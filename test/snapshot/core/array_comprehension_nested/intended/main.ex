@@ -1,75 +1,62 @@
 defmodule Main do
   def simple_nested() do
-    g = []
-    _ = g ++ [(fn ->
+    [(fn ->
   _ = g ++ [0]
   _ = g ++ [1]
   _ = g ++ [2]
   []
-end).()]
-    _ = g ++ [(fn ->
+end).(), (fn ->
   _ = g ++ [3]
   _ = g ++ [4]
   _ = g ++ [5]
   []
-end).()]
-    _ = g ++ [(fn ->
+end).(), (fn ->
   _ = g ++ [6]
   _ = g ++ [7]
   _ = g ++ [8]
   []
 end).()]
-    g
   end
   def constant_range_unrolled() do
-    g = []
-    _ = g ++ [(fn ->
+    [(fn ->
+  _ = g ++ [0]
+  _ = g ++ [1]
+  []
+end).(), (fn ->
   _ = g ++ [0]
   _ = g ++ [1]
   []
 end).()]
-    _ = g ++ [(fn ->
-  _ = g ++ [0]
-  _ = g ++ [1]
-  []
-end).()]
-    g
   end
   def nested_with_condition() do
-    g = []
-    _ = g ++ [(fn ->
+    [(fn ->
   g ++ [0]
   nil
   g ++ [2]
   nil
   []
-end).()]
-    _ = g ++ [(fn ->
+end).(), (fn ->
   nil
   g ++ [5]
   nil
   g ++ [7]
   []
-end).()]
-    _ = g ++ [(fn ->
+end).(), (fn ->
   g ++ [8]
   nil
   g ++ [10]
   nil
   []
-end).()]
-    _ = g ++ [(fn ->
+end).(), (fn ->
   nil
   g ++ [13]
   nil
   g ++ [15]
   []
 end).()]
-    g
   end
   def deeply_nested() do
-    g = []
-    _ = g ++ [(fn ->
+    [(fn ->
   _ = g ++ [(fn ->
   _ = g ++ [0]
   _ = g ++ [1]
@@ -81,8 +68,7 @@ end).()]
   []
 end).()]
   []
-end).()]
-    _ = g ++ [(fn ->
+end).(), (fn ->
   _ = g ++ [(fn ->
   _ = g ++ [4]
   _ = g ++ [5]
@@ -95,11 +81,9 @@ end).()]
 end).()]
   []
 end).()]
-    g
   end
   def four_level_nesting() do
-    g = []
-    _ = g ++ [(fn ->
+    [(fn ->
   _ = g ++ [(fn ->
   _ = g ++ [(fn ->
   _ = g ++ [0]
@@ -127,8 +111,7 @@ end).()]
   []
 end).()]
   []
-end).()]
-    _ = g ++ [(fn ->
+end).(), (fn ->
   _ = g ++ [(fn ->
   _ = g ++ [(fn ->
   _ = g ++ [8]
@@ -157,33 +140,27 @@ end).()]
 end).()]
   []
 end).()]
-    g
   end
   def nested_with_expression() do
-    g = []
-    _ = g ++ [(fn ->
+    [(fn ->
   _ = g ++ ["R" <> Kernel.to_string(0) <> "C" <> Kernel.to_string(0)]
   _ = g ++ ["R" <> Kernel.to_string(0) <> "C" <> Kernel.to_string(1)]
   _ = g ++ ["R" <> Kernel.to_string(0) <> "C" <> Kernel.to_string(2)]
   []
-end).()]
-    _ = g ++ [(fn ->
+end).(), (fn ->
   _ = g ++ ["R" <> Kernel.to_string(1) <> "C" <> Kernel.to_string(0)]
   _ = g ++ ["R" <> Kernel.to_string(1) <> "C" <> Kernel.to_string(1)]
   _ = g ++ ["R" <> Kernel.to_string(1) <> "C" <> Kernel.to_string(2)]
   []
-end).()]
-    _ = g ++ [(fn ->
+end).(), (fn ->
   _ = g ++ ["R" <> Kernel.to_string(2) <> "C" <> Kernel.to_string(0)]
   _ = g ++ ["R" <> Kernel.to_string(2) <> "C" <> Kernel.to_string(1)]
   _ = g ++ ["R" <> Kernel.to_string(2) <> "C" <> Kernel.to_string(2)]
   []
 end).()]
-    g
   end
   def nested_with_block() do
-    g = []
-    _ = g ++ [(fn ->
+    [(fn ->
   temp = 0
   _ = g ++ [temp]
   temp = 0
@@ -191,8 +168,7 @@ end).()]
   temp = 0
   _ = g ++ [temp + 2]
   []
-end).()]
-    _ = g ++ [(fn ->
+end).(), (fn ->
   temp = 0
   _ = g ++ [temp + 1]
   temp = 1
@@ -200,8 +176,7 @@ end).()]
   temp = 2
   _ = g ++ [temp + 3]
   []
-end).()]
-    _ = g ++ [(fn ->
+end).(), (fn ->
   temp = 0
   _ = g ++ [temp + 2]
   temp = 2
@@ -210,7 +185,6 @@ end).()]
   _ = g ++ [temp + 4]
   []
 end).()]
-    g
   end
   def mixed_constant_variable() do
     n = 3
@@ -265,18 +239,15 @@ end end).())
     sum
   end
   def with_meta_and_parens() do
-    g = []
-    _ = g ++ [(fn ->
+    [(fn ->
   _ = g ++ [0]
   _ = g ++ [1]
   []
-end).()]
-    _ = g ++ [(fn ->
+end).(), (fn ->
   _ = g ++ [2]
   _ = g ++ [3]
   []
 end).()]
-    g
   end
   def mixed_with_literals() do
     [(fn ->
@@ -312,12 +283,10 @@ end end).())
     []
   end
   def single_element_nested() do
-    g = []
-    _ = g ++ [(fn ->
+    [(fn ->
   _ = g ++ [0]
   []
 end).()]
-    g
   end
   def main() do
     _ = simple_nested()

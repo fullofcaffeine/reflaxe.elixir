@@ -15,16 +15,8 @@ defmodule Main do
   end
   def handle_result(result) do
     (case result do
-      {:ok, value} ->
-        _fn_ = value
-        _end_ = value
-        _fn = value
-        _end = value
-        to_string = value
-        "Success: #{(fn -> Kernel.to_string(value) end).()}"
-      {:error, reason} ->
-        message = reason
-        "Error: #{(fn -> message end).()}"
+      {:ok, value} -> "Success: #{(fn -> Kernel.to_string(value) end).()}"
+      {:error, message} -> "Error: #{(fn -> message end).()}"
     end)
   end
   def get_value_or_default(result) do

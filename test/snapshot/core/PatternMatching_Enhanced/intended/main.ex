@@ -14,7 +14,7 @@ defmodule Main do
   {:red} -> "red"
   {:green} -> "green"
   {:blue} -> "blue"
-  {:rgb, r, g, b} -> "custom"
+  {:rgb, _r, _g, _b} -> "custom"
 end))
     nil
   end
@@ -24,21 +24,11 @@ end))
   {:red} -> "primary"
   {:green} -> "primary"
   {:blue} -> "primary"
-  {:rgb, r, g, b} ->
-    r = g
-    b = _g2
-    if (r + g + b > 500) do
+  {:rgb, r, _g, b} ->
+    if (r + r + b > 500) do
       "bright"
     else
-      r = g
-      b = _g2
-      if (r + g + b < 100) do
-        "dark"
-      else
-        r = g
-        b = _g2
-        "medium"
-      end
+      if (r + r + b < 100), do: "dark", else: "medium"
     end
 end))
     nil
@@ -47,7 +37,7 @@ end))
     result = {:ok, "success"}
     message = ((case result do
   {:ok, value} -> "Got value: #{(fn -> value end).()}"
-  {:error, reason} -> "Got error: #{(fn -> error end).()}"
+  {:error, error} -> "Got error: #{(fn -> error end).()}"
 end))
     nil
   end
@@ -93,20 +83,27 @@ end end).())
   end
   defp test_object_patterns() do
     point_y = nil
-    point_x = nil
+    _ = nil
     point_x = 10
     point_y = 20
-    quadrant = g = point_x
-    _ = point_y
-    if (point_x > 0 and point_y > 0) do
+    quadrant = g = point_y
+    x = g
+    y = g
+    if (x > 0 and y > 0) do
       "first"
     else
-      if (point_x < 0 and point_y > 0) do
+      x = g
+      y = g
+      if (x < 0 and y > 0) do
         "second"
       else
-        if (point_x < 0 and point_y < 0) do
+        x = g
+        y = g
+        if (x < 0 and y < 0) do
           "third"
         else
+          x = g
+          y = g
           cond do
             x > 0 and y < 0 -> "fourth"
             _g == 0 -> "axis"

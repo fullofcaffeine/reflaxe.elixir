@@ -216,7 +216,7 @@ defmodule Bytes do
   def of_string(s, encoding) do
     binary = :unicode.characters_to_binary(s, :utf8)
     length = byte_size(binary)
-    encoding = MyApp.Bytes.new(length, binary)
+    _ = MyApp.Bytes.new(length, binary)
   end
   def fast_get(b, pos) do
     :binary.at(b, pos)

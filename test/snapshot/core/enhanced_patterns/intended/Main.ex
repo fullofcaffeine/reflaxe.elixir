@@ -2,7 +2,7 @@ defmodule Main do
   def test_binary_patterns() do
     data = [72, 101, 108, 108, 111]
     switch_result_1 = ((case data do
-  [] when arr[0] == 72 and length(data) > 1 ->
+  [head | tail] when head == 72 and tail != [] ->
     "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   g = []
   g1 = 1
@@ -14,9 +14,13 @@ defmodule Main do
   _g
 end).(), ",") end).()}"
   [] -> "Empty binary"
-  [head | tail] when _g == 72 -> "Starts with 'H' (single byte)"
-  [head | tail] when arr[0] == 72 and length(data) > 1 ->
-    "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
+  [head | _tail] ->
+    if (head == 72) do
+      "Starts with 'H' (single byte)"
+    else
+      arr = data
+      if (arr[0] == 72 and length(arr) > 1) do
+        "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   g1 = 1
   _g2 = length(arr)
   Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
@@ -25,8 +29,15 @@ end).(), ",") end).()}"
   end end).())
   _g
 end).(), ",") end).()}"
-  [head | tail] when length(bytes) > 10 -> "Large binary: #{(fn -> Kernel.to_string(length(bytes)) end).()} bytes"
-  [head | tail] -> "Other binary pattern"
+      else
+        bytes = data
+        if (length(bytes) > 10) do
+          "Large binary: #{(fn -> Kernel.to_string(length(bytes)) end).()} bytes"
+        else
+          "Other binary pattern"
+        end
+      end
+    end
   2 ->
     arr = data
     if (arr[0] == 72 and length(arr) > 1) do
@@ -41,8 +52,8 @@ end).(), ",") end).()}"
   _g
 end).(), ",") end).()}"
     else
-      first = _g
-      second = _g1
+      first = g
+      _second = g
       if (first > 64 and first < 90) do
         "2-byte uppercase start"
       else
@@ -68,11 +79,11 @@ end).(), ",") end).()}"
   _g
 end).(), ",") end).()}"
     else
-      a = _g
-      b = _g1
-      c = arr_length
-      d = _g3
-      e = _g4
+      a = g
+      _b = g
+      _c = arr_length
+      _d = g
+      _e = g
       if (a == 72) do
         "5-byte message starting with H"
       else
@@ -111,10 +122,35 @@ end))
   def test_complex_binary_segments() do
     packet = [1, 0, 8, 72, 101, 108, 108, 111]
     switch_result_2 = ((case packet do
-  3 when _g == 1 ->
-    if (_g == 0) do
-      size = arr_length
-      "Protocol v1, size=#{(fn -> Kernel.to_string(size) end).()} (header only)"
+  3 ->
+    if (g == 1) do
+      if (g == 0) do
+        size = arr_length
+        "Protocol v1, size=#{(fn -> Kernel.to_string(size) end).()} (header only)"
+      else
+        arr = packet
+        if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
+          "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
+  g1 = 3
+  _g2 = length(arr)
+  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
+    i = _g1 + 1
+    _g = Enum.concat(_g, [inspect(arr[i])])
+  end end).())
+  _g
+end).(), ",") end).()}"
+        else
+          version = g
+          _flags = g
+          _size = arr_length
+          if (version > 1) do
+            "Future protocol v#{(fn -> Kernel.to_string(version) end).()}"
+          else
+            header = packet
+            if (length(header) < 3), do: "Incomplete header", else: "Unknown packet format"
+          end
+        end
+      end
     else
       arr = packet
       if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
@@ -128,9 +164,9 @@ end))
   _g
 end).(), ",") end).()}"
       else
-        version = _g
-        flags = _g
-        size = arr_length
+        version = g
+        _flags = g
+        _size = arr_length
         if (version > 1) do
           "Future protocol v#{(fn -> Kernel.to_string(version) end).()}"
         else
@@ -139,19 +175,6 @@ end).(), ",") end).()}"
         end
       end
     end
-  3 when length(packet) >= 4 and arr[0] == 1 and arr[1] == 0 ->
-    "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
-  g1 = 3
-  _g2 = length(arr)
-  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
-    i = _g1 + 1
-    _g = Enum.concat(_g, [inspect(arr[i])])
-  end end).())
-  _g
-end).(), ",") end).()}"
-  3 when version > 1 -> "Future protocol v#{(fn -> Kernel.to_string(version) end).()}"
-  3 when length(header) < 3 -> "Incomplete header"
-  3 -> "Unknown packet format"
   4 ->
     arr = packet
     if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
@@ -166,10 +189,10 @@ end).(), ",") end).()}"
   _g
 end).(), ",") end).()}"
     else
-      version = _g
-      flags = _g1
+      version = g
+      flags = g
       size = arr_length
-      payload = _g3
+      _payload = g
       "Packet: v#{(fn -> Kernel.to_string(version) end).()}, flags=#{(fn -> Kernel.to_string(flags) end).()}, size=#{(fn -> Kernel.to_string(size) end).()}"
     end
   _ ->
@@ -197,8 +220,8 @@ end))
     expected_name = "test"
     test_value = 42
     test_name = "test"
-    result1 = _value = test_value
-    if (test_value == expected_value), do: "Matches expected value", else: "Different value"
+    result1 = value = test_value
+    if (value == expected_value), do: "Matches expected value", else: "Different value"
     result2 = v = test_value
     n = test_name
     if (v == expected_value and n == expected_name) do
@@ -341,18 +364,9 @@ end))
     _ = 3
     array_result = ((case 3 do
   0 -> "Empty"
-  1 ->
-    x = _g
-    "Single: #{(fn -> Kernel.to_string(x) end).()}"
-  2 ->
-    x = _g
-    y = _g1
-    "Pair: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()}"
-  3 ->
-    x = _g
-    y = _g1
-    z = arr_length
-    "Triple: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()}"
+  1 -> "Single: #{(fn -> Kernel.to_string(x) end).()}"
+  2 -> "Pair: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()}"
+  3 -> "Triple: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()}"
   _ ->
     cond do
       3 > 3 -> "Many: " <> Kernel.to_string(3) <> " items"
@@ -363,7 +377,7 @@ end))
   end
   def test_nested_patterns_with_guards() do
     _ = nil
-    data_user_age = nil
+    _ = nil
     data_user_active = nil
     _ = nil
     _ = nil
@@ -374,25 +388,33 @@ end))
     _ = "read"
     _ = "write"
     data_last_login = 1640995200
-    _g = data_user_age
-    _ = 2
-    _ = data_user_active
+    g = data_user_active
+    age = g
+    perms = g_entry
     active = arr_length
-    if (data_user_age >= 18 and data_user_age < 25 and perms > 0 and active) do
+    if (age >= 18 and age < 25 and perms > 0 and active) do
       "Young adult with permissions"
     else
+      age = g
+      perms = g_entry
       active = arr_length
-      if (data_user_age >= 25 and data_user_age < 65 and perms >= 2 and active) do
+      if (age >= 25 and age < 65 and perms >= 2 and active) do
         "Adult with full permissions"
       else
+        age = g
+        perms = g_entry
         active = arr_length
-        if (data_user_age >= 65 and active) do
+        if (age >= 65 and active) do
           "Senior user"
         else
+          age = g
+          perms = g_entry
           active = arr_length
           if (not active) do
             "Inactive user"
           else
+            age = g
+            perms = g_entry
             _active = arr_length
             if (perms == 0), do: "User without permissions", else: "Other user type"
           end
@@ -402,31 +424,40 @@ end))
   end
   def test_complex_guard_performance() do
     metrics_network = nil
-    metrics_memory = nil
-    metrics_disk = nil
-    metrics_cpu = nil
+    _ = nil
+    _ = nil
+    _ = nil
     metrics_cpu = 45.2
     metrics_memory = 68.7
     metrics_disk = 23.1
     metrics_network = 12.8
-    _g = metrics_cpu
-    _ = metrics_memory
-    _ = metrics_disk
-    _ = metrics_network
+    g = metrics_network
+    cpu = g
+    mem = g_next
     disk = arr_length
-    if (metrics_cpu > 80 or mem > 90 or disk > 90 or net > 80) do
+    net = g_value
+    if (cpu > 80 or mem > 90 or disk > 90 or net > 80) do
       "Critical resource usage"
     else
+      cpu = g
+      mem = g_next
       disk = arr_length
-      if (metrics_cpu > 60 or mem > 75 or disk > 75 or net > 60) do
+      net = g_value
+      if (cpu > 60 or mem > 75 or disk > 75 or net > 60) do
         "High resource usage"
       else
+        cpu = g
+        mem = g_next
         disk = arr_length
-        if (metrics_cpu > 40 and mem > 50 and disk > 50 and net > 30) do
+        net = g_value
+        if (cpu > 40 and mem > 50 and disk > 50 and net > 30) do
           "Moderate resource usage"
         else
+          cpu = g
+          mem = g_next
           disk = arr_length
-          if (metrics_cpu <= 40 and mem <= 50 and disk <= 50 and net <= 30), do: "Low resource usage", else: "Unknown resource state"
+          net = g_value
+          if (cpu <= 40 and mem <= 50 and disk <= 50 and net <= 30), do: "Low resource usage", else: "Unknown resource state"
         end
       end
     end
