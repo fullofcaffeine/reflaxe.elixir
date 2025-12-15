@@ -1246,8 +1246,8 @@ class SwitchBuilder {
                             case TParenthesis(inner):
                                 cur = inner;
                                 continue;
-                            case TMeta(_, inner2):
-                                cur = inner2;
+                            case TMeta(_, innerExpr):
+                                cur = innerExpr;
                                 continue;
                             default:
                                 return cur;
@@ -1593,8 +1593,8 @@ class SwitchBuilder {
                     case TParenthesis(inner):
                         x = inner;
                         continue;
-                    case TMeta(_, inner2):
-                        x = inner2;
+                    case TMeta(_, innerExpr):
+                        x = innerExpr;
                         continue;
                     default:
                         return x;
@@ -1755,8 +1755,8 @@ class SwitchBuilder {
 	                    case TParenthesis(inner):
 	                        cur = inner;
 	                        continue;
-	                    case TMeta(_, inner2):
-	                        cur = inner2;
+	                    case TMeta(_, innerExpr):
+	                        cur = innerExpr;
 	                        continue;
 	                    default:
 	                        break;
