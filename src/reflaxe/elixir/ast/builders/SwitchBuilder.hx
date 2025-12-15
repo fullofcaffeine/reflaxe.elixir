@@ -1501,9 +1501,9 @@ class SwitchBuilder {
                     && recoveredBinders != null
                     && i < recoveredBinders.length
                 ) {
-                    var rb2 = recoveredBinders[i];
-                    if (rb2 != null && !isEnvLikeName(rb2) && !isFunctionParamByName(rb2) && !isGenericOrAutoName(rb2)) {
-                        candidate = rb2;
+                    var recoveredBinder = recoveredBinders[i];
+                    if (recoveredBinder != null && !isEnvLikeName(recoveredBinder) && !isFunctionParamByName(recoveredBinder) && !isGenericOrAutoName(recoveredBinder)) {
+                        candidate = recoveredBinder;
                     }
                 }
 
