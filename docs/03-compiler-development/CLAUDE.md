@@ -237,10 +237,10 @@ DebugHelper.debugIfExpression(expr, condition, elseExpr, "context description");
 ### Debug Compilation Flags
 ```bash
 # Enable detailed compilation debugging
-haxe build.hxml -D debug_compiler
+npx haxe build.hxml -D debug_compiler
 
 # Enable source mapping for error tracking
-haxe build.hxml -D source-map
+npx haxe build.hxml -D source-map
 ```
 
 ### Common Debugging Patterns
