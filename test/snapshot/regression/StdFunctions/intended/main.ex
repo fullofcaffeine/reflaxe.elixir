@@ -44,9 +44,18 @@ defmodule Main do
     nil
   end
   defp test_random_and_int() do
-    _ = MyApp.Std.random()
-    _ = MyApp.Std.random()
-    _ = MyApp.Std.random()
+    rand1 = ((case 100 do
+  std_random_max when std_random_max <= 0 -> 0
+  _std_random_max -> (:rand.uniform(_std_random_max) - 1)
+end))
+    rand2 = ((case 100 do
+  std_random_max when std_random_max <= 0 -> 0
+  _std_random_max -> (:rand.uniform(_std_random_max) - 1)
+end))
+    rand3 = ((case 100 do
+  std_random_max when std_random_max <= 0 -> 0
+  _std_random_max -> (:rand.uniform(_std_random_max) - 1)
+end))
     _ = 3
     _ = 3
     _ = -2
