@@ -284,6 +284,13 @@ You can compile-check all examples with `npm run test:examples`.
 - **[Testing Guide](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md)** - Snapshot + integration testing system
 - **[Contributing](docs/10-contributing/contributing.md)** - Contributing and extending
 
+## Project Meta
+
+- `CONTRIBUTING.md` – contribution workflow and commands
+- `SECURITY.md` – vulnerability reporting process
+- `CODE_OF_CONDUCT.md` – community guidelines
+- `RELEASING.md` – release checklist and tagging
+
 ### Manual Installation (For Contributors)
 
 ```bash
