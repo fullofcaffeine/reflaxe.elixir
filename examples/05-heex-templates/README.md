@@ -16,7 +16,7 @@ This example demonstrates how to write Phoenix HEEx templates using Haxe with ty
 cd examples/05-heex-templates
 
 # Compile Haxe templates to HEEx
-npx haxe build.hxml
+haxe build.hxml
 ```
 
 ## Template Examples

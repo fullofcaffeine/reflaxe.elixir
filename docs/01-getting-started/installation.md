@@ -44,8 +44,11 @@ This automatically installs:
 # Check lix is available
 npx lix --version
 
-# Check project-specific Haxe version (from .haxerc)
-npx haxe --version
+# Check project-specific Haxe version (managed by lix / .haxerc)
+haxe --version
+
+# If `haxe` is not on your PATH, use:
+# npx lix run haxe --version
 ```
 
 **Expected Output:**
@@ -91,7 +94,7 @@ Source mapping enables debugging at the Haxe source level:
 ```bash
 # Test source map generation
 cd test/tests/source_map_basic
-npx haxe compile.hxml -D source-map
+haxe compile.hxml -D source-map
 
 # Verify .ex.map files were created
 ls out/*.ex.map
@@ -137,37 +140,41 @@ Contains library paths and installation instructions.
 ```json
 {
   "scripts": {
-    "test": "npm run test:haxe && npm run test:mix",
-    "test:haxe": "npx haxe ComprehensiveTestRunner.hxml",
-    "test:mix": "mix test"
+    "test": "npm test",
+    "test:quick": "npm run test:quick",
+    "test:examples": "npm run test:examples"
   }
 }
 ```
 
 ## Using Haxe After Installation
 
-### Always Use `npx haxe`
-```bash
-# ✅ Correct - Uses project-specific version
-npx haxe build.hxml
-npx haxe --version
+### Use the Project-Local `haxe` (via lix)
 
-# ❌ Incorrect - Uses global version (if installed)
+This repo uses lix to manage the Haxe toolchain. After `npm install`, prefer running `haxe ...`
+(or `npx lix run haxe ...` if `haxe` isn’t on your PATH).
+
+Avoid `npx haxe ...` (the npm package): it can try to download a separate, platform-specific Haxe
+binary which may not match your system/architecture.
+
+```bash
+# ✅ Correct - Uses project-specific version (via lix)
 haxe build.hxml
+haxe --version
 ```
 
 ### Compilation Examples
 ```bash
 # Compile a simple example
 cd examples/01-simple-modules
-npx haxe BasicModule.hxml
+haxe BasicModule.hxml
 
 # Compile with source mapping (recommended for development)
-npx haxe BasicModule.hxml -D source-map
+haxe BasicModule.hxml -D source-map
 
 # Compile Phoenix LiveView with source maps
 cd examples/03-phoenix-app  
-npx haxe build.hxml -D source-map
+haxe build.hxml -D source-map
 
 # Run comprehensive tests
 npm test
@@ -179,7 +186,7 @@ Reflaxe.Elixir is the **first Reflaxe target with source mapping**:
 
 ```bash
 # Enable in any compilation
-npx haxe build.hxml -D source-map
+haxe build.hxml -D source-map
 
 # Generates .ex.map files alongside .ex files
 ls lib/*.ex.map
