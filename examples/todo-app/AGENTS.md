@@ -364,7 +364,7 @@ src_haxe/components/Component.hx:30: Unknown identifier : @field
 ### 1. Start File Watcher
 ```bash
 # Start the watcher for real-time compilation
-mix compile.haxe --watch
+mix haxe.watch
 
 # You'll see:
 [10:30:45] Starting HaxeWatcher...
@@ -534,8 +534,8 @@ mix haxe.source_map lib/MyModule.ex 45 12
 # Check compilation errors with source positions
 mix haxe.errors --format json
 
-# Get structured compilation status
-mix haxe.status --format json
+# Get structured compilation errors (LLM-friendly)
+mix haxe.errors --format json
 ```
 
 ## 📁 Project Structure
@@ -555,7 +555,7 @@ todo-app/
 ## ✅ Best Practices
 
 ### 1. Always Use File Watcher
-- **Start watcher first**: `mix compile.haxe --watch`
+- **Start watcher first**: `mix haxe.watch`
 - **Keep it running**: One terminal dedicated to watching
 - **Check feedback**: Watch for compilation success/errors
 
@@ -575,20 +575,20 @@ todo-app/
 
 ### Watcher Not Starting
 ```bash
-# Check if port 6000 is in use
-lsof -i :6000
+# Check if the Phoenix watcher port is in use (default: 6001)
+lsof -i :6001
 
-# Use different port if needed
-mix compile.haxe --watch --port 6001
+# Use a different watcher port if needed
+HAXE_CLIENT_WAIT_PORT=6002 mix phx.server
 
 # Reset watcher state
-rm -rf .haxe_cache && mix compile.haxe --watch --force
+rm -rf .haxe_cache && mix haxe.watch --once
 ```
 
 ### Changes Not Detected
 ```bash
 # Verify files are in watched directories
-mix haxe.status
+mix haxe.errors
 
 # Check if src_haxe/ contains .hx files
 ls src_haxe/**/*.hx
@@ -1091,4 +1091,4 @@ mix ecto.compile
 
 ---
 
-**Remember**: The watcher provides sub-second compilation perfect for AI-assisted development. Always start with `mix compile.haxe --watch` for the best experience!
+**Remember**: The watcher provides sub-second compilation perfect for AI-assisted development. Always start with `mix haxe.watch` for the best experience!
