@@ -182,8 +182,8 @@ class TopLevelNilAssignDiscardTransforms {
                 // Core expression forms
                 case EIf(condition, thenBranch, elseBranch):
                     visit(condition); visit(thenBranch); if (elseBranch != null) visit(elseBranch);
-                case EUnless(condition, bodyExpr, elseBranch2):
-                    visit(condition); visit(bodyExpr); if (elseBranch2 != null) visit(elseBranch2);
+                case EUnless(condition, bodyExpr, elseBranch):
+                    visit(condition); visit(bodyExpr); if (elseBranch != null) visit(elseBranch);
                 case EUnary(_op, expr):
                     visit(expr);
                 case EPin(expr):
@@ -195,16 +195,16 @@ class TopLevelNilAssignDiscardTransforms {
                 case ECall(target, _func, args):
                     if (target != null) visit(target);
                     for (a in args) { visit(a); if (used) break; }
-                case ERemoteCall(moduleExpr, _func2, args2):
+                case ERemoteCall(moduleExpr, _funcName, callArgs):
                     visit(moduleExpr);
-                    for (a2 in args2) { visit(a2); if (used) break; }
-                case EMacroCall(_macro, args3, doBlock2):
-                    for (a3 in args3) { visit(a3); if (used) break; }
-                    if (!used) visit(doBlock2);
+                    for (arg in callArgs) { visit(arg); if (used) break; }
+                case EMacroCall(_macro, macroArgs, doBlock):
+                    for (arg in macroArgs) { visit(arg); if (used) break; }
+                    if (!used) visit(doBlock);
                 case EField(obj, _field):
                     visit(obj);
-                case EAccess(obj2, key):
-                    visit(obj2); visit(key);
+                case EAccess(obj, key):
+                    visit(obj); visit(key);
                 case ERange(start, end, _exclusive):
                     visit(start); visit(end);
 
@@ -213,13 +213,13 @@ class TopLevelNilAssignDiscardTransforms {
                     for (e in elements) { visit(e); if (used) break; }
                 case EMap(pairs):
                     for (p in pairs) { visit(p.key); visit(p.value); if (used) break; }
-                case EKeywordList(pairs2):
-                    for (p2 in pairs2) { visit(p2.value); if (used) break; }
+                case EKeywordList(pairs):
+                    for (pair in pairs) { visit(pair.value); if (used) break; }
                 case EStruct(_module, fields):
                     for (f in fields) { visit(f.value); if (used) break; }
-                case EStructUpdate(base, fields2):
+                case EStructUpdate(base, fields):
                     visit(base);
-                    for (f2 in fields2) { visit(f2.value); if (used) break; }
+                    for (field in fields) { visit(field.value); if (used) break; }
                 case EBitstring(segments):
                     for (seg in segments) {
                         visit(seg.value);

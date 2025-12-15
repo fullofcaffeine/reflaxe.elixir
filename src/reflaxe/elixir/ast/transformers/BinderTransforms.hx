@@ -1923,10 +1923,10 @@ class BinderTransforms {
                         switch (s.def) {
                             case EMatch(_, rhs):
                                 rhsName = extractSimpleVarName(rhs);
-                            case EBinary(Match, _, rhs2):
-                                rhsName = extractSimpleVarName(rhs2);
-                            default:
-                        }
+                case EBinary(Match, _, rhsExpr):
+                    rhsName = extractSimpleVarName(rhsExpr);
+                default:
+            }
                         if (rhsName != null && isInfraTemp(rhsName) && !declared.exists(rhsName)) {
                             // This statement reads an infra temp that is not bound by the clause pattern
                             // and has not been declared earlier in the clause body.
@@ -1952,8 +1952,8 @@ class BinderTransforms {
                         switch (s.def) {
                             case EMatch(_, rhs):
                                 rhsName = extractSimpleVarName(rhs);
-                            case EBinary(Match, _, rhs2):
-                                rhsName = extractSimpleVarName(rhs2);
+                            case EBinary(Match, _, rhsExpr):
+                                rhsName = extractSimpleVarName(rhsExpr);
                             default:
                         }
                         if (rhsName != null && isInfraTemp(rhsName) && !declaredDo.exists(rhsName)) {
@@ -2370,14 +2370,14 @@ class BinderTransforms {
                         case [ENil, _]: makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [right]));
                         default: n;
                     }
-                case EBinary(NotEqual, left2, right2):
-                    switch [left2.def, right2.def] {
+                case EBinary(NotEqual, left, right):
+                    switch [left.def, right.def] {
                         case [_, ENil]:
-                            var inner = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [left2]));
-                            makeAST(ElixirASTDef.EUnary(Not, inner));
+                            var isNilCall = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [left]));
+                            makeAST(ElixirASTDef.EUnary(Not, isNilCall));
                         case [ENil, _]:
-                            var inner2 = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [right2]));
-                            makeAST(ElixirASTDef.EUnary(Not, inner2));
+                            var isNilCall = makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [right]));
+                            makeAST(ElixirASTDef.EUnary(Not, isNilCall));
                         default: n;
                     }
                 default:
@@ -2410,13 +2410,13 @@ class BinderTransforms {
                                                 var fixedBody = ElixirASTTransformer.transformNode(clause.body, function(x) {
                                                     return switch(x.def) {
                                                         case EVar(v) if (v == "flashType"): makeASTWithMeta(EVar("flash_type"), x.metadata, x.pos);
-                                                        case ERemoteCall(mod2, func2, args2) if (func2 == "put_flash"):
-                                                            if (args2.length >= 2) {
-                                                                switch(args2[1].def) {
+                                                        case ERemoteCall(moduleExpr, funcName, callArgs) if (funcName == "put_flash"):
+                                                            if (callArgs.length >= 2) {
+                                                                switch(callArgs[1].def) {
                                                                     case EVar(v) if (v == "flashType"):
-                                                                        var newArgs = args2.copy();
+                                                                        var newArgs = callArgs.copy();
                                                                         newArgs[1] = makeAST(EVar("flash_type"));
-                                                                        return makeASTWithMeta(ERemoteCall(mod2, func2, newArgs), x.metadata, x.pos);
+                                                                        return makeASTWithMeta(ERemoteCall(moduleExpr, funcName, newArgs), x.metadata, x.pos);
                                                                     default:
                                                                 }
                                                             }
@@ -2456,13 +2456,13 @@ class BinderTransforms {
                                                 var fixedBody = ElixirASTTransformer.transformNode(clause.body, function(x) {
                                                     return switch(x.def) {
                                                         case EVar(v) if (v == "flashType"): makeASTWithMeta(EVar("flash_type"), x.metadata, x.pos);
-                                                        case ERemoteCall(mod2, func2, args2) if (func2 == "put_flash"):
-                                                            if (args2.length >= 2) {
-                                                                switch(args2[1].def) {
+                                                        case ERemoteCall(moduleExpr, funcName, callArgs) if (funcName == "put_flash"):
+                                                            if (callArgs.length >= 2) {
+                                                                switch(callArgs[1].def) {
                                                                     case EVar(v) if (v == "flashType"):
-                                                                        var newArgs = args2.copy();
+                                                                        var newArgs = callArgs.copy();
                                                                         newArgs[1] = makeAST(EVar("flash_type"));
-                                                                        return makeASTWithMeta(ERemoteCall(mod2, func2, newArgs), x.metadata, x.pos);
+                                                                        return makeASTWithMeta(ERemoteCall(moduleExpr, funcName, newArgs), x.metadata, x.pos);
                                                                     default:
                                                                 }
                                                             }
