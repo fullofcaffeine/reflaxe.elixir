@@ -12,10 +12,11 @@ defmodule MixProjectExample.MixProject do
       compilers: [:haxe] ++ Mix.compilers(),
       
       # Configure Haxe compiler settings
-      haxe_compiler: [
+      haxe: [
         hxml_file: "build.hxml",
         source_dir: "src_haxe", 
         target_dir: "lib",
+        watch: false,
         verbose: Mix.env() == :dev
       ],
       
@@ -50,6 +51,8 @@ defmodule MixProjectExample.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:reflaxe_elixir, path: "../..", runtime: false},
+
       # Development and testing
       {:ex_doc, "~> 0.31", only: :dev, runtime: false},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},

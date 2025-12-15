@@ -11,10 +11,11 @@ defmodule PhoenixHaxeExample.MixProject do
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
       deps: deps(),
-      haxe_compiler: [
+      haxe: [
         hxml_file: "build.hxml",
         source_dir: "src_haxe",
         target_dir: "lib",
+        watch: false,
         verbose: true
       ]
     ]
@@ -32,6 +33,7 @@ defmodule PhoenixHaxeExample.MixProject do
 
   defp deps do
     [
+      {:reflaxe_elixir, path: "../..", runtime: false},
       {:phoenix, "~> 1.7.0"},
       {:phoenix_html, "~> 3.3"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
