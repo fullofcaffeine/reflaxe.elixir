@@ -86,6 +86,14 @@ class EFnUndefinedRefToArgTransforms {
               return x;
             });
 
+            // If the clause argument binder is already referenced in the body, this closure
+            // is not a single-source-of-truth situation. It may intentionally capture and
+            // use outer variables (e.g., comparing `todo.id` to `id`). Do not rewrite.
+            if (referenced.exists(argName)) {
+              newClauses.push(cl);
+              continue;
+            }
+
             // Compute undefined references
             var undefined = [for (k in referenced.keys()) if (!declared.exists(k)) k];
             #if debug_ast_transformer
