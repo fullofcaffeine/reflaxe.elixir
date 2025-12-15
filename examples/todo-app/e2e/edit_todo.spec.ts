@@ -8,12 +8,16 @@ test('edit todo updates title', async ({ page }) => {
   // Create a fresh todo to edit
   await page.getByTestId('btn-new-todo').click()
   const original = `Edit Me ${Date.now()}`
+  const originalDesc = `Original description ${Date.now()}`
   const titleInput = page.getByTestId('input-title')
   await expect(titleInput).toBeVisible({ timeout: 15000 })
   await titleInput.fill(original)
+  // Set description so we can verify clearing it works too
+  await page.locator('form[phx-submit="create_todo"] textarea[name="description"]').fill(originalDesc)
   await page.getByTestId('btn-create-todo').click()
   const heading = page.locator('h3', { hasText: original }).first()
   const card = heading.locator('xpath=ancestor::*[@data-testid="todo-card"][1]')
+  await expect(card).toContainText(originalDesc, { timeout: 15000 })
 
   // Open edit form
   await card.getByTestId('btn-edit-todo').click()
@@ -45,6 +49,10 @@ test('edit todo updates title', async ({ page }) => {
 
   // Assert the updated title is visible
   await expect(page.locator('h3', { hasText: updated })).toBeVisible({ timeout: 15000 })
+  // Assert description was cleared (it should no longer render)
+  const updatedHeading = page.locator('h3', { hasText: updated }).first()
+  const updatedCard = updatedHeading.locator('xpath=ancestor::*[@data-testid="todo-card"][1]')
+  await expect(updatedCard).not.toContainText(originalDesc, { timeout: 15000 })
   // Guard: the LiveView should still be connected after save
   await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 10000 })
 })
