@@ -1,7 +1,6 @@
 defmodule TestAppWeb.TestLive do
   use Phoenix.Component
   use Phoenix.LiveView, layout: {TestAppWeb.Layouts, :app}
-  require Ecto.Query
   def mount(_params, session, socket) do
     %{:status => "ok", :socket => socket}
   end
