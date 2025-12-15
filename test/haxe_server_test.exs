@@ -22,7 +22,8 @@ defmodule HaxeServerTest do
     end
 
     test "starts with custom port option" do
-      assert {:ok, _pid} = HaxeServer.start_link([port: 7000])
+      custom_port = find_free_port()
+      assert {:ok, _pid} = HaxeServer.start_link([port: custom_port])
       
       # Give it time to try starting the server
       Process.sleep(100)
@@ -73,7 +74,7 @@ defmodule HaxeServerTest do
     end
 
     test "includes correct port in stats" do
-      custom_port = 7001
+      custom_port = find_free_port()
       {:ok, _pid} = HaxeServer.start_link([port: custom_port])
       
       {_response, stats} = HaxeServer.status()
@@ -231,6 +232,24 @@ defmodule HaxeServerTest do
       assert Process.alive?(Process.whereis(HaxeServer))
       result = HaxeServer.status()
       assert match?({_, %{}}, result)
+    end
+  end
+
+  defp find_free_port() do
+    # Prefer a dual-stack bind to match lix/haxeshim's default (::) behavior.
+    ipv6_opts = [:binary, active: false, reuseaddr: true, ip: {0, 0, 0, 0, 0, 0, 0, 0}, ipv6_v6only: false]
+
+    case :gen_tcp.listen(0, ipv6_opts) do
+      {:ok, socket} ->
+        {:ok, {_addr, port}} = :inet.sockname(socket)
+        :gen_tcp.close(socket)
+        port
+
+      {:error, _} ->
+        {:ok, socket} = :gen_tcp.listen(0, [:binary, active: false, reuseaddr: true])
+        {:ok, {_addr, port}} = :inet.sockname(socket)
+        :gen_tcp.close(socket)
+        port
     end
   end
 end
