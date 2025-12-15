@@ -1,94 +1,35 @@
-# Phoenix Application Integration
+# Phoenix Application Integration (Haxe → Elixir)
 
-This example demonstrates how to create a Phoenix application with Haxe→Elixir compilation using Reflaxe.Elixir.
+This example is a minimal Phoenix application whose server-side modules are authored in Haxe and compiled to Elixir with Reflaxe.Elixir.
 
 **Prerequisites**: [02-mix-project](../02-mix-project/) completed  
-**Difficulty**: 🟡 Intermediate  
-**Time**: 45 minutes
+**Difficulty**: 🟡 Intermediate
 
 ## What You'll Learn
 
-- Phoenix application structure with Haxe integration
-- Application supervision tree setup from Haxe
-- Phoenix configuration management
-- Production deployment considerations
-
-## Features
-
-- **Phoenix Application**: Full application supervision tree
-- **Mix Integration**: Haxe compiler integrated into Phoenix build pipeline  
-- **Supervision Tree**: OTP application structure generated from Haxe
-- **Production Ready**: Complete Phoenix app with config, telemetry, etc.
+- Phoenix application + endpoint/router generation from Haxe
+- Mix compiler integration (`mix compile` runs the Haxe compiler)
+- A minimal JSON controller written in Haxe
 
 ## Quick Start
 
 ```bash
-# From project root, install dependencies
 cd examples/03-phoenix-app
 mix deps.get
-
-# Compile Haxe source to Elixir
-npx haxe build.hxml
-
-# Start Phoenix server
+mix compile
 mix phx.server
 ```
 
-Open [http://localhost:4000](http://localhost:4000) to see the counter.
+Then visit `http://localhost:4000/` to see a JSON response.
 
-## Architecture
+## Where the Haxe Code Lives
 
-### Haxe Source (`src_haxe/`)
-- `phoenix/Application.hx` - Main application with LiveView component
-- Uses `@:liveview` annotation for automatic LiveView generation
+- `examples/03-phoenix-app/src_haxe/PhoenixHaxeExample.hx` — OTP application supervision tree (`@:application`)
+- `examples/03-phoenix-app/src_haxe/PhoenixHaxeExampleRouter.hx` — router DSL (`@:router`)
+- `examples/03-phoenix-app/src_haxe/controllers/PageController.hx` — minimal JSON controller (`@:controller`)
+- `examples/03-phoenix-app/src_haxe/server/infrastructure/*` — `@:endpoint`, `@:phoenixWebModule`, and error renderers
 
-### Generated Elixir (`lib/`)
-- Phoenix modules generated from Haxe source
-- Standard Phoenix application structure
+## Notes
 
-### Build Process
-1. **Haxe compilation**: `npx haxe build.hxml` converts `.hx` → `.ex`
-2. **Elixir compilation**: `mix compile` processes generated Elixir code  
-3. **Phoenix server**: `mix phx.server` runs the application
-
-## LiveView Example
-
-The `CounterLive` class demonstrates:
-
-**Haxe Source:**
-```haxe
-@:liveview
-class CounterLive {
-    var count = 0;
-    
-    function handle_event("increment", _params, socket) {
-        count++;
-        return {status: "noreply", socket: assign(socket, "count", count)};
-    }
-}
-```
-
-**Generated Elixir:**
-```elixir
-defmodule CounterLive do
-  use Phoenix.LiveView
-  
-  def handle_event("increment", _params, socket) do
-    count = socket.assigns.count + 1
-    {:noreply, assign(socket, :count, count)}
-  end
-end
-```
-
-## Development Workflow
-
-1. **Edit Haxe**: Modify files in `src_haxe/`
-2. **Compile**: Run `npx haxe build.hxml` (or use Phoenix live reload)
-3. **Test**: Browser automatically refreshes with changes
-
-## Next Steps
-
-- Add more LiveView components
-- Integrate with Ecto for database operations
-- Add OTP GenServers for business logic
-- Deploy to production with releases
+- Generated Elixir output is written to `examples/03-phoenix-app/lib/` and is intentionally not committed.
+- For a full LiveView example, see `examples/todo-app/`.

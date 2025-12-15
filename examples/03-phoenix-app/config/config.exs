@@ -5,9 +5,9 @@ config :phoenix_haxe_example,
 
 config :phoenix_haxe_example, PhoenixHaxeExampleWeb.Endpoint,
   url: [host: "localhost"],
-  render_errors: [view: PhoenixHaxeExampleWeb.ErrorView, accepts: ~w(html json), layout: false],
+  render_errors: [formats: [html: PhoenixHaxeExampleWeb.ErrorHTML, json: PhoenixHaxeExampleWeb.ErrorJSON], layout: false],
   pubsub_server: PhoenixHaxeExample.PubSub,
-  live_view: [signing_salt: "secret"]
+  live_view: [signing_salt: "phoenix_haxe_example_signing_salt"]
 
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
