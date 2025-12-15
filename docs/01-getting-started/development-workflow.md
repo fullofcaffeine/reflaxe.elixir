@@ -24,7 +24,7 @@ npx haxe build.hxml -D source-map  # With debugging support
 ```bash
 # Start automatic recompilation (todo-app example)
 cd examples/todo-app
-mix compile.haxe --watch
+mix haxe.watch
 
 # Make changes to .hx files → automatic recompilation
 # Sub-second compilation times with hot reload

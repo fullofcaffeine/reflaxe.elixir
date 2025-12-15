@@ -460,7 +460,7 @@ end
 1. **Start File Watcher**
    ```bash
    # Start development server with watching
-   mix compile.haxe --watch
+   mix haxe.watch
    
    # Or use Phoenix server
    mix phx.server
@@ -642,7 +642,7 @@ class UserLive {
 
 **Step 4: Verify fix with incremental compilation**
 ```bash
-$ mix compile.haxe --watch  # Already running, detects change
+$ mix haxe.watch  # Already running, detects change
 ==> haxe (0.089s)
 Generated: lib/UserLive.ex, lib/UserLive.ex.map
 ```
@@ -936,7 +936,7 @@ real    0m8.634s
 
 **File watcher with source maps (10 iterations)**:
 ```bash
-$ mix compile.haxe --watch --verbose
+$ mix haxe.watch --verbose
 [File changed: src_haxe/UserService.hx]
 ==> haxe (0.089s)  # Generated: UserService.ex, UserService.ex.map
 
@@ -1143,7 +1143,7 @@ This performance analysis demonstrates that source mapping adds minimal overhead
    npx haxe --wait 6000
    
    # Use server for compilation
-   mix compile.haxe --watch
+   mix haxe.watch
    ```
 
 2. Disable for production:
