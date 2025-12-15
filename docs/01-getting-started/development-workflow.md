@@ -14,8 +14,8 @@ npm test                    # Full validation (recommended)
 npm run test:quick         # Faster subset for quick iterations
 
 # 3. Test specific functionality
-npx haxe build.hxml        # Basic compilation
-npx haxe build.hxml -D source-map  # With debugging support
+haxe build.hxml        # Basic compilation
+haxe build.hxml -D source-map  # With debugging support
 ```
 
 ⚠️ **Important**: See [Compiler Flags Guide](compiler-flags-guide.md) for critical information about which optimization flags to avoid (particularly `-D analyzer-optimize`).
@@ -46,14 +46,15 @@ Reflaxe.Elixir coordinates two development ecosystems for complete validation:
 ```bash
 npm install             # Installs lix package manager locally
 npx lix download        # Downloads Haxe dependencies (project-specific versions)
-npx haxe TestMain.hxml  # Uses project-specific Haxe binary (no global conflicts)
+haxe TestMain.hxml      # Uses the project-local Haxe toolchain (via lix)
+# If `haxe` is not on your PATH, use: npx lix run haxe TestMain.hxml
 ```
 
 **Why lix?**
 - ✅ **Project-specific Haxe versions** (avoids "works on my machine")
 - ✅ **GitHub + haxelib sources** (always latest libraries)  
 - ✅ **Locked dependency versions** (zero software erosion)
-- ✅ **Local binary management** (`npx haxe` uses `.haxerc` version)
+- ✅ **Local toolchain management** (`haxe` is provided by lix / `.haxerc`)
 
 ### ⚡ Elixir Runtime Side (mix)  
 **Purpose**: Test and run the generated Elixir code
@@ -80,14 +81,14 @@ mix ecto.migrate     # Runs database migrations
 # Test everything (recommended before commits)
 npm test
 
-# Test just the Haxe compiler
-npm run test:haxe
+# Snapshot-only run (fastest)
+npm run test:quick
 
-# Test just the generated Elixir code
+# Test Mix tasks + Elixir integration
 npm run test:mix
 
-# Quick subset for iteration
-npm run test:quick
+# Compile-check every example under examples/
+npm run test:examples
 ```
 
 ### Testing Infrastructure Benefits

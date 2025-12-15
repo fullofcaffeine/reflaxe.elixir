@@ -177,7 +177,7 @@ npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
 
 ```bash
 # Compile once
-npx haxe build.hxml
+haxe build.hxml
 
 # Watch for changes (long-running)
 mix haxe.watch
@@ -206,7 +206,7 @@ Most examples can be compiled with:
 
 ```bash
 cd examples/<example-name>
-npx haxe build.hxml   # or compile-all.hxml when present
+haxe build.hxml   # or compile-all.hxml when present
 ```
 
 ### Phoenix Integration

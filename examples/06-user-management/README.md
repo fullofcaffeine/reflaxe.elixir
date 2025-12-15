@@ -126,7 +126,7 @@ class UserGenServer {
 cd examples/06-user-management
 
 # Compile all components
-npx haxe build.hxml
+haxe build.hxml
 
 # Generated files:
 # - lib/contexts/users.ex (Ecto schema + context)  
@@ -228,7 +228,7 @@ end
 ## Development Workflow
 
 1. **Edit Haxe Sources**: Modify `.hx` files with full IDE support
-2. **Compile**: `npx haxe build.hxml` generates Elixir code
+2. **Compile**: `haxe build.hxml` generates Elixir code
 3. **Test**: Standard Phoenix/Elixir testing workflow
 4. **Deploy**: Standard OTP release process
 
