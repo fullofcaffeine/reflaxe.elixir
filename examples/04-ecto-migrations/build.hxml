@@ -16,4 +16,3 @@
 # Migration classes to compile
 migrations.CreatePosts
 migrations.CreateUsers
-migrations.TestMigrationDSL
