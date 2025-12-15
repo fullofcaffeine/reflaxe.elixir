@@ -203,12 +203,14 @@ class ASTUtils {
                     }
                 case ECall(func, _, _):
                     // Check for calls to iterator methods
-                    switch(func.def) {
-                        case EField(_, field):
-                            if (field == "key_value_iterator" || field == "has_next" || field == "next") {
-                                hasPattern = true;
-                            }
-                        default:
+                    if (func != null && func.def != null) {
+                        switch (func.def) {
+                            case EField(_, field):
+                                if (field == "key_value_iterator" || field == "has_next" || field == "next") {
+                                    hasPattern = true;
+                                }
+                            default:
+                        }
                     }
                 default:
             }
