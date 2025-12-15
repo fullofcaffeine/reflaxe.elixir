@@ -154,11 +154,18 @@ defmodule HaxeServer do
       last_compile: nil
     }
     
-    # If HAXE_NO_SERVER=1, do not attempt to start a server; callers will fall back to direct haxe
+    # If HAXE_NO_SERVER=1, do not attempt to start a server; callers will fall back to direct haxe.
     if System.get_env("HAXE_NO_SERVER") == "1" do
       {:ok, state}
     else
-      # Try to connect to an already-running server on the chosen port first
+      # Start and manage our own `haxe --wait` server instance.
+      #
+      # We intentionally do NOT "reuse" an already-running server on the same port:
+      # - It might be a different Haxe toolchain/version than this project expects (lix vs global).
+      # - We can't reliably stop/monitor an external process, which leads to stale state and port
+      #   collisions in tests/dev.
+      #
+      # If the configured port is already bound (EADDRINUSE), we transparently relocate to a free port.
       send(self(), :start_server)
       {:ok, state}
     end
