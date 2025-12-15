@@ -956,45 +956,110 @@ class SwitchBuilder {
 
     static function rewriteInnerCaseScrutineeInfraMap(body: ElixirAST, renameMap: Map<String, String>): ElixirAST {
         if (renameMap == null) return body;
-        return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
-            if (n == null || n.def == null) return n;
-            return switch (n.def) {
-                case ECase(scrut, cls):
-                    var nscrut = switch (scrut.def) {
-                        case EVar(v) if (v != null && renameMap.exists(v)):
-                            { def: EVar(renameMap.get(v)), metadata: scrut.metadata, pos: scrut.pos };
-                        default:
-                            scrut;
-                    };
-                    var ncls = [];
-                    for (c in cls) ncls.push({ pattern: c.pattern, guard: c.guard == null ? null : rewriteInnerCaseScrutineeInfraMap(c.guard, renameMap), body: rewriteInnerCaseScrutineeInfraMap(c.body, renameMap) });
-                    { def: ECase(nscrut, ncls), metadata: n.metadata, pos: n.pos };
-                case EBlock(stmts):
-                    var out:Array<ElixirAST> = [];
-                    for (s in stmts) out.push(rewriteInnerCaseScrutineeInfraMap(s, renameMap));
-                    { def: EBlock(out), metadata: n.metadata, pos: n.pos };
-                case EDo(statements):
-                    var outDo:Array<ElixirAST> = [];
-                    for (s in statements) outDo.push(rewriteInnerCaseScrutineeInfraMap(s, renameMap));
-                    { def: EDo(outDo), metadata: n.metadata, pos: n.pos };
-                case EIf(c,t,e):
-                    { def: EIf(rewriteInnerCaseScrutineeInfraMap(c, renameMap), rewriteInnerCaseScrutineeInfraMap(t, renameMap), e == null ? null : rewriteInnerCaseScrutineeInfraMap(e, renameMap)), metadata: n.metadata, pos: n.pos };
-                case EBinary(op, l, r):
-                    { def: EBinary(op, rewriteInnerCaseScrutineeInfraMap(l, renameMap), rewriteInnerCaseScrutineeInfraMap(r, renameMap)), metadata: n.metadata, pos: n.pos };
-                case EMatch(pat, rhs):
-                    { def: EMatch(pat, rewriteInnerCaseScrutineeInfraMap(rhs, renameMap)), metadata: n.metadata, pos: n.pos };
-                case ECall(tgt, fnm, args):
-                    var nt = tgt == null ? null : rewriteInnerCaseScrutineeInfraMap(tgt, renameMap);
-                    var nargs = [for (a in args) rewriteInnerCaseScrutineeInfraMap(a, renameMap)];
-                    { def: ECall(nt, fnm, nargs), metadata: n.metadata, pos: n.pos };
-                case ERemoteCall(moduleExpr, functionName, remoteArgs):
-                    var nmod = rewriteInnerCaseScrutineeInfraMap(moduleExpr, renameMap);
-                    var nargs = [for (a in remoteArgs) rewriteInnerCaseScrutineeInfraMap(a, renameMap)];
-                    { def: ERemoteCall(nmod, functionName, nargs), metadata: n.metadata, pos: n.pos };
+
+        function cloneNameSet(src: Map<String, Bool>): Map<String, Bool> {
+            var out = new Map<String, Bool>();
+            for (k in src.keys()) out.set(k, true);
+            return out;
+        }
+
+        function collectPatternBinders(p: EPattern, out: Map<String, Bool>): Void {
+            switch (p) {
+                case PVar(n) if (n != null && n.length > 0):
+                    out.set(n, true);
+                case PAlias(nm, inner):
+                    if (nm != null && nm.length > 0) out.set(nm, true);
+                    collectPatternBinders(inner, out);
+                case PTuple(es) | PList(es):
+                    for (e in es) collectPatternBinders(e, out);
+                case PCons(h, t):
+                    collectPatternBinders(h, out);
+                    collectPatternBinders(t, out);
+                case PMap(kvs):
+                    for (kv in kvs) collectPatternBinders(kv.value, out);
+                case PStruct(_, fs):
+                    for (f in fs) collectPatternBinders(f.value, out);
+                case PPin(inner):
+                    collectPatternBinders(inner, out);
                 default:
-                    n;
             }
-        });
+        }
+
+        function collectDeclaredFromStatement(stmt: ElixirAST, out: Map<String, Bool>): Void {
+            if (stmt == null || stmt.def == null) return;
+            switch (stmt.def) {
+                case EMatch(PVar(lhs), _):
+                    if (lhs != null && lhs.length > 0) out.set(lhs, true);
+                case EBinary(Match, {def: EVar(lhs)}, _):
+                    if (lhs != null && lhs.length > 0) out.set(lhs, true);
+                default:
+            }
+        }
+
+        function rewriteExpr(expr: ElixirAST, bound: Map<String, Bool>): ElixirAST {
+            if (expr == null || expr.def == null) return expr;
+            return switch (expr.def) {
+                case EVar(v) if (v != null && renameMap.exists(v) && !bound.exists(v)):
+                    makeASTWithMeta(EVar(renameMap.get(v)), expr.metadata, expr.pos);
+
+                case ECase(scrut, clauses):
+                    var nextScrut = rewriteExpr(scrut, bound);
+                    var nextClauses: Array<ECaseClause> = [];
+                    for (cl in clauses) {
+                        var clauseScope = cloneNameSet(bound);
+                        collectPatternBinders(cl.pattern, clauseScope);
+                        var nextGuard = cl.guard == null ? null : rewriteExpr(cl.guard, clauseScope);
+                        var nextBody = rewriteExpr(cl.body, clauseScope);
+                        nextClauses.push({ pattern: cl.pattern, guard: nextGuard, body: nextBody });
+                    }
+                    makeASTWithMeta(ECase(nextScrut, nextClauses), expr.metadata, expr.pos);
+
+                case EFn(clauses):
+                    var nextFnClauses = [];
+                    for (cl in clauses) {
+                        var fnScope = cloneNameSet(bound);
+                        for (a in cl.args) collectPatternBinders(a, fnScope);
+                        var nextGuard = cl.guard == null ? null : rewriteExpr(cl.guard, fnScope);
+                        var nextBody = rewriteExpr(cl.body, fnScope);
+                        nextFnClauses.push({ args: cl.args, guard: nextGuard, body: nextBody });
+                    }
+                    makeASTWithMeta(EFn(nextFnClauses), expr.metadata, expr.pos);
+
+                case EBlock(stmts):
+                    var scope = cloneNameSet(bound);
+                    var outStmts: Array<ElixirAST> = [];
+                    for (s in stmts) {
+                        var ns = rewriteExpr(s, scope);
+                        outStmts.push(ns);
+                        collectDeclaredFromStatement(ns, scope);
+                    }
+                    makeASTWithMeta(EBlock(outStmts), expr.metadata, expr.pos);
+
+                case EDo(stmts):
+                    var scopeDo = cloneNameSet(bound);
+                    var outDo: Array<ElixirAST> = [];
+                    for (s in stmts) {
+                        var ns = rewriteExpr(s, scopeDo);
+                        outDo.push(ns);
+                        collectDeclaredFromStatement(ns, scopeDo);
+                    }
+                    makeASTWithMeta(EDo(outDo), expr.metadata, expr.pos);
+
+                case EMatch(pat, rhs):
+                    makeASTWithMeta(EMatch(pat, rewriteExpr(rhs, bound)), expr.metadata, expr.pos);
+
+                case EBinary(Match, left, right):
+                    // Never rewrite the LHS; only the RHS expression.
+                    makeASTWithMeta(EBinary(Match, left, rewriteExpr(right, bound)), expr.metadata, expr.pos);
+
+                default:
+                    reflaxe.elixir.ast.ElixirASTTransformer.transformAST(expr, function(child:ElixirAST):ElixirAST {
+                        return rewriteExpr(child, bound);
+                    });
+            };
+        }
+
+        return rewriteExpr(body, new Map<String, Bool>());
     }
     
     /**
@@ -1030,11 +1095,11 @@ class SwitchBuilder {
                                 // When TEnumIndex optimization transforms case Ok(n) to case 0,
                                 // we recover the user's variable name from the guard condition
                                 // CRITICAL FIX: Use new version that analyzes case body for parameter usage
-                                return generateIdiomaticEnumPatternWithBody(constructor, guardVars, caseBody, context);
-                            } else {
-                                #if debug_switch_builder trace('[SwitchBuilder]     WARNING: No constructor found for index $i'); #end
-                            }
-                        }
+	                                return generateIdiomaticEnumPatternWithBody(constructor, guardVars, caseBody, context, targetVarName);
+	                            } else {
+	                                #if debug_switch_builder trace('[SwitchBuilder]     WARNING: No constructor found for index $i'); #end
+	                            }
+	                        }
 
                         // Fallback: regular integer pattern
                         return PLiteral(makeAST(EInteger(i)));
@@ -1072,7 +1137,7 @@ class SwitchBuilder {
         // Direct reference to enum constructor (no immediate call in AST)
         // Use body-aware idiomatic generator to pick binder names and usage
         #if debug_switch_builder trace('[SwitchBuilder]   Found TField FEnum, building enum pattern (with body usage analysis)'); #end
-        return generateIdiomaticEnumPatternWithBody(enumField2, guardVars, caseBody, context);
+	        return generateIdiomaticEnumPatternWithBody(enumField2, guardVars, caseBody, context, targetVarName);
 
       case TLocal(v):
         // Variable pattern (binds the value)
@@ -1096,7 +1161,7 @@ class SwitchBuilder {
      *
      * CRITICAL: This solves the "empty case body" bug where unused parameters generate orphaned _g variables
      */
-    static function generateIdiomaticEnumPatternWithBody(ef: EnumField, guardVars: Array<String>, caseBody: TypedExpr, context: CompilationContext): EPattern {
+    static function generateIdiomaticEnumPatternWithBody(ef: EnumField, guardVars: Array<String>, caseBody: TypedExpr, context: CompilationContext, targetVarName: Null<String>): EPattern {
         #if debug_perf var __p = reflaxe.elixir.debug.Perf.now(); #end
         var atomName = NameUtils.toSnakeCase(ef.name);
 
@@ -1170,7 +1235,7 @@ class SwitchBuilder {
             // alias shape `TVar(binder, TLocal(tmp))` where tmp was an extracted parameter.
             // If an extraction TVar was removed by preprocessing, consult infraVarSubstitutions
             // to recover the original `TEnumParameter` index.
-            function recoverEnumParamBinders(body: TypedExpr, ctorName: String, paramCount: Int): Array<Null<String>> {
+            function recoverEnumParamBinders(body: TypedExpr, ctorName: String, paramCount: Int, rootVarName: Null<String>): Array<Null<String>> {
                 var out:Array<Null<String>> = [for (_ in 0...paramCount) null];
                 var extractedIdByIndex:Array<Null<Int>> = [for (_ in 0...paramCount) null];
 
@@ -1189,6 +1254,66 @@ class SwitchBuilder {
                         }
                     }
                     return cur;
+                }
+
+                // Only consider enum-parameter extractions from the *outer* switch scrutinee.
+                //
+                // WHY
+                // - For nested enum patterns (e.g. TreeNode.Node(Node(...), v, Node(...))) Haxe often lowers
+                //   the match into if/switch checks that destructure *inner* enum values in the case body.
+                // - Those inner destructures re-use the same constructor name and indices, so naïvely scanning
+                //   for `TEnumParameter(..., ctorName, index)` can incorrectly "recover" binders from inner
+                //   values (e.g. rightVal from the right subtree) and then apply them to the outer pattern.
+                //
+                // HOW
+                // - Track the TVar.id(s) for the current switch target name (and simple aliases to it).
+                // - Accept `TEnumParameter(receiver, ctorName, index)` only when `receiver` is one of those ids.
+                var allowedReceiverIds: Map<Int, Bool> = new Map();
+                if (rootVarName != null) {
+                    // Collect direct IDs for the root var name and any simple alias edges.
+                    var aliasEdges: Map<Int, Int> = new Map();
+                    function collectAliases(expr:TypedExpr):Void {
+                        if (expr == null) return;
+                        switch (expr.expr) {
+                            case TLocal(v) if (v != null && v.name == rootVarName):
+                                allowedReceiverIds.set(v.id, true);
+                            case TVar(v, init):
+                                if (v != null && init != null) {
+                                    var initUnwrapped = unwrapNoOp(init);
+                                    switch (initUnwrapped.expr) {
+                                        case TLocal(src) if (src != null):
+                                            aliasEdges.set(v.id, src.id);
+                                        default:
+                                    }
+                                }
+                            default:
+                        }
+                        TypedExprTools.iter(expr, collectAliases);
+                    }
+                    collectAliases(body);
+
+                    // Compute transitive closure of aliases to the root IDs.
+                    var changed = true;
+                    while (changed) {
+                        changed = false;
+                        for (dstId => srcId in aliasEdges) {
+                            if (!allowedReceiverIds.exists(dstId) && allowedReceiverIds.exists(srcId)) {
+                                allowedReceiverIds.set(dstId, true);
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+
+                function isReceiverFromRoot(receiver:TypedExpr):Bool {
+                    if (rootVarName == null) return true;
+                    var unwrapped = unwrapNoOp(receiver);
+                    return switch (unwrapped.expr) {
+                        case TLocal(v) if (v != null):
+                            allowedReceiverIds.exists(v.id);
+                        default:
+                            false;
+                    };
                 }
 
                 function rememberExtraction(index:Int, v:TVar):Void {
@@ -1210,8 +1335,11 @@ class SwitchBuilder {
                             if (context != null && context.infraVarSubstitutions != null && context.infraVarSubstitutions.exists(src.id)) {
                                 var subst = unwrapNoOp(context.infraVarSubstitutions.get(src.id));
                                 switch (subst.expr) {
-                                    case TEnumParameter(_, ef2, index)
+                                    case TEnumParameter(receiver, ef2, index)
                                         if (ef2 != null && ef2.name == ctorName && index >= 0 && index < paramCount):
+                                        if (!isReceiverFromRoot(receiver)) {
+                                            return false;
+                                        }
                                         if (out[index] == null || out[index] == src.name) out[index] = targetVar.name;
                                         extractedIdByIndex[index] = src.id;
                                         return true;
@@ -1239,8 +1367,15 @@ class SwitchBuilder {
                             if (init != null) {
                                 var initUnwrapped = unwrapNoOp(init);
                                 switch (initUnwrapped.expr) {
-                                    case TEnumParameter(_, ef2, index)
+                                    case TEnumParameter(receiver, ef2, index)
                                         if (ef2 != null && ef2.name == ctorName && index >= 0 && index < paramCount):
+                                        if (!isReceiverFromRoot(receiver)) {
+                                            // Ignore destructuring of inner enum values for binder recovery.
+                                            // See isReceiverFromRoot for details.
+                                            // Still traverse init in case it contains aliases to outer binders.
+                                            traverse(init);
+                                            return;
+                                        }
                                         out[index] = v.name;
                                         rememberExtraction(index, v);
                                     default:
@@ -1258,7 +1393,7 @@ class SwitchBuilder {
                 return out;
             }
 
-            var recoveredBinders = recoverEnumParamBinders(caseBody, ef.name, parameterNames.length);
+            var recoveredBinders = recoverEnumParamBinders(caseBody, ef.name, parameterNames.length, targetVarName);
 
             // Helper: check if a name corresponds to a current function parameter (shape-based exclusion)
             function isFunctionParamByName(n:String):Bool {
@@ -1335,9 +1470,15 @@ class SwitchBuilder {
 
                 // Highest priority: if we can recover a binder name that the body actually uses,
                 // prefer it (this preserves the user's pattern variable names under enum-index
-                // optimizations and avoids undefined locals). Only apply when the enum param name
-                // is generic (e.g. `value`) so we don't override meaningful signature names.
-                if (isGenericOrAutoName(enumParamName)) {
+                // optimizations and avoids undefined locals).
+                //
+                // NOTE
+                // - For single-parameter constructors, this override is safe even when the enum
+                //   signature parameter name is meaningful (e.g. Error(error)). Haxe pattern
+                //   binders (e.g. Error(msg)) must win to prevent unbound body references.
+                // - For multi-parameter constructors, restrict to generic/auto names to avoid
+                //   positional corruption from inner destructuring.
+                if (parameterNames.length == 1 || isGenericOrAutoName(enumParamName)) {
                     var rb:Null<String> = (recoveredBinders != null && i < recoveredBinders.length) ? recoveredBinders[i] : null;
                     var rbUsed = (rb != null) && (bodyIsLarge || localUsage.exists(rb));
                     if (rb != null && rbUsed && !isEnvLikeName(rb) && !isFunctionParamByName(rb) && !isAutoTempName(rb)) {
@@ -1347,7 +1488,7 @@ class SwitchBuilder {
 
                 // Only use guardVars for single-parameter constructors. For multi-parameter ctors,
                 // guardVars extracted from case bodies are not positional and can corrupt binder order.
-                if (parameterNames.length == 1 && isGenericOrAutoName(enumParamName) && guardVars != null && i < guardVars.length) {
+                if (parameterNames.length == 1 && guardVars != null && i < guardVars.length) {
                     var gv = guardVars[i];
                     if (gv != null && !isEnvLikeName(gv) && !isFunctionParamByName(gv) && !isGenericOrAutoName(gv)) {
                         candidate = gv;

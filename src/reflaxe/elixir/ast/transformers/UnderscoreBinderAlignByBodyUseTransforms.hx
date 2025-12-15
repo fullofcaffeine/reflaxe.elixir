@@ -95,15 +95,15 @@ class UnderscoreBinderAlignByBodyUseTransforms {
   }
   static function extractSecondBinder(p:EPattern):Null<String> {
     return switch (p) {
-      case PTuple(es) if (es.length >= 2):
+      case PTuple(es) if (es.length == 2):
         switch (es[1]) { case PVar(n): n; default: null; }
       default: null;
     }
   }
   static function rewriteSecondBinder(p:EPattern, newName:String):Null<EPattern> {
     return switch (p) {
-      case PTuple(es) if (es.length >= 2):
-        switch (es[1]) { case PVar(_): PTuple([es[0], PVar(newName)].concat(es.slice(2))); default: null; }
+      case PTuple(es) if (es.length == 2):
+        switch (es[1]) { case PVar(_): PTuple([es[0], PVar(newName)]); default: null; }
       default: null;
     }
   }

@@ -485,11 +485,13 @@ class AnnotationTransforms {
         
         // Extract app name from module name (e.g., TodoAppWeb.Presence -> todo_app)
         var appName = extractAppName(moduleName);
+        var appModule = extractAppModule(moduleName);
         
         // use Phoenix.Presence, otp_app: :todo_app
         var useStatement = makeAST(EUse("Phoenix.Presence", [
             makeAST(EKeywordList([
-                {key: "otp_app", value: makeAST(EAtom(appName))}
+                {key: "otp_app", value: makeAST(EAtom(appName))},
+                {key: "pubsub_server", value: makeAST(EVar(appModule + ".PubSub"))}
             ]))
         ]));
         statements.push(useStatement);
@@ -1650,6 +1652,27 @@ class AnnotationTransforms {
         }
         
         return result;
+    }
+
+    /**
+     * Extract app module prefix from module name
+     *
+     * Examples:
+     * - TodoAppWeb.Presence -> TodoApp
+     * - MyApp.Presence -> MyApp
+     * - SomeModuleWeb.Presence -> SomeModule
+     */
+    static function extractAppModule(moduleName: String): String {
+        var name = moduleName;
+        var webIndex = name.indexOf("Web.");
+        if (webIndex > 0) {
+            name = name.substring(0, webIndex);
+        }
+        var lastDotIndex = name.lastIndexOf(".");
+        if (lastDotIndex > 0) {
+            name = name.substring(0, lastDotIndex);
+        }
+        return name;
     }
     
     /**

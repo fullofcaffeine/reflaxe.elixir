@@ -125,6 +125,10 @@ class ClauseUndefinedRefRewriteTransforms {
         case EMatch(p, _): collectPatternVars(p, vars);
         case EBinary(Match, l, _): collectLhs(l, vars);
         case ECase(_, cs): for (c in cs) collectPatternVars(c.pattern, vars);
+        case EFn(clauses):
+          for (cl in clauses) {
+            if (cl.args != null) for (a in cl.args) collectPatternVars(a, vars);
+          }
         default:
       }
     });

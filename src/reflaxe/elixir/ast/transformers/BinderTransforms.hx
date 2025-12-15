@@ -1826,6 +1826,89 @@ class BinderTransforms {
             };
         }
 
+        function extractAliasAssignment(stmt: ElixirAST): Null<{lhs: String, rhs: String}> {
+            if (stmt == null || stmt.def == null) return null;
+            return switch (stmt.def) {
+                case EMatch(PVar(lhs), rhs):
+                    var rhsName = extractSimpleVarName(rhs);
+                    (lhs != null && rhsName != null) ? { lhs: lhs, rhs: rhsName } : null;
+                case EBinary(Match, {def: EVar(lhs)}, rhs2):
+                    var rhsName2 = extractSimpleVarName(rhs2);
+                    (lhs != null && rhsName2 != null) ? { lhs: lhs, rhs: rhsName2 } : null;
+                default:
+                    null;
+            };
+        }
+
+        function collectUsedVars(expr: ElixirAST, out: Map<String, Bool>): Void {
+            if (expr == null || expr.def == null) return;
+            switch (expr.def) {
+                case EVar(v) if (v != null):
+                    out.set(v, true);
+                case EBinary(Match, _, rhs):
+                    // Do not treat LHS as a read
+                    collectUsedVars(rhs, out);
+                case EMatch(_, rhs):
+                    // Do not treat pattern as a read
+                    collectUsedVars(rhs, out);
+                case ECase(scrut, clauses):
+                    collectUsedVars(scrut, out);
+                    for (cl in clauses) {
+                        if (cl.guard != null) collectUsedVars(cl.guard, out);
+                        collectUsedVars(cl.body, out);
+                    }
+                case EFn(clauses):
+                    for (cl in clauses) {
+                        if (cl.guard != null) collectUsedVars(cl.guard, out);
+                        collectUsedVars(cl.body, out);
+                    }
+                default:
+                    ElixirASTTransformer.transformAST(expr, function(child:ElixirAST):ElixirAST {
+                        collectUsedVars(child, out);
+                        return child;
+                    });
+            }
+        }
+
+        function dropUnusedAliasAssignments(stmts: Array<ElixirAST>): Array<ElixirAST> {
+            var usedLater = new Map<String, Bool>();
+            var keptReversed: Array<ElixirAST> = [];
+
+            var i = stmts.length - 1;
+            while (i >= 0) {
+                var s = stmts[i];
+
+                // Trivial alias: lhs = rhs (both simple vars)
+                var alias = extractAliasAssignment(s);
+
+                // Drop only when lhs is never read later in the block.
+                if (alias != null && !usedLater.exists(alias.lhs)) {
+                    // dropped
+                } else {
+                    keptReversed.push(s);
+                }
+
+                // Update liveness for earlier statements:
+                // - remove defs (lhs)
+                // - add reads (rhs / expression reads)
+                var defName = declaredVarFromStatement(s);
+                if (defName != null) usedLater.remove(defName);
+
+                if (alias != null) {
+                    usedLater.set(alias.rhs, true);
+                } else {
+                    var usedHere = new Map<String, Bool>();
+                    collectUsedVars(s, usedHere);
+                    for (u in usedHere.keys()) usedLater.set(u, true);
+                }
+
+                i--;
+            }
+
+            keptReversed.reverse();
+            return keptReversed;
+        }
+
         function dropUndefinedTempAssignmentsInClauseBody(body: ElixirAST, bound: Map<String, Bool>): ElixirAST {
             if (body == null || body.def == null) return body;
             return switch (body.def) {
@@ -1856,7 +1939,7 @@ class BinderTransforms {
                             if (lhs != null) declared.set(lhs, true);
                         }
                     }
-                    makeASTWithMeta(EBlock(kept), body.metadata, body.pos);
+                    makeASTWithMeta(EBlock(dropUnusedAliasAssignments(kept)), body.metadata, body.pos);
 
                 case EDo(stmts):
                     var declaredDo = new Map<String, Bool>();
@@ -1883,7 +1966,7 @@ class BinderTransforms {
                             if (lhs != null) declaredDo.set(lhs, true);
                         }
                     }
-                    makeASTWithMeta(EDo(keptDo), body.metadata, body.pos);
+                    makeASTWithMeta(EDo(dropUnusedAliasAssignments(keptDo)), body.metadata, body.pos);
 
                 default:
                     body;

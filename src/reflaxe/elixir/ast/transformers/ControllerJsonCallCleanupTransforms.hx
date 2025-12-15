@@ -32,37 +32,6 @@ class ControllerJsonCallCleanupTransforms {
           #if debug_ast_transformer
           #end
           makeASTWithMeta(EDefmodule(name2, cleanseDefs(doBlock)), n.metadata, n.pos);
-        // Also handle nested case bodies anywhere under a controller module
-        case ECase(expr, clauses):
-          #if debug_ast_transformer
-          #end
-          // Cleanse each clause body for alias-chains directly inside the case arms
-          var newClauses = [];
-          for (cl in clauses) {
-            var cleanedBody = cleanseBody(cl.body);
-            // Success/error binder mapping and rename heuristics (no alias injection)
-            var binder:Null<String> = null;
-            switch (cl.pattern) {
-              case PTuple(es) if (es.length == 2):
-                switch (es[1]) { case PVar(nm): binder = nm; default: }
-              default:
-            }
-            var newPattern = maybeRenameBinderFromBodyMapKeys(cl.pattern, cleanedBody);
-            // Also map undefined lowercase vars in body to the (possibly renamed) binder
-            var effectiveBinder:Null<String> = switch (newPattern) {
-              case PTuple(es2) if (es2.length == 2): switch (es2[1]) { case PVar(nn): nn; default: null; }
-              default: binder;
-            };
-            var finalBody = cleanedBody;
-            if (effectiveBinder != null) {
-              finalBody = mapUndefinedVarsToBinder(finalBody, effectiveBinder, defaultControllerEnv());
-            }
-            // Do not prefix-inject alias lines; rely on targeted json/2 rewrite and alias cleanups
-            finalBody = cleanseAliasInBody(finalBody);
-            var cleaned = { pattern: newPattern, guard: cl.guard, body: finalBody };
-            newClauses.push(cleaned);
-          }
-          makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);
         default: n;
       }
     });

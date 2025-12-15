@@ -4763,6 +4763,13 @@ class ElixirASTTransformer {
                     ast.metadata,
                     ast.pos
                 );
+
+            case EParen(expr):
+                makeASTWithMeta(
+                    EParen(transformNode(expr, transformer)),
+                    ast.metadata,
+                    ast.pos
+                );
                 
             case ECall(target, funcName, args):
                 makeASTWithMeta(
