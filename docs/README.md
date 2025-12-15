@@ -79,12 +79,12 @@ Most 1.0 planning docs and historical PRDs were archived under **[09-history/arc
 
 ### 📜 History & Records
 **[09-history/](09-history/)** - Historical documentation and decisions
-- [Task History](09-history/task-history.md) - Complete implementation log (3200+ entries)
-- [Legacy Development Guide](09-history/legacy-development-guide.md) - Previous development workflow
-- [Legacy Installation Guide](09-history/legacy-installation-guide.md) - Previous setup instructions
-- [Legacy Documentation Index](09-history/legacy-documentation-index.md) - Previous documentation structure
+- [Task History](09-history/archive/records/task-history.md) - Complete implementation log (3200+ entries)
+- [Legacy Development Guide](09-history/archive/records/legacy-development-guide.md) - Previous development workflow
+- [Legacy Installation Guide](09-history/archive/records/legacy-installation-guide.md) - Previous setup instructions
+- [Legacy Documentation Index](09-history/archive/records/legacy-documentation-index.md) - Previous documentation structure
 - [Archive](09-history/archive/) - Historical development plans and PRDs
-- [Session Records](09-history/sessions/) - Development session archives
+- [Session Records](09-history/archive/sessions/) - Development session archives
 
 ### 🤝 Contributing
 **[10-contributing/](10-contributing/)** - Contribution guidelines and processes

@@ -880,7 +880,7 @@ haxe test/Test.hxml test=YourTestName flexible-positions
 npm test
 
 # If tests pass, document what you've added
-echo "Added YourFeature testing" >> docs/09-history/task-history.md
+echo "Added YourFeature testing" >> docs/09-history/archive/records/task-history.md
 ```
 
 **Testing Philosophy**:

@@ -114,7 +114,7 @@ grep -r "^#if.*macro" src/ -A 100 | grep "+="
 - **Investigation time**: 5+ hours
 - **Files affected**: MigrationDSL.hx
 - **Solution applied**: MigrationDSLFixed.hx using array join pattern
-- **Full report**: [/docs/09-history/2025-08-27-migration-dsl-hang-retrospective.md](/docs/09-history/2025-08-27-migration-dsl-hang-retrospective.md)
+- **Full report**: [/docs/09-history/archive/records/2025-08-27-migration-dsl-hang-retrospective.md](/docs/09-history/archive/records/2025-08-27-migration-dsl-hang-retrospective.md)
 
 ### Enforcement Checklist
 Before committing any changes to macro code:
