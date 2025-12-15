@@ -110,10 +110,10 @@ class Main {
     }
     
     static function testRandomAndInt() {
-        // Test Std.random()
-        var rand1 = Std.random();
-        var rand2 = Std.random();
-        var rand3 = Std.random();
+        // Test Std.random(max)
+        var rand1 = Std.random(100);
+        var rand2 = Std.random(100);
+        var rand3 = Std.random(100);
         
         // Test Std.int() - truncation
         var truncated1 = Std.int(3.14);
@@ -122,7 +122,7 @@ class Main {
         var truncated4 = Std.int(-2.1);
         var truncated5 = Std.int(0.0);
         
-        trace("Random numbers (0-1):");
+        trace("Random integers (0-99):");
         trace('  Random 1: $rand1');
         trace('  Random 2: $rand2');
         trace('  Random 3: $rand3');

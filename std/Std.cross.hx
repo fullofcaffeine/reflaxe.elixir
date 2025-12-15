@@ -218,17 +218,19 @@ class Std {
     }
     
     /**
-     * Get a random float between 0 (inclusive) and 1 (exclusive).
-     * 
-     * WHY: Random number generation is needed for various algorithms.
-     * WHAT: Generates a random float in the range [0, 1).
-     * HOW: The compiler will optimize this to :rand.uniform/0.
-     * 
-     * @return Random float value between 0 and 1
+     * Get a random integer between 0 (inclusive) and `max` (exclusive).
+     *
+     * WHY: Haxe's Std.random(max) is widely used for ID generation, sampling, and tests.
+     * WHAT: Returns an integer in the range `[0, max)`. If `max <= 0`, returns `0`.
+     * HOW: CallExprBuilder.handleSpecialCall() intercepts Std.random(max) and emits
+     * idiomatic Elixir `:rand.uniform(max) - 1` guarded for `max <= 0`.
+     *
+     * @param max Upper bound (exclusive)
+     * @return Random integer between 0 and max-1 (or 0 if max <= 0)
      */
-    public static function random(): Float {
-        // Use Erlang's :rand.uniform() for random number generation
-        return untyped __elixir__(':rand.uniform()');
+    public static function random(max: Int): Int {
+        // Prefer the compiler's special-call lowering. Keep a correct fallback body.
+        return untyped __elixir__('if {0} <= 0, do: 0, else: (:rand.uniform({0}) - 1)', max);
     }
     
     /**

@@ -33,11 +33,11 @@ class Main {
         var checkString = Std.isOfType("world", String);
         var checkInt = Std.isOfType(100, Int);
         
-        // Test 6: Std.random() - Random number generation
-        var rand1 = Std.random();
-        var rand2 = Std.random();
-        var rand3 = Std.random();
-        // All should be between 0 and 1
+        // Test 6: Std.random(max) - Random integer generation
+        var rand1 = Std.random(100);
+        var rand2 = Std.random(100);
+        var rand3 = Std.random(100);
+        // All should be between 0 and 99
         
         // Test 7: Std.int() - Float to integer conversion
         var int1 = Std.int(3.14);    // Should be 3

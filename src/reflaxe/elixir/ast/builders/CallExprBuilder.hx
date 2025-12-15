@@ -661,10 +661,21 @@ class CallExprBuilder {
                         }
                         
                     case "random":
-                        // Std.random(max) → :rand.uniform(max)
+                        // Std.random(max) → if max <= 0, do: 0, else: :rand.uniform(max) - 1
+                        // NOTE: :rand.uniform(max) returns 1..max; Std.random(max) must return 0..max-1.
                         if (args.length == 1) {
-                            var max = buildExpression(args[0]);
-                            return ERemoteCall(makeAST(EAtom("rand")), "uniform", [max]);
+                            var maxExpr = buildExpression(args[0]);
+                            // Evaluate the argument once (Haxe semantics) by binding it per-case clause.
+                            // Use a leading-underscore name to minimize outer-scope collisions.
+                            var maxVar = "_std_random_max";
+                            var maxVarExpr = makeAST(EVar(maxVar));
+                            var guard = makeAST(EBinary(LessEqual, maxVarExpr, makeAST(EInteger(0))));
+                            var uniform = makeAST(ERemoteCall(makeAST(EAtom("rand")), "uniform", [maxVarExpr]));
+                            var value = makeAST(EBinary(Subtract, uniform, makeAST(EInteger(1))));
+                            return ECase(maxExpr, [
+                                {pattern: PVar(maxVar), guard: guard, body: makeAST(EInteger(0))},
+                                {pattern: PVar(maxVar), body: value}
+                            ]);
                         }
                 }
                 
