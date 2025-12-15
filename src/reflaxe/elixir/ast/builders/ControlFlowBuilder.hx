@@ -183,6 +183,26 @@ class ControlFlowBuilder {
                 var recovered: Null<EnumParamBinderRecovery> = null;
                 var binderElixirNames: Array<Null<String>> = [for (_ in 0...constructorParams) null];
 
+                #if debug_enum_param_recovery
+                function debugPattern(pattern: EPattern): String {
+                    return switch (pattern) {
+                        case PVar(name):
+                            name == null ? "<null>" : name;
+                        case PWildcard:
+                            "_";
+                        case PLiteral(ast):
+                            switch (ast.def) {
+                                case EAtom(a): ":" + a;
+                                default: "lit(" + Type.enumConstructor(ast.def) + ")";
+                            }
+                        case PTuple(elements):
+                            "{" + [for (e in elements) debugPattern(e)].join(", ") + "}";
+                        default:
+                            Type.enumConstructor(pattern);
+                    };
+                }
+                #end
+
                 var pattern: EPattern = if (constructorParams == 0) {
                     // All enums are represented as tagged tuples (including 0-arity constructors),
                     // e.g. `Red` → `{:red}`. Match the tuple shape, not the bare atom.
@@ -215,6 +235,10 @@ class ControlFlowBuilder {
 
                     EPattern.PTuple([EPattern.PLiteral(makeAST(EAtom(atomName)))].concat(binderPatterns));
                 };
+
+                #if debug_enum_param_recovery
+                trace('[EnumParamRecovery] final pattern ctor=' + matchingConstructor + ' pattern=' + debugPattern(pattern) + ' binders=' + binderElixirNames);
+                #end
 
                 // Compile the matching-clause body under a clause context so that:
                 // - temp enum extraction vars (_g/_g1/...) resolve to the pattern binders

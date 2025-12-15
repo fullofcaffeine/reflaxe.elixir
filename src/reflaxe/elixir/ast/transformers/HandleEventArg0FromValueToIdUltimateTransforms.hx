@@ -11,19 +11,19 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HandleEventArg0FromValueToIdUltimateTransforms
  *
  * WHAT
- * - In handle_event/3 clause bodies for id-based events (toggle_todo, delete_todo, edit_todo),
- *   when a call uses `Map.get(params, "value", ...)` as its first argument and `socket` as the
- *   last argument, replace that first argument with an integer-converted id extracted from the
- *   nested value map or from the top-level params fallback.
+ * - In handle_event/3 clause bodies, when a call uses `Map.get(params, "value", ...)` as its
+ *   first argument and `socket` as the last argument, replace that first argument with an
+ *   integer-converted id extracted from the nested value map or from the top-level params
+ *   fallback.
  *
  * WHY
  * - Click events often send payload as `%{"value" => %{"id" => "123", ...}}` while form submits
- *   omit `value` entirely. Helpers like `toggle_todo_status/2` expect an `id`, not the entire map.
- *   This pass bridges that shape generically without app-specific names.
+ *   omit `value` entirely. Helpers that operate on a specific record typically expect an `id`,
+ *   not the entire map. This pass bridges that shape generically without app-specific names.
  *
  * HOW
- * - Match inside `def handle_event(<string>, params, socket)` for event names that conventionally
- *   take an id. For calls where first arg is `Map.get(params, "value", ...)` (or call-form Map.get)
+ * - Match inside `def handle_event(<string>, params, socket)`. For calls where first arg is
+ *   `Map.get(params, "value", ...)` (or call-form Map.get)
  *   and last arg is `socket`, swap first arg with:
  *     id_raw = Map.get(Map.get(params, "value"), "id", Map.get(params, "id", params))
  *     if Kernel.is_binary(id_raw), do: String.to_integer(id_raw), else: id_raw
@@ -61,15 +61,11 @@ class HandleEventArg0FromValueToIdUltimateTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EDef(name, args, guards, body) if (isHandleEvent3(name, args)):
-          var ev:Null<String> = switch (args[0]) { case PLiteral({def: EString(s)}): s.toLowerCase(); default: null; };
-          if (!isIdBasedEvent(ev)) return n;
           var paramsVar = secondArg(args);
           var socketVar = thirdArg(args);
           var nb = rewrite(body, paramsVar, socketVar);
           makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
         case EDefp(name2, args2, guards2, body2) if (isHandleEvent3(name2, args2)):
-          var ev2:Null<String> = switch (args2[0]) { case PLiteral({def: EString(s2)}): s2.toLowerCase(); default: null; };
-          if (!isIdBasedEvent(ev2)) return n;
           var paramsVar2 = secondArg(args2);
           var socketVar2 = thirdArg(args2);
           var nb2 = rewrite(body2, paramsVar2, socketVar2);
@@ -82,10 +78,6 @@ class HandleEventArg0FromValueToIdUltimateTransforms {
 
   static inline function isHandleEvent3(name:String, args:Array<EPattern>):Bool {
     return name == "handle_event" && args != null && args.length == 3 && switch (args[0]) { case PLiteral({def: EString(_)}): true; default: false; };
-  }
-  static inline function isIdBasedEvent(ev:Null<String>):Bool {
-    if (ev == null) return false;
-    return ev == "toggle_todo" || ev == "delete_todo" || ev == "edit_todo";
   }
   static inline function secondArg(args:Array<EPattern>):String { return switch (args[1]) { case PVar(n): n; default: "params"; } }
   static inline function thirdArg(args:Array<EPattern>):String { return switch (args[2]) { case PVar(n): n; default: "socket"; } }

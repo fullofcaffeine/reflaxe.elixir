@@ -151,9 +151,7 @@ class FinalLocalReferenceAlignTransforms {
             var lower = v.toLowerCase();
             if (lower != v && has(lower) && !has(v)) target = lower;
           }
-          // Rule E: common for-each binder drift: todo -> item when only item exists
-          if (target == null && v == "todo" && has("item") && !has("todo")) target = "item";
-          // Rule F: canonical remap (snake+no-underscore match to a unique declared name)
+          // Rule E: canonical remap (snake+no-underscore match to a unique declared name)
           if (target == null && !has(v)) {
             var cv = canon(v);
             if (declaredCanonToName.exists(cv)) {
