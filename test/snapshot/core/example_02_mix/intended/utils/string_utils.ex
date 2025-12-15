@@ -1,12 +1,23 @@
 defmodule StringUtils do
   def process_string(input) do
-    processed = processed |> remove_excess_whitespace() |> normalize_case()
+    if (Kernel.is_nil(input)) do
+      ""
+    else
+      processed = StringTools.ltrim(StringTools.rtrim(input))
+      if (length(processed) == 0) do
+        "[empty]"
+      else
+        processed = processed |> remove_excess_whitespace() |> normalize_case()
+      end
+    end
   end
   def format_display_name(name) do
-    if (Kernel.is_nil(name) or length(StringTools.ltrim(StringTools.rtrim(name))) == 0), do: "Anonymous User"
-    parts = String.split(_this, " ")
-    formatted = []
-    _ = Enum.each(parts, (fn -> fn item ->
+    if (Kernel.is_nil(name) or length(StringTools.ltrim(StringTools.rtrim(name))) == 0) do
+      "Anonymous User"
+    else
+      parts = String.split(_this, " ")
+      formatted = []
+      _ = Enum.each(parts, (fn -> fn item ->
     if (length(item) > 0) do
     capitalized = _this = String.at(part, 0) || ""
 String.upcase(_this) <> _this = len = nil
@@ -19,50 +30,66 @@ String.downcase(_this)
     item = Enum.concat(item, [item])
   end
 end end).())
-    _ = Enum.join((fn -> " " end).())
+      _ = Enum.join((fn -> " " end).())
+    end
   end
   def process_email(email) do
-    if (Kernel.is_nil(email)), do: %{:valid => false, :error => "Email is required"}
-    trimmed = StringTools.ltrim(StringTools.rtrim(email))
-    if (length(trimmed) == 0), do: %{:valid => false, :error => "Email cannot be empty"}
-    if (not is_valid_email_format(trimmed)), do: %{:valid => false, :error => "Invalid email format"}
-    %{:valid => true, :email => String.downcase(trimmed), :domain => extract_domain(trimmed), :username => extract_username(trimmed)}
+    if (Kernel.is_nil(email)) do
+      %{:valid => false, :error => "Email is required"}
+    else
+      trimmed = StringTools.ltrim(StringTools.rtrim(email))
+      if (length(trimmed) == 0) do
+        %{:valid => false, :error => "Email cannot be empty"}
+      else
+        if (not is_valid_email_format(trimmed)), do: %{:valid => false, :error => "Invalid email format"}, else: %{:valid => true, :email => String.downcase(trimmed), :domain => extract_domain(trimmed), :username => extract_username(trimmed)}
+      end
+    end
   end
   def create_slug(text) do
-    slug = slug |> EReg.new("[^a-z0-9\\s-]", "g").replace("") |> EReg.new("\\s+", "g").replace("-") |> EReg.new("-+", "g").replace("-")
+    if (Kernel.is_nil(text)) do
+      ""
+    else
+      slug = slug |> EReg.new("[^a-z0-9\\s-]", "g").replace("") |> EReg.new("\\s+", "g").replace("-") |> EReg.new("-+", "g").replace("-")
+    end
   end
   def truncate(text, max_length) do
-    if (Kernel.is_nil(text)), do: ""
-    if (length(text) <= max_length), do: text
-    truncated = len = (max_length - 3)
-    if (Kernel.is_nil(len)) do
-      String.slice(text, 0..-1)
+    if (Kernel.is_nil(text)) do
+      ""
     else
-      String.slice(text, 0, len)
-    end
-    last_space = start_index = nil
-    if (Kernel.is_nil(start_index)) do
-      start_index = length(truncated)
-    end
-    sub = String.slice(truncated, 0, start_index)
-    case String.split(sub, " ") do
+      if (length(text) <= max_length) do
+        text
+      else
+        truncated = len = (max_length - 3)
+        if (Kernel.is_nil(len)) do
+          String.slice(text, 0..-1)
+        else
+          String.slice(text, 0, len)
+        end
+        last_space = start_index = nil
+        if (Kernel.is_nil(start_index)) do
+          start_index = length(truncated)
+        end
+        sub = String.slice(truncated, 0, start_index)
+        case String.split(sub, " ") do
             parts when length(parts) > 1 ->
                 String.length(Enum.join(Enum.slice(parts, 0..-2), " "))
             _ -> -1
         end
-    if (last_space > trunc.(max_length * 0.7)) do
-      truncated = if (Kernel.is_nil(last_space)) do
-        String.slice(truncated, 0..-1)
-      else
-        String.slice(truncated, 0, last_space)
+        if (last_space > trunc.(max_length * 0.7)) do
+          truncated = if (Kernel.is_nil(last_space)) do
+            String.slice(truncated, 0..-1)
+          else
+            String.slice(truncated, 0, last_space)
+          end
+        end
+        "#{(fn -> truncated end).()}..."
       end
     end
-    "#{(fn -> truncated end).()}..."
   end
   def mask_sensitive_info(text, visible_chars) do
     if (Kernel.is_nil(text) or length(text) <= visible_chars) do
-      result = ""
       repeat_count = if (not Kernel.is_nil(text)), do: length(text), else: 4
+      result = ""
       _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {repeat_count, result}, (fn -> fn _, {repeat_count, result} ->
   if (0 < repeat_count) do
     i = 1

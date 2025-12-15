@@ -5,7 +5,8 @@ defmodule StringDisplay do
   def format(value, options) do
     if (Map.get(options, :uppercase)) do
       String.upcase(value)
+    else
+      value
     end
-    value
   end
 end

@@ -5,7 +5,8 @@ defmodule UserDisplay do
   def format(user, options) do
     if (Map.get(options, :verbose)) do
       "User: #{(fn -> user.name end).()}, Age: #{(fn -> Kernel.to_string(user.age) end).()}"
+    else
+      display(user)
     end
-    _ = display(user)
   end
 end

@@ -13,8 +13,8 @@ defmodule Main do
   end
   defp test_nested_operations() do
     matrix = [[1, 2], [3, 4], [5, 6]]
-    doubled = Enum.map(matrix, fn row -> Enum.map(row, fn n -> row * 2 end) end)
-    filtered = Enum.map(matrix, fn row -> Enum.filter(row, fn n -> row > 2 end) end)
+    doubled = Enum.map(matrix, fn row -> Enum.map(row, fn n -> n * 2 end) end)
+    filtered = Enum.map(matrix, fn row -> Enum.filter(row, fn n -> n > 2 end) end)
   end
   defp test_array_filter() do
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]

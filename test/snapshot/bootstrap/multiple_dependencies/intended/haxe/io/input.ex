@@ -54,7 +54,7 @@ end end).())
   end
   def read_line(struct) do
     buf = %StringBuf{}
-    _ = nil
+    last = nil
     _ = Enum.each(last, (fn -> fn item ->
   if (item == 10) do
     throw(:break)
