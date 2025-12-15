@@ -7,7 +7,7 @@ import haxe.functional.Result;
 import services.ConfigManager;
 
 using haxe.ds.OptionTools;
-using haxe.functional.Result.ResultTools;
+using haxe.functional.ResultTools;
 
 /**
  * ExUnit tests for ConfigManager demonstrating Option<T> configuration patterns.

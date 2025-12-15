@@ -6,7 +6,7 @@ import haxe.functional.Result;
 import models.User;
 
 using haxe.ds.OptionTools;
-using haxe.functional.Result.ResultTools;
+using haxe.functional.ResultTools;
 
 /**
  * User repository demonstrating Option<T> patterns for database operations.
