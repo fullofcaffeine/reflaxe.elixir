@@ -315,8 +315,15 @@ fi
 
 on_exit() {
   local rc=$?
-  # Only report DONE for the actual runner (not the async launcher)
-  # ASYNC_CHILD=1 is set for the background process; or ASYNC=0 for sync mode
+  # If Phoenix was started and KEEP_ALIVE isn't requested, tear it down.
+  # `cleanup` is defined only after Phoenix is launched, so guard its presence
+  # to keep early-failure paths safe.
+  if [[ "${KEEP_ALIVE:-0}" -eq 0 ]] && declare -F cleanup >/dev/null 2>&1; then
+    cleanup || true
+  fi
+
+  # Only report DONE for the actual runner (not the async launcher).
+  # ASYNC_CHILD=1 is set for the background process; or ASYNC=0 for sync mode.
   if [[ "${ASYNC_CHILD:-0}" -eq 1 || "${ASYNC}" -eq 0 ]]; then
     echo "[$(ts)] [QA] DONE status=${rc}"
   fi
@@ -570,10 +577,6 @@ cleanup() {
     if [[ -n "$PIDS" ]]; then kill -9 $PIDS >/dev/null 2>&1 || true; fi
   fi
 }
-
-if [[ "$KEEP_ALIVE" -eq 0 ]]; then
-  trap cleanup EXIT
-fi
 
 log "[QA] Step 5: Waiting for server readiness (probes=$READY_PROBES)"
 READY=0
