@@ -27,7 +27,7 @@ This example demonstrates how to write Ecto database migrations using Haxe with 
 cd examples/04-ecto-migrations
 
 # Compile Haxe migrations to Elixir
-npx haxe build.hxml
+haxe build.hxml
 
 # Run migrations (if you have a database configured)
 mix ecto.migrate
@@ -42,17 +42,21 @@ mix ecto.rollback
 
 **Haxe Source:**
 ```haxe
+import ecto.Migration;
+import ecto.Migration.ColumnType;
+
 @:migration
-class CreateUsers {
-    public static function up() {
-        createTable("users", function(t) {
-            t.addColumn("name", "string", {null: false});
-            t.addColumn("email", "string", {null: false});
-            t.addIndex(["email"], {unique: true});
-        });
+class CreateUsers extends Migration {
+    public function up(): Void {
+        createTable("users")
+            .addId()
+            .addColumn("name", ColumnType.String(), {nullable: false})
+            .addColumn("email", ColumnType.String(), {nullable: false})
+            .addTimestamps()
+            .addIndex(["email"], {unique: true});
     }
     
-    public static function down() {
+    public function down(): Void {
         dropTable("users");  
     }
 }
@@ -60,7 +64,7 @@ class CreateUsers {
 
 **Generated Elixir:**
 ```elixir
-defmodule CreateUsers do
+defmodule <YourApp>.Repo.Migrations.CreateUsers do
   use Ecto.Migration
 
   def up do
@@ -83,17 +87,17 @@ end
 
 **Foreign Keys:**
 ```haxe
-t.addForeignKey("user_id", "users", "id");
+createTable("posts").addReference("user_id", "users");
 ```
 
 **Composite Indexes:**
 ```haxe
-t.addIndex(["published", "inserted_at"]);
+createTable("posts").addIndex(["published", "inserted_at"]);
 ```
 
 **Check Constraints:**
 ```haxe
-t.addCheckConstraint("view_count >= 0", "positive_view_count");
+createTable("posts").addCheckConstraint("positive_view_count", "view_count >= 0");
 ```
 
 ## Workflow Integration
@@ -104,13 +108,13 @@ t.addCheckConstraint("view_count >= 0", "positive_view_count");
 mix haxe.gen.migration CreateUsers
 
 # This creates both:
-# - src_haxe/migrations/CreateUsers.hx (Haxe source)
-# - priv/repo/migrations/20231201120000_create_users.exs (compiled Elixir)
+# - src_haxe/migrations/CreateUsers.hx (Haxe source skeleton)
+# - priv/repo/migrations/<timestamp>_create_users.exs (Elixir migration file)
 ```
 
 ### Development Flow
 1. Write migration in Haxe using `@:migration`
-2. Compile with `npx haxe build.hxml`
+2. Compile with `haxe build.hxml`
 3. Run with `mix ecto.migrate`
 4. Rollback with `mix ecto.rollback` if needed
 
