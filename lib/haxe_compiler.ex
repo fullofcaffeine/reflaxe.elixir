@@ -511,23 +511,23 @@ defmodule HaxeCompiler do
     # This allows tests to explicitly control which Haxe binary to use
     env_haxe = System.get_env("HAXE_PATH")
     
-    # Try to find the project's lix-managed haxe binary
-    # This ensures we use the correct version even when running from temp directories
-    project_root = find_project_root()
-    project_haxe = Path.join([project_root, "node_modules", ".bin", "haxe"])
+    # Try to find a lix-managed `node_modules/.bin/haxe` by walking up from cwd.
+    #
+    # Why:
+    # - Mix tasks often run from nested directories (examples/*), which have their own `mix.exs`
+    #   but rely on the repo root `node_modules/.bin/haxe` installed by lix.
+    # - Using `npx haxe` as a fallback can implicitly download an npm "haxe" package which is
+    #   both slow and may not support the current platform (e.g. darwin/arm64).
+    project_haxe = find_haxe_in_ancestors(File.cwd!())
     
     cond do
       # Respect HAXE_PATH environment variable if set (highest priority)
       env_haxe && File.exists?(env_haxe) ->
         {env_haxe, []}
       
-      # Check for project's lix-managed haxe
-      File.exists?(project_haxe) ->
+      # Prefer the nearest lix-managed haxe shim when available
+      is_binary(project_haxe) ->
         {project_haxe, []}
-      
-      # Check if npx is available (fallback)
-      System.find_executable("npx") != nil ->
-        {"npx", ["haxe"]}
       
       # Check if haxe is directly available
       System.find_executable("haxe") != nil ->
@@ -545,41 +545,34 @@ defmodule HaxeCompiler do
         {"haxe", []}
     end
   end
-  
-  defp find_project_root() do
-    # Try to find the project root by looking for mix.exs or package.json
-    # Start from current directory and walk up
-    find_project_root_from(File.cwd!())
-  end
-  
-  defp find_project_root_from(dir) do
+
+  defp find_haxe_in_ancestors(start_dir) do
+    candidate = Path.join([start_dir, "node_modules", ".bin", "haxe"])
+
     cond do
-      # Found project markers
-      File.exists?(Path.join(dir, "mix.exs")) or 
-      File.exists?(Path.join(dir, "package.json")) ->
-        dir
-      
-      # Reached root directory
-      dir == "/" or dir == Path.dirname(dir) ->
-        # Default to current directory if we can't find project root
-        File.cwd!()
-      
-      # Keep searching up
+      File.exists?(candidate) ->
+        candidate
+
+      start_dir == "/" or start_dir == Path.dirname(start_dir) ->
+        nil
+
       true ->
-        find_project_root_from(Path.dirname(dir))
+        find_haxe_in_ancestors(Path.dirname(start_dir))
     end
   end
   
   defp build_haxe_env() do
     # Start with current environment
     base_env = System.get_env() |> Enum.into([])
+
+    haxe_libraries_dir = find_haxe_libraries_in_ancestors(File.cwd!())
     
     # Add or override specific Haxe environment variables
     haxe_env = [
       # If HAXELIB_PATH is set (by tests), include it
       {"HAXELIB_PATH", System.get_env("HAXELIB_PATH")},
       # Include the project's haxe_libraries path as fallback
-      {"HAXEPATH", Path.join(find_project_root(), "haxe_libraries")}
+      {"HAXEPATH", haxe_libraries_dir}
     ]
     |> Enum.filter(fn {_key, value} -> value != nil end)
     |> Enum.into(%{})
@@ -587,6 +580,21 @@ defmodule HaxeCompiler do
     # Merge with base environment
     Map.merge(base_env |> Enum.into(%{}), haxe_env)
     |> Enum.into([])
+  end
+
+  defp find_haxe_libraries_in_ancestors(start_dir) do
+    candidate = Path.join(start_dir, "haxe_libraries")
+
+    cond do
+      File.dir?(candidate) ->
+        candidate
+
+      start_dir == "/" or start_dir == Path.dirname(start_dir) ->
+        nil
+
+      true ->
+        find_haxe_libraries_in_ancestors(Path.dirname(start_dir))
+    end
   end
   
 end
