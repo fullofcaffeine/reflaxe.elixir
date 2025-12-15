@@ -2711,6 +2711,20 @@ class ElixirASTPrinter {
                         return app + "." + n;
                     }
                 }
+                // In <App>.* (non-Web) modules, qualify single-segment CamelCase roots to <App>.<Name>.
+                // This prevents undefined module warnings for app-local helper modules (e.g., UserChangeset)
+                // without requiring cross-module registry knowledge.
+                if (currentModuleName != null && currentModuleName.indexOf(".") != -1) {
+                    var dot = currentModuleName.indexOf(".");
+                    var appPrefix = dot > 0 ? currentModuleName.substring(0, dot) : null;
+                    inline function isSingleSegmentCamel2(name:String):Bool {
+                        if (name == null || name.length == 0) return false;
+                        return name.indexOf(".") == -1 && name.charAt(0).toUpperCase() == name.charAt(0) && name.charAt(0).toLowerCase() != name.charAt(0);
+                    }
+                    if (appPrefix != null && isSingleSegmentCamel2(n) && n != appPrefix && n != appPrefix + "Web") {
+                        return appPrefix + "." + n;
+                    }
+                }
                 // Outside Web.* modules, conservatively qualify well-known Phoenix Web modules
                 // e.g., TodoLive, HTML, CoreComponents, Layouts → <App>Web.<Name>
                 inline function isSingleSegmentCamel(name:String):Bool {

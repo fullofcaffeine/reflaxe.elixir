@@ -13,5 +13,8 @@
 # Required for Reflaxe targets
 -D reflaxe_runtime
 
+# Application module prefix (prevents collisions with Elixir built-ins like `Application`)
+-D app_name=PhoenixHaxeExample
+
 # Main class to compile (entry point)
 phoenix.Application

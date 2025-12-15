@@ -307,8 +307,6 @@ class AnnotationTransforms {
                 ]));
                 var newBody: Array<ElixirAST> = [];
                 newBody.push(makeAST(EUse("Phoenix.LiveView", [liveViewOptions])));
-                // Ensure Ecto.Query macros are available for LiveViews
-                newBody.push(makeAST(ERequire("Ecto.Query", null)));
                 for (stmt in body) newBody.push(stmt);
                 return makeASTWithMeta(EModule(name, attrs, newBody), ast.metadata, ast.pos);
             default:
@@ -422,10 +420,6 @@ class AnnotationTransforms {
             }
         ]));
         statements.push(makeAST(EUse("Phoenix.LiveView", [liveViewOptions])));
-
-        // Ensure Ecto.Query macros are available for LiveViews that use queries
-        // Safe to include even if not used; avoids macro require errors
-        statements.push(makeAST(ERequire("Ecto.Query", null)));
         
         // Add existing functions from the body
         switch(existingBody.def) {

@@ -42,6 +42,7 @@ enum FlashType {
 /**
  * Helper functions for FlashType enum
  */
+@:keep
 class FlashTypeTools {
     
     /**

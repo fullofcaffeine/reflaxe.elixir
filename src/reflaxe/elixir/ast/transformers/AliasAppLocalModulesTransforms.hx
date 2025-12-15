@@ -59,6 +59,14 @@ class AliasAppLocalModulesTransforms {
             return reflaxe.elixir.ast.StdModuleWhitelist.isWhitelistedRoot(name);
         }
 
+        function moduleAlreadyAliased(stmts:Array<ElixirAST>, fq:String):Bool {
+            for (s in stmts) switch (s.def) {
+                case EAlias(m, _): if (m == fq) return true;
+                default:
+            }
+            return false;
+        }
+
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EModule(name, attrs, body) if (name.indexOf("Web") != -1):
@@ -82,15 +90,16 @@ class AliasAppLocalModulesTransforms {
                         return x;
                     });
                     // Build alias attribute list additions
-                    var newAttrs = attrs.copy();
+                    var newBody = body.copy();
                     for (mname in referenced.keys()) {
                         var fq = (app != null) ? (app + "." + mname) : null;
                         if (fq != null && defined.exists(fq)) {
-                            // Add module attribute entry for EModule form
-                            newAttrs.push({ name: "alias", value: makeASTWithMeta(EVar(fq), n.metadata, n.pos) });
+                            if (!moduleAlreadyAliased(newBody, fq)) {
+                                newBody.unshift(makeASTWithMeta(EAlias(fq, null), n.metadata, n.pos));
+                            }
                         }
                     }
-                    makeASTWithMeta(EModule(name, newAttrs, body), n.metadata, n.pos);
+                    makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name, doBlock) if (name.indexOf("Web") != -1):
                     var app2 = appPrefix(name);
                     var referenced2 = new Map<String,Bool>();
@@ -115,7 +124,7 @@ class AliasAppLocalModulesTransforms {
                     for (mname2 in referenced2.keys()) {
                         var fq2 = (app2 != null) ? (app2 + "." + mname2) : null;
                         if (fq2 != null && defined.exists(fq2)) {
-                            aliasNodes.push(makeASTWithMeta(EModuleAttribute("alias", makeASTWithMeta(EVar(fq2), n.metadata, n.pos)), n.metadata, n.pos));
+                            aliasNodes.push(makeASTWithMeta(EAlias(fq2, null), n.metadata, n.pos));
                         }
                     }
                     if (aliasNodes.length > 0) {
@@ -124,6 +133,9 @@ class AliasAppLocalModulesTransforms {
                             case EDo(stmts):
                                 var merged = aliasNodes.concat(stmts);
                                 newDo = makeASTWithMeta(EDo(merged), newDo.metadata, newDo.pos);
+                            case EBlock(stmts2):
+                                var merged2 = aliasNodes.concat(stmts2);
+                                newDo = makeASTWithMeta(EBlock(merged2), newDo.metadata, newDo.pos);
                             default:
                         }
                     }

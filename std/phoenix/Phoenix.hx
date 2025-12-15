@@ -257,7 +257,6 @@ extern class LiveView {
      * 
      * @param TAssigns The type of socket assigns structure
      */
-    // Map rich FlashType to Phoenix-supported keys via FlashTypeTools, then String.to_atom
     extern inline static function putFlash<TAssigns>(socket: Socket<TAssigns>, type: FlashType, message: String): Socket<TAssigns> {
         return untyped __elixir__('Phoenix.LiveView.put_flash({0}, String.to_atom({1}), {2})', socket, phoenix.types.Flash.FlashTypeTools.toPhoenixKey(type), message);
     }
