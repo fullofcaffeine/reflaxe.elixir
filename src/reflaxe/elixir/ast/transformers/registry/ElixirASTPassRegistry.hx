@@ -2299,7 +2299,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "CasePatternUnusedUnderscore",
             description: "Underscore unused variables bound in case/with patterns",
-            enabled: false,
+            enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.CasePatternUnusedUnderscoreTransforms.pass
         });
         passes.push({
@@ -5648,8 +5648,7 @@ class ElixirASTPassRegistry {
             description: "In case clauses, underscore unused binders (absolute-final)",
             // Fixed: collectUsed now extracts identifiers from ERaw/EString using regex
             // to detect usage in nested expressions/IIFEs
-            // NOTE: Uses VarUseAnalyzer - DISABLED under fast_boot
-            enabled: #if fast_boot false #else true #end,
+            enabled: #if disable_hygiene_final false #else true #end,
             pass: reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.pass
         });
 
