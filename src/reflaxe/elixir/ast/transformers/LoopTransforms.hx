@@ -2220,25 +2220,25 @@ class LoopTransforms {
             
             // Stop if not a function call or different function
             if (call == null) {
-                #if !no_traces trace('[XRay LoopTransforms]   Statement $i is not a function call, stopping'); #end
+                #if debug_loop_transforms trace('[XRay LoopTransforms]   Statement $i is not a function call, stopping'); #end
                 break;
             }
             
             if (call.module != firstCall.module || call.func != firstCall.func) {
-                #if !no_traces trace('[XRay LoopTransforms]   Statement $i has different function (${call.module}.${call.func}), stopping'); #end
+                #if debug_loop_transforms trace('[XRay LoopTransforms]   Statement $i has different function (${call.module}.${call.func}), stopping'); #end
                 break;
             }
             
             // Check if it has the expected index
             if (call.args.length > 0) {
-                #if !no_traces trace('[XRay LoopTransforms]   Checking for index $expectedIndex in arg: ' + call.args[0].def); #end
+                #if debug_loop_transforms trace('[XRay LoopTransforms]   Checking for index $expectedIndex in arg: ' + call.args[0].def); #end
                 var hasExpectedIndex = checkForIndex(call.args[0], expectedIndex);
                 if (!hasExpectedIndex) {
-                    #if !no_traces trace('[XRay LoopTransforms]   No index $expectedIndex found, stopping'); #end
+                    #if debug_loop_transforms trace('[XRay LoopTransforms]   No index $expectedIndex found, stopping'); #end
                     // Index pattern broken, stop here
                     break;
                 }
-                #if !no_traces trace('[XRay LoopTransforms]   ✓ Statement ${i} matches with index $expectedIndex'); #end
+                #if debug_loop_transforms trace('[XRay LoopTransforms]   ✓ Statement ${i} matches with index $expectedIndex'); #end
             }
             
             count++;
@@ -2247,11 +2247,11 @@ class LoopTransforms {
         
         // Need at least 2 consecutive statements to be considered a loop
         if (count < 2) {
-            #if !no_traces trace('[XRay LoopTransforms] detectLoopGroup: Only $count matching statements, not enough for a loop'); #end
+            #if debug_loop_transforms trace('[XRay LoopTransforms] detectLoopGroup: Only $count matching statements, not enough for a loop'); #end
             return null;
         }
         
-        #if !no_traces trace('[XRay LoopTransforms] ✅ DETECTED LOOP GROUP: ${firstCall.module}.${firstCall.func} with $count iterations'); #end
+        #if debug_loop_transforms trace('[XRay LoopTransforms] ✅ DETECTED LOOP GROUP: ${firstCall.module}.${firstCall.func} with $count iterations'); #end
         
         // Transform this group to Enum.each
         var transformed = transformToEnumEach(firstCall, count);
@@ -2259,7 +2259,7 @@ class LoopTransforms {
         // Check if transformation was successful
         if (transformed == null) {
             // Transformation was skipped due to safety check
-            #if !no_traces trace('[XRay LoopTransforms] Transformation was skipped - keeping original unrolled statements'); #end
+            #if debug_loop_transforms trace('[XRay LoopTransforms] Transformation was skipped - keeping original unrolled statements'); #end
             return null;
         }
         
@@ -2276,42 +2276,42 @@ class LoopTransforms {
     static function checkForIndex(ast: ElixirAST, expectedIndex: Int): Bool {
         if (checkIndexBudget <= 0) return false;
         checkIndexBudget--;
-        #if !no_traces trace('[XRay LoopTransforms] checkForIndex: Looking for index ' + expectedIndex + ' in ' + ast.def); #end
+        #if debug_loop_transforms trace('[XRay LoopTransforms] checkForIndex: Looking for index ' + expectedIndex + ' in ' + ast.def); #end
         
         switch (ast.def) {
             case EString(s):
                 // First try exact string match
                 var exactPattern = 'Iteration ' + expectedIndex;
                 if (s == exactPattern) {
-                    #if !no_traces trace('[XRay LoopTransforms]   ✓ EXACT match found: "' + s + '"'); #end
+                    #if debug_loop_transforms trace('[XRay LoopTransforms]   ✓ EXACT match found: "' + s + '"'); #end
                     return true;
                 }
                 
                 // Check for interpolation pattern (exact match)
                 var interpolationPattern = 'Iteration #{' + expectedIndex + '}';
                 if (s == interpolationPattern) {
-                    #if !no_traces trace('[XRay LoopTransforms]   ✓ EXACT interpolation match: "' + s + '"'); #end
+                    #if debug_loop_transforms trace('[XRay LoopTransforms]   ✓ EXACT interpolation match: "' + s + '"'); #end
                     return true;
                 }
                 
                 // Check for just the index placeholder
                 var placeholderPattern = '#{' + expectedIndex + '}';
                 if (s == placeholderPattern) {
-                    #if !no_traces trace('[XRay LoopTransforms]   ✓ EXACT placeholder match: "' + s + '"'); #end
+                    #if debug_loop_transforms trace('[XRay LoopTransforms]   ✓ EXACT placeholder match: "' + s + '"'); #end
                     return true;
                 }
                 
                 // Check if string is just the index number
                 var indexStr = Std.string(expectedIndex);
                 if (s == indexStr) {
-                    #if !no_traces trace('[XRay LoopTransforms]   ✓ EXACT index string match: "' + s + '"'); #end
+                    #if debug_loop_transforms trace('[XRay LoopTransforms]   ✓ EXACT index string match: "' + s + '"'); #end
                     return true;
                 }
                 
                 // Check for "Index: " pattern specifically (for Log.trace cases)
                 var indexPattern = 'Index: ' + expectedIndex;
                 if (s == indexPattern || s.indexOf(indexPattern) != -1) {
-                    #if !no_traces trace('[XRay LoopTransforms]   ✓ Found "Index: ' + expectedIndex + '" pattern in: "' + s + '"'); #end
+                    #if debug_loop_transforms trace('[XRay LoopTransforms]   ✓ Found "Index: ' + expectedIndex + '" pattern in: "' + s + '"'); #end
                     return true;
                 }
                 
@@ -2320,11 +2320,11 @@ class LoopTransforms {
                 if (s.indexOf(exactPattern) != -1 || 
                     s.indexOf(interpolationPattern) != -1 ||
                     s.indexOf(placeholderPattern) != -1) {
-                    #if !no_traces trace('[XRay LoopTransforms]   ✓ Found index via contains fallback in: "' + s + '"'); #end
+                    #if debug_loop_transforms trace('[XRay LoopTransforms]   ✓ Found index via contains fallback in: "' + s + '"'); #end
                     return true;
                 }
                 
-                #if !no_traces trace('[XRay LoopTransforms]   ✗ No match in string: "' + s + '"'); #end
+                #if debug_loop_transforms trace('[XRay LoopTransforms]   ✗ No match in string: "' + s + '"'); #end
                 return false;
                 
             case EBinary(StringConcat, left, right):
@@ -2333,7 +2333,7 @@ class LoopTransforms {
                 var leftHas = checkForIndex(left, expectedIndex);
                 var rightHas = checkForIndex(right, expectedIndex);
                 if (leftHas || rightHas) {
-                    #if !no_traces trace('[XRay LoopTransforms]   ✓ Found index in binary concat'); #end
+                    #if debug_loop_transforms trace('[XRay LoopTransforms]   ✓ Found index in binary concat'); #end
                 }
                 return leftHas || rightHas;
                 
