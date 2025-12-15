@@ -337,19 +337,37 @@ defmodule HaxeServer do
   end
 
   defp find_available_port() do
-    # Use process ID and timestamp to ensure uniqueness in parallel tests
-    base_port = 7000 + rem(System.unique_integer([:positive]), 2000)
-    
-    Enum.reduce_while(0..20, nil, fn offset, _acc ->
-      port = base_port + offset
-      case :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true]) do
+    # Pick from a mid-range that avoids common dev ports (<10k) and OS ephemeral ports (often 49k+).
+    # This reduces collisions with both local services and active outbound connections.
+    base_port = 15_000 + rem(System.unique_integer([:positive]), 20_000)
+
+    port_available? = fn port ->
+      # Haxe (via lix/haxeshim) binds to the IPv6 wildcard (::) by default, typically
+      # as a dual-stack socket (v6only=false). Probe with an IPv6 dual-stack listen
+      # first, falling back to IPv4 when IPv6 isn't available.
+      ipv6_opts = [:binary, packet: :line, active: false, reuseaddr: true, ip: {0, 0, 0, 0, 0, 0, 0, 0}, ipv6_v6only: false]
+
+      case :gen_tcp.listen(port, ipv6_opts) do
         {:ok, socket} ->
           :gen_tcp.close(socket)
-          {:halt, port}
+          true
+
         {:error, _} ->
-          {:cont, nil}
+          case :gen_tcp.listen(port, [:binary, packet: :line, active: false, reuseaddr: true]) do
+            {:ok, socket} ->
+              :gen_tcp.close(socket)
+              true
+
+            {:error, _} ->
+              false
+          end
       end
-    end) || 8000 + :rand.uniform(1000)  # Better fallback with randomization
+    end
+    
+    Enum.reduce_while(0..50, nil, fn offset, _acc ->
+      port = base_port + offset
+      if port_available?.(port), do: {:halt, port}, else: {:cont, nil}
+    end) || 35_000 + :rand.uniform(5_000)  # Better fallback with randomization
   end
   
   defp find_project_root() do
