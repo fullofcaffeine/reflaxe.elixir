@@ -4839,11 +4839,17 @@ class ElixirASTBuilder {
                 return name;  // Return just the name without package prefix
             }
             
-            // For non-extern application classes, qualify with App module prefix
+            // For non-extern application classes, optionally qualify with the configured app module prefix.
             // e.g., server.schemas.Todo → TodoApp.Todo (using -D app_name)
+            //
+            // IMPORTANT: Only apply the prefix when `-D app_name=...` is present. For minimal, non-Phoenix
+            // examples we keep the historical behavior of emitting unqualified module names.
             if (!isExtern) {
-                var app = reflaxe.elixir.PhoenixMapper.getAppModuleName();
-                return (app != null && app.length > 0 ? (app + "." + name) : name);
+                // Never prefix Haxe stdlib/runtime modules (haxe.* / sys.*); they are emitted and referenced
+                // as unqualified modules (e.g., `Log`, `BalancedTree`) regardless of app_name.
+                if (pack[0] == "haxe" || pack[0] == "sys" || pack[0] == "elixir" || pack[0] == "ecto" || pack[0] == "phoenix" || pack[0] == "plug") return name;
+                var appName = Context.definedValue("app_name");
+                return (appName != null && appName.length > 0 ? (appName + "." + name) : name);
             }
             
             // For extern classes, add the package prefix for proper Elixir module references

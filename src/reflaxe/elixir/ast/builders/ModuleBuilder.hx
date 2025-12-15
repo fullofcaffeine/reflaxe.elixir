@@ -3,6 +3,7 @@ package reflaxe.elixir.ast.builders;
 #if (macro || reflaxe_runtime)
 
 import haxe.macro.Type;
+import haxe.macro.Context;
 import reflaxe.elixir.ast.ElixirAST;
 
 /**
@@ -65,15 +66,38 @@ class ModuleBuilder {
             if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
                 switch(nativeMeta[0].params[0].expr) {
                     case EConst(CString(s, _)):
-                        return s;
+                        // Prefer idiomatic module aliases (String) over fully-qualified internal names (Elixir.String).
+                        return StringTools.startsWith(s, "Elixir.") ? s.substr("Elixir.".length) : s;
                     default:
                 }
+            }
+        }
+
+        // For non-extern project code in a packaged namespace, qualify with the configured app module prefix.
+        //
+        // This is intentionally conservative: we only apply the prefix when `-D app_name=...` is present.
+        // Without app_name, keep prior behavior (emit unqualified module names) for minimal examples.
+        //
+        // IMPORTANT: Do not prefix Haxe stdlib/runtime modules (haxe.* / sys.*). Those are emitted as
+        // unqualified modules (e.g., `Log`, `BalancedTree`) and are referenced unqualified by the runtime.
+        if (!classType.isExtern && classType.pack.length > 0
+            && classType.pack[0] != "haxe"
+            && classType.pack[0] != "sys"
+            && classType.pack[0] != "elixir"
+            && classType.pack[0] != "ecto"
+            && classType.pack[0] != "phoenix"
+            && classType.pack[0] != "plug") {
+            var appName = Context.definedValue("app_name");
+            if (appName != null && appName != "") {
+                return appName + "." + classType.name;
             }
         }
 
         // For @:application classes without @:native, append ".Application" to module name
         // This follows Phoenix/OTP convention where applications are named AppName.Application
         if (classType.meta.has(":application") && !classType.meta.has(":native")) {
+            var appName = Context.definedValue("app_name");
+            if (appName != null && appName != "") return appName + ".Application";
             return classType.name + ".Application";
         }
 
