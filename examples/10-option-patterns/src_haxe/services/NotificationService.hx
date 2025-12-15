@@ -7,7 +7,7 @@ import models.User;
 import repositories.UserRepository;
 
 using haxe.ds.OptionTools;
-using haxe.functional.Result.ResultTools;
+using haxe.functional.ResultTools;
 
 /**
  * Notification service demonstrating advanced Option<T> and Result<T,E> patterns.

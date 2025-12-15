@@ -5,7 +5,7 @@ import haxe.ds.OptionTools;
 import haxe.functional.Result;
 
 using haxe.ds.OptionTools;
-using haxe.functional.Result.ResultTools;
+using haxe.functional.ResultTools;
 
 /**
  * Configuration manager demonstrating Option<T> patterns for safe config access.

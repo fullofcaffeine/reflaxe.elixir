@@ -54,7 +54,7 @@
     "test:list": "make -C test list",
     "test:clean": "make -C test clean",
     "test:mix-parallel": "MIX_ENV=test mix deps.compile && MIX_ENV=test mix test --max-cases 4 --timeout 120000",
-    "test:examples": "for dir in examples/*/; do echo \"Testing $dir\"; if [ -f \"$dir/compile-all.hxml\" ]; then (cd \"$dir\" && npx haxe compile-all.hxml) || exit 1; elif [ -f \"$dir/build.hxml\" ]; then (cd \"$dir\" && npx haxe build.hxml) || exit 1; fi; done",
+    "test:examples": "bash -lc 'HAXE_BIN=${HAXE_BIN:-haxe}; for dir in examples/*/; do echo \"Testing $dir\"; if [ -f \"$dir/compile-all.hxml\" ]; then (cd \"$dir\" && $HAXE_BIN compile-all.hxml) || exit 1; elif [ -f \"$dir/build.hxml\" ]; then (cd \"$dir\" && $HAXE_BIN build.hxml) || exit 1; fi; done'",
     "test:update": "make -C test update-intended",
     "test:verify": "npm run test:core && echo 'Core functionality verified ✅'",
     "clean": "npm run test:clean",

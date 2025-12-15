@@ -8,7 +8,7 @@ import models.User;
 import repositories.UserRepository;
 
 using haxe.ds.OptionTools;
-using haxe.functional.Result.ResultTools;
+using haxe.functional.ResultTools;
 
 /**
  * ExUnit tests for UserRepository demonstrating Option<T> testing patterns.

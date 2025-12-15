@@ -8,7 +8,7 @@ import models.User;
 import services.NotificationService;
 
 using haxe.ds.OptionTools;
-using haxe.functional.Result.ResultTools;
+using haxe.functional.ResultTools;
 
 /**
  * ExUnit tests for NotificationService demonstrating complex Option<T> and Result<T,E> patterns.

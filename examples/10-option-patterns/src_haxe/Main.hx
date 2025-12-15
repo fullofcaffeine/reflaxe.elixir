@@ -7,7 +7,7 @@ import services.ConfigManager;
 import services.NotificationService;
 
 using haxe.ds.OptionTools;
-using haxe.functional.Result.ResultTools;
+using haxe.functional.ResultTools;
 
 /**
  * Main demonstration of Option<T> patterns in real-world scenarios.
