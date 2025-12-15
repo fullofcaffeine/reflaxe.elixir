@@ -267,10 +267,13 @@ class PatternDetector {
      * HOW: Pattern matching on variable names
      */
     public static function isTempPatternVarName(name: String): Bool {
-        if (name == "g") return true;
+        if (name == null || name.length == 0) return false;
+        if (name == "g" || name == "_g") return true;
         if (name.length > 1 && name.charAt(0) == "g") {
-            var suffix = name.substr(1);
-            return isDigits(suffix);
+            return isDigits(name.substr(1));
+        }
+        if (name.length > 2 && name.substr(0, 2) == "_g") {
+            return isDigits(name.substr(2));
         }
         return false;
     }

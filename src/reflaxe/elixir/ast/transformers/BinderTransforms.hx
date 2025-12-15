@@ -1766,135 +1766,156 @@ class BinderTransforms {
     // The pattern already binds `todo`; the assignment from temp `_g` is redundant and may reference
     // an eliminated temp. This pass removes such assignments conservatively.
     public static function casePatternTempAssignmentRemovalPass(ast: ElixirAST): ElixirAST {
-        // Collect variable names from a pattern
-        function collectPatternVars(p: EPattern, out: Map<String, Bool>): Void {
-            switch (p) {
-                case PVar(name):
-                    // Keep non-underscore binders only
-                    if (name != null && name.length > 0 && name.charAt(0) != "_") out.set(name, true);
-                case PTuple(elems):
-                    for (ep in elems) collectPatternVars(ep, out);
-                case PList(elems):
-                    for (ep in elems) collectPatternVars(ep, out);
-                case PCons(h, t):
-                    collectPatternVars(h, out); collectPatternVars(t, out);
-                case PMap(pairs):
-                    for (kv in pairs) collectPatternVars(kv.value, out);
-                case PStruct(_, fields):
-                    for (f in fields) collectPatternVars(f.value, out);
-                case PPin(inner):
-                    collectPatternVars(inner, out);
-                case PAlias(varName, inner):
-                    if (varName != null && varName.length > 0 && varName.charAt(0) != "_") out.set(varName, true);
-                    collectPatternVars(inner, out);
-                default:
-            }
-        }
-
-        // Check if a name looks like an infrastructure temp (g, g1, _g, _g1, etc.)
+        // Detect infrastructure temps: g, g1, _g, _g1, ...
         function isInfraTemp(name: String): Bool {
             if (name == null || name.length == 0) return false;
-            if (name.charAt(0) == "_") name = name.substr(1);
-            if (name == "g") return true;
-            if (name.charAt(0) == "g") {
-                var ok = true;
-                // digits after g
-                for (i in 1...name.length) {
-                    var c = name.charCodeAt(i);
-                    if (c < '0'.code || c > '9'.code) { ok = false; break; }
-                }
-                return ok;
+            var n = name;
+            if (n.charAt(0) == "_") n = n.substr(1);
+            if (n == "g") return true;
+            if (n.charAt(0) != "g") return false;
+            for (i in 1...n.length) {
+                var c = n.charCodeAt(i);
+                if (c < '0'.code || c > '9'.code) return false;
             }
-            return false;
+            return true;
         }
 
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            // Global sweep in any block: drop `lhs = _g*` style assignments
-            switch (n.def) {
+        function extractSimpleVarName(expr: Null<ElixirAST>): Null<String> {
+            if (expr == null || expr.def == null) return null;
+            return switch (expr.def) {
+                case EVar(v):
+                    v;
+                case EParen(inner):
+                    extractSimpleVarName(inner);
+                default:
+                    null;
+            };
+        }
+
+        function collectBoundVarsFromPattern(p: EPattern, out: Map<String, Bool>): Void {
+            switch (p) {
+                case PVar(name) if (name != null && name.length > 0):
+                    out.set(name, true);
+                case PAlias(name, inner):
+                    if (name != null && name.length > 0) out.set(name, true);
+                    collectBoundVarsFromPattern(inner, out);
+                case PTuple(es) | PList(es):
+                    for (e in es) collectBoundVarsFromPattern(e, out);
+                case PCons(h, t):
+                    collectBoundVarsFromPattern(h, out);
+                    collectBoundVarsFromPattern(t, out);
+                case PMap(kvs):
+                    for (kv in kvs) collectBoundVarsFromPattern(kv.value, out);
+                case PStruct(_, fs):
+                    for (f in fs) collectBoundVarsFromPattern(f.value, out);
+                case PPin(inner):
+                    collectBoundVarsFromPattern(inner, out);
+                default:
+            }
+        }
+
+        function declaredVarFromStatement(stmt: ElixirAST): Null<String> {
+            if (stmt == null || stmt.def == null) return null;
+            return switch (stmt.def) {
+                case EMatch(PVar(lhs), _):
+                    lhs;
+                case EBinary(Match, {def: EVar(lhs)}, _):
+                    lhs;
+                default:
+                    null;
+            };
+        }
+
+        function dropUndefinedTempAssignmentsInClauseBody(body: ElixirAST, bound: Map<String, Bool>): ElixirAST {
+            if (body == null || body.def == null) return body;
+            return switch (body.def) {
                 case EBlock(stmts):
-                    var filtered: Array<ElixirAST> = [];
+                    var declared = new Map<String, Bool>();
+                    for (k in bound.keys()) declared.set(k, true);
+
+                    var kept: Array<ElixirAST> = [];
                     for (s in stmts) {
                         var drop = false;
+                        var rhsName: Null<String> = null;
                         switch (s.def) {
-                            case EBinary(Match, left, right):
-                                switch (left.def) {
-                                    case EVar(lhs):
-                                        switch (right.def) {
-                                            case EVar(rn): if (isInfraTemp(rn)) drop = true; default:
-                                        }
-                                    default:
-                                }
-                            case EMatch(pat, rhs):
-                                switch (pat) {
-                                    case PVar(lhs):
-                                        switch (rhs.def) {
-                                            case EVar(rn): if (isInfraTemp(rn)) drop = true; default:
-                                        }
-                                    default:
-                                }
+                            case EMatch(_, rhs):
+                                rhsName = extractSimpleVarName(rhs);
+                            case EBinary(Match, _, rhs2):
+                                rhsName = extractSimpleVarName(rhs2);
                             default:
                         }
-                        if (!drop) filtered.push(s);
+                        if (rhsName != null && isInfraTemp(rhsName) && !declared.exists(rhsName)) {
+                            // This statement reads an infra temp that is not bound by the clause pattern
+                            // and has not been declared earlier in the clause body.
+                            drop = true;
+                        }
+
+                        if (!drop) {
+                            kept.push(s);
+                            var lhs = declaredVarFromStatement(s);
+                            if (lhs != null) declared.set(lhs, true);
+                        }
                     }
-                    n = {def: EBlock(filtered), metadata: n.metadata, pos: n.pos};
+                    makeASTWithMeta(EBlock(kept), body.metadata, body.pos);
+
+                case EDo(stmts):
+                    var declaredDo = new Map<String, Bool>();
+                    for (k in bound.keys()) declaredDo.set(k, true);
+
+                    var keptDo: Array<ElixirAST> = [];
+                    for (s in stmts) {
+                        var drop = false;
+                        var rhsName: Null<String> = null;
+                        switch (s.def) {
+                            case EMatch(_, rhs):
+                                rhsName = extractSimpleVarName(rhs);
+                            case EBinary(Match, _, rhs2):
+                                rhsName = extractSimpleVarName(rhs2);
+                            default:
+                        }
+                        if (rhsName != null && isInfraTemp(rhsName) && !declaredDo.exists(rhsName)) {
+                            drop = true;
+                        }
+
+                        if (!drop) {
+                            keptDo.push(s);
+                            var lhs = declaredVarFromStatement(s);
+                            if (lhs != null) declaredDo.set(lhs, true);
+                        }
+                    }
+                    makeASTWithMeta(EDo(keptDo), body.metadata, body.pos);
+
                 default:
+                    body;
             }
-            return switch (n.def) {
-                case ECase(target, clauses):
-                    var newClauses: Array<ECaseClause> = [];
+        }
+
+        function pass(node: ElixirAST): ElixirAST {
+            if (node == null || node.def == null) return node;
+
+            return switch (node.def) {
+                case ECase(expr, clauses):
+                    var nextExpr = pass(expr);
+                    var nextClauses: Array<ECaseClause> = [];
                     for (cl in clauses) {
-                        var patternVars = new Map<String, Bool>();
-                        collectPatternVars(cl.pattern, patternVars);
-
-                        var newBody = cl.body;
-                        switch (cl.body.def) {
-                            case EBlock(stmts):
-                                var filtered: Array<ElixirAST> = [];
-                                for (s in stmts) {
-                                    var drop = false;
-                                    switch (s.def) {
-                                        case EMatch(pat, rhs):
-                                            switch (pat) {
-                                                case PVar(lhs):
-                                                    // Only consider pattern-bound names
-                                                    if (patternVars.exists(lhs)) {
-                                                        // RHS must be a simple var referring to infra temp
-                                                        switch (rhs.def) {
-                                                            case EVar(rn):
-                                                                if (isInfraTemp(rn)) drop = true;
-                                                            default:
-                                                        }
-                                                    }
-                                                default:
-                                            }
-                                        case EBinary(Match, left, right):
-                                            // Match operator form: lhs = rhs
-                                            switch (left.def) {
-                                                case EVar(lhs):
-                                                    if (patternVars.exists(lhs)) {
-                                                        switch (right.def) {
-                                                            case EVar(rn):
-                                                                if (isInfraTemp(rn)) drop = true;
-                                                            default:
-                                                        }
-                                                    }
-                                                default:
-                                            }
-                                        default:
-                                    }
-                                    if (!drop) filtered.push(s);
-                                }
-                                newBody = {def: EBlock(filtered), metadata: cl.body.metadata, pos: cl.body.pos};
-                            default:
-                        }
-
-                        newClauses.push({pattern: cl.pattern, guard: cl.guard, body: newBody});
+                        var bound = new Map<String, Bool>();
+                        collectBoundVarsFromPattern(cl.pattern, bound);
+                        var nextGuard = cl.guard == null ? null : pass(cl.guard);
+                        var nextBody = pass(cl.body);
+                        var cleanedBody = dropUndefinedTempAssignmentsInClauseBody(nextBody, bound);
+                        nextClauses.push({ pattern: cl.pattern, guard: nextGuard, body: cleanedBody });
                     }
-                    makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
+                    makeASTWithMeta(ECase(nextExpr, nextClauses), node.metadata, node.pos);
+
+                case EParen(inner):
+                    makeASTWithMeta(EParen(pass(inner)), node.metadata, node.pos);
+
                 default:
-                    n;
-            }
-        });
+                    ElixirASTTransformer.transformAST(node, pass);
+            };
+        }
+
+        return pass(ast);
     }
 
     /**

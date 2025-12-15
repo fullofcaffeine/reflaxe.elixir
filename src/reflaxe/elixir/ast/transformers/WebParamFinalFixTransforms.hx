@@ -121,16 +121,16 @@ class WebParamFinalFixTransforms {
                             default:
                         }
 
-                        var renamePairs = new Map<String,String>();
-                        for (a in cl.args) switch (a) {
-                            case PVar(nm) if (nm != null && nm.length > 1 && nm.charAt(0) == '_'):
-                                var base2 = nm.substr(1);
-                                if (used.exists(nm)) renamePairs.set(nm, base2);
-                            case PAlias(nm2, _) if (nm2 != null && nm2.length > 1 && nm2.charAt(0) == '_'):
-                                var base3 = nm2.substr(1);
-                                if (used.exists(nm2)) renamePairs.set(nm2, base3);
-                            default:
-                        }
+	                        var renamePairs = new Map<String,String>();
+	                        for (a in cl.args) switch (a) {
+	                            case PVar(nm) if (nm != null && nm.length > 1 && nm.charAt(0) == '_'):
+	                                var baseName = nm.substr(1);
+	                                if (used.exists(nm)) renamePairs.set(nm, baseName);
+	                            case PAlias(aliasName, _) if (aliasName != null && aliasName.length > 1 && aliasName.charAt(0) == '_'):
+	                                var aliasBaseName = aliasName.substr(1);
+	                                if (used.exists(aliasName)) renamePairs.set(aliasName, aliasBaseName);
+	                            default:
+	                        }
                         if (Lambda.count(renamePairs) > 0) newBodyClause = ElixirASTTransformer.transformNode(newBodyClause, function(n2: ElixirAST): ElixirAST {
                             return switch (n2.def) { case EVar(v) if (renamePairs.exists(v)): makeASTWithMeta(EVar(renamePairs.get(v)), n2.metadata, n2.pos); default: n2; }
                         });
