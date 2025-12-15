@@ -465,7 +465,7 @@ This file contains instructions for AI assistants (Claude, ChatGPT, etc.) workin
 ### 1. Start File Watcher
 ```bash
 # Start the watcher for real-time compilation
-mix compile.haxe --watch
+mix haxe.watch
 ```
 
 ### 2. Development Workflow

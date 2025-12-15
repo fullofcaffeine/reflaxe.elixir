@@ -203,16 +203,19 @@ defmodule Mix.Tasks.Compile.Haxe do
   end
   
   defp start_file_watcher(config) do
-    # Check if watcher is already running
-    case Process.whereis(:haxe_watcher) do
+    # HaxeWatcher is a named GenServer (name: HaxeWatcher). Avoid re-starting it.
+    case Process.whereis(HaxeWatcher) do
       nil ->
-        # Start the watcher process
-        {:ok, pid} = HaxeWatcher.start_link(config)
-        Process.register(pid, :haxe_watcher)
+        source_dir = Keyword.get(config, :source_dir, "src_haxe")
+        watcher_opts =
+          config
+          |> Keyword.put_new(:dirs, [source_dir])
+          |> Keyword.put(:build_file, Keyword.get(config, :hxml_file, "build.hxml"))
+
+        {:ok, _pid} = HaxeWatcher.start_link(watcher_opts)
         Mix.shell().info("Started Haxe file watcher")
-      
+
       _pid ->
-        # Watcher already running
         if config[:verbose] do
           Mix.shell().info("Haxe file watcher is already running")
         end

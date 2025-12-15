@@ -21,8 +21,8 @@ Primary compilation task for Haxe→Elixir transpilation.
 # Basic compilation
 mix compile.haxe
 
-# With file watching
-mix compile.haxe --watch
+# Long-running watch (keeps the Mix VM alive)
+mix haxe.watch
 
 # With verbose output
 mix compile.haxe --verbose
@@ -32,15 +32,15 @@ mix compile.haxe --force
 ```
 
 **Options:**
-- `--watch` - Enable file watching for automatic recompilation
 - `--verbose` - Show detailed compilation output
 - `--force` - Force full recompilation (ignore cache)
-- `--no-deps-check` - Skip dependency checking
-- `--return-errors` - Return compilation errors as data structure
+- `--no-watch` - Disable auto-watching in long-running Mix (e.g., under `mix phx.server`)
 
 **Environment Variables:**
 - `MIX_QUIET=1` - Suppress all output except errors
-- `HAXE_SERVER_PORT=6000` - Custom port for Haxe compilation server
+- `HAXE_SERVER_PORT=6116` - Custom port for Haxe compilation server (default: 6116)
+- `HAXE_NO_SERVER=1` - Disable the Haxe `--wait` server and compile directly
+- `HAXE_NO_COMPILE=1` - Skip Haxe compilation entirely (useful for CI/sentinels)
 
 ## Source Mapping Tasks
 
@@ -191,76 +191,17 @@ mix haxe.stacktrace haxe_error_123456_0 --trace-generation
 
 ## Development Tasks
 
-### mix haxe.status
+### mix haxe.watch
 
-Get current project compilation status.
-
-```bash
-# Basic status
-mix haxe.status
-
-# JSON format for automation
-mix haxe.status --format json
-
-# Detailed status with file information
-mix haxe.status --detailed
-```
-
-**JSON Output:**
-```json
-{
-  "watching": true,
-  "last_compilation": "2025-08-11T10:30:45Z",
-  "files_compiled": 3,
-  "errors": [],
-  "warnings": 0,
-  "server_running": true,
-  "server_port": 6000
-}
-```
-
-### mix haxe.clean
-
-Clean generated files and cache.
+Watches Haxe files and recompiles on changes (recommended for local development).
 
 ```bash
-# Clean generated Elixir files
-mix haxe.clean
-
-# Clean everything including source maps
-mix haxe.clean --all
-
-# Clean only cache
-mix haxe.clean --cache-only
+mix haxe.watch
+mix haxe.watch --verbose
+mix haxe.watch --once
+mix haxe.watch --dirs src_haxe,test
+mix haxe.watch --hxml build.hxml
 ```
-
-**Options:**
-- `--all` - Remove all generated files and source maps
-- `--cache-only` - Only clean compilation cache
-- `--deps` - Also clean dependency files
-
-### mix haxe.server
-
-Manage Haxe compilation server.
-
-```bash
-# Start compilation server
-mix haxe.server start
-
-# Stop compilation server
-mix haxe.server stop
-
-# Restart compilation server
-mix haxe.server restart
-
-# Get server status
-mix haxe.server status
-```
-
-**Options:**
-- `--port` - Custom server port (default: 6000)
-- `--timeout` - Compilation timeout in ms
-- `--verbose` - Verbose server output
 
 ## Migration Tasks
 
@@ -329,7 +270,7 @@ HAXE_SERVER_PORT=7000 mix haxe.server start
 
 ```bash
 # 1. Start file watching with source mapping
-mix compile.haxe --watch
+mix haxe.watch
 
 # 2. Make changes to Haxe files
 # (automatic recompilation)
@@ -345,12 +286,9 @@ mix haxe.source_map lib/User.ex 45 12
 
 ```bash
 # 1. Start watching with JSON output
-mix compile.haxe --watch --verbose
+mix haxe.watch --verbose
 
-# 2. Agent queries status
-mix haxe.status --format json
-
-# 3. Agent checks errors
+# 2. Agent checks errors
 mix haxe.errors --format json
 
 # 4. Agent queries source positions
@@ -397,11 +335,8 @@ mix ecto.migrate
 ### Incremental Compilation
 
 ```bash
-# Start Haxe server for faster rebuilds
-mix haxe.server start
-
 # Use file watching for automatic compilation
-mix compile.haxe --watch
+mix haxe.watch
 ```
 
 ### Batch Operations
@@ -416,9 +351,6 @@ done | jq -s '.'
 ### Caching
 
 ```bash
-# Clear cache if performance degrades
-mix haxe.clean --cache-only
-
 # Force fresh compilation
 mix compile.haxe --force
 ```
@@ -438,20 +370,13 @@ ls lib/*.ex.map
 
 **Server connection issues:**
 ```bash
-# Check server status
-mix haxe.server status
-
-# Restart server
-mix haxe.server restart
-
-# Use different port if needed
-HAXE_SERVER_PORT=7000 mix haxe.server start
+# Use a different Haxe compilation-server port if needed
+HAXE_SERVER_PORT=7000 mix haxe.watch
 ```
 
 **Stale compilation results:**
 ```bash
 # Clean and rebuild
-mix haxe.clean
 mix compile.haxe --force
 ```
 
@@ -466,7 +391,7 @@ mix compile.haxe --force
     {
       "label": "Compile Haxe",
       "type": "shell",
-      "command": "mix compile.haxe --watch",
+      "command": "mix haxe.watch",
       "problemMatcher": "$haxe"
     },
     {
