@@ -148,9 +148,10 @@ defmodule HaxeCompiler do
   
   defp compile_with_real_haxe(hxml_file, _source_dir, target_dir, verbose) do
     # First, try to use HaxeServer for incremental compilation if available
-    # Pass -D fast_boot in dev-like envs to minimize macro load during cold boots
-    fast_boot? = Mix.env() in [:dev, :test, :e2e]
-    common_args = (if fast_boot?, do: ["-D", "fast_boot"], else: [])
+    # fast_boot is an opt-in compilation profile that disables expensive macro/transform work.
+    # Enable it explicitly via env var:
+    #   HAXE_FAST_BOOT=1 mix compile
+    common_args = if fast_boot_enabled?(), do: ["-D", "fast_boot"], else: []
     
     compilation_result = case HaxeServer.running?() do
       true ->
@@ -190,6 +191,22 @@ defmodule HaxeCompiler do
   rescue
     error ->
       {:error, "Haxe compilation failed: #{Exception.message(error)}"}
+  end
+
+  defp fast_boot_enabled?() do
+    case System.get_env("HAXE_FAST_BOOT") do
+      nil ->
+        false
+
+      value ->
+        case String.downcase(String.trim(value)) do
+          "1" -> true
+          "true" -> true
+          "yes" -> true
+          "y" -> true
+          _ -> false
+        end
+    end
   end
   
   defp compile_with_direct_haxe(hxml_file, verbose, common_args) do
