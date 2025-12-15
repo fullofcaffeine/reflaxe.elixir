@@ -257,7 +257,27 @@ Start at **[docs/README.md](docs/README.md)** for the curated documentation inde
 - **[Source Mapping Guide](docs/04-api-reference/SOURCE_MAPPING.md)** 🎯 - Complete guide to our pioneering source mapping feature
 - **[Annotations](docs/04-api-reference/ANNOTATIONS.md)** - Complete annotation reference
 - **[Troubleshooting](docs/06-guides/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[Examples](examples/)** - Working code examples
+- **[Examples](examples/README.md)** - Working code examples (index)
+
+### Examples
+
+Each example includes its own `README.md` with compile/run steps:
+
+- `examples/01-simple-modules/README.md`
+- `examples/02-mix-project/README.md`
+- `examples/03-phoenix-app/README.md`
+- `examples/04-ecto-migrations/README.md`
+- `examples/05-heex-templates/README.md`
+- `examples/06-user-management/README.md`
+- `examples/07-protocols/README.md`
+- `examples/08-behaviors/README.md`
+- `examples/09-phoenix-router/README.md`
+- `examples/10-option-patterns/README.md`
+- `examples/11-domain-validation/README.md`
+- `examples/test-integration/README.md`
+- `examples/todo-app/README.md`
+
+You can compile-check all examples with `npm run test:examples`.
 
 ### Architecture
 - **[Architecture Overview](docs/05-architecture/ARCHITECTURE.md)** - Compiler internals
