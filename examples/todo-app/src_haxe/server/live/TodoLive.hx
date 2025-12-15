@@ -214,9 +214,9 @@ class TodoLive {
                     case _:
                         NoReply(socket);
                 }
-            case UserOnline(_userId):
+            case UserOnline(_):
                 NoReply(socket);
-            case UserOffline(_userId):
+            case UserOffline(_):
                 NoReply(socket);
             case _:
                 NoReply(socket);
@@ -305,7 +305,7 @@ class TodoLive {
                 });
                 var lsCreated: LiveSocket<TodoLiveAssigns> = recomputeVisible(updatedSocket);
                 return LiveView.putFlash(lsCreated, FlashType.Success, "Todo created successfully!");
-            case Error(_reason):
+            case Error(_):
                 return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
             case _:
                 return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
@@ -447,7 +447,7 @@ class TodoLive {
         var iso = (rawDue.indexOf(":") == -1) ? (rawDue + " 00:00:00") : rawDue;
         return switch (NaiveDateTime.from_iso8601(iso)) {
             case Ok(dt): dt;
-            case Error(_reason): null;
+            case Error(_): null;
         };
     }
 	
