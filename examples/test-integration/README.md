@@ -50,7 +50,7 @@ end
 
 ```bash
 # Compile Haxe code to Elixir
-haxe build.hxml
+npx haxe build.hxml
 
 # Run Mix tests (if any ExUnit tests are present)
 mix test

@@ -183,6 +183,32 @@ npx haxe build.hxml
 mix haxe.watch
 ```
 
+### Running Tests
+
+```bash
+# Full test suite (snapshots + Mix task tests)
+npm test
+
+# Compile-check every example under examples/
+npm run test:examples
+
+# Quick snapshot-only run
+npm run test:quick
+```
+
+### Running Examples
+
+Each example is self-contained and documented. Start here:
+
+- `examples/README.md`
+
+Most examples can be compiled with:
+
+```bash
+cd examples/<example-name>
+npx haxe build.hxml   # or compile-all.hxml when present
+```
+
 ### Phoenix Integration
 
 ```bash
