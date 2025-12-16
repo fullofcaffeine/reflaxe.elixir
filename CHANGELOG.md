@@ -2,6 +2,8 @@
 
 ### 🐞 Bug Fixes
 
+- Todo-app: Fix a late-stage hygiene regression that could rewrite `Enum.find` predicates into self-comparisons (preventing edits) and add Playwright coverage for tags/sort/live updates.
+
 - Runtime: Fixed `Reflect.compare/2` to return -1/0/1 deterministically by replacing two independent `if` expressions plus trailing `0` with a single `cond` fallback. The previous shape always returned `0` (last expression), breaking sort determinism used by module/key ordering and affecting qualification snapshots.
 - Compiler: Prevent `UndefinedLocalExtractFromParamsTransforms` from shadowing real function arguments when a function has a `params` argument.
 - Todo-app: Reuse the canonical `server.schemas.User` schema in the `TodoApp.Users` context to avoid duplicate `TodoApp.User` module definitions and related Mix warnings.

@@ -102,7 +102,7 @@ For the complete roadmap including AI tooling, universal deployment, and multi-p
 npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # Or install a specific version/tag
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.3
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.4
 
 # Add to existing project
 npx lix use
