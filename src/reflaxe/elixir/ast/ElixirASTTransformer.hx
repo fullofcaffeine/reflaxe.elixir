@@ -214,6 +214,15 @@ class ElixirASTTransformer {
                 "<root>";
         };
 
+        #if debug_root_names
+        #if sys
+        Sys.println('[ASTRoot] ' + rootName);
+        Sys.stdout().flush();
+        #else
+        trace('[ASTRoot] ' + rootName);
+        #end
+        #end
+
         #if hxx_ast_progress
         transformInvocationCounter++;
 
@@ -376,6 +385,7 @@ class ElixirASTTransformer {
             // dump the target function after each pass to tmp/ast_flow/passes.
             try {
                 PerPassSnapshot.emitFunctionAfterPass(result, passConfig.name);
+                PerPassModuleSnapshot.emitModuleAfterPass(result, rootName, passConfig.name);
             } catch (e: Dynamic) {
                 #if sys Sys.println('[AST Snapshot] PerPass failed for ' + passConfig.name + ': ' + Std.string(e)); #end
             }
@@ -5759,7 +5769,7 @@ class ElixirASTTransformer {
     /**
      * Helper function to iterate over AST nodes without transformation
      */
-    static function iterateAST(node: ElixirAST, visitor: ElixirAST -> Void): Void {
+    public static function iterateAST(node: ElixirAST, visitor: ElixirAST -> Void): Void {
         // Check for null node or def before processing
         if (node == null || node.def == null) {
             return;
@@ -7524,6 +7534,53 @@ private class PerPassSnapshot {
             });
         }
         visitor(node);
+    }
+
+    static function safePrint(node: ElixirAST): String {
+        try {
+            return reflaxe.elixir.ast.ElixirASTPrinter.print(node, 0);
+        } catch (e: Dynamic) {
+            return '// <printer error> ' + Std.string(e);
+        }
+    }
+}
+#end // debug_ast_snapshots
+
+#if debug_ast_snapshots
+private class PerPassModuleSnapshot {
+    static var passIndex:Int = 0;
+
+    public static function emitModuleAfterPass(ast: ElixirAST, rootName: String, passName: String): Void {
+        var moduleFilter = getDefineString('debug_ast_snapshots_module');
+        if (moduleFilter == null || moduleFilter == '') { passIndex++; return; }
+        if (rootName == null || rootName.indexOf(moduleFilter) == -1) { passIndex++; return; }
+
+        var code = safePrint(ast);
+        var containsFilter = getDefineString('debug_ast_snapshots_contains');
+        if (containsFilter != null && containsFilter != '') {
+            // Allow space in define values via URL-style encoding, e.g.:
+            //   -D debug_ast_snapshots_contains=defmodule%20Main
+            containsFilter = containsFilter.split('%20').join(' ');
+            if (code.indexOf(containsFilter) == -1) { passIndex++; return; }
+        }
+        var dir = 'tmp/ast_flow/passes_module2';
+        #if sys if (!sys.FileSystem.exists(dir)) sys.FileSystem.createDirectory(dir); #end
+        var file = dir + '/' + Std.string(passIndex) + '_' + sanitize(rootName) + '_' + sanitize(passName) + '.ex';
+        #if sys sys.io.File.saveContent(file, code); #end
+        passIndex++;
+    }
+
+    static function sanitize(s:String):String {
+        if (s == null) return 'pass';
+        return s.split(' ').join('_').split('/').join('_');
+    }
+
+    static function getDefineString(name: String): Null<String> {
+        #if macro
+        try return haxe.macro.Context.definedValue(name) catch (_:Dynamic) return null;
+        #else
+        return null;
+        #end
     }
 
     static function safePrint(node: ElixirAST): String {

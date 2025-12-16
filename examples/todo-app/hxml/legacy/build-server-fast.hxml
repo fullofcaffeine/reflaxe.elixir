@@ -28,7 +28,6 @@
 --macro keep('server.presence.TodoPresence')
 --macro keep('server.infrastructure.Repo')
 --macro keep('phoenix.DateFormat')
---macro keep('phoenix.Sorting')
 --macro keep('phoenix.SafePubSub')
 
 # Compiler flags
@@ -57,4 +56,3 @@ server.i18n.Gettext
 server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
 phoenix.SafePubSub
-phoenix.Sorting

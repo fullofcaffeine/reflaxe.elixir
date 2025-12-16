@@ -17,9 +17,9 @@ defmodule Main do
     item + 1
   cols = 0
   _ = 1
-  item + 1
+  cols + 1
   _ = 2
-  item + 1
+  cols + 1
   nil
 end end).())
     nil

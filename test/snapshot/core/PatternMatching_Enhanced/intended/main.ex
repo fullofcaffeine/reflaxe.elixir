@@ -43,17 +43,17 @@ end))
   end
   defp test_guard_patterns() do
     numbers = [1, 5, 10, 15, 20]
-    _ = Enum.each(numbers, (fn -> fn item ->
-    category = n = item
-  if (item < 5) do
+    _ = Enum.each(numbers, (fn -> fn num ->
+    category = n = num
+  if (num < 5) do
     "small"
   else
-    n = item
-    if (item >= 5 and item < 15) do
+    n = num
+    if (num >= 5 and num < 15) do
       "medium"
     else
-      n = item
-      if (item >= 15), do: "large", else: "unknown"
+      n = num
+      if (num >= 15), do: "large", else: "unknown"
     end
   end
   nil
@@ -61,8 +61,8 @@ end end).())
   end
   defp test_array_patterns() do
     arrays = [[], [1], [1, 2], [1, 2, 3], [1, 2, 3, 4, 5]]
-    _ = Enum.each(arrays, (fn -> fn item ->
-    description = (case length(item) do
+    _ = Enum.each(arrays, (fn -> fn arr ->
+    description = (case length(arr) do
     0 -> "empty"
     1 ->
       x = arr[0]
@@ -76,7 +76,7 @@ end end).())
       y = arr[1]
       z = arr[2]
       "triple: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y) <> ", " <> Kernel.to_string(z)
-    _ -> "length=" <> Kernel.to_string(length(arr)) <> ", first=" <> (if (length(item) > 0), do: inspect(arr[0]), else: "none")
+    _ -> "length=" <> Kernel.to_string(length(arr)) <> ", first=" <> (if (length(arr) > 0), do: inspect(arr[0]), else: "none")
   end)
   nil
 end end).())

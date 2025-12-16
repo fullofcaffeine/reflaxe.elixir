@@ -44,6 +44,15 @@ class ListUpdateAndFilterFixTransforms {
         return (n != null && n.length > 0 && n.charAt(0) == '_') ? n.substr(1) : n;
     }
 
+    static function unwrapSingleExpr(e: ElixirAST): ElixirAST {
+        return switch (e.def) {
+            case EParen(inner): unwrapSingleExpr(inner);
+            case EDo(body) if (body != null && body.length == 1): unwrapSingleExpr(body[0]);
+            case EBlock(exprs) if (exprs != null && exprs.length == 1): unwrapSingleExpr(exprs[0]);
+            default: e;
+        }
+    }
+
     static function unwrapFnArg(a: ElixirAST): Null<Array<EFnClause>> {
         return switch (a.def) {
             case EFn(clauses): clauses;
@@ -128,13 +137,39 @@ class ListUpdateAndFilterFixTransforms {
                     if (idParam != null) trace('[ListFix] EDef ' + fname + ' has id param: ' + idParam);
                     #end
                     if (idParam == null) return n;
-                    // Traverse body to fix v.id != v → v.id != idParam
-                    var newBody = ElixirASTTransformer.transformNode(fbody, function(x: ElixirAST): ElixirAST {
-                        return switch (x.def) {
-                            case ERemoteCall({def: EVar(m)}, "filter", args) if (m == "Enum" && args != null && args.length == 2):
-                                var filterFnClauses = unwrapFnArg(args[1]);
-                                switch (filterFnClauses) {
-                                    case _ if (filterFnClauses != null && filterFnClauses.length == 1):
+	                    // Traverse body to fix v.id != v → v.id != idParam
+	                    var newBody = ElixirASTTransformer.transformNode(fbody, function(x: ElixirAST): ElixirAST {
+	                        return switch (x.def) {
+	                            case ERemoteCall({def: EVar(m)}, "find", args) if (m == "Enum" && args != null && args.length == 2):
+	                                var findFnClauses = unwrapFnArg(args[1]);
+	                                switch (findFnClauses) {
+	                                    case _ if (findFnClauses != null && findFnClauses.length == 1):
+	                                        var cl = findFnClauses[0];
+	                                        var binder: Null<String> = switch (cl.args.length == 1 ? cl.args[0] : null) { case PVar(nm): nm; default: null; };
+	                                        if (binder == null) return x;
+	                                        var body = unwrapSingleExpr(cl.body);
+	                                        var fixedBody = switch (body.def) {
+	                                            case EBinary(Equal | StrictEqual, l, r):
+	                                                inline function isBinderVar(e: ElixirAST): Bool return isVarNamed(e, binder);
+	                                                inline function isIdFieldOfBinder(e: ElixirAST): Bool return switch (unwrapSingleExpr(e).def) { case EField(target, fld) if (fld == "id"): isVarNamed(target, binder); default: false; };
+	                                                var eqOp = switch (body.def) { case EBinary(StrictEqual, _, _): StrictEqual; default: Equal; };
+	                                                if (isIdFieldOfBinder(l) && isBinderVar(r)) makeAST(EBinary(eqOp, l, makeAST(EVar(idParam))))
+	                                                else if (isBinderVar(l) && isIdFieldOfBinder(r)) makeAST(EBinary(eqOp, makeAST(EVar(idParam)), r))
+	                                                else cl.body;
+	                                            default:
+	                                                cl.body;
+	                                        };
+	                                        if (fixedBody != cl.body) {
+	                                            var rebuiltFn = makeAST(EFn([{ args: cl.args, guard: cl.guard, body: fixedBody }]));
+	                                            makeAST(ERemoteCall(makeAST(EVar("Enum")), "find", [args[0], rebuiltFn]));
+	                                        } else x;
+	                                    default:
+	                                        x;
+	                                }
+	                            case ERemoteCall({def: EVar(m)}, "filter", args) if (m == "Enum" && args != null && args.length == 2):
+	                                var filterFnClauses = unwrapFnArg(args[1]);
+	                                switch (filterFnClauses) {
+	                                    case _ if (filterFnClauses != null && filterFnClauses.length == 1):
                                         var cl = filterFnClauses[0];
                                         #if debug_list_fix
                                         try {
@@ -170,17 +205,29 @@ class ListUpdateAndFilterFixTransforms {
                                     default: x;
                                 }
                             // Fallback: fix anonymous fn bodies matching self-compare shape anywhere inside this function
-                            case EFn(clauses) if (clauses.length == 1):
-                                var cl2 = clauses[0];
-                                var binder: Null<String> = switch (cl2.args.length == 1 ? cl2.args[0] : null) { case PVar(nm): nm; default: null; };
-                                if (binder == null) return x;
-                                switch (cl2.body.def) {
-                                    case EBinary(NotEqual | StrictNotEqual, l2, r2):
-                                        inline function isBinder(e: ElixirAST): Bool return switch (e.def) { case EVar(nm) if (nm == binder): true; default: false; };
-                                        inline function isIdFieldOfBinder(e: ElixirAST): Bool return switch (e.def) { case EField({def: EVar(nm)}, fld) if (fld == "id" && nm == binder): true; default: false; };
-                                        if (isIdFieldOfBinder(l2) && isBinder(r2)) {
-                                            var nb = makeAST(EBinary(NotEqual, l2, makeAST(EVar(idParam))));
-                                            makeASTWithMeta(EFn([{ args: cl2.args, guard: cl2.guard, body: nb }]), x.metadata, x.pos);
+	                            case EFn(clauses) if (clauses.length == 1):
+	                                var cl2 = clauses[0];
+	                                var binder: Null<String> = switch (cl2.args.length == 1 ? cl2.args[0] : null) { case PVar(nm): nm; default: null; };
+	                                if (binder == null) return x;
+	                                var unwrappedBody = unwrapSingleExpr(cl2.body);
+	                                switch (unwrappedBody.def) {
+	                                    case EBinary(NotEqual | StrictNotEqual, l2, r2):
+	                                        inline function isBinder(e: ElixirAST): Bool return switch (e.def) { case EVar(nm) if (nm == binder): true; default: false; };
+	                                        inline function isIdFieldOfBinder(e: ElixirAST): Bool return switch (unwrapSingleExpr(e).def) { case EField(target, fld) if (fld == "id"): isVarNamed(target, binder); default: false; };
+	                                        if (isIdFieldOfBinder(l2) && isBinder(r2)) {
+	                                            var nb = makeAST(EBinary(NotEqual, l2, makeAST(EVar(idParam))));
+	                                            makeASTWithMeta(EFn([{ args: cl2.args, guard: cl2.guard, body: nb }]), x.metadata, x.pos);
+	                                        } else x;
+	                                    case EBinary(Equal | StrictEqual, lEq, rEq):
+	                                        inline function isBinderVar(e: ElixirAST): Bool return switch (unwrapSingleExpr(e).def) { case EVar(nm) if (nm == binder): true; default: false; };
+	                                        inline function isIdFieldOfBinderEq(e: ElixirAST): Bool return switch (unwrapSingleExpr(e).def) { case EField(target, fld) if (fld == "id"): isVarNamed(target, binder); default: false; };
+	                                        var eqOp = switch (unwrappedBody.def) { case EBinary(StrictEqual, _, _): StrictEqual; default: Equal; };
+	                                        if (isIdFieldOfBinderEq(lEq) && isBinderVar(rEq)) {
+	                                            var nbEq = makeAST(EBinary(eqOp, lEq, makeAST(EVar(idParam))));
+	                                            makeASTWithMeta(EFn([{ args: cl2.args, guard: cl2.guard, body: nbEq }]), x.metadata, x.pos);
+	                                        } else if (isBinderVar(lEq) && isIdFieldOfBinderEq(rEq)) {
+                                            var nbEq2 = makeAST(EBinary(eqOp, makeAST(EVar(idParam)), rEq));
+                                            makeASTWithMeta(EFn([{ args: cl2.args, guard: cl2.guard, body: nbEq2 }]), x.metadata, x.pos);
                                         } else x;
                                     default: x;
                                 }
@@ -196,12 +243,38 @@ class ListUpdateAndFilterFixTransforms {
                     if (idParamP != null) trace('[ListFix] EDefp ' + fnamep + ' has id param: ' + idParamP);
                     #end
                     if (idParamP == null) return n;
-                    var newBodyP = ElixirASTTransformer.transformNode(fbodyp, function(x: ElixirAST): ElixirAST {
-                        return switch (x.def) {
-                            case ERemoteCall({def: EVar(m)}, "filter", args) if (m == "Enum" && args != null && args.length == 2):
-                                var filterFnClauses = unwrapFnArg(args[1]);
-                                switch (filterFnClauses) {
-                                    case _ if (filterFnClauses != null && filterFnClauses.length == 1):
+	                    var newBodyP = ElixirASTTransformer.transformNode(fbodyp, function(x: ElixirAST): ElixirAST {
+	                        return switch (x.def) {
+	                            case ERemoteCall({def: EVar(m)}, "find", args) if (m == "Enum" && args != null && args.length == 2):
+	                                var findFnClauses = unwrapFnArg(args[1]);
+	                                switch (findFnClauses) {
+	                                    case _ if (findFnClauses != null && findFnClauses.length == 1):
+	                                        var cl = findFnClauses[0];
+	                                        var binder: Null<String> = switch (cl.args.length == 1 ? cl.args[0] : null) { case PVar(nm): nm; default: null; };
+	                                        if (binder == null) return x;
+	                                        var body = unwrapSingleExpr(cl.body);
+	                                        var fixedBody = switch (body.def) {
+	                                            case EBinary(Equal | StrictEqual, l, r):
+	                                                inline function isBinderVar(e: ElixirAST): Bool return isVarNamed(e, binder);
+	                                                inline function isIdFieldOfBinder(e: ElixirAST): Bool return switch (unwrapSingleExpr(e).def) { case EField(target, fld) if (fld == "id"): isVarNamed(target, binder); default: false; };
+	                                                var eqOp = switch (body.def) { case EBinary(StrictEqual, _, _): StrictEqual; default: Equal; };
+	                                                if (isIdFieldOfBinder(l) && isBinderVar(r)) makeAST(EBinary(eqOp, l, makeAST(EVar(idParamP))))
+	                                                else if (isBinderVar(l) && isIdFieldOfBinder(r)) makeAST(EBinary(eqOp, makeAST(EVar(idParamP)), r))
+	                                                else cl.body;
+	                                            default:
+	                                                cl.body;
+	                                        };
+	                                        if (fixedBody != cl.body) {
+	                                            var rebuiltFn = makeAST(EFn([{ args: cl.args, guard: cl.guard, body: fixedBody }]));
+	                                            makeAST(ERemoteCall(makeAST(EVar("Enum")), "find", [args[0], rebuiltFn]));
+	                                        } else x;
+	                                    default:
+	                                        x;
+	                                }
+	                            case ERemoteCall({def: EVar(m)}, "filter", args) if (m == "Enum" && args != null && args.length == 2):
+	                                var filterFnClauses = unwrapFnArg(args[1]);
+	                                switch (filterFnClauses) {
+	                                    case _ if (filterFnClauses != null && filterFnClauses.length == 1):
                                         var cl = filterFnClauses[0];
                                         #if debug_list_fix
                                         try {
@@ -236,17 +309,29 @@ class ListUpdateAndFilterFixTransforms {
                                     default: x;
                                 }
                             // Fallback: fix anonymous fn bodies matching self-compare shape anywhere inside this function
-                            case EFn(clauses) if (clauses.length == 1):
-                                var clb = clauses[0];
-                                var binder2: Null<String> = switch (clb.args.length == 1 ? clb.args[0] : null) { case PVar(nmb): nmb; default: null; };
-                                if (binder2 == null) return x;
-                                switch (clb.body.def) {
-                                    case EBinary(NotEqual | StrictNotEqual, lB, rB):
-                                        inline function isBinder(e: ElixirAST): Bool return switch (e.def) { case EVar(nm2) if (nm2 == binder2): true; default: false; };
-                                        inline function isIdFieldOfBinder(e: ElixirAST): Bool return switch (e.def) { case EField({def: EVar(nm3)}, fld) if (fld == "id" && nm3 == binder2): true; default: false; };
-                                        if (isIdFieldOfBinder(lB) && isBinder(rB)) {
-                                            var nbp = makeAST(EBinary(NotEqual, lB, makeAST(EVar(idParamP))));
-                                            makeASTWithMeta(EFn([{ args: clb.args, guard: clb.guard, body: nbp }]), x.metadata, x.pos);
+	                            case EFn(clauses) if (clauses.length == 1):
+	                                var clb = clauses[0];
+	                                var binder2: Null<String> = switch (clb.args.length == 1 ? clb.args[0] : null) { case PVar(nmb): nmb; default: null; };
+	                                if (binder2 == null) return x;
+	                                var unwrappedBodyP = unwrapSingleExpr(clb.body);
+	                                switch (unwrappedBodyP.def) {
+	                                    case EBinary(NotEqual | StrictNotEqual, lB, rB):
+	                                        inline function isBinder(e: ElixirAST): Bool return switch (e.def) { case EVar(nm2) if (nm2 == binder2): true; default: false; };
+	                                        inline function isIdFieldOfBinder(e: ElixirAST): Bool return switch (unwrapSingleExpr(e).def) { case EField(target, fld) if (fld == "id"): isVarNamed(target, binder2); default: false; };
+	                                        if (isIdFieldOfBinder(lB) && isBinder(rB)) {
+	                                            var nbp = makeAST(EBinary(NotEqual, lB, makeAST(EVar(idParamP))));
+	                                            makeASTWithMeta(EFn([{ args: clb.args, guard: clb.guard, body: nbp }]), x.metadata, x.pos);
+	                                        } else x;
+	                                    case EBinary(Equal | StrictEqual, lEqP, rEqP):
+	                                        inline function isBinderVarP(e: ElixirAST): Bool return switch (unwrapSingleExpr(e).def) { case EVar(nm) if (nm == binder2): true; default: false; };
+	                                        inline function isIdFieldOfBinderP(e: ElixirAST): Bool return switch (unwrapSingleExpr(e).def) { case EField(target, fld) if (fld == "id"): isVarNamed(target, binder2); default: false; };
+	                                        var eqOpP = switch (unwrappedBodyP.def) { case EBinary(StrictEqual, _, _): StrictEqual; default: Equal; };
+	                                        if (isIdFieldOfBinderP(lEqP) && isBinderVarP(rEqP)) {
+	                                            var nbEqP = makeAST(EBinary(eqOpP, lEqP, makeAST(EVar(idParamP))));
+	                                            makeASTWithMeta(EFn([{ args: clb.args, guard: clb.guard, body: nbEqP }]), x.metadata, x.pos);
+	                                        } else if (isBinderVarP(lEqP) && isIdFieldOfBinderP(rEqP)) {
+                                            var nbEqP2 = makeAST(EBinary(eqOpP, makeAST(EVar(idParamP)), rEqP));
+                                            makeASTWithMeta(EFn([{ args: clb.args, guard: clb.guard, body: nbEqP2 }]), x.metadata, x.pos);
                                         } else x;
                                     default: x;
                                 }

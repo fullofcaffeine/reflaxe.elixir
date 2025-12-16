@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.ElixirASTPrinter;
 
 /**
  * ListMapFilterFixTransforms
@@ -35,6 +36,11 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   function whose parameters include `id` or `_id`. Rewrite the self-compare
  *   side to use that outer id parameter so it becomes `v.id != id`.
  *
+ * - findByIdFixPass (implemented as part of filterRemoveFixPass traversal):
+ *   Detect Enum.find(list, fn v -> v.id == v end) (or strict ==) within a surrounding
+ *   function whose parameters include `id` or `_id`. Rewrite the self-compare
+ *   side to use that outer id parameter so it becomes `v.id == id`.
+ *
  * EXAMPLES
  * Haxe:
  *   todos.map(t -> t.id == todo.id ? todo : t);
@@ -59,6 +65,12 @@ class ListMapFilterFixTransforms {
                     var fnNode = unwrapToFnNode(anon);
                     var fixedAnon = fnNode != null ? fixMapAnon(fnNode) : null;
                     if (fixedAnon == null) node else makeASTWithMeta(ERemoteCall(module, func, [listExpr, fixedAnon]), node.metadata, node.pos);
+                case ECall(target, func, args) if (isEnumTargetCall(target, func, "map", args, 2)):
+                    var listExpr2 = args[0];
+                    var anon2 = args[1];
+                    var fnNode2 = unwrapToFnNode(anon2);
+                    var fixedAnon2 = fnNode2 != null ? fixMapAnon(fnNode2) : null;
+                    if (fixedAnon2 == null) node else makeASTWithMeta(ECall(target, func, [listExpr2, fixedAnon2]), node.metadata, node.pos);
                 default:
                     node;
             }
@@ -85,6 +97,24 @@ class ListMapFilterFixTransforms {
                     var fnNode = unwrapToFnNode(anon);
                     var fixedAnon = fnNode != null ? fixFilterAnon(fnNode, fnParams) : null;
                     if (fixedAnon == null) n else makeASTWithMeta(ERemoteCall(module, func, [listExpr, fixedAnon]), n.metadata, n.pos);
+                case ERemoteCall(module, func, callArgs) if (isEnumCall(module, func, "find", callArgs, 2)):
+                    var listExpr2 = callArgs[0];
+                    var anon2 = callArgs[1];
+                    var fnNode2 = unwrapToFnNode(anon2);
+                    var fixedAnon2 = fnNode2 != null ? fixFindAnon(fnNode2, fnParams) : null;
+                    if (fixedAnon2 == null) n else makeASTWithMeta(ERemoteCall(module, func, [listExpr2, fixedAnon2]), n.metadata, n.pos);
+                case ECall(target, func, callArgs) if (isEnumTargetCall(target, func, "filter", callArgs, 2)):
+                    var listExpr3 = callArgs[0];
+                    var anon3 = callArgs[1];
+                    var fnNode3 = unwrapToFnNode(anon3);
+                    var fixedAnon3 = fnNode3 != null ? fixFilterAnon(fnNode3, fnParams) : null;
+                    if (fixedAnon3 == null) n else makeASTWithMeta(ECall(target, func, [listExpr3, fixedAnon3]), n.metadata, n.pos);
+                case ECall(target, func, callArgs) if (isEnumTargetCall(target, func, "find", callArgs, 2)):
+                    var listExpr4 = callArgs[0];
+                    var anon4 = callArgs[1];
+                    var fnNode4 = unwrapToFnNode(anon4);
+                    var fixedAnon4 = fnNode4 != null ? fixFindAnon(fnNode4, fnParams) : null;
+                    if (fixedAnon4 == null) n else makeASTWithMeta(ECall(target, func, [listExpr4, fixedAnon4]), n.metadata, n.pos);
                 default:
                     // Manual shallow transform to propagate params into children
                     return transformChildren(n, fnParams);
@@ -120,6 +150,14 @@ class ListMapFilterFixTransforms {
 
     static inline function isEnumCall(module: ElixirAST, func: String, expected: String, args: Array<ElixirAST>, arity: Int): Bool {
         return func == expected && args != null && args.length == arity && switch(module.def) {
+            case EVar(m): m == "Enum";
+            default: false;
+        };
+    }
+
+    static inline function isEnumTargetCall(target: Null<ElixirAST>, func: String, expected: String, args: Array<ElixirAST>, arity: Int): Bool {
+        if (target == null) return false;
+        return func == expected && args != null && args.length == arity && switch (target.def) {
             case EVar(m): m == "Enum";
             default: false;
         };
@@ -172,7 +210,8 @@ class ListMapFilterFixTransforms {
                 if (param == null) return null;
                 var outerId = resolveOuterIdParam(enclosingParams);
                 if (outerId == null) return null;
-                switch (cl.body.def) {
+                var bodyExpr = unwrapSingleExpr(cl.body);
+                switch (bodyExpr.def) {
                     case EBinary(NotEqual | StrictNotEqual, left, right):
                         // Match v.id != v  OR  v != v.id
                         if (isFieldIdOfVar(left, param) && varNameEquals(right, param)) {
@@ -185,6 +224,56 @@ class ListMapFilterFixTransforms {
                             #if debug_list_fix
                             #end
                             return makeAST(EFn([ { args: cl.args, guard: cl.guard, body: makeAST(EBinary(NotEqual, newLeft, right)) } ]));
+                        } else {
+                            return null;
+                        }
+                    default:
+                        return null;
+                }
+            default:
+                null;
+        }
+    }
+
+    static function fixFindAnon(anon: ElixirAST, enclosingParams: Array<String>): Null<ElixirAST> {
+        return switch (anon.def) {
+            case EFn(clauses) if (clauses.length == 1):
+                var cl = clauses[0];
+                var param = extractSingleParamName(cl.args);
+                if (param == null) return null;
+                var outerId = resolveOuterIdParam(enclosingParams);
+                if (outerId == null) return null;
+                var bodyExpr = unwrapSingleExpr(cl.body);
+                #if debug_list_fix
+                Sys.println('[ListMapFilterFix.find] param=' + param + ' outerId=' + outerId + ' body=' + ElixirASTPrinter.print(bodyExpr, 0));
+                #end
+                switch (bodyExpr.def) {
+                    case EBinary(Equal, left, right):
+                        // Match v.id == v  OR  v == v.id
+                        if (isFieldIdOfVar(left, param) && varNameEquals(right, param)) {
+                            #if debug_list_fix
+                            Sys.println('[ListMapFilterFix.find] fixing (v.id == v) → (v.id == ' + outerId + ')');
+                            #end
+                            return makeAST(EFn([ { args: cl.args, guard: cl.guard, body: makeAST(EBinary(Equal, left, makeAST(EVar(outerId)))) } ]));
+                        } else if (varNameEquals(left, param) && isFieldIdOfVar(right, param)) {
+                            #if debug_list_fix
+                            Sys.println('[ListMapFilterFix.find] fixing (v == v.id) → (' + outerId + ' == v.id)');
+                            #end
+                            return makeAST(EFn([ { args: cl.args, guard: cl.guard, body: makeAST(EBinary(Equal, makeAST(EVar(outerId)), right)) } ]));
+                        } else {
+                            return null;
+                        }
+                    case EBinary(StrictEqual, left2, right2):
+                        if (isFieldIdOfVar(left2, param) && varNameEquals(right2, param)) {
+                            #if debug_list_fix
+                            Sys.println('[ListMapFilterFix.find] fixing (v.id === v) → (v.id === ' + outerId + ')');
+                            #end
+                            return makeAST(EFn([ { args: cl.args, guard: cl.guard, body: makeAST(EBinary(StrictEqual, left2, makeAST(EVar(outerId)))) } ]));
+                        } else if (varNameEquals(left2, param) && isFieldIdOfVar(right2, param)) {
+                            #if debug_list_fix
+                            Sys.println('[ListMapFilterFix.find] fixing (v === v.id) → (' + outerId + ' === v.id)');
+                            #end
+                            return makeAST(EFn([ { args: cl.args, guard: cl.guard, body: makeAST(EBinary(StrictEqual, makeAST(EVar(outerId)), right2)) } ]));
                         } else {
                             return null;
                         }
@@ -242,6 +331,15 @@ class ListMapFilterFixTransforms {
             case EDo(body) if (body != null && body.length == 1): unwrapToFnNode(body[0]);
             default: null;
         }
+    }
+
+    static function unwrapSingleExpr(n: ElixirAST): ElixirAST {
+        return switch (n.def) {
+            case EParen(inner): unwrapSingleExpr(inner);
+            case EDo(body) if (body != null && body.length == 1): unwrapSingleExpr(body[0]);
+            case EBlock(exprs) if (exprs != null && exprs.length == 1): unwrapSingleExpr(exprs[0]);
+            default: n;
+        };
     }
 
     static function otherVarFromIdField(ast: ElixirAST, param: String): Null<String> {

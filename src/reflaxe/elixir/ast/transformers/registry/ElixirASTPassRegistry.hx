@@ -1598,7 +1598,7 @@ class ElixirASTPassRegistry {
         });
         passes.push({
             name: "ListFilterRemoveFix",
-            description: "Fix Enum.filter self-compare v.id != v by replacing with enclosing id/_id parameter",
+            description: "Fix list self-compare bugs: Enum.filter v.id != v and Enum.find v.id == v (replace with enclosing id/_id param)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ListMapFilterFixTransforms.filterRemoveFixPass
         });
@@ -2773,7 +2773,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HeexRenderStringToSigil",
             description: "Ensure render(assigns) returns ~H by converting final HTML strings to ~H",
-            enabled: #if hxx_string_to_sigil true #else false #end,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexRenderStringToSigilTransforms.transformPass
         });
 
@@ -3198,6 +3198,14 @@ class ElixirASTPassRegistry {
             description: "Rewrite Enum.each scans ending with nil into Enum.find(list, &pred/1)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.findRewritePass
+        });
+        // Post-rewrite cleanup: once loops have become Enum.find/2, repair any remaining
+        // `v.id == v` self-compare drift by using the enclosing `id`/`_id` parameter.
+        passes.push({
+            name: "ListFindByIdFix_PostFindRewrite",
+            description: "Fix Enum.find self-compare v.id == v using enclosing id/_id param (after FindRewrite)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ListMapFilterFixTransforms.filterRemoveFixPass
         });
         // Avoid duplicate side-effect calls: reuse prior assignment as case scrutinee
         passes.push({
@@ -4695,7 +4703,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "HandleEventParamExtractFromBodyUse_Final",
             description: "Prepend var = Map.get(params, snake(var)) for undefined body locals in handle_event/3",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventParamExtractFromBodyUseTransforms.transformPass
         });
         // Final handle_info normalizations
@@ -4727,7 +4735,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "UndefinedLocalExtractFromParams_Final",
             description: "For any def with params/_params arg, bind undefined locals from params generically",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.UndefinedLocalExtractFromParamsTransforms.transformPass
         });
         passes.push({

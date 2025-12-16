@@ -33,18 +33,18 @@ defmodule Main do
     linked_result = Task.task.start_link(fn -> nil end)
     tasks = [Task.task.async(fn ->  end), Task.task.async(fn -> 2 end), Task.task.async(fn -> 3 end)]
     results = Task.task.yield_many(tasks)
-    _ = Enum.each(results, (fn -> fn item ->
-    if (item.result != nil), do: nil
+    _ = Enum.each(results, (fn -> fn task_result ->
+    if (task_result.result != nil), do: nil
 end end).())
     quick_result = task = Task.task.async(fn -> "quick" end)
     _ = Task.task.await(task)
     concurrent_results = funs = [fn -> "a" end, fn -> "b" end, fn -> "c" end]
-    tasks = _ = Enum.each(funs, (fn -> fn item ->
-    [].push(Task.task.async(item))
+    tasks = _ = Enum.each(funs, (fn -> fn fun ->
+    [].push(Task.task.async(fun))
 end end).())
     []
-    _ = Enum.each(tasks, (fn -> fn item ->
-    [].push(Task.task.await(item))
+    _ = Enum.each(tasks, (fn -> fn task ->
+    [].push(Task.task.await(task))
 end end).())
     []
     timed_result = task = Task.task.async((fn -> fn ->

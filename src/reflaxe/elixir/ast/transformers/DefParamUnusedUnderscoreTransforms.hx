@@ -125,7 +125,7 @@ class DefParamUnusedUnderscoreTransforms {
         return switch (p) {
             case PVar(name):
                 // Never underscore Phoenix-idiomatic parameter names that are commonly used indirectly
-                var preserve = (name == "assigns" || name == "opts" || name == "args" || name == "conn");
+                var preserve = (name == "assigns" || name == "opts" || name == "args" || name == "conn" || name == "params");
                 if (preserve || name == null || name.length == 0 || name.charAt(0) == '_') {
                     p;
                 } else {
@@ -157,7 +157,7 @@ class DefParamUnusedUnderscoreTransforms {
         return switch (p) {
                 case PVar(name):
                 // Never underscore Phoenix-idiomatic parameter names that are commonly used indirectly
-                var preserve = (name == "assigns" || name == "opts" || name == "args" || name == "conn");
+                var preserve = (name == "assigns" || name == "opts" || name == "args" || name == "conn" || name == "params");
                 if (!preserve && name != null && name.length > 0 && name.charAt(0) != '_' && !used.exists(name)) PVar("_" + name) else p;
             case PTuple(es): PTuple([for (e in es) underscorePattern(e, used)]);
             case PList(es): PList([for (e in es) underscorePattern(e, used)]);

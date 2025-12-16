@@ -35,9 +35,23 @@ defmodule Main do
   end
   defp test_loop_counters() do
     i = 0
-    _ = Enum.each(i, fn item -> item + 1 end)
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, (fn -> fn _, {i} ->
+  if (i < 5) do
+    i + 1
+    {:cont, {i}}
+  else
+    {:halt, {i}}
+  end
+end end).())
     j = 5
-    _ = Enum.each(j, fn item -> (item - 1) end)
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, (fn -> fn _, {j} ->
+  if (j > 0) do
+    (j - 1)
+    {:cont, {j}}
+  else
+    {:halt, {j}}
+  end
+end end).())
     sum = 0
     k = 1
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, k}, (fn -> fn _, {sum, k} ->

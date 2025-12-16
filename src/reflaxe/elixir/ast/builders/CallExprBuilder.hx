@@ -70,6 +70,11 @@ class CallExprBuilder {
                     var left = buildExpression(target);
                     var right = buildExpression(args[0]);
                     return EBinary(EBinaryOp.Concat, left, right);
+                case TField(target2, FInstance(_, _, cf2)) if (cf2.get().name == "contains" && args != null && args.length == 1):
+                    // Array.contains(x) → Enum.member?(list, x)
+                    var listExpr = buildExpression(target2);
+                    var needleExpr = buildExpression(args[0]);
+                    return ERemoteCall(makeAST(EVar("Enum")), "member?", [listExpr, needleExpr]);
                 default:
             }
         }

@@ -96,6 +96,9 @@ class HeexControlTagTransforms {
         var t0 = haxe.Timer.stamp();
         #end
         var lowered = reflaxe.elixir.ast.TemplateHelpers.rewriteForBlocks(content);
+        // Inside ~H, Elixir string interpolation (`#{...}` / `${...}`) is literal text.
+        // Normalize all HXX-style interpolations to HEEx `<%= ... %>` so templates render correctly.
+        lowered = reflaxe.elixir.ast.TemplateHelpers.rewriteInterpolations(lowered);
         if (lowered.indexOf("<if") == -1) return lowered;
         var out = rewriteControlTags(lowered);
         #if hxx_instrument
@@ -109,6 +112,7 @@ class HeexControlTagTransforms {
             return switch (n.def) {
                 case ESigil(type, content, modifiers) if (type == "H"):
                     var lowered = reflaxe.elixir.ast.TemplateHelpers.rewriteForBlocks(content);
+                    lowered = reflaxe.elixir.ast.TemplateHelpers.rewriteInterpolations(lowered);
                     var updated = rewriteControlTags(lowered);
                     if (updated != content) makeASTWithMeta(ESigil(type, updated, modifiers), n.metadata, n.pos) else n;
                 case ERaw(code):
@@ -127,7 +131,7 @@ class HeexControlTagTransforms {
                                     var before = code.substr(0, contentStart);
                                     var body = code.substr(contentStart, contentEnd - contentStart);
                                     var after = code.substr(contentEnd);
-                                    var updatedBody = rewriteControlTags(body);
+                                    var updatedBody = rewriteControlTags(reflaxe.elixir.ast.TemplateHelpers.rewriteInterpolations(body));
                                     if (updatedBody != body) return makeASTWithMeta(ERaw(before + updatedBody + after), n.metadata, n.pos);
                                 }
                             }
