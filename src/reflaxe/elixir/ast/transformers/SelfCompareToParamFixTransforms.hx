@@ -46,11 +46,12 @@ class SelfCompareToParamFixTransforms {
                     var cl = clauses[0];
                     var binder: Null<String> = switch (cl.args.length == 1 ? cl.args[0] : null) { case PVar(nm): nm; default: null; };
                     if (binder == null) x else {
-                        switch (cl.body.def) {
+                        var bodyExpr = unwrapSingleExpr(cl.body);
+                        switch (bodyExpr.def) {
                             // t.id != t  → t.id != id
                             case EBinary(NotEqual | StrictNotEqual, l, r):
-                                inline function isBinderVar(e: ElixirAST): Bool return switch (e.def) { case EVar(n) if (n == binder): true; default: false; };
-                                inline function isBinderIdField(e: ElixirAST): Bool return switch (e.def) { case EField({def: EVar(n2)}, fld) if (n2 == binder && fld == "id"): true; default: false; };
+                                inline function isBinderVar(e: ElixirAST): Bool return switch (unwrapSingleExpr(e).def) { case EVar(n) if (n == binder): true; default: false; };
+                                inline function isBinderIdField(e: ElixirAST): Bool return switch (unwrapSingleExpr(e).def) { case EField({def: EVar(n2)}, fld) if (n2 == binder && fld == "id"): true; default: false; };
                                 if (isBinderIdField(l) && isBinderVar(r)) {
                                     var nb = makeAST(EBinary(NotEqual, l, makeAST(EVar(idParam))));
                                     makeASTWithMeta(EFn([{ args: cl.args, guard: cl.guard, body: nb }]), x.metadata, x.pos);
@@ -58,6 +59,25 @@ class SelfCompareToParamFixTransforms {
                                     // conservative: t != t  → t != id
                                     var nb2 = makeAST(EBinary(NotEqual, l, makeAST(EVar(idParam))));
                                     makeASTWithMeta(EFn([{ args: cl.args, guard: cl.guard, body: nb2 }]), x.metadata, x.pos);
+                                } else x;
+                            // t.id == t  → t.id == id   (covers Enum.find-by-id drift)
+                            case EBinary(Equal | StrictEqual, l2, r2):
+                                inline function isBinderVar2(e: ElixirAST): Bool return switch (unwrapSingleExpr(e).def) { case EVar(n) if (n == binder): true; default: false; };
+                                inline function isBinderIdField2(e: ElixirAST): Bool return switch (unwrapSingleExpr(e).def) { case EField({def: EVar(n2)}, fld) if (n2 == binder && fld == "id"): true; default: false; };
+                                var eqOp = switch (bodyExpr.def) { case EBinary(StrictEqual, _, _): StrictEqual; default: Equal; };
+                                // v.id == v  → v.id == id
+                                if (isBinderIdField2(l2) && isBinderVar2(r2)) {
+                                    #if debug_self_compare_fix
+                                    Sys.println('[SelfCompareFix] rewriting ' + binder + '.id == ' + binder + ' to compare with ' + idParam);
+                                    #end
+                                    var nbEq = makeAST(EBinary(eqOp, l2, makeAST(EVar(idParam))));
+                                    makeASTWithMeta(EFn([{ args: cl.args, guard: cl.guard, body: nbEq }]), x.metadata, x.pos);
+                                } else if (isBinderVar2(l2) && isBinderIdField2(r2)) {
+                                    #if debug_self_compare_fix
+                                    Sys.println('[SelfCompareFix] rewriting ' + binder + ' == ' + binder + '.id to compare with ' + idParam);
+                                    #end
+                                    var nbEq2 = makeAST(EBinary(eqOp, makeAST(EVar(idParam)), r2));
+                                    makeASTWithMeta(EFn([{ args: cl.args, guard: cl.guard, body: nbEq2 }]), x.metadata, x.pos);
                                 } else x;
                             default:
                                 x;
@@ -68,7 +88,16 @@ class SelfCompareToParamFixTransforms {
             }
         });
     }
+
+    static function unwrapSingleExpr(n: ElixirAST): ElixirAST {
+        if (n == null || n.def == null) return n;
+        return switch (n.def) {
+            case EParen(inner): unwrapSingleExpr(inner);
+            case EDo(body) if (body != null && body.length == 1): unwrapSingleExpr(body[0]);
+            case EBlock(exprs) if (exprs != null && exprs.length == 1): unwrapSingleExpr(exprs[0]);
+            default: n;
+        };
+    }
 }
 
 #end
-

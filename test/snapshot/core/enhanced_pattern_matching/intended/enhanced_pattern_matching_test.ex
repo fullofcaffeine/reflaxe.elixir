@@ -27,19 +27,16 @@ defmodule EnhancedPatternMatchingTest do
   def match_with_complex_guards(status, priority, is_urgent) do
     (case status do
       {:idle} -> "idle"
-      {:working, _payload} ->
+      {:working, task} ->
         if (priority > 5 and is_urgent) do
           "High priority urgent task: #{(fn -> task end).()}"
         else
-          task = priority
           if (priority > 3 and not is_urgent) do
             "High priority normal task: #{(fn -> task end).()}"
           else
-            task = priority
             if (priority <= 3 and is_urgent) do
               "Low priority urgent task: #{(fn -> task end).()}"
             else
-              task = priority
               "Normal task: #{(fn -> task end).()}"
             end
           end
@@ -80,16 +77,16 @@ defmodule EnhancedPatternMatchingTest do
   def chain_result_operations(input) do
     step1 = validate_input(input)
     (case ((case step1 do
-  {:success, validated} ->
-    process_data(validated)
+  {:success, g} ->
+    process_data(g)
   {:error, error, context} ->
     if (Kernel.is_nil(context)) do
       context = ""
     end
     result = {:error, error, context}
 end)) do
-      {:success, processed} ->
-        format_output(processed)
+      {:success, g} ->
+        format_output(g)
       {:error, error, context} ->
         if (Kernel.is_nil(context)) do
           context = ""

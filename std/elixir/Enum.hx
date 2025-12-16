@@ -58,19 +58,21 @@ extern class Enum {
      */
     static function filter<T>(enumerable: Array<T>, fun: T -> Bool): Array<T>;
     
-    /**
-     * Returns true if all elements in enumerable are truthy.
-     * If fun is given, it evaluates fun for each element.
-     */
-    @:overload(function<T>(enumerable: Array<T>): Bool {})
-    static function all<T>(enumerable: Array<T>, fun: T -> Bool): Bool;
-    
-    /**
-     * Returns true if at least one element in enumerable is truthy.
-     * If fun is given, it evaluates fun for each element.
-     */
-    @:overload(function<T>(enumerable: Array<T>): Bool {})
-    static function any<T>(enumerable: Array<T>, fun: T -> Bool): Bool;
+	    /**
+	     * Returns true if all elements in enumerable are truthy.
+	     * If fun is given, it evaluates fun for each element.
+	     */
+	    @:native("all?")
+	    @:overload(function<T>(enumerable: Array<T>): Bool {})
+	    static function all<T>(enumerable: Array<T>, fun: T -> Bool): Bool;
+	    
+	    /**
+	     * Returns true if at least one element in enumerable is truthy.
+	     * If fun is given, it evaluates fun for each element.
+	     */
+	    @:native("any?")
+	    @:overload(function<T>(enumerable: Array<T>): Bool {})
+	    static function any<T>(enumerable: Array<T>, fun: T -> Bool): Bool;
     
     /**
      * Finds the element at the given index (zero-based).
@@ -88,6 +90,15 @@ extern class Enum {
      * Sorts the enumerable according to Erlang's term ordering.
      */
     static function sort<T>(enumerable: Array<T>): Array<T>;
+
+    /**
+     * Sorts the enumerable by the given mapper.
+     *
+     * Maps to `Enum.sort_by/2` and `Enum.sort_by/3`.
+     */
+    @:native("sort_by")
+    @:overload(function<T, K>(enumerable: Array<T>, mapper: T -> K): Array<T> {})
+    static function sortBy<T, K>(enumerable: Array<T>, mapper: T -> K, sorter: Dynamic): Array<T>;
     
     /**
      * Returns the size of the enumerable.
@@ -117,6 +128,14 @@ extern class Enum {
      */
     @:native("flat_map")
     static function flatMap<T,R>(enumerable: Array<T>, fun: T -> Array<R>): Array<R>;
+
+    /**
+     * Concatenates two enumerables.
+     *
+     * Maps to `Enum.concat/2`.
+     */
+    @:native("concat")
+    static function concatTwo<T>(left: Array<T>, right: Array<T>): Array<T>;
     
     /**
      * Splits the enumerable into groups based on key_fun.

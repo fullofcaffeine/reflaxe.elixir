@@ -313,6 +313,7 @@ extern class LiveView {
      * 
      * @param TAssigns The type of socket assigns structure
      */
+    @:native("connected?")
     static function connected<TAssigns>(socket: Socket<TAssigns>): Bool;
     
     /**
@@ -478,15 +479,14 @@ extern class Router {
  * @see LiveSocket For the type-safe wrapper with convenient methods
  * @see https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.Socket.html
  */
-@:native("Phoenix.LiveView.Socket")
-extern class Socket<T> {
-    var assigns: T; // Type-safe assigns with application-specific structure
-    var changed: Map<String, Bool>;
-    var connected: Bool;
-    var endpoint: String;
-    var id: String;
-    var parent_pid: ProcessId;
-    var root_pid: ProcessId;
+	@:native("Phoenix.LiveView.Socket")
+	extern class Socket<T> {
+	    var assigns: T; // Type-safe assigns with application-specific structure
+	    var changed: Map<String, Bool>;
+	    var endpoint: String;
+	    var id: String;
+	    var parent_pid: ProcessId;
+	    var root_pid: ProcessId;
     var router: String;
     var transport_pid: ProcessId;
     var view: String;

@@ -46,8 +46,8 @@ defmodule Std do
   def is_of_type(value, type) do
     is(value, type)
   end
-  def random() do
-    :rand.uniform()
+  def random(max) do
+    if max <= 0, do: 0, else: (:rand.uniform(max) - 1)
   end
   def int(value) do
     trunc(value)

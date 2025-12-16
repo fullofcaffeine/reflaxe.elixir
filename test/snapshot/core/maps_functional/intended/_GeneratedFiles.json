@@ -6,9 +6,6 @@
   "reflect.ex",
   "map_tools.ex",
   "haxe/iterators/array_iterator.ex",
-  "haxe/ds/tree_node.ex",
-  "haxe/ds/enum_value_map.ex",
-  "haxe/ds/balanced_tree.ex",
   "array_tools.ex"
 ],
   "id": 0,

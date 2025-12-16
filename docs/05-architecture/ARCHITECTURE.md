@@ -36,6 +36,23 @@ This repo uses a layered approach:
 - `std/elixir/**`: typed externs for existing Elixir/Erlang/Phoenix/Ecto modules (API-faithful; no invented functions).
 - `std/_std/`: target-specific std overrides are injected **only when compiling to Elixir** (see `src/reflaxe/elixir/CompilerInit.hx`).
 
+## Phoenix App Stubs vs Framework Implementations
+
+Phoenix requires certain *application-namespaced* modules (e.g. `MyAppWeb.ErrorHTML`, `MyAppWeb.ErrorJSON`) that are referenced from endpoint configuration. These are Phoenix-specific as a concept, but they are **app-specific as modules** because the namespace (`MyAppWeb`) differs per project.
+
+**Directive**
+- Put the *generic implementation* in the framework layer (`std/phoenix/**`) as reusable helpers/modules.
+- In apps/examples, keep only **thin stubs** under the app namespace that delegate to the shared implementation.
+
+**Why**
+- Avoid duplicating the same Phoenix boilerplate across examples/apps.
+- Avoid app code using `__elixir__()` to reach Phoenix internals; that’s a smell and belongs in std/framework (if needed at all).
+- Preserve portability: std/framework code stays Phoenix-specific; app code stays app-namespaced and minimal.
+
+**Pattern**
+- Framework provides: `phoenix.errors.DefaultErrorHTML` / `phoenix.errors.DefaultErrorJSON`.
+- App provides (tiny stubs): `MyAppWeb.ErrorHTML` / `MyAppWeb.ErrorJSON` delegating to the framework modules.
+
 ## Migrations (Typed DSL)
 
 Migrations are authored in Haxe via the typed DSL in `std/ecto/Migration.hx` and marked with `@:migration`.
@@ -48,4 +65,3 @@ Migrations are authored in Haxe via the typed DSL in `std/ecto/Migration.hx` and
 - `docs/05-architecture/AST_PIPELINE_MIGRATION.md` (migration rationale + ordering)
 - `docs/03-compiler-development/COMPILATION_PIPELINE_ARCHITECTURE.md` (TypedExpr → AST details)
 - `docs/05-architecture/HXML_ARCHITECTURE.md` (build configuration patterns)
-

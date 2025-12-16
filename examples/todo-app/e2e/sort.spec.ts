@@ -37,7 +37,7 @@ test('sort by priority reorders list', async ({ page }) => {
   await page.selectOption('select[name="sort_by"]', 'priority')
   await page.waitForFunction(() => document.querySelector('select[name="sort_by"]').value === 'priority')
 
-  // Expect priority ascending by rank: low < medium < high (UI sort semantics)
+  // Expect priority ascending: low → medium → high
   await expect.poll(async () => {
     const cards = page.locator('[data-testid="todo-card"]').filter({ hasText: group })
     const priorities = await cards.locator('span').allTextContents()

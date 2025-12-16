@@ -16,6 +16,7 @@ import reflaxe.elixir.ast.context.ClauseContext;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.ast.NameUtils;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
+import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
 
 using StringTools;
 
@@ -57,10 +58,10 @@ using StringTools;
  * - Complex enum patterns with multiple parameters
  */
 @:nullSafety(Off)
-class SwitchBuilder {
-    static function cleanupTempBinderAliases(body: Null<ElixirAST>): Null<ElixirAST> {
-        if (body == null) return null;
-        // Remove statements like `lhs = _g*` or `lhs = g*` inside blocks
+	class SwitchBuilder {
+	    static function cleanupTempBinderAliases(body: Null<ElixirAST>): Null<ElixirAST> {
+	        if (body == null) return null;
+	        // Remove statements like `lhs = _g*` or `lhs = g*` inside blocks
         function isInfraTemp(name:String):Bool {
             if (name == null || name.length == 0) return false;
             if (name.charAt(0) == "_") name = name.substr(1);
@@ -75,21 +76,52 @@ class SwitchBuilder {
             return false;
         }
 
-        switch (body.def) {
-            case EBlock(stmts):
-                var filtered:Array<ElixirAST> = [];
-                for (s in stmts) {
-                    var drop = false;
-                    switch (s.def) {
-                        case EBinary(Match, left, right):
-                            switch (right.def) { case EVar(rn) if (isInfraTemp(rn)): drop = true; default: }
-                        case EMatch(pat, rhs):
-                            switch (rhs.def) { case EVar(rn) if (isInfraTemp(rn)): drop = true; default: }
-                        default:
-                    }
-                    if (!drop) filtered.push(s);
-                }
-                return {def: EBlock(filtered), metadata: body.metadata, pos: body.pos};
+	        switch (body.def) {
+	            case EBlock(stmts):
+	                // Only drop alias bindings when they are truly redundant.
+	                //
+	                // WHY
+	                // - Haxe lowering (especially under enum-index optimizations) commonly introduces infra temps
+	                //   (_g/_g1/...) and then assigns them into meaningful locals used later in the clause body.
+	                // - Dropping those assignments unconditionally can produce undefined locals (e.g. `b`),
+	                //   breaking generated Elixir semantics and snapshot expectations.
+	                //
+	                // HOW
+	                // - Compute referenced names for the whole block (excluding binding sites).
+	                // - Drop `lhs = _g*` only when `lhs` is never referenced in the block, or when `lhs` is itself
+	                //   an infra temp (pure scaffolding).
+	                var refs = VariableUsageCollector.referencedInFunctionScope(body);
+	                var filtered:Array<ElixirAST> = [];
+	                for (s in stmts) {
+	                    var drop = false;
+	                    switch (s.def) {
+	                        case EBinary(Match, left, right):
+	                            switch (right.def) {
+	                                case EVar(rn) if (isInfraTemp(rn)):
+	                                    var lhsName:Null<String> = switch (left.def) { case EVar(n): n; default: null; };
+	                                    if (lhsName != null && (isInfraTemp(lhsName) || !refs.exists(lhsName))) {
+	                                        drop = true;
+	                                    }
+	                                default:
+	                            }
+	                        case EMatch(pat, rhs):
+	                            switch (rhs.def) {
+	                                case EVar(rn) if (isInfraTemp(rn)):
+	                                    var lhsName:Null<String> = switch (pat) {
+	                                        case PVar(n): n;
+	                                        case PAlias(nm, _): nm;
+	                                        default: null;
+	                                    };
+	                                    if (lhsName != null && (isInfraTemp(lhsName) || !refs.exists(lhsName))) {
+	                                        drop = true;
+	                                    }
+	                                default:
+	                            }
+	                        default:
+	                    }
+	                    if (!drop) filtered.push(s);
+	                }
+	                return {def: EBlock(filtered), metadata: body.metadata, pos: body.pos};
             default:
                 return body;
         }
@@ -458,14 +490,14 @@ class SwitchBuilder {
         // Build pattern from case value.
         //
         // NOTE
-        // - `patternVars` are extracted from the *case body* to recover binder names when Haxe lowers
-        //   enum switches to integer indices (TEnumIndex → TInt case patterns).
-        // - For direct enum constructor patterns (TCall/FEnum), `patternVars` is not positional and
-        //   must not be used as enum parameter names.
+        // - `patternVars` is used only for guard compilation (TLocal ID → stable name mapping).
+        // - Do NOT feed `patternVars` into enum parameter binding. It is not positional and can
+        //   include unrelated locals from lambdas/guards, which corrupts binder recovery under
+        //   TEnumIndex (see snapshot: core/domain_abstractions_exunit).
         var guardVarsForPattern: Array<String> = [];
         switch (value.expr) {
             case TConst(TInt(_)):
-                guardVarsForPattern = patternVars;
+                guardVarsForPattern = [];
             default:
                 guardVarsForPattern = [];
         }
@@ -1235,11 +1267,11 @@ class SwitchBuilder {
             // alias shape `TVar(binder, TLocal(tmp))` where tmp was an extracted parameter.
             // If an extraction TVar was removed by preprocessing, consult infraVarSubstitutions
             // to recover the original `TEnumParameter` index.
-            function recoverEnumParamBinders(body: TypedExpr, ctorName: String, paramCount: Int, rootVarName: Null<String>): Array<Null<String>> {
-                var out:Array<Null<String>> = [for (_ in 0...paramCount) null];
-                var extractedIdByIndex:Array<Null<Int>> = [for (_ in 0...paramCount) null];
+	            function recoverEnumParamBinders(body: TypedExpr, ctorName: String, paramCount: Int, rootVarName: Null<String>): Array<Null<String>> {
+	                var out:Array<Null<String>> = [for (_ in 0...paramCount) null];
+	                var extractedIdByIndex:Array<Null<Int>> = [for (_ in 0...paramCount) null];
 
-                function unwrapNoOp(e:TypedExpr):TypedExpr {
+	                function unwrapNoOp(e:TypedExpr):TypedExpr {
                     var cur = e;
                     while (cur != null) {
                         switch (cur.expr) {
@@ -1253,10 +1285,30 @@ class SwitchBuilder {
                                 return cur;
                         }
                     }
-                    return cur;
-                }
+	                    return cur;
+	                }
 
-                // Only consider enum-parameter extractions from the *outer* switch scrutinee.
+	                // Under some lowering strategies (notably the enum-index optimization),
+	                // constructor payload extraction can appear as an index access rather than
+	                // a `TEnumParameter`, e.g.:
+	                //   var _g1 = pos2[0]; var b = _g1;
+	                //
+	                // We treat `TArray(receiver, TInt(index))` similarly to `TEnumParameter(receiver, ctorName, index)`.
+	                function extractIndexAccess(e:TypedExpr):Null<{ receiver:TypedExpr, index:Int }> {
+	                    var unwrapped = unwrapNoOp(e);
+	                    return switch (unwrapped.expr) {
+	                        case TArray(receiver, indexExpr):
+	                            var idxU = unwrapNoOp(indexExpr);
+	                            switch (idxU.expr) {
+	                                case TConst(TInt(i)): { receiver: receiver, index: i };
+	                                default: null;
+	                            }
+	                        default:
+	                            null;
+	                    };
+	                }
+
+	                // Only consider enum-parameter extractions from the *outer* switch scrutinee.
                 //
                 // WHY
                 // - For nested enum patterns (e.g. TreeNode.Node(Node(...), v, Node(...))) Haxe often lowers
@@ -1320,10 +1372,10 @@ class SwitchBuilder {
                     if (index >= 0 && index < paramCount) extractedIdByIndex[index] = v.id;
                 }
 
-                function tryPromoteAlias(targetVar:TVar, initExpr:TypedExpr):Bool {
-                    var initUnwrapped = unwrapNoOp(initExpr);
-                    return switch (initUnwrapped.expr) {
-                        case TLocal(src):
+	                function tryPromoteAlias(targetVar:TVar, initExpr:TypedExpr):Bool {
+	                    var initUnwrapped = unwrapNoOp(initExpr);
+	                    return switch (initUnwrapped.expr) {
+	                        case TLocal(src):
                             // 1) Alias by extracted temp-var ID
                             for (index in 0...paramCount) {
                                 if (extractedIdByIndex[index] != null && extractedIdByIndex[index] == src.id) {
@@ -1332,68 +1384,128 @@ class SwitchBuilder {
                                 }
                             }
                             // 2) Alias by substitution map (tempVar.id -> original TEnumParameter)
-                            if (context != null && context.infraVarSubstitutions != null && context.infraVarSubstitutions.exists(src.id)) {
-                                var subst = unwrapNoOp(context.infraVarSubstitutions.get(src.id));
-                                switch (subst.expr) {
-                                    case TEnumParameter(receiver, ef2, index)
-                                        if (ef2 != null && ef2.name == ctorName && index >= 0 && index < paramCount):
-                                        if (!isReceiverFromRoot(receiver)) {
-                                            return false;
-                                        }
-                                        if (out[index] == null || out[index] == src.name) out[index] = targetVar.name;
-                                        extractedIdByIndex[index] = src.id;
-                                        return true;
-                                    default:
-                                }
-                            }
-                            false;
-                        default:
+	                            if (context != null && context.infraVarSubstitutions != null && context.infraVarSubstitutions.exists(src.id)) {
+	                                var subst = unwrapNoOp(context.infraVarSubstitutions.get(src.id));
+	                                switch (subst.expr) {
+	                                    case TEnumParameter(receiver, ef2, index)
+	                                        if (ef2 != null && ef2.name == ctorName && index >= 0 && index < paramCount):
+	                                        if (!isReceiverFromRoot(receiver)) {
+	                                            return false;
+	                                        }
+	                                        if (out[index] == null || out[index] == src.name) out[index] = targetVar.name;
+	                                        extractedIdByIndex[index] = src.id;
+	                                        return true;
+	                                    case TArray(receiver, indexExpr):
+	                                        var info = extractIndexAccess(subst);
+	                                        if (info != null && info.index >= 0 && info.index < paramCount) {
+	                                            if (!isReceiverFromRoot(info.receiver)) return false;
+	                                            if (out[info.index] == null || out[info.index] == src.name) out[info.index] = targetVar.name;
+	                                            extractedIdByIndex[info.index] = src.id;
+	                                            return true;
+	                                        }
+	                                    default:
+	                                }
+	                            }
+	                            false;
+	                        default:
                             false;
                     };
                 }
 
-                function traverse(expr:TypedExpr):Void {
-                    if (expr == null) return;
-                    switch (expr.expr) {
-                        case TSwitch(switchExpr, _, _):
-                            // IMPORTANT: Do not descend into nested switches when recovering
-                            // binders for an outer enum constructor. Nested switches frequently
-                            // destructure *inner* values of the same constructor name (e.g. TreeNode.Node),
-                            // which would overwrite the outer binder recovery and corrupt the
-                            // top-level pattern.
-                            traverse(switchExpr);
-                            return;
-                        case TVar(v, init):
-                            if (init != null) {
-                                var initUnwrapped = unwrapNoOp(init);
-                                switch (initUnwrapped.expr) {
-                                    case TEnumParameter(receiver, ef2, index)
-                                        if (ef2 != null && ef2.name == ctorName && index >= 0 && index < paramCount):
-                                        if (!isReceiverFromRoot(receiver)) {
-                                            // Ignore destructuring of inner enum values for binder recovery.
-                                            // See isReceiverFromRoot for details.
-                                            // Still traverse init in case it contains aliases to outer binders.
-                                            traverse(init);
-                                            return;
-                                        }
-                                        out[index] = v.name;
-                                        rememberExtraction(index, v);
-                                    default:
-                                        // Promote common alias: binder = tmp
-                                        tryPromoteAlias(v, init);
-                                }
-                                traverse(init);
-                            }
-                        default:
-                    }
-                    TypedExprTools.iter(expr, traverse);
-                }
+	                function traverse(expr:TypedExpr):Void {
+	                    if (expr == null) return;
+	                    switch (expr.expr) {
+		                        case TBinop(OpAssign, lhs, rhs):
+	                            // Support assignment-based extraction/aliasing patterns in case bodies:
+	                            //   lhs = TEnumParameter(receiver, ctorName, idx)
+	                            //   lhs = tmp   (where tmp was an extracted param)
+	                            //
+	                            // Haxe sometimes lowers pattern binders this way (especially under enum-index optimizations),
+	                            // so we must treat it similarly to `TVar(lhs, init)`.
+		                            var rhsUnwrapped = unwrapNoOp(rhs);
+		                            switch (lhs.expr) {
+		                                case TLocal(targetVar):
+		                                    switch (rhsUnwrapped.expr) {
+		                                        case TEnumParameter(receiver, ef2, index)
+		                                            if (ef2 != null && ef2.name == ctorName && index >= 0 && index < paramCount):
+	                                            if (!isReceiverFromRoot(receiver)) {
+	                                                // Ignore destructuring of inner enum values for binder recovery
+	                                                traverse(rhs);
+	                                                return;
+	                                            }
+		                                            out[index] = targetVar.name;
+		                                            extractedIdByIndex[index] = targetVar.id;
+		                                        case TArray(receiver, indexExpr):
+		                                            var info = extractIndexAccess(rhsUnwrapped);
+		                                            if (info != null && info.index >= 0 && info.index < paramCount) {
+		                                                if (!isReceiverFromRoot(info.receiver)) {
+		                                                    traverse(rhs);
+		                                                    return;
+		                                                }
+		                                                out[info.index] = targetVar.name;
+		                                                extractedIdByIndex[info.index] = targetVar.id;
+		                                            }
+		                                        case TLocal(src):
+		                                            // Promote common alias: binder = tmp
+		                                            tryPromoteAlias(targetVar, rhs);
+		                                        default:
+	                                    }
+	                                default:
+	                            }
+	                            traverse(rhs);
+	                            return;
+	                        case TSwitch(switchExpr, _, _):
+	                            // IMPORTANT: Do not descend into nested switches when recovering
+	                            // binders for an outer enum constructor. Nested switches frequently
+	                            // destructure *inner* values of the same constructor name (e.g. TreeNode.Node),
+	                            // which would overwrite the outer binder recovery and corrupt the
+	                            // top-level pattern.
+	                            traverse(switchExpr);
+	                            return;
+		                        case TVar(v, init):
+		                            if (init != null) {
+		                                var initUnwrapped = unwrapNoOp(init);
+		                                switch (initUnwrapped.expr) {
+		                                    case TEnumParameter(receiver, ef2, index)
+	                                        if (ef2 != null && ef2.name == ctorName && index >= 0 && index < paramCount):
+	                                        if (!isReceiverFromRoot(receiver)) {
+	                                            // Ignore destructuring of inner enum values for binder recovery.
+	                                            // See isReceiverFromRoot for details.
+	                                            // Still traverse init in case it contains aliases to outer binders.
+	                                            traverse(init);
+	                                            return;
+	                                        }
+		                                        out[index] = v.name;
+		                                        rememberExtraction(index, v);
+		                                    case TArray(receiver, indexExpr):
+		                                        var info = extractIndexAccess(initUnwrapped);
+		                                        if (info != null && info.index >= 0 && info.index < paramCount) {
+		                                            if (!isReceiverFromRoot(info.receiver)) {
+		                                                traverse(init);
+		                                                return;
+		                                            }
+		                                            out[info.index] = v.name;
+		                                            rememberExtraction(info.index, v);
+		                                        }
+		                                    default:
+		                                        // Promote common alias: binder = tmp
+		                                        tryPromoteAlias(v, init);
+		                                }
+	                                traverse(init);
+	                            }
+	                        default:
+	                    }
+	                    TypedExprTools.iter(expr, traverse);
+	                }
 
                 traverse(body);
                 return out;
             }
 
-            var recoveredBinders = recoverEnumParamBinders(caseBody, ef.name, parameterNames.length, targetVarName);
+	            var recoveredBinders = recoverEnumParamBinders(caseBody, ef.name, parameterNames.length, targetVarName);
+	            #if debug_switch_builder
+	            trace('[SwitchBuilder]   recoveredBinders(target=${targetVarName}) = ${recoveredBinders != null ? "[" + recoveredBinders.join(", ") + "]" : "null"}');
+	            #end
 
             // Helper: check if a name corresponds to a current function parameter (shape-based exclusion)
             function isFunctionParamByName(n:String):Bool {
@@ -1486,9 +1598,21 @@ class SwitchBuilder {
                     }
                 }
 
-                // Only use guardVars for single-parameter constructors. For multi-parameter ctors,
-                // guardVars extracted from case bodies are not positional and can corrupt binder order.
-                if (parameterNames.length == 1 && guardVars != null && i < guardVars.length) {
+                // Only use guardVars as a *last resort* for single-parameter constructors with a
+                // generic enum param name (e.g., `value`). If we already recovered a meaningful
+                // binder from the case body, do NOT override it.
+                //
+                // WHY
+                // - guardVars can include unrelated locals from lambdas/guards (e.g., `onSuccess`,
+                //   `transform`) and should never replace an explicit binder used in the body.
+                // - For Result.Error/1 the enum param name is often meaningful (`error`), so guardVars
+                //   must not override it either.
+                if (parameterNames.length == 1
+                    && guardVars != null
+                    && i < guardVars.length
+                    && candidate == enumParamName
+                    && isGenericOrAutoName(enumParamName)
+                ) {
                     var gv = guardVars[i];
                     if (gv != null && !isEnvLikeName(gv) && !isFunctionParamByName(gv) && !isGenericOrAutoName(gv)) {
                         candidate = gv;
@@ -1603,6 +1727,32 @@ class SwitchBuilder {
             return cur;
         }
 
+        function isEnumLikeType(t:Type):Bool {
+            return switch (t) {
+                case TEnum(_, _): true;
+                case TAbstract(ref, _):
+                    var abs = ref.get();
+                    switch (abs.type) {
+                        case TEnum(_, _): true;
+                        default: false;
+                    }
+                default: false;
+            };
+        }
+
+        function extractIndexAccess(te:TypedExpr):Null<{ receiver:TypedExpr, index:Int }> {
+            var u = unwrapNoOp(te);
+            return switch (u.expr) {
+                case TArray(receiver, indexExpr) if (receiver != null && isEnumLikeType(receiver.t)):
+                    var idxU = unwrapNoOp(indexExpr);
+                    switch (idxU.expr) {
+                        case TConst(TInt(i)): { receiver: receiver, index: i };
+                        default: null;
+                    }
+                default: null;
+            };
+        }
+
         // First pass: collect extraction/alias assignments and mark direct uses of TEnumParameter
         function pass1(te:TypedExpr):Void {
             if (te == null) return;
@@ -1611,12 +1761,26 @@ class SwitchBuilder {
                     // Direct usage (not just extraction into a local)
                     if (idx >= 0 && idx < paramCount) used[idx] = true;
 
+                case TArray(receiver, indexExpr):
+                    var info = extractIndexAccess(te);
+                    if (info != null && info.index >= 0 && info.index < paramCount) {
+                        used[info.index] = true;
+                        pass1(info.receiver);
+                        return;
+                    }
+
                 case TVar(v, init) if (init != null):
                     var initU = unwrapNoOp(init);
                     switch (initU.expr) {
                         case TEnumParameter(_, _, idx2):
                             // Extraction into a local; usage depends on later reads
                             registerAssignment(v.name, idx2);
+                        case TArray(receiver, indexExpr):
+                            var info = extractIndexAccess(initU);
+                            if (info != null && info.index >= 0 && info.index < paramCount) {
+                                registerAssignment(v.name, info.index);
+                                return;
+                            }
                         case TLocal(src) if (assignedFromParam.exists(src.name)):
                             // Alias: v = tmp; tmp was extracted from enum param
                             registerAssignment(v.name, assignedFromParam.get(src.name));
@@ -1633,6 +1797,12 @@ class SwitchBuilder {
                                 case TEnumParameter(_, _, idx3):
                                     registerAssignment(v.name, idx3);
                                     return;
+                                case TArray(receiver, indexExpr):
+                                    var info = extractIndexAccess(rhsU);
+                                    if (info != null && info.index >= 0 && info.index < paramCount) {
+                                        registerAssignment(v.name, info.index);
+                                        return;
+                                    }
                                 case TLocal(src2) if (assignedFromParam.exists(src2.name)):
                                     registerAssignment(v.name, assignedFromParam.get(src2.name));
                                     return;

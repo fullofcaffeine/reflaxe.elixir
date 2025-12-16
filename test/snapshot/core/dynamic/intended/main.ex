@@ -17,9 +17,9 @@ defmodule Main do
     fn_ = fn s -> String.upcase(s) end
     var_args = fn args ->
       g = 0
-      _ = Enum.each(0..(length(args) - 1), (fn -> fn item ->
-        arg = args[_g]
-        item + 1
+      _ = Enum.each(0..(length(args) - 1), (fn -> fn g ->
+        arg = args[g]
+        g + 1
         sum = sum + arg
       end end).())
     end

@@ -8,26 +8,41 @@ defmodule Main do
   defp test_basic_indexed_iteration() do
     items = ["apple", "banana", "cherry"]
     results = []
-    _ = Enum.each(items, (fn -> fn item ->
-  i = 1
-  item = items[i]
-  item = Enum.concat(item, ["" <> Kernel.to_string(i) <> ": " <> item])
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {items}, (fn -> fn _, {items} ->
+  if (0 < length(items)) do
+    i = 1
+    item = items[i]
+    results = Enum.concat(results, ["" <> Kernel.to_string(i) <> ": " <> item])
+    {:cont, {items}}
+  else
+    {:halt, {items}}
+  end
 end end).())
     nil
   end
   defp test_indexed_map() do
     items = ["first", "second", "third"]
-    _ = Enum.each(items, (fn -> fn item ->
-  i = 1
-  item = Enum.concat(item, ["Item #" <> Kernel.to_string(i + 1) <> ": " <> items[i]])
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {items}, (fn -> fn _, {items} ->
+  if (0 < length(items)) do
+    i = 1
+    indexed = Enum.concat(indexed, ["Item #" <> Kernel.to_string(i + 1) <> ": " <> items[i]])
+    {:cont, {items}}
+  else
+    {:halt, {items}}
+  end
 end end).())
     []
   end
   defp test_indexed_filter() do
     items = ["a", "b", "c", "d", "e"]
-    _ = Enum.each(items, (fn -> fn item ->
-  i = 1
-  if (rem(item, 2) == 0), do: item = Enum.concat(item, [items[i]])
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {items}, (fn -> fn _, {items} ->
+  if (0 < length(items)) do
+    i = 1
+    if (rem(i, 2) == 0), do: even_indexed = Enum.concat(even_indexed, [items[i]])
+    {:cont, {items}}
+  else
+    {:halt, {items}}
+  end
 end end).())
     []
   end

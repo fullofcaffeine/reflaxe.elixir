@@ -72,7 +72,7 @@ abstract Socket<TAssigns>(Dynamic) from Dynamic to Dynamic {
      * Check if socket is connected
      */
     public function isConnected(): Bool {
-        return Reflect.field(this, "connected");
+        return Reflect.field(this, "transport_pid") != null;
     }
     
     /**

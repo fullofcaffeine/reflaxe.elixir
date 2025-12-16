@@ -27,8 +27,14 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  *   2) Build clause-defined set from pattern vars + LHS binds inside the body
  *   3) Collect used simple lower-case names in the body
  *   4) Compute undefined = used − defined − {binder} − {socket/live_socket}
- *   5) If undefined.length == 1, rename binder to that name and rewrite body references
- *      to the old binder accordingly
+ *   5) If undefined.length == 1 AND the original binder is not referenced in the clause body,
+ *      rename the binder to that undefined name. This is safe because renaming an unused binder
+ *      cannot change semantics and avoids introducing binder/body mismatches.
+ *
+ * NOTE
+ * - This pass intentionally does not rewrite clause bodies. Renaming a used binder without
+ *   rewriting references is incorrect. When binders are used, the builder should emit the
+ *   correct binder name (or other dedicated transforms should prefix-bind/alias safely).
  */
 class CasePayloadBinderAlignByBodyUseTransforms {
     static function prefer(names:Array<String>): Null<String> {
@@ -66,14 +72,6 @@ class CasePayloadBinderAlignByBodyUseTransforms {
                             // candidates: unique undefined, excluding common env names
                             var cands:Array<String> = [];
                             for (u in used.keys()) if (u != payloadBinder && allow(u) && !defined.exists(u)) cands.push(u);
-                            if (cands.length == 0) {
-                                // Fallback: pick the first meaningful variable in body that is not declared/binder
-                                var ex = new haxe.ds.StringMap<Bool>();
-                                ex.set(payloadBinder, true);
-                                for (k in defined.keys()) ex.set(k, true);
-                                var first = findFirstMeaningfulVar(cl.body, ex);
-                                if (first != null) cands.push(first);
-                            }
                             // DISABLED: trace('[CasePayloadAlign] candidates = ' + cands.join(','));
                             var chosen:Null<String> = null;
                             if (cands.length > 1) {
@@ -84,10 +82,12 @@ class CasePayloadBinderAlignByBodyUseTransforms {
                                 var newName = cands[0];
                                 var newPat = rewriteTagPayloadBinder(cl.pattern, newName);
                                 if (newPat != cl.pattern) {
-                                    // DISABLED: trace('[CasePayloadAlign] Renaming binder ' + payloadBinder + ' -> ' + newName);
-                                    // Only rename in the pattern to avoid rewriting outer vars shadowed by binder
-                                    out.push({ pattern: newPat, guard: cl.guard, body: cl.body });
-                                    continue;
+                                    // Only rename when the original binder is *not* referenced in this clause.
+                                    // Renaming a used binder without rewriting body refs would be incorrect.
+                                    if (!clauseUsesVar(cl.body, payloadBinder) && (cl.guard == null || !clauseUsesVar(cl.guard, payloadBinder))) {
+                                        out.push({ pattern: newPat, guard: cl.guard, body: cl.body });
+                                        continue;
+                                    }
                                 }
                             }
                         }
@@ -118,10 +118,11 @@ class CasePayloadBinderAlignByBodyUseTransforms {
                             if (cands.length == 1) {
                                 var newName = cands[0];
                                 var newPat = rewriteTagPayloadBinder(cl.pattern, newName);
-                if (newPat != cl.pattern) {
-                                    // Only rename in the pattern to avoid rewriting outer vars
-                                    out.push({ pattern: newPat, guard: cl.guard, body: cl.body });
-                                    continue;
+                                if (newPat != cl.pattern) {
+                                    if (!clauseUsesVar(cl.body, payloadBinder) && (cl.guard == null || !clauseUsesVar(cl.guard, payloadBinder))) {
+                                        out.push({ pattern: newPat, guard: cl.guard, body: cl.body });
+                                        continue;
+                                    }
                                 }
                             }
                         }
@@ -265,6 +266,20 @@ class CasePayloadBinderAlignByBodyUseTransforms {
             }
         });
         return chosen;
+    }
+
+    static function clauseUsesVar(ast: ElixirAST, name: String): Bool {
+        if (ast == null || name == null || name.length == 0) return false;
+        var found = false;
+        ASTUtils.walk(ast, function(n: ElixirAST) {
+            if (found || n == null || n.def == null) return;
+            switch (n.def) {
+                case EVar(v) if (v == name):
+                    found = true;
+                default:
+            }
+        });
+        return found;
     }
 
     static function extractTagPayloadBinder(p: EPattern): Null<String> {

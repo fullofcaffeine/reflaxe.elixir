@@ -49,6 +49,14 @@ class EarlyBootstrap {
       pass: reflaxe.elixir.ast.transformers.TempVariableTransforms.resolveClauseLocalsPass
     });
 
+    // Normalize camelCase locals/patterns to snake_case (prevents casing drift before binder alignment)
+    passes.push({
+      name: "LocalVarNameNormalize",
+      description: "Normalize local variable and pattern binder names to snake_case",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.LocalVarNameNormalizeTransforms.pass
+    });
+
     // Remove redundant enum extraction pass (must run early to fix pattern matching)
     passes.push({
       name: "RemoveRedundantEnumExtraction",

@@ -4,14 +4,14 @@ defmodule Main do
     nil
   end
   setup context do
-    test_data = test_data = testData = [1, 2, 3, 4, 5]
-    test_string = test_string = testString = "Hello World"
+    test_data = [1, 2, 3, 4, 5]
+    test_string = "Hello World"
     nil
   end
   setup context do
     on_exit((fn -> fn ->
-        test_data = test_data = testData = nil
-        test_string = test_string = testString = nil
+        test_data = nil
+        test_string = nil
         nil
       end end).())
     :ok

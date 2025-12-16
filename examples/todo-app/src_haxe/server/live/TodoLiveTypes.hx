@@ -45,6 +45,8 @@ typedef TodoLiveAssigns = {
     var show_form: Bool;
     var search_query: String;
     var selected_tags: Array<String>;
+    // Derived from todos; used to render the tag chip row in the UI
+    var available_tags: Array<String>;
     // Optimistic UI state: ids currently flipped client-first, pending server reconcile
     var optimistic_toggle_ids: Array<Int>;
     // Precomputed view rows for HXX (zero-logic rendering)

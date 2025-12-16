@@ -89,6 +89,11 @@ class VariableUsageCollector {
                 walk(c, shadowed, refs); walk(t, shadowed, refs); if (e != null) walk(e, shadowed, refs);
             case EUnless(c, b, e):
                 walk(c, shadowed, refs); walk(b, shadowed, refs); if (e != null) walk(e, shadowed, refs);
+            case ECond(clauses):
+                for (cl in clauses) {
+                    walk(cl.condition, shadowed, refs);
+                    walk(cl.body, shadowed, refs);
+                }
 
             // Case/Receive: pattern binds names visible within guard/body
             case ECase(expr, clauses):

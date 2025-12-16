@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirAST.EPattern;
  * - If a param name is not referenced in the body, rename to "_" + name (if not already underscored).
  */
 class SimplePrefixUnusedParamsFinalTransforms {
+    static inline function preserveParamName(name: Null<String>): Bool {
+        return name == "assigns" || name == "opts" || name == "args" || name == "conn" || name == "params";
+    }
+
     static function collectVarUsage(ast: ElixirAST, target: String): Bool {
         var used = false;
         if (ast == null) return false;
@@ -59,7 +63,7 @@ class SimplePrefixUnusedParamsFinalTransforms {
                     // Identify unused vars
                     for (a in args) switch (a) {
                         case PVar(vn):
-                            if (vn != null && vn.length > 0 && vn.charAt(0) != "_" && !collectVarUsage(body, vn)) {
+                            if (vn != null && vn.length > 0 && vn.charAt(0) != "_" && !preserveParamName(vn) && !collectVarUsage(body, vn)) {
                                 ren.set(vn, "_" + vn);
                             }
                         default:
@@ -72,7 +76,7 @@ class SimplePrefixUnusedParamsFinalTransforms {
                 case EDefp(name, args, guards, body):
                     var ren2 = new Map<String,String>();
                     for (a in args) switch (a) {
-                        case PVar(vn): if (vn != null && vn.length > 0 && vn.charAt(0) != "_" && !collectVarUsage(body, vn)) ren2.set(vn, "_" + vn);
+                        case PVar(vn): if (vn != null && vn.length > 0 && vn.charAt(0) != "_" && !preserveParamName(vn) && !collectVarUsage(body, vn)) ren2.set(vn, "_" + vn);
                         default:
                     }
                     if (ren2.keys().hasNext()) {
@@ -83,7 +87,7 @@ class SimplePrefixUnusedParamsFinalTransforms {
                 case EDefmacro(name, args, guards, body):
                     var ren3 = new Map<String,String>();
                     for (a in args) switch (a) {
-                        case PVar(vn): if (vn != null && vn.length > 0 && vn.charAt(0) != "_" && !collectVarUsage(body, vn)) ren3.set(vn, "_" + vn);
+                        case PVar(vn): if (vn != null && vn.length > 0 && vn.charAt(0) != "_" && !preserveParamName(vn) && !collectVarUsage(body, vn)) ren3.set(vn, "_" + vn);
                         default:
                     }
                     if (ren3.keys().hasNext()) {
@@ -94,7 +98,7 @@ class SimplePrefixUnusedParamsFinalTransforms {
                 case EDefmacrop(name, args, guards, body):
                     var ren4 = new Map<String,String>();
                     for (a in args) switch (a) {
-                        case PVar(vn): if (vn != null && vn.length > 0 && vn.charAt(0) != "_" && !collectVarUsage(body, vn)) ren4.set(vn, "_" + vn);
+                        case PVar(vn): if (vn != null && vn.length > 0 && vn.charAt(0) != "_" && !preserveParamName(vn) && !collectVarUsage(body, vn)) ren4.set(vn, "_" + vn);
                         default:
                     }
                     if (ren4.keys().hasNext()) {

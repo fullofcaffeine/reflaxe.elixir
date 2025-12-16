@@ -3,39 +3,40 @@ package server.live;
 import HXX; // Import HXX for template rendering
 import ecto.Changeset; // Import Ecto Changeset from the correct location
 import ecto.Query; // Import Ecto Query from the correct location
-import elixir.Atom;
-import elixir.ElixirMap;
-import elixir.Task; // Background work via Task.start
-import elixir.DateTime.NaiveDateTime;
-import elixir.Enum;
-import haxe.functional.Result; // Import Result type properly
-import phoenix.LiveSocket; // Type-safe socket wrapper
-import phoenix.types.Flash.FlashType;
-import phoenix.Phoenix.HandleEventResult;
-import phoenix.Phoenix.HandleInfoResult;
-import phoenix.Phoenix.LiveView; // Use the comprehensive Phoenix module version
-import phoenix.Phoenix.MountResult;
-import phoenix.Phoenix.Socket;
-import phoenix.Presence; // Import Presence module for PresenceEntry typedef
-import phoenix.Sorting; // Type-safe sorting API using extern inline pattern
-import server.infrastructure.Repo; // Import the TodoApp.Repo module
-import server.live.SafeAssigns;
+	import elixir.Atom;
+	import elixir.ElixirMap;
+	import elixir.Task; // Background work via Task.start
+	import elixir.List;
+		import elixir.DateTime.NaiveDateTime;
+		import elixir.Enum;
+	import haxe.functional.Result; // Import Result type properly
+	import phoenix.LiveSocket; // Type-safe socket wrapper
+	import phoenix.types.Flash.FlashType;
+	import phoenix.Phoenix.HandleEventResult;
+	import phoenix.Phoenix.HandleInfoResult;
+	import phoenix.Phoenix.LiveView; // Use the comprehensive Phoenix module version
+	import phoenix.Phoenix.MountResult;
+	import phoenix.Phoenix.Socket;
+	import phoenix.Presence; // Import Presence module for PresenceEntry typedef
+	import server.infrastructure.Repo; // Import the TodoApp.Repo module
+	import server.live.SafeAssigns;
 import server.live.TodoLiveTypes.TodoLiveAssigns;
 import server.live.TodoLiveTypes.TodoLiveEvent;
 import server.live.TodoLiveTypes.TodoView;
 import server.presence.TodoPresence;
 import server.pubsub.TodoPubSub.TodoPubSubMessage;
 import server.pubsub.TodoPubSub.TodoPubSubTopic;
-import server.pubsub.TodoPubSub;
-import server.schemas.Todo;
-import server.types.Types.BulkOperationType;
-import server.types.Types.EventParams;
-import server.types.Types.MountParams;
-import server.types.Types.PubSubMessage;
-import server.types.Types.Session;
-import server.types.Types.User;
-import server.types.Types.AlertLevel;
-using reflaxe.elixir.macros.TypedQueryLambda;
+	import server.pubsub.TodoPubSub;
+	import server.schemas.Todo;
+	import server.types.Types.BulkOperationType;
+	import server.types.Types.EventParams;
+	import server.types.Types.MountParams;
+	import server.types.Types.PubSubMessage;
+	import server.types.Types.Session;
+	import server.types.Types.User;
+	import server.types.Types.AlertLevel;
+	import StringTools;
+	using reflaxe.elixir.macros.TypedQueryLambda;
 
 /**
  * LiveView component for todo management with real-time updates
@@ -63,26 +64,33 @@ class TodoLive {
 	 * 
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
-    public static function mount(_params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
-        // Prepare LiveSocket wrapper
-        var sock: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
+	    public static function mount(_params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
+	        // Prepare LiveSocket wrapper
+	        var sock: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
 
-        var currentUser = getUserFromSession(session);
-        var todos = loadTodos(currentUser.id);
+	        var currentUser = getUserFromSession(session);
+		        var todos = loadTodos(currentUser.id);
 
-        var assigns: TodoLiveAssigns = {
-            todos: todos,
-            filter: shared.TodoTypes.TodoFilter.All,
-            sort_by: shared.TodoTypes.TodoSort.Created,
-            current_user: currentUser,
-            editing_todo: null,
-            show_form: false,
-            search_query: "",
-            selected_tags: [],
-            optimistic_toggle_ids: [],
-            visible_todos: [],
-            visible_count: 0,
-            filter_btn_all_class: filterBtnClass(shared.TodoTypes.TodoFilter.All, shared.TodoTypes.TodoFilter.All),
+		        // Subscribe only on the connected mount (the initial static render is disconnected).
+		        // This enables cross-session real-time updates via Phoenix.PubSub.
+		        if (socket.transport_pid != null) {
+		            TodoPubSub.subscribe(TodoUpdates);
+		        }
+
+	        var assigns: TodoLiveAssigns = {
+	            todos: todos,
+	            filter: shared.TodoTypes.TodoFilter.All,
+	            sort_by: shared.TodoTypes.TodoSort.Created,
+	            current_user: currentUser,
+	            editing_todo: null,
+	            show_form: false,
+	            search_query: "",
+	            selected_tags: [],
+	            available_tags: computeAvailableTags(todos),
+	            optimistic_toggle_ids: [],
+	            visible_todos: [],
+	            visible_count: 0,
+	            filter_btn_all_class: filterBtnClass(shared.TodoTypes.TodoFilter.All, shared.TodoTypes.TodoFilter.All),
             filter_btn_active_class: filterBtnClass(shared.TodoTypes.TodoFilter.All, shared.TodoTypes.TodoFilter.Active),
             filter_btn_completed_class: filterBtnClass(shared.TodoTypes.TodoFilter.All, shared.TodoTypes.TodoFilter.Completed),
             sort_selected_created: sortSelected(shared.TodoTypes.TodoSort.Created, shared.TodoTypes.TodoSort.Created),
@@ -105,44 +113,57 @@ class TodoLive {
 	 * No more string matching or Dynamic params!
 	 * Each event carries its own typed parameters.
 	 */
-    @:keep
-    @:native("handle_event")
-    public static function handle_event(event: String, params: Dynamic, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
-        var sort_by = Reflect.field(params, "sort_by");
-        var s = switch (event) {
-            case "create_todo":
-                createTodo(cast params, socket);
-            case "toggle_todo":
-                toggle_todo_status(extract_id(params), socket);
-            case "delete_todo":
-                delete_todo(extract_id(params), socket);
-            case "edit_todo":
-                start_editing(extract_id(params), socket);
-            case "save_todo":
-                save_edited_todo_typed(cast params, socket);
-            case "cancel_edit":
-                recomputeVisible(SafeAssigns.setEditingTodo(socket, null));
-            case "filter_todos":
-                recomputeVisible(SafeAssigns.setFilter(socket, Reflect.field(params, "filter")));
-            case "sort_todos":
-                recomputeVisible(SafeAssigns.setSortByAndResort(socket, sort_by));
-            case "search_todos":
-                recomputeVisible(SafeAssigns.setSearchQuery(socket, Reflect.field(params, "query")));
-            case "toggle_tag":
-                recomputeVisible(SafeAssigns.toggleTag(socket, Reflect.field(params, "tag")));
-            case "set_priority":
-                update_todo_priority(extract_id(params), Reflect.field(params, "priority"), socket);
-            case "toggle_form":
-                recomputeVisible(SafeAssigns.setShowForm(socket, !socket.assigns.show_form));
-            case "bulk_complete":
-                complete_all_todos(socket);
-            case "bulk_delete_completed":
-                delete_completed_todos(socket);
-            case _:
-                socket;
-        };
-        return NoReply(s);
-    }
+	    @:keep
+	    @:native("handle_event")
+	    public static function handle_event(event: String, params: Dynamic, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
+	        var nextSocket: Socket<TodoLiveAssigns> =
+	            if (event == "create_todo") {
+	                createTodo(cast params, socket);
+	            } else if (event == "toggle_todo") {
+	                toggle_todo_status(extract_id(params), socket);
+	            } else if (event == "delete_todo") {
+	                delete_todo(extract_id(params), socket);
+	            } else if (event == "edit_todo") {
+	                start_editing(extract_id(params), socket);
+	            } else if (event == "save_todo") {
+	                save_edited_todo_typed(cast params, socket);
+	            } else if (event == "cancel_edit") {
+	                recomputeVisible(SafeAssigns.setEditingTodo(socket, null));
+	            } else if (event == "filter_todos") {
+	                recomputeVisible(SafeAssigns.setFilter(socket, Reflect.field(params, "filter")));
+	            } else if (event == "sort_todos") {
+	                var sortBy = Reflect.field(params, "sort_by");
+	                recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy));
+	            } else if (event == "search_todos") {
+	                recomputeVisible(SafeAssigns.setSearchQuery(socket, Reflect.field(params, "query")));
+	            } else if (event == "toggle_tag") {
+	                var tagValue: Null<String> = Reflect.field(params, "tag");
+	                if (tagValue == null) {
+	                    socket;
+	                } else {
+	                    var tag: String = tagValue;
+	                    var current = socket.assigns.selected_tags;
+	                    var updated = if (current.contains(tag)) {
+	                        current.filter(function(t) return t != tag);
+	                    } else {
+	                        List.insertAt(current, 0, tag);
+	                    };
+	                    recomputeVisible(SafeAssigns.setSelectedTags(socket, updated));
+	                }
+	            } else if (event == "set_priority") {
+	                update_todo_priority(extract_id(params), Reflect.field(params, "priority"), socket);
+	            } else if (event == "toggle_form") {
+	                recomputeVisible(SafeAssigns.setShowForm(socket, !socket.assigns.show_form));
+	            } else if (event == "bulk_complete") {
+	                complete_all_todos(socket);
+	            } else if (event == "bulk_delete_completed") {
+	                delete_completed_todos(socket);
+	            } else {
+	                socket;
+	            };
+	
+	        return NoReply(nextSocket);
+	    }
 
     @:keep
     public static function extract_id(params: Dynamic): Int {
@@ -178,22 +199,15 @@ class TodoLive {
 
     @:keep
     static function handlePubSub(payload: TodoPubSubMessage, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
-        // Handle creation separately to avoid binder underscore transforms causing undefined vars
-        var created: Todo = switch (payload) {
-            case TodoCreated(_): cast elixir.Tuple.elem(payload, 1);
-            case _: null;
-        };
-        if (created != null) {
-            var merged = socket.merge({
-                todos: [created].concat(socket.assigns.todos),
-                total_todos: socket.assigns.total_todos + 1,
-                pending_todos: socket.assigns.pending_todos + (created.completed ? 0 : 1),
-                completed_todos: socket.assigns.completed_todos + (created.completed ? 1 : 0)
-            });
-            return NoReply(recomputeVisible(merged));
-        }
-
         return switch (payload) {
+            case TodoCreated(todo):
+                var merged = socket.merge({
+                    todos: [todo].concat(socket.assigns.todos),
+                    total_todos: socket.assigns.total_todos + 1,
+                    pending_todos: socket.assigns.pending_todos + (todo.completed ? 0 : 1),
+                    completed_todos: socket.assigns.completed_todos + (todo.completed ? 1 : 0)
+                });
+                NoReply(recomputeVisible(merged));
             case TodoUpdated(todo):
                 var clearedIds = socket.assigns.optimistic_toggle_ids.filter(function(x) return x != todo.id);
                 var cleared = socket.assign(_.optimistic_toggle_ids, clearedIds);
@@ -547,19 +561,20 @@ class TodoLive {
     /**
      * Recompute and merge visible_todos into assigns; returns a typed LiveSocket.
      */
-    static function recomputeVisible(socket: Socket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
-        var ls: LiveSocket<TodoLiveAssigns> = socket;
-        var rows = buildVisibleTodos(ls.assigns);
-        // Precompute UI helpers
-        var selected = ls.assigns.sort_by;
-        var filter = ls.assigns.filter;
-        var merged = ls.merge({
-            visible_todos: rows,
-            visible_count: rows.length,
-            filter_btn_all_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.All),
-            filter_btn_active_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Active),
-            filter_btn_completed_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Completed),
-            sort_selected_created: sortSelected(selected, shared.TodoTypes.TodoSort.Created),
+	    static function recomputeVisible(socket: Socket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
+	        var ls: LiveSocket<TodoLiveAssigns> = socket;
+	        var rows = buildVisibleTodos(ls.assigns);
+	        // Precompute UI helpers
+	        var selected = ls.assigns.sort_by;
+	        var filter = ls.assigns.filter;
+	        var merged = ls.merge({
+	            visible_todos: rows,
+	            visible_count: rows.length,
+	            available_tags: computeAvailableTags(ls.assigns.todos),
+	            filter_btn_all_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.All),
+	            filter_btn_active_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Active),
+	            filter_btn_completed_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Completed),
+	            sort_selected_created: sortSelected(selected, shared.TodoTypes.TodoSort.Created),
             sort_selected_priority: sortSelected(selected, shared.TodoTypes.TodoSort.Priority),
             sort_selected_due_date: sortSelected(selected, shared.TodoTypes.TodoSort.DueDate)
         });
@@ -709,6 +724,14 @@ class TodoLive {
     static inline function encodeFilter(f: shared.TodoTypes.TodoFilter): String {
         return switch (f) { case All: "all"; case Active: "active"; case Completed: "completed"; };
     }
+    static inline function priorityRankForSort(priority: String): Int {
+        return switch (priority) {
+            case "low": 0;
+            case "medium": 1;
+            case "high": 2;
+            case _: 3;
+        };
+    }
 
     // Typed UI helpers (no inline HEEx ops in HXX)
     static inline function filterBtnClass(current: shared.TodoTypes.TodoFilter, expect: shared.TodoTypes.TodoFilter): String {
@@ -811,15 +834,6 @@ class TodoLive {
 				socket;
 		};
 	}
-	
-    static function toggleTagFilter(tag: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        return SafeAssigns.setSelectedTags(
-            socket,
-            socket.assigns.selected_tags.contains(tag)
-                ? socket.assigns.selected_tags.filter(function(t) return t != tag)
-                : socket.assigns.selected_tags.concat([tag])
-        );
-    }
 	
 	/**
 	 * Router action handlers for LiveView routes
@@ -977,24 +991,25 @@ class TodoLive {
 							</div>
 							
                         <!-- Filter Buttons -->
-                        <div class="flex space-x-2">
-                            <button phx-click="filter_todos" phx-value-filter="all" data-testid="btn-filter-all"
-                                class={@filter_btn_all_class}>All</button>
-                            <button phx-click="filter_todos" phx-value-filter="active" data-testid="btn-filter-active"
-                                class={@filter_btn_active_class}>Active</button>
-                            <button phx-click="filter_todos" phx-value-filter="completed" data-testid="btn-filter-completed"
-                                class={@filter_btn_completed_class}>Completed</button>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button phx-click="search_todos" phx-value-query="work"
-                                class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded text-xs hover:bg-blue-200">
-                                work
-                            </button>
-                            <button phx-click="search_todos" phx-value-query="home"
-                                class="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 rounded text-xs hover:bg-purple-200">
-                                home
-                            </button>
-                        </div>
+	                        <div class="flex space-x-2">
+	                            <button phx-click="filter_todos" phx-value-filter="all" data-testid="btn-filter-all"
+	                                class={@filter_btn_all_class}>All</button>
+	                            <button phx-click="filter_todos" phx-value-filter="active" data-testid="btn-filter-active"
+	                                class={@filter_btn_active_class}>Active</button>
+	                            <button phx-click="filter_todos" phx-value-filter="completed" data-testid="btn-filter-completed"
+	                                class={@filter_btn_completed_class}>Completed</button>
+	                        </div>
+	                        <div class="flex flex-wrap gap-2" data-testid="available-tags">
+	                            <%= for tag <- @available_tags do %>
+	                                <button phx-click="toggle_tag" phx-value-tag={tag} data-testid="tag-chip" data-tag={tag}
+	                                    class={"px-2 py-1 rounded text-xs transition-colors " <>
+	                                      (if Enum.member?(@selected_tags, tag),
+	                                        do: "bg-blue-500 text-white hover:bg-blue-600",
+	                                        else: "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 hover:bg-blue-200")}>
+	                                    <%= tag %>
+	                                </button>
+	                            <% end %>
+	                        </div>
 							
 							<!-- Sort Dropdown -->
 							<div>
@@ -1075,14 +1090,19 @@ class TodoLive {
                                                         Due: <%= v.due_display %>
                                                     </span>
                                                 <% end %>
-                                                <%= if v.has_tags do %>
-                                                    <%= for tag <- v.tags do %>
-                                                        <button phx-click="search_todos" phx-value-query={tag}
-                                                            class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 rounded text-xs hover:bg-blue-200"><%= tag %></button>
-                                                    <% end %>
-                                                <% end %>
-                                            </div>
-                                        </div>
+	                                                <%= if v.has_tags do %>
+	                                                    <%= for tag <- v.tags do %>
+	                                                        <button phx-click="toggle_tag" phx-value-tag={tag} data-testid="todo-tag" data-tag={tag}
+	                                                            class={"px-2 py-1 rounded text-xs transition-colors " <>
+	                                                              (if Enum.member?(@selected_tags, tag),
+	                                                                do: "bg-blue-500 text-white hover:bg-blue-600",
+	                                                                else: "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-200")}>
+	                                                            <%= tag %>
+	                                                        </button>
+	                                                    <% end %>
+	                                                <% end %>
+	                                            </div>
+	                                        </div>
 
                                         <!-- Actions -->
                                         <div class="flex space-x-2">
@@ -1130,48 +1150,78 @@ class TodoLive {
      * Helper to filter todos based on filter and search query
      * Pure Haxe implementation (no raw Elixir injection).
         */
-    static function filterTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, searchQuery: String): Array<server.schemas.Todo> {
-        inline function lower(s:String):String {
-            return s.toLowerCase();
-        }
-        var base = switch (filter) {
-            case shared.TodoTypes.TodoFilter.Active: todos.filter(function(t) return !t.completed);
-            case shared.TodoTypes.TodoFilter.Completed: todos.filter(function(t) return t.completed);
-            case shared.TodoTypes.TodoFilter.All: todos;
-        };
+	    static function filterTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, searchQuery: String): Array<server.schemas.Todo> {
+	        inline function lower(s:String):String {
+	            return s.toLowerCase();
+	        }
+	        var base = switch (filter) {
+	            case shared.TodoTypes.TodoFilter.Active: todos.filter(function(t) return !t.completed);
+	            case shared.TodoTypes.TodoFilter.Completed: todos.filter(function(t) return t.completed);
+	            case shared.TodoTypes.TodoFilter.All: todos;
+	        };
 
-        var result = if (searchQuery == null || searchQuery == "") {
-            base;
-        } else {
-            var ql = lower(searchQuery);
-            base.filter(function(t) {
-                var title = (t.title != null) ? lower(t.title) : "";
-                var desc = (t.description != null) ? lower(t.description) : "";
-                return title.indexOf(ql) != -1 || desc.indexOf(ql) != -1;
-            });
-        }
-        return result;
-    }
+	        var result = if (searchQuery == null || searchQuery == "") {
+	            base;
+	        } else {
+	            var ql = lower(searchQuery);
+	            base.filter(function(t) {
+	                var title = (t.title != null) ? lower(t.title) : "";
+	                var desc = (t.description != null) ? lower(t.description) : "";
+	                var matchesTag = (t.tags != null) && Enum.any(t.tags, function(tag) {
+	                    if (tag == null) return false;
+	                    var normalized = lower(tag);
+	                    return normalized != "" && normalized.indexOf(ql) != -1;
+	                });
+	                return title.indexOf(ql) != -1 || desc.indexOf(ql) != -1 || matchesTag;
+	            });
+	        }
+	        return result;
+	    }
+
+	    static function computeAvailableTags(todos: Array<server.schemas.Todo>): Array<String> {
+	        // Use Enum.flat_map + Enum.uniq + Enum.sort to generate idiomatic Elixir and
+	        // avoid nested-loop binder hygiene issues in generated code.
+	        var allTags = Enum.flatMap(todos, function(todo) {
+	            return (todo.tags != null)
+	                ? Enum.map(
+	                    Enum.filter(todo.tags, function(tag) {
+	                        return tag != null && StringTools.trim(tag) != "";
+	                    }),
+	                    function(tag) return StringTools.trim(tag)
+	                )
+	                : [];
+	        });
+
+	        return Enum.sort(Enum.uniq(allTags));
+	    }
 	
     /**
      * Helper to filter and sort todos
      *
-     * REFACTORED: Now uses typed Sorting API instead of raw injection strings.
-     * The Sorting.by() call is a proper Haxe function call that uses extern inline
-     * to inject idiomatic Elixir sorting code at compile time.
+     * NOTE: This is intentionally implemented in pure Haxe (no `__elixir__()` in apps).
+     * We rely on faithful Enum externs so the compiler emits idiomatic Elixir.
      */
     public static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, sortBy: shared.TodoTypes.TodoSort, searchQuery: String, selectedTags: Array<String>): Array<server.schemas.Todo> {
-        final sortKey = encodeSort(sortBy);
         // First, filter the todos in Haxe
         var filtered = filterTodos(todos, filter, searchQuery);
         // Then apply tag filtering if needed
         if (selectedTags != null && selectedTags.length > 0) {
             filtered = filtered.filter(function(t) {
                 var tags = (t.tags != null) ? t.tags : [];
-                return selectedTags.filter(function(sel) return tags.indexOf(sel) != -1).length > 0;
+                return Enum.any(selectedTags, function(sel) return tags.indexOf(sel) != -1);
             });
         }
-        // Sort using the typed Sorting API (extern inline on the framework side)
-        return cast Sorting.by(sortKey, filtered);
+
+        // Use Enum.sort_by (via ElixirEnum) with lexicographic list keys.
+        // Arrays compile to Elixir lists and are comparable under term ordering.
+        return switch (sortBy) {
+            case Priority:
+                Enum.sortBy(filtered, function(t) return (cast ([priorityRankForSort(t.priority), -t.id] : Array<Dynamic>)));
+            case DueDate:
+                Enum.sortBy(filtered, function(t) return (cast ([elixir.Kernel.isNil(t.dueDate), t.dueDate, -t.id] : Array<Dynamic>)));
+            case Created:
+                // Newest first (stable): use id desc as a proxy for creation order.
+                Enum.sortBy(filtered, function(t) return (cast ([-t.id] : Array<Dynamic>)));
+        };
     }
 }

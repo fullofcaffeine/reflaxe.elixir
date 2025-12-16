@@ -74,9 +74,9 @@ end end).())
   end
   def process_map(input) do
     key = input.keys()
-    _ = Enum.each(key, (fn -> fn item ->
-  value = input.get(item)
-  item.set(item, "Value: " <> Kernel.to_string(value))
+    _ = Enum.each(key, (fn -> fn _ ->
+  value = input.get(key)
+  result.set(key, "Value: " <> Kernel.to_string(value))
 end end).())
     %{}
   end
