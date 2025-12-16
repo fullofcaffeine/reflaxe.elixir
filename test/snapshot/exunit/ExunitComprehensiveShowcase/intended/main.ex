@@ -1,24 +1,24 @@
 defmodule Main do
   use ExUnit.Case, async: :true
   setup_all context do
-    module_state = module_state = moduleState = "initialized"
+    module_state = "initialized"
     %{:shared_resource => "database_connection", :test_environment => "test"}
   end
   setup context do
-    test_data = test_data = testData = ["apple", "banana", "cherry"]
-    counter = counter = 0
-    shared_resource = shared_resource = Map.get(context, :shared_resource)
+    test_data = ["apple", "banana", "cherry"]
+    counter = 0
+    shared_resource = Map.get(context, :shared_resource)
     %{:test_id => :rand.uniform(), :timestamp => DateTime.utc_now()}
   end
   setup context do
     on_exit((fn -> fn ->
-        test_data = test_data = testData = []
-        counter = counter = 0
+        test_data = []
+        counter = 0
       end end).())
     :ok
   end
   setup_all context do
-    on_exit(fn -> module_state = module_state = moduleState = nil end)
+    on_exit(fn -> module_state = nil end)
     :ok
   end
   describe "Performance Tests" do

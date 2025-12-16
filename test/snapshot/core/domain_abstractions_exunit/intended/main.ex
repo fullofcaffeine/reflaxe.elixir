@@ -81,7 +81,7 @@ defmodule Main do
     str = NonEmptyString_Impl_.parse("  hello world  ")
     assert match?({:ok, _}, str)
     (case str do
-      {:ok, trimmed} ->
+      {:ok, s} ->
         trimmed = NonEmptyString_Impl_.safe_trim(s)
         assert match?({:ok, _}, trimmed)
         (case trimmed do

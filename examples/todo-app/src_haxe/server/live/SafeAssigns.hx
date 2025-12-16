@@ -3,6 +3,7 @@ package server.live;
 import phoenix.Phoenix.Socket;
 import phoenix.LiveSocket;
 import server.live.TodoLiveTypes.TodoLiveAssigns;
+import elixir.List;
 
 // Bridge to the generated LiveView module for reuse of server-side helpers
 @:native("TodoAppWeb.TodoLive")
@@ -146,9 +147,11 @@ class SafeAssigns {
      */
     public static function toggleTag(socket: Socket<TodoLiveAssigns>, tag: String): Socket<TodoLiveAssigns> {
         var currentTags = socket.assigns.selected_tags;
-        var updatedTags = currentTags.contains(tag)
-            ? currentTags.filter(function(existingTag) return existingTag != tag)
-            : currentTags.concat([tag]);
+        var updatedTags = if (currentTags.contains(tag)) {
+            currentTags.filter(function(existingTag) return existingTag != tag);
+        } else {
+            List.insertAt(currentTags, 0, tag);
+        };
         return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.selected_tags, updatedTags);
     }
 

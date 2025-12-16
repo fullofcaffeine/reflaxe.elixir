@@ -36,6 +36,7 @@ class HandleEventSortByFinalBindTransforms {
 
   static function ensureSortBy(args:Array<EPattern>, body:ElixirAST):ElixirAST {
     if (!usesVar(body, "sort_by")) return body;
+    if (declaresVar(body, "sort_by")) return body;
 
     var paramsVar = extractParamsVar(args);
     var bind = makeAST(EBinary(Match,
@@ -59,6 +60,25 @@ class HandleEventSortByFinalBindTransforms {
     ASTUtils.walk(body, function(x:ElixirAST) {
       if (found) return;
       switch (x.def) { case EVar(v) if (v == name): found = true; default: }
+    });
+    return found;
+  }
+
+  static function declaresVar(body:ElixirAST, name:String):Bool {
+    var found = false;
+    ASTUtils.walk(body, function(x:ElixirAST) {
+      if (found) return;
+      switch (x.def) {
+        case EMatch(PVar(v), _expr) if (v == name):
+          found = true;
+        case EBinary(Match, lhs, _rhs):
+          switch (lhs.def) {
+            case EVar(v2) if (v2 == name):
+              found = true;
+            default:
+          }
+        default:
+      }
     });
     return found;
   }

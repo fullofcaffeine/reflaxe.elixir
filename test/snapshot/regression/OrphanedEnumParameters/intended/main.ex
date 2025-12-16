@@ -27,9 +27,9 @@ defmodule Main do
     description = ""
     (case state do
       {:loading, _progress} -> nil
-      {:processing, _description} -> description = "Progress: #{(fn -> Kernel.to_string(progress) end).()}%"
-      {:complete, _description} -> description = "Done: #{(fn -> result end).()}"
-      {:error, _description} -> description = "Error: #{(fn -> msg end).()}"
+      {:processing, progress} -> description = "Progress: #{(fn -> Kernel.to_string(progress) end).()}%"
+      {:complete, result} -> description = "Done: #{(fn -> result end).()}"
+      {:error, msg} -> description = "Error: #{(fn -> msg end).()}"
     end)
     nil
   end

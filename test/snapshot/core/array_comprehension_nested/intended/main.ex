@@ -188,13 +188,13 @@ end).()]
   end
   def mixed_constant_variable() do
     n = 3
-    _g = n
-    _ = Enum.each(0..(_g2 - 1), (fn -> fn item ->
-  i = item + 1
-  item = Enum.concat(item, [(fn -> g = []
-item = Enum.concat(item, [i])
-item = Enum.concat(item, [i + 1])
-item end).()])
+    g = n
+    _ = Enum.each(0..(_g2 - 1), (fn -> fn _ ->
+  i = _g1 + 1
+  _g = Enum.concat(_g, [(fn -> g = []
+_g = Enum.concat(_g, [i])
+_g = Enum.concat(_g, [i + 1])
+_g end).()])
 end end).())
     []
   end

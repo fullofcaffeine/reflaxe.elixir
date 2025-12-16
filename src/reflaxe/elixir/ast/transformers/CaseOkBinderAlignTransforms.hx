@@ -66,6 +66,30 @@ class CaseOkBinderAlignTransforms {
         return n == "socket" || n == "live_socket" || n == "livesocket" || n == "conn" || n == "params";
     }
 
+    static inline function isInfraTemp(name:String):Bool {
+        // Infrastructure temps: g, _g, g1, _g1, ...
+        if (name == null || name.length == 0) return false;
+        if (name == "g" || name == "_g") return true;
+        if (StringTools.startsWith(name, "_g")) {
+            var rest = name.substr(2);
+            return rest.length > 0 && isDigits(rest);
+        }
+        if (StringTools.startsWith(name, "g")) {
+            var rest2 = name.substr(1);
+            return rest2.length > 0 && isDigits(rest2);
+        }
+        return false;
+    }
+
+    static function isDigits(s:String):Bool {
+        if (s == null || s.length == 0) return false;
+        for (i in 0...s.length) {
+            var c = s.charCodeAt(i);
+            if (c < '0'.code || c > '9'.code) return false;
+        }
+        return true;
+    }
+
     /**
      * WHAT (update October 2025)
      * - Tighten binder alignment to avoid renaming {:ok, binder} to names that are
@@ -108,6 +132,34 @@ class CaseOkBinderAlignTransforms {
                     collectDeclaredFromStatement(rewrittenStatement, doScope);
                 }
                 makeASTWithMeta(EDo(doOutput), node.metadata, node.pos);
+            case EFn(clauses):
+                var outClauses:Array<EFnClause> = [];
+                for (cl in clauses) {
+                    // Function clauses introduce new locals via their argument patterns.
+                    var fnScope = cloneNameSet(declaredBefore);
+                    for (a in cl.args) collectPatternDeclsLower(a, fnScope);
+                    var newGuard = cl.guard == null ? null : alignWithScope(cl.guard, funcArgs, fnScope);
+                    var newBody = alignWithScope(cl.body, funcArgs, fnScope);
+                    outClauses.push({ args: cl.args, guard: newGuard, body: newBody });
+                }
+                makeASTWithMeta(EFn(outClauses), node.metadata, node.pos);
+            case EReceive(clauses, afterClause):
+                var outRecv:Array<ECaseClause> = [];
+                for (cl in clauses) {
+                    var recvScope = cloneNameSet(declaredBefore);
+                    collectPatternDeclsLower(cl.pattern, recvScope);
+                    var newGuard = cl.guard == null ? null : alignWithScope(cl.guard, funcArgs, recvScope);
+                    var newBody = alignWithScope(cl.body, funcArgs, recvScope);
+                    outRecv.push({ pattern: cl.pattern, guard: newGuard, body: newBody });
+                }
+                var newAfter:Null<EAfterClause> = null;
+                if (afterClause != null) {
+                    newAfter = {
+                        timeout: alignWithScope(afterClause.timeout, funcArgs, declaredBefore),
+                        body: alignWithScope(afterClause.body, funcArgs, declaredBefore)
+                    };
+                }
+                makeASTWithMeta(EReceive(outRecv, newAfter), node.metadata, node.pos);
             case ECase(expr, clauses):
                 var newExpr = alignWithScope(expr, funcArgs, declaredBefore);
                 var outClauses:Array<ECaseClause> = [];
@@ -161,6 +213,7 @@ class CaseOkBinderAlignTransforms {
 
         // Collect lowercase locals referenced in body that are NOT declared anywhere in-scope.
         var undefined:Array<String> = [];
+        var originalByLower = new Map<String,String>();
         var seen = new Map<String,Bool>();
         ASTUtils.walk(body, function(n:ElixirAST) {
             switch (n.def) {
@@ -172,6 +225,7 @@ class CaseOkBinderAlignTransforms {
                         if (!seen.exists(vlow) && allowLocalCandidate(vlow, currentLow, funcArgs) && !declaredInBody.exists(vlow)) {
                             seen.set(vlow, true);
                             undefined.push(vlow);
+                            if (!originalByLower.exists(vlow)) originalByLower.set(vlow, v);
                         }
                     }
                 default:
@@ -179,7 +233,7 @@ class CaseOkBinderAlignTransforms {
         });
 
         // Only rename when unambiguous; otherwise skip to avoid changing semantics.
-        return undefined.length == 1 ? undefined[0] : null;
+        return undefined.length == 1 ? originalByLower.get(undefined[0]) : null;
     }
 
     static function collectDeclaredLocals(body: ElixirAST): Map<String,Bool> {
@@ -200,6 +254,12 @@ class CaseOkBinderAlignTransforms {
                 case EMatch(p, _): collectFromPattern(p);
                 case EBinary(Match, left, _):
                     switch (left.def) { case EVar(nm): if (nm != null) declared.set(nm.toLowerCase(), true); default: }
+                case ECase(_, cs):
+                    for (c in cs) collectFromPattern(c.pattern);
+                case EFn(clauses):
+                    for (cl in clauses) for (a in cl.args) collectFromPattern(a);
+                case EReceive(clauses, _):
+                    for (cl in clauses) collectFromPattern(cl.pattern);
                 default:
             }
             return x;
@@ -212,6 +272,12 @@ class CaseOkBinderAlignTransforms {
         return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EVar(v) if (v == from): makeASTWithMeta(EVar(to), n.metadata, n.pos);
+                case ERaw(code) if (code != null):
+                    var updated = replaceIdent(code, from, to);
+                    if (updated != code) makeASTWithMeta(ERaw(updated), n.metadata, n.pos) else n;
+                case EString(s) if (s != null):
+                    var updatedS = replaceIdent(s, from, to);
+                    if (updatedS != s) makeASTWithMeta(EString(updatedS), n.metadata, n.pos) else n;
                 default: n;
             }
         });
@@ -220,10 +286,49 @@ class CaseOkBinderAlignTransforms {
     static inline function allowLocalCandidate(name:String, currentLow:String, funcArgs:Map<String,Bool>): Bool {
         if (name == null || name.length == 0) return false;
         if (name == currentLow) return false;
+        // Never align to underscore-leading or compiler temp names.
+        if (name.charAt(0) == "_") return false;
+        if (isInfraTemp(name)) return false;
         if (isEnvLike(name)) return false;
         if (funcArgs.exists(name)) return false;
         var c = name.charAt(0);
         return c.toLowerCase() == c;
+    }
+
+    static function replaceIdent(code:String, from:String, to:String):String {
+        if (code == null || from == null || to == null) return code;
+        if (from == to) return code;
+        if (code.indexOf(from) == -1) return code;
+
+        var buf = new StringBuf();
+        var i = 0;
+        while (i < code.length) {
+            var idx = code.indexOf(from, i);
+            if (idx == -1) { buf.add(code.substr(i)); break; }
+            // Ensure word boundary: not part of another identifier
+            var beforeOk = idx == 0 || !isIdentChar(code.charAt(idx - 1));
+            var afterIdx = idx + from.length;
+            var afterOk = afterIdx >= code.length || !isIdentChar(code.charAt(afterIdx));
+            if (beforeOk && afterOk) {
+                buf.add(code.substr(i, idx - i));
+                buf.add(to);
+                i = afterIdx;
+            } else {
+                // Not a boundary hit; keep scanning
+                buf.add(code.substr(i, (idx - i) + 1));
+                i = idx + 1;
+            }
+        }
+        return buf.toString();
+    }
+
+    static inline function isIdentChar(c:String):Bool {
+        if (c == null || c.length == 0) return false;
+        var cc = c.charCodeAt(0);
+        return (cc >= 'a'.code && cc <= 'z'.code)
+            || (cc >= 'A'.code && cc <= 'Z'.code)
+            || (cc >= '0'.code && cc <= '9'.code)
+            || cc == '_'.code;
     }
 
     static function collectPatternDeclsLower(p:EPattern, out:Map<String,Bool>):Void {

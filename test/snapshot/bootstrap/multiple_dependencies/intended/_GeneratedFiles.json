@@ -10,10 +10,7 @@
   "haxe/iterators/array_iterator.ex",
   "haxe/io/output.ex",
   "haxe/io/input.ex",
-  "haxe/io/bytes.ex",
-  "haxe/ds/tree_node.ex",
-  "haxe/ds/enum_value_map.ex",
-  "haxe/ds/balanced_tree.ex"
+  "haxe/io/bytes.ex"
 ],
   "id": 0,
   "wasCached": false,

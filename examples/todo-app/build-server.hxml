@@ -57,7 +57,6 @@
 # which Haxe DCE cannot see. Force-keep to ensure the module is emitted.
 --macro keep('server.components.CoreComponents')
 --macro keep('phoenix.DateFormat')
---macro keep('phoenix.Sorting')
 --macro keep('server.live.TodoLive')
 # Skip problematic stdlib structures we don't use in the todo app
 
@@ -86,6 +85,8 @@ server.infrastructure.Repo
 server.infrastructure.Telemetry
 server.infrastructure.Endpoint
 server.infrastructure.TodoAppWeb
+server.infrastructure.ErrorHTML
+server.infrastructure.ErrorJSON
 controllers.UserController
 server.components.CoreComponents
 server.i18n.Gettext

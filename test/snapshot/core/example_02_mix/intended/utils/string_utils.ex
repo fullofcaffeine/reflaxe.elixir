@@ -17,17 +17,17 @@ defmodule StringUtils do
     else
       parts = String.split(_this, " ")
       formatted = []
-      _ = Enum.each(parts, (fn -> fn item ->
-    if (length(item) > 0) do
+      _ = Enum.each(parts, (fn -> fn part ->
+    if (length(part) > 0) do
     capitalized = _this = String.at(part, 0) || ""
 String.upcase(_this) <> _this = len = nil
-if (item == nil) do
+if (len == nil) do
   String.slice(part, 1..-1)
 else
   String.slice(part, 1, len)
 end
 String.downcase(_this)
-    item = Enum.concat(item, [item])
+    formatted = Enum.concat(formatted, [part])
   end
 end end).())
       _ = Enum.join((fn -> " " end).())

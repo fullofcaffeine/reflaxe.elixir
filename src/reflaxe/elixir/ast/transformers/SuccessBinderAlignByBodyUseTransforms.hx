@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
  * SuccessBinderAlignByBodyUseTransforms
@@ -88,14 +89,26 @@ class SuccessBinderAlignByBodyUseTransforms {
                             var locked = false;
                             try { locked = untyped (cl.body != null && cl.body.metadata != null && (cl.body.metadata.lockPayloadBinder == true)); } catch (e:Dynamic) {}
                             if (okBinder == "_value" || locked) { newClauses.push(cl); continue; }
+                            // This pass is intentionally conservative: it should only realign binders
+                            // that are clearly "hygiene artifacts" (underscored or infrastructure temps).
+                            if (!isHygieneBinder(okBinder)) { newClauses.push(cl); continue; }
+                            // If the binder is referenced in the body/guard, renaming it without also
+                            // rewriting usages is unsafe and can introduce undefined locals.
+                            var binderUsed = VarUseAnalyzer.stmtUsesVarExact(cl.body, okBinder) || (cl.guard != null && VarUseAnalyzer.stmtUsesVarExact(cl.guard, okBinder));
+                            if (binderUsed) { newClauses.push(cl); continue; }
                             // Collect declared names inside clause body (pattern LHS and matches)
                             var clauseDeclared: Map<String,Bool> = new Map();
                             collectPatternDecls(cl.pattern, clauseDeclared);
                             collectLhsDeclsInBody(cl.body, clauseDeclared);
                             // Merge function-level declared (params + prior LHS) to avoid renaming to params
                             if (fnDeclared != null) for (k in fnDeclared.keys()) clauseDeclared.set(k, true);
-                            // Collect used names in clause body
+                            // Collect used names in clause body (+ guard) so we don't ignore names
+                            // that only appear in guards.
                             var used = collectUsedNames(cl.body);
+                            if (cl.guard != null) {
+                                var guardUsed = collectUsedNames(cl.guard);
+                                for (k in guardUsed.keys()) used.set(k, true);
+                            }
                             #if (sys && debug_ast_transformer) {
                                 var declArr = [for (k in clauseDeclared.keys()) k];
                                 var usedArr = [for (k in used.keys()) k];
@@ -106,38 +119,12 @@ class SuccessBinderAlignByBodyUseTransforms {
                             for (u in used.keys()) if (!clauseDeclared.exists(u) && u != okBinder && allowUndefined(u)) undef.push(u);
                             if (undef.length == 1) {
                                 var newName = undef[0];
-                                // Guard: never rename binder to a reserved env name
-                                if (!allowUndefined(newName)) {
-                                    newClauses.push(cl);
-                                    continue;
-                                }
+                                // Guard: never rename binder to an underscore/infra temp or reserved env name
+                                if (!allowUndefined(newName) || isHygieneBinder(newName)) { newClauses.push(cl); continue; }
                                 // Rewrite pattern binder to newName
                                 var newPattern = rewriteOkBinder(cl.pattern, newName);
-                                // Rewrite old binder references in body to newName
-                                // Only rewrite the binder in the pattern. Do NOT replace the old
-                                // binder name inside the body so that any references to `socket`
-                                // (or other outer variables) correctly refer to the outer scope
-                                // once the shadowing binder is renamed.
                                 newClauses.push({ pattern: newPattern, guard: cl.guard, body: cl.body });
                                 continue;
-                            }
-                            // Fallback: if multiple undefineds, choose the most frequently used in the body
-                            if (undef.length >= 1) {
-                                var freq = new haxe.ds.StringMap<Int>();
-                                for (u in undef) freq.set(u, 0);
-                                ASTUtils.walk(cl.body, function(w: ElixirAST) {
-                                    switch (w.def) { case EVar(nm) if (freq.exists(nm)): freq.set(nm, freq.get(nm) + 1); default: }
-                                });
-                                var best:Null<String> = null; var bestCount = -1;
-                                for (u in undef) {
-                                    var c = freq.exists(u) ? freq.get(u) : 0;
-                                    if (c > bestCount) { bestCount = c; best = u; }
-                                }
-                                if (best != null && allowUndefined(best)) {
-                                    var newPat2 = rewriteOkBinder(cl.pattern, best);
-                                    newClauses.push({ pattern: newPat2, guard: cl.guard, body: cl.body });
-                                    continue;
-                                }
                             }
                             // If no clear undefineds, keep binder as-is
                         }
@@ -154,8 +141,40 @@ class SuccessBinderAlignByBodyUseTransforms {
         if (name == null || name.length == 0) return false;
         // Exclude common environment names we never want to rebind to binder
         if (name == "socket" || name == "live_socket" || name == "liveSocket") return false;
+        // Never select underscore-leading or compiler temp vars as "meaningful" binders.
+        if (name.charAt(0) == "_") return false;
+        if (isInfraTemp(name)) return false;
         // Must be lowercase-starting simple name
         return isLower(name);
+    }
+
+    static function isHygieneBinder(name: String): Bool {
+        if (name == null || name.length == 0) return false;
+        if (name.charAt(0) == "_") return true;
+        return isInfraTemp(name);
+    }
+
+    static function isInfraTemp(name: String): Bool {
+        // Infrastructure temps: g, g1, g2..., _g, _g1...
+        if (name == "g" || name == "_g") return true;
+        if (StringTools.startsWith(name, "g")) {
+            var rest = name.substr(1);
+            return rest.length > 0 && isDigits(rest);
+        }
+        if (StringTools.startsWith(name, "_g")) {
+            var rest2 = name.substr(2);
+            return rest2.length > 0 && isDigits(rest2);
+        }
+        return false;
+    }
+
+    static function isDigits(s: String): Bool {
+        if (s == null || s.length == 0) return false;
+        for (i in 0...s.length) {
+            var c = s.charAt(i);
+            if (c < "0" || c > "9") return false;
+        }
+        return true;
     }
 
     static function collectFunctionDefinedVars(args: Array<EPattern>, body: ElixirAST): Map<String, Bool> {
@@ -166,6 +185,7 @@ class SuccessBinderAlignByBodyUseTransforms {
             switch (x.def) {
                 case EMatch(p, _): collectPatternDecls(p, vars);
                 case EBinary(Match, l, _): collectLhsDecls(l, vars);
+                case ECase(_, cs): for (c in cs) collectPatternDecls(c.pattern, vars);
                 default:
             }
         });

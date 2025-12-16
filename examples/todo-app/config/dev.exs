@@ -20,7 +20,7 @@ requested_haxe_wait_port =
 is_port_available? = fn port ->
   # The Haxe watcher (lix/haxeshim) binds on the IPv6 wildcard (::) as a dual-stack
   # socket by default (v6only=false). Probe IPv6 dual-stack first, fall back to IPv4.
-  ipv6_opts = [:binary, active: false, reuseaddr: true, ip: {0, 0, 0, 0, 0, 0, 0, 0}, ipv6_v6only: false]
+  ipv6_opts = [:binary, active: false, ip: {0, 0, 0, 0, 0, 0, 0, 0}, ipv6_v6only: false]
 
   case :gen_tcp.listen(port, ipv6_opts) do
     {:ok, socket} ->
@@ -28,7 +28,7 @@ is_port_available? = fn port ->
       true
 
     {:error, _} ->
-      case :gen_tcp.listen(port, [:binary, active: false, reuseaddr: true]) do
+      case :gen_tcp.listen(port, [:binary, active: false]) do
         {:ok, socket} ->
           :gen_tcp.close(socket)
           true

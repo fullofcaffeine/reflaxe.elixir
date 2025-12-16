@@ -19,8 +19,8 @@ defmodule ResultTools do
     (case result do
       {:ok, value} ->
         value.(value)
-      {:error, payload} ->
-        payload.(payload)
+      {:error, _error} ->
+        on_error.(on_error)
     end)
   end
   def is_ok(result) do
@@ -52,27 +52,28 @@ defmodule ResultTools do
   def unwrap_or_else(result, error_handler) do
     (case result do
       {:ok, value} -> value
-      {:error, payload} ->
-        payload.(payload)
+      {:error, error} ->
+        error.(error)
     end)
   end
   def filter(result, predicate, error_value) do
     (case result do
-      {:ok, payload} ->
-        if (payload.(payload)), do: {:ok, payload}, else: {:error, payload}
+      {:ok, value} ->
+        error_value = value
+        if (error_value.(error_value)), do: {:ok, error_value}, else: {:error, error_value}
       {:error, error} -> {:error, error}
     end)
   end
   def map_error(result, transform) do
     (case result do
       {:ok, value} -> {:ok, value}
-      {:error, payload} -> {:error, payload.(payload)}
+      {:error, error} -> {:error, error.(error)}
     end)
   end
   def bimap(result, on_success, on_error) do
     (case result do
       {:ok, value} -> {:ok, value.(value)}
-      {:error, payload} -> {:error, payload.(payload)}
+      {:error, _error} -> {:error, on_error.(on_error)}
     end)
   end
   def ok(value) do
@@ -83,11 +84,10 @@ defmodule ResultTools do
   end
   def sequence(results) do
     values = []
-    _ = Enum.each(results, (fn -> fn item ->
-    (case item do
-    {:ok, values} ->
-      value = item
-      item = Enum.concat(item, [item])
+    _ = Enum.each(results, (fn -> fn result ->
+    (case result do
+    {:ok, value} ->
+      result = Enum.concat(result, [value])
     {:error, error} ->
       {:error, error}
   end)

@@ -20,9 +20,14 @@ defmodule Main do
     _ = Enum.each(fruits, (fn -> fn _ ->
     nil
 end end).())
-    _ = Enum.each(fruits, (fn -> fn _ ->
-  i = 1
-  nil
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fruits}, (fn -> fn _, {fruits} ->
+  if (0 < length(fruits)) do
+    i = 1
+    nil
+    {:cont, {fruits}}
+  else
+    {:halt, {fruits}}
+  end
 end end).())
     i = 0
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fruits, i}, (fn -> fn _, {fruits, i} ->
@@ -73,8 +78,8 @@ end end).())
   end
   def multi_dimensional() do
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-    _ = Enum.each(matrix, (fn -> fn item ->
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {row}, (fn -> fn _, {row} ->
+    _ = Enum.each(matrix, (fn -> fn row ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> row + 1 end), {row}, (fn -> fn _, {row} ->
     if (0 < length(row)) do
       elem = row[0]
       nil

@@ -535,22 +535,38 @@ class HeexStringReturnToSigilTransforms {
                             : EDefp(name, argsRenamed, guards, newBody);
                         makeASTWithMeta(newDef, n.metadata, n.pos);
                     } else {
-                        // Fallback: if this is render(assigns) and body is string-ish, force conversion to ~H
-                        if ((hasAssignsParam || hasUnderscoredAssigns) && name == "render") {
-                            var collected = reflaxe.elixir.ast.TemplateHelpers.collectTemplateContent(body);
-                            // If collector produced an interpolation-wrapped literal, extract the inner HTML first
-                            var extracted = tryExtractQuotedFromInterpolation(collected);
-                            var content = (extracted != null) ? extracted : collected;
-                            if (looksLikeHtml(content)) {
-                                // Convert any #{}/$ {} expressions and control tags inside the content
-                                var conv = convertInterpolations(content);
-                                var normalized = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(conv);
-                                var sig = makeAST(ESigil("H", normalized, ""));
+                        // Fallback: LiveView requires render/1 to return a ~H sigil (%Phoenix.LiveView.Rendered{}),
+                        // but some HXX expansions still leave render/1 returning a plain string.
+                        //
+                        // IMPORTANT: Restrict this to render/1 only (arity=1) so we do not accidentally convert
+                        // Phoenix error renderers like ErrorHTML.render/2 or ErrorJSON.render/2 into HEEx.
+                        if (name == "render" && args.length == 1 && (hasAssignsParam || hasUnderscoredAssigns)) {
+                            if (containsHSigilAST(body)) {
+                                n;
+                            } else {
+                                // Ensure the param name is literally `assigns` when we materialize ~H.
+                                if (!hasAssignsParam && hasUnderscoredAssigns) {
+                                    var tmp2:Array<EPattern> = [];
+                                    for (a in args) switch (a) {
+                                        case PVar(p2) if (p2 == "_assigns"): tmp2.push(PVar("assigns"));
+                                        default: tmp2.push(a);
+                                    }
+                                    argsRenamed = tmp2;
+                                }
+
+                                // Collect the template content from the AST and emit a ~H sigil.
+                                // This path intentionally does NOT require "real" HTML tags up front:
+                                // render/1 must return a Rendered struct even for text-only templates.
+                                var collected2 = reflaxe.elixir.ast.TemplateHelpers.collectTemplateContent(body);
+                                var extracted2 = tryExtractQuotedFromInterpolation(collected2);
+                                var content2 = (extracted2 != null) ? extracted2 : collected2;
+                                var normalized2 = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(content2);
+                                var sig2 = makeAST(ESigil("H", normalized2, ""));
                                 var newDef2 = Type.enumConstructor(n.def) == "EDef"
-                                    ? EDef(name, argsRenamed, guards, sig)
-                                    : EDefp(name, argsRenamed, guards, sig);
+                                    ? EDef(name, argsRenamed, guards, sig2)
+                                    : EDefp(name, argsRenamed, guards, sig2);
                                 makeASTWithMeta(newDef2, n.metadata, n.pos);
-                            } else n;
+                            }
                         } else n;
                     }
                 default:

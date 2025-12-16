@@ -67,10 +67,14 @@ class ASTUtils {
      */
     public static function walk(ast: ElixirAST, visitor: ElixirAST -> Void): Void {
         if (ast == null || ast.def == null) return;
-        ElixirASTTransformer.transformNode(ast, function(n) {
-            visitor(n);
-            return n;
-        });
+
+        function walkNode(node: ElixirAST): Void {
+            if (node == null || node.def == null) return;
+            visitor(node);
+            ElixirASTTransformer.iterateAST(node, walkNode);
+        }
+
+        walkNode(ast);
     }
     
     /**
@@ -193,13 +197,16 @@ class ASTUtils {
         
         var hasPattern = false;
         
-        // Use transformNode for exhaustive traversal
-        ElixirASTTransformer.transformNode(ast, function(n) {
-            switch(n.def) {
+        function scan(node: ElixirAST): Void {
+            if (hasPattern) return;
+            if (node == null || node.def == null) return;
+
+            switch(node.def) {
                 case EField(_, field):
-                    if (field == "key_value_iterator" || field == "has_next" || 
+                    if (field == "key_value_iterator" || field == "has_next" ||
                         field == "next" || field == "key" || field == "value") {
                         hasPattern = true;
+                        return;
                     }
                 case ECall(func, _, _):
                     // Check for calls to iterator methods
@@ -208,14 +215,18 @@ class ASTUtils {
                             case EField(_, field):
                                 if (field == "key_value_iterator" || field == "has_next" || field == "next") {
                                     hasPattern = true;
+                                    return;
                                 }
                             default:
                         }
                     }
                 default:
             }
-            return n; // Return unchanged, we're just detecting
-        });
+
+            ElixirASTTransformer.iterateAST(node, scan);
+        }
+
+        scan(ast);
         
         return hasPattern;
     }

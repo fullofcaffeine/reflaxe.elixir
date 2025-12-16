@@ -11,8 +11,8 @@ defmodule Main do
   end
   def sum_range(struct, start, end_param) do
     sum = 0
-    _ = Enum.each(0..(end_param - 1), (fn -> fn item ->
-  i = item + 1
+    _ = Enum.each(0..(end_param - 1), (fn -> fn start ->
+  i = start + 1
   sum = sum + i
 end end).())
     sum

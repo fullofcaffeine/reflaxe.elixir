@@ -7,6 +7,7 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.naming.ElixirNaming;
 
 /**
  * UndefinedLocalExtractFromParamsTransforms
@@ -62,6 +63,8 @@ class UndefinedLocalExtractFromParamsTransforms {
     if (name == "socket" || name == "params" || name == "_params" || name == "event") return false;
     // Skip internal/intermediate variables that should NOT be extracted from params
     if (isInternalVariable(name)) return false;
+    // Never synthesize bindings for Elixir reserved keywords (would generate invalid syntax)
+    if (ElixirNaming.isReserved(name)) return false;
     return isLower(name) && name.charAt(0) != '_';
   }
 
@@ -166,34 +169,6 @@ class UndefinedLocalExtractFromParamsTransforms {
       if (n == null || n.def == null) return;
       switch (n.def) {
         case EVar(v): names.set(v, true);
-        case ERaw(code):
-          try {
-            if (code != null) {
-              var tok = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
-              var pos = 0;
-              while (tok.matchSub(code, pos)) {
-                var id = tok.matched(0);
-                if (allow(id)) names.set(id, true);
-                pos = tok.matchedPos().pos + tok.matchedPos().len;
-              }
-            }
-          } catch (e:Dynamic) {}
-        case EString(s):
-          try {
-            var block = new EReg("\\#\\{([^}]*)\\}", "g");
-            var pos = 0;
-            while (block.matchSub(s, pos)) {
-              var inner = block.matched(1);
-              var tok = new EReg("[A-Za-z_][A-Za-z0-9_]*", "gi");
-              var tpos = 0;
-              while (tok.matchSub(inner, tpos)) {
-                var id = tok.matched(0);
-                if (allow(id)) names.set(id, true);
-                tpos = tok.matchedPos().pos + tok.matchedPos().len;
-              }
-              pos = block.matchedPos().pos + block.matchedPos().len;
-            }
-          } catch (e:Dynamic) {}
         default:
       }
     });

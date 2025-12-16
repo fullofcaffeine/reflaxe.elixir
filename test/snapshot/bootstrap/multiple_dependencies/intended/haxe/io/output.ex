@@ -7,10 +7,15 @@ defmodule Output do
       throw("Invalid parameters")
     end
     k = len
-    _ = Enum.each(k, (fn -> fn item ->
-  item.writeByte(item.get(item))
-  item + 1
-  (item - 1)
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k}, (fn -> fn _, {k} ->
+  if (k > 0) do
+    struct.writeByte(b.get(pos))
+    pos + 1
+    (k - 1)
+    {:cont, {k}}
+  else
+    {:halt, {k}}
+  end
 end end).())
     len
   end

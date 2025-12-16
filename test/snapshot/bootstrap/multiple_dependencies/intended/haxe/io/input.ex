@@ -7,14 +7,19 @@ defmodule Input do
       throw("Invalid parameters")
     end
     k = len
-    _ = Enum.each(k, (fn -> fn item ->
-  byte = item.readByte()
-  if (item < 0) do
-    throw(:break)
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k}, (fn -> fn _, {k} ->
+  if (k > 0) do
+    byte = struct.readByte()
+    if (byte < 0) do
+      throw(:break)
+    end
+    b.set(pos, byte)
+    pos + 1
+    (k - 1)
+    {:cont, {k}}
+  else
+    {:halt, {k}}
   end
-  item.set(item, item)
-  item + 1
-  (item - 1)
 end end).())
     (len - k)
   end
@@ -55,11 +60,16 @@ end end).())
   def read_line(struct) do
     buf = %StringBuf{}
     last = nil
-    _ = Enum.each(last, (fn -> fn item ->
-  if (item == 10) do
-    throw(:break)
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {last}, (fn -> fn _, {last} ->
+  if (last = struct.readByte() >= 0) do
+    if (last == 10) do
+      throw(:break)
+    end
+    if (last != 13), do: buf.addChar(last)
+    {:cont, {last}}
+  else
+    {:halt, {last}}
   end
-  if (item != 13), do: item.addChar(item)
 end end).())
     _ = StringBuf.to_string(buf)
   end

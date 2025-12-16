@@ -66,7 +66,19 @@ defmodule Type do
     struct(cl)
   end
   def create_enum(enum, constructor, params) do
-    enum = Map.get(params, "enum")
+    wrap = Map.get(params, "wrap")
+    when_ = Map.get(params, "when")
+    values = Map.get(params, "values")
+    to_tuple = Map.get(params, "to_tuple")
+    to_atom = Map.get(params, "to_atom")
+    tag = Map.get(params, "tag")
+    other = Map.get(params, "other")
+    nil = Map.get(params, "nil")
+    is_list = Map.get(params, "is_list")
+    end_ = Map.get(params, "end")
+    do_ = Map.get(params, "do")
+    case_ = Map.get(params, "case")
+    arr = Map.get(params, "arr")
     _ignore_enum = enum
     
       tag = String.to_atom(constructor)
@@ -79,8 +91,6 @@ defmodule Type do
     
   end
   def create_enum_index(enum, index, params) do
-    index = Map.get(params, "index")
-    enum = Map.get(params, "enum")
     _ignore_enum = enum
     _ignore_i = index
     _ignore_p = params

@@ -1,14 +1,14 @@
 defmodule OptionTools do
   def map(option, transform) do
     (case option do
-      {:some, payload} -> {:some, transform.(payload)}
+      {:some, value} -> {:some, transform.(value)}
       {:none} -> {:none}
     end)
   end
   def then(option, transform) do
     (case option do
-      {:some, payload} ->
-        transform.(payload)
+      {:some, value} ->
+        transform.(value)
       {:none} -> {:none}
     end)
   end
@@ -23,8 +23,8 @@ defmodule OptionTools do
   end
   def filter(option, predicate) do
     (case option do
-      {:some, payload} ->
-        if (predicate.(payload)), do: {:some, payload}, else: {:none}
+      {:some, value} ->
+        if (predicate.(value)), do: {:some, value}, else: {:none}
       {:none} -> {:none}
     end)
   end
@@ -68,22 +68,20 @@ defmodule OptionTools do
   end
   def all(options) do
     values = []
-    _ = Enum.each(options, (fn -> fn item ->
-    (case item do
-    {:some, values} ->
-      value = item
-      item = Enum.concat(item, [item])
+    _ = Enum.each(options, (fn -> fn option ->
+    (case option do
+    {:some, value} ->
+      option = Enum.concat(option, [value])
     {:none} -> {:none}
   end)
 end end).())
     {:some, values}
   end
   def values(options) do
-    _ = Enum.each(options, (fn -> fn item ->
-    (case item do
-    {:some, result} ->
-      value = item
-      item = Enum.concat(item, [item])
+    _ = Enum.each(options, (fn -> fn option ->
+    (case option do
+    {:some, value} ->
+      option = Enum.concat(option, [value])
     {:none} -> nil
   end)
 end end).())
@@ -130,8 +128,8 @@ end end).())
   end
   def apply(option, fn_param) do
     (case option do
-      {:some, fn_} ->
-        fn_param.(fn_)
+      {:some, value} ->
+        fn_param.(value)
       {:none} -> nil
     end)
     option
