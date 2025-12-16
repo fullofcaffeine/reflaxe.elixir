@@ -40,3 +40,36 @@ test('clicking a tag chip filters by tags', async ({ page }) => {
   // Counter should change as a result of filtering
   await expect.poll(async () => await stats.first().innerText(), { timeout: 5000 }).not.toBe(beforeText)
 })
+
+test('clicking a todo tag filters by tags', async ({ page }) => {
+  const base = process.env.BASE_URL || 'http://localhost:4001'
+  await page.goto(base + '/todos')
+  await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 15000 })
+
+  const tagA = `todo-tag-a-${Date.now()}`
+  const tagB = `todo-tag-b-${Date.now()}`
+
+  const mk = async (title: string, tag: string) => {
+    await page.getByTestId('btn-new-todo').click()
+    const titleInput = page.getByTestId('input-title')
+    await expect(titleInput).toBeVisible({ timeout: 20000 })
+    await titleInput.fill(title)
+    await page.locator('input[name="tags"]').fill(tag)
+    await page.getByTestId('btn-create-todo').click()
+    await expect(page.locator('[data-testid="todo-card"] h3', { hasText: title })).toBeVisible({ timeout: 20000 })
+  }
+
+  const titleA = `TodoTag A ${Date.now()}`
+  const titleB = `TodoTag B ${Date.now()}`
+  await mk(titleA, tagA)
+  await mk(titleB, tagB)
+
+  const cardA = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: titleA }) }).first()
+  await expect(cardA).toBeVisible({ timeout: 20000 })
+  const tagBtn = cardA.locator(`[data-testid="todo-tag"][data-tag="${tagA}"]`).first()
+  await expect(tagBtn).toBeVisible({ timeout: 20000 })
+  await tagBtn.click()
+
+  await expect(page.locator('h3', { hasText: titleA })).toBeVisible({ timeout: 20000 })
+  await expect(page.locator('h3', { hasText: titleB })).toHaveCount(0)
+})
