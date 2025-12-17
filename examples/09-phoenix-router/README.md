@@ -55,7 +55,7 @@ end
 Compile the example:
 
 ```bash
-npx haxe build.hxml
+haxe build.hxml
 ```
 
 Generated files appear in `lib/` directory ready for Phoenix integration.

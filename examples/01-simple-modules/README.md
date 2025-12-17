@@ -96,13 +96,13 @@ function validateInput(data: String): Bool {
 
 After mastering simple modules, continue to:
 - [02-mix-project](../02-mix-project/) - Integration with Mix build system
-- [03-phoenix-controllers](../03-phoenix-controllers/) - Web request handling
-- [04-phoenix-liveview](../04-phoenix-liveview/) - Real-time interactivity
+- [03-phoenix-app](../03-phoenix-app/) - Minimal Phoenix web app authored in Haxe
+- [todo-app](../todo-app/) - Full Phoenix LiveView + Ecto reference app
 
 ## Troubleshooting
 
 **Compilation errors?**
-- Ensure Haxe 4.3.6+ is installed
+- Ensure Haxe 4.3.7+ is installed
 - Check that `reflaxe_runtime` flag is set in .hxml files
 - Verify src/ directory is in classpath
 

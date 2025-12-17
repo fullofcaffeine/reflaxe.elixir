@@ -71,8 +71,8 @@ Gating DOES NOT activate in these scenarios:
 
 ## Verification
 
-- Elixir builds: `npx haxe build-server.hxml` succeed; mix compiles; Elixir-only overrides are present.
-- Non-Elixir builds: `npx haxe build-client.hxml` (genes) succeed; no `__elixir__()` symbols; no staged overrides on classpath.
+- Elixir builds: `haxe build-server.hxml` succeed; mix compiles; Elixir-only overrides are present.
+- Non-Elixir builds: `haxe build-client.hxml` (genes) succeed; no `__elixir__()` symbols; no staged overrides on classpath.
 - Macro contexts: running macro tools no longer error on `__elixir__()`.
 
 ## Notes

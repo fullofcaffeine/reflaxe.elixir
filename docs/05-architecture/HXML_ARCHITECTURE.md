@@ -129,8 +129,9 @@ server.live.TodoLive
 
 # Production
 -D no-debug
--D dce=full          # Dead code elimination
--D analyzer-optimize # Optimizer
+-dce full            # Dead code elimination
+-D loop_unroll_max_cost=10
+# NOTE: Do not use -D analyzer-optimize for Elixir targets (it harms output quality).
 ```
 
 ### 4. Library Management
@@ -271,8 +272,9 @@ build.hxml
 # prod.hxml
 build.hxml
 -D no-debug
--D dce=full
--D analyzer-optimize
+-dce full
+-D loop_unroll_max_cost=10
+# NOTE: Do not use -D analyzer-optimize for Elixir targets (it harms output quality).
 ```
 
 ## Common Pitfalls to Avoid

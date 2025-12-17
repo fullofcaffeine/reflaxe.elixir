@@ -229,7 +229,7 @@ assert(getPath([], "TodoAppRouter", "@:router") == "todo_app_web/router.ex");
 ### Integration Test
 ```bash
 # Compile todo-app
-npx haxe build-server.hxml
+haxe build-server.hxml
 
 # Verify file structure
 find lib -name "*.ex" | head -20

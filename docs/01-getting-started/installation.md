@@ -53,7 +53,7 @@ haxe --version
 
 **Expected Output:**
 ```
-Haxe Compiler 4.3.6
+Haxe Compiler 4.3.7
 ```
 
 ### 3. Install Haxe Dependencies
@@ -124,7 +124,7 @@ ls out/*.ex.map
 
 #### `.haxerc`
 ```
-4.3.6
+4.3.7
 ```
 Specifies exact Haxe version for this project.
 
@@ -247,13 +247,13 @@ reflaxe.elixir/
 ### Common Issues
 
 #### Issue: `haxe: command not found`
-**Solution:** Always use `npx haxe` instead of `haxe`
+**Solution:** Install Haxe and/or use lix to run the project-local toolchain
 ```bash
-# ❌ This fails
+# Preferred (Haxe on PATH)
 haxe --version
 
-# ✅ This works  
-npx haxe --version
+# Fallback (run via lix if haxe isn’t on PATH)
+npx lix run haxe --version
 ```
 
 #### Issue: `Unknown identifier: reflaxe`
@@ -290,10 +290,10 @@ pwd                 # Should end with /reflaxe.elixir
 **Solution:** Ensure `-D source-map` flag is included
 ```bash
 # ❌ This won't generate source maps
-npx haxe build.hxml
+haxe build.hxml
 
 # ✅ This will generate source maps
-npx haxe build.hxml -D source-map
+haxe build.hxml -D source-map
 
 # Verify .ex.map files exist
 ls lib/*.ex.map
@@ -306,7 +306,7 @@ ls lib/*.ex.map
 rm -rf lib/*.ex lib/*.ex.map
 
 # Rebuild with source mapping
-npx haxe build.hxml -D source-map
+haxe build.hxml -D source-map
 
 # Test mapping
 mix haxe.source_map lib/MyModule.ex 10 5
@@ -319,7 +319,7 @@ mix haxe.source_map lib/MyModule.ex 10 5
 # Verify each component
 node --version      # Node.js
 npx lix --version   # lix package manager
-npx haxe --version  # Project-specific Haxe
+haxe --version      # Haxe (project toolchain)
 mix --version       # Elixir/Mix
 ```
 

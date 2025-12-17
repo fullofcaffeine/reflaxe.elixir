@@ -260,7 +260,7 @@ class MyModule {
 2. **Compilation not run:**
 ```bash
 # Recompile Haxe to Elixir
-npx haxe build.hxml
+haxe build.hxml
 
 # Verify generated file exists
 ls lib/generated/my_module.ex
@@ -642,7 +642,7 @@ function render(assigns: Dynamic): String {
 2. **Verify compiler version:**
 ```bash
 # Check you have HXX support
-npx haxe build.hxml --version
+haxe --version
 ```
 
 3. **Check build configuration:**
@@ -743,7 +743,7 @@ Compilation takes more than a few seconds.
 
 **Solutions:**
 
-1. **Use compilation server:**
+1. **Use the Haxe compilation server:**
 ```bash
 # Start compilation server
 haxe --wait 6000
@@ -752,19 +752,9 @@ haxe --wait 6000
 haxe build.hxml --connect 6000
 ```
 
-2. **Split into smaller modules:**
-```hxml
-# Create separate compilation units
-# build-schemas.hxml
--cp src_haxe
--D reflaxe.output=lib/generated/schemas
-schemas
-
-# build-controllers.hxml
--cp src_haxe
--D reflaxe.output=lib/generated/controllers
-controllers
-```
+2. **Prefer incremental compilation/watch workflows:**
+   - For Elixir/Mix projects: use `mix haxe.watch` (or your app's watcher integration)
+   - For plain HXML workflows: keep a compile server running and use `--connect`
 
 3. **Use conditional compilation:**
 ```haxe
@@ -780,9 +770,8 @@ Generated Elixir files are very large.
 
 **Solution:**
 ```hxml
-# Enable optimization
--D analyzer-optimize
--D reflaxe.optimize
+# Enable dead-code elimination (recommended for Elixir targets)
+-dce full
 
 # Remove debug information
 -D no-debug
@@ -797,11 +786,8 @@ Error: Out of memory
 
 **Solution:**
 ```bash
-# Increase Node.js memory (if using npx)
-NODE_OPTIONS="--max-old-space-size=4096" npx haxe build.hxml
-
-# Or increase Java heap (if using Java target)
-export HAXE_STD_PATH="--java=-Xmx2G"
+# If you're running Haxe through a Node wrapper (e.g. lix) and hit a Node OOM:
+NODE_OPTIONS="--max-old-space-size=4096" npx lix run haxe build.hxml
 ```
 
 ## IDE and Tooling Issues
@@ -816,7 +802,7 @@ code --install-extension vshaxe.haxe-extension-pack
 # Create .vscode/settings.json
 {
     "haxe.executable": "npx",
-    "haxe.arguments": ["haxe"],
+    "haxe.arguments": ["lix", "run", "haxe"],
     "haxe.displayConfigurations": [
         ["build.hxml"]
     ]
@@ -829,7 +815,7 @@ code --install-extension vshaxe.haxe-extension-pack
 1. Create `.haxerc` file:
 ```json
 {
-    "version": "4.3.6",
+    "version": "4.3.7",
     "resolveLibs": "scoped"
 }
 ```
@@ -837,7 +823,6 @@ code --install-extension vshaxe.haxe-extension-pack
 2. Ensure build.hxml has proper paths:
 ```hxml
 -cp src_haxe
--cp std
 -lib reflaxe.elixir
 ```
 
@@ -1060,7 +1045,7 @@ MyModule.function()
 If you can't resolve your issue:
 
 1. **Check the documentation:**
-   - [Getting Started Guide](./GETTING_STARTED.md)
+   - [Quickstart](./QUICKSTART.md)
    - [Documentation Index](../README.md)
    - [Examples](../../examples/)
 
@@ -1087,7 +1072,7 @@ When encountering issues, go through this checklist:
 - [ ] Haxe version 4.3.0+ installed?
 - [ ] Reflaxe.elixir properly installed?
 - [ ] All dependencies installed (`npm install` and `mix deps.get`)?
-- [ ] Code compiled (`npx haxe build.hxml`)?
+- [ ] Code compiled (`haxe build.hxml`)?
 - [ ] Mix compilers configured in `mix.exs`?
 - [ ] Generated files present in `lib/generated/`?
 - [ ] No syntax errors in Haxe code?
@@ -1131,7 +1116,7 @@ Most issues fall into these categories:
 1. Check error level (⚠️ warning vs ❌ error)
 2. Verify all required annotations present
 3. Confirm build.hxml configuration
-4. Test Haxe compilation separately (`npx haxe build.hxml`)
+4. Test Haxe compilation separately (`haxe build.hxml`)
 5. Check generated Elixir files exist
 
 Remember: The compiler is your friend! Read error messages carefully—they usually point directly to the problem.

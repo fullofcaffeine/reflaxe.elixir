@@ -258,7 +258,7 @@ mix ecto.migrate
 rm -rf lib/*.ex lib/**/*.ex
 rm -rf _build deps
 mix deps.get
-npx haxe build-server.hxml
+haxe build-server.hxml
 mix compile
 ```
 

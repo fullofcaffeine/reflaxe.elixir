@@ -400,7 +400,7 @@ After compilation, check for `.ex.map` files:
 
 ```bash
 # Compile with source mapping
-npx haxe build.hxml
+haxe build.hxml
 
 # Verify source maps were generated
 ls lib/*.ex.map
@@ -443,7 +443,7 @@ end
 
 2. **Compile with Source Mapping**
    ```bash
-   npx haxe build.hxml -D source-map
+   haxe build.hxml -D source-map
    ```
 
 3. **Debug with Source Positions**
@@ -1123,7 +1123,7 @@ This performance analysis demonstrates that source mapping adds minimal overhead
 1. Clean and rebuild:
    ```bash
    rm -rf lib/*.ex lib/*.ex.map
-   npx haxe build.hxml -D source-map
+   haxe build.hxml -D source-map
    ```
 
 2. Clear Mix cache:
@@ -1140,7 +1140,7 @@ This performance analysis demonstrates that source mapping adds minimal overhead
 1. Use incremental compilation:
    ```bash
    # Start Haxe server
-   npx haxe --wait 6000
+   haxe --wait 6000
    
    # Use server for compilation
    mix haxe.watch
@@ -1345,7 +1345,7 @@ end
     {
       "label": "Compile Haxe with Source Maps",
       "type": "shell",
-      "command": "npx haxe build.hxml -D source-map",
+      "command": "haxe build.hxml -D source-map",
       "problemMatcher": "$haxe"
     }
   ]

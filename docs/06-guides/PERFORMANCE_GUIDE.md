@@ -189,7 +189,7 @@ end
 
 **Analyze output:**
 ```bash
-npx haxe build.hxml --times 2>&1 | tee compilation_profile.txt
+haxe build.hxml --times 2>&1 | tee compilation_profile.txt
 
 # Parse timing data
 grep "ElixirCompiler" compilation_profile.txt | sort -n -k2
@@ -432,7 +432,7 @@ COPY --from=elixir-deps /deps/deps ./deps
 
 - name: Parallel compilation
   run: |
-    npx haxe build.hxml -D parallel_compilation
+    npx lix run haxe build.hxml -D parallel_compilation
 ```
 
 ## Monitoring Performance
@@ -447,7 +447,7 @@ defmodule Mix.Tasks.Compile.HaxeWithMetrics do
   def run(_args) do
     start_time = System.monotonic_time()
     
-    result = System.cmd("npx", ["haxe", "build.hxml"])
+    result = System.cmd("haxe", ["build.hxml"])
     
     duration = System.monotonic_time() - start_time
     duration_ms = System.convert_time_unit(duration, :native, :millisecond)
@@ -544,7 +544,7 @@ FATAL ERROR: Ineffective mark-compacts near heap limit
 **Diagnosis**:
 ```bash
 # Monitor memory usage
-/usr/bin/time -v npx haxe build.hxml
+/usr/bin/time -v haxe build.hxml
 ```
 
 **Solution**:
@@ -552,8 +552,8 @@ FATAL ERROR: Ineffective mark-compacts near heap limit
 # Increase Node.js memory
 export NODE_OPTIONS="--max-old-space-size=4096"
 
-# Enable incremental compilation
-haxe build.hxml -D incremental
+# Prefer a compilation server for repeated builds
+haxe --wait 6000
 ```
 
 ### Runtime Performance Degradation
