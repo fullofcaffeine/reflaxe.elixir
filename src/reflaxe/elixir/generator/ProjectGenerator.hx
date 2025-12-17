@@ -507,6 +507,12 @@ class ProjectGenerator {
 		if (options.verbose) {
 			Sys.println('Created AGENTS.md with AI development instructions');
 		}
+
+		// Ensure .haxerc exists for lix-managed toolchain
+		var haxercPath = Path.join([projectPath, ".haxerc"]);
+		if (!FileSystem.exists(haxercPath)) {
+			File.saveContent(haxercPath, '{\n  "version": "4.3.7",\n  "resolveLibs": "scoped"\n}\n');
+		}
 		
 		// Create LLM documentation directory structure
 		createLLMDocumentation(projectPath, options);
@@ -630,8 +636,10 @@ class ProjectGenerator {
 	function generateBuildHxml(projectName: String): String {
 		return '-cp src_haxe
 -lib reflaxe.elixir
--D reflaxe.output=lib/generated
+-D elixir_output=lib/generated
 -D reflaxe_runtime
+-dce full
+--macro reflaxe.elixir.CompilerInit.Start()
 --main Main
 ';
 	}
@@ -643,8 +651,9 @@ class ProjectGenerator {
   "version": "0.1.0",
   "description": "A Reflaxe.Elixir project",
   "scripts": {
-    "compile": "npx haxe build.hxml",
-    "watch": "npx nodemon --watch src_haxe --ext hx --exec \\"npx haxe build.hxml\\"",
+    "setup:haxe": "npx lix download",
+    "compile": "npx lix run haxe build.hxml",
+    "watch": "npx nodemon --watch src_haxe --ext hx --exec \\"npx lix run haxe build.hxml\\"",
     "test": "mix test"
   },
   "devDependencies": {
@@ -680,7 +689,7 @@ npm install
 mix deps.get
 
 # Compile Haxe to Elixir
-npx haxe build.hxml
+haxe build.hxml
 ```
 
 ### Development
@@ -1207,10 +1216,10 @@ This project includes comprehensive documentation specifically designed for AI a
 ### Generating Enhanced Documentation
 ```bash
 # Generate full API documentation
-npx haxe build.hxml -D generate-llm-docs
+haxe build.hxml -D generate-llm-docs
 
 # Extract patterns from your code
-npx haxe build.hxml -D extract-patterns
+haxe build.hxml -D extract-patterns
 ```
 
 ## 📚 Additional Resources

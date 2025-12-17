@@ -14,7 +14,7 @@ using StringTools;
  *   haxelib run reflaxe.elixir create my-app
  */
 class Run {
-	static var VERSION = "1.0.2";
+	static final FALLBACK_VERSION = "unknown";
 	
 	public static function main() {
 		var args = Sys.args();
@@ -37,7 +37,7 @@ class Run {
 			case "create":
 				handleCreate(args.slice(1));
 			case "version", "--version", "-v":
-				Sys.println('Reflaxe.Elixir v$VERSION');
+				Sys.println('Reflaxe.Elixir v${detectVersion()}');
 			case "help", "--help", "-h":
 				showHelp();
 			default:
@@ -147,7 +147,8 @@ class Run {
 			Sys.println('  mix deps.get         # Install Elixir dependencies');
 		}
 		
-		Sys.println('  npx haxe build.hxml  # Compile Haxe to Elixir');
+		Sys.println('  haxe build.hxml                 # Compile Haxe to Elixir');
+		Sys.println('  # or: npx lix run haxe build.hxml  (lix-managed toolchain)');
 		
 		if (projectType == "phoenix" || projectType == "liveview") {
 			Sys.println('  mix ecto.create      # Create database');
@@ -184,6 +185,45 @@ class Run {
 		Sys.println("");
 		Sys.println("For more information, visit:");
 		Sys.println("  https://github.com/fullofcaffeine/reflaxe.elixir");
+	}
+
+	static function detectVersion(): String {
+		try {
+			var versionFromCwd = readVersionFrom(Path.join([Sys.getCwd(), "haxelib.json"]));
+			if (versionFromCwd != null) return versionFromCwd;
+
+			// When installed via haxelib/lix, Sys.programPath() typically lives under the library dir.
+			// Walk upward a few levels looking for haxelib.json.
+			var currentDir = Path.directory(Sys.programPath());
+			var steps = 0;
+			while (currentDir != null && currentDir != "/" && steps < 8) {
+				var candidate = Path.join([currentDir, "haxelib.json"]);
+				var version = readVersionFrom(candidate);
+				if (version != null) return version;
+
+				currentDir = Path.directory(currentDir);
+				steps++;
+			}
+		} catch (_: Dynamic) {}
+
+		return FALLBACK_VERSION;
+	}
+
+	static function readVersionFrom(path: String): Null<String> {
+		if (!FileSystem.exists(path)) return null;
+
+		try {
+			var content = File.getContent(path);
+			var parsed: Dynamic = haxe.Json.parse(content);
+			var name: Null<String> = Reflect.field(parsed, "name");
+			var version: Null<String> = Reflect.field(parsed, "version");
+
+			if (name == "reflaxe.elixir" && version != null && version != "") {
+				return version;
+			}
+		} catch (_: Dynamic) {}
+
+		return null;
 	}
 	
 	static function showCreateHelp() {

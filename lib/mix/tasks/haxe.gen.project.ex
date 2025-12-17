@@ -68,6 +68,9 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     
     # 2. Create Haxe build configuration
     create_build_config(config)
+
+    # 2b. Create .haxerc for lix-managed toolchain (if missing)
+    create_haxerc(config)
     
     # 3. Create package.json for npm dependencies (if not skipped)
     unless config.skip_npm do
@@ -128,6 +131,14 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     Mix.shell().info("Created Haxe build configuration: build.hxml")
   end
 
+  defp create_haxerc(config) do
+    haxerc_content =
+      Jason.encode!(%{version: "4.3.7", resolveLibs: "scoped"}, pretty: true) <> "\n"
+
+    write_file_with_confirmation(".haxerc", haxerc_content, config.force)
+    Mix.shell().info("Created .haxerc for lix-managed Haxe toolchain")
+  end
+
   # Generate build.hxml content
   defp build_hxml_content(config) do
     """
@@ -139,10 +150,14 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     
     # Libraries
     -lib reflaxe.elixir
+
+    # Initialize the target (required)
+    --macro reflaxe.elixir.CompilerInit.Start()
     
     # Compiler flags
-    -D reflaxe.output=#{config.output_dir}
+    -D elixir_output=#{config.output_dir}
     -D reflaxe_runtime
+    -dce full
     
     # Entry point
     --main Main
@@ -167,11 +182,10 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       version: "0.1.0",
       description: "Elixir project with Reflaxe.Elixir support",
       scripts: %{
-        compile: "npx haxe build.hxml",
-        watch: "npx nodemon --watch #{config.haxe_dir} --ext hx --exec \"npx haxe build.hxml\"",
-        test: "npm run test:haxe && npm run test:elixir",
-        "test:haxe": "npx haxe test.hxml",
-        "test:elixir": "mix test"
+        "setup:haxe": "npx lix download",
+        compile: "npx lix run haxe build.hxml",
+        watch: "npx nodemon --watch #{config.haxe_dir} --ext hx --exec \"npx lix run haxe build.hxml\"",
+        test: "mix test"
       },
       devDependencies: %{
         lix: "^15.12.4",
@@ -456,8 +470,9 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     Mix.shell().info("🎉 Reflaxe.Elixir setup complete!")
     Mix.shell().info("")
     Mix.shell().info("Next steps:")
-    Mix.shell().info("  1. Install Reflaxe.Elixir:")
+    Mix.shell().info("  1. Install Reflaxe.Elixir (Haxe library):")
     Mix.shell().info("     npx lix install github:fullofcaffeine/reflaxe.elixir")
+    Mix.shell().info("     npx lix download")
     Mix.shell().info("")
     
     unless config.skip_npm do
@@ -467,7 +482,8 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     end
     
     Mix.shell().info("  3. Compile your first Haxe code:")
-    Mix.shell().info("     npx haxe build.hxml")
+    Mix.shell().info("     haxe build.hxml")
+    Mix.shell().info("     # or: npx lix run haxe build.hxml")
     Mix.shell().info("")
     Mix.shell().info("  4. Start development with file watching:")
     Mix.shell().info("     npm run watch")
@@ -475,7 +491,8 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     Mix.shell().info("  5. Test your generated Elixir code:")
     Mix.shell().info("     mix test")
     Mix.shell().info("")
-    Mix.shell().info("📖 For more information, see: documentation/GETTING_STARTED.md")
+    Mix.shell().info("📖 Docs:")
+    Mix.shell().info("  https://github.com/fullofcaffeine/reflaxe.elixir/tree/main/docs")
     Mix.shell().info("")
   end
 
