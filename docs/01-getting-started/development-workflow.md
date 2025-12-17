@@ -211,7 +211,7 @@ All compilation features meet <15ms performance requirements:
 
 ### Configuration Files
 - **`package.json`**: npm scripts, lix dependency  
-- **`.haxerc`**: Project-specific Haxe version (4.3.6)
+- **`.haxerc`**: Project-specific Haxe version (4.3.7)
 - **`haxe_libraries/`**: lix-managed dependencies (tink_unittest, reflaxe)
 - **`mix.exs`**: Elixir dependencies (Phoenix, Ecto)
 
@@ -230,7 +230,7 @@ All compilation features meet <15ms performance requirements:
 ### Enable Source Mapping
 ```bash
 # Compile with source maps for debugging
-npx haxe build.hxml -D source-map
+haxe build.hxml -D source-map
 
 # Verify .ex.map files were created
 ls lib/*.ex.map
@@ -301,8 +301,8 @@ class TestNewFeature {
 # Check project Haxe version  
 cat .haxerc
 
-# Use project-specific Haxe
-npx haxe --version  
+# Use project-specific Haxe (via lix)
+npx lix run haxe --version
 
 # Reset lix scope
 npx lix scope create
@@ -338,14 +338,15 @@ haxe test/Test.hxml update-intended
 ```bash
 # Clean and rebuild everything
 rm -rf lib/*.ex lib/**/*.ex  # Remove generated files
-npx haxe build.hxml          # Regenerate from Haxe
+npx lix run haxe build.hxml  # Regenerate from Haxe
 mix compile --force          # Verify Elixir compilation
 ```
 
 ## Best Practices
 
 ### Development Workflow
-- **Always use `npx haxe`** instead of global `haxe` command
+- Prefer `haxe` (from a proper Haxe install) or `npx lix run haxe` (lix-managed toolchain).
+- Avoid `npx haxe ...` (the npm package): it may download a platform-specific binary and can break on macOS arm64.
 - **Run full test suite** before committing changes
 - **Use source maps** for debugging (`-D source-map`)
 - **Test todo-app integration** after compiler changes

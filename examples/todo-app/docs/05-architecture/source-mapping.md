@@ -235,7 +235,7 @@ function saveFileWithSourceMap(path: String, content: String, sourceMap: SourceM
 ### Manual Testing
 ```bash
 # 1. Compile with source maps
-npx haxe build-server.hxml
+haxe build-server.hxml
 
 # 2. Check .ex.map files exist
 ls lib/**/*.ex.map

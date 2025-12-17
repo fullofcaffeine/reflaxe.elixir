@@ -26,7 +26,7 @@ This example demonstrates Elixir protocol support in Reflaxe.Elixir, enabling po
 
 ```bash
 cd examples/07-protocols
-npx haxe build.hxml
+haxe build.hxml
 ```
 
 Generated files appear in `lib/` directory:

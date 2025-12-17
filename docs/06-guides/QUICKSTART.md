@@ -1,218 +1,33 @@
-# 5-Minute Quickstart Guide
+# Quickstart (Phoenix-first)
 
-Get a Reflaxe.Elixir project running in under 5 minutes!
+This project is an **alpha** Haxe→Elixir compiler with deep Phoenix support. This quickstart is focused on helping a Phoenix developer get productive quickly.
 
-## 🚀 Installation & Project Creation
+## Pick a Path
 
-### Option 1: New Standalone Project
+- New Phoenix app (greenfield): `docs/06-guides/PHOENIX_NEW_APP.md`
+- Existing Phoenix app (gradual adoption): `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`
+- Learn by example: `examples/README.md` (start with `examples/03-phoenix-app/` or `examples/todo-app/`)
 
-```bash
-# Install Reflaxe.Elixir
-npx lix install github:fullofcaffeine/reflaxe.elixir
+## Prerequisites
 
-# Create your first project
-npx lix run reflaxe.elixir create hello-world
+- Elixir 1.14+
+- Node.js 16+ (for `lix` and JS toolchain)
+- Haxe 4.3.7+ on your PATH
 
-# Navigate to your project
-cd hello-world
-```
+If you don’t have Haxe installed yet, start here: `docs/01-getting-started/installation.md`.
 
-### Option 2: Add to Existing Elixir Project
-
-```bash
-# Navigate to your existing Elixir project
-cd existing-elixir-project
-
-# Add Haxe support using Mix task
-mix haxe.gen.project --basic-modules
-
-# Or interactively
-npx lix run reflaxe.elixir create --type add-to-existing
-```
-
-## 📁 What Was Created?
-
-```
-hello-world/
-├── src_haxe/          # Your Haxe source files go here
-│   └── Main.hx        # Entry point
-├── lib/               # Elixir output
-│   └── generated/     # Compiled Haxe→Elixir files
-├── build.hxml         # Haxe build configuration
-├── mix.exs            # Elixir project file
-└── package.json       # Node.js dependencies
-```
-
-## ✏️ Write Your First Haxe Code
-
-Edit `src_haxe/Main.hx`:
-
-```haxe
-package;
-
-@:module
-class Main {
-    public static function main(): Void {
-        trace("Hello from Haxe→Elixir!");
-        
-        var greeting = Greeter.greet("World");
-        trace(greeting);
-    }
-}
-
-@:module
-class Greeter {
-    public static function greet(name: String): String {
-        return 'Hello, $name! Welcome to Reflaxe.Elixir!';
-    }
-}
-```
-
-## 🔨 Compile & Run
+## One-Minute Smoke Test (using the repo’s todo-app)
 
 ```bash
-# Compile Haxe to Elixir
-npx haxe build.hxml
-
-# Run the generated Elixir code
-mix run -e "Main.main()"
+cd examples/todo-app
+mix setup
+mix dev
 ```
 
-Expected output:
-```
-Hello from Haxe→Elixir!
-Hello, World! Welcome to Reflaxe.Elixir!
-```
+Open `http://localhost:4000`.
 
-## 🎯 Try Different Project Types
+## Important Notes
 
-### Phoenix Web Application
-```bash
-npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
-cd my-phoenix-app
-npm install && mix deps.get
-npx haxe build.hxml
-mix phx.server
-# Visit http://localhost:4000
-```
-
-### LiveView Interactive App
-```bash
-npx lix run reflaxe.elixir create my-liveview-app --type liveview
-cd my-liveview-app
-npm install && mix deps.get
-npx haxe build.hxml
-mix phx.server
-# Visit http://localhost:4000
-```
-
-### Add to Existing Elixir Project
-```bash
-cd existing-elixir-project
-
-# Method 1: Using Mix task (recommended for Elixir developers)
-mix haxe.gen.project --basic-modules
-
-# Method 2: Using Haxe generator
-npx lix run reflaxe.elixir create --type add-to-existing
-# Follow the prompts to add Haxe support
-```
-
-## 💡 Development Workflow
-
-### Watch Mode (Auto-compile on changes)
-```bash
-npm run watch
-```
-
-### Run Tests
-```bash
-# Haxe tests
-npm test
-
-# Elixir tests  
-mix test
-```
-
-### Interactive Development
-```bash
-# Start IEx with your compiled modules
-iex -S mix
-
-# In IEx, call your Haxe-compiled functions
-iex> Greeter.greet("Haxe")
-"Hello, Haxe! Welcome to Reflaxe.Elixir!"
-```
-
-## 🎨 VS Code Integration
-
-The generator automatically creates VS Code configuration. Just open the project:
-
-```bash
-code .
-```
-
-Recommended extensions will be suggested automatically:
-- Haxe language support
-- Elixir language support
-- LiveView snippets
-
-## 📚 Next Steps
-
-Now that you have a working project:
-
-1. **Explore Examples**: Check the `examples/` folder in the Reflaxe.Elixir repo
-2. **Read the Guide**: See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed information
-3. **Learn Features**: Review [FEATURES.md](../04-api-reference/FEATURES.md) for available functionality
-4. **Join Community**: Get help and share your projects
-
-## 🆘 Troubleshooting
-
-### "Command not found: lix"
-```bash
-npm install -g lix
-```
-
-### "Module reflaxe.elixir not found"
-```bash
-# Reinstall with explicit GitHub URL
-npx lix install github:fullofcaffeine/reflaxe.elixir --force
-
-# Or using haxelib
-haxelib git reflaxe.elixir https://github.com/fullofcaffeine/reflaxe.elixir
-```
-
-### "Type not found" errors
-Make sure you have the latest version:
-```bash
-# With lix
-npx lix reinstall reflaxe.elixir
-
-# With haxelib
-haxelib update reflaxe.elixir
-```
-
-### Mix task not found
-```bash
-# Ensure you're in an Elixir project with mix.exs
-mix compile
-
-# Then try the generator task
-mix haxe.gen.project
-```
-
-### Phoenix won't start
-```bash
-mix deps.get
-mix ecto.create
-mix phx.server
-```
-
-## 🎉 Success!
-
-You now have a working Haxe→Elixir project! Start building with:
-- **Type safety** from Haxe
-- **Power** of Elixir/BEAM
-- **Productivity** of Phoenix
-
-Happy coding! 🚀
+- Prefer `haxe ...` (or `npx lix run haxe ...` if `haxe` isn’t on your PATH).
+- Avoid `npx haxe ...` (the npm package) — it can pull a separate platform-specific Haxe binary and breaks on some systems (notably macOS arm64).
+- Do not use `-D analyzer-optimize` for the Elixir target; it produces non-idiomatic output and can break functional shapes. See `docs/01-getting-started/compiler-flags-guide.md`.

@@ -57,11 +57,16 @@ Additional (uncurated) architecture notes were archived to **[09-history/archive
 ### 📋 How-To Guides
 **[06-guides/](06-guides/)** - Practical guides for specific tasks
 - [Quickstart](06-guides/QUICKSTART.md) - Fast track to productivity
-- [Getting Started](06-guides/GETTING_STARTED.md) - Practical onboarding
-- [Phoenix Integration Guide](06-guides/PHOENIX_INTEGRATION_GUIDE.md) - Phoenix app setup + patterns
-- [Project Generator Guide](06-guides/PROJECT_GENERATOR_GUIDE.md) - CLI project generation
+- [Phoenix (New App)](06-guides/PHOENIX_NEW_APP.md) - Greenfield Phoenix setup
+- [Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md) - Gradual adoption in an existing app
+- [Production Deployment](06-guides/PRODUCTION_DEPLOYMENT.md) - CI/Docker/release patterns
 - [Performance Guide](06-guides/PERFORMANCE_GUIDE.md) - Compilation performance
 - [Troubleshooting](06-guides/TROUBLESHOOTING.md) - Common issues and solutions
+
+Legacy guides (kept for link stability, but archived):
+- [Getting Started (Legacy)](06-guides/GETTING_STARTED.md)
+- [Phoenix Integration Guide (Legacy)](06-guides/PHOENIX_INTEGRATION_GUIDE.md)
+- [Project Generator Guide (Legacy)](06-guides/PROJECT_GENERATOR_GUIDE.md)
 
 ### 🎯 Patterns & Examples
 **[07-patterns/](07-patterns/)** - Code patterns and best practices
@@ -105,6 +110,8 @@ This documentation is optimized for AI assistant development with **AGENTS.md** 
 
 - **[Installation](01-getting-started/installation.md)** - Get started in 5 minutes
 - **[Quickstart](06-guides/QUICKSTART.md)** - Your first Haxe→Elixir project
+- **[Phoenix (New App)](06-guides/PHOENIX_NEW_APP.md)** - Greenfield Phoenix setup
+- **[Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md)** - Add Haxe to an existing Phoenix app
 - **[Phoenix Guide](02-user-guide/PHOENIX_INTEGRATION.md)** - Building Phoenix applications
 - **[Troubleshooting](06-guides/TROUBLESHOOTING.md)** - Solve common issues
 - **[Contributing](10-contributing/contributing.md)** - Help improve the project

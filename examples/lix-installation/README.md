@@ -15,7 +15,7 @@ npm install lix
 npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # 3. (Optional) Install a specific version
-# npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.1
+# npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.4
 
 # 4. Use the scope (makes dependencies available)
 npx lix use
@@ -59,7 +59,7 @@ Main
 3. Compile:
 
 ```bash
-npx haxe build.hxml
+haxe build.hxml
 ```
 
 This will generate Elixir files in the `lib/` directory that you can use in your Elixir/Phoenix projects.

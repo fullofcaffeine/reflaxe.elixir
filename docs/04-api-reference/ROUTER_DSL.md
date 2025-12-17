@@ -255,7 +255,7 @@ Delete all the empty function implementations - the build macro will generate th
 Verify the generated routes are identical:
 
 ```bash
-npx haxe build.hxml
+haxe build.hxml
 # Check generated router.ex matches expected Phoenix routes
 ```
 
@@ -415,7 +415,7 @@ Ensure the `@:build()` annotation is present:
 
 Check for compilation errors in the macro:
 ```bash
-npx haxe build.hxml -v  # Verbose output shows macro execution
+haxe build.hxml -v  # Verbose output shows macro execution
 ```
 
 ### Route Validation Errors

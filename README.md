@@ -159,17 +159,12 @@ For complete compiler configuration guidance, see [docs/01-getting-started/compi
 
 ## Quick Start
 
-### Create a New Project
+### Phoenix (Recommended)
 
-```bash
-# Using the project generator (after installation)
-npx lix run reflaxe.elixir create my-app
+- New Phoenix project: `docs/06-guides/PHOENIX_NEW_APP.md`
+- Add Haxe gradually to an existing Phoenix project: `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`
 
-# Or create a Phoenix project
-npx lix run reflaxe.elixir create my-phoenix-app --type phoenix
-```
-
-🚀 **Get started in 5 minutes!** See [docs/06-guides/QUICKSTART.md](docs/06-guides/QUICKSTART.md)
+Also see: `docs/06-guides/QUICKSTART.md`
 
 ## Development Workflow
 
@@ -220,6 +215,8 @@ defp deps do
   ]
 end
 
+> Note: the `mix haxe.gen.*` generators are being refreshed post-`v1.0.x`. Prefer the Phoenix guides above (and the working examples under `examples/`) if you run into generator output that doesn't match current flags/tooling.
+
 # Compile Haxe as part of your build
 mix compile.haxe
 
@@ -249,6 +246,8 @@ Start at **[docs/README.md](docs/README.md)** for the curated documentation inde
 ### Quick Links
 - **[Installation Guide](docs/01-getting-started/installation.md)** - Setup and prerequisites
 - **[Quickstart](docs/06-guides/QUICKSTART.md)** - Your first Haxe→Elixir project
+- **[Phoenix (New App)](docs/06-guides/PHOENIX_NEW_APP.md)** - Greenfield Phoenix setup
+- **[Phoenix (Existing App)](docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md)** - Add Haxe to an existing Phoenix app
 - **[Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)** - Controllers, LiveView, Ecto, Channels
 - **[Escape Hatches](docs/02-user-guide/ESCAPE_HATCHES.md)** - Calling Elixir from Haxe safely
 
