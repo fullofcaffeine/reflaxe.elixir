@@ -1,33 +1,26 @@
 # 📝 Todo App - Full-Stack Haxe with Phoenix LiveView
 
-A comprehensive todo application showcasing Reflaxe.Elixir v1.0 capabilities, featuring:
-- **Haxe → Elixir** compilation for backend logic
-- **Haxe → JavaScript** compilation for enhanced frontend
-- **Phoenix LiveView** for real-time updates
-- **Ecto** for database persistence
-- **PubSub** for multi-user synchronization
+End-to-end reference app showcasing Reflaxe.Elixir in a real Phoenix LiveView application:
+
+- **Server**: Haxe → Elixir (LiveView + Ecto + PubSub)
+- **Client**: Haxe → JavaScript (LiveView hooks + progressive enhancement)
+- **E2E tests**: Playwright
 
 ## 🌟 Features
 
 ### Backend (Haxe → Elixir)
-- ✅ Complete CRUD operations for todos
-- ✅ Ecto schemas with validations
-- ✅ LiveView components with real-time updates
-- ✅ PubSub for multi-user synchronization
-- ✅ User authentication and authorization
-- ✅ Priority levels and due dates
-- ✅ Tag system for organization
-- ✅ Bulk operations (complete all, clear completed)
+- Todo CRUD + typed LiveView assigns
+- Ecto schemas + migrations
+- Tag filtering + search + sorting
+- PubSub broadcasts so multiple sessions update live
+- Bulk actions (complete all / delete completed)
 
 ### Frontend (Haxe → JavaScript)
-- ✅ Drag-and-drop reordering
-- ✅ Keyboard shortcuts (Cmd+N, Cmd+F, Alt+1/2/3)
-- ✅ Offline support with local storage
-- ✅ Browser notifications for reminders
-- ✅ Rich text editing with markdown
-- ✅ File drag-and-drop for imports
-- ✅ Smooth animations and transitions
-- ✅ Progressive enhancement
+- LiveView hooks authored in Haxe (progressive enhancement)
+- Keyboard shortcuts + small UX helpers
+- Optional offline/connection-state behaviors
+
+The client is intentionally kept “thin”: most logic stays on the server (LiveView), with JS as an enhancement layer.
 
 ## 🚀 Quick Start
 
@@ -48,76 +41,30 @@ mix setup
 
 # 2) Start the app with watchers (after first‐time setup)
 mix dev
-
-# Optional: explicit build steps
-# Build client bundle + server code, then run
-mix assets.build && mix compile
-mix phx.server
 ```
 
 Visit `http://localhost:4000` to see the app.
 
-## 🔍 Background Runtime-Debug Loop
+## Where to Look (Code Tour)
 
-Once the app compiles, use a background server + curl loop to surface and fix runtime errors quickly. This augments the compile loop with fast runtime validation.
+- LiveView: `examples/todo-app/src_haxe/server/live/TodoLive.hx`
+- Typed assigns/types: `examples/todo-app/src_haxe/server/live/TodoLiveTypes.hx`
+- Ecto schema: `examples/todo-app/src_haxe/server/schemas/Todo.hx`
+- Client hooks: `examples/todo-app/src_haxe/client/hooks/`
+- Playwright specs: `examples/todo-app/e2e/*.spec.ts`
 
-Prerequisites
-- Postgres running and accessible (see `config/dev.exs`)
-- Deps installed and DB created/migrated
+## QA / E2E
 
-Build (server + client) using Mix
+This repo includes a non-blocking QA sentinel that:
+- compiles Haxe → Elixir
+- runs `mix compile`
+- boots Phoenix in the background
+- probes readiness + runs Playwright
+
+From repo root:
+
 ```bash
-# From examples/todo-app
-mix assets.build                  # Builds client (Haxe→JS via haxe.compile.client, then esbuild)
-mix compile --force               # Compiles server (Haxe→Elixir via Mix compiler)
-```
-
-Start Phoenix in the background with logs
-```bash
-# Kill previous run (if any)
-if [ -f tmp_server_bg.pid ]; then kill "$(cat tmp_server_bg.pid)" 2>/dev/null || true; rm -f tmp_server_bg.pid; fi
-
-# Start and capture logs
-: > tmp_server_bg.log
-( MIX_ENV=dev nohup mix phx.server >> tmp_server_bg.log 2>&1 & echo $! > tmp_server_bg.pid )
-
-# Give it a moment to boot
-sleep 5
-```
-
-Health check and error capture
-```bash
-# Verify it is listening
-lsof -i :4000 -sTCP:LISTEN -n -P || true
-
-# Inspect the response (headers + first lines)
-curl -sS -i http://localhost:4000 | sed -n '1,60p'
-
-# Save full error page for precise stack details when 500 occurs
-curl -sS http://localhost:4000 > /tmp/todo_err.html
-
-# Tail recent server logs
-tail -n 120 tmp_server_bg.log
-
-# Grep for common runtime issues
-rg -n "KeyError|RuntimeError|Undefined|Protocol.UndefinedError" tmp_server_bg.log -S || true
-```
-
-Iteration loop (fix → rebuild → reload)
-```bash
-# 1) Edit Haxe/AST transforms or example source to fix the root cause
-
-# 2) Rebuild server output
-mix compile --force
-
-# 3) Let Phoenix code reloader pick up changes, or restart the background server
-kill "$(cat tmp_server_bg.pid)" 2>/dev/null || true
-( MIX_ENV=dev nohup mix phx.server >> tmp_server_bg.log 2>&1 & echo $! > tmp_server_bg.pid )
-sleep 5
-
-# 4) Re-check runtime behavior
-curl -sS -i http://localhost:4000 | sed -n '1,60p'
-tail -n 120 tmp_server_bg.log
+scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --async --deadline 900 --verbose
 ```
 
 Alternative: stable background run without code reloader
@@ -217,7 +164,7 @@ Note
 mix test
 
 # Test Haxe compilation
-npx haxe test.hxml
+haxe test.hxml
 
 # Test JavaScript output
 npm test
@@ -391,7 +338,7 @@ CMD ["_build/prod/rel/todo_app/bin/todo_app", "start"]
 ## 📚 Learning Resources
 
 ### Reflaxe.Elixir Documentation
-- [Getting Started](../../docs/06-guides/GETTING_STARTED.md)
+- [Quickstart](../../docs/06-guides/QUICKSTART.md)
 - [LiveView Guide](../../docs/02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md)
 - [Ecto Integration](../../docs/07-patterns/ECTO_INTEGRATION_PATTERNS.md)
 

@@ -712,10 +712,10 @@ typedef Socket = {
 ### Compilation Errors
 ```bash
 # Check Haxe syntax
-npx haxe --help
+haxe --help
 
 # Compile with verbose output
-npx haxe -v build.hxml
+haxe -v build.hxml
 
 # Clean build
 mix clean && mix compile

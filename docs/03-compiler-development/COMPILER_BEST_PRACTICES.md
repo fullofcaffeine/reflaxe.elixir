@@ -326,7 +326,7 @@ if (target != null && js.Syntax.instanceof(target, js.html.Element)) {
    ```bash
    cd examples/todo-app
    rm -rf lib/*.ex lib/**/*.ex
-   npx haxe build-server.hxml
+   haxe build-server.hxml
    mix compile --force
    ```
 

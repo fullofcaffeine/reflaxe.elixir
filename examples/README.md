@@ -126,7 +126,7 @@ mix phx.server  # If Phoenix app
 All examples are automatically tested for compilation health:
 
 ```bash
-# Test all 8 examples at once
+# Compile-check all examples at once
 npm run test:examples
 
 # Run comprehensive test suite (includes examples)  
@@ -140,7 +140,7 @@ haxe build.hxml
 ### Continuous Integration
 
 Examples are tested in CI/CD on every commit to ensure:
-- ✅ All 9 examples compile successfully
+- ✅ All examples compile successfully
 - ✅ Generated Elixir code is syntactically valid
 - ✅ No compilation warnings or errors
 - ✅ Documentation consistency maintained
@@ -167,7 +167,7 @@ All examples use project lix dependencies:
 
 ## 🛠 Requirements
 
-- **Haxe**: 4.3.6+ (managed by lix, no global install needed)
+- **Haxe**: 4.3.7+ (install the compiler; dependencies are managed via lix)
 - **Elixir**: 1.14+
 - **Phoenix**: 1.7+ (for Phoenix examples)
 - **PostgreSQL**: For Ecto examples

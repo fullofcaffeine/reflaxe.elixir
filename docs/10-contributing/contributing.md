@@ -150,7 +150,7 @@ npm run test:all  # Both test suites
 npm run test:update
 
 # Run specific test
-npx haxe test/SpecificTest.hxml
+haxe test/SpecificTest.hxml
 ```
 
 ### Understanding Test Output
