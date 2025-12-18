@@ -193,25 +193,25 @@ abstract Assigns<T>(Dynamic) from Dynamic to Dynamic {
         return Reflect.field(this, "inner_content");
     }
     
-    /**
-     * Get flash messages
-     * Type-safe access to flash message map
-     * 
-     * @return Dynamic Flash message map (TODO: replace with typed FlashMessage)
-     */
-    public function getFlash(): Dynamic {
-        return Reflect.field(this, "flash");
-    }
+	    /**
+	     * Get flash messages
+	     * Type-safe access to flash message map
+	     * 
+	     * @return Dynamic Flash message map (can be typed in your assigns typedef)
+	     */
+	    public function getFlash(): Dynamic {
+	        return Reflect.field(this, "flash");
+	    }
     
-    /**
-     * Get current user (common pattern in Phoenix apps)
-     * Returns null if not present
-     * 
-     * @return Dynamic Current user object (TODO: replace with typed User)
-     */
-    public function getCurrentUser(): Dynamic {
-        return Reflect.field(this, "current_user");
-    }
+	    /**
+	     * Get current user (common pattern in Phoenix apps)
+	     * Returns null if not present
+	     * 
+	     * @return Dynamic Current user object (can be typed in your assigns typedef)
+	     */
+	    public function getCurrentUser(): Dynamic {
+	        return Reflect.field(this, "current_user");
+	    }
     
     /**
      * Get CSRF token (for forms)
