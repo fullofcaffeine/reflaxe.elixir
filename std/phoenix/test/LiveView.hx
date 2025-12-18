@@ -1,6 +1,7 @@
 package phoenix.test;
 
 import phoenix.test.Conn;
+import elixir.types.Term;
 
 /**
  * Phoenix LiveView testing harness.
@@ -28,7 +29,7 @@ typedef LiveView = {
     function html(): String;
     
     /** Current assigns (LiveView state) */
-    var assigns: Map<String, Dynamic>;
+    var assigns: Map<String, Term>;
     
     /** Flash messages */
     var flash: Map<String, String>;
@@ -52,7 +53,7 @@ typedef LiveView = {
     var route: String;
     
     /** Socket assigns */
-    var socket_assigns: Map<String, Dynamic>;
+    var socket_assigns: Map<String, Term>;
 }
 
 /**
@@ -81,7 +82,7 @@ typedef LiveViewEvent = {
     var event: String;
     
     /** Event payload data */
-    var value: Map<String, Dynamic>;
+    var value: Map<String, Term>;
     
     /** Target element (if applicable) */
     @:optional var target: String;
@@ -95,7 +96,7 @@ typedef LiveViewEvent = {
  */
 typedef LiveViewForm = {
     /** Form field values */
-    var fields: Map<String, Dynamic>;
+    var fields: Map<String, Term>;
     
     /** Form action (submit event name) */
     var action: String;
@@ -135,7 +136,7 @@ typedef LiveViewComponent = {
     var id: String;
     
     /** Component assigns */
-    var assigns: Map<String, Dynamic>;
+    var assigns: Map<String, Term>;
     
     /** Whether component can handle events */
     var stateful: Bool;

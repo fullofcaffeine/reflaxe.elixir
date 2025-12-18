@@ -1,5 +1,7 @@
 package phoenix;
 
+import elixir.types.Term;
+
 /**
  * Extern definition for Phoenix Gettext internationalization
  * 
@@ -30,7 +32,7 @@ extern class Gettext {
      * @param bindings Map of variable names to values for interpolation
      * @return The translated string with interpolated values
      */
-    static function gettext(msgid: String, bindings: Dynamic): String;
+    static function gettext(msgid: String, bindings: Term): String;
     
     /**
      * Get a pluralized translated string
@@ -49,7 +51,7 @@ extern class Gettext {
      * @param bindings Map of variable names to values for interpolation
      * @return The appropriate translated string with interpolations
      */
-    static function ngettext(singular: String, plural: String, n: Int, bindings: Dynamic): String;
+    static function ngettext(singular: String, plural: String, n: Int, bindings: Term): String;
     
     /**
      * Get a domain-specific translated string
@@ -66,7 +68,7 @@ extern class Gettext {
      * @param bindings Map of variable names to values for interpolation
      * @return The translated string with interpolated values
      */
-    static function dgettext(domain: String, msgid: String, bindings: Dynamic): String;
+    static function dgettext(domain: String, msgid: String, bindings: Term): String;
     
     /**
      * Get a domain-specific pluralized translated string
@@ -87,5 +89,5 @@ extern class Gettext {
      * @param bindings Map of variable names to values for interpolation
      * @return The appropriate translated string with interpolations
      */
-    static function dngettext(domain: String, singular: String, plural: String, n: Int, bindings: Dynamic): String;
+    static function dngettext(domain: String, singular: String, plural: String, n: Int, bindings: Term): String;
 }

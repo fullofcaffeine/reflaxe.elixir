@@ -1,5 +1,7 @@
 package phoenix.errors;
 
+import elixir.types.Term;
+
 /**
  * DefaultErrorHTML
  *
@@ -20,7 +22,7 @@ package phoenix.errors;
  * Haxe (app stub):
  *   @:native("MyAppWeb.ErrorHTML")
  *   class ErrorHTML {
- *     public static function render(template:String, assigns:Dynamic):String
+ *     public static function render(template:String, assigns:Term):String
  *       return phoenix.errors.DefaultErrorHTML.render(template, assigns);
  *   }
  *
@@ -35,7 +37,7 @@ extern class DefaultErrorHTML {
      *
      * Implemented as an extern inline to avoid emitting a runtime module in user apps.
      */
-    extern inline public static function render(template: String, _assigns: Dynamic): String {
+    extern inline public static function render(template: String, _assigns: Term): String {
         return untyped __elixir__('
           _ = {1}
           t = to_string({0})

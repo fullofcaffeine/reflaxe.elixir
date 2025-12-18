@@ -2,6 +2,8 @@ package phoenix;
 
 #if (elixir || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * PubSubShim
  *
@@ -19,11 +21,11 @@ package phoenix;
  */
 @:native("Phoenix.PubSubShim")
 class PubSubShim {
-    public static inline function subscribe(pubsub: Dynamic, topic: String): Dynamic {
+    public static inline function subscribe(pubsub: Term, topic: String): Term {
         return untyped __elixir__('Phoenix.PubSub.subscribe({0}, {1})', pubsub, topic);
     }
 
-    public static inline function broadcast(pubsub: Dynamic, topic: String, message: Dynamic): Dynamic {
+    public static inline function broadcast<TMessage>(pubsub: Term, topic: String, message: TMessage): Term {
         return untyped __elixir__('Phoenix.PubSub.broadcast_from({0}, self(), {1}, {2})', pubsub, topic, message);
     }
 }

@@ -1,10 +1,12 @@
 package phoenix.types;
 
+import elixir.types.Term;
+
 /**
  * Type-safe wrapper for Phoenix HTML components.
  * 
  * This abstract type provides compile-time safety for Phoenix component functions
- * while hiding the underlying Dynamic implementation. Components that return
+ * while hiding the underlying term implementation. Components that return
  * HtmlComponent are guaranteed to be safe HTML output that Phoenix can render.
  * 
  * ## Usage
@@ -17,15 +19,15 @@ package phoenix.types;
  * 
  * ## Type Safety
  * 
- * The abstract prevents direct access to the underlying Dynamic value,
+ * The abstract prevents direct access to the underlying term value,
  * ensuring all component creation goes through type-safe factory methods.
  */
-abstract HtmlComponent(Dynamic) {
+abstract HtmlComponent(Term) {
     /**
      * Creates a new HtmlComponent from component data.
      * This is an internal constructor - use factory methods instead.
      */
-    inline function new(data: Dynamic) {
+    inline function new(data: Term) {
         this = data;
     }
     
@@ -90,7 +92,7 @@ abstract HtmlComponent(Dynamic) {
      * @return A type-safe HtmlComponent wrapper
      */
     @:noCompletion
-    public static inline function fromPhoenix(phoenixComponent: Dynamic): HtmlComponent {
+    public static inline function fromPhoenix(phoenixComponent: Term): HtmlComponent {
         return new HtmlComponent(phoenixComponent);
     }
 }

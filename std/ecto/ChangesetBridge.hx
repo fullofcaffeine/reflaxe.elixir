@@ -3,6 +3,8 @@ package ecto;
 #if (elixir || reflaxe_runtime)
 
 import elixir.Atom;
+import elixir.types.Term;
+import ecto.Changeset;
 
 /**
  * ChangesetBridge
@@ -38,40 +40,40 @@ import elixir.Atom;
  */
 @:native("Ecto.ChangesetBridge")
 class ChangesetBridge {
-    public static function castParams(data: Dynamic, params: Dynamic, permitted: Array<Atom>): Dynamic {
-        return untyped __elixir__('Ecto.Changeset.cast({0}, {1}, {2})', data, params, permitted);
+    public static function castParams<T, P>(data: T, params: P, permitted: Array<Atom>): Changeset<T, P> {
+        return cast untyped __elixir__('Ecto.Changeset.cast({0}, {1}, {2})', data, params, permitted);
     }
 
-    public static function validateRequired(cs: Dynamic, fields: Array<Atom>): Dynamic {
-        return untyped __elixir__('Ecto.Changeset.validate_required({0}, {1})', cs, fields);
+    public static function validateRequired<T, P>(cs: Changeset<T, P>, fields: Array<Atom>): Changeset<T, P> {
+        return cast untyped __elixir__('Ecto.Changeset.validate_required({0}, {1})', cs, fields);
     }
 
-    public static function validateLength(cs: Dynamic, field: Atom, opts: Dynamic): Dynamic {
-        return untyped __elixir__('Ecto.Changeset.validate_length({0}, {1}, {2})', cs, field, opts);
+    public static function validateLength<T, P>(cs: Changeset<T, P>, field: Atom, opts: Term): Changeset<T, P> {
+        return cast untyped __elixir__('Ecto.Changeset.validate_length({0}, {1}, {2})', cs, field, opts);
     }
 
-    public static function validateFormat(cs: Dynamic, field: Atom, regex: Dynamic): Dynamic {
-        return untyped __elixir__('Ecto.Changeset.validate_format({0}, {1}, {2})', cs, field, regex);
+    public static function validateFormat<T, P>(cs: Changeset<T, P>, field: Atom, regex: Term): Changeset<T, P> {
+        return cast untyped __elixir__('Ecto.Changeset.validate_format({0}, {1}, {2})', cs, field, regex);
     }
 
-    public static function validateConfirmation(cs: Dynamic, field: Atom, ?opts: Dynamic): Dynamic {
+    public static function validateConfirmation<T, P>(cs: Changeset<T, P>, field: Atom, ?opts: Term): Changeset<T, P> {
         return opts == null
-            ? untyped __elixir__('Ecto.Changeset.validate_confirmation({0}, {1})', cs, field)
-            : untyped __elixir__('Ecto.Changeset.validate_confirmation({0}, {1}, {2})', cs, field, opts);
+            ? cast untyped __elixir__('Ecto.Changeset.validate_confirmation({0}, {1})', cs, field)
+            : cast untyped __elixir__('Ecto.Changeset.validate_confirmation({0}, {1}, {2})', cs, field, opts);
     }
 
-    public static function uniqueConstraint(cs: Dynamic, field: Atom, ?opts: Dynamic): Dynamic {
+    public static function uniqueConstraint<T, P>(cs: Changeset<T, P>, field: Atom, ?opts: Term): Changeset<T, P> {
         return opts == null
-            ? untyped __elixir__('Ecto.Changeset.unique_constraint({0}, {1})', cs, field)
-            : untyped __elixir__('Ecto.Changeset.unique_constraint({0}, {1}, {2})', cs, field, opts);
+            ? cast untyped __elixir__('Ecto.Changeset.unique_constraint({0}, {1})', cs, field)
+            : cast untyped __elixir__('Ecto.Changeset.unique_constraint({0}, {1}, {2})', cs, field, opts);
     }
 
-    public static function change(data: Dynamic, params: Dynamic): Dynamic {
-        return untyped __elixir__('Ecto.Changeset.change({0}, {1})', data, params);
+    public static function change<T, P>(data: T, params: P): Changeset<T, P> {
+        return cast untyped __elixir__('Ecto.Changeset.change({0}, {1})', data, params);
     }
 
-    public static function registration(user: Dynamic, params: Dynamic): Dynamic {
-        return untyped __elixir__('
+    public static function registration<TUser, P>(user: TUser, params: P): Changeset<TUser, P> {
+        return cast untyped __elixir__('
             {0}
             |> Ecto.Changeset.cast({1}, [:name, :email, :password, :password_confirmation])
             |> Ecto.Changeset.validate_required([:name, :email, :password])
@@ -82,8 +84,8 @@ class ChangesetBridge {
         ', user, params);
     }
 
-    public static function update(user: Dynamic, params: Dynamic): Dynamic {
-        return untyped __elixir__('
+    public static function update<TUser, P>(user: TUser, params: P): Changeset<TUser, P> {
+        return cast untyped __elixir__('
             {0}
             |> Ecto.Changeset.cast({1}, [:name, :email])
             |> Ecto.Changeset.validate_required([:name, :email])
@@ -93,8 +95,8 @@ class ChangesetBridge {
         ', user, params);
     }
 
-    public static function password(user: Dynamic, params: Dynamic): Dynamic {
-        return untyped __elixir__('
+    public static function password<TUser, P>(user: TUser, params: P): Changeset<TUser, P> {
+        return cast untyped __elixir__('
             {0}
             |> Ecto.Changeset.cast({1}, [:password, :password_confirmation])
             |> Ecto.Changeset.validate_required([:password])

@@ -1,5 +1,6 @@
 package phoenix.types;
 
+import elixir.types.Term;
 import phoenix.types.Flash.FlashMap;
 
 /**
@@ -28,14 +29,14 @@ import phoenix.types.Flash.FlashMap;
 abstract Assigns<T>(T) from T to T {
     
     /**
-     * Create typed assigns from a Dynamic value
-     * Used when receiving assigns from Phoenix
+     * Create typed assigns from an arbitrary term
+     * Used when receiving assigns from Phoenix.
      * 
      * @param value Raw assigns map from Phoenix
      * @return Assigns<T> Type-safe wrapper
      */
     @:from
-    public static function fromDynamic<T>(value: Dynamic): Assigns<T> {
+    public static function fromDynamic<T>(value: Term): Assigns<T> {
         return cast value;
     }
     
@@ -51,13 +52,13 @@ abstract Assigns<T>(T) from T to T {
     }
     
     /**
-     * Get the underlying Dynamic value
-     * Use when passing to Phoenix functions that expect Dynamic
+     * Get the underlying term
+     * Use when passing to Phoenix functions that expect a raw term.
      * 
-     * @return Dynamic Raw assigns map for Phoenix compatibility
+     * @return Term Raw assigns map for Phoenix compatibility
      */
     @:to
-    public function toDynamic(): Dynamic {
+    public function toDynamic(): Term {
         return cast this;
     }
     
@@ -68,10 +69,10 @@ abstract Assigns<T>(T) from T to T {
      * Following the same pattern as haxe.DynamicAccess and Map
      * 
      * @param key Field name to access
-     * @return Dynamic Field value, null if not present
+     * @return Term Field value, null if not present
      */
     @:arrayAccess
-    public inline function get(key: String): Dynamic {
+    public inline function get(key: String): Term {
         return Reflect.field(this, key);
     }
     
@@ -97,9 +98,9 @@ abstract Assigns<T>(T) from T to T {
      * Use when you prefer explicit method calls over array syntax
      * 
      * @param field Field name to access
-     * @return Dynamic Field value
+     * @return Term Field value
      */
-    public inline function getField(field: String): Dynamic {
+    public inline function getField(field: String): Term {
         return Reflect.field(this, field);
     }
     
@@ -180,56 +181,6 @@ abstract Assigns<T>(T) from T to T {
         Reflect.setField(result, field, value);
         
         return fromDynamic(result);
-    }
-    
-    /**
-     * Phoenix-specific assigns access
-     * Special handling for common Phoenix assigns patterns
-     */
-    
-    /**
-     * Get inner_content (common in layouts)
-     * This is automatically provided by Phoenix for layout templates
-     * 
-     * @return String The inner content HTML
-     */
-    public function getInnerContent(): String {
-        return Reflect.field(this, "inner_content");
-    }
-    
-	    /**
-	     * Get flash messages
-	     * Type-safe access to flash message map
-	     * 
-	     * WHY: Phoenix assigns are a runtime map, but flash has a stable shape in Phoenix.
-	     * WHAT: Returns a typed `FlashMap` (optional fields) instead of Dynamic.
-	     *
-	     * @return FlashMap Flash message map (or null if not present)
-	     */
-	    public inline function getFlash(): Null<FlashMap> {
-	        return cast Reflect.field(this, "flash");
-	    }
-    
-	    /**
-	     * Get current user (common pattern in Phoenix apps)
-	     * Returns null if not present
-	     * 
-	     * WHY: `current_user` is application-defined, so the stdlib cannot know its type.
-	     * HOW: Let callers choose a type parameter so the public surface stays typed.
-	     *
-	     * @return TUser Current user object (or null if not present)
-	     */
-	    public inline function getCurrentUser<TUser>(): Null<TUser> {
-	        return cast Reflect.field(this, "current_user");
-	    }
-    
-    /**
-     * Get CSRF token (for forms)
-     * 
-     * @return String CSRF token for form protection
-     */
-    public function getCsrfToken(): String {
-        return Reflect.field(this, "csrf_token");
     }
 }
 

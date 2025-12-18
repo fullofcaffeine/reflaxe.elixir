@@ -4,7 +4,7 @@ package server.infrastructure;
  * Type-safe translation bindings for Gettext interpolation.
  * 
  * This abstract type provides a type-safe way to pass variable bindings
- * to Gettext translation functions without using Dynamic. It internally
+ * to Gettext translation functions without using raw maps. It internally
  * uses a Map but provides a clean API for setting interpolation values.
  * 
  * ## Usage

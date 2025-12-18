@@ -3,6 +3,7 @@ package phoenix;
 // Import framework types
 import haxe.functional.Result;
 import haxe.ds.Option;
+import elixir.types.Term;
 import phoenix.types.Flash.FlashType;
 
 
@@ -10,7 +11,7 @@ import phoenix.types.Flash.FlashType;
  * Comprehensive Phoenix framework extern definitions with full type safety
  * 
  * Provides strongly-typed interfaces for Phoenix controllers, LiveView, HTML helpers,
- * PubSub messaging, and routing - eliminating all Dynamic types for compile-time safety.
+ * PubSub messaging, and routing with typed APIs wherever the framework shapes are stable.
  * 
  * ## Three-Layer LiveView Socket Design
  * 
@@ -163,7 +164,6 @@ extern class LiveView {
     /**
      * Assign single value to the socket
      * 
-     * IMPORTANT: The value parameter is Dynamic because it can be any type.
      * Phoenix.LiveView.assign/3 accepts any value for the given key.
      * The key must be a string that will be converted to an atom in Elixir.
      * 
@@ -177,7 +177,7 @@ extern class LiveView {
      * @param key The assign key (will be converted to atom in Elixir)
      * @param value The value to assign (can be any type)
      */
-    static function assign<TAssigns>(socket: Socket<TAssigns>, key: String, value: Dynamic): Socket<TAssigns>;
+    static function assign<TAssigns, TValue>(socket: Socket<TAssigns>, key: String, value: TValue): Socket<TAssigns>;
     
     /**
      * Assign multiple values to the socket using a map of assigns
@@ -206,7 +206,7 @@ extern class LiveView {
      * @param TAssigns The type of socket assigns structure
      * @param assigns Partial assigns object (only fields being updated)
      */
-    extern inline static function assignMultiple<TAssigns>(socket: Socket<TAssigns>, assigns: Dynamic): Socket<TAssigns> {
+    extern inline static function assignMultiple<TAssigns, TPartial>(socket: Socket<TAssigns>, assigns: TPartial): Socket<TAssigns> {
         return untyped __elixir__('Phoenix.Component.assign({0}, {1})', socket, assigns);
     }
     
@@ -326,25 +326,25 @@ extern class LiveView {
 
     /**
      * Streams API – declarative collection rendering helpers
-     * Mirrors Phoenix.LiveView.stream/3 and friends; options are left Dynamic for flexibility.
+     * Mirrors Phoenix.LiveView.stream/3 and friends; options are left as raw terms for flexibility.
      */
     @:native("stream")
-    static function stream<TAssigns>(socket: Socket<TAssigns>, name: String, item: Dynamic, ?opts: Dynamic): Socket<TAssigns>;
+    static function stream<TAssigns, TItem>(socket: Socket<TAssigns>, name: String, item: TItem, ?opts: Term): Socket<TAssigns>;
 
     @:native("stream_insert")
-    static function streamInsert<TAssigns>(socket: Socket<TAssigns>, name: String, item: Dynamic, ?opts: Dynamic): Socket<TAssigns>;
+    static function streamInsert<TAssigns, TItem>(socket: Socket<TAssigns>, name: String, item: TItem, ?opts: Term): Socket<TAssigns>;
 
     @:native("stream_delete")
-    static function streamDelete<TAssigns>(socket: Socket<TAssigns>, name: String, item: Dynamic, ?opts: Dynamic): Socket<TAssigns>;
+    static function streamDelete<TAssigns, TItem>(socket: Socket<TAssigns>, name: String, item: TItem, ?opts: Term): Socket<TAssigns>;
 
     /**
      * Uploads API – allow and consume uploads
      */
     @:native("allow_upload")
-    static function allowUpload<TAssigns>(socket: Socket<TAssigns>, name: String, options: Dynamic): Socket<TAssigns>;
+    static function allowUpload<TAssigns>(socket: Socket<TAssigns>, name: String, options: Term): Socket<TAssigns>;
 
     @:native("consume_uploaded_entries")
-    static function consumeUploadedEntries<TAssigns>(socket: Socket<TAssigns>, name: String, handler: Dynamic): Array<Dynamic>;
+    static function consumeUploadedEntries<TAssigns>(socket: Socket<TAssigns>, name: String, handler: Term): Array<Term>;
 }
 
 /**
@@ -464,7 +464,7 @@ extern class Router {
  * ## Example
  * ```haxe
  * // Phoenix expects Socket in mount signature
- * static function mount(params: Dynamic, session: Dynamic, socket: Socket<MyAssigns>) {
+ * static function mount(params: Term, session: Term, socket: Socket<MyAssigns>) {
  *     // Convert to LiveSocket for type-safe operations
  *     var liveSocket: LiveSocket<MyAssigns> = socket;
  *     
@@ -491,7 +491,7 @@ extern class Router {
     var transport_pid: ProcessId;
     var view: String;
     var fingerprints: Map<String, String>;
-    var _private: Map<String, Any>;
+    var _private: Map<String, Term>;
 }
 
 /**
@@ -512,7 +512,7 @@ extern class PubSub {
      * @param topic Topic string to subscribe to
      * @return :ok on success, {:error, reason} on failure
      */
-    static function subscribe(pubsub: Dynamic, topic: String): Dynamic;
+    static function subscribe(pubsub: Term, topic: String): Term;
     
     /**
      * Subscribe to a topic with options
@@ -530,7 +530,7 @@ extern class PubSub {
      * @param topic Topic string to broadcast on
      * @param message Message payload to broadcast
      */
-    static function broadcast<T>(pubsub: Dynamic, topic: String, message: T): Dynamic;
+    static function broadcast<T>(pubsub: Term, topic: String, message: T): Term;
     
     /**
      * Broadcast with specific PubSub server
@@ -584,8 +584,8 @@ typedef Conn = {
     var status: Null<HttpStatus>;
     var state: ConnState;
     var params: Map<String, String>;
-    var assigns: Map<String, Any>;
-    var body_params: Map<String, Any>;
+    var assigns: Map<String, Term>;
+    var body_params: Map<String, Term>;
     var query_params: Map<String, String>;
     var path_params: Map<String, String>;
     var cookies: Map<String, String>;
@@ -745,9 +745,9 @@ typedef PubSubServer = String;
  * PubSub subscription options
  */
 typedef PubSubOptions = {
-    var ?fastlane: Map<String, Any>;
+    var ?fastlane: Map<String, Term>;
     var ?link: Bool;
-    var ?metadata: Map<String, Any>;
+    var ?metadata: Map<String, Term>;
 }
 
 /**
@@ -1042,5 +1042,4 @@ typedef PatchOptions = {
 // Presence functionality has been moved to the dedicated phoenix/Presence.hx module
 // Import phoenix.Presence for Phoenix.Presence functionality
 
-// Any/Dynamic types eliminated in favor of proper type-safe alternatives
-// Use generics, enums, or specific types instead of Any/Dynamic
+// Prefer generics/enums/specific types over raw terms.

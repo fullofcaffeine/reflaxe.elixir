@@ -2,6 +2,9 @@ package elixir;
 
 #if (macro || reflaxe_runtime)
 
+import elixir.types.Term;
+import elixir.types.Atom as AtomValue;
+
 /**
  * Tuple module extern definitions for Elixir standard library
  * Provides type-safe interfaces for tuple operations
@@ -14,93 +17,93 @@ extern class Tuple {
     
     // Tuple creation
     @:native("duplicate")
-    static function duplicate<T>(value: T, size: Int): Dynamic; // Returns tuple with value repeated
+    static function duplicate<T>(value: T, size: Int): Term; // Returns tuple with value repeated
     
     // Tuple operations
     @:native("append")
-    static function append(tuple: Dynamic, value: Dynamic): Dynamic; // Append element to tuple
+    static function append(tuple: Term, value: Term): Term; // Append element to tuple
     
     @:native("delete_at")
-    static function deleteAt(tuple: Dynamic, index: Int): Dynamic; // Delete element at index
+    static function deleteAt(tuple: Term, index: Int): Term; // Delete element at index
     
     @:native("insert_at")
-    static function insertAt(tuple: Dynamic, index: Int, value: Dynamic): Dynamic; // Insert at index
+    static function insertAt(tuple: Term, index: Int, value: Term): Term; // Insert at index
     
     @:native("product")
-    static function product(tuple1: Dynamic, tuple2: Dynamic): Dynamic; // Cartesian product
+    static function product(tuple1: Term, tuple2: Term): Term; // Cartesian product
     
     @:native("sum")
-    static function sum(tuple: Dynamic): Float; // Sum of numeric tuple elements
+    static function sum(tuple: Term): Float; // Sum of numeric tuple elements
     
     // Conversion
     @:native("to_list")
-    static function toList(tuple: Dynamic): Array<Dynamic>; // Convert tuple to list
+    static function toList(tuple: Term): Array<Term>; // Convert tuple to list
     
     // Helper functions for common operations
-    public static inline function fromList(list: Array<Dynamic>): Dynamic {
+    public static inline function fromList(list: Array<Term>): Term {
         return untyped __elixir__('List.to_tuple({0})', list);
     }
     
-    public static inline function size(tuple: Dynamic): Int {
+    public static inline function size(tuple: Term): Int {
         return untyped __elixir__('tuple_size({0})', tuple);
     }
     
-    public static inline function elem(tuple: Dynamic, index: Int): Dynamic {
+    public static inline function elem(tuple: Term, index: Int): Term {
         return untyped __elixir__('elem({0}, {1})', tuple, index);
     }
     
-    public static inline function putElem(tuple: Dynamic, index: Int, value: Dynamic): Dynamic {
+    public static inline function putElem(tuple: Term, index: Int, value: Term): Term {
         return untyped __elixir__('put_elem({0}, {1}, {2})', tuple, index, value);
     }
     
-    public static inline function make2<A, B>(a: A, b: B): Dynamic {
-        return untyped __elixir__('{{0}, {1}}', a, b);
+    public static inline function make2<A, B>(a: A, b: B): {_0: A, _1: B} {
+        return cast untyped __elixir__('{{0}, {1}}', a, b);
     }
     
-    public static inline function make3<A, B, C>(a: A, b: B, c: C): Dynamic {
-        return untyped __elixir__('{{0}, {1}, {2}}', a, b, c);
+    public static inline function make3<A, B, C>(a: A, b: B, c: C): {_0: A, _1: B, _2: C} {
+        return cast untyped __elixir__('{{0}, {1}, {2}}', a, b, c);
     }
     
-    public static inline function make4<A, B, C, D>(a: A, b: B, c: C, d: D): Dynamic {
-        return untyped __elixir__('{{0}, {1}, {2}, {3}}', a, b, c, d);
+    public static inline function make4<A, B, C, D>(a: A, b: B, c: C, d: D): {_0: A, _1: B, _2: C, _3: D} {
+        return cast untyped __elixir__('{{0}, {1}, {2}, {3}}', a, b, c, d);
     }
     
-    public static inline function make5<A, B, C, D, E>(a: A, b: B, c: C, d: D, e: E): Dynamic {
-        return untyped __elixir__('{{0}, {1}, {2}, {3}, {4}}', a, b, c, d, e);
+    public static inline function make5<A, B, C, D, E>(a: A, b: B, c: C, d: D, e: E): {_0: A, _1: B, _2: C, _3: D, _4: E} {
+        return cast untyped __elixir__('{{0}, {1}, {2}, {3}, {4}}', a, b, c, d, e);
     }
     
     // Pattern matching helpers
-    public static inline function isOkTuple(tuple: Dynamic): Bool {
+    public static inline function isOkTuple(tuple: Term): Bool {
         return untyped __elixir__('match?({{:ok, _}}, {0})', tuple);
     }
     
-    public static inline function isErrorTuple(tuple: Dynamic): Bool {
+    public static inline function isErrorTuple(tuple: Term): Bool {
         return untyped __elixir__('match?({{:error, _}}, {0})', tuple);
     }
     
-    public static inline function getOkValue(tuple: Dynamic): Dynamic {
+    public static inline function getOkValue(tuple: Term): Term {
         return untyped __elixir__('elem({0}, 1)', tuple);
     }
     
-    public static inline function getErrorReason(tuple: Dynamic): Dynamic {
+    public static inline function getErrorReason(tuple: Term): Term {
         return untyped __elixir__('elem({0}, 1)', tuple);
     }
     
     // Common tuple patterns
-    public static inline function ok<T>(value: T): Dynamic {
-        return untyped __elixir__('{{:ok, {0}}}', value);
+    public static inline function ok<T>(value: T): {_0: AtomValue, _1: T} {
+        return cast untyped __elixir__('{{:ok, {0}}}', value);
     }
     
-    public static inline function error<T>(reason: T): Dynamic {
-        return untyped __elixir__('{{:error, {0}}}', reason);
+    public static inline function error<T>(reason: T): {_0: AtomValue, _1: T} {
+        return cast untyped __elixir__('{{:error, {0}}}', reason);
     }
     
-    public static inline function okAtom(): Dynamic {
-        return untyped __elixir__(':ok');
+    public static inline function okAtom(): AtomValue {
+        return cast untyped __elixir__(':ok');
     }
     
-    public static inline function errorAtom(): Dynamic {
-        return untyped __elixir__(':error');
+    public static inline function errorAtom(): AtomValue {
+        return cast untyped __elixir__(':error');
     }
 }
 

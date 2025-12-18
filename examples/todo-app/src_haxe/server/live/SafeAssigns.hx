@@ -21,12 +21,12 @@ extern class TodoLiveNative {
  * 
  * This class demonstrates how to use the Phoenix framework's LiveSocket
  * type-safe assign patterns. The LiveSocket provides compile-time validation
- * of field names WITHOUT needing Dynamic, cast, or string field names.
+ * of field names WITHOUT needing raw maps, casts, or string field names.
  * 
  * ## Architecture Benefits:
  * - **Compile-time field validation**: The `_.fieldName` pattern validates fields exist
  * - **No cast needed**: LiveSocket methods return properly typed sockets
- * - **No Dynamic needed**: Field access is validated at compile time
+ * - **No raw-map access needed**: Field access is validated at compile time
  * - **No strings for field names**: The underscore pattern provides type safety
  * - **Automatic camelCase conversion**: Field names are converted to snake_case for Phoenix
  * - **IntelliSense support**: Full IDE autocomplete for all operations
@@ -168,7 +168,7 @@ class SafeAssigns {
      * 
      * Uses LiveSocket's merge pattern for type-safe bulk updates.
      * The merge method validates all field names at compile time
-     * and ensures type compatibility. No Dynamic, cast, or strings needed!
+     * and ensures type compatibility. No casts or strings needed!
      */
     public static function updateTodosAndStats(socket: Socket<TodoLiveAssigns>, todos: Array<server.schemas.Todo>): Socket<TodoLiveAssigns> {
         var completed = countCompleted(todos);

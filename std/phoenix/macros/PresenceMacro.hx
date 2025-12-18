@@ -71,7 +71,7 @@ import reflaxe.elixir.PhoenixMapper;
  * 
  * ### The Type-Safe Solution Using Generics
  * 
- * The socket parameter in all generated methods uses generic type parameter `T` instead of Dynamic.
+ * The socket parameter in all generated methods uses a generic type parameter `T`.
  * This provides COMPLETE TYPE SAFETY while handling multiple Socket type definitions.
  * 
  * ### How Generic Type Parameters Solve the Problem
@@ -143,7 +143,7 @@ import reflaxe.elixir.PhoenixMapper;
  * 
  * 4. **Clean Generated Code**:
  *    - Generic types compile to clean Elixir code
- *    - No Dynamic casts or type conversions needed
+ *    - No casts or type conversions needed
  *    - Idiomatic Phoenix.Presence calls generated
  * 
  * ### Implementation Strategy
@@ -151,16 +151,16 @@ import reflaxe.elixir.PhoenixMapper;
  * ```haxe
  * // Generated method signature
  * extern inline public static function trackInternal<T, M>(
- *     socket: T,      // Any socket type
+ *     socket: T,      // any socket type
  *     key: String, 
- *     meta: M         // Any metadata type
+ *     meta: M         // any metadata type
  * ): T {              // Returns same socket type
  *     return untyped __elixir__('track({0}, {1}, {2}, {3})', 
  *         untyped __elixir__('self()'), socket, key, meta);
  * }
  * ```
  * 
- * ### Benefits Over Dynamic
+ * ### Benefits Over raw terms
  * 
  * - **Type Safety**: Full compile-time type checking
  * - **IntelliSense**: Complete IDE support with proper types
@@ -200,9 +200,9 @@ import reflaxe.elixir.PhoenixMapper;
  * ## Type Safety
  * 
  * The macro uses generic type parameters <T, M> to ensure complete type safety:
- * - T: Any socket type (phoenix.Socket, phoenix.Phoenix.Socket<T>, or custom)
- * - M: Any metadata type (user-defined typedef or anonymous structure)
- * All methods preserve types throughout the call chain with no Dynamic usage.
+ * - T: any socket type (phoenix.Socket, phoenix.Phoenix.Socket<T>, or custom)
+ * - M: any metadata type (user-defined typedef or anonymous structure)
+ * All methods preserve types throughout the call chain with no raw-term usage in signatures.
  * 
  * ## Why This Approach?
  * 
@@ -259,7 +259,7 @@ class PresenceMacro {
 			}
 		}
 
-		var appMod = try PhoenixMapper.getAppModuleName() catch (_:Dynamic) "MyApp";
+		var appMod = PhoenixMapper.getAppModuleName();
 		if (appMod == null || appMod == "") appMod = "MyApp";
 		if (otpAppAtom == null) otpAppAtom = ":" + camelToSnake(appMod);
 		if (pubsubModule == null) pubsubModule = appMod + ".PubSub";
@@ -327,9 +327,7 @@ class PresenceMacro {
             #if debug_presence
             reflaxe.elixir.PhoenixMapper.registerPresenceModule(deriveBootstrap(ct, fqModule));
             #else
-            try {
-                reflaxe.elixir.PhoenixMapper.registerPresenceModule(deriveBootstrap(ct, fqModule));
-            } catch (_:Dynamic) {}
+            reflaxe.elixir.PhoenixMapper.registerPresenceModule(deriveBootstrap(ct, fqModule));
             #end
         }
 
@@ -364,7 +362,7 @@ class PresenceMacro {
 	/**
 	 * Generate internal track method that works with any socket type.
 	 * Uses extern inline to allow compile-time resolution of socket type.
-	 * This avoids the need for overloading and eliminates Dynamic usage.
+	 * This avoids the need for overloading and eliminates raw-term usage in signatures.
 	 */
 	static function generateInternalTrack(): Field {
 		return {
@@ -644,7 +642,7 @@ class PresenceMacro {
 			pos: Context.currentPos(),
 			kind: FFun({
 				args: [],  // No arguments needed
-				ret: macro : Dynamic,  // Returns a map of presence entries
+				ret: macro : elixir.types.Term,  // Returns a map of presence entries
 				expr: macro {
                     // Use presence module's list/1 with the class-level topic
                     return untyped __elixir__('{0}.list({1})', untyped __elixir__('__MODULE__'), $v{topic});
@@ -664,7 +662,7 @@ class PresenceMacro {
      */
     static function generateExternalList(fqModule:String): Field {
         #if macro
-        var app = try reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (_:Dynamic) "MyApp";
+        var app = reflaxe.elixir.PhoenixMapper.getAppModuleName();
         var appWebPresence = app + "Web.Presence";
         #end
         return {
@@ -672,7 +670,7 @@ class PresenceMacro {
             pos: Context.currentPos(),
             kind: FFun({
                 args: [ {name: "topic", type: macro : String} ],
-                ret: macro : Dynamic,
+                ret: macro : elixir.types.Term,
                 expr: macro {
                     // Emit <App>Web.Presence.list(topic)
                     return untyped __elixir__('{0}.list({1})', untyped __elixir__($v{appWebPresence}), topic);
@@ -693,7 +691,7 @@ class PresenceMacro {
             pos: Context.currentPos(),
             kind: FFun({
                 args: [ {name: "topic", type: macro : String}, {name: "key", type: macro : String} ],
-                ret: macro : Dynamic,
+                ret: macro : elixir.types.Term,
                 expr: macro {
                     return untyped __elixir__('Phoenix.Presence.get_by_key({0}, {1})', topic, key);
                 }

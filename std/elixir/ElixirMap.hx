@@ -2,6 +2,8 @@ package elixir;
 
 #if (macro || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * Map module extern definitions for Elixir standard library
  * Provides type-safe interfaces for Map operations
@@ -13,16 +15,16 @@ extern class ElixirMap {
     
     // Core map operations
     @:native("new")
-    public static function new_(): Dynamic;
+    public static function new_(): Term;
     
     @:native("new")
-    public static function fromList(list: Array<Dynamic>): Dynamic;
+    public static function fromList(list: Array<Term>): Term;
     
     @:native("put")
-    public static function put(map: Dynamic, key: Dynamic, value: Dynamic): Dynamic;
+    public static function put(map: Term, key: Term, value: Term): Term;
     
     @:native("get")
-    public static function get(map: Dynamic, key: Dynamic): Dynamic;
+    public static function get(map: Term, key: Term): Term;
     
     @:native("Map.get")
     public static function getWithDefault<K, V>(map: Map<K, V>, key: K, defaultValue: V): V;
@@ -93,7 +95,7 @@ extern class ElixirMap {
     public static function toList<K, V>(map: Map<K, V>): Array<{_0: K, _1: V}>;
     
     @:native("Map.from_struct")
-    public static function fromStruct<T>(struct: T): Map<String, Dynamic>;
+    public static function fromStruct<T>(struct: T): Map<String, Term>;
     
     // Filter and mapping
     @:native("Map.filter")
@@ -108,16 +110,16 @@ extern class ElixirMap {
     
     // String key convenience functions (for struct-like maps)
     @:native("Map.get")
-    public static function getAtom(map: Map<String, Dynamic>, key: String): Null<Dynamic>;
+    public static function getAtom(map: Map<String, Term>, key: String): Null<Term>;
     
     @:native("Map.put")
-    public static function putAtom(map: Map<String, Dynamic>, key: String, value: Dynamic): Map<String, Dynamic>;
+    public static function putAtom(map: Map<String, Term>, key: String, value: Term): Map<String, Term>;
     
     @:native("Map.has_key?")
-    public static function hasAtom(map: Map<String, Dynamic>, key: String): Bool;
+    public static function hasAtom(map: Map<String, Term>, key: String): Bool;
     
     @:native("Map.delete")
-    public static function deleteAtom(map: Map<String, Dynamic>, key: String): Map<String, Dynamic>;
+    public static function deleteAtom(map: Map<String, Term>, key: String): Map<String, Term>;
     
     // Replace operations (similar to put but only if key exists)
     @:native("Map.replace")

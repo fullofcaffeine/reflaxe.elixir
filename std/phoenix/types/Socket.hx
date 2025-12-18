@@ -1,5 +1,6 @@
 package phoenix.types;
 
+import elixir.types.Term;
 import phoenix.types.Assigns;
 
 /**
@@ -16,7 +17,7 @@ import phoenix.types.Assigns;
  *     filter: String
  * }
  * 
- * function mount(params: Dynamic, session: Dynamic, socket: Socket<TodoAssigns>): Socket<TodoAssigns> {
+ * function mount(params: Term, session: Term, socket: Socket<TodoAssigns>): Socket<TodoAssigns> {
  *     return socket.assign({
  *         todos: [],
  *         current_user: getCurrentUser(session),
@@ -37,19 +38,19 @@ enum SocketTransport {
 /**
  * Type-safe LiveView socket wrapper
  */
-abstract Socket<TAssigns>(Dynamic) from Dynamic to Dynamic {
+abstract Socket<TAssigns>(Term) from Term to Term {
     
     /**
-     * Create typed socket from Dynamic value
+     * Create typed socket from an arbitrary term
      */
-    public static function fromDynamic<TAssigns>(socket: Dynamic): Socket<TAssigns> {
+    public static function fromDynamic<TAssigns>(socket: Term): Socket<TAssigns> {
         return cast socket;
     }
     
     /**
-     * Get the underlying Dynamic socket
+     * Get the underlying term socket
      */
-    public function toDynamic(): Dynamic {
+    public function toDynamic(): Term {
         return this;
     }
     
@@ -63,7 +64,7 @@ abstract Socket<TAssigns>(Dynamic) from Dynamic to Dynamic {
     /**
      * Get specific assign value
      */
-    public function getAssign(key: String): Dynamic {
+    public function getAssign(key: String): Term {
         var assigns = Reflect.field(this, "assigns");
         return Reflect.field(assigns, key);
     }
@@ -86,7 +87,7 @@ abstract Socket<TAssigns>(Dynamic) from Dynamic to Dynamic {
      * Get transport type
      */
     public function getTransport(): SocketTransport {
-        var transport: Dynamic = Reflect.field(this, "transport");
+        var transport: Term = Reflect.field(this, "transport");
         // This is a simplified detection - actual implementation would inspect transport details
         return WebSocket;
     }
@@ -94,28 +95,28 @@ abstract Socket<TAssigns>(Dynamic) from Dynamic to Dynamic {
     /**
      * Get endpoint module
      */
-    public function getEndpoint(): Dynamic {
+    public function getEndpoint(): Term {
         return Reflect.field(this, "endpoint");
     }
     
     /**
      * Get router module
      */
-    public function getRouter(): Dynamic {
+    public function getRouter(): Term {
         return Reflect.field(this, "router");
     }
     
     /**
      * Get view module
      */
-    public function getView(): Dynamic {
+    public function getView(): Term {
         return Reflect.field(this, "view");
     }
     
     /**
      * Get changed assigns
      */
-    public function getChanged(): Dynamic {
+    public function getChanged(): Term {
         return Reflect.field(this, "changed");
     }
     
@@ -123,28 +124,28 @@ abstract Socket<TAssigns>(Dynamic) from Dynamic to Dynamic {
      * Check if specific assign has changed
      */
     public function hasChanged(key: String): Bool {
-        var changed: Dynamic = getChanged();
+        var changed: Term = getChanged();
         return Reflect.hasField(changed, key);
     }
     
     /**
      * Get parent process ID
      */
-    public function getParentPid(): Dynamic {
+    public function getParentPid(): Term {
         return Reflect.field(this, "parent_pid");
     }
     
     /**
      * Get root process ID
      */
-    public function getRootPid(): Dynamic {
+    public function getRootPid(): Term {
         return Reflect.field(this, "root_pid");
     }
     
     /**
      * Get transport process ID
      */
-    public function getTransportPid(): Dynamic {
+    public function getTransportPid(): Term {
         return Reflect.field(this, "transport_pid");
     }
 }
@@ -164,7 +165,7 @@ class SocketTools {
     /**
      * Get assign with default value
      */
-    public static function getAssignOr<T>(socket: Socket<T>, key: String, defaultValue: Dynamic): Dynamic {
+    public static function getAssignOr<T>(socket: Socket<T>, key: String, defaultValue: Term): Term {
         var assigns = socket.getAssigns().toDynamic();
         return Reflect.hasField(assigns, key) ? Reflect.field(assigns, key) : defaultValue;
     }
@@ -172,21 +173,21 @@ class SocketTools {
     /**
      * Check if socket is in a specific state
      */
-    public static function isInState<T>(socket: Socket<T>, stateName: String, stateValue: Dynamic): Bool {
+    public static function isInState<T>(socket: Socket<T>, stateName: String, stateValue: Term): Bool {
         return socket.getAssign(stateName) == stateValue;
     }
     
     /**
      * Extract user from socket assigns (common pattern)
      */
-    public static function getCurrentUser<T>(socket: Socket<T>): Dynamic {
+    public static function getCurrentUser<T>(socket: Socket<T>): Term {
         return socket.getAssign("current_user");
     }
     
     /**
      * Extract flash messages from socket assigns
      */
-    public static function getFlash<T>(socket: Socket<T>): Dynamic {
+    public static function getFlash<T>(socket: Socket<T>): Term {
         return socket.getAssign("flash");
     }
     

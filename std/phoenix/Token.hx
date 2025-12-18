@@ -1,5 +1,7 @@
 package phoenix;
 
+import elixir.types.Term;
+
 /**
  * Phoenix.Token extern definitions for secure token generation and verification
  * 
@@ -42,7 +44,7 @@ typedef TokenOptions = {
 /**
  * Token context - can be endpoint, connection, socket, or secret key base
  */
-typedef TokenContext = Dynamic;
+typedef TokenContext = Term;
 
 /**
  * Salt for token generation - should be unique per use case
@@ -64,7 +66,7 @@ extern class Token {
      * @param opts Token options (key_iterations, max_age, etc.)
      */
     @:native("Phoenix.Token.sign")
-    public static function sign(context: TokenContext, salt: TokenSalt, data: Dynamic, ?opts: TokenOptions): String;
+    public static function sign(context: TokenContext, salt: TokenSalt, data: Term, ?opts: TokenOptions): String;
     
     /**
      * Verify and decode a signed token
@@ -76,7 +78,7 @@ extern class Token {
      * @param opts Token options (must match signing options)
      */
     @:native("Phoenix.Token.verify")
-    public static function verify(context: TokenContext, salt: TokenSalt, token: String, ?opts: TokenOptions): Dynamic;
+    public static function verify(context: TokenContext, salt: TokenSalt, token: String, ?opts: TokenOptions): Term;
     
     /**
      * Encrypt data into a token using AES-GCM
@@ -89,7 +91,7 @@ extern class Token {
      * @param opts Token options
      */
     @:native("Phoenix.Token.encrypt")
-    public static function encrypt(context: TokenContext, secret: String, data: Dynamic, ?opts: TokenOptions): String;
+    public static function encrypt(context: TokenContext, secret: String, data: Term, ?opts: TokenOptions): String;
     
     /**
      * Decrypt and verify an encrypted token
@@ -101,7 +103,7 @@ extern class Token {
      * @param opts Token options (must match encryption options)
      */
     @:native("Phoenix.Token.decrypt")
-    public static function decrypt(context: TokenContext, secret: String, token: String, ?opts: TokenOptions): Dynamic;
+    public static function decrypt(context: TokenContext, secret: String, token: String, ?opts: TokenOptions): Term;
 }
 
 /**

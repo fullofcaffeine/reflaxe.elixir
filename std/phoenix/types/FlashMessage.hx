@@ -1,5 +1,7 @@
 package phoenix.types;
 
+import elixir.types.Term;
+
 /**
  * Type-safe wrapper for Phoenix Flash messages
  * 
@@ -14,7 +16,7 @@ package phoenix.types;
  * }
  * 
  * // In templates/views
- * var messages = socket.getFlash();
+ * var messages = socket.assigns.flash;
  * if (FlashMessage.hasType(messages, FlashType.Error)) {
  *     // Show error styling
  * }
@@ -42,7 +44,7 @@ typedef FlashData = {
     ?title: String,
     ?dismissible: Bool,
     ?timeout: Int,
-    ?metadata: Dynamic
+    ?metadata: Term
 }
 
 /**
@@ -51,16 +53,16 @@ typedef FlashData = {
 abstract FlashMessage(FlashData) from FlashData to FlashData {
     
     /**
-     * Create flash message from Dynamic value
+     * Create flash message from an arbitrary term
      */
-    public static function fromDynamic(flash: Dynamic): FlashMessage {
+    public static function fromDynamic(flash: Term): FlashMessage {
         return cast flash;
     }
     
     /**
-     * Get the underlying Dynamic flash
+     * Get the underlying term flash
      */
-    public function toDynamic(): Dynamic {
+    public function toDynamic(): Term {
         return this;
     }
     
@@ -174,7 +176,7 @@ abstract FlashMessage(FlashData) from FlashData to FlashData {
     /**
      * Get additional metadata
      */
-    public function getMetadata(): Dynamic {
+    public function getMetadata(): Term {
         return this.metadata;
     }
     
@@ -199,7 +201,7 @@ abstract FlashMessage(FlashData) from FlashData to FlashData {
     /**
      * Add metadata to flash message
      */
-    public function withMetadata(metadata: Dynamic): FlashMessage {
+    public function withMetadata(metadata: Term): FlashMessage {
         var updated = Reflect.copy(this);
         updated.metadata = metadata;
         return updated;
@@ -242,7 +244,7 @@ class FlashMessageTools {
     /**
      * Check if flash collection has specific type
      */
-    public static function hasType(flash: Dynamic, type: FlashType): Bool {
+    public static function hasType(flash: Term, type: FlashType): Bool {
         if (flash == null) return false;
         
         var typeStr = typeToString(type);
@@ -252,7 +254,7 @@ class FlashMessageTools {
     /**
      * Get flash messages of specific type
      */
-    public static function getByType(flash: Dynamic, type: FlashType): Null<String> {
+    public static function getByType(flash: Term, type: FlashType): Null<String> {
         if (!hasType(flash, type)) return null;
         
         var typeStr = typeToString(type);
@@ -262,7 +264,7 @@ class FlashMessageTools {
     /**
      * Get all flash message types present
      */
-    public static function getTypes(flash: Dynamic): Array<FlashType> {
+    public static function getTypes(flash: Term): Array<FlashType> {
         if (flash == null) return [];
         
         var types = [];
@@ -281,7 +283,7 @@ class FlashMessageTools {
     /**
      * Check if any flash messages exist
      */
-    public static function hasAny(flash: Dynamic): Bool {
+    public static function hasAny(flash: Term): Bool {
         if (flash == null) return false;
         
         var fields = Reflect.fields(flash);
@@ -324,7 +326,7 @@ class FlashMessageTools {
     /**
      * Create flash message collection from individual messages
      */
-    public static function createCollection(messages: Array<FlashMessage>): Dynamic {
+    public static function createCollection(messages: Array<FlashMessage>): Term {
         var collection = {};
         
         for (message in messages) {
@@ -345,7 +347,7 @@ class FlashMessageBuilder {
     private var title: Null<String>;
     private var dismissible: Bool = true;
     private var timeout: Null<Int>;
-    private var metadata: Dynamic;
+    private var metadata: Term;
     
     public function new(type: FlashType, message: String) {
         this.type = type;
@@ -367,7 +369,7 @@ class FlashMessageBuilder {
         return this;
     }
     
-    public function withMetadata(metadata: Dynamic): FlashMessageBuilder {
+    public function withMetadata(metadata: Term): FlashMessageBuilder {
         this.metadata = metadata;
         return this;
     }

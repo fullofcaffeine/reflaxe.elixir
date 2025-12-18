@@ -10,7 +10,7 @@ import phoenix.types.HXXTypes;
  * 
  * Architecture:
  * - Static registration of HTML5 elements
- * - Dynamic registration of Phoenix components
+ * - Runtime registration of Phoenix components
  * - Attribute name conversion (camelCase → kebab-case)
  * - Type validation and error reporting
  * 

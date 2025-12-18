@@ -2,6 +2,7 @@ package phoenix.test;
 
 import phoenix.test.Conn;
 import phoenix.test.LiveView;
+import elixir.types.Term;
 
 /**
  * Phoenix.LiveViewTest extern definitions for LiveView testing.
@@ -32,14 +33,14 @@ extern class LiveViewTest {
      * Mount a LiveView for testing.
      * Connects to the LiveView and returns a test harness.
      */
-    @:overload(function(conn: Conn, path: String, params: Map<String, Dynamic>): LiveView {})
-    @:overload(function(conn: Conn, path: String, session: Map<String, Dynamic>, params: Map<String, Dynamic>): LiveView {})
+    @:overload(function(conn: Conn, path: String, params: Map<String, Term>): LiveView {})
+    @:overload(function(conn: Conn, path: String, session: Map<String, Term>, params: Map<String, Term>): LiveView {})
     public static function live(conn: Conn, path: String): LiveView;
     
     /**
      * Connect to an isolated LiveView component.
      */
-    @:overload(function(module: String, assigns: Map<String, Dynamic>): LiveView {})
+    @:overload(function(module: String, assigns: Map<String, Term>): LiveView {})
     public static function live_component(module: String): LiveView;
     
     /**
@@ -52,58 +53,58 @@ extern class LiveViewTest {
      * Simulate a click event on an element.
      */
     // Phoenix API: render_click(element_or_view, value \\ %{})
-    @:overload(function(element: Dynamic, value: Dynamic): LiveView {})
-    @:overload(function(element: Dynamic): LiveView {})
-    @:overload(function(liveView: LiveView, element: String, value: Dynamic): LiveView {})
+    @:overload(function(element: Term, value: Term): LiveView {})
+    @:overload(function(element: Term): LiveView {})
+    @:overload(function(liveView: LiveView, element: String, value: Term): LiveView {})
     public static function render_click(liveView: LiveView, element: String): LiveView;
     
     /**
      * Simulate form submission.
      */
-    @:overload(function(element: Dynamic, data: Dynamic): LiveView {})
-    @:overload(function(liveView: LiveView, form: String, data: Map<String, Dynamic>): LiveView {})
+    @:overload(function(element: Term, data: Term): LiveView {})
+    @:overload(function(liveView: LiveView, form: String, data: Map<String, Term>): LiveView {})
     public static function render_submit(liveView: LiveView, form: String): LiveView;
     
     /**
      * Simulate form change event (validation).
      */
-    @:overload(function(liveView: LiveView, form: String, data: Map<String, Dynamic>): LiveView {})
+    @:overload(function(liveView: LiveView, form: String, data: Map<String, Term>): LiveView {})
     public static function render_change(liveView: LiveView, form: String): LiveView;
     
     /**
      * Simulate keydown event.
      */
-    @:overload(function(liveView: LiveView, element: String, key: String, meta: Map<String, Dynamic>): LiveView {})
+    @:overload(function(liveView: LiveView, element: String, key: String, meta: Map<String, Term>): LiveView {})
     public static function render_keydown(liveView: LiveView, element: String, key: String): LiveView;
     
     /**
      * Simulate keyup event.
      */
-    @:overload(function(liveView: LiveView, element: String, key: String, meta: Map<String, Dynamic>): LiveView {})
+    @:overload(function(liveView: LiveView, element: String, key: String, meta: Map<String, Term>): LiveView {})
     public static function render_keyup(liveView: LiveView, element: String, key: String): LiveView;
     
     /**
      * Simulate blur event (losing focus).
      */
-    @:overload(function(liveView: LiveView, element: String, value: Dynamic): LiveView {})
+    @:overload(function(liveView: LiveView, element: String, value: Term): LiveView {})
     public static function render_blur(liveView: LiveView, element: String): LiveView;
     
     /**
      * Simulate focus event.
      */
-    @:overload(function(liveView: LiveView, element: String, value: Dynamic): LiveView {})
+    @:overload(function(liveView: LiveView, element: String, value: Term): LiveView {})
     public static function render_focus(liveView: LiveView, element: String): LiveView;
     
     /**
      * Simulate hook event (JavaScript hooks).
      */
-    @:overload(function(liveView: LiveView, hook: String, event: String, data: Map<String, Dynamic>): LiveView {})
+    @:overload(function(liveView: LiveView, hook: String, event: String, data: Map<String, Term>): LiveView {})
     public static function render_hook(liveView: LiveView, hook: String, event: String): LiveView;
     
     /**
      * Send a message to the LiveView process.
      */
-    public static function send_message(liveView: LiveView, message: Dynamic): LiveView;
+    public static function send_message(liveView: LiveView, message: Term): LiveView;
     
     /**
      * Follow a redirect from the LiveView.
@@ -140,12 +141,12 @@ extern class LiveViewTest {
     /**
      * Get current LiveView assigns.
      */
-    public static function get_assigns(liveView: LiveView): Map<String, Dynamic>;
+    public static function get_assigns(liveView: LiveView): Map<String, Term>;
     
     /**
      * Get specific assign value.
      */
-    public static function get_assign(liveView: LiveView, key: String): Dynamic;
+    public static function get_assign(liveView: LiveView, key: String): Term;
     
     /**
      * Check if LiveView has specific assign.
@@ -167,13 +168,13 @@ extern class LiveViewTest {
     /**
      * Find element in rendered HTML.
      */
-    @:overload(function(liveView: LiveView, selector: String, text: String): Dynamic {})
-    public static function element(liveView: LiveView, selector: String): Dynamic;
+    @:overload(function(liveView: LiveView, selector: String, text: String): Term {})
+    public static function element(liveView: LiveView, selector: String): Term;
     
     /**
      * Find all elements matching selector.
      */
-    public static function all(liveView: LiveView, selector: String): Array<Dynamic>;
+    public static function all(liveView: LiveView, selector: String): Array<Term>;
     
     /**
      * Open browser view for debugging (in test mode).

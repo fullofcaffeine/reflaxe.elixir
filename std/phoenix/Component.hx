@@ -1,5 +1,6 @@
 package phoenix;
 
+import elixir.types.Term;
 import phoenix.types.Assigns;
 import phoenix.types.Flash;
 import phoenix.types.Flash.FlashType;
@@ -88,7 +89,7 @@ extern class Component {
      * @param params Optional route parameters
      * @return String Generated route path
      */
-    static function route_path(route: String, ?params: Dynamic): String;
+    static function route_path(route: String, ?params: Term): String;
     
     /**
      * Generate a verified route URL  
@@ -98,7 +99,7 @@ extern class Component {
      * @param params Optional route parameters
      * @return String Generated route URL
      */
-    static function route_url(route: String, ?params: Dynamic): String;
+    static function route_url(route: String, ?params: Term): String;
     
     /**
      * Render raw HTML (marked as safe)
@@ -118,7 +119,7 @@ extern class Component {
      * @param opts Options like prefix, suffix, separator
      * @return String Formatted title HTML
      */
-    static function live_title(title: String, ?opts: Dynamic): String;
+    static function live_title(title: String, ?opts: Term): String;
     
     /**
      * Generate a link element
@@ -129,5 +130,5 @@ extern class Component {
      * @param opts Link options (class, id, target, etc.)
      * @return String Generated link HTML
      */
-    static function link(text: String, to: String, ?opts: Dynamic): String;
+    static function link(text: String, to: String, ?opts: Term): String;
 }

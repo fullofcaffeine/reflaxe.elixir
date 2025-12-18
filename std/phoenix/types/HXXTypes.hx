@@ -1,5 +1,7 @@
 package phoenix.types;
 
+import elixir.types.Term;
+
 /**
  * HXX Type Safety System - Core Type Definitions
  * 
@@ -189,7 +191,7 @@ typedef GlobalAttributes = {
 typedef InputAttributes = GlobalAttributes & {
     ?type: InputType,
     ?name: String,
-    ?value: Dynamic,
+    ?value: Term,
     ?placeholder: String,
     ?required: Bool,
     ?disabled: Bool,

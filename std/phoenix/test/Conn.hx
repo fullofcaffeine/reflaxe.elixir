@@ -1,5 +1,7 @@
 package phoenix.test;
 
+import elixir.types.Term;
+
 /**
  * Phoenix connection type for HTTP testing.
  * 
@@ -42,13 +44,13 @@ typedef Conn = {
     var query_params: Map<String, String>;
     
     /** Request parameters (from URL and body) */
-    var params: Map<String, Dynamic>;
+    var params: Map<String, Term>;
     
     /** Session data */
-    var session: Map<String, Dynamic>;
+    var session: Map<String, Term>;
     
     /** Assigns (controller-level data) */
-    var assigns: Map<String, Dynamic>;
+    var assigns: Map<String, Term>;
     
     /** Flash messages */
     var flash: Map<String, String>;
@@ -57,10 +59,10 @@ typedef Conn = {
     var req_cookies: Map<String, String>;
     
     /** Response cookies */
-    var resp_cookies: Map<String, Dynamic>;
+    var resp_cookies: Map<String, Term>;
     
     /** Current user (if authenticated) */
-    @:optional var current_user: Dynamic;
+    @:optional var current_user: Term;
     
     /** CSRF token */
     @:optional var csrf_token: String;
@@ -69,7 +71,7 @@ typedef Conn = {
     @:optional var content_type: String;
     
     /** Request body */
-    @:optional var body_params: Map<String, Dynamic>;
+    @:optional var body_params: Map<String, Term>;
     
     /** Whether request was halted */
     var halted: Bool;

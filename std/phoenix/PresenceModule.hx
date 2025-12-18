@@ -1,5 +1,6 @@
 package phoenix;
 
+import elixir.types.Term;
 import phoenix.Phoenix.Socket;
 
 /**
@@ -35,7 +36,7 @@ class PresenceModule {
      * @param key The unique key for this presence
      * @param meta The metadata to associate with the presence
      */
-    protected static extern inline function trackPresence<T>(socket: Socket<T>, topic: String, key: String, meta: Dynamic): Socket<T> {
+    protected static extern inline function trackPresence<T>(socket: Socket<T>, topic: String, key: String, meta: Term): Socket<T> {
         return untyped __elixir__('track(self(), {0}, {1}, {2}, {3})', socket, topic, key, meta);
     }
     
@@ -48,7 +49,7 @@ class PresenceModule {
      * @param key The unique key for this presence
      * @param meta The updated metadata
      */
-    protected static extern inline function updatePresence<T>(socket: Socket<T>, topic: String, key: String, meta: Dynamic): Socket<T> {
+    protected static extern inline function updatePresence<T>(socket: Socket<T>, topic: String, key: String, meta: Term): Socket<T> {
         return untyped __elixir__('update(self(), {0}, {1}, {2}, {3})', socket, topic, key, meta);
     }
     
@@ -59,7 +60,7 @@ class PresenceModule {
      * @param topic The presence topic to list
      * @return Map of presence keys to their metadata
      */
-    protected static extern inline function listPresences(topic: String): Dynamic {
+    protected static extern inline function listPresences(topic: String): Term {
         return untyped __elixir__('list({0})', topic);
     }
     

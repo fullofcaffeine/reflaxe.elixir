@@ -1,6 +1,7 @@
 package phoenix.test;
 
 import phoenix.test.Conn;
+import elixir.types.Term;
 
 /**
  * Phoenix.ConnTest extern definitions for HTTP testing.
@@ -31,13 +32,13 @@ extern class ConnTest {
      * Overloads mirror Phoenix.ConnTest.build_conn/0|2|3.
      */
     @:overload(function(): Conn {})
-    @:overload(function(method: String, path: String, params: Dynamic): Conn {})
+    @:overload(function(method: String, path: String, params: Term): Conn {})
     public static function build_conn(method: String, path: String): Conn;
     
     /**
      * Make a GET request with parameters.
      */
-    @:overload(function(conn: Conn, path: String, params: Dynamic): Conn {})
+    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
     public static function get(conn: Conn, path: String): Conn;
     
     /**
@@ -46,7 +47,7 @@ extern class ConnTest {
     /**
      * Make a POST request with parameters.
      */
-    @:overload(function(conn: Conn, path: String, params: Dynamic): Conn {})
+    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
     public static function post(conn: Conn, path: String): Conn;
     
     /**
@@ -55,7 +56,7 @@ extern class ConnTest {
     /**
      * Make a PUT request with parameters.
      */
-    @:overload(function(conn: Conn, path: String, params: Dynamic): Conn {})
+    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
     public static function put(conn: Conn, path: String): Conn;
     
     /**
@@ -64,7 +65,7 @@ extern class ConnTest {
     /**
      * Make a PATCH request with parameters.
      */
-    @:overload(function(conn: Conn, path: String, params: Dynamic): Conn {})
+    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
     public static function patch(conn: Conn, path: String): Conn;
     
     /**
@@ -73,7 +74,7 @@ extern class ConnTest {
     /**
      * Make a DELETE request with parameters.
      */
-    @:overload(function(conn: Conn, path: String, params: Dynamic): Conn {})
+    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
     public static function delete(conn: Conn, path: String): Conn;
     
     /**
@@ -82,7 +83,7 @@ extern class ConnTest {
     /**
      * Make a HEAD request with parameters.
      */
-    @:overload(function(conn: Conn, path: String, params: Dynamic): Conn {})
+    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
     public static function head(conn: Conn, path: String): Conn;
     
     /**
@@ -91,13 +92,13 @@ extern class ConnTest {
     /**
      * Make an OPTIONS request with parameters.
      */
-    @:overload(function(conn: Conn, path: String, params: Dynamic): Conn {})
+    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
     public static function options(conn: Conn, path: String): Conn;
     
     /**
      * Initialize test session for the connection.
      */
-    public static function init_test_session(conn: Conn, session: Map<String, Dynamic>): Conn;
+    public static function init_test_session(conn: Conn, session: Map<String, Term>): Conn;
     
     /**
      * Clear the session data.

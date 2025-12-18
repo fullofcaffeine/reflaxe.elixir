@@ -1,5 +1,7 @@
 package server.infrastructure;
 
+import elixir.types.Term;
+
 /**
  * TodoAppWeb.ErrorJSON
  *
@@ -17,7 +19,7 @@ package server.infrastructure;
 @:native("TodoAppWeb.ErrorJSON")
 @:keep
 class ErrorJSON {
-    public static function render(template: String, assigns: Dynamic): phoenix.errors.DefaultErrorJSON.ErrorPayload {
+    public static function render(template: String, assigns: Term): phoenix.errors.DefaultErrorJSON.ErrorPayload {
         return phoenix.errors.DefaultErrorJSON.render(template, assigns);
     }
 }
