@@ -1,6 +1,7 @@
 package ecto;
 
 import ecto.DatabaseAdapter;
+import elixir.types.Term;
 
 /**
  * Type-safe Ecto Migration DSL for database schema management
@@ -152,8 +153,8 @@ class TableBuilder {
     public function addColumn<T>(name: String, type: ColumnType<T>, ?options: ColumnOptions<T>): TableBuilder {
         columns.push({
             name: name,
-            type: type,
-            options: options
+            type: cast type,
+            options: options != null ? cast options : null
         });
         
         #if macro
@@ -300,7 +301,7 @@ class AlterTableBuilder {
      * Add a new column to existing table
      */
     public function addColumn<T>(name: String, type: ColumnType<T>, ?options: ColumnOptions<T>): AlterTableBuilder {
-        operations.push(AddColumn(name, type, options));
+        operations.push(AddColumn(name, cast type, options != null ? cast options : null));
         return this;
     }
     
@@ -316,7 +317,7 @@ class AlterTableBuilder {
      * Modify an existing column's type or options
      */
     public function modifyColumn<T>(name: String, type: ColumnType<T>, ?options: ColumnOptions<T>): AlterTableBuilder {
-        operations.push(ModifyColumn(name, type, options));
+        operations.push(ModifyColumn(name, cast type, options != null ? cast options : null));
         return this;
     }
     
@@ -358,11 +359,11 @@ enum ColumnType<T> {
     Binary: ColumnType<haxe.io.Bytes>;
     
     // JSON types
-    Json: ColumnType<Dynamic>;
-    JsonArray: ColumnType<Array<Dynamic>>;
+    Json: ColumnType<Term>;
+    JsonArray: ColumnType<Array<Term>>;
     
     // Array types (PostgreSQL)
-    Array(itemType: ColumnType<Dynamic>): ColumnType<Array<T>>;
+    Array(itemType: ColumnType<T>): ColumnType<Array<T>>;
     
     // Special types
     References(table: String): ColumnType<Int>;
@@ -469,8 +470,8 @@ enum IdType {
  */
 private typedef ColumnDefinition = {
     var name: String;
-    var type: ColumnType<Dynamic>;
-    var options: Null<ColumnOptions<Dynamic>>;
+    var type: ColumnType<Term>;
+    var options: Null<ColumnOptions<Term>>;
 }
 
 /**
@@ -504,9 +505,8 @@ private enum ConstraintType {
  * Alter table operations
  */
 private enum AlterOperation {
-    AddColumn(name: String, type: ColumnType<Dynamic>, options: Null<ColumnOptions<Dynamic>>);
+    AddColumn(name: String, type: ColumnType<Term>, options: Null<ColumnOptions<Term>>);
     RemoveColumn(name: String);
-    ModifyColumn(name: String, type: ColumnType<Dynamic>, options: Null<ColumnOptions<Dynamic>>);
+    ModifyColumn(name: String, type: ColumnType<Term>, options: Null<ColumnOptions<Term>>);
     RenameColumn(oldName: String, newName: String);
 }
-
