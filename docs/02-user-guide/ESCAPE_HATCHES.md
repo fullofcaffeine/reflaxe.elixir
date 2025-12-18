@@ -539,7 +539,7 @@ class DataProcessor {
      * that aren't available in typed API yet.
      */
     public function fastLookup(key: String): Dynamic {
-        // TODO: Replace with typed API when available
+        // Prefer a typed wrapper once one exists for this API.
         return untyped __elixir__('
             :ets.lookup(:cache, $key)
         ');
