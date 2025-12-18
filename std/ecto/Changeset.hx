@@ -63,7 +63,7 @@ import elixir.types.Term;
  * @see ecto.Schema For defining database schemas
  * @see ecto.Repository For database operations
  */
-abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
+abstract Changeset<T, P>(Term) from Term to Term {
     
     /**
      * Create a new changeset from data and params
@@ -222,7 +222,7 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @param values List of allowed values
      * @return The updated changeset
      */
-    extern inline public function validateInclusion(field: String, values: Array<Dynamic>): Changeset<T, P> {
+    extern inline public function validateInclusion(field: String, values: Array<Term>): Changeset<T, P> {
         return untyped __elixir__('Ecto.Changeset.validate_inclusion({0}, :{1}, {2})', 
             this, field, values);
     }
@@ -234,7 +234,7 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @param values List of excluded values
      * @return The updated changeset
      */
-    extern inline public function validateExclusion(field: String, values: Array<Dynamic>): Changeset<T, P> {
+    extern inline public function validateExclusion(field: String, values: Array<Term>): Changeset<T, P> {
         return untyped __elixir__('Ecto.Changeset.validate_exclusion({0}, :{1}, {2})', 
             this, field, values);
     }
@@ -377,7 +377,7 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @param value The new value
      * @return The updated changeset
      */
-    extern inline public function putChange(field: String, value: Dynamic): Changeset<T, P> {
+    extern inline public function putChange(field: String, value: Term): Changeset<T, P> {
         return untyped __elixir__('Ecto.Changeset.put_change({0}, :{1}, {2})', this, field, value);
     }
     
@@ -387,7 +387,7 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @param field The field name
      * @return The change value or null
      */
-    extern inline public function getChange(field: String): Dynamic {
+    extern inline public function getChange(field: String): Term {
         return untyped __elixir__('Ecto.Changeset.get_change({0}, :{1})', this, field);
     }
     
@@ -397,7 +397,7 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @param field The field name
      * @return The field value
      */
-    extern inline public function getField(field: String): Dynamic {
+    extern inline public function getField(field: String): Term {
         return untyped __elixir__('Ecto.Changeset.get_field({0}, :{1})', this, field);
     }
     
@@ -433,7 +433,7 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * @param opts Error options
      * @return The updated changeset
      */
-    extern inline public function addError(field: String, message: String, ?opts: Dynamic): Changeset<T, P> {
+    extern inline public function addError(field: String, message: String, ?opts: Term): Changeset<T, P> {
         if (opts != null) {
             return untyped __elixir__('Ecto.Changeset.add_error({0}, :{1}, {2}, {3})', 
                 this, field, message, opts);

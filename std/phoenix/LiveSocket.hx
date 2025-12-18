@@ -321,7 +321,7 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @return Updated LiveSocket
 	 */
     extern inline public function putFlash(type: phoenix.types.Flash.FlashType, message: String): LiveSocket<T> {
-        return untyped __elixir__('Phoenix.LiveView.put_flash({0}, String.to_atom({1}), {2})', this, phoenix.types.Flash.FlashTypeTools.toPhoenixKey(type), message);
+        return cast phoenix.Phoenix.LiveView.putFlash(cast this, type, message);
     }
 	
 	/**

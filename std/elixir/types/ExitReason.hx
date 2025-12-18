@@ -1,5 +1,7 @@
 package elixir.types;
 
+import elixir.Kernel;
+
 /**
  * Type-safe abstraction for process exit reasons
  * 
@@ -8,23 +10,10 @@ package elixir.types;
  * like {:shutdown, term}. While technically any term can be an exit reason,
  * this abstract provides type-safe constructors for the most common patterns.
  * 
- * ## Why Dynamic?
- * 
- * We use Dynamic as the underlying type because exit reasons in Elixir can be:
- * - Atoms (:normal, :kill, :shutdown, :timeout)
- * - Tuples ({:shutdown, :immediate}, {:error, "failed to connect"})
- * - Any arbitrary term (strings, numbers, complex structures)
- * 
- * This flexibility is essential for OTP compliance and error propagation.
- * 
- * ## The @:to and @:from metadata
- * 
- * The abstract uses Haxe's implicit casting metadata:
- * - `from Dynamic`: Allows any Dynamic value to be implicitly cast to ExitReason
- * - `to Dynamic`: Allows ExitReason to be implicitly cast to Dynamic when needed
- * - `@:to` on toString(): Allows implicit conversion to String in string contexts
- * 
- * This provides type safety at API boundaries while maintaining flexibility.
+ * ## Boundary Type
+ *
+ * Exit reasons can be any Elixir term (atoms, tuples, strings, etc). We represent
+ * that surface with `Term`, keeping APIs typed without exposing untyped values in signatures.
  * 
  * ## Usage Examples
  * 
@@ -38,20 +27,16 @@ package elixir.types;
  * Process.exit(pid, ExitReason.custom("timeout"));     // "timeout"
  * Process.exit(pid, ExitReason.shutdownWith("db"));    // {:shutdown, "db"}
  * 
- * // Implicit conversion from Dynamic
- * var reason: Dynamic = getExitReasonFromSomewhere();
- * Process.exit(pid, reason);  // Works due to 'from Dynamic'
- * 
  * // Implicit conversion to String
  * var exitReason = ExitReason.normal();
  * trace("Process exited with: " + exitReason);  // Uses toString() via @:to
  * ```
  */
-abstract ExitReason(Dynamic) from Dynamic to Dynamic {
+abstract ExitReason(Term) from Term to Term {
     /**
      * Create a new ExitReason wrapper
      */
-    public inline function new(reason: Dynamic) {
+    public inline function new(reason: Term) {
         this = reason;
     }
     
@@ -59,34 +44,34 @@ abstract ExitReason(Dynamic) from Dynamic to Dynamic {
      * Normal exit reason
      */
     public static inline function normal(): ExitReason {
-        return new ExitReason(untyped __elixir__(':normal'));
+        return new ExitReason(Atom.NORMAL);
     }
     
     /**
      * Kill exit reason (untrappable)
      */
     public static inline function kill(): ExitReason {
-        return new ExitReason(untyped __elixir__(':kill'));
+        return new ExitReason(Atom.fromString("kill"));
     }
     
     /**
      * Shutdown exit reason
      */
     public static inline function shutdown(): ExitReason {
-        return new ExitReason(untyped __elixir__(':shutdown'));
+        return new ExitReason(Atom.SHUTDOWN);
     }
     
     /**
      * Shutdown with additional info
      */
-    public static inline function shutdownWith(info: Dynamic): ExitReason {
+    public static inline function shutdownWith(info: Term): ExitReason {
         return new ExitReason(untyped __elixir__('{:shutdown, $info}'));
     }
     
     /**
      * Custom exit reason
      */
-    public static inline function custom(reason: Dynamic): ExitReason {
+    public static inline function custom(reason: Term): ExitReason {
         return new ExitReason(reason);
     }
     
@@ -114,6 +99,6 @@ abstract ExitReason(Dynamic) from Dynamic to Dynamic {
      */
     @:to
     public inline function toString(): String {
-        return untyped __elixir__('inspect($this)');
+        return Kernel.inspect(this);
     }
 }

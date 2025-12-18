@@ -96,15 +96,6 @@ interface BuildContext {
     function getCurrentClass(): Null<ClassType>;
 
     /**
-     * Store metadata for an AST node
-     * Used to pass hints to transformer phase
-     *
-     * @param nodeId Unique identifier for the node
-     * @param metadata Transformation hints and patterns detected
-     */
-    function setNodeMetadata(nodeId: String, metadata: Dynamic): Void;
-
-    /**
      * Generate a unique node ID for metadata tracking
      * Ensures each node can be uniquely identified
      *

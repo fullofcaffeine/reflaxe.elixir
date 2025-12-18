@@ -1,5 +1,7 @@
 package elixir.types;
 
+import elixir.types.Term;
+
 /**
  * Type-safe options for Registry.start_link
  * 
@@ -16,7 +18,7 @@ typedef RegistryOptions = {
     /**
      * The registry name (atom or via tuple)
      */
-    name: Dynamic,
+    name: Term,
     
     /**
      * Number of partitions for the registry
@@ -28,7 +30,7 @@ typedef RegistryOptions = {
     /**
      * Metadata to store with the registry
      */
-    ?meta: Array<{key: Dynamic, value: Dynamic}>,
+    ?meta: Array<{key: Term, value: Term}>,
     
     /**
      * Whether to compress ETS tables
@@ -39,7 +41,7 @@ typedef RegistryOptions = {
     /**
      * Custom listener modules for registry events
      */
-    ?listeners: Array<Dynamic>
+    ?listeners: Array<Term>
 }
 
 /**
@@ -102,7 +104,7 @@ class RegistryOptionsBuilder {
     /**
      * Add metadata to registry
      */
-    public static inline function withMeta(options: RegistryOptions, key: Dynamic, value: Dynamic): RegistryOptions {
+    public static inline function withMeta(options: RegistryOptions, key: Term, value: Term): RegistryOptions {
         if (options.meta == null) options.meta = [];
         options.meta.push({key: key, value: value});
         return options;

@@ -1,5 +1,19 @@
 package elixir.types;
 
+import elixir.Kernel;
+import elixir.Process;
+import elixir.types.Pid;
+import elixir.types.Reference;
+import elixir.types.Term;
+
+// Task.t() is a struct with these fields.
+// We model it locally so TaskRef methods can compile to idiomatic `task.pid` access.
+private typedef TaskStruct = {
+    var pid: Pid;
+    var ref: Reference;
+    var owner: Pid;
+};
+
 /**
  * Type-safe abstraction for Elixir Task references
  * 
@@ -31,12 +45,12 @@ package elixir.types;
  * - **Zero overhead**: Compiles to native Task.t() at runtime
  * - **Better IntelliSense**: Full autocomplete for task operations
  */
-abstract TaskRef(Dynamic) from Dynamic to Dynamic {
+abstract TaskRef(Term) from Term to Term {
     /**
      * Create a new TaskRef wrapper
      * Usually not called directly - returned from Task.async()
      */
-    public inline function new(task: Dynamic) {
+    public inline function new(task: Term) {
         this = task;
     }
     
@@ -44,28 +58,31 @@ abstract TaskRef(Dynamic) from Dynamic to Dynamic {
      * Get the PID of the task process
      */
     public inline function pid(): Pid {
-        return untyped __elixir__('$this.pid');
+        var task: TaskStruct = cast this;
+        return task.pid;
     }
     
     /**
      * Get the reference of the task
      */
-    public inline function ref(): Dynamic {
-        return untyped __elixir__('$this.ref');
+    public inline function ref(): Reference {
+        var task: TaskStruct = cast this;
+        return task.ref;
     }
     
     /**
      * Get the owner PID (the process that spawned this task)
      */
     public inline function owner(): Pid {
-        return untyped __elixir__('$this.owner');
+        var task: TaskStruct = cast this;
+        return task.owner;
     }
     
     /**
      * Check if this task is still alive
      */
     public inline function isAlive(): Bool {
-        return untyped __elixir__('Process.alive?($this.pid)');
+        return Process.alive(pid());
     }
     
     /**
@@ -73,6 +90,6 @@ abstract TaskRef(Dynamic) from Dynamic to Dynamic {
      */
     @:to
     public inline function toString(): String {
-        return untyped __elixir__('inspect($this)');
+        return Kernel.inspect(this);
     }
 }

@@ -1,6 +1,7 @@
 package utils;
 
 using StringTools;
+import elixir.types.Result;
 
 /**
  * ValidationHelper - Input validation utilities for Mix project
@@ -10,16 +11,60 @@ using StringTools;
  */
 @:module
 class ValidationHelper {
+
+    typedef UserInput = {
+        var name: String;
+        var email: String;
+        @:optional var age: Null<Int>;
+    }
+
+    typedef SanitizedUserInput = {
+        var name: String;
+        var email: String;
+        @:optional var age: Null<Int>;
+    }
+
+    typedef EmailValidation = {
+        var email: String;
+        var domain: String;
+    }
+
+    enum AgeCategory {
+        Child;
+        Teenager;
+        Adult;
+        Senior;
+    }
+
+    typedef AgeValidation = {
+        var age: Int;
+        var category: AgeCategory;
+    }
+
+    typedef PasswordStrength = {
+        var score: Int;
+        var hasLowercase: Bool;
+        var hasUppercase: Bool;
+        var hasNumbers: Bool;
+        var hasSpecialChars: Bool;
+        var length: Int;
+    }
+
+    typedef UrlValidation = {
+        var url: String;
+        var protocol: String;
+        var domain: String;
+    }
     
     /**
      * Validates user input data comprehensively
      * Returns validation result with detailed error information
      */
-    public static function validateUserInput(data: Dynamic): Dynamic {
-        var errors = [];
+    public static function validateUserInput(data: UserInput): Result<SanitizedUserInput, Array<String>> {
+        var errors: Array<String> = [];
         
         // Validate name
-        if (data.name == null || data.name.trim().length == 0) {
+        if (data.name.trim().length == 0) {
             errors.push("Name is required");
         } else if (data.name.trim().length < 2) {
             errors.push("Name must be at least 2 characters");
@@ -28,107 +73,93 @@ class ValidationHelper {
         }
         
         // Validate email
-        var emailResult = validateEmail(data.email);
-        if (!emailResult.valid) {
-            errors.push("Email: " + emailResult.error);
+        var validatedEmail: Null<EmailValidation> = null;
+        switch (validateEmail(data.email)) {
+            case Ok(result):
+                validatedEmail = result;
+            case Error(reason):
+                errors.push("Email: " + reason);
         }
         
         // Validate age if provided
         if (data.age != null) {
-            var ageResult = validateAge(data.age);
-            if (!ageResult.valid) {
-                errors.push("Age: " + ageResult.error);
+            switch (validateAge(data.age)) {
+                case Ok(_):
+                case Error(reason):
+                    errors.push("Age: " + reason);
             }
         }
-        
-        return {
-            valid: errors.length == 0,
-            errors: errors,
-            data: errors.length == 0 ? sanitizeUserData(data) : null
-        };
+
+        if (errors.length > 0 || validatedEmail == null) {
+            return Error(errors);
+        }
+
+        return Ok({
+            name: sanitizeText(data.name),
+            email: validatedEmail.email,
+            age: data.age
+        });
     }
     
     /**
      * Validates email address format and domain
      */
-    public static function validateEmail(email: Dynamic): Dynamic {
-        if (email == null) {
-            return {valid: false, error: "Email is required"};
-        }
-        
-        var emailStr = Std.string(email).trim();
-        
+    public static function validateEmail(email: String): Result<EmailValidation, String> {
+        var emailStr = email.trim();
+
         if (emailStr.length == 0) {
-            return {valid: false, error: "Email cannot be empty"};
+            return Error("Email is required");
         }
         
         if (emailStr.length > 254) {
-            return {valid: false, error: "Email is too long"};
+            return Error("Email is too long");
         }
         
         // Basic format validation
         if (!isValidEmailFormat(emailStr)) {
-            return {valid: false, error: "Invalid email format"};
+            return Error("Invalid email format");
         }
         
         // Check for valid domain
         var domain = extractDomain(emailStr);
         if (!isValidDomain(domain)) {
-            return {valid: false, error: "Invalid email domain"};
+            return Error("Invalid email domain");
         }
         
-        return {
-            valid: true,
+        return Ok({
             email: emailStr.toLowerCase(),
             domain: domain
-        };
+        });
     }
     
     /**
      * Validates age input
      */
-    public static function validateAge(age: Dynamic): Dynamic {
-        if (age == null) {
-            return {valid: false, error: "Age is required"};
+    public static function validateAge(age: Int): Result<AgeValidation, String> {
+        if (age < 0) {
+            return Error("Age cannot be negative");
         }
         
-        var ageNum: Null<Int>;
-        try {
-            ageNum = Std.parseInt(Std.string(age));
-            if (ageNum == null) throw "Invalid number";
-        } catch (e: Dynamic) {
-            return {valid: false, error: "Age must be a valid number"};
+        if (age > 150) {
+            return Error("Age seems unrealistic");
         }
         
-        if (ageNum < 0) {
-            return {valid: false, error: "Age cannot be negative"};
-        }
-        
-        if (ageNum > 150) {
-            return {valid: false, error: "Age seems unrealistic"};
-        }
-        
-        return {
-            valid: true,
-            age: ageNum,
-            category: categorizeAge(ageNum)
-        };
+        return Ok({
+            age: age,
+            category: categorizeAge(age)
+        });
     }
     
     /**
      * Validates password strength
      */
-    public static function validatePassword(password: String): Dynamic {
-        if (password == null) {
-            return {valid: false, error: "Password is required", strength: 0};
-        }
-        
+    public static function validatePassword(password: String): Result<PasswordStrength, Array<String>> {
         if (password.length < 8) {
-            return {valid: false, error: "Password must be at least 8 characters", strength: 1};
+            return Error(["Password must be at least 8 characters"]);
         }
         
         var strength = calculatePasswordStrength(password);
-        var errors = [];
+        var errors: Array<String> = [];
         
         if (strength.score < 3) {
             if (!strength.hasLowercase) errors.push("Must contain lowercase letters");
@@ -136,73 +167,55 @@ class ValidationHelper {
             if (!strength.hasNumbers) errors.push("Must contain numbers");
             if (!strength.hasSpecialChars) errors.push("Must contain special characters");
         }
-        
-        return {
-            valid: strength.score >= 3,
-            error: errors.length > 0 ? errors.join(", ") : null,
-            strength: strength.score,
-            details: strength
-        };
+
+        if (errors.length > 0) {
+            return Error(errors);
+        }
+
+        return Ok(strength);
     }
     
     /**
      * Validates and sanitizes text input
      */
-    public static function validateAndSanitizeText(text: String, minLength: Int = 0, maxLength: Int = 1000): Dynamic {
+    public static function validateAndSanitizeText(text: Null<String>, minLength: Int = 0, maxLength: Int = 1000): Result<String, String> {
         if (text == null) {
-            return {
-                valid: minLength == 0,
-                error: minLength > 0 ? "Text is required" : null,
-                sanitized: ""
-            };
+            return minLength == 0 ? Ok("") : Error("Text is required");
         }
         
         var sanitized = sanitizeText(text);
         
         if (sanitized.length < minLength) {
-            return {
-                valid: false,
-                error: "Text must be at least " + minLength + " characters",
-                sanitized: sanitized
-            };
+            return Error("Text must be at least " + minLength + " characters");
         }
         
         if (sanitized.length > maxLength) {
-            return {
-                valid: false,
-                error: "Text must not exceed " + maxLength + " characters",
-                sanitized: sanitized
-            };
+            return Error("Text must not exceed " + maxLength + " characters");
         }
         
-        return {
-            valid: true,
-            error: null,
-            sanitized: sanitized
-        };
+        return Ok(sanitized);
     }
     
     /**
      * Validates URL format
      */
-    public static function validateUrl(url: String): Dynamic {
-        if (url == null || url.trim().length == 0) {
-            return {valid: false, error: "URL is required"};
+    public static function validateUrl(url: String): Result<UrlValidation, String> {
+        if (url.trim().length == 0) {
+            return Error("URL is required");
         }
         
         var trimmed = url.trim();
         
         // Basic URL validation
         if (!isValidUrlFormat(trimmed)) {
-            return {valid: false, error: "Invalid URL format"};
+            return Error("Invalid URL format");
         }
         
-        return {
-            valid: true,
+        return Ok({
             url: trimmed,
             protocol: extractProtocol(trimmed),
             domain: extractUrlDomain(trimmed)
-        };
+        });
     }
     
     // Private helper functions
@@ -228,15 +241,15 @@ class ValidationHelper {
     }
     
     @:private
-    static function categorizeAge(age: Int): String {
-        if (age < 13) return "child";
-        if (age < 20) return "teenager";
-        if (age < 65) return "adult";
-        return "senior";
+    static function categorizeAge(age: Int): AgeCategory {
+        if (age < 13) return Child;
+        if (age < 20) return Teenager;
+        if (age < 65) return Adult;
+        return Senior;
     }
     
     @:private
-    static function calculatePasswordStrength(password: String): Dynamic {
+    static function calculatePasswordStrength(password: String): PasswordStrength {
         var hasLowercase = new EReg("[a-z]", "").match(password);
         var hasUppercase = new EReg("[A-Z]", "").match(password);
         var hasNumbers = new EReg("[0-9]", "").match(password);
@@ -271,14 +284,6 @@ class ValidationHelper {
     }
     
     @:private
-    static function sanitizeUserData(data: Dynamic): Dynamic {
-        return {
-            name: data.name != null ? sanitizeText(Std.string(data.name)) : null,
-            email: data.email != null ? Std.string(data.email).trim().toLowerCase() : null,
-            age: data.age
-        };
-    }
-    
     @:private
     static function isValidUrlFormat(url: String): Bool {
         var pattern = new EReg("^https?://[^\\s/$.?#].[^\\s]*$", "i");

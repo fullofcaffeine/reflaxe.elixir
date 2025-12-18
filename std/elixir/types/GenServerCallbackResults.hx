@@ -1,5 +1,7 @@
 package elixir.types;
 
+import elixir.types.Term;
+
 /**
  * Type-safe result types for GenServer callbacks
  * 
@@ -35,13 +37,13 @@ enum InitResult<S> {
      * Successful initialization with continue
      * Compiles to: {:ok, state, {:continue, term}}
      */
-    OkContinue(state: S, continueArg: Dynamic);
+    OkContinue(state: S, continueArg: Term);
     
     /**
      * Stop the GenServer immediately
      * Compiles to: {:stop, reason}
      */
-    Stop(reason: Dynamic);
+    Stop(reason: Term);
     
     /**
      * Ignore this GenServer start
@@ -79,7 +81,7 @@ enum HandleCallResult<R, S> {
      * Reply and continue
      * Compiles to: {:reply, reply, new_state, {:continue, term}}
      */
-    ReplyContinue(reply: R, newState: S, continueArg: Dynamic);
+    ReplyContinue(reply: R, newState: S, continueArg: Term);
     
     /**
      * Don't reply yet (will reply later with GenServer.reply)
@@ -103,19 +105,19 @@ enum HandleCallResult<R, S> {
      * Don't reply and continue
      * Compiles to: {:noreply, new_state, {:continue, term}}
      */
-    NoReplyContinue(newState: S, continueArg: Dynamic);
+    NoReplyContinue(newState: S, continueArg: Term);
     
     /**
      * Stop and reply
      * Compiles to: {:stop, reason, reply, new_state}
      */
-    StopReply(reason: Dynamic, reply: R, newState: S);
+    StopReply(reason: Term, reply: R, newState: S);
     
     /**
      * Stop without replying
      * Compiles to: {:stop, reason, new_state}
      */
-    Stop(reason: Dynamic, newState: S);
+    Stop(reason: Term, newState: S);
 }
 
 /**
@@ -146,13 +148,13 @@ enum HandleCastResult<S> {
      * Continue with continue argument
      * Compiles to: {:noreply, new_state, {:continue, term}}
      */
-    NoReplyContinue(newState: S, continueArg: Dynamic);
+    NoReplyContinue(newState: S, continueArg: Term);
     
     /**
      * Stop the GenServer
      * Compiles to: {:stop, reason, new_state}
      */
-    Stop(reason: Dynamic, newState: S);
+    Stop(reason: Term, newState: S);
 }
 
 /**
