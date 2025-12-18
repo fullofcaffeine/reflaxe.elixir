@@ -2,6 +2,8 @@ package ecto;
 
 #if (elixir || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * Params normalization helpers for Ecto.
  *
@@ -22,7 +24,7 @@ package ecto;
  *   3) Coerces strings to integers/booleans/NaiveDateTime as appropriate
  */
 class Params {
-    public static inline function normalizeFor<T>(data:T, params:Dynamic):Dynamic {
+    public static inline function normalizeFor<T>(data: T, params: Term): Term {
         return untyped __elixir__(
             '
             (fn data, params ->

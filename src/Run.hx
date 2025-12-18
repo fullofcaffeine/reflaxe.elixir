@@ -130,7 +130,7 @@ class Run {
 			Sys.println("");
 			showNextSteps(projectName, projectType, skipInstall);
 			
-		} catch (e: Dynamic) {
+		} catch (e: haxe.Exception) {
 			Sys.println('Error: Failed to create project');
 			Sys.println('  $e');
 			Sys.exit(1);
@@ -205,7 +205,7 @@ class Run {
 				currentDir = Path.directory(currentDir);
 				steps++;
 			}
-		} catch (_: Dynamic) {}
+		} catch (_: haxe.Exception) {}
 
 		return FALLBACK_VERSION;
 	}
@@ -215,14 +215,14 @@ class Run {
 
 		try {
 			var content = File.getContent(path);
-			var parsed: Dynamic = haxe.Json.parse(content);
+			var parsed = haxe.Json.parse(content);
 			var name: Null<String> = Reflect.field(parsed, "name");
 			var version: Null<String> = Reflect.field(parsed, "version");
 
 			if (name == "reflaxe.elixir" && version != null && version != "") {
 				return version;
 			}
-		} catch (_: Dynamic) {}
+		} catch (_: haxe.Exception) {}
 
 		return null;
 	}

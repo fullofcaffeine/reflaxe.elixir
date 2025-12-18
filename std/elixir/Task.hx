@@ -4,6 +4,7 @@ import elixir.types.Result;
 import elixir.types.TaskRef;
 import elixir.types.TaskResult;
 import elixir.types.Pid;
+import elixir.types.Term;
 
 #if (macro || reflaxe_runtime)
 
@@ -44,7 +45,7 @@ extern class Task {
     public static function async<T>(fun: () -> T): TaskRef;
     
     @:native("Task.async")
-    public static function asyncMFA<T>(module: String, func: String, args: Array<Dynamic>): TaskRef;
+    public static function asyncMFA<T>(module: String, func: String, args: Array<Term>): TaskRef;
     
     @:native("Task.await")
     public static function await<T>(task: TaskRef): T;
@@ -57,13 +58,13 @@ extern class Task {
     public static function start(fun: () -> Void): Result<Pid, String>;
     
     @:native("Task.start")
-    public static function startMFA(module: String, func: String, args: Array<Dynamic>): Result<Pid, String>;
+    public static function startMFA(module: String, func: String, args: Array<Term>): Result<Pid, String>;
     
     @:native("Task.start_link")
     public static function startLink(fun: () -> Void): Result<Pid, String>;
     
     @:native("Task.start_link")
-    public static function startLinkMFA(module: String, func: String, args: Array<Dynamic>): Result<Pid, String>;
+    public static function startLinkMFA(module: String, func: String, args: Array<Term>): Result<Pid, String>;
     
     // Task control with type-safe results
     @:native("Task.yield")
@@ -92,17 +93,17 @@ extern class Task {
     public static function ignore(task: TaskRef): Void;
     
     @:native("Task.child_spec")
-    public static function childSpec(arg: Dynamic): Map<String, Dynamic>;
+    public static function childSpec(arg: Term): Map<String, Term>;
     
     // Async streams with type safety
     @:native("Task.async_stream")
-    public static function asyncStream<T, R>(enumerable: Array<T>, fun: (T) -> R): Dynamic; // Returns Stream
+    public static function asyncStream<T, R>(enumerable: Array<T>, fun: (T) -> R): Term; // Returns Stream
     
     @:native("Task.async_stream")
-    public static function asyncStreamWithOptions<T, R>(enumerable: Array<T>, fun: (T) -> R, options: TaskStreamOptions): Dynamic;
+    public static function asyncStreamWithOptions<T, R>(enumerable: Array<T>, fun: (T) -> R, options: TaskStreamOptions): Term;
     
     @:native("Task.async_stream")
-    public static function asyncStreamMFA<T>(enumerable: Array<T>, module: String, func: String, args: Array<Dynamic>): Dynamic;
+    public static function asyncStreamMFA<T>(enumerable: Array<T>, module: String, func: String, args: Array<Term>): Term;
     
     // Helper functions for common patterns with full type safety
     
@@ -208,7 +209,7 @@ typedef TaskStreamOptions = {
      * What to do on task failure
      * :exit_on_error (default) or :ignore
      */
-    ?on_timeout: Dynamic,
+    ?on_timeout: Term,
     
     /**
      * Whether to zip input with results

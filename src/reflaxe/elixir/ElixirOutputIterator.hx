@@ -234,17 +234,9 @@ class ElixirOutputIterator {
         if (ast == null) return false;
         // Honor explicit metadata first
         if (ast.metadata != null) {
-            // Allow any future pass to set `suppressEmission = true`
-            var m: Dynamic = ast.metadata;
-            try {
-                // If explicitly forced to emit, never suppress
-                if (Reflect.hasField(m, "forceEmit") && Reflect.field(m, "forceEmit") == true) {
-                    return false;
-                }
-                if (Reflect.hasField(m, "suppressEmission") && Reflect.field(m, "suppressEmission") == true) {
-                    return true;
-                }
-            } catch (_:Dynamic) {}
+            // If explicitly forced to emit, never suppress
+            if (ast.metadata.forceEmit == true) return false;
+            if (ast.metadata.suppressEmission == true) return true;
         }
 
         // Structural empty-module detection

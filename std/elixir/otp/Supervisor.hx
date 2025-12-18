@@ -1,5 +1,7 @@
 package elixir.otp;
 
+import elixir.types.Term;
+
 /**
  * Type-safe wrapper for OTP Supervisor child specifications
  * 
@@ -41,13 +43,13 @@ enum ChildSpecFormat {
      * Module with arguments
      * Compiles to: {MyModule, args}
      */
-    ModuleWithArgs(module: String, args: Array<Dynamic>);
+    ModuleWithArgs(module: String, args: Array<Term>);
     
     /**
      * Module with keyword list config
      * Compiles to: {MyModule, [name: "foo", pool_size: 10]}
      */
-    ModuleWithConfig(module: String, config: Array<{key: String, value: Dynamic}>);
+    ModuleWithConfig(module: String, config: Array<{key: String, value: Term}>);
     
     /**
      * Full child specification map
@@ -60,7 +62,7 @@ enum ChildSpecFormat {
  */
 typedef ChildSpec = {
     id: String,
-    start: {module: String, func: String, args: Array<Dynamic>},
+    start: {module: String, func: String, args: Array<Term>},
     ?restart: RestartType,
     ?shutdown: ShutdownType,
     ?type: ChildType,
@@ -160,7 +162,7 @@ class ChildSpecBuilder {
     /**
      * Create a worker child spec
      */
-    public static function worker(module: String, args: Array<Dynamic>, ?id: String): ChildSpec {
+    public static function worker(module: String, args: Array<Term>, ?id: String): ChildSpec {
         return {
             id: id != null ? id : module,
             start: {module: module, func: "start_link", args: args},
@@ -174,7 +176,7 @@ class ChildSpecBuilder {
     /**
      * Create a supervisor child spec
      */
-    public static function supervisor(module: String, args: Array<Dynamic>, ?id: String): ChildSpec {
+    public static function supervisor(module: String, args: Array<Term>, ?id: String): ChildSpec {
         return {
             id: id != null ? id : module,
             start: {module: module, func: "start_link", args: args},
@@ -188,7 +190,7 @@ class ChildSpecBuilder {
     /**
      * Create a temporary worker (won't be restarted)
      */
-    public static function tempWorker(module: String, args: Array<Dynamic>, ?id: String): ChildSpec {
+    public static function tempWorker(module: String, args: Array<Term>, ?id: String): ChildSpec {
         var spec = worker(module, args, id);
         spec.restart = Temporary;
         return spec;
@@ -245,53 +247,53 @@ extern class SupervisorExtern {
      * @param options Supervisor options
      */
     @:native("start_link")
-    static function startLink(children: Array<ChildSpecFormat>, options: SupervisorOptions): Dynamic;
+    static function startLink(children: Array<ChildSpecFormat>, options: SupervisorOptions): Term;
     
     /**
      * Start a child dynamically
      */
     @:native("start_child")
-    static function startChild(supervisor: Dynamic, child_spec: ChildSpec): Dynamic;
+    static function startChild(supervisor: Term, child_spec: ChildSpec): Term;
 
     /**
      * Initialize supervisor flags and children (use inside init/1 callbacks)
      */
     @:native("init")
-    static function init(children: Array<ChildSpecFormat>, options: SupervisorOptions): Dynamic;
+    static function init(children: Array<ChildSpecFormat>, options: SupervisorOptions): Term;
     
     /**
      * Terminate a child
      */
     @:native("terminate_child")
-    static function terminateChild(supervisor: Dynamic, child_id: String): Dynamic;
+    static function terminateChild(supervisor: Term, child_id: String): Term;
     
     /**
      * Delete a child specification
      */
     @:native("delete_child")
-    static function deleteChild(supervisor: Dynamic, child_id: String): Dynamic;
+    static function deleteChild(supervisor: Term, child_id: String): Term;
     
     /**
      * Restart a child
      */
     @:native("restart_child")
-    static function restartChild(supervisor: Dynamic, child_id: String): Dynamic;
+    static function restartChild(supervisor: Term, child_id: String): Term;
     
     /**
      * Get child specification
      */
     @:native("get_childspec")
-    static function getChildspec(supervisor: Dynamic, child_id: String): Dynamic;
+    static function getChildspec(supervisor: Term, child_id: String): Term;
     
     /**
      * Count children
      */
     @:native("count_children")
-    static function countChildren(supervisor: Dynamic): Dynamic;
+    static function countChildren(supervisor: Term): Term;
     
     /**
      * List children
      */
     @:native("which_children")
-    static function whichChildren(supervisor: Dynamic): Array<Dynamic>;
+    static function whichChildren(supervisor: Term): Array<Term>;
 }

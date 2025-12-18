@@ -57,13 +57,11 @@ class CaseSecondBinderCanonicalUnderscoreTransforms {
     };
     // Add lock flag on body to prevent late passes from drifting binder name
     var body2 = cl.body;
-    try {
-      if (body2 != null) {
-        if (body2.metadata == null) body2.metadata = {};
-        untyped body2.metadata.lockPayloadBinder = true;
-        untyped body2.metadata.canonicalPayloadValue = true;
-      }
-    } catch (e:Dynamic) {}
+    if (body2 != null) {
+      if (body2.metadata == null) body2.metadata = {};
+      body2.metadata.lockPayloadBinder = true;
+      body2.metadata.canonicalPayloadValue = true;
+    }
     return { pattern: pat2, guard: cl.guard, body: body2 };
   }
 

@@ -567,14 +567,6 @@ class CompilationContext implements BuildContext {
     }
 
     /**
-     * Store metadata for an AST node
-     */
-    public function setNodeMetadata(nodeId: String, metadata: Dynamic): Void {
-        // Delegate to astContext
-        astContext.setNodeMetadata(nodeId, metadata);
-    }
-
-    /**
      * Generate a unique node ID for metadata tracking
      */
     public function generateNodeId(): String {

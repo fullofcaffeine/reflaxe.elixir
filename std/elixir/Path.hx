@@ -2,6 +2,8 @@ package elixir;
 
 #if (macro || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * Path module extern definitions for Elixir standard library
  * Provides type-safe interfaces for path manipulation operations
@@ -75,7 +77,7 @@ extern class Path {
     public static function wildcard(glob: String): Array<String>; // Find files matching glob pattern
     
     @:native("Path.wildcard")
-    public static function wildcardWithOptions(glob: String, options: Map<String, Dynamic>): Array<String>;
+    public static function wildcardWithOptions(glob: String, options: Map<String, Term>): Array<String>;
     
     // Path constants
     public static inline var SEPARATOR: String = "/"; // Path separator for current OS

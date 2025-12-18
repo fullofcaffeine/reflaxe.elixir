@@ -2,6 +2,8 @@ package elixir;
 
 #if (macro || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * String module extern definitions for Elixir standard library
  * Provides type-safe interfaces for String operations
@@ -186,7 +188,7 @@ extern class ElixirString {
     
     // Stream-based operations for large strings
     @:native("String.splitter")
-    public static function splitter(string: String, pattern: String): Dynamic; // Returns a Stream
+    public static function splitter(string: String, pattern: String): Term; // Returns a Stream
     
     // Bag distance for approximate matching
     @:native("String.bag_distance")

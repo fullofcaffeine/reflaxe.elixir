@@ -2,6 +2,8 @@ package elixir;
 
 #if (macro || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * Enum module extern definitions for Elixir standard library
  * Provides type-safe interfaces for enumerable operations
@@ -14,41 +16,51 @@ extern class ElixirEnum {
     
     // Basic enumeration operations
     @:native("Enum.count")
-    public static function count(enumerable: Dynamic): Int; // Count elements
+    @:overload(function<T>(enumerable: Array<T>): Int {})
+    public static function count(enumerable: Term): Int; // Count elements
     
     @:native("Enum.count")
-    public static function countWith(enumerable: Dynamic, predicate: Dynamic -> Bool): Int; // Count matching elements
+    @:overload(function<T>(enumerable: Array<T>, predicate: T -> Bool): Int {})
+    public static function countWith(enumerable: Term, predicate: Term -> Bool): Int; // Count matching elements
     
     @:native("Enum.empty?")
-    public static function empty(enumerable: Dynamic): Bool; // Check if empty
+    @:overload(function<T>(enumerable: Array<T>): Bool {})
+    public static function empty(enumerable: Term): Bool; // Check if empty
     
     @:native("Enum.member?")
-    public static function member(enumerable: Dynamic, element: Dynamic): Bool; // Check membership
+    @:overload(function<T>(enumerable: Array<T>, element: T): Bool {})
+    public static function member(enumerable: Term, element: Term): Bool; // Check membership
     
     // Element access and retrieval
     @:native("Enum.at")
-    public static function at(enumerable: Dynamic, index: Int): Dynamic; // Get element at index
+    @:overload(function<T>(enumerable: Array<T>, index: Int): T {})
+    public static function at(enumerable: Term, index: Int): Term; // Get element at index
     
     @:native("Enum.at")
-    public static function atWithDefault(enumerable: Dynamic, index: Int, defaultValue: Dynamic): Dynamic;
+    @:overload(function<T>(enumerable: Array<T>, index: Int, defaultValue: T): T {})
+    public static function atWithDefault(enumerable: Term, index: Int, defaultValue: Term): Term;
     
     @:native("Enum.fetch")
-    public static function fetch(enumerable: Dynamic, index: Int): {_0: String, _1: Dynamic}; // {:ok, element} | :error
+    public static function fetch(enumerable: Term, index: Int): {_0: String, _1: Term}; // {:ok, element} | :error
     
     @:native("Enum.fetch!")
-    public static function fetchBang(enumerable: Dynamic, index: Int): Dynamic; // Get element or raise
+    public static function fetchBang(enumerable: Term, index: Int): Term; // Get element or raise
     
     @:native("Enum.find")
-    public static function find(enumerable: Dynamic, predicate: Dynamic -> Bool): Null<Dynamic>; // Find first match
+    @:overload(function(enumerable: Term, predicate: Term -> Bool): Null<Term> {})
+    public static function find<T>(enumerable: Array<T>, predicate: T -> Bool): Null<T>; // Find first match
     
     @:native("Enum.find")
-    public static function findWithDefault(enumerable: Dynamic, defaultValue: Dynamic, predicate: Dynamic -> Bool): Dynamic;
+    @:overload(function(enumerable: Term, defaultValue: Term, predicate: Term -> Bool): Term {})
+    public static function findWithDefault<T>(enumerable: Array<T>, defaultValue: T, predicate: T -> Bool): T;
     
     @:native("Enum.find_value")
-    public static function findValue(enumerable: Dynamic, predicate: Dynamic -> Dynamic): Null<Dynamic>; // Find and transform
+    @:overload(function(enumerable: Term, predicate: Term -> Term): Null<Term> {})
+    public static function findValue<T, R>(enumerable: Array<T>, predicate: T -> R): Null<R>; // Find and transform
     
     @:native("Enum.find_index")
-    public static function findIndex(enumerable: Dynamic, predicate: Dynamic -> Bool): Null<Int>; // Find index of match
+    @:overload(function(enumerable: Term, predicate: Term -> Bool): Null<Int> {})
+    public static function findIndex<T>(enumerable: Array<T>, predicate: T -> Bool): Null<Int>; // Find index of match
     
     // Collection transformation
     @:native("Enum.map")
@@ -100,34 +112,34 @@ extern class ElixirEnum {
     
     // Aggregation functions
     @:native("Enum.sum")
-    public static function sum(enumerable: Dynamic): Dynamic; // Sum numeric values
+    public static function sum(enumerable: Term): Term; // Sum numeric values
     
     @:native("Enum.product")
-    public static function product(enumerable: Dynamic): Dynamic; // Product of numeric values
+    public static function product(enumerable: Term): Term; // Product of numeric values
     
     @:native("Enum.max")
-    public static function max(enumerable: Dynamic): Dynamic; // Maximum element
+    public static function max(enumerable: Term): Term; // Maximum element
     
     @:native("Enum.max")
-    public static function maxWithDefault(enumerable: Dynamic, defaultValue: Dynamic): Dynamic;
+    public static function maxWithDefault(enumerable: Term, defaultValue: Term): Term;
     
     @:native("Enum.max_by")
-    public static function maxBy<T>(enumerable: Array<T>, mapper: T -> Dynamic): T; // Max by transformation
+    public static function maxBy<T>(enumerable: Array<T>, mapper: T -> Term): T; // Max by transformation
     
     @:native("Enum.min")
-    public static function min(enumerable: Dynamic): Dynamic; // Minimum element
+    public static function min(enumerable: Term): Term; // Minimum element
     
     @:native("Enum.min")
-    public static function minWithDefault(enumerable: Dynamic, defaultValue: Dynamic): Dynamic;
+    public static function minWithDefault(enumerable: Term, defaultValue: Term): Term;
     
     @:native("Enum.min_by")
-    public static function minBy<T>(enumerable: Array<T>, mapper: T -> Dynamic): T; // Min by transformation
+    public static function minBy<T>(enumerable: Array<T>, mapper: T -> Term): T; // Min by transformation
     
     @:native("Enum.min_max")
-    public static function minMax(enumerable: Dynamic): {_0: Dynamic, _1: Dynamic}; // {min, max}
+    public static function minMax(enumerable: Term): {_0: Term, _1: Term}; // {min, max}
     
     @:native("Enum.min_max_by")
-    public static function minMaxBy<T>(enumerable: Array<T>, mapper: T -> Dynamic): {_0: T, _1: T};
+    public static function minMaxBy<T>(enumerable: Array<T>, mapper: T -> Term): {_0: T, _1: T};
     
     // List manipulation
     @:native("Enum.take")
@@ -165,10 +177,10 @@ extern class ElixirEnum {
     public static function sortWith<T>(enumerable: Array<T>, sorter: T -> T -> String): Array<T>; // Custom sort (:lt, :eq, :gt)
     
     @:native("Enum.sort_by")
-    public static function sortBy<T>(enumerable: Array<T>, mapper: T -> Dynamic): Array<T>; // Sort by transformation
+    public static function sortBy<T>(enumerable: Array<T>, mapper: T -> Term): Array<T>; // Sort by transformation
     
     @:native("Enum.sort_by")
-    public static function sortByWith<T>(enumerable: Array<T>, mapper: T -> Dynamic, sorter: Dynamic -> Dynamic -> String): Array<T>;
+    public static function sortByWith<T>(enumerable: Array<T>, mapper: T -> Term, sorter: Term -> Term -> Term): Array<T>;
     
     // List operations
     @:native("Enum.reverse")
@@ -184,33 +196,33 @@ extern class ElixirEnum {
     public static function uniq<T>(enumerable: Array<T>): Array<T>; // Remove duplicates
     
     @:native("Enum.uniq_by")
-    public static function uniqBy<T>(enumerable: Array<T>, mapper: T -> Dynamic): Array<T>; // Unique by transformation
+    public static function uniqBy<T>(enumerable: Array<T>, mapper: T -> Term): Array<T>; // Unique by transformation
     
     @:native("Enum.frequencies")
     public static function frequencies<T>(enumerable: Array<T>): Map<T, Int>; // Count occurrences
     
     @:native("Enum.frequencies_by")
-    public static function frequenciesBy<T>(enumerable: Array<T>, mapper: T -> Dynamic): Map<Dynamic, Int>;
+    public static function frequenciesBy<T>(enumerable: Array<T>, mapper: T -> Term): Map<Term, Int>;
     
     // Set operations
     @:native("Enum.dedup")
     public static function dedup<T>(enumerable: Array<T>): Array<T>; // Remove consecutive duplicates
     
     @:native("Enum.dedup_by")
-    public static function dedupBy<T>(enumerable: Array<T>, mapper: T -> Dynamic): Array<T>;
+    public static function dedupBy<T>(enumerable: Array<T>, mapper: T -> Term): Array<T>;
     
     // Joining and concatenation
     @:native("Enum.join")
-    public static function join(enumerable: Dynamic): String; // Join to string
+    public static function join(enumerable: Term): String; // Join to string
     
     @:native("Enum.join")
-    public static function joinWith(enumerable: Dynamic, joiner: String): String; // Join with separator
+    public static function joinWith(enumerable: Term, joiner: String): String; // Join with separator
     
     @:native("Enum.concat")
-    public static function concat(enumerables: Array<Dynamic>): Dynamic; // Concatenate multiple enumerables
+    public static function concat(enumerables: Array<Term>): Term; // Concatenate multiple enumerables
     
     @:native("Enum.concat")
-    public static function concatTwo(left: Dynamic, right: Dynamic): Dynamic; // Concatenate two enumerables
+    public static function concatTwo(left: Term, right: Term): Term; // Concatenate two enumerables
     
     // Chunking operations
     @:native("Enum.chunk_every")
@@ -220,30 +232,30 @@ extern class ElixirEnum {
     public static function chunkEveryWithStep<T>(enumerable: Array<T>, count: Int, step: Int): Array<Array<T>>;
     
     @:native("Enum.chunk_by")
-    public static function chunkBy<T>(enumerable: Array<T>, chunker: T -> Dynamic): Array<Array<T>>; // Chunk by transformation
+    public static function chunkBy<T>(enumerable: Array<T>, chunker: T -> Term): Array<Array<T>>; // Chunk by transformation
     
     @:native("Enum.chunk_while")
     public static function chunkWhile<T, A>(enumerable: Array<T>, acc: A, chunker: T -> A -> {_0: String, _1: A}): Array<Array<T>>;
     
     // Validation operations
     @:native("Enum.all?")
-    public static function all(enumerable: Dynamic): Bool; // All truthy
+    public static function all(enumerable: Term): Bool; // All truthy
     
     @:native("Enum.all?")
-    public static function allWith(enumerable: Dynamic, predicate: Dynamic -> Bool): Bool; // All match predicate
+    public static function allWith(enumerable: Term, predicate: Term -> Bool): Bool; // All match predicate
     
     @:native("Enum.any?")
-    public static function any(enumerable: Dynamic): Bool; // Any truthy
+    public static function any(enumerable: Term): Bool; // Any truthy
     
     @:native("Enum.any?")
-    public static function anyWith(enumerable: Dynamic, predicate: Dynamic -> Bool): Bool; // Any match predicate
+    public static function anyWith(enumerable: Term, predicate: Term -> Bool): Bool; // Any match predicate
     
     // Zipping operations
     @:native("Enum.zip")
     public static function zip<T, R>(left: Array<T>, right: Array<R>): Array<{_0: T, _1: R}>; // Zip two enumerables
     
     @:native("Enum.zip")
-    public static function zipMultiple(enumerables: Array<Dynamic>): Array<Array<Dynamic>>; // Zip multiple enumerables
+    public static function zipMultiple(enumerables: Array<Term>): Array<Array<Term>>; // Zip multiple enumerables
     
     @:native("Enum.zip_with")
     public static function zipWith<T, R, S>(left: Array<T>, right: Array<R>, zipper: T -> R -> S): Array<S>; // Zip with transformation
@@ -260,13 +272,13 @@ extern class ElixirEnum {
     
     // Conversion operations
     @:native("Enum.to_list")
-    public static function toList<T>(enumerable: Dynamic): Array<T>; // Convert to list
+    public static function toList<T>(enumerable: Term): Array<T>; // Convert to list
     
     @:native("Enum.into")
-    public static function into<T>(enumerable: Array<T>, collectable: Dynamic): Dynamic; // Convert into collection
+    public static function into<T>(enumerable: Array<T>, collectable: Term): Term; // Convert into collection
     
     @:native("Enum.into")
-    public static function intoWithTransform<T>(enumerable: Array<T>, collectable: Dynamic, transform: T -> Dynamic): Dynamic;
+    public static function intoWithTransform<T>(enumerable: Array<T>, collectable: Term, transform: T -> Term): Term;
     
     // Helper functions for common patterns
     public static inline function forEach<T>(enumerable: Array<T>, action: T -> Void): Array<T> {

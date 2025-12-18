@@ -13,12 +13,12 @@ package elixir.types;
  * if (Process.alive(myPid)) { ... }
  * ```
  */
-abstract Pid(Dynamic) from Dynamic to Dynamic {
+abstract Pid(Term) from Term to Term {
     /**
      * Create a new Pid wrapper
      * Note: This is typically not called directly - PIDs come from Process functions
      */
-    public inline function new(pid: Dynamic) {
+    public inline function new(pid: Term) {
         this = pid;
     }
     

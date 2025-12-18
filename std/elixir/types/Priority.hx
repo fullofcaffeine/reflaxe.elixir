@@ -1,5 +1,7 @@
 package elixir.types;
 
+import elixir.types.Atom;
+
 /**
  * Type-safe representation of process scheduling priorities in Elixir/Erlang.
  * 
@@ -29,7 +31,7 @@ package elixir.types;
  * @see Process.flag for setting process priority
  * @see ProcessFlag for other process flags
  */
-abstract Priority(Dynamic) from Dynamic to Dynamic {
+abstract Priority(Atom) from Atom to Atom {
     
     /**
      * Low priority - process runs less frequently than normal.
@@ -37,7 +39,7 @@ abstract Priority(Dynamic) from Dynamic to Dynamic {
      * interactive or time-sensitive operations.
      */
     public static inline function low(): Priority {
-        return new Priority(untyped __elixir__(':low'));
+        return new Priority("low");
     }
     
     /**
@@ -45,7 +47,7 @@ abstract Priority(Dynamic) from Dynamic to Dynamic {
      * Provides balanced CPU allocation.
      */
     public static inline function normal(): Priority {
-        return new Priority(untyped __elixir__(':normal'));
+        return new Priority("normal");
     }
     
     /**
@@ -53,7 +55,7 @@ abstract Priority(Dynamic) from Dynamic to Dynamic {
      * Use for time-sensitive operations that need quick response.
      */
     public static inline function high(): Priority {
-        return new Priority(untyped __elixir__(':high'));
+        return new Priority("high");
     }
     
     /**
@@ -62,28 +64,18 @@ abstract Priority(Dynamic) from Dynamic to Dynamic {
      * Use with extreme caution as it can starve other processes.
      */
     public static inline function max(): Priority {
-        return new Priority(untyped __elixir__(':max'));
+        return new Priority("max");
     }
     
     /**
      * Convert priority to its atom representation.
      * @return The priority as an Elixir atom
      */
-    public inline function toAtom(): Dynamic {
+    public inline function toAtom(): Atom {
         return this;
     }
-    
-    @:from
-    private static inline function fromAtom(atom: Dynamic): Priority {
-        return new Priority(atom);
-    }
-    
-    @:to
-    private inline function toValue(): Dynamic {
-        return this;
-    }
-    
-    private inline function new(priority: Dynamic) {
+
+    private inline function new(priority: Atom) {
         this = priority;
     }
 }

@@ -1,5 +1,7 @@
 package elixir.types;
 
+import elixir.Kernel;
+
 /**
  * Type-safe abstraction for Registry keys
  * 
@@ -9,7 +11,7 @@ package elixir.types;
  * ## Usage Examples
  * 
  * ```haxe
- * // String keys (converted to atoms)
+ * // String keys
  * var key1: RegistryKey = "user_service";
  * Registry.register("MyRegistry", key1, self());
  * 
@@ -29,21 +31,22 @@ package elixir.types;
  * - **Compile-time validation**: Can't accidentally use incompatible key types
  * - **Zero overhead**: Compiles to native Elixir terms
  */
-abstract RegistryKey(Dynamic) from Dynamic to Dynamic {
+abstract RegistryKey(Term) from Term to Term {
     /**
      * Create a new RegistryKey from any value
      */
-    public inline function new(key: Dynamic) {
+    public inline function new(key: Term) {
         this = key;
     }
     
     /**
-     * Convert from String to RegistryKey (as atom)
+     * Convert from String to RegistryKey
      * Enables: `var key: RegistryKey = "my_key";`
      */
     @:from
     public static inline function fromString(str: String): RegistryKey {
-        return new RegistryKey(untyped __elixir__('String.to_atom($str)'));
+        // Registry keys can be any term; using strings avoids atom leaks.
+        return new RegistryKey(str);
     }
     
     /**
@@ -88,7 +91,7 @@ abstract RegistryKey(Dynamic) from Dynamic to Dynamic {
      * @param module The registry module
      * @param name The name to register under
      */
-    public static inline function via(module: String, name: Dynamic): RegistryKey {
+    public static inline function via(module: String, name: Term): RegistryKey {
         return new RegistryKey(untyped __elixir__('{:via, String.to_atom($module), $name}'));
     }
     
@@ -97,6 +100,6 @@ abstract RegistryKey(Dynamic) from Dynamic to Dynamic {
      */
     @:to
     public inline function toString(): String {
-        return untyped __elixir__('inspect($this)');
+        return Kernel.inspect(this);
     }
 }

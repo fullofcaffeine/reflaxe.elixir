@@ -12,9 +12,8 @@ class Perf {
       var f = sys.io.File.append("/tmp/haxe_perf.log");
       f.writeString(label + ":" + Std.string(dur) + "ms\n");
       f.close();
-    } catch (_: Dynamic) {}
+    } catch (_: haxe.Exception) {}
   }
 }
 
 #end
-

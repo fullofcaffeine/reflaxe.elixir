@@ -1,5 +1,7 @@
 package plug;
 
+import elixir.types.Term;
+
 /**
  * Type-safe wrapper for Plug.Conn HTTP connection struct
  * 
@@ -47,19 +49,19 @@ enum HttpStatus {
 /**
  * Type-safe wrapper for Plug.Conn
  */
-abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
+abstract Conn<TParams>(Term) from Term to Term {
     
     /**
      * Create typed conn from Dynamic value
      */
-    public static function fromDynamic<TParams>(conn: Dynamic): Conn<TParams> {
+    public static function fromDynamic<TParams>(conn: Term): Conn<TParams> {
         return cast conn;
     }
     
     /**
      * Get the underlying Dynamic conn
      */
-    public function toDynamic(): Dynamic {
+    public function toDynamic(): Term {
         return this;
     }
     
@@ -98,7 +100,7 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
      * Get request headers
      */
     public function getHeaders(): Map<String, String> {
-        var headers: Dynamic = Reflect.field(this, "req_headers");
+        var headers: Term = Reflect.field(this, "req_headers");
         var result = new Map<String, String>();
         for (field in Reflect.fields(headers)) {
             result.set(field, Reflect.field(headers, field));
@@ -117,14 +119,14 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
     /**
      * Get request body parameters
      */
-    public function getBodyParams(): Dynamic {
+    public function getBodyParams(): Term {
         return Reflect.field(this, "body_params");
     }
     
     /**
      * Get query parameters
      */
-    public function getQueryParams(): Dynamic {
+    public function getQueryParams(): Term {
         return Reflect.field(this, "query_params");
     }
     
@@ -145,14 +147,14 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
     /**
      * Get assigns
      */
-    public function getAssigns(): Dynamic {
+    public function getAssigns(): Term {
         return Reflect.field(this, "assigns");
     }
     
     /**
      * Get specific assign value
      */
-    public function getAssign(key: String): Dynamic {
+    public function getAssign(key: String): Term {
         var assigns = getAssigns();
         return Reflect.field(assigns, key);
     }
@@ -175,7 +177,7 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
      * Get response headers
      */
     public function getResponseHeaders(): Map<String, String> {
-        var headers: Dynamic = Reflect.field(this, "resp_headers");
+        var headers: Term = Reflect.field(this, "resp_headers");
         var result = new Map<String, String>();
         for (field in Reflect.fields(headers)) {
             result.set(field, Reflect.field(headers, field));
@@ -274,7 +276,7 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
      * @return Updated conn with JSON response set
      */
     extern
-    public inline function json(data: Dynamic): Conn<TParams> {
+    public inline function json(data: Term): Conn<TParams> {
         return untyped __elixir__('Phoenix.Controller.json({0}, {1})', this, data);
     }
     
@@ -313,7 +315,7 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
      * @return Updated conn with rendered response
      */
     extern
-    public inline function render(template: String, ?assigns: Dynamic): Conn<TParams> {
+    public inline function render(template: String, ?assigns: Term): Conn<TParams> {
         return if (assigns != null) {
             untyped __elixir__('Phoenix.Controller.render({0}, {1}, {2})', this, template, assigns);
         } else {
@@ -384,7 +386,7 @@ abstract Conn<TParams>(Dynamic) from Dynamic to Dynamic {
      * @return Updated conn with new assign
      */
     extern
-    public inline function assign(key: String, value: Dynamic): Conn<TParams> {
+    public inline function assign(key: String, value: Term): Conn<TParams> {
         return untyped __elixir__('Plug.Conn.assign({0}, {1}, {2})', this, key, value);
     }
     

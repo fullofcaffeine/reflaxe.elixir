@@ -2,6 +2,8 @@ package ecto;
 
 #if (elixir || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * ChangesetApi
  *
@@ -15,32 +17,32 @@ package ecto;
  *
  * HOW
  * - Methods are declared as externs and map directly to the Elixir function names.
- * - Types are `Dynamic` at this boundary because Ecto changesets/params/keyword options
- *   are runtime data structures that are not modeled as a fully-typed Haxe API (yet).
+ * - Ecto changesets/params/keyword options are runtime data structures. We model that
+ *   boundary as `elixir.types.Term` (opaque Elixir term) instead of leaking `Dynamic`.
  *   Prefer higher-level wrappers (e.g. `ecto.Changeset`) when you want a typed builder.
  */
 @:native("Ecto.Changeset")
 extern class ChangesetApi {
     @:native("change")
-    public static function change(data: Dynamic, params: Dynamic): Dynamic;
+    public static function change(data: Term, params: Term): Term;
 
     @:native("cast")
-    public static function castParams(data: Dynamic, params: Dynamic, permitted: Dynamic): Dynamic;
+    public static function castParams(data: Term, params: Term, permitted: Term): Term;
 
     @:native("validate_required")
-    public static function validateRequired(cs: Dynamic, fields: Dynamic): Dynamic;
+    public static function validateRequired(cs: Term, fields: Term): Term;
 
     @:native("validate_length")
-    public static function validateLength(cs: Dynamic, field: Dynamic, opts: Dynamic): Dynamic;
+    public static function validateLength(cs: Term, field: Term, opts: Term): Term;
 
     @:native("validate_format")
-    public static function validateFormat(cs: Dynamic, field: Dynamic, pattern: Dynamic): Dynamic;
+    public static function validateFormat(cs: Term, field: Term, pattern: Term): Term;
 
     @:native("validate_confirmation")
-    public static function validateConfirmation(cs: Dynamic, field: Dynamic, opts: Dynamic = null): Dynamic;
+    public static function validateConfirmation(cs: Term, field: Term, opts: Term = null): Term;
 
     @:native("unique_constraint")
-    public static function uniqueConstraint(cs: Dynamic, field: Dynamic, opts: Dynamic = null): Dynamic;
+    public static function uniqueConstraint(cs: Term, field: Term, opts: Term = null): Term;
 }
 
 #end

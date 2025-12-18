@@ -4,6 +4,7 @@ import elixir.types.Result;
 import elixir.types.RegistryKey;
 import elixir.types.RegistryOptions;
 import elixir.types.Pid;
+import elixir.types.Term;
 
 #if (macro || reflaxe_runtime)
 
@@ -46,7 +47,7 @@ extern class Registry {
     public static function startLink(options: RegistryOptions): Result<Pid, String>;
     
     @:native("Registry.child_spec")
-    public static function childSpec(options: RegistryOptions): Map<String, Dynamic>;
+    public static function childSpec(options: RegistryOptions): Map<String, Term>;
     
     // Process registration with generics
     @:native("Registry.register")
@@ -94,7 +95,7 @@ extern class Registry {
     public static function match<K, V>(registry: String, key: K, pattern: V): Array<{pid: Pid, value: V}>;
     
     @:native("Registry.select")
-    public static function select<T>(registry: String, spec: Array<Dynamic>): Array<T>;
+    public static function select<T>(registry: String, spec: Array<Term>): Array<T>;
     
     // Registry partitioning
     @:native("Registry.partition")
@@ -232,7 +233,7 @@ typedef RegistryInfo = {
     /**
      * Registry metadata
      */
-    meta: Map<String, Dynamic>
+    meta: Map<String, Term>
 }
 
 #end

@@ -3,6 +3,7 @@ package elixir;
 import elixir.types.AgentRef;
 import elixir.types.Result;
 import elixir.types.Pid;
+import elixir.types.Term;
 
 #if (macro || reflaxe_runtime)
 
@@ -21,16 +22,16 @@ extern class Agent {
     public static function start<T>(fun: Void -> T): Result<AgentRef, String>;
     
     @:native("Agent.start")
-    public static function startWithOptions<T>(fun: Void -> T, options: Map<String, Dynamic>): Result<AgentRef, String>;
+    public static function startWithOptions<T>(fun: Void -> T, options: Map<String, Term>): Result<AgentRef, String>;
     
     @:native("Agent.start_link")
     public static function startLink<T>(fun: Void -> T): Result<AgentRef, String>;
     
     @:native("Agent.start_link")
-    public static function startLinkWithOptions<T>(fun: Void -> T, options: Map<String, Dynamic>): Result<AgentRef, String>;
+    public static function startLinkWithOptions<T>(fun: Void -> T, options: Map<String, Term>): Result<AgentRef, String>;
     
     @:native("Agent.child_spec")
-    public static function childSpec(options: Map<String, Dynamic>): Map<String, Dynamic>;
+    public static function childSpec(options: Map<String, Term>): Map<String, Term>;
     
     // Agent state access - synchronous operations with generics
     @:native("Agent.get")
@@ -47,24 +48,24 @@ extern class Agent {
     
     // Agent state modification - synchronous operations
     @:native("Agent.update")
-    public static function update<T>(agent: AgentRef, fun: T -> T): String;
+    public static function update<T>(agent: AgentRef, fun: T -> T): Term;
     
     @:native("Agent.update")
-    public static function updateWithTimeout<T>(agent: AgentRef, fun: T -> T, timeout: Int): String;
+    public static function updateWithTimeout<T>(agent: AgentRef, fun: T -> T, timeout: Int): Term;
     
     // Agent state modification - asynchronous operations
     @:native("Agent.cast")
-    public static function sendCast<T>(agent: AgentRef, fun: T -> T): String;
+    public static function sendCast<T>(agent: AgentRef, fun: T -> T): Term;
     
     // Agent lifecycle
     @:native("Agent.stop")
-    public static function stop(agent: AgentRef): String;
+    public static function stop(agent: AgentRef): Term;
     
     @:native("Agent.stop")
-    public static function stopWithReason<E>(agent: AgentRef, reason: E): String;
+    public static function stopWithReason<E>(agent: AgentRef, reason: E): Term;
     
     @:native("Agent.stop")
-    public static function stopWithTimeout<E>(agent: AgentRef, reason: E, timeout: Int): String;
+    public static function stopWithTimeout<E>(agent: AgentRef, reason: E, timeout: Int): Term;
     
     // Agent information and introspection
     @:native("Agent.whereis")
@@ -87,11 +88,11 @@ extern class Agent {
         return get(agent, (state: T) -> state);
     }
     
-    public static inline function setState<T>(agent: AgentRef, newState: T): String {
+    public static inline function setState<T>(agent: AgentRef, newState: T): Term {
         return update(agent, (_: T) -> newState);
     }
     
-    public static inline function updateStateAsync<T>(agent: AgentRef, fun: T -> T): String {
+    public static inline function updateStateAsync<T>(agent: AgentRef, fun: T -> T): Term {
         return sendCast(agent, fun);
     }
     
@@ -100,11 +101,11 @@ extern class Agent {
         return startLink(() -> initialValue);
     }
     
-    public static inline function increment(agent: AgentRef, by: Int = 1): String {
+    public static inline function increment(agent: AgentRef, by: Int = 1): Term {
         return update(agent, (count: Int) -> count + by);
     }
     
-    public static inline function decrement(agent: AgentRef, by: Int = 1): String {
+    public static inline function decrement(agent: AgentRef, by: Int = 1): Term {
         return update(agent, (count: Int) -> count - by);
     }
     

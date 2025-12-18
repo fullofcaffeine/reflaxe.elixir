@@ -711,7 +711,15 @@ typedef ElixirMetadata = {
     ?inComprehension: Bool,       // Inside for comprehension
     ?inGuard: Bool,               // Inside guard clause
     ?redundantEnumExtraction: Bool, // Marks redundant enum extraction for removal
-    
+
+    // Payload binder canonicalization locks (Phoenix/LiveView transforms)
+    ?lockPayloadBinder: Bool,       // Prevent later passes from rewriting payload binder names
+    ?canonicalPayloadValue: Bool,   // Marks payload value as already canonicalized
+
+    // Emission control (module/file output)
+    ?forceEmit: Bool,               // Force emitting even if structurally empty
+    ?suppressEmission: Bool,        // Suppress emitting this module/file
+
     // Array Comprehension Reconstruction
     ?isUnrolledComprehension: Bool, // Block contains unrolled array comprehension
     ?comprehensionElements: Int,    // Number of elements in unrolled comprehension

@@ -5,6 +5,7 @@ import elixir.types.GenServerRef;
 import elixir.types.GenServerOption;
 import elixir.types.GenServerCallbackResults;
 import elixir.types.Pid;
+import elixir.types.Term;
 
 #if (macro || reflaxe_runtime)
 
@@ -45,19 +46,19 @@ extern class GenServer {
     
     // GenServer startup with type-safe results
     @:native("GenServer.start")
-    public static function start<S>(module: Dynamic, initArg: S): Result<GenServerRef, String>;
+    public static function start<S>(module: Term, initArg: S): Result<GenServerRef, String>;
     
     @:native("GenServer.start")
-    public static function startWithOptions<S>(module: Dynamic, initArg: S, options: GenServerOptions): Result<GenServerRef, String>;
+    public static function startWithOptions<S>(module: Term, initArg: S, options: GenServerOptions): Result<GenServerRef, String>;
     
     @:native("GenServer.start_link")
-    public static function startLink<S>(module: Dynamic, initArg: S): Result<GenServerRef, String>;
+    public static function startLink<S>(module: Term, initArg: S): Result<GenServerRef, String>;
     
     @:native("GenServer.start_link")
-    public static function startLinkWithOptions<S>(module: Dynamic, initArg: S, options: GenServerOptions): Result<GenServerRef, String>;
+    public static function startLinkWithOptions<S>(module: Term, initArg: S, options: GenServerOptions): Result<GenServerRef, String>;
     
     @:native("GenServer.child_spec")
-    public static function childSpec(options: Map<String, Dynamic>): Map<String, Dynamic>;
+    public static function childSpec(options: Map<String, Term>): Map<String, Term>;
     
     // GenServer communication - synchronous calls with generics
     @:native("GenServer.call")
@@ -98,7 +99,7 @@ extern class GenServer {
     
     // GenServer reply operations with generics
     @:native("GenServer.reply")
-    public static function reply<R>(from: Dynamic, reply: R): Void;
+    public static function reply<R>(from: Term, reply: R): Void;
     
     /**
      * GenServer behavior callbacks - these would be implemented by user code
@@ -113,7 +114,7 @@ extern class GenServer {
      * @param args Initial arguments passed to start/start_link
      * @return InitResult with the initial state or stop reason
      */
-    public static function init<S>(args: Dynamic): InitResult<S>;
+    public static function init<S>(args: Term): InitResult<S>;
     
     /**
      * Handle synchronous requests
@@ -122,7 +123,7 @@ extern class GenServer {
      * @param state Current GenServer state
      * @return HandleCallResult with reply and new state
      */
-    public static function handleCall<Req, Res, S>(request: Req, from: Dynamic, state: S): HandleCallResult<Res, S>;
+    public static function handleCall<Req, Res, S>(request: Req, from: Term, state: S): HandleCallResult<Res, S>;
     
     /**
      * Handle asynchronous messages
@@ -138,7 +139,7 @@ extern class GenServer {
      * @param state Current GenServer state
      * @return HandleInfoResult with new state
      */
-    public static function handleInfo<S>(info: Dynamic, state: S): HandleInfoResult<S>;
+    public static function handleInfo<S>(info: Term, state: S): HandleInfoResult<S>;
     
     /**
      * Handle continue instructions from previous callbacks
@@ -146,14 +147,14 @@ extern class GenServer {
      * @param state Current GenServer state
      * @return HandleContinueResult with new state
      */
-    public static function handleContinue<S>(continueArg: Dynamic, state: S): HandleContinueResult<S>;
+    public static function handleContinue<S>(continueArg: Term, state: S): HandleContinueResult<S>;
     
     /**
      * Clean up before stopping
      * @param reason The stop reason
      * @param state Final GenServer state
      */
-    public static function terminate<S>(reason: Dynamic, state: S): Void;
+    public static function terminate<S>(reason: Term, state: S): Void;
     
     /**
      * Handle hot code upgrades
@@ -162,7 +163,7 @@ extern class GenServer {
      * @param extra Extra upgrade data
      * @return Result with new state or error
      */
-    public static function codeChange<S>(oldVsn: Dynamic, state: S, extra: Dynamic): Result<S, String>;
+    public static function codeChange<S>(oldVsn: Term, state: S, extra: Term): Result<S, String>;
     
     /**
      * Format status for debugging
@@ -170,7 +171,7 @@ extern class GenServer {
      * @param statusData Current status data
      * @return Formatted status
      */
-    public static function formatStatus(opt: Dynamic, statusData: Array<Dynamic>): Dynamic;
+    public static function formatStatus(opt: Term, statusData: Array<Term>): Term;
     
     // Helper constants for common atoms
     @:native("GenServer.timeout")
@@ -180,7 +181,7 @@ extern class GenServer {
      * Helper function to create an infinite timeout
      * @return The :infinity atom for no timeout
      */
-    public static inline function infinity(): Dynamic {
+    public static inline function infinity(): Term {
         return untyped __elixir__(':infinity');
     }
     
@@ -188,7 +189,7 @@ extern class GenServer {
      * Helper function to create a normal stop reason
      * @return The :normal atom
      */
-    public static inline function normal(): Dynamic {
+    public static inline function normal(): Term {
         return untyped __elixir__(':normal');
     }
     
@@ -196,7 +197,7 @@ extern class GenServer {
      * Helper function to create a shutdown stop reason
      * @return The :shutdown atom
      */
-    public static inline function shutdown(): Dynamic {
+    public static inline function shutdown(): Term {
         return untyped __elixir__(':shutdown');
     }
 }

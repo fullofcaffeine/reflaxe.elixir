@@ -1,5 +1,7 @@
 package elixir;
 
+import elixir.types.Term;
+
 /**
  * Elixir Module utilities for runtime module operations
  * 
@@ -36,7 +38,7 @@ extern class Module {
      * - Module.concat(["MyApp", "Web"]) → MyApp.Web  
      * - Module.concat([Application.get_application(__MODULE__), "PubSub"]) → MyApp.PubSub
      */
-    static function concat(parts: Array<Dynamic>): Dynamic;
+    static function concat(parts: Array<Term>): Term;
     
     /**
      * Split a module name into its component parts
@@ -47,7 +49,7 @@ extern class Module {
      * Example:
      * - Module.split(MyApp.Web.Router) → [:MyApp, :Web, :Router]
      */
-    static function split(module: Dynamic): Array<Dynamic>;
+    static function split(module: Term): Array<Term>;
     
     /**
      * Safe concatenation that handles nil values gracefully
@@ -55,5 +57,5 @@ extern class Module {
      * @param parts Array of module parts (may contain nil)
      * @return Module atom or nil if any required part is nil
      */
-    static function safe_concat(parts: Array<Dynamic>): Dynamic;
+    static function safe_concat(parts: Array<Term>): Term;
 }

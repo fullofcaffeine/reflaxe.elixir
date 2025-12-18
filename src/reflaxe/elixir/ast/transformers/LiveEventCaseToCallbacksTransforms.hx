@@ -182,31 +182,6 @@ class LiveEventCaseToCallbacksTransforms {
         return declared;
     }
 
-    static function usesVar(ast:Dynamic, name:String):Bool {
-        if (ast == null) return false;
-        var found = false;
-        function walkOne(node:ElixirAST):Void {
-            if (node == null || found) return;
-            reflaxe.elixir.ast.ASTUtils.walk(node, function(x:ElixirAST){
-                if (found) return;
-                switch (x.def) {
-                    case EVar(v) if (v == name): found = true;
-                    default:
-                }
-            });
-        }
-        if (Std.isOfType(ast, Array)) {
-            var arr:Array<Dynamic> = cast ast;
-            for (item in arr) {
-                if (found) break;
-                walkOne(cast item);
-            }
-        } else {
-            walkOne(cast ast);
-        }
-        return found;
-    }
-
     /**
      * Converts snake_case to camelCase.
      * Example: search_socket -> searchSocket
