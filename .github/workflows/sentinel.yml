@@ -80,6 +80,13 @@ jobs:
           if grep -F "$WORKSPACE/src/" classpath.log; then echo "ERROR: repo src/ found in client classpath"; exit 1; fi
           if grep -F "$WORKSPACE/vendor/genes/src/" classpath.log; then echo "ERROR: repo vendor/genes/src found in client classpath"; exit 1; fi
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('examples/todo-app/package-lock.json') }}
+
       - name: Install Playwright browsers (cached)
         run: |
           npm -C examples/todo-app ci --prefer-offline --no-audit --no-fund
