@@ -16,25 +16,26 @@ This page focuses on what exists in Reflaxe.Elixir **today** (v1.x): how to buil
 
 In Elixir, LiveView state lives in `socket.assigns` and is keyed by atoms. In Haxe, you model assigns as a `typedef` and update them through `phoenix.LiveSocket`, which validates fields at compile time and emits atom keys in Elixir.
 
-```haxe
-import phoenix.LiveSocket;
-import phoenix.Phoenix.HandleEventResult;
-import phoenix.Phoenix.MountResult;
-import phoenix.Phoenix.Socket;
+	```haxe
+	import elixir.types.Term;
+	import phoenix.LiveSocket;
+	import phoenix.Phoenix.HandleEventResult;
+	import phoenix.Phoenix.MountResult;
+	import phoenix.Phoenix.Socket;
 
 typedef CounterAssigns = { count: Int };
 
-@:native("MyAppWeb.CounterLive")
-@:liveview
-class CounterLive {
-  public static function mount(_params: Dynamic, _session: Dynamic, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
-    var ls: LiveSocket<CounterAssigns> = socket;
-    return MountResult.Ok(ls.assign(_.count, 0));
-  }
+	@:native("MyAppWeb.CounterLive")
+	@:liveview
+	class CounterLive {
+	  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+	    var ls: LiveSocket<CounterAssigns> = socket;
+	    return MountResult.Ok(ls.assign(_.count, 0));
+	  }
 
-  @:native("handle_event")
-  public static function handle_event(event: String, _params: Dynamic, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
-    var ls: LiveSocket<CounterAssigns> = socket;
+	  @:native("handle_event")
+	  public static function handle_event(event: String, _params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
+	    var ls: LiveSocket<CounterAssigns> = socket;
 
     return switch (event) {
       case "increment":
