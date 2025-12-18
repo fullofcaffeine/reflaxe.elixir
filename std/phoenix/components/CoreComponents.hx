@@ -2,6 +2,7 @@ package phoenix.components;
 
 import HXX;
 
+import elixir.types.Term;
 import phoenix.types.Assigns;
 
 /**
@@ -68,7 +69,7 @@ class CoreComponents {
     @:attr("disabled", "boolean", {default: false})
     @:attr("class", "string", {default: ""})
     @:slot("inner_block", {required: true})
-    public static function button(assigns: Assigns<Dynamic>): String {
+    public static function button(assigns: Assigns<Term>): String {
         return HXX.hxx('
         <button
             type={@type}
@@ -107,7 +108,7 @@ class CoreComponents {
     @:attr("required", "boolean", {default: false})
     @:attr("disabled", "boolean", {default: false})
     @:attr("class", "string", {default: ""})
-    public static function input(assigns: Assigns<Dynamic>): String {
+    public static function input(assigns: Assigns<Term>): String {
         return HXX.hxx('
         <div class="form-field">
             <%= if @label do %>
@@ -148,7 +149,7 @@ class CoreComponents {
     @:attr("for", "string")
     @:attr("class", "string", {default: ""})
     @:slot("inner_block", {required: true})
-    public static function label(assigns: Assigns<Dynamic>): String {
+    public static function label(assigns: Assigns<Term>): String {
         return HXX.hxx('
         <label for={@for} class={"label #{@class}"}>
             {render_slot(@inner_block)}
@@ -173,7 +174,7 @@ class CoreComponents {
     @:component
     @:attr("field", "Phoenix.HTML.FormField", {required: true})
     @:attr("class", "string", {default: ""})
-    public static function error(assigns: Assigns<Dynamic>): String {
+    public static function error(assigns: Assigns<Term>): String {
         return HXX.hxx('
         <%= for error <- @field.errors do %>
             <div class={"error-message #{@class}"} role="alert">
@@ -203,12 +204,12 @@ class CoreComponents {
      * @return String Generated form element with CSRF protection
      */
     @:component
-    @:attr("for", "Dynamic", {required: true})
+    @:attr("for", "any", {required: true})
     @:attr("action", "string")
     @:attr("method", "string", {default: "post"})
     @:attr("class", "string", {default: ""})
     @:slot("inner_block", {required: true})
-    public static function form(assigns: Assigns<Dynamic>): String {
+    public static function form(assigns: Assigns<Term>): String {
         return HXX.hxx('
         <.form_component for={@for} action={@action} method={@method} class={@class}>
             {render_slot(@inner_block)}
@@ -237,7 +238,7 @@ class CoreComponents {
     @:attr("variant", "string", {default: "outline"})
     @:attr("size", "string", {default: "md"})
     @:attr("class", "string", {default: ""})
-    public static function icon(assigns: Assigns<Dynamic>): String {
+    public static function icon(assigns: Assigns<Term>): String {
         return HXX.hxx('
         <svg 
             class={"icon icon-#{@size} #{@class}"} 
@@ -277,7 +278,7 @@ class CoreComponents {
     @:attr("size", "string", {default: "md"})
     @:attr("class", "string", {default: ""})
     @:slot("inner_block", {required: true})
-    public static function modal(assigns: Assigns<Dynamic>): String {
+    public static function modal(assigns: Assigns<Term>): String {
         return HXX.hxx('
         <div
             id={@id}

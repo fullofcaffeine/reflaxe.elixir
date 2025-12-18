@@ -1,5 +1,7 @@
 package phoenix.errors;
 
+import elixir.types.Term;
+
 /**
  * DefaultErrorJSON
  *
@@ -22,7 +24,7 @@ extern class DefaultErrorJSON {
      *
      * Implemented as an extern inline to avoid emitting a runtime module in user apps.
      */
-    extern inline public static function render(template: String, _assigns: Dynamic): ErrorPayload {
+    extern inline public static function render(template: String, _assigns: Term): ErrorPayload {
         return cast untyped __elixir__('
           _ = {1}
           t = to_string({0})

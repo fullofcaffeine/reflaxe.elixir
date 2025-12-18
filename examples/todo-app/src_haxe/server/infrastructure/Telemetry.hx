@@ -6,6 +6,7 @@ import elixir.otp.Supervisor.SupervisorOptions;
 import elixir.otp.Supervisor.SupervisorStrategy;
 import elixir.otp.Application;
 import elixir.otp.TypeSafeChildSpec;
+import elixir.types.Term;
 
 /**
  * Type definition for telemetry supervisor options
@@ -106,7 +107,7 @@ class Telemetry {
 
 
     @:keep
-    public static function init(args: TelemetryOptions): Dynamic {
+    public static function init(args: TelemetryOptions): Term {
         var _ = args;
         var options: SupervisorOptions = {
             strategy: SupervisorStrategy.OneForOne,

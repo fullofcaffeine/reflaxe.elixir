@@ -6,9 +6,9 @@ import server.types.Types.BulkOperationType;
 import server.types.Types.AlertLevel;
 import elixir.Atom;
 import elixir.Tuple;
-import elixir.Atom;
 import phoenix.PubSubShim;
 import server.types.Types.TodoPriority;
+import elixir.types.Term;
 import Type;
 
 /**
@@ -42,7 +42,7 @@ class TodoPubSub {
     /**
      * Parse an incoming message back to the enum type.
      */
-    public static function parseMessage(msg: Dynamic): Option<TodoPubSubMessage> {
+    public static function parseMessage(msg: Term): Option<TodoPubSubMessage> {
         return parseMessageImpl(msg);
     }
 
@@ -60,7 +60,7 @@ class TodoPubSub {
     /**
      * Convert message enum to Elixir tuple format.
      */
-    public static function messageToElixir(msg: TodoPubSubMessage): Dynamic {
+    public static function messageToElixir(msg: TodoPubSubMessage): Term {
         var params = Type.enumParameters(msg);
         return switch (Type.enumConstructor(msg)) {
             case "TodoCreated":
@@ -84,7 +84,7 @@ class TodoPubSub {
     /**
      * Parse an Elixir tuple message back to the enum.
      */
-    public static function parseMessageImpl(msg: Dynamic): Option<TodoPubSubMessage> {
+    public static function parseMessageImpl(msg: Term): Option<TodoPubSubMessage> {
         // Expect tuples shaped like {:tag, payload} or {:tag, payload, extra}
         var tagAtom = Tuple.elem(msg, 0);
         var tag = Atom.toString(tagAtom);
@@ -99,11 +99,6 @@ class TodoPubSub {
                 Some(SystemAlert(cast Tuple.elem(msg, 1), parseAlertLevel(cast Tuple.elem(msg, 2))));
             default: None;
         };
-    }
-
-    // Legacy helper kept for compatibility; currently unused after enum switch.
-    static inline function paramAt(params: Array<Dynamic>, idx: Int): Dynamic {
-        return params[idx];
     }
 
     @:keep
@@ -175,23 +170,23 @@ class TodoPubSub {
         };
     }
 
-    static inline function systemAlertTuple(alertMessage: String, alertLevelValue: AlertLevel): Dynamic {
+    static inline function systemAlertTuple(alertMessage: String, alertLevelValue: AlertLevel): Term {
         var levelLabel = alertLevelToString(alertLevelValue);
         return Tuple.make3(systemAlertAtom(), alertMessage, levelLabel);
     }
 
-    static inline function pubsubModule(): Dynamic {
+    static inline function pubsubModule(): Term {
         // Module atoms are Elixir atoms like :"Elixir.TodoApp.PubSub"
         return Atom.fromString("Elixir.TodoApp.PubSub");
     }
 
-    static inline function todoCreatedAtom(): Dynamic return Atom.create("todo_created");
-    static inline function todoUpdatedAtom(): Dynamic return Atom.create("todo_updated");
-    static inline function todoDeletedAtom(): Dynamic return Atom.create("todo_deleted");
-    static inline function bulkUpdateAtom(): Dynamic return Atom.create("bulk_update");
-    static inline function userOnlineAtom(): Dynamic return Atom.create("user_online");
-    static inline function userOfflineAtom(): Dynamic return Atom.create("user_offline");
-    static inline function systemAlertAtom(): Dynamic return Atom.create("system_alert");
+    static inline function todoCreatedAtom(): Term return Atom.create("todo_created");
+    static inline function todoUpdatedAtom(): Term return Atom.create("todo_updated");
+    static inline function todoDeletedAtom(): Term return Atom.create("todo_deleted");
+    static inline function bulkUpdateAtom(): Term return Atom.create("bulk_update");
+    static inline function userOnlineAtom(): Term return Atom.create("user_online");
+    static inline function userOfflineAtom(): Term return Atom.create("user_offline");
+    static inline function systemAlertAtom(): Term return Atom.create("system_alert");
 }
 
 enum TodoPubSubTopic {

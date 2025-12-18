@@ -1,5 +1,7 @@
 package phoenix;
 
+import elixir.types.Term;
+
 /**
  * Phoenix.Presence extern definitions for real-time presence tracking
  * 
@@ -87,7 +89,7 @@ package phoenix;
 /**
  * Presence metadata - can contain any data about the tracked entity
  */
-typedef PresenceMeta = Dynamic;
+typedef PresenceMeta = Term;
 
 /**
  * Presence key - typically user ID or other unique identifier
@@ -105,7 +107,7 @@ typedef Topic = String;
  * ## What is TMeta?
  * 
  * TMeta is a generic type parameter that represents the type of metadata attached to each presence.
- * It allows you to use type-safe custom metadata structures instead of Dynamic.
+ * It allows you to use type-safe custom metadata structures instead of raw terms.
  * 
  * ## Why Generic?
  * 
@@ -151,13 +153,13 @@ typedef Topic = String;
  *    }
  *    ```
  * 
- * 3. **Using Dynamic**: When you don't need type safety
+ * 3. **Using raw terms**: When you don't need type safety
  *    ```haxe
- *    var presence: PresenceEntry<Dynamic> = Presence.getByKey(socket, key);
+ *    var presence: PresenceEntry<Term> = Presence.getByKey(socket, key);
  *    ```
  * 
  * @param TMeta The type of metadata attached to each presence. Can be any type including
- *              Dynamic for untyped metadata, or a custom typedef/class for type-safe access.
+ *              raw terms for untyped metadata, or a custom typedef/class for type-safe access.
  */
 
 typedef PresenceEntry<TMeta> = {
@@ -168,7 +170,7 @@ typedef PresenceEntry<TMeta> = {
  * Presence list containing all presences for a topic
  * Map of PresenceKey -> PresenceEntry
  */
-typedef PresenceList = Dynamic;
+typedef PresenceList = Term;
 
 /**
  * Phoenix.Presence functions for tracking user presence
@@ -202,10 +204,10 @@ extern class Presence {
      * @param socket Channel socket to track (contains the PID and topic)
      * @param key Unique identifier for the presence (e.g., user ID as string)
      * @param meta Metadata map to associate with the presence (e.g., user info)
-     * @return Dynamic Either {:ok, ref} or {:error, reason}
+     * @return Term Either {:ok, ref} or {:error, reason}
      */
     @:native("track")
-    public static function track(socket: Dynamic, key: PresenceKey, meta: PresenceMeta): Dynamic;
+    public static function track(socket: Term, key: PresenceKey, meta: PresenceMeta): Term;
     
     /**
      * Track an arbitrary process with metadata (4-argument version with explicit topic)
@@ -236,10 +238,10 @@ extern class Presence {
      * @param topic Topic string to track in (e.g., "users", "rooms:123")
      * @param key Unique identifier for the presence within the topic
      * @param meta Metadata map to associate with the presence
-     * @return Dynamic Either {:ok, ref} or {:error, reason}
+     * @return Term Either {:ok, ref} or {:error, reason}
      */
     @:native("track")
-    public static function trackPid(pid: Dynamic, topic: Topic, key: PresenceKey, meta: PresenceMeta): Dynamic;
+    public static function trackPid(pid: Term, topic: Topic, key: PresenceKey, meta: PresenceMeta): Term;
     
     /**
      * Stop tracking a channel's process
@@ -249,7 +251,7 @@ extern class Presence {
      * @param key Presence key to untrack
      */
     @:native("untrack")
-    public static function untrack(socket: Dynamic, key: PresenceKey): Dynamic;
+    public static function untrack(socket: Term, key: PresenceKey): Term;
     
     /**
      * Stop tracking an arbitrary process
@@ -260,7 +262,7 @@ extern class Presence {
      * @param key Presence key to untrack
      */
     @:native("untrack")
-    public static function untrackPid(pid: Dynamic, topic: Topic, key: PresenceKey): Dynamic;
+    public static function untrackPid(pid: Term, topic: Topic, key: PresenceKey): Term;
     
     /**
      * Get all presences for a socket or topic
@@ -312,7 +314,7 @@ extern class Presence {
      * @return PresenceList Map of presence_key to metadata entries
      */
     @:native("list")
-    public static function list(socketOrTopic: Dynamic): PresenceList;
+    public static function list(socketOrTopic: Term): PresenceList;
     
     /**
      * Update presence metadata for a channel's process
@@ -352,10 +354,10 @@ extern class Presence {
      * @param socket Channel socket containing the process and topic
      * @param key Presence key to update (must already be tracked)
      * @param meta New metadata map or update function
-     * @return Dynamic Either {:ok, ref} or {:error, :not_tracked}
+     * @return Term Either {:ok, ref} or {:error, :not_tracked}
      */
     @:native("update")
-    public static function update(socket: Dynamic, key: PresenceKey, meta: PresenceMeta): Dynamic;
+    public static function update(socket: Term, key: PresenceKey, meta: PresenceMeta): Term;
     
     /**
      * Update presence metadata for an arbitrary process
@@ -367,7 +369,7 @@ extern class Presence {
      * @param meta New metadata (can be a map or update function)
      */
     @:native("update")
-    public static function updatePid(pid: Dynamic, topic: Topic, key: PresenceKey, meta: PresenceMeta): Dynamic;
+    public static function updatePid(pid: Term, topic: Topic, key: PresenceKey, meta: PresenceMeta): Term;
     
     /**
      * Get presence entries for a specific key
@@ -377,7 +379,7 @@ extern class Presence {
      * @param key Presence key to get
      */
     @:native("get_by_key")
-    public static function getByKey<TMeta>(socketOrTopic: Dynamic, key: PresenceKey): Array<PresenceEntry<TMeta>>;
+    public static function getByKey<TMeta>(socketOrTopic: Term, key: PresenceKey): Array<PresenceEntry<TMeta>>;
 }
 
 /**

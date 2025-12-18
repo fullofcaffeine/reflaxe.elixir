@@ -1,5 +1,7 @@
 package server.infrastructure;
 
+import elixir.types.Term;
+
 /**
  * TodoAppWeb.ErrorHTML
  *
@@ -17,7 +19,7 @@ package server.infrastructure;
 @:native("TodoAppWeb.ErrorHTML")
 @:keep
 class ErrorHTML {
-    public static function render(template: String, assigns: Dynamic): String {
+    public static function render(template: String, assigns: Term): String {
         return phoenix.errors.DefaultErrorHTML.render(template, assigns);
     }
 }

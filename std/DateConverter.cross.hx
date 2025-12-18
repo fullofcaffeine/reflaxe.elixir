@@ -175,37 +175,4 @@ class DateConverter {
 		return ElixirDate.compare(d1, d2) == elixir.ComparisonResult.Eq;
 	}
 	
-	// ========================================
-	// Ecto Integration Helpers
-	// ========================================
-	
-	/**
-	 * Convert Date to Ecto changeset value
-	 */
-	public static function toChangesetValue(date: Null<Date>): phoenix.Ecto.ChangesetValue {
-		if (date == null) {
-			return phoenix.Ecto.ChangesetValue.NullValue;
-		}
-		// Convert to Elixir Date for Ecto
-		var elixirDate = date.toElixirDate();
-		return phoenix.Ecto.ChangesetValue.DateValue(elixirDate);
-	}
-	
-	/**
-	 * Create a date from Ecto field value
-	 */
-	public static function fromEctoField(value: Dynamic): Null<Date> {
-		if (value == null) {
-			return null;
-		}
-		// Handle different Ecto date field types
-		if (Std.isOfType(value, ElixirDate)) {
-			return fromElixirDate(cast value);
-		} else if (Std.isOfType(value, NaiveDateTime)) {
-			return fromNaiveDateTime(cast value);
-		} else if (Std.isOfType(value, ElixirDateTime)) {
-			return fromDateTime(cast value);
-		}
-		return null;
-	}
 }

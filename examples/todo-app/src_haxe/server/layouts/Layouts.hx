@@ -1,6 +1,10 @@
 package server.layouts;
 
 import HXX; // Compile-time HXX → ~H macro
+import phoenix.types.Assigns;
+import phoenix.types.Assigns.LayoutAssigns;
+import server.live.TodoLiveTypes.TodoLiveAssigns;
+import server.types.Types.User;
 
 /**
  * Main layouts module for Phoenix application
@@ -20,7 +24,7 @@ class Layouts {
      *   and yields `@inner_content`. This mirrors Phoenix 1.7 defaults and
      *   lets our HEEx transformer convert this string into a `~H` sigil.
      */
-    @:keep public static function root(assigns: Dynamic): Dynamic {
+    @:keep public static function root(_assigns: Assigns<LayoutAssigns<User, TodoLiveAssigns>>): String {
         return HXX.hxx('
             <!DOCTYPE html>
             <html lang="en" class="h-full">
@@ -49,7 +53,7 @@ class Layouts {
      * Application layout function
      * - Wraps content in a responsive container and basic page chrome.
      */
-    @:keep public static function app(assigns: Dynamic): Dynamic {
+    @:keep public static function app(_assigns: Assigns<LayoutAssigns<User, TodoLiveAssigns>>): String {
         return HXX.hxx('
             <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-8 max-w-6xl">

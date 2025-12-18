@@ -47,8 +47,6 @@
 # Exclude client code from server compilation
 --macro exclude('client')
 --macro exclude('test')
---macro exclude('server.live.UserLive')
---macro exclude('server.services.UserGenServer')
 ## Include controllers and contexts in server build (needed for test WAE)
 ## (Removed earlier excludes for server.controllers.UserController and contexts.*)
 
@@ -56,7 +54,6 @@
 # WHY: Phoenix imports TodoAppWeb.CoreComponents via `use TodoAppWeb, :html`
 # which Haxe DCE cannot see. Force-keep to ensure the module is emitted.
 --macro keep('server.components.CoreComponents')
---macro keep('phoenix.DateFormat')
 --macro keep('server.live.TodoLive')
 # Skip problematic stdlib structures we don't use in the todo app
 
@@ -92,7 +89,6 @@ server.components.CoreComponents
 server.i18n.Gettext
 server.infrastructure.GettextErrorMessages
 server.infrastructure.GettextUIMessages
-server.support.Flash
 server.support.FlashTypeTools
 server.pubsub.TodoPubSub
 # PostgrexTypes is now auto-generated from Repo, not a separate class

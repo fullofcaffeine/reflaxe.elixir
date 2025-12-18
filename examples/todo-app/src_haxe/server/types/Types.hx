@@ -1,5 +1,8 @@
 package server.types;
 
+import elixir.DateTime.DateTime;
+import elixir.types.Term;
+
 /**
  * Comprehensive Phoenix LiveView types for the todo-app
  * 
@@ -19,8 +22,8 @@ typedef User = {
     var name: String;
     var email: String;
     var passwordHash: String;  // camelCase
-    var confirmedAt: Null<Dynamic>;  // camelCase
-    var lastLoginAt: Null<Dynamic>;  // camelCase
+    var confirmedAt: Null<DateTime>;  // camelCase
+    var lastLoginAt: Null<DateTime>;  // camelCase
     var active: Bool;
 }
 
@@ -99,8 +102,8 @@ typedef EventParams = {
     var ?_target: Array<String>;
     var ?_csrf_token: String;
     
-    // Additional dynamic fields for extensibility
-    var ?value: Dynamic;
+    // Additional runtime field (avoid in app logic; decode into typed params)
+    var ?value: Term;
     var ?key: String;
     var ?index: Int;
 }
@@ -211,7 +214,7 @@ typedef PubSubMessage = {
  * PubSub metadata for message tracking
  */
 typedef PubSubMetadata = {
-    var ?timestamp: Dynamic;
+    var ?timestamp: Term;
     var ?source: String;
     var ?version: String;
     var ?user_id: Int;
@@ -232,7 +235,7 @@ typedef Session = {
     var ?timezone: String;
     var ?userAgent: String;  // camelCase
     var ?ipAddress: String;  // camelCase
-    var ?loginAt: Dynamic;  // camelCase
+    var ?loginAt: Term;  // camelCase
 }
 
 /**
@@ -259,7 +262,7 @@ typedef RepoResult<T> = {
     var success: Bool;
     var ?data: T;
     var ?error: String;
-    var ?changeset: Dynamic;
+    var ?changeset: Term;
 }
 
 /**
@@ -268,7 +271,7 @@ typedef RepoResult<T> = {
 typedef Changeset<T> = {
     var valid: Bool;
     var data: T;
-    var changes: Dynamic;
+    var changes: Term;
     var errors: Array<FieldError>;
     var action: Null<String>;
 }
@@ -292,10 +295,10 @@ typedef FieldError = {
 typedef FormField = {
     var id: String;
     var name: String;
-    var value: Dynamic;
+    var value: Term;
     var errors: Array<String>;
     var valid: Bool;
-    var data: Dynamic;
+    var data: Term;
 }
 
 /**
@@ -307,7 +310,7 @@ typedef Form<T> = {
     var id: String;
     var name: String;
     var data: T;
-    var params: Dynamic;
+    var params: Term;
     var hidden: Array<FormField>;
     var options: FormOptions;
 }
@@ -343,7 +346,7 @@ typedef ComponentAssigns = {
     var ?phx_target: String;
     var ?phx_debounce: String;
     var ?phx_throttle: String;
-    var ?rest: Dynamic;
+    var ?rest: Term;
 }
 
 // ============================================================================
@@ -417,7 +420,7 @@ enum TodoFilter {
     Completed;
     ByTag(tag: String);
     ByPriority(priority: String);
-    ByDueDate(date: Dynamic);
+    ByDueDate(date: DateTime);
 }
 
 /**
