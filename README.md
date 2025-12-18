@@ -376,26 +376,27 @@ See [docs/04-api-reference/SOURCE_MAPPING.md](docs/04-api-reference/SOURCE_MAPPI
 
 ### Phoenix LiveView
 ```haxe
-import HXX;
-import phoenix.LiveSocket;
-import phoenix.Phoenix.HandleEventResult;
-import phoenix.Phoenix.MountResult;
-import phoenix.Phoenix.Socket;
+	import HXX;
+	import elixir.types.Term;
+	import phoenix.LiveSocket;
+	import phoenix.Phoenix.HandleEventResult;
+	import phoenix.Phoenix.MountResult;
+	import phoenix.Phoenix.Socket;
 
 typedef CounterAssigns = { count: Int };
 
-@:native("MyAppWeb.CounterLive")
-@:liveview
-class CounterLive {
-    public static function mount(_params: Dynamic, _session: Dynamic, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
-        var liveSocket: LiveSocket<CounterAssigns> = socket;
-        liveSocket = liveSocket.assign(_.count, 0);
-        return MountResult.Ok(liveSocket);
-    }
+	@:native("MyAppWeb.CounterLive")
+	@:liveview
+	class CounterLive {
+	    public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+	        var liveSocket: LiveSocket<CounterAssigns> = socket;
+	        liveSocket = liveSocket.assign(_.count, 0);
+	        return MountResult.Ok(liveSocket);
+	    }
 
-    @:native("handle_event")
-    public static function handle_event(event: String, _params: Dynamic, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
-        var liveSocket: LiveSocket<CounterAssigns> = socket;
+	    @:native("handle_event")
+	    public static function handle_event(event: String, _params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
+	        var liveSocket: LiveSocket<CounterAssigns> = socket;
 
         return switch (event) {
             case "increment":

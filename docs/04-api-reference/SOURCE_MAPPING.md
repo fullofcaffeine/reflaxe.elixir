@@ -629,17 +629,18 @@ class UserLive {
 
 **Step 3: Fix at Haxe source level**
 ```haxe
-// Add proper import at top of file
-import phoenix.Phoenix.MountResult;
-import phoenix.Phoenix.Socket;
+	// Add proper import at top of file
+	import phoenix.Phoenix.MountResult;
+	import phoenix.Phoenix.Socket;
+	import elixir.types.Term;
 
-@:liveview
-class UserLive {
-    public static function mount(_params: Dynamic, _session: Dynamic, socket: Socket<Dynamic>): MountResult<Dynamic> {  // Now resolves correctly
-        return MountResult.Ok(socket);
-    }
-}
-```
+	@:liveview
+	class UserLive {
+	    public static function mount(_params: Term, _session: Term, socket: Socket<Term>): MountResult<Term> {  // Now resolves correctly
+	        return MountResult.Ok(socket);
+	    }
+	}
+	```
 
 **Step 4: Verify fix with incremental compilation**
 ```bash

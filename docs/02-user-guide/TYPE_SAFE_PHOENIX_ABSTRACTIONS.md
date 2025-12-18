@@ -19,20 +19,21 @@ typedef CounterAssigns = {
 
 In LiveView modules, take a typed socket and update assigns via `LiveSocket.assign`:
 
-```haxe
-import phoenix.LiveSocket;
-import phoenix.Phoenix.MountResult;
-import phoenix.Phoenix.Socket;
+	```haxe
+	import elixir.types.Term;
+	import phoenix.LiveSocket;
+	import phoenix.Phoenix.MountResult;
+	import phoenix.Phoenix.Socket;
 
-@:liveview
-class CounterLive {
-  public static function mount(_params: Dynamic, _session: Dynamic, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
-    var liveSocket: LiveSocket<CounterAssigns> = socket;
-    liveSocket = liveSocket.assign(_.count, 0);
-    return MountResult.Ok(liveSocket);
-  }
-}
-```
+	@:liveview
+	class CounterLive {
+	  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+	    var liveSocket: LiveSocket<CounterAssigns> = socket;
+	    liveSocket = liveSocket.assign(_.count, 0);
+	    return MountResult.Ok(liveSocket);
+	  }
+	}
+	```
 
 In `render/1`, prefer a typed assigns parameter:
 
@@ -49,7 +50,7 @@ Some Phoenix helpers expose assigns as a map. The stdlib models that as `phoenix
 Key behavior:
 - `Assigns<T>` is a typed wrapper over Phoenix assigns.
 - It supports typed field access as `T` (use your `typedef`).
-- It still supports Dynamic interop when needed (it’s a Phoenix runtime map).
+	- It still supports term interop when needed (it’s a Phoenix runtime map).
 
 Example in a function component:
 
@@ -59,13 +60,13 @@ import phoenix.types.Assigns;
 
 typedef ButtonAssigns = { label: String };
 
-class MyComponents {
-  public static function button(_ignored: Dynamic): String {
-    var assigns: Assigns<ButtonAssigns> = Component.assigns();
-    return HXX.hxx('<button>${assigns.label}</button>');
-  }
-}
-```
+	class MyComponents {
+	  public static function button(_ignored: Term): String {
+	    var assigns: Assigns<ButtonAssigns> = Component.assigns();
+	    return HXX.hxx('<button>${assigns.label}</button>');
+	  }
+	}
+	```
 
 ## Flash + Current User
 
@@ -84,4 +85,3 @@ Event params and assigns originate from a dynamic runtime world (Phoenix). Keep 
 
 If you need a Phoenix helper that doesn’t exist yet, don’t use `untyped __elixir__()` in the app:
 - add a typed extern/shim under `std/phoenix/**` and reuse it across apps.
-
