@@ -630,12 +630,13 @@ class UserLive {
 **Step 3: Fix at Haxe source level**
 ```haxe
 // Add proper import at top of file
-import phoenix.LiveView.Socket;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Socket;
 
 @:liveview
 class UserLive {
-    public function mount(_params, _session, socket: Socket) {  // Now resolves correctly
-        return {:ok, socket};
+    public static function mount(_params: Dynamic, _session: Dynamic, socket: Socket<Dynamic>): MountResult<Dynamic> {  // Now resolves correctly
+        return MountResult.Ok(socket);
     }
 }
 ```
