@@ -46,20 +46,33 @@ Minimal `build.hxml` (server-side Haxe→Elixir):
 -cp src_haxe
 
 -D reflaxe_runtime
--D elixir_output=lib/my_app_hx
+-D elixir_output=lib
 -dce full
+--macro reflaxe.elixir.CompilerInit.Start()
 
-# Define at least one “root” module to compile:
-my_app_hx.Greeter
+# Define a stable entrypoint:
+--main my_app_hx.Main
 ```
 
-Why `lib/my_app_hx`?
-- Keeps generated modules isolated from your hand-written `lib/my_app/**`.
-- Enables gradual adoption without replacing existing modules.
+Why `elixir_output=lib`?
+- Your generated modules live under `MyAppHx.*`, so they compile into `lib/my_app_hx/**`.
+- This avoids accidentally generating into your existing `lib/my_app/**` namespace.
 
 ## 3) Add a first Haxe module (called from Elixir)
 
-Create `src_haxe/my_app_hx/Greeter.hx`:
+Create `src_haxe/my_app_hx/Main.hx`:
+
+```haxe
+package my_app_hx;
+
+@:native("MyAppHx.Main")
+@:module
+class Main {
+  public static function main(): Void {}
+}
+```
+
+Then create `src_haxe/my_app_hx/Greeter.hx`:
 
 ```haxe
 package my_app_hx;
@@ -108,7 +121,7 @@ def project do
     haxe: [
       hxml_file: "build.hxml",
       source_dir: "src_haxe",
-      target_dir: "lib/my_app_hx",
+      target_dir: "lib",
       watch: Mix.env() == :dev
     ]
   ]
