@@ -58,49 +58,40 @@ class ProjectGenerator {
 			Sys.println('Creating project using Mix generator...');
 		}
 		
-		// Use Mix generators to create proper project structure
-		var mixCommand = switch (options.type) {
+		// Use Mix generators to create proper project structure.
+		//
+		// IMPORTANT: Always use `--no-install` for Phoenix generators to avoid interactive prompts.
+		// We install dependencies explicitly in `installDependencies()` when requested.
+		var projectModule = toPascalCase(options.name);
+
+		var mixArgs: Null<Array<String>> = switch (options.type) {
 			case "basic":
-				'mix new ${options.name} --module ${toPascalCase(options.name)}';
+				["new", options.name, "--module", projectModule];
 			case "phoenix":
-				'mix phx.new ${options.name} --module ${toPascalCase(options.name)} --no-ecto --no-html --no-gettext --no-dashboard';
+				["phx.new", options.name, "--module", projectModule, "--no-dashboard", "--no-install"];
 			case "liveview":
-				'mix phx.new ${options.name} --module ${toPascalCase(options.name)} --live --no-dashboard';
+				["phx.new", options.name, "--module", projectModule, "--live", "--no-dashboard", "--no-install"];
 			default:
 				null;
+		};
+
+		if (mixArgs == null) {
+			throw 'Invalid project type: ${options.type}';
 		}
-		
-		if (mixCommand != null) {
-			// Change to working directory and run Mix generator
-			var originalDir = Sys.getCwd();
-			Sys.setCwd(options.workingDir);
-			
-			if (options.verbose) {
-				Sys.println('Running: $mixCommand');
-			}
-			
-			// Run Mix generator (add --install flag to auto-install deps)
-			// Use --no-install to prevent interactive prompts during testing
-			var installFlag = options.skipInstall ? " --no-install" : " --install";
-			var fullCommand = mixCommand + installFlag;
-			
-			// Set timeout for Mix command (prevent hanging in tests)
-			var result = Sys.command('timeout 5 $fullCommand 2>/dev/null');
-			if (result != 0) {
-				Sys.setCwd(originalDir);
-				// If Mix generator fails, fallback to template copying
-				if (options.verbose) {
-					Sys.println("Mix generator not available or timed out, using template fallback...");
-				}
-				FileSystem.createDirectory(projectPath);
-				copyTemplate(templatePath, projectPath, options);
-			}
-			
-			Sys.setCwd(originalDir);
-		} else {
-			// Fallback to template copying for unknown types
-			FileSystem.createDirectory(projectPath);
-			copyTemplate(templatePath, projectPath, options);
+
+		// Change to working directory and run Mix generator
+		var originalDir = Sys.getCwd();
+		Sys.setCwd(options.workingDir);
+
+		if (options.verbose) {
+			Sys.println('Running: mix ${mixArgs.join(" ")}');
+		}
+
+		var result = Sys.command("mix", mixArgs);
+		Sys.setCwd(originalDir);
+
+		if (result != 0) {
+			throw 'Mix generator failed (exit $result). Ensure Elixir/Mix (and Phoenix for phx.new) are installed.';
 		}
 		
 		// Add Haxe integration to the project
@@ -122,10 +113,14 @@ class ProjectGenerator {
 	
 	function createDirectoryRecursive(path: String): Void {
 		var parts = path.split("/");
-		var current = "";
+		var current = path.startsWith("/") ? "/" : "";
 		for (part in parts) {
 			if (part.length == 0) continue;
-			current = current.length == 0 ? part : Path.join([current, part]);
+			if (current == "" || current == "/") {
+				current = current + part;
+			} else {
+				current = Path.join([current, part]);
+			}
 			if (!FileSystem.exists(current)) {
 				FileSystem.createDirectory(current);
 			}
@@ -309,10 +304,12 @@ class ProjectGenerator {
 	}
 	
 	function addHaxeIntegration(projectPath: String, options: GeneratorOptions): Void {
-		// 1. Update mix.exs to include :haxe compiler
+		// 1. Update mix.exs to include :haxe compiler and add the reflaxe_elixir Mix dependency.
 		var mixPath = Path.join([projectPath, "mix.exs"]);
 		if (FileSystem.exists(mixPath)) {
 			var mixContent = File.getContent(mixPath);
+
+			mixContent = ensureReflaxeElixirDependency(mixContent);
 			
 			// Add :haxe to compilers list if not already there
 			if (mixContent.indexOf("compilers: [:haxe]") == -1 && mixContent.indexOf("[:haxe") == -1) {
@@ -339,26 +336,23 @@ class ProjectGenerator {
 		if (!FileSystem.exists(srcHaxePath)) {
 			FileSystem.createDirectory(srcHaxePath);
 		}
-		
-		// 3. Copy Mix.Tasks.Compile.Haxe to the project
-		var mixTaskDir = Path.join([projectPath, "lib", "mix", "tasks"]);
-		if (!FileSystem.exists(mixTaskDir)) {
-			createDirectoryRecursive(mixTaskDir);
+
+		// 3. Create a minimal Haxe entrypoint in an isolated namespace.
+		var haxeNamespace = toSnakeCase(options.name) + "_hx";
+		var namespaceDir = Path.join([srcHaxePath, haxeNamespace]);
+		if (!FileSystem.exists(namespaceDir)) {
+			createDirectoryRecursive(namespaceDir);
 		}
-		
-		var compileTaskPath = Path.join([mixTaskDir, "compile.haxe.ex"]);
-		if (!FileSystem.exists(compileTaskPath)) {
-			// Copy from our lib directory
-			var sourceTaskPath = "lib/mix/tasks/compile.haxe.ex";
-			if (FileSystem.exists(sourceTaskPath)) {
-				File.copy(sourceTaskPath, compileTaskPath);
-			}
+
+		var mainPath = Path.join([namespaceDir, "Main.hx"]);
+		if (!FileSystem.exists(mainPath)) {
+			File.saveContent(mainPath, generateMainHx(haxeNamespace, options));
 		}
-		
+
 		// 4. Create build.hxml if it doesn't exist
 		var buildHxmlPath = Path.join([projectPath, "build.hxml"]);
 		if (!FileSystem.exists(buildHxmlPath)) {
-			var buildContent = generateBuildHxml(options.name);
+			var buildContent = generateBuildHxml(options);
 			File.saveContent(buildHxmlPath, buildContent);
 		}
 		
@@ -388,11 +382,32 @@ class ProjectGenerator {
 				Sys.println('Created src_haxe/ directory');
 			}
 		}
+
+		// Ensure mix.exs has the dependency + compiler integration
+		var mixPath = Path.join([projectPath, "mix.exs"]);
+		if (FileSystem.exists(mixPath)) {
+			var mixContent = File.getContent(mixPath);
+			mixContent = ensureReflaxeElixirDependency(mixContent);
+			mixContent = ensureHaxeCompilerConfigured(mixContent);
+			File.saveContent(mixPath, mixContent);
+		}
+
+		// Create isolated namespace entrypoint
+		var haxeNamespace = toSnakeCase(options.name) + "_hx";
+		var namespaceDir = Path.join([srcHaxePath, haxeNamespace]);
+		if (!FileSystem.exists(namespaceDir)) {
+			createDirectoryRecursive(namespaceDir);
+		}
+
+		var mainPath = Path.join([namespaceDir, "Main.hx"]);
+		if (!FileSystem.exists(mainPath)) {
+			File.saveContent(mainPath, generateMainHx(haxeNamespace, options));
+		}
 		
 		// Create build.hxml
 		var buildHxml = Path.join([projectPath, "build.hxml"]);
 		if (!FileSystem.exists(buildHxml)) {
-			var content = generateBuildHxml(options.name);
+			var content = generateBuildHxml(options);
 			File.saveContent(buildHxml, content);
 			if (options.verbose) {
 				Sys.println('Created build.hxml');
@@ -408,15 +423,11 @@ class ProjectGenerator {
 				Sys.println('Created package.json');
 			}
 		}
-		
-		// Create example Haxe module
-		var exampleModule = Path.join([srcHaxePath, "HelloWorld.hx"]);
-		if (!FileSystem.exists(exampleModule)) {
-			var content = generateExampleModule();
-			File.saveContent(exampleModule, content);
-			if (options.verbose) {
-				Sys.println('Created example module: HelloWorld.hx');
-			}
+
+		// Ensure .haxerc exists for lix-managed toolchain
+		var haxercPath = Path.join([projectPath, ".haxerc"]);
+		if (!FileSystem.exists(haxercPath)) {
+			File.saveContent(haxercPath, '{\n  "version": "4.3.7",\n  "resolveLibs": "scoped"\n}\n');
 		}
 		
 		// Always regenerate AGENTS.md from template to ensure correct project name
@@ -427,11 +438,8 @@ class ProjectGenerator {
 			Sys.println('Created AGENTS.md with AI development instructions');
 		}
 		
-		// Update mix.exs compiler configuration
 		Sys.println("");
-		Sys.println("⚠️  Please update your mix.exs file:");
-		Sys.println('  Add :haxe to the compilers list:');
-		Sys.println('    compilers: [:haxe] ++ Mix.compilers()');
+		Sys.println("✅ Updated mix.exs with :haxe compiler + reflaxe_elixir dependency");
 		Sys.println("");
 	}
 	
@@ -520,7 +528,7 @@ class ProjectGenerator {
 		// Ensure build.hxml exists
 		var buildHxmlPath = Path.join([projectPath, "build.hxml"]);
 		if (!FileSystem.exists(buildHxmlPath)) {
-			var content = generateBuildHxml(options.name);
+			var content = generateBuildHxml(options);
 			File.saveContent(buildHxmlPath, content);
 		}
 		
@@ -576,11 +584,24 @@ class ProjectGenerator {
 			// Install npm dependencies
 			Sys.println("  Installing Haxe dependencies...");
 			Sys.command("npm", ["install"]);
+
+			// Install Reflaxe.Elixir as a Haxe library in this project (via lix)
+			var haxeLibVersion = "v" + readLibraryVersion();
+			Sys.println('  Installing Haxe library: reflaxe.elixir#${haxeLibVersion} ...');
+			Sys.command("npx", ["lix", "install", 'github:fullofcaffeine/reflaxe.elixir#${haxeLibVersion}']);
+			Sys.command("npx", ["lix", "download"]);
 			
 			// Install Mix dependencies
 			if (FileSystem.exists("mix.exs")) {
 				Sys.println("  Installing Elixir dependencies...");
 				Sys.command("mix", ["deps.get"]);
+
+				// Phoenix apps typically require assets setup after deps are fetched.
+				// Run it opportunistically when available.
+				if (FileSystem.exists("assets") && FileSystem.exists(Path.join(["assets", "package.json"]))) {
+					Sys.println("  Installing Phoenix assets...");
+					Sys.command("mix", ["assets.setup"]);
+				}
 			}
 			
 			Sys.println("  ✅ Dependencies installed");
@@ -633,14 +654,15 @@ class ProjectGenerator {
 	
 	// Helper functions for generating files
 	
-	function generateBuildHxml(projectName: String): String {
+	function generateBuildHxml(options: GeneratorOptions): String {
+		var haxeNamespace = toSnakeCase(options.name) + "_hx";
 		return '-cp src_haxe
 -lib reflaxe.elixir
--D elixir_output=lib/generated
+-D elixir_output=lib
 -D reflaxe_runtime
 -dce full
 --macro reflaxe.elixir.CompilerInit.Start()
---main Main
+--main ${haxeNamespace}.Main
 ';
 	}
 	
@@ -925,11 +947,86 @@ class HelloWorld {
 		var templatePath = Path.join([libPath, "templates", "project", templateName]);
 		
 		if (!FileSystem.exists(templatePath)) {
-			// Fall back to embedded default if template file missing
-			throw 'Template not found: $templatePath';
+			// Fall back to embedded defaults when running from a minimal distribution.
+			return defaultTemplate(templateName);
 		}
 		
 		return File.getContent(templatePath);
+	}
+
+	function defaultTemplate(templateName: String): String {
+		return switch (templateName) {
+			case "readme.md.tpl":
+				'# {{PROJECT_NAME}}
+
+{{PROJECT_DESCRIPTION}}
+
+## Quick Start
+
+```bash
+npm install
+npx lix download
+mix deps.get
+mix compile
+```
+
+### Compile Haxe → Elixir
+```bash
+haxe build.hxml
+# or: npx lix run haxe build.hxml
+```
+
+## Phoenix
+
+If this is a Phoenix project:
+```bash
+mix phx.server
+```
+';
+
+			case "claude.md.tpl":
+				'# AI Development Notes for {{PROJECT_NAME}}
+
+This project uses Reflaxe.Elixir (Haxe → Elixir) for gradual adoption and type-safe BEAM development.
+
+## Day-to-day
+
+```bash
+# Compile once
+haxe build.hxml
+
+# Run Elixir tests
+mix test
+```
+
+## Phoenix runtime
+
+```bash
+mix phx.server
+```
+';
+
+			case "api_reference.md.tpl":
+				'# API Reference Skeleton
+
+This file is a starting point for documenting your public modules.
+';
+
+			case "patterns.md.tpl":
+				'# Patterns
+
+This file can be used to record stable patterns discovered in the codebase.
+';
+
+			case "project_specifics.md.tpl":
+				'# Project Specifics
+
+Describe decisions and conventions unique to this project.
+';
+
+			default:
+				"";
+		}
 	}
 	
 	function processTemplate(templateName: String, context: Dynamic): String {
@@ -950,7 +1047,7 @@ class HelloWorld {
 	
 	function generateAPIReferenceSkeleton(options: GeneratorOptions): String {
 		var context = createTemplateContext(options);
-		context.BUILD_CONFIG = generateBuildHxml(options.name);
+		context.BUILD_CONFIG = generateBuildHxml(options);
 		return processTemplate("api_reference.md.tpl", context);
 	}
 	
@@ -1263,6 +1360,94 @@ haxe build.hxml -D extract-patterns
 			if (word.length == 0) return "";
 			return word.charAt(0).toUpperCase() + word.substr(1).toLowerCase();
 		}).join("");
+	}
+
+	function toSnakeCase(str: String): String {
+		var cleaned = str.toLowerCase();
+		cleaned = ~/[^a-z0-9]+/g.replace(cleaned, "_");
+		cleaned = ~/_{2,}/g.replace(cleaned, "_");
+		cleaned = cleaned.trim();
+		if (cleaned.startsWith("_")) cleaned = cleaned.substr(1);
+		if (cleaned.endsWith("_")) cleaned = cleaned.substr(0, cleaned.length - 1);
+		return cleaned;
+	}
+
+	function generateMainHx(haxeNamespace: String, options: GeneratorOptions): String {
+		var elixirNamespace = toPascalCase(options.name) + "Hx";
+		return 'package ${haxeNamespace};
+
+/**
+ * Minimal entrypoint for Haxe→Elixir compilation.
+ *
+ * This module exists primarily to give the Haxe compiler a stable `--main`.
+ * Add your application modules under `${haxeNamespace}.*` and call them from Elixir as `${elixirNamespace}.*`.
+ */
+@:native("${elixirNamespace}.Main")
+@:module
+class Main {
+  public static function main(): Void {}
+}
+';
+	}
+
+	function ensureReflaxeElixirDependency(mixContent: String): String {
+		if (mixContent.indexOf("{:reflaxe_elixir") >= 0) return mixContent;
+
+		var version = "v" + readLibraryVersion();
+		var depLine = '      {:reflaxe_elixir, github: \"fullofcaffeine/reflaxe.elixir\", tag: \"${version}\", only: [:dev, :test]},';
+
+		// Insert just after the deps list opening bracket, preserving existing indentation.
+		var depsPattern = ~/defp deps do\s*\[/m;
+		if (depsPattern.match(mixContent)) {
+			var pos = depsPattern.matchedPos();
+			var insertAt = pos.pos + pos.len;
+			return mixContent.substr(0, insertAt) + "\n" + depLine + mixContent.substr(insertAt);
+		}
+
+		return mixContent;
+	}
+
+	function ensureHaxeCompilerConfigured(mixContent: String): String {
+		// Reuse existing conservative compiler insertion logic.
+		if (mixContent.indexOf("compilers: [:haxe]") == -1 && mixContent.indexOf("[:haxe") == -1) {
+			var compilerPattern = ~/compilers:\s*\[([^\]]*)\]/;
+			if (compilerPattern.match(mixContent)) {
+				var existingCompilers = compilerPattern.matched(1);
+				var newCompilers = existingCompilers.length > 0 ? ':haxe, $existingCompilers' : ':haxe';
+				mixContent = compilerPattern.replace(mixContent, 'compilers: [$newCompilers]');
+			} else {
+				var projectPattern = ~/def project do\s*\[/;
+				if (projectPattern.match(mixContent)) {
+					mixContent = projectPattern.replace(mixContent, 'def project do\n    [\n      compilers: [:haxe] ++ Mix.compilers(),');
+				}
+			}
+		}
+
+		// Add `haxe:` config block if missing.
+		if (mixContent.indexOf("\n      haxe: [") == -1 && mixContent.indexOf("\n    haxe: [") == -1 && mixContent.indexOf("haxe: [") == -1) {
+			var compilersLinePattern = ~/compilers:\s*([^\n,]+),/m;
+			if (compilersLinePattern.match(mixContent)) {
+				var matched = compilersLinePattern.matched(0);
+				mixContent = compilersLinePattern.replace(
+					mixContent,
+					matched + '\n      haxe: [hxml_file: \"build.hxml\", source_dir: \"src_haxe\", target_dir: \"lib\", watch: Mix.env() == :dev],'
+				);
+			}
+		}
+
+		return mixContent;
+	}
+
+	function readLibraryVersion(): String {
+		try {
+			var libPath = getLibraryPath();
+			var content = File.getContent(Path.join([libPath, "haxelib.json"]));
+			var parsed: Dynamic = haxe.Json.parse(content);
+			var version: Null<String> = Reflect.field(parsed, "version");
+			if (version != null && version != "") return version;
+		} catch (_: Dynamic) {}
+
+		return "1.0.0";
 	}
 }
 
