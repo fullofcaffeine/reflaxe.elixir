@@ -4,6 +4,7 @@ import haxe.ds.Option;
 import haxe.functional.Result;
 import elixir.Module;
 import elixir.Application;
+import elixir.types.Term;
 
 /**
  * Type-safe PubSub system for Phoenix applications
@@ -71,15 +72,15 @@ interface PubSubTopicProvider<T> {
  */
 interface PubSubMessageProvider<M> {
     /**
-     * Parse incoming Dynamic message to typed enum
+     * Parse incoming message term to typed enum
      * Returns None for unknown or malformed messages
      */
-    function parseMessage(msg: Dynamic): Option<M>;
+    function parseMessage(msg: Term): Option<M>;
     
     /**
-     * Convert typed message to Dynamic for Elixir compatibility
+     * Convert typed message to a term for Elixir compatibility
      */
-    function messageToElixir(message: M): Dynamic;
+    function messageToElixir(message: M): Term;
 }
 
 /**
@@ -141,7 +142,7 @@ extern class SafePubSub {
      * @param payload Message payload
      * @return Result indicating success or failure
      */
-    extern inline public static function broadcastTopicPayload(topicString: String, payload: Dynamic): Result<Void, String> {
+    extern inline public static function broadcastTopicPayload(topicString: String, payload: Term): Result<Void, String> {
         return untyped __elixir__('
           pubsub_mod = Phoenix.SafePubSub.get_pub_sub_module()
           normalized = if is_map({1}) do
@@ -167,7 +168,7 @@ extern class SafePubSub {
         topic: T,
         message: M,
         topicConverter: T -> String,
-        messageConverter: M -> Dynamic
+        messageConverter: M -> Term
     ): Result<Void, String> {
         return broadcastTopicPayload(topicConverter(topic), messageConverter(message));
     }
@@ -176,8 +177,8 @@ extern class SafePubSub {
      * Parse incoming PubSub message with application-specific parser
      */
     extern inline public static function parseWithConverter<M>(
-        msg: Dynamic,
-        messageParser: Dynamic -> Option<M>
+        msg: Term,
+        messageParser: Term -> Option<M>
     ): Option<M> {
         return untyped __elixir__('
           res = cond do
@@ -210,14 +211,14 @@ extern class SafePubSub {
     /**
      * Add timestamp to message payload
      */
-    extern inline public static function addTimestamp(payload: Dynamic): Dynamic {
+    extern inline public static function addTimestamp(payload: Term): Term {
         return untyped __elixir__('Map.put({0} || %{}, :timestamp, System.system_time(:millisecond))', payload);
     }
 
     /**
      * Validate message structure
      */
-    extern inline public static function isValidMessage(msg: Dynamic): Bool {
+    extern inline public static function isValidMessage(msg: Term): Bool {
         return untyped __elixir__('is_map({0}) and Map.has_key?({0}, :type) and not is_nil(Map.get({0}, :type))', msg);
     }
 
@@ -231,7 +232,7 @@ extern class SafePubSub {
     /**
      * Create error message for malformed messages
      */
-    extern inline public static function createMalformedMessageError(msg: Dynamic): String {
+    extern inline public static function createMalformedMessageError(msg: Term): String {
         return untyped __elixir__('
           msg_str = try do
             Jason.encode!({0})
@@ -246,7 +247,7 @@ extern class SafePubSub {
      * Get PubSub module dynamically from endpoint configuration.
      * This is called at runtime by the inlined code.
      */
-    extern inline public static function getPubSubModule(): Dynamic {
+    extern inline public static function getPubSubModule(): Term {
         return untyped __elixir__('Phoenix.SafePubSub.get_pub_sub_module()');
     }
 }

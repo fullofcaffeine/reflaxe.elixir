@@ -3,6 +3,7 @@ package ecto;
 #if (elixir || reflaxe_runtime)
 
 import elixir.types.Result;
+import elixir.types.Term;
 
 /**
  * Type-safe Ecto.Changeset wrapper
@@ -458,15 +459,15 @@ abstract Changeset<T, P>(Dynamic) from Dynamic to Dynamic {
      * Prefer using typed wrappers when possible; provided for integration points where
      * the generated schema changeset delegates to change/2 internally.
      */
-    extern inline public static function changeRaw(data: Dynamic, normalizedParams: Dynamic): Dynamic {
-        return untyped __elixir__('Ecto.Changeset.change({0}, {1})', data, normalizedParams);
+    extern inline public static function changeRaw<T>(data: T, normalizedParams: Term): Changeset<T, Term> {
+        return cast untyped __elixir__('Ecto.Changeset.change({0}, {1})', data, normalizedParams);
     }
 
     /**
      * Alias for change/2 to accommodate generated module namespace mapping.
      */
-    extern inline public static function change(data: Dynamic, params: Dynamic): Dynamic {
-        return untyped __elixir__('Ecto.Changeset.change({0}, {1})', data, params);
+    extern inline public static function change<T, P>(data: T, params: P): Changeset<T, P> {
+        return cast untyped __elixir__('Ecto.Changeset.change({0}, {1})', data, params);
     }
 }
 

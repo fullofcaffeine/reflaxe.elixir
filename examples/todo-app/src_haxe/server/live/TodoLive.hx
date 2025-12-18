@@ -3,6 +3,8 @@ package server.live;
 import HXX; // Import HXX for template rendering
 import ecto.Changeset; // Import Ecto Changeset from the correct location
 import ecto.Query; // Import Ecto Query from the correct location
+import elixir.types.Term;
+import haxe.Constraints.Function;
 	import elixir.Atom;
 	import elixir.ElixirMap;
 	import elixir.Task; // Background work via Task.start
@@ -45,7 +47,7 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 @:liveview
 class TodoLive {
     // Prevent DCE from stripping private helpers used by LiveView callbacks.
-    @:keep private static var __keep_fns:Array<Dynamic> = [
+    @:keep private static var __keep_fns:Array<Function> = [
         toggle_todo_status,
         delete_todo,
         update_todo_priority,
@@ -110,15 +112,15 @@ class TodoLive {
 	/**
 	 * Handle events with fully typed event system.
 	 * 
-	 * No more string matching or Dynamic params!
+	 * No more string matching or raw params!
 	 * Each event carries its own typed parameters.
 	 */
 	    @:keep
 	    @:native("handle_event")
-	    public static function handle_event(event: String, params: Dynamic, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
+	    public static function handle_event(event: String, params: Term, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
 	        var nextSocket: Socket<TodoLiveAssigns> =
 	            if (event == "create_todo") {
-	                createTodo(cast params, socket);
+	                createTodo(params, socket);
 	            } else if (event == "toggle_todo") {
 	                toggle_todo_status(extract_id(params), socket);
 	            } else if (event == "delete_todo") {
@@ -126,16 +128,18 @@ class TodoLive {
 	            } else if (event == "edit_todo") {
 	                start_editing(extract_id(params), socket);
 	            } else if (event == "save_todo") {
-	                save_edited_todo_typed(cast params, socket);
+	                save_edited_todo_typed(params, socket);
 	            } else if (event == "cancel_edit") {
 	                recomputeVisible(SafeAssigns.setEditingTodo(socket, null));
 	            } else if (event == "filter_todos") {
-	                recomputeVisible(SafeAssigns.setFilter(socket, Reflect.field(params, "filter")));
+	                var filterValue: Null<String> = cast Reflect.field(params, "filter");
+	                recomputeVisible(SafeAssigns.setFilter(socket, filterValue != null ? filterValue : "all"));
 	            } else if (event == "sort_todos") {
-	                var sortBy = Reflect.field(params, "sort_by");
-	                recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy));
+	                var sortBy: Null<String> = cast Reflect.field(params, "sort_by");
+	                recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy != null ? sortBy : "created"));
 	            } else if (event == "search_todos") {
-	                recomputeVisible(SafeAssigns.setSearchQuery(socket, Reflect.field(params, "query")));
+	                var query: Null<String> = cast Reflect.field(params, "query");
+	                recomputeVisible(SafeAssigns.setSearchQuery(socket, query != null ? query : ""));
 	            } else if (event == "toggle_tag") {
 	                var tagValue: Null<String> = Reflect.field(params, "tag");
 	                if (tagValue == null) {
@@ -151,7 +155,8 @@ class TodoLive {
 	                    recomputeVisible(SafeAssigns.setSelectedTags(socket, updated));
 	                }
 	            } else if (event == "set_priority") {
-	                update_todo_priority(extract_id(params), Reflect.field(params, "priority"), socket);
+	                var priority: Null<String> = cast Reflect.field(params, "priority");
+	                update_todo_priority(extract_id(params), priority != null ? priority : "medium", socket);
 	            } else if (event == "toggle_form") {
 	                recomputeVisible(SafeAssigns.setShowForm(socket, !socket.assigns.show_form));
 	            } else if (event == "bulk_complete") {
@@ -166,21 +171,18 @@ class TodoLive {
 	    }
 
     @:keep
-    public static function extract_id(params: Dynamic): Int {
-        var direct: Dynamic = Reflect.field(params, "id");
-        var todoObj: Dynamic = Reflect.field(params, "todo");
-        var todoId: Dynamic = (todoObj != null) ? Reflect.field(todoObj, "id") : null;
-        var candidate: Dynamic = (direct != null) ? direct : todoId;
+    public static function extract_id(params: Term): Int {
+        var direct: Term = Reflect.field(params, "id");
+        var todoObj: Term = Reflect.field(params, "todo");
+        var todoId: Term = (todoObj != null) ? Reflect.field(todoObj, "id") : null;
+        var candidate: Term = (direct != null) ? direct : todoId;
 
         if (candidate == null) return 0;
         if (elixir.Kernel.isInteger(candidate)) return cast candidate;
         else if (elixir.Kernel.isFloat(candidate)) return elixir.Kernel.trunc(candidate);
         else if (elixir.Kernel.isBinary(candidate)) {
-            try {
-                return Std.parseInt(cast candidate);
-            } catch (_:Dynamic) {
-                return 0;
-            }
+            var parsed = Std.parseInt(cast candidate);
+            return parsed != null ? parsed : 0;
         } else {
             return 0;
         }
@@ -277,7 +279,7 @@ class TodoLive {
      * Create a new todo using typed TodoParams.
      */
     @:keep
-    static function createTodo(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+    static function createTodo(params: Term, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         // LiveView form params arrive as a map with string keys; extract safely.
         var rawTitle: Null<String> = Reflect.field(params, "title");
         var rawDesc: Null<String> = Reflect.field(params, "description");
@@ -294,14 +296,14 @@ class TodoLive {
 
         // Build the todo struct for changeset
         var todoStruct = new server.schemas.Todo();
-        var castParams: Dynamic = {
+        var castParams: server.schemas.Todo.TodoChangesetParams = {
             title: title,
             description: description,
             completed: false,
             priority: priority,
-            due_date: dueDate,
+            dueDate: dueDate,
             tags: tagsArr,
-            user_id: socket.assigns.current_user.id
+            userId: socket.assigns.current_user.id
         };
         // Use the schema-generated changeset to keep casting/validation idiomatic
         var cs = Todo.changeset(todoStruct, castParams);
@@ -469,8 +471,9 @@ class TodoLive {
         var uid: Int = switch (session) {
             case null: 1;
             case _:
-                var primary:Dynamic = elixir.ElixirMap.get(session, "user_id");
-                var chosen:Dynamic = primary != null ? primary : elixir.ElixirMap.get(session, "userId");
+                var sessionTerm: Term = cast session;
+                var primary: Term = elixir.ElixirMap.get(sessionTerm, "user_id");
+                var chosen: Term = primary != null ? primary : elixir.ElixirMap.get(sessionTerm, "userId");
                 chosen != null ? cast chosen : 1;
         };
         return {
@@ -640,11 +643,11 @@ class TodoLive {
 		return SafeAssigns.setEditingTodo(socket, todo);
 	}
 	
-	/**
-	 * Save edited todo with typed parameters.
-	 */
+    /**
+     * Save edited todo with typed parameters.
+     */
     @:keep
-    public static function save_edited_todo_typed(params: server.schemas.Todo.TodoParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+    public static function save_edited_todo_typed(params: Term, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         if (socket.assigns.editing_todo == null) return socket;
         var todo = socket.assigns.editing_todo;
         // LiveView form params arrive as a map with string keys; extract safely.
@@ -667,7 +670,7 @@ class TodoLive {
             case Ok(value):
                 // Best-effort broadcast
                 TodoPubSub.broadcast(TodoUpdates, TodoUpdated(value));
-                var ls: LiveSocket<TodoLiveAssigns> = updateTodoInList(value, socket);
+                var ls: LiveSocket<TodoLiveAssigns> = updateTodoInList(value, (cast socket: LiveSocket<TodoLiveAssigns>));
                 ls = ls.assign(_.editing_todo, null);
                 ls = recomputeVisible(ls);
                 return ls;
@@ -689,34 +692,10 @@ class TodoLive {
         return base + " transition-all hover:shadow-xl";
     }
 
-    // Compatibility shim: legacy event handler expects create_todo_typed/2
-    // Bridge dynamic params to strongly-typed TodoParams and delegate to createTodoTyped/2
-    static function create_todo_typed(params: Dynamic, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        var rawTitle: Null<String> = Reflect.field(params, "title");
-        var rawDesc: Null<String> = Reflect.field(params, "description");
-        var rawPriority: Null<String> = Reflect.field(params, "priority");
-        var rawDue: Null<String> = Reflect.field(params, "due_date");
-        var rawTags: Null<String> = Reflect.field(params, "tags");
-
-        var todoParams: server.schemas.Todo.TodoParams = {
-            title: rawTitle != null ? rawTitle : "",
-            description: rawDesc != null ? rawDesc : "",
-            completed: false,
-            priority: (rawPriority != null && rawPriority != "") ? rawPriority : "medium",
-            dueDate: parseDueDate(rawDue),
-            tags: (rawTags != null && rawTags != "") ? parseTags(rawTags) : [],
-            userId: socket.assigns.current_user.id
-        };
-        return createTodo(todoParams, socket);
-    }
-    static inline function format_due_date(d: Dynamic): String {
+    static inline function format_due_date(d: Null<NaiveDateTime>): String {
         if (d == null) return "";
-        try {
-            var iso = (cast d : NaiveDateTime).to_iso8601();
-            return iso.substr(0, 10);
-        } catch (_:Dynamic) {
-            return Std.string(d);
-        }
+        var iso = d.to_iso8601();
+        return iso.substr(0, 10);
     }
     static inline function encodeSort(s: shared.TodoTypes.TodoSort): String {
         return switch (s) { case Created: "created"; case Priority: "priority"; case DueDate: "due_date"; };
@@ -869,7 +848,7 @@ class TodoLive {
 	 * Render function for the LiveView component
 	 * This generates the HTML template that gets sent to the browser
 	 */
-    @:keep public static function render(assigns: TodoLiveAssigns): Dynamic {
+    @:keep public static function render(assigns: TodoLiveAssigns): String {
         return HXX.hxx('
 			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
 				<div id="root" class="container mx-auto px-4 py-8 max-w-6xl" phx-hook="Ping">
@@ -1216,12 +1195,12 @@ class TodoLive {
         // Arrays compile to Elixir lists and are comparable under term ordering.
         return switch (sortBy) {
             case Priority:
-                Enum.sortBy(filtered, function(t) return (cast ([priorityRankForSort(t.priority), -t.id] : Array<Dynamic>)));
+                Enum.sortBy(filtered, function(t) return (cast ([priorityRankForSort(t.priority), -t.id] : Array<Term>)));
             case DueDate:
-                Enum.sortBy(filtered, function(t) return (cast ([elixir.Kernel.isNil(t.dueDate), t.dueDate, -t.id] : Array<Dynamic>)));
+                Enum.sortBy(filtered, function(t) return (cast ([elixir.Kernel.isNil(t.dueDate), t.dueDate, -t.id] : Array<Term>)));
             case Created:
                 // Newest first (stable): use id desc as a proxy for creation order.
-                Enum.sortBy(filtered, function(t) return (cast ([-t.id] : Array<Dynamic>)));
+                Enum.sortBy(filtered, function(t) return (cast ([-t.id] : Array<Term>)));
         };
     }
 }

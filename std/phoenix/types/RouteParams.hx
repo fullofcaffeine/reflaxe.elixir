@@ -1,5 +1,7 @@
 package phoenix.types;
 
+import elixir.types.Term;
+
 /**
  * Type-safe route parameter system for Phoenix applications
  * 
@@ -31,16 +33,16 @@ package phoenix.types;
  * Wraps Phoenix's params map with compile-time type checking while
  * maintaining full compatibility with Phoenix routing system.
  */
-abstract RouteParams<T>(Dynamic) from Dynamic to Dynamic {
+abstract RouteParams<T>(Term) from Term to Term {
     
     /**
-     * Create typed route params from a Dynamic value
+     * Create typed route params from an arbitrary term
      * Used when receiving params from Phoenix
      * 
      * @param value Raw params map from Phoenix
      * @return RouteParams<T> Type-safe wrapper
      */
-    public static function fromDynamic<T>(value: Dynamic): RouteParams<T> {
+    public static function fromDynamic<T>(value: Term): RouteParams<T> {
         return cast value;
     }
     
@@ -56,12 +58,12 @@ abstract RouteParams<T>(Dynamic) from Dynamic to Dynamic {
     }
     
     /**
-     * Get the underlying Dynamic value
-     * Use when passing to Phoenix functions that expect Dynamic
+     * Get the underlying term
+     * Use when passing to Phoenix functions that expect a raw term
      * 
-     * @return Dynamic Raw params map for Phoenix compatibility
+     * @return Term Raw params map for Phoenix compatibility
      */
-    public function toDynamic(): Dynamic {
+    public function toDynamic(): Term {
         return this;
     }
     
@@ -69,7 +71,7 @@ abstract RouteParams<T>(Dynamic) from Dynamic to Dynamic {
      * Type-safe field access
      * Compiler ensures field exists in T
      */
-    @:op(a.b) public function getField<K>(field: K): Dynamic {
+    @:op(a.b) public function getField<K>(field: K): Term {
         return Reflect.field(this, cast field);
     }
     

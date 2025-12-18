@@ -17,8 +17,6 @@
 --macro exclude('client')
 --macro exclude('test')
 --macro exclude('server.live.UserLive')
---macro exclude('server.services.UserGenServer')
-
 # Keep critical Phoenix modules to avoid DCE loss of runtime‑invoked functions
 --macro keep('server.components.CoreComponents')
 --macro keep('server.live.TodoLive')
@@ -27,7 +25,6 @@
 --macro keep('server.infrastructure.TodoAppWeb')
 --macro keep('server.presence.TodoPresence')
 --macro keep('server.infrastructure.Repo')
---macro keep('phoenix.DateFormat')
 --macro keep('phoenix.SafePubSub')
 
 # Compiler flags

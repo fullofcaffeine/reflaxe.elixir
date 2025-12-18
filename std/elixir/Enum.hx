@@ -22,6 +22,8 @@
 
 package elixir;
 
+import elixir.types.Term;
+
 /**
  * 1:1 extern mapping to Elixir's Enum module
  * 
@@ -98,7 +100,7 @@ extern class Enum {
      */
     @:native("sort_by")
     @:overload(function<T, K>(enumerable: Array<T>, mapper: T -> K): Array<T> {})
-    static function sortBy<T, K>(enumerable: Array<T>, mapper: T -> K, sorter: Dynamic): Array<T>;
+    static function sortBy<T, K>(enumerable: Array<T>, mapper: T -> K, sorter: Term): Array<T>;
     
     /**
      * Returns the size of the enumerable.
@@ -182,69 +184,69 @@ extern class Enum {
     /**
      * Zips corresponding elements from two enumerables into a list of tuples.
      */
-    static function zip<T,U>(enumerable1: Dynamic, enumerable2: Dynamic): Array<Dynamic>;
+    static function zip<T,U>(enumerable1: Term, enumerable2: Term): Array<Term>;
     
     /**
      * Reduce the enumerable until fun returns {:halt, acc}.
      * Use with ReduceWhileResult enum for type safety.
      */
     @:native("reduce_while")
-    static function reduceWhile<T,Acc>(enumerable: Dynamic, acc: Acc, fun: (T, Acc) -> Dynamic): Acc;
+    static function reduceWhile<T,Acc>(enumerable: Term, acc: Acc, fun: (T, Acc) -> Term): Acc;
     
     /**
      * Maps and reduces an enumerable, flattening the given results.
      */
     @:native("flat_map_reduce")
-    static function flatMapReduce<T,R,Acc>(enumerable: Dynamic, acc: Acc, fun: (T, Acc) -> Dynamic): Dynamic;
+    static function flatMapReduce<T,R,Acc>(enumerable: Term, acc: Acc, fun: (T, Acc) -> Term): Term;
     
     /**
      * Chunks the enumerable with count elements each.
      */
     @:native("chunk_every")
-    static function chunkEvery<T>(enumerable: Dynamic, count: Int): Array<Array<T>>;
+    static function chunkEvery<T>(enumerable: Term, count: Int): Array<Array<T>>;
     
     /**
      * Converts enumerable to a list.
      */
     @:native("to_list")
-    static function toList<T>(enumerable: Dynamic): Array<T>;
+    static function toList<T>(enumerable: Term): Array<T>;
     
     /**
      * Drops the first count elements from the enumerable.
      */
-    static function drop<T>(enumerable: Dynamic, count: Int): Array<T>;
+    static function drop<T>(enumerable: Term, count: Int): Array<T>;
     
     /**
      * Drops elements at the beginning of the enumerable while fun returns a truthy value.
      */
     @:native("drop_while")
-    static function dropWhile<T>(enumerable: Dynamic, fun: T -> Bool): Array<T>;
+    static function dropWhile<T>(enumerable: Term, fun: T -> Bool): Array<T>;
     
     /**
      * Takes elements at the beginning of the enumerable while fun returns a truthy value.
      */
     @:native("take_while")
-    static function takeWhile<T>(enumerable: Dynamic, fun: T -> Bool): Array<T>;
+    static function takeWhile<T>(enumerable: Term, fun: T -> Bool): Array<T>;
     
     
     /**
      * Returns true if enumerable has exactly count elements.
      */
     @:native("count")
-    @:overload(function<T>(enumerable: Dynamic): Int {})
-    static function countBy<T>(enumerable: Dynamic, fun: T -> Bool): Int;
+    @:overload(function<T>(enumerable: Term): Int {})
+    static function countBy<T>(enumerable: Term, fun: T -> Bool): Int;
     
     /**
      * Returns the first element of the enumerable or default if empty.
      */
-    @:overload(function<T>(enumerable: Dynamic): Null<T> {})
-    static function fetch<T>(enumerable: Dynamic, index: Int): Dynamic;
+    @:overload(function<T>(enumerable: Term): Null<T> {})
+    static function fetch<T>(enumerable: Term, index: Int): Term;
     
     /**
      * Fetches the value at the given index, erroring out if index is out of bounds.
      */
     @:native("fetch!")
-    static function fetchOrThrow<T>(enumerable: Dynamic, index: Int): T;
+    static function fetchOrThrow<T>(enumerable: Term, index: Int): T;
     
     /**
      * Checks if element is a member of enumerable.
@@ -254,32 +256,32 @@ extern class Enum {
     /**
      * Applies fun on each element of enumerable and rejects the elements for which fun returns a truthy value.
      */
-    static function reject<T>(enumerable: Dynamic, fun: T -> Bool): Array<T>;
+    static function reject<T>(enumerable: Term, fun: T -> Bool): Array<T>;
     
     /**
      * Shuffles the elements of the enumerable.
      */
-    static function shuffle<T>(enumerable: Dynamic): Array<T>;
+    static function shuffle<T>(enumerable: Term): Array<T>;
     
     /**
      * Splits enumerable into two lists based on the given function.
      * Returns a tuple with two lists.
      */
-    static function split<T>(enumerable: Dynamic, count: Int): Dynamic;
+    static function split<T>(enumerable: Term, count: Int): Term;
     
     /**
      * Splits the enumerable in two lists according to the given function fun.
      */
     @:native("split_with")
-    static function splitWith<T>(enumerable: Dynamic, fun: T -> Bool): Dynamic;
+    static function splitWith<T>(enumerable: Term, fun: T -> Bool): Term;
     
     /**
      * Enumerates the enumerable, returning a list where each element is a tuple with the original element
      * and its index (zero-based).
      */
     @:native("with_index")
-    @:overload(function<T>(enumerable: Dynamic): Array<Dynamic> {})
-    static function withIndex<T>(enumerable: Dynamic, startAt: Int): Array<Dynamic>;
+    @:overload(function<T>(enumerable: Term): Array<Term> {})
+    static function withIndex<T>(enumerable: Term, startAt: Int): Array<Term>;
 }
 
 /**

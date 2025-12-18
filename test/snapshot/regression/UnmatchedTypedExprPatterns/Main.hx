@@ -23,7 +23,7 @@ class Main {
         trace("TParenthesis: y = " + y);
 
         // TCast test - Type casts (transparent in Elixir)
-        var z: Any = 42;
+        var z: elixir.types.Term = 42;
         var num = cast(z, Int);
         trace("TCast: num = " + num);
 
