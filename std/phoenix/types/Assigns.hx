@@ -1,5 +1,7 @@
 package phoenix.types;
 
+import phoenix.types.Flash.FlashMap;
+
 /**
  * Type-safe wrapper for Phoenix template assigns
  * 
@@ -23,7 +25,7 @@ package phoenix.types;
  * 
  * @see /docs/06-guides/TYPE_SAFE_ASSIGNS.md - Complete usage guide
  */
-abstract Assigns<T>(Dynamic) from Dynamic to Dynamic {
+abstract Assigns<T>(T) from T to T {
     
     /**
      * Create typed assigns from a Dynamic value
@@ -32,6 +34,7 @@ abstract Assigns<T>(Dynamic) from Dynamic to Dynamic {
      * @param value Raw assigns map from Phoenix
      * @return Assigns<T> Type-safe wrapper
      */
+    @:from
     public static function fromDynamic<T>(value: Dynamic): Assigns<T> {
         return cast value;
     }
@@ -53,8 +56,9 @@ abstract Assigns<T>(Dynamic) from Dynamic to Dynamic {
      * 
      * @return Dynamic Raw assigns map for Phoenix compatibility
      */
+    @:to
     public function toDynamic(): Dynamic {
-        return this;
+        return cast this;
     }
     
     /**
@@ -197,20 +201,26 @@ abstract Assigns<T>(Dynamic) from Dynamic to Dynamic {
 	     * Get flash messages
 	     * Type-safe access to flash message map
 	     * 
-	     * @return Dynamic Flash message map (can be typed in your assigns typedef)
+	     * WHY: Phoenix assigns are a runtime map, but flash has a stable shape in Phoenix.
+	     * WHAT: Returns a typed `FlashMap` (optional fields) instead of Dynamic.
+	     *
+	     * @return FlashMap Flash message map (or null if not present)
 	     */
-	    public function getFlash(): Dynamic {
-	        return Reflect.field(this, "flash");
+	    public inline function getFlash(): Null<FlashMap> {
+	        return cast Reflect.field(this, "flash");
 	    }
     
 	    /**
 	     * Get current user (common pattern in Phoenix apps)
 	     * Returns null if not present
 	     * 
-	     * @return Dynamic Current user object (can be typed in your assigns typedef)
+	     * WHY: `current_user` is application-defined, so the stdlib cannot know its type.
+	     * HOW: Let callers choose a type parameter so the public surface stays typed.
+	     *
+	     * @return TUser Current user object (or null if not present)
 	     */
-	    public function getCurrentUser(): Dynamic {
-	        return Reflect.field(this, "current_user");
+	    public inline function getCurrentUser<TUser>(): Null<TUser> {
+	        return cast Reflect.field(this, "current_user");
 	    }
     
     /**
@@ -232,11 +242,11 @@ abstract Assigns<T>(Dynamic) from Dynamic to Dynamic {
  * Basic layout assigns
  * Contains common fields needed in most layout templates
  */
-typedef LayoutAssigns = {
+typedef LayoutAssigns<TUser, TSocketAssigns> = {
     inner_content: String,
-    ?flash: Dynamic,
+    ?flash: FlashMap,
     ?csrf_token: String,
-    ?current_user: Dynamic,
+    ?current_user: TUser,
     ?page_title: String
 }
 
@@ -244,11 +254,11 @@ typedef LayoutAssigns = {
  * Live view assigns base
  * Common fields for LiveView components
  */
-typedef LiveViewAssigns = {
-    ?flash: Dynamic,
+typedef LiveViewAssigns<TUser, TSocketAssigns> = {
+    ?flash: FlashMap,
     ?live_action: String,
-    ?current_user: Dynamic,
-    ?socket: Dynamic
+    ?current_user: TUser,
+    ?socket: Socket<TSocketAssigns>
 }
 
 /**
