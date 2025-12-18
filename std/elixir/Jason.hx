@@ -1,5 +1,7 @@
 package elixir;
 
+import elixir.types.Term;
+
 /**
  * Jason: Type-safe extern for Elixir's Jason JSON library
  * 
@@ -20,28 +22,28 @@ extern class Jason {
      * Returns {:ok, json} or {:error, reason}
      */
     @:native("encode")
-    public static function encode(term: Dynamic, ?opts: JasonOptions): ElixirResult<String, Dynamic>;
+    public static function encode(term: Term, ?opts: JasonOptions): ElixirResult<String, Term>;
     
     /**
      * Encode a value to JSON string, raises on error
      * @throws JasonEncodeError if encoding fails
      */
     @:native("encode!")
-    public static function encodeStrict(term: Dynamic, ?opts: JasonOptions): String;
+    public static function encodeStrict(term: Term, ?opts: JasonOptions): String;
     
     /**
      * Decode a JSON string
      * Returns {:ok, value} or {:error, reason}
      */
     @:native("decode")
-    public static function decode(json: String, ?opts: JasonDecodeOptions): ElixirResult<Dynamic, Dynamic>;
+    public static function decode(json: String, ?opts: JasonDecodeOptions): ElixirResult<Term, Term>;
     
     /**
      * Decode a JSON string, raises on error
      * @throws JasonDecodeError if decoding fails
      */
     @:native("decode!")
-    public static function decodeStrict(json: String, ?opts: JasonDecodeOptions): Dynamic;
+    public static function decodeStrict(json: String, ?opts: JasonDecodeOptions): Term;
 }
 
 /**
@@ -61,7 +63,7 @@ typedef JasonOptions = {
     /**
      * Map ordering: :unsorted or a custom sort function
      */
-    ?maps: Dynamic
+    ?maps: Term
 }
 
 /**

@@ -2,6 +2,8 @@ package elixir.types;
 
 import elixir.types.Pid;
 import elixir.types.Reference;
+import elixir.types.Term;
+import elixir.types.Atom;
 
 /**
  * Type-safe representation of monitor information
@@ -30,10 +32,10 @@ enum MonitorInfo {
     /**
      * Monitoring a port
      */
-    PortMonitor(port: Dynamic); // Ports don't have a type yet
+    PortMonitor(port: Term);
     
     /**
      * Monitoring a named process
      */
-    NamedMonitor(name: String);
+    NamedMonitor(name: Atom);
 }

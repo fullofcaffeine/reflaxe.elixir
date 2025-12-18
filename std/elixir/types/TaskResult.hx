@@ -1,5 +1,7 @@
 package elixir.types;
 
+import elixir.types.Term;
+
 /**
  * Type-safe result types for Task operations
  * 
@@ -23,7 +25,7 @@ enum TaskYieldResult<T> {
      * Task exited with a reason
      * Compiles to: {:exit, reason}
      */
-    Exit(reason: Dynamic);
+    Exit(reason: Term);
 }
 
 /**
@@ -49,11 +51,11 @@ enum TaskStreamResult<T> {
      * Stream element failed with exit
      * Compiles to: {:exit, reason}
      */
-    Exit(reason: Dynamic);
+    Exit(reason: Term);
 }
 
 @:nativeGen extern class TaskResultHelper {
     public static function isOk<T>(result: TaskYieldOption<T>): Bool;
     public static function getValue<T>(result: TaskYieldOption<T>): Null<T>;
-    public static function getExitReason<T>(result: TaskYieldOption<T>): Null<Dynamic>;
+    public static function getExitReason<T>(result: TaskYieldOption<T>): Null<Term>;
 }

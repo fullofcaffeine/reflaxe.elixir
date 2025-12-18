@@ -10,7 +10,7 @@ defmodule GenServerOptionBuilder do
     if (Kernel.is_nil(options)) do
       options = %{}
     end
-    options = Map.put(options, "name", _elixir__.("{:via, #{(fn -> inspect(module) end).()}, #{(fn -> inspect(name) end).()}}"))
+    options = Map.put(options, "name", _elixir__.("{:via, #{(fn -> Kernel.to_string(module) end).()}, #{(fn -> Kernel.to_string(name) end).()}}"))
     options
   end
   def with_global_name(name, options) do

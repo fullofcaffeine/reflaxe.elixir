@@ -162,11 +162,11 @@ class CommonAtoms {
         return untyped __elixir__(':all');
     }
     
-    public static inline function any(): Dynamic {
+    public static inline function any(): Term {
         return untyped __elixir__(':any');
     }
     
-    public static inline function none(): Dynamic {
+    public static inline function none(): Term {
         return untyped __elixir__(':none');
     }
 }

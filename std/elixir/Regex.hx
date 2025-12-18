@@ -2,6 +2,8 @@ package elixir;
 
 #if (macro || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * Regex module extern definitions for Elixir standard library
  * Provides type-safe interfaces for regular expression operations
@@ -14,74 +16,74 @@ extern class Regex {
     
     // Compilation
     @:native("compile")
-    static function compile(pattern: String): {_0: String, _1: Dynamic}; // {:ok, regex} | {:error, reason}
+    static function compile(pattern: String): {_0: String, _1: Term}; // {:ok, regex} | {:error, reason}
     
     @:native("compile")
-    static function compileWithOptions(pattern: String, options: String): {_0: String, _1: Dynamic};
+    static function compileWithOptions(pattern: String, options: String): {_0: String, _1: Term};
     
     @:native("compile!")
-    static function compileBang(pattern: String): Dynamic; // Returns regex or raises
+    static function compileBang(pattern: String): Term; // Returns regex or raises
     
     @:native("compile!")
-    static function compileBangWithOptions(pattern: String, options: String): Dynamic;
+    static function compileBangWithOptions(pattern: String, options: String): Term;
     
     @:native("recompile")
-    static function recompile(regex: Dynamic): Dynamic;
+    static function recompile(regex: Term): Term;
     
     @:native("recompile!")
-    static function recompileBang(regex: Dynamic): Dynamic;
+    static function recompileBang(regex: Term): Term;
     
     // Pattern information
     @:native("source")
-    static function source(regex: Dynamic): String; // Get the source pattern
+    static function source(regex: Term): String; // Get the source pattern
     
     @:native("opts")
-    static function opts(regex: Dynamic): String; // Get the options
+    static function opts(regex: Term): String; // Get the options
     
     @:native("names")
-    static function names(regex: Dynamic): Array<String>; // Get named capture groups
+    static function names(regex: Term): Array<String>; // Get named capture groups
     
     @:native("version")
     static function version(): String; // PCRE version
     
     // Matching
     @:native("match?")
-    static function match(regex: Dynamic, string: String): Bool;
+    static function match(regex: Term, string: String): Bool;
     
     @:native("run")
-    static function run(regex: Dynamic, string: String): Null<Array<String>>; // Returns matches or nil
+    static function run(regex: Term, string: String): Null<Array<String>>; // Returns matches or nil
     
     @:native("run")
-    static function runWithOptions(regex: Dynamic, string: String, options: Array<Dynamic>): Null<Array<String>>;
+    static function runWithOptions(regex: Term, string: String, options: Array<Term>): Null<Array<String>>;
     
     @:native("scan")
-    static function scan(regex: Dynamic, string: String): Array<Array<String>>; // All matches
+    static function scan(regex: Term, string: String): Array<Array<String>>; // All matches
     
     @:native("scan")
-    static function scanWithOptions(regex: Dynamic, string: String, options: Array<Dynamic>): Array<Array<String>>;
+    static function scanWithOptions(regex: Term, string: String, options: Array<Term>): Array<Array<String>>;
     
     @:native("named_captures")
-    static function namedCaptures(regex: Dynamic, string: String): Map<String, String>; // Named captures
+    static function namedCaptures(regex: Term, string: String): Map<String, String>; // Named captures
     
     @:native("named_captures")
-    static function namedCapturesWithOptions(regex: Dynamic, string: String, options: Array<Dynamic>): Map<String, String>;
+    static function namedCapturesWithOptions(regex: Term, string: String, options: Array<Term>): Map<String, String>;
     
     // Replacement
     @:native("replace")
-    static function replace(regex: Dynamic, string: String, replacement: String): String;
+    static function replace(regex: Term, string: String, replacement: String): String;
     
     @:native("replace")
-    static function replaceWithFunction(regex: Dynamic, string: String, replacement: String -> String): String;
+    static function replaceWithFunction(regex: Term, string: String, replacement: String -> String): String;
     
     @:native("replace")
-    static function replaceWithOptions(regex: Dynamic, string: String, replacement: Dynamic, options: Array<Dynamic>): String;
+    static function replaceWithOptions(regex: Term, string: String, replacement: Term, options: Array<Term>): String;
     
     // Splitting
     @:native("split")
-    static function split(regex: Dynamic, string: String): Array<String>;
+    static function split(regex: Term, string: String): Array<String>;
     
     @:native("split")
-    static function splitWithOptions(regex: Dynamic, string: String, options: Array<Dynamic>): Array<String>;
+    static function splitWithOptions(regex: Term, string: String, options: Array<Term>): Array<String>;
     
     // Escaping
     @:native("escape")

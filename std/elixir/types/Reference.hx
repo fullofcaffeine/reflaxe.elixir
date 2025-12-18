@@ -16,12 +16,12 @@ package elixir.types;
  * Process.cancelTimer(timerRef);
  * ```
  */
-abstract Reference(Dynamic) from Dynamic to Dynamic {
+abstract Reference(Term) from Term to Term {
     /**
      * Create a new Reference wrapper
      * Note: This is typically not called directly - refs come from Process/timer functions
      */
-    public inline function new(ref: Dynamic) {
+    public inline function new(ref: Term) {
         this = ref;
     }
     

@@ -68,14 +68,14 @@ class CompilerInit {
         if (!fastBoot) {
             try {
                 Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.RepoEnumerator.ensureRepoKept())");
-            } catch (e:Dynamic) {}
+            } catch (e: haxe.Exception) {}
         }
 
         // Macro-phase discovery: force-type @:repo externs so they join normal compilation
         if (!fastBoot) {
             try {
                 reflaxe.elixir.macros.RepoDiscovery.run();
-            } catch (e:Dynamic) {}
+            } catch (e: haxe.Exception) {}
         }
 
         // Target-conditional classpath gating for staged overrides in std/_std
@@ -95,7 +95,7 @@ class CompilerInit {
             if (targetName == "elixir" || Context.defined("elixir_output")) {
                 Compiler.addClassPath(stagedStd);
             }
-        } catch (e:Dynamic) {
+        } catch (e: haxe.Exception) {
             // If resolvePath fails in certain contexts, skip gating silently (non-Elixir targets)
         }
 

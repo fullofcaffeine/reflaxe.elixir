@@ -134,11 +134,9 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
             default:
         }
         if (secondIsValue) return true;
-        var locked = false;
-        try {
-            locked = untyped (cl.body != null && cl.body.metadata != null && (cl.body.metadata.lockPayloadBinder == true));
-        } catch (e:Dynamic) {}
-        return locked;
+        return cl.body != null
+            && cl.body.metadata != null
+            && (cl.body.metadata.lockPayloadBinder == true);
     }
 
     static function extractOkBinder(p: EPattern): Null<String> {

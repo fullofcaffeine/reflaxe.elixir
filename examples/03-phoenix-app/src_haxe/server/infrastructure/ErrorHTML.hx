@@ -1,12 +1,14 @@
 package server.infrastructure;
 
+import elixir.types.Term;
+
 /**
  * Minimal error HTML renderer to satisfy Phoenix error pipeline.
  */
 @:native("PhoenixHaxeExampleWeb.ErrorHTML")
 @:keep
 class ErrorHTML {
-    public static function render(template: String, _assigns: Dynamic): String {
+    public static function render(template: String, _assigns: Term): String {
         return switch (baseTemplate(template)) {
             case "404": "Not Found";
             case "401": "Unauthorized";
@@ -22,4 +24,3 @@ class ErrorHTML {
         return idx >= 0 ? template.substr(0, idx) : template;
     }
 }
-

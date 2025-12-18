@@ -4,6 +4,8 @@ import sys.FileSystem;
 import sys.io.File;
 import haxe.io.Path;
 import reflaxe.elixir.generator.TemplateEngine;
+import reflaxe.elixir.generator.TemplateContext;
+import reflaxe.elixir.generator.TemplateValue;
 using StringTools;
 
 /**
@@ -449,17 +451,17 @@ class ProjectGenerator {
 		}
 		
 		var engine = new TemplateEngine();
-		var replacements = {
-			"__PROJECT_NAME__": options.name,
-			"__PROJECT_MODULE__": toPascalCase(options.name),
-			"__PROJECT_VERSION__": "0.1.0",
-			"__YEAR__": Std.string(Date.now().getFullYear())
+		var replacements: TemplateContext = cast {
+			PROJECT_NAME: options.name,
+			PROJECT_MODULE: toPascalCase(options.name),
+			PROJECT_VERSION: "0.1.0",
+			YEAR: Std.string(Date.now().getFullYear())
 		};
 		
 		copyDirectory(templatePath, destPath, engine, replacements, options.verbose);
 	}
 	
-	function copyDirectory(src: String, dest: String, engine: TemplateEngine, replacements: Dynamic, verbose: Bool): Void {
+	function copyDirectory(src: String, dest: String, engine: TemplateEngine, replacements: TemplateContext, verbose: Bool): Void {
 		for (item in FileSystem.readDirectory(src)) {
 			// Skip hidden files and directories
 			if (item.startsWith(".")) continue;
@@ -605,7 +607,7 @@ class ProjectGenerator {
 			}
 			
 			Sys.println("  ✅ Dependencies installed");
-		} catch (e: Dynamic) {
+		} catch (e: haxe.Exception) {
 			Sys.println("  ⚠️  Failed to install dependencies: " + e);
 			Sys.println("  Please run 'npm install' and 'mix deps.get' manually");
 		}
@@ -1029,7 +1031,7 @@ Describe decisions and conventions unique to this project.
 		}
 	}
 	
-	function processTemplate(templateName: String, context: Dynamic): String {
+	function processTemplate(templateName: String, context: TemplateContext): String {
 		var template = loadTemplate(templateName);
 		var engine = new TemplateEngine();
 		return engine.processContent(template, context);
@@ -1047,7 +1049,7 @@ Describe decisions and conventions unique to this project.
 	
 	function generateAPIReferenceSkeleton(options: GeneratorOptions): String {
 		var context = createTemplateContext(options);
-		context.BUILD_CONFIG = generateBuildHxml(options);
+		context.set("BUILD_CONFIG", VString(generateBuildHxml(options)));
 		return processTemplate("api_reference.md.tpl", context);
 	}
 	
@@ -1061,7 +1063,7 @@ Describe decisions and conventions unique to this project.
 		return processTemplate("project_specifics.md.tpl", context);
 	}
 	
-	function createTemplateContext(options: GeneratorOptions): Dynamic {
+	function createTemplateContext(options: GeneratorOptions): TemplateContext {
 		var projectName = options.name;
 		var projectType = options.type;
 		
@@ -1073,24 +1075,25 @@ Describe decisions and conventions unique to this project.
 		var isLiveView = projectType == "liveview";
 		var isBasic = projectType == "basic" || projectType == "add-to-existing";
 		
-		// Create template context object
-		return {
-			PROJECT_NAME: projectName,
-			PROJECT_NAME_SNAKE: projectNameSnake,
-			PROJECT_MODULE: projectModule,
-			PROJECT_TYPE: projectType,
-			PROJECT_TYPE_DISPLAY: getProjectTypeDisplay(projectType),
-			PROJECT_DESCRIPTION: getProjectDescription(projectType),
-			GENERATED_DATE: Date.now().toString(),
-			YEAR: Std.string(Date.now().getFullYear()),
-			
-			// Boolean flags for conditionals
-			IS_PHOENIX: isPhoenix,
-			IS_LIVEVIEW: isLiveView || isPhoenix, // Phoenix includes LiveView
-			IS_BASIC: isBasic,
-			HAS_ECTO: isPhoenix || isLiveView,
-			HAS_PATTERNS: false // Will be true after first extraction
-		};
+		// Create template context map
+		var context = TemplateContext.empty();
+		context.set("PROJECT_NAME", VString(projectName));
+		context.set("PROJECT_NAME_SNAKE", VString(projectNameSnake));
+		context.set("PROJECT_MODULE", VString(projectModule));
+		context.set("PROJECT_TYPE", VString(projectType));
+		context.set("PROJECT_TYPE_DISPLAY", VString(getProjectTypeDisplay(projectType)));
+		context.set("PROJECT_DESCRIPTION", VString(getProjectDescription(projectType)));
+		context.set("GENERATED_DATE", VString(Date.now().toString()));
+		context.set("YEAR", VString(Std.string(Date.now().getFullYear())));
+
+		// Boolean flags for conditionals
+		context.set("IS_PHOENIX", VBool(isPhoenix));
+		context.set("IS_LIVEVIEW", VBool(isLiveView || isPhoenix)); // Phoenix includes LiveView
+		context.set("IS_BASIC", VBool(isBasic));
+		context.set("HAS_ECTO", VBool(isPhoenix || isLiveView));
+		context.set("HAS_PATTERNS", VBool(false)); // Will be true after first extraction
+
+		return context;
 	}
 	
 	function getProjectTypeDisplay(type: String): String {
@@ -1442,10 +1445,10 @@ class Main {
 		try {
 			var libPath = getLibraryPath();
 			var content = File.getContent(Path.join([libPath, "haxelib.json"]));
-			var parsed: Dynamic = haxe.Json.parse(content);
+			var parsed = haxe.Json.parse(content);
 			var version: Null<String> = Reflect.field(parsed, "version");
 			if (version != null && version != "") return version;
-		} catch (_: Dynamic) {}
+		} catch (_: haxe.Exception) {}
 
 		return "1.0.0";
 	}

@@ -2,6 +2,8 @@ package elixir;
 
 #if (macro || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * Kernel module extern definitions for Elixir standard library
  * Provides type-safe interfaces for core Elixir functions
@@ -14,13 +16,13 @@ extern class Kernel {
     
     // Arithmetic operators (as functions)
     @:native("+")
-    static function add(left: Dynamic, right: Dynamic): Dynamic;
+    static function add(left: Term, right: Term): Term;
     
     @:native("-")
-    static function subtract(left: Dynamic, right: Dynamic): Dynamic;
+    static function subtract(left: Term, right: Term): Term;
     
     @:native("*")
-    static function multiply(left: Dynamic, right: Dynamic): Dynamic;
+    static function multiply(left: Term, right: Term): Term;
     
     @:native("/")
     static function divide(left: Float, right: Float): Float;
@@ -33,28 +35,28 @@ extern class Kernel {
     
     // Comparison functions
     @:native("==")
-    static function equal(left: Dynamic, right: Dynamic): Bool;
+    static function equal(left: Term, right: Term): Bool;
     
     @:native("!=")
-    static function notEqual(left: Dynamic, right: Dynamic): Bool;
+    static function notEqual(left: Term, right: Term): Bool;
     
     @:native("===")
-    static function strictEqual(left: Dynamic, right: Dynamic): Bool;
+    static function strictEqual(left: Term, right: Term): Bool;
     
     @:native("!==")
-    static function strictNotEqual(left: Dynamic, right: Dynamic): Bool;
+    static function strictNotEqual(left: Term, right: Term): Bool;
     
     @:native("<")
-    static function lessThan(left: Dynamic, right: Dynamic): Bool;
+    static function lessThan(left: Term, right: Term): Bool;
     
     @:native("<=")
-    static function lessOrEqual(left: Dynamic, right: Dynamic): Bool;
+    static function lessOrEqual(left: Term, right: Term): Bool;
     
     @:native(">")
-    static function greaterThan(left: Dynamic, right: Dynamic): Bool;
+    static function greaterThan(left: Term, right: Term): Bool;
     
     @:native(">=")
-    static function greaterOrEqual(left: Dynamic, right: Dynamic): Bool;
+    static function greaterOrEqual(left: Term, right: Term): Bool;
     
     // Boolean operations
     @:native("and")
@@ -68,142 +70,142 @@ extern class Kernel {
     
     // Type checking
     @:native("is_atom")
-    static function isAtom(term: Dynamic): Bool;
+    static function isAtom(term: Term): Bool;
     
     @:native("is_binary")
-    static function isBinary(term: Dynamic): Bool;
+    static function isBinary(term: Term): Bool;
     
     @:native("is_bitstring")
-    static function isBitstring(term: Dynamic): Bool;
+    static function isBitstring(term: Term): Bool;
     
     @:native("is_boolean")
-    static function isBoolean(term: Dynamic): Bool;
+    static function isBoolean(term: Term): Bool;
     
     @:native("is_float")
-    static function isFloat(term: Dynamic): Bool;
+    static function isFloat(term: Term): Bool;
     
     @:native("is_function")
-    static function isFunction(term: Dynamic): Bool;
+    static function isFunction(term: Term): Bool;
     
     @:native("is_function")
-    static function isFunctionArity(term: Dynamic, arity: Int): Bool;
+    static function isFunctionArity(term: Term, arity: Int): Bool;
     
     @:native("is_integer")
-    static function isInteger(term: Dynamic): Bool;
+    static function isInteger(term: Term): Bool;
     
     @:native("is_list")
-    static function isList(term: Dynamic): Bool;
+    static function isList(term: Term): Bool;
     
     @:native("is_map")
-    static function isMap(term: Dynamic): Bool;
+    static function isMap(term: Term): Bool;
     
     @:native("is_nil")
-    static function isNil(term: Dynamic): Bool;
+    static function isNil(term: Term): Bool;
     
     @:native("is_number")
-    static function isNumber(term: Dynamic): Bool;
+    static function isNumber(term: Term): Bool;
     
     @:native("is_pid")
-    static function isPid(term: Dynamic): Bool;
+    static function isPid(term: Term): Bool;
     
     @:native("is_port")
-    static function isPort(term: Dynamic): Bool;
+    static function isPort(term: Term): Bool;
     
     @:native("is_reference")
-    static function isReference(term: Dynamic): Bool;
+    static function isReference(term: Term): Bool;
     
     @:native("is_tuple")
-    static function isTuple(term: Dynamic): Bool;
+    static function isTuple(term: Term): Bool;
     
     // Type conversion
     @:native("to_string")
-    static function toString(term: Dynamic): String;
+    static function toString(term: Term): String;
     
     @:native("to_charlist")
-    static function toCharlist(term: Dynamic): Array<Int>;
+    static function toCharlist(term: Term): Array<Int>;
     
     // Tuple operations
     @:native("elem")
-    static function elem(tuple: Dynamic, index: Int): Dynamic;
+    static function elem(tuple: Term, index: Int): Term;
     
     @:native("put_elem")
-    static function putElem(tuple: Dynamic, index: Int, value: Dynamic): Dynamic;
+    static function putElem(tuple: Term, index: Int, value: Term): Term;
     
     @:native("tuple_size")
-    static function tupleSize(tuple: Dynamic): Int;
+    static function tupleSize(tuple: Term): Int;
     
     // List operations
     @:native("hd")
-    static function head(list: Array<Dynamic>): Dynamic;
+    static function head(list: Array<Term>): Term;
     
     @:native("tl")
-    static function tail(list: Array<Dynamic>): Array<Dynamic>;
+    static function tail(list: Array<Term>): Array<Term>;
     
     @:native("length")
-    static function length(list: Array<Dynamic>): Int;
+    static function length(list: Array<Term>): Int;
     
     // Map operations
     @:native("map_size")
-    static function mapSize(map: Map<Dynamic, Dynamic>): Int;
+    static function mapSize(map: Term): Int;
     
     // Binary operations
     @:native("binary_part")
     static function binaryPart(binary: String, start: Int, length: Int): String;
     
     @:native("bit_size")
-    static function bitSize(bitstring: Dynamic): Int;
+    static function bitSize(bitstring: Term): Int;
     
     @:native("byte_size")
     static function byteSize(binary: String): Int;
     
     // Process operations
     @:native("self")
-    static function self(): Dynamic; // Returns current process PID
+    static function self(): Term; // Returns current process PID
     
     @:native("send")
-    static function send(dest: Dynamic, message: Dynamic): Dynamic;
+    static function send(dest: Term, message: Term): Term;
     
     @:native("spawn")
-    static function spawn(func: Void -> Void): Dynamic; // Returns PID
+    static function spawn(func: Void -> Void): Term; // Returns PID
     
     @:native("spawn")
-    static function spawnModule(module: Dynamic, func: String, args: Array<Dynamic>): Dynamic;
+    static function spawnModule(module: Term, func: String, args: Array<Term>): Term;
     
     @:native("spawn_link")
-    static function spawnLink(func: Void -> Void): Dynamic;
+    static function spawnLink(func: Void -> Void): Term;
     
     @:native("spawn_monitor")
-    static function spawnMonitor(func: Void -> Void): {_0: Dynamic, _1: Dynamic}; // {pid, ref}
+    static function spawnMonitor(func: Void -> Void): {_0: Term, _1: Term}; // {pid, ref}
     
     // Exception handling
     @:native("raise")
     static function raise(message: String): Void;
     
     @:native("raise")
-    static function raiseException(exception: Dynamic, attributes: Array<Dynamic>): Void;
+    static function raiseException(exception: Term, attributes: Array<Term>): Void;
     
     @:native("throw")
-    static function throwValue(value: Dynamic): Void;
+    static function throwValue(value: Term): Void;
     
     @:native("exit")
-    static function exit(reason: Dynamic): Void;
+    static function exit(reason: Term): Void;
     
     // Inspection and debugging
     @:native("inspect")
-    static function inspect(term: Dynamic, ?options: Map<String, Dynamic>): String;
+    static function inspect(term: Term, ?options: Map<String, Term>): String;
     
     @:native("dbg")
-    static function dbg(value: Dynamic): Dynamic; // Debug helper (Elixir 1.14+)
+    static function dbg(value: Term): Term; // Debug helper (Elixir 1.14+)
     
     // Module operations
     @:native("apply")
-    static function apply(module: Dynamic, funName: String, args: Array<Dynamic>): Dynamic;
+    static function apply(module: Term, funName: String, args: Array<Term>): Term;
     
     @:native("function_exported?")
-    static function functionExported(module: Dynamic, funName: String, arity: Int): Bool;
+    static function functionExported(module: Term, funName: String, arity: Int): Bool;
     
     @:native("macro_exported?")
-    static function macroExported(module: Dynamic, macroName: String, arity: Int): Bool;
+    static function macroExported(module: Term, macroName: String, arity: Int): Bool;
     
     // Math functions
     @:native("abs")
@@ -222,46 +224,46 @@ extern class Kernel {
     static function trunc(number: Float): Int;
     
     @:native("max")
-    static function max(a: Dynamic, b: Dynamic): Dynamic;
+    static function max(a: Term, b: Term): Term;
     
     @:native("min")
-    static function min(a: Dynamic, b: Dynamic): Dynamic;
+    static function min(a: Term, b: Term): Term;
     
     // Node operations
     @:native("node")
-    static function node(): Dynamic; // Current node
+    static function node(): Term; // Current node
     
     @:native("node")
-    static function nodeOf(pid: Dynamic): Dynamic; // Node of a PID
+    static function nodeOf(pid: Term): Term; // Node of a PID
     
     // Utility functions
     @:native("binding")
-    static function binding(): Array<{_0: Dynamic, _1: Dynamic}>; // Current variable bindings
+    static function binding(): Array<{_0: Term, _1: Term}>; // Current variable bindings
     
     @:native("get_in")
-    static function getIn(data: Dynamic, keys: Array<Dynamic>): Dynamic;
+    static function getIn(data: Term, keys: Array<Term>): Term;
     
     @:native("put_in")
-    static function putIn(data: Dynamic, keys: Array<Dynamic>, value: Dynamic): Dynamic;
+    static function putIn(data: Term, keys: Array<Term>, value: Term): Term;
     
     @:native("pop_in")
-    static function popIn(data: Dynamic, keys: Array<Dynamic>): {_0: Dynamic, _1: Dynamic};
+    static function popIn(data: Term, keys: Array<Term>): {_0: Term, _1: Term};
     
     @:native("update_in")
-    static function updateIn(data: Dynamic, keys: Array<Dynamic>, func: Dynamic -> Dynamic): Dynamic;
+    static function updateIn(data: Term, keys: Array<Term>, func: Term -> Term): Term;
     
     @:native("struct")
-    static function struct(module: Dynamic, ?fields: Map<String, Dynamic>): Dynamic;
+    static function struct(module: Term, ?fields: Map<String, Term>): Term;
     
     @:native("struct!")
-    static function structBang(module: Dynamic, fields: Map<String, Dynamic>): Dynamic;
+    static function structBang(module: Term, fields: Map<String, Term>): Term;
     
     // Range operations
     @:native("Range.new")
-    static function range(first: Int, last: Int): Dynamic;
+    static function range(first: Int, last: Int): Term;
     
     @:native("Range.new")
-    static function rangeWithStep(first: Int, last: Int, step: Int): Dynamic;
+    static function rangeWithStep(first: Int, last: Int, step: Int): Term;
     
     // Helper functions for common operations
     public static inline function require(condition: Bool, message: String): Void {
@@ -270,7 +272,7 @@ extern class Kernel {
         }
     }
     
-    public static inline function ensure(value: Dynamic, message: String): Dynamic {
+    public static inline function ensure(value: Term, message: String): Term {
         if (isNil(value)) {
             raise(message);
         }
@@ -286,7 +288,7 @@ extern class Kernel {
         return func(value);
     }
     
-    public static inline function typeOf(value: Dynamic): String {
+    public static inline function typeOf(value: Term): String {
         if (isNil(value)) return "nil";
         if (isAtom(value)) return "atom";
         if (isBinary(value)) return "binary";

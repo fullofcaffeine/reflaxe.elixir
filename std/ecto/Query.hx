@@ -4,6 +4,7 @@ package ecto;
 
 import haxe.functional.Result;
 // Note: Avoid depending on compiler-time NameUtils at runtime; use Elixir's Macro.underscore
+import elixir.types.Term;
 
 /**
  * Type-safe Ecto Query API for Haxe→Elixir
@@ -38,8 +39,8 @@ import haxe.functional.Result;
  * Represents an Ecto query with type information.
  * This is an opaque type that wraps the actual Elixir query struct.
  */
-abstract EctoQuery<T>(Dynamic) {
-    public inline function new(query: Dynamic) {
+abstract EctoQuery<T>(Term) {
+    public inline function new(query: Term) {
         this = query;
     }
     
@@ -64,7 +65,7 @@ abstract EctoQuery<T>(Dynamic) {
      * @param associations The associations to preload
      * @return The query with preload added
      */
-    extern inline public function preload(associations: Dynamic): EctoQuery<T> {
+    extern inline public function preload(associations: Term): EctoQuery<T> {
         return new EctoQuery<T>(untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.preload({0}, ^{1}))',
             this, associations
@@ -115,7 +116,7 @@ abstract EctoQuery<T>(Dynamic) {
      * Used internally when passing to Repo functions
      */
     @:allow(ecto)
-    extern inline public function toElixirQuery(): Dynamic {
+    extern inline public function toElixirQuery(): Term {
         return this;
     }
 }
@@ -123,7 +124,7 @@ abstract EctoQuery<T>(Dynamic) {
 /**
  * Internal implementation type for the Elixir query struct
  */
-private typedef EctoQueryImpl = Dynamic;
+private typedef EctoQueryImpl = Term;
 
 /**
  * Main Query module with factory methods for creating queries
@@ -147,7 +148,7 @@ class Query {
      * @param conditions Map of field names to values
      * @return The query with where conditions added
      */
-    extern inline public static function whereAll<T>(query: EctoQuery<T>, conditions: Map<String, Dynamic>): EctoQuery<T> {
+    extern inline public static function whereAll<T>(query: EctoQuery<T>, conditions: Map<String, Term>): EctoQuery<T> {
         // Use Enum.reduce to build up the query with field/2 function for dynamic field access
         // This is the idiomatic way to handle dynamic field names in Ecto
         var elixirQuery = untyped __elixir__(

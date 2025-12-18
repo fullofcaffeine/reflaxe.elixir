@@ -2,6 +2,8 @@ package elixir;
 
 #if (macro || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * Code module extern definitions for Elixir standard library
  * Provides type-safe interfaces for code compilation, evaluation, and module management
@@ -14,45 +16,45 @@ extern class Code {
     
     // Code evaluation
     @:native("eval_string")
-    static function evalString(string: String, ?binding: Array<{_0: Dynamic, _1: Dynamic}>): {_0: Dynamic, _1: Array<{_0: Dynamic, _1: Dynamic}>}; // {result, binding}
+    static function evalString(string: String, ?binding: Array<{_0: Term, _1: Term}>): {_0: Term, _1: Array<{_0: Term, _1: Term}>}; // {result, binding}
     
     @:native("eval_string")
-    static function evalStringWithOpts(string: String, binding: Array<{_0: Dynamic, _1: Dynamic}>, opts: CodeEvalOptions): {_0: Dynamic, _1: Array<{_0: Dynamic, _1: Dynamic}>};
+    static function evalStringWithOpts(string: String, binding: Array<{_0: Term, _1: Term}>, opts: CodeEvalOptions): {_0: Term, _1: Array<{_0: Term, _1: Term}>};
     
     @:native("eval_file")
-    static function evalFile(file: String, ?relativeTo: String): {_0: Dynamic, _1: Array<{_0: Dynamic, _1: Dynamic}>};
+    static function evalFile(file: String, ?relativeTo: String): {_0: Term, _1: Array<{_0: Term, _1: Term}>};
     
     @:native("eval_quoted")
-    static function evalQuoted(quoted: Dynamic, ?binding: Array<{_0: Dynamic, _1: Dynamic}>): {_0: Dynamic, _1: Array<{_0: Dynamic, _1: Dynamic}>};
+    static function evalQuoted(quoted: Term, ?binding: Array<{_0: Term, _1: Term}>): {_0: Term, _1: Array<{_0: Term, _1: Term}>};
     
     // Code compilation
     @:native("compile_string")
-    static function compileString(string: String, ?file: String): Array<{_0: Dynamic, _1: String}>; // [{module, binary}]
+    static function compileString(string: String, ?file: String): Array<{_0: Term, _1: String}>; // [{module, binary}]
     
     @:native("compile_file")
-    static function compileFile(file: String, ?destDir: String): Array<{_0: Dynamic, _1: String}>;
+    static function compileFile(file: String, ?destDir: String): Array<{_0: Term, _1: String}>;
     
     @:native("compile_quoted")
-    static function compileQuoted(quoted: Dynamic): Array<{_0: Dynamic, _1: String}>;
+    static function compileQuoted(quoted: Term): Array<{_0: Term, _1: String}>;
     
     @:native("string_to_quoted")
-    static function stringToQuoted(string: String): {_0: String, _1: Dynamic}; // {:ok, quoted} | {:error, reason}
+    static function stringToQuoted(string: String): {_0: String, _1: Term}; // {:ok, quoted} | {:error, reason}
     
     @:native("string_to_quoted!")
-    static function stringToQuotedBang(string: String): Dynamic; // Returns quoted or raises
+    static function stringToQuotedBang(string: String): Term; // Returns quoted or raises
     
     @:native("string_to_quoted")
-    static function stringToQuotedWithOpts(string: String, opts: CodeParseOptions): {_0: String, _1: Dynamic};
+    static function stringToQuotedWithOpts(string: String, opts: CodeParseOptions): {_0: String, _1: Term};
     
     @:native("quoted_to_algebra")
-    static function quotedToAlgebra(quoted: Dynamic, ?opts: CodeFormatOptions): Dynamic; // Returns document algebra
+    static function quotedToAlgebra(quoted: Term, ?opts: CodeFormatOptions): Term; // Returns document algebra
     
     // Code loading
     @:native("require_file")
-    static function requireFile(file: String, ?relativeTo: String): Array<Dynamic>; // List of loaded modules
+    static function requireFile(file: String, ?relativeTo: String): Array<Term>; // List of loaded modules
     
     @:native("load_file")
-    static function loadFile(file: String, ?relativeTo: String): Array<{_0: Dynamic, _1: String}>;
+    static function loadFile(file: String, ?relativeTo: String): Array<{_0: Term, _1: String}>;
     
     @:native("unload_files")
     static function unloadFiles(files: Array<String>): Void;
@@ -74,43 +76,43 @@ extern class Code {
     static function setPath(paths: Array<String>): Array<String>; // Set code load paths
     
     @:native("compiler_options")
-    static function compilerOptions(): Map<String, Dynamic>; // Get compiler options
+    static function compilerOptions(): Map<String, Term>; // Get compiler options
     
     @:native("compiler_options")
-    static function setCompilerOptions(opts: Map<String, Dynamic>): Map<String, Dynamic>;
+    static function setCompilerOptions(opts: Map<String, Term>): Map<String, Term>;
     
     // Module operations
     @:native("ensure_loaded")
-    static function ensureLoaded(module: Dynamic): {_0: String, _1: Dynamic}; // {:module, module} | {:error, reason}
+    static function ensureLoaded(module: Term): {_0: String, _1: Term}; // {:module, module} | {:error, reason}
     
     @:native("ensure_loaded?")
-    static function isEnsureLoaded(module: Dynamic): Bool;
+    static function isEnsureLoaded(module: Term): Bool;
     
     @:native("ensure_compiled")
-    static function ensureCompiled(module: Dynamic): {_0: String, _1: Dynamic}; // {:module, module} | {:error, reason}
+    static function ensureCompiled(module: Term): {_0: String, _1: Term}; // {:module, module} | {:error, reason}
     
     @:native("ensure_compiled!")
-    static function ensureCompiledBang(module: Dynamic): Dynamic; // Returns module or raises
+    static function ensureCompiledBang(module: Term): Term; // Returns module or raises
     
     @:native("ensure_all_loaded")
-    static function ensureAllLoaded(modules: Array<Dynamic>): String; // :ok | raises
+    static function ensureAllLoaded(modules: Array<Term>): Term; // :ok | raises
     
     // Module availability
     @:native("loaded?")
-    static function isLoaded(module: Dynamic): Bool;
+    static function isLoaded(module: Term): Bool;
     
     @:native("available?")
-    static function isAvailable(module: Dynamic): Bool;
+    static function isAvailable(module: Term): Bool;
     
     @:native("module?")
-    static function isModule(module: Dynamic): Bool;
+    static function isModule(module: Term): Bool;
     
     // Module information
     @:native("fetch_docs")
-    static function fetchDocs(module: Dynamic): {_0: String, _1: Dynamic}; // {:docs_v1, ...} | {:error, reason}
+    static function fetchDocs(module: Term): {_0: String, _1: Term}; // {:docs_v1, ...} | {:error, reason}
     
     @:native("get_docs")
-    static function getDocs(module: Dynamic, kind: String): Null<Dynamic>; // :all, :moduledoc, :docs, :callback_docs, :type_docs
+    static function getDocs(module: Term, kind: String): Null<Term>; // :all, :moduledoc, :docs, :callback_docs, :type_docs
     
     // Formatting
     @:native("format_string!")
@@ -121,19 +123,19 @@ extern class Code {
     
     // Cursor information
     @:native("cursor_context")
-    static function cursorContext(string: String, ?opts: CursorOptions): Dynamic;
+    static function cursorContext(string: String, ?opts: CursorOptions): Term;
     
     @:native("fragment")
-    static function fragment(string: String, ?opts: FragmentOptions): {_0: String, _1: Dynamic};
+    static function fragment(string: String, ?opts: FragmentOptions): {_0: String, _1: Term};
     
     // Helper functions for common operations
-    public static inline function eval(code: String): Dynamic {
+    public static inline function eval(code: String): Term {
         var result = evalString(code);
         return result._0;
     }
     
-    public static inline function evalWithBinding(code: String, vars: Map<String, Dynamic>): Dynamic {
-        var binding: Array<{_0: Dynamic, _1: Dynamic}> = [];
+    public static inline function evalWithBinding(code: String, vars: Map<String, Term>): Term {
+        var binding: Array<{_0: Term, _1: Term}> = [];
         for (key in vars.keys()) {
             binding.push({_0: untyped __elixir__(':{0}', key), _1: vars.get(key)});
         }
@@ -145,20 +147,20 @@ extern class Code {
         try {
             requireFile(file);
             return true;
-        } catch (e: Dynamic) {
+        } catch (_: haxe.Exception) {
             return false;
         }
     }
     
-    public static inline function safeEval(code: String): Null<Dynamic> {
+    public static inline function safeEval(code: String): Null<Term> {
         try {
             return eval(code);
-        } catch (e: Dynamic) {
+        } catch (_: haxe.Exception) {
             return null;
         }
     }
     
-    public static inline function parseCode(code: String): Null<Dynamic> {
+    public static inline function parseCode(code: String): Null<Term> {
         var result = stringToQuoted(code);
         return result._0 == "ok" ? result._1 : null;
     }
@@ -166,7 +168,7 @@ extern class Code {
     public static inline function format(code: String): String {
         try {
             return formatStringBang(code);
-        } catch (e: Dynamic) {
+        } catch (_: haxe.Exception) {
             return code; // Return original if formatting fails
         }
     }
@@ -183,9 +185,9 @@ extern class Code {
 typedef CodeEvalOptions = {
     ?file: String,
     ?line: Int,
-    ?tracers: Array<Dynamic>,
+    ?tracers: Array<Term>,
     ?localTracking: Bool,
-    ?parserOptions: Array<Dynamic>
+    ?parserOptions: Array<Term>
 }
 
 /**
@@ -197,8 +199,8 @@ typedef CodeParseOptions = {
     ?column: Int,
     ?columns: Bool,
     ?tokenMetadata: Bool,
-    ?literalEncoder: Dynamic -> Dynamic,
-    ?quotedGenerator: Dynamic -> Dynamic,
+    ?literalEncoder: Term -> Term,
+    ?quotedGenerator: Term -> Term,
     ?unescape: Bool,
     ?warnOnUnusedAlias: Bool
 }
@@ -209,7 +211,7 @@ typedef CodeParseOptions = {
 typedef CodeFormatOptions = {
     ?file: String,
     ?lineLength: Int,
-    ?localWithoutParens: Array<Dynamic>,
+    ?localWithoutParens: Array<Term>,
     ?forceDoEndBlocks: Bool,
     ?normalizeCompilerMetadata: Bool
 }

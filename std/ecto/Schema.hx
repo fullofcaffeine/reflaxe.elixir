@@ -2,6 +2,8 @@ package ecto;
 
 #if (elixir || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * Base class for Ecto schemas following Phoenix patterns exactly
  * 
@@ -35,7 +37,7 @@ package ecto;
  *     public var user: User;
  *     
  *     @:changeset
- *     public static function changeset(todo: Todo, params: Dynamic): Changeset<Todo, Dynamic> {
+ *     public static function changeset(todo: Todo, params: Term): Changeset<Todo, Term> {
  *         return new Changeset(todo, params)
  *             .validateRequired(["title", "userId"])
  *             .validateLength("title", {min: 3, max: 200});
@@ -90,7 +92,7 @@ class Schema {
      * @:field public var title: String;
      * ```
      */
-    static public var field: Dynamic;
+    static public var field: Term;
     
     /**
      * Define a belongs_to association
@@ -101,7 +103,7 @@ class Schema {
      * public var user: User;
      * ```
      */
-    static public var belongs_to: Dynamic;
+    static public var belongs_to: Term;
     
     /**
      * Define a has_many association
@@ -112,7 +114,7 @@ class Schema {
      * public var posts: Array<Post>;
      * ```
      */
-    static public var has_many: Dynamic;
+    static public var has_many: Term;
     
     /**
      * Define a has_one association
@@ -123,7 +125,7 @@ class Schema {
      * public var profile: Profile;
      * ```
      */
-    static public var has_one: Dynamic;
+    static public var has_one: Term;
     
     /**
      * Mark a function as a changeset generator
@@ -181,7 +183,7 @@ class Schema {
      * 
      * @see docs/03-compiler-development/preserving-functions-through-dce.md For DCE details
      */
-    static public var changeset: Dynamic;
+    static public var changeset: Term;
 }
 
 /**

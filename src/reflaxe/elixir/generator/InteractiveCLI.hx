@@ -232,7 +232,7 @@ class InteractiveCLI {
 		try {
 			task();
 			Sys.println("✓");
-		} catch (e: Dynamic) {
+		} catch (e: haxe.Exception) {
 			Sys.println("✗");
 			throw e;
 		}

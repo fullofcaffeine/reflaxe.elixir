@@ -2,6 +2,8 @@ package elixir;
 
 #if (macro || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * IO module extern definitions for Elixir standard library
  * Provides type-safe interfaces for input/output operations
@@ -14,71 +16,71 @@ extern class IO {
     
     // Output operations
     @:native("IO.puts")
-    public static function puts(item: Dynamic): String; // Returns :ok
+    public static function puts(item: Term): Term; // Returns :ok
     
     @:native("IO.puts")
-    public static function putsTo(device: Dynamic, item: Dynamic): String; // Output to specific device
+    public static function putsTo(device: Term, item: Term): Term; // Output to specific device
     
     @:native("IO.write")
-    public static function write(item: Dynamic): String; // Write without newline
+    public static function write(item: Term): Term; // Write without newline
     
     @:native("IO.write")
-    public static function writeTo(device: Dynamic, item: Dynamic): String;
+    public static function writeTo(device: Term, item: Term): Term;
     
     @:native("IO.inspect")
     public static function inspect<T>(item: T): T; // Inspect and return the item
     
     @:native("IO.inspect")
-    public static function inspectTo<T>(device: Dynamic, item: T): T;
+    public static function inspectTo<T>(device: Term, item: T): T;
     
     @:native("IO.inspect")
-    public static function inspectWithOptions<T>(item: T, options: Map<String, Dynamic>): T;
+    public static function inspectWithOptions<T>(item: T, options: Map<String, Term>): T;
     
     @:native("IO.inspect")
-    public static function inspectToWithOptions<T>(device: Dynamic, item: T, options: Map<String, Dynamic>): T;
+    public static function inspectToWithOptions<T>(device: Term, item: T, options: Map<String, Term>): T;
     
     // Input operations
     @:native("IO.gets")
     public static function gets(prompt: String): Null<String>; // Read line with prompt
     
     @:native("IO.gets")
-    public static function getsFrom(device: Dynamic, prompt: String): Null<String>;
+    public static function getsFrom(device: Term, prompt: String): Null<String>;
     
     @:native("IO.read")
     public static function read(count: Int): Null<String>; // Read specific number of characters
     
     @:native("IO.read")
-    public static function readFrom(device: Dynamic, count: Int): Null<String>;
+    public static function readFrom(device: Term, count: Int): Null<String>;
     
     @:native("IO.read")
     public static function readLine(): Null<String>; // Read single line
     
     @:native("IO.read")
-    public static function readLineFrom(device: Dynamic): Null<String>;
+    public static function readLineFrom(device: Term): Null<String>;
     
     // Data formatting
     @:native("IO.iodata_length")
-    public static function iodataLength(iodata: Dynamic): Int; // Get iodata byte length
+    public static function iodataLength(iodata: Term): Int; // Get iodata byte length
     
     @:native("IO.iodata_to_binary")
-    public static function iodataToBinary(iodata: Dynamic): String; // Convert iodata to binary
+    public static function iodataToBinary(iodata: Term): String; // Convert iodata to binary
     
     @:native("IO.chardata_to_string")
-    public static function chardataToString(chardata: Dynamic): String; // Convert chardata to string
+    public static function chardataToString(chardata: Term): String; // Convert chardata to string
     
     // Stream operations
     @:native("IO.stream")
-    public static function stream(device: Dynamic, lineOrBytes: Dynamic): Dynamic; // Create IO stream
+    public static function stream(device: Term, lineOrBytes: Term): Term; // Create IO stream
     
     @:native("IO.binstream")
-    public static function binstream(device: Dynamic, lineOrBytes: Dynamic): Dynamic; // Create binary IO stream
+    public static function binstream(device: Term, lineOrBytes: Term): Term; // Create binary IO stream
     
     // ANSI and formatting
     @:native("IO.ANSI.format")
-    public static function ansiFormat(ansidata: Array<Dynamic>): String; // Format ANSI codes
+    public static function ansiFormat(ansidata: Array<Term>): String; // Format ANSI codes
     
     @:native("IO.ANSI.format")
-    public static function ansiFormatWithOptions(ansidata: Array<Dynamic>, options: Map<String, Dynamic>): String;
+    public static function ansiFormatWithOptions(ansidata: Array<Term>, options: Map<String, Term>): String;
     
     // Common ANSI colors and styles
     @:native("IO.ANSI.reset")
@@ -134,23 +136,23 @@ extern class IO {
     
     // Warn operations for deprecation and warnings
     @:native("IO.warn")
-    public static function warn(message: String): String; // Print warning
+    public static function warn(message: String): Term; // Print warning
     
     @:native("IO.warn")
-    public static function warnWithLocation(message: String, location: Map<String, Dynamic>): String;
+    public static function warnWithLocation(message: String, location: Map<String, Term>): Term;
     
     // Device operations
     @:native("IO.getopts")
-    public static function getopts(): Map<String, Dynamic>; // Get terminal options
+    public static function getopts(): Map<String, Term>; // Get terminal options
     
     @:native("IO.getopts")
-    public static function getoptsFrom(device: Dynamic): Map<String, Dynamic>;
+    public static function getoptsFrom(device: Term): Map<String, Term>;
     
     @:native("IO.setopts")
-    public static function setopts(options: Map<String, Dynamic>): String; // Set terminal options
+    public static function setopts(options: Map<String, Term>): Term; // Set terminal options
     
     @:native("IO.setopts")
-    public static function setoptsTo(device: Dynamic, options: Map<String, Dynamic>): String;
+    public static function setoptsTo(device: Term, options: Map<String, Term>): Term;
     
     // Common devices
     public static inline var STDIO: String = "stdio";
@@ -158,11 +160,11 @@ extern class IO {
     public static inline var STDIN: String = "stdin";
     
     // Helper functions for common operations
-    public static inline function println(item: Dynamic): String {
+    public static inline function println(item: Term): Term {
         return puts(item);
     }
     
-    public static inline function print(item: Dynamic): String {
+    public static inline function print(item: Term): Term {
         return write(item);
     }
     
@@ -173,27 +175,27 @@ extern class IO {
         return inspect(item);
     }
     
-    public static inline function error(message: String): String {
+    public static inline function error(message: String): Term {
         return putsTo(STDERR, message);
     }
     
-    public static inline function coloredPrint(text: String, color: String): String {
+    public static inline function coloredPrint(text: String, color: String): Term {
         return write(color + text + ANSI_RESET);
     }
     
-    public static inline function redText(text: String): String {
+    public static inline function redText(text: String): Term {
         return coloredPrint(text, ANSI_RED);
     }
     
-    public static inline function greenText(text: String): String {
+    public static inline function greenText(text: String): Term {
         return coloredPrint(text, ANSI_GREEN);
     }
     
-    public static inline function blueText(text: String): String {
+    public static inline function blueText(text: String): Term {
         return coloredPrint(text, ANSI_BLUE);
     }
     
-    public static inline function yellowText(text: String): String {
+    public static inline function yellowText(text: String): Term {
         return coloredPrint(text, ANSI_YELLOW);
     }
     

@@ -2,6 +2,7 @@ package elixir.otp;
 
 import elixir.otp.Supervisor.ChildSpecFormat;
 import elixir.otp.Supervisor.ChildSpec;
+import elixir.types.Term;
 
 /**
  * Type-safe child specifications for OTP supervisors
@@ -53,7 +54,7 @@ class TypeSafeChildSpec {
      * @param config Optional configuration as keyword list
      * @return Child spec for the repository
      */
-    public static inline function repo(module: String, ?config: Array<{key: String, value: Dynamic}>): ChildSpecFormat {
+    public static inline function repo(module: String, ?config: Array<{key: String, value: Term}>): ChildSpecFormat {
         if (config != null) {
             return ModuleWithConfig(module, config);
         } else {
@@ -89,7 +90,7 @@ class TypeSafeChildSpec {
      * @param args Arguments to pass to start_link
      * @return Child spec for the worker
      */
-    public static inline function worker(module: String, ?args: Array<Dynamic>): ChildSpecFormat {
+    public static inline function worker(module: String, ?args: Array<Term>): ChildSpecFormat {
         if (args != null && args.length > 0) {
             return ModuleWithArgs(module, args);
         } else {
@@ -105,7 +106,7 @@ class TypeSafeChildSpec {
      * @param opts Additional options for full spec
      * @return Child spec for the supervisor
      */
-    public static inline function supervisor(module: String, ?args: Array<Dynamic>, ?opts: ChildSpec): ChildSpecFormat {
+    public static inline function supervisor(module: String, ?args: Array<Term>, ?opts: ChildSpec): ChildSpecFormat {
         if (opts != null) {
             // Use full spec with provided options
             var spec = opts;
@@ -137,7 +138,7 @@ class TypeSafeChildSpec {
      * @param opts Registry options as keyword list
      * @return Child spec for Registry
      */
-    public static inline function registry(name: String, ?opts: Array<{key: String, value: Dynamic}>): ChildSpecFormat {
+    public static inline function registry(name: String, ?opts: Array<{key: String, value: Term}>): ChildSpecFormat {
         var config = [{key: "name", value: name}];
         if (opts != null) {
             config = config.concat(opts);
@@ -162,7 +163,7 @@ class TypeSafeChildSpec {
      * @param args Arguments for start_link
      * @return Simple module-based child spec
      */
-    public static inline function simple(module: String, ?args: Array<Dynamic>): ChildSpecFormat {
+    public static inline function simple(module: String, ?args: Array<Term>): ChildSpecFormat {
         if (args != null && args.length > 0) {
             return ModuleWithArgs(module, args);
         } else {

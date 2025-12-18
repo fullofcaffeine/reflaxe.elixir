@@ -121,7 +121,7 @@ class TupleResult {
     
     public static inline function unwrap<T>(result: {_0: String, _1: T}): T {
         if (result._0 != "ok") {
-            throw 'Expected ok tuple, got ${result._0}';
+            throw new haxe.Exception('Expected ok tuple, got ${result._0}');
         }
         return result._1;
     }
@@ -130,16 +130,16 @@ class TupleResult {
         return result._0 == "ok" ? result._1 : defaultValue;
     }
     
-    public static inline function mapOk<T, R>(result: {_0: String, _1: T}, fn: T -> R): {_0: String, _1: Dynamic} {
+    public static inline function mapOk<T, R>(result: {_0: String, _1: T}, fn: T -> R): {_0: String, _1: Term} {
         if (result._0 == "ok") {
-            return {_0: "ok", _1: fn(result._1)};
+            return {_0: "ok", _1: cast fn(result._1)};
         }
         return cast result;
     }
     
-    public static inline function mapError<T, E, R>(result: {_0: String, _1: T}, fn: T -> R): {_0: String, _1: Dynamic} {
+    public static inline function mapError<T, E, R>(result: {_0: String, _1: T}, fn: T -> R): {_0: String, _1: Term} {
         if (result._0 == "error") {
-            return {_0: "error", _1: fn(result._1)};
+            return {_0: "error", _1: cast fn(result._1)};
         }
         return cast result;
     }

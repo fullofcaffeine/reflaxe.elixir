@@ -140,7 +140,7 @@ class FormComponents {
 
 // Type definitions
 typedef FormAssigns = {
-    changeset: Dynamic
+    changeset: ecto.Changeset<elixir.types.Term, elixir.types.Term>
 }
 
 typedef SearchAssigns = {

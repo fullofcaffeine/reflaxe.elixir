@@ -3,10 +3,11 @@ package elixir;
 import elixir.types.Pid;
 import elixir.types.Reference;
 import elixir.types.ProcessInfo;
-import elixir.types.ExitReason;
 import elixir.types.ProcessFlag;
 import elixir.types.Priority;
 import elixir.types.MessageQueueData;
+import elixir.types.Term;
+import elixir.types.Atom;
 
 #if (macro || reflaxe_runtime)
 
@@ -24,7 +25,7 @@ extern class Process {
     public static function self(): Pid;
     
     @:native("Process.whereis")
-    public static function whereis(name: String): Null<Pid>;
+    public static function whereis(name: Atom): Null<Pid>;
     
     @:native("Process.pid_from_string")
     public static function pidFromString(string: String): Pid;
@@ -34,26 +35,26 @@ extern class Process {
     public static function spawn(func: Void -> Void): Pid;
     
     @:native("Process.spawn")
-    public static function spawnModule(module: String, func: String, args: Array<Dynamic>): Pid;
+    public static function spawnModule(module: String, func: String, args: Array<Term>): Pid;
     
     @:native("Process.spawn_link")
     public static function spawnLink(func: Void -> Void): Pid;
     
     @:native("Process.spawn_link")
-    public static function spawnLinkModule(module: String, func: String, args: Array<Dynamic>): Pid;
+    public static function spawnLinkModule(module: String, func: String, args: Array<Term>): Pid;
     
     @:native("Process.spawn_monitor") 
     public static function spawnMonitor(func: Void -> Void): {pid: Pid, ref: Reference};
     
     @:native("Process.spawn_monitor")
-    public static function spawnMonitorModule(module: String, func: String, args: Array<Dynamic>): {pid: Pid, ref: Reference};
+    public static function spawnMonitorModule(module: String, func: String, args: Array<Term>): {pid: Pid, ref: Reference};
     
     // Process lifecycle
     @:native("Process.exit")
-    public static function exit(pid: Pid, reason: ExitReason): Bool;
+    public static function exit(pid: Pid, reason: Term): Bool;
     
     @:native("Process.kill")
-    public static function kill(pid: Pid, reason: ExitReason): Bool;
+    public static function kill(pid: Pid, reason: Term): Bool;
     
     @:native("Process.alive?")
     public static function alive(pid: Pid): Bool;
@@ -76,33 +77,34 @@ extern class Process {
     
     // Process communication
     @:native("Process.send")
-    public static function send(dest: Pid, message: Dynamic): Dynamic;
+    public static function send(dest: Pid, message: Term): Term;
     
     @:native("Process.send")
-    public static function sendToName(dest: String, message: Dynamic): Dynamic;
+    @:overload(function(dest: Atom, message: Term): Term {})
+    public static function sendToName(dest: String, message: Term): Term;
     
     @:native("Process.send")
-    public static function sendWithOptions(dest: Pid, message: Dynamic, options: Array<String>): Dynamic;
+    public static function sendWithOptions(dest: Pid, message: Term, options: Array<String>): Term;
     
     @:native("Process.send_after")
-    public static function sendAfter(dest: Pid, message: Dynamic, time: Int): Reference;
+    public static function sendAfter(dest: Pid, message: Term, time: Int): Reference;
     
     // Process registration
     @:native("Process.register")
-    public static function register(pid: Pid, name: String): Bool;
+    public static function register(pid: Pid, name: Atom): Bool;
     
     @:native("Process.unregister")
-    public static function unregister(name: String): Bool;
+    public static function unregister(name: Atom): Bool;
     
     @:native("Process.registered")
-    public static function registered(): Array<String>; // List all registered names
+    public static function registered(): Array<Atom>; // List all registered names
     
     // Process information
     @:native("Process.info")
     public static function info(pid: Pid): Null<ProcessInfo>; // Process info map
     
     @:native("Process.info")
-    public static function infoKey(pid: Pid, key: String): Null<Dynamic>; // Specific info key
+    public static function infoKey(pid: Pid, key: String): Null<Term>; // Specific info key
     
     @:native("Process.info")
     public static function infoKeys(pid: Pid, keys: Array<String>): Null<ProcessInfo>;
@@ -139,11 +141,11 @@ extern class Process {
     
     // Process sleeping and timing
     @:native("Process.sleep")
-    public static function sleep(timeout: Int): String; // Returns :ok
+    public static function sleep(timeout: Int): Term; // Returns :ok
     
     // Process hibernation
     @:native("Process.hibernate")
-    public static function hibernate(module: String, func: String, args: Array<Dynamic>): Void;
+    public static function hibernate(module: String, func: String, args: Array<Term>): Void;
     
     // Process cancellation
     @:native("Process.cancel_timer")

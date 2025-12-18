@@ -3,6 +3,9 @@ package elixir.types;
 import elixir.types.Pid;
 import elixir.types.ProcessDictionary;
 import elixir.types.MonitorInfo;
+import elixir.types.Atom;
+import elixir.types.Term;
+import elixir.types.Priority;
 
 /**
  * Type-safe representation of process information
@@ -11,7 +14,7 @@ import elixir.types.MonitorInfo;
  * with properly typed fields for common process attributes.
  * 
  * The generic parameter T allows you to specify the message type if known,
- * otherwise defaults to Dynamic for flexibility.
+ * otherwise defaults to Term for flexibility.
  * 
  * Usage:
  * ```haxe
@@ -19,15 +22,15 @@ import elixir.types.MonitorInfo;
  * trace('Memory usage: ${info.memory}');
  * trace('Message queue: ${info.message_queue_len}');
  * 
- * // Or use with Dynamic for unknown message types:
- * var info: ProcessInfo<Dynamic> = Process.info(pid);
+ * // Or use with Term for unknown message types:
+ * var info: ProcessInfo<Term> = Process.info(pid);
  * ```
  */
-typedef ProcessInfo<T = Dynamic> = {
+typedef ProcessInfo<T = Term> = {
     /**
      * Current function being executed
      */
-    ?current_function: {module: String, func: String, arity: Int},
+    ?current_function: {module: Atom, func: Atom, arity: Int},
     
     /**
      * Dictionary/process dictionary
@@ -37,7 +40,7 @@ typedef ProcessInfo<T = Dynamic> = {
     /**
      * Error handler module
      */
-    ?error_handler: String,
+    ?error_handler: Atom,
     
     /**
      * Process group leader
@@ -52,7 +55,7 @@ typedef ProcessInfo<T = Dynamic> = {
     /**
      * Initial function that started the process
      */
-    ?initial_call: {module: String, func: String, arity: Int},
+    ?initial_call: {module: Atom, func: Atom, arity: Int},
     
     /**
      * Links to other processes
@@ -97,7 +100,7 @@ typedef ProcessInfo<T = Dynamic> = {
     /**
      * Priority level (low, normal, high, max)
      */
-    ?priority: String,
+    ?priority: Priority,
     
     /**
      * Number of reductions executed
@@ -107,7 +110,7 @@ typedef ProcessInfo<T = Dynamic> = {
     /**
      * Registered name (if any)
      */
-    ?registered_name: String,
+    ?registered_name: Atom,
     
     /**
      * Stack size in words

@@ -1,5 +1,7 @@
 package elixir.otp;
 
+import elixir.types.Term;
+
 /**
  * Type-safe wrapper for OTP Application lifecycle functions
  * 
@@ -67,12 +69,12 @@ enum ApplicationStartType {
 /**
  * Application arguments passed to start function
  */
-abstract ApplicationArgs(Dynamic) from Dynamic to Dynamic {
-    public static function fromDynamic(value: Dynamic): ApplicationArgs {
+abstract ApplicationArgs(Term) from Term to Term {
+    public static function fromDynamic(value: Term): ApplicationArgs {
         return cast value;
     }
     
-    public function toDynamic(): Dynamic {
+    public function toDynamic(): Term {
         return this;
     }
 }
@@ -104,7 +106,7 @@ abstract ApplicationArgs(Dynamic) from Dynamic to Dynamic {
  */
 @:elixirIdiomatic
 enum ApplicationResult {
-    Ok(state: Dynamic);
+    Ok(state: Term);
     Error(reason: String);
     Ignore;
 }
@@ -117,7 +119,7 @@ class ApplicationResultTools {
      * Create a successful application start result
      */
     public static function ok<T>(state: T): ApplicationResult {
-        return Ok(state);
+        return Ok(cast state);
     }
     
     /**
@@ -143,40 +145,40 @@ extern class ApplicationExtern {
     /**
      * Start an application
      */
-    static function start(app: String, ?type: String): Dynamic;
+    static function start(app: String, ?type: String): Term;
     
     /**
      * Stop an application
      */
-    static function stop(app: String): Dynamic;
+    static function stop(app: String): Term;
     
     /**
      * Get application environment
      */
-    static function get_env(app: String, key: String, ?default_value: Dynamic): Dynamic;
+    static function get_env(app: String, key: String, ?default_value: Term): Term;
     
     /**
      * Put application environment
      */
-    static function put_env(app: String, key: String, value: Dynamic): Void;
+    static function put_env(app: String, key: String, value: Term): Void;
     
     /**
      * Get all application environment
      */
-    static function get_all_env(app: String): Dynamic;
+    static function get_all_env(app: String): Term;
     
     /**
      * Load an application
      */
-    static function load(app: String): Dynamic;
+    static function load(app: String): Term;
     
     /**
      * Ensure an application is started
      */
-    static function ensure_started(app: String, ?type: String): Dynamic;
+    static function ensure_started(app: String, ?type: String): Term;
     
     /**
      * Ensure all applications are started
      */
-    static function ensure_all_started(app: String, ?type: String): Dynamic;
+    static function ensure_all_started(app: String, ?type: String): Term;
 }

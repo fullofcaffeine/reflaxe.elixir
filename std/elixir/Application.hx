@@ -1,5 +1,7 @@
 package elixir;
 
+import elixir.types.Term;
+
 /**
  * Elixir Application utilities for runtime application operations
  * 
@@ -34,7 +36,7 @@ extern class Application {
      * Example:
      * - Application.get_application(MyApp.Web.Router) → :my_app
      */
-    static function get_application(module: Dynamic): Dynamic;
+    static function get_application(module: Term): Term;
     
     /**
      * Get application environment configuration value
@@ -44,7 +46,7 @@ extern class Application {
      * @param defaultValue Default value if key not found
      * @return Configuration value or default
      */
-    static function get_env(app: Dynamic, key: Dynamic, ?defaultValue: Dynamic): Dynamic;
+    static function get_env(app: Term, key: Term, ?defaultValue: Term): Term;
     
     /**
      * Get all environment configuration for an application
@@ -52,5 +54,5 @@ extern class Application {
      * @param app Application name atom
      * @return Map of all configuration key-value pairs
      */
-    static function get_all_env(app: Dynamic): Dynamic;
+    static function get_all_env(app: Term): Term;
 }

@@ -2,6 +2,8 @@ package ecto;
 
 #if (elixir || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * Type-safe sort direction for order_by clauses
  * 
@@ -337,7 +339,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
      * // Generates: order_by: [desc: t.inserted_at, asc: t.title]
      * ```
      */
-    extern inline public function orderBy(ordering: T -> Array<{field: Dynamic, direction: SortDirection}>): TypedQuery<T> {
+    extern inline public function orderBy(ordering: T -> Array<{field: Term, direction: SortDirection}>): TypedQuery<T> {
         // Simplified orderBy without compile-time validation
         var newQuery = untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.order_by({0}, [t], {1}))',

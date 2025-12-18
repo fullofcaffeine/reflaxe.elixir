@@ -2,6 +2,8 @@ package elixir;
 
 #if (macro || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * List module extern definitions for Elixir standard library
  * Provides type-safe interfaces for List operations
@@ -26,7 +28,7 @@ extern class List {
     public static function flatten<T>(list: Array<Array<T>>): Array<T>;
     
     @:native("flatten")
-    public static function flattenDeep(list: Array<Dynamic>): Array<Dynamic>; // Deep flatten any nesting
+    public static function flattenDeep(list: Array<Term>): Array<Term>; // Deep flatten any nesting
     
     @:native("duplicate")
     public static function duplicate<T>(element: T, n: Int): Array<T>;
@@ -113,7 +115,7 @@ extern class List {
     public static function toIntegerWithBase(charlist: Array<Int>, base: Int): Int;
     
     @:native("to_tuple")
-    public static function toTuple<T>(list: Array<T>): Dynamic; // Convert to tuple (represented as Dynamic)
+    public static function toTuple<T>(list: Array<T>): Term; // Convert to tuple
     
     // Improper lists (for advanced use cases)
     @:native("improper?")  

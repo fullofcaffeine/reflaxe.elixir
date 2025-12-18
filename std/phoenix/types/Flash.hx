@@ -2,6 +2,8 @@ package phoenix.types;
 
 #if (elixir || reflaxe_runtime)
 
+import elixir.types.Atom;
+
 /**
  * Type-safe flash message system for Phoenix applications
  * 
@@ -65,7 +67,7 @@ class FlashTypeTools {
      * LiveView officially supports only :info and :error.
      * Success/Warning map to :info for compatibility.
      */
-    public static function toPhoenixKey(type: FlashType): String {
+    public static function toPhoenixKey(type: FlashType): Atom {
         return switch (type) {
             case Info: "info";
             case Success: "info";

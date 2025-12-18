@@ -3,6 +3,7 @@ package ecto;
 #if (elixir || reflaxe_runtime)
 
 import elixir.types.Result;
+import elixir.types.Term;
 import ecto.Query.EctoQuery;
 import ecto.Changeset;
 
@@ -118,7 +119,7 @@ class Repository {
      * @return Array of matching records
      */
     @:generic
-    public static function all<T>(queryable: Dynamic): Array<T> {
+    public static function all<T>(queryable: Term): Array<T> {
         return untyped __elixir__('{0}.all({1})', getSelf(), queryable);
     }
     
@@ -130,7 +131,7 @@ class Repository {
      * @return The struct or null if not found
      */
     @:generic
-    public static function get<T>(queryable: Class<T>, id: Dynamic): Null<T> {
+    public static function get<T>(queryable: Class<T>, id: Term): Null<T> {
         return untyped __elixir__('{0}.get({1}, {2})', getSelf(), queryable, id);
     }
     
@@ -143,7 +144,7 @@ class Repository {
      * @throws Ecto.NoResultsError if no record found
      */
     @:generic
-    public static function get_<T>(queryable: Class<T>, id: Dynamic): T {
+    public static function get_<T>(queryable: Class<T>, id: Term): T {
         return untyped __elixir__('{0}.get!({1}, {2})', getSelf(), queryable, id);
     }
     
@@ -177,7 +178,7 @@ class Repository {
      * @return Ok with the inserted struct or Error with the invalid changeset
      */
     @:generic
-    public static function insert<T, P>(struct_or_changeset: Dynamic): Result<T, Changeset<T, P>> {
+    public static function insert<T, P>(struct_or_changeset: Term): Result<T, Changeset<T, P>> {
         return untyped __elixir__('{0}.insert({1})', getSelf(), struct_or_changeset);
     }
     
@@ -189,7 +190,7 @@ class Repository {
      * @throws Ecto.InvalidChangesetError if changeset is invalid
      */
     @:generic
-    public static function insert_<T>(struct_or_changeset: Dynamic): T {
+    public static function insert_<T>(struct_or_changeset: Term): T {
         return untyped __elixir__('{0}.insert!({1})', getSelf(), struct_or_changeset);
     }
     
@@ -212,7 +213,7 @@ class Repository {
      * @throws Ecto.InvalidChangesetError if changeset is invalid
      */
     @:generic
-    public static function update_<T>(changeset: Dynamic): T {
+    public static function update_<T, P>(changeset: Changeset<T, P>): T {
         return untyped __elixir__('{0}.update!({1})', getSelf(), changeset);
     }
     
@@ -246,7 +247,7 @@ class Repository {
      * @return Tuple with number of deleted entries and nil
      */
     @:generic
-    public static function deleteAll<T>(queryable: Dynamic): {deleted: Int, data: Null<T>} {
+    public static function deleteAll<T>(queryable: Term): {deleted: Int, data: Null<T>} {
         return untyped __elixir__('{0}.delete_all({1})', getSelf(), queryable);
     }
     
@@ -257,7 +258,7 @@ class Repository {
      * @param updates The updates to apply
      * @return Tuple with number of updated entries and nil
      */
-    public static function updateAll(queryable: Dynamic, updates: Dynamic): {updated: Int, data: Dynamic} {
+    public static function updateAll(queryable: Term, updates: Term): {updated: Int, data: Term} {
         return untyped __elixir__('{0}.update_all({1}, {2})', getSelf(), queryable, updates);
     }
     
@@ -269,7 +270,7 @@ class Repository {
      * @return The struct(s) with preloaded associations
      */
     @:generic
-    public static function preload<T>(structs_or_struct: Dynamic, preloads: Dynamic): T {
+    public static function preload<T>(structs_or_struct: T, preloads: Term): T {
         return untyped __elixir__('{0}.preload({1}, {2})', getSelf(), structs_or_struct, preloads);
     }
     
@@ -281,7 +282,7 @@ class Repository {
      * @param field The field to aggregate (optional for :count)
      * @return The aggregate value
      */
-    public static function aggregate(queryable: Dynamic, aggregate: Dynamic, ?field: Dynamic): Dynamic {
+    public static function aggregate(queryable: Term, aggregate: Term, ?field: Term): Term {
         if (field != null) {
             return untyped __elixir__('{0}.aggregate({1}, {2}, {3})', getSelf(), queryable, aggregate, field);
         } else {
@@ -295,7 +296,7 @@ class Repository {
      * @param queryable The query
      * @return True if any entries exist
      */
-    public static function exists(queryable: Dynamic): Bool {
+    public static function exists(queryable: Term): Bool {
         return untyped __elixir__('{0}.exists?({1})', getSelf(), queryable);
     }
     
@@ -307,7 +308,7 @@ class Repository {
      * @return Ok with the function result or Error with the reason
      */
     @:generic
-    public static function transaction<T>(fun: () -> T, ?opts: Dynamic): Result<T, Dynamic> {
+    public static function transaction<T>(fun: () -> T, ?opts: Term): Result<T, Term> {
         if (opts != null) {
             return untyped __elixir__('{0}.transaction({1}, {2})', getSelf(), fun, opts);
         } else {
@@ -320,7 +321,7 @@ class Repository {
      * 
      * @param reason The rollback reason
      */
-    public static function rollback(reason: Dynamic): Void {
+    public static function rollback(reason: Term): Void {
         untyped __elixir__('{0}.rollback({1})', getSelf(), reason);
     }
     
@@ -337,7 +338,7 @@ class Repository {
 /**
  * Transaction result type
  */
-typedef TransactionResult<T> = Result<T, Dynamic>;
+typedef TransactionResult<T> = Result<T, Term>;
 
 /**
  * Aggregate operations

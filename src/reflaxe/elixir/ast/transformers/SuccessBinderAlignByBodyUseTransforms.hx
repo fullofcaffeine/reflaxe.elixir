@@ -86,8 +86,10 @@ class SuccessBinderAlignByBodyUseTransforms {
                         var okBinder = extractOkBinder(cl.pattern);
                         if (okBinder != null) {
                             // Respect canonical payload locking: keep {:ok, _value} + aliases intact
-                            var locked = false;
-                            try { locked = untyped (cl.body != null && cl.body.metadata != null && (cl.body.metadata.lockPayloadBinder == true)); } catch (e:Dynamic) {}
+                            var locked =
+                                cl.body != null
+                                && cl.body.metadata != null
+                                && (cl.body.metadata.lockPayloadBinder == true);
                             if (okBinder == "_value" || locked) { newClauses.push(cl); continue; }
                             // This pass is intentionally conservative: it should only realign binders
                             // that are clearly "hygiene artifacts" (underscored or infrastructure temps).

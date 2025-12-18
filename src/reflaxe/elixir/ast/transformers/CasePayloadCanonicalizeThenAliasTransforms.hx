@@ -123,11 +123,9 @@ class CasePayloadCanonicalizeThenAliasTransforms {
       default: makeASTWithMeta(EBlock(prefix.concat([cl.body])), cl.body.metadata, cl.body.pos);
     };
     // Mark this clause body as having a locked canonical payload binder to prevent late renamers
-    try {
-      if (newBody.metadata == null) newBody.metadata = {};
-      untyped newBody.metadata.lockPayloadBinder = true;
-      untyped newBody.metadata.canonicalPayloadValue = true;
-    } catch (e:Dynamic) {}
+    if (newBody.metadata == null) newBody.metadata = {};
+    newBody.metadata.lockPayloadBinder = true;
+    newBody.metadata.canonicalPayloadValue = true;
     return { pattern: pat2, guard: cl.guard, body: newBody };
   }
 

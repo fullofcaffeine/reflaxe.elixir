@@ -1,6 +1,8 @@
 package reflaxe.elixir.generator;
 
-import haxe.Template;
+import reflaxe.elixir.generator.TemplateContext;
+import reflaxe.elixir.generator.TemplateValue;
+import reflaxe.elixir.generator.TemplateValueTools;
 using StringTools;
 
 /**
@@ -23,15 +25,12 @@ class TemplateEngine {
 	/**
 	 * Process file content with replacements
 	 */
-	public function processContent(content: String, replacements: Dynamic): String {
+	public function processContent(content: String, replacements: TemplateContext): String {
 		// First handle conditional blocks
 		content = processConditionals(content, replacements);
 		
 		// Then handle simple placeholders
 		content = processPlaceholders(content, replacements);
-		
-		// Handle Haxe template syntax if present
-		content = processHaxeTemplates(content, replacements);
 		
 		return content;
 	}
@@ -39,7 +38,7 @@ class TemplateEngine {
 	/**
 	 * Process a single file
 	 */
-	public function processFile(inputPath: String, outputPath: String, replacements: Dynamic): Void {
+	public function processFile(inputPath: String, outputPath: String, replacements: TemplateContext): Void {
 		var content = sys.io.File.getContent(inputPath);
 		content = processContent(content, replacements);
 		sys.io.File.saveContent(outputPath, content);
@@ -48,21 +47,16 @@ class TemplateEngine {
 	/**
 	 * Replace simple placeholders like __PROJECT_NAME__ and {{PROJECT_NAME}}
 	 */
-	function processPlaceholders(content: String, replacements: Dynamic): String {
+	function processPlaceholders(content: String, replacements: TemplateContext): String {
 		// Process __PLACEHOLDER__ style
 		content = PLACEHOLDER_PATTERN.map(content, function(r) {
 			var key = r.matched(1);
-			var value = Reflect.field(replacements, key);
-			
-			if (value != null) {
-				return Std.string(value);
-			}
-			
-			// Try lowercase version
-			value = Reflect.field(replacements, key.toLowerCase());
-			if (value != null) {
-				return Std.string(value);
-			}
+			var value = replacements.get(key);
+			if (value != null) return TemplateValueTools.toString(value);
+
+			// Try lowercase version (legacy templates)
+			value = replacements.get(key.toLowerCase());
+			if (value != null) return TemplateValueTools.toString(value);
 			
 			// Keep original if no replacement found
 			return r.matched(0);
@@ -71,17 +65,12 @@ class TemplateEngine {
 		// Process {{PLACEHOLDER}} style
 		content = MUSTACHE_PATTERN.map(content, function(r) {
 			var key = r.matched(1);
-			var value = Reflect.field(replacements, key);
-			
-			if (value != null) {
-				return Std.string(value);
-			}
-			
-			// Try lowercase version
-			value = Reflect.field(replacements, key.toLowerCase());
-			if (value != null) {
-				return Std.string(value);
-			}
+			var value = replacements.get(key);
+			if (value != null) return TemplateValueTools.toString(value);
+
+			// Try lowercase version (legacy templates)
+			value = replacements.get(key.toLowerCase());
+			if (value != null) return TemplateValueTools.toString(value);
 			
 			// Keep original if no replacement found
 			return r.matched(0);
@@ -93,7 +82,7 @@ class TemplateEngine {
 	/**
 	 * Process conditional blocks {{#if condition}}...{{/if}}
 	 */
-	function processConditionals(content: String, context: Dynamic): String {
+	function processConditionals(content: String, context: TemplateContext): String {
 		// Process {{#if}} blocks
 		content = IF_PATTERN.map(content, function(r) {
 			var condition = r.matched(1);
@@ -120,33 +109,22 @@ class TemplateEngine {
 		content = EACH_PATTERN.map(content, function(r) {
 			var arrayName = r.matched(1);
 			var block = r.matched(2);
-			var array = Reflect.field(context, arrayName);
-			
-			if (array != null && Std.isOfType(array, Array)) {
-				var result = "";
-				var items: Array<Dynamic> = cast array;
-				for (item in items) {
-					// Create a new context with the item
-					var itemContext = {};
-					
-					// Copy original context
-					for (field in Reflect.fields(context)) {
-						Reflect.setField(itemContext, field, Reflect.field(context, field));
-					}
-					
-					// Add item to context
-					if (Std.isOfType(item, String) || Std.isOfType(item, Int) || Std.isOfType(item, Float)) {
-						Reflect.setField(itemContext, "item", item);
-					} else {
-						// Copy item fields to context
-						for (field in Reflect.fields(item)) {
-							Reflect.setField(itemContext, field, Reflect.field(item, field));
+			var array = context.get(arrayName);
+			if (array != null) switch (array) {
+				case VArray(items):
+					var result = "";
+					for (item in items) {
+						var itemContext = context.copy();
+						itemContext.set("item", item);
+						switch (item) {
+							case VObject(fields):
+								itemContext.mergeFrom(fields);
+							default:
 						}
+						result += processContent(block, itemContext);
 					}
-					
-					result += processContent(block, itemContext);
-				}
-				return result;
+					return result;
+				default:
 			}
 			return "";
 		});
@@ -157,7 +135,7 @@ class TemplateEngine {
 	/**
 	 * Evaluate a condition against the context
 	 */
-	function evaluateCondition(condition: String, context: Dynamic): Bool {
+	function evaluateCondition(condition: String, context: TemplateContext): Bool {
 		// Handle negation
 		if (condition.startsWith("!")) {
 			return !evaluateCondition(condition.substr(1), context);
@@ -168,7 +146,7 @@ class TemplateEngine {
 			var parts = condition.split("==");
 			var left = evaluateExpression(parts[0].trim(), context);
 			var right = evaluateExpression(parts[1].trim(), context);
-			return left == right;
+			return TemplateValueTools.equals(left, right);
 		}
 		
 		// Handle inequality check (e.g., "type!=basic")
@@ -176,80 +154,44 @@ class TemplateEngine {
 			var parts = condition.split("!=");
 			var left = evaluateExpression(parts[0].trim(), context);
 			var right = evaluateExpression(parts[1].trim(), context);
-			return left != right;
+			return !TemplateValueTools.equals(left, right);
 		}
 		
 		// Simple field check
-		var value = Reflect.field(context, condition);
-		
-		// Check for truthy values
-		if (value == null) return false;
-		if (Std.isOfType(value, Bool)) {
-			var boolVal: Bool = cast value;
-			if (boolVal == false) return false;
-		}
-		if (Std.isOfType(value, Float)) {  // Int is treated as Float in Haxe
-			var numVal: Float = cast value;
-			if (numVal == 0) return false;
-		}
-		if (Std.isOfType(value, String)) {
-			var strVal: String = cast value;
-			if (strVal == "") return false;
-		}
-		if (Std.isOfType(value, Array)) {
-			var arrVal: Array<Dynamic> = cast value;
-			if (arrVal.length == 0) return false;
-		}
-		
-		return true;
+		return TemplateValueTools.truthy(context.get(condition));
 	}
 	
 	/**
 	 * Evaluate an expression (field reference or literal)
 	 */
-	function evaluateExpression(expr: String, context: Dynamic): Dynamic {
+	function evaluateExpression(expr: String, context: TemplateContext): TemplateValue {
 		// Remove quotes for string literals
 		if ((expr.startsWith('"') && expr.endsWith('"')) || 
 			(expr.startsWith("'") && expr.endsWith("'"))) {
-			return expr.substr(1, expr.length - 2);
+			return VString(expr.substr(1, expr.length - 2));
 		}
 		
 		// Check for boolean literals
-		if (expr == "true") return true;
-		if (expr == "false") return false;
+		if (expr == "true") return VBool(true);
+		if (expr == "false") return VBool(false);
 		
 		// Check for numeric literals
 		var num = Std.parseFloat(expr);
 		if (!Math.isNaN(num)) {
-			return num;
+			// If the token is an integer, preserve it as Int for comparisons.
+			var intVal = Std.parseInt(expr);
+			return intVal != null && Std.string(intVal) == expr ? VInt(intVal) : VFloat(num);
 		}
 		
 		// Otherwise treat as field reference
-		return Reflect.field(context, expr);
-	}
-	
-	/**
-	 * Process Haxe template syntax (for compatibility)
-	 */
-	function processHaxeTemplates(content: String, context: Dynamic): String {
-		// Check if content contains Haxe template syntax
-		if (content.indexOf("::") < 0 && content.indexOf("$$") < 0) {
-			return content;
-		}
-		
-		try {
-			var template = new Template(content);
-			return template.execute(context);
-		} catch (e: Dynamic) {
-			// If template parsing fails, return original content
-			return content;
-		}
+		var v = context.get(expr);
+		return v != null ? v : VNull;
 	}
 	
 	/**
 	 * Transform filename based on replacements
 	 */
-	public function transformFilename(filename: String, replacements: Dynamic): String {
+	public function transformFilename(filename: String, replacements: TemplateContext): String {
 		// Replace placeholders in filename
 		return processPlaceholders(filename, replacements);
 	}
@@ -257,7 +199,7 @@ class TemplateEngine {
 	/**
 	 * Check if a file should be included based on conditions
 	 */
-	public function shouldIncludeFile(filename: String, context: Dynamic): Bool {
+	public function shouldIncludeFile(filename: String, context: TemplateContext): Bool {
 		// Check for conditional file patterns
 		// e.g., "auth.hx.if-authentication" should only be included if authentication is true
 		
@@ -286,49 +228,6 @@ class TemplateEngine {
 		filename = ~/\.if-\w+$/.replace(filename, "");
 		filename = ~/\.unless-\w+$/.replace(filename, "");
 		return filename;
-	}
-	
-	/**
-	 * Create a context object from project options
-	 */
-	public static function createContext(options: Dynamic): Dynamic {
-		var context = {};
-		
-		// Copy all options to context
-		for (field in Reflect.fields(options)) {
-			Reflect.setField(context, field, Reflect.field(options, field));
-		}
-		
-		// Add computed fields
-		if (Reflect.hasField(options, "name")) {
-			var name = Reflect.field(options, "name");
-			
-			// Various name formats
-			Reflect.setField(context, "PROJECT_NAME", name);
-			Reflect.setField(context, "PROJECT_NAME_LOWER", name.toLowerCase());
-			Reflect.setField(context, "PROJECT_NAME_UPPER", name.toUpperCase());
-			Reflect.setField(context, "PROJECT_MODULE", toPascalCase(name));
-			Reflect.setField(context, "PROJECT_SNAKE", toSnakeCase(name));
-			Reflect.setField(context, "PROJECT_KEBAB", toKebabCase(name));
-		}
-		
-		// Add date/time fields
-		var now = Date.now();
-		Reflect.setField(context, "YEAR", now.getFullYear());
-		Reflect.setField(context, "MONTH", now.getMonth() + 1);
-		Reflect.setField(context, "DAY", now.getDate());
-		Reflect.setField(context, "TIMESTAMP", now.getTime());
-		
-		// Add boolean flags for common conditions
-		var type = Reflect.field(options, "type");
-		if (type != null) {
-			Reflect.setField(context, "is_basic", type == "basic");
-			Reflect.setField(context, "is_phoenix", type == "phoenix");
-			Reflect.setField(context, "is_liveview", type == "liveview");
-			Reflect.setField(context, "is_web", type == "phoenix" || type == "liveview");
-		}
-		
-		return context;
 	}
 	
 	// String transformation utilities

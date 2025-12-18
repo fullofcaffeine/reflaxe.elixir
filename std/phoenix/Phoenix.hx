@@ -4,6 +4,7 @@ package phoenix;
 import haxe.functional.Result;
 import haxe.ds.Option;
 import elixir.types.Term;
+import elixir.types.Atom;
 import phoenix.types.Flash.FlashType;
 
 
@@ -177,6 +178,7 @@ extern class LiveView {
      * @param key The assign key (will be converted to atom in Elixir)
      * @param value The value to assign (can be any type)
      */
+    @:overload(function<TAssigns, TPartial>(socket: Socket<TAssigns>, assigns: TPartial): Socket<TAssigns> {})
     static function assign<TAssigns, TValue>(socket: Socket<TAssigns>, key: String, value: TValue): Socket<TAssigns>;
     
     /**
@@ -207,7 +209,7 @@ extern class LiveView {
      * @param assigns Partial assigns object (only fields being updated)
      */
     extern inline static function assignMultiple<TAssigns, TPartial>(socket: Socket<TAssigns>, assigns: TPartial): Socket<TAssigns> {
-        return untyped __elixir__('Phoenix.Component.assign({0}, {1})', socket, assigns);
+        return assign(socket, assigns);
     }
     
     /**
@@ -258,8 +260,11 @@ extern class LiveView {
      * @param TAssigns The type of socket assigns structure
      */
     extern inline static function putFlash<TAssigns>(socket: Socket<TAssigns>, type: FlashType, message: String): Socket<TAssigns> {
-        return untyped __elixir__('Phoenix.LiveView.put_flash({0}, String.to_atom({1}), {2})', socket, phoenix.types.Flash.FlashTypeTools.toPhoenixKey(type), message);
+        return putFlashKey(socket, phoenix.types.Flash.FlashTypeTools.toPhoenixKey(type), message);
     }
+
+    @:native("put_flash")
+    static function putFlashKey<TAssigns>(socket: Socket<TAssigns>, type: Atom, message: String): Socket<TAssigns>;
     
     /**
      * Put temporary flash (cleared after next render)
@@ -947,61 +952,23 @@ enum HandleInfoResult<TAssigns> {
 // ============================================================================
 
 /**
- * Mount parameters for LiveView initialization
+ * Mount parameters for LiveView initialization.
+ *
+ * Phoenix passes params/session/event params as maps with application-specific keys.
+ * Use `phoenix.types.RouteParams<T>` (or your own typedefs) on your LiveView modules,
+ * and keep the framework boundary typed as `Term`.
  */
-typedef MountParams = {
-    var ?id: String;
-    var ?action: String;
-    var ?slug: String;
-    var ?page: String;
-    var ?filter: String;
-    var ?sort: String;
-    var ?search: String;
-}
+typedef MountParams = Term;
 
 /**
- * Session data structure for LiveView mount
+ * Session data passed to `mount/3` (application-defined).
  */
-typedef Session = {
-    var ?user_id: Int;
-    var ?token: String;
-    var ?csrf_token: String;
-    var ?locale: String;
-    var ?timezone: String;
-    var ?user_agent: String;
-    var ?ip_address: String;
-    var ?login_at: String; // ISO timestamp string
-}
+typedef Session = Term;
 
 /**
- * Event parameters from client interactions
+ * Event parameters from client interactions (application-defined).
  */
-typedef EventParams = {
-    // Todo CRUD fields
-    var ?id: Int;
-    var ?title: String;
-    var ?description: String;
-    var ?priority: String;
-    var ?due_date: String;
-    var ?tags: String;
-    var ?completed: Bool;
-    
-    // UI interaction fields
-    var ?filter: String;
-    var ?sort_by: String;
-    var ?query: String;
-    var ?tag: String;
-    var ?action: String;
-    
-    // Form validation metadata
-    var ?_target: Array<String>;
-    var ?_csrf_token: String;
-    
-    // Additional fields for extensibility
-    var ?value: String; // String representation of values
-    var ?key: String;
-    var ?index: Int;
-}
+typedef EventParams = Term;
 
 /**
  * PubSub message type for real-time communication

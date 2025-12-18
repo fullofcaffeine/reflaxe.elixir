@@ -39,7 +39,6 @@ class MockBuildContext implements BuildContext {
     private var variableMap: Map<Int, String>;
     private var patternVariables: Map<Int, String>;
     private var featureFlags: Map<String, Bool>;
-    private var nodeMetadata: Map<String, Dynamic>;
     private var recordedCalls: Array<String>;
     private var nextNodeId: Int;
 
@@ -50,7 +49,6 @@ class MockBuildContext implements BuildContext {
         variableMap = new Map();
         patternVariables = new Map();
         featureFlags = new Map();
-        nodeMetadata = new Map();
         recordedCalls = [];
         nextNodeId = 0;
         astContext = new ElixirASTContext();
@@ -140,11 +138,6 @@ class MockBuildContext implements BuildContext {
     public function getCurrentClass(): Null<ClassType> {
         recordedCalls.push("getCurrentClass");
         return null; // Simplified for testing
-    }
-
-    public function setNodeMetadata(nodeId: String, metadata: Dynamic): Void {
-        recordedCalls.push('setNodeMetadata($nodeId)');
-        nodeMetadata.set(nodeId, metadata);
     }
 
     public function generateNodeId(): String {

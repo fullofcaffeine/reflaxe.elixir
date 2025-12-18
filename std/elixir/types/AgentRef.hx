@@ -1,6 +1,10 @@
 package elixir.types;
 
 import elixir.types.Pid;
+import elixir.types.Atom;
+import elixir.types.Term;
+import elixir.Kernel;
+import elixir.Process;
 
 /**
  * Type-safe reference to an Agent process.
@@ -28,7 +32,7 @@ import elixir.types.Pid;
  * @see Agent for agent operations
  * @see Pid for process identifiers
  */
-abstract AgentRef(Dynamic) from Dynamic to Dynamic {
+abstract AgentRef(Term) from Term to Term {
     
     /**
      * Create an AgentRef from a process ID.
@@ -45,8 +49,8 @@ abstract AgentRef(Dynamic) from Dynamic to Dynamic {
      * @param name The registered name of the agent
      * @return An AgentRef for the named agent
      */
-    public static inline function named(name: String): AgentRef {
-        return new AgentRef(untyped __elixir__(':$name'));
+    public static inline function named(name: Atom): AgentRef {
+        return new AgentRef(name);
     }
     
     /**
@@ -64,28 +68,22 @@ abstract AgentRef(Dynamic) from Dynamic to Dynamic {
      * @return True if the agent process is running
      */
     public inline function isAlive(): Bool {
-        return untyped __elixir__('Process.alive?($this)');
+        if (Kernel.isPid(this)) {
+            return Process.alive(cast this);
+        }
+        var pid = Process.whereis(cast this);
+        return pid != null && Process.alive(pid);
     }
     
     /**
      * Get the underlying value (pid or atom).
      * @return The raw agent reference
      */
-    public inline function toValue(): Dynamic {
+    public inline function toValue(): Term {
         return this;
     }
-    
-    @:from
-    private static inline function fromDynamic(d: Dynamic): AgentRef {
-        return new AgentRef(d);
-    }
-    
-    @:to
-    private inline function toDynamic(): Dynamic {
-        return this;
-    }
-    
-    private inline function new(ref: Dynamic) {
+
+    private inline function new(ref: Term) {
         this = ref;
     }
 }

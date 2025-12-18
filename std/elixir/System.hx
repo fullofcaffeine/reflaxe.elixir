@@ -2,6 +2,8 @@ package elixir;
 
 #if (macro || reflaxe_runtime)
 
+import elixir.types.Term;
+
 /**
  * System module extern definitions for Elixir standard library
  * Provides type-safe interfaces for system interaction and environment management
@@ -33,13 +35,13 @@ extern class System {
     static function getEnvVarWithDefault(varname: String, defaultValue: String): String;
     
     @:native("put_env")
-    static function putEnv(varname: String, value: String): String; // Returns :ok
+    static function putEnv(varname: String, value: String): Term; // Returns :ok
     
     @:native("put_env")
-    static function putEnvMap(env: Map<String, String>): String; // Set multiple env vars
+    static function putEnvMap(env: Map<String, String>): Term; // Set multiple env vars
     
     @:native("delete_env")
-    static function deleteEnv(varname: String): String; // Returns :ok
+    static function deleteEnv(varname: String): Term; // Returns :ok
     
     // System information
     @:native("otp_release")
@@ -49,7 +51,7 @@ extern class System {
     static function version(): String; // Elixir version
     
     @:native("build_info")
-    static function buildInfo(): Map<String, Dynamic>; // Build information
+    static function buildInfo(): Map<String, Term>; // Build information
     
     @:native("compiled_endianness")
     static function compiledEndianness(): String; // :big or :little
@@ -117,7 +119,7 @@ extern class System {
     static function memory(): Map<String, Int>; // All memory info
     
     @:native("stacktrace")
-    static function stacktrace(): Array<Dynamic>; // Current stacktrace
+    static function stacktrace(): Array<Term>; // Current stacktrace
     
     // User home directory
     @:native("user_home")
@@ -193,7 +195,7 @@ extern class System {
  * Options for System.cmd and System.shell functions
  */
 typedef SystemCmdOptions = {
-    ?into: Dynamic,         // Collectable to stream output into
+    ?into: Term,            // Collectable to stream output into
     ?cd: String,            // Directory to run the command in
     ?env: Array<{_0: String, _1: String}>, // Environment variables as tuples
     ?arg0: String,          // Program name to use as argv[0]

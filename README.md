@@ -462,6 +462,7 @@ class UserChangeset {
 import elixir.types.Atom;
 import elixir.types.GenServerCallbackResults.HandleCallResult;
 import elixir.types.GenServerCallbackResults.InitResult;
+import elixir.types.Term;
 
 enum abstract CounterCall(Atom) to Atom {
     var Get = "get";
@@ -475,7 +476,7 @@ class CounterServer {
     }
 
     @:native("handle_call")
-    public static function handle_call(request: CounterCall, _from: Dynamic, state: Int): HandleCallResult<Int, Int> {
+    public static function handle_call(request: CounterCall, _from: Term, state: Int): HandleCallResult<Int, Int> {
         return switch (request) {
             case Get:
                 HandleCallResult.Reply(state, state);

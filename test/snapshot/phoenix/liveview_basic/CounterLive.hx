@@ -2,8 +2,11 @@ package;
 
 import phoenix.LiveSocket;
 import phoenix.Phoenix.Socket;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.HandleEventResult;
 import HXX;
 import phoenix.Phoenix.LiveView;
+import elixir.types.Term;
 
 typedef CounterAssigns = {
 	var count: Int;
@@ -16,22 +19,22 @@ typedef CounterAssigns = {
 @:liveview
 class CounterLive {
 	
-	public function mount(params: Dynamic, session: Dynamic, socket: Socket<CounterAssigns>): Dynamic {
+	public function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
 		// Use LiveView.assign like todo-app does
 		socket = LiveView.assign(socket, "count", 0);
-		return {ok: socket};
+		return Ok(socket);
 	}
 	
-	public function handle_event_increment(params: Dynamic, socket: Socket<CounterAssigns>): Dynamic {
+	public function handle_event_increment(params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
 		var count = socket.assigns.count;
 		socket = LiveView.assign(socket, "count", count + 1);
-		return {noreply: socket};
+		return NoReply(socket);
 	}
 	
-	public function handle_event_decrement(params: Dynamic, socket: Socket<CounterAssigns>): Dynamic {
+	public function handle_event_decrement(params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
 		var count = socket.assigns.count;
 		socket = LiveView.assign(socket, "count", count - 1);
-		return {noreply: socket};
+		return NoReply(socket);
 	}
 	
     public function render(assigns: CounterAssigns): String {

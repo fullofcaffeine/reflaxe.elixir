@@ -85,13 +85,7 @@ class ElixirASTContext {
      */
     public var clauseContextStack: Array<ClauseContext> = [];
 
-    // ===== Metadata Storage =====
-
-    /**
-     * Node metadata by unique ID
-     * Stores transformation hints, patterns detected, etc.
-     */
-    public var nodeMetadata: Map<String, Dynamic> = new Map();
+    // Node-level metadata is carried directly on ElixirAST.metadata.
 
     /**
      * Enum type information cache
@@ -465,23 +459,6 @@ class ElixirASTContext {
         return clauseContextStack.length > 0 ? clauseContextStack[clauseContextStack.length - 1] : null;
     }
 
-    // ===== Metadata Management =====
-
-    /**
-     * Store metadata for an AST node
-     * Used to pass information between phases
-     */
-    public function setNodeMetadata(nodeId: String, metadata: Dynamic): Void {
-        nodeMetadata.set(nodeId, metadata);
-    }
-
-    /**
-     * Retrieve metadata for an AST node
-     */
-    public function getNodeMetadata(nodeId: String): Dynamic {
-        return nodeMetadata.get(nodeId);
-    }
-
     /**
      * Check if an enum is idiomatic
      * Caches the result for performance
@@ -647,7 +624,7 @@ class ElixirASTContext {
         tempVariableMap.clear();
         renamedVariableMap.clear();
         clauseContextStack = [];
-        nodeMetadata.clear();
+        // No nodeMetadata side map.
         testResults.clear();
         enumBindingPlans.clear();
 
@@ -681,7 +658,7 @@ class ElixirASTContext {
         // DISABLED: trace('[ElixirASTContext] Entered transformation phase');
         // DISABLED: trace('  - Variable mappings: ${Lambda.count(globalVariableMap)}');
         // DISABLED: trace('  - Pattern variables: ${Lambda.count(patternVariableRegistry)}');
-        // DISABLED: trace('  - Node metadata: ${Lambda.count(nodeMetadata)}');
+        // DISABLED: trace('  - Node metadata: (stored on nodes)');
         #end
     }
 
@@ -746,7 +723,7 @@ class ElixirASTContext {
         tempVariableMap.clear();
         renamedVariableMap.clear();
         clauseContextStack = [];
-        nodeMetadata.clear();
+        // No nodeMetadata side map.
         enumTypeCache.clear();
         idiomaticEnums.clear();
         testResults.clear();

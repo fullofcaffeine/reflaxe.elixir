@@ -1,5 +1,9 @@
 package elixir.types;
 
+import elixir.Kernel;
+import elixir.types.Atom;
+import elixir.types.Term;
+
 /**
  * Type-safe abstraction for GenServer references
  * 
@@ -26,7 +30,7 @@ package elixir.types;
  * 
  * The @:from metadata enables automatic conversions:
  * ```haxe
- * function doCall(server: GenServerRef, msg: Dynamic): Dynamic {
+ * function doCall(server: GenServerRef, msg: Term): Term {
  *     return GenServer.call(server, msg);
  * }
  * 
@@ -43,12 +47,12 @@ package elixir.types;
  * - **Zero overhead**: Compiles to native Elixir references
  * - **IntelliSense support**: Full autocomplete for server operations
  */
-abstract GenServerRef(Dynamic) from Dynamic to Dynamic {
+abstract GenServerRef(Term) from Term to Term {
     /**
      * Create a new GenServerRef from a dynamic value
      * Usually not called directly - use implicit conversions
      */
-    public inline function new(ref: Dynamic) {
+    public inline function new(ref: Term) {
         this = ref;
     }
     
@@ -62,12 +66,12 @@ abstract GenServerRef(Dynamic) from Dynamic to Dynamic {
     }
     
     /**
-     * Convert from a registered name (String becomes atom in Elixir)
-     * Enables: `var ref: GenServerRef = "my_server";`
+     * Convert from a registered name (atom)
+     * Enables: `var ref: GenServerRef = "my_server";` (string literal inferred as Atom)
      */
     @:from
-    public static inline function fromName(name: String): GenServerRef {
-        return new GenServerRef(untyped __elixir__('String.to_atom($name)'));
+    public static inline function fromName(name: Atom): GenServerRef {
+        return new GenServerRef(name);
     }
     
     /**
@@ -75,7 +79,7 @@ abstract GenServerRef(Dynamic) from Dynamic to Dynamic {
      * Example: `{:via, Registry, {MyRegistry, "key"}}`
      */
     @:from
-    public static inline function fromVia(via: {via: String, module: Dynamic, name: Dynamic}): GenServerRef {
+    public static inline function fromVia(via: {via: String, module: Term, name: Term}): GenServerRef {
         return new GenServerRef(via);
     }
     
@@ -83,8 +87,8 @@ abstract GenServerRef(Dynamic) from Dynamic to Dynamic {
      * Create a global reference for cross-node communication
      * @param name The globally registered name
      */
-    public static inline function global(name: String): GenServerRef {
-        return new GenServerRef(untyped __elixir__('{:global, String.to_atom($name)}'));
+    public static inline function global(name: Atom): GenServerRef {
+        return new GenServerRef(untyped __elixir__('{:global, $name}'));
     }
     
     /**
@@ -136,6 +140,6 @@ abstract GenServerRef(Dynamic) from Dynamic to Dynamic {
      */
     @:to
     public inline function toString(): String {
-        return untyped __elixir__('inspect($this)');
+        return Kernel.inspect(this);
     }
 }

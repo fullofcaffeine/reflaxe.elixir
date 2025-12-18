@@ -1,5 +1,7 @@
 package elixir.types;
 
+import elixir.types.Term;
+
 /**
  * Type-safe options for GenServer.start and GenServer.start_link
  * 
@@ -23,25 +25,25 @@ typedef GenServerOptions = {
      * Register the server with a name
      * Can be a string (converted to atom) or a via tuple
      */
-    ?name: Dynamic,
+    ?name: Term,
     
     /**
      * Timeout in milliseconds for the init callback
      * Default is 5000ms, use `:infinity` for no timeout
      */
-    ?timeout: Dynamic,
+    ?timeout: Term,
     
     /**
      * Debug options for sys module
      * Common values: [:trace, :log, :statistics]
      */
-    ?debug: Array<Dynamic>,
+    ?debug: Array<Term>,
     
     /**
      * Options passed to the underlying spawn function
      * Example: [:link, :monitor, {:priority, :high}]
      */
-    ?spawn_opt: Array<Dynamic>,
+    ?spawn_opt: Array<Term>,
     
     /**
      * Time in milliseconds after which the server will hibernate
@@ -66,7 +68,7 @@ class GenServerOptionBuilder {
     /**
      * Create options with a via tuple for custom registry
      */
-    public static inline function withVia(module: Dynamic, name: Dynamic, ?options: GenServerOptions): GenServerOptions {
+    public static inline function withVia(module: Term, name: Term, ?options: GenServerOptions): GenServerOptions {
         if (options == null) options = {};
         options.name = untyped __elixir__('{:via, $module, $name}');
         return options;
