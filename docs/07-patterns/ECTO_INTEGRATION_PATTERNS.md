@@ -1,379 +1,137 @@
 # Ecto Integration Patterns
 
-## Current Implementation Status 🎯
+This document shows the current, supported patterns for using Ecto from Haxe in Reflaxe.Elixir.
 
-> **Update (Reflaxe.Elixir 1.0+)**: Typed Ecto integration is available end-to-end (queries, changesets, and migrations).
-> Escape hatches are still supported for advanced Ecto features, but are no longer the default path.
+See working references:
 
-### What's Working Today ✅
+- End-to-end LiveView + Ecto: `examples/todo-app/README.md`
+- Migrations DSL: `examples/04-ecto-migrations/README.md`
 
-- **Query DSL**: Full expression parsing and compilation to proper Ecto pipe syntax
-- **Where Clauses**: Complex conditions with AND/OR operators compile correctly
-- **Select Expressions**: Field and map selections with proper syntax
-- **Joins**: Association-based joins with correct binding arrays
-- **Order/Group By**: Multiple field support with proper compilation
-- **Schema Validation**: Compile-time field checking with helpful error messages
-- **Changesets**: Typed helpers over `Ecto.Changeset` for cast/validate flows
-- **Migrations**: Typed migration DSL (`std/ecto/Migration.hx`) for common operations
+## Typed Queries (`ecto.TypedQuery`)
 
-### What Still Needs Escape Hatches ❌
-
-- **CTEs / complex subqueries**: Use `fragment/1`, `with_cte/3`, or raw Ecto constructs as needed
-- **Database-specific functions**: Use `fragment/1` / raw SQL when you need vendor features
-
-## Table of Contents
-
-- [Native Haxe Ecto Queries (NEW!)](#native-haxe-ecto-queries)
-- [Changeset Workarounds](#changeset-workarounds)
-- [Migration Strategies](#migration-strategies)
-- [Complex Query Patterns](#complex-query-patterns)
-- [Recommended Architecture](#recommended-architecture)
-
-## Native Haxe Ecto Queries
-
-**NEW**: You can now write type-safe Ecto queries directly in Haxe!
+The recommended query API is `ecto.TypedQuery`, which lets you build Ecto queries with compile-time field validation and idiomatic Elixir output.
 
 ```haxe
-import reflaxe.elixir.macros.EctoQueryMacros.*;
+import ecto.TypedQuery;
+import MyApp.Repo;
+import MyApp.Todo;
 
-@:module
-class UserQueries {
-    // Simple where clause - WORKS TODAY!
-    function getActiveUsers(): String {
-        var query = analyzeCondition(macro u -> u.active == true);
-        return generateWhereQuery(query);
-        // Generates: |> where([u], u.active == ^true)
-    }
-    
-    // Complex conditions - WORKS TODAY!
-    function getAdultActiveUsers(): String {
-        var condition = analyzeCondition(macro u -> u.age >= 18 && u.active == true);
-        return generateWhereQuery(condition);
-        // Generates: |> where([u], u.age >= ^18 and u.active == ^true)
-    }
-    
-    // Select with map - WORKS TODAY!
-    function getUserSummary(): String {
-        var select = analyzeSelectExpression(macro u -> {
-            name: u.name,
-            email: u.email,
-            joined: u.inserted_at
-        });
-        return generateSelectQuery(select);
-        // Generates: |> select([u], %{name: u.name, email: u.email, joined: u.inserted_at})
-    }
-    
-    // Join operations - WORKS TODAY!
-    function getUsersWithPosts(): String {
-        var join = {
-            schema: "Post",
-            alias: "posts",
-            type: "inner",
-            on: "user.id == posts.user_id"
-        };
-        return generateJoinQuery(join);
-        // Generates: |> join(:inner, [u], p in assoc(u, :posts), as: :p)
-    }
+class TodoQueries {
+  public static function listTodosForUser(userId: Int): Array<Todo> {
+    var query = TypedQuery
+      .from(Todo)
+      .where(t -> t.userId == userId)
+      .orderBy(t -> [desc: t.insertedAt]);
+
+    return Repo.all(query);
+  }
 }
 ```
 
-### Schema Validation (WORKING!)
+Notes:
 
-Compile-time validation catches errors early:
+- Field names use your Haxe schema fields (e.g. `userId`, `insertedAt`); output is snake_cased to match Ecto fields.
+- When a field doesn’t exist, compilation fails early with a schema validation error.
+
+## Changesets
+
+Reflaxe.Elixir supports two complementary approaches:
+
+1. **Schema-driven changesets** via `@:changeset` (recommended for common CRUD flows).
+2. **Direct `Ecto.Changeset` externs** for custom validation and advanced pipelines.
+
+### 1) Schema-driven changesets (`@:changeset`)
+
+Annotate your schema with `@:changeset(...)` and declare an `extern` for the generated function.
+
+Example (from the todo-app pattern):
 
 ```haxe
-// This will fail at compile time with helpful error message
-var query = analyzeCondition(macro u -> u.nonexistent_field > 0);
-// Error: Field "nonexistent_field" does not exist in schema "User". 
-// Available fields: id, name, email, age, active, inserted_at, updated_at
+typedef TodoParams = {
+  ?title: String,
+  ?description: String,
+  ?completed: Bool,
+  ?priority: String,
+  ?userId: Int
+}
 
-// Operator type checking also works
-var query = analyzeCondition(macro u -> u.name > 42);
-// Error: Cannot use numeric operator ">" on non-string field "name" of type "String"
+@:schema("todos")
+@:changeset(["title", "description", "completed", "priority", "userId"], ["title"])
+class Todo {
+  @:field public var id: Int;
+  @:field public var title: String;
+  @:field public var completed: Bool;
+  @:field public var userId: Int;
+
+  extern public static function changeset(todo: Todo, params: TodoParams): ecto.Changeset.Changeset<Todo, TodoParams>;
+}
 ```
 
-### Test Coverage Proof
-
-All these features have passing tests:
-- `test/EctoQueryExpressionParsingTest.hx` - 6 tests passing
-- `test/EctoQueryCompilationTest.hx` - 5 tests passing  
-- `test/SchemaValidationTest.hx` - 5 tests passing
-
-## Changeset Workarounds
-
-**Status**: ❌ Not Implemented (Use Elixir modules as temporary workaround)
-
-Since changesets aren't implemented yet, create Elixir modules:
-
-```elixir
-# lib/my_app/changesets/user_changeset.ex
-defmodule MyApp.Changesets.UserChangeset do
-  import Ecto.Changeset
-  alias MyApp.User
-
-  def changeset(user \\ %User{}, attrs) do
-    user
-    |> cast(attrs, [:name, :email, :age])
-    |> validate_required([:name, :email])
-    |> validate_format(:email, ~r/@/)
-    |> validate_number(:age, greater_than: 0, less_than: 150)
-    |> unique_constraint(:email)
-  end
-  
-  def registration_changeset(user, attrs) do
-    user
-    |> changeset(attrs)
-    |> cast(attrs, [:password])
-    |> validate_required([:password])
-    |> validate_length(:password, min: 8)
-    |> hash_password()
-  end
-  
-  defp hash_password(changeset) do
-    case get_change(changeset, :password) do
-      nil -> changeset
-      password -> put_change(changeset, :password_hash, Bcrypt.hash_pwd_salt(password))
-    end
-  end
-end
-```
-
-Then expose via Haxe extern:
+Using it with a typed Repo surface:
 
 ```haxe
-@:native("MyApp.Changesets.UserChangeset")
-extern class UserChangeset {
-    @:native("changeset")
-    public static function changeset(user: Dynamic, attrs: Dynamic): Dynamic;
-    
-    @:native("registration_changeset")
-    public static function registrationChangeset(user: Dynamic, attrs: Dynamic): Dynamic;
-}
+import elixir.types.Result;
+import ecto.Changeset;
+import MyApp.Repo;
 
-// Usage
-@:module
-class UserService {
-    function createUser(userData: Dynamic): Dynamic {
-        var changeset = UserChangeset.changeset({}, userData);
-        
-        return switch(Repo.insert(changeset)) {
-            case {:ok, user}: user;
-            case {:error, changeset}: throw "Validation failed";
-        }
-    }
+function createTodo(params: TodoParams): Result<Todo, Changeset<Todo, TodoParams>> {
+  var changeset = Todo.changeset(new Todo(), params);
+  return Repo.insert(changeset);
 }
 ```
 
-**Timeline**: Changeset support planned for Q2 2025 (estimated 2-3 weeks of work)
-
-## Migration Strategies
-
-**Status**: ❌ Not Implemented (Use standard Ecto migrations)
-
-Write migrations in Elixir as normal:
-
-```elixir
-# priv/repo/migrations/20250108000000_create_users.exs
-defmodule MyApp.Repo.Migrations.CreateUsers do
-  use Ecto.Migration
-
-  def change do
-    create table(:users) do
-      add :name, :string, null: false
-      add :email, :string, null: false
-      add :age, :integer
-      add :active, :boolean, default: true
-      
-      timestamps()
-    end
-    
-    create unique_index(:users, [:email])
-    create index(:users, [:active])
-  end
-end
-```
-
-Run migrations normally:
-```bash
-mix ecto.migrate
-```
-
-**Timeline**: Migration DSL support planned for Q2 2025 (estimated 2-3 weeks of work)
-
-## Complex Query Patterns
-
-### What Works in Haxe Now
-
-Simple to moderate complexity queries work great:
+Pattern matching stays in Haxe enums, not Elixir tuples:
 
 ```haxe
-// All of these compile to proper Ecto syntax TODAY
-class WorkingQueries {
-    function activeAdultUsers() {
-        // Multiple conditions
-        var condition = analyzeCondition(macro u -> 
-            u.age >= 18 && 
-            u.active == true && 
-            u.email != null
-        );
-        
-        // Field selection
-        var select = analyzeSelectExpression(macro u -> {
-            id: u.id,
-            name: u.name,
-            email: u.email
-        });
-        
-        // Combine into query (manual composition for now)
-        var whereClause = generateWhereQuery(condition);
-        var selectClause = generateSelectQuery(select);
-        
-        return 'from(u in User) ${whereClause} ${selectClause}';
-    }
+switch (createTodo(params)) {
+  case Result.Ok(todo):
+    // success
+  case Result.Error(changeset):
+    // validation errors
 }
 ```
 
-### What Still Needs Elixir Modules
+### 2) Keep `__elixir__()` out of apps (use std bridges)
 
-Complex features not yet supported:
+Some Ecto ergonomics are easiest to express with `__elixir__()` (sigils, keyword options, certain pipeline shapes).
 
-```elixir
-# Subqueries, CTEs, window functions still need Elixir
-defmodule MyApp.ComplexQueries do
-  import Ecto.Query
-  
-  def top_users_by_engagement do
-    # Common Table Expression
-    recent_posts = from p in Post,
-      where: p.inserted_at > ago(7, "day"),
-      group_by: p.user_id,
-      select: %{user_id: p.user_id, post_count: count(p.id)}
-    
-    # Window function
-    from u in User,
-      join: rp in subquery(recent_posts), on: rp.user_id == u.id,
-      windows: [rank: [order_by: [desc: rp.post_count]]],
-      select: %{
-        user: u,
-        post_count: rp.post_count,
-        rank: row_number() |> over(:rank)
-      }
-  end
-  
-  # Full-text search with PostgreSQL
-  def search_content(search_term) do
-    from p in Post,
-      where: fragment("? @@ plainto_tsquery('english', ?)", p.search_vector, ^search_term),
-      order_by: [desc: fragment("ts_rank(?, plainto_tsquery('english', ?))", 
-                                 p.search_vector, ^search_term)]
-  end
-end
-```
+Rule of thumb:
 
-## Recommended Architecture
+- Don’t use `__elixir__()` directly in application code.
+- Prefer a reusable, typed helper in `std/ecto/**` (or `std/phoenix/**`) that centralizes any required injection.
 
-### Current Best Practice (August 2025)
+For example, `std/ecto/ChangesetBridge.hx` wraps common `Ecto.Changeset.*` pipelines while keeping injection in the stdlib.
 
-```
-┌─────────────────┐       ┌──────────────────┐      ┌─────────────┐
-│ Haxe            │       │ Haxe-Generated   │      │ Database    │
-│ Business Logic  │──────▶│ Ecto Queries     │─────▶│             │
-│ + Simple Queries│       │ (Pipe Syntax)    │      │             │
-└─────────────────┘       └──────────────────┘      └─────────────┘
-         │                                                   ▲
-         │                ┌──────────────────┐              │
-         └───────────────▶│ Elixir Modules   │──────────────┘
-                          │ (Changesets,     │
-                          │  Complex Queries) │
-                          └──────────────────┘
-```
+## Migrations (`@:migration`)
 
-**Use Haxe for**:
-- ✅ Business logic
-- ✅ Simple to moderate queries (WHERE, SELECT, JOIN, ORDER BY)
-- ✅ Type-safe query building
-- ✅ Schema validation
+Migrations can be authored in Haxe using the typed DSL in `std/ecto/Migration.hx` and compiled into standard `Ecto.Migration` modules.
 
-**Use Elixir modules for**:
-- ❌ Changesets (not implemented)
-- ❌ Migrations (not implemented)
-- ⚠️ Complex aggregations with subqueries
-- ⚠️ Database-specific features (full-text search, window functions)
-
-### Migration Path from Escape Hatches
-
-As features are implemented, you can migrate:
+Example:
 
 ```haxe
-// Before (Q4 2024) - Everything through Elixir
-@:native("UserQueries.active_users")
-extern function getActiveUsers(): Array<User>;
+import ecto.Migration;
+import ecto.Migration.ColumnType;
 
-// Now (Q1 2025) - Native Haxe queries!
-function getActiveUsers(): Array<User> {
-    var query = analyzeCondition(macro u -> u.active == true);
-    var whereClause = generateWhereQuery(query);
-    // Actually compiles to working Ecto!
-    return Repo.all('from(u in User) ${whereClause}');
-}
+@:migration
+class CreateUsers extends Migration {
+  public function up(): Void {
+    createTable("users")
+      .addId()
+      .addColumn("name", ColumnType.String(), {nullable: false})
+      .addColumn("email", ColumnType.String(), {nullable: false})
+      .addTimestamps()
+      .addIndex(["email"], {unique: true});
+  }
 
-// Future (Q2 2025) - With changesets
-function createUser(data: UserData): User {
-    var changeset = User.changeset(%User{}, data); // Coming soon!
-    return Repo.insert!(changeset);
+  public function down(): Void {
+    dropTable("users");
+  }
 }
 ```
 
-## Performance Characteristics
+Run migrations with standard Ecto tooling:
 
-### Query Compilation Performance ✅
-- Compilation: <1ms per query (exceeds <15ms target)
-- Runtime: Native Ecto performance (no overhead)
-- Type checking: Compile-time (zero runtime cost)
+- `mix ecto.migrate`
+- `mix ecto.rollback`
 
-### Development Velocity 📈
-- **Before**: Write queries in Elixir, expose via externs
-- **Now**: Write queries directly in Haxe with type safety
-- **Future**: Full Ecto feature parity planned
-
-## Roadmap to Complete Implementation
-
-### Q1 2025 ✅ (COMPLETED)
-- [x] Expression parsing
-- [x] Query compilation
-- [x] Schema validation
-- [x] Basic query operations
-
-### Q2 2025 (PLANNED)
-- [ ] Changeset support (2-3 weeks)
-- [ ] Migration DSL (2-3 weeks)
-- [ ] Query composition helpers (1 week)
-- [ ] Repo integration (1 week)
-
-### Q3 2025 (PLANNED)
-- [ ] Subquery support
-- [ ] Aggregate functions
-- [ ] Transaction support
-- [ ] Multi-repo support
-
-### Q4 2025 (GOAL)
-- [ ] Full Ecto feature parity
-- [ ] Remove all escape hatches
-- [ ] Production ready
-
-## Conclusion
-
-**August 2025 Reality**: Reflaxe.Elixir now has working Ecto query compilation! While changesets and migrations still need escape hatches, the core query DSL is functional and generates proper Elixir code.
-
-**What This Means**:
-- ✅ You can write type-safe queries in Haxe today
-- ✅ Compile-time validation catches errors early
-- ✅ Generated code uses proper Ecto pipe syntax
-- ⚠️ Some features still need Elixir modules (temporary)
-- 📈 Active development toward full feature parity
-
-**Recommendation**: Start using native Haxe queries for new code. Keep changeset/migration logic in Elixir modules until those features are implemented (Q2 2025).
-
----
-
-*Last Updated: August 2025 - Reflects actual working implementation with test coverage*
+See the full migration example and workflow notes in `examples/04-ecto-migrations/README.md`.
