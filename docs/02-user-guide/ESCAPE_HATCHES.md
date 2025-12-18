@@ -49,18 +49,20 @@ var evens = ElixirEnum.filter(numbers, x -> x % 2 == 0);
 ### Mapping to Erlang Modules
 
 ```haxe
+import elixir.types.Atom;
+
 @:native(":crypto")
 extern class Crypto {
     @:native("strong_rand_bytes")
     public static function strongRandBytes(size: Int): Dynamic;
     
     @:native("hash")
-    public static function hash(type: Dynamic, data: String): Dynamic;
+    public static function hash(type: Atom, data: String): Dynamic;
 }
 
 // Usage
 var randomBytes = Crypto.strongRandBytes(32);
-var hash = Crypto.hash(untyped :sha256, "my data");
+var hash = Crypto.hash("sha256", "my data");
 ```
 
 ## Untyped Code Blocks
@@ -177,10 +179,23 @@ class BusinessLogic {
 
 ```haxe
 // HTTPoison library
+import elixir.types.Result;
+
+@:native("HTTPoison.Response")
+extern class HTTPoisonResponse {
+    public var status_code: Int;
+    public var body: String;
+}
+
+@:native("HTTPoison.Error")
+extern class HTTPoisonError {
+    public var reason: Atom;
+}
+
 @:native("HTTPoison")
 extern class HTTPoison {
-    public static function get(url: String, ?headers: Dynamic, ?options: Dynamic): Dynamic;
-    public static function post(url: String, body: String, ?headers: Dynamic, ?options: Dynamic): Dynamic;
+    public static function get(url: String, ?headers: Dynamic, ?options: Dynamic): Result<HTTPoisonResponse, HTTPoisonError>;
+    public static function post(url: String, body: String, ?headers: Dynamic, ?options: Dynamic): Result<HTTPoisonResponse, HTTPoisonError>;
 }
 
 // Timex library
@@ -196,14 +211,12 @@ class ApiClient {
     public function fetchData(): Dynamic {
         var response = HTTPoison.get("https://api.example.com/data");
         
-        return switch (untyped response) {
-            case {:ok, %{status_code: 200, body: body}}:
-                parseResponse(body);
-            case {:error, reason}:
-                handleError(reason);
-            default:
-                null;
-        };
+        return switch (response) {
+            case Result.Ok(resp):
+                if (resp.status_code == 200) parseResponse(resp.body) else handleError(resp);
+            case Result.Error(err):
+                handleError(err.reason);
+        }
     }
     
     public function getCurrentTime(): String {
@@ -300,11 +313,18 @@ class MixedCode {
 
 ```haxe
 // Complete extern for an Elixir GenServer
+import elixir.types.Atom;
+import elixir.types.Result;
+
+enum abstract CacheError(Atom) to Atom {
+    var NotFound = "not_found";
+}
+
 @:native("MyApp.Cache")
 extern class CacheServer {
     // Client API
     public static function start_link(opts: Dynamic): Dynamic;
-    public static function get(key: String): Dynamic;
+    public static function get<T>(key: String): Result<T, CacheError>;
     public static function put(key: String, value: Dynamic, ?ttl: Int): Dynamic;
     public static function delete(key: String): Bool;
     public static function clear(): Dynamic;
@@ -318,18 +338,16 @@ extern class CacheServer {
 // Usage
 class DataService {
     public function getCachedData(key: String): Dynamic {
-        var cached = CacheServer.get(key);
-        
-        return switch (untyped cached) {
-            case {:ok, value}:
+        return switch (CacheServer.get(key)) {
+            case Result.Ok(value):
                 value;
-            case {:error, :not_found}:
+            case Result.Error(NotFound):
                 var fresh = fetchFreshData(key);
                 CacheServer.put(key, fresh, 3600); // 1 hour TTL
                 fresh;
-            default:
+            case Result.Error(_):
                 null;
-        };
+        }
     }
 }
 ```
@@ -582,16 +600,17 @@ class InteropTest {
 ### Pattern 1: Elixir Tuple Handling
 
 ```haxe
+import elixir.types.Result;
+import elixir.types.Atom;
+
 class TupleHandler {
-    public function handleElixirResult(result: Dynamic): String {
-        return switch (untyped result) {
-            case {:ok, value}:
+    public function handleElixirResult(result: Result<String, Atom>): String {
+        return switch (result) {
+            case Result.Ok(value):
                 'Success: $value';
-            case {:error, reason}:
+            case Result.Error(reason):
                 'Error: $reason';
-            case _:
-                "Unknown result";
-        };
+        }
     }
 }
 ```
@@ -648,7 +667,7 @@ class WithExpression {
 1. **Type Information Lost**: When using `untyped` or `Dynamic`, you lose compile-time type checking
 2. **Macro Timing**: Elixir macros execute at Elixir compile time, not Haxe compile time
 3. **Pattern Matching**: Haxe pattern matching is more limited than Elixir's
-4. **Atoms**: Use `untyped :atom_name` or create an enum abstraction
+4. **Atoms**: Use `elixir.types.Atom` (e.g. `var a: Atom = "ok"`) or an `enum abstract` over `Atom`
 5. **Processes**: Process spawning and message passing needs `untyped` blocks
 
 ## Summary

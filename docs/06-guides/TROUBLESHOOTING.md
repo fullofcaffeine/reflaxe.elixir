@@ -286,14 +286,18 @@ end
 
 **Solution:**
 ```haxe
-// Handle all possible return values
-var result = Database.find(id);
+import elixir.types.Result;
+import elixir.types.Atom;
+
+typedef User = { id: Int };
+
+// Handle all possible return values (typed, not raw Elixir tuples)
+var result: Result<User, Atom> = Database.findUser(id);
 switch (result) {
-    case {:ok, value}:
+    case Result.Ok(value):
         return value;
-    case {:error, reason}:
-        // Handle error case
-        throw new Error('Database error: $reason');
+    case Result.Error(reason):
+        throw 'Database error: $reason';
 }
 ```
 
@@ -306,15 +310,20 @@ switch (result) {
 
 **Solution:**
 ```haxe
-// Check parameter types match Elixir expectations
-// Haxe Int → Elixir integer
-// Haxe Float → Elixir float
-// Haxe String → Elixir binary
-// Haxe Array → Elixir list
+import elixir.types.Atom;
+import elixir.types.Result;
 
-// Use proper type conversions
-var elixirAtom = untyped :my_atom;
-var elixirTuple = {ok: "value"}; // Creates {:ok, "value"}
+// Check parameter types match Elixir expectations:
+// - Haxe Int → Elixir integer
+// - Haxe Float → Elixir float
+// - Haxe String → Elixir binary
+// - Haxe Array → Elixir list
+
+// Atoms are explicit in Haxe
+var elixirAtom: Atom = "my_atom";
+
+// Common {:ok, value} / {:error, reason} tuples are typed enums in Haxe
+var elixirTuple = Result.Ok("value"); // Compiles to {:ok, "value"}
 ```
 
 ## Type System Issues
@@ -1006,15 +1015,17 @@ project/
 
 ### Q: How do I handle Elixir atoms?
 
-**A:** Use untyped or create an enum:
+**A:** Use `elixir.types.Atom` (or an `enum abstract` over it):
 ```haxe
-// Direct atom
-var atom = untyped :my_atom;
+import elixir.types.Atom;
 
-// Enum abstraction
-enum Atom {
-    @:native(":ok") OK;
-    @:native(":error") ERROR;
+// Direct atom
+var atom: Atom = "my_atom";
+
+// Enum abstraction (preferred when you have a closed set)
+enum abstract Status(Atom) to Atom {
+    var Ok = "ok";
+    var Error = "error";
 }
 ```
 

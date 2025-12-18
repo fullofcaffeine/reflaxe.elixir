@@ -376,20 +376,37 @@ See [docs/04-api-reference/SOURCE_MAPPING.md](docs/04-api-reference/SOURCE_MAPPI
 
 ### Phoenix LiveView
 ```haxe
+import HXX;
+import phoenix.LiveSocket;
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Socket;
+
+typedef CounterAssigns = { count: Int };
+
+@:native("MyAppWeb.CounterLive")
 @:liveview
 class CounterLive {
-    var count = 0;
-    
-    function mount(_params, _session, socket) {
-        return {:ok, assign(socket, "count", count)};
+    public static function mount(_params: Dynamic, _session: Dynamic, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+        var liveSocket: LiveSocket<CounterAssigns> = socket;
+        liveSocket = liveSocket.assign(_.count, 0);
+        return MountResult.Ok(liveSocket);
     }
-    
-    function handle_event("increment", _params, socket) {
-        count++;
-        return {:noreply, assign(socket, "count", count)};
+
+    @:native("handle_event")
+    public static function handle_event(event: String, _params: Dynamic, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
+        var liveSocket: LiveSocket<CounterAssigns> = socket;
+
+        return switch (event) {
+            case "increment":
+                var nextCount = liveSocket.assigns.count + 1;
+                HandleEventResult.NoReply(liveSocket.assign(_.count, nextCount));
+            case _:
+                HandleEventResult.NoReply(liveSocket);
+        }
     }
-    
-    function render(assigns: Dynamic): String {
+
+    public static function render(assigns: CounterAssigns): String {
         return HXX.hxx('
             <div class="counter">
                 <h1>${assigns.count}</h1>
@@ -425,6 +442,8 @@ defmodule CounterLive do
 end
 ```
 
+Note: the Haxe return values are enums (`MountResult.Ok(...)`, `HandleEventResult.NoReply(...)`), which compile to the standard Elixir atom-tagged tuples (`{:ok, ...}`, `{:noreply, ...}`).
+
 ### Ecto Changesets
 ```haxe
 @:changeset  
@@ -439,17 +458,29 @@ class UserChangeset {
 
 ### OTP GenServer
 ```haxe
+import elixir.types.Atom;
+import elixir.types.GenServerCallbackResults.HandleCallResult;
+import elixir.types.GenServerCallbackResults.InitResult;
+
+enum abstract CounterCall(Atom) to Atom {
+    var Get = "get";
+    var Increment = "increment";
+}
+
 @:genserver
 class CounterServer {
-    var count = 0;
-    
-    function init(initial) {
-        count = initial;
-        return {:ok, count};
+    public static function init(initial: Int): InitResult<Int> {
+        return InitResult.Ok(initial);
     }
-    
-    function handle_call(:get, _from, state) {
-        return {:reply, state, state};
+
+    @:native("handle_call")
+    public static function handle_call(request: CounterCall, _from: Dynamic, state: Int): HandleCallResult<Int, Int> {
+        return switch (request) {
+            case Get:
+                HandleCallResult.Reply(state, state);
+            case Increment:
+                HandleCallResult.Reply(state + 1, state + 1);
+        }
     }
 }
 ```
