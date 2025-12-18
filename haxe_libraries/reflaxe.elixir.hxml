@@ -4,6 +4,11 @@
 # being developed in this repository. This allows tests and examples
 # to use `-lib reflaxe.elixir` to reference this compiler.
 #
+# CLI support:
+# - `npx lix run reflaxe.elixir <args...>` uses the @run directive below.
+#
+# @run: haxe -cp ${SCOPE_DIR}/src --run Run
+#
 # During development: Uses the local source code
 # After publication: Users would get a similar file pointing to installed version
 #

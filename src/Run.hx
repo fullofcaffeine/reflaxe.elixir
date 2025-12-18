@@ -145,6 +145,7 @@ class Run {
 		if (skipInstall) {
 			Sys.println('  npm install          # Install Haxe dependencies');
 			Sys.println('  mix deps.get         # Install Elixir dependencies');
+			Sys.println('  npx lix download     # Install Haxe libraries (per .haxerc)');
 		}
 		
 		Sys.println('  haxe build.hxml                 # Compile Haxe to Elixir');
