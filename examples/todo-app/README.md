@@ -106,6 +106,10 @@ todo-app/
 └── build-client.hxml      # Client (Haxe→JS) build (used by assets alias)
 ```
 
+Build note:
+- The canonical entrypoints are `build.hxml` (server), `build-client.hxml` (client), and `build-tests.hxml` (tests).
+- Any legacy multi-pass/prewarm experiments live under `examples/todo-app/hxml/legacy/` and are not required for normal development.
+
 ### Compilation Flow
 
 ```mermaid
