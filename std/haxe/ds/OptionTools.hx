@@ -16,7 +16,7 @@ import haxe.functional.Result;
  * - **Functor operations**: map for transforming contained values
  * - **Monad operations**: then (flatMap) for chaining Option-returning functions  
  * - **Collection operations**: all, values for working with arrays
- * - **BEAM integration**: toResult, toReply for OTP patterns
+ * - **BEAM integration**: toResult, toReply for OTP-friendly payloads
  * 
  * ## Usage Examples
  * 
@@ -28,7 +28,7 @@ import haxe.functional.Result;
  *     .unwrap("unknown@example.com");
  * 
  * // OTP GenServer integration
- * var reply = getUser(id).toReply();  // {:reply, {:ok, user}, state}
+ * var reply = getUser(id).toReply();  // {:ok, user} | {:error, "none"}
  * 
  * // Error handling chains
  * var outcome = findUser(id)
@@ -312,18 +312,22 @@ class OptionTools {
     }
     
     /**
-     * Convert Option to OTP-style reply tuple.
+     * Convert Option to a reply payload for BEAM/OTP patterns.
      * 
-     * For GenServer handle_call implementations. Generates appropriate
-     * {:reply, response, state} patterns.
+     * This is a convenience for GenServer-style code where you commonly want
+     * `{:ok, value}` / `{:error, reason}` reply payloads.
+     *
+     * Note: This does not include GenServer state. Wrap the result using your
+     * callback result type (e.g. `HandleCallResult.Reply(reply, state)`).
      * 
      * @param option The option to convert to reply
-     * @return Dynamic tuple appropriate for GenServer replies
+     * @param noneError Error message used when the option is None
+     * @return Result payload: Ok(value) or Error(noneError)
      */
-    public static function toReply<T>(option: Option<T>): Dynamic {
+    public static function toReply<T>(option: Option<T>, ?noneError: String = "none"): Result<T, String> {
         return switch (option) {
-            case Some(value): {reply: value, status: "ok"};
-            case None: {reply: null, status: "none"};
+            case Some(value): Ok(value);
+            case None: Error(noneError);
         }
     }
     

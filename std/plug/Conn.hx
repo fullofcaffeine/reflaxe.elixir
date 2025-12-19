@@ -1,5 +1,6 @@
 package plug;
 
+import elixir.types.Atom;
 import elixir.types.Term;
 
 /**
@@ -52,14 +53,14 @@ enum HttpStatus {
 abstract Conn<TParams>(Term) from Term to Term {
     
     /**
-     * Create typed conn from Dynamic value
+     * Create typed conn from an arbitrary term value (framework boundary)
      */
     public static function fromDynamic<TParams>(conn: Term): Conn<TParams> {
         return cast conn;
     }
     
     /**
-     * Get the underlying Dynamic conn
+     * Get the underlying term conn
      */
     public function toDynamic(): Term {
         return this;
@@ -386,7 +387,7 @@ abstract Conn<TParams>(Term) from Term to Term {
      * @return Updated conn with new assign
      */
     extern
-    public inline function assign(key: String, value: Term): Conn<TParams> {
+    public inline function assign(key: Atom, value: Term): Conn<TParams> {
         return untyped __elixir__('Plug.Conn.assign({0}, {1}, {2})', this, key, value);
     }
     

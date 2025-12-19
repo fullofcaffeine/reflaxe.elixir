@@ -58,10 +58,10 @@ class AssignMacro {
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
 		
-        // Generate Phoenix.Component.assign call with an atom key
-        // Use __elixir__ to embed :snake_case as an atom to match LiveView semantics
-        var codeStr = 'Phoenix.Component.assign({0}, :$snakeCaseName, {1})';
-        return macro untyped __elixir__($v{codeStr}, $socketExpr, $value);
+        // Generate Phoenix.Component.assign call with an atom key.
+        // We model the atom via `elixir.types.Atom` so this stays AST-based (no ERaw).
+        var atomKeyExpr: Expr = macro (($v{snakeCaseName} : elixir.types.Atom));
+        return macro phoenix.Component.assign($socketExpr, $e{atomKeyExpr}, $value);
 	}
 	
 	/**
@@ -92,33 +92,16 @@ class AssignMacro {
 					});
 				}
 
-				// Generate map for assign_multiple with atom keys
-				// Build the map string with atom keys and placeholders for values
-				var mapPairs = [];
-				var values: Array<Expr> = [];
-				var i = 1; // Start from 1 since socket is {0}
-				for (field in transformedFields) {
-					mapPairs.push(':${field.field} => {${i}}');
-					values.push(field.expr);
-					i++;
-				}
-				var mapString = '%{' + mapPairs.join(', ') + '}';
+					// Build an object literal with snake_case field names; the compiler emits
+					// `%{...}` with atom keys in Elixir. This keeps references visible in the AST
+					// so later hygiene passes cannot accidentally drop required binders.
+					var mapExpr: Expr = { expr: EObjectDecl(transformedFields), pos: updates.pos };
+					return macro phoenix.Component.assign($socketExpr, $e{mapExpr});
 
-				// Build complete code string as a constant
-				var codeStr = 'Phoenix.Component.assign({0}, $mapString)';
-
-				// Build the __elixir__ call with all arguments
-				// We need to construct: __elixir__(codeStr, socket, value1, value2, ...)
-				// Using $a{} to spread the array of expressions into the call arguments
-				var allArgs: Array<Expr> = [macro $v{codeStr}, socketExpr].concat(values);
-
-				// Return macro expression with $a{} to spread arguments
-				return macro untyped __elixir__($a{allArgs});
-
-			case _:
-				Context.error("Expected object literal with fields to merge", updates.pos);
-				return null;
-		}
+				case _:
+					Context.error("Expected object literal with fields to merge", updates.pos);
+					return null;
+			}
 	}
 	
 	/**
@@ -145,11 +128,9 @@ class AssignMacro {
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
 
-		// Generate Phoenix.Component.assign_new call
-		// Use proper __elixir__() with {N} placeholders for variables
-		// The atom :field is part of the constant string
-		var codeStr = 'Phoenix.Component.assign_new({0}, :$snakeCaseName, {1})';
-		return macro untyped __elixir__($v{codeStr}, $socketExpr, $defaultFn);
+		// Generate Phoenix.Component.assign_new/3 call with an atom key.
+		var atomKeyExpr: Expr = macro (($v{snakeCaseName} : elixir.types.Atom));
+		return macro phoenix.Component.assignNew($socketExpr, $e{atomKeyExpr}, $defaultFn);
 	}
 	
 	/**
@@ -176,11 +157,9 @@ class AssignMacro {
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
 
-		// Generate Phoenix.Component.update call
-		// Use proper __elixir__() with {N} placeholders for variables
-		// The atom :field is part of the constant string
-		var codeStr = 'Phoenix.Component.update({0}, :$snakeCaseName, {1})';
-		return macro untyped __elixir__($v{codeStr}, $socketExpr, $updater);
+		// Generate Phoenix.Component.update/3 call with an atom key.
+		var atomKeyExpr: Expr = macro (($v{snakeCaseName} : elixir.types.Atom));
+		return macro phoenix.Component.update($socketExpr, $e{atomKeyExpr}, $updater);
 	}
 	
 	/**

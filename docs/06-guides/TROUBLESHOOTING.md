@@ -360,11 +360,13 @@ This is now automatically handled by the compiler. If you see this issue:
 3. Consider adding explicit types for better IDE support:
 
 ```haxe
-// Instead of Dynamic
-var todos: Dynamic = socket.assigns.todos;
+import phoenix.LiveSocket;
+import phoenix.Phoenix.Socket;
 
-// Use explicit typing when possible
-var todos: Array<Todo> = cast socket.assigns.todos;
+typedef Assigns = { todos: Array<Todo> }
+
+var liveSocket: LiveSocket<Assigns> = cast socket;
+var todos: Array<Todo> = liveSocket.assigns.todos;
 ```
 
 ### Problem: ".length on Dynamic generates invalid code"
@@ -439,16 +441,26 @@ LiveView component renders but doesn't respond to events.
 
 **Solution:**
 ```haxe
+import elixir.types.Term;
+import phoenix.LiveSocket;
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.LiveView;
+import phoenix.Phoenix.Socket;
+
+typedef Assigns = { clicked: Bool }
+
 @:liveview
 class MyLive {
-    // Ensure handleEvent returns the socket
-    public function handleEvent(event: String, params: Dynamic, socket: Socket): Socket {
+    @:native("handle_event")
+    public static function handle_event(event: String, _params: Term, socket: Socket<Assigns>): HandleEventResult<Assigns> {
+        var liveSocket: LiveSocket<Assigns> = cast socket;
+
         return switch (event) {
             case "click":
-                // Must return the socket
-                socket.assign("clicked", true);
-            default:
-                socket; // Always return socket
+                liveSocket = LiveView.assignMultiple(liveSocket, {clicked: true});
+                NoReply(liveSocket);
+            case _:
+                NoReply(liveSocket);
         };
     }
 }
@@ -464,11 +476,21 @@ class MyLive {
 **Solution:**
 ```haxe
 // Ensure assigns are set in mount
-public function mount(params: Dynamic, session: Dynamic, socket: Socket): Socket {
-    return socket.assign({
-        products: [], // Initialize all assigns
-        loading: true
-    });
+import elixir.types.Term;
+import phoenix.LiveSocket;
+import phoenix.Phoenix.LiveView;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Socket;
+
+typedef Assigns = {
+    products: Array<Product>,
+    loading: Bool
+}
+
+public static function mount(_params: Term, _session: Term, socket: Socket<Assigns>): MountResult<Assigns> {
+    var liveSocket: LiveSocket<Assigns> = cast socket;
+    liveSocket = LiveView.assignMultiple(liveSocket, {products: [], loading: true});
+    return Ok(liveSocket);
 }
 ```
 
@@ -511,8 +533,11 @@ npx lix install github:fullofcaffeine/reflaxe.elixir#latest
 2. **Verify HXX syntax:**
 ```haxe
 // Correct HXX usage
-function render(assigns: Dynamic): String {
-    return HXX('<div class="container">${assigns.content}</div>');
+import HXX;
+import phoenix.types.Assigns;
+
+function render(assigns: Assigns<{content: String}>): String {
+    return HXX.hxx('<div class="container">${assigns.content}</div>');
 }
 ```
 
@@ -567,8 +592,11 @@ Error: Unterminated string or unexpected line ending
 **Solution:**
 ```haxe
 // Use proper multiline string syntax
-function complexTemplate(assigns: Dynamic): String {
-    return HXX('
+import HXX;
+import phoenix.types.Assigns;
+
+function complexTemplate(assigns: Assigns<{user: {name: String, email: String}}>): String {
+    return HXX.hxx('
         <div class="user-card">
             <h3>${assigns.user.name}</h3>
             <p class="email">${assigns.user.email}</p>
@@ -608,10 +636,13 @@ end
 **Solution:**
 1. **Use in LiveView context:**
 ```haxe
+import HXX;
+import phoenix.types.Assigns;
+
 @:liveview
 class MyLive {
-    function render(assigns: Dynamic): String {
-        return HXX('<div class="content">${assigns.message}</div>');
+    function render(assigns: Assigns<{message: String}>): String {
+        return HXX.hxx('<div class="content">${assigns.message}</div>');
     }
 }
 ```
@@ -619,10 +650,13 @@ class MyLive {
 2. **Check annotation placement:**
 ```haxe
 // Annotation must be on the class, not the function
+import HXX;
+import phoenix.types.Assigns;
+
 @:liveview  // ✅ Correct
 class MyLive {
-    function render(assigns: Dynamic): String {
-        return HXX('...');
+    function render(assigns: Assigns<{}>): String {
+        return HXX.hxx('...');
     }
 }
 ```
@@ -643,8 +677,11 @@ The HXX function is built into the compiler. If you see this error:
 // Remove any HXX imports
 
 // Just use it directly:
-function render(assigns: Dynamic): String {
-    return HXX('<div>content</div>');
+import HXX;
+import phoenix.types.Assigns;
+
+function render(_assigns: Assigns<{}>): String {
+    return HXX.hxx('<div>content</div>');
 }
 ```
 
@@ -670,7 +707,7 @@ Phoenix events like `phx-click` don't trigger event handlers.
 ```haxe
 // Ensure proper event syntax in HXX
 function todoItem(todo: Todo): String {
-    return HXX('
+    return HXX.hxx('
         <li class="todo-item">
             <input type="checkbox" 
                    phx-click="toggle" 
@@ -685,20 +722,25 @@ function todoItem(todo: Todo): String {
 }
 
 // Make sure LiveView has matching event handlers
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.Socket;
+
+typedef EventParams = { ?id: Int };
+typedef Assigns = {};
+
 @:liveview  
 class TodoLive {
-    function handleEvent(event: String, params: Dynamic, socket: Socket): SocketResult {
+    @:native("handle_event")
+    public static function handle_event(event: String, params: EventParams, socket: Socket<Assigns>): HandleEventResult<Assigns> {
         return switch (event) {
             case "toggle":
                 var id = params.id;
-                // Handle toggle logic
-                {:noreply, socket};
+                NoReply(socket);
             case "delete":
-                var id = params.id;  
-                // Handle delete logic
-                {:noreply, socket};
-            default:
-                {:noreply, socket};
+                var id = params.id;
+                NoReply(socket);
+            case _:
+                NoReply(socket);
         };
     }
 }
@@ -713,20 +755,23 @@ Large HXX templates causing slow compilation.
 1. **Break into smaller components:**
 ```haxe
 // Instead of one huge template
-function render(assigns: Dynamic): String {
-    return HXX('
+import HXX;
+import phoenix.types.Assigns;
+
+function render(assigns: Assigns<{title: String, body: String}>): String {
+    return HXX.hxx('
         ${header(assigns)}
         ${content(assigns)}
         ${footer(assigns)}
     ');
 }
 
-function header(assigns: Dynamic): String {
-    return HXX('<header>${assigns.title}</header>');
+function header(assigns: Assigns<{title: String, body: String}>): String {
+    return HXX.hxx('<header>${assigns.title}</header>');
 }
 
-function content(assigns: Dynamic): String {
-    return HXX('<main>${assigns.body}</main>');
+function content(assigns: Assigns<{title: String, body: String}>): String {
+    return HXX.hxx('<main>${assigns.body}</main>');
 }
 ```
 
@@ -972,10 +1017,7 @@ import phoenix.Socket;
 // Haxe code is fine with semicolons
 var x = 10; // This is OK
 
-// But in untyped blocks, avoid them
-untyped __elixir__('
-    x = 10  # No semicolon
-');
+// Avoid `untyped`/`__elixir__()` in application code; use typed externs instead.
 ```
 
 ## FAQ
@@ -984,9 +1026,11 @@ untyped __elixir__('
 
 **A:** Yes! Use extern definitions or escape hatches:
 ```haxe
+import elixir.types.Term;
+
 @:native("ExistingLibrary")
 extern class ExistingLibrary {
-    public static function doSomething(arg: String): Dynamic;
+    public static function doSomething(arg: String): Term;
 }
 ```
 

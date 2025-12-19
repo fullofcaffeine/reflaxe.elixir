@@ -231,10 +231,10 @@ public function mapPosition(pos: Position): Void {
     
     try {
         // VLQ encoding and mapping logic
-    } catch (e: Dynamic) {
+    } catch (err: haxe.Exception) {
         // Log error but don't fail compilation
         if (Context.defined("source-map-verbose")) {
-            Context.warning('Source map error: $e', pos);
+            Context.warning('Source map error: ${err.message}', pos);
         }
     }
 }
@@ -683,7 +683,7 @@ Mapping found:
   Haxe:   src_haxe/UserLive.hx:28:12
 
 Haxe context (lines 26-30):
-  26: public function handleEvent(event: String, params: Dynamic, socket: Socket) {
+  26: public function handleEvent(event: String, params: elixir.types.Term, socket: Socket) {
   27:     return switch(event) {
   28:         case "increment": socket.assign("count", socket.assigns.count + 1);  // <- Mapped position
   29:         default: socket;
@@ -707,7 +707,7 @@ $ mix haxe.inspect --analyze-patterns | grep assign
 **Step 4: Fix in Haxe with proper null handling**
 ```haxe
 // In src_haxe/UserLive.hx
-public function handleEvent(event: String, params: Dynamic, socket: Socket) {
+public function handleEvent(event: String, params: elixir.types.Term, socket: Socket) {
     return switch(event) {
         case "increment": 
             var currentCount = socket.assigns.count != null ? socket.assigns.count : 0;

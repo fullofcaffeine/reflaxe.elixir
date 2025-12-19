@@ -5651,6 +5651,16 @@ class ElixirASTPassRegistry {
             enabled: false,
             pass: reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms.pass
         });
+        // Late semantic fix: if a match binds to a block value (pat = (stmt1; stmt2; expr)),
+        // ensure the match binds to the *last* expression once flattened into statement context.
+        // This is intentionally late to avoid perturbing earlier pattern-based transforms.
+        passes.push({
+            name: "MatchBlockRhsExtractLast_Final",
+            description: "Expand `pat = <block>` into block prefix statements + `pat = last_expr` (semantic fix)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MatchBlockRhsExtractLastTransforms.pass,
+            runAfter: ["HandleInfoAliasCleanup_Final"]
+        });
         passes.push({
             name: "CaseClauseUnusedBinderUnderscore_Final",
             description: "In case clauses, underscore unused binders (absolute-final)",
@@ -5716,6 +5726,16 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseBinderUnderscoreAlignTransforms.pass,
             runAfter: ["FinalUnderscoreRepair"]
+        });
+
+        // Absolute-last: normalize any ambiguous `Component.*` call targets to `Phoenix.Component.*`.
+        // This must run after all qualification and alias passes to avoid reintroduction of `<App>.Component`.
+        passes.push({
+            name: "PhoenixComponentModuleNormalize_AbsoluteLast",
+            description: "Absolute-last: rewrite Component.assign/assign_new/update to Phoenix.Component",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.PhoenixComponentModuleNormalizeTransforms.pass,
+            runAfter: ["CaseBinderUnderscoreAlign_AbsoluteFinal_Replay"]
         });
 
         // Filter disabled passes first

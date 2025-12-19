@@ -194,7 +194,7 @@ extern inline function toUpperCase(): String {
 @:native("Phoenix.LiveView")
 extern class LiveView {
     @:native("assign")
-    static function assign<T>(socket: Socket<T>, key: String, value: Dynamic): Socket<T>;
+    static function assign<TAssigns, TValue>(socket: Socket<TAssigns>, key: String, value: TValue): Socket<TAssigns>;
 }
 // Generates: Phoenix.LiveView.assign(socket, key, value)
 ```
@@ -310,7 +310,7 @@ The most successful Reflaxe compilers minimize AST transformations.
 - **Create Std.hx, Log.hx or other core Haxe classes in std/** - These are handled by the compiler
 - Define test infrastructure types in application code
 - Create duplicated functionality across different std modules
-- Use Dynamic for standard library APIs
+- Leak `Dynamic` in new public standard-library APIs (except where the Haxe Std API requires it)
 - Implement escape hatches in standard library
 - Break type safety for convenience
 
@@ -386,9 +386,10 @@ out/
 import phoenix.test.Conn;
 import ecto.test.Sandbox;
 import haxe.test.ExUnit;
+import elixir.types.Term;
 
 // ❌ WRONG: Application-defined test types
-typedef Conn = Dynamic;
+typedef Conn = Term;
 ```
 
 ### Namespace Conventions
@@ -478,21 +479,23 @@ See: `std/phoenix/macros/PresenceMacro.hx` for complete implementation
 **Why This Matters**: Haxe combines the class-level and method-level @:native annotations. If both contain the full module path, you get malformed output like `Phoenix.Presence.phoenix._presence.track`.
 
 ```haxe
+import elixir.types.Term;
+
 // ✅ CORRECT: Class has module, methods have only method names
 @:native("Phoenix.Presence")
 extern class Presence {
     @:native("track")  // Just the method name!
-    static function track(socket: Dynamic, key: String, meta: Dynamic): Dynamic;
+    static function track(socket: Term, key: String, meta: Term): Term;
     
     @:native("list")   // Just the method name!
-    static function list(topic: String): Dynamic;
+    static function list(topic: String): Term;
 }
 
 // ❌ WRONG: Duplicating the module path in method annotations
 @:native("Phoenix.Presence")
 extern class Presence {
     @:native("Phoenix.Presence.track")  // WRONG! Creates malformed output
-    static function track(socket: Dynamic, key: String, meta: Dynamic): Dynamic;
+    static function track(socket: Term, key: String, meta: Term): Term;
 }
 ```
 
@@ -551,9 +554,10 @@ enum Result<T,E> {
 ### Test Infrastructure Architecture
 ```haxe
 // haxe/test/ExUnit.hx - ExUnit integration
+import elixir.types.Term;
 extern class ExUnit {
     static function start(): Void;
-    static function configure(options: Dynamic): Void;
+    static function configure(options: Term): Void;
 }
 
 // phoenix/test/ConnCase.hx - Phoenix test patterns
@@ -586,27 +590,38 @@ extern class ConnCase {
 ### Phoenix Integration Standards
 ```haxe
 // phoenix/LiveView.hx - Type-safe LiveView API
+import phoenix.Phoenix.Socket;
 extern class LiveView {
-    static function assign<T>(socket: Socket, assigns: T): Socket;
-    static function push_event(socket: Socket, event: String, payload: Dynamic): Socket;
+    @:overload(function<TAssigns, TPartial>(socket: Socket<TAssigns>, assigns: TPartial): Socket<TAssigns> {})
+    static function assign<TAssigns, TValue>(socket: Socket<TAssigns>, key: String, value: TValue): Socket<TAssigns>;
+    static function push_event<TAssigns, TPayload>(socket: Socket<TAssigns>, event: String, payload: TPayload): Socket<TAssigns>;
 }
 
 // phoenix/types/Assigns.hx - Type-safe assigns
-abstract Assigns<T>(Dynamic) {
+import elixir.types.Term;
+abstract Assigns<T>(T) from T to T {
     @:arrayAccess
-    public function get(key: String): Dynamic;
+    public function get(key: String): Term;
     
     @:arrayAccess  
-    public function set(key: String, value: Dynamic): Dynamic;
+    public function set<V>(key: String, value: V): V;
 }
 ```
 
 ### Ecto Integration Standards
 ```haxe
 // ecto/Changeset.hx - Type-safe changesets
-extern class Changeset<T> {
-    static function cast<T>(data: T, params: Dynamic, permitted: Array<String>): Changeset<T>;
-    static function validate_required<T>(changeset: Changeset<T>, fields: Array<String>): Changeset<T>;
+import ecto.Changeset;
+
+typedef UserParams = {
+    ?name: String,
+    ?email: String
+}
+
+public static function changeset(user: User, params: UserParams): Changeset<User, UserParams> {
+    return new Changeset(user, params)
+        .cast(["name", "email"])
+        .validateRequired(["name", "email"]);
 }
 ```
 

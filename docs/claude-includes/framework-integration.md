@@ -42,18 +42,39 @@ Todo.hx @:schema           → lib/todo_app/schemas/todo.ex    # Domain models
 
 ### LiveView Patterns
 ```haxe
+import elixir.types.Term;
+import phoenix.LiveSocket;
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.LiveView;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Socket;
+
+typedef TodoAssigns = {
+    todos: Array<Todo>
+}
+
+typedef TodoEventParams = {
+    ?title: String,
+    ?id: Int
+}
+
 @:liveview
 class TodoLive {
-    function mount(params: Dynamic, session: Dynamic, socket: Socket): Socket {
-        return socket.assign("todos", []);
+    public static function mount(_params: Term, _session: Term, socket: Socket<TodoAssigns>): MountResult<TodoAssigns> {
+        var liveSocket: LiveSocket<TodoAssigns> = cast socket;
+        liveSocket = LiveView.assignMultiple(liveSocket, {todos: []});
+        return Ok(liveSocket);
     }
     
-    function handleEvent(event: String, params: Dynamic, socket: Socket): Socket {
-        return switch(event) {
-            case "add_todo": addTodo(params, socket);
-            case "toggle_todo": toggleTodo(params, socket);
-            default: socket;
-        }
+    @:native("handle_event")
+    public static function handle_event(event: String, params: TodoEventParams, socket: Socket<TodoAssigns>): HandleEventResult<TodoAssigns> {
+        var liveSocket: LiveSocket<TodoAssigns> = cast socket;
+
+        return switch (event) {
+            case "add_todo": NoReply(liveSocket);
+            case "toggle_todo": NoReply(liveSocket);
+            case _: NoReply(liveSocket);
+        };
     }
 }
 ```

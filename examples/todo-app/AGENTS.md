@@ -693,69 +693,38 @@ typedef TodoParams = {
 ### 3. Phoenix LiveView Components
 
 ```haxe
-// src_haxe/server/live/TodoLive.hx
+import HXX;
+import elixir.types.Term;
+import phoenix.LiveSocket;
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.LiveView;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Socket;
+
+typedef Assigns = {
+    todos: Array<Todo>,
+    current_user: User,
+    editing_todo: Null<Todo>,
+    search_query: String
+}
+
 @:native("TodoAppWeb.TodoLive")
 @:liveview
 class TodoLive {
-    // Type-safe assigns
-    typedef Assigns = {
-        todos: Array<Todo>,
-        currentUser: User,
-        editingTodo: Null<Todo>,
-        searchQuery: String
+    public static function mount(_params: Term, _session: Term, socket: Socket<Assigns>): MountResult<Assigns> {
+        var liveSocket: LiveSocket<Assigns> = cast socket;
+        // Full implementation: examples/todo-app/src_haxe/server/live/TodoLive.hx
+        return Ok(liveSocket);
     }
-    
-    public static function mount(params: Dynamic, session: Dynamic, socket: LiveSocket<Assigns>): Socket {
-        var socket = socket
-            .assign("currentUser", getCurrentUser(session))
-            .assign("todos", loadTodos())
-            .assign("editingTodo", null)
-            .assign("searchQuery", "");
-            
-        return {:ok, socket};
+
+    @:native("handle_event")
+    public static function handle_event(event: String, _params: Term, socket: Socket<Assigns>): HandleEventResult<Assigns> {
+        // Full implementation: examples/todo-app/src_haxe/server/live/TodoLive.hx
+        return NoReply(socket);
     }
-    
-    public static function handleEvent(event: String, params: Dynamic, socket: Socket): Socket {
-        return switch(event) {
-            case "add_todo": addTodo(params, socket);
-            case "toggle_todo": toggleTodo(params.id, socket);
-            case "delete_todo": deleteTodo(params.id, socket);
-            case "search": updateSearch(params.query, socket);
-            default: {:noreply, socket};
-        }
-    }
-    
-    // HXX templates with Phoenix components
-    public static function render(assigns: Assigns): String {
-        return HXX.hxx('
-            <div class="todo-container">
-                <.header>
-                    Todo List for <%= @currentUser.name %>
-                </.header>
-                
-                <.simple_form for={@form} phx-submit="add_todo">
-                    <.input field={@form[:title]} label="Title" />
-                    <.input field={@form[:description]} type="textarea" label="Description" />
-                    <.button>Add Todo</.button>
-                </.simple_form>
-                
-                <.table rows={@todos}>
-                    <:col let={todo} label="Title">
-                        <%= todo.title %>
-                    </:col>
-                    <:col let={todo} label="Status">
-                        <.button phx-click="toggle_todo" phx-value-id={todo.id}>
-                            <%= if todo.completed, do: "✓", else: "○" %>
-                        </.button>
-                    </:col>
-                    <:action let={todo}>
-                        <.link phx-click="delete_todo" phx-value-id={todo.id}>
-                            Delete
-                        </.link>
-                    </:action>
-                </.table>
-            </div>
-        ');
+
+    public static function render(_assigns: Assigns): String {
+        return HXX.hxx('<div class="todo-container"></div>');
     }
 }
 ```

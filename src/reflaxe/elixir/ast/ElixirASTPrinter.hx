@@ -868,7 +868,30 @@ class ElixirASTPrinter {
                 }].join(', ') + ']';
                 
             case ETuple(elements):
-                '{' + [for (e in elements) print(e, 0)].join(', ') + '}';
+                '{' + [for (e in elements) {
+                    switch (e.def) {
+                        case EBlock(exprs) if (exprs.length > 1):
+                            // Multi-statement blocks inside tuple literals must be reduced to a single expression.
+                            // Use an IIFE to avoid container parsing issues and to prevent temp bindings from leaking.
+                            '(fn -> ' + print(e, 0).rtrim() + ' end).()';
+                        case EDo(stmts) if (stmts.length > 1):
+                            // Do-end blocks in expression position: also wrap.
+                            '(fn -> ' + print(e, 0).rtrim() + ' end).()';
+                        case EIf(_cond, thenBranch, elseBranch):
+                            // Inline `if` uses commas (`do:`/`else:`) and is ambiguous inside containers unless wrapped.
+                            var isInline = isSimpleExpression(thenBranch) &&
+                                (elseBranch == null || isSimpleExpression(elseBranch));
+                            if (isInline) '(' + print(e, 0) + ')' else print(e, 0);
+                        case EFor(_, _, _, _, _):
+                            // Comprehensions inside tuples can also confuse the parser; keep them explicit.
+                            '(' + print(e, 0) + ')';
+                        case EParen(inner) if (switch (inner.def) { case EBlock(es) if (es.length > 1): true; case EDo(ds) if (ds.length > 1): true; default: false; }):
+                            // Already parenthesized multi-statement expression: still wrap in IIFE to ensure a single tuple element.
+                            '(fn -> ' + print(e, 0).rtrim() + ' end).()';
+                        default:
+                            print(e, 0);
+                    }
+                }].join(', ') + '}';
                 
             case EMap(pairs):
                 '%{' + [for (p in pairs) {
@@ -1339,7 +1362,38 @@ class ElixirASTPrinter {
                     }
                 })();
                 var moduleStr = printQualifiedModule(module);
-                moduleStr + '.' + funcName + '(' + argStr + ')';
+                var finalFuncName = funcName;
+
+                // Phoenix.Component normalization
+                // Some upstream shapes can yield ambiguous `Component.*` module targets (or be qualified to `<App>.Component`)
+                // in Web modules. `TodoApp.Component` is not a Phoenix module; normalize these known calls back to
+                // `Phoenix.Component.*` to avoid undefined-module warnings and runtime failures.
+                inline function isPhoenixComponentFn(fnName: String): Bool {
+                    return fnName == "assign" || fnName == "assign_new" || fnName == "update";
+                }
+                // Handle compound funcName like "Component.assign"
+                if (finalFuncName != null && StringTools.startsWith(finalFuncName, "Component.")) {
+                    var rest = finalFuncName.substr("Component.".length);
+                    if (isPhoenixComponentFn(rest)) {
+                        moduleStr = "Phoenix.Component";
+                        finalFuncName = rest;
+                    }
+                }
+                // Handle module already qualified to `<App>.Component`
+                if (finalFuncName != null && isPhoenixComponentFn(finalFuncName)) {
+                    var app: Null<String> = null;
+                    try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
+                    var appComponent = (app != null && app.length > 0) ? (app + ".Component") : null;
+                    var appWebComponent = (app != null && app.length > 0) ? (app + "Web.Component") : null;
+                    if (moduleStr == "Component"
+                        || (appComponent != null && moduleStr == appComponent)
+                        || (appWebComponent != null && moduleStr == appWebComponent)
+                    ) {
+                        moduleStr = "Phoenix.Component";
+                    }
+                }
+
+                moduleStr + '.' + finalFuncName + '(' + argStr + ')';
                 
             case EPipe(left, right):
                 print(left, 0) + ' |> ' + print(right, 0);
@@ -1752,6 +1806,9 @@ class ElixirASTPrinter {
                         return cleaned.join('\n');
                     }
                     bodyStr = stripBareNumericLines(bodyStr);
+                    if (bodyStr == null || StringTools.trim(bodyStr).length == 0) {
+                        bodyStr = 'nil';
+                    }
 
                     #if debug_loop_builder
                     // DISABLED: trace('[XRay Printer]   Printed body string (first 200 chars): ${bodyStr.substring(0, bodyStr.length > 200 ? 200 : bodyStr.length)}');
@@ -1778,7 +1835,10 @@ class ElixirASTPrinter {
                     [for (clause in clauses)
                         indentStr(indent + 1) + printPatterns(clause.args) +
                         (clause.guard != null ? ' when ' + print(clause.guard, 0) : '') +
-                        ' ->\n' + indentStr(indent + 2) + print(clause.body, indent + 2)
+                        ' ->\n' + indentStr(indent + 2) + (function() {
+                            var clauseBody = print(clause.body, indent + 2);
+                            return (clauseBody == null || StringTools.trim(clauseBody).length == 0) ? 'nil' : clauseBody;
+                        })()
                     ].join('\n') + '\n' +
                     indentStr(indent) + 'end';
                 }
@@ -2225,7 +2285,9 @@ class ElixirASTPrinter {
         if (clause.varName != null) {
             result += ' -> ' + clause.varName;
         }
-        result += ' ->\n' + indentStr(indent + 1) + print(clause.body, indent + 1);
+        var bodyStr = print(clause.body, indent + 1);
+        if (bodyStr == null || StringTools.trim(bodyStr).length == 0) bodyStr = 'nil';
+        result += ' ->\n' + indentStr(indent + 1) + bodyStr;
         return result;
     }
     
@@ -2239,8 +2301,10 @@ class ElixirASTPrinter {
             case Throw: ':throw';
             case Any: '_';
         };
+        var bodyStr = print(clause.body, indent + 1);
+        if (bodyStr == null || StringTools.trim(bodyStr).length == 0) bodyStr = 'nil';
         return kindStr + ', ' + printPattern(clause.pattern) + ' ->\n' +
-            indentStr(indent + 1) + print(clause.body, indent + 1);
+            indentStr(indent + 1) + bodyStr;
     }
     
     /**

@@ -130,7 +130,7 @@ class User {
     }
     
     /**
-     * User initials for avatars (uses __elixir__ for clean generation)
+     * User initials for avatars (pure Haxe; no __elixir__ injections in apps)
      */
     public static function initials(user: User): String {
         var name = displayName(user);

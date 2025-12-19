@@ -1,6 +1,6 @@
 defmodule TableBuilder do
   def add_column(struct, name, type, options) do
-    _ = columns ++ [%{:name => name, :type => type, :options => options}]
+    _ = columns ++ [%{:name => name, :type => type, :options => (if (options != nil), do: options, else: nil)}]
     struct
   end
   def add_id(struct, name, type) do

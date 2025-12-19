@@ -349,12 +349,12 @@ class PresenceMacro {
         newFields.push(generateUpdateWithSocket());
         newFields.push(generateUntrackWithSocket());
 
-        // Generate external topic-based wrappers expected by snapshots:
+        // Generate external topic-based wrappers:
         newFields.push(generateExternalList(fqModule));
-        newFields.push(generateExternalGetByKey());
-        newFields.push(generateExternalTrackTopic());
-        newFields.push(generateExternalUpdateTopic());
-        newFields.push(generateExternalUntrackTopic());
+        newFields.push(generateExternalGetByKey(fqModule));
+        newFields.push(generateExternalTrackTopic(fqModule));
+        newFields.push(generateExternalUpdateTopic(fqModule));
+        newFields.push(generateExternalUntrackTopic(fqModule));
 		
 		return fields.concat(newFields);
 	}
@@ -661,10 +661,6 @@ class PresenceMacro {
      * This avoids tying wrappers to @:native module names and matches snapshot shapes.
      */
     static function generateExternalList(fqModule:String): Field {
-        #if macro
-        var app = reflaxe.elixir.PhoenixMapper.getAppModuleName();
-        var appWebPresence = app + "Web.Presence";
-        #end
         return {
             name: "list",
             pos: Context.currentPos(),
@@ -672,12 +668,12 @@ class PresenceMacro {
                 args: [ {name: "topic", type: macro : String} ],
                 ret: macro : elixir.types.Term,
                 expr: macro {
-                    // Emit <App>Web.Presence.list(topic)
-                    return untyped __elixir__('{0}.list({1})', untyped __elixir__($v{appWebPresence}), topic);
+                    // Emit <PresenceModule>.list(topic) (function injected by `use Phoenix.Presence`)
+                    return untyped __elixir__('{0}.list({1})', untyped __elixir__($v{fqModule}), topic);
                 }
             }),
-            access: [APublic, AStatic, AInline],
-            doc: "List presences for a topic via <App>Web.Presence.list/1",
+            access: [APublic, AStatic, AExtern, AInline],
+            doc: "List presences for a topic via the Presence module's injected list/1",
             meta: [{name: ":doc", pos: Context.currentPos()}]
         };
     }
@@ -685,25 +681,32 @@ class PresenceMacro {
     /**
      * Generate external getByKey(topic, key) wrapper.
      */
-    static function generateExternalGetByKey(): Field {
+    static function generateExternalGetByKey(fqModule:String): Field {
         return {
             name: "getByKey",
             pos: Context.currentPos(),
             kind: FFun({
+                params: [ {name: "M"} ],
                 args: [ {name: "topic", type: macro : String}, {name: "key", type: macro : String} ],
-                ret: macro : elixir.types.Term,
+                ret: macro : Null<phoenix.Presence.PresenceEntry<M>>,
                 expr: macro {
-                    return untyped __elixir__('Phoenix.Presence.get_by_key({0}, {1})', topic, key);
+                    // Presence.get_by_key/2 returns `[]` when missing; convert to `nil` for Haxe `Null<T>`.
+                    return untyped __elixir__(
+                      '(case {0}.get_by_key({1}, {2}) do [] -> nil; entry -> entry end)',
+                      untyped __elixir__($v{fqModule}),
+                      topic,
+                      key
+                    );
                 }
             }),
-            access: [APublic, AStatic, AInline],
-            doc: "Get a presence entry by key via __MODULE__.get_by_key/2",
+            access: [APublic, AStatic, AExtern, AInline],
+            doc: "Get a presence entry by key via the Presence module's injected get_by_key/2",
             meta: [{name: ":doc", pos: Context.currentPos()}]
         };
     }
 
     /** Topic-based external track wrapper: track(topic, key, meta) */
-    static function generateExternalTrackTopic(): Field {
+    static function generateExternalTrackTopic(fqModule:String): Field {
         return {
             name: "track",
             pos: Context.currentPos(),
@@ -712,18 +715,24 @@ class PresenceMacro {
                 args: [ {name: "topic", type: macro : String}, {name: "key", type: macro : String}, {name: "meta", type: macro : M} ],
                 ret: macro : Void,
                 expr: macro {
-                    // Call Phoenix.Presence directly for external usage
-                    untyped __elixir__('Phoenix.Presence.track({0}, {1}, {2})', topic, key, meta);
+                    // Emit <PresenceModule>.track(self(), topic, key, meta)
+                    untyped __elixir__(
+                      '{0}.track(self(), {1}, {2}, {3})',
+                      untyped __elixir__($v{fqModule}),
+                      topic,
+                      key,
+                      meta
+                    );
                 }
             }),
-            access: [APublic, AStatic, AInline],
-            doc: "External track wrapper using topic; injects self()",
+            access: [APublic, AStatic, AExtern, AInline],
+            doc: "External track wrapper using topic; calls PresenceModule.track/4",
             meta: [{name: ":doc", pos: Context.currentPos()}]
         };
     }
 
     /** Topic-based external update wrapper: update(topic, key, meta) */
-    static function generateExternalUpdateTopic(): Field {
+    static function generateExternalUpdateTopic(fqModule:String): Field {
         return {
             name: "update",
             pos: Context.currentPos(),
@@ -732,17 +741,23 @@ class PresenceMacro {
                 args: [ {name: "topic", type: macro : String}, {name: "key", type: macro : String}, {name: "meta", type: macro : M} ],
                 ret: macro : Void,
                 expr: macro {
-                    untyped __elixir__('Phoenix.Presence.update({0}, {1}, {2})', topic, key, meta);
+                    untyped __elixir__(
+                      '{0}.update(self(), {1}, {2}, {3})',
+                      untyped __elixir__($v{fqModule}),
+                      topic,
+                      key,
+                      meta
+                    );
                 }
             }),
-            access: [APublic, AStatic, AInline],
-            doc: "External update wrapper using topic; injects self()",
+            access: [APublic, AStatic, AExtern, AInline],
+            doc: "External update wrapper using topic; calls PresenceModule.update/4",
             meta: [{name: ":doc", pos: Context.currentPos()}]
         };
     }
 
     /** Topic-based external untrack wrapper: untrack(topic, key) */
-    static function generateExternalUntrackTopic(): Field {
+    static function generateExternalUntrackTopic(fqModule:String): Field {
         return {
             name: "untrack",
             pos: Context.currentPos(),
@@ -750,11 +765,16 @@ class PresenceMacro {
                 args: [ {name: "topic", type: macro : String}, {name: "key", type: macro : String} ],
                 ret: macro : Void,
                 expr: macro {
-                    untyped __elixir__('Phoenix.Presence.untrack({0}, {1})', topic, key);
+                    untyped __elixir__(
+                      '{0}.untrack(self(), {1}, {2})',
+                      untyped __elixir__($v{fqModule}),
+                      topic,
+                      key
+                    );
                 }
             }),
-            access: [APublic, AStatic, AInline],
-            doc: "External untrack wrapper using topic; injects self()",
+            access: [APublic, AStatic, AExtern, AInline],
+            doc: "External untrack wrapper using topic; calls PresenceModule.untrack/3",
             meta: [{name: ":doc", pos: Context.currentPos()}]
         };
     }
