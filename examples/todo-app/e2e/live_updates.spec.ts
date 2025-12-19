@@ -38,7 +38,36 @@ test('live updates propagate across two sessions', async ({ browser }) => {
 
   await expect.poll(async () => (await cardB.getAttribute('data-completed')) || '', { timeout: 20000 }).toBe(expected)
 
+  // Edit in session A and expect session B to receive the updated title
+  const edited = `LiveEdited ${Date.now()}`
+  await cardA.getByTestId('btn-edit-todo').click()
+  const editFormA = pageA.locator('form[phx-submit="save_todo"]').first()
+  await expect(editFormA).toBeVisible({ timeout: 20000 })
+  const editTitleInput = editFormA.getByTestId('input-title').first()
+  await editTitleInput.evaluate((el, val) => {
+    const input = el as HTMLInputElement
+    input.removeAttribute('readonly')
+    input.value = val as string
+    input.dispatchEvent(new Event('input', { bubbles: true }))
+  }, edited)
+  await editFormA.getByRole('button', { name: /Save/i }).click()
+
+  await expect(pageA.locator('h3', { hasText: edited })).toBeVisible({ timeout: 20000 })
+  await expect(pageB.locator('h3', { hasText: edited })).toBeVisible({ timeout: 20000 })
+  await expect(pageB.locator('h3', { hasText: title })).toHaveCount(0)
+
+  // Delete in session A and expect session B to remove it too
+  const editedCardA = pageA.locator('[data-testid="todo-card"]', { has: pageA.locator('h3', { hasText: edited }) }).first()
+  const editedCardB = pageB.locator('[data-testid="todo-card"]', { has: pageB.locator('h3', { hasText: edited }) }).first()
+  await expect(editedCardA).toBeVisible({ timeout: 20000 })
+  await expect(editedCardB).toBeVisible({ timeout: 20000 })
+
+  pageA.once('dialog', d => d.accept())
+  await editedCardA.getByTestId('btn-delete-todo').click()
+
+  await expect(pageA.locator('h3', { hasText: edited })).toHaveCount(0, { timeout: 20000 })
+  await expect(pageB.locator('h3', { hasText: edited })).toHaveCount(0, { timeout: 20000 })
+
   await ctxA.close()
   await ctxB.close()
 })
-

@@ -4,6 +4,7 @@ test('sort by due date orders earliest first', async ({ page }) => {
   const base = process.env.BASE_URL || 'http://localhost:4001'
   await page.goto(base + '/todos')
   await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 15000 })
+  const group = `duegrp-${Date.now()}`
 
   const mk = async (title: string, due: string) => {
     await page.getByTestId('btn-new-todo').click()
@@ -20,12 +21,24 @@ test('sort by due date orders earliest first', async ({ page }) => {
       input.dispatchEvent(new Event('input', { bubbles: true }))
       input.dispatchEvent(new Event('change', { bubbles: true }))
     }, due)
+    await form.locator('input[name="tags"]').fill(group)
+    await page.getByTestId('btn-create-todo').click()
+    await expect.poll(async () => await page.locator('[data-testid="todo-card"] h3', { hasText: title }).count(), { timeout: 20000 }).toBeGreaterThan(0)
+  }
+
+  const mkNoDue = async (title: string) => {
+    await page.getByTestId('btn-new-todo').click()
+    const form = page.locator('form[phx-submit="create_todo"]').first()
+    await expect(form).toBeVisible()
+    await page.getByTestId('input-title').fill(title)
+    await form.locator('input[name="tags"]').fill(group)
     await page.getByTestId('btn-create-todo').click()
     await expect.poll(async () => await page.locator('[data-testid="todo-card"] h3', { hasText: title }).count(), { timeout: 20000 }).toBeGreaterThan(0)
   }
 
   const tEarly = `DueEarly ${Date.now()}`
   const tLate = `DueLate ${Date.now()}`
+  const tNone = `DueNone ${Date.now()}`
   const today = new Date()
   const pad = (n: number) => n.toString().padStart(2, '0')
   const y = today.getFullYear()
@@ -37,15 +50,20 @@ test('sort by due date orders earliest first', async ({ page }) => {
   const d2 = pad(tomorrow.getDate())
   await mk(tLate, `${y2}-${m2}-${d2}`)
   await mk(tEarly, `${y}-${m}-${d}`)
+  await mkNoDue(tNone)
 
   await page.selectOption('select[name="sort_by"]', 'due_date')
   await page.waitForTimeout(300)
 
-  const titles = await page.locator('[data-testid="todo-card"] h3').allTextContents()
+  const titles = await page.locator('[data-testid="todo-card"]', { hasText: group }).locator('h3').allTextContents()
   const iEarly = titles.findIndex(t => t.includes(tEarly))
   const iLate = titles.findIndex(t => t.includes(tLate))
+  const iNone = titles.findIndex(t => t.includes(tNone))
   expect(iEarly).toBeGreaterThanOrEqual(0)
   expect(iLate).toBeGreaterThanOrEqual(0)
+  expect(iNone).toBeGreaterThanOrEqual(0)
   // Earliest first → tEarly before tLate
   expect(iEarly).toBeLessThan(iLate)
+  // Items without due date should sort after items with due dates
+  expect(iNone).toBeGreaterThan(iLate)
 })

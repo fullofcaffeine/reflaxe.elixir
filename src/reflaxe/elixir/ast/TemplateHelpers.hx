@@ -280,7 +280,11 @@ class TemplateHelpers {
 
     static function rewriteInterpolationsInternal(s:String):String {
         if (s == null) return s;
-        if (s.indexOf("${") == -1 && s.indexOf("#{") == -1 && s.indexOf("<for {") == -1) {
+        // NOTE: Even when there are no explicit `${...}` / `#{...}` markers, Haxe string interpolation
+        // inside an HXX template (e.g. `value=${assigns.query}`) becomes string concatenation and
+        // we may have already emitted `<%= ... %>` fragments (via collectTemplateContent).
+        // We still need to run attribute-level rewrites so `attr=<%= expr %>` becomes `attr={expr}`.
+        if (s.indexOf("${") == -1 && s.indexOf("#{") == -1 && s.indexOf("<for {") == -1 && s.indexOf("<%") == -1) {
             return s;
         }
         s = rewriteAttributeInterpolations(s);
@@ -365,7 +369,10 @@ class TemplateHelpers {
             var pattern = StringTools.trim(binding[0]);
             var iterator = StringTools.trim(binding[1]);
             iterator = StringTools.replace(iterator, "assigns.", "@");
-            chunks.push("<% for " + pattern + " <- " + iterator + " do %>");
+            // In HEEx, comprehensions must be output with `<%=` so the rendered
+            // iodata is included in the template (plain `<%` triggers warnings
+            // and results in no output).
+            chunks.push("<%= for " + pattern + " <- " + iterator + " do %>");
             chunks.push(rewriteForBlocksInternal(body));
             chunks.push("<% end %>");
             i = closeTag + 6;
@@ -377,9 +384,27 @@ class TemplateHelpers {
     static function rewriteAttributeEexInterpolations(s:String):String {
         // Fast-path: regex-based attribute EEx → HEEx conversion (single pass), avoiding heavy scanning
         if (s == null || s.indexOf("<%") == -1) return s;
+        // Normalize common wrappers introduced by Haxe string interpolation so boolean
+        // attributes remain booleans (e.g. selected/checked/disabled).
+        function normalizeAttrExpr(expr:String):String {
+            var e = StringTools.trim(expr);
+            // Unwrap (fn -> ... end).()
+            var iife = ~/^\(fn\s*->\s*(.*?)\s*end\)\.\(\)\s*$/s;
+            if (iife.match(e)) e = StringTools.trim(iife.matched(1));
+            // Unwrap inspect(...)
+            var inspectWrap = ~/^(?:Kernel\.)?inspect\((.*)\)\s*$/s;
+            if (inspectWrap.match(e)) e = StringTools.trim(inspectWrap.matched(1));
+            // Unwrap to_string(...)
+            var toStringWrap = ~/^(?:Kernel\.)?to_string\((.*)\)\s*$/s;
+            if (toStringWrap.match(e)) e = StringTools.trim(toStringWrap.matched(1));
+            return e;
+        }
         // name=<%= expr %>  → name={expr}
         var eexAttr = ~/=\s*<%=\s*([^%]+?)\s*%>/g;
-        var result = eexAttr.replace(s, '={$1}');
+        var result = eexAttr.map(s, function (re) {
+            var expr = normalizeAttrExpr(re.matched(1));
+            return '={' + expr + '}';
+        });
         // name=<% if cond do %>then<% else %>else<% end %> → name={if cond, do: "then", else: "else"}
         var eexIf = ~/=\s*<%\s*if\s+(.+?)\s+do\s*%>([^<]*)<%\s*else\s*%>([^<]*)<%\s*end\s*%>/g;
         result = eexIf.map(result, function (re) {
@@ -678,6 +703,9 @@ class TemplateHelpers {
             var elseEnd = closeIdx;
             var thenHtml = s.substr(thenStart, thenEnd - thenStart);
             var elseHtml = elseStart != -1 ? s.substr(elseStart, elseEnd - elseStart) : null;
+            // Rewrite nested <if>/<else> blocks inside the branches.
+            thenHtml = rewriteControlTags(thenHtml);
+            if (elseHtml != null) elseHtml = rewriteControlTags(elseHtml);
             parts.push('<%= if ' + cond + ' do %>');
             parts.push(thenHtml);
             if (elseHtml != null && StringTools.trim(elseHtml) != "") { parts.push('<% else %>'); parts.push(elseHtml); }
