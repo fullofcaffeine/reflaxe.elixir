@@ -68,7 +68,7 @@ class ConstructorBuilder {
         #if debug_ast_builder
         #if debug_ast_builder trace('[ConstructorBuilder] Building constructor for class: $className'); #end
         #if debug_ast_builder trace('[ConstructorBuilder]   Arguments: ${el.length}'); #end
-        #if debug_ast_builder trace('[ConstructorBuilder]   Has @:schema: ${classType.meta.has("schema")}'); #end
+        #if debug_ast_builder trace('[ConstructorBuilder]   Has @:schema: ${classType.meta.has(":schema")}'); #end
         #end
 
         // CRITICAL FIX: Bypass compileExpressionImpl to preserve context
@@ -87,7 +87,7 @@ class ConstructorBuilder {
         // ====================================================================
         // PATTERN 1: Ecto Schemas
         // ====================================================================
-        if (classType.meta.has("schema")) {
+        if (classType.meta.has(":schema")) {
             #if debug_ast_builder trace('[ConstructorBuilder] ✓ Detected Ecto schema, generating struct literal'); #end
             return buildEctoSchema(classType, className);
         }
@@ -135,8 +135,8 @@ class ConstructorBuilder {
      */
     static function buildEctoSchema(classType: ClassType, defaultName: String): ElixirASTDef {
         // Get the full module name from @:native or use className
-        var moduleName = if (classType.meta.has("native")) {
-            var nativeMeta = classType.meta.extract("native");
+        var moduleName = if (classType.meta.has(":native")) {
+            var nativeMeta = classType.meta.extract(":native");
             if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
                 switch(nativeMeta[0].params[0].expr) {
                     case EConst(CString(s, _)):

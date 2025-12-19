@@ -312,7 +312,7 @@ class ElixirASTTransformer {
              */
             #if debug_pass_metrics
             var __beforePrint: String = null;
-            try __beforePrint = reflaxe.elixir.ast.ElixirASTPrinter.print(result, 0) catch (e: Dynamic) {}
+            try __beforePrint = reflaxe.elixir.ast.ElixirASTPrinter.print(result, 0) catch (e) {}
             #end
 
             // CONTEXTUAL PASS SELECTION LOGIC
@@ -370,7 +370,7 @@ class ElixirASTTransformer {
                     var __log = sys.io.File.append("/tmp/passF-macro.log", false);
                     __log.writeString("[PassTiming] module=" + rootName + " name=" + passConfig.name + " ms=" + Std.int(__elapsedPass) + "\n");
                     __log.close();
-                } catch (e: Dynamic) {
+                } catch (e) {
                     // Fallback to stdout if append fails.
                     // DISABLED: Sys.println('[PassTiming] name=' + passConfig.name + ' ms=' + Std.int(__elapsedPass));
                 }
@@ -386,7 +386,7 @@ class ElixirASTTransformer {
             try {
                 PerPassSnapshot.emitFunctionAfterPass(result, passConfig.name);
                 PerPassModuleSnapshot.emitModuleAfterPass(result, rootName, passConfig.name);
-            } catch (e: Dynamic) {
+            } catch (e) {
                 #if sys Sys.println('[AST Snapshot] PerPass failed for ' + passConfig.name + ': ' + Std.string(e)); #end
             }
             #end
@@ -397,7 +397,7 @@ class ElixirASTTransformer {
             try {
                 __afterPrint = reflaxe.elixir.ast.ElixirASTPrinter.print(result, 0);
                 __changed = (__beforePrint != __afterPrint);
-            } catch (e: Dynamic) {}
+            } catch (e) {}
             if (__changed) {
                 #if sys Sys.println('#[PassMetrics] Changed by: ' + passConfig.name); #else trace('#[PassMetrics] Changed by: ' + passConfig.name); #end
             }
@@ -421,7 +421,7 @@ class ElixirASTTransformer {
             var __totalLog = sys.io.File.append("/tmp/passF-macro.log", false);
             __totalLog.writeString("[PassTiming] module=" + rootName + " name=ElixirASTTransformer.total ms=" + Std.int(__pipelineElapsed) + "\n");
             __totalLog.close();
-        } catch (e: Dynamic) {
+        } catch (e) {
             // DISABLED: Sys.println('[PassTiming] name=ElixirASTTransformer.total ms=' + Std.int(__pipelineElapsed));
         }
         #else
@@ -474,7 +474,7 @@ class ElixirASTTransformer {
         #if debug_ast_snapshots
         try {
             AbsoluteFinalSnapshot.emitFilterTodosThenBranch(result);
-        } catch (e: Dynamic) {
+        } catch (e) {
             #if sys Sys.println('[AST Snapshot] Failed: ' + Std.string(e)); #else trace('[AST Snapshot] Failed: ' + Std.string(e)); #end
         }
         #end
@@ -526,7 +526,7 @@ class ElixirASTTransformer {
         #if macro
         try {
             return Context.definedValue(name);
-        } catch (_: Dynamic) {
+        } catch (_) {
             return null;
         }
         #else
@@ -7440,7 +7440,7 @@ private class AbsoluteFinalSnapshot {
     static function safePrint(node: ElixirAST): String {
         try {
             return reflaxe.elixir.ast.ElixirASTPrinter.print(node, 0);
-        } catch (e: Dynamic) {
+        } catch (e) {
             return '// <printer error> ' + Std.string(e);
         }
     }
@@ -7459,7 +7459,7 @@ private class AbsoluteFinalSnapshot {
 
     static function getDefineString(name: String): Null<String> {
         #if macro
-        try return haxe.macro.Context.definedValue(name) catch (_:Dynamic) return null;
+        try return haxe.macro.Context.definedValue(name) catch (_) return null;
         #else
         return null;
         #end
@@ -7507,7 +7507,7 @@ private class PerPassSnapshot {
     }
     static function getDefineString(name: String): Null<String> {
         #if macro
-        try return haxe.macro.Context.definedValue(name) catch (_:Dynamic) return null;
+        try return haxe.macro.Context.definedValue(name) catch (_) return null;
         #else
         return null;
         #end
@@ -7539,7 +7539,7 @@ private class PerPassSnapshot {
     static function safePrint(node: ElixirAST): String {
         try {
             return reflaxe.elixir.ast.ElixirASTPrinter.print(node, 0);
-        } catch (e: Dynamic) {
+        } catch (e) {
             return '// <printer error> ' + Std.string(e);
         }
     }
@@ -7577,7 +7577,7 @@ private class PerPassModuleSnapshot {
 
     static function getDefineString(name: String): Null<String> {
         #if macro
-        try return haxe.macro.Context.definedValue(name) catch (_:Dynamic) return null;
+        try return haxe.macro.Context.definedValue(name) catch (_) return null;
         #else
         return null;
         #end
@@ -7586,7 +7586,7 @@ private class PerPassModuleSnapshot {
     static function safePrint(node: ElixirAST): String {
         try {
             return reflaxe.elixir.ast.ElixirASTPrinter.print(node, 0);
-        } catch (e: Dynamic) {
+        } catch (e) {
             return '// <printer error> ' + Std.string(e);
         }
     }

@@ -449,9 +449,9 @@ class GuardConditionCollector {
 	/**
 	 * Helper to create AST nodes
 	 */
-	static function makeAST(def: ElixirASTDef, ?pos: haxe.macro.Expr.Position): ElixirAST {
-		return {def: def, pos: pos != null ? pos : haxe.macro.Context.currentPos(), metadata: null};
-	}
+		static function makeAST(def: ElixirASTDef, ?pos: haxe.macro.Expr.Position): ElixirAST {
+			return {def: def, pos: pos != null ? pos : haxe.macro.Context.currentPos(), metadata: reflaxe.elixir.ast.ElixirAST.emptyMetadata()};
+		}
 }
 
 /**
@@ -771,7 +771,7 @@ class GuardConditionReconstructor {
 	/**
 	 * Helper to create AST nodes
 	 */
-	static function makeAST(def: ElixirASTDef, ?pos: haxe.macro.Expr.Position): ElixirAST {
-		return {def: def, pos: pos != null ? pos : haxe.macro.Context.currentPos(), metadata: null};
+		static function makeAST(def: ElixirASTDef, ?pos: haxe.macro.Expr.Position): ElixirAST {
+			return {def: def, pos: pos != null ? pos : haxe.macro.Context.currentPos(), metadata: reflaxe.elixir.ast.ElixirAST.emptyMetadata()};
+		}
 	}
-}

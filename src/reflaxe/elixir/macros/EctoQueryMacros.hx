@@ -30,7 +30,9 @@ class EctoQueryMacros {
             );
             #end
             return __result;
-        } catch (e: Dynamic) {
+        } catch (e: haxe.Exception) {
+            // Macro boundary: macro execution can fail for many reasons (invalid AST shapes, schema
+            // introspection mismatch, etc.). Convert to a deterministic Context.error with position.
             Context.error('Failed to process from() macro: ' + Std.string(e), Context.currentPos());
             return macro null;
         }

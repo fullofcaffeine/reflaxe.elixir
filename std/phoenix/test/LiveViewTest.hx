@@ -19,7 +19,8 @@ import elixir.types.Term;
  * @:test
  * function testLiveViewInteraction(): Void {
  *     var conn = ConnTest.build_conn();
- *     var liveView = LiveViewTest.live(conn, "/todos");
+ *     var result = LiveViewTest.live(conn, "/todos");
+ *     var liveView = LiveViewTest.view(result);
  *     liveView = LiveViewTest.render_click(liveView, "add-todo");
  *     Assert.contains(liveView.html(), "New todo");
  * }
@@ -33,15 +34,32 @@ extern class LiveViewTest {
      * Mount a LiveView for testing.
      * Connects to the LiveView and returns a test harness.
      */
-    @:overload(function(conn: Conn, path: String, params: Map<String, Term>): LiveView {})
-    @:overload(function(conn: Conn, path: String, session: Map<String, Term>, params: Map<String, Term>): LiveView {})
-    public static function live(conn: Conn, path: String): LiveView;
+    @:overload(function(conn: Conn, path: String, params: Map<String, Term>): Term {})
+    @:overload(function(conn: Conn, path: String, session: Map<String, Term>, params: Map<String, Term>): Term {})
+    public static function live(conn: Conn, path: String): Term;
     
     /**
      * Connect to an isolated LiveView component.
      */
-    @:overload(function(module: String, assigns: Map<String, Term>): LiveView {})
-    public static function live_component(module: String): LiveView;
+    @:overload(function(module: String, assigns: Map<String, Term>): Term {})
+    public static function live_component(module: String): Term;
+
+    /**
+     * Extract the LiveView handle from a successful `live/2` or `live_component/2` result.
+     *
+     * Phoenix returns `{:ok, view, html}`. Keeping the raw return as `Term` avoids inventing
+     * tuple shapes in app/test code while still eliminating `Dynamic` from APIs.
+     */
+    public static inline function view(result: Term): LiveView {
+        return cast elixir.Tuple.elem(result, 1);
+    }
+
+    /**
+     * Extract the initial rendered HTML from a successful `live/2` result tuple.
+     */
+    public static inline function initial_html(result: Term): String {
+        return cast elixir.Tuple.elem(result, 2);
+    }
     
     /**
      * Render the current LiveView state.
@@ -62,12 +80,14 @@ extern class LiveViewTest {
      * Simulate form submission.
      */
     @:overload(function(element: Term, data: Term): LiveView {})
+    @:overload(function(liveView: LiveView, form: String, data: Term): LiveView {})
     @:overload(function(liveView: LiveView, form: String, data: Map<String, Term>): LiveView {})
     public static function render_submit(liveView: LiveView, form: String): LiveView;
     
     /**
      * Simulate form change event (validation).
      */
+    @:overload(function(liveView: LiveView, form: String, data: Term): LiveView {})
     @:overload(function(liveView: LiveView, form: String, data: Map<String, Term>): LiveView {})
     public static function render_change(liveView: LiveView, form: String): LiveView;
     

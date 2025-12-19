@@ -1,6 +1,14 @@
 package implementations;
 
 import behaviors.DataProcessor;
+import behaviors.DataProcessor.DataItem;
+import behaviors.DataProcessor.InitResponse;
+import behaviors.DataProcessor.ProcessBatchResponse;
+import behaviors.DataProcessor.ProcessItemResponse;
+import behaviors.DataProcessor.ProcessedItem;
+import behaviors.DataProcessor.ProcessorConfig;
+import behaviors.DataProcessor.ProcessorState;
+import behaviors.DataProcessor.ProcessorStats;
 
 /**
  * Streaming implementation of DataProcessor behavior
@@ -13,11 +21,11 @@ import behaviors.DataProcessor;
 class StreamProcessor {
     
     // GenServer state
-    private var processingState: Dynamic;
-    private var config: Dynamic;
+    private var processingState: ProcessorState;
+    private var config: ProcessorConfig;
     
     // GenServer callbacks
-    public function genserver_init(args: Dynamic): {ok: Dynamic} {
+    public function genserver_init(args: ProcessorConfig): {ok: ProcessorState} {
         this.config = args;
         this.processingState = {
             processed_count: 0,
@@ -28,30 +36,32 @@ class StreamProcessor {
     }
     
     // DataProcessor behavior implementation
-    public function init(config: Dynamic): {ok: Dynamic, error: String} {
+    public function init(config: ProcessorConfig): InitResponse {
         if (config == null) {
-            return {ok: null, error: "Configuration required"};
+            return {ok: {processed_count: 0, errors: 0}, error: "Configuration required"};
         }
-        return {ok: config, error: ""};
+        return {ok: {processed_count: 0, errors: 0}, error: ""};
     }
     
-    public function process_item(item: Dynamic, state: Dynamic): {result: Dynamic, newState: Dynamic} {
+    public function process_item(item: DataItem, state: ProcessorState): ProcessItemResponse {
         if (!validate_data(item)) {
-            return {
-                result: {error: "Invalid data format", item: item},
-                newState: state
+            var newState: ProcessorState = {
+                processed_count: state.processed_count,
+                errors: state.errors + 1,
+                last_processed: state.last_processed
             };
+            return {result: {id: item.id, original: item, processed_at: Date.now().getTime()}, newState: newState};
         }
         
         // Simulate stream processing
-        var processed = {
-            id: Std.random(1000),
+        var processed: ProcessedItem = {
+            id: item.id,
             original: item,
             processed_at: Date.now().getTime(),
             stream_id: "stream_001"
         };
         
-        var newState = {
+        var newState: ProcessorState = {
             processed_count: state.processed_count + 1,
             errors: state.errors,
             last_processed: processed
@@ -60,8 +70,8 @@ class StreamProcessor {
         return {result: processed, newState: newState};
     }
     
-    public function process_batch(items: Array<Dynamic>, state: Dynamic): {results: Array<Dynamic>, newState: Dynamic} {
-        var results = [];
+    public function process_batch(items: Array<DataItem>, state: ProcessorState): ProcessBatchResponse {
+        var results: Array<ProcessedItem> = [];
         var currentState = state;
         
         for (item in items) {
@@ -73,27 +83,27 @@ class StreamProcessor {
         return {results: results, newState: currentState};
     }
     
-    public function validate_data(data: Dynamic): Bool {
+    public function validate_data(data: DataItem): Bool {
         // Stream processor accepts any non-null data
         return data != null;
     }
     
-    public function handle_error(error: Dynamic, context: Dynamic): String {
+    public function handle_error(error: String, context: String): String {
         trace("Stream processor error: " + error + " in context: " + context);
         return "error_logged_to_stream";
     }
     
     // Optional callbacks implementation
-    public function get_stats(): Map<String, Dynamic> {
-        var stats = new Map<String, Dynamic>();
-        stats.set("type", "stream_processor");
-        stats.set("processed_count", processingState.processed_count);
-        stats.set("error_count", processingState.errors);
-        stats.set("status", "active");
-        return stats;
+    public function get_stats(): ProcessorStats {
+        return {
+            type: "stream_processor",
+            processed_count: processingState.processed_count,
+            error_count: processingState.errors,
+            status: "active"
+        };
     }
     
-    public function cleanup(state: Dynamic): Void {
+    public function cleanup(state: ProcessorState): Void {
         trace("Stream processor cleaning up...");
         // Close streams, flush buffers, etc.
     }

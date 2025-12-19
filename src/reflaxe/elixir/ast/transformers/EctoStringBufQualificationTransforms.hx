@@ -44,7 +44,7 @@ class EctoStringBufQualificationTransforms {
                     if (!hasShims) return n;
                     var app = deriveAppPrefix(name);
                     if (app == null || app.length == 0) {
-                        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+                        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
                     }
                     if (app == null || app.length == 0) return n;
                     var newBody = [for (b in body) qualifyStringBuf(b, app)];
@@ -59,7 +59,7 @@ class EctoStringBufQualificationTransforms {
                     if (!hasShims2) return n;
                     var app2 = deriveAppPrefix(name);
                     if (app2 == null || app2.length == 0) {
-                        try app2 = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+                        try app2 = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
                     }
                     if (app2 == null || app2.length == 0) return n;
                     var newDo = makeAST(EBlock([for (s in stmts) qualifyStringBuf(s, app2)]));

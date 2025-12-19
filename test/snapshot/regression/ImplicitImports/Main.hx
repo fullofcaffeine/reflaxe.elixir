@@ -9,6 +9,7 @@
  */
 
 import reflaxe.elixir.macros.HXX;
+import elixir.types.Term;
 
 // Typed assigns for HXX (required by linter) — keep fields minimal and task-focused
 typedef ComponentAssigns = {
@@ -25,7 +26,7 @@ typedef ButtonAssigns = {
 
 typedef LiveAssigns = {
     // In app code this would be an Ecto.Changeset or proper form struct; typed here to satisfy linter
-    var form: Dynamic;
+    var form: Term;
     var show_modal: Bool;
 }
 
@@ -82,11 +83,8 @@ class TestComponent {
 @:native("TestAppWeb.TestLive")
 @:liveview
 class TestLive {
-    public static function mount(params: Dynamic, session: Dynamic, socket: Dynamic): Dynamic {
-        return {
-            status: "ok",
-            socket: socket
-        };
+    public static function mount(params: Term, session: Term, socket: phoenix.Phoenix.Socket<{}>): phoenix.Phoenix.MountResult<{}> {
+        return phoenix.Phoenix.MountResult.Ok(socket);
     }
     
     public static function render(assigns: LiveAssigns): String {
@@ -108,11 +106,8 @@ class TestLive {
         ');
     }
     
-    public static function handle_event(event: String, params: Dynamic, socket: Dynamic): Dynamic {
-        return {
-            status: "noreply",
-            socket: socket
-        };
+    public static function handle_event(event: String, params: Term, socket: phoenix.Phoenix.Socket<{}>): phoenix.Phoenix.HandleEventResult<{}> {
+        return phoenix.Phoenix.HandleEventResult.NoReply(socket);
     }
 }
 

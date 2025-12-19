@@ -270,7 +270,7 @@ class CallExprBuilder {
                             if (webIndex > 0) appPrefix = context.currentModule.substring(0, webIndex);
                         }
                         if (appPrefix == null) {
-                            try appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+                            try appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
                         }
                         if (appPrefix != null) presenceTargetModule = appPrefix + "Web.Presence";
                     }
@@ -422,6 +422,28 @@ class CallExprBuilder {
                     case FInstance(_, _, cf):
                         // Instance method call
                         var methodName = cf.get().name;
+                        // Elixir values don't support method syntax; for certain extern-backed
+                        // structs (e.g., NaiveDateTime), rewrite method-style calls to proper
+                        // module calls.
+                        //
+                        // Example: d.to_iso8601() -> NaiveDateTime.to_iso8601(d)
+                        if (methodName == "to_iso8601" && (args == null || args.length == 0)) {
+                            var receiverAst = buildExpression(obj);
+                            var moduleName: Null<String> = null;
+                            var followed = haxe.macro.TypeTools.follow(obj.t);
+                            switch (followed) {
+                                case TInst(classRef, _):
+                                    var ct = classRef.get();
+                                    if (ct != null && ct.isExtern) {
+                                        moduleName = ModuleBuilder.extractModuleName(ct);
+                                    }
+                                default:
+                            }
+                            if (moduleName != null && moduleName.length > 0) {
+                                return ERemoteCall(makeAST(EVar(moduleName)), methodName, [receiverAst]);
+                            }
+                        }
+
                         return ECall(buildExpression(obj), methodName, argASTs);
                         
                     case FStatic(classRef, cf):
@@ -645,17 +667,25 @@ class CallExprBuilder {
                         }
                         
                     case "parseInt":
-                        // Std.parseInt(str) → String.to_integer(str)
+                        // Std.parseInt(str) → case Integer.parse(str) do {num, _} -> num; :error -> nil end
                         if (args.length == 1) {
                             var str = buildExpression(args[0]);
-                            return ERemoteCall(makeAST(EVar("String")), "to_integer", [str]);
+                            var parsed = makeAST(ERemoteCall(makeAST(EVar("Integer")), "parse", [str]));
+                            return ECase(parsed, [
+                                {pattern: PTuple([PVar("num"), PWildcard]), body: makeAST(EVar("num"))},
+                                {pattern: PLiteral(makeAST(EAtom("error"))), body: makeAST(ENil)}
+                            ]);
                         }
                         
                     case "parseFloat":
-                        // Std.parseFloat(str) → String.to_float(str)
+                        // Std.parseFloat(str) → case Float.parse(str) do {num, _} -> num; :error -> nil end
                         if (args.length == 1) {
                             var str = buildExpression(args[0]);
-                            return ERemoteCall(makeAST(EVar("String")), "to_float", [str]);
+                            var parsed = makeAST(ERemoteCall(makeAST(EVar("Float")), "parse", [str]));
+                            return ECase(parsed, [
+                                {pattern: PTuple([PVar("num"), PWildcard]), body: makeAST(EVar("num"))},
+                                {pattern: PLiteral(makeAST(EAtom("error"))), body: makeAST(ENil)}
+                            ]);
                         }
                         
                     case "int":

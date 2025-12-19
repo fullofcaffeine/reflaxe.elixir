@@ -289,11 +289,7 @@ using StringTools;
                 var binder: Null<String> = null;
                 if (cl.body != null && cl.body.metadata != null) {
                     // Use binder computed during case building when available
-                    binder = try {
-                        untyped cl.body.metadata.primaryCaseBinder;
-                    } catch (e:Dynamic) {
-                        null;
-                    }
+                    binder = cl.body.metadata.primaryCaseBinder;
                 }
                 if (binder == null) {
                     // Fallback: derive from pattern shape
@@ -548,15 +544,12 @@ using StringTools;
                 // - usedLocalsFromTyped (names discovered from TypedExpr case body)
                 var usedTyped:Array<String> = collectUsedLowerLocalsTyped(switchCase.expr);
                 var annotated = body;
-                try {
-                    var meta:Dynamic = annotated.metadata;
-                    if (meta == null) meta = {};
-                    if (clauseCtx != null && clauseCtx.primaryCaseBinder != null) {
-                        untyped meta.primaryCaseBinder = clauseCtx.primaryCaseBinder;
-                    }
-                    untyped meta.usedLocalsFromTyped = usedTyped;
-                    annotated = makeASTWithMeta(annotated.def, meta, annotated.pos);
-                } catch (e:Dynamic) {}
+                var meta = annotated.metadata;
+                if (clauseCtx != null && clauseCtx.primaryCaseBinder != null) {
+                    meta.primaryCaseBinder = clauseCtx.primaryCaseBinder;
+                }
+                meta.usedLocalsFromTyped = usedTyped;
+                annotated = makeASTWithMeta(annotated.def, meta, annotated.pos);
 
                 var cleanedBody = cleanupTempBinderAliases(annotated);
                 clauses.push({
@@ -676,13 +669,10 @@ using StringTools;
                         var rawWhole = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedWhole, context);
                         var metaWhole = (function(b:ElixirAST){
                             if (b == null) return b;
-                            try {
-                                var meta:Dynamic = b.metadata;
-                                if (meta == null) meta = {};
-                                if (primaryBinder != null) untyped meta.primaryCaseBinder = primaryBinder;
-                                untyped meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
-                                return makeASTWithMeta(b.def, meta, b.pos);
-                            } catch (e:Dynamic) { return b; }
+                            var meta = b.metadata;
+                            if (primaryBinder != null) meta.primaryCaseBinder = primaryBinder;
+                            meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
+                            return makeASTWithMeta(b.def, meta, b.pos);
                         })(rawWhole);
                         var bodyWhole = cleanupTempBinderAliases(metaWhole);
                         context.popClauseContext();
@@ -700,13 +690,11 @@ using StringTools;
                     var rawBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
                     // Annotate with clause-local metadata to aid late passes
                     var metaBody = (function(b:ElixirAST){
-                        try {
-                            var meta:Dynamic = b.metadata;
-                            if (meta == null) meta = {};
-                            if (primaryBinder != null) untyped meta.primaryCaseBinder = primaryBinder;
-                            untyped meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
-                            return makeASTWithMeta(b.def, meta, b.pos);
-                        } catch (e:Dynamic) { return b; }
+                        if (b == null) return b;
+                        var meta = b.metadata;
+                        if (primaryBinder != null) meta.primaryCaseBinder = primaryBinder;
+                        meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
+                        return makeASTWithMeta(b.def, meta, b.pos);
                     })(rawBody);
                     var body = cleanupTempBinderAliases(metaBody);
 
@@ -751,13 +739,11 @@ using StringTools;
                     var substitutedBody = context.substituteIfNeeded(current);
                     var rawBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
                     var metaBody2 = (function(b:ElixirAST){
-                        try {
-                            var meta:Dynamic = b.metadata;
-                            if (meta == null) meta = {};
-                            if (primaryBinder != null) untyped meta.primaryCaseBinder = primaryBinder;
-                            untyped meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
-                            return makeASTWithMeta(b.def, meta, b.pos);
-                        } catch (e:Dynamic) { return b; }
+                        if (b == null) return b;
+                        var meta = b.metadata;
+                        if (primaryBinder != null) meta.primaryCaseBinder = primaryBinder;
+                        meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
+                        return makeASTWithMeta(b.def, meta, b.pos);
                     })(rawBody);
                     var body = cleanupTempBinderAliases(metaBody2);
 
@@ -832,8 +818,7 @@ using StringTools;
                 }
                 var b = harmonized.body;
                 if (b != null) {
-                    if (b.metadata == null) b.metadata = {};
-                    untyped b.metadata.primaryCaseBinder = _cctx.primaryCaseBinder; // store for outer repair
+                    b.metadata.primaryCaseBinder = _cctx.primaryCaseBinder; // store for outer repair
                 }
                 annotated.push(harmonized);
             }

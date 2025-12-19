@@ -4,6 +4,17 @@ package phoenix;
  * Phoenix Socket types - Server-side and client-side
  */
 
+// This module is JavaScript-only (Phoenix channels/socket client).
+// Importing it in non-JS builds is almost certainly a mistake.
+#if !js
+#error "phoenix.Socket is a JavaScript-only extern. Only import it when compiling to JavaScript."
+#end
+
+#if js
+import js.lib.Object as JsObject;
+import js.lib.Function as JsFunction;
+#end
+
 // DEPRECATED: LiveViewSocket has been removed
 // Use phoenix.Phoenix.Socket<T> instead for type-safe LiveView sockets
 // See Phoenix.hx for the three-layer socket design documentation
@@ -38,7 +49,7 @@ extern class Socket {
 	/**
 	 * Join a channel
 	 */
-	function channel(topic: String, ?params: Dynamic): Channel;
+	function channel(topic: String, ?params: JsObject): Channel;
 	
 	/**
 	 * Remove a channel
@@ -65,14 +76,14 @@ extern class Socket {
  * Socket configuration options
  */
 typedef SocketOptions = {
-	?transport: Dynamic,
+	?transport: JsFunction,
 	?timeout: Int,
 	?heartbeatIntervalMs: Int,
-	?reconnectAfterMs: Dynamic,
-	?rejoinAfterMs: Dynamic,
-	?logger: Dynamic,
+	?reconnectAfterMs: Int -> Int,
+	?rejoinAfterMs: Int -> Int,
+	?logger: String -> String -> JsObject -> Void,
 	?longpollerTimeout: Int,
-	?params: Dynamic,
+	?params: JsObject,
 	?binaryType: String,
 	?vsn: String
 };
@@ -95,17 +106,17 @@ extern class Channel {
 	/**
 	 * Push a message to the channel
 	 */
-	function push(event: String, payload: Dynamic, ?timeout: Int): Push;
+	function push(event: String, payload: JsObject, ?timeout: Int): Push;
 	
 	/**
 	 * Listen for channel events
 	 */
-	function on(event: String, callback: Dynamic -> Void): Void;
+	function on(event: String, callback: JsObject -> Void): Void;
 	
 	/**
 	 * Stop listening for channel events
 	 */
-	function off(event: String, ?callback: Dynamic -> Void): Void;
+	function off(event: String, ?callback: JsObject -> Void): Void;
 	
 	/**
 	 * Get channel state
@@ -121,5 +132,5 @@ extern class Push {
 	/**
 	 * Handle successful response
 	 */
-	function receive(status: String, callback: Dynamic -> Void): Push;
+	function receive(status: String, callback: JsObject -> Void): Push;
 }

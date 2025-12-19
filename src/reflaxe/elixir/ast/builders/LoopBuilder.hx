@@ -16,6 +16,7 @@ import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.ElixirASTPatterns;
 import reflaxe.elixir.ast.ElixirASTPrinter;
+import reflaxe.elixir.ast.context.BuildContext;
 import reflaxe.elixir.ast.loop_ir.LoopIR;
 import reflaxe.elixir.ast.analyzers.RangeIterationAnalyzer;
 import reflaxe.elixir.helpers.MutabilityDetector;
@@ -60,15 +61,6 @@ enum LoopTransform {
 
     // Keep as standard for comprehension
     StandardFor(v: TVar, iterator: TypedExpr, body: TypedExpr);
-}
-
-/**
- * BuildContext interface for loop compilation
- */
-typedef BuildContext = {
-    function isFeatureEnabled(feature: String): Bool;
-    function buildFromTypedExpr(expr: TypedExpr, ?context: Dynamic): ElixirAST;
-    var whileLoopCounter: Int;
 }
 
 /**
@@ -2077,6 +2069,7 @@ class LoopBuilder {
     static function buildIdiomaticMapIteration(v: TVar, iterator: TypedExpr, body: TypedExpr,
                                                context: BuildContext,
                                                toElixirVarName: String -> String): ElixirASTDef {
+        var buildExpression = context.getExpressionBuilder();
         
         #if debug_map_iteration
         // DISABLED: trace('[LoopBuilder] Building idiomatic Map iteration');
@@ -2090,7 +2083,7 @@ class LoopBuilder {
         };
         
         // Build the map AST
-        var mapAst = context.buildFromTypedExpr(mapExpr);
+        var mapAst = buildExpression(mapExpr);
         
         // Extract the actual key and value variable names from the body
         var vars = extractMapIterationVariables(body, v.name);
@@ -2104,7 +2097,7 @@ class LoopBuilder {
         var cleanedBody = removeMapIterationExtractions(body, v.name);
         
         // Build the cleaned body
-        var bodyAst = context.buildFromTypedExpr(cleanedBody);
+        var bodyAst = buildExpression(cleanedBody);
         
         // Detect if we're collecting results or just side effects
         var isCollecting = detectAccumulationPattern(cleanedBody) != null;
@@ -2165,9 +2158,10 @@ class LoopBuilder {
      * Extracted from ElixirASTBuilder lines 5259-5349
      */
     public static function buildFor(v: TVar, e1: TypedExpr, e2: TypedExpr, 
-                                    expr: TypedExpr,
-                                    context: BuildContext,
-                                    toElixirVarName: String -> String): ElixirASTDef {
+                                   expr: TypedExpr,
+                                   context: BuildContext,
+                                   toElixirVarName: String -> String): ElixirASTDef {
+        var buildExpression = context.getExpressionBuilder();
         
         // ALWAYS trace to understand what's being compiled
         #if debug_map_iteration
@@ -2264,7 +2258,7 @@ class LoopBuilder {
             var transform = analyzeFor(v, e1, e2);
             var ast = buildFromTransform(
                 transform,
-                e -> context.buildFromTypedExpr(e),
+                e -> buildExpression(e),
                 name -> toElixirVarName(name)
             );
             
@@ -2277,8 +2271,8 @@ class LoopBuilder {
             // Simple for comprehension fallback
             var varName = toElixirVarName(v.name);
             var pattern = PVar(varName);
-            var iteratorExpr = context.buildFromTypedExpr(e1);
-            var bodyExpr = context.buildFromTypedExpr(e2);
+            var iteratorExpr = buildExpression(e1);
+            var bodyExpr = buildExpression(e2);
             
             var forDef = EFor([{pattern: pattern, expr: iteratorExpr}], [], bodyExpr, null, false);
             return makeASTWithMeta(forDef, loopMetadata, expr.pos).def;
@@ -2294,6 +2288,7 @@ class LoopBuilder {
                                               expr: TypedExpr,
                                               context: BuildContext,
                                               toElixirVarName: String -> String): ElixirASTDef {
+        var buildExpression = context.getExpressionBuilder();
         
         // First check if this is a desugared for loop
         if (context.isFeatureEnabled("loop_builder_enabled")) {
@@ -2301,7 +2296,7 @@ class LoopBuilder {
             if (forPattern != null) {
                 return buildFromForPattern(
                     forPattern,
-                    expr -> context.buildFromTypedExpr(expr),
+                    expr -> buildExpression(expr),
                     s -> toElixirVarName(s)
                 ).def;
             }
@@ -2370,8 +2365,9 @@ class LoopBuilder {
         // DISABLED: trace('[XRay LoopBuilder]   body TypedExpr: ${e.expr}');
         #end
 
-        var condition = context.buildFromTypedExpr(econd);
-        var body = context.buildFromTypedExpr(e);
+        var buildExpression = context.getExpressionBuilder();
+        var condition = buildExpression(econd);
+        var body = buildExpression(e);
 
         #if debug_loop_builder
         // DISABLED: trace('[XRay LoopBuilder] After compiling from TypedExpr:');
@@ -2600,14 +2596,14 @@ class LoopBuilder {
         context: BuildContext,
         toElixirVarName: String -> String
     ): ElixirASTDef {
-        
-        var array = context.buildFromTypedExpr(arrayRef);
+        var buildExpression = context.getExpressionBuilder();
+        var array = buildExpression(arrayRef);
         
         switch(operation) {
             case "map":
                 // Extract the transformation from the body
                 var itemVar = "item";
-                var transformation = context.buildFromTypedExpr(body);
+                var transformation = buildExpression(body);
                 
                 return ERemoteCall(
                     makeAST(EVar("Enum")),
@@ -2624,7 +2620,7 @@ class LoopBuilder {
                 
             case "filter":
                 var itemVar = "item";
-                var predicate = context.buildFromTypedExpr(body);
+                var predicate = buildExpression(body);
                 
                 return ERemoteCall(
                     makeAST(EVar("Enum")),
@@ -2670,7 +2666,7 @@ class LoopBuilder {
                     scan(body);
                     return candidate != null ? reflaxe.elixir.ast.ElixirASTHelpers.toElixirVarName(candidate) : "item";
                 })();
-                var action = context.buildFromTypedExpr(body);
+                var action = buildExpression(body);
                 
                 return ERemoteCall(
                     makeAST(EVar("Enum")),

@@ -52,7 +52,7 @@ class AsyncSimple {
             
             // Write back
             File.saveContent(output, js);
-        } catch (e:Dynamic) {
+        } catch (e) {
             // Silent fail - don't break compilation
         }
     }

@@ -1,6 +1,11 @@
 package;
 
 import HXX;
+import elixir.types.Term;
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.LiveView;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Socket;
 
 /**
  * LiveView fast_boot + hygiene gating smoke test.
@@ -8,7 +13,7 @@ import HXX;
  * WHAT
  * - Small @:liveview module that exercises:
  *   - assign/assigns usage
- *   - handle_event with pattern matching
+ *   - handle_event with basic state transitions
  *   - HXX.hxx-based template rendering
  *
  * WHY
@@ -25,29 +30,24 @@ import HXX;
 @:native("TestAppWeb.FastBootLive")
 @:liveview
 class Main {
-  public static function mount(params:Dynamic, session:Dynamic, socket:Dynamic):Dynamic {
-    // Simple assign path to exercise assign/assigns transforms.
-    return {
-      status: "ok",
-      socket: socket
-    };
+  public static function mount(params: Term, session: Term, socket: Socket<FastBootAssigns>): MountResult<FastBootAssigns> {
+    // Exercise assign/assigns transforms without relying on raw param maps.
+    socket = LiveView.assign(socket, "count", 0);
+    socket = LiveView.assign(socket, "active", false);
+    return Ok(socket);
   }
 
-  public static function handle_event(event:String, params:Dynamic, socket:Dynamic):Dynamic {
-    // Event names and payload shapes are generic; no app-specific heuristics.
+  public static function handle_event(event: String, params: Term, socket: Socket<FastBootAssigns>): HandleEventResult<FastBootAssigns> {
+    // Event names are generic; no app-specific heuristics.
     switch (event) {
       case "increment":
-        // Exercise basic assignment + map/struct update patterns.
-        var count = params.count;
-        var next = count + 1;
-        // In Elixir this becomes assign(socket, :count, next).
-        ignore(next);
+        var next = socket.assigns.count + 1;
+        socket = LiveView.assign(socket, "count", next);
       case "toggle":
-        var active = params.active;
-        ignore(active);
+        socket = LiveView.assign(socket, "active", !socket.assigns.active);
       case _:
     }
-    return { status: "noreply", socket: socket };
+    return NoReply(socket);
   }
 
   /**
@@ -66,3 +66,7 @@ class Main {
   static inline function ignore<T>(value:T):Void {}
 }
 
+typedef FastBootAssigns = {
+  var count: Int;
+  var active: Bool;
+}

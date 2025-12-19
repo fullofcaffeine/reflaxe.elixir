@@ -5,6 +5,7 @@ package reflaxe.elixir.schema;
 import haxe.macro.Context;
 import haxe.macro.Type;
 import haxe.macro.Expr.ComplexType;
+import elixir.types.Term;
 import sys.FileSystem;
 import sys.io.File;
 
@@ -22,7 +23,7 @@ typedef FieldInfo = {
     name: String,
     type: String,
     nullable: Bool,
-    defaultValue: Dynamic,
+    defaultValue: Term,
     indexed: Bool
 };
 
@@ -421,7 +422,7 @@ class SchemaIntrospection {
             #else
             return null;
             #end
-        } catch (e: Dynamic) {
+        } catch (e) {
             return null;
         }
     }
@@ -437,7 +438,7 @@ class SchemaIntrospection {
                     case "Int": "Int";
                     case "Bool": "Bool";
                     case "Date": "NaiveDateTime"; // map Haxe Date to datetime-like
-                    default: "Dynamic";
+                    default: "Term";
                 }
             case TAbstract(t, _):
                 var n = t.get().name;
@@ -445,14 +446,14 @@ class SchemaIntrospection {
                     case "Int": "Int";
                     case "Bool": "Bool";
                     case "Single", "Float": "Float";
-                    default: "Dynamic";
+                    default: "Term";
                 }
             case TType(t, _): t.get().name;
             case _:
-                "Dynamic";
+                "Term";
         }
         #else
-        var typeStr = "Dynamic";
+        var typeStr = "Term";
         #end
 
         return {
@@ -464,7 +465,7 @@ class SchemaIntrospection {
         };
     }
     
-    static function parseAssociationsFromMetadata(meta: Dynamic): Array<AssociationInfo> {
+    static function parseAssociationsFromMetadata(meta: Term): Array<AssociationInfo> {
         // Simplified association parsing from metadata
         return [];
     }
@@ -480,7 +481,7 @@ class SchemaIntrospection {
             case "decimal": "Float";
             case "binary": "String";
             case "text": "String";
-            default: "Dynamic";
+            default: "Term";
         };
     }
     

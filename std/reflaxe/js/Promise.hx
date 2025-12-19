@@ -1,6 +1,7 @@
 package reflaxe.js;
 
 import js.lib.Promise as JSPromise;
+import reflaxe.js.Unknown;
 
 /**
  * Static extension methods for js.lib.Promise to provide ergonomic Promise utilities.
@@ -78,8 +79,8 @@ class Promise {
      * @param recovery Function to provide fallback value
      * @return Promise that never rejects
      */
-    public static function recover<T>(promise: JSPromise<T>, recovery: Dynamic -> T): JSPromise<T> {
-        return promise.catchError(function(error: Dynamic): T {
+    public static function recover<T>(promise: JSPromise<T>, recovery: Unknown -> T): JSPromise<T> {
+        return promise.catchError(function(error: Unknown): T {
             return recovery(error);
         });
     }
@@ -91,8 +92,8 @@ class Promise {
      * @param transform Function to transform the error
      * @return Promise with transformed error
      */
-    public static function catchError<T>(promise: JSPromise<T>, transform: Dynamic -> T): JSPromise<T> {
-        return promise.catchError(function(error: Dynamic): T {
+    public static function catchError<T>(promise: JSPromise<T>, transform: Unknown -> T): JSPromise<T> {
+        return promise.catchError(function(error: Unknown): T {
             return transform(error);
         });
     }
@@ -146,7 +147,7 @@ class Promise {
      * @param error Error to reject with
      * @return Rejected Promise
      */
-    public static function reject<T>(error: Dynamic): JSPromise<T> {
+    public static function reject<T>(error: Unknown): JSPromise<T> {
         return JSPromise.reject(error);
     }
     
@@ -171,8 +172,8 @@ class Promise {
      * @param sideEffect Function to execute on error
      * @return Original Promise unchanged
      */
-    public static function tapError<T>(promise: JSPromise<T>, sideEffect: Dynamic -> Void): JSPromise<T> {
-        return promise.catchError(function(error: Dynamic): JSPromise<T> {
+    public static function tapError<T>(promise: JSPromise<T>, sideEffect: Unknown -> Void): JSPromise<T> {
+        return promise.catchError(function(error: Unknown): JSPromise<T> {
             sideEffect(error);
             return JSPromise.reject(error);
         });
@@ -188,7 +189,7 @@ class Promise {
         return new JSPromise(function(resolve, reject) {
             try {
                 fn(resolve);
-            } catch (error: Dynamic) {
+            } catch (error) {
                 reject(error);
             }
         });
@@ -200,9 +201,9 @@ class Promise {
      * @param fn Function that takes (error, result) callback
      * @return Promise-returning function
      */
-    public static function fromNodeCallback<T>(fn: (Dynamic -> T -> Void) -> Void): JSPromise<T> {
+    public static function fromNodeCallback<T>(fn: (Null<Unknown> -> T -> Void) -> Void): JSPromise<T> {
         return new JSPromise(function(resolve, reject) {
-            fn(function(error: Dynamic, result: T) {
+            fn(function(error: Null<Unknown>, result: T) {
                 if (error != null) {
                     reject(error);
                 } else {

@@ -123,7 +123,7 @@ class CaseClauseCamelAliasToSnakeBinderTransforms {
         if (allow(id)) m.set(id, true);
         pos = tok.matchedPos().pos + tok.matchedPos().len;
       }
-    } catch (e:Dynamic) {}
+    } catch (e) {}
     return m;
   }
 
@@ -145,4 +145,3 @@ class CaseClauseCamelAliasToSnakeBinderTransforms {
 }
 
 #end
-

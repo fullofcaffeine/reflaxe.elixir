@@ -155,9 +155,9 @@ class MigrationSyncMacro {
             case "Boolean": "Bool";
             case "Date" | "DateTime" | "Timestamp": "Date";
             case "UUID": "String";
-            case "Json" | "JsonArray": "Dynamic";
+            case "Json" | "JsonArray": "elixir.types.Term";
             case "Binary": "haxe.io.Bytes";
-            default: "Dynamic";
+            default: "elixir.types.Term";
         };
     }
     
@@ -221,7 +221,8 @@ class MigrationSyncMacro {
                 case "Date": macro: Date;
                 case "haxe.Int64": macro: haxe.Int64;
                 case "haxe.io.Bytes": macro: haxe.io.Bytes;
-                default: macro: Dynamic;
+                case "elixir.types.Term": macro: elixir.types.Term;
+                default: macro: elixir.types.Term;
             };
             
             // Make nullable if specified
@@ -259,9 +260,9 @@ class MigrationSyncMacro {
             pos: Context.currentPos(),
             kind: FFun({
                 args: [
-                    {name: "params", type: macro: Dynamic}
+                    {name: "params", type: macro: elixir.types.Term}
                 ],
-                ret: macro: ecto.Changeset<$p{[data.tableName]}>,
+                ret: macro: ecto.Changeset<$p{[data.tableName]}, elixir.types.Term>,
                 expr: macro {
                     return new ecto.Changeset(this, params);
                 }

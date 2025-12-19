@@ -5,6 +5,8 @@ package contexts;
  * Demonstrates schemas, changesets, queries, and business logic
  */
 
+import elixir.types.Term;
+
 @:schema("users")
 class User {
     @:primary_key
@@ -36,7 +38,7 @@ class UserChangeset {
     @:validate_format("email", "email_regex")
     @:validate_length("name", {min: 2, max: 100})
     @:validate_number("age", {greater_than: 0, less_than: 150})
-    public static function changeset(user: User, attrs: Dynamic): Dynamic {
+    public static function changeset(user: User, attrs: Term): Term {
         // Changeset pipeline will be generated
         return null;
     }
@@ -54,7 +56,7 @@ class Users {
     /**
      * Create changeset for user (required by LiveView example)
      */
-    public static function change_user(?user: User): Dynamic {
+    public static function change_user(?user: User): Term {
         // Would create Ecto changeset - simplified for compilation
         return {valid: true};
     }
@@ -85,7 +87,7 @@ class Users {
     /**
      * Create a new user
      */
-    public static function create_user(attrs: Dynamic): {status: String, ?user: User, ?changeset: Dynamic} {
+    public static function create_user(attrs: Term): UserMutationResult {
         var changeset = UserChangeset.changeset(null, attrs);
         
         if (changeset != null) {
@@ -99,7 +101,7 @@ class Users {
     /**
      * Update existing user
      */
-    public static function update_user(user: User, attrs: Dynamic): {status: String, ?user: User, ?changeset: Dynamic} {
+    public static function update_user(user: User, attrs: Term): UserMutationResult {
         var changeset = UserChangeset.changeset(user, attrs);
         
         if (changeset != null) {
@@ -114,7 +116,8 @@ class Users {
      * Delete user (soft delete by setting active: false)
      */
     public static function delete_user(user: User): {status: String, ?user: User} {
-        return update_user(user, {active: false});
+        var result = update_user(user, {active: false});
+        return {status: result.status, user: result.user};
     }
     
     /**
@@ -159,4 +162,10 @@ typedef Post = {
     id: Int,
     title: String,
     user_id: Int
+}
+
+typedef UserMutationResult = {
+    status: String,
+    ?user: User,
+    ?changeset: Term
 }

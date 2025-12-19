@@ -2,9 +2,26 @@ package live;
 
 import contexts.Users;
 import contexts.Users.User;
+import elixir.ElixirMap;
+import elixir.types.Term;
+import phoenix.Phoenix.EventParams;
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.LiveView;
+import phoenix.Phoenix.MountParams;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Session;
+import phoenix.Phoenix.Socket;
 
 // Import HXX function for template processing
 import HXX.*;
+
+private typedef UserLiveAssigns = {
+    users: Array<User>,
+    selectedUser: Null<User>,
+    changeset: Term,
+    searchTerm: String,
+    showForm: Bool
+}
 
 /**
  * Phoenix LiveView for user management
@@ -12,160 +29,131 @@ import HXX.*;
  */
 @:liveview
 class UserLive {
-    var users: Array<User> = [];
-    var selectedUser: Null<User> = null;
-    var changeset: Dynamic = null;
-    var searchTerm: String = "";
-    var showForm: Bool = false;
-    
-    function mount(_params: Dynamic, _session: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        users = Users.list_users();
-        
-        return {
-            status: "ok", 
-            socket: assign_multiple(socket, {
-                users: users,
-                selectedUser: null,
-                changeset: Users.change_user(null),
-                searchTerm: "",
-                showForm: false
-            })
+    public static function mount(_params: MountParams, _session: Session, socket: Socket<UserLiveAssigns>): MountResult<UserLiveAssigns> {
+        var users = Users.list_users();
+
+        var assigns: UserLiveAssigns = {
+            users: users,
+            selectedUser: null,
+            changeset: Users.change_user(null),
+            searchTerm: "",
+            showForm: false
         };
+
+        return Ok(LiveView.assignMultiple(socket, assigns));
     }
-    
-    function handle_event(event: String, params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        return switch(event) {
+
+    public static function handle_event(event: String, params: EventParams, socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
+        return switch (event) {
             case "new_user":
-                handleNewUser(params, socket);
-                
+                handleNewUser(socket);
+
             case "edit_user":
                 handleEditUser(params, socket);
-                
+
             case "save_user":
                 handleSaveUser(params, socket);
-                
+
             case "delete_user":
                 handleDeleteUser(params, socket);
-                
+
             case "search":
                 handleSearch(params, socket);
-                
+
             case "cancel":
                 handleCancel(socket);
-                
+
             default:
-                {status: "noreply", socket: socket};
-        }
-    }
-    
-    function handleNewUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        changeset = Users.change_user(null);
-        selectedUser = null;
-        showForm = true;
-        
-        return {
-            status: "noreply",
-            socket: assign_multiple(socket, {
-                changeset: changeset,
-                selectedUser: selectedUser,
-                showForm: showForm
-            })
+                NoReply(socket);
         };
     }
-    
-    function handleEditUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        var userId = params.id;
-        selectedUser = Users.get_user(userId);
-        changeset = Users.change_user(selectedUser);
-        showForm = true;
-        
-        return {
-            status: "noreply",
-            socket: assign_multiple(socket, {
-                selectedUser: selectedUser,
-                changeset: changeset,
-                showForm: showForm
-            })
-        };
+
+    private static function handleNewUser(socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
+        var updated = LiveView.assignMultiple(socket, {
+            changeset: Users.change_user(null),
+            selectedUser: null,
+            showForm: true
+        });
+        return NoReply(updated);
     }
-    
-    function handleSaveUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        var userParams = params.user;
-        var result = selectedUser == null 
+
+    private static function handleEditUser(params: EventParams, socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
+        var userId = getIntParam(params, "id");
+        if (userId == null) return NoReply(socket);
+
+        var selectedUser = Users.get_user(userId);
+        var updated = LiveView.assignMultiple(socket, {
+            selectedUser: selectedUser,
+            changeset: Users.change_user(selectedUser),
+            showForm: true
+        });
+        return NoReply(updated);
+    }
+
+    private static function handleSaveUser(params: EventParams, socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
+        var userParams: Term = ElixirMap.get(params, "user");
+        var result = socket.assigns.selectedUser == null
             ? Users.create_user(userParams)
-            : Users.update_user(selectedUser, userParams);
-            
-        return switch(result.status) {
+            : Users.update_user(socket.assigns.selectedUser, userParams);
+
+        return switch (result.status) {
             case "ok":
-                users = Users.list_users();
-                showForm = false;
-                
-                {
-                    status: "noreply",
-                    socket: assign_multiple(socket, {
-                        users: users,
-                        showForm: showForm,
-                        selectedUser: null,
-                        changeset: Users.change_user(null)
-                    })
-                };
-                
+                var users = Users.list_users();
+                var updated = LiveView.assignMultiple(socket, {
+                    users: users,
+                    showForm: false,
+                    selectedUser: null,
+                    changeset: Users.change_user(null)
+                });
+                NoReply(updated);
+
             case "error":
-                {
-                    status: "noreply",
-                    socket: assign(socket, "changeset", result.changeset)
-                };
-                
+                var updated = LiveView.assignMultiple(socket, {changeset: result.changeset});
+                NoReply(updated);
+
             default:
-                {status: "noreply", socket: socket};
+                NoReply(socket);
         }
     }
-    
-    function handleDeleteUser(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        var userId = params.id;
+
+    private static function handleDeleteUser(params: EventParams, socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
+        var userId = getIntParam(params, "id");
+        if (userId == null) return NoReply(socket);
+
         var user = Users.get_user(userId);
         var result = Users.delete_user(user);
-        
+
         if (result.status == "ok") {
-            users = Users.list_users();
-            
-            return {
-                status: "noreply",
-                socket: assign(socket, "users", users)
-            };
+            var users = Users.list_users();
+            var updated = LiveView.assignMultiple(socket, {users: users});
+            return NoReply(updated);
         }
-        
-        return {status: "noreply", socket: socket};
+
+        return NoReply(socket);
     }
-    
-    function handleSearch(params: Dynamic, socket: Dynamic): {status: String, socket: Dynamic} {
-        searchTerm = params.search;
-        
-        users = searchTerm.length > 0 
+
+    private static function handleSearch(params: EventParams, socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
+        var searchTerm = getStringParam(params, "search");
+        if (searchTerm == null) searchTerm = "";
+
+        var users = searchTerm.length > 0
             ? Users.search_users(searchTerm)
             : Users.list_users();
-            
-        return {
-            status: "noreply",
-            socket: assign_multiple(socket, {
-                users: users,
-                searchTerm: searchTerm
-            })
-        };
+
+        var updated = LiveView.assignMultiple(socket, {users: users, searchTerm: searchTerm});
+        return NoReply(updated);
     }
-    
-    function handleCancel(socket: Dynamic): {status: String, socket: Dynamic} {
-        return {
-            status: "noreply",
-            socket: assign_multiple(socket, {
-                showForm: false,
-                selectedUser: null,
-                changeset: Users.change_user(null)
-            })
-        };
+
+    private static function handleCancel(socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
+        var updated = LiveView.assignMultiple(socket, {
+            showForm: false,
+            selectedUser: null,
+            changeset: Users.change_user(null)
+        });
+        return NoReply(updated);
     }
-    
-    function render(assigns: Dynamic): String {
+
+    public static function render(assigns: UserLiveAssigns): String {
         return hxx('
         <div class="user-management">
             <div class="header">
@@ -191,8 +179,8 @@ class UserLive {
         </div>
         ');
     }
-    
-    function renderUserList(assigns: Dynamic): String {
+
+    private static function renderUserList(assigns: UserLiveAssigns): String {
         return hxx('
         <div class="users-list">
             <table class="table">
@@ -212,8 +200,8 @@ class UserLive {
         </div>
         ');
     }
-    
-    function renderUserRow(user: User): String {
+
+    private static function renderUserRow(user: User): String {
         return hxx('
         <tr>
             <td>${user.name}</td>
@@ -241,12 +229,12 @@ class UserLive {
         </tr>
         ');
     }
-    
-    function renderUserForm(assigns: Dynamic): String {
+
+    private static function renderUserForm(assigns: UserLiveAssigns): String {
         if (!assigns.showForm) return "";
-        
+
         var title = assigns.selectedUser == null ? "New User" : "Edit User";
-        
+
         return hxx('
         <div class="modal">
             <div class="modal-content">
@@ -295,12 +283,18 @@ class UserLive {
         </div>
         ');
     }
-    
-    // Helper functions
-    static function assign(socket: Dynamic, key: String, value: Dynamic): Dynamic return socket;
-    static function assign_multiple(socket: Dynamic, assigns: Dynamic): Dynamic return socket;
-    
-    // Main function for compilation testing
+
+    private static function getStringParam(params: Term, key: String): Null<String> {
+        var value: Term = ElixirMap.get(params, key);
+        return value == null ? null : Std.string(value);
+    }
+
+    private static function getIntParam(params: Term, key: String): Null<Int> {
+        var value = getStringParam(params, key);
+        if (value == null) return null;
+        return Std.parseInt(value);
+    }
+
     public static function main(): Void {
         trace("UserLive with @:liveview annotation compiled successfully!");
     }

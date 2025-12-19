@@ -187,13 +187,10 @@ class CasePayloadBinderAlignByBodyUseTransforms {
         var names = new Map<String,Bool>();
 
         // Prefer metadata supplied by the builder (TypedExpr-derived)
-        try {
-            var meta:Dynamic = ast.metadata;
-            if (meta != null && untyped meta.usedLocalsFromTyped != null) {
-                var arr:Array<String> = untyped meta.usedLocalsFromTyped;
-                for (n in arr) if (n != null && n.length > 0 && allow(n)) names.set(n, true);
-            }
-        } catch (e:Dynamic) {}
+        var arr = ast.metadata.usedLocalsFromTyped;
+        if (arr != null) {
+            for (n in arr) if (n != null && n.length > 0 && allow(n)) names.set(n, true);
+        }
 
         // Also traverse the Elixir AST for any EVar occurrences
         ASTUtils.walk(ast, function(x: ElixirAST) {
@@ -242,7 +239,7 @@ class CasePayloadBinderAlignByBodyUseTransforms {
                     }
                     pos = block.matchedPos().pos + block.matchedPos().len;
                 }
-            } catch (e:Dynamic) {}
+            } catch (e) {}
         }
 
         return names;

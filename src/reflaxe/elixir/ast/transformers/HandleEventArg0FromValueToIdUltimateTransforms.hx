@@ -34,7 +34,7 @@ class HandleEventArg0FromValueToIdUltimateTransforms {
    * EXAMPLES
    * Haxe (snapshot: liveview/handle_event_value_to_id):
    *   @:liveview class Main {
-   *     public static function handle_event(event:String, params:Dynamic, socket:Dynamic) {
+   *     public static function handle_event(event:String, params:elixir.types.Term, socket:phoenix.Phoenix.Socket<{}>) {
    *       switch (event) {
    *         case "toggle_todo": toggleTodo(params.value, socket);
    *         default:

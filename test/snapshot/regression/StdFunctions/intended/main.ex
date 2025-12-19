@@ -19,16 +19,46 @@ defmodule Main do
     nil
   end
   defp test_parsing() do
-    valid_int = String.to_integer("42")
-    negative_int = String.to_integer("-123")
-    invalid_int = String.to_integer("abc")
-    partial_int = String.to_integer("42abc")
-    empty_int = String.to_integer("")
-    valid_float = String.to_float("3.14")
-    negative_float = String.to_float("-2.5")
-    int_as_float = String.to_float("42")
-    invalid_float = String.to_float("xyz")
-    partial_float = String.to_float("3.14xyz")
+    valid_int = ((case Integer.parse("42") do
+  {num, _} -> num
+  :error -> nil
+end))
+    negative_int = ((case Integer.parse("-123") do
+  {num, _} -> num
+  :error -> nil
+end))
+    invalid_int = ((case Integer.parse("abc") do
+  {num, _} -> num
+  :error -> nil
+end))
+    partial_int = ((case Integer.parse("42abc") do
+  {num, _} -> num
+  :error -> nil
+end))
+    empty_int = ((case Integer.parse("") do
+  {num, _} -> num
+  :error -> nil
+end))
+    valid_float = ((case Float.parse("3.14") do
+  {num, _} -> num
+  :error -> nil
+end))
+    negative_float = ((case Float.parse("-2.5") do
+  {num, _} -> num
+  :error -> nil
+end))
+    int_as_float = ((case Float.parse("42") do
+  {num, _} -> num
+  :error -> nil
+end))
+    invalid_float = ((case Float.parse("xyz") do
+  {num, _} -> num
+  :error -> nil
+end))
+    partial_float = ((case Float.parse("3.14xyz") do
+  {num, _} -> num
+  :error -> nil
+end))
     nil
   end
   defp test_type_checking() do

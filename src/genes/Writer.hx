@@ -66,7 +66,7 @@ class Writer {
         try
           if (FileSystem.exists(file) && output == File.getContent(file))
             return endTimer()
-        catch (e:Dynamic) {}
+        catch (e) {}
         #end
         File.saveContent(file, output);
         endTimer();

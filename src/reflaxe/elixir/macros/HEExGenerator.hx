@@ -11,12 +11,19 @@ using StringTools;
  * HEEx code generation from parsed JSX elements
  * Handles proper HEEx syntax, attribute formatting, and LiveView compatibility
  */
+import reflaxe.elixir.macros.HXXParser.JSXElement;
+
+typedef JSXSlot = {
+    var name: String;
+    var content: String;
+}
+
 class HEExGenerator {
     
     /**
      * Generate HEEx code from JSX element structure
      */
-    public static function generateHEEx(element: Dynamic): String {
+    public static function generateHEEx(element: JSXElement): String {
         #if (macro && hxx_instrument_sys)
         return MacroTimingHelper.time("HEExGenerator.generateHEEx", () -> generateHEExInternal(element));
         #else
@@ -24,7 +31,7 @@ class HEExGenerator {
         #end
     }
 
-    static function generateHEExInternal(element: Dynamic): String {
+    static function generateHEExInternal(element: JSXElement): String {
         if (element == null || !element.valid) {
             throw "Invalid JSX element provided to HEExGenerator";
         }
@@ -202,7 +209,7 @@ class HEExGenerator {
     /**
      * Generate component with proper slot handling
      */
-    public static function generateComponent(componentName: String, props: Map<String, String>, slots: Array<Dynamic>): String {
+    public static function generateComponent(componentName: String, props: Map<String, String>, slots: Array<JSXSlot>): String {
         #if (macro && hxx_instrument_sys)
         return MacroTimingHelper.time("HEExGenerator.generateComponent", () -> generateComponentInternal(componentName, props, slots));
         #else
@@ -210,7 +217,7 @@ class HEExGenerator {
         #end
     }
 
-    static function generateComponentInternal(componentName: String, props: Map<String, String>, slots: Array<Dynamic>): String {
+    static function generateComponentInternal(componentName: String, props: Map<String, String>, slots: Array<JSXSlot>): String {
         var parts:Array<String> = [];
         parts.push('<.${componentName}');
 

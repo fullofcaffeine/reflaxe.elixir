@@ -134,7 +134,7 @@ class HandleEventValueVarNormalizeTransforms {
             } else {
               x;
             }
-          } catch (_:Dynamic) {
+          } catch (_) {
             x;
           }
         default: x;

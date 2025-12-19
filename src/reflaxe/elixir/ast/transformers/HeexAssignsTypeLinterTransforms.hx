@@ -96,7 +96,7 @@ class HeexAssignsTypeLinterTransforms {
                     return;
                 }
                 var fileContent: String = null;
-                try fileContent = sys.io.File.getContent(hxPath) catch (e: Dynamic) fileContent = null;
+                try fileContent = sys.io.File.getContent(hxPath) catch (e) fileContent = null;
                 if (fileContent == null) return;
 
                 var nearLine: Null<Int> = findMinSourceLine(body);
@@ -196,32 +196,26 @@ class HeexAssignsTypeLinterTransforms {
                     var meta = x.metadata;
                     if (meta != null) {
                         // Prefer typed HEEx AST when available
-                        var dyn2: Dynamic = meta;
-                        if (Reflect.hasField(dyn2, "heexAST")) {
-                            var nodes: Array<ElixirAST> = Reflect.field(dyn2, "heexAST");
-                            if (nodes != null && nodes.length > 0) {
-                                validateHeexTypedAST(nodes, fields, typeName, ctx, x.pos);
-                            }
+                        var nodes = meta.heexAST;
+                        if (nodes != null && nodes.length > 0) {
+                            validateHeexTypedAST(nodes, fields, typeName, ctx, x.pos);
                         }
-                        var dyn: Dynamic = meta;
-                        if (Reflect.hasField(dyn, "heexFragments")) {
-                            var frags: Array<Dynamic> = Reflect.field(dyn, "heexFragments");
-                            if (frags != null) {
-                                for (f in frags) {
-                                    var attrs: Array<Dynamic> = f.attributes;
-                                    if (attrs == null) continue;
-                                    for (a in attrs) {
-                                        var vexpr: String = a.valueExpr;
-                                        // Unknown field checks: scan @field tokens
-                                        var used = collectAtFields(vexpr);
-                                        for (uf in used) {
-                                            if (!fields.exists(uf)) {
-                                                error(ctx, 'HEEx assigns error: Unknown field @' + uf + ' (not found in typedef ' + typeName + ')', x.pos);
-                                            }
+                        var frags = meta.heexFragments;
+                        if (frags != null) {
+                            for (f in frags) {
+                                var attrs = f.attributes;
+                                if (attrs == null) continue;
+                                for (a in attrs) {
+                                    var vexpr: String = a.valueExpr;
+                                    // Unknown field checks: scan @field tokens
+                                    var used = collectAtFields(vexpr);
+                                    for (uf in used) {
+                                        if (!fields.exists(uf)) {
+                                            error(ctx, 'HEEx assigns error: Unknown field @' + uf + ' (not found in typedef ' + typeName + ')', x.pos);
                                         }
-                                        // Literal kind mismatches within attribute expressions
-                                        checkLiteralComparisons(vexpr, fields, typeName, ctx, x.pos);
                                     }
+                                    // Literal kind mismatches within attribute expressions
+                                    checkLiteralComparisons(vexpr, fields, typeName, ctx, x.pos);
                                 }
                             }
                         }

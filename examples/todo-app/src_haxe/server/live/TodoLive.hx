@@ -43,15 +43,16 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 /**
  * LiveView component for todo management with real-time updates
  */
-@:native("TodoAppWeb.TodoLive")
-@:liveview
-class TodoLive {
-    // Prevent DCE from stripping private helpers used by LiveView callbacks.
-    @:keep private static var __keep_fns:Array<Function> = [
-        toggle_todo_status,
-        delete_todo,
-        update_todo_priority,
-        start_editing,
+	@:native("TodoAppWeb.TodoLive")
+	@:liveview
+	class TodoLive {
+	    // Prevent DCE from stripping private helpers used by LiveView callbacks.
+	    @:keep private static var __keep_fns:Array<Function> = [
+	        create_todo,
+	        toggle_todo_status,
+	        delete_todo,
+	        update_todo_priority,
+	        start_editing,
         save_edited_todo_typed,
         complete_all_todos,
         delete_completed_todos,
@@ -117,15 +118,15 @@ class TodoLive {
 	 */
 	    @:keep
 	    @:native("handle_event")
-	    public static function handle_event(event: String, params: Term, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
-	        var nextSocket: Socket<TodoLiveAssigns> =
-	            if (event == "create_todo") {
-	                createTodo(params, socket);
-	            } else if (event == "toggle_todo") {
-	                toggle_todo_status(extract_id(params), socket);
-	            } else if (event == "delete_todo") {
-	                delete_todo(extract_id(params), socket);
-	            } else if (event == "edit_todo") {
+		    public static function handle_event(event: String, params: Term, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
+		        var nextSocket: Socket<TodoLiveAssigns> =
+		            if (event == "create_todo") {
+		                create_todo(params, socket);
+		            } else if (event == "toggle_todo") {
+		                toggle_todo_status(extract_id(params), socket);
+		            } else if (event == "delete_todo") {
+		                delete_todo(extract_id(params), socket);
+		            } else if (event == "edit_todo") {
 	                start_editing(extract_id(params), socket);
 	            } else if (event == "save_todo") {
 	                save_edited_todo_typed(params, socket);
@@ -275,15 +276,15 @@ class TodoLive {
 		}
 	}
 
-    /**
-     * Create a new todo using typed TodoParams.
-     */
-    @:keep
-    static function createTodo(params: Term, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        // LiveView form params arrive as a map with string keys; extract safely.
-        var rawTitle: Null<String> = Reflect.field(params, "title");
-        var rawDesc: Null<String> = Reflect.field(params, "description");
-        var rawPriority: Null<String> = Reflect.field(params, "priority");
+	    /**
+	     * Create a new todo using typed TodoParams.
+	     */
+	    @:keep
+	    public static function create_todo(params: Term, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	        // LiveView form params arrive as a map with string keys; extract safely.
+	        var rawTitle: Null<String> = Reflect.field(params, "title");
+	        var rawDesc: Null<String> = Reflect.field(params, "description");
+	        var rawPriority: Null<String> = Reflect.field(params, "priority");
         var rawDue: Null<String> = Reflect.field(params, "due_date");
         var rawTags: Null<String> = Reflect.field(params, "tags");
 

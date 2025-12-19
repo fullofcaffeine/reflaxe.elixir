@@ -140,7 +140,7 @@ class ModuleBuilder {
             if (app != null && app.length > 0 && moduleName.indexOf('.') == -1) {
                 reflaxe.elixir.ElixirCompiler.registerModule(app + "." + moduleName);
             }
-        } catch (e:Dynamic) {}
+        } catch (e) {}
         var attributes: Array<EAttribute> = [];
 
         // Use provided metadata or create empty object

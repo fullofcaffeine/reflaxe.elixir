@@ -203,7 +203,7 @@ class HandleEventParamExtractFromBodyUseTransforms {
                 pos = tok.matchedPos().pos + tok.matchedPos().len;
               }
             }
-          } catch (e:Dynamic) {}
+          } catch (e) {}
         case EString(s):
           // Capture identifiers used in string interpolation (e.g., "id=\#{id}")
           try {
@@ -220,7 +220,7 @@ class HandleEventParamExtractFromBodyUseTransforms {
               }
               pos = block.matchedPos().pos + block.matchedPos().len;
             }
-          } catch (e:Dynamic) {}
+          } catch (e) {}
         default:
       }
     });

@@ -124,13 +124,19 @@ defmodule Main do
   end
   def try_as_expression() do
     value = try do
-      String.to_integer("123")
+      (case Integer.parse("123") do
+        {num, _} -> num
+        :error -> nil
+      end)
     rescue
       e ->
         0
     end
     value2 = try do
-      String.to_integer("not a number")
+      (case Integer.parse("not a number") do
+        {num, _} -> num
+        :error -> nil
+      end)
     rescue
       e ->
         -1

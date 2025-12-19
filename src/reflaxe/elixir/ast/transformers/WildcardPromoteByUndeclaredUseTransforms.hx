@@ -3,8 +3,10 @@ package reflaxe.elixir.ast.transformers;
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import haxe.macro.Expr.Position;
 
 /**
  * WildcardPromoteByUndeclaredUseTransforms
@@ -375,7 +377,7 @@ class WildcardPromoteByUndeclaredUseTransforms {
         return null;
     }
 
-    static function tryPromoteWildcardBinary(rhs: ElixirAST, stmts:Array<ElixirAST>, idx:Int, declared:Map<String,Bool>, meta:Dynamic, pos:Dynamic):Null<ElixirAST> {
+    static function tryPromoteWildcardBinary(rhs: ElixirAST, stmts:Array<ElixirAST>, idx:Int, declared:Map<String,Bool>, meta:ElixirMetadata, pos:Position):Null<ElixirAST> {
         // Special case: binder for String.downcase(search_query) should be `query` when used later
         inline function isDowncaseSearch(x: ElixirAST): Bool {
             return switch (x.def) {

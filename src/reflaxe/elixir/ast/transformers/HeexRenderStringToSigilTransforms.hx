@@ -66,7 +66,7 @@ class HeexRenderStringToSigilTransforms {
         var printed:String = null;
         try {
             printed = ElixirASTPrinter.print(expr, 0);
-        } catch (_:Dynamic) {
+        } catch (_) {
             return null;
         }
         if (printed == null) return null;

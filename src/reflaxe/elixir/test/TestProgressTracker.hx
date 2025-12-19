@@ -240,26 +240,26 @@ class TestProgressTracker {
     /**
      * Load previous test results
      */
-    function loadPreviousResults(): Void {
-        var resultsPath = haxe.io.Path.join([outputDir, TEST_RESULTS_FILE]);
+	    function loadPreviousResults(): Void {
+	        var resultsPath = haxe.io.Path.join([outputDir, TEST_RESULTS_FILE]);
 
-        if (FileSystem.exists(resultsPath)) {
-            try {
-                var content = File.getContent(resultsPath);
-                var data = Json.parse(content);
+	        if (FileSystem.exists(resultsPath)) {
+	            try {
+	                var content = File.getContent(resultsPath);
+	                // Json.parse returns a dynamic shape. Immediately project into a concrete structure
+	                // so `Dynamic` does not leak into internal logic.
+	                var data: Null<{tests: Array<{path: String, fingerprint: String}>}> = cast Json.parse(content);
 
-                if (data.tests != null) {
-                    for (test in (data.tests : Array<Dynamic>)) {
-                        if (test.fingerprint != null) {
-                            testFingerprints.set(test.path, test.fingerprint);
-                        }
-                    }
-                }
-            } catch (e: Dynamic) {
-                // Ignore corrupted file, start fresh
-            }
-        }
-    }
+	                if (data != null && data.tests != null) {
+	                    for (test in data.tests) {
+	                        testFingerprints.set(test.path, test.fingerprint);
+	                    }
+	                }
+	            } catch (e: haxe.Exception) {
+	                // Ignore corrupted file, start fresh
+	            }
+	        }
+	    }
 
     /**
      * Compute fingerprint for a test file
@@ -267,22 +267,22 @@ class TestProgressTracker {
      * @param testPath Path to test
      * @return Fingerprint string
      */
-    function computeFingerprint(testPath: String): String {
-        if (!FileSystem.exists(testPath)) {
-            return "";
-        }
+	    function computeFingerprint(testPath: String): String {
+	        if (!FileSystem.exists(testPath)) {
+	            return "";
+	        }
 
         try {
             var stat = FileSystem.stat(testPath);
             var content = File.getContent(testPath);
 
-            // Simple fingerprint: size + modification time + content hash
-            var hash = haxe.crypto.Md5.encode(content);
-            return '${stat.size}_${stat.mtime.getTime()}_${hash}';
-        } catch (e: Dynamic) {
-            return "";
-        }
-    }
+	            // Simple fingerprint: size + modification time + content hash
+	            var hash = haxe.crypto.Md5.encode(content);
+	            return '${stat.size}_${stat.mtime.getTime()}_${hash}';
+	        } catch (e: haxe.Exception) {
+	            return "";
+	        }
+	    }
 
     /**
      * Extract test category from path

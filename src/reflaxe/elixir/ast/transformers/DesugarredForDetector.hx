@@ -26,6 +26,18 @@ package reflaxe.elixir.ast.transformers;
 import haxe.macro.Type;
 import haxe.macro.Type.TypedExprDef;
 
+private typedef EliminationData = {
+    var isArrayIteration: Bool;
+}
+
+private typedef SubstitutionData = {
+    var counterVar: String;
+    var limitVar: String;
+    var ?userVar: String;
+    var ?variableMapping: Map<String, String>;
+    var ?eliminationData: EliminationData;
+}
+
 /**
  * DESUGARED FOR LOOP DETECTION MODULE
  * 
@@ -428,7 +440,7 @@ class DesugarredForDetector {
      * WHAT: Returns map of old name → new name for substitution
      * HOW: Uses detection data to build comprehensive mapping
      */
-    public static function createSubstitutionMap(data: Dynamic): Map<String, String> {
+    public static function createSubstitutionMap(data: SubstitutionData): Map<String, String> {
         var map = new Map<String, String>();
         
         // Map counter to user variable or generate name
@@ -436,8 +448,7 @@ class DesugarredForDetector {
             map.set(data.counterVar, data.userVar);
         } else {
             // Generate appropriate name based on context
-            var eliminationData = Reflect.field(data, "eliminationData");
-            var isArrayIteration = eliminationData != null ? Reflect.field(eliminationData, "isArrayIteration") : false;
+            var isArrayIteration = data.eliminationData != null && data.eliminationData.isArrayIteration;
             var generatedName = isArrayIteration ? "item" : "i";
             map.set(data.counterVar, generatedName);
         }
@@ -446,7 +457,7 @@ class DesugarredForDetector {
         map.set(data.limitVar, "_limit");
         
         // Add any additional mappings from variableMapping
-        var variableMapping: Map<String, String> = Reflect.field(data, "variableMapping");
+        var variableMapping = data.variableMapping;
         if (variableMapping != null) {
             for (key in variableMapping.keys()) {
                 var value = variableMapping.get(key);

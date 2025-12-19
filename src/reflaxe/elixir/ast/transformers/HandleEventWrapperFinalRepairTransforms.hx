@@ -314,7 +314,7 @@ class HandleEventWrapperFinalRepairTransforms {
           }
           pos2 = block2.matchedPos().pos + block2.matchedPos().len;
         }
-      } catch (e:Dynamic) {}
+      } catch (e) {}
     }
     return [for (k in names.keys()) k];
   }

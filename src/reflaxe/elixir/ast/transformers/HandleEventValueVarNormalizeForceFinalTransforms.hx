@@ -97,7 +97,7 @@ class HandleEventValueVarNormalizeForceFinalTransforms {
               #end
               makeASTWithMeta(ERaw(replaced), x.metadata, x.pos);
             } else x;
-          } catch (_:Dynamic) {
+          } catch (_) {
             x;
           }
         default: x;

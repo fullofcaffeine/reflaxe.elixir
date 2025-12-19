@@ -23,6 +23,11 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 
+private typedef ExpressionInfo = {
+    var multipliers: Array<Int>;
+    var offsets: Array<Int>;
+}
+
 /**
  * NESTED LOOP DETECTION MODULE
  * 
@@ -299,7 +304,7 @@ class NestedLoopDetector {
     /**
      * Analyze expression patterns across all statements to infer multipliers and offsets
      */
-    static function analyzeExpressionPatterns(stmts: Array<ElixirAST>, patterns: Array<Array<Int>>, dimensions: Array<Int>): Dynamic {
+    static function analyzeExpressionPatterns(stmts: Array<ElixirAST>, patterns: Array<Array<Int>>, dimensions: Array<Int>): ExpressionInfo {
         // For now, return empty info - this is a placeholder for expression analysis
         // In a full implementation, we would analyze the sequence of values to detect
         // patterns like arithmetic progressions (i * 3, j * 2, etc.)
@@ -312,7 +317,7 @@ class NestedLoopDetector {
     /**
      * Build nested Enum.each with expression reconstruction
      */
-    static function buildNestedEnumEachWithExpressions(sampleStmt: ElixirAST, dimensions: Array<Int>, expressionInfo: Dynamic): ElixirAST {
+    static function buildNestedEnumEachWithExpressions(sampleStmt: ElixirAST, dimensions: Array<Int>, expressionInfo: ExpressionInfo): ElixirAST {
         // For now, delegate to the original method
         // In a full implementation, we would use expressionInfo to reconstruct expressions
         return buildNestedEnumEach(sampleStmt, dimensions);

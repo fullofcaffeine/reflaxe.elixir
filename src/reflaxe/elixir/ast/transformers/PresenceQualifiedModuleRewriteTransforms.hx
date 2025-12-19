@@ -32,7 +32,7 @@ class PresenceQualifiedModuleRewriteTransforms {
         if (StringTools.endsWith(modName, ".Presence") && modName.indexOf("Web.Presence") == -1) {
             // Use PhoenixMapper to derive the canonical app prefix (shape-based, not name-coupled)
             var appPrefix: String = null;
-            try appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (_:Dynamic) {}
+            try appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (_) {}
             if (appPrefix == null || appPrefix.length == 0) return null;
             return appPrefix + "Web.Presence";
         }

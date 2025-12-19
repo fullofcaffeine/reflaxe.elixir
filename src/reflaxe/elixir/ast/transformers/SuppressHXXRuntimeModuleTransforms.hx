@@ -19,12 +19,12 @@ class SuppressHXXRuntimeModuleTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EModule(name, attrs, body) if (name == "HXX"):
-          var meta: Dynamic = n.metadata == null ? {} : n.metadata;
-          Reflect.setField(meta, "suppressEmission", true);
+          var meta = n.metadata;
+          meta.suppressEmission = true;
           makeASTWithMeta(EModule(name, attrs, body), meta, n.pos);
         case EDefmodule(name, doBlock) if (name == "HXX"):
-          var meta2: Dynamic = n.metadata == null ? {} : n.metadata;
-          Reflect.setField(meta2, "suppressEmission", true);
+          var meta2 = n.metadata;
+          meta2.suppressEmission = true;
           makeASTWithMeta(EDefmodule(name, doBlock), meta2, n.pos);
         default:
           n;
@@ -34,4 +34,3 @@ class SuppressHXXRuntimeModuleTransforms {
 }
 
 #end
-

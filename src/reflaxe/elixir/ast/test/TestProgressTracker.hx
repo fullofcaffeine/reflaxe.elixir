@@ -196,22 +196,22 @@ class TestProgressTracker {
     /**
      * Load results from cache
      */
-    private function loadResults(): Void {
-        if (FileSystem.exists(resultsFile)) {
-            try {
-                var content = File.getContent(resultsFile);
-                var data = Json.parse(content);
+	    private function loadResults(): Void {
+	        if (FileSystem.exists(resultsFile)) {
+	            try {
+	                var content = File.getContent(resultsFile);
+	                var data = Json.parse(content);
 
                 // Convert JSON back to Map
-                for (field in Reflect.fields(data)) {
-                    results.set(field, Reflect.field(data, field));
-                }
-            } catch (e: Dynamic) {
-                // Cache corrupted, start fresh
-                results.clear();
-            }
-        }
-    }
+	                for (field in Reflect.fields(data)) {
+	                    results.set(field, Reflect.field(data, field));
+	                }
+	            } catch (e: haxe.Exception) {
+	                // Cache corrupted, start fresh
+	                results.clear();
+	            }
+	        }
+	    }
 
     /**
      * Save results to cache

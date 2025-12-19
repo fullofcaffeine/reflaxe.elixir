@@ -38,6 +38,20 @@ class CompilerInit {
         #end
         
         var fastBoot = Context.defined("fast_boot");
+
+        // Treat Haxe's canonical Result as an Elixir-idiomatic enum.
+        //
+        // WHAT: Mark `haxe.functional.Result` with `@:elixirIdiomatic`.
+        // WHY:
+        // - Many codebases (tests/examples/stdlib helpers) use `haxe.functional.Result` directly.
+        // - Without `@:elixirIdiomatic`, Haxe may optimize enum patterns into tag-only switches
+        //   (e.g., `case Ok(v)` becomes `case 0`) and our printer will emit those tags verbatim,
+        //   producing invalid/non-idiomatic Elixir.
+        // - With `@:elixirIdiomatic`, the AST pipeline emits `{:ok, v}` / `{:error, e}` tuples.
+        // HOW: Apply global metadata in macro phase for Elixir builds.
+        try {
+            Compiler.addGlobalMetadata("haxe.functional.Result", "@:elixirIdiomatic");
+        } catch (e: haxe.Exception) {}
         // Initialize LiveView preservation to prevent DCE from removing Phoenix methods.
         // Even in fast_boot mode we must keep LiveView callbacks (mount/handle_event/etc.)
         // or DCE will drop them and Phoenix will raise at runtime.

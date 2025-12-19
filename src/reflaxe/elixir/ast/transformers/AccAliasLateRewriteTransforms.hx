@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
+import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ASTUtils;
 
@@ -63,7 +64,7 @@ class AccAliasLateRewriteTransforms {
         return result;
     }
 
-    static function rewriteToAcc(lhsName: String, rhs: ElixirAST, accName: String, meta: Dynamic, pos: Dynamic): ElixirAST {
+    static function rewriteToAcc(lhsName: String, rhs: ElixirAST, accName: String, meta: ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
         var newRight = ElixirASTTransformer.transformNode(rhs, function(z: ElixirAST): ElixirAST {
             return switch (z.def) {
                 case ERemoteCall(_, "concat", argsX) if (argsX.length == 2):

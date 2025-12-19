@@ -24,7 +24,7 @@ class HandleEventDecodeValueQueryIfBinaryUltimateTransforms {
    * EXAMPLES
    * Haxe (snapshot: liveview/handle_event_value_decode):
    *   @:liveview class Main {
-   *     public static function handle_event(event:String, params:Dynamic, socket:Dynamic) {
+   *     public static function handle_event(event:String, params:elixir.types.Term, socket:phoenix.Phoenix.Socket<{}>) {
    *       switch (event) {
    *         case "search_todos": performSearch(params.value, socket);
    *         default:

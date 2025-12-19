@@ -27,15 +27,15 @@ class TrailingTempReturnSimplifyTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
-                case EBlock(stmts): makeASTWithMeta(EBlock(simplify(stmts, n.metadata, n.pos)), n.metadata, n.pos);
-                case EDo(stmts2): makeASTWithMeta(EDo(simplify(stmts2, n.metadata, n.pos)), n.metadata, n.pos);
+                case EBlock(stmts): makeASTWithMeta(EBlock(simplify(stmts)), n.metadata, n.pos);
+                case EDo(stmts2): makeASTWithMeta(EDo(simplify(stmts2)), n.metadata, n.pos);
                 case EFn(clauses):
                     var newClauses = [];
                     for (cl in clauses) {
                         var b = cl.body;
                         var nb = switch (b.def) {
-                            case EBlock(ss): makeASTWithMeta(EBlock(simplify(ss, b.metadata, b.pos)), b.metadata, b.pos);
-                            case EDo(ss2): makeASTWithMeta(EDo(simplify(ss2, b.metadata, b.pos)), b.metadata, b.pos);
+                            case EBlock(ss): makeASTWithMeta(EBlock(simplify(ss)), b.metadata, b.pos);
+                            case EDo(ss2): makeASTWithMeta(EDo(simplify(ss2)), b.metadata, b.pos);
                             default: b;
                         };
                         newClauses.push({ args: cl.args, guard: cl.guard, body: nb });
@@ -47,7 +47,7 @@ class TrailingTempReturnSimplifyTransforms {
         });
     }
 
-    static function simplify(stmts:Array<ElixirAST>, meta:Dynamic, pos:Dynamic): Array<ElixirAST> {
+    static function simplify(stmts:Array<ElixirAST>): Array<ElixirAST> {
         if (stmts.length >= 2) {
             var last = stmts[stmts.length - 1];
             switch (last.def) {

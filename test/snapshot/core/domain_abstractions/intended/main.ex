@@ -206,7 +206,10 @@ end end).())
   defp build_user_profile(user_id_str, email_str, score_str) do
     MyApp.ResultTools.flat_map(ResultTools.map_error(UserId_Impl_.parse(user_id_str), fn e -> "Invalid UserId: " <> e end), (fn -> fn user_id ->
       ResultTools.flat_map(ResultTools.map_error(Email_Impl_.parse(StringTools.ltrim(StringTools.rtrim(email_str))), fn e -> "Invalid Email: " <> e end), (fn -> fn email ->
-        score_int = String.to_integer(score_str)
+        score_int = (case Integer.parse(score_str) do
+          {num, _} -> num
+          :error -> nil
+        end)
         if (score_int == nil), do: {:error, "Invalid score: " <> score_str}
         ResultTools.map(ResultTools.map_error(PositiveInt_Impl_.parse(score_int), fn e -> "Invalid score: " <> e end), fn score -> %{:user_id => user_id, :email => email, :score => score} end)
       end end).())
@@ -216,8 +219,14 @@ end end).())
     MyApp.ResultTools.flat_map(ResultTools.map_error(UserId_Impl_.parse(user_id_str), fn e -> "Invalid UserId: " <> e end), fn user_id -> ResultTools.flat_map(ResultTools.map_error(Email_Impl_.parse(email_str), fn e -> "Invalid Email: " <> e end), fn email -> ResultTools.map(ResultTools.map_error(NonEmptyString_Impl_.parse_and_trim(name_str), fn e -> "Invalid Name: " <> e end), fn display_name -> %{:user_id => user_id, :email => email, :display_name => display_name} end) end) end)
   end
   defp validate_configuration(timeout_str, retries_str, name_str) do
-    timeout_int = String.to_integer(timeout_str)
-    retries_int = String.to_integer(retries_str)
+    timeout_int = ((case Integer.parse(timeout_str) do
+  {num, _} -> num
+  :error -> nil
+end))
+    retries_int = ((case Integer.parse(retries_str) do
+  {num, _} -> num
+  :error -> nil
+end))
     if (Kernel.is_nil(timeout_int)) do
       {:error, "Timeout must be a number: " <> timeout_str}
     else

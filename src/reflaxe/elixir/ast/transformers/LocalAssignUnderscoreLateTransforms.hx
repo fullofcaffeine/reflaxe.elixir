@@ -66,7 +66,7 @@ class LocalAssignUnderscoreLateTransforms {
                             if (found) break;
                             pos = block.matchedPos().pos + block.matchedPos().len;
                         }
-                    } catch (e:Dynamic) {}
+                    } catch (e) {}
                 case EBinary(_, l, r): visit(l); visit(r);
                 case EMatch(_, rhs): visit(rhs);
                 case ERemoteCall(m, _, as): visit(m); if (as != null) for (a in as) visit(a);

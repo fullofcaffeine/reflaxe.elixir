@@ -356,7 +356,7 @@ class EctoERawTransforms {
                         try {
                             var d = haxe.macro.Compiler.getDefine("app_name");
                             if (d != null && d.length > 0) return d; 
-                        } catch (e:Dynamic) {}
+                        } catch (e) {}
                         #end
                         return reflaxe.elixir.PhoenixMapper.getAppModuleName();
                     })();
@@ -376,7 +376,7 @@ class EctoERawTransforms {
                         try {
                             var d = haxe.macro.Compiler.getDefine("app_name");
                             if (d != null && d.length > 0) return d; 
-                        } catch (e:Dynamic) {}
+                        } catch (e) {}
                         #end
                         return reflaxe.elixir.PhoenixMapper.getAppModuleName();
                     })();
@@ -567,7 +567,7 @@ class EctoERawTransforms {
             try {
                 var d = haxe.macro.Compiler.getDefine("app_name");
                 if (d != null && d.length > 0) return d;
-            } catch (e:Dynamic) {}
+            } catch (e) {}
             #end
             return reflaxe.elixir.PhoenixMapper.getAppModuleName();
         })();
@@ -644,7 +644,7 @@ class EctoERawTransforms {
             try {
                 var d = haxe.macro.Compiler.getDefine("app_name");
                 if (d != null && d.length > 0) return d;
-            } catch (e:Dynamic) {}
+            } catch (e) {}
             #end
             return reflaxe.elixir.PhoenixMapper.getAppModuleName();
         })();

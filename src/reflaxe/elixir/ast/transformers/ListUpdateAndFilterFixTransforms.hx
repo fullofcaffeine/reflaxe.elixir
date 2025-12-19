@@ -175,7 +175,7 @@ class ListUpdateAndFilterFixTransforms {
                                         try {
                                             var predStr = reflaxe.elixir.ast.ElixirASTPrinter.print(cl.body, 0);
                                             // DISABLED: trace('[ListFix] (EDef ' + fname + ') filter predicate: ' + predStr);
-                                        } catch (e: Dynamic) {}
+                                        } catch (e) {}
                                         #end
                                         // match body: v.id != v
                                         var fixedBody = switch (cl.body.def) {
@@ -280,7 +280,7 @@ class ListUpdateAndFilterFixTransforms {
                                         try {
                                             var printed = reflaxe.elixir.ast.ElixirASTPrinter.print(cl.body, 0);
                                             // DISABLED: trace('[ListFix] (EDefp ' + fnamep + ') filter predicate: ' + printed);
-                                        } catch (e: Dynamic) {}
+                                        } catch (e) {}
                                         #end
                                         var fixedBody = switch (cl.body.def) {
                                             case EBinary(NotEqual | StrictNotEqual, l, r):

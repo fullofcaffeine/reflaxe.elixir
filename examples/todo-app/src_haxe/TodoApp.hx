@@ -7,6 +7,7 @@ import elixir.otp.Supervisor.SupervisorStrategy;
 import elixir.otp.Supervisor.SupervisorOptions;
 import elixir.otp.TypeSafeChildSpec;
 import elixir.otp.Supervisor.ChildSpecFormat;
+import elixir.types.Term;
 
 /**
  * Main TodoApp application module
@@ -56,9 +57,7 @@ class TodoApp {
      * State is whatever was returned from start/2
      */
     @:keep
-    public static function prep_stop(state: Dynamic): Dynamic {
-        // For now, keep Dynamic since this is rarely customized
-        // and state type varies based on application needs
+    public static function prep_stop(state: Term): Term {
         return state;
     }
 }
