@@ -1,0 +1,10 @@
+title = "reflaxe.elixir gitleaks config"
+
+[allowlist]
+description = "Allow known non-secret local Postgres credentials used in docs/CI examples"
+regexes = [
+  '''POSTGRES_PASSWORD=postgres''',
+  '''POSTGRES_PASSWORD:[[:space:]]+postgres''',
+  '''PGPASSWORD:[[:space:]]+postgres''',
+]
+

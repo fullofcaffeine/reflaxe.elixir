@@ -44,8 +44,8 @@ class MatchBlockRhsExtractLastTransforms {
             return switch (n.def) {
                 case EBlock(stmts):
                     makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);
-                case EDo(stmts2):
-                    makeASTWithMeta(EDo(rewrite(stmts2)), n.metadata, n.pos);
+                case EDo(doStatements):
+                    makeASTWithMeta(EDo(rewrite(doStatements)), n.metadata, n.pos);
                 default:
                     n;
             }
@@ -79,12 +79,12 @@ class MatchBlockRhsExtractLastTransforms {
                 }, blockStmts);
 
             // Binary match form: left = <block>
-            case EBinary(Match, left, rhs2):
-                var blockStmts2 = extractBlockStatements(rhs2);
-                if (blockStmts2 == null) return null;
-                return expandMatchLike(stmt, function(lastExpr2) {
-                    return makeASTWithMeta(EBinary(Match, left, lastExpr2), stmt.metadata, stmt.pos);
-                }, blockStmts2);
+            case EBinary(Match, left, rhs):
+                var blockStatements = extractBlockStatements(rhs);
+                if (blockStatements == null) return null;
+                return expandMatchLike(stmt, function(lastExpr) {
+                    return makeASTWithMeta(EBinary(Match, left, lastExpr), stmt.metadata, stmt.pos);
+                }, blockStatements);
 
             default:
                 return null;
@@ -95,8 +95,8 @@ class MatchBlockRhsExtractLastTransforms {
         if (rhs == null || rhs.def == null) return null;
         return switch (rhs.def) {
             case EBlock(inner): inner;
-            case EDo(inner2): inner2;
-            case EParen(inner3): extractBlockStatements(inner3);
+            case EDo(doStatements): doStatements;
+            case EParen(inner): extractBlockStatements(inner);
             default: null;
         }
     }
@@ -138,7 +138,7 @@ class MatchBlockRhsExtractLastTransforms {
         if (expr == null || expr.def == null) return true;
         return switch (expr.def) {
             case EBlock(stmts): stmts == null || stmts.length == 0;
-            case EDo(stmts2): stmts2 == null || stmts2.length == 0;
+            case EDo(doStatements): doStatements == null || doStatements.length == 0;
             default: false;
         }
     }

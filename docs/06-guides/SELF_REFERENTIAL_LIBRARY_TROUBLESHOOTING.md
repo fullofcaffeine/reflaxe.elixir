@@ -68,7 +68,7 @@ end
 -cp src/
 -cp std/
 -lib reflaxe
--D reflaxe.elixir=1.0.1
+-D reflaxe.elixir=1.0.5
 --macro reflaxe.elixir.CompilerInit.Start()
 ```
 

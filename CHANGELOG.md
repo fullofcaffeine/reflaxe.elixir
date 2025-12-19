@@ -1,5 +1,17 @@
 ## [Unreleased]
 
+## [1.0.5](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.0.4...v1.0.5) (2025-12-19)
+
+### 🐞 Bug Fixes
+
+- Compiler: Fix AST printer correctness in container contexts (tuple/map/keyword) by safely wrapping inline `if` and multi‑statement expressions.
+- Compiler: Ensure `fn`, `rescue`, and `catch` bodies never print empty (emit `nil`) to keep generated Elixir syntactically valid.
+- Phoenix: Improve typing/codegen (atoms for assigns keys; better atom argument lowering; Presence macro correctness + typing).
+
+### 🔧 Tooling
+
+- CI: Add a guard to prevent `Dynamic`/`Any`/`untyped`/`__elixir__()` leaks in app/example code.
+
 ### 🐞 Bug Fixes
 
 - Todo-app: Fix a late-stage hygiene regression that could rewrite `Enum.find` predicates into self-comparisons (preventing edits) and add Playwright coverage for tags/sort/live updates.
