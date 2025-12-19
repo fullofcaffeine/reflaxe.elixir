@@ -22,15 +22,15 @@ class SuppressHXXRuntimeModuleTransforms {
           var meta = n.metadata;
           meta.suppressEmission = true;
           makeASTWithMeta(EModule(name, attrs, body), meta, n.pos);
-        case EDefmodule(name, doBlock) if (name == "HXX"):
-          var meta2 = n.metadata;
-          meta2.suppressEmission = true;
-          makeASTWithMeta(EDefmodule(name, doBlock), meta2, n.pos);
-        default:
-          n;
-      }
-    });
-  }
+	        case EDefmodule(name, doBlock) if (name == "HXX"):
+	          var meta = n.metadata;
+	          meta.suppressEmission = true;
+	          makeASTWithMeta(EDefmodule(name, doBlock), meta, n.pos);
+	        default:
+	          n;
+	      }
+	    });
+	  }
 }
 
 #end

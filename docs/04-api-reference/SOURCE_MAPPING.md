@@ -380,19 +380,29 @@ Add the `-D source-map` flag to your compilation configuration:
 
 #### In compile.hxml:
 ```hxml
+-lib reflaxe.elixir
 -cp src_haxe
--lib reflaxe
--main Main
+-D reflaxe_runtime
 -D elixir_output=lib
 -D source-map  # Enable source mapping
+-dce full
+--main Main
 ```
 
 #### In build.hxml:
 ```hxml
---macro reflaxe.elixir.CompilerInit.Start()
--D source-map  # Enable source mapping
+-lib reflaxe.elixir
+-cp src_haxe
+-D reflaxe_runtime
 -D elixir_output=lib
+-D source-map  # Enable source mapping
+-dce full
+--main Main
 ```
+
+Notes:
+- When you use `-lib reflaxe.elixir`, the library already runs `--macro reflaxe.elixir.CompilerInit.Start()` for you.
+- If you vendor the compiler sources manually (no `-lib`), add `--macro reflaxe.elixir.CompilerInit.Start()` to your HXML.
 
 ### 2. Verify Source Map Generation
 

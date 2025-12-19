@@ -92,7 +92,8 @@ For the complete roadmap including AI tooling, universal deployment, and multi-p
 ## Installation
 
 ### Prerequisites
-- Node.js 16+ (for lix package management)
+- Haxe 4.3.7+ (compiler)
+- Node.js 16+ (for lix package management; Node 20 recommended)
 - Elixir 1.14+ (for Phoenix/Ecto ecosystem)
 
 ### Method 1: Install via Lix (Recommended)
@@ -103,6 +104,9 @@ npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # Or install a specific version/tag
 npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.4
+
+# Download pinned Haxe libraries for the project
+npx lix download
 
 # Add to existing project
 npx lix use
@@ -211,7 +215,8 @@ haxe build.hxml   # or compile-all.hxml when present
 defp deps do
   [
     # ... other deps
-    {:reflaxe_elixir, "~> 1.0", only: [:dev]}
+    # Mix tasks only (build-time): pin to a tag or use a commit SHA
+    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.0.4", only: [:dev, :test], runtime: false}
   ]
 end
 

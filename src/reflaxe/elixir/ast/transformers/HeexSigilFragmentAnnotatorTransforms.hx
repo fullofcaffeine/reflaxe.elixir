@@ -31,13 +31,13 @@ class HeexSigilFragmentAnnotatorTransforms {
     static function annotate(ast: ElixirAST): ElixirAST {
         return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
-                case ESigil(type, content, modifiers) if (type == "H"):
-                    var frags = parseFragments(content);
-                    if (frags != null && frags.length > 0) {
-                        var meta2 = n.metadata;
-                        meta2.heexFragments = frags;
-                        makeASTWithMeta(n.def, meta2, n.pos);
-                    } else n;
+	                case ESigil(type, content, modifiers) if (type == "H"):
+	                    var frags = parseFragments(content);
+	                    if (frags != null && frags.length > 0) {
+	                        var meta = n.metadata;
+	                        meta.heexFragments = frags;
+	                        makeASTWithMeta(n.def, meta, n.pos);
+	                    } else n;
                 default:
                     n;
             }
