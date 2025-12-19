@@ -1,5 +1,6 @@
 package server.support;
 
+import elixir.types.Atom;
 import phoenix.types.Flash.FlashType;
 
 /**
@@ -27,7 +28,7 @@ class FlashTypeTools {
         };
     }
 
-    public static function to_phoenix_key(type:FlashType):String {
+    public static function to_phoenix_key(type:FlashType):Atom {
         return switch (type) {
             case Error: "error";
             case _: "info";

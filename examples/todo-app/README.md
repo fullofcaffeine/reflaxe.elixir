@@ -110,6 +110,28 @@ Build note:
 - The canonical entrypoints are `build.hxml` (server), `build-client.hxml` (client), and `build-tests.hxml` (tests).
 - Any legacy multi-pass/prewarm experiments live under `examples/todo-app/hxml/legacy/` and are not required for normal development.
 
+### Is the todo-app “100% Haxe”?
+
+The todo-app is designed to demonstrate **end-to-end Haxe→Elixir** for application code, while still being a *normal* Phoenix project.
+
+**Generated from Haxe**
+- Server app code: `examples/todo-app/src_haxe/server/**` → `examples/todo-app/lib/todo_app/**` and `examples/todo-app/lib/todo_app_web/**`
+- Shared/domain types: `examples/todo-app/src_haxe/shared/**` → `examples/todo-app/lib/shared/**`
+- Client hooks: `examples/todo-app/src_haxe/client/**` → bundled JS under `priv/static/assets/` via `build-client.hxml`
+
+**Hand-written (Elixir/Phoenix conventions)**
+- Phoenix project scaffolding and configuration: `mix.exs`, `config/*.exs`
+  - Why: Phoenix expects these files and patterns; keeping them idiomatic makes gradual adoption easy.
+- Ecto migrations and seeds: `priv/repo/migrations/*.exs`, `priv/repo/seeds.exs`
+  - Why: Ecto executes migrations as Elixir scripts from `priv/repo/migrations/`. Reflaxe.Elixir can *generate* migration content, but the canonical runtime location is still `.exs`.
+- Phoenix JS bootstrap: `assets/js/phoenix_app.js`
+  - Why: this mirrors Phoenix’s canonical LiveView bootstrap and stays stable across Phoenix upgrades (see section above).
+
+**Intentional small Elixir helper**
+- `examples/todo-app/lib/todo_app/flash.ex`
+  - Why: it’s a tiny, stable helper module and also demonstrates that you can mix Haxe-generated modules with hand-written Elixir where it makes sense.
+  - If you want a “pure Haxe” demo, this module can be moved into `src_haxe/` later (without changing the overall architecture).
+
 ### Compilation Flow
 
 ```mermaid

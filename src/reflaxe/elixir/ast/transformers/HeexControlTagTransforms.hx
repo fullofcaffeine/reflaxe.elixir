@@ -205,6 +205,10 @@ class HeexControlTagTransforms {
             var elseEnd = closeIdx;
             var thenHtml = s.substr(thenStart, thenEnd - thenStart);
             var elseHtml = elseStart != -1 ? s.substr(elseStart, elseEnd - elseStart) : null;
+            // Recursively rewrite nested <if>/<else> blocks in the branches so authoring can
+            // freely nest control tags without leaking literal <if> elements into HEEx output.
+            thenHtml = rewriteControlTags(thenHtml);
+            if (elseHtml != null) elseHtml = rewriteControlTags(elseHtml);
             parts.push('<%= if ' + cond + ' do %>');
             parts.push(thenHtml);
             if (elseHtml != null && StringTools.trim(elseHtml) != "") {

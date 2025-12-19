@@ -9,10 +9,10 @@ import haxe.Constraints.Function;
 	import elixir.ElixirMap;
 	import elixir.Task; // Background work via Task.start
 	import elixir.List;
-		import elixir.DateTime.NaiveDateTime;
-		import elixir.Enum;
-	import haxe.functional.Result; // Import Result type properly
-	import phoenix.LiveSocket; // Type-safe socket wrapper
+			import elixir.DateTime.NaiveDateTime;
+			import elixir.Enum;
+			import haxe.functional.Result; // Import Result type properly
+			import phoenix.LiveSocket; // Type-safe socket wrapper
 	import phoenix.types.Flash.FlashType;
 	import phoenix.Phoenix.HandleEventResult;
 	import phoenix.Phoenix.HandleInfoResult;
@@ -25,6 +25,7 @@ import haxe.Constraints.Function;
 import server.live.TodoLiveTypes.TodoLiveAssigns;
 import server.live.TodoLiveTypes.TodoLiveEvent;
 import server.live.TodoLiveTypes.TodoView;
+import server.live.TodoLiveTypes.TagView;
 import server.presence.TodoPresence;
 import server.pubsub.TodoPubSub.TodoPubSubMessage;
 import server.pubsub.TodoPubSub.TodoPubSubTopic;
@@ -74,11 +75,11 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 	        var currentUser = getUserFromSession(session);
 		        var todos = loadTodos(currentUser.id);
 
-		        // Subscribe only on the connected mount (the initial static render is disconnected).
-		        // This enables cross-session real-time updates via Phoenix.PubSub.
-		        if (socket.transport_pid != null) {
-		            TodoPubSub.subscribe(TodoUpdates);
-		        }
+				        // Subscribe only on the connected mount (the initial static render is disconnected).
+				        // This enables cross-session real-time updates via Phoenix.PubSub.
+				        if (socket.transport_pid != null) {
+				            TodoPubSub.subscribe(TodoUpdates);
+				        }
 
 	        var assigns: TodoLiveAssigns = {
 	            todos: todos,
@@ -89,7 +90,7 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 	            show_form: false,
 	            search_query: "",
 	            selected_tags: [],
-	            available_tags: computeAvailableTags(todos),
+	            available_tags: computeAvailableTags(todos, []),
 	            optimistic_toggle_ids: [],
 	            visible_todos: [],
 	            visible_count: 0,
@@ -138,24 +139,26 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 	            } else if (event == "sort_todos") {
 	                var sortBy: Null<String> = cast Reflect.field(params, "sort_by");
 	                recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy != null ? sortBy : "created"));
-	            } else if (event == "search_todos") {
-	                var query: Null<String> = cast Reflect.field(params, "query");
-	                recomputeVisible(SafeAssigns.setSearchQuery(socket, query != null ? query : ""));
-	            } else if (event == "toggle_tag") {
-	                var tagValue: Null<String> = Reflect.field(params, "tag");
-	                if (tagValue == null) {
-	                    socket;
-	                } else {
-	                    var tag: String = tagValue;
-	                    var current = socket.assigns.selected_tags;
-	                    var updated = if (current.contains(tag)) {
-	                        current.filter(function(t) return t != tag);
-	                    } else {
-	                        List.insertAt(current, 0, tag);
-	                    };
-	                    recomputeVisible(SafeAssigns.setSelectedTags(socket, updated));
-	                }
-	            } else if (event == "set_priority") {
+			            } else if (event == "search_todos") {
+			                var query: Null<String> = cast Reflect.field(params, "query");
+			                var withQuery = SafeAssigns.setSearchQuery(socket, query != null ? query : "");
+			                // Ensure tag-selection state composes with search changes.
+			                recomputeVisible(SafeAssigns.setSelectedTags(withQuery, socket.assigns.selected_tags));
+		            } else if (event == "toggle_tag") {
+		                var tagValue: Null<String> = Reflect.field(params, "tag");
+		                if (tagValue == null) {
+		                    socket;
+		                } else {
+			                    var tag: String = tagValue;
+			                    var current = socket.assigns.selected_tags;
+			                    var updated = if (current.contains(tag)) {
+			                        current.filter(function(t) return t != tag);
+			                    } else {
+			                        List.insertAt(current, 0, tag);
+			                    };
+			                    recomputeVisible(SafeAssigns.setSelectedTags(socket, updated));
+			                }
+		            } else if (event == "set_priority") {
 	                var priority: Null<String> = cast Reflect.field(params, "priority");
 	                update_todo_priority(extract_id(params), priority != null ? priority : "medium", socket);
 	            } else if (event == "toggle_form") {
@@ -513,7 +516,7 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
         return updated;
     }
 
-    static function buildTodoRow(todoItem: server.schemas.Todo, forceCompletedView: Bool, editing: Null<server.schemas.Todo>): TodoView {
+    static function buildTodoRow(todoItem: server.schemas.Todo, forceCompletedView: Bool, editing: Null<server.schemas.Todo>, selectedTags: Array<String>): TodoView {
         var completedFlag: Bool = if (forceCompletedView) {
             true;
         } else {
@@ -527,7 +530,8 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
             + " transition-all hover:shadow-xl";
         var hasDue = (todoItem.dueDate != null);
         var dueDisplay = hasDue ? format_due_date(todoItem.dueDate) : "";
-        var hasTags = (todoItem.tags != null && todoItem.tags.length > 0);
+        var tagViews = buildTagViews((todoItem.tags != null ? todoItem.tags : []), selectedTags);
+        var hasTags = tagViews.length > 0;
         var hasDescription = (todoItem.description != null && todoItem.description != "");
         var isEditing = (editing != null && editing.id == todoItem.id);
         return {
@@ -546,7 +550,7 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
             has_tags: hasTags,
             has_description: hasDescription,
             is_editing: isEditing,
-            tags: (todoItem.tags != null ? todoItem.tags : [])
+            tags: tagViews
         };
     }
 
@@ -557,8 +561,9 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
         var base = filterAndSortTodos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query, assigns.selected_tags);
         var forceCompletedView = (assigns.filter == shared.TodoTypes.TodoFilter.Completed) && countCompleted(assigns.todos) == 0;
         var currentEdit = assigns.editing_todo;
+        var selectedTags = assigns.selected_tags;
         var rows = elixir.Enum.map(base, function(rowSource: server.schemas.Todo): TodoView {
-            return buildTodoRow(rowSource, forceCompletedView, currentEdit);
+            return buildTodoRow(rowSource, forceCompletedView, currentEdit, selectedTags);
         });
         return rows;
     }
@@ -575,7 +580,7 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 	        var merged = ls.merge({
 	            visible_todos: rows,
 	            visible_count: rows.length,
-	            available_tags: computeAvailableTags(ls.assigns.todos),
+	            available_tags: computeAvailableTags(ls.assigns.todos, ls.assigns.selected_tags),
 	            filter_btn_all_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.All),
 	            filter_btn_active_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Active),
 	            filter_btn_completed_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Completed),
@@ -616,8 +621,10 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
         var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll));
         // Reload todos and update assigns
         var refreshedTodos = loadTodos(socket.assigns.current_user.id);
+        var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, refreshedTodos));
+        updated = LiveView.clearFlash(updated);
         return LiveView.putFlash(
-            recomputeVisible(SafeAssigns.setTodos(socket, refreshedTodos)),
+            updated,
             FlashType.Info,
             "All todos marked as completed!"
         );
@@ -632,8 +639,10 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
         var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted));
         // Reload fresh todos from DB and update assigns
         var remaining = loadTodos(socket.assigns.current_user.id);
+        var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, remaining));
+        updated = LiveView.clearFlash(updated);
         return LiveView.putFlash(
-            recomputeVisible(SafeAssigns.setTodos(socket, remaining)),
+            updated,
             FlashType.Info,
             "Completed todos deleted!"
         );
@@ -859,6 +868,17 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
         return HXX.hxx('
 			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
 				<div id="root" class="container mx-auto px-4 py-8 max-w-6xl" phx-hook="Ping">
+					<!-- Flash messages (info/error) -->
+						<if {info = Phoenix.Flash.get(assigns.flash, :info)}>
+							<div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
+								#{info}
+							</div>
+						</if>
+						<if {error = Phoenix.Flash.get(assigns.flash, :error)}>
+							<div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+								#{error}
+							</div>
+						</if>
 					
 					<!-- Header -->
 					<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 mb-8">
@@ -969,42 +989,41 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 							<!-- Search -->
 							<div class="flex-1 min-w-[300px]">
                             <form phx-change="search_todos" class="relative">
-									<input type="search" name="query" value={@search_query} phx-debounce="300"
+									<input type="search" name="query" value=${assigns.search_query} phx-debounce="300"
 										class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 										placeholder="Search todos..." />
 									<span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
 								</form>
 							</div>
 							
-                        <!-- Filter Buttons -->
+	                        <!-- Filter Buttons -->
 	                        <div class="flex space-x-2">
-	                            <button phx-click="filter_todos" phx-value-filter="all" data-testid="btn-filter-all"
-	                                class={@filter_btn_all_class}>All</button>
-	                            <button phx-click="filter_todos" phx-value-filter="active" data-testid="btn-filter-active"
-	                                class={@filter_btn_active_class}>Active</button>
-	                            <button phx-click="filter_todos" phx-value-filter="completed" data-testid="btn-filter-completed"
-	                                class={@filter_btn_completed_class}>Completed</button>
+	                            <button type="button" phx-click="filter_todos" phx-value-filter="all" data-testid="btn-filter-all"
+	                                class=${assigns.filter_btn_all_class}>All</button>
+	                            <button type="button" phx-click="filter_todos" phx-value-filter="active" data-testid="btn-filter-active"
+	                                class=${assigns.filter_btn_active_class}>Active</button>
+	                            <button type="button" phx-click="filter_todos" phx-value-filter="completed" data-testid="btn-filter-completed"
+	                                class=${assigns.filter_btn_completed_class}>Completed</button>
 	                        </div>
 	                        <div class="flex flex-wrap gap-2" data-testid="available-tags">
-	                            <%= for tag <- @available_tags do %>
-	                                <button phx-click="toggle_tag" phx-value-tag={tag} data-testid="tag-chip" data-tag={tag}
-	                                    class={"px-2 py-1 rounded text-xs transition-colors " <>
-	                                      (if Enum.member?(@selected_tags, tag),
-	                                        do: "bg-blue-500 text-white hover:bg-blue-600",
-	                                        else: "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 hover:bg-blue-200")}>
-	                                    <%= tag %>
+	                            <for {tagView in assigns.available_tags}>
+	                                <button type="button" phx-click="toggle_tag" phx-value-tag=#{tagView.tag} data-testid="tag-chip" data-tag=#{tagView.tag}
+	                                    class=#{tagView.chip_class}>
+	                                    #{tagView.tag}
 	                                </button>
-	                            <% end %>
-	                        </div>
+	                            </for>
+							</div>
 							
 							<!-- Sort Dropdown -->
 							<div>
-                            <select phx-change="sort_todos" name="sort_by"
-                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                <option value="created" selected={@sort_selected_created}>Sort by Date</option>
-                                <option value="priority" selected={@sort_selected_priority}>Sort by Priority</option>
-                                <option value="due_date" selected={@sort_selected_due_date}>Sort by Due Date</option>
-                            </select>
+                            <form phx-change="sort_todos">
+                                <select name="sort_by"
+                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+                                    <option value="created" selected=${assigns.sort_selected_created}>Sort by Date</option>
+                                    <option value="priority" selected=${assigns.sort_selected_priority}>Sort by Priority</option>
+                                    <option value="due_date" selected=${assigns.sort_selected_due_date}>Sort by Due Date</option>
+                                </select>
+                            </form>
 							</div>
 						</div>
 					</div>
@@ -1016,91 +1035,88 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
                     <!-- Bulk Actions (typed HXX) -->
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center">
                         <div class="text-sm text-gray-600 dark:text-gray-400">
-                            Showing #{@visible_count} of #{@total_todos} todos
+                            Showing ${assigns.visible_count} of ${assigns.total_todos} todos
                         </div>
                         <div class="flex space-x-2">
-                            <button phx-click="bulk_complete"
+                            <button type="button" phx-click="bulk_complete"
                                 class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm">✅ Complete All</button>
-                            <button phx-click="bulk_delete_completed" data-confirm="Are you sure you want to delete all completed todos?"
+                            <button type="button" phx-click="bulk_delete_completed" data-confirm="Are you sure you want to delete all completed todos?"
                                 class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm">🗑️ Delete Completed</button>
                         </div>
                     </div>
 					
 					<!-- Todo List -->
                     <div id="todo-list" class="space-y-4">
-                        <%= for v <- @visible_todos do %>
-                            <%= if v.is_editing do %>
-                                <div id={v.dom_id} data-testid="todo-card" data-completed={v.completed_str}
-                                    class={v.container_class}>
+                        <for {v in assigns.visible_todos}>
+                            <if {v.is_editing}>
+                                <div id=#{v.dom_id} data-testid="todo-card" data-completed=#{v.completed_str}
+                                    class=#{v.container_class}>
                                     <form phx-submit="save_todo" class="space-y-4">
-                                        <input type="text" name="title" value={v.title} required data-testid="input-title"
+                                        <input type="text" name="title" value=#{v.title} required data-testid="input-title"
                                             class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
                                         <textarea name="description" rows="2"
-                                            class="w-full px-4 py-2 border border-gray-300 dark-border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"><%= v.description %></textarea>
+                                            class="w-full px-4 py-2 border border-gray-300 dark-border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">#{v.description}</textarea>
                                         <div class="flex space-x-2">
                                             <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Save</button>
                                             <button type="button" phx-click="cancel_edit" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
                                         </div>
                                     </form>
                                 </div>
-                            <% else %>
-                                <div id={v.dom_id} data-testid="todo-card" data-completed={v.completed_str}
-                                    class={v.container_class}>
+                            <else>
+                                <div id=#{v.dom_id} data-testid="todo-card" data-completed=#{v.completed_str}
+                                    class=#{v.container_class}>
                                     <div class="flex items-start space-x-4">
                                         <!-- Checkbox -->
-                                        <button type="button" phx-click="toggle_todo" phx-value-id={v.id} data-testid="btn-toggle-todo"
+                                        <button type="button" phx-click="toggle_todo" phx-value-id=#{v.id} data-testid="btn-toggle-todo"
                                             class="mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors">
-                                            <%= if v.completed_for_view do %>
+                                            <if {v.completed_for_view}>
                                                 <span class="text-green-500">✓</span>
-                                            <% end %>
+                                            </if>
                                         </button>
 
                                         <!-- Content -->
                                         <div class="flex-1">
-                                            <h3 class={v.title_class}>
-                                                <%= v.title %>
+                                            <h3 class=#{v.title_class}>
+                                                #{v.title}
                                             </h3>
-                                            <%= if v.has_description do %>
-                                                <p class={v.desc_class}>
-                                                    <%= v.description %>
+                                            <if {v.has_description}>
+                                                <p class=#{v.desc_class}>
+                                                    #{v.description}
                                                 </p>
-                                            <% end %>
+                                            </if>
 
                                             <!-- Meta info -->
                                             <div class="flex flex-wrap gap-2 mt-3">
                                                 <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
-                                                    Priority: <%= v.priority %>
+                                                    Priority: #{v.priority}
                                                 </span>
-                                                <%= if v.has_due do %>
+                                                <if {v.has_due}>
                                                     <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
-                                                        Due: <%= v.due_display %>
+                                                        Due: #{v.due_display}
                                                     </span>
-                                                <% end %>
-	                                                <%= if v.has_tags do %>
-	                                                    <%= for tag <- v.tags do %>
-	                                                        <button phx-click="toggle_tag" phx-value-tag={tag} data-testid="todo-tag" data-tag={tag}
-	                                                            class={"px-2 py-1 rounded text-xs transition-colors " <>
-	                                                              (if Enum.member?(@selected_tags, tag),
-	                                                                do: "bg-blue-500 text-white hover:bg-blue-600",
-	                                                                else: "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-200")}>
-	                                                            <%= tag %>
+	                                                </if>
+	                                                <if {v.has_tags}>
+	                                                    <for {tagView in v.tags}>
+	                                                        <button type="button" phx-click="toggle_tag" phx-value-tag=#{tagView.tag} data-testid="todo-tag" data-tag=#{tagView.tag}
+	                                                            class=#{tagView.chip_class}>
+	                                                            #{tagView.tag}
 	                                                        </button>
-	                                                    <% end %>
-	                                                <% end %>
+	                                                    </for>
+	                                                </if>
 	                                            </div>
-	                                        </div>
+                                        </div>
 
                                         <!-- Actions -->
                                         <div class="flex space-x-2">
-                                            <button type="button" phx-click="edit_todo" phx-value-id={v.id} data-testid="btn-edit-todo"
+                                            <button type="button" phx-click="edit_todo" phx-value-id=#{v.id} data-testid="btn-edit-todo"
                                                 class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">✏️</button>
-                                            <button type="button" phx-click="delete_todo" phx-value-id={v.id} data-testid="btn-delete-todo"
+                                            <button type="button" phx-click="delete_todo" phx-value-id=#{v.id} data-testid="btn-delete-todo"
                                                 class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">🗑️</button>
                                         </div>
                                     </div>
                                 </div>
-                            <% end %>
-                        <% end %>
+                            </if>
+                        </for>
                     </div>
                 </div>
             </div>
@@ -1164,7 +1180,32 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 	        return result;
 	    }
 
-	    static function computeAvailableTags(todos: Array<server.schemas.Todo>): Array<String> {
+	    static inline function tagChipClass(selected: Bool): String {
+	        var base = "px-2 py-1 rounded text-xs transition-colors ";
+	        return base + (selected
+	            ? "bg-blue-500 text-white hover:bg-blue-600"
+	            : "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-200");
+	    }
+
+	    static function buildTagViews(tagValues: Array<String>, selectedTags: Array<String>): Array<TagView> {
+	        if (tagValues == null || tagValues.length == 0) return [];
+
+	        var trimmedValues = Enum.map(
+	            Enum.filter(tagValues, function(tag) return tag != null && StringTools.trim(tag) != ""),
+	            function(tag) return StringTools.trim(tag)
+	        );
+
+	        return Enum.map(trimmedValues, function(tag): TagView {
+	            var selected = selectedTags != null && selectedTags.contains(tag);
+	            return {
+	                tag: tag,
+	                selected: selected,
+	                chip_class: tagChipClass(selected)
+	            };
+	        });
+	    }
+
+	    static function computeAvailableTags(todos: Array<server.schemas.Todo>, selectedTags: Array<String>): Array<TagView> {
 	        // Use Enum.flat_map + Enum.uniq + Enum.sort to generate idiomatic Elixir and
 	        // avoid nested-loop binder hygiene issues in generated code.
 	        var allTags = Enum.flatMap(todos, function(todo) {
@@ -1178,7 +1219,7 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 	                : [];
 	        });
 
-	        return Enum.sort(Enum.uniq(allTags));
+	        return buildTagViews(Enum.sort(Enum.uniq(allTags)), selectedTags);
 	    }
 	
     /**

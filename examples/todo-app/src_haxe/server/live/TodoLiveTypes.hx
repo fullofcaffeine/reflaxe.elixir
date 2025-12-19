@@ -46,7 +46,7 @@ typedef TodoLiveAssigns = {
     var search_query: String;
     var selected_tags: Array<String>;
     // Derived from todos; used to render the tag chip row in the UI
-    var available_tags: Array<String>;
+    var available_tags: Array<TagView>;
     // Optimistic UI state: ids currently flipped client-first, pending server reconcile
     var optimistic_toggle_ids: Array<Int>;
     // Precomputed view rows for HXX (zero-logic rendering)
@@ -86,5 +86,17 @@ typedef TodoView = {
     var has_tags: Bool;
     var has_description: Bool;
     var is_editing: Bool;
-    var tags: Array<String>;
+    var tags: Array<TagView>;
+}
+
+/**
+ * Tag chip view model (zero-logic HXX rendering).
+ *
+ * We precompute selection state and styling in Haxe so templates do not embed
+ * HEEx/Elixir logic (Enum.member?, Kernel.*, etc).
+ */
+typedef TagView = {
+    var tag: String;
+    var selected: Bool;
+    var chip_class: String;
 }
