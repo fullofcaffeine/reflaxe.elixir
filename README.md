@@ -255,6 +255,9 @@ Start at **[docs/README.md](docs/README.md)** for the curated documentation inde
 - **[Phoenix (Existing App)](docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md)** - Add Haxe to an existing Phoenix app
 - **[Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)** - Controllers, LiveView, Ecto, Channels
 - **[Escape Hatches](docs/02-user-guide/ESCAPE_HATCHES.md)** - Calling Elixir from Haxe safely
+- **[Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md)** - Alpha gaps and sharp edges
+- **[Support Matrix](docs/06-guides/SUPPORT_MATRIX.md)** - CI-tested toolchain versions
+- **[Licensing & Distribution](docs/06-guides/LICENSING_AND_DISTRIBUTION.md)** - GPL notes (not legal advice)
 
 ### Reference
 - **[Haxe→Elixir Mappings](docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md)** ✨ - Complete reference for how Haxe constructs map to Elixir code
