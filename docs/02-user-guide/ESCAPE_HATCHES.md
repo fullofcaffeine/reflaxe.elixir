@@ -105,7 +105,13 @@ See:
 - `examples/todo-app/src_haxe/server/live/TodoLive.hx` (real-world typed params + assigns)
 
 ### Ecto changesets
-- Prefer `@:changeset([...], [...])` for the common case (cast + validate_required).
+- Prefer `@:changeset([...], [...])` for the common case (**Ecto** `cast` + `validate_required`).
+  - This `cast` is **not** a Haxe type cast; it is `Ecto.Changeset.cast/3` (or `/4`), and it exists to:
+    - whitelist permitted fields (mass-assignment protection),
+    - cast external params (often strings) into your schema field types,
+    - populate the changeset `changes` and `errors` for later validation/Repo calls.
+  - When you already have trusted, internal, correctly-typed values (not user input), you can often skip `cast`
+    and use `Ecto.Changeset.change/2`, `put_change/3`, etc. instead.
 - For advanced validation, use `ecto.Changeset<T, P>` helpers.
 
 See:
