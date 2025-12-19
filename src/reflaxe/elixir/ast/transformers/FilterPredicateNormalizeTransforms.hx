@@ -43,37 +43,37 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 class FilterPredicateNormalizeTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                // Direct Enum.filter(list, pred)
-                case ERemoteCall({def: EVar(mod)}, "filter", args) if (mod == "Enum" && args != null && args.length == 2):
-                    var normalized = ensureFnPredicate(args[0], args[1]);
+	            return switch (n.def) {
+	                // Direct Enum.filter(list, pred)
+	                case ERemoteCall({def: EVar(mod)}, "filter", args) if (mod == "Enum" && args != null && args.length == 2):
+	                    var normalized = ensureFnPredicate(args[0], args[1]);
                     if (normalized == null) n else
                         makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "filter", [normalized.list, normalized.predicate]), n.metadata, n.pos);
 
-                // Method-style list.filter(pred) (rewritten to Enum by printer)
-                case ECall(target, "filter", args2) if (args2 != null && args2.length == 1):
-                    var normalized2 = ensureFnPredicate(target, args2[0]);
-                    if (normalized2 == null) n else
-                        makeASTWithMeta(ECall(normalized2.list, "filter", [normalized2.predicate]), n.metadata, n.pos);
+	                // Method-style list.filter(pred) (rewritten to Enum by printer)
+	                case ECall(target, "filter", args) if (args != null && args.length == 1):
+	                    var normalized = ensureFnPredicate(target, args[0]);
+	                    if (normalized == null) n else
+	                        makeASTWithMeta(ECall(normalized.list, "filter", [normalized.predicate]), n.metadata, n.pos);
 
-                // Matches where RHS is a filter call
-                case EMatch(pat, rhs):
-                    switch (rhs.def) {
-                        case ERemoteCall({def: EVar(mod2)}, "filter", a3) if (mod2 == "Enum" && a3 != null && a3.length == 2):
-                            var normalized3 = ensureFnPredicate(a3[0], a3[1]);
-                            if (normalized3 == null) n else {
-                                var repl = makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [normalized3.list, normalized3.predicate]));
-                                makeASTWithMeta(EMatch(pat, repl), n.metadata, n.pos);
-                            }
-                        case ECall(t2, "filter", a4) if (a4 != null && a4.length == 1):
-                            var normalized4 = ensureFnPredicate(t2, a4[0]);
-                            if (normalized4 == null) n else {
-                                var repl2 = makeAST(ECall(normalized4.list, "filter", [normalized4.predicate]));
-                                makeASTWithMeta(EMatch(pat, repl2), n.metadata, n.pos);
-                            }
-                        default:
-                            n;
-                    }
+	                // Matches where RHS is a filter call
+	                case EMatch(pat, rhs):
+	                    switch (rhs.def) {
+	                        case ERemoteCall({def: EVar(mod)}, "filter", args) if (mod == "Enum" && args != null && args.length == 2):
+	                            var normalized = ensureFnPredicate(args[0], args[1]);
+	                            if (normalized == null) n else {
+	                                var replacement = makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [normalized.list, normalized.predicate]));
+	                                makeASTWithMeta(EMatch(pat, replacement), n.metadata, n.pos);
+	                            }
+	                        case ECall(target, "filter", args) if (args != null && args.length == 1):
+	                            var normalized = ensureFnPredicate(target, args[0]);
+	                            if (normalized == null) n else {
+	                                var replacement = makeAST(ECall(normalized.list, "filter", [normalized.predicate]));
+	                                makeASTWithMeta(EMatch(pat, replacement), n.metadata, n.pos);
+	                            }
+	                        default:
+	                            n;
+	                    }
 
                 default:
                     n;
@@ -98,26 +98,26 @@ class FilterPredicateNormalizeTransforms {
                 #end
                 { list: listExpr, predicate: fnNode };
 
-            case EVar(_) | EField(_, _):
-                // Function variable or field holding a function: call with elem
-                var binder2 = makeAST(EVar("elem"));
-                var call2 = makeAST(ECall(pred, "", [binder2]));
-                var fnNode2 = makeAST(EFn([{ args: [PVar("elem")], guard: null, body: call2 }]));
-                #if debug_filter_predicate
-                // DISABLED: trace('[FilterPredNorm] Wrapped function variable into EFn predicate');
-                #end
-                { list: listExpr, predicate: fnNode2 };
+	            case EVar(_) | EField(_, _):
+	                // Function variable or field holding a function: call with elem
+	                var binder = makeAST(EVar("elem"));
+	                var call = makeAST(ECall(pred, "", [binder]));
+	                var fnNode = makeAST(EFn([{ args: [PVar("elem")], guard: null, body: call }]));
+	                #if debug_filter_predicate
+	                // DISABLED: trace('[FilterPredNorm] Wrapped function variable into EFn predicate');
+	                #end
+	                { list: listExpr, predicate: fnNode };
 
-            default:
-                // Generic expression: wrap directly as body. We do not synthesize ERaw.
-                // Downstream passes may further rewrite body and binder usage.
-                var fnNode3 = makeAST(EFn([{ args: [PVar("elem")], guard: null, body: pred }]));
-                #if debug_filter_predicate
-                // DISABLED: trace('[FilterPredNorm] Normalized non-EFn predicate of type ' + Type.enumConstructor(pred.def));
-                #end
-                { list: listExpr, predicate: fnNode3 };
-        }
-    }
-}
+	            default:
+	                // Generic expression: wrap directly as body. We do not synthesize ERaw.
+	                // Downstream passes may further rewrite body and binder usage.
+	                var fnNode = makeAST(EFn([{ args: [PVar("elem")], guard: null, body: pred }]));
+	                #if debug_filter_predicate
+	                // DISABLED: trace('[FilterPredNorm] Normalized non-EFn predicate of type ' + Type.enumConstructor(pred.def));
+	                #end
+	                { list: listExpr, predicate: fnNode };
+	        }
+	    }
+	}
 
 #end
