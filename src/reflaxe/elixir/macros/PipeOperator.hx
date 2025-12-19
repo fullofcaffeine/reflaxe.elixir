@@ -118,7 +118,7 @@ class PipeOperator {
     /**
      * Generate pipe operator macro for compile-time processing
      */
-    public static macro function pipe(expr: ExprOf<Dynamic>): Expr {
+    public static macro function pipe(expr: Expr): Expr {
         var exprString = getExpressionString(expr);
         var piped = processPipeExpression(exprString);
         
@@ -130,7 +130,7 @@ class PipeOperator {
      * Macro for automatic pipe operator transformation
      * Usage: @:pipe data.process().format()
      */
-    public static macro function autoPipe(expr: ExprOf<Dynamic>): Expr {
+    public static macro function autoPipe(expr: Expr): Expr {
         var exprString = getExpressionString(expr);
         var piped = transformChaining(exprString);
         

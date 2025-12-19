@@ -65,7 +65,7 @@ class ProjectLocalModuleQualificationTransforms {
         collect(ast);
 
         var app: Null<String> = null;
-        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
         if (app == null) return ast;
 
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {

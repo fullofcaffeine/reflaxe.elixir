@@ -75,13 +75,13 @@ class SupportModuleQualificationTransforms {
         }
         inline function deriveApp(): Null<String> {
             var p: Null<String> = null;
-            try p = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+            try p = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
             #if macro
             if (p == null) {
                 try {
                     var d = haxe.macro.Compiler.getDefine("app_name");
                     if (d != null && d.length > 0) p = d;
-                } catch (e:Dynamic) {}
+                } catch (e) {}
             }
             #end
             return p;

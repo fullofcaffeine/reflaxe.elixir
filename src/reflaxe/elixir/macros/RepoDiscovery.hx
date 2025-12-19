@@ -34,7 +34,7 @@ class RepoDiscovery {
         // Preferred: derive app modules and force-type <App>.Repo and <App>Web.Presence directly
         try {
             var app: Null<String> = null;
-            try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (_:Dynamic) {}
+            try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (_) {}
             if (app != null && app.length > 0) {
                 var repoMod = app + ".Repo";
                 if (discovered.indexOf(repoMod) == -1) discovered.push(repoMod);
@@ -54,7 +54,7 @@ class RepoDiscovery {
                 var webMod = app + "Web";
                 if (discovered.indexOf(webMod) == -1) discovered.push(webMod);
             }
-        } catch (_:Dynamic) {}
+        } catch (_) {}
         // Fallback: restrict discovery to active compilation classpaths to avoid
         // scanning the entire repository (which is expensive and unnecessary).
         // This is target- and shape-based, not app-coupled.
@@ -66,9 +66,9 @@ class RepoDiscovery {
                 if (!isProjectPath(p)) continue;
                 // Focus on app source roots; most projects mount their code under src_haxe*
                 if (p.indexOf("src_haxe") == -1) continue;
-                try if (sys.FileSystem.isDirectory(cp)) walkDir(cp) else null catch (_:Dynamic) {}
+                try if (sys.FileSystem.isDirectory(cp)) walkDir(cp) else null catch (_) {}
             }
-        } catch (_:Dynamic) {}
+        } catch (_) {}
     }
 
     public static function getDiscovered(): Array<String> {
@@ -96,7 +96,7 @@ class RepoDiscovery {
                     processHxFile(path);
                 }
             }
-        } catch (_:Dynamic) {}
+        } catch (_) {}
     }
 
     static function findDirsNamed(root:String, name:String, maxDepth:Int): Array<String> {
@@ -104,7 +104,7 @@ class RepoDiscovery {
         function loop(dir:String, depth:Int): Void {
             if (depth < 0) return;
             var entries: Array<String> = [];
-            try entries = sys.FileSystem.readDirectory(dir) catch (_:Dynamic) {}
+            try entries = sys.FileSystem.readDirectory(dir) catch (_) {}
             for (e in entries) {
                 var p = Path.join([dir, e]);
                 if (!sys.FileSystem.exists(p)) continue;
@@ -178,7 +178,7 @@ class RepoDiscovery {
 
             // Record discovered module
             if (discovered.indexOf(mod) == -1) discovered.push(mod);
-        } catch (_:Dynamic) {}
+        } catch (_) {}
     }
 }
 

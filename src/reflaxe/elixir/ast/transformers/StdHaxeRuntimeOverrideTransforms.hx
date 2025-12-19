@@ -3,6 +3,7 @@ package reflaxe.elixir.ast.transformers;
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -56,7 +57,7 @@ class StdHaxeRuntimeOverrideTransforms {
     static inline function arrayIteratorDef(orig: ElixirAST): ElixirAST {
         return makeASTWithMeta(EDefmodule("ArrayIterator", arrayIteratorBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
     }
-    static inline function arrayIteratorBlock(meta: Dynamic, pos: haxe.macro.Expr.Position): ElixirAST {
+    static inline function arrayIteratorBlock(meta: ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
         var raw = makeAST(ERaw(
             "  def has_next(struct), do: struct.current < length(struct.array)\n" +
             "  def next(struct), do: struct.array[struct.current + 1]\n"
@@ -67,7 +68,7 @@ class StdHaxeRuntimeOverrideTransforms {
     static inline function posExceptionDef(orig: ElixirAST): ElixirAST {
         return makeASTWithMeta(EDefmodule("PosException", posExceptionBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
     }
-    static inline function posExceptionBlock(meta: Dynamic, pos: haxe.macro.Expr.Position): ElixirAST {
+    static inline function posExceptionBlock(meta: ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
         var raw = makeAST(ERaw(
             "  def to_string(struct), do: \"#{Kernel.to_string(struct.message)} in #{struct.posInfos.className}.#{struct.posInfos.methodName} at #{struct.posInfos.fileName}:#{struct.posInfos.lineNumber}\"\n"
         ));
@@ -77,7 +78,7 @@ class StdHaxeRuntimeOverrideTransforms {
     static inline function stringToolsDef(orig: ElixirAST): ElixirAST {
         return makeASTWithMeta(EDefmodule("StringTools", stringToolsBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
     }
-    static inline function stringToolsBlock(meta: Dynamic, pos: haxe.macro.Expr.Position): ElixirAST {
+    static inline function stringToolsBlock(meta: ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
         var raw = makeAST(ERaw(
             "  def is_space(s, pos), do: (:binary.at(s, pos) > 8 and :binary.at(s, pos) < 14) or :binary.at(s, pos) == 32\n" +
             "  def ltrim(s), do: String.trim_leading(s)\n" +

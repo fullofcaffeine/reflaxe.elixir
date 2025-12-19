@@ -742,6 +742,10 @@ typedef ElixirMetadata = {
     ?tempToBinderMap: Map<Int, Int>, // Maps extraction temp var IDs to pattern binder IDs
     ?isUnused: Bool,               // Whether this variable is actually used in the code
 
+    // Case/switch helpers
+    ?primaryCaseBinder: String,     // Selected binder name for primary enum payload (used for nested-case repair)
+    ?usedLocalsFromTyped: Array<String>, // Lower-case locals used in a TypedExpr body (for binder alignment passes)
+
     // Phoenix/Framework Specific
     ?phoenixContext: PhoenixContext,  // LiveView, Router, etc.
     ?ectoContext: EctoContext,        // Schema, Query, etc.

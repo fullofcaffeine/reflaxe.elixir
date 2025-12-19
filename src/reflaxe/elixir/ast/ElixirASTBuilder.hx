@@ -472,8 +472,8 @@ class ElixirASTBuilder {
             case ESigil(type, content, _mods) if (type == "H"):
                 try {
                     var typedFrags = reflaxe.elixir.ast.builders.HeexFragmentBuilder.build(content);
-                    (cast metadata : Dynamic).heexAST = typedFrags;
-                } catch (_:Dynamic) {}
+                    metadata.heexAST = typedFrags;
+                } catch (_) {}
             default:
         }
 
@@ -1907,7 +1907,7 @@ class ElixirASTBuilder {
                                             baseIsSchemaStruct = switch (baseExpr.t) {
                                                 case TInst(c, _):
                                                     var ct = c.get();
-                                                    ct != null && ct.meta != null && ct.meta.has("schema");
+                                                    ct != null && ct.meta != null && ct.meta.has(":schema");
                                                 default: false;
                                             };
                                         }
@@ -3111,23 +3111,13 @@ class ElixirASTBuilder {
                 #end
                 
                 // Delegate ALL for loop compilation to LoopBuilder
-                // Create adapter for BuildContext interface
-                var buildContext: reflaxe.elixir.ast.builders.LoopBuilder.BuildContext = {
-                    isFeatureEnabled: function(f) return currentContext.isFeatureEnabled(f),
-                    buildFromTypedExpr: function(e, ?ctx) return buildFromTypedExpr(e, currentContext),
-                    whileLoopCounter: currentContext.whileLoopCounter
-                };
-                return LoopBuilder.buildFor(v, e1, e2, expr, buildContext, name -> VariableAnalyzer.toElixirVarName(name));
+                // Use the real CompilationContext (implements BuildContext) to avoid `Dynamic` adapters.
+                return LoopBuilder.buildFor(v, e1, e2, expr, currentContext, name -> VariableAnalyzer.toElixirVarName(name));
                 
             case TWhile(econd, e, normalWhile):
                 // Delegate ALL while loop compilation to LoopBuilder
-                // Create adapter for BuildContext interface
-                var buildContext: reflaxe.elixir.ast.builders.LoopBuilder.BuildContext = {
-                    isFeatureEnabled: function(f) return currentContext.isFeatureEnabled(f),
-                    buildFromTypedExpr: function(e, ?ctx) return buildFromTypedExpr(e, currentContext),
-                    whileLoopCounter: currentContext.whileLoopCounter
-                };
-                return LoopBuilder.buildWhileComplete(econd, e, normalWhile, expr, buildContext, name -> VariableAnalyzer.toElixirVarName(name)); 
+                // Use the real CompilationContext (implements BuildContext) to avoid `Dynamic` adapters.
+                return LoopBuilder.buildWhileComplete(econd, e, normalWhile, expr, currentContext, name -> VariableAnalyzer.toElixirVarName(name)); 
                 
             case TEnumParameter(e, ef, index):
                 /**
@@ -4083,7 +4073,7 @@ class ElixirASTBuilder {
                                                 if (webIndex > 0) appModulePrefix = currentModule.substring(0, webIndex);
                                             }
                                             if (appModulePrefix == null) {
-                                                try appModulePrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+                                                try appModulePrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
                                             }
                                             if (appModulePrefix != null) moduleName = appModulePrefix + "Web.Presence";
                                         }
@@ -4217,7 +4207,7 @@ class ElixirASTBuilder {
                                     }
 
                                     // Prepare metadata with raw variable references
-                                    var meta: Dynamic = {};
+                                    var meta: ElixirMetadata = {};
                                     var names: Array<String> = [];
                                     for (k in referencedVars.keys()) names.push(k);
                                     Reflect.setField(meta, "rawVarRefs", names);

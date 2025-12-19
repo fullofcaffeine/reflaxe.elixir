@@ -238,7 +238,7 @@ class ClauseUndefinedVarToBinderTransforms {
                     }
                     pos = block.matchedPos().pos + block.matchedPos().len;
                 }
-            } catch (e:Dynamic) {}
+            } catch (e) {}
         }
         return [for (k in names.keys()) k];
     }

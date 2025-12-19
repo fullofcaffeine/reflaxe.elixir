@@ -49,7 +49,7 @@ class EFnTempChainSimplifyTransforms {
                                 // DISABLED: trace('[EFnTempChainSimplify]   stmt[$i]: ${Type.enumConstructor(stmts[i].def)}');
                             }
                             #end
-                            makeASTWithMeta(EBlock(simplify(stmts, b.metadata, b.pos)), b.metadata, b.pos);
+                            makeASTWithMeta(EBlock(simplify(stmts)), b.metadata, b.pos);
                         default:
                             #if debug_efn_temp_chain
                             // DISABLED: trace('[EFnTempChainSimplify] Body is NOT EBlock: ${Type.enumConstructor(b.def)}');
@@ -73,7 +73,7 @@ class EFnTempChainSimplifyTransforms {
      * - We drop only the shape `name = nil` for the identified `name`. This is a
      *   precise sentinel cleanup that preserves other side effects and ordering.
      */
-    static function simplify(stmts:Array<ElixirAST>, meta:Dynamic, pos:Dynamic): Array<ElixirAST> {
+    static function simplify(stmts:Array<ElixirAST>): Array<ElixirAST> {
         #if debug_efn_temp_chain
         // DISABLED: trace('[EFnTempChainSimplify.simplify] Called with ${stmts.length} stmts');
         #end

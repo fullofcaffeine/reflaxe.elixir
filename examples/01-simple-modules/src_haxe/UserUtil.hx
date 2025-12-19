@@ -1,6 +1,13 @@
 
 using StringTools;
 
+private typedef User = {
+    name: String,
+    email: String,
+    id: String,
+    createdAt: String
+}
+
 /**
  * UserUtil - Demonstrates public and private functions
  * 
@@ -16,7 +23,7 @@ class UserUtil {
      * This will compile to "def create_user(name, email)"
      * Uses private helper functions for validation and formatting
      */
-    function createUser(name: String, email: String): Dynamic {
+    function createUser(name: String, email: String): User {
         // Validate inputs using private functions
         if (!isValidName(name)) {
             throw "Invalid name provided";
@@ -42,8 +49,8 @@ class UserUtil {
      * Public function - updates user information
      * Demonstrates how public functions can call private helpers
      */
-    function updateUser(user: Dynamic, newName: String, newEmail: String): Dynamic {
-        var updatedUser = {
+    function updateUser(user: User, newName: String, newEmail: String): User {
+        var updatedUser: User = {
             name: user.name,
             email: user.email,
             id: user.id,
@@ -65,7 +72,7 @@ class UserUtil {
      * Public function - formats user for display
      * Uses private formatting helpers
      */
-    function formatUserForDisplay(user: Dynamic): String {
+    function formatUserForDisplay(user: User): String {
         var displayName = formatDisplayName(user.name);
         var maskedEmail = maskEmail(user.email);
         

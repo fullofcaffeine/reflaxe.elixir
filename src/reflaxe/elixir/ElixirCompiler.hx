@@ -322,7 +322,7 @@ class ElixirCompiler extends GenericCompiler<
                     case _:
                 }
             }
-        } catch (_:Dynamic) {}
+        } catch (_) {}
 
         // Append modules discovered in macro phase without force-typing to avoid
         // re-entrancy issues when LiveView/Router modules are still being processed.
@@ -1715,7 +1715,7 @@ class ElixirCompiler extends GenericCompiler<
             var webIdx = moduleName.indexOf("Web");
             if (webIdx > 0) appPrefix = moduleName.substr(0, webIdx);
             if (appPrefix == null || appPrefix.length == 0) {
-                try appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+                try appPrefix = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
             }
             if (appPrefix == null || appPrefix.length == 0) appPrefix = classType.name; // conservative fallback
             var appAtom = reflaxe.elixir.ast.NameUtils.toSnakeCase(appPrefix);

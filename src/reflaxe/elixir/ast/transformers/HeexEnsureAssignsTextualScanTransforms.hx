@@ -51,7 +51,7 @@ class HeexEnsureAssignsTextualScanTransforms {
                     var printed:String = null;
                     try {
                         printed = reflaxe.elixir.ast.ElixirASTPrinter.printAST(body);
-                    } catch (e: Dynamic) {}
+                    } catch (e) {}
                     if (printed != null && (printed.indexOf("~H\"") != -1 || printed.indexOf("~H\"\"\"") != -1)) {
                         var wrapped = makeAST(EBlock([
                             makeAST(EMatch(PVar("assigns"), makeAST(EMap([])))),
@@ -71,4 +71,3 @@ class HeexEnsureAssignsTextualScanTransforms {
 }
 
 #end
-

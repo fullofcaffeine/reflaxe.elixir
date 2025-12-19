@@ -1,5 +1,7 @@
 package protocols;
 
+import elixir.types.Term;
+
 /**
  * Example protocol for drawable objects
  */
@@ -9,14 +11,14 @@ class Drawable {
     /**
      * Draw a visual representation of the object
      */
-    public function draw(value: Dynamic): String {
+    public function draw(value: Term): String {
         throw "Protocol method should be implemented";
     }
     
     /**
      * Calculate the "area" or size metric of the object
      */
-    public function area(value: Dynamic): Float {
+    public function area(value: Term): Float {
         throw "Protocol method should be implemented";
     }
 }

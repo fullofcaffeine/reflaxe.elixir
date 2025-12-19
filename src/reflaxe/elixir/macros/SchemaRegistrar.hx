@@ -267,7 +267,7 @@ class SchemaRegistrar {
      * Convert ComplexType to string representation
      */
     static function typeToString(type: Null<ComplexType>): String {
-        if (type == null) return "Dynamic";
+        if (type == null) return "Term";
         
         return switch(type) {
             case TPath(p):
@@ -282,7 +282,7 @@ class SchemaRegistrar {
                     base;
                 }
             default:
-                "Dynamic";
+                "Term";
         }
     }
     

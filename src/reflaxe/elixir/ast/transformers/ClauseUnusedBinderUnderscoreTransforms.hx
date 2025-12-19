@@ -121,13 +121,10 @@ class ClauseUnusedBinderUnderscoreTransforms {
     static function collectUsedVars(body: ElixirAST): Array<String> {
         var names = new Map<String, Bool>();
         // Include builder-provided metadata when present
-        try {
-            var meta:Dynamic = body.metadata;
-            if (meta != null && untyped meta.usedLocalsFromTyped != null) {
-                var arr:Array<String> = untyped meta.usedLocalsFromTyped;
-                for (n in arr) if (n != null && n.length > 0) names.set(n, true);
-            }
-        } catch (e:Dynamic) {}
+        var arr = body.metadata.usedLocalsFromTyped;
+        if (arr != null) {
+            for (n in arr) if (n != null && n.length > 0) names.set(n, true);
+        }
         ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             switch (n.def) {
                 case EVar(v): names.set(v, true);

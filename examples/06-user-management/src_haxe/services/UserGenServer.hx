@@ -2,6 +2,43 @@ package services;
 
 import contexts.Users;
 import contexts.Users.User;
+import contexts.Users.UserStats;
+import elixir.types.Term;
+
+private enum UserCallRequest {
+    GetUser(userId: Int);
+    GetStats;
+    CacheUser(user: User);
+    ClearCache;
+}
+
+private enum UserCastMessage {
+    RefreshStats;
+    InvalidateUserCache;
+    PreloadActiveUsers;
+}
+
+private enum UserInfoMessage {
+    StatsRefreshTimer;
+    CleanupCache;
+}
+
+private typedef UserGenServerState = {
+    userCache: Map<Int, User>,
+    statsCache: Null<UserStats>,
+    lastStatsUpdate: Float
+}
+
+private typedef UserGenServerCallResponse = {
+    status: String,
+    response: Term,
+    state: UserGenServerState
+}
+
+private typedef UserGenServerCastResponse = {
+    status: String,
+    state: UserGenServerState
+}
 
 /**
  * OTP GenServer for user-related background processes
@@ -9,262 +46,169 @@ import contexts.Users.User;
  */
 @:genserver
 class UserGenServer {
-    var userCache: Map<Int, User> = new Map();
-    var statsCache: Dynamic = null;
-    var lastStatsUpdate: Float = 0;
-    
-    function init(initialState: Dynamic): {status: String, state: Dynamic} {
-        // Initialize the GenServer with empty cache
+    private static inline function makeState(userCache: Map<Int, User>, statsCache: Null<UserStats>, lastStatsUpdate: Float): UserGenServerState {
+        return {userCache: userCache, statsCache: statsCache, lastStatsUpdate: lastStatsUpdate};
+    }
+
+    function init(_initialState: Term): {status: String, state: UserGenServerState} {
         trace("UserGenServer starting...");
-        
-        // Schedule periodic stats refresh
         scheduleStatsRefresh();
-        
-        return {
-            status: "ok",
-            state: {
-                userCache: userCache,
-                statsCache: null,
-                lastStatsUpdate: 0
-            }
-        };
+
+        var userCache: Map<Int, User> = new Map();
+        return {status: "ok", state: makeState(userCache, null, 0)};
     }
-    
-    function handle_call(request: String, from: Dynamic, state: Dynamic): CallResponse {
-        return switch(request) {
-            case "get_user":
-                handleGetUser(from, state);
-                
-            case "get_stats":
-                handleGetStats(from, state);
-                
-            case "cache_user":
-                handleCacheUser(from, state);
-                
-            case "clear_cache":
-                handleClearCache(from, state);
-                
-            default:
-                {status: "reply", response: "unknown_request", state: state};
+
+    function handle_call(request: UserCallRequest, _from: Term, state: UserGenServerState): UserGenServerCallResponse {
+        return switch (request) {
+            case GetUser(userId):
+                handleGetUser(userId, state);
+            case GetStats:
+                handleGetStats(state);
+            case CacheUser(user):
+                handleCacheUser(user, state);
+            case ClearCache:
+                handleClearCache();
         }
     }
-    
-    function handle_cast(message: String, state: Dynamic): {status: String, state: Dynamic} {
-        return switch(message) {
-            case "refresh_stats":
+
+    function handle_cast(message: UserCastMessage, state: UserGenServerState): UserGenServerCastResponse {
+        return switch (message) {
+            case RefreshStats:
                 handleRefreshStats(state);
-                
-            case "invalidate_user_cache":
+            case InvalidateUserCache:
                 handleInvalidateUserCache(state);
-                
-            case "preload_active_users":
+            case PreloadActiveUsers:
                 handlePreloadActiveUsers(state);
-                
-            default:
-                {status: "noreply", state: state};
         }
     }
-    
-    function handle_info(message: String, state: Dynamic): {status: String, state: Dynamic} {
-        return switch(message) {
-            case "stats_refresh_timer":
-                // Periodic stats refresh
-                var newState = refreshUserStats(state);
-                scheduleStatsRefresh(); // Reschedule
-                {status: "noreply", state: newState};
-                
-            case "cleanup_cache":
-                // Periodic cache cleanup
-                var newState = cleanupOldCacheEntries(state);
-                {status: "noreply", state: newState};
-                
-            default:
-                {status: "noreply", state: state};
+
+    function handle_info(message: UserInfoMessage, state: UserGenServerState): UserGenServerCastResponse {
+        return switch (message) {
+            case StatsRefreshTimer:
+                var refreshed = refreshUserStats(state);
+                scheduleStatsRefresh();
+                {status: "noreply", state: refreshed};
+            case CleanupCache:
+                var cleaned = cleanupOldCacheEntries(state);
+                {status: "noreply", state: cleaned};
         }
     }
-    
+
     // Call handlers
-    function handleGetUser(from: Dynamic, state: Dynamic): CallResponse {
-        var userId = from.userId; // Would extract from proper message format
-        
-        if (userCache.exists(userId)) {
-            var user = userCache.get(userId);
+    private function handleGetUser(userId: Int, state: UserGenServerState): UserGenServerCallResponse {
+        if (state.userCache.exists(userId)) {
+            var user = state.userCache.get(userId);
             return {status: "reply", response: {user: user}, state: state};
-        } else {
-            // Load from database and cache
-            var user = Users.get_user_safe(userId);
-            if (user != null) {
-                userCache.set(userId, user);
-                return {status: "reply", response: {user: user}, state: updateState(state, "userCache", userCache)};
-            } else {
-                return {status: "reply", response: "user_not_found", state: state};
-            }
         }
+
+        var loaded = Users.get_user_safe(userId);
+        if (loaded != null) {
+            state.userCache.set(userId, loaded);
+            return {status: "reply", response: {user: loaded}, state: state};
+        }
+
+        return {status: "reply", response: "user_not_found", state: state};
     }
-    
-    function handleGetStats(from: Dynamic, state: Dynamic): CallResponse {
+
+    private function handleGetStats(state: UserGenServerState): UserGenServerCallResponse {
         var now = Date.now().getTime();
-        var cacheAge = now - lastStatsUpdate;
-        
-        // Return cached stats if less than 5 minutes old
-        if (statsCache != null && cacheAge < 300000) {
-            return {status: "reply", response: statsCache, state: state};
-        } else {
-            // Refresh stats and cache
-            var stats = Users.user_stats();
-            statsCache = stats;
-            lastStatsUpdate = now;
-            
-            return {
-                status: "reply", 
-                response: stats, 
-                state: updateStateMultiple(state, {
-                    statsCache: stats,
-                    lastStatsUpdate: now
-                })
-            };
+        var cacheAge = now - state.lastStatsUpdate;
+
+        if (state.statsCache != null && cacheAge < 300000) {
+            return {status: "reply", response: state.statsCache, state: state};
         }
+
+        var stats = Users.user_stats();
+        var updated = makeState(state.userCache, stats, now);
+        return {status: "reply", response: stats, state: updated};
     }
-    
-    function handleCacheUser(from: Dynamic, state: Dynamic): CallResponse {
-        var user = from.user; // Would extract from proper message format
-        userCache.set(user.id, user);
-        
-        return {
-            status: "reply",
-            response: "cached",
-            state: updateState(state, "userCache", userCache)
-        };
+
+    private function handleCacheUser(user: User, state: UserGenServerState): UserGenServerCallResponse {
+        state.userCache.set(user.id, user);
+        return {status: "reply", response: "cached", state: state};
     }
-    
-    function handleClearCache(from: Dynamic, state: Dynamic): CallResponse {
-        userCache = new Map();
-        statsCache = null;
-        lastStatsUpdate = 0;
-        
-        return {
-            status: "reply",
-            response: "cache_cleared",
-            state: {
-                userCache: userCache,
-                statsCache: null,
-                lastStatsUpdate: 0
-            }
-        };
+
+    private function handleClearCache(): UserGenServerCallResponse {
+        var cleared = makeState(new Map(), null, 0);
+        return {status: "reply", response: "cache_cleared", state: cleared};
     }
-    
+
     // Cast handlers
-    function handleRefreshStats(state: Dynamic): {status: String, state: Dynamic} {
+    private function handleRefreshStats(state: UserGenServerState): UserGenServerCastResponse {
         var stats = Users.user_stats();
-        statsCache = stats;
-        lastStatsUpdate = Date.now().getTime();
-        
-        return {
-            status: "noreply",
-            state: updateStateMultiple(state, {
-                statsCache: stats,
-                lastStatsUpdate: lastStatsUpdate
-            })
-        };
+        var updatedAt = Date.now().getTime();
+        var updated = makeState(state.userCache, stats, updatedAt);
+        return {status: "noreply", state: updated};
     }
-    
-    function handleInvalidateUserCache(state: Dynamic): {status: String, state: Dynamic} {
-        userCache = new Map();
-        
-        return {
-            status: "noreply",
-            state: updateState(state, "userCache", userCache)
-        };
+
+    private function handleInvalidateUserCache(state: UserGenServerState): UserGenServerCastResponse {
+        var updated = makeState(new Map(), state.statsCache, state.lastStatsUpdate);
+        return {status: "noreply", state: updated};
     }
-    
-    function handlePreloadActiveUsers(state: Dynamic): {status: String, state: Dynamic} {
+
+    private function handlePreloadActiveUsers(state: UserGenServerState): UserGenServerCastResponse {
         var activeUsers = Users.list_users({active: true});
-        
+        var updatedCache: Map<Int, User> = new Map();
+
         for (user in activeUsers) {
-            userCache.set(user.id, user);
+            updatedCache.set(user.id, user);
         }
-        
+
         trace('Preloaded ${activeUsers.length} active users into cache');
-        
-        return {
-            status: "noreply",
-            state: updateState(state, "userCache", userCache)
-        };
+        var updated = makeState(updatedCache, state.statsCache, state.lastStatsUpdate);
+        return {status: "noreply", state: updated};
     }
-    
-    // Helper functions
-    function refreshUserStats(state: Dynamic): Dynamic {
+
+    // Helpers
+    private function refreshUserStats(state: UserGenServerState): UserGenServerState {
         var stats = Users.user_stats();
-        return updateStateMultiple(state, {
-            statsCache: stats,
-            lastStatsUpdate: Date.now().getTime()
-        });
+        return makeState(state.userCache, stats, Date.now().getTime());
     }
-    
-    function cleanupOldCacheEntries(state: Dynamic): Dynamic {
-        // In a real implementation, would remove entries older than X time
-        // For demo, just log cache size
-        var keyArray = [for (key in userCache.keys()) key];
+
+    private function cleanupOldCacheEntries(state: UserGenServerState): UserGenServerState {
+        var keyArray = [for (key in state.userCache.keys()) key];
         trace('User cache contains ${keyArray.length} entries');
         return state;
     }
-    
-    function scheduleStatsRefresh(): Void {
-        // Would schedule timer message - implementation varies by platform
+
+    private function scheduleStatsRefresh(): Void {
         trace("Scheduling stats refresh in 5 minutes");
     }
-    
-    function updateState(state: Dynamic, key: String, value: Dynamic): Dynamic {
-        // Helper to update state
-        return state;
-    }
-    
-    function updateStateMultiple(state: Dynamic, updates: Dynamic): Dynamic {
-        // Helper to update multiple state fields
-        return state;
-    }
-    
-    // Main function for compilation testing
+
     public static function main(): Void {
         trace("UserGenServer with @:genserver annotation compiled successfully!");
     }
 }
 
-// Public API for interacting with UserGenServer
+/**
+ * Public API for interacting with UserGenServer
+ */
 class UserService {
     static var serverName = "UserGenServer";
-    
+
     public static function getCachedUser(userId: Int): User {
         // Would call GenServer.call(serverName, {:get_user, userId})
         return null;
     }
-    
-    public static function getUserStats(): Dynamic {
+
+    public static function getUserStats(): UserStats {
         // Would call GenServer.call(serverName, :get_stats)
         return null;
     }
-    
+
     public static function cacheUser(user: User): Void {
         // Would call GenServer.cast(serverName, {:cache_user, user})
     }
-    
+
     public static function refreshStats(): Void {
         // Would call GenServer.cast(serverName, :refresh_stats)
     }
-    
+
     public static function clearCache(): Void {
         // Would call GenServer.call(serverName, :clear_cache)
     }
-    
-    // Main function for compilation testing
-    public static function main(): Void {
-        trace("UserGenServer with @:genserver annotation compiled successfully!");
-    }
-}
 
-// Type definitions
-typedef CallResponse = {
-    status: String,
-    response: Dynamic,
-    state: Dynamic
+    public static function main(): Void {
+        trace("UserService compiled successfully!");
+    }
 }

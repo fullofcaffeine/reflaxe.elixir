@@ -34,10 +34,8 @@ class HeexSigilFragmentAnnotatorTransforms {
                 case ESigil(type, content, modifiers) if (type == "H"):
                     var frags = parseFragments(content);
                     if (frags != null && frags.length > 0) {
-                        var meta = n.metadata != null ? n.metadata : reflaxe.elixir.ast.ElixirAST.emptyMetadata();
-                        var meta2 = meta; // shallow copy
-                        // Haxe typedefs are structural; assign new field
-                        (cast meta2 : Dynamic).heexFragments = frags;
+                        var meta2 = n.metadata;
+                        meta2.heexFragments = frags;
                         makeASTWithMeta(n.def, meta2, n.pos);
                     } else n;
                 default:
@@ -105,4 +103,3 @@ class HeexSigilFragmentAnnotatorTransforms {
 }
 
 #end
-

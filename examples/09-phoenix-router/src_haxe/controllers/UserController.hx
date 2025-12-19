@@ -1,5 +1,7 @@
 package controllers;
 
+import elixir.types.Term;
+
 /**
  * Phoenix controller with @:route annotations
  * Demonstrates RESTful route generation and parameter handling
@@ -18,12 +20,12 @@ class UserController {
     }
     
     @:route({method: "POST", path: "/users"})
-    public function create(user: Dynamic): String {
+    public function create(user: Term): String {
         return "Create new user";
     }
     
     @:route({method: "PUT", path: "/users/:id"})
-    public function update(id: Int, user: Dynamic): String {
+    public function update(id: Int, user: Term): String {
         return "Update user " + id;
     }
     

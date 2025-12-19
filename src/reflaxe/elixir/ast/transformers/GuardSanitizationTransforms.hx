@@ -117,7 +117,7 @@ class GuardSanitizationTransforms {
         }
     }
 
-    static function makeIsMapKey(mapExpr: ElixirAST, keyExpr: ElixirAST, meta: Dynamic, pos: haxe.macro.Expr.Position): ElixirAST {
+    static function makeIsMapKey(mapExpr: ElixirAST, keyExpr: ElixirAST, meta: reflaxe.elixir.ast.ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
         return makeASTWithMeta(ERemoteCall(makeAST(EVar("Kernel")), "is_map_key", [mapExpr, keyExpr]), meta, pos);
     }
 

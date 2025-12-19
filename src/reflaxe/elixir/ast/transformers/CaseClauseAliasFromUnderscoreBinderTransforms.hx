@@ -109,7 +109,7 @@ class CaseClauseAliasFromUnderscoreBinderTransforms {
             if (ok) aliases.push({u: base, from: key});
           }
         }
-      } catch (e:Dynamic) {}
+      } catch (e) {}
     }
 
     if (aliases.length == 0) return cl;

@@ -189,11 +189,11 @@ class Async {
      */
     static function transformReturnType(returnType: Null<ComplexType>, pos: Position): ComplexType {
         if (returnType == null) {
-            // If no return type specified, default to Promise<Dynamic>
+            // If no return type specified, default to Promise<Unknown>
             return TPath({
                 name: "Promise",
                 pack: ["js", "lib"],
-                params: [TPType(macro: Dynamic)]
+                params: [TPType(macro: reflaxe.js.Unknown)]
             });
         }
         
@@ -566,7 +566,7 @@ class Async {
      * @param error The error to reject with
      * @return Promise that rejects with the error
      */
-    public static function reject<T>(error: Dynamic): js.lib.Promise<T> {
+    public static function reject<T>(error: Unknown): js.lib.Promise<T> {
         return js.lib.Promise.reject(error);
     }
     
@@ -595,7 +595,7 @@ class Async {
         return new js.lib.Promise(function(resolve, reject) {
             try {
                 fn(resolve);
-            } catch (error: Dynamic) {
+            } catch (error) {
                 reject(error);
             }
         });

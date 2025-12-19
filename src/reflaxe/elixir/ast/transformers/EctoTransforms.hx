@@ -73,7 +73,7 @@ class EctoTransforms {
         var defaultApp = (function() {
             try {
                 return reflaxe.elixir.PhoenixMapper.getAppModuleName();
-            } catch (e:Dynamic) {
+            } catch (e) {
                 return null;
             }
         })();

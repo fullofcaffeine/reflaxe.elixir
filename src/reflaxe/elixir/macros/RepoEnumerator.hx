@@ -32,7 +32,7 @@ class RepoEnumerator {
             if (meta != null && meta.has(":repo")) {
                 // Debug: indicate detection of a @:repo class
                 #if eval
-                try Context.warning('[RepoEnumerator] Keeping @:repo class: ' + cls.module + '.' + cls.name, cls.pos) catch (_:Dynamic) {}
+                try Context.warning('[RepoEnumerator] Keeping @:repo class: ' + cls.module + '.' + cls.name, cls.pos) catch (_) {}
                 #end
                 // Ensure the class is preserved by Haxe DCE
                 meta.add(":keep", [], cls.pos);

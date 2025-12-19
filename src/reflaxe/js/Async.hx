@@ -189,11 +189,18 @@ class Async {
      */
     static function transformReturnType(returnType: Null<ComplexType>, pos: Position): ComplexType {
         if (returnType == null) {
-            // If no return type specified, default to Promise<Dynamic>
+            // If no return type is specified, we must conservatively default to Promise<Unknown>.
+            //
+            // WHY Unknown here is acceptable:
+            // - This is a compile-time macro boundary for JS interop. Haxe does not provide an
+            //   true "unknown" type that preserves inference without widening.
+            // - Requiring explicit return types would be a breaking change for existing JS code.
+            //
+            // Downstream code can still be fully typed when users annotate async return types.
             return TPath({
                 name: "Promise",
                 pack: ["js", "lib"],
-                params: [TPType(macro: Dynamic)]
+                params: [TPType(macro: reflaxe.js.Unknown)]
             });
         }
         
@@ -567,7 +574,11 @@ class Async {
      * @param error The error to reject with
      * @return Promise that rejects with the error
      */
-    public static function reject<T>(error: Dynamic): js.lib.Promise<T> {
+    @:overload(function<T>(error: String): js.lib.Promise<T> {})
+    @:overload(function<T>(error: Int): js.lib.Promise<T> {})
+    @:overload(function<T>(error: Float): js.lib.Promise<T> {})
+    @:overload(function<T>(error: Bool): js.lib.Promise<T> {})
+    public static function reject<T>(error: js.lib.Object): js.lib.Promise<T> {
         return js.lib.Promise.reject(error);
     }
     
@@ -596,7 +607,7 @@ class Async {
         return new js.lib.Promise(function(resolve, reject) {
             try {
                 fn(resolve);
-            } catch (error: Dynamic) {
+            } catch (error) {
                 reject(error);
             }
         });

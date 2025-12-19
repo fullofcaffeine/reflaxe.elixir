@@ -89,14 +89,12 @@ class CaseTupleMultiBinderPromoteByUseTransforms {
 
   static function collectUsedNames(body: ElixirAST): Map<String,Bool> {
     var used = new Map<String,Bool>();
+    if (body == null) return used;
     // Prefer builder-attached metadata when available
-    try {
-      var meta:Dynamic = body.metadata;
-      if (meta != null && untyped meta.usedLocalsFromTyped != null) {
-        var arr:Array<String> = untyped meta.usedLocalsFromTyped;
-        for (n in arr) if (n != null && n.length > 0) used.set(n, true);
-      }
-    } catch (e:Dynamic) {}
+    var arr = body.metadata.usedLocalsFromTyped;
+    if (arr != null) {
+      for (n in arr) if (n != null && n.length > 0) used.set(n, true);
+    }
     // AST variable uses
     reflaxe.elixir.ast.ASTUtils.walk(body, function(n: ElixirAST) {
       if (n == null || n.def == null) return;
