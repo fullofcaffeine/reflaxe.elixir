@@ -67,9 +67,9 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 	 * 
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
-	    public static function mount(_params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
-	        // Prepare LiveSocket wrapper
-	        var sock: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
+		    public static function mount(_params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
+		        // Prepare LiveSocket wrapper
+		        var sock: LiveSocket<TodoLiveAssigns> = socket;
 
 	        var currentUser = getUserFromSession(session);
 		        var todos = loadTodos(currentUser.id);
@@ -194,11 +194,11 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
      * 
      * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
      */
-    @:keep
-    public static function handleInfo(msg: TodoPubSubMessage, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
-        var liveSocket: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
-        return handlePubSub(msg, liveSocket);
-    }
+	    @:keep
+	    public static function handleInfo(msg: TodoPubSubMessage, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
+	        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+	        return handlePubSub(msg, liveSocket);
+	    }
 
     @:keep
     static function handlePubSub(payload: TodoPubSubMessage, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
@@ -309,17 +309,18 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
         // Use the schema-generated changeset to keep casting/validation idiomatic
         var cs = Todo.changeset(todoStruct, castParams);
         switch (Repo.insert(cs)) {
-            case Ok(value):
-                // broadcast best-effort; ignore returned term
-                var _broadcastResult = TodoPubSub.broadcast(TodoUpdates, TodoCreated(value));
-                var todos = [value].concat(socket.assigns.todos);
-                var updatedSocket: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>).merge({
-                    todos: todos,
-                    show_form: false,
-                    total_todos: socket.assigns.total_todos + 1,
-                    pending_todos: socket.assigns.pending_todos + (value.completed ? 0 : 1),
-                    completed_todos: socket.assigns.completed_todos + (value.completed ? 1 : 0)
-                });
+	            case Ok(value):
+	                // broadcast best-effort; ignore returned term
+	                var _broadcastResult = TodoPubSub.broadcast(TodoUpdates, TodoCreated(value));
+	                var todos = [value].concat(socket.assigns.todos);
+	                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+	                var updatedSocket: LiveSocket<TodoLiveAssigns> = liveSocket.merge({
+	                    todos: todos,
+	                    show_form: false,
+	                    total_todos: socket.assigns.total_todos + 1,
+	                    pending_todos: socket.assigns.pending_todos + (value.completed ? 0 : 1),
+	                    completed_todos: socket.assigns.completed_todos + (value.completed ? 1 : 0)
+	                });
                 var lsCreated: LiveSocket<TodoLiveAssigns> = recomputeVisible(updatedSocket);
                 return LiveView.putFlash(lsCreated, FlashType.Success, "Todo created successfully!");
             case Error(_):
@@ -343,13 +344,13 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
  *   handle_info updates the list with the authoritative record; on error we broadcast the
  *   current DB row to revert.
  */
-    @:keep
-    public static function toggle_todo_status(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        var s: LiveSocket<TodoLiveAssigns> = (cast socket: LiveSocket<TodoLiveAssigns>);
-        var toggledTodos = s.assigns.todos.map(function(todo) {
-            if (todo.id == id) {
-                return cast ElixirMap.put(todo, Atom.create("completed"), !todo.completed);
-            }
+	    @:keep
+	    public static function toggle_todo_status(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	        var s: LiveSocket<TodoLiveAssigns> = socket;
+	        var toggledTodos = s.assigns.todos.map(function(todo) {
+	            if (todo.id == id) {
+	                return cast ElixirMap.put(todo, Atom.create("completed"), !todo.completed);
+	            }
             return todo;
         });
 
@@ -659,22 +660,23 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
         var rawTags: Null<String> = Reflect.field(params, "tags");
 
         // Inline computed fields into changeset map to avoid local-binder rename mismatches
-        switch (Repo.update(server.schemas.Todo.changeset(todo, {
-            title: (rawTitle != null) ? rawTitle : todo.title,
-            description: (rawDesc != null) ? rawDesc : (todo.description != null ? todo.description : ""),
-            priority: (rawPriority != null && rawPriority != "") ? rawPriority : todo.priority,
+	        switch (Repo.update(server.schemas.Todo.changeset(todo, {
+	            title: (rawTitle != null) ? rawTitle : todo.title,
+	            description: (rawDesc != null) ? rawDesc : (todo.description != null ? todo.description : ""),
+	            priority: (rawPriority != null && rawPriority != "") ? rawPriority : todo.priority,
             dueDate: (rawDue != null) ? parseDueDate(rawDue) : todo.dueDate,
             tags: (rawTags != null) ? (rawTags != "" ? parseTags(rawTags) : []) : (todo.tags != null ? todo.tags : []),
             completed: todo.completed,
             userId: todo.userId
         }))) {
-            case Ok(value):
-                // Best-effort broadcast
-                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(value));
-                var ls: LiveSocket<TodoLiveAssigns> = updateTodoInList(value, (cast socket: LiveSocket<TodoLiveAssigns>));
-                ls = ls.assign(_.editing_todo, null);
-                ls = recomputeVisible(ls);
-                return ls;
+	            case Ok(value):
+	                // Best-effort broadcast
+	                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(value));
+	                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+	                var ls: LiveSocket<TodoLiveAssigns> = updateTodoInList(value, liveSocket);
+	                ls = ls.assign(_.editing_todo, null);
+	                ls = recomputeVisible(ls);
+	                return ls;
             case _:
                 return LiveView.putFlash(socket, FlashType.Error, "Failed to update todo");
         }
@@ -782,24 +784,28 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 	}
 	
 	// Handle bulk update messages from PubSub with type-safe socket handling
-	static function handleBulkUpdate(action: BulkOperationType, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        return switch (action) {
-            case CompleteAll:
-                // Reload todos and apply in a single merge without temporaries
-                (cast socket: LiveSocket<TodoLiveAssigns>).merge({
-                    todos: loadTodos(socket.assigns.current_user.id),
-                    total_todos: loadTodos(socket.assigns.current_user.id).length,
-                    completed_todos: countCompleted(loadTodos(socket.assigns.current_user.id)),
-                    pending_todos: countPending(loadTodos(socket.assigns.current_user.id))
-                });
-            
-            case DeleteCompleted:
-                (cast socket: LiveSocket<TodoLiveAssigns>).merge({
-                    todos: loadTodos(socket.assigns.current_user.id),
-                    total_todos: loadTodos(socket.assigns.current_user.id).length,
-                    completed_todos: countCompleted(loadTodos(socket.assigns.current_user.id)),
-                    pending_todos: countPending(loadTodos(socket.assigns.current_user.id))
-                });
+		static function handleBulkUpdate(action: BulkOperationType, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	        return switch (action) {
+	            case CompleteAll:
+	                // Reload todos once and apply in a single merge
+	                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+	                var refreshed = loadTodos(socket.assigns.current_user.id);
+	                liveSocket.merge({
+	                    todos: refreshed,
+	                    total_todos: refreshed.length,
+	                    completed_todos: countCompleted(refreshed),
+	                    pending_todos: countPending(refreshed)
+	                });
+	            
+	            case DeleteCompleted:
+	                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+	                var refreshed = loadTodos(socket.assigns.current_user.id);
+	                liveSocket.merge({
+	                    todos: refreshed,
+	                    total_todos: refreshed.length,
+	                    completed_todos: countCompleted(refreshed),
+	                    pending_todos: countPending(refreshed)
+	                });
 			
 			case SetPriority(priority):
 				// Could handle bulk priority changes in future

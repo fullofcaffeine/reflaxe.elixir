@@ -45,7 +45,7 @@ haxe test.hxml -D reflaxe_runtime --interp
 #if (elixir || reflaxe_runtime)
 class Syntax {
     // Available during Elixir compilation AND test compilation
-    public static function code(code: String): Dynamic;
+    public static function code(code: String): elixir.types.Term;
 }
 #end
 ```
@@ -91,7 +91,7 @@ class CompilerHelper {
 #if (elixir || reflaxe_runtime)
 class Syntax {
     // Available in Elixir target AND for testing
-    public static function code(code: String): Dynamic;
+    public static function code(code: String): elixir.types.Term;
 }
 #end
 ```
@@ -176,7 +176,7 @@ haxe -cp std -main Test --interp -D reflaxe_runtime
 // std/elixir/Syntax.hx
 #if (elixir || reflaxe_runtime)
 class Syntax {
-    public static function code(code: String, args: Rest<Dynamic>): Dynamic {
+    public static function code(code: String, args: Rest<elixir.types.Term>): elixir.types.Term {
         // Should be processed by compiler, never executed
         return elixir.Injection.__elixir__(code, args);
     }

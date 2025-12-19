@@ -86,8 +86,8 @@ end end).())
     _ = nil
     point_x = 10
     point_y = 20
-    quadrant = g = point_y
-    x = g
+    g = point_y
+    quadrant = x = g
     y = g
     if (x > 0 and y > 0) do
       "first"

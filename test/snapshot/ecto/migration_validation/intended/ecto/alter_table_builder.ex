@@ -1,6 +1,6 @@
 defmodule AlterTableBuilder do
   def add_column(struct, name, type, options) do
-    _ = operations ++ [{:add_column, name, type, options}]
+    _ = operations ++ [{:add_column, name, type, (if (options != nil), do: options, else: nil)}]
     struct
   end
   def remove_column(struct, name) do
@@ -8,7 +8,7 @@ defmodule AlterTableBuilder do
     struct
   end
   def modify_column(struct, name, type, options) do
-    _ = operations ++ [{:modify_column, name, type, options}]
+    _ = operations ++ [{:modify_column, name, type, (if (options != nil), do: options, else: nil)}]
     struct
   end
   def rename_column(struct, old_name, new_name) do

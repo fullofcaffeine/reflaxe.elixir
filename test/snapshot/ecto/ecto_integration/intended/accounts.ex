@@ -6,7 +6,7 @@ defmodule Accounts do
     MyApp.Repo.get(MyApp.User, id)
   end
   def create_user(attrs) do
-    user = %user{}
+    user = %User{}
     changeset = MyApp.UserChangeset.changeset(user, attrs)
     _ = MyApp.Repo.insert(changeset)
   end

@@ -1,7 +1,7 @@
 package;
 
 import phoenix.PresenceBehavior;
-import phoenix.Socket;
+import phoenix.Phoenix.Socket;
 import phoenix.Presence.PresenceEntry;
 
 /**
@@ -31,7 +31,7 @@ class TestPresence implements PresenceBehavior {
 	static inline var TOPIC = "presence:test";
 
 	// Custom method that uses the generated internal methods
-	public static function trackTestUser(socket: Socket, userId: String, name: String): Socket {
+	public static function trackTestUser(socket: Socket<PresenceAssigns>, userId: String, name: String): Socket<PresenceAssigns> {
 		var meta: TestMeta = {
 			onlineAt: Date.now().getTime(),
 			userName: name,
@@ -44,7 +44,7 @@ class TestPresence implements PresenceBehavior {
 	}
 
 	// Custom method that uses the generated update method
-	public static function updateStatus(socket: Socket, userId: String, newStatus: String): Socket {
+	public static function updateStatus(socket: Socket<PresenceAssigns>, userId: String, newStatus: String): Socket<PresenceAssigns> {
             // Get current metadata using macro-generated wrapper
             var presences = TestPresence.list(TOPIC);
 
@@ -67,7 +67,7 @@ class TestPresence implements PresenceBehavior {
 	}
 
 	// Custom method that uses the generated untrack method
-	public static function removeUser(socket: Socket, userId: String): Socket {
+	public static function removeUser(socket: Socket<PresenceAssigns>, userId: String): Socket<PresenceAssigns> {
 		// This should use the macro-generated untrackInternal method
 		untrackInternal(TOPIC, userId);
 		return socket;
@@ -78,7 +78,7 @@ class TestPresence implements PresenceBehavior {
 class ExternalCaller {
 	static inline var TOPIC = "presence:test";
 
-	public static function callFromOutside(socket: Socket): Void {
+	public static function callFromOutside(socket: Socket<PresenceAssigns>): Void {
 		// These should use the macro-generated external methods that call Phoenix.Presence
 		var meta: TestMeta = {
 			onlineAt: Date.now().getTime(),
@@ -97,7 +97,7 @@ class ExternalCaller {
 
             // List and getByKey should work externally too
             var allPresences = TestPresence.list(TOPIC);
-            var userPresence = TestPresence.getByKey(TOPIC, "external_user");
+            var userPresence: Null<PresenceEntry<TestMeta>> = TestPresence.getByKey(TOPIC, "external_user");
 
 		// Type safety check - should be able to access typed metadata
 		if (userPresence != null && userPresence.metas.length > 0) {
@@ -111,7 +111,7 @@ class ExternalCaller {
 class Main {
 	static function main() {
 		// Create a mock socket for testing
-		var socket: Socket = untyped {};
+		var socket: Socket<PresenceAssigns> = null;
 		
 		// Test internal methods via custom functions
 		TestPresence.trackTestUser(socket, "user_1", "Alice");
@@ -124,3 +124,5 @@ class Main {
 		trace("PresenceMacro test completed successfully");
 	}
 }
+
+typedef PresenceAssigns = {}
