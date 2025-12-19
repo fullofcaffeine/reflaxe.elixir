@@ -64,10 +64,10 @@ class InlineLocalAssignUsedOnceTransforms {
       var s = stmts[i];
       switch (s.def) {
         case EMatch(PVar(b), rhs):
-          var res = tryInline(stmts, i, b, rhs, s.metadata, s.pos);
+          var res = tryInline(stmts, i, b, rhs);
           if (res.inlined) { out.push(res.nextStmt); i += 2; continue; } else { out.push(s); i++; continue; }
         case EBinary(Match, {def: EVar(b2)}, rhs2):
-          var res2 = tryInline(stmts, i, b2, rhs2, s.metadata, s.pos);
+          var res2 = tryInline(stmts, i, b2, rhs2);
           if (res2.inlined) { out.push(res2.nextStmt); i += 2; continue; } else { out.push(s); i++; continue; }
         default:
           out.push(s); i++;
@@ -76,7 +76,7 @@ class InlineLocalAssignUsedOnceTransforms {
     return out;
   }
 
-  static function tryInline(stmts:Array<ElixirAST>, idx:Int, name:String, rhs:ElixirAST, md:Dynamic, pos:haxe.macro.Expr.Position):{inlined:Bool, nextStmt:ElixirAST} {
+  static function tryInline(stmts:Array<ElixirAST>, idx:Int, name:String, rhs:ElixirAST):{inlined:Bool, nextStmt:ElixirAST} {
     if (name == null || name.length == 0) return {inlined:false, nextStmt:null};
     if (name.charAt(0) == '_') return {inlined:false, nextStmt:null};
     if (idx + 1 >= stmts.length) return {inlined:false, nextStmt:null};

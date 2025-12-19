@@ -18,6 +18,16 @@ class SourcePositionData {
   public final file: Null<String>;
 }
 
+typedef SourceMap = {
+  var version: Int;
+  var names: Array<String>;
+  var file: String;
+  var sourceRoot: String;
+  var sources: Array<Null<String>>;
+  var mappings: String;
+  @:optional var sourcesContent: Array<Null<String>>;
+}
+
 @:forward
 abstract SourcePosition(SourcePositionData) from SourcePositionData {
   @:from static function fromTypedExpr(expr: TypedExpr)
@@ -110,7 +120,7 @@ class SourceMapGenerator {
   }
 
   public function toJSON(path: String, withSources: Bool) {
-    final map: Dynamic = {
+    final map: SourceMap = {
       version: 3,
       names: [],
       file: Path.withoutDirectory(path),

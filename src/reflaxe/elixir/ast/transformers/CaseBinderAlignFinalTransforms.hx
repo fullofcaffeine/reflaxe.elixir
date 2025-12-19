@@ -130,13 +130,10 @@ class CaseBinderAlignFinalTransforms {
   static function collectUsedLowerVars(ast: ElixirAST): Array<String> {
     var names = new Map<String,Bool>();
     // Use builder-provided metadata when present
-    try {
-      var meta:Dynamic = ast.metadata;
-      if (meta != null && untyped meta.usedLocalsFromTyped != null) {
-        var arr:Array<String> = untyped meta.usedLocalsFromTyped;
-        for (n in arr) if (n != null && n.length > 0 && isLower(n)) names.set(n, true);
-      }
-    } catch (e:Dynamic) {}
+    var arr = ast.metadata.usedLocalsFromTyped;
+    if (arr != null) {
+      for (n in arr) if (n != null && n.length > 0 && isLower(n)) names.set(n, true);
+    }
 
     ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
       switch (n.def) {

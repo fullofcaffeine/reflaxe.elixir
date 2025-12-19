@@ -130,13 +130,10 @@ class CasePatternUnderscorePromotionTransforms {
   static function collectUsedVars(body:ElixirAST, guard:Null<ElixirAST>):Map<String,Bool> {
     var s = new Map<String,Bool>();
     // Ingest builder metadata if present
-    try {
-      var meta:Dynamic = body != null ? body.metadata : null;
-      if (meta != null && untyped meta.usedLocalsFromTyped != null) {
-        var arr:Array<String> = untyped meta.usedLocalsFromTyped;
-        for (n in arr) if (n != null && n.length > 0) s.set(n, true);
-      }
-    } catch (e:Dynamic) {}
+    var arr = body != null ? body.metadata.usedLocalsFromTyped : null;
+    if (arr != null) {
+      for (n in arr) if (n != null && n.length > 0) s.set(n, true);
+    }
     function markTextInterps(str:String):Void {
       if (str == null) return;
       var re = new EReg("\\#\\{([^}]*)\\}", "g");
@@ -211,13 +208,10 @@ class CasePatternUnderscorePromotionTransforms {
     if (guard != null) walk(guard);
     // Include guard metadata and interpolation scan
     if (guard != null) {
-      try {
-        var gmeta:Dynamic = guard.metadata;
-        if (gmeta != null && untyped gmeta.usedLocalsFromTyped != null) {
-          var garr:Array<String> = untyped gmeta.usedLocalsFromTyped;
-          for (n in garr) if (n != null && n.length > 0) s.set(n, true);
-        }
-      } catch (e:Dynamic) {}
+      var garr = guard.metadata.usedLocalsFromTyped;
+      if (garr != null) {
+        for (n in garr) if (n != null && n.length > 0) s.set(n, true);
+      }
     }
     return s;
   }

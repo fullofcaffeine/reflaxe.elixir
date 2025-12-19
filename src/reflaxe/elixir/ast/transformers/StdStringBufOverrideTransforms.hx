@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 
 /**
  * StdStringBufOverrideTransforms
@@ -48,7 +49,7 @@ class StdStringBufOverrideTransforms {
         });
     }
 
-    static inline function bodyBlock(meta: Dynamic, pos: haxe.macro.Expr.Position): ElixirAST {
+    static inline function bodyBlock(meta: ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
         // Align to intended HXXTypeSafety snapshot shape
         var code = (
         "  def add(struct, x) do\n" +

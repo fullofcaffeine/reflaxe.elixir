@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
+import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.naming.ElixirAtom;
@@ -693,7 +694,7 @@ class BinderTransforms {
                     }
                     if (prefix == null) {
                         // Fallback to PhoenixMapper app module name (based on -D app_name)
-                        try { prefix = reflaxe.elixir.PhoenixMapper.getAppModuleName(); } catch (e:Dynamic) {}
+                        try { prefix = reflaxe.elixir.PhoenixMapper.getAppModuleName(); } catch (e) {}
                     }
                     if (prefix != null) {
                         var repoName = prefix + ".Repo";
@@ -709,13 +710,13 @@ class BinderTransforms {
                         prefix = n.metadata.appName;
                     }
                     if (prefix == null) {
-                        try { prefix = reflaxe.elixir.PhoenixMapper.getAppModuleName(); } catch (e:Dynamic) {}
+                        try { prefix = reflaxe.elixir.PhoenixMapper.getAppModuleName(); } catch (e) {}
                         #if macro
                         if (prefix == null) {
                             try {
                                 var d = haxe.macro.Compiler.getDefine("app_name");
                                 if (d != null && d.length > 0) prefix = d;
-                            } catch (e:Dynamic) {}
+                            } catch (e) {}
                         }
                         #end
                     }
@@ -1516,14 +1517,14 @@ class BinderTransforms {
             return switch (n.def) {
                 case EModule(name, attrs, body):
                     var app = deriveAppPrefix(name);
-                    if (app == null) try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+                    if (app == null) try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
                     if (app == null) return n;
                     var newBody: Array<ElixirAST> = [];
                     for (b in body) newBody.push(rewriteInScope(b, app));
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name, doBlock):
                     var app = deriveAppPrefix(name);
-                    if (app == null) try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+                    if (app == null) try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
                     if (app == null) return n;
                     var newDo = rewriteInScope(doBlock, app);
                     makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
@@ -1556,7 +1557,7 @@ class BinderTransforms {
             var idx = moduleName.indexOf("Web");
             return idx > 0 ? moduleName.substring(0, idx) : null;
         }
-        function toStruct(mod: ElixirAST, meta: Dynamic, pos: haxe.macro.Expr.Position, appPrefix: Null<String>): ElixirAST {
+        function toStruct(mod: ElixirAST, meta: ElixirMetadata, pos: haxe.macro.Expr.Position, appPrefix: Null<String>): ElixirAST {
             return switch (mod.def) {
                 case EVar(name) if (name != null && name.length > 0 && isUpperCamel(name)):
                     var full = (appPrefix != null && name.indexOf('.') == -1) ? appPrefix + '.' + name : name;
@@ -2226,7 +2227,7 @@ class BinderTransforms {
                 case EModule(name, attrs, body):
                     var prefix = deriveAppPrefix(name);
                     if (prefix == null) {
-                        try { prefix = reflaxe.elixir.PhoenixMapper.getAppModuleName(); } catch (e:Dynamic) {}
+                        try { prefix = reflaxe.elixir.PhoenixMapper.getAppModuleName(); } catch (e) {}
                     }
                     if (prefix == null) return n;
                     var repoModule = prefix + ".Repo";
@@ -2241,7 +2242,7 @@ class BinderTransforms {
                 case EDefmodule(name, doBlock):
                     var prefix = deriveAppPrefix(name);
                     if (prefix == null) {
-                        try { prefix = reflaxe.elixir.PhoenixMapper.getAppModuleName(); } catch (e:Dynamic) {}
+                        try { prefix = reflaxe.elixir.PhoenixMapper.getAppModuleName(); } catch (e) {}
                     }
                     if (prefix == null) return n;
                     var repoModule = prefix + ".Repo";
@@ -2294,7 +2295,7 @@ class BinderTransforms {
             return n;
         });
         if (app == null || app.length == 0) {
-            try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+            try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
         }
         if (app == null || app.length == 0) return ast;
         var repoModule = app + ".Repo";

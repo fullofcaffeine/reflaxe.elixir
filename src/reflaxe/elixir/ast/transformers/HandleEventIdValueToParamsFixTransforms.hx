@@ -84,7 +84,7 @@ class HandleEventIdValueToParamsFixTransforms {
             Sys.println('[HandleEventIdValueToParamsFix] rewrite raw Map.get(value, ...) -> Map.get(' + pv + ', ...)');
             #end
             makeASTWithMeta(ERaw(replaced), x.metadata, x.pos);
-          } catch (_:Dynamic) {
+          } catch (_) {
             x;
           }
         case EVar(v3) if (v3 == "value"):

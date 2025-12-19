@@ -1,6 +1,13 @@
 package implementations;
 
 import behaviors.DataProcessor;
+import behaviors.DataProcessor.DataItem;
+import behaviors.DataProcessor.InitResponse;
+import behaviors.DataProcessor.ProcessBatchResponse;
+import behaviors.DataProcessor.ProcessItemResponse;
+import behaviors.DataProcessor.ProcessedItem;
+import behaviors.DataProcessor.ProcessorConfig;
+import behaviors.DataProcessor.ProcessorState;
 
 /**
  * Batch implementation of DataProcessor behavior
@@ -12,94 +19,102 @@ import behaviors.DataProcessor;
 class BatchProcessor {
     
     private var batchSize: Int = 100;
-    private var currentBatch: Array<Dynamic> = [];
+    private var currentBatch: Array<DataItem> = [];
     
     // DataProcessor behavior implementation
-    public function init(config: Dynamic): {ok: Dynamic, error: String} {
+    public function init(config: ProcessorConfig): InitResponse {
         if (config != null && config.batchSize != null) {
             this.batchSize = config.batchSize;
         }
-        
+
         return {
             ok: {
-                batch_size: this.batchSize,
-                mode: "batch_processing",
-                created_at: Date.now().getTime()
+                processed_count: 0,
+                errors: 0,
+                batches_processed: 0,
+                total_items: 0,
+                last_batch_time: 0
             },
             error: ""
         };
     }
     
-    public function process_item(item: Dynamic, state: Dynamic): {result: Dynamic, newState: Dynamic} {
+    public function process_item(item: DataItem, state: ProcessorState): ProcessItemResponse {
         if (!validate_data(item)) {
+            var newState: ProcessorState = {
+                processed_count: state.processed_count,
+                errors: state.errors + 1,
+                batches_processed: state.batches_processed,
+                total_items: state.total_items,
+                last_batch_time: state.last_batch_time
+            };
+
             return {
-                result: {error: "Invalid data format", item: item},
-                newState: state
+                result: {
+                    id: item.id,
+                    original: item,
+                    processed_at: Date.now().getTime(),
+                    batch_id: null
+                },
+                newState: newState
             };
         }
         
         // Add to batch instead of processing immediately
         currentBatch.push(item);
-        
-        var result: Dynamic;
+
+        // If batch is full, process it to advance state/counters.
         var newState = state;
-        
         if (currentBatch.length >= batchSize) {
-            // Process the full batch
             var batchResult = process_batch(currentBatch, state);
-            result = {
-                type: "batch_completed",
-                batch_id: Std.random(10000),
-                items_processed: currentBatch.length,
-                results: batchResult.results
-            };
-            
             newState = batchResult.newState;
-            currentBatch = []; // Reset batch
-        } else {
-            // Item queued for batch processing
-            result = {
-                type: "queued_for_batch",
-                queue_position: currentBatch.length,
-                batch_size: batchSize
-            };
+            currentBatch = [];
         }
-        
-        return {result: result, newState: newState};
+
+        return {
+            result: {
+                id: item.id,
+                original: item,
+                processed_at: Date.now().getTime(),
+                batch_id: null
+            },
+            newState: newState
+        };
     }
     
-    public function process_batch(items: Array<Dynamic>, state: Dynamic): {results: Array<Dynamic>, newState: Dynamic} {
-        var results = [];
+    public function process_batch(items: Array<DataItem>, state: ProcessorState): ProcessBatchResponse {
+        var results: Array<ProcessedItem> = [];
         var startTime = Date.now().getTime();
         
         for (item in items) {
-            var processed = {
-                id: Std.random(1000),
+            var processed: ProcessedItem = {
+                id: item.id,
                 original: item,
-                batch_processed_at: startTime,
+                processed_at: startTime,
                 batch_id: Std.random(10000)
             };
             results.push(processed);
         }
         
-        var newState = {
-            batches_processed: state.batches_processed != null ? state.batches_processed + 1 : 1,
-            total_items: state.total_items != null ? state.total_items + items.length : items.length,
+        var newState: ProcessorState = {
+            processed_count: state.processed_count + items.length,
+            errors: state.errors,
+            batches_processed: (state.batches_processed != null ? state.batches_processed : 0) + 1,
+            total_items: (state.total_items != null ? state.total_items : 0) + items.length,
             last_batch_time: startTime
         };
         
         return {results: results, newState: newState};
     }
     
-    public function validate_data(data: Dynamic): Bool {
+    public function validate_data(data: DataItem): Bool {
         // Batch processor has stricter validation
         if (data == null) return false;
         
-        // Require data to have an 'id' field for batch tracking
-        return Reflect.hasField(data, "id") || Std.isOfType(data, String);
+        return data.id > 0 && data.payload != null;
     }
     
-    public function handle_error(error: Dynamic, context: Dynamic): String {
+    public function handle_error(error: String, context: String): String {
         trace("Batch processor error: " + error);
         trace("Context: " + context);
         

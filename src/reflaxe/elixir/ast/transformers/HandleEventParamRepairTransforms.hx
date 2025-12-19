@@ -284,7 +284,7 @@ class HandleEventParamRepairTransforms {
               }
               pos = block.matchedPos().pos + block.matchedPos().len;
             }
-          } catch (e:Dynamic) {}
+          } catch (e) {}
         default:
       }
     });

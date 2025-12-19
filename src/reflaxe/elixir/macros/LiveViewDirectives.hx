@@ -8,6 +8,12 @@ using StringTools;
  * LiveView-specific directive handling and validation
  * Supports LiveView attributes, component syntax, and slot compilation
  */
+import reflaxe.elixir.macros.HXXParser.JSXElement;
+
+typedef ComponentContext = {
+    var ?componentName: String;
+}
+
 class LiveViewDirectives {
     
     /**
@@ -33,7 +39,7 @@ class LiveViewDirectives {
     /**
      * Validate LiveView directive usage
      */
-    public static function validateDirective(directive: String, value: String, context: Dynamic): {valid: Bool, errors: Array<String>} {
+    public static function validateDirective(directive: String, value: String, context: Null<ComponentContext>): {valid: Bool, errors: Array<String>} {
         var result = {valid: true, errors: []};
         
         var directiveName = directive.startsWith("lv:") ? directive : "lv:" + directive.substring(1);
@@ -136,7 +142,7 @@ class LiveViewDirectives {
     /**
      * Validate slot directive
      */
-    static function validateSlotDirective(directive: String, value: String, context: Dynamic): {valid: Bool, errors: Array<String>} {
+    static function validateSlotDirective(directive: String, value: String, context: Null<ComponentContext>): {valid: Bool, errors: Array<String>} {
         var result = {valid: true, errors: []};
         
         if (context != null && context.componentName == null) {
@@ -185,12 +191,26 @@ class LiveViewDirectives {
     /**
      * Extract component props and validate types (simplified for compatibility)
      */
-    public static function extractComponentProps(element: Dynamic): {props: Map<String, String>, errors: Array<String>} {
+    public static function extractComponentProps(element: JSXElement): {props: Map<String, String>, errors: Array<String>} {
         var props = new Map<String, String>();
         var errors = [];
         
-        // For now, return empty props due to Dynamic iteration limitations in Haxe
-        // This will be enhanced in future iterations with proper type definitions
+        if (element == null || element.attributes == null) {
+            return {props: props, errors: errors};
+        }
+
+        for (key in element.attributes.keys()) {
+            // Skip directives and event handlers; props are only plain attributes.
+            if (isLiveViewDirective(key) || isEventHandler(key)) continue;
+
+            var value = element.attributes.get(key);
+            if (value == null) continue;
+
+            var validation = validatePropType(key, value);
+            for (e in validation.errors) errors.push(e);
+
+            props.set(key, value);
+        }
         
         return {props: props, errors: errors};
     }

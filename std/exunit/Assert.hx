@@ -1,5 +1,8 @@
 package exunit;
 
+import haxe.ds.Option;
+import haxe.functional.Result;
+
 /**
  * ExUnit assertion functions
  * 
@@ -106,7 +109,7 @@ class Assert {
      * @param result The Result to check
      * @param message Optional failure message
      */
-    extern inline public static function assertIsOk<T,E>(result: Dynamic, ?message: String): Void {
+    extern inline public static function assertIsOk<T, E>(result: Result<T, E>, ?message: String): Void {
         untyped __elixir__('assert match?({:ok, _}, {0})', result);
     }
     
@@ -119,7 +122,7 @@ class Assert {
      * @param result The Result to check
      * @param message Optional failure message
      */
-    extern inline public static function assertIsError<T,E>(result: Dynamic, ?message: String): Void {
+    extern inline public static function assertIsError<T, E>(result: Result<T, E>, ?message: String): Void {
         untyped __elixir__('assert match?({:error, _}, {0})', result);
     }
     
@@ -132,7 +135,7 @@ class Assert {
      * @param option The Option to check
      * @param message Optional failure message
      */
-    extern inline public static function assertIsSome<T>(option: Dynamic, ?message: String): Void {
+    extern inline public static function assertIsSome<T>(option: Option<T>, ?message: String): Void {
         untyped __elixir__('assert match?({:some, _}, {0})', option);
     }
     
@@ -145,7 +148,7 @@ class Assert {
      * @param option The Option to check
      * @param message Optional failure message
      */
-    extern inline public static function assertIsNone<T>(option: Dynamic, ?message: String): Void {
+    extern inline public static function assertIsNone<T>(option: Option<T>, ?message: String): Void {
         untyped __elixir__('assert {0} == :none', option);
     }
 }

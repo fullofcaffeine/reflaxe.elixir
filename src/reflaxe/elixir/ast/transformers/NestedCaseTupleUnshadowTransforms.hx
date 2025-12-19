@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
+import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 
 /**
@@ -36,8 +37,8 @@ class NestedCaseTupleUnshadowTransforms {
 
   static function rewriteNested(oc:ECaseClause): ECaseClause {
     // Look for an inner `case innerExpr do` as the first expression in the body
-    var inner: Null<{ expr:ElixirAST, clauses:Array<ECaseClause>, meta:Dynamic, pos:Dynamic, parenDepth:Int }>= null;
-    function unwrapParens(e: ElixirAST): { node:ElixirAST, depth:Int, meta:Dynamic, pos:Dynamic } {
+    var inner: Null<{ expr:ElixirAST, clauses:Array<ECaseClause>, meta:ElixirMetadata, pos:haxe.macro.Expr.Position, parenDepth:Int }>= null;
+    function unwrapParens(e: ElixirAST): { node:ElixirAST, depth:Int, meta:ElixirMetadata, pos:haxe.macro.Expr.Position } {
       var depth = 0; var cur = e; var m = e.metadata; var p = e.pos;
       while (true) {
         switch (cur.def) {

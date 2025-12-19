@@ -1,5 +1,7 @@
 package services;
 
+import elixir.types.Result;
+
 using StringTools;
 
 /**
@@ -15,14 +17,14 @@ class UserService {
      * Creates a new user with validation
      * Returns {:ok, user} or {:error, reason} tuple
      */
-    public static function createUser(userData: Dynamic): Dynamic {
+    public static function createUser(userData: NewUserInput): Result<User, String> {
         // Validate required fields
         if (!isValidUserData(userData)) {
-            return {error: "Invalid user data provided"};
+            return Error("Invalid user data provided");
         }
         
         // Create user with processed data
-        var user = {
+        var user: User = {
             id: generateUserId(),
             name: formatName(userData.name),
             email: normalizeEmail(userData.email),
@@ -31,32 +33,32 @@ class UserService {
             status: "active"
         };
         
-        return {ok: user};
+        return Ok(user);
     }
     
     /**
      * Updates user information with validation
      */
-    public static function updateUser(userId: String, updates: Dynamic): Dynamic {
+    public static function updateUser(userId: String, updates: UserUpdates): Result<User, String> {
         if (userId == null || userId.trim().length == 0) {
-            return {error: "User ID is required"};
+            return Error("User ID is required");
         }
         
         // Simulate user lookup (in real app, this would query database)
         var existingUser = getUserById(userId);
         if (existingUser == null) {
-            return {error: "User not found"};
+            return Error("User not found");
         }
         
         // Apply updates with validation
         var updatedUser = applyUserUpdates(existingUser, updates);
-        return {ok: updatedUser};
+        return Ok(updatedUser);
     }
     
     /**
      * Retrieves user by ID (simulated for example)
      */
-    public static function getUserById(userId: String): Dynamic {
+    public static function getUserById(userId: String): Null<User> {
         if (userId == null) return null;
         
         // In real implementation, this would query the database
@@ -74,9 +76,9 @@ class UserService {
     /**
      * Lists users with pagination (simulated)
      */
-    public static function listUsers(page: Int = 1, perPage: Int = 10): Dynamic {
+    public static function listUsers(page: Int = 1, perPage: Int = 10): UserListPage {
         // Simulate pagination logic
-        var users = [];
+        var users: Array<User> = [];
         for (i in 0...Std.int(Math.min(perPage, 5))) {
             users.push({
                 id: "user_" + (page * perPage + i),
@@ -99,7 +101,7 @@ class UserService {
     // Private helper functions
     
     @:private
-    static function isValidUserData(data: Dynamic): Bool {
+    static function isValidUserData(data: NewUserInput): Bool {
         if (data == null) return false;
         if (data.name == null || data.name.trim().length == 0) return false;
         if (data.email == null || !isValidEmail(data.email)) return false;
@@ -138,8 +140,8 @@ class UserService {
     }
     
     @:private
-    static function applyUserUpdates(user: Dynamic, updates: Dynamic): Dynamic {
-        var updated = {
+    static function applyUserUpdates(user: User, updates: UserUpdates): User {
+        var updated: User = {
             id: user.id,
             name: updates.name != null ? formatName(updates.name) : user.name,
             email: updates.email != null ? normalizeEmail(updates.email) : user.email,
@@ -157,4 +159,33 @@ class UserService {
     public static function main(): Void {
         trace("UserService compiled successfully for Mix project!");
     }
+}
+
+typedef User = {
+    var id: String;
+    var name: String;
+    var email: String;
+    var age: Int;
+    var createdAt: String;
+    var status: String;
+}
+
+typedef NewUserInput = {
+    var name: String;
+    var email: String;
+    var ?age: Int;
+}
+
+typedef UserUpdates = {
+    var ?name: String;
+    var ?email: String;
+    var ?age: Int;
+    var ?status: String;
+}
+
+typedef UserListPage = {
+    var data: Array<User>;
+    var page: Int;
+    var perPage: Int;
+    var total: Int;
 }

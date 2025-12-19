@@ -629,15 +629,19 @@ class LoopOptimizer {
 								findKeyValueVars(body);
 								
 								if (keyVar != null && valueVar != null) {
-									// Return pattern compatible with ElixirASTBuilder's MapIterationPattern
-									// Note: ElixirASTBuilder doesn't have iteratorVar field
-									var pattern: Dynamic = {
-										keyVar: keyVar,
-										valueVar: valueVar,
-										mapExpr: getMapExpression(init),
-										body: body
-									};
-									return pattern;
+									var mapExpr = getMapExpression(init);
+									if (mapExpr != null) {
+										// Return pattern compatible with MapIterationPattern.
+										// We keep the iterator variable name for downstream transforms/debugging.
+										var pattern: MapIterationPattern = {
+											iteratorVar: iterVar.name,
+											keyVar: keyVar,
+											valueVar: valueVar,
+											mapExpr: mapExpr,
+											body: body
+										};
+										return pattern;
+									}
 								}
 							default:
 						}
@@ -777,7 +781,7 @@ class LoopOptimizer {
 		]), metadata: {}, pos: null};
 	}
 	
-	static function getMapExpression(keyValueIterator: TypedExpr): TypedExpr {
+	static function getMapExpression(keyValueIterator: TypedExpr): Null<TypedExpr> {
 		// Extract the map expression from map.keyValueIterator() call
 		switch(keyValueIterator.expr) {
 			case TField(mapExpr, _):

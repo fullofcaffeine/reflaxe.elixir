@@ -4,6 +4,22 @@ package reflaxe.elixir.macros;
 
 using StringTools;
 
+typedef JSXPosition = {
+    var line: Int;
+    var column: Int;
+}
+
+typedef JSXElement = {
+    var tag: String;
+    var content: String;
+    var children: Array<JSXElement>;
+    var selfClosing: Bool;
+    var attributes: Map<String, String>;
+    var position: JSXPosition;
+    var valid: Bool;
+    var errors: Array<String>;
+}
+
 /**
  * JSX parsing utilities for HXX macro system
  * Provides enhanced JSX parsing with better error handling and validation
@@ -11,30 +27,16 @@ using StringTools;
 class HXXParser {
     
     /**
-     * JSX Element structure with enhanced metadata
-     */
-    public static var JSXElement = {
-        tag: "",
-        content: "",
-        children: [],
-        selfClosing: false,
-        attributes: new Map<String, String>(),
-        position: {line: 0, column: 0},
-        valid: true,
-        errors: []
-    };
-    
-    /**
      * Enhanced JSX parsing with better error detection
      */
-    public static function parseJSXElement(jsx: String, ?position: {line: Int, column: Int}): Dynamic {
+    public static function parseJSXElement(jsx: String, ?position: JSXPosition): JSXElement {
         jsx = jsx.trim();
         
         if (jsx.length == 0) {
             return createErrorElement("Empty JSX input", position);
         }
         
-        var element = {
+        var element: JSXElement = {
             tag: "",
             content: "",
             children: [],
@@ -96,9 +98,9 @@ class HXXParser {
                 }
             }
             
-        } catch (e: Dynamic) {
+        } catch (e) {
             element.valid = false;
-            element.errors.push('Parsing error: ${e.toString()}');
+            element.errors.push('Parsing error: ${Std.string(e)}');
         }
         
         return element;
@@ -107,8 +109,8 @@ class HXXParser {
     /**
      * Parse nested elements (basic implementation)
      */
-    public static function parseNestedElements(content: String): Array<Dynamic> {
-        var elements = [];
+    public static function parseNestedElements(content: String): Array<JSXElement> {
+        var elements: Array<JSXElement> = [];
         
         // Simple nested element detection - would be enhanced in full implementation
         var openTags = [];
@@ -142,8 +144,8 @@ class HXXParser {
     /**
      * Create error element for parsing failures
      */
-    public static function createErrorElement(message: String, ?position: {line: Int, column: Int}): Dynamic {
-        return {
+    public static function createErrorElement(message: String, ?position: JSXPosition): JSXElement {
+        return ({
             tag: "",
             content: "",
             children: [],
@@ -152,7 +154,7 @@ class HXXParser {
             position: position != null ? position : {line: 1, column: 1},
             valid: false,
             errors: [message]
-        };
+        } : JSXElement);
     }
     
     /**
@@ -208,9 +210,9 @@ class HXXParser {
                     result.errors.push('Unclosed tags: ${openTags.join(", ")}');
                 }
             }
-        } catch (e: Dynamic) {
+        } catch (e) {
             result.valid = false;
-            result.errors.push('Validation error: ${e.toString()}');
+            result.errors.push('Validation error: ${Std.string(e)}');
         }
         
         return result;

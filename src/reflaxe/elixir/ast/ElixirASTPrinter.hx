@@ -1161,7 +1161,7 @@ class ElixirASTPrinter {
                                                         try {
                                                             var app = reflaxe.elixir.PhoenixMapper.getAppModuleName();
                                                             if (app != null && app.length > 0) app + ".Repo" else name;
-                                                        } catch (e:Dynamic) {
+                                                        } catch (e) {
                                                             name;
                                                         }
                                                     }
@@ -1303,7 +1303,7 @@ class ElixirASTPrinter {
                                             if (w > 0) pfx = currentModuleName.substring(0, w);
                                         }
                                         if (pfx == null) pfx = observedAppPrefix;
-                                        if (pfx == null) { try pfx = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {} }
+                                        if (pfx == null) { try pfx = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {} }
                                         return pfx;
                                     })();
                                     if (app != null && app.length > 0) {
@@ -1327,7 +1327,7 @@ class ElixirASTPrinter {
                                     if (w > 0) pfx = currentModuleName.substring(0, w);
                                 }
                                 if (pfx == null) pfx = observedAppPrefix;
-                                if (pfx == null) { try pfx = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {} }
+                                if (pfx == null) { try pfx = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {} }
                                 return pfx;
                             })();
                             if (app != null && isBareModule(trimmed)) {
@@ -2077,7 +2077,7 @@ class ElixirASTPrinter {
                         }
                     }
                     if (pfx == null && observedAppPrefix != null) pfx = observedAppPrefix;
-                    if (pfx == null) { try pfx = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {} }
+                    if (pfx == null) { try pfx = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {} }
                     if (pfx != null && pfx.length > 0) {
                         var buf = new StringBuf();
                         var i = 0;
@@ -2685,7 +2685,7 @@ class ElixirASTPrinter {
                 try {
                     var app = reflaxe.elixir.PhoenixMapper.getAppModuleName();
                     if (app != null && app.length > 0) return app + ".Repo";
-                } catch (e:Dynamic) {}
+                } catch (e) {}
                 return name;
             case EVar(name) if (name == "Presence"):
                 var prefix = currentAppPrefix();

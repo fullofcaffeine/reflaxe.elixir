@@ -3,6 +3,50 @@ package utils;
 using StringTools;
 import elixir.types.Result;
 
+typedef UserInput = {
+    var name: String;
+    var email: String;
+    var ?age: Int;
+}
+
+typedef SanitizedUserInput = {
+    var name: String;
+    var email: String;
+    var ?age: Int;
+}
+
+typedef EmailValidation = {
+    var email: String;
+    var domain: String;
+}
+
+enum AgeCategory {
+    Child;
+    Teenager;
+    Adult;
+    Senior;
+}
+
+typedef AgeValidation = {
+    var age: Int;
+    var category: AgeCategory;
+}
+
+typedef PasswordStrength = {
+    var score: Int;
+    var hasLowercase: Bool;
+    var hasUppercase: Bool;
+    var hasNumbers: Bool;
+    var hasSpecialChars: Bool;
+    var length: Int;
+}
+
+typedef UrlValidation = {
+    var url: String;
+    var protocol: String;
+    var domain: String;
+}
+
 /**
  * ValidationHelper - Input validation utilities for Mix project
  * 
@@ -11,50 +55,6 @@ import elixir.types.Result;
  */
 @:module
 class ValidationHelper {
-
-    typedef UserInput = {
-        var name: String;
-        var email: String;
-        @:optional var age: Null<Int>;
-    }
-
-    typedef SanitizedUserInput = {
-        var name: String;
-        var email: String;
-        @:optional var age: Null<Int>;
-    }
-
-    typedef EmailValidation = {
-        var email: String;
-        var domain: String;
-    }
-
-    enum AgeCategory {
-        Child;
-        Teenager;
-        Adult;
-        Senior;
-    }
-
-    typedef AgeValidation = {
-        var age: Int;
-        var category: AgeCategory;
-    }
-
-    typedef PasswordStrength = {
-        var score: Int;
-        var hasLowercase: Bool;
-        var hasUppercase: Bool;
-        var hasNumbers: Bool;
-        var hasSpecialChars: Bool;
-        var length: Int;
-    }
-
-    typedef UrlValidation = {
-        var url: String;
-        var protocol: String;
-        var domain: String;
-    }
     
     /**
      * Validates user input data comprehensively

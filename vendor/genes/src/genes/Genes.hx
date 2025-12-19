@@ -31,6 +31,9 @@ class Genes {
       case EFunction(_, {args: args, expr: body}):
         final current = Context.getLocalClass().get().module;
         final ret = switch Context.typeExpr(body).t.toComplexType() {
+          // Macro boundary: if we cannot resolve a precise return type at compile time,
+          // we must conservatively widen to Dynamic so the generated JS can still compile.
+          // Users can keep strong typing by explicitly annotating the returned expression.
           case null: (macro:Dynamic);
           case v: v;
         }

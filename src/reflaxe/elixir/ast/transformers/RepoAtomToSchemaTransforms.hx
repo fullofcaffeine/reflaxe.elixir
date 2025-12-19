@@ -65,7 +65,7 @@ class RepoAtomToSchemaTransforms {
 
     public static function transformPass(ast: ElixirAST): ElixirAST {
         var app: Null<String> = null;
-        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e:Dynamic) {}
+        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
 
         // Helper: detect whether a subtree uses Ecto.Query macros (remote calls)
         function usesEctoQuery(node: ElixirAST): Bool {

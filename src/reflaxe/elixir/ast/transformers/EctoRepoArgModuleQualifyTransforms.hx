@@ -56,7 +56,7 @@ class EctoRepoArgModuleQualifyTransforms {
   static inline function getAppPrefix():Null<String> {
     try {
       return reflaxe.elixir.PhoenixMapper.getAppModuleName();
-    } catch (e:Dynamic) {
+    } catch (e) {
       return null;
     }
   }

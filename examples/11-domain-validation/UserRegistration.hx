@@ -350,6 +350,13 @@ typedef RegisteredUser = {
     registrationDate: NonEmptyString
 }
 
+typedef UserBatchRow = {
+    var userId: String;
+    var email: String;
+    var displayName: String;
+    var age: String;
+}
+
 /**
  * Service class demonstrating business logic with domain abstractions
  */
@@ -358,23 +365,13 @@ class UserService {
     /**
      * Validate and normalize user input for batch processing
      */
-    public static function validateUserBatch(userData: Array<Dynamic>): Result<Array<RegisteredUser>, Array<String>> {
+    public static function validateUserBatch(userData: Array<UserBatchRow>): Result<Array<RegisteredUser>, Array<String>> {
         var validUsers: Array<RegisteredUser> = [];
         var errors: Array<String> = [];
         
         for (i in 0...userData.length) {
             var data = userData[i];
-            var userIdStr = Reflect.field(data, "userId");
-            var emailStr = Reflect.field(data, "email");
-            var displayNameStr = Reflect.field(data, "displayName");
-            var ageStr = Reflect.field(data, "age");
-            
-            if (userIdStr == null || emailStr == null || displayNameStr == null || ageStr == null) {
-                errors.push('Row ${i + 1}: Missing required fields');
-                continue;
-            }
-            
-            switch (UserRegistration.registerUser(userIdStr, emailStr, displayNameStr, ageStr)) {
+            switch (UserRegistration.registerUser(data.userId, data.email, data.displayName, data.age)) {
                 case Ok(user):
                     validUsers.push(user);
                 case Error(reason):

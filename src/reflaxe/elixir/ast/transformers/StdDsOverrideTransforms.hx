@@ -49,7 +49,7 @@ class StdDsOverrideTransforms {
     static inline function balancedTreeDef(orig: ElixirAST): ElixirAST {
         return makeASTWithMeta(EDefmodule("BalancedTree", balancedTreeBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
     }
-    static inline function balancedTreeBlock(meta: Dynamic, pos: haxe.macro.Expr.Position): ElixirAST {
+    static inline function balancedTreeBlock(meta: reflaxe.elixir.ast.ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
         var raw = makeAST(ERaw(
             "  def set(struct, _key, _value), do: struct\n" +
             "  def get(_struct, _key), do: nil\n" +
@@ -68,7 +68,7 @@ class StdDsOverrideTransforms {
     static inline function enumValueMapDef(orig: ElixirAST): ElixirAST {
         return makeASTWithMeta(EDefmodule("EnumValueMap", enumValueMapBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
     }
-    static inline function enumValueMapBlock(meta: Dynamic, pos: haxe.macro.Expr.Position): ElixirAST {
+    static inline function enumValueMapBlock(meta: reflaxe.elixir.ast.ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
         var raw = makeAST(ERaw(
             "  def keys(struct), do: Map.keys(struct)\n" +
             "  def copy(struct), do: struct\n" +
@@ -81,7 +81,7 @@ class StdDsOverrideTransforms {
     static inline function treeNodeDef(orig: ElixirAST): ElixirAST {
         return makeASTWithMeta(EDefmodule("TreeNode", treeNodeBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
     }
-    static inline function treeNodeBlock(meta: Dynamic, pos: haxe.macro.Expr.Position): ElixirAST {
+    static inline function treeNodeBlock(meta: reflaxe.elixir.ast.ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
         var raw = makeAST(ERaw(
             "  def get_height(struct), do: Map.get(struct, :_height)\n" +
             "  def to_string(struct), do: inspect(struct)\n"

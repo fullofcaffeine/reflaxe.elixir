@@ -1,5 +1,7 @@
 package utils;
 
+import elixir.types.Result;
+
 /**
  * MathHelper - Mathematical operations and calculations for Mix project
  * 
@@ -34,7 +36,7 @@ class MathHelper {
      * Calculates discount based on various factors
      * Demonstrates business logic calculations
      */
-    public static function calculateDiscount(basePrice: Float, customerType: String, quantity: Int): Dynamic {
+    public static function calculateDiscount(basePrice: Float, customerType: String, quantity: Int): DiscountResult {
         var discount = 0.0;
         
         // Base discount by customer type
@@ -69,65 +71,59 @@ class MathHelper {
      * Calculates compound interest
      * Useful for financial calculations in applications
      */
-    public static function calculateCompoundInterest(principal: Float, rate: Float, time: Int, compound: Int = 1): Dynamic {
+    public static function calculateCompoundInterest(principal: Float, rate: Float, time: Int, compound: Int = 1): Result<CompoundInterestResult, String> {
         if (principal <= 0 || rate <= 0 || time <= 0 || compound <= 0) {
-            return {error: "Invalid parameters for compound interest calculation"};
+            return Error("Invalid parameters for compound interest calculation");
         }
         
         var rateDecimal = rate / 100.0;
         var amount = principal * Math.pow(1 + (rateDecimal / compound), compound * time);
         var interest = amount - principal;
         
-        return {
+        return Ok({
             principal: principal,
             rate: rate,
             time: time,
             compound: compound,
             amount: Math.round(amount * 100) / 100,
             interest: Math.round(interest * 100) / 100
-        };
+        });
     }
     
     /**
      * Validates numerical input and provides error information
      */
-    public static function validateNumber(input: Dynamic): Dynamic {
+    public static function validateNumber(input: String): Result<ValidatedNumber, String> {
         if (input == null) {
-            return {valid: false, error: "Input is null"};
+            return Error("Input is null");
         }
         
         // Try to convert to number
-        var number: Float;
-        try {
-            number = Std.parseFloat(Std.string(input));
-        } catch (e: Dynamic) {
-            return {valid: false, error: "Cannot convert to number"};
-        }
+        var number = Std.parseFloat(input);
         
         if (Math.isNaN(number)) {
-            return {valid: false, error: "Input is not a valid number"};
+            return Error("Input is not a valid number");
         }
         
         if (!Math.isFinite(number)) {
-            return {valid: false, error: "Input is not finite"};
+            return Error("Input is not finite");
         }
         
-        return {
-            valid: true,
+        return Ok({
             number: number,
             isInteger: number == Math.floor(number),
             isPositive: number > 0,
             isNegative: number < 0,
             absoluteValue: Math.abs(number)
-        };
+        });
     }
     
     /**
      * Performs statistical calculations on an array of numbers
      */
-    public static function calculateStats(numbers: Array<Float>): Dynamic {
+    public static function calculateStats(numbers: Array<Float>): Result<StatsResult, String> {
         if (numbers == null || numbers.length == 0) {
-            return {error: "Empty or null array provided"};
+            return Error("Empty or null array provided");
         }
         
         var sum = 0.0;
@@ -154,7 +150,7 @@ class MathHelper {
             median = sorted[midIndex];
         }
         
-        return {
+        return Ok({
             count: numbers.length,
             sum: sum,
             mean: mean,
@@ -162,7 +158,7 @@ class MathHelper {
             min: min,
             max: max,
             range: max - min
-        };
+        });
     }
     
     // Private helper functions
@@ -187,4 +183,39 @@ class MathHelper {
     public static function main(): Void {
         trace("MathHelper compiled successfully for Mix project!");
     }
+}
+
+typedef DiscountResult = {
+    var basePrice: Float;
+    var discount: Float;
+    var discountAmount: Float;
+    var finalPrice: Float;
+    var savings: Float;
+}
+
+typedef CompoundInterestResult = {
+    var principal: Float;
+    var rate: Float;
+    var time: Int;
+    var compound: Int;
+    var amount: Float;
+    var interest: Float;
+}
+
+typedef ValidatedNumber = {
+    var number: Float;
+    var isInteger: Bool;
+    var isPositive: Bool;
+    var isNegative: Bool;
+    var absoluteValue: Float;
+}
+
+typedef StatsResult = {
+    var count: Int;
+    var sum: Float;
+    var mean: Float;
+    var median: Float;
+    var min: Float;
+    var max: Float;
+    var range: Float;
 }

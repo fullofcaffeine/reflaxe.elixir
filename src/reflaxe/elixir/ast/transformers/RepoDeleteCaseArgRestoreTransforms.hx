@@ -347,7 +347,7 @@ class RepoDeleteCaseArgRestoreTransforms {
                         case ECase(expr2, _):
                             try {
                                 var printed = reflaxe.elixir.ast.ElixirASTPrinter.print(expr2, 0);
-                            } catch (e: Dynamic) {}
+                            } catch (e) {}
                         default:
                     }
                     #end

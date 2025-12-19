@@ -105,9 +105,9 @@ typedef ComprehensionInfo = {
 class LoopTransforms {
 
     #if no_traces
-    static inline function trace(msg:Dynamic, ?pos:haxe.PosInfos) {}
+    static inline function trace(msg:String, ?pos:haxe.PosInfos) {}
     #else
-    static inline function trace(msg:Dynamic, ?pos:haxe.PosInfos) {
+    static inline function trace(msg:String, ?pos:haxe.PosInfos) {
         haxe.Log.trace(msg, pos);
     }
     #end

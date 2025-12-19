@@ -1,5 +1,7 @@
 package controllers;
 
+import elixir.types.Term;
+
 /**
  * Product controller with resource routing
  * Demonstrates @:resources annotation and nested routes
@@ -22,15 +24,15 @@ class ProductController {
     }
     
     @:route({method: "POST", path: "/products/:product_id/reviews"})
-    public function create_review(product_id: Int, review: Dynamic): String {
+    public function create_review(product_id: Int, review: Term): String {
         return "Create review for product " + product_id;
     }
     
-    public function create(product: Dynamic): String {
+    public function create(product: Term): String {
         return "Create new product";
     }
     
-    public function update(id: Int, product: Dynamic): String {
+    public function update(id: Int, product: Term): String {
         return "Update product " + id;
     }
     

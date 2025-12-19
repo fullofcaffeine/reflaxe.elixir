@@ -1,6 +1,9 @@
 defmodule Main do
   def parse_number(input) do
-    parsed = String.to_integer(input)
+    parsed = ((case Integer.parse(input) do
+  {num, _} -> num
+  :error -> nil
+end))
     if (not Kernel.is_nil(parsed)), do: {:ok, parsed}, else: {:error, "Invalid number: " <> input}
   end
   def divide_numbers(a, b) do

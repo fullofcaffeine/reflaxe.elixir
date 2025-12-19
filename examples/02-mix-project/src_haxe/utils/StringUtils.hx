@@ -2,6 +2,14 @@ package utils;
 
 using StringTools;
 
+private typedef EmailProcessResult = {
+    valid: Bool,
+    ?error: String,
+    ?email: String,
+    ?domain: String,
+    ?username: String
+}
+
 /**
  * StringUtils - String processing utilities for Mix project
  * 
@@ -56,7 +64,7 @@ class StringUtils {
     /**
      * Validates and formats email addresses
      */
-    public static function processEmail(email: String): Dynamic {
+    public static function processEmail(email: String): EmailProcessResult {
         if (email == null) {
             return {valid: false, error: "Email is required"};
         }

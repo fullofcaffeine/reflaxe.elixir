@@ -2,18 +2,24 @@ package genes;
 
 import js.lib.Object;
 import js.Syntax;
+import haxe.DynamicAccess;
+import js.lib.Function;
 
 class Register {
   @:keep @:native("$global")
   public static final _global = js.Syntax.code('typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : undefined');
 
-  static final globals = {}
+  static final globals: DynamicAccess<Object> = {};
   @:keep @:native('new')
   static final construct = new js.lib.Symbol();
   @:keep static final init = new js.lib.Symbol();
 
   @:keep public static function global(name) {
-    return untyped globals[name] ? globals[name] : globals[name] = {};
+    var existing = globals[name];
+    if (existing != null) return existing;
+    var created: Object = new Object();
+    globals[name] = created;
+    return created;
   }
 
   @:keep public static function createStatic<T>(obj: {}, name: String,
@@ -39,14 +45,21 @@ class Register {
   }
 
   @:keep public static function iterator<T>(a: Array<T>): Void->Iterator<T> {
-    return if (!untyped Array.isArray(a))
-      js.Syntax.code('typeof a.iterator === "function" ? a.iterator.bind(a) : a.iterator') else
+    var isArray: Bool = Syntax.code("Array.isArray({0})", a);
+    return if (!isArray) {
+      Syntax.code('typeof {0}.iterator === "function" ? {0}.iterator.bind({0}) : {0}.iterator', a);
+    } else {
       mkIter.bind(a);
+    }
   }
 
   @:keep public static function getIterator<T>(a: Array<T>): Iterator<T> {
-    return if (!untyped Array.isArray(a)) js.Syntax.code('a.iterator()') else
+    var isArray: Bool = Syntax.code("Array.isArray({0})", a);
+    return if (!isArray) {
+      Syntax.code('{0}.iterator()', a);
+    } else {
       mkIter(a);
+    }
   }
 
   @:keep static function mkIter<T>(a: Array<T>): Iterator<T> {
@@ -94,21 +107,28 @@ class Register {
 
   static var fid = 0;
 
-  @:keep public static function bind(o: Dynamic, m: Dynamic) {
-    if (m == null)
-      return null;
-    if (m.__id__ == null)
-      m.__id__ = fid++;
-    var f = null;
-    if (o.hx__closures__ == null)
-      o.hx__closures__ = {}
-    else
-      f = o.hx__closures__[m.__id__];
-    if (f == null) {
-      f = m.bind(o);
-      o.hx__closures__[m.__id__] = f;
+  @:keep public static function bind(o: Object, m: Function): Null<Function> {
+    if (m == null) return null;
+
+    var id: Null<Int> = Syntax.code("{0}.__id__", m);
+    if (id == null) {
+      id = fid++;
+      Syntax.code("{0}.__id__ = {1}", m, id);
     }
-    return f;
+
+    var closures: Null<DynamicAccess<Function>> = Syntax.code("{0}.hx__closures__", o);
+    if (closures == null) {
+      closures = {};
+      Syntax.code("{0}.hx__closures__ = {1}", o, closures);
+    }
+
+    var key = Std.string(id);
+    var existing = closures[key];
+    if (existing != null) return existing;
+
+    var bound: Function = Syntax.code("{0}.bind({1})", m, o);
+    closures[key] = bound;
+    return bound;
   }
 }
 
