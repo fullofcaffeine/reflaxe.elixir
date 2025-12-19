@@ -81,10 +81,17 @@ end
 
 **Public/Private Pattern:**
 ```haxe
+private typedef User = {
+    name: String,
+    email: String,
+    id: String,
+    createdAt: String
+}
+
 @:module
 class UserUtil {
     // Public function - accessible from outside
-    function createUser(name: String, email: String): Dynamic {
+    function createUser(name: String, email: String): User {
         if (!isValidName(name)) {
             throw "Invalid name";
         }

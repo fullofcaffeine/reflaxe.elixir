@@ -16,8 +16,8 @@ defmodule MemoryStorage do
     _ = this1.remove(key)
   end
   def list(struct) do
-    k = this1 = struct.data
-    _ = this1.keys()
+    this1 = struct.data
+    k = _ = this1.keys()
     _ = Enum.each(k, fn item -> [].push(item) end)
     []
   end

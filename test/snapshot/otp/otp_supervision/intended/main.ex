@@ -31,28 +31,28 @@ defmodule Main do
     end
     _ = Task.task.start(fn -> nil end)
     linked_result = Task.task.start_link(fn -> nil end)
-    tasks = [Task.task.async(fn ->  end), Task.task.async(fn -> 2 end), Task.task.async(fn -> 3 end)]
+    tasks = [Task.task.async(fn -> nil end), Task.task.async(fn -> 2 end), Task.task.async(fn -> 3 end)]
     results = Task.task.yield_many(tasks)
     _ = Enum.each(results, (fn -> fn task_result ->
     if (task_result.result != nil), do: nil
 end end).())
-    quick_result = task = Task.task.async(fn -> "quick" end)
-    _ = Task.task.await(task)
-    concurrent_results = funs = [fn -> "a" end, fn -> "b" end, fn -> "c" end]
-    tasks = _ = Enum.each(funs, (fn -> fn fun ->
+    task = Task.task.async(fn -> "quick" end)
+    quick_result = _ = Task.task.await(task)
+    funs = [fn -> "a" end, fn -> "b" end, fn -> "c" end]
+    _ = Enum.each(funs, (fn -> fn fun ->
     [].push(Task.task.async(fun))
 end end).())
-    []
-    _ = Enum.each(tasks, (fn -> fn task ->
+    tasks = []
+    concurrent_results = _ = Enum.each(tasks, (fn -> fn task ->
     [].push(Task.task.await(task))
 end end).())
     []
-    timed_result = task = Task.task.async((fn -> fn ->
+    task = Task.task.async((fn -> fn ->
       Process.process.sleep(50)
       "timed"
     end end).())
     result = Task.task.yield(task, 100)
-    if (Kernel.is_nil(result)) do
+    timed_result = if (Kernel.is_nil(result)) do
       _ = Task.task.shutdown(task)
       nil
     else
@@ -77,17 +77,17 @@ end end).())
       _ = Supervisor.task.supervisor.start_child(supervisor, fn -> nil end)
       children = Supervisor.task.supervisor.children(supervisor)
       stream = Supervisor.task.supervisor.async_stream(supervisor, [10, 20, 30], fn x -> x + 1 end)
-      supervised_result = task = Supervisor.task.supervisor.async(supervisor, fn -> "helper result" end)
-      _ = Task.task.await(task)
-      concurrent_results = funs = [fn -> 100 end, fn -> 200 end, fn -> 300 end]
-      tasks = g = 0
+      task = Supervisor.task.supervisor.async(supervisor, fn -> "helper result" end)
+      supervised_result = _ = Task.task.await(task)
+      funs = [fn -> 100 end, fn -> 200 end, fn -> 300 end]
+      g = 0
       _ = Enum.map(funs, (fn -> fn item ->
   fun = funs[_g1]
   _g1 + 1
   _g = Enum.concat(_g, [Supervisor.task.supervisor.async(supervisor, fun)])
 end end).())
-      []
-      g = 0
+      tasks = []
+      concurrent_results = g = 0
       _ = Enum.map(tasks, (fn -> fn item ->
   task = tasks[_g1]
   _g1 + 1

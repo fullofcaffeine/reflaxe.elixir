@@ -223,8 +223,8 @@ end).() == "_suffix") do
     end
   end
   def main() do
-    nested_success = value = result = {:success, "deep value"}
-    result = {:success, value}
+    value = result = {:success, "deep value"}
+    nested_success = result = {:success, value}
     nil
   end
 end

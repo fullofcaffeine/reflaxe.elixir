@@ -237,8 +237,10 @@ var filtered = untyped __elixir__("
 
 ```haxe
 // The result is untyped
-var result = untyped __elixir__("DateTime.now()");
-// result has type 'Unknown' - no IntelliSense, no type checking
+import elixir.types.Term;
+
+var result: Term = untyped __elixir__("DateTime.now()");
+// result is an opaque Elixir term - no structural typing until you wrap/decode it
 
 // Cast if you need types
 var date: Date = cast untyped __elixir__("DateTime.now()");
@@ -270,12 +272,14 @@ var result = Date.now();
 ### 1. Document Why You're Using It
 
 ```haxe
+import elixir.types.Term;
+
 /**
  * Uses __elixir__ because:
  * - NaiveDateTime extern methods don't resolve properly
  * - Need to generate idiomatic Elixir code
  */
-public function toElixirDate(): Dynamic {
+public function toElixirDate(): Term {
     return untyped __elixir__("Date.from_erl!({0})", erlDate);
 }
 ```

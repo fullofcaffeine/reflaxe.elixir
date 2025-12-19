@@ -412,7 +412,50 @@ class CallExprBuilder {
         
         // Build the target and arguments
         var target = buildExpression(e);
-        var argASTs = [for (arg in args) buildExpression(arg)];
+
+        // Build arguments with awareness of the callee's expected types.
+        //
+        // WHY:
+        // - Some Elixir "compile-time marker" abstracts (notably `elixir.types.Atom`) need to
+        //   affect printing even though they are represented as `String` at the Haxe level.
+        // - Haxe does not always propagate abstract-expected types to literal constants in
+        //   the argument expression tree, so relying solely on `arg.t` can emit `"count"`
+        //   where `:count` is required (Phoenix assigns keys).
+        //
+        // HOW:
+        // - When the callee type is TFun, peek the expected arg types and, for Atom-typed
+        //   arguments, rewrite literal strings to atoms at the AST level.
+        var expectedArgTypes: Null<Array<Type>> = null;
+        switch (haxe.macro.TypeTools.follow(e.t)) {
+            case TFun(fnArgs, _):
+                expectedArgTypes = [for (a in fnArgs) a.t];
+            default:
+        }
+
+        inline function isAtomType(t: Null<Type>): Bool {
+            if (t == null) return false;
+            return switch (haxe.macro.TypeTools.follow(t)) {
+                case TAbstract(ref, _):
+                    var at = ref.get();
+                    at.pack.join(".") == "elixir.types" && at.name == "Atom";
+                default:
+                    false;
+            }
+        }
+
+        var argASTs: Array<ElixirAST> = [];
+        for (i in 0...args.length) {
+            var expected = (expectedArgTypes != null && i < expectedArgTypes.length) ? expectedArgTypes[i] : null;
+            var builtArg = buildExpression(args[i]);
+            if (isAtomType(expected)) {
+                switch (builtArg.def) {
+                    case EString(s):
+                        builtArg = makeASTWithMeta(EAtom(s), builtArg.metadata, builtArg.pos);
+                    default:
+                }
+            }
+            argASTs.push(builtArg);
+        }
         
         // Determine the call type
         switch(e.expr) {
@@ -475,11 +518,11 @@ class CallExprBuilder {
                             }
                         }
 
-                        // Check for Phoenix-specific patterns
-                        var phoenixCall = handlePhoenixCall(className, methodName, args, context);
-                        if (phoenixCall != null) {
-                            return phoenixCall;
-                        }
+	                        // Check for Phoenix-specific patterns
+	                        var phoenixCall = handlePhoenixCall(className, methodName, argASTs, context);
+	                        if (phoenixCall != null) {
+	                            return phoenixCall;
+	                        }
 
                         // CRITICAL FIX: Convert method name to snake_case for Elixir function calls
                         // Function definitions use snake_case (parse_action), so calls must match
@@ -786,8 +829,7 @@ class CallExprBuilder {
      * @param context Build context
      * @return ElixirASTDef for the Phoenix call, or null if not Phoenix-specific
      */
-    static function handlePhoenixCall(className: String, methodName: String, args: Array<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
-        var buildExpression = context.getExpressionBuilder();
+    static function handlePhoenixCall(className: String, methodName: String, argASTs: Array<ElixirAST>, context: CompilationContext): Null<ElixirASTDef> {
         
         #if debug_ast_builder
         // DISABLED: trace('[CallExpr] Checking Phoenix call: ${className}.${methodName}');
@@ -799,14 +841,12 @@ class CallExprBuilder {
                 case "subscribe", "unsubscribe":
                     // Phoenix.PubSub.subscribe/2 and unsubscribe/1 DO NOT take self()
                     var moduleRef = makeAST(EVar(className));
-                    var argASTs = [for (arg in args) buildExpression(arg)];
                     return ERemoteCall(moduleRef, methodName, argASTs);
 
                 case "broadcast", "broadcast_from":
                     // broadcast_from/3 takes a process (often self()) as first arg
                     // but we only add self() when the source explicitly provides it.
                     var moduleRef = makeAST(EVar(className));
-                    var argASTs = [for (arg in args) buildExpression(arg)];
                     return ERemoteCall(moduleRef, methodName, argASTs);
             }
         }
@@ -817,17 +857,15 @@ class CallExprBuilder {
                 case "track", "update", "untrack":
                     // Presence operations need self() as first argument
                     var moduleRef = makeAST(EVar(className));
-                    var argASTs = [for (arg in args) buildExpression(arg)];
-
+                    var callArgs = (argASTs != null) ? argASTs.copy() : [];
                     var selfCall = makeAST(ECall(null, "self", []));
-                    argASTs.unshift(selfCall);
+                    callArgs.unshift(selfCall);
                     
-                    return ERemoteCall(moduleRef, methodName, argASTs);
+                    return ERemoteCall(moduleRef, methodName, callArgs);
                     
                 case "list":
                     // list() doesn't need self()
                     var moduleRef = makeAST(EVar(className));
-                    var argASTs = [for (arg in args) buildExpression(arg)];
                     return ERemoteCall(moduleRef, methodName, argASTs);
             }
         }
@@ -838,13 +876,11 @@ class CallExprBuilder {
                 case "assign", "assign_new", "clear_flash", "put_flash":
                     // These are typically called with socket as first arg
                     var moduleRef = makeAST(EVar("Phoenix.LiveView"));
-                    var argASTs = [for (arg in args) buildExpression(arg)];
                     return ERemoteCall(moduleRef, methodName, argASTs);
                     
                 case "push_event", "push_patch", "push_redirect":
                     // Event pushing functions
                     var moduleRef = makeAST(EVar("Phoenix.LiveView"));
-                    var argASTs = [for (arg in args) buildExpression(arg)];
                     return ERemoteCall(moduleRef, methodName, argASTs);
             }
         }

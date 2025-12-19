@@ -30,12 +30,12 @@ src_haxe/
 @:behaviour
 class DataProcessor {
     @:callback
-    public function process_item(item: Dynamic, state: Dynamic): ProcessResult {
+    public function process_item(item: DataItem, state: ProcessorState): ProcessItemResponse {
         throw "Callback must be implemented by behavior user";
     }
     
     @:optional_callback  
-    public function get_stats(): Map<String, Dynamic> {
+    public function get_stats(): ProcessorStats {
         throw "Optional callback can be implemented by behavior user";
     }
 }
@@ -47,7 +47,7 @@ class DataProcessor {
 @:use(DataProcessor)
 class BatchProcessor {
     // Must implement all @:callback methods
-    public function process_item(item: Dynamic, state: Dynamic): ProcessResult {
+    public function process_item(item: DataItem, state: ProcessorState): ProcessItemResponse {
         // Implementation specific to batch processing
         return processInBatch(item, state);
     }

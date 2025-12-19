@@ -3268,13 +3268,12 @@ class ElixirASTTransformer {
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch(node.def) {
                 case EBlock(expressions):
-                    // Look for pipeline patterns in blocks
-                    var optimized = detectAndOptimizePipeline(expressions);
-                    if (optimized != null) {
-                        optimized;
-                    } else {
-                        node;
-                    }
+                    // Look for pipeline patterns in blocks and collapse them in-place.
+                    // IMPORTANT: Preserve all non-pipeline expressions in the block.
+                    var optimizedExpressions = detectAndOptimizePipeline(expressions);
+                    optimizedExpressions != null
+                        ? makeASTWithMeta(EBlock(optimizedExpressions), node.metadata, node.pos)
+                        : node;
                     
                 default:
                     node;
@@ -4887,104 +4886,92 @@ class ElixirASTTransformer {
     /**
      * Detect and optimize pipeline patterns in a block
      */
-    static function detectAndOptimizePipeline(expressions: Array<ElixirAST>): Null<ElixirAST> {
-        // Look for patterns like:
-        // x = f(x, ...)
-        // x = g(x, ...)
-        // x = h(x, ...)
-        // Also handles remote calls like:
-        // x = Module.f(x, ...)
-        // x = Module.g(x, ...)
-        
+    static function detectAndOptimizePipeline(expressions: Array<ElixirAST>): Null<Array<ElixirAST>> {
+        // Collapse contiguous patterns like:
+        //   x = f(x, ...)
+        //   x = g(x, ...)
+        // into:
+        //   x = x |> f(...) |> g(...)
+        //
+        // IMPORTANT: This runs on EBlock nodes and MUST preserve any non-pipeline
+        // expressions before/after the collapsed segment. Dropping them can erase
+        // required bindings and side effects (e.g., broadcasts, initial bindings).
+
         if (expressions.length < 2) return null;
-        
-        var pipelineOps = [];
-        var baseVar: String = null;
-        var lastExpr: ElixirAST = null;
-        
-        for (expr in expressions) {
-            switch(expr.def) {
-                case EMatch(PVar(name), call):
-                    switch(call.def) {
+
+        var didChange = false;
+        var optimizedExpressions: Array<ElixirAST> = [];
+
+        function parsePipelineAssign(expr: ElixirAST): Null<{ varName: String, func: String, args: Array<ElixirAST>, target: Null<ElixirAST> }> {
+            return switch (expr.def) {
+                case EMatch(PVar(varName), call):
+                    switch (call.def) {
                         case ECall(target, func, args):
-                            if (args.length > 0) {
-                                switch(args[0].def) {
-                                    case EVar(argName) if (argName == name):
-                                        // Found a pipeline candidate
-                                        if (baseVar == null) {
-                                            baseVar = name;
-                                        }
-                                        if (baseVar == name) {
-                                            pipelineOps.push({
-                                                func: func,
-                                                args: args.slice(1),
-                                                target: target
-                                            });
-                                            lastExpr = expr;
-                                            continue;
-                                        }
-                                    default:
-                                }
-                            }
+                            (args.length > 0 && switch (args[0].def) { case EVar(argName): argName == varName; default: false; })
+                                ? { varName: varName, func: func, args: args.slice(1), target: target }
+                                : null;
                         case ERemoteCall(module, func, args):
-                            // Handle remote calls like EctoQuery_Impl_.where(query, ...)
-                            if (args.length > 0) {
-                                switch(args[0].def) {
-                                    case EVar(argName) if (argName == name):
-                                        // Found a pipeline candidate for remote call
-                                        if (baseVar == null) {
-                                            baseVar = name;
-                                        }
-                                        if (baseVar == name) {
-                                            pipelineOps.push({
-                                                func: func,
-                                                args: args.slice(1),
-                                                target: module  // Use module as target
-                                            });
-                                            lastExpr = expr;
-                                            continue;
-                                        }
-                                    default:
-                                }
-                            }
+                            (args.length > 0 && switch (args[0].def) { case EVar(argName): argName == varName; default: false; })
+                                ? { varName: varName, func: func, args: args.slice(1), target: module }
+                                : null;
                         default:
+                            null;
                     }
                 default:
-            }
-            
-            // Pattern broken, check if we have enough for a pipeline
-            if (pipelineOps.length >= 2) {
-                break;
-            } else {
-                // Reset and continue looking
-                pipelineOps = [];
-                baseVar = null;
-            }
+                    null;
+            };
         }
-        
-        // Create pipeline if we found a pattern
-        if (pipelineOps.length >= 2) {
+
+        function buildPipelineAssign(baseVar: String, ops: Array<{ func: String, args: Array<ElixirAST>, target: Null<ElixirAST> }>, metaFrom: ElixirAST): ElixirAST {
             var pipeline = makeAST(EVar(baseVar));
-            
-            for (op in pipelineOps) {
-                if (op.target != null) {
-                    pipeline = makeAST(EPipe(
-                        pipeline,
-                        makeAST(ERemoteCall(op.target, op.func, op.args))
-                    ));
-                } else {
-                    pipeline = makeAST(EPipe(
-                        pipeline,
-                        makeAST(ECall(null, op.func, op.args))
-                    ));
-                }
+            for (op in ops) {
+                pipeline = makeAST(EPipe(
+                    pipeline,
+                    op.target != null
+                        ? makeAST(ERemoteCall(op.target, op.func, op.args))
+                        : makeAST(ECall(null, op.func, op.args))
+                ));
             }
-            
-            // Create final assignment
-            return makeAST(EMatch(PVar(baseVar), pipeline));
+            return makeASTWithMeta(EMatch(PVar(baseVar), pipeline), metaFrom.metadata, metaFrom.pos);
         }
-        
-        return null;
+
+        var index = 0;
+        while (index < expressions.length) {
+            var expr = expressions[index];
+
+            var first = parsePipelineAssign(expr);
+            if (first == null) {
+                optimizedExpressions.push(expr);
+                index++;
+                continue;
+            }
+
+            var baseVar = first.varName;
+            var ops: Array<{ func: String, args: Array<ElixirAST>, target: Null<ElixirAST> }> = [
+                { func: first.func, args: first.args, target: first.target }
+            ];
+
+            var scanIndex = index + 1;
+            var lastExprInChain = expr;
+            while (scanIndex < expressions.length) {
+                var next = parsePipelineAssign(expressions[scanIndex]);
+                if (next == null || next.varName != baseVar) break;
+                ops.push({ func: next.func, args: next.args, target: next.target });
+                lastExprInChain = expressions[scanIndex];
+                scanIndex++;
+            }
+
+            if (ops.length >= 2) {
+                didChange = true;
+                optimizedExpressions.push(buildPipelineAssign(baseVar, ops, lastExprInChain));
+                index = scanIndex;
+            } else {
+                optimizedExpressions.push(expr);
+                index++;
+            }
+        }
+
+        return didChange ? optimizedExpressions : null;
     }
     
     /**

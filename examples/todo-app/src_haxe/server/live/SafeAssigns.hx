@@ -73,21 +73,24 @@ class SafeAssigns {
      * - The field name is converted to :editing_todo in Elixir
      */
     public static function setEditingTodo(socket: Socket<TodoLiveAssigns>, todo: Null<server.schemas.Todo>): Socket<TodoLiveAssigns> {
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.editing_todo, todo);
+        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(_.editing_todo, todo);
     }
     
     /**
      * Set the selectedTags field using LiveSocket's type-safe assign pattern
      */
     public static function setSelectedTags(socket: Socket<TodoLiveAssigns>, tags: Array<String>): Socket<TodoLiveAssigns> {
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.selected_tags, tags);
+        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(_.selected_tags, tags);
     }
     
     /**
      * Set the filter field using LiveSocket's type-safe assign pattern
      */
     public static function setFilter(socket: Socket<TodoLiveAssigns>, filter: String): Socket<TodoLiveAssigns> {
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(
+        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(
             _.filter,
             switch (filter) {
                 case "active": shared.TodoTypes.TodoFilter.Active;
@@ -101,7 +104,8 @@ class SafeAssigns {
      * Set the sortBy field using LiveSocket's type-safe assign pattern
      */
     public static function setSortBy(socket: Socket<TodoLiveAssigns>, sortBy: String): Socket<TodoLiveAssigns> {
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(
+        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(
             _.sort_by,
             switch (sortBy) {
                 case "priority": shared.TodoTypes.TodoSort.Priority;
@@ -117,7 +121,8 @@ class SafeAssigns {
      * cross-module helper dependencies.
      */
     public static function setSortByAndResort(socket: Socket<TodoLiveAssigns>, sortBy: String): Socket<TodoLiveAssigns> {
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(
+        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(
             _.sort_by,
             switch (sortBy) {
                 case "priority": shared.TodoTypes.TodoSort.Priority;
@@ -131,14 +136,16 @@ class SafeAssigns {
      * Set the searchQuery field using LiveSocket's type-safe assign pattern
      */
     public static function setSearchQuery(socket: Socket<TodoLiveAssigns>, query: String): Socket<TodoLiveAssigns> {
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.search_query, query);
+        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(_.search_query, query);
     }
     
     /**
      * Set the showForm field using LiveSocket's type-safe assign pattern
      */
     public static function setShowForm(socket: Socket<TodoLiveAssigns>, showForm: Bool): Socket<TodoLiveAssigns> {
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.show_form, showForm);
+        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(_.show_form, showForm);
     }
 
     /**
@@ -152,7 +159,8 @@ class SafeAssigns {
         } else {
             List.insertAt(currentTags, 0, tag);
         };
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.selected_tags, updatedTags);
+        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(_.selected_tags, updatedTags);
     }
 
     /**
@@ -175,7 +183,8 @@ class SafeAssigns {
         var pending = countPending(todos);
 
         // Use LiveSocket's type-safe merge for bulk updates
-        final updatedSocket = (cast socket: LiveSocket<TodoLiveAssigns>).merge({
+        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        final updatedSocket = liveSocket.merge({
             todos: todos,
             total_todos: todos.length,
             completed_todos: completed,
@@ -191,7 +200,8 @@ class SafeAssigns {
      * Uses LiveSocket's assign pattern for single field update.
      */
     public static function setTodos(socket: Socket<TodoLiveAssigns>, todos: Array<server.schemas.Todo>): Socket<TodoLiveAssigns> {
-        return (cast socket: LiveSocket<TodoLiveAssigns>).assign(_.todos, todos);
+        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+        return liveSocket.assign(_.todos, todos);
     }
     
     /**

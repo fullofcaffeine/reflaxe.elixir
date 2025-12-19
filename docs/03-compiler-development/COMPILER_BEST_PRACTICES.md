@@ -60,7 +60,7 @@ This document consolidates proven compiler development patterns and best practic
 - **Test types** (Conn, Changeset<T>, LiveView, etc.) belong in the standard library at `/std/phoenix/test/` and `/std/ecto/test/`
 - **Applications** should import from standard library: `import phoenix.test.Conn` NOT `typedef Conn = Dynamic`
 - **This ensures**: consistency, reusability, proper maintenance, and type safety across all projects
-- **Example**: `import ecto.Changeset; var changeset: Changeset<User>` NOT `var changeset: Dynamic`
+- **Example**: `import ecto.Changeset; var changeset: Changeset<User>` (avoid dynamic types in signatures)
 
 ### ⚠️ CRITICAL: No Simplifications or Workarounds for Testing
 **NEVER simplify code just to make tests pass or to bypass compilation issues.**
@@ -297,20 +297,17 @@ if (target != null && js.Syntax.instanceof(target, js.html.Element)) {
 6. **Type safety first** - Always use `js.Syntax.instanceof()` before casting DOM elements
 7. **Performance APIs** - Use `PerformanceNavigationTiming` instead of deprecated `PerformanceTiming`
 
-## Dynamic Type Usage Guidelines ⚠️
+## Dynamic / untyped Policy ⚠️
 
-**Dynamic should be used with caution** and only when necessary:
-- ✅ **When to use Dynamic**: Catch blocks (error types vary), reflection operations, external API integration
-- ✅ **Always add justification comment** when using Dynamic to explain why it's necessary
-- ❌ **Avoid Dynamic when generics or specific types work** - prefer type safety
-- 📝 **Example of proper Dynamic usage**:
-  ```haxe
-  } catch (e: Dynamic) {
-      // Dynamic used here because Haxe's catch can throw various error types
-      // Converting to String for error reporting
-      EctoErrorReporter.reportSchemaError(className, Std.string(e), pos);
-  }
-  ```
+Reflaxe.Elixir aims to keep *application code* fully typed and free of escape hatches.
+
+- ❌ Do not use `Dynamic`, `Any`, or `untyped` in app/example Haxe code.
+- ✅ Use explicit boundary types instead:
+  - `elixir.types.Term` for opaque Elixir terms (e.g. Phoenix params/session payloads, Ecto structs).
+  - `reflaxe.js.Unknown` for explicit JS interop boundaries (e.g. genes dynamic imports).
+- ✅ Prefer typed externs, wrappers, and macros so callers stay typed.
+- ✅ For exceptions, prefer `catch (err: haxe.Exception)` (typed surface) and convert to strings/messages as needed.
+- 🧩 Compiler/macro internals may still touch `Dynamic` where Haxe’s macro APIs require it, but it must not leak into public APIs; document why when it’s unavoidable.
 
 ## Quality Standards and Testing
 
@@ -322,12 +319,14 @@ if (target != null && js.Syntax.instanceof(target, js.html.Element)) {
 2. **Test Specific Feature**: `haxe test/Test.hxml test=feature_name`
 3. **Update Snapshots When Improved**: `haxe test/Test.hxml update-intended`
 4. **Validate Runtime**: `MIX_ENV=test mix test`
-5. **Test Todo-App Integration**:
+5. **Test Todo-App Integration (bounded, no hangs)**:
    ```bash
-   cd examples/todo-app
-   rm -rf lib/*.ex lib/**/*.ex
-   haxe build-server.hxml
-   mix compile --force
+   # Quick (repo root)
+   npm run qa:sentinel
+
+   # Agent/CI-safe (non-blocking)
+   scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose
+   scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 60
    ```
 
 #### Testing Requirements

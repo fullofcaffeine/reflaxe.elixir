@@ -8,6 +8,7 @@ defmodule StringUtils do
         "[empty]"
       else
         processed = processed |> remove_excess_whitespace() |> normalize_case()
+        processed
       end
     end
   end
@@ -49,7 +50,47 @@ end end).())
     if (Kernel.is_nil(text)) do
       ""
     else
+      s = String.downcase(text)
+      slug = _ = StringTools.ltrim(StringTools.rtrim(s))
       slug = slug |> EReg.new("[^a-z0-9\\s-]", "g").replace("") |> EReg.new("\\s+", "g").replace("-") |> EReg.new("-+", "g").replace("-")
+      _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, (fn -> fn _, {slug} ->
+  if (String.at(slug, 0) || "" == "-") do
+    slug = len = nil
+    if (len == nil) do
+      String.slice(slug, 1..-1)
+    else
+      String.slice(slug, 1, len)
+    end
+    {:cont, {(fn -> len = nil
+if (len == nil) do
+  String.slice(slug, 1..-1)
+else
+  String.slice(slug, 1, len)
+end end).()}}
+  else
+    {:halt, {slug}}
+  end
+end end).())
+      _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug, index}, (fn -> fn _, {slug, index} ->
+  if (index = (length(slug) - 1)
+String.at(slug, index) || "" == "-") do
+    slug = len = (length(slug) - 1)
+    if (len == nil) do
+      String.slice(slug, 0..-1)
+    else
+      String.slice(slug, 0, len)
+    end
+    {:cont, {(fn -> len = (length(slug) - 1)
+if (len == nil) do
+  String.slice(slug, 0..-1)
+else
+  String.slice(slug, 0, len)
+end end).(), index}}
+  else
+    {:halt, {slug, index}}
+  end
+end end).())
+      slug
     end
   end
   def truncate(text, max_length) do
@@ -59,18 +100,18 @@ end end).())
       if (length(text) <= max_length) do
         text
       else
-        truncated = len = (max_length - 3)
-        if (Kernel.is_nil(len)) do
+        len = (max_length - 3)
+        truncated = if (Kernel.is_nil(len)) do
           String.slice(text, 0..-1)
         else
           String.slice(text, 0, len)
         end
-        last_space = start_index = nil
+        start_index = nil
         if (Kernel.is_nil(start_index)) do
           start_index = length(truncated)
         end
         sub = String.slice(truncated, 0, start_index)
-        case String.split(sub, " ") do
+        last_space = case String.split(sub, " ") do
             parts when length(parts) > 1 ->
                 String.length(Enum.join(Enum.slice(parts, 0..-2), " "))
             _ -> -1

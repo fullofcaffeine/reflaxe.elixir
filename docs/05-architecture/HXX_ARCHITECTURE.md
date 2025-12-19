@@ -78,7 +78,13 @@ case TBinop(OpAdd, _, _):
 
 Input Haxe:
 ```haxe
-function render(assigns: Dynamic): String {
+import phoenix.types.Assigns;
+
+typedef UserAssigns = {
+  user: { name: String }
+}
+
+function render(assigns: Assigns<UserAssigns>): String {
     return HXX.hxx('<div class="user">${assigns.user.name}</div>');
 }
 ```
@@ -189,7 +195,9 @@ class LiveViewHelper {
 }
 
 // ✅ GOOD: Direct Phoenix integration
-function render(assigns: Dynamic): String {
+import phoenix.types.Assigns;
+
+function render(_assigns: Assigns<{}>): String {
     return HXX.hxx('<div>Direct HEEx generation</div>');
 }
 ```

@@ -200,7 +200,7 @@ end end).())
   end
   def nested_in_expression() do
     sum = 0
-    data = _ = [(fn ->
+    _ = [(fn ->
   _ = [0]
   _ = [1]
   _ = [2]
@@ -218,7 +218,7 @@ end).()]
   _ = [4]
   []
 end).()]
-    []
+    data = []
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, data}, (fn -> fn _, {sum, data} ->
   if (0 < length(data)) do
     row = data[0]

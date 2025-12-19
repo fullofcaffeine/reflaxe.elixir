@@ -106,7 +106,7 @@ extern class Controller {
     /**
      * Assign values to the connection for templates
      */
-    static function assign<T>(conn: Conn, key: String, value: T): Conn;
+    static function assign<T>(conn: Conn, key: Atom, value: T): Conn;
     
     /**
      * Assign multiple values at once
@@ -166,20 +166,24 @@ extern class LiveView {
      * Assign single value to the socket
      * 
      * Phoenix.LiveView.assign/3 accepts any value for the given key.
-     * The key must be a string that will be converted to an atom in Elixir.
+     *
+     * NOTE: Phoenix assigns keys are atoms in Elixir. This extern uses `elixir.types.Atom`
+     * so the compiler emits `:key` atoms rather than `"key"` strings.
      * 
      * Example:
      * ```haxe
+     * // Atom is an abstract over String, so string literals are accepted
+     * // and compile to atoms in Elixir: :user, :count
      * socket = LiveView.assign(socket, "user", currentUser);
      * socket = LiveView.assign(socket, "count", 42);
      * ```
      * 
      * @param TAssigns The type of socket assigns structure
-     * @param key The assign key (will be converted to atom in Elixir)
+     * @param key The assign key (emits an atom in Elixir)
      * @param value The value to assign (can be any type)
      */
     @:overload(function<TAssigns, TPartial>(socket: Socket<TAssigns>, assigns: TPartial): Socket<TAssigns> {})
-    static function assign<TAssigns, TValue>(socket: Socket<TAssigns>, key: String, value: TValue): Socket<TAssigns>;
+    static function assign<TAssigns, TValue>(socket: Socket<TAssigns>, key: Atom, value: TValue): Socket<TAssigns>;
     
     /**
      * Assign multiple values to the socket using a map of assigns

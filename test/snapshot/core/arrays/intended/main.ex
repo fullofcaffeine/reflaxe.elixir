@@ -55,7 +55,7 @@ end end).())
   end
   def array_comprehensions() do
     squares = [1, 4, 9, 16, 25]
-    even_squares = g = []
+    g = []
     nil
     g ++ [4]
     nil
@@ -65,15 +65,15 @@ end end).())
     nil
     g ++ [64]
     nil
-    g
-    pairs = g = []
+    even_squares = g
+    g = []
     _ = g ++ [%{:x => 1, :y => 2}]
     _ = g ++ [%{:x => 1, :y => 3}]
     _ = g ++ [%{:x => 2, :y => 1}]
     _ = g ++ [%{:x => 2, :y => 3}]
     _ = g ++ [%{:x => 3, :y => 1}]
     _ = g ++ [%{:x => 3, :y => 2}]
-    g
+    pairs = g
     nil
   end
   def multi_dimensional() do
@@ -89,7 +89,7 @@ end end).())
     end
   end end).())
 end end).())
-    grid = _ = [(fn ->
+    _ = [(fn ->
   _ = [0]
   _ = [1]
   _ = [2]
@@ -107,7 +107,7 @@ end).()]
   _ = [8]
   []
 end).()]
-    []
+    grid = []
     nil
   end
   def process_array(arr) do

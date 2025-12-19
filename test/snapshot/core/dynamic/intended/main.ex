@@ -47,7 +47,13 @@ end))
     value
   end
   def dynamic_collections() do
+    dyn_array = [1, "two", 3, true, %{:x => 10}]
+    _ = Enum.each(dyn_array, (fn -> fn _ ->
+    nil
+end end).())
+    dyn_obj = %{}
     dyn_obj = dyn_obj |> Map.put("field1", "value1") |> Map.put("field2", 42) |> Map.put("field3", [1, 2, 3])
+    nil
   end
   def process_dynamic(value) do
     cond do
@@ -61,7 +67,12 @@ end))
     end
   end
   def dynamic_method_calls() do
+    obj = %{}
     obj = obj |> Map.put("value", 10) |> Map.put("increment", fn -> Map.get(obj, :value) + 1 end) |> Map.put("get_value", fn -> Map.get(obj, :value) end)
+    _ = Map.get(obj, :increment).()
+    method_name = "increment"
+    _ = Reflect.call_method(obj, Map.get(obj, method_name), [])
+    nil
   end
   def main() do
     _ = dynamic_vars()

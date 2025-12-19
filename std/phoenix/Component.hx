@@ -1,10 +1,12 @@
 package phoenix;
 
 import elixir.types.Term;
+import elixir.types.Atom;
 import phoenix.types.Assigns;
 import phoenix.types.Flash;
 import phoenix.types.Flash.FlashType;
 import phoenix.types.Flash.FlashMap;
+import phoenix.Phoenix.Socket;
 
 /**
  * Phoenix.Component extern definitions for template helpers
@@ -56,8 +58,25 @@ extern class Component {
      * @param value Assignment value (for single assignment)
      * @return Assigns<T> Updated type-safe assigns map
      */
+    @:overload(function<TAssigns, TPartial>(socket: Socket<TAssigns>, new_assigns: TPartial): Socket<TAssigns> {})
+    @:overload(function<T, V>(assigns: Assigns<T>, key: Atom, value: V): Assigns<T> {})
     @:overload(function<T>(assigns: Assigns<T>, new_assigns: T): Assigns<T> {})
-    static function assign<T, V>(assigns: Assigns<T>, key: String, value: V): Assigns<T>;
+    static function assign<TAssigns, TValue>(socket: Socket<TAssigns>, key: Atom, value: TValue): Socket<TAssigns>;
+
+    /**
+     * Conditionally assign a value if the key is not already present.
+     *
+     * Compiles to Phoenix.Component.assign_new/3.
+     */
+    @:native("assign_new")
+    static function assignNew<TAssigns, TValue>(socket: Socket<TAssigns>, key: Atom, func: () -> TValue): Socket<TAssigns>;
+
+    /**
+     * Update an assign by applying a function to the existing value.
+     *
+     * Compiles to Phoenix.Component.update/3.
+     */
+    static function update<TAssigns, TValue>(socket: Socket<TAssigns>, key: Atom, updater: TValue -> TValue): Socket<TAssigns>;
     
     /**
      * Get flash messages from the session

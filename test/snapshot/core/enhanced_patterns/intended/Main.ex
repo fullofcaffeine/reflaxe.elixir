@@ -220,11 +220,11 @@ end))
     expected_name = "test"
     test_value = 42
     test_name = "test"
-    result1 = value = test_value
-    if (value == expected_value), do: "Matches expected value", else: "Different value"
-    result2 = v = test_value
+    value = test_value
+    result1 = if (value == expected_value), do: "Matches expected value", else: "Different value"
+    v = test_value
     n = test_name
-    if (v == expected_value and n == expected_name) do
+    result2 = if (v == expected_value and n == expected_name) do
       "Both match"
     else
       v = test_value

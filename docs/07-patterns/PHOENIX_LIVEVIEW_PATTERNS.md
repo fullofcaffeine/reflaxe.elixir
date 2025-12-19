@@ -72,9 +72,12 @@ typedef CreateTodoParams = {
   ?description: String
 };
 
+import elixir.ElixirMap;
+import elixir.types.Term;
+
 class Params {
-  public static function getString(params: Dynamic, key: String): Null<String> {
-    var value: Dynamic = Reflect.field(params, key);
+  public static function getString(params: Term, key: String): Null<String> {
+    var value: Term = ElixirMap.get(params, key);
     return (value == null) ? null : Std.string(value);
   }
 }

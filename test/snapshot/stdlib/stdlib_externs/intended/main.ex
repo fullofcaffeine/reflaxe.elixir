@@ -28,15 +28,15 @@ defmodule Main do
     keys = Registry.registry.keys("MyRegistry", Process.process.self())
   end
   defp test_agent_externs() do
-    agent_result = Agent.agent.start_link(fn ->  end)
+    agent_result = Agent.agent.start_link(fn -> nil end)
     state = Agent.agent.get(nil, fn count -> count end)
     _ = Agent.agent.update(nil, fn count -> count + 1 end)
     _ = Agent.agent.cast(nil, fn count -> count + 1 end)
     counter_agent = Agent.agent.start_link(fn -> 10 end)
     agent = nil
     _ = Agent.agent.update(agent, fn count -> count + 5 end)
-    current_count = agent = nil
-    _ = Agent.agent.get(agent, fn count -> count end)
+    agent = nil
+    current_count = _ = Agent.agent.get(agent, fn count -> count end)
   end
   defp test_io_externs() do
     _ = IO.io.puts("Hello, World!")
@@ -60,12 +60,12 @@ defmodule Main do
     _ = IO.io.write("#{(fn -> color end).()}Success text#{(fn -> IO.IO.ANSI.reset end).()}")
     color = IO.IO.ANSI.blue
     _ = IO.io.write("#{(fn -> color end).()}Info text#{(fn -> IO.IO.ANSI.reset end).()}")
-    formatted = label = "Array"
+    label = "Array"
     if (Kernel.is_nil(label)) do
       label = ""
     end
     result = IO.io.iodata_to_binary(IO.io.inspect([1, 2, 3]))
-    if (label != "") do
+    formatted = if (label != "") do
       "#{(fn -> label end).()}: #{(fn -> result end).()}"
     else
       result
@@ -84,19 +84,19 @@ defmodule Main do
     ls_result = File.file.ls(".")
     copy_result = File.file.copy("source.txt", "dest.txt")
     rename_result = File.file.rename("old.txt", "new.txt")
-    text_content = result = File.file.read("text_file.txt")
-    if (result._0 == "ok"), do: result._1, else: nil
-    write_success = result = File.file.write("output.txt", "content")
-    result._0 == "ok"
-    lines = content = result = File.file.read("multi_line.txt")
-    if (result._0 == "ok"), do: result._1, else: nil
-    if (not Kernel.is_nil(content)) do
+    result = File.file.read("text_file.txt")
+    text_content = if (result._0 == "ok"), do: result._1, else: nil
+    result = File.file.write("output.txt", "content")
+    write_success = result._0 == "ok"
+    result = File.file.read("multi_line.txt")
+    content = if (result._0 == "ok"), do: result._1, else: nil
+    lines = if (not Kernel.is_nil(content)) do
       String.split(content, "\n")
     else
       nil
     end
-    dir_created = result = File.file.mkdir_p("new_dir")
-    result._0 == "ok"
+    result = File.file.mkdir_p("new_dir")
+    dir_created = result._0 == "ok"
   end
   defp test_path_externs() do
     joined = Path.path.join(["home", "user", "documents"])
@@ -173,13 +173,13 @@ defmodule Main do
     to_int_result = String.string.to_integer("123")
     to_float_result = String.string.to_float("123.45")
     is_empty = String.string.length("") == 0
-    is_blank = string = String.trim("   ")
-    String.string.length(string) == 0
-    left_padded = pad_with = "0"
+    string = String.trim("   ")
+    is_blank = String.string.length(string) == 0
+    pad_with = "0"
     if (Kernel.is_nil(pad_with)) do
       pad_with = " "
     end
-    if (String.string.length("test") >= 10) do
+    left_padded = if (String.string.length("test") >= 10) do
       "test"
     else
       String.string.pad_leading("test", 10, pad_with)

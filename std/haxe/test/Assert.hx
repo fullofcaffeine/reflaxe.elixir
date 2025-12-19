@@ -1,5 +1,7 @@
 package haxe.test;
 
+import elixir.types.Term;
+
 /**
  * ExUnit assertion API for Haxe tests.
  * 
@@ -142,10 +144,10 @@ class Assert {
      * Assert that a function raises an exception.
      * 
      * @param fn Function to execute
-     * @param exceptionType Expected exception type (optional)
+     * @param exceptionModule Expected exception module (optional, Elixir module atom)
      * @param message Optional failure message
      */
-    public static function raises(fn: () -> Void, ?exceptionType: Class<Dynamic>, ?message: String): Void {
+    public static function raises(fn: () -> Void, ?exceptionModule: Term, ?message: String): Void {
         throw "Assert.raises should be compiled by ExUnitCompiler";
     }
     
@@ -253,7 +255,7 @@ class Assert {
      * @param timeout Timeout in milliseconds (default: 100)
      * @param message Optional failure message
      */
-    public static function received(pattern: Dynamic, ?timeout: Int = 100, ?message: String): Void {
+    public static function received(pattern: Term, ?timeout: Int = 100, ?message: String): Void {
         throw "Assert.received should be compiled by ExUnitCompiler";
     }
 }

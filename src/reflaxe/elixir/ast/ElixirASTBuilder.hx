@@ -3492,9 +3492,26 @@ class ElixirASTBuilder {
                 convertExpression(e);
 
             case TCast(e, _):
-                // Elixir has no explicit casts - uses pattern matching instead
-                // Just process the expression, ignoring the module type hint
-                convertExpression(e);
+                // Elixir has no explicit casts - uses pattern matching instead.
+                //
+                // However, `elixir.types.Atom` is a *compile-time* marker used to
+                // generate atoms instead of strings. Haxe commonly represents the
+                // implicit String→Atom abstract conversion as a `TCast`. If we
+                // drop the cast blindly, we lose the Atom type and emit `"foo"`
+                // where `:foo` is required (e.g. Phoenix assigns keys).
+                switch (expr.t) {
+                    case TAbstract(ref, _) if (ref.get().pack.join(".") == "elixir.types" && ref.get().name == "Atom"):
+                        var inner = convertExpression(e);
+                        switch (inner) {
+                            case EString(s):
+                                EAtom(s);
+                            case _:
+                                inner;
+                        }
+                    case _:
+                        // Default: ignore casts.
+                        convertExpression(e);
+                }
 
             case TTypeExpr(m):
                 // Type expressions become module references (ModuleName), not atoms

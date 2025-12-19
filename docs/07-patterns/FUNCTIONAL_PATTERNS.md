@@ -386,56 +386,48 @@ Potential improvements to the transformation system:
 5. **With Expressions**: Transform nested error handling to `with` expressions
 6. **More Array Methods**: Support slice, take, drop, reverse, sort operations
 
-## Dynamic Type Handling
+## Opaque Boundary Types (Term)
 
 ### Overview
-When working with Dynamic types (common in LiveView socket assigns, JSON parsing, etc.), the compiler provides intelligent transformations to ensure idiomatic Elixir output.
+When you cross into framework boundaries (Phoenix params maps, JSON payloads, PubSub messages, etc.), represent unknown shapes as `elixir.types.Term` rather than `Dynamic`.
 
-### Dynamic Array Operations
+Application code should prefer **typed `typedef`s** for params and assigns; use `Term` only when a value is truly polymorphic.
 
-```haxe
-// Haxe - Dynamic typed socket assigns
-var socket: Dynamic = getSocket();
-var todos = socket.assigns.todos;
-var completed = todos.filter(t -> t.completed);
-var titles = todos.map(t -> t.title);
-var count = todos.length;
-```
-
-```elixir
-# Generated Elixir - Proper Enum functions
-socket = get_socket()
-todos = socket.assigns.todos
-completed = Enum.filter(todos, fn t -> t.completed end)
-titles = Enum.map(todos, fn t -> t.title end)  
-count = length(todos)
-```
-
-### How It Works
-The compiler uses `isArrayMethod()` to detect common array operations regardless of type:
-- Typed Arrays get optimal transformations
-- Dynamic values with array-like methods get Enum transformations
-- Property access like `.length` becomes function calls
-
-### Best Practice: Progressive Typing
+### Typed Collection Operations (preferred)
 
 ```haxe
-// Phase 1: Prototype with Dynamic
-function processItems(data: Dynamic): Dynamic {
-    return data.items.filter(item -> item.active);
-}
+import phoenix.LiveSocket;
+import phoenix.Phoenix.Socket;
 
-// Phase 2: Add types as API stabilizes
-typedef Data = {
-    items: Array<Item>
-}
+typedef Todo = { id: Int, title: String, completed: Bool }
+typedef Assigns = { todos: Array<Todo> }
 
-function processItems(data: Data): Array<Item> {
-    return data.items.filter(item -> item.active);
+function compute(socket: Socket<Assigns>) {
+    var liveSocket: LiveSocket<Assigns> = cast socket;
+    var todos = liveSocket.assigns.todos;
+
+    var completed = todos.filter(t -> t.completed);
+    var titles = todos.map(t -> t.title);
+    var count = todos.length;
 }
 ```
 
-**See**: [`/docs/05-architecture/DYNAMIC_HANDLING.md`](/docs/05-architecture/DYNAMIC_HANDLING.md) for comprehensive Dynamic type handling guide.
+### Progressive Typing
+Start with a broad, typed params shape (optional fields), then refine as your API stabilizes:
+
+```haxe
+// Phase 1: Broad but typed params
+typedef Params = {
+    ?items: Array<Item>
+}
+
+function processItems(params: Params): Array<Item> {
+    var items = params.items != null ? params.items : [];
+    return items.filter(item -> item.active);
+}
+```
+
+**See**: [`/docs/05-architecture/DYNAMIC_HANDLING.md`](/docs/05-architecture/DYNAMIC_HANDLING.md) (historical name) for details on boundary-term handling and compiler lowering.
 
 ## Type-Safe Null Handling with Option<T>
 
@@ -549,9 +541,9 @@ function getUser(id: Int): Result<User, String> {
     return findUser(id).toResult('User not found with id: ${id}');
 }
 
-// Use in GenServer replies
-function handleGetUser(id: Int): Dynamic {
-    return findUser(id).toReply(); // Generates proper {:reply, response, state}
+// Use as a reply payload (e.g. wrap in HandleCallResult.Reply(reply, state))
+function handleGetUser(id: Int): Result<User, String> {
+    return findUser(id).toReply(); // {:ok, user} | {:error, "none"}
 }
 
 // Bridge with nullable APIs

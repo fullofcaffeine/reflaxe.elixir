@@ -138,8 +138,10 @@ No compilation                →    Haxe compile-time validation
 
 2. **Compile-Time Hook Registration**
    ```haxe
+   import reflaxe.js.Unknown;
+
    class Hooks {
-       public static function getAll(): Dynamic {
+       public static function getAll(): Unknown {
            return {
                Form: new FormHook(),
                AutoFocus: new AutoFocusHook(),

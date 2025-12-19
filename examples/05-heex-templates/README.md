@@ -92,9 +92,11 @@ ${posts.map(renderPost).join("")}
 
 ### With LiveView
 ```haxe
+import phoenix.types.Assigns;
+
 @:liveview
 class UserLive {
-    function render(assigns: Dynamic): String {
+    public static function render(assigns: Assigns<UserAssigns>): String {
         return UserProfile.render(assigns);
     }
 }

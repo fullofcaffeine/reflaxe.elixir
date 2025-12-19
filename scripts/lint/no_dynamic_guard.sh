@@ -49,6 +49,15 @@ scan_tree "src/" \
   src \
   --glob '!src/reflaxe/js/Unknown.hx'
 
+# Standard library sources: we enforce the same No-Dynamic/No-Any policy for
+# app-facing std modules, while allowing known/required exceptions.
+scan_tree "std/ (excluding macro/cross/boundaries)" \
+  std \
+  --glob '!**/*.cross.hx' \
+  --glob '!std/elixir/types/Term.hx' \
+  --glob '!std/reflaxe/js/Unknown.hx' \
+  --glob '!std/haxe/macro/**'
+
 # Application/example sources (exclude generated outputs)
 scan_tree "examples/" \
   examples \
@@ -70,6 +79,23 @@ if rg -n -S --glob '*.hx' '\\buntyped\\b' examples \
 then
   echo "[guard:no-dynamic] ERROR: 'untyped' is not allowed in example/app Haxe sources." >&2
   bad=1
+fi
+
+# App/example code must not use __elixir__() injections; keep apps pure Haxe→Elixir.
+elixir_injection_matches="$(rg -n -S --glob '*.hx' '\\b__elixir__\\b' examples \
+  --glob '!**/lib/**' \
+  --glob '!**/out/**' \
+  --glob '!**/_build/**' \
+  --glob '!**/deps/**' \
+  --glob '!**/node_modules/**' \
+  --glob '!**/priv/static/**' || true)"
+if [[ -n "$elixir_injection_matches" ]]; then
+  filtered_injections="$(printf "%s\n" "$elixir_injection_matches" | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\\*|/\\*)' || true)"
+  if [[ -n "$filtered_injections" ]]; then
+    echo "$filtered_injections"
+    echo "[guard:no-dynamic] ERROR: '__elixir__' is not allowed in example/app Haxe sources." >&2
+    bad=1
+  fi
 fi
 
 if [[ "$bad" -ne 0 ]]; then
