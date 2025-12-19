@@ -48,11 +48,14 @@ Minimal `build.hxml` (server-side Haxe→Elixir):
 -D reflaxe_runtime
 -D elixir_output=lib
 -dce full
---macro reflaxe.elixir.CompilerInit.Start()
 
 # Define a stable entrypoint:
 --main my_app_hx.Main
 ```
+
+Notes:
+- When you use `-lib reflaxe.elixir`, the library already runs `--macro reflaxe.elixir.CompilerInit.Start()` for you.
+- If you vendor the compiler sources manually (no `-lib`), then you must add the `--macro ...Start()` line yourself.
 
 Why `elixir_output=lib`?
 - Your generated modules live under `MyAppHx.*`, so they compile into `lib/my_app_hx/**`.
