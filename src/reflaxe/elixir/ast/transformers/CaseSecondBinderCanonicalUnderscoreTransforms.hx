@@ -40,42 +40,44 @@ class CaseSecondBinderCanonicalUnderscoreTransforms {
     });
   }
 
-  static function canonicalize(cl:ECaseClause):ECaseClause {
-    var binder:Null<String> = null;
-    var newPat:EPattern = switch (cl.pattern) {
-      case PTuple(es) if (es.length == 2):
-        switch (es[1]) { case PVar(n) if (n != null && n.length > 0): binder = n; default: }
-        cl.pattern;
-      default: cl.pattern;
-    };
-    if (binder == null) return cl;
-    var used = collectUsed(cl.body, cl.guard);
-    // Canonicalize regardless of current usage; alias passes will restore body refs
-    var pat2 = switch (cl.pattern) {
-      case PTuple(es2) if (es2.length == 2): PTuple([es2[0], PVar("_value")]);
-      default: cl.pattern;
-    };
-    // Add lock flag on body to prevent late passes from drifting binder name
-    var body2 = cl.body;
-    if (body2 != null) {
-      if (body2.metadata == null) body2.metadata = {};
-      body2.metadata.lockPayloadBinder = true;
-      body2.metadata.canonicalPayloadValue = true;
-    }
-    return { pattern: pat2, guard: cl.guard, body: body2 };
-  }
+	  static function canonicalize(cl:ECaseClause):ECaseClause {
+	    var binder:Null<String> = null;
+	    switch (cl.pattern) {
+	      case PTuple(es) if (es.length == 2):
+	        switch (es[1]) { case PVar(n) if (n != null && n.length > 0): binder = n; default: }
+	        cl.pattern;
+	      default: cl.pattern;
+	    };
+	    if (binder == null) return cl;
+
+	    var used = collectUsed(cl.body, cl.guard);
+	    if (used.exists(binder)) return cl;
+
+	    var canonicalPattern = switch (cl.pattern) {
+	      case PTuple(elements) if (elements.length == 2): PTuple([elements[0], PVar("_value")]);
+	      default: cl.pattern;
+	    };
+	    // Add lock flag on body to prevent late passes from drifting binder name
+	    var body = cl.body;
+	    if (body != null) {
+	      if (body.metadata == null) body.metadata = {};
+	      body.metadata.lockPayloadBinder = true;
+	      body.metadata.canonicalPayloadValue = true;
+	    }
+	    return { pattern: canonicalPattern, guard: cl.guard, body: body };
+	  }
 
   static function collectUsed(body:ElixirAST, guard:Null<ElixirAST>):Map<String,Bool> {
     var s = new Map<String,Bool>();
-    function scan(n:ElixirAST):Void {
+	    function scan(n:ElixirAST):Void {
       if (n == null || n.def == null) return;
       switch (n.def) {
         case EVar(v): s.set(v, true);
         case EString(str): markInterpolations(str, s);
         case ERaw(code): markInterpolations(code, s);
-        case EBlock(ss): for (x in ss) scan(x);
-        case EDo(ss2): for (x in ss2) scan(x);
-        case EBinary(_, l, r): scan(l); scan(r);
+	        case EBlock(ss): for (x in ss) scan(x);
+	        case EDo(stmts): for (x in stmts) scan(x);
+	        case EBinary(_, l, r): scan(l); scan(r);
         case EMatch(_, rhs): scan(rhs);
         case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
         case ECase(e, cls): scan(e); for (c in cls) { if (c.guard != null) scan(c.guard); scan(c.body); }
