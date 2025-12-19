@@ -511,6 +511,36 @@ scope "/", MyAppWeb do
 end
 ```
 
+### Problem: `EADDRINUSE` when running `mix phx.server` (Haxe watcher port)
+
+**Symptom:**
+
+You see a Node/Haxe watcher crash like:
+```
+Error: listen EADDRINUSE: address already in use :::6001
+```
+
+**Cause:**
+
+Phoenix watchers often run Haxe in `--wait <PORT>` mode for fast incremental rebuilds. If that port is already in use (e.g., from a previous run), the watcher process will fail.
+
+**Solutions:**
+
+1. **Stop whatever is using the port**:
+```bash
+lsof -i :6001
+kill -TERM <PID>
+```
+
+2. **Change the watcher port** (recommended if you frequently run multiple app instances):
+   - Find the watcher command in `config/dev.exs`
+   - Change `--wait 6001` to another free port (e.g. `--wait 6002`)
+
+3. **Disable `--wait` for the watcher** (slower rebuilds, but no port binding):
+   - Remove the `--wait <PORT>` args from the watcher command in `config/dev.exs`
+
+If you see port conflicts in CI builds, also see `docs/06-guides/PRODUCTION_DEPLOYMENT.md` for `HAXE_NO_SERVER=1` and other build‑time options.
+
 ## HXX Template Processing
 
 ### Problem: "invalid attribute value after `=`" in Phoenix templates
