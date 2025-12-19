@@ -158,6 +158,13 @@ end
 
 Generates Ecto.Changeset modules for data validation.
 
+Notes:
+
+- The generated changeset uses **Ecto** `cast` + `validate_required` by default.
+  - This `cast` is `Ecto.Changeset.cast/3` (or `/4`), not a Haxe type cast.
+  - It’s the standard Ecto entry point for taking external params (often string-keyed / string values),
+    whitelisting permitted fields, and casting them into the schema’s field types.
+
 **Basic Usage**:
 ```haxe
 import ecto.Changeset;
