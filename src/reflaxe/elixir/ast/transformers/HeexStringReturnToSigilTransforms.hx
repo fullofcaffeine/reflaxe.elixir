@@ -12,8 +12,11 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHAT
  * - Converts functions that return plain HTML strings into ~H sigil blocks so HEEx can
- *   compile them properly. Supports simple cases where the final expression (or if-branches)
- *   are string literals (optionally parenthesized) that contain HTML-like markup.
+ *   compile them properly.
+ * - Supports:
+ *   - Final expression is a string literal (optionally parenthesized)
+ *   - Final expression is an if with string branches
+ *   - Final expression is a variable bound to an HTML-like string literal earlier in the block
  *
  * WHY
  * - Returning raw strings from helper functions and embedding them in ~H causes escaping, so
@@ -23,6 +26,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - For EDef/EDefp bodies:
  *   - Detect EString/EParen(EString) as the final expression (and within EIf branches).
+ *   - Detect `var = "<html...>"` followed by returning `var` and convert the binding to ~H.
  *   - If the string content looks like HTML/HEEx (contains '<' and '>'), convert to
  *     ESigil("H", converted, "") where converted:
  *       • replaces #{...} and ${...} with <%= ... %>
@@ -319,6 +323,21 @@ class HeexStringReturnToSigilTransforms {
                 case EBlock(stmts):
                     if (stmts.length == 0) return n;
                     var last = stmts[stmts.length - 1];
+
+                    // If the function returns a local variable that was just bound to an HTML-like
+                    // string, convert the binding itself to ~H so subsequent HEEx passes (control tags,
+                    // interpolation rewrites) operate on the template content.
+                    switch (last.def) {
+                        case EVar(varName):
+                            var rewritten = tryConvertReturnedVarBindingToHeex(stmts, varName);
+                            if (rewritten != null) {
+                                var updated = rewritten;
+                                if (ensureAssigns) updated.insert(updated.length - 1, makeAST(EMatch(PVar("assigns"), makeAST(EMap([])))));
+                                return makeASTWithMeta(EBlock(updated), n.metadata, n.pos);
+                            }
+                        default:
+                    }
+
                     var convertedLast = last;
                     // If the last expression is an if with string branches, convert it to ~H.
                     var tryIf = tryConvertIfToHeex(last);
@@ -432,6 +451,92 @@ class HeexStringReturnToSigilTransforms {
             default:
                 return null;
         }
+    }
+
+    /**
+     * Convert the binding of a returned local variable into ~H.
+     *
+     * Pattern:
+     *   template_str = "<div>...</div>"
+     *   template_str
+     *
+     * We rewrite the assignment RHS to ESigil("H", ...) and keep the final `template_str`
+     * return expression intact.
+     *
+     * Guards:
+     * - Only applies when the variable is *not* referenced between the assignment and the return,
+     *   to avoid changing a value that is still used as a plain string in later expressions.
+     */
+    static function tryConvertReturnedVarBindingToHeex(stmts: Array<ElixirAST>, varName: String): Null<Array<ElixirAST>> {
+        if (stmts.length < 2) return null;
+
+        // Find the most recent assignment to varName before the final return.
+        var assignIdx = stmts.length - 2;
+        while (assignIdx >= 0) {
+            var extracted = extractVarAssignment(stmts[assignIdx], varName);
+            if (extracted != null) {
+                // Ensure varName is not referenced between assignment and return.
+                var idx = assignIdx + 1;
+                while (idx <= stmts.length - 2) {
+                    if (containsVarRef(stmts[idx], varName)) return null;
+                    idx++;
+                }
+
+                var convertedRhs = convertAssignedValueToHeex(extracted.rhs);
+                if (convertedRhs == null) return null;
+
+                var next = stmts.copy();
+                next[assignIdx] = extracted.rebuild(convertedRhs);
+                return next;
+            }
+            assignIdx--;
+        }
+
+        return null;
+    }
+
+    static function convertAssignedValueToHeex(rhs: ElixirAST): Null<ElixirAST> {
+        // Prefer explicit HXX.hxx conversion when present.
+        var hxx = tryConvertHxxCallToHeex(rhs);
+        if (hxx != null) return hxx;
+
+        // Otherwise, allow converting literal HTML-ish strings.
+        var asHeex = toHeex(rhs);
+        return (asHeex != rhs) ? asHeex : null;
+    }
+
+    static function extractVarAssignment(stmt: ElixirAST, varName: String): Null<{rhs: ElixirAST, rebuild: ElixirAST -> ElixirAST}> {
+        return switch (stmt.def) {
+            case EMatch(PVar(lhs), rhs) if (lhs == varName):
+                {
+                    rhs: rhs,
+                    rebuild: (newRhs: ElixirAST) -> makeASTWithMeta(EMatch(PVar(lhs), newRhs), stmt.metadata, stmt.pos)
+                };
+            case EBinary(Match, left, right):
+                switch (left.def) {
+                    case EVar(lhs2) if (lhs2 == varName):
+                        {
+                            rhs: right,
+                            rebuild: (newRhs: ElixirAST) -> makeASTWithMeta(EBinary(Match, left, newRhs), stmt.metadata, stmt.pos)
+                        };
+                    default:
+                        null;
+                }
+            default:
+                null;
+        };
+    }
+
+    static function containsVarRef(node: ElixirAST, varName: String): Bool {
+        var found = false;
+        ElixirASTTransformer.transformNode(node, function(n: ElixirAST): ElixirAST {
+            if (!found) switch (n.def) {
+                case EVar(v) if (v == varName): found = true;
+                default:
+            }
+            return n;
+        });
+        return found;
     }
 
     // Attempt to convert an if expression with string branches into a ~H sigil

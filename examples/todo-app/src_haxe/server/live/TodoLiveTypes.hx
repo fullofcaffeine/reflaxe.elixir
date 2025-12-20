@@ -3,6 +3,7 @@ package server.live;
 import server.types.Types.User;
 import shared.TodoTypes.TodoFilter;
 import shared.TodoTypes.TodoSort;
+import phoenix.types.Flash.FlashMap;
 
 /**
  * Type-safe event definitions for TodoLive.
@@ -65,6 +66,17 @@ typedef TodoLiveAssigns = {
     var sort_selected_created: Bool;
     var sort_selected_priority: Bool;
     var sort_selected_due_date: Bool;
+}
+
+/**
+ * Render assigns for TodoLive templates.
+ *
+ * NOTE: LiveView injects additional assigns (e.g. `flash`) that are not part of our
+ * socket state updates. We model them separately so we can read them in `render/1`
+ * without forcing mount/merge code to override framework-managed assigns.
+ */
+typedef TodoLiveRenderAssigns = {> TodoLiveAssigns,
+    var flash: FlashMap;
 }
 
 /**

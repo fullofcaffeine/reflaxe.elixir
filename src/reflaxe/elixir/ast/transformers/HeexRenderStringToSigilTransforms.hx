@@ -153,6 +153,81 @@ class HeexRenderStringToSigilTransforms {
                                 var newStmts = stmts.copy();
                                 newStmts[newStmts.length - 1] = makeAST(ESigil("H", conv, ""));
                                 makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(newStmts))), n.metadata, n.pos);
+                            case EVar(varName):
+                                // Common compiler shape: bind template string, then return the var
+                                //   template_str = "<div>...</div>"
+                                //   template_str
+                                //
+                                // Convert the binding RHS to ~H so subsequent HEEx passes can run.
+                                var assignIdx = stmts.length - 2;
+                                while (assignIdx >= 0) {
+                                    var updatedStmt: Null<ElixirAST> = null;
+                                    switch (stmts[assignIdx].def) {
+                                        case EMatch(PVar(lhs), rhs) if (lhs == varName):
+                                            // Ensure the variable isn't referenced after the bind (except as the return itself)
+                                            var j = assignIdx + 1;
+                                            var usedLater = false;
+                                            while (j <= stmts.length - 2) {
+                                                ASTUtils.walk(stmts[j], function(node) {
+                                                    if (usedLater) return;
+                                                    switch (node.def) {
+                                                        case EVar(v) if (v == varName): usedLater = true;
+                                                        default:
+                                                    }
+                                                });
+                                                if (usedLater) break;
+                                                j++;
+                                            }
+                                            if (!usedLater) {
+                                                var rhs0 = unwrapParens(rhs);
+                                                var sBind: Null<String> = switch (rhs0.def) {
+                                                    case EString(s5): s5;
+                                                    default: extractPrintedStringLiteral(rhs0);
+                                                };
+                                                if (sBind != null && looksLikeHtml(sBind)) {
+                                                    var convBind = convertInterpolations(sBind);
+                                                    updatedStmt = makeASTWithMeta(EMatch(PVar(lhs), makeAST(ESigil("H", convBind, ""))), stmts[assignIdx].metadata, stmts[assignIdx].pos);
+                                                }
+                                            }
+                                        case EBinary(Match, left, right):
+                                            switch (left.def) {
+                                                case EVar(lhs2) if (lhs2 == varName):
+                                                    var j2 = assignIdx + 1;
+                                                    var usedLater2 = false;
+                                                    while (j2 <= stmts.length - 2) {
+                                                        ASTUtils.walk(stmts[j2], function(node) {
+                                                            if (usedLater2) return;
+                                                            switch (node.def) {
+                                                                case EVar(v) if (v == varName): usedLater2 = true;
+                                                                default:
+                                                            }
+                                                        });
+                                                        if (usedLater2) break;
+                                                        j2++;
+                                                    }
+                                                    if (!usedLater2) {
+                                                        var rhs1 = unwrapParens(right);
+                                                        var sBind2: Null<String> = switch (rhs1.def) {
+                                                            case EString(s6): s6;
+                                                            default: extractPrintedStringLiteral(rhs1);
+                                                        };
+                                                        if (sBind2 != null && looksLikeHtml(sBind2)) {
+                                                            var convBind2 = convertInterpolations(sBind2);
+                                                            updatedStmt = makeASTWithMeta(EBinary(Match, left, makeAST(ESigil("H", convBind2, ""))), stmts[assignIdx].metadata, stmts[assignIdx].pos);
+                                                        }
+                                                    }
+                                                default:
+                                            }
+                                        default:
+                                    }
+                                    if (updatedStmt != null) {
+                                        var out = stmts.copy();
+                                        out[assignIdx] = updatedStmt;
+                                        return makeASTWithMeta(EDef(name, args, guards, makeAST(EBlock(out))), n.metadata, n.pos);
+                                    }
+                                    assignIdx--;
+                                }
+                                n;
                             default:
                                 var printed = extractPrintedStringLiteral(last);
                                 if (printed != null && looksLikeHtml(printed)) {
@@ -170,6 +245,46 @@ class HeexRenderStringToSigilTransforms {
                                 var out = stmts.copy();
                                 out[out.length - 1] = makeAST(ESigil("H", conv3, ""));
                                 makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(out))), n.metadata, n.pos);
+                            case EVar(varName2):
+                                // Same pattern as EBlock: bind HTML-ish string then return the var.
+                                var assignIdx2 = stmts.length - 2;
+                                while (assignIdx2 >= 0) {
+                                    var updatedStmt2: Null<ElixirAST> = null;
+                                    switch (stmts[assignIdx2].def) {
+                                        case EMatch(PVar(lhs3), rhs3) if (lhs3 == varName2):
+                                            var rhs3u = unwrapParens(rhs3);
+                                            var sBind3: Null<String> = switch (rhs3u.def) {
+                                                case EString(s7): s7;
+                                                default: extractPrintedStringLiteral(rhs3u);
+                                            };
+                                            if (sBind3 != null && looksLikeHtml(sBind3)) {
+                                                var convBind3 = convertInterpolations(sBind3);
+                                                updatedStmt2 = makeASTWithMeta(EMatch(PVar(lhs3), makeAST(ESigil("H", convBind3, ""))), stmts[assignIdx2].metadata, stmts[assignIdx2].pos);
+                                            }
+                                        case EBinary(Match, left3, right3):
+                                            switch (left3.def) {
+                                                case EVar(lhs4) if (lhs4 == varName2):
+                                                    var rhs4u = unwrapParens(right3);
+                                                    var sBind4: Null<String> = switch (rhs4u.def) {
+                                                        case EString(s8): s8;
+                                                        default: extractPrintedStringLiteral(rhs4u);
+                                                    };
+                                                    if (sBind4 != null && looksLikeHtml(sBind4)) {
+                                                        var convBind4 = convertInterpolations(sBind4);
+                                                        updatedStmt2 = makeASTWithMeta(EBinary(Match, left3, makeAST(ESigil("H", convBind4, ""))), stmts[assignIdx2].metadata, stmts[assignIdx2].pos);
+                                                    }
+                                                default:
+                                            }
+                                        default:
+                                    }
+                                    if (updatedStmt2 != null) {
+                                        var out3 = stmts.copy();
+                                        out3[assignIdx2] = updatedStmt2;
+                                        return makeASTWithMeta(EDef(name, args, guards, makeAST(EDo(out3))), n.metadata, n.pos);
+                                    }
+                                    assignIdx2--;
+                                }
+                                n;
                             default:
                                 var printed2 = extractPrintedStringLiteral(last2);
                                 if (printed2 != null && looksLikeHtml(printed2)) {

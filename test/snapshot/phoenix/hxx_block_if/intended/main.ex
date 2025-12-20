@@ -1,19 +1,16 @@
 defmodule Main do
   use Phoenix.Component
   def render(assigns) do
-    content = "
-      <div>
-        <p>Welcome, #{(fn -> assigns.current_user.name end).()}!</p>
-        <div class=\"stats\">
-          <span>#{(fn -> Kernel.to_string(assigns.total_todos) end).()}</span>
-          <span>#{(fn -> Kernel.to_string(assigns.completed_todos) end).()}</span>
-          <span>#{(fn -> Kernel.to_string(assigns.pending_todos) end).()}</span>
-        </div>
-        #{(fn -> if (assigns.show_form), do: "<div id=\"form\">FORM</div>", else: "" end).()}
-      </div>
-    "
     ~H"""
-<%= Phoenix.HTML.raw(content) %>
+<div>
+  <p>Welcome, <%= @current_user.name %>!</p>
+  <div class="stats">
+    <span><%= Kernel.to_string(@total_todos) %></span>
+    <span><%= Kernel.to_string(@completed_todos) %></span>
+    <span><%= Kernel.to_string(@pending_todos) %></span>
+  </div>
+  <%= if @show_form do %><div id="form">FORM</div><% end %>
+</div>
 """
   end
   def main() do

@@ -8,6 +8,11 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 
 using StringTools;
 
+#if macro
+import haxe.macro.Context;
+import haxe.macro.TypeTools;
+#end
+
 /**
  * HeexAssignsTypeLinterTransforms
  *
@@ -437,12 +442,28 @@ class HeexAssignsTypeLinterTransforms {
     }
 
     static function extractAssignsFields(typeName: String, hx: String): Map<String, String> {
+        var parsed = extractAssignsFieldsFromTypedefBlock(typeName, hx);
+        if (parsed.foundTypedef) {
+            return parsed.fields;
+        }
+
+#if macro
+        // Fallback: resolve assigns typedefs via the Haxe typer so the linter works even
+        // when the assigns type is declared in a different module/file.
+        var resolved = extractAssignsFieldsViaContext(typeName, hx);
+        if (resolved != null) return resolved;
+#end
+
+        return parsed.fields;
+    }
+
+    private static function extractAssignsFieldsFromTypedefBlock(typeName: String, hx: String): { foundTypedef: Bool, fields: Map<String, String> } {
         var out = new Map<String, String>();
         // Find typedef <typeName> = { ... }
         var idx = hx.indexOf('typedef ' + typeName + '');
-        if (idx == -1) return out;
+        if (idx == -1) return { foundTypedef: false, fields: out };
         var braceStart = hx.indexOf('{', idx);
-        if (braceStart == -1) return out;
+        if (braceStart == -1) return { foundTypedef: false, fields: out };
         var i = braceStart + 1;
         var depth = 1;
         while (i < hx.length && depth > 0) {
@@ -450,13 +471,25 @@ class HeexAssignsTypeLinterTransforms {
             if (ch == '{') depth++; else if (ch == '}') depth--; i++;
         }
         var braceEnd = i - 1;
-        if (braceEnd <= braceStart) return out;
+        if (braceEnd <= braceStart) return { foundTypedef: false, fields: out };
         var block = hx.substr(braceStart + 1, braceEnd - (braceStart + 1));
+
+        // Support anonymous structure extension: typedef X = {> Base, ... }
+        var baseTypes: Array<String> = [];
+
         // Parse lines: supports both `var name: Type` and `name: Type`, with optional comma/semicolon terminators
         var lines = block.split("\n");
         for (ln in lines) {
             var line = ln.trim();
             if (line.length == 0 || line.startsWith("//")) continue;
+
+            if (line.startsWith(">")) {
+                var rest = line.substr(1).trim();
+                if (rest.endsWith(",")) rest = rest.substr(0, rest.length - 1).trim();
+                if (rest.length > 0) baseTypes.push(rest);
+                continue;
+            }
+
             var name: String = null;
             var typeSpec: String = null;
             var reVar = ~/^var\s+([A-Za-z0-9_]+)\s*:\s*([^,;]+)\s*[,;]?$/;
@@ -474,8 +507,102 @@ class HeexAssignsTypeLinterTransforms {
                 out.set(name, normalizeKind(typeSpec));
             }
         }
-        return out;
+
+        for (base in baseTypes) {
+            var baseParsed = extractAssignsFieldsFromTypedefBlock(base, hx);
+            if (baseParsed.foundTypedef) {
+                for (k in baseParsed.fields.keys()) if (!out.exists(k)) out.set(k, baseParsed.fields.get(k));
+            }
+        }
+
+        return { foundTypedef: true, fields: out };
     }
+
+#if macro
+    static function extractAssignsFieldsViaContext(typeName: String, hx: String): Null<Map<String, String>> {
+        var candidates = new Array<String>();
+
+        if (typeName.indexOf(".") != -1) {
+            candidates.push(typeName);
+        }
+
+        var resolvedFromImports = resolveTypeNameFromImports(typeName, hx);
+        if (resolvedFromImports != null) candidates.push(resolvedFromImports);
+
+        var packageName = extractPackageName(hx);
+        if (packageName != null && typeName.indexOf(".") == -1) {
+            candidates.push(packageName + "." + typeName);
+        }
+
+        for (candidate in candidates) {
+            try {
+                var t = Context.getType(candidate);
+                var fields = fieldsFromType(t);
+                if (fields != null) return fields;
+            } catch (_:Dynamic) {
+                // try next candidate
+            }
+        }
+
+        return null;
+    }
+
+    static function fieldsFromType(t: haxe.macro.Type): Null<Map<String, String>> {
+        var out = new Map<String, String>();
+        var followed = TypeTools.follow(t);
+        switch (followed) {
+            case TAnonymous(a):
+                for (f in a.get().fields) {
+                    out.set(f.name, normalizeKind(TypeTools.toString(f.type)));
+                }
+                return out;
+            case TType(tdef, params):
+                return fieldsFromType(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
+            default:
+                return null;
+        }
+    }
+
+    static function extractPackageName(hx: String): Null<String> {
+        var re = ~/^\s*package\s+([A-Za-z0-9_\.]+)\s*;/m;
+        return re.match(hx) ? re.matched(1) : null;
+    }
+
+    static function resolveTypeNameFromImports(typeName: String, hx: String): Null<String> {
+        var importPaths = new Map<String, String>();
+
+        // Supports:
+        // - import a.b.C;
+        // - import a.b.C as Alias;
+        var re = ~/^\s*import\s+([A-Za-z0-9_\.]+)(?:\s+as\s+([A-Za-z0-9_]+))?\s*;/m;
+        var start = 0;
+        while (re.matchSub(hx, start)) {
+            var full = re.matched(1);
+            var alias = re.matched(2);
+            var lastDot = full.lastIndexOf(".");
+            var visible = (alias != null && alias != "") ? alias : (lastDot == -1 ? full : full.substr(lastDot + 1));
+            importPaths.set(visible, full);
+
+            var pos = re.matchedPos();
+            start = pos.pos + pos.len;
+        }
+
+        if (importPaths.exists(typeName)) {
+            return importPaths.get(typeName);
+        }
+
+        // Handle module-import prefix usage: Foo.Bar where Foo is imported as a module.
+        var dot = typeName.indexOf(".");
+        if (dot != -1) {
+            var prefix = typeName.substr(0, dot);
+            if (importPaths.exists(prefix)) {
+                return importPaths.get(prefix) + typeName.substr(dot);
+            }
+        }
+
+        return null;
+    }
+#end
 
     static function normalizeKind(spec: String): String {
         var s = spec.trim();

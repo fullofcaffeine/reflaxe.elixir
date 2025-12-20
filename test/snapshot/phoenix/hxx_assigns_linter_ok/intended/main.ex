@@ -5,7 +5,7 @@ defmodule Main do
 <div>
       <p>User: <%= @user.name %></p>
       <p class={if @active, do: "on", else: "off"}>Status</p>
-      <p><%= if @sort_by == "created_at" do %>Newest<% else %>Other<% end %></p>
+      <p><%= if @sort_by == "created_at", do: "Newest", else: "Other" %></p>
       <span><%= @count %></span>
     </div>
 """
