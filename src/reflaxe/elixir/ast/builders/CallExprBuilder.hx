@@ -493,8 +493,32 @@ class CallExprBuilder {
                         // Static method call
                         var classType = classRef.get();
                         var className = classType.name;
-                        var moduleName = resolveStaticCallModuleName(classType);
+                        var moduleName = ModuleBuilder.extractModuleName(classType);
                         var methodName = cf.get().name;
+
+                        // Respect `@:native` on the field when present.
+                        //
+                        // WHY:
+                        // - Externs often map Haxe-friendly names to exact Elixir functions,
+                        //   including punctuation (`has_key?`, `fetch!`) and full module paths
+                        //   (`Task.Supervisor.start_link`). These must not be snake_cased or
+                        //   qualified by app-local module rules.
+                        //
+                        // HOW:
+                        // - If field `@:native` contains a dot, treat it as `<Module>.<function>`
+                        //   and use that module/function directly.
+                        // - Otherwise treat it as the function name only.
+                        var nativeFieldName = extractNativeModuleName(cf.get().meta);
+                        var resolvedMethodName: Null<String> = null;
+                        if (nativeFieldName != null) {
+                            var lastDot = nativeFieldName.lastIndexOf(".");
+                            if (lastDot != -1) {
+                                moduleName = nativeFieldName.substr(0, lastDot);
+                                resolvedMethodName = nativeFieldName.substr(lastDot + 1);
+                            } else {
+                                resolvedMethodName = nativeFieldName;
+                            }
+                        }
 
                         // Check for special Haxe standard library calls
                         var specialCall = handleSpecialCall(className, methodName, args, context);
@@ -524,9 +548,11 @@ class CallExprBuilder {
 	                            return phoenixCall;
 	                        }
 
-                        // CRITICAL FIX: Convert method name to snake_case for Elixir function calls
-                        // Function definitions use snake_case (parse_action), so calls must match
-                        var elixirMethodName = ElixirNaming.toVarName(methodName);
+                        // Convert method name to snake_case for Elixir function calls unless a
+                        // native name was provided (native names are already exact).
+                        var elixirMethodName = resolvedMethodName != null
+                            ? resolvedMethodName
+                            : ElixirNaming.toVarName(methodName);
 
                         // IDIOMATIC FIX: Within the same module, use unqualified function calls
                         // Elixir allows calling module functions directly when within that module
