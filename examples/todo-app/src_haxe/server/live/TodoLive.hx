@@ -871,25 +871,26 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
     @:keep public static function render(assigns: TodoLiveRenderAssigns): String {
         // Phoenix warns when templates access locals defined outside ~H (it disables change tracking).
         // Compute derived flash strings into tracked assigns, then reference @flash_info/@flash_error in HEEx.
-        var renderAssigns: Assigns<TodoLiveRenderAssigns> = assigns;
-        renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
-        renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
-        assigns = renderAssigns;
+	        var renderAssigns: Assigns<TodoLiveRenderAssigns> = assigns;
+	        renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
+	        renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
+	        renderAssigns = Component.assign(renderAssigns, "toggle_form_label", assigns.show_form ? "✖ Cancel" : "➕ Add New Todo");
+	        assigns = renderAssigns;
 
         return HXX.hxx('
 			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
 				<div id="root" class="container mx-auto px-4 py-8 max-w-6xl" phx-hook="Ping">
-					<!-- Flash messages (info/error) -->
-						<if {assigns.flash_info}>
-							<div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
-								${assigns.flash_info}
-							</div>
-						</if>
-						<if {assigns.flash_error}>
-							<div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-								${assigns.flash_error}
-							</div>
-						</if>
+						<!-- Flash messages (info/error) -->
+							<if {@flash_info}>
+								<div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
+									#{@flash_info}
+								</div>
+							</if>
+							<if {@flash_error}>
+								<div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+									#{@flash_error}
+								</div>
+							</if>
 					
 					<!-- Header -->
 					<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 mb-8">
@@ -897,43 +898,43 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 							<div>
 								<h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-2">
 									📝 Todo Manager
-								</h1>
-								<p class="text-gray-600 dark:text-gray-400">
-									Welcome, ${assigns.current_user.name}!
-								</p>
-							</div>
+									</h1>
+									<p class="text-gray-600 dark:text-gray-400">
+										Welcome, #{@current_user.name}!
+									</p>
+								</div>
 							
 							<!-- Statistics -->
 							<div class="flex space-x-6">
-								<div class="text-center">
-									<div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
-										${assigns.total_todos}
+									<div class="text-center">
+										<div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
+											#{@total_todos}
+										</div>
+										<div class="text-sm text-gray-600 dark:text-gray-400">Total</div>
 									</div>
-									<div class="text-sm text-gray-600 dark:text-gray-400">Total</div>
-								</div>
-								<div class="text-center">
-									<div class="text-3xl font-bold text-green-600 dark:text-green-400">
-										${assigns.completed_todos}
+									<div class="text-center">
+										<div class="text-3xl font-bold text-green-600 dark:text-green-400">
+											#{@completed_todos}
+										</div>
+										<div class="text-sm text-gray-600 dark:text-gray-400">Completed</div>
 									</div>
-									<div class="text-sm text-gray-600 dark:text-gray-400">Completed</div>
-								</div>
-								<div class="text-center">
-									<div class="text-3xl font-bold text-amber-600 dark:text-amber-400">
-										${assigns.pending_todos}
+									<div class="text-center">
+										<div class="text-3xl font-bold text-amber-600 dark:text-amber-400">
+											#{@pending_todos}
+										</div>
+										<div class="text-sm text-gray-600 dark:text-gray-400">Pending</div>
 									</div>
-									<div class="text-sm text-gray-600 dark:text-gray-400">Pending</div>
-								</div>
 							</div>
 						</div>
 						
 						<!-- Add Todo Button -->
-						<button phx-click="toggle_form" data-testid="btn-new-todo" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
-							${assigns.show_form ? "✖ Cancel" : "➕ Add New Todo"}
-						</button>
-					</div>
-					
-					<!-- New Todo Form -->
-					<if {assigns.show_form}>
+							<button phx-click="toggle_form" data-testid="btn-new-todo" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
+								#{@toggle_form_label}
+							</button>
+						</div>
+						
+						<!-- New Todo Form -->
+						<if {@show_form}>
 						<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
 							<form phx-submit="create_todo" class="space-y-4">
 								<div>
@@ -999,42 +1000,42 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 						<div class="flex flex-wrap gap-4">
 							<!-- Search -->
 							<div class="flex-1 min-w-[300px]">
-                            <form phx-change="search_todos" class="relative">
-									<input type="search" name="query" value=${assigns.search_query} phx-debounce="300"
-										class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-										placeholder="Search todos..." />
-									<span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
-								</form>
+	                            <form phx-change="search_todos" class="relative">
+										<input type="search" name="query" value={@search_query} phx-debounce="300"
+											class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+											placeholder="Search todos..." />
+										<span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
+									</form>
 							</div>
 							
 	                        <!-- Filter Buttons -->
-	                        <div class="flex space-x-2">
-	                            <button type="button" phx-click="filter_todos" phx-value-filter="all" data-testid="btn-filter-all"
-	                                class=${assigns.filter_btn_all_class}>All</button>
-	                            <button type="button" phx-click="filter_todos" phx-value-filter="active" data-testid="btn-filter-active"
-	                                class=${assigns.filter_btn_active_class}>Active</button>
-	                            <button type="button" phx-click="filter_todos" phx-value-filter="completed" data-testid="btn-filter-completed"
-	                                class=${assigns.filter_btn_completed_class}>Completed</button>
-	                        </div>
-	                        <div class="flex flex-wrap gap-2" data-testid="available-tags">
-	                            <for {tagView in assigns.available_tags}>
-	                                <button type="button" phx-click="toggle_tag" phx-value-tag=#{tagView.tag} data-testid="tag-chip" data-tag=#{tagView.tag}
-	                                    class=#{tagView.chip_class}>
-	                                    #{tagView.tag}
-	                                </button>
-	                            </for>
-							</div>
+		                        <div class="flex space-x-2">
+		                            <button type="button" phx-click="filter_todos" phx-value-filter="all" data-testid="btn-filter-all"
+		                                class={@filter_btn_all_class}>All</button>
+		                            <button type="button" phx-click="filter_todos" phx-value-filter="active" data-testid="btn-filter-active"
+		                                class={@filter_btn_active_class}>Active</button>
+		                            <button type="button" phx-click="filter_todos" phx-value-filter="completed" data-testid="btn-filter-completed"
+		                                class={@filter_btn_completed_class}>Completed</button>
+		                        </div>
+		                        <div class="flex flex-wrap gap-2" data-testid="available-tags">
+		                            <for {tagView in @available_tags}>
+		                                <button type="button" phx-click="toggle_tag" phx-value-tag={tagView.tag} data-testid="tag-chip" data-tag={tagView.tag}
+		                                    class={tagView.chip_class}>
+		                                    #{tagView.tag}
+		                                </button>
+		                            </for>
+								</div>
 							
 							<!-- Sort Dropdown -->
 							<div>
                             <form phx-change="sort_todos">
-                                <select name="sort_by"
-                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-                                    <option value="created" selected=${assigns.sort_selected_created}>Sort by Date</option>
-                                    <option value="priority" selected=${assigns.sort_selected_priority}>Sort by Priority</option>
-                                    <option value="due_date" selected=${assigns.sort_selected_due_date}>Sort by Due Date</option>
-                                </select>
-                            </form>
+	                                <select name="sort_by"
+	                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+	                                    <option value="created" selected={@sort_selected_created}>Sort by Date</option>
+	                                    <option value="priority" selected={@sort_selected_priority}>Sort by Priority</option>
+	                                    <option value="due_date" selected={@sort_selected_due_date}>Sort by Due Date</option>
+	                                </select>
+	                            </form>
 							</div>
 						</div>
 					</div>
@@ -1046,7 +1047,7 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
                     <!-- Bulk Actions (typed HXX) -->
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center">
                         <div class="text-sm text-gray-600 dark:text-gray-400">
-                            Showing ${assigns.visible_count} of ${assigns.total_todos} todos
+                            Showing #{@visible_count} of #{@total_todos} todos
                         </div>
                         <div class="flex space-x-2">
                             <button type="button" phx-click="bulk_complete"
@@ -1057,14 +1058,14 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
                     </div>
 					
 					<!-- Todo List -->
-                    <div id="todo-list" class="space-y-4">
-                        <for {v in assigns.visible_todos}>
-                            <if {v.is_editing}>
-                                <div id=#{v.dom_id} data-testid="todo-card" data-completed=#{v.completed_str}
-                                    class=#{v.container_class}>
-                                    <form phx-submit="save_todo" class="space-y-4">
-                                        <input type="text" name="title" value=#{v.title} required data-testid="input-title"
-                                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
+	                    <div id="todo-list" class="space-y-4">
+	                        <for {v in @visible_todos}>
+	                            <if {v.is_editing}>
+	                                <div id={v.dom_id} data-testid="todo-card" data-completed={v.completed_str}
+	                                    class={v.container_class}>
+	                                    <form phx-submit="save_todo" class="space-y-4">
+	                                        <input type="text" name="title" value={v.title} required data-testid="input-title"
+	                                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
                                         <textarea name="description" rows="2"
                                             class="w-full px-4 py-2 border border-gray-300 dark-border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">#{v.description}</textarea>
                                         <div class="flex space-x-2">
@@ -1072,29 +1073,29 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
                                             <button type="button" phx-click="cancel_edit" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
                                         </div>
                                     </form>
-                                </div>
-                            <else>
-                                <div id=#{v.dom_id} data-testid="todo-card" data-completed=#{v.completed_str}
-                                    class=#{v.container_class}>
-                                    <div class="flex items-start space-x-4">
-                                        <!-- Checkbox -->
-                                        <button type="button" phx-click="toggle_todo" phx-value-id=#{v.id} data-testid="btn-toggle-todo"
-                                            class="mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors">
+	                                </div>
+	                            <else>
+	                                <div id={v.dom_id} data-testid="todo-card" data-completed={v.completed_str}
+	                                    class={v.container_class}>
+	                                    <div class="flex items-start space-x-4">
+	                                        <!-- Checkbox -->
+	                                        <button type="button" phx-click="toggle_todo" phx-value-id={v.id} data-testid="btn-toggle-todo"
+	                                            class="mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors">
                                             <if {v.completed_for_view}>
                                                 <span class="text-green-500">✓</span>
                                             </if>
                                         </button>
 
-                                        <!-- Content -->
-                                        <div class="flex-1">
-                                            <h3 class=#{v.title_class}>
-                                                #{v.title}
-                                            </h3>
-                                            <if {v.has_description}>
-                                                <p class=#{v.desc_class}>
-                                                    #{v.description}
-                                                </p>
-                                            </if>
+	                                        <!-- Content -->
+	                                        <div class="flex-1">
+	                                            <h3 class={v.title_class}>
+	                                                #{v.title}
+	                                            </h3>
+	                                            <if {v.has_description}>
+	                                                <p class={v.desc_class}>
+	                                                    #{v.description}
+	                                                </p>
+	                                            </if>
 
                                             <!-- Meta info -->
                                             <div class="flex flex-wrap gap-2 mt-3">
@@ -1106,24 +1107,24 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
                                                         Due: #{v.due_display}
                                                     </span>
 	                                                </if>
-	                                                <if {v.has_tags}>
-	                                                    <for {tagView in v.tags}>
-	                                                        <button type="button" phx-click="toggle_tag" phx-value-tag=#{tagView.tag} data-testid="todo-tag" data-tag=#{tagView.tag}
-	                                                            class=#{tagView.chip_class}>
-	                                                            #{tagView.tag}
-	                                                        </button>
-	                                                    </for>
-	                                                </if>
+		                                                <if {v.has_tags}>
+		                                                    <for {tagView in v.tags}>
+		                                                        <button type="button" phx-click="toggle_tag" phx-value-tag={tagView.tag} data-testid="todo-tag" data-tag={tagView.tag}
+		                                                            class={tagView.chip_class}>
+		                                                            #{tagView.tag}
+		                                                        </button>
+		                                                    </for>
+		                                                </if>
 	                                            </div>
                                         </div>
 
-                                        <!-- Actions -->
-                                        <div class="flex space-x-2">
-                                            <button type="button" phx-click="edit_todo" phx-value-id=#{v.id} data-testid="btn-edit-todo"
-                                                class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">✏️</button>
-                                            <button type="button" phx-click="delete_todo" phx-value-id=#{v.id} data-testid="btn-delete-todo"
-                                                class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">🗑️</button>
-                                        </div>
+	                                        <!-- Actions -->
+	                                        <div class="flex space-x-2">
+	                                            <button type="button" phx-click="edit_todo" phx-value-id={v.id} data-testid="btn-edit-todo"
+	                                                class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">✏️</button>
+	                                            <button type="button" phx-click="delete_todo" phx-value-id={v.id} data-testid="btn-delete-todo"
+	                                                class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">🗑️</button>
+	                                        </div>
                                     </div>
                                 </div>
                             </if>

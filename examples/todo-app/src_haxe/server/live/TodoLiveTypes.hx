@@ -75,13 +75,15 @@ typedef TodoLiveAssigns = {
  * socket state updates. We model them separately so we can read them in `render/1`
  * without forcing mount/merge code to override framework-managed assigns.
  */
-typedef TodoLiveRenderAssigns = {> TodoLiveAssigns,
-    var flash: FlashMap;
-    // NOTE: We compute these in render/1 via Phoenix.Component.assign/3 so templates
-    // use tracked assigns (@flash_info/@flash_error) instead of local variables.
-    var flash_info: Null<String>;
-    var flash_error: Null<String>;
-}
+	typedef TodoLiveRenderAssigns = {> TodoLiveAssigns,
+	    var flash: FlashMap;
+	    // NOTE: We compute these in render/1 via Phoenix.Component.assign/3 so templates
+	    // use tracked assigns (@flash_info/@flash_error) instead of local variables.
+	    var flash_info: Null<String>;
+	    var flash_error: Null<String>;
+	    // Derived from show_form; assigned in render/1 for zero-logic HXX.
+	    var toggle_form_label: String;
+	}
 
 /**
  * Row view model for HXX zero-logic rendering.
