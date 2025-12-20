@@ -77,6 +77,10 @@ typedef TodoLiveAssigns = {
  */
 typedef TodoLiveRenderAssigns = {> TodoLiveAssigns,
     var flash: FlashMap;
+    // NOTE: We compute these in render/1 via Phoenix.Component.assign/3 so templates
+    // use tracked assigns (@flash_info/@flash_error) instead of local variables.
+    var flash_info: Null<String>;
+    var flash_error: Null<String>;
 }
 
 /**

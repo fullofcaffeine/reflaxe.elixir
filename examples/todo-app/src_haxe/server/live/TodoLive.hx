@@ -12,7 +12,9 @@ import haxe.Constraints.Function;
 			import elixir.DateTime.NaiveDateTime;
 			import elixir.Enum;
 			import haxe.functional.Result; // Import Result type properly
-			import phoenix.LiveSocket; // Type-safe socket wrapper
+	import phoenix.LiveSocket; // Type-safe socket wrapper
+	import phoenix.Component;
+	import phoenix.types.Assigns;
 	import phoenix.types.Flash.FlashType;
 	import phoenix.PhoenixFlash;
 	import phoenix.Phoenix.HandleEventResult;
@@ -867,22 +869,25 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
 	 * This generates the HTML template that gets sent to the browser
 	 */
     @:keep public static function render(assigns: TodoLiveRenderAssigns): String {
-        // Read LiveView-injected flash assigns through typed Phoenix externs (no raw `:info` / `:error` in templates).
-        final info = PhoenixFlash.get(assigns.flash, "info");
-        final error = PhoenixFlash.get(assigns.flash, "error");
+        // Phoenix warns when templates access locals defined outside ~H (it disables change tracking).
+        // Compute derived flash strings into tracked assigns, then reference @flash_info/@flash_error in HEEx.
+        var renderAssigns: Assigns<TodoLiveRenderAssigns> = assigns;
+        renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
+        renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
+        assigns = renderAssigns;
 
         return HXX.hxx('
 			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
 				<div id="root" class="container mx-auto px-4 py-8 max-w-6xl" phx-hook="Ping">
 					<!-- Flash messages (info/error) -->
-						<if {info}>
+						<if {assigns.flash_info}>
 							<div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
-								${info}
+								${assigns.flash_info}
 							</div>
 						</if>
-						<if {error}>
+						<if {assigns.flash_error}>
 							<div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-								${error}
+								${assigns.flash_error}
 							</div>
 						</if>
 					
