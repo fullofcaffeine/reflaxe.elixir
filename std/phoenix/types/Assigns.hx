@@ -26,6 +26,7 @@ import phoenix.types.Flash.FlashMap;
  * 
  * @see /docs/02-user-guide/TYPE_SAFE_PHOENIX_ABSTRACTIONS.md - Assigns/Socket/Flash typed usage
  */
+@:forward
 abstract Assigns<T>(T) from T to T {
     
     /**

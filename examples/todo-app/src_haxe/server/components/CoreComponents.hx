@@ -1,6 +1,7 @@
 package server.components;
 
 import HXX;
+import elixir.Enum;
 
 /**
  * Type-safe assigns for Phoenix components
@@ -116,15 +117,21 @@ typedef LabelAssigns = {
 @:component
 @:keep
 class CoreComponents {
+    static function iconClass(name: String, className: Null<String>): String {
+        return className != null ? "icon icon-" + name + " " + className : "icon icon-" + name;
+    }
+
     
     /**
      * Renders a modal dialog
      */
     @:component
     public static function modal(assigns: ModalAssigns): String {
-        return HXX.hxx('<div id={@id} class="modal" phx-show={@show}>
-            <%= @inner_content %>
-        </div>');
+        return HXX.hxx('
+            <div id=${assigns.id} class="modal" phx-show=${assigns.show}>
+                ${assigns.inner_content != null ? assigns.inner_content : ""}
+            </div>
+        ');
     }
     
     /**
@@ -132,9 +139,15 @@ class CoreComponents {
      */
     @:component
     public static function button(assigns: ButtonAssigns): String {
-        return HXX.hxx('<button type={@type || "button"} class={@className} disabled={@disabled}>
-            <%= @inner_content %>
-        </button>');
+        return HXX.hxx('
+            <button
+                type=${assigns.type != null ? assigns.type : "button"}
+                class=${assigns.className}
+                disabled=${assigns.disabled}
+            >
+                ${assigns.inner_content}
+            </button>
+        ');
     }
     
     /**
@@ -142,21 +155,25 @@ class CoreComponents {
      */
     @:component
     public static function input(assigns: InputAssigns): String {
-        return HXX.hxx('<div class="form-group">
-            <label for={@field.id}><%= @label %></label>
-            <input 
-                type={@type || "text"} 
-                id={@field.id}
-                name={@field.name}
-                value={@field.value}
-                placeholder={@placeholder}
-                class="form-control"
-                required={@required}
-            />
-            <%= if @field.errors && length(@field.errors) > 0 do %>
-                <span class="error"><%= Enum.join(@field.errors, ", ") %></span>
-            <% end %>
-        </div>');
+        return HXX.hxx('
+            <div class="form-group">
+                <label for=${assigns.field.id}>${assigns.label}</label>
+                <input
+                    type=${assigns.type != null ? assigns.type : "text"}
+                    id=${assigns.field.id}
+                    name=${assigns.field.name}
+                    value=${assigns.field.value}
+                    placeholder=${assigns.placeholder}
+                    class="form-control"
+                    required=${assigns.required}
+                />
+                <if {assigns.field.errors != null && assigns.field.errors.length > 0}>
+                    <span class="error">
+                        ${Enum.join(assigns.field.errors != null ? assigns.field.errors : [], ", ")}
+                    </span>
+                </if>
+            </div>
+        ');
     }
     
     /**
@@ -164,11 +181,13 @@ class CoreComponents {
      */
     @:component
     public static function error(assigns: ErrorAssigns): String {
-        return HXX.hxx('<%= if @field && @field.errors && length(@field.errors) > 0 do %>
-            <div class="error-message">
-                <%= Enum.join(@field.errors, ", ") %>
-            </div>
-        <% end %>');
+        return HXX.hxx('
+            <if {assigns.field.errors != null && assigns.field.errors.length > 0}>
+                <div class="error-message">
+                    ${Enum.join(assigns.field.errors != null ? assigns.field.errors : [], ", ")}
+                </div>
+            </if>
+        ');
     }
     
     /**
@@ -177,9 +196,11 @@ class CoreComponents {
     @:component  
     public static function simple_form(assigns: FormAssigns): String {
         // Use `_f` to avoid unused variable warnings when slot variable is not referenced
-        return HXX.hxx('<.form :let={_f} for={@formFor} action={@action} method={@method || "post"}>
-            <%= @inner_content %>
-        </.form>');
+        return HXX.hxx('
+            <.form :let={_f} for=${assigns.formFor} action=${assigns.action} method=${assigns.method != null ? assigns.method : "post"}>
+                ${assigns.inner_content}
+            </.form>
+        ');
     }
     
     /**
@@ -187,14 +208,16 @@ class CoreComponents {
      */
     @:component
     public static function header(assigns: HeaderAssigns): String {
-        return HXX.hxx('<header class="header">
-            <h1><%= @title %></h1>
-            <%= if @actions do %>
-                <div class="actions">
-                    <%= @actions %>
-                </div>
-            <% end %>
-        </header>');
+        return HXX.hxx('
+            <header class="header">
+                <h1>${assigns.title}</h1>
+                <if {assigns.actions}>
+                    <div class="actions">
+                        ${assigns.actions != null ? assigns.actions : ""}
+                    </div>
+                </if>
+            </header>
+        ');
     }
     
     /**
@@ -202,24 +225,26 @@ class CoreComponents {
      */
     @:component
     public static function table(assigns: TableAssigns): String {
-        return HXX.hxx('<table class="table">
-            <thead>
-                <tr>
-                    <%= for col <- @columns do %>
-                        <th><%= col.label %></th>
-                    <% end %>
-                </tr>
-            </thead>
-            <tbody>
-                <%= for row <- @rows do %>
+        return HXX.hxx('
+            <table class="table">
+                <thead>
                     <tr>
-                        <%= for col <- @columns do %>
-                            <td><%= Map.get(row, col.field) %></td>
-                        <% end %>
+                        <for {col in assigns.columns}>
+                            <th>#{col.label}</th>
+                        </for>
                     </tr>
-                <% end %>
-            </tbody>
-        </table>');
+                </thead>
+                <tbody>
+                    <for {row in assigns.rows}>
+                        <tr>
+                            <for {col in assigns.columns}>
+                                <td>#{Map.get(row, col.field)}</td>
+                            </for>
+                        </tr>
+                    </for>
+                </tbody>
+            </table>
+        ');
     }
     
     /**
@@ -227,11 +252,13 @@ class CoreComponents {
      */
     @:component
     public static function list(assigns: ListAssigns): String {
-        return HXX.hxx('<ul class="list">
-            <%= for item <- @items do %>
-                <li><%= item %></li>
-            <% end %>
-        </ul>');
+        return HXX.hxx('
+            <ul class="list">
+                <for {item in assigns.items}>
+                    <li>#{item}</li>
+                </for>
+            </ul>
+        ');
     }
     
     /**
@@ -239,11 +266,13 @@ class CoreComponents {
      */
     @:component
     public static function back(assigns: BackAssigns): String {
-        return HXX.hxx('<div class="back-link">
-            <.link navigate={@navigate}>
-                ← Back
-            </.link>
-        </div>');
+        return HXX.hxx('
+            <div class="back-link">
+                <.link navigate=${assigns.navigate}>
+                    ← Back
+                </.link>
+            </div>
+        ');
     }
     
     /**
@@ -251,11 +280,9 @@ class CoreComponents {
      */
     @:component
     public static function icon(assigns: IconAssigns): String {
-        return HXX.hxx('<%= if @className do %>
-            <span class={"icon icon-" <> @name <> " " <> @className}></span>
-        <% else %>
-            <span class={"icon icon-" <> @name}></span>
-        <% end %>');
+        return HXX.hxx('
+            <span class=${iconClass(assigns.name, assigns.className)}></span>
+        ');
     }
     
     /**
@@ -263,10 +290,10 @@ class CoreComponents {
      */
     @:component
     public static function label(assigns: LabelAssigns): String {
-        return HXX.hxx('<%= if @htmlFor do %>
-            <label for={@htmlFor} class={@className}><%= @inner_content %></label>
-        <% else %>
-            <label class={@className}><%= @inner_content %></label>
-        <% end %>');
+        return HXX.hxx('
+            <label for=${assigns.htmlFor} class=${assigns.className}>
+                ${assigns.inner_content}
+            </label>
+        ');
     }
 }

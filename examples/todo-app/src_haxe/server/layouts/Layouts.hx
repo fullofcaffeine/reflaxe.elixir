@@ -1,6 +1,7 @@
 package server.layouts;
 
 import HXX; // Compile-time HXX → ~H macro
+import plug.CSRFProtection;
 import phoenix.types.Assigns;
 import phoenix.types.Assigns.LayoutAssigns;
 import server.live.TodoLiveTypes.TodoLiveAssigns;
@@ -24,7 +25,7 @@ class Layouts {
      *   and yields `@inner_content`. This mirrors Phoenix 1.7 defaults and
      *   lets our HEEx transformer convert this string into a `~H` sigil.
      */
-    @:keep public static function root(_assigns: Assigns<LayoutAssigns<User, TodoLiveAssigns>>): String {
+    @:keep public static function root(assigns: Assigns<LayoutAssigns<User, TodoLiveAssigns>>): String {
         return HXX.hxx('
             <!DOCTYPE html>
             <html lang="en" class="h-full">
@@ -33,7 +34,7 @@ class Layouts {
                     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
                     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
                     <title>Todo App</title>
-                    <meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()}/>
+                    <meta name="csrf-token" content=${CSRFProtection.get_csrf_token()}/>
                     
                     <!-- Static assets (served by Phoenix Endpoint) -->
                     <link phx-track-static rel="stylesheet" href="/assets/app.css"/>
@@ -42,7 +43,7 @@ class Layouts {
                 </head>
                 <body class="h-full bg-gray-50 dark:bg-gray-900 font-inter antialiased">
                     <main id="main-content" class="h-full">
-                        <%= @inner_content %>
+                        ${assigns.inner_content}
                     </main>
                 </body>
             </html>
@@ -53,11 +54,11 @@ class Layouts {
      * Application layout function
      * - Wraps content in a responsive container and basic page chrome.
      */
-    @:keep public static function app(_assigns: Assigns<LayoutAssigns<User, TodoLiveAssigns>>): String {
+    @:keep public static function app(assigns: Assigns<LayoutAssigns<User, TodoLiveAssigns>>): String {
         return HXX.hxx('
             <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-8 max-w-6xl">
-                    <%= @inner_content %>
+                    ${assigns.inner_content}
                 </div>
             </div>
         ');
