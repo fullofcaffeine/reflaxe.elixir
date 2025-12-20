@@ -155,8 +155,14 @@ class TemplateHelpers {
                 // String concatenation - collect both sides
                 var l = collectTemplateContent(left);
                 var r = collectTemplateContent(right);
-                // Ensure HXX control tags remain balanced across boundaries
-                rewriteControlTags(l + r);
+                // Haxe string interpolation turns templates into concatenation, so attribute-level
+                // EEx/inspect wrappers can straddle boundaries (e.g. `attr=` in one chunk and
+                // `<%= if ... %>` in the next). Re-run interpolation + control-tag rewrites on
+                // the joined string so attribute normalization is applied to the full shape.
+                var combined = l + r;
+                combined = rewriteInterpolations(combined);
+                combined = rewriteControlTags(combined);
+                combined;
                 
             case EIf(condition, thenBranch, elseBranch):
                 // Prefer inline-if when then/else are simple HTML strings (including HXX.block)
@@ -205,6 +211,10 @@ class TemplateHelpers {
                     } else func;
                     function renderArgForTemplate(a: ElixirAST): String {
                         return switch (a.def) {
+                            case EIf(_, _, _):
+                                // `if cond, do: ..., else: ...` must be parenthesized when used as an argument,
+                                // otherwise the commas are parsed as additional function arguments.
+                                '(' + renderExpr(a) + ')';
                             case EBlock(sts) if (sts != null && sts.length > 1):
                                 // Wrap multi-statement blocks as IIFE to form a single expression
                                 '(fn -> ' + StringTools.rtrim(ElixirASTPrinter.print(a, 0)) + ' end).()';
@@ -226,6 +236,8 @@ class TemplateHelpers {
                 var head = renderExpr(module) + "." + func;
                 function renderArg2(a: ElixirAST): String {
                     return switch (a.def) {
+                        case EIf(_, _, _):
+                            '(' + renderExpr(a) + ')';
                         case EBlock(sts) if (sts != null && sts.length > 1):
                             '(fn -> ' + StringTools.rtrim(ElixirASTPrinter.print(a, 0)) + ' end).()';
                         case EParen(inner) if (switch (inner.def) { case EBlock(es) if (es.length > 1): true; default: false; }):
@@ -278,12 +290,16 @@ class TemplateHelpers {
         #end
     }
 
-    static function rewriteInterpolationsInternal(s:String):String {
-        if (s == null) return s;
-        // NOTE: Even when there are no explicit `${...}` / `#{...}` markers, Haxe string interpolation
-        // inside an HXX template (e.g. `value=${assigns.query}`) becomes string concatenation and
-        // we may have already emitted `<%= ... %>` fragments (via collectTemplateContent).
-        // We still need to run attribute-level rewrites so `attr=<%= expr %>` becomes `attr={expr}`.
+	    static function rewriteInterpolationsInternal(s:String):String {
+	        if (s == null) return s;
+	        // Fix up stray trailing quotes after brace-style attribute expressions (`attr={expr}"`),
+	        // which can occur when string concatenations are nested and the closing quote lands in
+	        // a later chunk after the `<%=` marker has already been rewritten away.
+	        s = rewriteAttributeBraceTrailingQuotes(s);
+	        // NOTE: Even when there are no explicit `${...}` / `#{...}` markers, Haxe string interpolation
+	        // inside an HXX template (e.g. `value=${assigns.query}`) becomes string concatenation and
+	        // we may have already emitted `<%= ... %>` fragments (via collectTemplateContent).
+	        // We still need to run attribute-level rewrites so `attr=<%= expr %>` becomes `attr={expr}`.
         if (s.indexOf("${") == -1 && s.indexOf("#{") == -1 && s.indexOf("<for {") == -1 && s.indexOf("<%") == -1) {
             return s;
         }
@@ -348,6 +364,19 @@ class TemplateHelpers {
 
     static function rewriteForBlocksInternal(src:String):String {
         if (src == null || src.indexOf("<for {") == -1) return src;
+        // Similar to <if>, the iterator expression can be produced by Haxe string
+        // interpolation and arrive as a single EEx interpolation, e.g.:
+        //   <for {item in <%= assigns.items %>}> ... </for>
+        // Unwrap it so the generated HEEx is valid.
+        function unwrapSingleEexInterpolation(expr:String):String {
+            if (expr == null) return expr;
+            var trimmed = StringTools.trim(expr);
+            var single = ~/^<%=\s*(.*?)\s*%>$/s;
+            if (single.match(trimmed)) {
+                return StringTools.trim(single.matched(1));
+            }
+            return expr;
+        }
         var chunks:Array<String> = [];
         var i = 0;
         while (i < src.length) {
@@ -368,7 +397,13 @@ class TemplateHelpers {
             }
             var pattern = StringTools.trim(binding[0]);
             var iterator = StringTools.trim(binding[1]);
+            iterator = unwrapSingleEexInterpolation(iterator);
             iterator = StringTools.replace(iterator, "assigns.", "@");
+            iterator = ~/\bnull\b/g.replace(iterator, "nil");
+            var lenProp = ~/(@?[A-Za-z0-9_\.]+)\.length\b/g;
+            iterator = lenProp.map(iterator, function (re) {
+                return 'length(' + re.matched(1) + ')';
+            });
             // In HEEx, comprehensions must be output with `<%=` so the rendered
             // iodata is included in the template (plain `<%` triggers warnings
             // and results in no output).
@@ -381,9 +416,8 @@ class TemplateHelpers {
     }
 
     // Convert attribute values written as <%= ... %> (and conditional blocks) into HEEx { ... }
-    static function rewriteAttributeEexInterpolations(s:String):String {
-        // Fast-path: regex-based attribute EEx → HEEx conversion (single pass), avoiding heavy scanning
-        if (s == null || s.indexOf("<%") == -1) return s;
+	    static function rewriteAttributeEexInterpolations(s:String):String {
+	        if (s == null || s.indexOf("<%") == -1) return s;
         // Normalize common wrappers introduced by Haxe string interpolation so boolean
         // attributes remain booleans (e.g. selected/checked/disabled).
         function normalizeAttrExpr(expr:String):String {
@@ -397,29 +431,225 @@ class TemplateHelpers {
             // Unwrap to_string(...)
             var toStringWrap = ~/^(?:Kernel\.)?to_string\((.*)\)\s*$/s;
             if (toStringWrap.match(e)) e = StringTools.trim(toStringWrap.matched(1));
+            // Unwrap Abstract-to-string helpers emitted as `<Module>_Impl_.to_string(value)`
+            // when the attribute ultimately wants the raw value (HEEx `{expr}`), not a binary.
+            var implToStringWrap = ~/^[A-Za-z0-9_\.]+_Impl_\.to_string\((.*)\)\s*$/s;
+            if (implToStringWrap.match(e)) e = StringTools.trim(implToStringWrap.matched(1));
             return e;
         }
-        // name=<%= expr %>  → name={expr}
-        var eexAttr = ~/=\s*<%=\s*([^%]+?)\s*%>/g;
-        var result = eexAttr.map(s, function (re) {
-            var expr = normalizeAttrExpr(re.matched(1));
-            return '={' + expr + '}';
-        });
-        // name=<% if cond do %>then<% else %>else<% end %> → name={if cond, do: "then", else: "else"}
-        var eexIf = ~/=\s*<%\s*if\s+(.+?)\s+do\s*%>([^<]*)<%\s*else\s*%>([^<]*)<%\s*end\s*%>/g;
-        result = eexIf.map(result, function (re) {
-            var cond = StringTools.trim(re.matched(1));
-            var th = StringTools.trim(re.matched(2));
-            var el = StringTools.trim(re.matched(3));
-            if (!(StringTools.startsWith(th, '"') && StringTools.endsWith(th, '"')) && !(StringTools.startsWith(th, "'") && StringTools.endsWith(th, "'"))) th = '"' + th + '"';
-            if (!(StringTools.startsWith(el, '"') && StringTools.endsWith(el, '"')) && !(StringTools.startsWith(el, "'") && StringTools.endsWith(el, "'"))) el = '"' + el + '"';
-            return '={if ' + cond + ', do: ' + th + ', else: ' + el + '}';
-        });
-        return result;
-    }
 
-    public static inline function toQuoted(s:String): String {
-        var t = StringTools.trim(s);
+        function isQuoted(v:String):Bool {
+            var t = StringTools.trim(v);
+            return (StringTools.startsWith(t, "\"") && StringTools.endsWith(t, "\"")) || (StringTools.startsWith(t, "'") && StringTools.endsWith(t, "'"));
+        }
+
+        function quoteWrap(v:String):String {
+            var t = StringTools.trim(v);
+            if (t == "") return "\"\"";
+            if (isQuoted(t)) return t;
+            if (t == "nil" || t == "null") return "nil";
+            if (t == "true" || t == "false") return t;
+            return "\"" + t + "\"";
+        }
+
+        function branchToExpr(raw:String):String {
+            var t = StringTools.trim(raw);
+            var single = ~/^<%=\s*(.*?)\s*%>$/s;
+            if (single.match(t)) {
+                return normalizeAttrExpr(single.matched(1));
+            }
+            return quoteWrap(t);
+        }
+
+        // Scan rather than regex so nested `%{}` and multi-tag if blocks don't break.
+        var parts:Array<String> = [];
+        var i = 0;
+	        while (i < s.length) {
+	            var j = s.indexOf("<%", i);
+	            if (j == -1) { parts.push(s.substr(i)); break; }
+
+            // Determine if this <% ... %> is directly after an '=' in an attribute context,
+            // without crossing a tag close '>'.
+            var k = j - 1;
+            var seenGt = false;
+            while (k >= i) {
+                var ch = s.charAt(k);
+                if (ch == '>') { seenGt = true; break; }
+                if (ch == '=') break;
+                k--;
+            }
+
+            if (k < i || seenGt || s.charAt(k) != '=') {
+                // Not an attribute context; copy and continue past this EEx opener.
+                parts.push(s.substr(i, j - i));
+                parts.push("<%");
+                i = j + 2;
+                continue;
+            }
+
+            // We're in an attribute value context. Copy prefix up to '='
+            parts.push(s.substr(i, (k - i) + 1));
+
+            // Optional opening quote after '='
+            var vpos = k + 1;
+            while (vpos < s.length && ~/^\s$/.match(s.charAt(vpos))) vpos++;
+            var quote: Null<String> = null;
+            if (vpos < s.length && (s.charAt(vpos) == '"' || s.charAt(vpos) == '\'')) { quote = s.charAt(vpos); vpos++; }
+
+            // Expect vpos == j
+            if (vpos != j) {
+                // Unexpected; emit as-is.
+                parts.push(s.substr(k + 1, j - (k + 1)));
+                parts.push("<%");
+                i = j + 2;
+                continue;
+            }
+
+            // Only handle <%= ... %> in attribute contexts.
+            if (j + 3 > s.length || s.charAt(j + 2) != '=') {
+                parts.push(s.substr(k + 1, j - (k + 1)));
+                parts.push("<%");
+                i = j + 2;
+                continue;
+            }
+
+            var end = s.indexOf("%>", j + 3);
+            if (end == -1) { parts.push(s.substr(i)); break; }
+            var expr = normalizeAttrExpr(s.substr(j + 3, end - (j + 3)));
+
+            // Special handling: <%= if cond do %>then<% else %>else<% end %>
+            // This is a common shape from Haxe ternary in string interpolation.
+            if (StringTools.startsWith(expr, "if ") && StringTools.endsWith(expr, " do")) {
+                var condStr = StringTools.trim(expr.substr(3, expr.length - 3 - 3)); // between "if " and " do"
+                var thenStartPos = end + 2;
+                var elseMarkerPos = s.indexOf("<% else %>", thenStartPos);
+                var endMarkerPos = s.indexOf("<% end %>", thenStartPos);
+                if (endMarkerPos == -1) { parts.push(s.substr(i)); break; }
+                var thenEndPos = (elseMarkerPos != -1 && elseMarkerPos < endMarkerPos) ? elseMarkerPos : endMarkerPos;
+                var thenContentRaw = StringTools.trim(s.substr(thenStartPos, thenEndPos - thenStartPos));
+                var elseContentRaw: Null<String> = (elseMarkerPos != -1 && elseMarkerPos < endMarkerPos)
+                    ? StringTools.trim(s.substr(elseMarkerPos + 10, endMarkerPos - (elseMarkerPos + 10)))
+                    : null;
+
+                var thenExpr = branchToExpr(thenContentRaw);
+                var elseExpr: Null<String> = elseContentRaw != null ? branchToExpr(elseContentRaw) : null;
+
+                parts.push("{");
+                parts.push("if " + condStr + ", do: " + thenExpr + (elseExpr != null ? ", else: " + elseExpr : ""));
+                parts.push("}");
+
+                var postEndPos = endMarkerPos + 9;
+                if (postEndPos < s.length && (s.charAt(postEndPos) == '"' || s.charAt(postEndPos) == '\'')) {
+                    if (quote == null || s.charAt(postEndPos) == quote) postEndPos++;
+                }
+                i = postEndPos;
+                continue;
+            }
+
+	            // Simple attribute expression: name=<%= expr %>  → name={expr}
+	            parts.push("{");
+	            parts.push(expr);
+	            parts.push("}");
+
+		            var nextPos = end + 2;
+	            // Skip closing quote if the attribute value was quoted, even if the opening quote was already removed.
+	            // Also tolerate a small amount of whitespace between `%>` and the closing quote.
+	            var qpos = nextPos;
+	            while (qpos < s.length && ~/^\s$/.match(s.charAt(qpos))) qpos++;
+	            if (qpos < s.length && (s.charAt(qpos) == '"' || s.charAt(qpos) == '\'')) {
+	                if (quote == null || s.charAt(qpos) == quote) qpos++;
+	            }
+	            nextPos = qpos;
+	            i = nextPos;
+	        }
+
+	        return parts.join("");
+	    }
+
+	    /**
+	     * rewriteAttributeBraceTrailingQuotes
+	     *
+	     * WHY
+	     * - Haxe string interpolation inside HXX templates is lowered into nested string concatenations.
+	     * - We may rewrite an attribute value to `{expr}` in an inner concat node, but the closing quote
+	     *   from `attr="${expr}"` can live in the *next* concat chunk.
+	     * - When the outer concat is reprocessed there is no remaining `<%` marker to trigger the
+	     *   attribute rewrite, leaving output like: `attr={expr}"`.
+	     *
+	     * WHAT
+	     * - Removes a trailing quote immediately after a brace-style attribute expression when it looks
+	     *   like an attribute terminator (whitespace, `>`, or `/`) follows.
+	     *
+	     * HOW
+	     * - For each `}` followed by a quote, confirm we are inside a tag attribute value by finding the
+	     *   nearest `=` to the left without crossing a `>`, and ensuring the attribute value starts with `{`.
+	     */
+	    static function rewriteAttributeBraceTrailingQuotes(s:String):String {
+	        if (s == null) return s;
+	        if (s.indexOf("}\"") == -1 && s.indexOf("}'") == -1) return s;
+
+	        inline function isWhitespace(ch:String):Bool {
+	            return ~/^\s$/.match(ch);
+	        }
+	        inline function isAttrTerminator(ch:String):Bool {
+	            return ch == ">" || ch == "/" || isWhitespace(ch);
+	        }
+
+	        var parts:Array<String> = [];
+	        var i = 0;
+	        while (i < s.length) {
+	            var j = s.indexOf("}", i);
+	            if (j == -1) { parts.push(s.substr(i)); break; }
+
+	            // Not followed by a quote → passthrough
+	            if (j + 1 >= s.length || (s.charAt(j + 1) != '"' && s.charAt(j + 1) != '\'')) {
+	                parts.push(s.substr(i, (j - i) + 1));
+	                i = j + 1;
+	                continue;
+	            }
+
+	            // Check attribute context: find nearest '=' without crossing '>'
+	            var k = j - 1;
+	            var seenGt = false;
+	            while (k >= i) {
+	                var ch = s.charAt(k);
+	                if (ch == ">") { seenGt = true; break; }
+	                if (ch == "=") break;
+	                k--;
+	            }
+	            if (k < i || seenGt || s.charAt(k) != "=") {
+	                parts.push(s.substr(i, (j - i) + 1));
+	                i = j + 1;
+	                continue;
+	            }
+
+	            // Confirm the attribute value starts with '{' after '='
+	            var vpos = k + 1;
+	            while (vpos < s.length && isWhitespace(s.charAt(vpos))) vpos++;
+	            if (vpos >= s.length || s.charAt(vpos) != "{") {
+	                parts.push(s.substr(i, (j - i) + 1));
+	                i = j + 1;
+	                continue;
+	            }
+
+	            // Only drop quote if it is actually terminating the attribute
+	            var afterQuotePos = j + 2;
+	            if (afterQuotePos >= s.length || isAttrTerminator(s.charAt(afterQuotePos))) {
+	                parts.push(s.substr(i, (j - i) + 1)); // include '}'
+	                i = j + 2; // skip quote
+	                continue;
+	            }
+
+	            // Otherwise keep as-is
+	            parts.push(s.substr(i, (j - i) + 1));
+	            i = j + 1;
+	        }
+
+	        return parts.join("");
+	    }
+
+	    public static inline function toQuoted(s:String): String {
+	        var t = StringTools.trim(s);
         // If already quoted, keep as-is; otherwise wrap with quotes without escaping inner quotes
         if ((StringTools.startsWith(t, '"') && StringTools.endsWith(t, '"')) || (StringTools.startsWith(t, "'") && StringTools.endsWith(t, "'"))) {
             return t;
@@ -655,6 +885,34 @@ class TemplateHelpers {
      */
     public static function rewriteControlTags(s:String):String {
         if (s == null || s.indexOf("<if") == -1) return s;
+        // If the condition inside `{ ... }` is produced by Haxe string interpolation
+        // it may arrive wrapped as a single EEx interpolation, e.g.:
+        //   <if {<%= assigns.show_form %>}> ... </if>
+        // Unwrap it so the generated HEEx is valid:
+        //   <%= if @show_form do %> ... <% end %>
+        function unwrapSingleEexInterpolation(expr:String):String {
+            if (expr == null) return expr;
+            var trimmed = StringTools.trim(expr);
+            var single = ~/^<%=\s*(.*?)\s*%>$/s;
+            if (single.match(trimmed)) {
+                return StringTools.trim(single.matched(1));
+            }
+            return expr;
+        }
+        function normalizeControlExpr(expr:String):String {
+            if (expr == null) return expr;
+            var out = expr;
+            out = StringTools.replace(out, "assigns.", "@");
+            // Allow common Haxe-ish syntax inside control tags.
+            // - `null` (Haxe) → `nil` (Elixir)
+            // - `x.length` (Haxe Array/List) → `length(x)` (Elixir)
+            out = ~/\bnull\b/g.replace(out, "nil");
+            var lenProp = ~/(@?[A-Za-z0-9_\.]+)\.length\b/g;
+            out = lenProp.map(out, function (re) {
+                return 'length(' + re.matched(1) + ')';
+            });
+            return out;
+        }
         var parts:Array<String> = [];
         var i = 0;
         while (i < s.length) {
@@ -662,7 +920,7 @@ class TemplateHelpers {
             if (idx == -1) { parts.push(s.substr(i)); break; }
             parts.push(s.substr(i, idx - i));
             var j = idx + 3; // after '<if'
-            while (j < s.length && ~/^\\s$/.match(s.charAt(j))) j++;
+            while (j < s.length && ~/^\s$/.match(s.charAt(j))) j++;
             if (j >= s.length || s.charAt(j) != '{') { parts.push("<if"); i = idx + 3; continue; }
             var braceStart = j; j++;
             var braceDepth = 1;
@@ -672,11 +930,12 @@ class TemplateHelpers {
             }
             if (braceDepth != 0) { parts.push(s.substr(idx)); break; }
             var braceEnd = j - 1;
-            while (j < s.length && ~/^\\s$/.match(s.charAt(j))) j++;
+            while (j < s.length && ~/^\s$/.match(s.charAt(j))) j++;
             if (j >= s.length || s.charAt(j) != '>') { parts.push(s.substr(idx, j - idx)); i = j; continue; }
             var openEnd = j + 1;
             var cond = StringTools.trim(s.substr(braceStart + 1, braceEnd - (braceStart + 1)));
-            cond = StringTools.replace(cond, "assigns.", "@");
+            cond = unwrapSingleEexInterpolation(cond);
+            cond = normalizeControlExpr(cond);
             var k = openEnd;
             var depth = 1;
             var elsePos = -1;

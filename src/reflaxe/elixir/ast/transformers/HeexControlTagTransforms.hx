@@ -176,7 +176,18 @@ class HeexControlTagTransforms {
             if (j >= s.length || s.charAt(j) != '>') { parts.push(s.substr(idx, j - idx)); i = j + 1; continue; }
             var openEnd = j + 1;
             var cond = StringTools.trim(s.substr(braceStart + 1, braceEnd - (braceStart + 1)));
+            // If the condition was produced via interpolation helpers, it can arrive as:
+            //   <if {<%= expr %>}> ... </if>
+            // Unwrap to keep generated HEEx valid.
+            var single = ~/^<%=\s*(.*?)\s*%>$/s;
+            if (single.match(cond)) cond = StringTools.trim(single.matched(1));
+            // Normalize common Haxe-ish syntax inside control tags.
             cond = StringTools.replace(cond, "assigns.", "@");
+            cond = ~/\bnull\b/g.replace(cond, "nil");
+            var lenProp = ~/(@?[A-Za-z0-9_\.]+)\.length\b/g;
+            cond = lenProp.map(cond, function (re) {
+                return 'length(' + re.matched(1) + ')';
+            });
             // find matching </if>, track nested <if
             var k = openEnd;
             var depth = 1;

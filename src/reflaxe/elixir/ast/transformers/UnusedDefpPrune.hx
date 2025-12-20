@@ -154,6 +154,24 @@ class UnusedDefpPrune {
                             }
                         }
                     }
+                case ESigil(_, content, _):
+                    // Same conservative scan for usage inside sigils (notably ~H templates),
+                    // where helper calls appear as literal text (e.g. `icon_class(@name)`).
+                    if (content != null) {
+                        for (k in defpNames.keys()) {
+                            if (used.exists(k)) continue;
+                            var names = candidates.get(k);
+                            if (names != null) {
+                                for (n in names) {
+                                    var needle = n + "(";
+                                    if (content.indexOf(needle) != -1) {
+                                        used.set(k, true);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 case EBlock(ss): for (s in ss) visit(s);
                 case EIf(c, t, e): visit(c); visit(t); if (e != null) visit(e);
                 case ECase(expr, cls):
