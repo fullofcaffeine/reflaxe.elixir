@@ -89,7 +89,13 @@ npm run test:mix
 
 # Compile-check every example under examples/
 npm run test:examples
+
+# Todo-app end-to-end build + boot (Phoenix runtime + optional Playwright)
+npm run qa:sentinel
 ```
+
+For details on non-blocking Phoenix validation (async runs, bounded log viewing, Playwright integration), see
+[Phoenix E2E & QA Sentinel](../06-guides/PHOENIX_E2E_AND_SENTINEL.md).
 
 ### Testing Infrastructure Benefits
 
