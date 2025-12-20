@@ -1,39 +1,142 @@
-Phoenix E2E, Environments, and QA Sentinel
+# Phoenix E2E & QA Sentinel (non-blocking)
 
-Overview
-- Primary tests are written in Haxe and compiled to idiomatic ExUnit (ConnTest/LiveViewTest).
-- A thin Playwright (JS) layer provides real‑browser smoke/regression checks.
-- QA Sentinel orchestrates non‑blocking build → boot → readiness → optional E2E.
+Reflaxe.Elixir has three practical QA layers:
 
-Environments
-- dev: fast iteration; PORT optional; secret_key_base allows env override or fallback.
-- test: SQL Sandbox enabled; dedicated todo_app_test DB; optional env override for secret.
-- e2e: dedicated todo_app_e2e DB; server: true; PORT from env; optional env secret.
-- prod: strict runtime config in config/runtime.exs — SECRET_KEY_BASE/PORT required.
+1) **Compiler layer** (Haxe→Elixir codegen): snapshot tests under `test/snapshot/**`
+2) **Integration layer** (compiler → Phoenix runtime): build + boot the todo-app and probe readiness
+3) **Application layer** (real browser): Playwright smoke/regression tests against the running app
 
-QA Sentinel
-- Layers
-  - Layer 1: Haxe snapshot tests (outside sentinel) — make -C test summary.
-  - Layer 2: Compiler→Phoenix runtime — Haxe build, deps, compile, boot, GET / + log scan.
-  - Layer 3: App E2E (browser) — optional Playwright run against the running server.
-- Flags
-  - --env NAME (dev|test|e2e|prod). If --playwright set and --env omitted, defaults to e2e.
-  - --reuse-db (non‑dev): skip drop; ensure create + migrate for faster local runs.
-  - --seeds PATH: run seeds after migrations (e.g., priv/repo/seeds.e2e.exs).
-  - --playwright + --e2e-spec "e2e/*.spec.ts": run Playwright; sentinel sets BASE_URL.
+The **QA sentinel** is the recommended way to validate layers (2) and (3) locally and in CI, because it:
+- Builds Haxe → Elixir
+- Runs `mix deps.get` + `mix compile`
+- Boots `mix phx.server` **in the background**
+- Probes readiness with bounded timeouts
+- Optionally runs Playwright
+- Tears everything down cleanly (unless `--keep-alive`)
 
-Usage
-- Keep‑alive (local E2E):
-  - scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4011 --keep-alive -v
-  - BASE_URL=http://localhost:4011 npx -C examples/todo-app playwright test e2e/<spec>.ts
-- One‑shot E2E (CI‑style):
-  - scripts/qa-sentinel.sh --app examples/todo-app --playwright --e2e-spec "e2e/*.spec.ts" --deadline 600
+## Quick Start
 
-Testing Strategy
-- Testing Trophy: emphasize Phoenix integration (ExUnit) + thin E2E.
-- Selectors: prefer role/label/text (user perspective). Use data-testid only when necessary.
+From the repo root:
 
-Secrets
-- dev/test/e2e: allow env overrides with safe fallback.
-- prod: required via config/runtime.exs — no fallbacks.
+```bash
+npm run qa:sentinel
+```
 
+This uses `scripts/qa-sentinel.sh` in **async mode** with a deadline, so it never hangs your terminal.
+
+## Non-Blocking Workflow (async + bounded logs)
+
+Run the sentinel:
+
+```bash
+scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose
+```
+
+It prints:
+- `QA_SENTINEL_PID=...` (background runner)
+- `QA_SENTINEL_RUN_ID=...` (log ID)
+
+Peek logs without blocking:
+
+```bash
+scripts/qa-logpeek.sh --run-id <RUN_ID> --last 200
+scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 60
+```
+
+Stop the background run:
+
+```bash
+kill -TERM $QA_SENTINEL_PID
+```
+
+## Keep-Alive (manual browsing / debugging)
+
+Start Phoenix and keep it running:
+
+```bash
+scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --keep-alive -v
+```
+
+The script prints `PHX_PID` and `PORT`.
+
+Stop Phoenix when done:
+
+```bash
+kill -TERM $PHX_PID
+```
+
+## Playwright E2E
+
+Run Playwright as part of the sentinel (recommended for CI-style verification):
+
+```bash
+scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 \
+  --playwright --e2e-spec "e2e/*.spec.ts" --async --deadline 900 --verbose
+```
+
+Notes:
+- If you pass `--playwright` and leave `--env` as `dev`, the sentinel defaults to `e2e` for DB isolation.
+- The sentinel sets `BASE_URL` automatically for Playwright.
+- Use `--e2e-workers 1` (default) for determinism when debugging flakes.
+
+To run Playwright manually against a keep-alive server:
+
+```bash
+BASE_URL=http://localhost:4001 npx -C examples/todo-app playwright test e2e/<spec>.ts
+```
+
+## Environments (todo-app)
+
+The todo-app uses `--env` to pick a Mix environment:
+- `dev`: fast iteration (PORT optional)
+- `test`: SQL sandbox enabled; `todo_app_test` DB
+- `e2e`: dedicated `todo_app_e2e` DB; `server: true`; PORT respected (recommended for Playwright)
+- `prod`: strict runtime config in `config/runtime.exs` (requires `SECRET_KEY_BASE`/`PORT`)
+
+## Common Flags
+
+- `--reuse-db` (non-dev): skips DB drop; ensures create + migrate only
+- `--seeds PATH`: runs seeds after migrations (example: `priv/repo/seeds.e2e.exs`)
+- `--deadline SECS`: hard cap watchdog for async runs (recommended even outside CI)
+
+See `scripts/qa-sentinel.sh` for the full flag list.
+
+## Troubleshooting
+
+### Port already in use
+
+If you see `EADDRINUSE`, something else is listening on the port (common ones):
+- Phoenix: `4000` (default) / sentinel default: `4001`
+- Haxe compilation server: `6116`
+- Todo-app watcher wait port: `6001` (used by the asset watcher integration)
+
+To identify a process:
+
+```bash
+lsof -nP -iTCP:4001 -sTCP:LISTEN || true
+lsof -nP -iTCP:6001 -sTCP:LISTEN || true
+```
+
+Then stop it (example):
+
+```bash
+kill -TERM <PID>
+```
+
+### Commands must finish
+
+If you run long steps manually, keep them bounded:
+
+```bash
+scripts/with-timeout.sh --secs 120 -- mix test
+```
+
+## Testing Strategy (trophy)
+
+- Prefer **Haxe-authored ExUnit** for most coverage (ConnTest/LiveViewTest).
+- Keep Playwright **thin** (smoke/regression). Use resilient selectors; `data-testid` only when necessary.
+
+## Secrets
+
+- `dev`/`test`/`e2e`: allow env overrides with safe fallbacks for local iteration.
+- `prod`: required via `config/runtime.exs` (no fallbacks).
