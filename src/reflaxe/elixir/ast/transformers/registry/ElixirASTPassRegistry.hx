@@ -5738,6 +5738,16 @@ class ElixirASTPassRegistry {
             runAfter: ["CaseBinderUnderscoreAlign_AbsoluteFinal_Replay"]
         });
 
+        // Absolute-last: ensure HEEx functions don't retain a stray `_assigns` local binder.
+        // Phoenix ~H requires a variable literally named `assigns` in scope.
+        passes.push({
+            name: "HeexAssignsLocalVarRename_AbsoluteLast",
+            description: "Absolute-last: rename _assigns → assigns inside function bodies containing ~H",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexAssignsLocalVarRenameTransforms.transformPass,
+            runAfter: ["PhoenixComponentModuleNormalize_AbsoluteLast"]
+        });
+
         // Filter disabled passes first
         var enabled = passes.filter(p -> p.enabled);
         // Validate current list (unique names, missing deps, cycles report only)
