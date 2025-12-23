@@ -75,7 +75,6 @@ TodoAppRouter
 server.live.TodoLive
 server.schemas.Todo
 server.schemas.User
-server.migrations.CreateTodos
 server.presence.TodoPresence
 server.layouts.Layouts
 server.infrastructure.Repo

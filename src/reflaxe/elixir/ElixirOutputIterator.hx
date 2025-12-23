@@ -61,6 +61,9 @@ class ElixirOutputIterator {
     // Extra outputs generated after all normal modules (e.g., bootstrap files)
     var extraOutputs: Array<DataAndFileInfo<StringOrBytes>> = [];
     var extraIndex: Int = 0;
+
+    // Cached next output so `hasNext()` can accurately account for suppressed emissions.
+    var preparedNext: Null<DataAndFileInfo<StringOrBytes>> = null;
     
     /**
      * Constructor
@@ -97,7 +100,9 @@ class ElixirOutputIterator {
      * @return True if there are more items
      */
     public function hasNext(): Bool {
-        return index < maxIndex || extraIndex < extraOutputs.length;
+        if (preparedNext != null) return true;
+        preparedNext = prepareNextOutput();
+        return preparedNext != null;
     }
     
     /**
@@ -105,125 +110,167 @@ class ElixirOutputIterator {
      * @return DataAndFileInfo with string output
      */
     public function next(): DataAndFileInfo<StringOrBytes> {
-        // If normal items are exhausted, serve extra outputs
-        if (index >= maxIndex) {
-            if (extraIndex < extraOutputs.length) {
-                return extraOutputs[extraIndex++];
+        if (preparedNext == null) {
+            preparedNext = prepareNextOutput();
+        }
+        final result = preparedNext;
+        preparedNext = null;
+        if (result == null) {
+            throw "ElixirOutputIterator.next() called with no remaining output";
+        }
+        return result;
+    }
+
+    function prepareNextOutput(): Null<DataAndFileInfo<StringOrBytes>> {
+        while (true) {
+            // If normal items are exhausted, serve extra outputs
+            if (index >= maxIndex) {
+                if (extraIndex < extraOutputs.length) {
+                    return extraOutputs[extraIndex++];
+                }
+                return null;
             }
-            // Should not happen if hasNext() is respected
-            return new DataAndFileInfo(StringOrBytes.fromString(""), null, "", null);
-        }
 
-        // Determine which collection to pull from based on current index
-        var astData: DataAndFileInfo<ElixirAST> = if (index < compiler.classes.length) {
-            // Get from classes
-            compiler.classes[index];
-        } else if (index < compiler.classes.length + compiler.enums.length) {
-            // Get from enums
-            compiler.enums[index - compiler.classes.length];
-        } else if (index < compiler.classes.length + compiler.enums.length + compiler.typedefs.length) {
-            // Get from typedefs
-            compiler.typedefs[index - compiler.classes.length - compiler.enums.length];
-        } else {
-            // Get from abstracts
-            compiler.abstracts[index - compiler.classes.length - compiler.enums.length - compiler.typedefs.length];
-        }
+            // Determine which collection to pull from based on current index
+            var astData: DataAndFileInfo<ElixirAST> = if (index < compiler.classes.length) {
+                // Get from classes
+                compiler.classes[index];
+            } else if (index < compiler.classes.length + compiler.enums.length) {
+                // Get from enums
+                compiler.enums[index - compiler.classes.length];
+            } else if (index < compiler.classes.length + compiler.enums.length + compiler.typedefs.length) {
+                // Get from typedefs
+                compiler.typedefs[index - compiler.classes.length - compiler.enums.length];
+            } else {
+                // Get from abstracts
+                compiler.abstracts[index - compiler.classes.length - compiler.enums.length - compiler.typedefs.length];
+            }
 
-        index++;
+            index++;
 
-        #if debug_output_iterator
-        // DISABLED: trace('[ElixirOutputIterator] Processing item ${index}/${maxIndex}');
-        // Debug the DataAndFileInfo overrides for this item
-        var moduleName = switch(astData.data.def) {
-            case EModule(name, _, _): name;
-            case EDefmodule(name, _): name;
-            default: "(unknown)";
-        };
-        // DISABLED: trace('[ElixirOutputIterator] Module: ${moduleName}');
-        // DISABLED: trace('[ElixirOutputIterator] overrideFileName: ${astData.overrideFileName}');
-        // DISABLED: trace('[ElixirOutputIterator] overrideDirectory: ${astData.overrideDirectory}');
-        #end
-        
-        // Apply transformation passes to the AST
-        // The metadata from the outer AST node needs to be preserved
-        // when passing to the transformer
-        // Pass the context to ensure metadata is available to transformation passes
-        final transformedAST = ElixirASTTransformer.transform(astData.data, context);
-
-        #if debug_output_iterator trace('[ElixirOutputIterator] Transformation complete'); #end
-
-        // Generic gating: suppress emission of compile-time-only empty modules
-        // WHAT: Avoid generating `.ex` files for modules that have no runtime content
-        // WHY: Macro-only helpers (e.g., std/ecto/*Macros, std/HXX) previously emitted empty stubs
-        // HOW: Detect EDefmodule/EModule nodes with empty bodies and skip yielding output
-        if (shouldSuppressEmission(transformedAST)) {
             #if debug_output_iterator
-            // Get module name from AST for debug
-            var moduleName = switch(transformedAST.def) {
+            // DISABLED: trace('[ElixirOutputIterator] Processing item ${index}/${maxIndex}');
+            // Debug the DataAndFileInfo overrides for this item
+            var moduleName = switch(astData.data.def) {
                 case EModule(name, _, _): name;
                 case EDefmodule(name, _): name;
                 default: "(unknown)";
             };
-            // DISABLED: trace('[ElixirOutputIterator] SUPPRESSING emission of: ${moduleName}');
-            #end
-            // Recursively advance to the next item; hasNext() already reflects remaining items
-            return next();
-        }
-
-        // Convert AST to string
-        var output = ElixirASTPrinter.print(transformedAST, 0);
-
-        // Debug: Check if we're getting empty output
-        if (output == null || output.length == 0) { /* silent by default */ }
-        
-        #if debug_output_iterator trace('[ElixirOutputIterator] Generated ${output.length} characters of output'); #end
-        
-        // Inline-deterministic strategy: inject requires + Module.main() into the
-        // module file AFTER compilation using the full dependency graph.
-        //
-        // WHY: Guarantees deterministic ordering (topological) and complete transitive
-        // closure while keeping a single-file entrypoint (no .exs runner).
-        if (ModuleBuilder.getBootstrapStrategy() == BootstrapStrategy.InlineDeterministic) {
-            // Attempt to map the current BaseType back to the module name used in maps
-            var moduleName: Null<String> = null;
-            for (name in compiler.moduleBaseTypes.keys()) {
-                if (compiler.moduleBaseTypes.get(name) == astData.baseType) {
-                    moduleName = name;
-                    break;
-                }
-            }
-            if (moduleName != null && compiler.modulesWithBootstrap.indexOf(moduleName) >= 0) {
-                // Compute deterministic require list using transitive closure and topo order
-                var closure = computeTransitiveDependencies(moduleName);
-                var topo = compiler.getSortedModules();
-                var ordered: Array<String> = [];
-                for (m in topo) if (closure.exists(m)) ordered.push(m);
-                if (ordered.length < Lambda.count(closure)) {
-                    var allKeys: Array<String> = [for (k in closure.keys()) k];
-                    allKeys.sort((a, b) -> Reflect.compare(a, b));
-                    ordered = allKeys;
-                }
-                var lines: Array<String> = [];
-                for (dep in ordered) {
-                    // Skip self when injecting inline
-                    if (dep == moduleName) continue;
-                    var p = compiler.moduleOutputPaths.get(dep);
-                    if (p == null) {
-                        var pack = compiler.modulePackages.get(dep);
-                        p = compiler.getModuleOutputPath(dep, pack);
+            var originalSize = switch (astData.data.def) {
+                case EModule(_, _, body): body != null ? Std.string(body.length) : "null";
+                case EDefmodule(_, doBlock):
+                    switch (doBlock.def) {
+                        case EBlock(exprs): exprs != null ? Std.string(exprs.length) : "null";
+                        case EDo(exprs2): exprs2 != null ? Std.string(exprs2.length) : "null";
+                        default: "unknown";
                     }
-                    if (p != null) lines.push('Code.require_file("' + p + '", __DIR__)');
-                }
-                // Build final inline output: requires + module + main call
-                var injected = (lines.length > 0 ? lines.join("\n") + "\n" : "")
-                    + output + "\n" + moduleName + ".main()";
-                // Ensure trailing newline for consistent diffs
-                output = injected + "\n";
-            }
-        }
+                default:
+                    "unknown";
+            };
+            trace('[ElixirOutputIterator] Input module: ${moduleName} (size=${originalSize})');
+            // DISABLED: trace('[ElixirOutputIterator] Module: ${moduleName}');
+            // DISABLED: trace('[ElixirOutputIterator] overrideFileName: ${astData.overrideFileName}');
+            // DISABLED: trace('[ElixirOutputIterator] overrideDirectory: ${astData.overrideDirectory}');
+            #end
 
-        // Return the same DataAndFileInfo but with string output instead of AST
-        return astData.withOutput(output);
+            // Apply transformation passes to the AST
+            // The metadata from the outer AST node needs to be preserved
+            // when passing to the transformer
+            // Pass the context to ensure metadata is available to transformation passes
+            final transformedAST = ElixirASTTransformer.transform(astData.data, context);
+
+            #if debug_output_iterator trace('[ElixirOutputIterator] Transformation complete'); #end
+
+            // Generic gating: suppress emission of compile-time-only empty modules
+            // WHAT: Avoid generating `.ex` files for modules that have no runtime content
+            // WHY: Macro-only helpers (e.g., std/ecto/*Macros, std/HXX) previously emitted empty stubs
+            // HOW: Detect EDefmodule/EModule nodes with empty bodies and skip yielding output
+            if (shouldSuppressEmission(transformedAST)) {
+                #if debug_output_iterator
+                // Get module name from AST for debug
+                var moduleName = switch(transformedAST.def) {
+                    case EModule(name, _, _): name;
+                    case EDefmodule(name, _): name;
+                    default: "(unknown)";
+                };
+                var reason = "structural";
+                if (transformedAST.metadata != null) {
+                    if (transformedAST.metadata.suppressEmission == true) reason = "metadata.suppressEmission";
+                    else if (transformedAST.metadata.forceEmit == true) reason = "metadata.forceEmit";
+                }
+                var sizeInfo = switch (transformedAST.def) {
+                    case EModule(_, _, body): body != null ? Std.string(body.length) : "null";
+                    case EDefmodule(_, doBlock):
+                        switch (doBlock.def) {
+                            case EBlock(exprs): exprs != null ? Std.string(exprs.length) : "null";
+                            case EDo(exprs2): exprs2 != null ? Std.string(exprs2.length) : "null";
+                            default: "unknown";
+                        }
+                    default:
+                        "unknown";
+                };
+                trace('[ElixirOutputIterator] SUPPRESSING emission of: ${moduleName} (reason=${reason}, size=${sizeInfo})');
+                #end
+
+                // Continue scanning for the next non-suppressed output.
+                continue;
+            }
+
+            // Convert AST to string
+            var output = ElixirASTPrinter.print(transformedAST, 0);
+
+            // Debug: Check if we're getting empty output
+            if (output == null || output.length == 0) { /* silent by default */ }
+
+            #if debug_output_iterator trace('[ElixirOutputIterator] Generated ${output.length} characters of output'); #end
+
+            // Inline-deterministic strategy: inject requires + Module.main() into the
+            // module file AFTER compilation using the full dependency graph.
+            //
+            // WHY: Guarantees deterministic ordering (topological) and complete transitive
+            // closure while keeping a single-file entrypoint (no .exs runner).
+            if (ModuleBuilder.getBootstrapStrategy() == BootstrapStrategy.InlineDeterministic) {
+                // Attempt to map the current BaseType back to the module name used in maps
+                var moduleName: Null<String> = null;
+                for (name in compiler.moduleBaseTypes.keys()) {
+                    if (compiler.moduleBaseTypes.get(name) == astData.baseType) {
+                        moduleName = name;
+                        break;
+                    }
+                }
+                if (moduleName != null && compiler.modulesWithBootstrap.indexOf(moduleName) >= 0) {
+                    // Compute deterministic require list using transitive closure and topo order
+                    var closure = computeTransitiveDependencies(moduleName);
+                    var topo = compiler.getSortedModules();
+                    var ordered: Array<String> = [];
+                    for (m in topo) if (closure.exists(m)) ordered.push(m);
+                    if (ordered.length < Lambda.count(closure)) {
+                        var allKeys: Array<String> = [for (k in closure.keys()) k];
+                        allKeys.sort((a, b) -> Reflect.compare(a, b));
+                        ordered = allKeys;
+                    }
+                    var lines: Array<String> = [];
+                    for (dep in ordered) {
+                        // Skip self when injecting inline
+                        if (dep == moduleName) continue;
+                        var p = compiler.moduleOutputPaths.get(dep);
+                        if (p == null) {
+                            var pack = compiler.modulePackages.get(dep);
+                            p = compiler.getModuleOutputPath(dep, pack);
+                        }
+                        if (p != null) lines.push('Code.require_file("' + p + '", __DIR__)');
+                    }
+                    // Build final inline output: requires + module + main call
+                    var injected = (lines.length > 0 ? lines.join("\n") + "\n" : "")
+                        + output + "\n" + moduleName + ".main()";
+                    // Ensure trailing newline for consistent diffs
+                    output = injected + "\n";
+                }
+            }
+
+            // Return the same DataAndFileInfo but with string output instead of AST
+            return astData.withOutput(output);
+        }
     }
 
     /**

@@ -21,8 +21,8 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 
 ### 4. [04-ecto-migrations](./04-ecto-migrations/)
 **Difficulty**: Intermediate  
-**Features**: Experimental `@:migration` DSL compilation (not yet executable via `mix ecto.migrate`)  
-**Use Case**: Explore the typed migration DSL surface and generated shapes
+**Features**: `@:migration` DSL compilation + opt-in runnable `.exs` emission (`build-migrations.hxml`)  
+**Use Case**: Author migrations in Haxe and generate Ecto-executable files
 
 ### 5. [05-heex-templates](./05-heex-templates/)
 **Difficulty**: Intermediate  

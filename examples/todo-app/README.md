@@ -122,10 +122,15 @@ The todo-app is designed to demonstrate **end-to-end Haxe→Elixir** for applica
 **Hand-written (Elixir/Phoenix conventions)**
 - Phoenix project scaffolding and configuration: `mix.exs`, `config/*.exs`
   - Why: Phoenix expects these files and patterns; keeping them idiomatic makes gradual adoption easy.
-- Ecto migrations and seeds: `priv/repo/migrations/*.exs`, `priv/repo/seeds.exs`
-  - Why: Ecto executes migrations as Elixir scripts from `priv/repo/migrations/`. Reflaxe.Elixir can *generate* migration content, but the canonical runtime location is still `.exs`.
+- Ecto seeds: `priv/repo/seeds.exs`
+  - Why: Ecto executes seeds as Elixir scripts; keeping them Elixir-first is fine for an example app.
 - Phoenix JS bootstrap: `assets/js/phoenix_app.js`
   - Why: this mirrors Phoenix’s canonical LiveView bootstrap and stays stable across Phoenix upgrades (see section above).
+
+**Haxe-authored migrations (compiled to `.exs`)**
+- Haxe sources: `examples/todo-app/src_haxe/server/migrations/*.hx`
+- Runtime artifacts: `examples/todo-app/priv/repo/migrations/*.exs` (generated via `build-migrations.hxml` / `mix haxe.compile.migrations`)
+- Why: Ecto requires `.exs` files under `priv/repo/migrations/`, but the migration logic can still be authored in Haxe.
 
 **Intentional small Elixir helper**
 - `examples/todo-app/lib/todo_app/flash.ex`

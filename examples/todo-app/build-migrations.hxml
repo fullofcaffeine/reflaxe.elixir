@@ -1,0 +1,26 @@
+# Haxe→Elixir migration-only build (Ecto executable `.exs`)
+#
+# WHY:
+# - Ecto loads and executes every `.exs` under `priv/repo/migrations/`.
+# - Reflaxe.Elixir can emit runnable migrations, but only in a dedicated build:
+#   `-D ecto_migrations_exs` switches output to `.exs` and filters emission to `@:migration` classes.
+#
+# See: `mix haxe.compile.migrations` (repo root Mix task).
+
+-lib reflaxe.elixir
+-cp src_haxe
+
+-D app_name=TodoApp
+-D elixir_output=priv/repo/migrations
+-D reflaxe_runtime
+-D ecto_migrations_exs
+-D no-utf16
+
+-dce full
+
+--macro exclude('client')
+--macro exclude('test')
+
+server.migrations.CreateTodos
+server.migrations.CreateUsers
+

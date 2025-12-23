@@ -4288,6 +4288,14 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoSchemaBinderFixTransforms.transformPass
         });
+        // Migration: when emitting `.exs` (ecto_migrations_exs), convert the typed builder-chain DSL
+        // into runnable Ecto.Migration modules (use + up/0 + down/0 + create table/index/constraint).
+        passes.push({
+            name: "EctoMigrationExs",
+            description: "Rewrite @:migration builder chains into runnable Ecto.Migration DSL when ecto_migrations_exs",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EctoMigrationExsTransforms.transformPass
+        });
         // Migration: inject nowarn + stubs (absolute final to see final call shapes)
         passes.push({
             name: "EctoMigrationNowarnAndStubs",

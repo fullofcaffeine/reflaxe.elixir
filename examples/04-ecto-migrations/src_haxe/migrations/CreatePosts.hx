@@ -7,7 +7,7 @@ import ecto.Migration.OnDeleteAction;
 /**
  * Advanced migration example with foreign keys and constraints
  */
-@:migration  
+@:migration({timestamp: "20240102120000"})
 class CreatePosts extends Migration {
     public function new() {}
 

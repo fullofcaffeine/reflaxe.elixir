@@ -399,19 +399,24 @@ end
 
 Marks a Haxe migration (built on `std/ecto/Migration.hx`) so the compiler can process it.
 
-> **Status**: Experimental.
->
-> The typed migration DSL compiles today, but it is **not yet wired into Ecto's executable
-> migration runner** (`priv/repo/migrations/*.exs` + `mix ecto.migrate`). For production
-> projects, generate migrations with `mix ecto.gen.migration` and keep them in Elixir for now.
+  > **Status (Alpha)**: Runnable via **opt-in `.exs` emission**.
+  >
+  > Ecto executes migrations from `priv/repo/migrations/*.exs`. Reflaxe.Elixir can emit runnable
+  > migrations when you compile **only** your `@:migration` classes with:
+  >
+  > - `-D ecto_migrations_exs` (switch output extension to `.exs` + enable migration rewrite)
+  > - `-D elixir_output=priv/repo/migrations`
+  >
+  > Each migration must declare a stable timestamp (used for the filename ordering):
+  > `@:migration({timestamp: "YYYYMMDDHHMMSS"})`.
 
 **Basic Usage**:
 ```haxe
 import ecto.Migration;
 import ecto.Migration.ColumnType;
 
-@:migration
-class CreateUsersTable extends Migration {
+  @:migration({timestamp: "20240101120000"})
+  class CreateUsersTable extends Migration {
     public function new() {}
 
     public function up(): Void {

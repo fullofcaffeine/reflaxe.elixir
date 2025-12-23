@@ -1,10 +1,10 @@
 # Ecto Database Migrations with Haxe
 
-This example demonstrates the **typed migration DSL surface** in Haxe via the `@:migration` annotation.
+This example demonstrates **Haxe-authored, type-safe Ecto migrations** via the `@:migration` annotation.
 
-> **Status (Alpha)**: The migration DSL compiles today, but it is **not yet wired into Ecto's executable
-> migration runner** (`priv/repo/migrations/*.exs` + `mix ecto.migrate`). Treat this example as a
-> compile-time/shape demo for now.
+> **Status (Alpha)**: Migrations are now executable by Ecto via an **opt-in migration build**
+> (`build-migrations.hxml`) that emits timestamped `.exs` files under `priv/repo/migrations/`.
+> The DSL is still evolving; treat `alterTable` support as experimental.
 
 **Prerequisites**: [03-phoenix-app](../03-phoenix-app/) completed  
 **Difficulty**: 🟡 Intermediate  
@@ -30,10 +30,18 @@ This example demonstrates the **typed migration DSL surface** in Haxe via the `@
 ```bash
 cd examples/04-ecto-migrations
 
-# Compile the Haxe migrations to Elixir output (for inspection)
+# Compile the migrations to runnable Ecto `.exs` files
+haxe build-migrations.hxml
+# Or via Mix:
+# mix haxe.compile.migrations
+
+# Inspect the generated migrations
+ls priv/repo/migrations
+
+# (Optional) Compile the intermediate `.ex` output (useful for debugging the DSL transform)
 haxe build.hxml
 
-# Inspect the generated output under lib/
+# Inspect the intermediate output under lib/
 ls lib/migrations
 ```
 
@@ -46,7 +54,7 @@ ls lib/migrations
 import ecto.Migration;
 import ecto.Migration.ColumnType;
 
-@:migration
+@:migration({timestamp: "20240101120000"})
 class CreateUsers extends Migration {
     public function up(): Void {
         createTable("users")
@@ -63,12 +71,11 @@ class CreateUsers extends Migration {
 }
 ```
 
-**Generated Elixir (current alpha shape):**
+**Generated Elixir (runnable Ecto migration):**
 
-The compiler currently emits an **intermediate helper module** for the migration DSL (not a
-timestamped `Ecto.Migration` under `priv/repo/migrations/`). After `haxe build.hxml`, see:
+After `haxe build-migrations.hxml`, see:
 
-- `lib/migrations/create_users.ex`
+- `priv/repo/migrations/*_create_users.exs`
 
 ### Advanced Features
 
@@ -95,17 +102,17 @@ createTable("posts").addCheckConstraint("positive_view_count", "view_count >= 0"
 mix haxe.gen.migration CreateUsers
 
 # This creates:
-# - src_haxe/migrations/CreateUsers.hx (Haxe source skeleton)
-#
-# NOTE: For executable migrations today, use:
-#   mix ecto.gen.migration create_users
-# and keep the migration logic in Elixir (Ecto runs priv/repo/migrations/*.exs).
+# - src_haxe/migrations/CreateUsers.hx (Haxe source skeleton with a timestamp)
+
+# Compile runnable `.exs` migrations (use the migration-only build file)
+haxe build-migrations.hxml
 ```
 
 ### Development Flow
 1. Write migration in Haxe using `@:migration`
-2. Compile with `haxe build.hxml`
-3. Review the generated output under `lib/` (alpha)
+2. Compile runnable migrations with `haxe build-migrations.hxml`
+3. Run `mix ecto.migrate` in a real project (Phoenix app) with a configured Repo
+4. (Optional) Use `haxe build.hxml` to inspect intermediate `.ex` output when debugging transforms
 
 ## Benefits
 

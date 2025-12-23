@@ -26,7 +26,7 @@ If you’re evaluating the project, also read:
 ### Ecto
 - **Schemas**: `Ecto.Schema` generation via `@:schema` and field metadata.
 - **Changesets**: `@:changeset` generation for common `cast/3` + `validate_required/2` patterns.
-- **Migrations (experimental)**: typed migration DSL compiles, but is not yet wired into Ecto’s executable runner (`priv/repo/migrations/*.exs` + `mix ecto.migrate`).
+- **Migrations (alpha)**: runnable via opt-in `.exs` emission (`-D ecto_migrations_exs` + `-D elixir_output=priv/repo/migrations`).
 
 ### OTP
 - **GenServer**: typed callback surfaces and child spec generation patterns.

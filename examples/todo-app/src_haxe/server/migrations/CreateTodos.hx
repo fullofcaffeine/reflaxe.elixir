@@ -1,7 +1,7 @@
 package server.migrations;
 
 import ecto.Migration;
-import ecto.Migration.*;
+import ecto.Migration.ColumnType;
 
 /**
  * Migration to create the todos table with proper indexes
@@ -9,18 +9,18 @@ import ecto.Migration.*;
  * Uses the new typed Migration DSL for compile-time validation
  * and idiomatic Elixir code generation.
  */
-@:migration
+@:migration({timestamp: "20250813170314"})
 class CreateTodos extends Migration {
     
     public function up(): Void {
         createTable("todos")
-            .addColumn("title", String(), {nullable: false})
-            .addColumn("description", Text)
-            .addColumn("completed", Boolean, {defaultValue: false})
-            .addColumn("priority", String())
-            .addColumn("due_date", DateTime)
-            .addColumn("tags", Json)
-            .addColumn("user_id", Integer)
+            .addColumn("title", ColumnType.String(), {nullable: false})
+            .addColumn("description", ColumnType.Text)
+            .addColumn("completed", ColumnType.Boolean, {defaultValue: false})
+            .addColumn("priority", ColumnType.String())
+            .addColumn("due_date", ColumnType.DateTime)
+            .addColumn("tags", ColumnType.Json)
+            .addColumn("user_id", ColumnType.Integer)
             .addTimestamps()
             .addIndex(["user_id"])
             .addIndex(["completed"]);

@@ -252,9 +252,18 @@ defmodule HaxeCompiler do
   
   defp find_generated_elixir_files(target_dir) do
     if File.exists?(target_dir) do
-      target_dir
-      |> Path.join("**/*.ex")
-      |> Path.wildcard()
+      ex_files =
+        target_dir
+        |> Path.join("**/*.ex")
+        |> Path.wildcard()
+
+      exs_files =
+        target_dir
+        |> Path.join("**/*.exs")
+        |> Path.wildcard()
+
+      (ex_files ++ exs_files)
+      |> Enum.uniq()
       |> Enum.sort()
     else
       []

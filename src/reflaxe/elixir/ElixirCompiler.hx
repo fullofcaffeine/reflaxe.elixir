@@ -308,6 +308,24 @@ class ElixirCompiler extends GenericCompiler<
             if (p != null) seen.set(p, true);
         }
 
+        // Migration-only compilation mode:
+        // When emitting `.exs` migrations, we must avoid writing non-migration helper modules
+        // into `priv/repo/migrations/` (Ecto loads every `.exs` in that directory).
+        // This mode is opt-in via `-D ecto_migrations_exs` and expects the build to include
+        // only `@:migration` classes you want to emit.
+        if (Context.defined("ecto_migrations_exs")) {
+            var migrations:Array<haxe.macro.Type.ModuleType> = [];
+            for (mt in result) {
+                switch (mt) {
+                    case TClassDecl(clsRef):
+                        var cls = clsRef.get();
+                        if (cls.meta != null && cls.meta.has(":migration")) migrations.push(mt);
+                    case _:
+                }
+            }
+            return migrations;
+        }
+
         // Debug: detect any @:repo classes already present
         try {
             for (mt in result) {
@@ -670,6 +688,38 @@ class ElixirCompiler extends GenericCompiler<
         moduleName: String,
         modulePack: Array<String>
     ): FrameworkNamingResult {
+        // Migrations: when emitting `.exs` files for Ecto, we must place them under
+        // `priv/repo/migrations/` with timestamped filenames. This is opt-in and
+        // expects a dedicated build that compiles only `@:migration` classes.
+        if (Context.defined("ecto_migrations_exs") && classType.meta.has(":migration")) {
+            var appModuleName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+
+            var migrationName = extractStringMeta(classType, ":migrationName");
+            if (migrationName == null || migrationName == "") {
+                migrationName = reflaxe.elixir.ast.NameUtils.toSnakeCase(classType.name);
+            }
+
+            var migrationTimestamp = extractStringMeta(classType, ":migrationTimestamp");
+            if (migrationTimestamp == null || migrationTimestamp == "") {
+                Context.error(
+                    'Missing migration timestamp for ${classType.name}. Add one via @:migration({timestamp: "20240101120000"}) (or generate with `mix haxe.gen.migration`).',
+                    classType.pos
+                );
+                migrationTimestamp = "00000000000000";
+            }
+
+            var fileStem = migrationTimestamp + "_" + migrationName;
+            setOutputFileName(fileStem);
+            setOutputFileDir("");
+
+            var outputPath = fileStem + ".exs";
+            return {
+                moduleName: appModuleName + ".Repo.Migrations." + classType.name,
+                modulePack: [],
+                outputPath: outputPath
+            };
+        }
+
         // Application modules: map to lib/<app_snake>/application.ex
         if (classType.meta.has(":application")) {
             var appModuleName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
@@ -774,6 +824,19 @@ class ElixirCompiler extends GenericCompiler<
             moduleName: moduleName,
             modulePack: modulePack,
             outputPath: null
+        };
+    }
+
+    static inline function extractStringMeta(classType: ClassType, metaName: String): Null<String> {
+        if (classType.meta == null || !classType.meta.has(metaName)) return null;
+        var entries = classType.meta.extract(metaName);
+        if (entries == null || entries.length == 0) return null;
+        var first = entries[0];
+        if (first.params == null || first.params.length == 0) return null;
+        return switch (first.params[0].expr) {
+            case EConst(CString(value, _)): value;
+            case EConst(CInt(value, _)): value;
+            default: null;
         };
     }
     
@@ -1679,21 +1742,33 @@ class ElixirCompiler extends GenericCompiler<
     /**
      * Build AST for a class (generates Elixir module)
      */
-    function buildClassAST(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
+	    function buildClassAST(classType: ClassType, varFields: Array<ClassVarData>, funcFields: Array<ClassFuncData>): Null<reflaxe.elixir.ast.ElixirAST> {
 
         #if debug_behavior_transformer
         // DISABLED: trace('[ElixirCompiler.buildClassAST] Building class: ${classType.name}');
         // DISABLED: trace('[ElixirCompiler.buildClassAST] Metadata: ${[for (m in classType.meta.get()) m.name]}');
         #end
 
-        // Skip built-in types and std/internal classes that shouldn't generate modules
-        if (isBuiltinAbstractType(classType.name) || isStandardLibraryClass(classType.name) || shouldSuppressStdEmission(classType)) {
-            return null;
-        }
-        
-        // Activate behavior transformer if this class has a behavior annotation
-        // This ensures that when the class's methods are compiled, the behavior transformer
-        // is active and can inject self() or other behavior-specific transformations
+	        // Skip built-in types and std/internal classes that shouldn't generate modules
+	        if (isBuiltinAbstractType(classType.name) || isStandardLibraryClass(classType.name) || shouldSuppressStdEmission(classType)) {
+	            return null;
+	        }
+
+	        #if (macro && debug_migration_build)
+	        if (Context.defined("ecto_migrations_exs") && classType.meta != null && classType.meta.has(":migration")) {
+	            Sys.println('[MigrationBuild] ' + classType.module + '.' + classType.name + ' funcFields=' + (funcFields != null ? Std.string(funcFields.length) : "null"));
+	            if (funcFields != null) {
+	                for (funcData in funcFields) {
+	                    var hasBody = funcData != null && funcData.expr != null;
+	                    Sys.println('  - ' + funcData.field.name + ' hasBody=' + (hasBody ? "true" : "false"));
+	                }
+	            }
+	        }
+	        #end
+	        
+	        // Activate behavior transformer if this class has a behavior annotation
+	        // This ensures that when the class's methods are compiled, the behavior transformer
+	        // is active and can inject self() or other behavior-specific transformations
         var previousBehavior: Null<String> = null;
         if (reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer != null) {
             previousBehavior = reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer.activeBehavior;

@@ -135,8 +135,9 @@ class CompilerInit {
         }
 
         // Register the Elixir compiler with Reflaxe
+        var outputExtension = Context.defined("ecto_migrations_exs") ? ".exs" : ".ex";
         ReflectCompiler.AddCompiler(new ElixirCompiler(), {
-            fileOutputExtension: ".ex",
+            fileOutputExtension: outputExtension,
             outputDirDefineName: "elixir_output",
             fileOutputType: FilePerModule,
             ignoreTypes: [],

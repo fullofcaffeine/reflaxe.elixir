@@ -74,7 +74,7 @@ The foundation for multi-target development:
 - **HXX Template System** - Complete compile-time JSX→HEEx transformation with AST-based processing
   - **Template Helper Metadata** ✨ NEW - Uses @:templateHelper metadata for extensible Phoenix function compilation
   - **Type-Safe Phoenix Abstractions** ✨ NEW - Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with operator overloading
-- **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations are experimental** (prefer Elixir `mix ecto.gen.migration` for now)  
+- **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations are runnable via opt-in `.exs` emission** (`-D ecto_migrations_exs`)  
 - **Mix Integration** - Seamless build pipeline with file watching and incremental compilation
 - **Source Maps** - First Reflaxe target with `.ex.map` generation for debugging
 - **OTP Support** - GenServers, Supervisors, Registry with type-safe compilation

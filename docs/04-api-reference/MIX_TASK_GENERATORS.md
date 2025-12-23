@@ -86,7 +86,7 @@ Output:
 
 Important:
 - Ecto executes migrations from `priv/repo/migrations/*.exs`.
-- If you need executable migrations today, prefer `mix ecto.gen.migration` and keep migrations in Elixir for now.
+- Reflaxe.Elixir can emit runnable `.exs` migrations via an opt-in migration build (`-D ecto_migrations_exs`).
 
 ### `mix haxe.gen.project` (legacy / being refreshed)
 

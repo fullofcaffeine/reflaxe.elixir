@@ -73,6 +73,14 @@ class ModuleBuilder {
             }
         }
 
+        // Migration emission mode: migrations are compiled into `priv/repo/migrations/*.exs`.
+        // Ecto convention is `MyApp.Repo.Migrations.*`, so we force that namespace when
+        // `-D ecto_migrations_exs` is enabled.
+        if (Context.defined("ecto_migrations_exs") && classType.meta.has(":migration")) {
+            var appName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+            return appName + ".Repo.Migrations." + classType.name;
+        }
+
         // For non-extern project code in a packaged namespace, qualify with the configured app module prefix.
         //
         // This is intentionally conservative: we only apply the prefix when `-D app_name=...` is present.
