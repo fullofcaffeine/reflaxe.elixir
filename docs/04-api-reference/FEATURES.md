@@ -35,7 +35,7 @@ If you’re evaluating the project, also read:
 ### Tooling & workflow
 - **Mix integration**: `mix compile` support via `Mix.Tasks.Compile.Haxe` and watchers for dev.
 - **Haxe compile server**: managed `haxe --wait` lifecycle (opt‑out via `HAXE_NO_SERVER=1`).
-- **Source maps**: optional `.ex.map` generation for error tracing back to Haxe.
+- **Source mapping (experimental)**: design and scaffolding exists, but `.ex.map` emission/lookup is not yet fully wired end‑to‑end (see `docs/04-api-reference/SOURCE_MAPPING.md`).
 - **Guardrails**: CI checks for `Dynamic`/`Any`/`untyped` and `__elixir__()` leaks in application code.
 
 ### JavaScript (client)

@@ -231,31 +231,12 @@ All compilation features meet <15ms performance requirements:
 - **`src/reflaxe/elixir/helpers/`**: Feature-specific compilers (Changeset, OTP, LiveView, etc.)
 - **`std/`**: Phoenix/Elixir type definitions and externs
 
-## Source Mapping and Debugging
+## Source Mapping (Experimental)
 
-### Enable Source Mapping
-```bash
-# Compile with source maps for debugging
-haxe build.hxml -D source-map
+Reflaxe.Elixir has a source mapping design (to map generated `.ex` back to `.hx`), but it is
+currently **experimental** and not fully wired end‑to‑end in the AST pipeline.
 
-# Verify .ex.map files were created
-ls lib/*.ex.map
-```
-
-### Using Source Maps
-```bash
-# Query source positions for debugging
-mix haxe.source_map lib/MyModule.ex 10 5
-# Output: src_haxe/MyModule.hx:15:8
-
-# View compilation errors with source context
-mix haxe.errors --format json
-```
-
-**Benefits:**
-- **Debug at Haxe level**: Errors point to original source
-- **Accurate line numbers**: Precise error locations
-- **IDE integration**: Better development experience
+See `docs/04-api-reference/SOURCE_MAPPING.md` for the current status and next steps.
 
 ## Full-Stack Development
 

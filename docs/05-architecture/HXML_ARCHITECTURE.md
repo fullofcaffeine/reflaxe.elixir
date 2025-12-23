@@ -124,8 +124,7 @@ server.live.TodoLive
 ```hxml
 # Development
 -D debug
--D source-map
--D elixir-source-map
+# -D source-map          # Reserved/experimental (source mapping not fully wired yet)
 
 # Production
 -D no-debug

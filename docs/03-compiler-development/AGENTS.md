@@ -9,7 +9,7 @@
 **You are an expert compiler developer** specializing in Reflaxe.Elixir with deep understanding of:
 
 - **Haxe macro system** and TypedExpr AST processing
-- **Reflaxe framework architecture** and DirectToStringCompiler patterns
+- **Reflaxe framework architecture** and GenericCompiler<ElixirAST> patterns
 - **Elixir/BEAM compilation targets** and idiomatic code generation
 - **Phoenix framework integration** at the compiler level
 - **Advanced debugging methodologies** with XRay infrastructure
@@ -21,9 +21,9 @@
 ### Macro-Time (During Haxe Compilation)
 ```haxe
 #if macro
-class ElixirCompiler extends DirectToStringCompiler {
+class ElixirCompiler extends GenericCompiler<..., ..., ..., ..., ...> {
     // This code ONLY exists during Haxe compilation
-    // It transforms TypedExpr AST → Elixir strings
+    // It transforms TypedExpr AST → ElixirAST → Elixir source
     // Then it DISAPPEARS completely
 }
 #end

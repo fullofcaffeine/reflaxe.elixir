@@ -41,7 +41,7 @@ Most internal research notes were archived to **[09-history/archive/docs/03-comp
 - [Annotations](04-api-reference/ANNOTATIONS.md) - @:router, @:liveview, @:schema reference
 - [Standard Library](04-api-reference/STANDARD_LIBRARY_HANDLING.md) - Stdlib strategy + guidance
 - [Haxe Macro APIs](04-api-reference/HAXE_MACRO_APIS.md) - Correct macro API usage
-- [Source Mapping](04-api-reference/SOURCE_MAPPING.md) - Source map architecture + usage
+- [Source Mapping](04-api-reference/SOURCE_MAPPING.md) - Experimental source map design/status
 - [Router DSL](04-api-reference/ROUTER_DSL.md) - Phoenix router DSL reference
 - [Mix Tasks](04-api-reference/MIX_TASKS.md) - Custom Mix task reference
 - [Mix Task Generators](04-api-reference/MIX_TASK_GENERATORS.md) - `mix haxe.gen.*` scaffolds (Haxe-first)

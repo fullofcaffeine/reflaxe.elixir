@@ -48,6 +48,9 @@ mix compile.haxe --force
 
 Query and validate source mapping information.
 
+> Note: Source mapping is currently **experimental**. The task is present, but `.ex.map` emission and
+> lookup are not yet fully wired end‑to‑end. See `docs/04-api-reference/SOURCE_MAPPING.md`.
+
 ```bash
 # Query specific position
 mix haxe.source_map lib/UserService.ex 45 12
@@ -377,14 +380,8 @@ mix compile.haxe --force
 
 ### Common Issues
 
-**No source maps generated:**
-```bash
-# Ensure -D source-map flag is set
-grep "source-map" build.hxml
-
-# Verify source maps exist
-ls lib/*.ex.map
-```
+**No source maps generated:** Source mapping is currently experimental; `.ex.map` files are not emitted
+by default builds yet. See `docs/04-api-reference/SOURCE_MAPPING.md`.
 
 **Server connection issues:**
 ```bash

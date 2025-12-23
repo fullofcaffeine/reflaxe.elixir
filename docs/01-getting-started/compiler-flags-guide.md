@@ -95,7 +95,7 @@ Dead code elimination (`-dce`) is GOOD because it:
 # Helpful during development
 -D debug_ast_pipeline       # See AST transformations
 -D debug_pattern_matching   # Debug pattern matching
--D source-map              # Generate source maps
+-D source-map              # Reserved/experimental (source mapping not fully wired yet)
 ```
 
 ## 📊 Flag Impact Comparison
@@ -105,7 +105,7 @@ Dead code elimination (`-dce`) is GOOD because it:
 | `-D analyzer-optimize` | Destroys functional patterns, unrolls loops | ❌ **Never use** |
 | `-dce full` | Removes unused code cleanly | ✅ **Always use** |
 | `-D loop_unroll_max_cost=N` | Controls unrolling threshold | ✅ **Use with low values (10-20)** |
-| `-D source-map` | Adds debugging information | ✅ **Use in development** |
+| `-D source-map` | Reserved/experimental | ⚠️ **Not yet end-to-end** |
 | `-D debug_ast_pipeline` | Verbose AST transformation output | 🔧 **Development only** |
 
 ## 🎯 Configuration by Use Case
@@ -114,7 +114,6 @@ Dead code elimination (`-dce`) is GOOD because it:
 ```hxml
 -dce full
 -D loop_unroll_max_cost=10
--D source-map
 # Optional: -D debug_ast_pipeline
 ```
 
