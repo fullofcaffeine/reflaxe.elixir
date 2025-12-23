@@ -6,7 +6,7 @@ import ecto.Migration.ColumnType;
 /**
  * Example migration using the typed Ecto Migration DSL (`std/ecto/Migration.hx`).
  */
-@:migration
+@:migration({timestamp: "20240101120000"})
 class CreateUsers extends Migration {
     public function new() {}
 

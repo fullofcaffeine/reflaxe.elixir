@@ -1,0 +1,18 @@
+# Compile runnable Ecto migrations (.exs) into priv/repo/migrations
+#
+# This build is intentionally migration-only:
+# - `-D ecto_migrations_exs` switches the compiler output extension to `.exs`
+# - The compiler filters output to only `@:migration` classes so helper modules do not
+#   land in the migrations directory (Ecto loads every `.exs` there).
+
+-lib reflaxe.elixir
+-cp src_haxe
+
+-D app_name=EctoMigrationsExample
+-D elixir_output=priv/repo/migrations
+-D reflaxe_runtime
+-D ecto_migrations_exs
+
+migrations.CreatePosts
+migrations.CreateUsers
+

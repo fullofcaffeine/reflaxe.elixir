@@ -13,6 +13,7 @@
 ```
 lib/mix/tasks/
 ├── AGENTS.md                    # THIS FILE - Documentation (DO NOT DELETE)
+├── haxe.compile.migrations.ex   # Compile runnable Ecto migrations (.exs)
 ├── compile.haxe.ex             # Mix compiler integration for Haxe→Elixir
 ├── haxe.watch.ex               # File watching for auto-recompilation
 ├── haxe.errors.ex              # Error display and debugging tools
@@ -100,6 +101,13 @@ lib/mix/tasks/
 - Generates Ecto migrations
 - Creates database change scripts
 - Handles schema evolution
+
+### Migration Compilation
+
+#### `Mix.Tasks.Haxe.Compile.Migrations`
+**File**: `haxe.compile.migrations.ex`
+- Compiles a migration-only HXML into runnable `priv/repo/migrations/*.exs`
+- Designed to be used before `mix ecto.migrate`
 
 ## 🧪 Testing
 

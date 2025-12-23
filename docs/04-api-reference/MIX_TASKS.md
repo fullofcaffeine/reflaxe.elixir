@@ -210,9 +210,8 @@ mix haxe.watch --hxml build.hxml
 Generate a **Haxe-authored migration skeleton**.
 
 This task is intentionally Haxe-first: it writes a Haxe migration file you can evolve in Haxe.
-Ecto itself executes migrations from `priv/repo/migrations/*.exs`, so if you need executable
-migrations today, prefer `mix ecto.gen.migration` for the timestamped `.exs` and keep migration
-logic in Elixir for now (the Haxe migration DSL is still evolving in the alpha series).
+Ecto executes migrations from `priv/repo/migrations/*.exs`. Reflaxe.Elixir can emit runnable
+`.exs` migrations via an opt-in migration build (`-D ecto_migrations_exs` + `-D elixir_output=priv/repo/migrations`).
 
 ```bash
 # Generate a Haxe migration skeleton
@@ -230,10 +229,26 @@ mix haxe.gen.migration CreatePostsTable --haxe-dir src_haxe/migrations
 - `--columns` - Comma-separated columns (e.g. `"name:string,email:string,age:integer"`)
 - `--index` - Index field(s)
 - `--unique` - Unique index
+- `--timestamp` - Timestamp used for `.exs` emission ordering (default: UTC now as `YYYYMMDDHHMMSS`)
 - `--haxe-dir` - Output dir for Haxe migrations (default: `src_haxe/migrations`)
 
 **Generated Files:**
 - `src_haxe/migrations/<MigrationName>.hx` (or `--haxe-dir`)
+
+### mix haxe.compile.migrations
+
+Compile runnable `.exs` migration files.
+
+This task expects a migration-only HXML (commonly `build-migrations.hxml`) that:
+
+- Defines `-D ecto_migrations_exs`
+- Sets `-D elixir_output=priv/repo/migrations`
+- Includes only your `@:migration` classes
+
+```bash
+mix haxe.compile.migrations
+mix haxe.compile.migrations --hxml build-migrations.hxml
+```
 
 ## Task Options & Flags
 
@@ -327,10 +342,10 @@ mix haxe.stacktrace haxe_error_123456_0 --cross-reference
 mix haxe.gen.migration CreateUsersTable --table users --columns "name:string,email:string"
 
 # 2. Include CreateUsersTable in your build.hxml (or migrations build) and compile
-haxe build.hxml
+haxe build-migrations.hxml
 
-# NOTE: Ecto executes migrations from priv/repo/migrations/*.exs.
-# For executable migrations today, prefer `mix ecto.gen.migration` and keep the migration in Elixir.
+# Or via Mix:
+mix haxe.compile.migrations
 ```
 
 ## Performance Tips

@@ -58,6 +58,12 @@ class EctoMigrationNowarnAndStubTransforms {
     }
 
     public static function transformPass(ast: ElixirAST): ElixirAST {
+        // In `.exs` migration emission mode we generate real Ecto.Migration DSL,
+        // so the old stubs/nowarn shims must not run.
+        #if ecto_migrations_exs
+        return ast;
+        #end
+
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EModule(name, attrs, body):
