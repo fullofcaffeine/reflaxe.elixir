@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * AssignmentChainCleanupTransforms
@@ -31,6 +32,7 @@ class AssignmentChainCleanupTransforms {
             return switch (node.def) {
                 case EBlock(stmts):
                     var out:Array<ElixirAST> = [];
+                    var usage = OptimizedVarUseAnalyzer.buildExact(stmts);
                     var n = stmts.length;
                     for (i in 0...n) {
                         var s = stmts[i];
@@ -56,7 +58,7 @@ class AssignmentChainCleanupTransforms {
                                         innerRightExpr = innerPatExpr;
                                     default:
                                 }
-                                if ((innerIsWildcard || (innerAliasName != null && !nameUsedLater(stmts, i+1, innerAliasName))) && innerRightExpr != null) {
+                                if ((innerIsWildcard || (innerAliasName != null && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, innerAliasName))) && innerRightExpr != null) {
                                     // Rewrite to leftOuter = innerRightExpr (underscore or unused alias)
                                     out.push(makeASTWithMeta(EBinary(Match, leftOuter, innerRightExpr), s.metadata, s.pos));
                                 } else {
@@ -83,7 +85,7 @@ class AssignmentChainCleanupTransforms {
                                         innerRightExpr = matchExpr;
                                     default:
                                 }
-                                if ((innerIsWildcard || (innerAliasName != null && !nameUsedLater(stmts, i+1, innerAliasName))) && innerRightExpr != null) {
+                                if ((innerIsWildcard || (innerAliasName != null && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, innerAliasName))) && innerRightExpr != null) {
                                     out.push(makeASTWithMeta(EMatch(patOuter, innerRightExpr), s.metadata, s.pos));
                                 } else {
                                     out.push(s);
@@ -95,6 +97,7 @@ class AssignmentChainCleanupTransforms {
                     makeASTWithMeta(EBlock(out), node.metadata, node.pos);
                 case EDo(stmts):
                     var doOut:Array<ElixirAST> = [];
+                    var usage = OptimizedVarUseAnalyzer.buildExact(stmts);
                     var doCount = stmts.length;
                     for (i in 0...doCount) {
                         var s = stmts[i];
@@ -111,7 +114,7 @@ class AssignmentChainCleanupTransforms {
                                         innerRightExprDo = innerMatchExpr;
                                     default:
                                 }
-                                if (innerAliasNameDo != null && innerRightExprDo != null && !nameUsedLater(stmts, i+1, innerAliasNameDo)) {
+                                if (innerAliasNameDo != null && innerRightExprDo != null && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, innerAliasNameDo)) {
                                     doOut.push(makeASTWithMeta(EBinary(Match, leftOuter, innerRightExprDo), s.metadata, s.pos));
                                 } else {
                                     doOut.push(s);
@@ -128,7 +131,7 @@ class AssignmentChainCleanupTransforms {
                                         innerRightExprDoMatch = matchExpr;
                                     default:
                                 }
-                                if (innerAliasNameDoMatch != null && innerRightExprDoMatch != null && !nameUsedLater(stmts, i+1, innerAliasNameDoMatch)) {
+                                if (innerAliasNameDoMatch != null && innerRightExprDoMatch != null && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, innerAliasNameDoMatch)) {
                                     doOut.push(makeASTWithMeta(EMatch(patOuter, innerRightExprDoMatch), s.metadata, s.pos));
                                 } else {
                                     doOut.push(s);
@@ -142,36 +145,6 @@ class AssignmentChainCleanupTransforms {
                     node;
             }
         });
-    }
-
-    static function nameUsedLater(stmts:Array<ElixirAST>, start:Int, name:String):Bool {
-        for (j in start...stmts.length) if (statementUsesName(stmts[j], name)) return true;
-        return false;
-    }
-
-    static function statementUsesName(s: ElixirAST, name:String):Bool {
-        var used = false;
-        function visit(n: ElixirAST):Void {
-            if (used || n == null || n.def == null) return;
-            switch (n.def) {
-                case EVar(v) if (v == name): used = true;
-                case EBlock(ss): for (x in ss) visit(x);
-                case EIf(c,t,e): visit(c); visit(t); if (e != null) visit(e);
-                case ECase(expr, cs): visit(expr); for (c in cs) visit(c.body);
-                case EBinary(_, l, r): visit(l); visit(r);
-                case EMatch(_, rhs): visit(rhs);
-                case ECall(t,_,as): if (t != null) visit(t); if (as != null) for (a in as) visit(a);
-                case ERemoteCall(remoteTarget,_,remoteArgs): visit(remoteTarget); if (remoteArgs != null) for (arg in remoteArgs) visit(arg);
-                case EFn(clauses): for (cl in clauses) visit(cl.body);
-                case ERaw(code):
-                    if (code != null && code.indexOf("#{" + name) != -1) used = true;
-                case EString(s):
-                    if (s != null && s.indexOf("#{" + name) != -1) used = true;
-                default:
-            }
-        }
-        visit(s);
-        return used;
     }
 }
 

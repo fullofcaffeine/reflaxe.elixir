@@ -55,6 +55,36 @@ class OptimizedVarUseAnalyzer {
         return { suffix: suffix };
     }
 
+    /**
+     * buildExact
+     *
+     * WHAT
+     * - Build a suffix usage index like `build/1`, but only tracks *exact* variable
+     *   names (no underscore/base/camel/snake variants).
+     *
+     * WHY
+     * - Some hygiene passes must distinguish between `name` and `_name` to avoid
+     *   suppressing legitimate warnings or missing real uses.
+     */
+    public static function buildExact(stmts: Array<ElixirAST>): OptimizedUsageIndex {
+        var suffix:Array<Map<String,Bool>> = [];
+        if (stmts == null) {
+            suffix.push(new Map());
+            return { suffix: suffix };
+        }
+        suffix[stmts.length] = new Map<String,Bool>();
+        var i = stmts.length - 1;
+        while (i >= 0) {
+            var nextMap = suffix[i + 1];
+            var current = new Map<String,Bool>();
+            for (k in nextMap.keys()) current.set(k, true);
+            collectVarsExact(stmts[i], current);
+            suffix[i] = current;
+            i--;
+        }
+        return { suffix: suffix };
+    }
+
     public static inline function usedLater(idx:OptimizedUsageIndex, startIdx:Int, name:String):Bool {
         if (idx == null || idx.suffix == null || name == null || name.length == 0) return false;
         var pos = startIdx;
@@ -71,38 +101,39 @@ class OptimizedVarUseAnalyzer {
 
     static function collectVars(n:ElixirAST, out:Map<String,Bool>):Void {
         if (n == null || n.def == null) return;
-        inline function addName(raw:String):Void {
-            if (raw == null || raw.length == 0) return;
-            function addOnce(s:String) {
-                if (s != null && s.length > 0 && !out.exists(s)) out.set(s, true);
-            }
-            addOnce(raw);
-            if (raw.charAt(0) == '_' && raw.length > 1) {
-                addOnce(raw.substr(1));
-            } else {
-                addOnce('_' + raw);
-            }
-            var sn = toSnake(raw);
-            addOnce(sn);
-            var cc = toCamel(raw);
-            addOnce(cc);
-        }
         switch (n.def) {
-            case EVar(v): addName(v);
-            case ERaw(code): if (code != null) for (t in tokenize(code)) addName(t);
-            case EString(str): if (str != null) for (t in tokenizeInterpolations(str)) addName(t);
-            case EBinary(_, l, r): collectVars(l, out); collectVars(r, out);
-            case EMatch(pat, rhs): collectVars(rhs, out); collectPattern(pat, out);
+            case EVar(v): addName(out, v);
+            case ERaw(code): if (code != null) for (t in tokenize(code)) addName(out, t);
+            case EString(str): if (str != null) for (t in tokenizeInterpolations(str)) addName(out, t);
+            // Match operator: LHS is a pattern binder; only RHS can reference vars.
+            case EBinary(Match, _left, rhs):
+                collectVars(rhs, out);
+            case EBinary(_, l, r):
+                collectVars(l, out);
+                collectVars(r, out);
+            // Match expression: pattern binds names; only RHS can reference vars (except pins).
+            case EMatch(pat, rhs):
+                collectVars(rhs, out);
+                collectPinnedPatternUses(pat, out, false);
             case EBlock(stmts): for (s in stmts) collectVars(s, out);
             case EDo(stmts): for (s in stmts) collectVars(s, out);
             case EIf(c,t,e): collectVars(c, out); collectVars(t, out); if (e != null) collectVars(e, out);
             case EUnless(c,t,e): collectVars(c,out); collectVars(t,out); if (e!=null) collectVars(e,out);
             case ECase(expr, clauses):
                 collectVars(expr, out);
-                for (c in clauses) { if (c.guard != null) collectVars(c.guard, out); collectVars(c.body, out); collectPattern(c.pattern, out); }
+                for (c in clauses) {
+                    // c.pattern binds names; do not treat as a use (except pins).
+                    if (c.guard != null) collectVars(c.guard, out);
+                    collectVars(c.body, out);
+                    collectPinnedPatternUses(c.pattern, out, false);
+                }
             case EWith(clauses, doBlock, elseBlock):
-                for (wc in clauses) { collectVars(wc.expr, out); collectPattern(wc.pattern, out); }
-                collectVars(doBlock, out); if (elseBlock != null) collectVars(elseBlock, out);
+                for (wc in clauses) {
+                    collectVars(wc.expr, out);
+                    collectPinnedPatternUses(wc.pattern, out, false);
+                }
+                collectVars(doBlock, out);
+                if (elseBlock != null) collectVars(elseBlock, out);
             case ECall(t, _, args):
                 if (t != null) collectVars(t, out);
                 for (a in args) collectVars(a, out);
@@ -120,7 +151,10 @@ class OptimizedVarUseAnalyzer {
             case EUnary(_, inner): collectVars(inner, out);
             case EPipe(l,r): collectVars(l,out); collectVars(r,out);
             case EFor(gens, filters, body, into, _uniq):
-                for (g in gens) { collectVars(g.expr, out); collectPattern(g.pattern, out); }
+                for (g in gens) {
+                    collectVars(g.expr, out);
+                    collectPinnedPatternUses(g.pattern, out, false);
+                }
                 for (f in filters) collectVars(f, out);
                 if (body != null) collectVars(body, out);
                 if (into != null) collectVars(into, out);
@@ -129,27 +163,178 @@ class OptimizedVarUseAnalyzer {
         }
     }
 
-    static function collectPattern(pat:ElixirAST.EPattern, out:Map<String,Bool>):Void {
+    static function addName(out: Map<String, Bool>, raw: String): Void {
+        if (out == null || raw == null || raw.length == 0) return;
+        inline function addOnce(s: String): Void {
+            if (s != null && s.length > 0 && !out.exists(s)) out.set(s, true);
+        }
+        addOnce(raw);
+        if (raw.charAt(0) == '_' && raw.length > 1) {
+            addOnce(raw.substr(1));
+        } else {
+            addOnce('_' + raw);
+        }
+        var sn = toSnake(raw);
+        addOnce(sn);
+        var cc = toCamel(raw);
+        addOnce(cc);
+    }
+
+    /**
+     * Collect uses inside pinned patterns (`^var`) without counting binders.
+     *
+     * WHY
+     * - `^var` in patterns references an existing binding; treating it as a binder
+     *   causes false positives/negatives for `usedLater` checks.
+     */
+    static function collectPinnedPatternUses(pat: ElixirAST.EPattern, out: Map<String, Bool>, inPin: Bool): Void {
         if (pat == null) return;
         switch (pat) {
-            case PVar(v): addNameInner(out, v);
-            case PTuple(ps):
-                for (p in ps) collectPattern(p, out);
-            case PStruct(_, fields):
-                for (f in fields) collectPattern(f.value, out);
-            case PMap(pairs):
-                for (p in pairs) collectPattern(p.value, out);
+            case PPin(inner):
+                collectPinnedPatternUses(inner, out, true);
+            case PVar(v) if (inPin):
+                addName(out, v);
+            case PTuple(ps) | PList(ps):
+                for (p in ps) collectPinnedPatternUses(p, out, inPin);
             case PCons(h, t):
-                collectPattern(h, out); collectPattern(t, out);
-            case PList(elems):
-                for (p in elems) collectPattern(p, out);
+                collectPinnedPatternUses(h, out, inPin);
+                collectPinnedPatternUses(t, out, inPin);
+            case PMap(pairs):
+                for (p in pairs) collectPinnedPatternUses(p.value, out, inPin);
+            case PStruct(_, fields):
+                for (f in fields) collectPinnedPatternUses(f.value, out, inPin);
+            case PBinary(segs):
+                for (s in segs) collectPinnedPatternUses(s.pattern, out, inPin);
+            case PAlias(_alias, inner):
+                collectPinnedPatternUses(inner, out, inPin);
             default:
         }
     }
 
-    static inline function addNameInner(out:Map<String,Bool>, n:String):Void {
-        if (n == null || n.length == 0) return;
-        if (!out.exists(n)) out.set(n, true);
+    static inline function addExact(out: Map<String, Bool>, raw: String): Void {
+        if (out == null || raw == null || raw.length == 0) return;
+        if (!out.exists(raw)) out.set(raw, true);
+    }
+
+    static function collectVarsExact(n: ElixirAST, out: Map<String, Bool>): Void {
+        if (n == null || n.def == null) return;
+        switch (n.def) {
+            case EVar(v):
+                addExact(out, v);
+            case ERaw(code):
+                if (code != null) for (t in tokenize(code)) addExact(out, t);
+            case EString(str):
+                if (str != null) for (t in tokenizeInterpolations(str)) addExact(out, t);
+            case EBinary(Match, _left, rhs):
+                collectVarsExact(rhs, out);
+            case EBinary(_, l, r):
+                collectVarsExact(l, out);
+                collectVarsExact(r, out);
+            case EMatch(pat, rhs):
+                collectVarsExact(rhs, out);
+                collectPinnedPatternUsesExact(pat, out, false);
+            case EBlock(stmts):
+                for (s in stmts) collectVarsExact(s, out);
+            case EDo(stmts):
+                for (s in stmts) collectVarsExact(s, out);
+            case EIf(c, t, e):
+                collectVarsExact(c, out);
+                collectVarsExact(t, out);
+                if (e != null) collectVarsExact(e, out);
+            case EUnless(c, t, e):
+                collectVarsExact(c, out);
+                collectVarsExact(t, out);
+                if (e != null) collectVarsExact(e, out);
+            case ECase(expr, clauses):
+                collectVarsExact(expr, out);
+                for (c in clauses) {
+                    if (c.guard != null) collectVarsExact(c.guard, out);
+                    collectVarsExact(c.body, out);
+                    collectPinnedPatternUsesExact(c.pattern, out, false);
+                }
+            case EWith(clauses, doBlock, elseBlock):
+                for (wc in clauses) {
+                    collectVarsExact(wc.expr, out);
+                    collectPinnedPatternUsesExact(wc.pattern, out, false);
+                }
+                collectVarsExact(doBlock, out);
+                if (elseBlock != null) collectVarsExact(elseBlock, out);
+            case ECall(t, _, args):
+                if (t != null) collectVarsExact(t, out);
+                for (a in args) collectVarsExact(a, out);
+            case ERemoteCall(m, _, args):
+                collectVarsExact(m, out);
+                for (a in args) collectVarsExact(a, out);
+            case EField(obj, _):
+                collectVarsExact(obj, out);
+            case EAccess(obj, key):
+                collectVarsExact(obj, out);
+                collectVarsExact(key, out);
+            case EKeywordList(pairs):
+                for (p in pairs) collectVarsExact(p.value, out);
+            case EMap(pairs):
+                for (p in pairs) {
+                    collectVarsExact(p.key, out);
+                    collectVarsExact(p.value, out);
+                }
+            case EStructUpdate(base, fields):
+                collectVarsExact(base, out);
+                for (f in fields) collectVarsExact(f.value, out);
+            case ETuple(elems) | EList(elems):
+                for (e in elems) collectVarsExact(e, out);
+            case EFn(clauses):
+                for (cl in clauses) collectVarsExact(cl.body, out);
+            case ECond(condClauses):
+                for (cl in condClauses) {
+                    collectVarsExact(cl.condition, out);
+                    collectVarsExact(cl.body, out);
+                }
+            case ERange(s, e, _):
+                collectVarsExact(s, out);
+                collectVarsExact(e, out);
+            case EUnary(_, inner):
+                collectVarsExact(inner, out);
+            case EPipe(l, r):
+                collectVarsExact(l, out);
+                collectVarsExact(r, out);
+            case EFor(gens, filters, body, into, _uniq):
+                for (g in gens) {
+                    collectVarsExact(g.expr, out);
+                    collectPinnedPatternUsesExact(g.pattern, out, false);
+                }
+                for (f in filters) collectVarsExact(f, out);
+                if (body != null) collectVarsExact(body, out);
+                if (into != null) collectVarsExact(into, out);
+            case EPin(expr):
+                collectVarsExact(expr, out);
+            case ECapture(expr, _):
+                collectVarsExact(expr, out);
+            default:
+        }
+    }
+
+    static function collectPinnedPatternUsesExact(pat: ElixirAST.EPattern, out: Map<String, Bool>, inPin: Bool): Void {
+        if (pat == null) return;
+        switch (pat) {
+            case PPin(inner):
+                collectPinnedPatternUsesExact(inner, out, true);
+            case PVar(v) if (inPin):
+                addExact(out, v);
+            case PTuple(ps) | PList(ps):
+                for (p in ps) collectPinnedPatternUsesExact(p, out, inPin);
+            case PCons(h, t):
+                collectPinnedPatternUsesExact(h, out, inPin);
+                collectPinnedPatternUsesExact(t, out, inPin);
+            case PMap(pairs):
+                for (p in pairs) collectPinnedPatternUsesExact(p.value, out, inPin);
+            case PStruct(_, fields):
+                for (f in fields) collectPinnedPatternUsesExact(f.value, out, inPin);
+            case PBinary(segs):
+                for (s in segs) collectPinnedPatternUsesExact(s.pattern, out, inPin);
+            case PAlias(_alias, inner):
+                collectPinnedPatternUsesExact(inner, out, inPin);
+            default:
+        }
     }
 
     static function tokenizeInterpolations(str:String):Array<String> {

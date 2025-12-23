@@ -407,13 +407,13 @@ end))
         if (age >= 65 and active) do
           "Senior user"
         else
-          age = g
+          _age = g
           perms = g_entry
           active = arr_length
           if (not active) do
             "Inactive user"
           else
-            age = g
+            _age = g
             perms = g_entry
             _active = arr_length
             if (perms == 0), do: "User without permissions", else: "Other user type"

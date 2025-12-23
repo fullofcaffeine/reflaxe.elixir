@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * LocalAssignDiscardIfUnusedLiveViewFinalTransforms
@@ -41,30 +42,25 @@ class LocalAssignDiscardIfUnusedLiveViewFinalTransforms {
 
   static function rewriteBlock(stmts:Array<ElixirAST>): Array<ElixirAST> {
     if (stmts == null) return stmts;
+    var usage = OptimizedVarUseAnalyzer.buildExact(stmts);
     var out:Array<ElixirAST> = [];
     for (i in 0...stmts.length) {
       var s = stmts[i];
       var s2 = s;
       switch (s.def) {
         case EBinary(Match, {def: EVar(b)}, rhs):
-          if (b != null && b.length > 0 && b.charAt(0) == '_' && !usedLater(stmts, i+1, b)) s2 = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs), s.metadata, s.pos);
+          if (b != null && b.length > 0 && b.charAt(0) == '_' && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, b)) {
+            s2 = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs), s.metadata, s.pos);
+          }
         case EMatch(PVar(b2), rhs2):
-          if (b2 != null && b2.length > 0 && b2.charAt(0) == '_' && !usedLater(stmts, i+1, b2)) s2 = makeASTWithMeta(EMatch(PVar("_"), rhs2), s.metadata, s.pos);
+          if (b2 != null && b2.length > 0 && b2.charAt(0) == '_' && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, b2)) {
+            s2 = makeASTWithMeta(EMatch(PVar("_"), rhs2), s.metadata, s.pos);
+          }
         default:
       }
       out.push(s2);
     }
     return out;
-  }
-
-  static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
-    var found = false;
-    for (j in start...stmts.length) if (!found) {
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(n: ElixirAST) {
-        switch (n.def) { case EVar(v) if (v == name): found = true; default: }
-      });
-    }
-    return found;
   }
 }
 
