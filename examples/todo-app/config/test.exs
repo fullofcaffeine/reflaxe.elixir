@@ -4,8 +4,8 @@ import Config
 config :todo_app, TodoAppWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: 4002],
   # Test seldom needs a real secret; allow env override for CI hygiene
-  secret_key_base: System.get_env("TEST_SECRET_KEY_BASE") ||
-    "HFnRr3hEFYrcH3i7y3b7Z1234567890abcdefghijklmnopqrstuvwxyz1234567",
+  # Keep fallback low-entropy so secret scanners don't flag example config.
+  secret_key_base: System.get_env("TEST_SECRET_KEY_BASE") || String.duplicate("a", 64),
   server: false
 
 # Print only warnings and errors during test
