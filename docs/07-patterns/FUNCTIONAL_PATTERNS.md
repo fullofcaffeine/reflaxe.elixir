@@ -653,7 +653,7 @@ The `Result<T,E>` type provides functional error handling as an alternative to e
 
 ```haxe
 // Import the Result type
-using haxe.functional.Result;
+import haxe.functional.Result;
 using haxe.functional.ResultTools;
 
 // Define functions that can fail

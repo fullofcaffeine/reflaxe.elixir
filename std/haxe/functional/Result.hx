@@ -18,7 +18,7 @@ package haxe.functional;
  * @see ResultTools for functional operations (map, flatMap, fold, etc.)
  */
 @:elixirIdiomatic
-enum Result<T, E> {
+enum Result<T, E = String> {
     /**
      * Successful result containing a value of type T
      * @param value The successful result value
@@ -31,4 +31,3 @@ enum Result<T, E> {
      */
     Error(error: E);
 }
-
