@@ -34,6 +34,7 @@ If you’re evaluating the project, also read:
 
 ### Tooling & workflow
 - **Mix integration**: `mix compile` support via `Mix.Tasks.Compile.Haxe` and watchers for dev.
+- **Project scaffold**: `mix haxe.gen.project` generates `src_haxe/<app>_hx/**`, `build.hxml`, and Mix config for gradual adoption.
 - **Haxe compile server**: managed `haxe --wait` lifecycle (opt‑out via `HAXE_NO_SERVER=1`).
 - **Source mapping (experimental)**: design and scaffolding exists, but `.ex.map` emission/lookup is not yet fully wired end‑to‑end (see `docs/04-api-reference/SOURCE_MAPPING.md`).
 - **Guardrails**: CI checks for `Dynamic`/`Any`/`untyped` and `__elixir__()` leaks in application code.
@@ -44,7 +45,6 @@ If you’re evaluating the project, also read:
 
 ## 🧪 Experimental / In Flux
 
-- **Project generator (`mix haxe.gen.project`)**: still being refreshed post‑`v1.0.x`; prefer guides + examples if output doesn’t match current flags/toolchain.
 - **Performance profiles (`fast_boot`)**: opt‑in development profile that trades some late hygiene for faster iteration on very large modules.
 - **Advanced Router/LiveView ergonomics**: improvements land incrementally; expect some churn.
 

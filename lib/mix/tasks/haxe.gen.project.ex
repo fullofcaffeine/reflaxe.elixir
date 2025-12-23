@@ -20,7 +20,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     * `--skip-examples` - Don't generate example Haxe files
     * `--skip-npm` - Don't create package.json or install npm dependencies
     * `--haxe-dir` - Directory for Haxe source files (default: "src_haxe")
-    * `--output-dir` - Directory for generated Elixir files (default: "lib/generated")
+    * `--output-dir` - Directory for generated Elixir files (default: "lib/<app>_hx")
     * `--force` - Overwrite existing files without confirmation
 
   """
@@ -46,12 +46,20 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     )
 
     Mix.shell().info("Adding Reflaxe.Elixir support to existing project...")
-    
+
+    app_name = get_app_name()
+    module_name = get_module_name()
+    haxe_namespace = "#{app_name}_hx"
+    elixir_namespace = "#{module_name}Hx"
+    default_output_dir = Path.join(["lib", haxe_namespace])
+
     project_config = %{
-      app_name: get_app_name(),
-      module_name: get_module_name(),
+      app_name: app_name,
+      module_name: module_name,
+      haxe_namespace: haxe_namespace,
+      elixir_namespace: elixir_namespace,
       haxe_dir: Keyword.get(opts, :haxe_dir, "src_haxe"),
-      output_dir: Keyword.get(opts, :output_dir, "lib/generated"),
+      output_dir: Keyword.get(opts, :output_dir, default_output_dir),
       basic_modules: Keyword.get(opts, :basic_modules, false),
       phoenix: Keyword.get(opts, :phoenix, false),
       skip_examples: Keyword.get(opts, :skip_examples, false),
@@ -101,18 +109,21 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
   # Create necessary directories
   defp create_directories(config) do
+    haxe_base = Path.join([config.haxe_dir, config.haxe_namespace])
+
     base_directories = [
       config.haxe_dir,
       config.output_dir,
-      "#{config.haxe_dir}/utils",
-      "#{config.haxe_dir}/services",
+      haxe_base,
+      Path.join([haxe_base, "utils"]),
+      Path.join([haxe_base, "services"]),
       ".vscode"
     ]
 
     all_directories = if config.phoenix do
       base_directories ++ [
-        "#{config.haxe_dir}/live",
-        "#{config.haxe_dir}/controllers"
+        Path.join([haxe_base, "live"]),
+        Path.join([haxe_base, "controllers"])
       ]
     else
       base_directories
@@ -142,6 +153,8 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
   # Generate build.hxml content
   defp build_hxml_content(config) do
+    main_module = "#{config.haxe_namespace}.Main"
+
     modules_section =
       cond do
         config.skip_examples ->
@@ -155,9 +168,12 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
         true ->
           modules =
-            ["Main"]
-            |> maybe_append_modules(config.basic_modules, ["utils.StringUtils", "utils.MathHelper"])
-            |> maybe_append_modules(config.phoenix, ["live.AppLive"])
+            [main_module]
+            |> maybe_append_modules(config.basic_modules, [
+              "#{config.haxe_namespace}.utils.StringUtils",
+              "#{config.haxe_namespace}.utils.MathHelper"
+            ])
+            |> maybe_append_modules(config.phoenix, ["#{config.haxe_namespace}.live.AppLive"])
 
           Enum.join(modules, "\n") <> "\n"
       end
@@ -186,7 +202,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     -D no-utf16
 
     # Application module prefix (prevents collisions with Elixir built-ins like `Application`)
-    -D app_name=#{config.module_name}
+    -D app_name=#{config.elixir_namespace}
 
     # Enable dead code elimination to remove unused functions and reduce output noise
     -dce full
@@ -293,24 +309,26 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
   # Create example modules
   defp create_example_modules(config) do
+    haxe_base = Path.join([config.haxe_dir, config.haxe_namespace])
+
     # Main.hx entry point
     main_content = main_hx_content(config)
-    write_file_with_confirmation("#{config.haxe_dir}/Main.hx", main_content, config.force)
+    write_file_with_confirmation(Path.join([haxe_base, "Main.hx"]), main_content, config.force)
 
     if config.basic_modules do
       # StringUtils utility
-      string_utils_content = string_utils_content()
-      write_file_with_confirmation("#{config.haxe_dir}/utils/StringUtils.hx", string_utils_content, config.force)
+      string_utils_content = string_utils_content(config)
+      write_file_with_confirmation(Path.join([haxe_base, "utils", "StringUtils.hx"]), string_utils_content, config.force)
       
       # MathHelper utility
-      math_helper_content = math_helper_content()
-      write_file_with_confirmation("#{config.haxe_dir}/utils/MathHelper.hx", math_helper_content, config.force)
+      math_helper_content = math_helper_content(config)
+      write_file_with_confirmation(Path.join([haxe_base, "utils", "MathHelper.hx"]), math_helper_content, config.force)
     end
 
     if config.phoenix do
       # Phoenix LiveView example
       live_example_content = live_example_content(config)
-      write_file_with_confirmation("#{config.haxe_dir}/live/AppLive.hx", live_example_content, config.force)
+      write_file_with_confirmation(Path.join([haxe_base, "live", "AppLive.hx"]), live_example_content, config.force)
     end
 
     Mix.shell().info("Created example Haxe modules")
@@ -319,7 +337,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   # Generate Main.hx content
   defp main_hx_content(config) do
     """
-    package;
+    package #{config.haxe_namespace};
 
     /**
      * Main entry point for Reflaxe.Elixir compilation
@@ -329,7 +347,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     class Main {
         public static function main(): Void {
             // Entry point for Haxe compilation
-            trace("#{config.module_name} - Reflaxe.Elixir compilation successful!");
+            trace("#{config.elixir_namespace} - Reflaxe.Elixir compilation successful!");
         }
         
         public static function hello(name: String): String {
@@ -340,9 +358,9 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   end
 
   # Generate StringUtils content
-  defp string_utils_content() do
+  defp string_utils_content(config) do
     """
-    package utils;
+    package #{config.haxe_namespace}.utils;
 
     /**
      * String utility functions
@@ -373,9 +391,9 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   end
 
   # Generate MathHelper content
-  defp math_helper_content() do
+  defp math_helper_content(config) do
     """
-    package utils;
+    package #{config.haxe_namespace}.utils;
 
     /**
      * Mathematical utility functions  
@@ -412,7 +430,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   # Generate LiveView example content
   defp live_example_content(config) do
     """
-    package live;
+    package #{config.haxe_namespace}.live;
 
     import phoenix.Phoenix.LiveView;
     import phoenix.Phoenix.MountParams;

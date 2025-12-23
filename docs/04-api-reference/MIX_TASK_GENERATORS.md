@@ -88,12 +88,34 @@ Important:
 - Ecto executes migrations from `priv/repo/migrations/*.exs`.
 - Reflaxe.Elixir can emit runnable `.exs` migrations via an opt-in migration build (`-D ecto_migrations_exs`).
 
-### `mix haxe.gen.project` (legacy / being refreshed)
+### `mix haxe.gen.project`
 
 Adds Reflaxe.Elixir plumbing to an existing Mix project (directory layout, `build.hxml`, Mix compiler config).
 
-This task still exists for convenience, but its templates are being updated post‑`v1.0.x`. For new Phoenix apps,
-prefer:
+Examples:
 
-- `docs/06-guides/PHOENIX_NEW_APP.md`
-- `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`
+```bash
+# Minimal scaffold (gradual adoption)
+mix haxe.gen.project --force
+
+# Phoenix-friendly scaffold (adds a typed LiveView example + HXX)
+mix haxe.gen.project --phoenix --basic-modules --force
+```
+
+Output (defaults; configurable via flags):
+- `src_haxe/<app>_hx/**` — isolated Haxe namespace (e.g. `src_haxe/todo_app_hx/*`)
+- `build.hxml` — aligned with current compiler flags:
+  - `-lib reflaxe.elixir`
+  - `-D elixir_output=lib/<app>_hx`
+  - `-D reflaxe_runtime`
+  - `-D no-utf16`
+  - `-D app_name=<ModuleName>Hx`
+  - `-dce full`
+  - `-D hxx_string_to_sigil` (when `--phoenix` is enabled)
+- `package.json` + `.haxerc` (unless `--skip-npm`)
+- `mix.exs` updated to include `compilers: [:haxe] ++ Mix.compilers()` and a `haxe: [...]` config block
+- `.gitignore` updated to ignore generated output dir by default
+
+Notes:
+- This task is intended for **gradual adoption**: start by compiling helper modules into `MyAppHx.*`, call them from Elixir, and only later replace Phoenix-facing modules.
+- It does not install Haxe libraries for you. Use `npx lix install ...` + `npx lix download` (see `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`).
