@@ -5,7 +5,7 @@ import sys.io.File;
 import haxe.io.Path;
 import reflaxe.elixir.generator.TemplateEngine;
 import reflaxe.elixir.generator.TemplateContext;
-import reflaxe.elixir.generator.TemplateValue;
+import reflaxe.elixir.generator.TemplateContext.TemplateValue;
 using StringTools;
 
 /**
