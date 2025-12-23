@@ -1,6 +1,10 @@
 # Ecto Database Migrations with Haxe
 
-This example demonstrates how to write Ecto database migrations using Haxe with the `@:migration` annotation.
+This example demonstrates the **typed migration DSL surface** in Haxe via the `@:migration` annotation.
+
+> **Status (Alpha)**: The migration DSL compiles today, but it is **not yet wired into Ecto's executable
+> migration runner** (`priv/repo/migrations/*.exs` + `mix ecto.migrate`). Treat this example as a
+> compile-time/shape demo for now.
 
 **Prerequisites**: [03-phoenix-app](../03-phoenix-app/) completed  
 **Difficulty**: 🟡 Intermediate  
@@ -19,21 +23,18 @@ This example demonstrates how to write Ecto database migrations using Haxe with 
 - **Foreign Keys**: Automatic relationship creation and constraints  
 - **Indexes**: Single and composite index creation
 - **Constraints**: Check constraints and validation rules
-- **Mix Integration**: Works with standard `mix ecto.migrate` workflow
+- **Compile-time validation**: Registry-backed checks during macro expansion (alpha)
 
 ## Quick Start
 
 ```bash
 cd examples/04-ecto-migrations
 
-# Compile Haxe migrations to Elixir
+# Compile the Haxe migrations to Elixir output (for inspection)
 haxe build.hxml
 
-# Run migrations (if you have a database configured)
-mix ecto.migrate
-
-# Rollback migrations  
-mix ecto.rollback
+# Inspect the generated output under lib/
+ls lib/migrations
 ```
 
 ## Migration Examples
@@ -62,26 +63,12 @@ class CreateUsers extends Migration {
 }
 ```
 
-**Generated Elixir:**
-```elixir
-defmodule <YourApp>.Repo.Migrations.CreateUsers do
-  use Ecto.Migration
+**Generated Elixir (current alpha shape):**
 
-  def up do
-    create table(:users) do
-      add :name, :string, null: false
-      add :email, :string, null: false
-      timestamps()
-    end
-    
-    create unique_index(:users, [:email])
-  end
+The compiler currently emits an **intermediate helper module** for the migration DSL (not a
+timestamped `Ecto.Migration` under `priv/repo/migrations/`). After `haxe build.hxml`, see:
 
-  def down do
-    drop table(:users)
-  end
-end
-```
+- `lib/migrations/create_users.ex`
 
 ### Advanced Features
 
@@ -107,16 +94,18 @@ createTable("posts").addCheckConstraint("positive_view_count", "view_count >= 0"
 # Generate new migration
 mix haxe.gen.migration CreateUsers
 
-# This creates both:
+# This creates:
 # - src_haxe/migrations/CreateUsers.hx (Haxe source skeleton)
-# - priv/repo/migrations/<timestamp>_create_users.exs (Elixir migration file)
+#
+# NOTE: For executable migrations today, use:
+#   mix ecto.gen.migration create_users
+# and keep the migration logic in Elixir (Ecto runs priv/repo/migrations/*.exs).
 ```
 
 ### Development Flow
 1. Write migration in Haxe using `@:migration`
 2. Compile with `haxe build.hxml`
-3. Run with `mix ecto.migrate`
-4. Rollback with `mix ecto.rollback` if needed
+3. Review the generated output under `lib/` (alpha)
 
 ## Benefits
 

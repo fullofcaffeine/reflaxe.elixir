@@ -207,27 +207,33 @@ mix haxe.watch --hxml build.hxml
 
 ### mix haxe.gen.migration
 
-Generate Ecto migrations from Haxe classes.
+Generate a **Haxe-authored migration skeleton**.
+
+This task is intentionally Haxe-first: it writes a Haxe migration file you can evolve in Haxe.
+Ecto itself executes migrations from `priv/repo/migrations/*.exs`, so if you need executable
+migrations today, prefer `mix ecto.gen.migration` for the timestamped `.exs` and keep migration
+logic in Elixir for now (the Haxe migration DSL is still evolving in the alpha series).
 
 ```bash
-# Generate migration from Haxe class
-mix haxe.gen.migration CreateUsers
+# Generate a Haxe migration skeleton
+mix haxe.gen.migration CreateUsersTable --table users --columns "name:string,email:string"
 
-# With custom module
-mix haxe.gen.migration AddIndexToUsers --module Users
+# Add an index
+mix haxe.gen.migration AddIndexToUsers --table users --index email --unique
 
-# Specify timestamp
-mix haxe.gen.migration CreatePosts --timestamp 20250115120000
+# Custom output directory (default: src_haxe/migrations)
+mix haxe.gen.migration CreatePostsTable --haxe-dir src_haxe/migrations
 ```
 
 **Options:**
-- `--module` - Source Haxe module name
-- `--timestamp` - Custom migration timestamp
-- `--path` - Output path for migration file
+- `--table` - Table name (defaults to inferred from migration name)
+- `--columns` - Comma-separated columns (e.g. `"name:string,email:string,age:integer"`)
+- `--index` - Index field(s)
+- `--unique` - Unique index
+- `--haxe-dir` - Output dir for Haxe migrations (default: `src_haxe/migrations`)
 
 **Generated Files:**
-- `priv/repo/migrations/[timestamp]_create_users.ex`
-- Source Haxe file in `src_haxe/migrations/`
+- `src_haxe/migrations/<MigrationName>.hx` (or `--haxe-dir`)
 
 ## Task Options & Flags
 
@@ -317,17 +323,14 @@ mix haxe.stacktrace haxe_error_123456_0 --cross-reference
 ### Migration Generation Workflow
 
 ```bash
-# 1. Create Haxe migration class
-vim src_haxe/migrations/CreateUsers.hx
+# 1. Generate a Haxe migration skeleton
+mix haxe.gen.migration CreateUsersTable --table users --columns "name:string,email:string"
 
-# 2. Generate Ecto migration
-mix haxe.gen.migration CreateUsers
+# 2. Include CreateUsersTable in your build.hxml (or migrations build) and compile
+haxe build.hxml
 
-# 3. Review generated migration
-cat priv/repo/migrations/*_create_users.ex
-
-# 4. Run migration
-mix ecto.migrate
+# NOTE: Ecto executes migrations from priv/repo/migrations/*.exs.
+# For executable migrations today, prefer `mix ecto.gen.migration` and keep the migration in Elixir.
 ```
 
 ## Performance Tips

@@ -26,7 +26,7 @@ If you’re evaluating the project, also read:
 ### Ecto
 - **Schemas**: `Ecto.Schema` generation via `@:schema` and field metadata.
 - **Changesets**: `@:changeset` generation for common `cast/3` + `validate_required/2` patterns.
-- **Migrations**: Haxe-authored migration helpers that generate idiomatic `.exs` migration content.
+- **Migrations (experimental)**: typed migration DSL compiles, but is not yet wired into Ecto’s executable runner (`priv/repo/migrations/*.exs` + `mix ecto.migrate`).
 
 ### OTP
 - **GenServer**: typed callback surfaces and child spec generation patterns.
@@ -44,7 +44,7 @@ If you’re evaluating the project, also read:
 
 ## 🧪 Experimental / In Flux
 
-- **Project generators (`mix haxe.gen.*`)**: being refreshed post‑`v1.0.x`; prefer guides + examples if output doesn’t match current flags/toolchain.
+- **Project generator (`mix haxe.gen.project`)**: still being refreshed post‑`v1.0.x`; prefer guides + examples if output doesn’t match current flags/toolchain.
 - **Performance profiles (`fast_boot`)**: opt‑in development profile that trades some late hygiene for faster iteration on very large modules.
 - **Advanced Router/LiveView ergonomics**: improvements land incrementally; expect some churn.
 
@@ -67,4 +67,3 @@ npm run test:examples
 # Todo-app integration smoke (non-blocking; includes Playwright)
 scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --async --deadline 900 --verbose
 ```
-
