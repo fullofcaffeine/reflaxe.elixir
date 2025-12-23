@@ -23,8 +23,8 @@ class LocalAssignDiscardIfUnusedLiveViewFinalTransforms {
       return switch (n.def) {
         case EDef(name, args, guards, body):
           makeASTWithMeta(EDef(name, args, guards, rewrite(body)), n.metadata, n.pos);
-        case EDefp(name2, args2, guards2, body2):
-          makeASTWithMeta(EDefp(name2, args2, guards2, rewrite(body2)), n.metadata, n.pos);
+        case EDefp(privateName, privateArgs, privateGuards, privateBody):
+          makeASTWithMeta(EDefp(privateName, privateArgs, privateGuards, rewrite(privateBody)), n.metadata, n.pos);
         default: n;
       }
     });
@@ -34,7 +34,7 @@ class LocalAssignDiscardIfUnusedLiveViewFinalTransforms {
     return ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
         case EBlock(stmts): makeASTWithMeta(EBlock(rewriteBlock(stmts)), x.metadata, x.pos);
-        case EDo(stmts2): makeASTWithMeta(EDo(rewriteBlock(stmts2)), x.metadata, x.pos);
+        case EDo(statements): makeASTWithMeta(EDo(rewriteBlock(statements)), x.metadata, x.pos);
         default: x;
       }
     });
@@ -45,20 +45,20 @@ class LocalAssignDiscardIfUnusedLiveViewFinalTransforms {
     var usage = OptimizedVarUseAnalyzer.buildExact(stmts);
     var out:Array<ElixirAST> = [];
     for (i in 0...stmts.length) {
-      var s = stmts[i];
-      var s2 = s;
-      switch (s.def) {
-        case EBinary(Match, {def: EVar(b)}, rhs):
-          if (b != null && b.length > 0 && b.charAt(0) == '_' && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, b)) {
-            s2 = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs), s.metadata, s.pos);
+      var statement = stmts[i];
+      var rewrittenStatement = statement;
+      switch (statement.def) {
+        case EBinary(Match, {def: EVar(binderName)}, rhsExpression):
+          if (binderName != null && binderName.length > 0 && binderName.charAt(0) == '_' && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, binderName)) {
+            rewrittenStatement = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhsExpression), statement.metadata, statement.pos);
           }
-        case EMatch(PVar(b2), rhs2):
-          if (b2 != null && b2.length > 0 && b2.charAt(0) == '_' && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, b2)) {
-            s2 = makeASTWithMeta(EMatch(PVar("_"), rhs2), s.metadata, s.pos);
+        case EMatch(PVar(binderName), rhsExpression):
+          if (binderName != null && binderName.length > 0 && binderName.charAt(0) == '_' && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, binderName)) {
+            rewrittenStatement = makeASTWithMeta(EMatch(PVar("_"), rhsExpression), statement.metadata, statement.pos);
           }
         default:
       }
-      out.push(s2);
+      out.push(rewrittenStatement);
     }
     return out;
   }

@@ -34,14 +34,14 @@ class MountParamsSideEffectAssignDiscardTransforms {
         for (i in 0...stmts.length) {
           var s = stmts[i];
           switch (s.def) {
-            case EMatch(PVar("params"), rhs) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "params")):
-              out.push(rhs);
-            case EBinary(Match, {def: EVar("params")}, rhs2) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "params")):
-              out.push(rhs2);
-            case EMatch(PVar("_params"), rhs3) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "_params")):
-              out.push(rhs3);
-            case EBinary(Match, {def: EVar("_params")}, rhs4) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "_params")):
-              out.push(rhs4);
+            case EMatch(PVar("params"), rhsExpression) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "params")):
+              out.push(rhsExpression);
+            case EBinary(Match, {def: EVar("params")}, rhsExpression) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "params")):
+              out.push(rhsExpression);
+            case EMatch(PVar("_params"), rhsExpression) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "_params")):
+              out.push(rhsExpression);
+            case EBinary(Match, {def: EVar("_params")}, rhsExpression) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "_params")):
+              out.push(rhsExpression);
             default:
               out.push(s);
           }
@@ -53,14 +53,14 @@ class MountParamsSideEffectAssignDiscardTransforms {
         for (i in 0...stmtsB.length) {
           var s = stmtsB[i];
           switch (s.def) {
-            case EMatch(PVar("params"), rhs) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "params")):
-              outB.push(rhs);
-            case EBinary(Match, {def: EVar("params")}, rhs2) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "params")):
-              outB.push(rhs2);
-            case EMatch(PVar("_params"), rhs3) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "_params")):
-              outB.push(rhs3);
-            case EBinary(Match, {def: EVar("_params")}, rhs4) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "_params")):
-              outB.push(rhs4);
+            case EMatch(PVar("params"), rhsExpression) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "params")):
+              outB.push(rhsExpression);
+            case EBinary(Match, {def: EVar("params")}, rhsExpression) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "params")):
+              outB.push(rhsExpression);
+            case EMatch(PVar("_params"), rhsExpression) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "_params")):
+              outB.push(rhsExpression);
+            case EBinary(Match, {def: EVar("_params")}, rhsExpression) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "_params")):
+              outB.push(rhsExpression);
             default:
               outB.push(s);
           }
