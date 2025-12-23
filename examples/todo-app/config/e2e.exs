@@ -25,9 +25,9 @@ port =
 
 config :todo_app, TodoAppWeb.Endpoint,
   http: [ip: {127, 0, 0, 1}, port: port],
-  # Prefer env in CI (SECRET_KEY_BASE); fallback to a stable non-sensitive value
-  secret_key_base: System.get_env("SECRET_KEY_BASE") ||
-    "HFnRr3hEFYrcH3i7y3b7Z1234567890abcdefghijklmnopqrstuvwxyz1234567",
+  # Prefer env in CI (SECRET_KEY_BASE); otherwise use a stable (but non-secret) fallback.
+  # Keep this low-entropy so secret scanners don't flag example config.
+  secret_key_base: System.get_env("SECRET_KEY_BASE") || String.duplicate("a", 64),
   server: true,
   check_origin: false
 

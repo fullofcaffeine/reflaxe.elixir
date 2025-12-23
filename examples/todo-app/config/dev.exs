@@ -105,9 +105,9 @@ config :todo_app, TodoAppWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  # Prefer env in dev when provided, otherwise use a stable, non-sensitive fallback
-  secret_key_base: System.get_env("DEV_SECRET_KEY_BASE") ||
-    "HFnRr3hEFYrcH3i7y3b7Z1234567890abcdefghijklmnopqrstuvwxyz1234567",
+  # Prefer env in dev when provided, otherwise use a stable (but non-secret) fallback.
+  # NOTE: Keep this low-entropy so secret scanners don't flag example config.
+  secret_key_base: System.get_env("DEV_SECRET_KEY_BASE") || String.duplicate("a", 64),
   watchers: (if disable_watchers, do: [], else: all_watchers)
 
 # Watch static and templates for browser reloading.
