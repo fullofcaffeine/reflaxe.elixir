@@ -2,8 +2,8 @@ package ecto;
 
 #if (elixir || reflaxe_runtime)
 
-import elixir.types.Result;
 import elixir.types.Term;
+import haxe.functional.Result;
 
 /**
  * Type-safe Ecto.Changeset wrapper

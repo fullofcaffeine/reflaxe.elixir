@@ -1,6 +1,6 @@
 package services;
 
-import elixir.types.Result;
+import haxe.functional.Result;
 
 using StringTools;
 
