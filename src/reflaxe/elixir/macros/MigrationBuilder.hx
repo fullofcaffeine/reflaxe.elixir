@@ -45,10 +45,34 @@ class MigrationBuilder {
         if (!localClass.meta.has(":migration")) {
             return fields;
         }
+
+        // Migration-only `.exs` emission needs `up`/`down` bodies to survive DCE.
+        // In that mode we mark the class (and its callbacks) as `@:keep` to prevent
+        // `-dce full` builds from stripping everything and producing empty modules.
+        if (Context.defined("ecto_migrations_exs")) {
+            if (!localClass.meta.has(":keep")) {
+                localClass.meta.add(":keep", [], localClass.pos);
+            }
+            for (field in fields) {
+                if (field.name != "up" && field.name != "down") continue;
+                if (field.meta == null) field.meta = [];
+                var alreadyKept = false;
+                for (m in field.meta) {
+                    if (m.name == ":keep" || m.name == "keep") {
+                        alreadyKept = true;
+                        break;
+                    }
+                }
+                if (!alreadyKept) {
+                    field.meta.push({name: ":keep", params: [], pos: field.pos});
+                }
+            }
+        }
         
         // Extract migration metadata
         var migrationMeta = localClass.meta.extract(":migration")[0];
-        var migrationName = extractMigrationName(localClass, migrationMeta);
+        var migrationInfo = extractMigrationInfo(localClass, migrationMeta);
+        var migrationName = migrationInfo.name;
         
         // Process migration methods
         for (field in fields) {
@@ -62,31 +86,61 @@ class MigrationBuilder {
         
         // Add migration metadata for code generation
         localClass.meta.add(":migrationName", [macro $v{migrationName}], localClass.pos);
-        
-        // Add timestamp if not present
-        if (!localClass.meta.has(":migrationTimestamp")) {
-            var timestamp = generateTimestamp();
-            localClass.meta.add(":migrationTimestamp", [macro $v{timestamp}], localClass.pos);
+
+        if (migrationInfo.timestamp != null) {
+            localClass.meta.add(":migrationTimestamp", [macro $v{migrationInfo.timestamp}], localClass.pos);
+        } else if (Context.defined("ecto_migrations_exs")) {
+            Context.error(
+                'Missing migration timestamp for ${localClass.name}. Provide one via @:migration({timestamp: \"20240101120000\"}) or generate with `mix haxe.gen.migration`.',
+                localClass.pos
+            );
         }
         
         return fields;
     }
     
     /**
-     * Extract migration name from class or metadata
+     * Extract migration name/timestamp from class or metadata
      */
-    static function extractMigrationName(cls: ClassType, meta: MetadataEntry): String {
+    static function extractMigrationInfo(cls: ClassType, meta: MetadataEntry): {name: String, timestamp: Null<String>} {
+        var name: Null<String> = null;
+        var timestamp: Null<String> = null;
+
         if (meta != null && meta.params != null && meta.params.length > 0) {
-            switch(meta.params[0].expr) {
-                case EConst(CString(name)):
-                    return name;
-                default:
+            for (param in meta.params) {
+                switch (param.expr) {
+                    case EConst(CString(value)):
+                        if (name == null) name = value;
+                        else if (timestamp == null) timestamp = value;
+                    case EConst(CInt(value, _)):
+                        if (timestamp == null) timestamp = value;
+                    case EObjectDecl(fields):
+                        for (field in fields) {
+                            switch (field.field) {
+                                case "name":
+                                    switch (field.expr.expr) {
+                                        case EConst(CString(value)):
+                                            name = value;
+                                        default:
+                                    }
+                                case "timestamp":
+                                    switch (field.expr.expr) {
+                                        case EConst(CInt(value, _)):
+                                            timestamp = value;
+                                        case EConst(CString(value)):
+                                            timestamp = value;
+                                        default:
+                                    }
+                                default:
+                            }
+                        }
+                    default:
+                }
             }
         }
-        
-        // Convert class name to migration name
-        // CreateTodosTable -> create_todos_table
-        return toSnakeCase(cls.name);
+
+        if (name == null || name == "") name = toSnakeCase(cls.name);
+        return {name: name, timestamp: timestamp};
     }
     
     /**
@@ -219,21 +273,6 @@ class MigrationBuilder {
                 MigrationRegistry.validateColumnsExist(tableName, columns, args[1].pos);
             }
         }
-    }
-    
-    /**
-     * Generate timestamp for migration file naming
-     */
-    static function generateTimestamp(): String {
-        var now = Date.now();
-        var year = now.getFullYear();
-        var month = StringTools.lpad(Std.string(now.getMonth() + 1), "0", 2);
-        var day = StringTools.lpad(Std.string(now.getDate()), "0", 2);
-        var hour = StringTools.lpad(Std.string(now.getHours()), "0", 2);
-        var min = StringTools.lpad(Std.string(now.getMinutes()), "0", 2);
-        var sec = StringTools.lpad(Std.string(now.getSeconds()), "0", 2);
-        
-        return '$year$month$day$hour$min$sec';
     }
     
     /**

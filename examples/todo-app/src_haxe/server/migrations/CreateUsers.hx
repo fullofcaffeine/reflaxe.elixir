@@ -1,7 +1,7 @@
 package server.migrations;
 
 import ecto.Migration;
-import ecto.Migration.*;
+import ecto.Migration.ColumnType;
 
 /**
  * Migration to create the users table with authentication fields
@@ -9,20 +9,20 @@ import ecto.Migration.*;
  * Uses the new typed Migration DSL for compile-time validation
  * and proper index/constraint generation.
  */
-@:migration
+@:migration({timestamp: "20250901092524"})
 class CreateUsers extends Migration {
     
     public function up(): Void {
         createTable("users")
             // User identification and profile fields
-            .addColumn("name", String(), {nullable: false})
-            .addColumn("email", String(), {nullable: false})
+            .addColumn("name", ColumnType.String(), {nullable: false})
+            .addColumn("email", ColumnType.String(), {nullable: false})
             
             // Authentication fields
-            .addColumn("password_hash", String(), {nullable: false})
-            .addColumn("confirmed_at", DateTime)
-            .addColumn("last_login_at", DateTime)
-            .addColumn("active", Boolean, {defaultValue: true})
+            .addColumn("password_hash", ColumnType.String(), {nullable: false})
+            .addColumn("confirmed_at", ColumnType.DateTime)
+            .addColumn("last_login_at", ColumnType.DateTime)
+            .addColumn("active", ColumnType.Boolean, {defaultValue: true})
             
             // Timestamps
             .addTimestamps()

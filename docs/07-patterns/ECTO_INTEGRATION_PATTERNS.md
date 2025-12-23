@@ -106,13 +106,13 @@ For example, `std/ecto/ChangesetBridge.hx` wraps common `Ecto.Changeset.*` pipel
 
 Migrations can be authored in Haxe using the typed DSL in `std/ecto/Migration.hx` and compiled into standard `Ecto.Migration` modules.
 
-Example:
+Example (runnable `.exs` emission requires a timestamp):
 
 ```haxe
 import ecto.Migration;
 import ecto.Migration.ColumnType;
 
-@:migration
+@:migration({timestamp: "20240101120000"})
 class CreateUsers extends Migration {
   public function up(): Void {
     createTable("users")
@@ -129,8 +129,9 @@ class CreateUsers extends Migration {
 }
 ```
 
-Run migrations with standard Ecto tooling:
+Compile migrations with a migration-only build (recommended), then run with standard Ecto tooling:
 
+- `mix haxe.compile.migrations` (or `haxe build-migrations.hxml`)
 - `mix ecto.migrate`
 - `mix ecto.rollback`
 
