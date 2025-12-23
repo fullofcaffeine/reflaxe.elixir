@@ -2,7 +2,7 @@
 
 **CRITICAL**: Always check Haxe reference folder and official docs for modern APIs before implementing JavaScript features.
 
-## JavaScript Async/Await Support ✨ **PRODUCTION READY**
+## JavaScript Async/Await Support ✨ (Supported in Alpha)
 
 **Complete async/await support for modern JavaScript compilation**:
 - ✅ **@:async annotation** - Transform functions to native `async function` declarations
