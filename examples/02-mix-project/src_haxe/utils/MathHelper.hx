@@ -1,6 +1,6 @@
 package utils;
 
-import elixir.types.Result;
+import haxe.functional.Result;
 
 /**
  * MathHelper - Mathematical operations and calculations for Mix project

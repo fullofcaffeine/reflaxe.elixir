@@ -49,7 +49,7 @@ Output:
 
 Notes:
 - Generates Phoenix-convention functions (`list_*`, `get_*`, `create_*`, `update_*`, `delete_*`).
-- Uses typed `ecto.Changeset` + `elixir.types.Result`.
+- Uses typed `ecto.Changeset` + `haxe.functional.Result`.
 
 ### `mix haxe.gen.live`
 
@@ -97,4 +97,3 @@ prefer:
 
 - `docs/06-guides/PHOENIX_NEW_APP.md`
 - `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`
-

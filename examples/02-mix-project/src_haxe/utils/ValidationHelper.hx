@@ -1,7 +1,7 @@
 package utils;
 
 using StringTools;
-import elixir.types.Result;
+import haxe.functional.Result;
 
 typedef UserInput = {
     var name: String;

@@ -4,17 +4,18 @@ package elixir.types;
  * Result<T, E>
  *
  * WHAT
- * - Canonical Result type for Reflaxe.Elixir Elixir-target code.
+ * - Backwards-compatible Result enum kept for older code that imported `elixir.types.Result`.
  *
  * WHY
- * - We need a stable, idiomatic representation in Elixir: `{:ok, value}` / `{:error, reason}`.
- * - Haxe typedef aliases to enums do not reliably import enum constructors (`Ok`/`Error`) into scope,
- *   which can cause pattern matches to degrade into tag-only switches (e.g. `case 0/1`) and
- *   lose constructor parameters.
+ * - The canonical Result type for new code is `haxe.functional.Result` (annotated as Elixir-idiomatic
+ *   by `reflaxe.elixir.CompilerInit.Start()`).
+ * - This module remains to avoid breaking existing user code and older examples.
  *
  * HOW
- * - Defined as a real enum with `@:elixirIdiomatic` so the AST pipeline emits Elixir tuples.
+ * - Prefer `import haxe.functional.Result;` in new code.
+ * - This enum remains `@:elixirIdiomatic` so the AST pipeline emits Elixir tuples.
  */
+@:deprecated("Use haxe.functional.Result")
 @:elixirIdiomatic
 enum Result<T, E = String> {
     Ok(value: T);

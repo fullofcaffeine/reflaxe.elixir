@@ -1,9 +1,9 @@
 package server.infrastructure;
 
-import elixir.types.Result;
 import ecto.Changeset;
 import ecto.Query.EctoQuery;
 import ecto.DatabaseAdapter.*;
+import haxe.functional.Result;
 
 /**
  * Database repository for TodoApp

@@ -19,7 +19,6 @@
   "phoenix/conn_state.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/exceptions/pos_exception.ex",
-  "elixir/types/result.ex",
   "ecto/option.ex",
   "ecto/changeset_utils.ex",
   "ecto/changeset_action.ex",

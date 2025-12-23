@@ -1,10 +1,10 @@
 package elixir;
 
-import elixir.types.Result;
 import elixir.types.TaskRef;
 import elixir.types.TaskResult;
 import elixir.types.Pid;
 import elixir.types.Term;
+import haxe.functional.Result;
 
 #if (macro || reflaxe_runtime)
 
