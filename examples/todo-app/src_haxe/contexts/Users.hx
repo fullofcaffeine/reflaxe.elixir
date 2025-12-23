@@ -1,9 +1,9 @@
 package contexts;
 
 import elixir.Kernel;
-import elixir.types.Result;
 import ecto.Changeset;
 import ecto.TypedQuery;
+import haxe.functional.Result;
 import server.infrastructure.Repo;
 import server.schemas.User;
 using reflaxe.elixir.macros.TypedQueryLambda; // ensure extension where(...) is available
@@ -119,4 +119,3 @@ class Users {
     public static function searchUsers(_term: String): Array<User> return [];
     public static function userStats(): UserStats return {total: 0, active: 0, inactive: 0};
 }
-

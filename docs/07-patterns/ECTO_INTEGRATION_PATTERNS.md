@@ -70,9 +70,9 @@ class Todo {
 Using it with a typed Repo surface:
 
 ```haxe
-import elixir.types.Result;
 import ecto.Changeset;
 import MyApp.Repo;
+import haxe.functional.Result;
 
 function createTodo(params: TodoParams): Result<Todo, Changeset<Todo, TodoParams>> {
   var changeset = Todo.changeset(new Todo(), params);

@@ -10,7 +10,7 @@ defmodule ChangesetUtils do
   def to_option(result) do
     (case result do
       {:ok, value} -> {:some, value}
-      {:error, _reason} -> {:none}
+      {:error, _error} -> {:none}
     end)
   end
 end

@@ -126,7 +126,7 @@ package infrastructure;
 import ecto.Changeset;
 import ecto.DatabaseAdapter.*;
 import ecto.Query.EctoQuery;
-import elixir.types.Result;
+import haxe.functional.Result;
 
 @:native("MyApp.Repo")
 @:repo({

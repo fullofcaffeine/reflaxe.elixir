@@ -25,14 +25,14 @@ Phoenix integration overview: `docs/02-user-guide/PHOENIX_INTEGRATION.md`.
 
 Elixir idioms like `{:ok, value}` / `{:error, reason}` are represented by typed Haxe enums that compile to atom-tagged tuples.
 
-- Generic `{:ok, value}` / `{:error, reason}`: `std/elixir/types/Result.hx`
+- Generic `{:ok, value}` / `{:error, reason}`: `haxe.functional.Result` (preferred; marked Elixir-idiomatic by `reflaxe.elixir.CompilerInit.Start()`)
 - LiveView callback tuples (`{:ok, socket}`, `{:noreply, socket}`): `std/phoenix/Phoenix.hx`
 - Atoms: `std/elixir/types/Atom.hx`
 
 Example (generic result):
 
 ```haxe
-import elixir.types.Result;
+import haxe.functional.Result;
 
 function parseIntSafe(s: String): Result<Int, String> {
   var n = Std.parseInt(s);

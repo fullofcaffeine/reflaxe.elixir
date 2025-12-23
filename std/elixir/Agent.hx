@@ -1,9 +1,9 @@
 package elixir;
 
 import elixir.types.AgentRef;
-import elixir.types.Result;
 import elixir.types.Pid;
 import elixir.types.Term;
+import haxe.functional.Result;
 
 #if (macro || reflaxe_runtime)
 

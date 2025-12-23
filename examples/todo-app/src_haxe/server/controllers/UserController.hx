@@ -3,7 +3,7 @@ package controllers;
 import plug.Conn;
 import contexts.Users;
 import contexts.Users.UserParams;
-import elixir.types.Result;
+import haxe.functional.Result;
 
 // Type-safe parameter definitions for each action
 typedef IndexParams = {}  // Empty params for index

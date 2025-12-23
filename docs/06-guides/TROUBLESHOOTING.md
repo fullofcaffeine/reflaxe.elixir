@@ -286,8 +286,8 @@ end
 
 **Solution:**
 ```haxe
-import elixir.types.Result;
 import elixir.types.Atom;
+import haxe.functional.Result;
 
 typedef User = { id: Int };
 
@@ -311,7 +311,7 @@ switch (result) {
 **Solution:**
 ```haxe
 import elixir.types.Atom;
-import elixir.types.Result;
+import haxe.functional.Result;
 
 // Check parameter types match Elixir expectations:
 // - Haxe Int → Elixir integer

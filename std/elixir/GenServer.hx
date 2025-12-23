@@ -1,11 +1,11 @@
 package elixir;
 
-import elixir.types.Result;
 import elixir.types.GenServerRef;
 import elixir.types.GenServerOption;
 import elixir.types.GenServerCallbackResults;
 import elixir.types.Pid;
 import elixir.types.Term;
+import haxe.functional.Result;
 
 #if (macro || reflaxe_runtime)
 

@@ -8,7 +8,6 @@
   "haxe/iterators/array_iterator.ex",
   "elixir/types/task_yield_result.ex",
   "elixir/types/task_stream_result.ex",
-  "elixir/types/result.ex",
   "elixir/types/registry_type.ex",
   "elixir/types/registry_options_builder.ex",
   "elixir/types/monitor_info.ex",
