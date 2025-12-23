@@ -74,7 +74,7 @@ The foundation for multi-target development:
 - **HXX Template System** - Complete compile-time JSX→HEEx transformation with AST-based processing
   - **Template Helper Metadata** ✨ NEW - Uses @:templateHelper metadata for extensible Phoenix function compilation
   - **Type-Safe Phoenix Abstractions** ✨ NEW - Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with operator overloading
-- **Ecto Complete** - Schemas, changesets, queries, migrations with full DSL support  
+- **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations are experimental** (prefer Elixir `mix ecto.gen.migration` for now)  
 - **Mix Integration** - Seamless build pipeline with file watching and incremental compilation
 - **Source Maps** - First Reflaxe target with `.ex.map` generation for debugging
 - **OTP Support** - GenServers, Supervisors, Registry with type-safe compilation
@@ -220,7 +220,7 @@ defp deps do
   ]
 end
 
-> Note: the `mix haxe.gen.*` generators are being refreshed post-`v1.0.x`. Prefer the Phoenix guides above (and the working examples under `examples/`) if you run into generator output that doesn't match current flags/tooling.
+> Note: the `mix haxe.gen.*` generators are Haxe-first scaffolds (they emit **Haxe only**, not Elixir). Treat them as starting points and compare against `examples/todo-app/` for current Phoenix patterns. See `docs/04-api-reference/MIX_TASKS.md` for details.
 
 # Compile Haxe as part of your build
 mix compile.haxe

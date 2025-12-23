@@ -21,8 +21,8 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 
 ### 4. [04-ecto-migrations](./04-ecto-migrations/)
 **Difficulty**: Intermediate  
-**Features**: @:migration annotation, database schemas, foreign keys  
-**Use Case**: Database migration management with type safety
+**Features**: Experimental `@:migration` DSL compilation (not yet executable via `mix ecto.migrate`)  
+**Use Case**: Explore the typed migration DSL surface and generated shapes
 
 ### 5. [05-heex-templates](./05-heex-templates/)
 **Difficulty**: Intermediate  
@@ -153,7 +153,7 @@ Examples are tested in CI/CD on every commit to ensure:
 - `@:changeset` - Create changeset functions  
 - `@:liveview` - Generate Phoenix LiveView modules
 - `@:genserver` - Create OTP GenServer modules
-- `@:migration` - Define database migrations
+- `@:migration` - Define database migrations (experimental)
 - `@:template` - Compile HEEx templates
 - `@:query` - Build type-safe Ecto queries
 
