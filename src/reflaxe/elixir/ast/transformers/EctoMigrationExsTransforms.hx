@@ -502,19 +502,19 @@ class EctoMigrationExsTransforms {
         var pairs = normalizeMapPairs(expr, pos);
         var out: Array<ElixirAST.EKeywordPair> = [];
 
-        for (p in pairs) {
-            switch (p.key) {
-                case "on_delete":
-                    var mapped = mapOnDelete(p.value);
-                    if (mapped != null) out.push({key: "on_delete", value: mapped});
-                case "on_update":
-                    var mapped2 = mapOnUpdate(p.value);
-                    if (mapped2 != null) out.push({key: "on_update", value: mapped2});
-                case "column":
-                    var col = extractString(p.value);
-                    if (col != null && col != "") out.push({key: "column", value: makeAtom(col)});
-                default:
-            }
+	        for (p in pairs) {
+	            switch (p.key) {
+	                case "on_delete":
+	                    var mappedOnDelete = mapOnDelete(p.value);
+	                    if (mappedOnDelete != null) out.push({key: "on_delete", value: mappedOnDelete});
+	                case "on_update":
+	                    var mappedOnUpdate = mapOnUpdate(p.value);
+	                    if (mappedOnUpdate != null) out.push({key: "on_update", value: mappedOnUpdate});
+	                case "column":
+	                    var col = extractString(p.value);
+	                    if (col != null && col != "") out.push({key: "column", value: makeAtom(col)});
+	                default:
+	            }
         }
 
         return out;
