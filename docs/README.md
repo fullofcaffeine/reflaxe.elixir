@@ -44,6 +44,7 @@ Most internal research notes were archived to **[09-history/archive/docs/03-comp
 - [Source Mapping](04-api-reference/SOURCE_MAPPING.md) - Source map architecture + usage
 - [Router DSL](04-api-reference/ROUTER_DSL.md) - Phoenix router DSL reference
 - [Mix Tasks](04-api-reference/MIX_TASKS.md) - Custom Mix task reference
+- [Mix Task Generators](04-api-reference/MIX_TASK_GENERATORS.md) - `mix haxe.gen.*` scaffolds (Haxe-first)
 
 ### 🏗️ Architecture
 **[05-architecture/](05-architecture/)** - System design and implementation details

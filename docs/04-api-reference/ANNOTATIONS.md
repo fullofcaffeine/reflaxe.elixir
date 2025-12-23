@@ -395,19 +395,32 @@ defmodule Counter do
 end
 ```
 
-### @:migration - Ecto Migration
+### @:migration - Ecto Migration (Experimental)
 
-Generates Ecto migration modules for database schema changes.
+Marks a Haxe migration (built on `std/ecto/Migration.hx`) so the compiler can process it.
+
+> **Status**: Experimental.
+>
+> The typed migration DSL compiles today, but it is **not yet wired into Ecto's executable
+> migration runner** (`priv/repo/migrations/*.exs` + `mix ecto.migrate`). For production
+> projects, generate migrations with `mix ecto.gen.migration` and keep them in Elixir for now.
 
 **Basic Usage**:
 ```haxe
+import ecto.Migration;
+import ecto.Migration.ColumnType;
+
 @:migration
-class CreateUsersTable {
+class CreateUsersTable extends Migration {
+    public function new() {}
+
     public function up(): Void {
         createTable("users")
-            .addColumn("name", "string", {null: false})
-            .addColumn("email", "string", {null: false})
-            .addColumn("age", "integer")
+            .addId()
+            .addColumn("name", ColumnType.String(), {nullable: false})
+            .addColumn("email", ColumnType.String(), {nullable: false})
+            .addColumn("age", ColumnType.Integer)
+            .addTimestamps()
             .addIndex(["email"], {unique: true});
     }
     
@@ -415,28 +428,6 @@ class CreateUsersTable {
         dropTable("users");
     }
 }
-```
-
-**Generated Elixir**:
-```elixir
-defmodule CreateUsersTable do
-  use Ecto.Migration
-  
-  def up do
-    create table(:users) do
-      add :name, :string, null: false
-      add :email, :string, null: false
-      add :age, :integer
-      timestamps()
-    end
-    
-    create unique_index(:users, [:email])
-  end
-  
-  def down do
-    drop table(:users)
-  end
-end
 ```
 
 ### @:template - Phoenix Template

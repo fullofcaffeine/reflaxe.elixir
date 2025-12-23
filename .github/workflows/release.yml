@@ -19,9 +19,71 @@ permissions:
   contents: write
 
 jobs:
+  verify:
+    name: Verify (tests + guards)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      NODE_VERSION: '20'
+      HAXE_VERSION: '4.3.7'
+      ELIXIR_VERSION: '1.18.3'
+      OTP_VERSION: '27.2'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Cache Mix deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.mix
+            ~/.hex
+            deps
+            _build
+          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Download Haxe libraries (lix)
+        run: npx lix download
+
+      - name: Run guardrails
+        run: npm run ci:guards
+
+      - name: Run full test suite
+        run: npm test
+
+      - name: Compile-check examples
+        run: npm run test:examples
+
   github-release:
     name: GitHub Release
     runs-on: ubuntu-latest
+    needs: [verify]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
