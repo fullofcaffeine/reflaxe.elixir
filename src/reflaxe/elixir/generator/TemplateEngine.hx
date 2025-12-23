@@ -1,8 +1,8 @@
 package reflaxe.elixir.generator;
 
 import reflaxe.elixir.generator.TemplateContext;
-import reflaxe.elixir.generator.TemplateValue;
-import reflaxe.elixir.generator.TemplateValueTools;
+import reflaxe.elixir.generator.TemplateContext.TemplateValue;
+import reflaxe.elixir.generator.TemplateContext.TemplateValueTools;
 using StringTools;
 
 /**
