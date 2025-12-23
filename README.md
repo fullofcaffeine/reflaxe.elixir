@@ -76,7 +76,7 @@ The foundation for multi-target development:
   - **Type-Safe Phoenix Abstractions** ✨ NEW - Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with operator overloading
 - **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations are runnable via opt-in `.exs` emission** (`-D ecto_migrations_exs`)  
 - **Mix Integration** - Seamless build pipeline with file watching and incremental compilation
-- **Source Maps** - First Reflaxe target with `.ex.map` generation for debugging
+- **Source Mapping (experimental)** - Design/scaffolding exists, but `.ex.map` emission/lookup is not yet fully wired end‑to‑end (see `docs/04-api-reference/SOURCE_MAPPING.md`)
 - **OTP Support** - GenServers, Supervisors, Registry with type-safe compilation
 - **Type Safety** - Complete Haxe→Elixir type mapping and compile-time validation
 - **JavaScript Async/Await** - Native async/await compilation for modern JS development
@@ -139,9 +139,24 @@ Once installed, add to your `build.hxml`:
 ```hxml
 -lib reflaxe.elixir
 -cp src_haxe
--D elixir_output=lib
+
+# Output directory for generated .ex files
+-D elixir_output=lib/my_app_hx
+
+# Required for Reflaxe targets
 -D reflaxe_runtime
-Main
+
+# Elixir is not a UTF-16 platform
+-D no-utf16
+
+# Application module prefix (prevents collisions with Elixir built-ins like `Application`)
+-D app_name=MyAppHx
+
+# Enable dead code elimination to reduce output noise
+-dce full
+
+# Define a stable entrypoint
+--main my_app_hx.Main
 ```
 
 ### ⚠️ Important: Compiler Configuration
@@ -364,23 +379,11 @@ Reflaxe.Elixir uses a **dual-ecosystem architecture**:
 
 ## Usage
 
-### Enable Source Mapping (New!)
-```hxml
-# In your compile.hxml or build.hxml
--lib reflaxe.elixir
--cp src_haxe
--D elixir_output=lib
--D reflaxe_runtime
--D source-map  # Enable source mapping for debugging
-Main
-```
+### Source Mapping (Experimental)
 
-Now compilation generates `.ex.map` files alongside `.ex` files, enabling:
-- Precise error locations mapped back to Haxe source
-- Debugging at the Haxe level while running Elixir
-- LLM agents can use source positions for accurate fixes
+Reflaxe.Elixir has early scaffolding for Haxe→Elixir source mapping, but it is not yet fully wired end‑to‑end (map emission + runtime lookup).
 
-See [docs/04-api-reference/SOURCE_MAPPING.md](docs/04-api-reference/SOURCE_MAPPING.md) for complete guide.
+See `docs/04-api-reference/SOURCE_MAPPING.md` for current status and how to experiment.
 
 ### Phoenix LiveView
 ```haxe

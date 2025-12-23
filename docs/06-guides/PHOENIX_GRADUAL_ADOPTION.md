@@ -32,6 +32,25 @@ Notes:
 
 ## 2) Add `src_haxe/` and a `build.hxml`
 
+### Option A (recommended): scaffold via Mix
+
+If you already added the Mix dependency from **Step 4** (so the tasks are available), you can scaffold the boilerplate:
+
+```bash
+# Minimal scaffold (gradual adoption)
+mix haxe.gen.project --force
+
+# Phoenix-friendly scaffold (typed LiveView example + HXX)
+mix haxe.gen.project --phoenix --basic-modules --force
+```
+
+This writes `src_haxe/<app>_hx/**`, `build.hxml`, `package.json` + `.haxerc` (unless `--skip-npm`), updates `mix.exs`,
+and adds the generated output dir to `.gitignore`.
+
+If you use this option, you can skip to **Step 5**.
+
+### Option B: manual setup
+
 Create:
 
 ```
@@ -46,7 +65,13 @@ Minimal `build.hxml` (server-side Haxe→Elixir):
 -cp src_haxe
 
 -D reflaxe_runtime
--D elixir_output=lib
+-D no-utf16
+
+# Keep generated Elixir isolated during gradual adoption
+-D elixir_output=lib/my_app_hx
+
+# Application module prefix (prevents collisions with Elixir built-ins like `Application`)
+-D app_name=MyAppHx
 -dce full
 
 # Define a stable entrypoint:
@@ -57,9 +82,9 @@ Notes:
 - When you use `-lib reflaxe.elixir`, the library already runs `--macro reflaxe.elixir.CompilerInit.Start()` for you.
 - If you vendor the compiler sources manually (no `-lib`), then you must add the `--macro ...Start()` line yourself.
 
-Why `elixir_output=lib`?
-- Your generated modules live under `MyAppHx.*`, so they compile into `lib/my_app_hx/**`.
-- This avoids accidentally generating into your existing `lib/my_app/**` namespace.
+Why `elixir_output=lib/my_app_hx`?
+- It keeps generated Elixir isolated during gradual adoption (`lib/my_app_hx/**` by default).
+- It avoids accidentally generating into your existing `lib/my_app/**` namespace.
 
 ## 3) Add a first Haxe module (called from Elixir)
 
@@ -68,7 +93,6 @@ Create `src_haxe/my_app_hx/Main.hx`:
 ```haxe
 package my_app_hx;
 
-@:native("MyAppHx.Main")
 @:module
 class Main {
   public static function main(): Void {}
@@ -80,7 +104,6 @@ Then create `src_haxe/my_app_hx/Greeter.hx`:
 ```haxe
 package my_app_hx;
 
-@:native("MyAppHx.Greeter")
 @:module
 class Greeter {
   public static function hello(name: String): String {
@@ -124,7 +147,7 @@ def project do
     haxe: [
       hxml_file: "build.hxml",
       source_dir: "src_haxe",
-      target_dir: "lib",
+      target_dir: "lib/my_app_hx",
       watch: Mix.env() == :dev
     ]
   ]

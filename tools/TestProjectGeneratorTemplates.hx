@@ -44,8 +44,54 @@ class TestProjectGeneratorTemplates {
 
         var buildHxml = File.getContent(Path.join([runDir, "build.hxml"]));
         assertContains(buildHxml, "-lib reflaxe.elixir", "build.hxml includes reflaxe.elixir lib");
+        assertContains(buildHxml, "-D elixir_output=lib/demo_hx", "build.hxml uses an isolated elixir_output dir");
+        assertContains(buildHxml, "-D reflaxe_runtime", "build.hxml includes reflaxe_runtime define");
+        assertContains(buildHxml, "-D no-utf16", "build.hxml includes no-utf16 define");
+        assertContains(buildHxml, "-D app_name=DemoHx", "build.hxml includes app_name define");
+        assertContains(buildHxml, "-dce full", "build.hxml enables dead code elimination");
+        assertContains(buildHxml, "--main demo_hx.Main", "build.hxml sets a stable --main");
+        assertNotContains(buildHxml, "CompilerInit.Start()", "build.hxml does not duplicate the bootstrap macro");
 
-        Sys.println("OK: ProjectGenerator add-to-existing scaffold");
+        assertMixTaskScaffold(root);
+
+        Sys.println("OK: ProjectGenerator + Mix.Tasks.Haxe.Gen.Project scaffolds");
+        rmrf(runDir);
+    }
+
+    private static function assertMixTaskScaffold(root: String): Void {
+        var runDir = Path.join([root, "mix-task-" + Std.string(Date.now().getTime())]);
+        mkdirp(runDir);
+
+        File.saveContent(Path.join([runDir, "mix.exs"]), minimalMixExs());
+
+        var elixirCode = 'Mix.Project.in_project(:demo, "${runDir}", fn _ -> Mix.Tasks.Haxe.Gen.Project.run(["--phoenix", "--basic-modules", "--force"]) end)';
+        var exitCode = Sys.command("mix", ["run", "-e", elixirCode]);
+        if (exitCode != 0) {
+            Sys.println("FAIL: mix run -e scaffold failed (exit: " + exitCode + ")");
+            Sys.exit(1);
+        }
+
+        assertExists(Path.join([runDir, "build.hxml"]), "mix task created build.hxml");
+        assertExists(Path.join([runDir, "package.json"]), "mix task created package.json");
+        assertExists(Path.join([runDir, "src_haxe", "demo_hx", "Main.hx"]), "mix task created src_haxe/demo_hx/Main.hx");
+        assertExists(Path.join([runDir, "src_haxe", "demo_hx", "utils", "StringUtils.hx"]), "mix task created utils/StringUtils.hx");
+        assertExists(Path.join([runDir, "src_haxe", "demo_hx", "live", "AppLive.hx"]), "mix task created live/AppLive.hx");
+
+        var mixExs = File.getContent(Path.join([runDir, "mix.exs"]));
+        assertContains(mixExs, "compilers: [:haxe]", "mix task updated mix.exs compilers");
+        assertContains(mixExs, "haxe: [", "mix task added haxe config to mix.exs");
+
+        var buildHxml = File.getContent(Path.join([runDir, "build.hxml"]));
+        assertContains(buildHxml, "-lib reflaxe.elixir", "mix task build.hxml includes reflaxe.elixir lib");
+        assertContains(buildHxml, "-D elixir_output=lib/demo_hx", "mix task build.hxml defaults to isolated output dir");
+        assertContains(buildHxml, "-D app_name=DemoHx", "mix task build.hxml uses an isolated app_name prefix");
+        assertContains(buildHxml, "-D no-utf16", "mix task build.hxml includes no-utf16");
+        assertContains(buildHxml, "-D reflaxe_runtime", "mix task build.hxml includes reflaxe_runtime");
+        assertContains(buildHxml, "-dce full", "mix task build.hxml enables dead code elimination");
+        assertContains(buildHxml, "-D hxx_string_to_sigil", "mix task build.hxml includes hxx_string_to_sigil for Phoenix");
+        assertContains(buildHxml, "demo_hx.Main", "mix task build.hxml compiles demo_hx.Main");
+        assertContains(buildHxml, "demo_hx.live.AppLive", "mix task build.hxml compiles demo_hx.live.AppLive");
+
         rmrf(runDir);
     }
 
@@ -86,6 +132,13 @@ end
     private static function assertContains(haystack: String, needle: String, message: String): Void {
         if (haystack.indexOf(needle) == -1) {
             Sys.println("FAIL: " + message + " (missing: " + needle + ")");
+            Sys.exit(1);
+        }
+    }
+
+    private static function assertNotContains(haystack: String, needle: String, message: String): Void {
+        if (haystack.indexOf(needle) != -1) {
+            Sys.println("FAIL: " + message + " (unexpected: " + needle + ")");
             Sys.exit(1);
         }
     }
