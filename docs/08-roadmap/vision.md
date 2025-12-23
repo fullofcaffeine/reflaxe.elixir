@@ -8,13 +8,17 @@ Stop learning multiple languages. Stop maintaining fragmented codebases. Stop bu
 
 Write once, deploy everywhere, with built-in AI that understands your entire stack.
 
+> Note on status
+>
+> Reflaxe.Elixir is **alpha software**: the BEAM/Phoenix foundation is feature‑complete enough to build real projects, but the toolchain is not yet production‑hardened. This document describes long‑term direction, not a stability guarantee.
+
 ## The Three Pillars
 
 ### 1. Runtime Ecosystem Leveraging
 
 Access the full power of every modern runtime without language fragmentation:
 
-- **BEAM Runtime**: Phoenix, LiveView, Ecto, OTP, GenServers (✅ Production Ready)
+- **BEAM Runtime**: Phoenix, LiveView, Ecto, OTP, GenServers (✅ Feature complete — Alpha)
 - **JavaScript Runtime**: React, npm ecosystem, TypeScript libraries (🚧 In Development)  
 - **Mobile Runtime**: iOS/Android via Capacitor, then React Native/Expo (🔮 Planned)
 - **Desktop Runtime**: Cross-platform via Electron/Tauri (🔮 Planned)
@@ -91,7 +95,7 @@ rex ai convert "this React component to Haxe LiveView"
 
 ## The Progressive Platform Strategy
 
-### Phase 1: BEAM Foundation (✅ Complete)
+### Phase 1: BEAM Foundation (✅ Feature complete)
 - **Phoenix/LiveView**: Type-safe web applications
 - **Ecto**: Database schemas and migrations
 - **OTP**: GenServers, Supervisors, fault tolerance

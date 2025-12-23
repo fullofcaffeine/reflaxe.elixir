@@ -362,7 +362,7 @@ mix compile --force          # Verify Elixir compilation
 - **Follow existing patterns** in the codebase
 - **Write comprehensive tests** for all new functionality
 - **Document architectural decisions** in appropriate guides
-- **Maintain performance targets** (<15ms compilation times)
+- **Maintain performance targets** (see Performance Guide; large modules may require `fast_boot` during iteration)
 
 ### Git Workflow
 - **Commit frequently** with descriptive messages
@@ -377,7 +377,7 @@ mix compile --force          # Verify Elixir compilation
 ✅ **End-to-end validation** (compiler + generated code)  
 ✅ **Single command simplicity** (`npm test`)
 ✅ **Zero global state** (project-specific everything)
-✅ **Production-ready performance** (all targets <15ms)
+✅ **Fast compilation** for typical modules (see `docs/06-guides/PERFORMANCE_GUIDE.md`)
 
 ## Next Steps
 
@@ -405,7 +405,9 @@ incremental builds during `mix compile` and `mix phx.server`.
 
 Behavior (no configuration required):
 
-- Auto‑reuse: If a server is already running on the chosen port, Mix will reuse it.
+- Auto‑manage: Mix starts and owns a `haxe --wait` server instance for this project.
+- Reuse (owned): If the managed server is already running, it is reused automatically.
+- No external reuse: If the configured port is already bound by an unknown process, Mix relocates to a free port instead of attaching to it.
 - Auto‑start: If none is running, Mix starts one in the background.
 - Auto‑relocate: If the port is busy, Mix transparently retries on a free port.
 - Fallback: If the server cannot be reached, Mix compiles directly (no server) and

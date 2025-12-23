@@ -1407,6 +1407,6 @@ Reflaxe.Elixir's source mapping provides:
 - ✅ **Seamless debugging** across compilation boundaries
 - ✅ **LLM-friendly** structured error data
 - ✅ **Performance optimized** for development workflows
-- ✅ **Production ready** with minimal overhead
+- ✅ **Low overhead** with minimal runtime impact
 
 With source mapping enabled, you can confidently debug at the Haxe source level while running Elixir code, making Reflaxe.Elixir a powerful choice for type-safe BEAM development.
