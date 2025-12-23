@@ -20,18 +20,18 @@ defmodule Main do
     filter = %{:name => "John", :email => "john@example.com", :is_active => true}
     if (not Kernel.is_nil(filter)) do
       query = "SELECT * FROM users"
-      query = this1
+      _query = this1
       if (not Kernel.is_nil(filter.name)) do
         value = "%#{(fn -> filter.name end).()}%"
-        query = this2
+        _query = this2
       end
       if (not Kernel.is_nil(filter.email)) do
         value = "%#{(fn -> filter.email end).()}%"
-        query = this3
+        _query = this3
       end
       if (filter.is_active == true) do
         value = filter.is_active
-        query = this4
+        _query = this4
       end
       nil
     end

@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * MountParamsSideEffectAssignDiscardTransforms
@@ -28,17 +29,18 @@ class MountParamsSideEffectAssignDiscardTransforms {
   static function discard(body: ElixirAST): ElixirAST {
     return switch (body.def) {
       case EDo(stmts):
+        var usage = OptimizedVarUseAnalyzer.buildExact(stmts);
         var out:Array<ElixirAST> = [];
         for (i in 0...stmts.length) {
           var s = stmts[i];
           switch (s.def) {
-            case EMatch(PVar("params"), rhs) if (!usedLater(stmts, i+1, "params")):
+            case EMatch(PVar("params"), rhs) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "params")):
               out.push(rhs);
-            case EBinary(Match, {def: EVar("params")}, rhs2) if (!usedLater(stmts, i+1, "params")):
+            case EBinary(Match, {def: EVar("params")}, rhs2) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "params")):
               out.push(rhs2);
-            case EMatch(PVar("_params"), rhs3) if (!usedLater(stmts, i+1, "_params")):
+            case EMatch(PVar("_params"), rhs3) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "_params")):
               out.push(rhs3);
-            case EBinary(Match, {def: EVar("_params")}, rhs4) if (!usedLater(stmts, i+1, "_params")):
+            case EBinary(Match, {def: EVar("_params")}, rhs4) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "_params")):
               out.push(rhs4);
             default:
               out.push(s);
@@ -46,17 +48,18 @@ class MountParamsSideEffectAssignDiscardTransforms {
         }
         makeASTWithMeta(EDo(out), body.metadata, body.pos);
       case EBlock(stmtsB):
+        var usage = OptimizedVarUseAnalyzer.buildExact(stmtsB);
         var outB:Array<ElixirAST> = [];
         for (i in 0...stmtsB.length) {
           var s = stmtsB[i];
           switch (s.def) {
-            case EMatch(PVar("params"), rhs) if (!usedLater(stmtsB, i+1, "params")):
+            case EMatch(PVar("params"), rhs) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "params")):
               outB.push(rhs);
-            case EBinary(Match, {def: EVar("params")}, rhs2) if (!usedLater(stmtsB, i+1, "params")):
+            case EBinary(Match, {def: EVar("params")}, rhs2) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "params")):
               outB.push(rhs2);
-            case EMatch(PVar("_params"), rhs3) if (!usedLater(stmtsB, i+1, "_params")):
+            case EMatch(PVar("_params"), rhs3) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "_params")):
               outB.push(rhs3);
-            case EBinary(Match, {def: EVar("_params")}, rhs4) if (!usedLater(stmtsB, i+1, "_params")):
+            case EBinary(Match, {def: EVar("_params")}, rhs4) if (!OptimizedVarUseAnalyzer.usedLater(usage, i + 1, "_params")):
               outB.push(rhs4);
             default:
               outB.push(s);
@@ -66,16 +69,6 @@ class MountParamsSideEffectAssignDiscardTransforms {
       default:
         body;
     }
-  }
-
-  static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
-    var found = false;
-    for (j in start...stmts.length) if (!found) {
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:ElixirAST){
-        switch (x.def) { case EVar(v) if (v == name): found = true; default: }
-      });
-    }
-    return found;
   }
 }
 
