@@ -200,16 +200,24 @@ end
 
 The compiler uses type information to make correct transformation decisions.
 
-### String Detection
+### String vs Numeric `+`
+
+Haxe uses `+` for both numeric addition and string concatenation. Reflaxe.Elixir uses type
+information from Haxe’s typed AST to emit idiomatic Elixir:
+
+- **String concatenation** becomes `<>`
+- **Numeric addition** remains `+`
+
+Example:
+
 ```haxe
-// Compiler checks if operands are strings
-case TBinop(OpAdd, e1, e2, _):
-    var isString = checkStringType(e1) || checkStringType(e2);
-    if (isString) {
-        return compileExpression(e1) + " <> " + compileExpression(e2);
-    } else {
-        return compileExpression(e1) + " + " + compileExpression(e2);
-    }
+var a = "hello " + name;
+var b = 1 + 2;
+```
+
+```elixir
+a = "hello " <> name
+b = 1 + 2
 ```
 
 ### Numeric Operations
