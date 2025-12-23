@@ -458,7 +458,8 @@ class ElixirASTPassRegistry {
         });
 
         // Collapse nested alias chains: lhs = alias = expr → lhs = expr (when alias unused later)
-        // NOTE: Has O(n²) complexity - DISABLED under fast_boot due to performance issues with large files
+        // NOTE: Uses a suffix usage index (O(n) build + O(1) checks). Still disabled under fast_boot to
+        // minimize pass count in speed-focused builds.
         passes.push({
             name: "AssignmentChainCleanup",
             description: "Collapse nested match alias chains to eliminate unused alias binders",
@@ -2505,7 +2506,7 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.UnderscoreLocalPromotionTransforms.pass
         });
         // Ultra-final: underscore unused local assignments (same-block conservative)
-        // NOTE: Has O(n²) complexity - DISABLED under fast_boot due to performance issues with large files
+        // NOTE: Uses a suffix usage index (O(n) build + O(1) checks) to avoid quadratic behavior on large blocks.
         passes.push({
             name: "UnusedLocalAssignUnderscoreFinal",
             description: "Rename unused local assignment binders `name = expr` to `_name` (same-block only)",
@@ -2744,7 +2745,8 @@ class ElixirASTPassRegistry {
         });
 
         // Late sweep: collapse nested aliasing chains like `lhs = g = expr` when alias is unused.
-        // NOTE: Has O(n²) complexity - DISABLED under fast_boot due to performance issues with large files
+        // NOTE: Uses a suffix usage index (O(n) build + O(1) checks). Still disabled under fast_boot to
+        // minimize pass count in speed-focused builds.
         passes.push({
             name: "AssignmentChainCleanupLate",
             description: "Late sweep to collapse nested aliasing chains (lhs = g = expr) when alias is unused",
