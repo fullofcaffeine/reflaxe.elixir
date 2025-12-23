@@ -87,22 +87,12 @@ npm test
 All tests complete ✅
 ```
 
-### 6. Enable Source Mapping (Recommended)
+### 6. Source Mapping (Experimental)
 
-Source mapping enables debugging at the Haxe source level:
+Reflaxe.Elixir has a source mapping design (to map generated `.ex` back to `.hx`), but it is
+currently **experimental** and not fully wired end‑to‑end in the AST pipeline.
 
-```bash
-# Test source map generation
-cd test/tests/source_map_basic
-haxe compile.hxml -D source-map
-
-# Verify .ex.map files were created
-ls out/*.ex.map
-```
-
-**Expected files:**
-- `out/SourceMapTest.ex.map`
-- `out/Any_Impl_.ex.map`
+See `docs/04-api-reference/SOURCE_MAPPING.md` for the current status and next steps.
 
 ## Understanding the Setup
 
@@ -169,44 +159,29 @@ haxe --version
 cd examples/01-simple-modules
 haxe BasicModule.hxml
 
-# Compile with source mapping (recommended for development)
-haxe BasicModule.hxml -D source-map
-
-# Compile Phoenix LiveView with source maps
-cd examples/03-phoenix-app  
-haxe build.hxml -D source-map
-
 # Run comprehensive tests
 npm test
 ```
 
-### Source Mapping Features
+### Source Mapping (Experimental)
 
-Reflaxe.Elixir is the **first Reflaxe target with source mapping**:
+Reflaxe.Elixir’s source mapping design (mapping generated `.ex` back to `.hx`) is currently
+**experimental** and not yet fully wired end‑to‑end in the AST pipeline.
 
-```bash
-# Enable in any compilation
-haxe build.hxml -D source-map
-
-# Generates .ex.map files alongside .ex files
-ls lib/*.ex.map
-
-# Use Mix tasks to query source positions
-mix haxe.source_map lib/MyModule.ex 10 5
-```
+See `docs/04-api-reference/SOURCE_MAPPING.md` for the current status and next steps.
 
 ### Development Workflow
 
 #### With File Watching (Recommended)
 ```bash
-# 1. Start file watcher with source mapping
+# 1. Start file watcher
 mix haxe.watch
 
 # 2. Make changes to Haxe files
 vim src_haxe/MyModule.hx
-# Files automatically recompile with source maps
+# Files automatically recompile
 
-# 3. Debug with source positions
+# 3. Debug compile errors
 mix haxe.errors --format json
 ```
 
@@ -287,30 +262,12 @@ pwd                 # Should end with /reflaxe.elixir
 ```
 
 #### Issue: No source maps generated
-**Solution:** Ensure `-D source-map` flag is included
-```bash
-# ❌ This won't generate source maps
-haxe build.hxml
-
-# ✅ This will generate source maps
-haxe build.hxml -D source-map
-
-# Verify .ex.map files exist
-ls lib/*.ex.map
-```
+**Solution:** Source mapping is currently experimental; `.ex.map` files are not emitted by default builds yet.
+See `docs/04-api-reference/SOURCE_MAPPING.md`.
 
 #### Issue: Source map positions incorrect
-**Solution:** Clean and rebuild with source mapping
-```bash
-# Clean generated files
-rm -rf lib/*.ex lib/*.ex.map
-
-# Rebuild with source mapping
-haxe build.hxml -D source-map
-
-# Test mapping
-mix haxe.source_map lib/MyModule.ex 10 5
-```
+**Solution:** Source mapping is currently experimental; if you’re working on it, start from
+`docs/04-api-reference/SOURCE_MAPPING.md` and add integration coverage under `test/snapshot/core/source_map_validation/`.
 
 ### Getting Help
 

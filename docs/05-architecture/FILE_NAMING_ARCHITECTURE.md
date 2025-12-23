@@ -304,7 +304,7 @@ This eliminated an entire class of bugs by having a single source of truth for f
 
 - [`/docs/03-compiler-development/COMPILER_BEST_PRACTICES.md`](/docs/03-compiler-development/COMPILER_BEST_PRACTICES.md) - Compiler development practices
 - [`/docs/02-user-guide/FILE_GENERATION.md`](/docs/02-user-guide/FILE_GENERATION.md) - File generation process
-- [`/docs/04-api-reference/ANNOTATION_SYSTEM.md`](/docs/04-api-reference/ANNOTATION_SYSTEM.md) - Framework annotation system
+- [`/docs/04-api-reference/ANNOTATIONS.md`](/docs/04-api-reference/ANNOTATIONS.md) - Framework annotation system
 - [`/docs/02-user-guide/PHOENIX_INTEGRATION.md`](/docs/02-user-guide/PHOENIX_INTEGRATION.md) - Phoenix framework patterns
 
 ## Summary

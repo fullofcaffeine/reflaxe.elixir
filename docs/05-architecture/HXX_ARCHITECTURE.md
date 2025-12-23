@@ -1,245 +1,82 @@
-# HXX Template Architecture: Compile-Time vs Runtime
+# HXX Template Architecture (Compile‑Time Only)
 
-## ⚠️ Critical Architectural Insight
+HXX is Reflaxe.Elixir’s **compile‑time** template system for generating Phoenix **HEEx** (`~H` sigils).
 
-**HXX is purely compile-time processing** - it transforms JSX-like syntax to Phoenix HEEx templates during Haxe→Elixir compilation. **There is no runtime HXX component.**
+There is **no runtime HXX engine**: the generated Elixir contains standard Phoenix code only.
 
-## Architecture Overview
+## The Entry Point: `HXX.hxx/1` and `HXX.block/1`
 
-### The Correct Model: Compile-Time Transformation
+Reflaxe.Elixir ships a small, non‑inline stub in `std/HXX.hx`:
 
-```
-Haxe Source (JSX-like) → Haxe Compilation → Elixir Code (HEEx ~H sigils)
-```
+- `HXX.hxx(templateStr: String): String`
+- `HXX.block(content: String): String`
 
-**HXX exists only during compilation step**. The generated Elixir contains standard Phoenix HEEx templates with no HXX dependencies.
+These functions exist so user code can type‑check normally. The compiler **intercepts** calls to
+`HXX.hxx`/`HXX.block` in the typed AST and lowers them into `~H"""..."""` during compilation.
 
-### The Wrong Model: Runtime Processing ❌
+## Build‑Time Lowering (TypedExpr → ElixirAST)
 
-```
-Haxe Source → Elixir Code with HXX calls → Runtime HXX module → HEEx
-```
+During AST building, the compiler:
 
-**This was our initial mistake** - creating `std/phoenix/HXX.hx` as a runtime module. This is architecturally incorrect because:
+1. Detects `HXX.hxx(...)` calls in the typed AST
+2. Collects the template string (including concatenation shapes created by Haxe interpolation)
+3. Converts HXX/HTML conventions into HEEx‑compatible content
+4. Emits an Elixir AST sigil node representing `~H"""..."""`
 
-1. **Templates should be static** - processed at compile time for performance
-2. **No runtime dependencies** - generated Elixir should be pure Phoenix
-3. **Type safety lost** - runtime processing can't provide compile-time checks
+Relevant implementation entrypoints:
 
-## How HXX Actually Works
+- `src/reflaxe/elixir/ast/ElixirASTBuilder.hx` (HXX detection + template collection)
+- `src/reflaxe/elixir/ast/TemplateHelpers.hx` (helpers used by the builder)
 
-### 1. Local HXX Placeholder
+## Output
 
-Each application has a local `HXX.hx` file:
+The printer renders the sigil AST node as standard Phoenix HEEx:
 
-```haxe
-// src_haxe/HXX.hx
-class HXX {
-    public static function hxx(templateStr: String): String {
-        // Placeholder for type checking - never executed
-        return templateStr;
-    }
-}
+```elixir
+~H"""
+<div>Hello</div>
+"""
 ```
 
-**Purpose**: Provides function signature for Haxe type checking only.
+No HXX module/function calls remain in the generated output.
 
-### 2. Compiler Detection
+## Nested Fragments with `HXX.block/1`
 
-`ElixirCompiler.hx` detects `HXX.hxx()` calls:
+`HXX.block(...)` marks nested fragments that should be **inlined** inside an outer `HXX.hxx(...)`
+without introducing extra interpolation wrappers. This is useful for composing template helpers.
 
-```haxe
-// In compileExpression() - TCall handler
-if (objStr == "HXX" && methodName == "hxx") {
-    return compileHxxCall(args);  // Transform to HEEx
-}
-```
+## No Runtime Artifacts
 
-**Key**: Detection happens during AST processing, before the placeholder function would ever run.
+Compile‑time‑only helper modules (including HXX helpers) are suppressed from emission when they
+would otherwise produce empty/no‑runtime `.ex` files. This keeps generated projects “pure Phoenix”.
 
-### 3. Template Transformation
+## Optional: Macro‑Validated HXX
 
-`compileHxxCall()` processes templates:
+There is also an optional macro implementation (`reflaxe.elixir.macros.HXX`) which can validate
+and pre‑process string literals, tagging them for the builder. The **recommended default** for
+applications is the `std/HXX.hx` stub + AST‑intercept path to avoid nested macro forwarding issues.
 
-```haxe
-case TConst(TString(s)):
-    var processed = processHxxTemplate(s);      // JSX → HEEx syntax
-    return formatHxxTemplate(processed);        // Wrap in ~H sigil
+## Minimal Example
 
-case TBinop(OpAdd, _, _):
-    var rawContent = extractRawStringFromTBinop(args[0]);
-    var processed = processHxxTemplate(rawContent);
-    return formatHxxTemplate(processed);
-```
+Haxe:
 
-**Result**: Direct generation of `~H"""..."""` strings in Elixir code.
-
-### 4. Generated Output
-
-Input Haxe:
 ```haxe
 import phoenix.types.Assigns;
 
-typedef UserAssigns = {
-  user: { name: String }
-}
+typedef AssignsData = { var title: String; }
 
-function render(assigns: Assigns<UserAssigns>): String {
-    return HXX.hxx('<div class="user">${assigns.user.name}</div>');
+function render(assigns: Assigns<AssignsData>): String {
+  return HXX.hxx('<h1>${assigns.title}</h1>');
 }
 ```
 
 Generated Elixir:
+
 ```elixir
 def render(assigns) do
   ~H"""
-  <div class="user">{assigns.user.name}</div>
+  <h1>{assigns.title}</h1>
   """
 end
 ```
 
-**No HXX references in generated code** - pure Phoenix HEEx.
-
-## Template Processing Pipeline
-
-### 1. AST Analysis
-- Detect `HXX.hxx()` calls in typed AST
-- Extract raw template strings before escaping
-- Handle both simple strings and multiline concatenations
-
-### 2. Syntax Transformation
-- Convert `${}` interpolation to `{}` (HEEx format)
-- Transform component syntax (`<.button>` stays as-is)
-- Process conditional rendering and loops
-- Handle LiveView event attributes
-
-### 3. HEEx Generation
-- Wrap processed template in `~H"""..."""` sigil
-- Ensure proper indentation and formatting
-- Generate valid Phoenix template syntax
-
-## Why No Runtime Module?
-
-### Performance
-- **Compile-time**: Templates processed once during build
-- **Runtime**: Templates are static strings, no processing overhead
-- **Caching**: Phoenix compiles templates to efficient bytecode
-
-### Type Safety
-- **Compile-time**: Template expressions type-checked by Haxe
-- **Template validation**: Syntax errors caught during compilation
-- **IDE support**: Autocomplete and error highlighting work
-
-### Framework Integration
-- **Standard Phoenix**: Generated code uses standard ~H sigils
-- **Deployment**: No custom dependencies in production
-- **Tooling**: Works with all Phoenix development tools
-
-## Architectural Lessons
-
-### 1. Distinguish Compile-Time vs Runtime
-**Always ask**: "Does this need to exist when the application runs?"
-
-- **Compile-time tools**: Transform source code (HXX, macros, code generators)
-- **Runtime libraries**: Provide functionality during execution (Phoenix, Ecto)
-
-### 2. Prefer Static Generation
-When possible, generate static code rather than runtime processing:
-
-```haxe
-// ✅ GOOD: Compile-time generation
-HXX.hxx('<div>Static template</div>') 
-// → Generates: ~H"<div>Static template</div>"
-
-// ❌ BAD: Runtime processing  
-SomeModule.processTemplate('<div>Dynamic template</div>')
-// → Runtime overhead, no compile-time validation
-```
-
-### 3. Framework Compatibility
-Generated code should use standard framework patterns:
-
-- **Phoenix**: Use ~H sigils, not custom template functions
-- **Ecto**: Generate standard schema modules, not wrappers
-- **OTP**: Create proper GenServer modules, not abstractions
-
-### 4. Test the Architecture
-Verify that generated code works without the compiler:
-
-```bash
-# Generated Elixir should compile and run independently
-cd generated_project
-mix compile  # Should work without Haxe/Reflaxe
-mix test     # Should pass with standard Phoenix tools
-```
-
-## Common Mistakes to Avoid
-
-### 1. Creating Runtime Modules for Compile-Time Features
-```haxe
-// ❌ WRONG: Runtime module for compile-time feature
-class HXX {
-    public static function hxx(templateStr: String): String {
-        return processTemplate(templateStr);  // Runtime processing
-    }
-}
-```
-
-### 2. Over-Abstracting Framework Features
-```haxe
-// ❌ WRONG: Custom abstraction over Phoenix
-class LiveViewHelper {
-    public static function render(template: String): String {
-        return "~H\"" + template + "\"";  // Runtime string manipulation
-    }
-}
-
-// ✅ GOOD: Direct Phoenix integration
-import phoenix.types.Assigns;
-
-function render(_assigns: Assigns<{}>): String {
-    return HXX.hxx('<div>Direct HEEx generation</div>');
-}
-```
-
-### 3. Mixing Compilation Phases
-```haxe
-// ❌ WRONG: Trying to use compile-time tools at runtime
-public static function renderDynamic(template: String): String {
-    return HXX.hxx(template);  // Can't work - HXX is compile-time only
-}
-
-// ✅ GOOD: Separate concerns
-public static function renderStatic(): String {
-    return HXX.hxx('<div>Compile-time template</div>');
-}
-```
-
-## Testing HXX Architecture
-
-### Verify Compile-Time Processing
-1. **Check generated .ex files** contain ~H sigils, not HXX calls
-2. **Compile without Haxe** - Elixir project should be self-contained
-3. **Performance test** - templates should be fast (no runtime processing)
-
-### Validate Template Transformation
-```haxe
-// Input
-HXX.hxx('<div class="user">${assigns.name}</div>')
-
-// Expected output in .ex file
-~H"""
-<div class="user">{assigns.name}</div>
-"""
-```
-
-## Related Documentation
-
-- **[HXX Implementation](../09-history/archive/docs/02-user-guide/HXX_IMPLEMENTATION.md)** - Technical details of template processing (archived)
-- **[HXX Syntax & Comparison](../02-user-guide/HXX_SYNTAX_AND_COMPARISON.md)** - User guide for writing templates
-- **[Compilation Flow](COMPILATION_FLOW.md)** - Overall compilation architecture
-- **[Haxe Language Fundamentals](../02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md)** - Type system insights
-
-## Key Takeaway
-
-**HXX is a compile-time preprocessor, not a runtime library. Understanding this distinction is crucial for proper architecture and prevents creating unnecessary runtime dependencies.**
