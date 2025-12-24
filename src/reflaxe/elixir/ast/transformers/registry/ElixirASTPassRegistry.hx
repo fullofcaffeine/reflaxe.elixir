@@ -458,12 +458,11 @@ class ElixirASTPassRegistry {
         });
 
         // Collapse nested alias chains: lhs = alias = expr → lhs = expr (when alias unused later)
-        // NOTE: Uses a suffix usage index (O(n) build + O(1) checks). Still disabled under fast_boot to
-        // minimize pass count in speed-focused builds.
+        // NOTE: Uses a suffix usage index (O(n) build + O(1) checks).
         passes.push({
             name: "AssignmentChainCleanup",
             description: "Collapse nested match alias chains to eliminate unused alias binders",
-            enabled: #if fast_boot false #else true #end,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.AssignmentChainCleanupTransforms.transformPass
         });
 
@@ -1405,7 +1404,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "LocalUnderscoreBinderPromote",
             description: "Rename EMatch(_name = ...) to name = ... when subsequent code uses name",
-            enabled: #if fast_boot false #else true #end,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreBinderPromoteTransforms.promotePass
         });
         // Generic underscore promotion: _any -> any when used later in the same body
@@ -2294,11 +2293,11 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.InlineIfInContainersGlobalTransforms.pass
         });
         // Generic: underscore unused case/with pattern vars
-        // NOTE: Uses VarUseAnalyzer - can be slow for large files. DISABLED under fast_boot.
+        // NOTE: Uses a suffix usage index (O(n) build + O(1) checks).
         passes.push({
             name: "CasePatternUnusedUnderscore",
             description: "Underscore unused variables bound in case/with patterns",
-            enabled: #if fast_boot false #else true #end,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.CasePatternUnusedUnderscoreTransforms.pass
         });
         passes.push({
@@ -2743,12 +2742,11 @@ class ElixirASTPassRegistry {
         });
 
         // Late sweep: collapse nested aliasing chains like `lhs = g = expr` when alias is unused.
-        // NOTE: Uses a suffix usage index (O(n) build + O(1) checks). Still disabled under fast_boot to
-        // minimize pass count in speed-focused builds.
+        // NOTE: Uses a suffix usage index (O(n) build + O(1) checks).
         passes.push({
             name: "AssignmentChainCleanupLate",
             description: "Late sweep to collapse nested aliasing chains (lhs = g = expr) when alias is unused",
-            enabled: #if fast_boot false #else true #end,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.AssignmentChainCleanupTransforms.transformPass
         });
 
@@ -2829,7 +2827,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DefParamUnusedUnderscore",
             description: "Prefix unused function parameters with underscore in Phoenix Web/Live/Presence modules",
-            enabled: #if fast_boot false #else true #end,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
         });
 
@@ -2837,7 +2835,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DefParamUnusedUnderscore",
             description: "Late sweep: underscore unused def/defp params in Phoenix modules",
-            enabled: #if fast_boot false #else true #end,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
         });
 
@@ -2858,14 +2856,14 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "DefParamUnusedUnderscore",
             description: "Ultra-final underscore of unused def/defp params in Web/Live/Presence",
-            enabled: #if fast_boot false #else true #end,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreTransforms.transformPass
         });
         // Final: discard top-level nil assignments in function bodies when unused
         passes.push({
             name: "TopLevelNilAssignDiscard",
             description: "Rewrite var = nil to _ = nil when var is not used later in function",
-            enabled: #if fast_boot false #else true #end,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.TopLevelNilAssignDiscardTransforms.transformPass
         });
         // Absolutely last: promote underscore binders by use one more time
@@ -5254,7 +5252,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "LocalAssignUnusedUnderscore_Scoped_Final",
             description: "Final (scoped): underscore local assigns not used later in defs except mount/3",
-            enabled: #if fast_boot false #else true #end,
+            enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalAssignUnusedUnderscoreScopedTransforms.pass,
             runAfter: ["EctoQueryBranchSelfAssignUnderscore_Final"]
         });
@@ -5528,7 +5526,7 @@ class ElixirASTPassRegistry {
             description: "Underscore unused def/defp parameters (absolute-final)",
             // Fixed: collectUsed now extracts identifiers from ERaw/EString using regex
             // to detect usage in IIFE call arguments like: end).(user, attrs)
-            // NOTE: Uses VarUseAnalyzer - DISABLED under fast_boot
+            // NOTE: Disabled by default; uses a suffix usage index (O(n) build + O(1) checks).
             enabled: false,
             pass: reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms.pass
         });
