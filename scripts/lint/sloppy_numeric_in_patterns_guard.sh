@@ -66,7 +66,7 @@ if [[ "$FULL_SCAN" -eq 0 ]] && git rev-parse --is-inside-work-tree >/dev/null 2>
             $found = 0;
             $file = undef;
           }
-          if (/^\+\+\+ b\/(\S+)/) { $file = $1; next; }
+          if (/^\+\+\+ (?:[a-z]\/)?(\S+)/) { $file = $1; next; }
           next if !defined($file) || $file !~ /\.hx$/;
           if (/^\+[^+]/) {
             my $line = substr($_, 1);
