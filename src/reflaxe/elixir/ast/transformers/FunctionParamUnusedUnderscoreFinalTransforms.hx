@@ -6,7 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
-import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 using Lambda;
 
@@ -21,23 +21,15 @@ using Lambda;
  *   a handle_event/3 catch-all, or `online_users` in a render helper).
  *
  * HOW
- * - For each EDef/EDefp, use VarUseAnalyzer.stmtUsesVar to check if each parameter
- *   is referenced in the body. For each positional argument that is a simple PVar(name)
- *   and not used, rename it to PVar("_" + name).
+ * - For each EDef/EDefp, build a conservative usage index over the body once (O(N)),
+ *   then for each positional argument that is a simple PVar(name) and not used,
+ *   rename it to PVar("_" + name) (O(1) per param).
  *
  * PHOENIX ~H TEMPLATE HANDLING
  * - Phoenix's ~H sigil implicitly requires a variable named `assigns` in scope
  * - The template uses @field syntax which accesses assigns.field
- * - VarUseAnalyzer cannot detect this implicit usage
+ * - Usage indexing cannot detect this implicit usage
  * - Therefore: if body contains ~H template, `assigns` parameter must NOT be prefixed
- *
- * USES VarUseAnalyzer
- * - This pass follows the project directive to use the centralized VarUseAnalyzer
- *   for all variable usage detection, ensuring proper coverage of:
- *   - EFn closure bodies
- *   - String interpolations (#{...})
- *   - ERaw token boundary search
- *   - All nested AST structures
  */
 class FunctionParamUnusedUnderscoreFinalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
@@ -60,7 +52,7 @@ class FunctionParamUnusedUnderscoreFinalTransforms {
 
   /**
    * Check each parameter and add underscore prefix if unused in body.
-   * Uses VarUseAnalyzer.stmtUsesVar for comprehensive usage detection.
+   * Uses OptimizedVarUseAnalyzer's usage index for conservative detection.
    *
    * Special case: if body contains Phoenix ~H template sigil, the `assigns`
    * parameter is implicitly used by Phoenix and must NOT be underscore-prefixed.
@@ -70,6 +62,7 @@ class FunctionParamUnusedUnderscoreFinalTransforms {
 
     // Check if body contains Phoenix ~H template (which implicitly uses assigns)
     var hasPhoenixTemplate = containsPhoenixTemplate(body);
+    var bodyUsage = OptimizedVarUseAnalyzer.build([body]);
 
     var out:Array<EPattern> = [];
     for (a in args) switch (a) {
@@ -78,8 +71,7 @@ class FunctionParamUnusedUnderscoreFinalTransforms {
         if (hasPhoenixTemplate && paramName == "assigns") {
           out.push(a); // Keep assigns unchanged - Phoenix needs it
         } else {
-          // Use VarUseAnalyzer to check if parameter is used in body
-          var isUsed = VarUseAnalyzer.stmtUsesVar(body, paramName);
+          var isUsed = OptimizedVarUseAnalyzer.usedLater(bodyUsage, 0, paramName);
           if (!isUsed && paramName.charAt(0) != '_') {
             out.push(PVar('_' + paramName));
           } else {
