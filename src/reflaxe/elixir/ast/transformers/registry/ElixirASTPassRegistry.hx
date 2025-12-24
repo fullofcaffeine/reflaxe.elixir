@@ -452,7 +452,6 @@ class ElixirASTPassRegistry {
                 "LocalAssignUnusedUnderscore_Scoped_Final",
                 "AlignBaseRefToUnderscoredBinder_Final",
                 "LocalUnderscoreBinderPromotionWhenUsed_Final",
-                "DanglingBaseRefAlign_Final",
                 "FinalLocalReferenceAlign"
             ]
         });
@@ -3752,17 +3751,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreBinderPromotionWhenUsedTransforms.pass,
             runAfter: ["AlignBaseRefToUnderscoredBinder_Final"]
         });
-        passes.push({
-            name: "DanglingBaseRefAlign_Final",
-            description: "Rewrite bare refs to corresponding earlier _name binder when base is undefined",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.DanglingBaseRefAlignTransforms.pass,
-            runAfter: [
-                "LocalAssignUnusedUnderscore_Scoped_Final",
-                "LocalUnderscoreBinderPromotionWhenUsed_Final",
-                "LocalAssignUnusedUnderscore_Global_Final"
-            ]
-        });
         // Absolute-final local reference alignment (safe, shape-based)
         passes.push({
             name: "FinalLocalReferenceAlign",
@@ -4297,17 +4285,6 @@ class ElixirASTPassRegistry {
             description: "Rewrite _socket refs to socket and alias assignments to discard in handle_info/2",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleInfoUnderscoreSocketFixTransforms.pass
-        });
-        passes.push({
-            name: "HandleInfoMissingSocketVar_Final",
-            description: "If handle_info/2 uses `s` without a binding, inject `s = socket`",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HandleInfoMissingSocketVarTransforms.pass,
-            runAfter: [
-                "HandleInfoUnderscoreSocketFix_Final",
-                "HandleInfoSomeClauseNormalize_Final",
-                "HandleInfoAliasCleanup_Final"
-            ]
         });
         // Generic: if a function has a `socket` param, fix `_socket` refs and alias lines
         passes.push({
@@ -5222,32 +5199,11 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HandleEventParamsHeadToParamsFinalTransforms.pass,
             runAfter: [
                 "HandleEventParamsUltraFinal_Last",
-                "HandleEventValueVarNormalizeForceFinal_Last2",
                 "LocalAssignUnusedUnderscore_Scoped_Final",
                 "ParamUnderscoreArgRefAlign_Final",
                 "ParamUnderscoreGlobalAlign_Final",
                 "HandleEventParamsForceBodyRewrite_Final"
             ]
-        });
-        // Absolute-last safety for Map.get(value, …) inside handle_event/3 when no `value` binding exists
-        passes.push({
-            name: "HandleEventValueVarNormalize_AbsoluteLast",
-            description: "Rewrite Map.get(value, key) → Map.get(params/_params, key) when `value` is undefined in handle_event/3",
-            enabled: false, // perf bisection
-            pass: reflaxe.elixir.ast.transformers.HandleEventValueVarNormalizeTransforms.pass,
-            runAfter: [
-                "HandleEventParamExtractFromBodyUse_Final",
-                "HandleEventParamRepair_Final",
-                "HandleEventParamsUltraFinal",
-                "HandleEventParamsUltraFinal_Last"
-            ]
-        });
-        // Ultra-absolute last (will be re-added at footer with stronger constraints)
-        passes.push({
-            name: "HandleEventValueVarNormalizeForceFinal_Last",
-            description: "Force Map.get(value, …) → Map.get(params/_params, …) in handle_event/3 (last pass)",
-            enabled: false, // perf bisection
-            pass: reflaxe.elixir.ast.transformers.HandleEventValueVarNormalizeForceFinalTransforms.pass
         });
         passes.push({
             name: "LocalAssignUnusedUnderscore_Scoped_Final",
@@ -5270,25 +5226,6 @@ class ElixirASTPassRegistry {
             ]
         });
 
-        // FINAL guard: force fix any Map.get(value, …) that survived all prior passes
-        passes.push({
-            name: "HandleEventValueVarNormalizeForceFinal_Last2",
-            description: "Ultimate guard: Force Map.get(value, …) → Map.get(params/_params, …) inside handle_event/3",
-            enabled: false, // perf bisection
-            pass: reflaxe.elixir.ast.transformers.HandleEventValueVarNormalizeForceFinalTransforms.pass,
-            runAfter: [
-                "ChainAssignIfPromote_Replay_Last",
-                "CaseOkBinderPrefixBindAllUndefined_Replay_Last",
-                "MountParamsUltraFinal",
-                "HandleEventParamsUltraFinal",
-                "ParamUnderscoreArgRefAlign_Final",
-                "ParamUnderscoreGlobalAlign_Final",
-                "HandleEventParamsForceBodyRewrite_Final",
-                "DefParamHeadUnderscoreWhenUnused_Final",
-                "HandleEventParamsUltraFinal_Last",
-                "ParamUnderscoreArgRefAlign_Global_Final"
-            ]
-        });
         // Normalize assign_multiple assignment pattern outside mount (late, app-agnostic)
         passes.push({
             name: "AssignMultipleNormalize_Final",
@@ -5296,7 +5233,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AssignMultipleNormalizeTransforms.pass,
             runAfter: [
-                "HandleEventValueVarNormalizeForceFinal_Last2",
                 "HandleEventParamsHeadToParams_Ultimate",
                 "HandleEventMapGetUnderscoreParams_Final"
             ]
@@ -5319,8 +5255,7 @@ class ElixirASTPassRegistry {
                 // before rewriting Map.get(_params, …) in the body.
                 "HandleEventParamsHeadToParams_Ultimate",
                 "HandleEventParamsHeadToParams_Final",
-                "HandleEventValueVarNormalize_AbsoluteLast",
-                "HandleEventValueVarNormalizeForceFinal_Last2"
+                "HandleEventParamsUltraFinal_Last"
             ]
         });
         // Final: promote handle_info {:some, _x} binder to `payload` and rewrite refs
@@ -5360,9 +5295,7 @@ class ElixirASTPassRegistry {
                 "HandleEventParamExtractFromBodyUse_Final",
                 "HandleEventParamRepair_Final",
                 "HandleEventParamsUltraFinal",
-                "HandleEventParamsUltraFinal_Last",
-                "HandleEventValueVarNormalize_AbsoluteLast",
-                "HandleEventValueVarNormalizeForceFinal_Last2"
+                "HandleEventParamsUltraFinal_Last"
             ]
         });
         passes.push({
@@ -5371,9 +5304,8 @@ class ElixirASTPassRegistry {
             enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventValueIdToParamsUltimateTransforms.pass,
             runAfter: [
-                "HandleEventValueVarNormalizeForceFinal_Last2",
-                "HandleEventIdExtractNormalize_AbsoluteLast",
-                "HandleEventParamsHeadToParams_Ultimate"
+                "HandleEventParamsHeadToParams_Ultimate",
+                "HandleEventMapGetUnderscoreParams_Final"
             ]
         });
         passes.push({
@@ -5382,9 +5314,7 @@ class ElixirASTPassRegistry {
             enabled: false,
             pass: reflaxe.elixir.ast.transformers.HandleEventIdValueToParamsFixTransforms.pass,
             runAfter: [
-                "HandleEventValueIdToParams_Ultimate",
-                "HandleEventIdExtractNormalize_AbsoluteLast",
-                "HandleEventValueVarNormalizeForceFinal_Last2"
+                "HandleEventValueIdToParams_Ultimate"
             ]
         });
         passes.push({
@@ -5394,16 +5324,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HandleEventValueToParamsGlobalTransforms.pass,
             runAfter: [
                 "HandleEventIdValueToParamsFix_Ultimate",
-                "HandleEventParamsHeadToParams_Ultimate"
-            ]
-        });
-        passes.push({
-            name: "HandleEventEnsureValueBinding_Ultimate",
-            description: "If handle_event/3 uses `value` without a binding, prepend value = paramsVar",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleEventEnsureValueBindingTransforms.pass,
-            runAfter: [
-                "HandleEventValueToParams_Global_Ultimate",
                 "HandleEventParamsHeadToParams_Ultimate"
             ]
         });
@@ -5425,62 +5345,6 @@ class ElixirASTPassRegistry {
                 "DowncaseInlineFromPriorAssign_Final"
             ]
         });
-        // Removed: FunctionParamUnusedUnderscore_Scoped_Final — rely on existing DefParamHeadUnderscoreWhenUnused_Final
-        // Penultimate after force Map.get rewrite: replace any remaining bare `value` with param var
-        passes.push({
-            name: "HandleEventUndefinedValueToParam_AbsoluteLast",
-            description: "In handle_event/3, if `value` is not declared, rewrite EVar(value) → EVar(params/_params)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HandleEventUndefinedValueToParamTransforms.pass,
-            runAfter: ["HandleEventValueVarNormalizeForceFinal_Last2", "HandleEventParamsUltraFinal_Last"]
-        });
-        passes.push({
-            name: "HandleEventMissingSortByExtract_Final",
-            description: "Inject sort_by = Map.get(params, \"sort_by\") when handle_event/3 body references sort_by without a binding",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HandleEventMissingSortByExtractTransforms.pass,
-            runAfter: [
-                "HandleEventUndefinedValueToParam_AbsoluteLast",
-                "HandleEventParamExtractFromBodyUse_Final",
-                "HandleEventParamsUltraFinal_Last",
-                "HandleEventIdExtractNormalize_AbsoluteLast"
-            ]
-        });
-        passes.push({
-            name: "HandleEventForceSortByBinding_Final",
-            description: "Force sort_by = Map.get(params,\"sort_by\") in handle_event/3 when undeclared",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HandleEventForceSortByBindingTransforms.pass,
-            runAfter: ["HandleEventMissingSortByExtract_Final"]
-        });
-        passes.push({
-            name: "HandleEventSortByFinalBind",
-            description: "Absolute final: ensure sort_by binding exists when referenced in handle_event/3",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HandleEventSortByFinalBindTransforms.pass,
-            runAfter: ["HandleEventForceSortByBinding_Final"]
-        });
-        passes.push({
-            name: "HandleEventPruneHelperBinds_Final",
-            description: "Prune duplicate/unused value/sort_by helper binds in handle_event/3",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HandleEventPruneHelperBindsTransforms.pass,
-            runAfter: ["HandleEventSortByFinalBind"]
-        });
-        passes.push({
-            name: "HandleEventIdExtractNormalize_AbsoluteLast",
-            description: "Normalize id extract branches to use the same params var instead of `value` in handle_event/3",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HandleEventIdExtractNormalizeTransforms.pass,
-            runAfter: [
-                "HandleEventUndefinedValueToParam_AbsoluteLast",
-                "HandleEventValueVarNormalizeForceFinal_Last2",
-                "HandleEventParamExtractFromBodyUse_Final",
-                "HandleEventParamRepair_Final",
-                "HandleEventParamsUltraFinal_Last",
-                "HandleEventPruneHelperBinds_Final"
-            ]
-        });
         passes.push({
             name: "HandleEventArg0FromValueToId_Ultimate",
             description: "When a helper call uses Map.get(params, \"value\", …) as first arg, replace with integer id from nested value map (or params id fallback)",
@@ -5490,9 +5354,7 @@ class ElixirASTPassRegistry {
                 "HandleEventParamsHeadToParams_Ultimate",
                 "HandleEventMapGetUnderscoreParams_Final",
                 "HandleEventMapGetValueDefaultToParams_Final",
-                "HandleEventUndefinedValueToParam_AbsoluteLast",
-                "HandleEventIdExtractNormalize_AbsoluteLast",
-                "HandleEventValueVarNormalizeForceFinal_Last2"
+                "HandleEventParamsUltraFinal_Last"
             ]
         });
         passes.push({
@@ -5513,12 +5375,9 @@ class ElixirASTPassRegistry {
             enabled: true, // RE-ENABLED: Transform now correctly replaces Map.get(params, "value") with just params
             pass: reflaxe.elixir.ast.transformers.HandleEventMapGetValueDefaultToParamsFinalTransforms.pass,
             runAfter: [
-                "HandleEventParamsHeadToParams_Ultimate",
-                "HandleEventMapGetUnderscoreParams_Final",
-                "HandleEventValueVarNormalize_AbsoluteLast",
-                "HandleEventValueVarNormalizeForceFinal_Last2",
-                "HandleEventUndefinedValueToParam_AbsoluteLast",
-                "HandleEventIdExtractNormalize_AbsoluteLast"
+                "HandleEventParamsHeadToParams_Final",
+                "HandleEventParamsUltraFinal_Last",
+                "HandleEventMapGetUnderscoreParams_Final"
             ]
         });
         passes.push({
@@ -5577,8 +5436,6 @@ class ElixirASTPassRegistry {
             enabled: false,
             pass: reflaxe.elixir.ast.transformers.UnusedVarUnderscoreFinalTransforms.pass,
             runAfter: [
-                "HandleEventSortByFinalBind",
-                "HandleEventIdExtractNormalize_AbsoluteLast",
                 "HandleInfoAliasAndNoreply_AbsoluteFinal"
             ]
         });
