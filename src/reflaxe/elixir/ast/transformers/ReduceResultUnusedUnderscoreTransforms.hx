@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * ReduceResultUnusedUnderscoreTransforms
@@ -28,27 +29,28 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 class ReduceResultUnusedUnderscoreTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EBlock(stmts):
-                    var out:Array<ElixirAST> = [];
-                    for (i in 0...stmts.length) {
-                        var s = stmts[i];
-                        switch (s.def) {
-                            case EMatch(pat, rhs) if (isEnumReduceOrWhile(rhs)):
-                                var names = extractNames(pat);
-                                if (names.length > 0) {
-                                    var unused = names.filter(nm -> !usedLater(stmts, i + 1, nm));
-                                    if (unused.length > 0) {
-                                        var newPat = underscoreUnusedInPattern(pat, unused);
-                                        out.push(makeASTWithMeta(EMatch(newPat, rhs), s.metadata, s.pos));
-                                    } else out.push(s);
-                                } else out.push(s);
-                            default:
-                                out.push(s);
-                        }
-                    }
-                    makeASTWithMeta(EBlock(out), n.metadata, n.pos);
-                default:
+	            return switch (n.def) {
+	                case EBlock(stmts):
+	                    var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
+	                    var out:Array<ElixirAST> = [];
+	                    for (i in 0...stmts.length) {
+	                        var stmt = stmts[i];
+	                        switch (stmt.def) {
+	                            case EMatch(pat, rhs) if (isEnumReduceOrWhile(rhs)):
+	                                var names = extractNames(pat);
+	                                if (names.length > 0) {
+	                                    var unused = names.filter(name -> !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, name));
+	                                    if (unused.length > 0) {
+	                                        var newPat = underscoreUnusedInPattern(pat, unused);
+	                                        out.push(makeASTWithMeta(EMatch(newPat, rhs), stmt.metadata, stmt.pos));
+	                                    } else out.push(stmt);
+	                                } else out.push(stmt);
+	                            default:
+	                                out.push(stmt);
+	                        }
+	                    }
+	                    makeASTWithMeta(EBlock(out), n.metadata, n.pos);
+	                default:
                     n;
             }
         });
@@ -86,68 +88,8 @@ class ReduceResultUnusedUnderscoreTransforms {
                 PTuple(outElems);
             default:
                 pat;
-        }
-    }
-
-    static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String):Bool {
-        for (j in start...stmts.length) if (stmtUsesVar(stmts[j], name)) return true; return false;
-    }
-
-    static function stmtUsesVar(n:ElixirAST, name:String):Bool {
-        var found = false;
-        inline function isIdentChar(c: String): Bool {
-            if (c == null || c.length == 0) return false;
-            var ch = c.charCodeAt(0);
-            return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_";
-        }
-        function walk(x:ElixirAST):Void {
-            if (x == null || found) return;
-            switch (x.def) {
-                case EVar(v) if (v == name): found = true;
-                case ERaw(code):
-                    if (name != null && name.length > 0 && name.charAt(0) != '_' && code != null) {
-                        var start = 0;
-                        while (!found) {
-                            var i = code.indexOf(name, start);
-                            if (i == -1) break;
-                            var before = i > 0 ? code.substr(i - 1, 1) : null;
-                            var afterIdx = i + name.length;
-                            var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
-                            if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
-                            start = i + name.length;
-                        }
-                    }
-                case EBlock(ss): for (s in ss) walk(s);
-                case EDo(ss2): for (s2 in ss2) walk(s2);
-                case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
-                case EBinary(_, l, r): walk(l); walk(r);
-                case ECall(tgt, _, args): if (tgt != null) walk(tgt); for (a in args) walk(a);
-                case ERemoteCall(tgt2, _, args2): walk(tgt2); for (a2 in args2) walk(a2);
-                case ECase(expr, cs): walk(expr); for (c in cs) walk(c.body);
-                case EKeywordList(pairs): for (p in pairs) walk(p.value);
-                case EMap(pairs): for (p in pairs) { walk(p.key); walk(p.value); }
-                case EStructUpdate(base, fields): walk(base); for (f in fields) walk(f.value);
-                case EField(obj, _): walk(obj);
-                case EAccess(tgt3, key): walk(tgt3); walk(key);
-                case EString(str):
-                    var i2 = 0;
-                    while (!found && str != null && i2 < str.length) {
-                        var idx2 = str.indexOf("#{", i2);
-                        if (idx2 == -1) break;
-                        var j2 = str.indexOf("}", idx2 + 2);
-                        if (j2 == -1) break;
-                        var inner = str.substr(idx2 + 2, j2 - (idx2 + 2));
-                        if (inner.indexOf(name) != -1) { found = true; break; }
-                        i2 = j2 + 1;
-                    }
-                case ETuple(elems): for (e in elems) walk(e);
-                default:
-            }
-        }
-        walk(n);
-        return found;
-    }
+	        }
+	    }
 }
 
 #end
-

@@ -143,9 +143,20 @@ class OptimizedVarUseAnalyzer {
             case EAccess(obj, key): collectVars(obj, out); collectVars(key, out);
             case EKeywordList(pairs): for (p in pairs) collectVars(p.value, out);
             case EMap(pairs): for (p in pairs) { collectVars(p.key, out); collectVars(p.value, out); }
+            case EStruct(_module, fields): for (f in fields) collectVars(f.value, out);
             case EStructUpdate(base, fields): collectVars(base, out); for (f in fields) collectVars(f.value, out);
+            case EBitstring(segs):
+                for (s in segs) {
+                    collectVars(s.value, out);
+                    if (s.size != null) collectVars(s.size, out);
+                }
             case ETuple(elems) | EList(elems): for (e in elems) collectVars(e, out);
-            case EFn(clauses): for (cl in clauses) collectVars(cl.body, out);
+            case EFn(clauses):
+                for (cl in clauses) {
+                    for (arg in cl.args) collectPinnedPatternUses(arg, out, false);
+                    if (cl.guard != null) collectVars(cl.guard, out);
+                    collectVars(cl.body, out);
+                }
             case ECond(condClauses): for (cl in condClauses) { collectVars(cl.condition, out); collectVars(cl.body, out); }
             case ERange(s,e,_): collectVars(s,out); collectVars(e,out);
             case EUnary(_, inner): collectVars(inner, out);
@@ -160,6 +171,50 @@ class OptimizedVarUseAnalyzer {
                 if (body != null) collectVars(body, out);
                 if (into != null) collectVars(into, out);
             case ECapture(expr, _): collectVars(expr, out);
+            case EReceive(clauses, after):
+                for (cl in clauses) {
+                    if (cl.guard != null) collectVars(cl.guard, out);
+                    collectVars(cl.body, out);
+                    collectPinnedPatternUses(cl.pattern, out, false);
+                }
+                if (after != null) {
+                    collectVars(after.timeout, out);
+                    collectVars(after.body, out);
+                }
+            case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
+                collectVars(body, out);
+                for (r in rescueClauses) {
+                    collectPinnedPatternUses(r.pattern, out, false);
+                    collectVars(r.body, out);
+                }
+                for (c in catchClauses) {
+                    collectPinnedPatternUses(c.pattern, out, false);
+                    collectVars(c.body, out);
+                }
+                if (afterBlock != null) collectVars(afterBlock, out);
+                if (elseBlock != null) collectVars(elseBlock, out);
+            case ERaise(exception, attributes):
+                collectVars(exception, out);
+                if (attributes != null) collectVars(attributes, out);
+            case EThrow(value):
+                collectVars(value, out);
+            case ESend(target, message):
+                collectVars(target, out);
+                collectVars(message, out);
+            case EModuleAttribute(_name, value):
+                collectVars(value, out);
+            case EQuote(options, expr):
+                for (o in options) collectVars(o, out);
+                collectVars(expr, out);
+            case EUnquote(expr) | EUnquoteSplicing(expr):
+                collectVars(expr, out);
+            case EUse(_module, options):
+                for (o in options) collectVars(o, out);
+            case EFragment(_tag, attrs, children):
+                for (a in attrs) collectVars(a.value, out);
+                for (c in children) collectVars(c, out);
+            case EAssign(_):
+                // Template assigns (`@name`) are not local variable uses.
             default:
         }
     }
@@ -278,13 +333,24 @@ class OptimizedVarUseAnalyzer {
                     collectVarsExact(p.key, out);
                     collectVarsExact(p.value, out);
                 }
+            case EStruct(_module, fields):
+                for (f in fields) collectVarsExact(f.value, out);
             case EStructUpdate(base, fields):
                 collectVarsExact(base, out);
                 for (f in fields) collectVarsExact(f.value, out);
+            case EBitstring(segs):
+                for (s in segs) {
+                    collectVarsExact(s.value, out);
+                    if (s.size != null) collectVarsExact(s.size, out);
+                }
             case ETuple(elems) | EList(elems):
                 for (e in elems) collectVarsExact(e, out);
             case EFn(clauses):
-                for (cl in clauses) collectVarsExact(cl.body, out);
+                for (cl in clauses) {
+                    for (arg in cl.args) collectPinnedPatternUsesExact(arg, out, false);
+                    if (cl.guard != null) collectVarsExact(cl.guard, out);
+                    collectVarsExact(cl.body, out);
+                }
             case ECond(condClauses):
                 for (cl in condClauses) {
                     collectVarsExact(cl.condition, out);
@@ -312,6 +378,50 @@ class OptimizedVarUseAnalyzer {
                 collectVarsExact(expr, out);
             case ECapture(expr, _):
                 collectVarsExact(expr, out);
+            case EReceive(clauses, after):
+                for (cl in clauses) {
+                    if (cl.guard != null) collectVarsExact(cl.guard, out);
+                    collectVarsExact(cl.body, out);
+                    collectPinnedPatternUsesExact(cl.pattern, out, false);
+                }
+                if (after != null) {
+                    collectVarsExact(after.timeout, out);
+                    collectVarsExact(after.body, out);
+                }
+            case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
+                collectVarsExact(body, out);
+                for (r in rescueClauses) {
+                    collectPinnedPatternUsesExact(r.pattern, out, false);
+                    collectVarsExact(r.body, out);
+                }
+                for (c in catchClauses) {
+                    collectPinnedPatternUsesExact(c.pattern, out, false);
+                    collectVarsExact(c.body, out);
+                }
+                if (afterBlock != null) collectVarsExact(afterBlock, out);
+                if (elseBlock != null) collectVarsExact(elseBlock, out);
+            case ERaise(exception, attributes):
+                collectVarsExact(exception, out);
+                if (attributes != null) collectVarsExact(attributes, out);
+            case EThrow(value):
+                collectVarsExact(value, out);
+            case ESend(target, message):
+                collectVarsExact(target, out);
+                collectVarsExact(message, out);
+            case EModuleAttribute(_name, value):
+                collectVarsExact(value, out);
+            case EQuote(options, expr):
+                for (o in options) collectVarsExact(o, out);
+                collectVarsExact(expr, out);
+            case EUnquote(expr) | EUnquoteSplicing(expr):
+                collectVarsExact(expr, out);
+            case EUse(_module, options):
+                for (o in options) collectVarsExact(o, out);
+            case EFragment(_tag, attrs, children):
+                for (a in attrs) collectVarsExact(a.value, out);
+                for (c in children) collectVarsExact(c, out);
+            case EAssign(_):
+                // Template assigns (`@name`) are not local variable uses.
             default:
         }
     }
