@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * LocalUnderscoreBinderPromotionWhenUsedTransforms
@@ -24,7 +25,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EBlock(stmts): makeASTWithMeta(EBlock(promote(stmts)), n.metadata, n.pos);
-        case EDo(stmts2): makeASTWithMeta(EDo(promote(stmts2)), n.metadata, n.pos);
+        case EDo(doStatements): makeASTWithMeta(EDo(promote(doStatements)), n.metadata, n.pos);
         default: n;
       }
     });
@@ -33,7 +34,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
   static function promote(stmts:Array<ElixirAST>):Array<ElixirAST> {
     if (stmts == null) return stmts;
     var defined:Map<String,Bool> = new Map();
-    var unders:Map<String,Bool> = new Map(); // underscored binder names
+    var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
 
     // First scan: collect definitions
     for (s in stmts) {
@@ -41,7 +42,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
         case EBinary(Match, left, _):
           switch (left.def) { case EVar(n): defined.set(n, true); default: }
         case EMatch(pat, _):
-          switch (pat) { case PVar(n2): defined.set(n2, true); default: }
+          switch (pat) { case PVar(patternVarName): defined.set(patternVarName, true); default: }
         default:
       }
     }
@@ -53,14 +54,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
           switch (left.def) {
             case EVar(n) if (n.length > 1 && n.charAt(0) == "_"):
               var base = n.substr(1);
-              if (!defined.exists(base) && usedLaterVar(stmts, i+1, n)) toPromote.set(n, base);
+              if (!defined.exists(base) && OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, n)) toPromote.set(n, base);
             default:
           }
         case EMatch(pat, _):
           switch (pat) {
-            case PVar(n2) if (n2.length > 1 && n2.charAt(0) == "_"):
-              var base2 = n2.substr(1);
-              if (!defined.exists(base2) && usedLaterVar(stmts, i+1, n2)) toPromote.set(n2, base2);
+            case PVar(underscoredName) if (underscoredName.length > 1 && underscoredName.charAt(0) == "_"):
+              var baseName = underscoredName.substr(1);
+              if (!defined.exists(baseName) && OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, underscoredName)) toPromote.set(underscoredName, baseName);
             default:
           }
         default:
@@ -76,28 +77,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
             makeASTWithMeta(EVar(toPromote.get(v)), x.metadata, x.pos);
           case EBinary(Match, left, rhs):
             switch (left.def) {
-              case EVar(v2) if (toPromote.exists(v2)):
-                makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(toPromote.get(v2)), left.metadata, left.pos), rhs), x.metadata, x.pos);
+              case EVar(binderName) if (toPromote.exists(binderName)):
+                makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(toPromote.get(binderName)), left.metadata, left.pos), rhs), x.metadata, x.pos);
               default: x;
             }
-          case EMatch(PVar(pn), rhs2) if (toPromote.exists(pn)):
-            makeASTWithMeta(EMatch(PVar(toPromote.get(pn)), rhs2), x.metadata, x.pos);
+          case EMatch(PVar(binderName), rhsExpr) if (toPromote.exists(binderName)):
+            makeASTWithMeta(EMatch(PVar(toPromote.get(binderName)), rhsExpr), x.metadata, x.pos);
           default: x;
         }
       });
       out.push(rewritten);
     }
     return out;
-  }
-
-  static function usedLaterVar(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
-    var found = false;
-    for (j in start...stmts.length) if (!found) {
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:ElixirAST){
-        switch (x.def) { case EVar(v) if (v == name): found = true; default: }
-      });
-    }
-    return found;
   }
 }
 
