@@ -11,8 +11,8 @@
 -D app_name=EctoMigrationsExample
 -D elixir_output=priv/repo/migrations
 -D reflaxe_runtime
+-D reflaxe_elixir_strict_examples
 -D ecto_migrations_exs
 
 migrations.CreatePosts
 migrations.CreateUsers
-

@@ -5,6 +5,7 @@
 # Do not touch app lib; write to a temp dir
 -D elixir_output=/tmp/qa-prewarm
 -D reflaxe_runtime
+-D reflaxe_elixir_strict_examples
 -D no-utf16
 -D app_name=TodoApp
 -dce std

@@ -13,6 +13,7 @@
 -D app_name=TodoApp
 -D elixir_output=priv/repo/migrations
 -D reflaxe_runtime
+-D reflaxe_elixir_strict_examples
 -D ecto_migrations_exs
 -D no-utf16
 
@@ -23,4 +24,3 @@
 
 server.migrations.CreateTodos
 server.migrations.CreateUsers
-
