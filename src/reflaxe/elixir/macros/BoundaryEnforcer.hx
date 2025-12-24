@@ -40,6 +40,13 @@ class BoundaryEnforcer {
             return;
         }
 
+        // This enforcement is a repository policy for our shipped examples, not a compiler restriction.
+        // Users can opt into the same guard in their own projects by defining:
+        //   -D reflaxe_elixir_strict_examples
+        if (!Context.defined("reflaxe_elixir_strict_examples")) {
+            return;
+        }
+
         Context.onAfterTyping(enforceExampleBoundaries);
     }
 

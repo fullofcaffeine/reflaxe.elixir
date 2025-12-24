@@ -58,7 +58,8 @@ class CompilerInit {
         // or DCE will drop them and Phoenix will raise at runtime.
         LiveViewPreserver.init();
 
-        // Enforce example-app purity: no __elixir__ injections or ad-hoc extern classes.
+        // Enforce example-app purity (opt-in): no __elixir__ injections or ad-hoc extern classes.
+        // Enabled by defining `reflaxe_elixir_strict_examples` in repo examples.
         // This keeps our public examples as "Haxe -> Elixir" references and pushes missing
         // framework surfaces into std/ (Phoenix/Ecto/etc.) instead of app-local escape hatches.
         BoundaryEnforcer.init();
