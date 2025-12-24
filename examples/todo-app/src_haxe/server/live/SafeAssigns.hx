@@ -5,17 +5,6 @@ import phoenix.LiveSocket;
 import server.live.TodoLiveTypes.TodoLiveAssigns;
 import elixir.List;
 
-// Bridge to the generated LiveView module for reuse of server-side helpers
-@:native("TodoAppWeb.TodoLive")
-extern class TodoLiveNative {
-    public static function filter_and_sort_todos(
-        todos: Array<server.schemas.Todo>,
-        filter: shared.TodoTypes.TodoFilter,
-        sortBy: shared.TodoTypes.TodoSort,
-        searchQuery: String
-    ): Array<server.schemas.Todo>;
-}
-
 /**
  * Type-safe socket assign operations for TodoLive using LiveSocket patterns
  * 

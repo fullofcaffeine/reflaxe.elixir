@@ -1647,6 +1647,7 @@ class ElixirCompiler extends GenericCompiler<
                classType.meta.has(":repo") ||
                classType.meta.has(":dbTypes") ||
                classType.meta.has(":postgrexTypes") ||
+               classType.meta.has(":gettext") ||
                classType.meta.has(":application") ||
                classType.meta.has(":genserver") ||
                classType.meta.has(":router") ||
