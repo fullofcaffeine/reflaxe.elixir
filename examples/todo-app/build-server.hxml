@@ -86,8 +86,6 @@ server.infrastructure.ErrorJSON
 controllers.UserController
 server.components.CoreComponents
 server.i18n.Gettext
-server.infrastructure.GettextErrorMessages
-server.infrastructure.GettextUIMessages
 server.support.FlashTypeTools
 server.pubsub.TodoPubSub
 # PostgrexTypes is now auto-generated from Repo, not a separate class

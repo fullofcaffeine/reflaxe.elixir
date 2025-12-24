@@ -50,6 +50,4 @@ server.infrastructure.ErrorHTML
 controllers.UserController
 server.components.CoreComponents
 server.i18n.Gettext
-server.infrastructure.GettextErrorMessages
-server.infrastructure.GettextUIMessages
 phoenix.SafePubSub
