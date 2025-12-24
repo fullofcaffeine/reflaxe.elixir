@@ -22,7 +22,6 @@ defmodule TestAppWeb.TestLive do
 """
   end
   def handle_event(event, _params, socket) do
-    sort_by = Map.get(_params, "sort_by")
     {:noreply, socket}
   end
 end
