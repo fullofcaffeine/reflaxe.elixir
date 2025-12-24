@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * DowncaseInlineFromPriorAssignTransforms
@@ -25,7 +26,7 @@ class DowncaseInlineFromPriorAssignTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EBlock(stmts): makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);
-        case EDo(stmts2): makeASTWithMeta(EDo(rewrite(stmts2)), n.metadata, n.pos);
+        case EDo(doStatements): makeASTWithMeta(EDo(rewrite(doStatements)), n.metadata, n.pos);
         default: n;
       }
     });
@@ -33,6 +34,7 @@ class DowncaseInlineFromPriorAssignTransforms {
 
   static function rewrite(stmts:Array<ElixirAST>):Array<ElixirAST> {
     if (stmts == null) return stmts;
+    var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
     var out:Array<ElixirAST> = [];
     var assigns:Map<String, { idx:Int, rhs:ElixirAST } > = new Map();
     for (i in 0...stmts.length) {
@@ -43,7 +45,7 @@ class DowncaseInlineFromPriorAssignTransforms {
           switch (left.def) { case EVar(v): assigns.set(v, {idx: out.length, rhs: rhs}); default: }
         case ERemoteCall({def: EVar("String")}, "downcase", args) if (args != null && args.length == 1):
           switch (args[0].def) {
-            case EVar(vname) if (assigns.exists(vname) && !usedBetween(out, stmts, assigns.get(vname).idx+1, i, vname) && !usedLater(stmts, i+1, vname)):
+            case EVar(vname) if (assigns.exists(vname) && !usedBetween(out, stmts, assigns.get(vname).idx+1, i, vname) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, vname)):
               var rec = assigns.get(vname);
               // remove earlier assign from out
               out = out.slice(0, rec.idx).concat(out.slice(rec.idx+1));
@@ -53,7 +55,7 @@ class DowncaseInlineFromPriorAssignTransforms {
         // Handle ERaw containing String.downcase(_var) patterns (from __elixir__)
         case ERaw(code) if (code != null && code.indexOf("String.downcase(") >= 0):
           var vname = extractVarFromDowncase(code);
-          if (vname != null && assigns.exists(vname) && !usedBetween(out, stmts, assigns.get(vname).idx+1, i, vname) && !usedLater(stmts, i+1, vname)) {
+          if (vname != null && assigns.exists(vname) && !usedBetween(out, stmts, assigns.get(vname).idx+1, i, vname) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, vname)) {
             var rec = assigns.get(vname);
             var rhsStr = simpleASTToString(rec.rhs);
             if (rhsStr != null) {
@@ -76,16 +78,6 @@ class DowncaseInlineFromPriorAssignTransforms {
     for (j in start...endIdx) if (!found) {
       var node = j < out.length ? out[j] : stmts[j];
       reflaxe.elixir.ast.ASTUtils.walk(node, function(x:ElixirAST){
-        switch (x.def) { case EVar(v) if (v == name): found = true; default: }
-      });
-    }
-    return found;
-  }
-
-  static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
-    var found = false;
-    for (j in start...stmts.length) if (!found) {
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:ElixirAST){
         switch (x.def) { case EVar(v) if (v == name): found = true; default: }
       });
     }
@@ -174,4 +166,3 @@ class DowncaseInlineFromPriorAssignTransforms {
 }
 
 #end
-
