@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * MountParamsUnusedReassignUnderscoreTransforms
@@ -28,36 +29,27 @@ class MountParamsUnusedReassignUnderscoreTransforms {
   static function rewrite(body: ElixirAST): ElixirAST {
     return switch (body.def) {
       case EBlock(stmts): makeASTWithMeta(EBlock(rewriteSeq(stmts)), body.metadata, body.pos);
-      case EDo(stmts2): makeASTWithMeta(EDo(rewriteSeq(stmts2)), body.metadata, body.pos);
+      case EDo(statements): makeASTWithMeta(EDo(rewriteSeq(statements)), body.metadata, body.pos);
       default: body;
     }
   }
 
   static function rewriteSeq(stmts:Array<ElixirAST>):Array<ElixirAST> {
     if (stmts == null) return stmts;
+    var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
     var out:Array<ElixirAST> = [];
     for (i in 0...stmts.length) {
-      var s = stmts[i];
-      var s1 = switch (s.def) {
-        case EMatch(PVar("params"), rhs) | EMatch(PVar("_params"), rhs):
-          makeASTWithMeta(EMatch(PVar("_"), rhs), s.metadata, s.pos);
-        case EBinary(Match, {def: EVar("params")}, rhs2) | EBinary(Match, {def: EVar("_params")}, rhs2):
-          makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs2), s.metadata, s.pos);
-        default: s;
+      var stmt = stmts[i];
+      var rewrittenStmt = switch (stmt.def) {
+        case EMatch(PVar("params"), rhs) if (!OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, "params")):
+          makeASTWithMeta(EMatch(PVar("_params"), rhs), stmt.metadata, stmt.pos);
+        case EBinary(Match, {def: EVar("params")}, rhs) if (!OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, "params")):
+          makeASTWithMeta(EBinary(Match, makeAST(EVar("_params")), rhs), stmt.metadata, stmt.pos);
+        default: stmt;
       };
-      out.push(s1);
+      out.push(rewrittenStmt);
     }
     return out;
-  }
-
-  static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
-    var found = false;
-    for (j in start...stmts.length) if (!found) {
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:ElixirAST){
-        switch (x.def) { case EVar(v) if (v == name): found = true; default: }
-      });
-    }
-    return found;
   }
 }
 

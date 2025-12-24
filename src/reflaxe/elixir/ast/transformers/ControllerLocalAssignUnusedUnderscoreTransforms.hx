@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * ControllerLocalAssignUnusedUnderscoreTransforms
@@ -47,19 +48,20 @@ class ControllerLocalAssignUnusedUnderscoreTransforms {
 
   static function rewrite(stmts:Array<ElixirAST>):Array<ElixirAST> {
     if (stmts == null) return stmts;
+    var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
     var out:Array<ElixirAST> = [];
     for (i in 0...stmts.length) {
-      var s = stmts[i];
-      var s1 = switch (s.def) {
+      var stmt = stmts[i];
+      var rewrittenStmt = switch (stmt.def) {
         case EBinary(Match, {def: EVar(b)}, rhs)
-          if (canUnderscoreBinder(b) && !usedLater(stmts, i + 1, b) && isSimple(rhs)):
-          makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b)), rhs), s.metadata, s.pos);
+          if (canUnderscoreBinder(b) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, b) && isSimple(rhs)):
+          makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b)), rhs), stmt.metadata, stmt.pos);
         case EMatch(PVar(binderName), rhsExpr)
-          if (canUnderscoreBinder(binderName) && !usedLater(stmts, i + 1, binderName) && isSimple(rhsExpr)):
-          makeASTWithMeta(EMatch(PVar('_' + binderName), rhsExpr), s.metadata, s.pos);
-        default: s;
+          if (canUnderscoreBinder(binderName) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, binderName) && isSimple(rhsExpr)):
+          makeASTWithMeta(EMatch(PVar('_' + binderName), rhsExpr), stmt.metadata, stmt.pos);
+        default: stmt;
       }
-      out.push(s1);
+      out.push(rewrittenStmt);
     }
     return out;
   }
@@ -69,16 +71,6 @@ class ControllerLocalAssignUnusedUnderscoreTransforms {
     // never rewrite the wildcard discard `_` (would become `__`, which Elixir treats
     // as an unknown compiler variable).
     return name != null && name.length > 0 && name.charAt(0) != '_';
-  }
-
-  static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
-    var found = false;
-    for (j in start...stmts.length) if (!found) {
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:ElixirAST){
-        switch (x.def) { case EVar(v) if (v == name): found = true; default: }
-      });
-    }
-    return found;
   }
 
   static function isSimple(e: ElixirAST): Bool {

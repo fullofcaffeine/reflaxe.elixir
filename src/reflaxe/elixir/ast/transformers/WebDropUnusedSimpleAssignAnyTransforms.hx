@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * WebDropUnusedSimpleAssignAnyTransforms
@@ -61,13 +62,14 @@ class WebDropUnusedSimpleAssignAnyTransforms {
 
   static function filter(stmts:Array<ElixirAST>): Array<ElixirAST> {
     if (stmts == null) return stmts;
+    var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
     var out:Array<ElixirAST> = [];
     for (i in 0...stmts.length) {
       var s = stmts[i];
       switch (s.def) {
-        case EBinary(Match, {def:EVar(binder)}, rhs) if (isPure(rhs) && !usedLater(stmts, i+1, binder)):
+        case EBinary(Match, {def:EVar(binder)}, rhs) if (isPure(rhs) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, binder)):
           // drop
-        case EMatch(PVar(binder), rhs) if (isPure(rhs) && !usedLater(stmts, i+1, binder)):
+        case EMatch(PVar(binder), rhs) if (isPure(rhs) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, binder)):
           // drop
         default:
           out.push(s);
@@ -82,61 +84,6 @@ class WebDropUnusedSimpleAssignAnyTransforms {
       case EMap(_)|EKeywordList(_)|ETuple(_)|EList(_)|EStruct(_, _): true;
       default: false;
     }
-  }
-
-  static function usedLater(stmts:Array<ElixirAST>, from:Int, name:String): Bool {
-    for (j in from...stmts.length) {
-      var found = false;
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(n:ElixirAST){
-        switch (n.def) {
-          case EVar(v) if (v == name):
-            found = true;
-          case ERaw(code) if (rawUsesVarName(code, name)):
-            found = true;
-          default:
-        }
-      });
-      if (found) return true;
-    }
-    return false;
-  }
-
-  /**
-   * Detect variable name usage inside ERaw code.
-   *
-   * WHY
-   * - __elixir__() placeholder substitution produces ERaw strings like
-   *   `Phoenix.Component.assign(socket, %{...})`.
-   * - Late cleanup passes that rely on EVar-only scanning must treat ERaw as a use-site,
-   *   otherwise they can incorrectly drop required binders (leading to undefined vars).
-   *
-   * HOW
-   * - Scan for `name` occurrences that are token-bounded (not part of a longer identifier).
-   * - Exclude atom occurrences like `:name` to avoid false positives.
-   */
-  static function rawUsesVarName(code: String, name: String): Bool {
-    if (code == null || name == null || name.length == 0) return false;
-    var idx = -1;
-    while (true) {
-      idx = code.indexOf(name, idx + 1);
-      if (idx == -1) return false;
-      var before = idx == 0 ? "" : code.charAt(idx - 1);
-      var afterIndex = idx + name.length;
-      var after = afterIndex >= code.length ? "" : code.charAt(afterIndex);
-      if (isTokenBoundary(before) && isTokenBoundary(after) && before != ":") {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  static inline function isTokenBoundary(ch: String): Bool {
-    if (ch == null || ch.length == 0) return true;
-    if (ch == "_") return false;
-    var c = ch.charCodeAt(0);
-    return !((c >= 'A'.code && c <= 'Z'.code)
-      || (c >= 'a'.code && c <= 'z'.code)
-      || (c >= '0'.code && c <= '9'.code));
   }
 }
 
