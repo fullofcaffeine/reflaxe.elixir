@@ -274,18 +274,6 @@ class WildcardPromoteByUndeclaredUseTransforms {
     }
 
     static function tryPromoteWildcard(rhs: ElixirAST, stmts:Array<ElixirAST>, idx:Int, declared:Map<String,Bool>):Null<ElixirAST> {
-        // Special case: `_ = String.downcase(search_query)` → `query = ...` when used later
-        inline function isDowncaseSearch(x: ElixirAST): Bool {
-            return switch (x.def) {
-                case ERemoteCall({def: EVar(m)}, "downcase", args) if (m == "String" && args != null && args.length == 1):
-                    switch (args[0].def) { case EVar(v) if (v == "search_query"): true; default: false; }
-                default: false;
-            };
-        }
-        if (isDowncaseSearch(rhs)) {
-            // Deterministically bind to `query` for String.downcase(search_query)
-            return makeASTWithMeta(EMatch(PVar("query"), rhs), rhs.metadata, rhs.pos);
-        }
         // Prefer map binder names that match a nearby Phoenix.Component.assign second-arg var
         switch (rhs.def) {
             case EMap(_) | EKeywordList(_):
@@ -378,19 +366,6 @@ class WildcardPromoteByUndeclaredUseTransforms {
     }
 
     static function tryPromoteWildcardBinary(rhs: ElixirAST, stmts:Array<ElixirAST>, idx:Int, declared:Map<String,Bool>, meta:ElixirMetadata, pos:Position):Null<ElixirAST> {
-        // Special case: binder for String.downcase(search_query) should be `query` when used later
-        inline function isDowncaseSearch(x: ElixirAST): Bool {
-            return switch (x.def) {
-                case ERemoteCall({def: EVar(m)}, "downcase", args) if (m == "String" && args != null && args.length == 1):
-                    switch (args[0].def) { case EVar(v) if (v == "search_query"): true; default: false; }
-                default: false;
-            };
-        }
-        if (isDowncaseSearch(rhs)) {
-            // Deterministically bind to `query` when downcasing search_query
-            // Later hygiene can underscore if truly unused.
-            return makeASTWithMeta(EBinary(Match, makeAST(ElixirASTDef.EVar("query")), rhs), meta, pos);
-        }
         // Prefer the unique first-arg variable of a nearby Phoenix.Component.assign/2 as the binder
         switch (rhs.def) {
             case ERemoteCall(mod, fn, _):

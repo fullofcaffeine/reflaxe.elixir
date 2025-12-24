@@ -149,32 +149,6 @@ class HygieneFinal {
       pass: reflaxe.elixir.ast.transformers.ChangesetChainCleanupTransforms.pass
     });
 
-    // Late query binder handling
-    passes.push({
-      name: "QueryBinderSynthesisLate",
-      description: "Insert `query = String.downcase(search_query)` before Enum.filter when predicate uses `query` and no prior binder exists",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.QueryBinderSynthesisLateTransforms.transformPass
-    });
-    passes.push({
-      name: "FilterPredicateInlineQuery",
-      description: "Inline `query` to `String.downcase(search_query)` inside Enum.filter predicates",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.FilterPredicateInlineQueryTransforms.transformPass
-    });
-    passes.push({
-      name: "FilterPredicateQueryInline_UltraFinal",
-      description: "Ultra-final safeguard to inline `query` in Enum.filter predicates when only search_query exists",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.FilterPredicateQueryInlineUltraFinalTransforms.pass
-    });
-    passes.push({
-      name: "QueryBinderSynthesis_UltraFinal",
-      description: "Ultra-final: insert `query = String.downcase(search_query)` before Enum.filter when predicate uses `query` and no prior binder exists",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.QueryBinderSynthesisUltraFinalTransforms.pass
-    });
-
     // Debug (kept enabled as in registry)
     passes.push({
       name: "DebugCaseBinderUndefScan",
@@ -192,12 +166,6 @@ class HygieneFinal {
     });
 
     // Changeset return/binder repairs
-    passes.push({
-      name: "DropUnusedDowncaseWildcardAssign",
-      description: "Drop `_ = String.downcase(search_query)` in blocks (pure, unused)",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.DropUnusedDowncaseWildcardAssignTransforms.transformPass
-    });
     passes.push({
       name: "ChangesetEnsureReturn",
       description: "Ensure functions building Ecto.Changeset return last assigned var",
@@ -301,20 +269,6 @@ class HygieneFinal {
       description: "Repair wildcard literal binder before where/2 that pins its value later",
       enabled: true,
       pass: reflaxe.elixir.ast.transformers.EctoWherePinnedBinderRepairTransforms.pass
-    });
-
-    // Post-final query binder enforcement and cleanup
-    passes.push({
-      name: "QueryBinderFinalization",
-      description: "Enforce `query = String.downcase(search_query)` at the very end when a different binder name slipped through",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.QueryBinderFinalizationTransforms.transformPass
-    });
-    passes.push({
-      name: "DropResidualWildcardDowncase",
-      description: "Drop stray `_ = String.downcase(search_query)` after establishing `query` binder (post-final)",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.DropResidualWildcardDowncasePostTransforms.transformPass
     });
 
     // Ultimate EFns and small global safety helpers

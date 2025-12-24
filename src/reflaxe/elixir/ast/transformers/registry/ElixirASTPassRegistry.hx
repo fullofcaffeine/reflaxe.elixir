@@ -1427,8 +1427,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreGenericPromotionFinalTransforms.pass,
             runAfter: [
-                "QueryVarUltimateNormalize_UltraFinal",
-                "FunctionQueryBinderSynthesis_UltraFinal",
                 "SuccessBinderPrefixMostUsedUndefined_UltraFinal"
             ]
         });
@@ -2920,13 +2918,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseSuccessVarRenameCollisionFixTransforms.transformPass
         });
-        // Absolute-final: ensure query binder promotion inside search-guarded EIf branches
-        passes.push({
-            name: "QueryBinderFinalization",
-            description: "Promote `_ = String.downcase(search_query)` to `query = ...` in guarded then-branches when Enum.filter appears later",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.QueryBinderFinalizationTransforms.transformPass
-        });
         // Discard unused assignments inside closures (EFn clause bodies)
         passes.push({
             name: "ClosureUnusedAssignmentDiscard",
@@ -3454,27 +3445,6 @@ class ElixirASTPassRegistry {
             description: "Late promotion of underscored def params to base names when body uses base",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamBinderAlignByBodyUseTransforms.alignPass
-        });
-        // Repair `query` binder name after early hygiene when later filter uses it
-        passes.push({
-            name: "QueryBinderRescue",
-            description: "Rename _query/_ = downcase to query = downcase when later Enum.filter uses query",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.QueryBinderRescueTransforms.transformPass
-        });
-        // Promote `_ = String.downcase(search_query)` preceding Enum.filter(...) that uses `query` to a named binder
-        passes.push({
-            name: "PromoteQueryFromWildcard",
-            description: "Promote wildcard downcase to `query = String.downcase(search_query)` when next filter uses `query`",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.PromoteQueryFromWildcardTransforms.pass
-        });
-        // Consolidate query handling after EFn arg/body normalizations so predicate shapes are stable
-        passes.push({
-            name: "FilterQueryConsolidate",
-            description: "Ensure `query` availability: promote `_ = String.downcase(search_query)` or bind/inline deterministically",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.FilterQueryConsolidateTransforms.pass
         });
         // Normalize Phoenix assign/2 map argument by inlining preceding literal map
         // Removed to avoid app-specific coupling; rely on hygiene hardening instead
@@ -4273,14 +4243,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.SocketPutFlashBranchUseTransforms.pass
         });
 
-        // Post3: remove immediate duplicate downcase after query binder
-        passes.push({
-            name: "RemoveDuplicateDowncaseAfterQuery",
-            description: "If `query = downcase(...)` is immediately followed by `_ = downcase(...)`, drop the wildcard line",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.RemoveDuplicateDowncaseAfterQueryPostTransforms.transformPass
-        });
-
         // UltraFinal2: As a last step, ensure changeset/2 binders match Ecto.Changeset usages
         passes.push({
             name: "EctoSchemaBinderFix",
@@ -4621,13 +4583,7 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.SplitChainedAssignmentsTransforms.transformPass
         });
-        // Absolute-final, idempotent replays to crush leftover `query` refs when *_query param exists
-        passes.push({
-            name: "VarRefQueryInlineDowncaseFromSuffixParam_AbsoluteFinal",
-            description: "Absolute-final: inline `query` to String.downcase(<*_query param>) across function body",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.VarRefQueryInlineDowncaseFromSuffixParamTransforms.pass
-        });
+        // Absolute-final: normalize short refs to unique suffix params
         passes.push({
             name: "VarRefSuffixParamNormalize_AbsoluteFinal",
             description: "Absolute-final: map short refs to a unique param that ends with _<short> (e.g., query -> search_query)",
@@ -4635,34 +4591,10 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.VarRefSuffixParamNormalizeTransforms.pass
         });
         passes.push({
-            name: "VarRefQueryToSuffixParam_AbsoluteFinal",
-            description: "Absolute-final: rewrite query -> <*_query param> across function bodies",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.VarRefQueryToSuffixParamTransforms.pass
-        });
-        passes.push({
-            name: "FilterPredicateMissingQueryFix_AbsoluteFinal",
-            description: "Absolute-final: inside Enum.filter EFns, rewrite query -> String.downcase(<*_query>)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.FilterPredicateMissingQueryFixTransforms.pass
-        });
-        passes.push({
-            name: "DowncaseParamThenFilterPredicateNormalize_AbsoluteFinal",
-            description: "Absolute-final: after `p = String.downcase(p)`, rewrite predicate `query` -> `p` in following Enum.filter",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.DowncaseParamThenFilterPredicateNormalizeTransforms.pass
-        });
-        passes.push({
             name: "DowncaseAssignLhsNormalize_AbsoluteFinal",
             description: "Absolute-final: normalize malformed LHS String.downcase(p) = String.downcase(p) to p = String.downcase(p)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DowncaseAssignLhsNormalizeTransforms.pass
-        });
-        passes.push({
-            name: "DebugDumpQueryFunctionBodies",
-            description: "Debug-only: dump bodies of *_query functions to verify final shapes",
-            enabled: #if fast_boot false #else true #end,
-            pass: reflaxe.elixir.ast.transformers.DebugDumpQueryFunctionBodiesTransforms.pass
         });
         passes.push({
             name: "CaseOkBinderPrefixBindAllUndefined_AbsoluteFinal",
@@ -4682,18 +4614,6 @@ class ElixirASTPassRegistry {
             description: "Absolute-final replay: after binder collision renames, prefix-bind all undefined locals to {:ok, binder}",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseOkBinderPrefixBindAllUndefinedTransforms.pass
-        });
-        passes.push({
-            name: "DowncaseParamThenFilterPredicateNormalize_Replay_AbsoluteFinal",
-            description: "Absolute-final replay: after LHS normalization, rewrite predicate query→param following downcase assign",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.DowncaseParamThenFilterPredicateNormalizeTransforms.pass
-        });
-        passes.push({
-            name: "DebugPredicateQueryScan",
-            description: "Debug-only: print Enum.filter predicates that still reference `query` in *_query functions",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.DebugPredicateQueryScanTransforms.pass
         });
         // Absolute final: inline undefined camelCase refs to prior discarded Map.get(_, "snake_key")
         passes.push({
@@ -4986,38 +4906,6 @@ class ElixirASTPassRegistry {
             enabled: false,
             pass: reflaxe.elixir.ast.transformers.VarRefSuffixParamNormalizeTransforms.pass
         });
-        passes.push({
-            name: "VarRefSuffixParamNormalize_UltraFinal",
-            description: "Ultra-final: rewrite free `query` refs to the single *_query param (e.g., search_query)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.VarRefSuffixParamNormalizeUltraFinalTransforms.pass
-        });
-        passes.push({
-            name: "VarRefQueryInlineDowncaseFromSuffixParam_UltraFinal",
-            description: "Ultra-final: inline `query` to String.downcase(<*_query param>) across function body",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.VarRefQueryInlineDowncaseFromSuffixParamTransforms.pass
-        });
-        // Ultra-final: last-resort normalization to eliminate stray `query` refs
-        passes.push({
-            name: "QueryVarUltimateNormalize_UltraFinal",
-            description: "Ultra-final: rewrite free `query` to normalized *_query param (prefers param if param = String.downcase(param) exists)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.QueryVarUltimateNormalizeTransforms.pass
-        });
-        passes.push({
-            name: "FunctionQueryBinderSynthesis_UltraFinal",
-            description: "Ultra-final: prepend `query = String.downcase(<*_query>)` if body uses query and no binder exists",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.FunctionQueryBinderSynthesisTransforms.pass
-        });
-        // Derive local `query` from a discovered `<_.>.search_query` field when referenced and unbound
-        passes.push({
-            name: "SearchFieldQueryBinderSynthesis_UltraFinal",
-            description: "Ultra-final: synthesize `query` from `<x>.search_query` when body references it without a binder",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.SearchFieldQueryBinderSynthesisTransforms.pass
-        });
         // Re-run binder safety for {:ok, binder} after all late ref/name rewrites
         passes.push({
             name: "SuccessBinderPrefixMostUsedUndefined_UltraFinal",
@@ -5084,14 +4972,6 @@ class ElixirASTPassRegistry {
             description: "Absolute final replay: list[0]→head; length(list)>1→tail!=[] in cons clauses",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ListGuardIndexToHeadTransforms.pass
-        });
-
-        // Ultra-Ultimate: replay query normalizer and binder prefix-all at the very end to ensure landing
-        passes.push({
-            name: "QueryVarUltimateNormalize_Replay_Last",
-            description: "Last: rewrite free `query` to normalized *_query param or String.downcase(param)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.QueryVarUltimateNormalizeTransforms.pass
         });
         passes.push({
             name: "CaseOkBinderPrefixBindAllUndefined_Replay_Last",
@@ -5205,10 +5085,6 @@ class ElixirASTPassRegistry {
                 "HandleEventParamsUltraFinal_Last",
                 "VarNameNormalization_Final",
                 "VarRefSuffixParamNormalize_Final",
-                "VarRefSuffixParamNormalize_UltraFinal",
-                "VarRefQueryInlineDowncaseFromSuffixParam_UltraFinal",
-                "QueryVarUltimateNormalize_UltraFinal",
-                "FunctionQueryBinderSynthesis_UltraFinal",
                 "SuccessBinderPrefixMostUsedUndefined_UltraFinal"
             ]
         });
@@ -5243,10 +5119,6 @@ class ElixirASTPassRegistry {
                 "MountSessionExtractCleanup_Final",
                 "VarNameNormalization_Final",
                 "VarRefSuffixParamNormalize_Final",
-                "VarRefSuffixParamNormalize_UltraFinal",
-                "VarRefQueryInlineDowncaseFromSuffixParam_UltraFinal",
-                "QueryVarUltimateNormalize_UltraFinal",
-                "FunctionQueryBinderSynthesis_UltraFinal",
                 "SuccessBinderPrefixMostUsedUndefined_UltraFinal"
             ]
         });
@@ -5408,7 +5280,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HandleEventValueVarNormalizeForceFinalTransforms.pass,
             runAfter: [
                 "ChainAssignIfPromote_Replay_Last",
-                "QueryVarUltimateNormalize_Replay_Last",
                 "CaseOkBinderPrefixBindAllUndefined_Replay_Last",
                 "MountParamsUltraFinal",
                 "HandleEventParamsUltraFinal",
