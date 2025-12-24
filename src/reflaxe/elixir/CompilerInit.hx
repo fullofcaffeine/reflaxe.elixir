@@ -8,6 +8,7 @@ import haxe.macro.Compiler;
 import haxe.io.Path;
 import reflaxe.elixir.ElixirCompiler;
 import reflaxe.elixir.macros.LiveViewPreserver;
+import reflaxe.elixir.macros.BoundaryEnforcer;
 
 // Import preprocessor types
 import reflaxe.preprocessors.ExpressionPreprocessor;
@@ -56,6 +57,11 @@ class CompilerInit {
         // Even in fast_boot mode we must keep LiveView callbacks (mount/handle_event/etc.)
         // or DCE will drop them and Phoenix will raise at runtime.
         LiveViewPreserver.init();
+
+        // Enforce example-app purity: no __elixir__ injections or ad-hoc extern classes.
+        // This keeps our public examples as "Haxe -> Elixir" references and pushes missing
+        // framework surfaces into std/ (Phoenix/Ecto/etc.) instead of app-local escape hatches.
+        BoundaryEnforcer.init();
 
         // Ensure @:repo externs are kept by DCE so they can be scheduled normally
         // for compilation via the AST pipeline (repoTransformPass).
