@@ -5,4 +5,5 @@
 -lib reflaxe.elixir
 -D elixir_output=lib
 -D reflaxe_runtime
+-D reflaxe_elixir_strict_examples
 MathHelper

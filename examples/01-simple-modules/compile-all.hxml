@@ -6,6 +6,7 @@
 -cp src_haxe
 -D elixir_output=lib
 -D reflaxe_runtime
+-D reflaxe_elixir_strict_examples
 BasicModule
 
 --next
@@ -15,6 +16,7 @@ BasicModule
 -cp src_haxe
 -D elixir_output=lib
 -D reflaxe_runtime
+-D reflaxe_elixir_strict_examples
 MathHelper
 
 --next
@@ -24,4 +26,5 @@ MathHelper
 -cp src_haxe
 -D elixir_output=lib
 -D reflaxe_runtime
+-D reflaxe_elixir_strict_examples
 UserUtil

@@ -12,6 +12,7 @@
 
 # Required for Reflaxe targets
 -D reflaxe_runtime
+-D reflaxe_elixir_strict_examples
 
 # Main classes to compile (no single entry point for this example)
 services.UserService

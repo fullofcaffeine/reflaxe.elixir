@@ -14,6 +14,7 @@
 
 # Required for Reflaxe targets
 -D reflaxe_runtime
+-D reflaxe_elixir_strict_examples
 
 # Elixir is not a UTF-16 platform
 -D no-utf16
