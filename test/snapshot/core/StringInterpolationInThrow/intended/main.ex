@@ -39,7 +39,7 @@ defmodule Main do
     end
   end
   defp test_nil_handling() do
-    _ = nil
+    maybe_value = nil
     try do
       throw("Value is: " <> if (maybe_value == nil), do: "nil", else: maybe_value)
     rescue

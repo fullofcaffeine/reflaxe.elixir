@@ -86,7 +86,7 @@ defmodule Main do
     nil
 end end).())
     _ = nil
-    _ = nil
+    iter_array = nil
     iter_current = 0
     iter_array = numbers
     _ = Enum.each(0..(length(iter_array) - 1), fn _ -> nil end)
