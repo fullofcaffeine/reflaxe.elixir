@@ -33,7 +33,8 @@ import Type;
  *   2. The same variable is used later in the block
  * - When found, rewrites both the assignment and all references to use the
  *   non-underscore name (e.g., `_this` → `this`).
- * - Uses VarUseAnalyzer for proper usage detection including closures and interpolation.
+ * - Uses a conservative usage index to detect later uses (closures, ERaw tokenization,
+ *   interpolation) in a single O(N) build.
  *
  * EXAMPLES
  * Before:
