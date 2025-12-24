@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * DropUnusedEnumAssignToUnderscoreTransforms
@@ -36,7 +37,7 @@ class DropUnusedEnumAssignToUnderscoreTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EBlock(stmts): makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);
-        case EDo(stmts2): makeASTWithMeta(EDo(rewrite(stmts2)), n.metadata, n.pos);
+        case EDo(statements): makeASTWithMeta(EDo(rewrite(statements)), n.metadata, n.pos);
         default: n;
       }
     });
@@ -44,18 +45,19 @@ class DropUnusedEnumAssignToUnderscoreTransforms {
 
   static function rewrite(stmts:Array<ElixirAST>): Array<ElixirAST> {
     if (stmts == null) return stmts;
+    var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
     var out:Array<ElixirAST> = [];
     for (i in 0...stmts.length) {
-      var s = stmts[i];
-      var s2 = s;
-      switch (s.def) {
-        case EBinary(Match, {def: EVar(lhs)}, rhs) if (isEnumCall(rhs) && !usedLater(stmts, i+1, lhs)):
-          s2 = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs), s.metadata, s.pos);
-        case EMatch(PVar(lhs2), rhs2) if (isEnumCall(rhs2) && !usedLater(stmts, i+1, lhs2)):
-          s2 = makeASTWithMeta(EMatch(PVar("_"), rhs2), s.metadata, s.pos);
+      var stmt = stmts[i];
+      var rewrittenStmt = stmt;
+      switch (stmt.def) {
+        case EBinary(Match, {def: EVar(lhs)}, rhs) if (isEnumCall(rhs) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, lhs)):
+          rewrittenStmt = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs), stmt.metadata, stmt.pos);
+        case EMatch(PVar(lhs), rhs) if (isEnumCall(rhs) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, lhs)):
+          rewrittenStmt = makeASTWithMeta(EMatch(PVar("_"), rhs), stmt.metadata, stmt.pos);
         default:
       }
-      out.push(s2);
+      out.push(rewrittenStmt);
     }
     return out;
   }
@@ -74,18 +76,6 @@ class DropUnusedEnumAssignToUnderscoreTransforms {
       default: false;
     }
   }
-
-  static function usedLater(stmts:Array<ElixirAST>, from:Int, name:String): Bool {
-    if (name == null || name == "_") return false;
-    var found = false;
-    for (j in from...stmts.length) if (!found) {
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(n: ElixirAST) {
-        switch (n.def) { case EVar(v) if (v == name): found = true; default: }
-      });
-    }
-    return found;
-  }
 }
 
 #end
-

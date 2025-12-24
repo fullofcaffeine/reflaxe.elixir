@@ -149,6 +149,7 @@ class OptimizedVarUseAnalyzer {
             case ECond(condClauses): for (cl in condClauses) { collectVars(cl.condition, out); collectVars(cl.body, out); }
             case ERange(s,e,_): collectVars(s,out); collectVars(e,out);
             case EUnary(_, inner): collectVars(inner, out);
+            case EParen(inner): collectVars(inner, out);
             case EPipe(l,r): collectVars(l,out); collectVars(r,out);
             case EFor(gens, filters, body, into, _uniq):
                 for (g in gens) {
@@ -294,6 +295,8 @@ class OptimizedVarUseAnalyzer {
                 collectVarsExact(e, out);
             case EUnary(_, inner):
                 collectVarsExact(inner, out);
+            case EParen(inner):
+                collectVarsExact(inner, out);
             case EPipe(l, r):
                 collectVarsExact(l, out);
                 collectVarsExact(r, out);
@@ -355,22 +358,33 @@ class OptimizedVarUseAnalyzer {
     static function tokenize(code:String):Array<String> {
         var out:Array<String> = [];
         if (code == null) return out;
-        var buf = new StringBuf();
-        inline function flush() {
-            if (buf.length > 0) {
-                out.push(buf.toString());
-                buf = new StringBuf();
-            }
-        }
-        for (i in 0...code.length) {
-            var ch = code.charAt(i);
-            if ((ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z") || (ch >= "0" && ch <= "9") || ch == "_") {
-                buf.add(ch);
-            } else {
-                flush();
-            }
-        }
-        flush();
+        var start = -1;
+        var i = 0;
+		while (i <= code.length) {
+			var ch = i < code.length ? code.charAt(i) : null;
+			var isIdent = false;
+			if (ch != null && ch.length > 0) {
+				isIdent = (ch >= "A" && ch <= "Z") || (ch >= "a" && ch <= "z") || (ch >= "0" && ch <= "9") || ch == "_";
+			}
+			if (isIdent) {
+				if (start == -1) start = i;
+			} else if (start != -1) {
+				var token = code.substr(start, i - start);
+				var beforeChar = start > 0 ? code.charAt(start - 1) : "";
+				var beforePrevChar = start > 1 ? code.charAt(start - 2) : "";
+				var afterChar = i < code.length ? code.charAt(i) : "";
+				var afterNextChar = i + 1 < code.length ? code.charAt(i + 1) : "";
+
+				// Exclude atoms `:token` and keyword keys `token:` which are not variable uses.
+				// Keep `token::spec` (bitstring specs) where the token is a real variable.
+				var isAtom = (beforeChar == ":" && beforePrevChar != ":");
+				var isBitstringSpec = (beforeChar == ":" && beforePrevChar == ":");
+				var isKeywordKey = (afterChar == ":" && afterNextChar != ":");
+				if (!isAtom && !isBitstringSpec && !isKeywordKey) out.push(token);
+				start = -1;
+			}
+			i++;
+		}
         return out;
     }
 

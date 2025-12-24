@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * HandleEventLocalUnusedUnderscoreTransforms
@@ -30,11 +31,11 @@ class HandleEventLocalUnusedUnderscoreTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EDef(name, args, guards, body) if (name == "handle_event" && args != null && args.length == 3):
-                    var nb = underscoreUnusedLocals(body);
-                    makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
-                case EDefp(name2, args2, guards2, body2) if (name2 == "handle_event" && args2 != null && args2.length == 3):
-                    var nb2 = underscoreUnusedLocals(body2);
-                    makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);
+                    var rewrittenBody = underscoreUnusedLocals(body);
+                    makeASTWithMeta(EDef(name, args, guards, rewrittenBody), n.metadata, n.pos);
+                case EDefp(name, args, guards, body) if (name == "handle_event" && args != null && args.length == 3):
+                    var rewrittenBody = underscoreUnusedLocals(body);
+                    makeASTWithMeta(EDefp(name, args, guards, rewrittenBody), n.metadata, n.pos);
                 default:
                     n;
             }
@@ -44,64 +45,60 @@ class HandleEventLocalUnusedUnderscoreTransforms {
     static function underscoreUnusedLocals(body: ElixirAST): ElixirAST {
         return switch (body.def) {
             case EBlock(stmts):
+                var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
                 var out:Array<ElixirAST> = [];
                 for (i in 0...stmts.length) {
-                    var s = stmts[i];
-                    var s1 = switch (s.def) {
+                    var stmt = stmts[i];
+                    var rewrittenStmt = switch (stmt.def) {
                         case EMatch(PVar(binder), rhs):
-                            if (!usedLater(stmts, i+1, binder)) makeASTWithMeta(EMatch(PVar('_' + binder), rhs), s.metadata, s.pos) else s;
+                            if (canUnderscoreBinder(binder) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, binder)) makeASTWithMeta(EMatch(PVar('_' + binder), rhs), stmt.metadata, stmt.pos) else stmt;
                         case EBinary(Match, left, right):
                             switch (left.def) {
-                                case EVar(binder2) if (!usedLater(stmts, i+1, binder2)):
-                                    makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + binder2)), right), s.metadata, s.pos);
-                                default: s;
+                                case EVar(binderName) if (canUnderscoreBinder(binderName) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, binderName)):
+                                    makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + binderName)), right), stmt.metadata, stmt.pos);
+                                default: stmt;
                             }
                         case ECase(expr, clauses):
                             var newClauses = [];
                             for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: underscoreUnusedLocals(cl.body) });
-                            makeASTWithMeta(ECase(expr, newClauses), s.metadata, s.pos);
+                            makeASTWithMeta(ECase(expr, newClauses), stmt.metadata, stmt.pos);
                         default:
-                            s;
+                            stmt;
                     };
-                    out.push(s1);
+                    out.push(rewrittenStmt);
                 }
                 makeASTWithMeta(EBlock(out), body.metadata, body.pos);
-            case EDo(stmts2):
-                var out2:Array<ElixirAST> = [];
-                for (i in 0...stmts2.length) {
-                    var s = stmts2[i];
-                    var s1 = switch (s.def) {
+            case EDo(statements):
+                var useIndex = OptimizedVarUseAnalyzer.buildExact(statements);
+                var out:Array<ElixirAST> = [];
+                for (i in 0...statements.length) {
+                    var stmt = statements[i];
+                    var rewrittenStmt = switch (stmt.def) {
                         case EMatch(PVar(binder), rhs):
-                            if (!usedLater(stmts2, i+1, binder)) makeASTWithMeta(EMatch(PVar('_' + binder), rhs), s.metadata, s.pos) else s;
+                            if (canUnderscoreBinder(binder) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, binder)) makeASTWithMeta(EMatch(PVar('_' + binder), rhs), stmt.metadata, stmt.pos) else stmt;
                         case EBinary(Match, left, right):
                             switch (left.def) {
-                                case EVar(binder2) if (!usedLater(stmts2, i+1, binder2)):
-                                    makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + binder2)), right), s.metadata, s.pos);
-                                default: s;
+                                case EVar(binderName) if (canUnderscoreBinder(binderName) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, binderName)):
+                                    makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + binderName)), right), stmt.metadata, stmt.pos);
+                                default: stmt;
                             }
                         case ECase(expr, clauses):
                             var newClauses = [];
                             for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: underscoreUnusedLocals(cl.body) });
-                            makeASTWithMeta(ECase(expr, newClauses), s.metadata, s.pos);
+                            makeASTWithMeta(ECase(expr, newClauses), stmt.metadata, stmt.pos);
                         default:
-                            s;
+                            stmt;
                     };
-                    out2.push(s1);
+                    out.push(rewrittenStmt);
                 }
-                makeASTWithMeta(EDo(out2), body.metadata, body.pos);
+                makeASTWithMeta(EDo(out), body.metadata, body.pos);
             default:
                 body;
         }
     }
 
-    static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
-        var found = false;
-        for (j in start...stmts.length) if (!found) {
-            reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:ElixirAST){
-                switch (x.def) { case EVar(v) if (v == name): found = true; default: }
-            });
-        }
-        return found;
+    static inline function canUnderscoreBinder(name: String): Bool {
+        return name != null && name.length > 0 && name != "_" && name.charAt(0) != '_';
     }
 }
 
