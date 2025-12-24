@@ -8,6 +8,7 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTPrinter;
 import StringTools;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * FunctionHygieneTransforms
@@ -50,6 +51,7 @@ class FunctionHygieneTransforms {
     static function simplifyChainsInBody(body: ElixirAST): ElixirAST {
         return switch (body.def) {
             case EBlock(stmts):
+                var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
                 var out = [];
                 for (i in 0...stmts.length) {
                     var s = stmts[i];
@@ -63,14 +65,14 @@ class FunctionHygieneTransforms {
                                     // DEBUG: Sys.println('[BlockAssignChainSimplify] chain detected outer=' + (outerName == null ? 'null' : outerName) + ', inner=' + (innerName == null ? 'null' : innerName));
                                     #end
                                     // Rule A: drop inner temp if not used later → outer = expr
-                                    if (innerName != null && !usedLater(stmts, i + 1, innerName)) {
+                                    if (innerName != null && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, innerName)) {
                                         #if debug_hygiene
                                         #end
                                         out.push(makeAST(EBinary(Match, leftOuter, expr)));
                                         continue;
                                     }
                                     // Rule B: drop outer temp if not used later → inner = expr
-                                    if (outerName != null && !usedLater(stmts, i + 1, outerName)) {
+                                    if (outerName != null && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, outerName)) {
                                         #if debug_hygiene
                                         #end
                                         out.push(makeAST(EBinary(Match, leftInner, expr)));
@@ -83,11 +85,11 @@ class FunctionHygieneTransforms {
                                     #if debug_hygiene
                                     // DEBUG: Sys.println('[BlockAssignChainSimplify] chain (EMatch) detected outer=' + (outerName2 == null ? 'null' : outerName2) + ', inner=' + (innerName2 == null ? 'null' : innerName2));
                                     #end
-                                    if (innerName2 != null && !usedLater(stmts, i + 1, innerName2)) {
+                                    if (innerName2 != null && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, innerName2)) {
                                         out.push(makeAST(EBinary(Match, leftOuter, expr2)));
                                         continue;
                                     }
-                                    if (outerName2 != null && !usedLater(stmts, i + 1, outerName2)) {
+                                    if (outerName2 != null && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, outerName2)) {
                                         out.push(makeAST(EMatch(patInner, expr2)));
                                         continue;
                                     }
@@ -103,11 +105,6 @@ class FunctionHygieneTransforms {
             default:
                 body;
         }
-    }
-
-    static function usedLater(stmts: Array<ElixirAST>, startIdx: Int, name: String): Bool {
-        for (j in startIdx...stmts.length) if (stmtUsesVar(stmts[j], name)) return true;
-        return false;
     }
 
     static function stmtUsesVar(n: ElixirAST, name: String): Bool {

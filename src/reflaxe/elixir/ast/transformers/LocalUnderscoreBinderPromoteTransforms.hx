@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * LocalUnderscoreBinderPromoteTransforms
@@ -36,19 +37,15 @@ class LocalUnderscoreBinderPromoteTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EBlock(stmts):
+                    var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
                     var out:Array<ElixirAST> = [];
                     for (i in 0...stmts.length) {
                         var s = stmts[i];
                         switch (s.def) {
                             case EMatch(PVar(name), rhs) if (name != null && name.length > 1 && name.charAt(0) == '_'):
                                 var base = name.substr(1);
-                                var usedBase = false;
-                                var usedUnderscore = false;
-                                for (j in i+1...stmts.length) {
-                                    if (!usedBase && statementUsesName(stmts[j], base)) usedBase = true;
-                                    if (!usedUnderscore && statementUsesName(stmts[j], name)) usedUnderscore = true;
-                                    if (usedBase && usedUnderscore) break;
-                                }
+                                var usedBase = OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, base);
+                                var usedUnderscore = OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, name);
                                 if (usedBase && !usedUnderscore) {
                                     out.push(makeASTWithMeta(EMatch(PVar(base), rhs), s.metadata, s.pos));
                                 } else {
@@ -57,17 +54,12 @@ class LocalUnderscoreBinderPromoteTransforms {
                             case EBinary(Match, left, rhs):
                                 // Handle plain assignment: _name = rhs
                                 switch (left.def) {
-                                    case EVar(v) if (v != null && v.length > 1 && v.charAt(0) == '_'):
-                                        var base2 = v.substr(1);
-                                        var usedBase2 = false;
-                                        var usedUnderscore2 = false;
-                                        for (j in i+1...stmts.length) {
-                                            if (!usedBase2 && statementUsesName(stmts[j], base2)) usedBase2 = true;
-                                            if (!usedUnderscore2 && statementUsesName(stmts[j], v)) usedUnderscore2 = true;
-                                            if (usedBase2 && usedUnderscore2) break;
-                                        }
-                                        if (usedBase2 && !usedUnderscore2) {
-                                            out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(base2), left.metadata, left.pos), rhs), s.metadata, s.pos));
+                                    case EVar(binderName) if (binderName != null && binderName.length > 1 && binderName.charAt(0) == '_'):
+                                        var baseName = binderName.substr(1);
+                                        var baseUsedLater = OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, baseName);
+                                        var underscoreUsedLater = OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, binderName);
+                                        if (baseUsedLater && !underscoreUsedLater) {
+                                            out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar(baseName), left.metadata, left.pos), rhs), s.metadata, s.pos));
                                         } else {
                                             out.push(s);
                                         }
@@ -92,61 +84,6 @@ class LocalUnderscoreBinderPromoteTransforms {
                     n;
             }
         });
-    }
-
-    static function statementUsesName(s: ElixirAST, name: String): Bool {
-        var found = false;
-        function visit(e: ElixirAST): Void {
-            if (found || e == null || e.def == null) return;
-            switch (e.def) {
-                case EVar(n) if (n == name): found = true;
-                case ERaw(code):
-                    if (code != null && containsIdent(code, name)) found = true;
-                case EBlock(ss): for (x in ss) visit(x);
-                case EIf(c,t,el): visit(c); visit(t); if (el != null) visit(el);
-                case ECase(expr, cs): visit(expr); for (c in cs) { if (c.guard != null) visit(c.guard); visit(c.body);} 
-                case EBinary(_, l, r): visit(l); visit(r);
-                case EMatch(_, rhs): visit(rhs);
-                case ECall(tgt, _, args): if (tgt != null) visit(tgt); for (a in args) visit(a);
-                case ERemoteCall(tgt2, _, args2): visit(tgt2); for (a2 in args2) visit(a2);
-                case EList(els): for (el in els) visit(el);
-                case ETuple(els): for (el in els) visit(el);
-                case EMap(pairs): for (p in pairs) { visit(p.key); visit(p.value); }
-                case EKeywordList(pairs): for (p in pairs) visit(p.value);
-                case EStructUpdate(base, fields): visit(base); for (f in fields) visit(f.value);
-                case EFn(clauses): for (cl in clauses) visit(cl.body);
-                default:
-            }
-        }
-        visit(s);
-        return found;
-    }
-
-    static function containsIdent(s:String, ident:String):Bool {
-        if (s == null || ident == null || ident.length == 0) return false;
-        var i = 0;
-        while (i < s.length) {
-            var idx = s.indexOf(ident, i);
-            if (idx == -1) return false;
-            var ok = true;
-            if (idx > 0) {
-                var p = s.charAt(idx - 1);
-                if (isIdent(p)) ok = false;
-            }
-            var endIdx = idx + ident.length;
-            if (endIdx < s.length) {
-                var n = s.charAt(endIdx);
-                if (isIdent(n)) ok = false;
-            }
-            if (ok) return true; else i = endIdx;
-        }
-        return false;
-    }
-
-    static inline function isIdent(ch: String): Bool {
-        if (ch == null || ch.length == 0) return false;
-        var c = ch.charCodeAt(0);
-        return (c >= 'a'.code && c <= 'z'.code) || (c >= 'A'.code && c <= 'Z'.code) || (c >= '0'.code && c <= '9'.code) || c == '_'.code;
     }
 }
 

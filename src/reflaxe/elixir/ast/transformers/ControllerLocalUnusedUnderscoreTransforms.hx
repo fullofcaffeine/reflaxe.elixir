@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * ControllerLocalUnusedUnderscoreTransforms
@@ -39,8 +40,8 @@ class ControllerLocalUnusedUnderscoreTransforms {
             return switch (n.def) {
                 case EDef(name, args, guards, body):
                     makeASTWithMeta(EDef(name, args, guards, underscoreUnused(body)), n.metadata, n.pos);
-                case EDefp(name2, args2, guards2, body2):
-                    makeASTWithMeta(EDefp(name2, args2, guards2, underscoreUnused(body2)), n.metadata, n.pos);
+                case EDefp(name, args, guards, body):
+                    makeASTWithMeta(EDefp(name, args, guards, underscoreUnused(body)), n.metadata, n.pos);
                 default:
                     n;
             }
@@ -50,92 +51,60 @@ class ControllerLocalUnusedUnderscoreTransforms {
     static function underscoreUnused(body:ElixirAST):ElixirAST {
         return switch (body.def) {
             case EBlock(stmts):
+                var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
                 var out:Array<ElixirAST> = [];
                 for (i in 0...stmts.length) {
-                    var s = stmts[i];
-                    var s1 = switch (s.def) {
-                        case EMatch(PVar(b), rhs) if (!usedLater(stmts, i+1, b)):
-                            makeASTWithMeta(EMatch(PVar('_' + b), rhs), s.metadata, s.pos);
+                    var stmt = stmts[i];
+                    var rewrittenStmt = switch (stmt.def) {
+                        case EMatch(PVar(b), rhs) if (canUnderscoreBinder(b) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, b)):
+                            makeASTWithMeta(EMatch(PVar('_' + b), rhs), stmt.metadata, stmt.pos);
                         case EBinary(Match, left, right):
                             switch (left.def) {
-                                case EVar(b2) if (!usedLater(stmts, i+1, b2)):
-                                    makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b2)), right), s.metadata, s.pos);
-                                default: s;
+                                case EVar(binderName) if (canUnderscoreBinder(binderName) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, binderName)):
+                                    makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + binderName)), right), stmt.metadata, stmt.pos);
+                                default: stmt;
                             }
                         case ECase(expr, clauses):
                             var newClauses = [];
                             for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: underscoreUnused(cl.body) });
-                            makeASTWithMeta(ECase(expr, newClauses), s.metadata, s.pos);
+                            makeASTWithMeta(ECase(expr, newClauses), stmt.metadata, stmt.pos);
                         default:
-                            s;
+                            stmt;
                     };
-                    out.push(s1);
+                    out.push(rewrittenStmt);
                 }
                 makeASTWithMeta(EBlock(out), body.metadata, body.pos);
-            case EDo(stmts2):
-                var out2:Array<ElixirAST> = [];
-                for (i in 0...stmts2.length) {
-                    var s = stmts2[i];
-                    var s1 = switch (s.def) {
-                        case EMatch(PVar(b), rhs) if (!usedLater(stmts2, i+1, b)):
-                            makeASTWithMeta(EMatch(PVar('_' + b), rhs), s.metadata, s.pos);
+            case EDo(statements):
+                var useIndex = OptimizedVarUseAnalyzer.buildExact(statements);
+                var out:Array<ElixirAST> = [];
+                for (i in 0...statements.length) {
+                    var stmt = statements[i];
+                    var rewrittenStmt = switch (stmt.def) {
+                        case EMatch(PVar(b), rhs) if (canUnderscoreBinder(b) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, b)):
+                            makeASTWithMeta(EMatch(PVar('_' + b), rhs), stmt.metadata, stmt.pos);
                         case EBinary(Match, left, right):
                             switch (left.def) {
-                                case EVar(b2) if (!usedLater(stmts2, i+1, b2)):
-                                    makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b2)), right), s.metadata, s.pos);
-                                default: s;
+                                case EVar(binderName) if (canUnderscoreBinder(binderName) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, binderName)):
+                                    makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + binderName)), right), stmt.metadata, stmt.pos);
+                                default: stmt;
                             }
                         case ECase(expr, clauses):
                             var newClauses = [];
                             for (cl in clauses) newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: underscoreUnused(cl.body) });
-                            makeASTWithMeta(ECase(expr, newClauses), s.metadata, s.pos);
+                            makeASTWithMeta(ECase(expr, newClauses), stmt.metadata, stmt.pos);
                         default:
-                            s;
+                            stmt;
                     };
-                    out2.push(s1);
+                    out.push(rewrittenStmt);
                 }
-                makeASTWithMeta(EDo(out2), body.metadata, body.pos);
+                makeASTWithMeta(EDo(out), body.metadata, body.pos);
             default:
                 body;
         }
     }
 
-    static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
-        var found = false;
-        function scan(n: ElixirAST, inLhs:Bool = false): Void {
-            if (found || n == null || n.def == null) return;
-            switch (n.def) {
-                case EVar(v) if (v == name && !inLhs): found = true;
-                case EBinary(Match, l, r):
-                    // Do not treat occurrences on LHS as a "use" (it's a binder)
-                    scan(l, true); scan(r, false);
-                case EMatch(pat, rhs):
-                    // skip scanning pattern entirely; only consider RHS for usages
-                    scan(rhs, false);
-                case EBlock(ss): for (s in ss) scan(s);
-                case EDo(ss2): for (s in ss2) scan(s);
-                case EIf(c,t,e): scan(c); scan(t); if (e != null) scan(e);
-                case ECase(expr, clauses):
-                    scan(expr, false);
-                    for (cl in clauses) { if (cl.guard != null) scan(cl.guard, false); scan(cl.body, false); }
-                case EWith(clauses, doBlock, elseBlock):
-                    for (wc in clauses) scan(wc.expr, false);
-                    scan(doBlock, false);
-                    if (elseBlock != null) scan(elseBlock, false);
-                case ECall(t,_,as): if (t != null) scan(t, false); if (as != null) for (a in as) scan(a, false);
-                case ERemoteCall(t2,_,as2): scan(t2, false); if (as2 != null) for (a2 in as2) scan(a2, false);
-                case EField(obj,_): scan(obj, false);
-                case EAccess(obj2,key): scan(obj2, false); scan(key, false);
-                case EKeywordList(pairs): for (p in pairs) scan(p.value, false);
-                case EMap(pairs): for (p in pairs) { scan(p.key, false); scan(p.value, false); }
-                case EStructUpdate(base, fs): scan(base, false); for (f in fs) scan(f.value, false);
-                case ETuple(es) | EList(es): for (e in es) scan(e, false);
-                case EFn(clauses): for (cl in clauses) { if (cl.guard != null) scan(cl.guard, false); scan(cl.body, false); }
-                default:
-            }
-        }
-        for (j in start...stmts.length) if (!found) scan(stmts[j], false);
-        return found;
+    static inline function canUnderscoreBinder(name: String): Bool {
+        return name != null && name.length > 0 && name != "_" && name.charAt(0) != '_';
     }
 
     static inline function isControllerModule(node:ElixirAST, name:String):Bool {

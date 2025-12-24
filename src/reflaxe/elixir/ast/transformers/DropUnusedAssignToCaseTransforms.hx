@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * DropUnusedAssignToCaseTransforms
@@ -19,7 +20,7 @@ class DropUnusedAssignToCaseTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EBlock(stmts): makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);
-        case EDo(stmts2): makeASTWithMeta(EDo(rewrite(stmts2)), n.metadata, n.pos);
+        case EDo(statements): makeASTWithMeta(EDo(rewrite(statements)), n.metadata, n.pos);
         default: n;
       }
     });
@@ -27,21 +28,22 @@ class DropUnusedAssignToCaseTransforms {
 
   static function rewrite(stmts:Array<ElixirAST>):Array<ElixirAST> {
     if (stmts == null) return stmts;
+    var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
     var out:Array<ElixirAST> = [];
     for (i in 0...stmts.length) {
-      var s = stmts[i];
-      switch (s.def) {
+      var stmt = stmts[i];
+      switch (stmt.def) {
         case EBinary(Match, left, rhs) if (isCase(rhs)):
           switch (left.def) {
-            case EVar(name) if (!usedLater(stmts, i+1, name)):
+            case EVar(name) if (!OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, name)):
               out.push(rhs);
             default:
-              out.push(s);
+              out.push(stmt);
           }
-        case EMatch(PVar(name2), rhs2) if (isCase(rhs2) && !usedLater(stmts, i+1, name2)):
-          out.push(rhs2);
+        case EMatch(PVar(binderName), rhs) if (isCase(rhs) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, binderName)):
+          out.push(rhs);
         default:
-          out.push(s);
+          out.push(stmt);
       }
     }
     return out;
@@ -57,16 +59,6 @@ class DropUnusedAssignToCaseTransforms {
       }
     }
     return switch (cur.def) { case ECase(_, _): true; default: false; }
-  }
-
-  static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
-    var found = false;
-    for (j in start...stmts.length) if (!found) {
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:ElixirAST){
-        switch (x.def) { case EVar(v) if (v == name): found = true; default: }
-      });
-    }
-    return found;
   }
 }
 

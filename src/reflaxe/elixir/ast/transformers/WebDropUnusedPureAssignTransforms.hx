@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * WebDropUnusedPureAssignTransforms
@@ -40,30 +41,21 @@ class WebDropUnusedPureAssignTransforms {
 
   static function rewrite(stmts:Array<ElixirAST>):Array<ElixirAST> {
     if (stmts == null) return stmts;
+    var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
     var out:Array<ElixirAST> = [];
     for (i in 0...stmts.length) {
       var s = stmts[i];
       var keep = true;
       switch (s.def) {
-        case EBinary(Match, {def: EVar(b)}, rhs) if (!isSocketBinder(b) && isDropCandidate(rhs) && !usedLater(stmts, i+1, b)):
+        case EBinary(Match, {def: EVar(b)}, rhs) if (!isSocketBinder(b) && isDropCandidate(rhs) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, b)):
           keep = false; // drop pure var copy or empty init
-        case EMatch(PVar(binder), rhs) if (!isSocketBinder(binder) && isDropCandidate(rhs) && !usedLater(stmts, i+1, binder)):
+        case EMatch(PVar(binder), rhs) if (!isSocketBinder(binder) && isDropCandidate(rhs) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, binder)):
           keep = false;
         default:
       }
       if (keep) out.push(s);
     }
     return out;
-  }
-
-  static function usedLater(stmts:Array<ElixirAST>, start:Int, name:String): Bool {
-    var found = false;
-    for (j in start...stmts.length) if (!found) {
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(x:ElixirAST){
-        switch (x.def) { case EVar(v) if (v == name): found = true; default: }
-      });
-    }
-    return found;
   }
 
   static inline function isSocketBinder(name:String): Bool {

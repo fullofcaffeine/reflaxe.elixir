@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * DropUnusedSimpleAliasToUnderscoreTransforms
@@ -29,7 +30,7 @@ class DropUnusedSimpleAliasToUnderscoreTransforms {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
         case EBlock(stmts): makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);
-        case EDo(stmts2): makeASTWithMeta(EDo(rewrite(stmts2)), n.metadata, n.pos);
+        case EDo(statements): makeASTWithMeta(EDo(rewrite(statements)), n.metadata, n.pos);
         default: n;
       }
     });
@@ -37,18 +38,19 @@ class DropUnusedSimpleAliasToUnderscoreTransforms {
 
   static function rewrite(stmts:Array<ElixirAST>): Array<ElixirAST> {
     if (stmts == null) return stmts;
+    var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
     var out:Array<ElixirAST> = [];
     for (i in 0...stmts.length) {
-      var s = stmts[i];
-      var s2 = s;
-      switch (s.def) {
-        case EBinary(Match, {def: EVar(lhs)}, rhs) if (isSimple(rhs) && hasNumericSuffix(lhs) && !usedLater(stmts, i+1, lhs)):
-          s2 = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs), s.metadata, s.pos);
-        case EMatch(PVar(lhs2), rhs2) if (isSimple(rhs2) && hasNumericSuffix(lhs2) && !usedLater(stmts, i+1, lhs2)):
-          s2 = makeASTWithMeta(EMatch(PVar("_"), rhs2), s.metadata, s.pos);
+      var stmt = stmts[i];
+      var rewrittenStmt = stmt;
+      switch (stmt.def) {
+        case EBinary(Match, {def: EVar(lhs)}, rhs) if (isSimple(rhs) && hasNumericSuffix(lhs) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, lhs)):
+          rewrittenStmt = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs), stmt.metadata, stmt.pos);
+        case EMatch(PVar(lhs), rhs) if (isSimple(rhs) && hasNumericSuffix(lhs) && !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, lhs)):
+          rewrittenStmt = makeASTWithMeta(EMatch(PVar("_"), rhs), stmt.metadata, stmt.pos);
         default:
       }
-      out.push(s2);
+      out.push(rewrittenStmt);
     }
     return out;
   }
@@ -66,52 +68,6 @@ class DropUnusedSimpleAliasToUnderscoreTransforms {
     if (name == null) return false;
     var re = ~/^(.+?)(\d+)$/;
     return re.match(name);
-  }
-
-  static function usedLater(stmts:Array<ElixirAST>, from:Int, name:String): Bool {
-    if (name == null || name == "_") return false;
-    var found = false;
-    for (j in from...stmts.length) if (!found) {
-      // AST walk for EVar occurrences
-      reflaxe.elixir.ast.ASTUtils.walk(stmts[j], function(n: ElixirAST) {
-        switch (n.def) { case EVar(v) if (v == name): found = true; default: }
-      });
-      // Interpolation and ERaw token scan
-      if (!found) {
-        scanStringsAndRaw(stmts[j], name, function(){ found = true; });
-      }
-    }
-    return found;
-  }
-
-  static inline function scanStringsAndRaw(n: ElixirAST, target:String, hit: Void->Void):Void {
-    function visit(x:ElixirAST):Void {
-      if (x == null || x.def == null) return;
-      switch (x.def) {
-        case EString(s) if (s != null):
-          var i = 0;
-          while (i < s.length) {
-            var idx = s.indexOf("#{", i);
-            if (idx == -1) break;
-            var j = s.indexOf('}', idx + 2);
-            if (j == -1) break;
-            var inner = s.substr(idx + 2, j - (idx + 2));
-            if (inner.indexOf(target) != -1) { hit(); return; }
-            i = j + 1;
-          }
-        case ERaw(code) if (code != null):
-          if (code.indexOf(target) != -1) { hit(); return; }
-        case EBlock(ss): for (y in ss) visit(y);
-        case EIf(c,t,e): visit(c); visit(t); if (e != null) visit(e);
-        case ECase(expr, cs): visit(expr); for (c in cs) visit(c.body);
-        case EBinary(_, l, r): visit(l); visit(r);
-        case EMatch(_, rhs): visit(rhs);
-        case ECall(t,_,as): if (t != null) visit(t); if (as != null) for (a in as) visit(a);
-        case ERemoteCall(t2,_,as2): visit(t2); if (as2 != null) for (a in as2) visit(a);
-        default:
-      }
-    }
-    visit(n);
   }
 }
 

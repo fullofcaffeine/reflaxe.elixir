@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * StrictBlockDiscardUnusedTransforms
@@ -24,8 +25,8 @@ class StrictBlockDiscardUnusedTransforms {
       return switch (n.def) {
         case EBlock(stmts):
           makeASTWithMeta(EBlock(discardInSeq(stmts)), n.metadata, n.pos);
-        case EDo(stmts2):
-          makeASTWithMeta(EDo(discardInSeq(stmts2)), n.metadata, n.pos);
+        case EDo(statements):
+          makeASTWithMeta(EDo(discardInSeq(statements)), n.metadata, n.pos);
         case EDef(name, args, guards, body):
           makeASTWithMeta(EDef(name, args, guards, pass(body)), n.metadata, n.pos);
         case EDefp(name, args, guards, body):
@@ -41,6 +42,7 @@ class StrictBlockDiscardUnusedTransforms {
   }
 
   static function discardInSeq(stmts:Array<ElixirAST>):Array<ElixirAST> {
+    var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
     var out:Array<ElixirAST> = [];
     for (i in 0...stmts.length) {
       var s = stmts[i];
@@ -48,17 +50,17 @@ class StrictBlockDiscardUnusedTransforms {
         case EBinary(Match, left, rhs):
           switch (left.def) {
             case EVar(nm):
-              if (!isUsedLater(stmts, i + 1, nm)) {
+              if (!OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, nm)) {
                 out.push(makeASTWithMeta(EBinary(Match, makeASTWithMeta(EVar("_"), left.metadata, left.pos), rhs), s.metadata, s.pos));
                 continue;
               }
             default:
           }
-        case EMatch(pat, rhs2):
+        case EMatch(pat, rhs):
           switch (pat) {
-            case PVar(nm2):
-              if (!isUsedLater(stmts, i + 1, nm2)) {
-                out.push(makeASTWithMeta(EMatch(PVar("_"), rhs2), s.metadata, s.pos));
+            case PVar(binderName):
+              if (!OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, binderName)) {
+                out.push(makeASTWithMeta(EMatch(PVar("_"), rhs), s.metadata, s.pos));
                 continue;
               }
             default:
@@ -69,22 +71,6 @@ class StrictBlockDiscardUnusedTransforms {
     }
     return out;
   }
-
-  static function isUsedLater(stmts:Array<ElixirAST>, start:Int, name:String):Bool {
-    var found = false;
-    for (i in start...stmts.length) {
-      ElixirASTTransformer.transformNode(stmts[i], function(x: ElixirAST): ElixirAST {
-        if (found) return x;
-        switch (x.def) {
-          case EVar(v) if (v == name): found = true; return x;
-          default: return x;
-        }
-      });
-      if (found) break;
-    }
-    return found;
-  }
 }
 
 #end
-
