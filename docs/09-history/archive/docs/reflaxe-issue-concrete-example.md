@@ -137,4 +137,4 @@ We investigated several alternatives:
 2. **Metadata injection** (`@:nativeFunctionCode`): Would require significant compiler changes
 3. **Accepting the overhead**: Current pragmatic solution, but not ideal
 
-The complete investigation is documented in our [RUNTIME_INLINE_PATTERN.md](https://github.com/fullofcaffeine/haxe.elixir/blob/main/docs/03-compiler-development/RUNTIME_INLINE_PATTERN.md).
+The complete investigation is documented in our [RUNTIME_INLINE_PATTERN.md](./03-compiler-development/RUNTIME_INLINE_PATTERN.md).
