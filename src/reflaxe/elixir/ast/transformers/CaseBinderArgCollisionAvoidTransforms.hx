@@ -173,8 +173,8 @@ class CaseBinderArgCollisionAvoidTransforms {
           collectPatternBinders(pat, out);
         case EBinary(Match, {def: EVar(lhs)}, _):
           if (lhs != null && lhs.length > 0) out.set(lhs, true);
-        case EBinary(Match, {def: EMatch(pat2, _)}, _):
-          collectPatternBinders(pat2, out);
+        case EBinary(Match, {def: EMatch(matchPattern, _)}, _):
+          collectPatternBinders(matchPattern, out);
         default:
       }
     }
