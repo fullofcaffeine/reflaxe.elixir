@@ -22,6 +22,7 @@ jobs:
   verify:
     name: Verify (tests + guards)
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     permissions:
       contents: read
     env:
@@ -84,6 +85,7 @@ jobs:
     name: GitHub Release
     runs-on: ubuntu-latest
     needs: [verify]
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
