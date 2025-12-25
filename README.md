@@ -337,7 +337,7 @@ npm run qa:sentinel  # Todo-app build + boot probe (async)
 Reflaxe.Elixir follows standard Reflaxe compiler conventions (similar to Reflaxe.CPP):
 
 ```
-haxe.elixir/
+reflaxe.elixir/
 ├── src/                    # Compiler source (macro-time transpiler code)
 │   └── reflaxe/elixir/     # ElixirCompiler.hx and helpers
 ├── std/                    # Standard library (compile-time classpath)
@@ -345,7 +345,7 @@ haxe.elixir/
 │   ├── phoenix/            # Phoenix framework externs (LiveView, Socket, etc.)
 │   └── ecto/               # Ecto ORM externs (Schema, Changeset, Query)
 ├── lib/                    # Elixir runtime support (Mix integration)
-│   ├── haxe_compiler.ex   # Mix compilation task
+│   ├── haxe_compiler.ex    # Mix compilation task
 │   ├── haxe_watcher.ex     # File watching for development
 │   └── haxe_server.ex      # Haxe compilation server wrapper
 ├── test/                   # Compiler tests (snapshot testing)
