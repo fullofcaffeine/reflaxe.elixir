@@ -47,25 +47,25 @@ class CaseBinderAlignFinalTransforms {
     if (node == null || node.def == null) return node;
     return switch (node.def) {
       case EDef(name, args, guards, body):
-        var env2 = cloneNameSet(env);
-        for (a in args) collectPatternBinders(a, env2);
-        var nb = rewriteNode(body, env2);
-        makeASTWithMeta(EDef(name, args, guards, nb), node.metadata, node.pos);
+        var defEnv = cloneNameSet(env);
+        for (arg in args) collectPatternBinders(arg, defEnv);
+        var nextBody = rewriteNode(body, defEnv);
+        makeASTWithMeta(EDef(name, args, guards, nextBody), node.metadata, node.pos);
 
-      case EDefp(name2, args2, guards2, body2):
-        var env3 = cloneNameSet(env);
-        for (a in args2) collectPatternBinders(a, env3);
-        var nb2 = rewriteNode(body2, env3);
-        makeASTWithMeta(EDefp(name2, args2, guards2, nb2), node.metadata, node.pos);
+      case EDefp(name, args, guards, body):
+        var defpEnv = cloneNameSet(env);
+        for (arg in args) collectPatternBinders(arg, defpEnv);
+        var nextBody = rewriteNode(body, defpEnv);
+        makeASTWithMeta(EDefp(name, args, guards, nextBody), node.metadata, node.pos);
 
       case EFn(clauses):
         var nextClauses = [];
-        for (cl in clauses) {
-          var fnEnv = cloneNameSet(env);
-          for (a in cl.args) collectPatternBinders(a, fnEnv);
-          var ng = cl.guard == null ? null : rewriteNode(cl.guard, fnEnv);
-          var nb3 = rewriteNode(cl.body, fnEnv);
-          nextClauses.push({ args: cl.args, guard: ng, body: nb3 });
+        for (clause in clauses) {
+          var clauseEnv = cloneNameSet(env);
+          for (arg in clause.args) collectPatternBinders(arg, clauseEnv);
+          var nextGuard = clause.guard == null ? null : rewriteNode(clause.guard, clauseEnv);
+          var nextBody = rewriteNode(clause.body, clauseEnv);
+          nextClauses.push({ args: clause.args, guard: nextGuard, body: nextBody });
         }
         makeASTWithMeta(EFn(nextClauses), node.metadata, node.pos);
 
@@ -117,24 +117,24 @@ class CaseBinderAlignFinalTransforms {
         makeASTWithMeta(ECase(nextTarget, outClauses), node.metadata, node.pos);
 
       case EBlock(stmts):
-        var scope = cloneNameSet(env);
-        var out = [];
-        for (s in stmts) {
-          var ns = rewriteNode(s, scope);
-          out.push(ns);
-          collectDeclaredFromStatement(ns, scope);
+        var blockScope = cloneNameSet(env);
+        var nextStatements = [];
+        for (statement in stmts) {
+          var nextStatement = rewriteNode(statement, blockScope);
+          nextStatements.push(nextStatement);
+          collectDeclaredFromStatement(nextStatement, blockScope);
         }
-        makeASTWithMeta(EBlock(out), node.metadata, node.pos);
+        makeASTWithMeta(EBlock(nextStatements), node.metadata, node.pos);
 
-      case EDo(stmts2):
-        var scope2 = cloneNameSet(env);
-        var out2 = [];
-        for (s2 in stmts2) {
-          var ns2 = rewriteNode(s2, scope2);
-          out2.push(ns2);
-          collectDeclaredFromStatement(ns2, scope2);
+      case EDo(statements):
+        var doScope = cloneNameSet(env);
+        var nextStatements = [];
+        for (statement in statements) {
+          var nextStatement = rewriteNode(statement, doScope);
+          nextStatements.push(nextStatement);
+          collectDeclaredFromStatement(nextStatement, doScope);
         }
-        makeASTWithMeta(EDo(out2), node.metadata, node.pos);
+        makeASTWithMeta(EDo(nextStatements), node.metadata, node.pos);
 
       default:
         ElixirASTTransformer.transformAST(node, function(child: ElixirAST): ElixirAST {
