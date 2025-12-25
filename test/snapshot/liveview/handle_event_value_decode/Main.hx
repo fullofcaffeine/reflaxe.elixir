@@ -8,7 +8,9 @@ class Main {
   public static function handle_event(event: String, params: elixir.types.Term, socket: phoenix.Phoenix.Socket<{}>): phoenix.Phoenix.HandleEventResult<{}> {
     switch (event) {
       case "search_todos":
-        // First arg uses Map.get(params, "value"); transform will decode when it is a binary query string.
+        // Historically, some LiveView payloads arrived as `%{"value" => <...>}`. The current pipeline
+        // normalizes Haxe's `Map.get(params, "value")` default access to just `params`, matching the
+        // typical LiveView handle_event/3 params shape (fields at the top level).
         performSearch(elixir.ElixirMap.get(params, "value"), socket);
       default:
     }

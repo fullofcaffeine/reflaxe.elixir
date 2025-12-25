@@ -81,8 +81,9 @@ defmodule Main do
     str = NonEmptyString_Impl_.parse("  hello world  ")
     assert match?({:ok, _}, str)
     (case str do
-      {:ok, trimmed} ->
-        s = trimmed
+      {:ok, value} ->
+        s = value
+        trimmed = NonEmptyString_Impl_.safe_trim(s)
         assert match?({:ok, _}, trimmed)
         (case trimmed do
           {:ok, trimmed_str} ->
@@ -115,7 +116,7 @@ defmodule Main do
     domain_result = ResultTools.filter(ResultTools.map(Email_Impl_.parse("test@example.com"), fn email -> Email_Impl_.get_domain(email) end), fn domain -> domain == "example.com" end, "Wrong domain")
     assert match?({:ok, _}, domain_result)
     (case domain_result do
-      {:ok, domain} -> assert domain == "example.com"
+      {:ok, value} -> assert domain == "example.com"
       {:error, reason} -> flunk("Domain extraction should not fail: " <> reason)
     end)
     failed_filter = ResultTools.filter(ResultTools.map(Email_Impl_.parse("test@wrong.com"), fn email -> Email_Impl_.get_domain(email) end), fn domain -> domain == "example.com" end, "Wrong domain")
@@ -126,7 +127,8 @@ defmodule Main do
     email_option = ResultTools.to_option(email_result)
     assert match?({:some, _}, email_option)
     (case email_option do
-      {:some, email} ->
+      {:some, _g} ->
+        email = v
         actual = Email_Impl_.get_domain(email)
         assert actual == "example.com"
       {:none} -> flunk("Valid email should not be None")

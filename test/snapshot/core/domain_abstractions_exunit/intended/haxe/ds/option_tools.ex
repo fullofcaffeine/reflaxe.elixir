@@ -30,7 +30,7 @@ defmodule OptionTools do
   end
   def unwrap(option, default_value) do
     (case option do
-      {:some, _value} -> default_value
+      {:some, value} -> value
       {:none} -> default_value
     end)
   end
@@ -43,13 +43,13 @@ defmodule OptionTools do
   end
   def or_fn(first, second) do
     (case first do
-      {:some, value} -> value
+      {:some, v} -> v
       {:none} -> second
     end)
   end
   def lazy_or(first, fn_param) do
     (case first do
-      {:some, value} -> value
+      {:some, v} -> v
       {:none} ->
         fn_param.()
     end)
@@ -108,10 +108,10 @@ end end).())
       {:none} -> nil
     end)
   end
-  def to_reply(option) do
+  def to_reply(option, none_error) do
     (case option do
-      {:some, value} -> %{:reply => value, :status => "ok"}
-      {:none} -> %{:reply => nil, :status => "none"}
+      {:some, value} -> {:ok, value}
+      {:none} -> {:error, none_error}
     end)
   end
   def expect(option, message) do
@@ -128,8 +128,7 @@ end end).())
   end
   def apply(option, fn_param) do
     (case option do
-      {:some, value} ->
-        fn_param.(value)
+      {:some, value} -> _ = fn_param.(value)
       {:none} -> nil
     end)
     option

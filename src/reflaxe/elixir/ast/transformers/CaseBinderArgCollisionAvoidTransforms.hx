@@ -75,8 +75,12 @@ class CaseBinderArgCollisionAvoidTransforms {
     return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
         case ECase(expr, clauses):
+          var scrutineeName:Null<String> = switch (expr.def) {
+            case EVar(v): v;
+            default: null;
+          };
           var out:Array<ECaseClause> = [];
-          for (c in clauses) out.push(renameCollidingBinders(c, argNames));
+          for (c in clauses) out.push(renameCollidingBinders(c, argNames, scrutineeName));
           makeASTWithMeta(ECase(expr, out), x.metadata, x.pos);
         default:
           x;
@@ -84,67 +88,167 @@ class CaseBinderArgCollisionAvoidTransforms {
     });
   }
 
-  static function renameCollidingBinders(clause:ECaseClause, argNames:Map<String,Bool>): ECaseClause {
-    // Collect binders from pattern and rename if colliding with args
-    var renamed = renamePatternOnly(clause.pattern, argNames);
-    return (renamed == null) ? clause : { pattern: renamed, guard: clause.guard, body: clause.body };
+  static function renameCollidingBinders(clause:ECaseClause, argNames:Map<String,Bool>, scrutineeName:Null<String>): ECaseClause {
+    var renameMap = new Map<String, String>();
+    var renamedPattern = renamePattern(clause.pattern, argNames, renameMap, scrutineeName);
+    if (!renameMap.keys().hasNext()) return clause;
+
+    var newGuard = clause.guard == null ? null : rewriteVars(clause.guard, renameMap);
+    var newBody = rewriteVars(clause.body, renameMap);
+    return { pattern: renamedPattern, guard: newGuard, body: newBody };
   }
 
-  static function renamePatternOnly(p:EPattern, argNames:Map<String,Bool>): Null<EPattern> {
+  static function renamePattern(p:EPattern, argNames:Map<String,Bool>, renameMap:Map<String,String>, scrutineeName:Null<String>): EPattern {
     return switch (p) {
-      case PVar(n) if (n != null && argNames.exists(n)):
-        PVar(safeName());
+      case PVar(n) if (n != null && argNames.exists(n) && (scrutineeName == null || scrutineeName != n)):
+        var nn = safeNameFrom(n);
+        renameMap.set(n, nn);
+        PVar(nn);
+      case PAlias(nm, inner):
+        var newNm = nm;
+        if (nm != null && argNames.exists(nm) && (scrutineeName == null || scrutineeName != nm)) {
+          newNm = safeNameFrom(nm);
+          renameMap.set(nm, newNm);
+        }
+        PAlias(newNm, renamePattern(inner, argNames, renameMap, scrutineeName));
       case PTuple(es):
-        var changed = false;
-        var rebuilt:Array<EPattern> = [];
-        for (e in es) {
-          var r = renamePatternOnly(e, argNames);
-          if (r != null) { changed = true; rebuilt.push(r); } else rebuilt.push(e);
-        }
-        changed ? PTuple(rebuilt) : null;
+        PTuple([for (e in es) renamePattern(e, argNames, renameMap, scrutineeName)]);
       case PList(es):
-        var changedL = false;
-        var rebuiltL:Array<EPattern> = [];
-        for (e in es) {
-          var r = renamePatternOnly(e, argNames);
-          if (r != null) { changedL = true; rebuiltL.push(r); } else rebuiltL.push(e);
-        }
-        changedL ? PList(rebuiltL) : null;
+        PList([for (e in es) renamePattern(e, argNames, renameMap, scrutineeName)]);
       case PCons(h, t):
-        var rh = renamePatternOnly(h, argNames);
-        var rt = renamePatternOnly(t, argNames);
-        (rh != null || rt != null) ? PCons(rh != null ? rh : h, rt != null ? rt : t) : null;
+        PCons(renamePattern(h, argNames, renameMap, scrutineeName), renamePattern(t, argNames, renameMap, scrutineeName));
       case PMap(kvs):
-        var changedM = false;
-        var rebuiltM = [];
-        for (kv in kvs) {
-          var rv = renamePatternOnly(kv.value, argNames);
-          if (rv != null) { changedM = true; rebuiltM.push({ key: kv.key, value: rv }); } else rebuiltM.push(kv);
-        }
-        changedM ? PMap(rebuiltM) : null;
+        PMap([for (kv in kvs) { key: kv.key, value: renamePattern(kv.value, argNames, renameMap, scrutineeName) }]);
       case PStruct(m, fs):
-        var changedS = false;
-        var rebuiltS = [];
-        for (f in fs) {
-          var rv2 = renamePatternOnly(f.value, argNames);
-          if (rv2 != null) { changedS = true; rebuiltS.push({ key: f.key, value: rv2 }); } else rebuiltS.push(f);
-        }
-        changedS ? PStruct(m, rebuiltS) : null;
+        PStruct(m, [for (f in fs) { key: f.key, value: renamePattern(f.value, argNames, renameMap, scrutineeName) }]);
+      case PBinary(segs):
+        PBinary([for (s in segs) { pattern: renamePattern(s.pattern, argNames, renameMap, scrutineeName), size: s.size, type: s.type, modifiers: s.modifiers }]);
       case PPin(inner):
-        var ri = renamePatternOnly(inner, argNames);
-        ri != null ? PPin(ri) : null;
-      default: null;
+        PPin(renamePattern(inner, argNames, renameMap, scrutineeName));
+      default:
+        p;
     }
   }
 
-  static inline function safeName(): String {
-    // Descriptive, generic; avoids numeric suffixes
-    return "payload";
+  static inline function safeNameFrom(original:String): String {
+    // Descriptive and stable; avoids numeric suffixes.
+    return "payload_" + original;
   }
 
-  // Intentionally no body substitution here; later passes align binder names to
-  // undefined body vars when appropriate. This avoids accidentally rewriting
-  // legitimate uses of function args (e.g., `socket`).
+  static function rewriteVars(expr: ElixirAST, renameMap: Map<String,String>): ElixirAST {
+    function cloneNameSet(src: Map<String, Bool>): Map<String, Bool> {
+      var out = new Map<String, Bool>();
+      for (k in src.keys()) out.set(k, true);
+      return out;
+    }
+
+    function collectPatternBinders(p: EPattern, out: Map<String, Bool>): Void {
+      switch (p) {
+        case PVar(n) if (n != null && n.length > 0):
+          out.set(n, true);
+        case PAlias(nm, inner):
+          if (nm != null && nm.length > 0) out.set(nm, true);
+          collectPatternBinders(inner, out);
+        case PTuple(es) | PList(es):
+          for (e in es) collectPatternBinders(e, out);
+        case PCons(h, t):
+          collectPatternBinders(h, out);
+          collectPatternBinders(t, out);
+        case PMap(kvs):
+          for (kv in kvs) collectPatternBinders(kv.value, out);
+        case PStruct(_, fs):
+          for (f in fs) collectPatternBinders(f.value, out);
+        case PBinary(segs):
+          for (s in segs) collectPatternBinders(s.pattern, out);
+        case PPin(inner):
+          collectPatternBinders(inner, out);
+        default:
+      }
+    }
+
+    function collectDeclaredFromStatement(stmt: ElixirAST, out: Map<String, Bool>): Void {
+      if (stmt == null || stmt.def == null) return;
+      switch (stmt.def) {
+        case EMatch(pat, _):
+          collectPatternBinders(pat, out);
+        case EBinary(Match, {def: EVar(lhs)}, _):
+          if (lhs != null && lhs.length > 0) out.set(lhs, true);
+        case EBinary(Match, {def: EMatch(pat2, _)}, _):
+          collectPatternBinders(pat2, out);
+        default:
+      }
+    }
+
+    function rewriteExpr(node: ElixirAST, shadowed: Map<String, Bool>): ElixirAST {
+      if (node == null || node.def == null) return node;
+      return switch (node.def) {
+        case EVar(v) if (v != null && renameMap.exists(v) && !shadowed.exists(v)):
+#if debug_case_binder_arg_collision
+          try {
+            trace('[CaseBinderArgCollisionAvoid] EVar rename ' + v + ' -> ' + renameMap.get(v));
+          } catch (_) {}
+#end
+          makeASTWithMeta(EVar(renameMap.get(v)), node.metadata, node.pos);
+
+        case ECase(scrut, clauses):
+          var nextScrut = rewriteExpr(scrut, shadowed);
+          var nextClauses: Array<ECaseClause> = [];
+          for (cl in clauses) {
+            var clauseScope = cloneNameSet(shadowed);
+            collectPatternBinders(cl.pattern, clauseScope);
+            var nextGuard = cl.guard == null ? null : rewriteExpr(cl.guard, clauseScope);
+            var nextBody = rewriteExpr(cl.body, clauseScope);
+            nextClauses.push({ pattern: cl.pattern, guard: nextGuard, body: nextBody });
+          }
+          makeASTWithMeta(ECase(nextScrut, nextClauses), node.metadata, node.pos);
+
+        case EFn(clauses):
+          var nextFnClauses = [];
+          for (cl in clauses) {
+            var fnScope = cloneNameSet(shadowed);
+            for (a in cl.args) collectPatternBinders(a, fnScope);
+            var nextGuard = cl.guard == null ? null : rewriteExpr(cl.guard, fnScope);
+            var nextBody = rewriteExpr(cl.body, fnScope);
+            nextFnClauses.push({ args: cl.args, guard: nextGuard, body: nextBody });
+          }
+          makeASTWithMeta(EFn(nextFnClauses), node.metadata, node.pos);
+
+        case EBlock(stmts):
+          var scope = cloneNameSet(shadowed);
+          var outStmts: Array<ElixirAST> = [];
+          for (s in stmts) {
+            var ns = rewriteExpr(s, scope);
+            outStmts.push(ns);
+            collectDeclaredFromStatement(ns, scope);
+          }
+          makeASTWithMeta(EBlock(outStmts), node.metadata, node.pos);
+
+        case EDo(stmts):
+          var scopeDo = cloneNameSet(shadowed);
+          var outDo: Array<ElixirAST> = [];
+          for (s in stmts) {
+            var ns = rewriteExpr(s, scopeDo);
+            outDo.push(ns);
+            collectDeclaredFromStatement(ns, scopeDo);
+          }
+          makeASTWithMeta(EDo(outDo), node.metadata, node.pos);
+
+        case EMatch(pat, rhs):
+          makeASTWithMeta(EMatch(pat, rewriteExpr(rhs, shadowed)), node.metadata, node.pos);
+
+        case EBinary(Match, left, rhs):
+          // Never rewrite the LHS; only the RHS expression.
+          makeASTWithMeta(EBinary(Match, left, rewriteExpr(rhs, shadowed)), node.metadata, node.pos);
+
+        default:
+          ElixirASTTransformer.transformAST(node, function(child:ElixirAST):ElixirAST {
+            return rewriteExpr(child, shadowed);
+          });
+      };
+    }
+
+    return rewriteExpr(expr, new Map<String, Bool>());
+  }
 }
 
 #end

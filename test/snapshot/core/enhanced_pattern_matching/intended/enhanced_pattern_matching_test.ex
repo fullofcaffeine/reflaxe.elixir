@@ -19,9 +19,9 @@ defmodule EnhancedPatternMatchingTest do
       {:success, value} ->
         (case value do
           {:success, value} -> "Double success: #{(fn -> inspect(value) end).()}"
-          {:error, error, context} -> "Outer success, inner error: #{(fn -> inner_error end).()} (context: #{(fn -> inner_context end).()})"
+          {:error, inner_error, inner_context} -> "Outer success, inner error: #{(fn -> inner_error end).()} (context: #{(fn -> inner_context end).()})"
         end)
-      {:error, error, context} -> "Outer error: #{(fn -> outer_error end).()} (context: #{(fn -> outer_context end).()})"
+      {:error, outer_error, outer_context} -> "Outer error: #{(fn -> outer_error end).()} (context: #{(fn -> outer_context end).()})"
     end)
   end
   def match_with_complex_guards(status, priority, is_urgent) do
@@ -71,22 +71,22 @@ defmodule EnhancedPatternMatchingTest do
       "temperature" when value >= 10 and value < 20 -> "Cool"
       "temperature" when value < 10 -> "Cold"
       "temperature" -> "Unknown category \"#{(fn -> cat end).()}\" with value #{(fn -> Kernel.to_string(n) end).()}"
-      _ -> "Unknown category \"#{(fn -> cat end).()}\" with value #{(fn -> Kernel.to_string(n) end).()}"
+      cat -> "Unknown category \"#{(fn -> cat end).()}\" with value #{(fn -> Kernel.to_string(n) end).()}"
     end)
   end
   def chain_result_operations(input) do
     step1 = validate_input(input)
     (case ((case step1 do
-  {:success, g} ->
-    process_data(g)
+  {:success, validated} ->
+    process_data(validated)
   {:error, error, context} ->
     if (Kernel.is_nil(context)) do
       context = ""
     end
     result = {:error, error, context}
 end)) do
-      {:success, g} ->
-        format_output(g)
+      {:success, processed} ->
+        format_output(processed)
       {:error, error, context} ->
         if (Kernel.is_nil(context)) do
           context = ""

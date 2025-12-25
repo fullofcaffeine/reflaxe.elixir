@@ -7466,9 +7466,9 @@ private class AbsoluteFinalSnapshot {
 private class PerPassSnapshot {
     static var passIndex:Int = 0;
 
-    public static function emitFunctionAfterPass(ast: ElixirAST, passName:String):Void {
-        var spec = getDefineString('debug_ast_snapshots_func');
-        if (spec == null || spec == '') return;
+		    public static function emitFunctionAfterPass(ast: ElixirAST, passName:String):Void {
+		        var spec = getDefineString('debug_ast_snapshots_func');
+		        if (spec == null || spec == '') return;
         var targetName = extractFuncName(spec);
         var targetArity = extractArity(spec);
         var fnNode: Null<ElixirAST> = null;
@@ -7479,14 +7479,14 @@ private class PerPassSnapshot {
                 default:
             }
         });
-        if (fnNode == null) { passIndex++; return; }
-        var code = safePrint(fnNode);
-        var dir = 'tmp/ast_flow/passes';
-        #if sys if (!sys.FileSystem.exists(dir)) sys.FileSystem.createDirectory(dir); #end
-        var file = dir + '/' + Std.string(passIndex) + '_' + sanitize(passName) + '.ex';
-        #if sys sys.io.File.saveContent(file, code); #end
-        passIndex++;
-    }
+		        if (fnNode == null) { passIndex++; return; }
+		        var code = safePrint(fnNode);
+		        var dir = 'tmp/ast_flow/passes';
+		        #if (macro || sys) if (!sys.FileSystem.exists(dir)) sys.FileSystem.createDirectory(dir); #end
+		        var file = dir + '/' + Std.string(passIndex) + '_' + sanitize(passName) + '.ex';
+		        #if (macro || sys) sys.io.File.saveContent(file, code); #end
+		        passIndex++;
+		    }
 
     static function sanitize(s:String):String {
         if (s == null) return 'pass';
@@ -7537,8 +7537,8 @@ private class PerPassSnapshot {
 private class PerPassModuleSnapshot {
     static var passIndex:Int = 0;
 
-    public static function emitModuleAfterPass(ast: ElixirAST, rootName: String, passName: String): Void {
-        var moduleFilter = getDefineString('debug_ast_snapshots_module');
+		    public static function emitModuleAfterPass(ast: ElixirAST, rootName: String, passName: String): Void {
+	        var moduleFilter = getDefineString('debug_ast_snapshots_module');
         if (moduleFilter == null || moduleFilter == '') { passIndex++; return; }
         if (rootName == null || rootName.indexOf(moduleFilter) == -1) { passIndex++; return; }
 
@@ -7549,13 +7549,13 @@ private class PerPassModuleSnapshot {
             //   -D debug_ast_snapshots_contains=defmodule%20Main
             containsFilter = containsFilter.split('%20').join(' ');
             if (code.indexOf(containsFilter) == -1) { passIndex++; return; }
-        }
-        var dir = 'tmp/ast_flow/passes_module2';
-        #if sys if (!sys.FileSystem.exists(dir)) sys.FileSystem.createDirectory(dir); #end
-        var file = dir + '/' + Std.string(passIndex) + '_' + sanitize(rootName) + '_' + sanitize(passName) + '.ex';
-        #if sys sys.io.File.saveContent(file, code); #end
-        passIndex++;
-    }
+		        }
+		        var dir = 'tmp/ast_flow/passes_module2';
+		        #if (macro || sys) if (!sys.FileSystem.exists(dir)) sys.FileSystem.createDirectory(dir); #end
+		        var file = dir + '/' + Std.string(passIndex) + '_' + sanitize(rootName) + '_' + sanitize(passName) + '.ex';
+		        #if (macro || sys) sys.io.File.saveContent(file, code); #end
+		        passIndex++;
+		    }
 
     static function sanitize(s:String):String {
         if (s == null) return 'pass';

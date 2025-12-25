@@ -28,6 +28,11 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *     id_raw = Map.get(Map.get(params, "value"), "id", Map.get(params, "id", params))
  *     if Kernel.is_binary(id_raw), do: String.to_integer(id_raw), else: id_raw
  * - Runs absolute-ultimate in the handle_event cluster.
+ *
+ * STATUS
+ * - Currently disabled in `ElixirASTPassRegistry` because it could mangle typed event handlers
+ *   by guessing payload shapes late in the pipeline. Prefer explicit, typed extraction in Haxe
+ *   (or framework-level helpers) until the lean pass set is finalized.
  */
 class HandleEventArg0FromValueToIdUltimateTransforms {
   /**
@@ -36,10 +41,10 @@ class HandleEventArg0FromValueToIdUltimateTransforms {
    *   @:liveview class Main {
    *     public static function handle_event(event:String, params:elixir.types.Term, socket:phoenix.Phoenix.Socket<{}>) {
    *       switch (event) {
-   *         case "toggle_todo": toggleTodo(params.value, socket);
+   *         case "toggle_todo": toggleTodo(elixir.ElixirMap.get(params, "value"), socket);
    *         default:
    *       }
-   *       return {status: "noreply", socket: socket};
+   *       return phoenix.Phoenix.HandleEventResult.NoReply(socket);
    *     }
    *   }
    * Elixir (before):

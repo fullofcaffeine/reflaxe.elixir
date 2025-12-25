@@ -1,10 +1,8 @@
 defmodule ChangesetUtils do
   def unwrap_or(result, default_value) do
     (case result do
-      {:ok, value} ->
-        default_value = value
-        default_value
-      {:error, payload} -> payload
+      {:ok, value} -> value
+      {:error, _error} -> default_value
     end)
   end
   def to_option(result) do

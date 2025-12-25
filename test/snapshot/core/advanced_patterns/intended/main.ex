@@ -4,7 +4,7 @@ defmodule Main do
       0 -> "zero"
       1 -> "one"
       2 -> "two"
-      _ ->
+      n ->
         n = value
         if (n < 0) do
           "negative"
@@ -35,7 +35,7 @@ defmodule Main do
       "" -> "empty"
       "goodbye" -> "farewell"
       "hello" -> "greeting"
-      _ ->
+      s ->
         s = str
         if (length(s) == 1) do
           "single char"

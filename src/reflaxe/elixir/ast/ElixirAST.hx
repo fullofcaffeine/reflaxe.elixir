@@ -745,6 +745,7 @@ typedef ElixirMetadata = {
     // Case/switch helpers
     ?primaryCaseBinder: String,     // Selected binder name for primary enum payload (used for nested-case repair)
     ?usedLocalsFromTyped: Array<String>, // Lower-case locals used in a TypedExpr body (for binder alignment passes)
+    ?infraTempVarToBinderName: Map<String, String>, // Maps infra temps (g/_g/_g1/...) to the clause's final binder names
 
     // Phoenix/Framework Specific
     ?phoenixContext: PhoenixContext,  // LiveView, Router, etc.

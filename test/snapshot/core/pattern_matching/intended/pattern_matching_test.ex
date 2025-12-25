@@ -17,7 +17,7 @@ defmodule PatternMatchingTest do
     (case value do
       0 -> "zero"
       1 -> "one"
-      _ ->
+      n ->
         n = value
         if (n < 0) do
           "negative"
@@ -31,7 +31,7 @@ defmodule PatternMatchingTest do
     (case str do
       "" -> "empty"
       "hello" -> "greeting"
-      _ ->
+      s ->
         s = str
         if (length(s) > 10), do: "long", else: "other"
     end)
@@ -53,13 +53,7 @@ defmodule PatternMatchingTest do
           {:red} -> "red color"
           {:green} -> "green color"
           {:blue} -> "blue color"
-          {:rgb, r, _g, _b} ->
-            if (r > 128) do
-              "bright rgb"
-            else
-              _b = r
-              "dark rgb"
-            end
+          {:rgb, r, _g, _b} -> if (r > 128), do: "bright rgb", else: "dark rgb"
         end)
     end)
   end

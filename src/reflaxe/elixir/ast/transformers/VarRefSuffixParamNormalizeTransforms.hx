@@ -81,7 +81,17 @@ class VarRefSuffixParamNormalizeTransforms {
     function collectDeclared(n:ElixirAST):Map<String,Bool> {
       var d = new Map<String,Bool>();
       reflaxe.elixir.ast.ASTUtils.walk(n, function(x:ElixirAST){
-        switch (x.def) { case EMatch(p,_): pat(p,d); case EBinary(Match, l,_): lhs(l,d); default: }
+        switch (x.def) {
+          case EMatch(p,_):
+            pat(p,d);
+          case EBinary(Match, l,_):
+            lhs(l,d);
+          case ECase(_, clauses):
+            for (cl in clauses) pat(cl.pattern, d);
+          case EWith(clauses, _, _):
+            for (cl in clauses) pat(cl.pattern, d);
+          default:
+        }
       });
       return d;
     }

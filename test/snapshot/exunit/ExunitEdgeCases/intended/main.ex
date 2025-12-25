@@ -4,7 +4,7 @@ defmodule Main do
     setup = true
   end
   setup context do
-    on_exit(fn ->  end)
+    on_exit(fn -> nil end)
     :ok
   end
   setup_all context do
@@ -22,7 +22,7 @@ defmodule Main do
     assert true
   end
   test "async with lifecycle" do
-    Process.process.sleep(1)
+    Process.sleep(1)
     assert true
   end
   test "with underscores and caps" do
@@ -80,7 +80,7 @@ defmodule Main do
   end
   describe "Full featured" do
     test "everything" do
-      Process.process.sleep(1)
+      Process.sleep(1)
       assert true
     end
   end

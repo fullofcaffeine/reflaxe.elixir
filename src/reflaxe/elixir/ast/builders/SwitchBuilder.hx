@@ -15,6 +15,7 @@ import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.context.ClauseContext;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.ast.NameUtils;
+import reflaxe.elixir.ast.ASTUtils;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
 
@@ -59,10 +60,142 @@ using StringTools;
  */
 @:nullSafety(Off)
 	class SwitchBuilder {
+	    static function bindWildcardScrutineeAliasIfNeeded(clauses: Array<ECaseClause>, targetVarName: Null<String>): Array<ECaseClause> {
+	        if (clauses == null || clauses.length == 0 || targetVarName == null || targetVarName.length == 0) {
+	            return clauses;
+	        }
+
+	        function isLowerLocalName(name: String): Bool {
+	            return name != null && name.length > 0 && name.charAt(0).toLowerCase() == name.charAt(0);
+	        }
+
+	        function collectVarsUsedInIfConditions(body: ElixirAST, aliasesFromScrutinee: Map<String, Bool>): Map<String, Bool> {
+	            var used = new Map<String, Bool>();
+	            if (body == null) return used;
+
+	            function rawMentionsAlias(code: String, aliasName: String): Bool {
+	                if (code == null || aliasName == null || aliasName.length == 0) return false;
+	                if (code.indexOf(aliasName) == -1) return false;
+	                try {
+	                    var re = new EReg('(^|[^A-Za-z0-9_])' + aliasName + '([^A-Za-z0-9_]|$)', '');
+	                    return re.match(code);
+	                } catch (_) {
+	                    return false;
+	                }
+	            }
+
+	            reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
+	                switch (n.def) {
+	                    case EIf(cond, _, _):
+	                        reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cond, function(c: ElixirAST): ElixirAST {
+	                            switch (c.def) {
+	                                case EVar(v) if (isLowerLocalName(v)):
+	                                    used.set(v, true);
+	                                case ERaw(code):
+	                                    if (aliasesFromScrutinee != null) {
+	                                        for (aliasName in aliasesFromScrutinee.keys()) {
+	                                            if (rawMentionsAlias(code, aliasName)) used.set(aliasName, true);
+	                                        }
+	                                    }
+	                                default:
+	                            }
+	                            return c;
+	                        });
+	                    default:
+	                }
+	                return n;
+	            });
+
+	            return used;
+	        }
+
+	        function collectAliasesFromScrutinee(body: ElixirAST): Map<String, Bool> {
+	            var aliases = new Map<String, Bool>();
+	            if (body == null) return aliases;
+
+	            function unwrapVarName(expr: ElixirAST): Null<String> {
+	                if (expr == null || expr.def == null) return null;
+	                return switch (expr.def) {
+	                    case EVar(v): v;
+	                    case EParen(inner): unwrapVarName(inner);
+	                    default: null;
+	                };
+	            }
+
+	            reflaxe.elixir.ast.ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
+	                switch (n.def) {
+	                    case EBinary(Match, left, right):
+	                        var lhs = switch (left.def) { case EVar(v): v; default: null; };
+	                        var rhs = unwrapVarName(right);
+	                        if (lhs != null && rhs == targetVarName && isLowerLocalName(lhs)) {
+	                            aliases.set(lhs, true);
+	                        }
+	                    case EMatch(pat, rhsExpr):
+	                        var lhs = switch (pat) {
+	                            case PVar(v): v;
+	                            case PAlias(v, _): v;
+	                            default: null;
+	                        };
+	                        var rhs = unwrapVarName(rhsExpr);
+	                        if (lhs != null && rhs == targetVarName && isLowerLocalName(lhs)) {
+	                            aliases.set(lhs, true);
+	                        }
+	                    default:
+	                }
+	                return n;
+	            });
+
+	            return aliases;
+	        }
+
+	        var out: Array<ECaseClause> = [];
+	            for (cl in clauses) {
+	            var updated = cl;
+	            switch (cl.pattern) {
+	                case PWildcard:
+	                    var aliases = collectAliasesFromScrutinee(cl.body);
+	                    var usedInIf = collectVarsUsedInIfConditions(cl.body, aliases);
+	                    var candidates: Array<String> = [];
+	                    for (name in usedInIf.keys()) {
+	                        if (aliases.exists(name)) candidates.push(name);
+	                    }
+	                    // If we have exactly one alias-from-scrutinee, bind it unconditionally.
+	                    //
+	                    // WHY
+	                    // - Guard-lowered default clauses often introduce `alias = <scrutinee>` inside a nested branch,
+	                    //   and later passes may rewrite the first guard check to use `alias`. If the pattern remains
+	                    //   `_`, Elixir sees `alias` as undefined in the first condition.
+	                    // - Binding the alias in the pattern (alias -> ...) is equivalent to `alias = <scrutinee>` and
+	                    //   guarantees `alias` is in scope for all conditions.
+	                    var aliasNames = [for (k in aliases.keys()) k];
+	                    if (aliasNames.length == 1 && (candidates.length == 0 || candidates[0] != aliasNames[0])) {
+	                        candidates = [aliasNames[0]];
+	                    }
+#if debug_wildcard_scrutinee_alias
+	                    try {
+	                        var usedNames = [for (k in usedInIf.keys()) k];
+	                        var aliasNames = [for (k in aliases.keys()) k];
+	                        trace('[SwitchBuilder.bindWildcardScrutineeAliasIfNeeded] target=' + targetVarName + ' usedInIf=' + usedNames.join(',') + ' aliases=' + aliasNames.join(',') + ' candidates=' + candidates.join(','));
+	                    } catch (_) {}
+#end
+	                    if (candidates.length == 1) {
+	                        var binder = candidates[0];
+	                        updated = { pattern: PVar(binder), guard: cl.guard, body: cl.body };
+	                        if (updated.body != null) {
+	                            updated.body.metadata.primaryCaseBinder = binder;
+	                        }
+	                    }
+	                default:
+	            }
+	            out.push(updated);
+	        }
+	        return out;
+	    }
+
 	    static function cleanupTempBinderAliases(body: Null<ElixirAST>): Null<ElixirAST> {
 	        if (body == null) return null;
 	        // Remove statements like `lhs = _g*` or `lhs = g*` inside blocks
-        function isInfraTemp(name:String):Bool {
+	        function isInfraTemp(name:String):Bool {
             if (name == null || name.length == 0) return false;
             if (name.charAt(0) == "_") name = name.substr(1);
             if (name == "g") return true;
@@ -254,26 +387,36 @@ using StringTools;
             }
         }
         
-        // Add default case if present
-        if (edef != null) {
-            var defaultBody = if (context.compiler != null) {
-                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
-                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
-                reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(edef, context);
-            } else {
-                null;
-            }
-            
-            if (defaultBody != null) {
-                caseClauses.push({
-                    pattern: PWildcard,  // _ pattern matches anything
-                    guard: null,
-                    body: defaultBody
-                });
-            }
-        }
-        
-        // Repair inner case scrutinees in clause bodies using binder metadata.
+	        // Add default case if present
+	        if (edef != null) {
+	            var defaultBody = if (context.compiler != null) {
+	                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+	                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+	                reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(edef, context);
+	            } else {
+	                null;
+	            }
+	            
+	            if (defaultBody != null) {
+	                var cleanedDefault = cleanupTempBinderAliases(defaultBody);
+	                caseClauses.push({
+	                    pattern: PWildcard,  // _ pattern matches anything
+	                    guard: null,
+	                    body: cleanedDefault
+	                });
+	            }
+	        }
+
+	        // Default clauses (and some lowered guard/default shapes) can reference a local binder (e.g. `str`)
+	        // in an `if` condition even though the case pattern is `_`. If the body aliases that binder from
+	        // the scrutinee (e.g. `str = action`), bind it in the pattern so the generated Elixir compiles.
+	        var scrutineeVarName: Null<String> = switch (targetAST.def) {
+	            case EVar(v): v;
+	            default: targetVarName;
+	        };
+	        caseClauses = bindWildcardScrutineeAliasIfNeeded(caseClauses, scrutineeVarName);
+	        
+	        // Repair inner case scrutinees in clause bodies using binder metadata.
         //
         // WHY
         // - Haxe lowering sometimes emits nested cases that scrutinee on temporary vars (g/_g/_g1...).
@@ -301,7 +444,13 @@ using StringTools;
                     newBody = rewriteInnerCaseScrutinee(newBody, targetVarName, binder);
                 }
                 // Strategy B: infra-temp scrutinee → corresponding tuple binder (per-parameter)
-                var infraMap = buildInfraScrutineeMapFromPattern(cl.pattern);
+                var infraMap:Null<Map<String, String>> = null;
+                if (newBody != null && newBody.metadata != null) {
+                    infraMap = newBody.metadata.infraTempVarToBinderName;
+                }
+                if (infraMap == null) {
+                    infraMap = buildInfraScrutineeMapFromPattern(cl.pattern);
+                }
                 if (infraMap != null) {
                     newBody = rewriteInnerCaseScrutineeInfraMap(newBody, infraMap);
                 }
@@ -459,11 +608,51 @@ using StringTools;
         #if debug_switch_builder trace('[SwitchBuilder] Extracted ${patternVars.length} variables from case body: [${patternVars.join(", ")}]'); #end
         #end
 
-        // CRITICAL: Extract TLocal IDs from guard and register in ClauseContext.localToName
-        // This ensures guard expressions compile with the same variable names as patterns
-        // Without this, guards get different names (n, n2, n3) due to independent TLocal instances
-        // NOTE: VariableBuilder.resolveVariableName() checks ClauseContext.lookupVariable() first
-        var tvarMapping = extractTLocalIDsFromGuard(switchCase.expr, patternVars);
+        // CRITICAL: Extract TLocal IDs from guard expressions and register in ClauseContext.localToName.
+        //
+        // WHY
+        // - Guard expressions can contain distinct TLocal IDs (and sometimes numeric-suffixed names)
+        //   for the same logical variable, which can lead to inconsistent Elixir variable names
+        //   (e.g. `n` vs `n2`) if compiled independently.
+        //
+        // IMPORTANT
+        // - Never scan the *case body* when extracting guard locals. Doing so can pollute the clause
+        //   mapping with unrelated variables (including function parameters), which can then shadow
+        //   correct tempVarRenameMap-based names and corrupt semantics (see regression: enum_index_usage).
+        //
+        // NOTE: VariableBuilder.resolveVariableName() checks ClauseContext.lookupVariable() first.
+        var directGuard: Null<TypedExpr> = null;
+        var switchCaseDyn: Dynamic = switchCase;
+        try {
+            if (Reflect.hasField(switchCaseDyn, "guard")) directGuard = cast Reflect.field(switchCaseDyn, "guard");
+        } catch (e) {}
+
+        var guardSourceExpr: Null<TypedExpr> = null;
+        if (directGuard != null) {
+            guardSourceExpr = directGuard;
+        } else if (switchCase.expr != null) {
+            // Detect lowered guard chains (if/else) and use the *condition* side only.
+            var exprToCheck = switchCase.expr;
+            switch (switchCase.expr.expr) {
+                case TBlock(exprs):
+                    for (expr in exprs) {
+                        if (Type.enumConstructor(expr.expr) == "TIf") {
+                            exprToCheck = expr;
+                            break;
+                        }
+                    }
+                default:
+            }
+            switch (exprToCheck.expr) {
+                case TIf(_, _, _):
+                    guardSourceExpr = exprToCheck;
+                default:
+            }
+        }
+
+        var tvarMapping = (guardSourceExpr != null)
+            ? extractTLocalIDsFromGuard(guardSourceExpr, patternVars, context)
+            : new Map<Int, String>();
 
         #if debug_guard_compilation
         var mappingCount = Lambda.count(tvarMapping);
@@ -506,10 +695,35 @@ using StringTools;
         // Compute and store the primary binder for this clause
         clauseCtx.primaryCaseBinder = selectPrimaryBinder(pattern);
 
-        // ENHANCED GUARD CHAIN DETECTION: Extract ALL guards from if-else chain
+        // Guard handling
+        // - Prefer explicit switch-case guards when present (Haxe `case pat if cond:`).
+        // - Fall back to extracting guard chains from lowered if/else bodies when no guard is provided.
         var clauses: Array<ECaseClause> = [];
+        if (directGuard != null) {
+            var substitutedGuard = context.substituteIfNeeded(directGuard);
+            var guardAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedGuard, context);
 
-        if (switchCase.expr != null) {
+            var substitutedBody = context.substituteIfNeeded(switchCase.expr);
+            var rawBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+            if (rawBody != null) {
+                var metaBody = (function(b:ElixirAST){
+                    if (b == null) return b;
+	                    var meta = b.metadata;
+	                    if (clauseCtx != null && clauseCtx.primaryCaseBinder != null) meta.primaryCaseBinder = clauseCtx.primaryCaseBinder;
+	                    meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(switchCase.expr);
+	                    if (clauseCtx != null && clauseCtx.infraTempVarToBinderName != null && clauseCtx.infraTempVarToBinderName.keys().hasNext()) {
+	                        meta.infraTempVarToBinderName = clauseCtx.infraTempVarToBinderName;
+	                    }
+	                    return makeASTWithMeta(b.def, meta, b.pos);
+	                })(rawBody);
+                var cleanedBody = cleanupTempBinderAliases(metaBody);
+                clauses.push({
+                    pattern: pattern,
+                    guard: guardAst,
+                    body: cleanedBody
+                });
+            }
+        } else if (switchCase.expr != null) {
             // Haxe may wrap guard clauses in TBlock - unwrap if needed
             var exprToCheck = switchCase.expr;
             switch(switchCase.expr.expr) {
@@ -530,10 +744,10 @@ using StringTools;
         }
 
         // If no guards detected, create single clause without guard
-        if (clauses.length == 0) {
-            var body = if (switchCase.expr != null && context.compiler != null) {
-                var substitutedBody = context.substituteIfNeeded(switchCase.expr);
-                reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
+	        if (clauses.length == 0) {
+	            var body = if (switchCase.expr != null && context.compiler != null) {
+	                var substitutedBody = context.substituteIfNeeded(switchCase.expr);
+	                reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
             } else {
                 null;
             };
@@ -549,6 +763,9 @@ using StringTools;
                     meta.primaryCaseBinder = clauseCtx.primaryCaseBinder;
                 }
                 meta.usedLocalsFromTyped = usedTyped;
+                if (clauseCtx != null && clauseCtx.infraTempVarToBinderName != null && clauseCtx.infraTempVarToBinderName.keys().hasNext()) {
+                    meta.infraTempVarToBinderName = clauseCtx.infraTempVarToBinderName;
+                }
                 annotated = makeASTWithMeta(annotated.def, meta, annotated.pos);
 
                 var cleanedBody = cleanupTempBinderAliases(annotated);
@@ -557,12 +774,12 @@ using StringTools;
                     guard: null,
                     body: cleanedBody
                 });
-            }
-        }
+	            }
+	        }
 
-        context.popClauseContext();
-        return clauses;
-    }
+	        context.popClauseContext();
+	        return clauses;
+	    }
 
     /**
      * Collect lower-case local variable names used in a TypedExpr case body.
@@ -600,16 +817,34 @@ using StringTools;
      *   →
      *   [{guard: n > 0, body: "pos"}, {guard: n < 0, body: "neg"}, {guard: null, body: "zero"}]
      */
-    static function extractGuardChain(expr: TypedExpr, pattern: EPattern, context: CompilationContext, primaryBinder: Null<String>, originalCaseBody: TypedExpr): Array<ECaseClause> {
-        var clauses: Array<ECaseClause> = [];
-        var current = expr;
+	    static function extractGuardChain(expr: TypedExpr, pattern: EPattern, context: CompilationContext, primaryBinder: Null<String>, originalCaseBody: TypedExpr): Array<ECaseClause> {
+	        var clauses: Array<ECaseClause> = [];
+	        var current = expr;
 
-                #if debug_switch_builder trace('[GuardChain] Starting extraction, expr type: ${Type.enumConstructor(current.expr)}'); #end
+	                #if debug_switch_builder trace('[GuardChain] Starting extraction, expr type: ${Type.enumConstructor(current.expr)}'); #end
 
-        // Guard clauses (`when`) cannot reference locals that are only defined inside the clause body.
-        // Haxe lowering for nested enum patterns sometimes introduces infra temps (g/_g/g1/...) for
-        // intermediate checks; if we lift those into a guard, we create undefined-variable errors.
-        // When the condition references an infra temp that is not bound by the clause pattern,
+	        // Names that are in scope outside the clause body must NOT be considered "undefined"
+	        // for binder harmonization. In particular, function parameters are always in scope
+	        // inside case clause bodies. Treating them as undefined can cause us to rename a
+	        // payload binder to a function param name, which rebinds it and corrupts semantics
+	        // (regression: enum_index_usage unwrap_or/2).
+	        var functionParamNames = new Map<String, Bool>();
+	        if (context != null && context.functionParameterIds != null && context.tempVarRenameMap != null) {
+	            for (idKey in context.functionParameterIds.keys()) {
+	                var nm = context.tempVarRenameMap.get(idKey);
+	                if (nm != null && nm.length > 0) {
+	                    functionParamNames.set(nm, true);
+	                    if (nm.charAt(0) == "_" && nm.length > 1) {
+	                        functionParamNames.set(nm.substr(1), true);
+	                    }
+	                }
+	            }
+	        }
+
+	        // Guard clauses (`when`) cannot reference locals that are only defined inside the clause body.
+	        // Haxe lowering for nested enum patterns sometimes introduces infra temps (g/_g/g1/...) for
+	        // intermediate checks; if we lift those into a guard, we create undefined-variable errors.
+	        // When the condition references an infra temp that is not bound by the clause pattern,
         // do NOT extract the guard chain; keep the original body intact.
         var patternBinders = new Map<String,Bool>();
         function collectBinders(p:EPattern):Void {
@@ -669,11 +904,14 @@ using StringTools;
                         var rawWhole = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedWhole, context);
                         var metaWhole = (function(b:ElixirAST){
                             if (b == null) return b;
-                            var meta = b.metadata;
-                            if (primaryBinder != null) meta.primaryCaseBinder = primaryBinder;
-                            meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
-                            return makeASTWithMeta(b.def, meta, b.pos);
-                        })(rawWhole);
+	                            var meta = b.metadata;
+	                            if (primaryBinder != null) meta.primaryCaseBinder = primaryBinder;
+	                            meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
+	                            if (context.currentClauseContext != null && context.currentClauseContext.infraTempVarToBinderName != null && context.currentClauseContext.infraTempVarToBinderName.keys().hasNext()) {
+	                                meta.infraTempVarToBinderName = context.currentClauseContext.infraTempVarToBinderName;
+	                            }
+	                            return makeASTWithMeta(b.def, meta, b.pos);
+	                        })(rawWhole);
                         var bodyWhole = cleanupTempBinderAliases(metaWhole);
                         context.popClauseContext();
                         return [{
@@ -691,11 +929,14 @@ using StringTools;
                     // Annotate with clause-local metadata to aid late passes
                     var metaBody = (function(b:ElixirAST){
                         if (b == null) return b;
-                        var meta = b.metadata;
-                        if (primaryBinder != null) meta.primaryCaseBinder = primaryBinder;
-                        meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
-                        return makeASTWithMeta(b.def, meta, b.pos);
-                    })(rawBody);
+	                        var meta = b.metadata;
+	                        if (primaryBinder != null) meta.primaryCaseBinder = primaryBinder;
+	                        meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
+	                        if (context.currentClauseContext != null && context.currentClauseContext.infraTempVarToBinderName != null && context.currentClauseContext.infraTempVarToBinderName.keys().hasNext()) {
+	                            meta.infraTempVarToBinderName = context.currentClauseContext.infraTempVarToBinderName;
+	                        }
+	                        return makeASTWithMeta(b.def, meta, b.pos);
+	                    })(rawBody);
                     var body = cleanupTempBinderAliases(metaBody);
 
                     // Create clause with guard
@@ -740,11 +981,14 @@ using StringTools;
                     var rawBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
                     var metaBody2 = (function(b:ElixirAST){
                         if (b == null) return b;
-                        var meta = b.metadata;
-                        if (primaryBinder != null) meta.primaryCaseBinder = primaryBinder;
-                        meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
-                        return makeASTWithMeta(b.def, meta, b.pos);
-                    })(rawBody);
+	                        var meta = b.metadata;
+	                        if (primaryBinder != null) meta.primaryCaseBinder = primaryBinder;
+	                        meta.usedLocalsFromTyped = collectUsedLowerLocalsTyped(originalCaseBody);
+	                        if (context.currentClauseContext != null && context.currentClauseContext.infraTempVarToBinderName != null && context.currentClauseContext.infraTempVarToBinderName.keys().hasNext()) {
+	                            meta.infraTempVarToBinderName = context.currentClauseContext.infraTempVarToBinderName;
+	                        }
+	                        return makeASTWithMeta(b.def, meta, b.pos);
+	                    })(rawBody);
                     var body = cleanupTempBinderAliases(metaBody2);
 
                     clauses.push({
@@ -778,19 +1022,24 @@ using StringTools;
                                         reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:ElixirAST):ElixirAST {
                                             switch (n.def) { case EMatch(p,_): patDecl(p); case EBinary(Match, {def: EVar(lhs)}, _): declared.set(lhs, true); default: }
                                             return n;
-                                        });
-                                        var used = new Map<String,Bool>();
-                                        reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:ElixirAST):ElixirAST {
-                                            switch (n.def) { case EVar(v): if (v != null && v.length > 0 && v.charAt(0).toLowerCase() == v.charAt(0)) used.set(v,true); default: }
-                                            return n;
-                                        });
-                                        var undef:Array<String> = [];
-                                        for (k in used.keys()) if (!declared.exists(k) && k != bn) undef.push(k);
-                                        // Only rename if the original pattern variable bn is NOT used in the body.
-                                        // If bn IS used, keep the original binding - don't rename to some other variable.
-                                        var bnIsUsed = used.exists(bn);
-                                        // Helper to check if a name is generic/auto-generated (single char, _prefix, contains digit, or "value"/"arg"/"v")
-                                        // Only rename generic names - descriptive names like "query" should be preserved!
+	                                        });
+	                                        var used = new Map<String,Bool>();
+	                                        reflaxe.elixir.ast.ElixirASTTransformer.transformNode(cl.body, function(n:ElixirAST):ElixirAST {
+	                                            switch (n.def) { case EVar(v): if (v != null && v.length > 0 && v.charAt(0).toLowerCase() == v.charAt(0)) used.set(v,true); default: }
+	                                            return n;
+	                                        });
+	                                        var undef:Array<String> = [];
+	                                        for (k in used.keys()) {
+	                                            if (k == bn) continue;
+	                                            if (declared.exists(k)) continue;
+	                                            if (functionParamNames.exists(k)) continue;
+	                                            undef.push(k);
+	                                        }
+	                                        // Only rename if the original pattern variable bn is NOT used in the body.
+	                                        // If bn IS used, keep the original binding - don't rename to some other variable.
+	                                        var bnIsUsed = used.exists(bn);
+	                                        // Helper to check if a name is generic/auto-generated (single char, _prefix, contains digit, or "value"/"arg"/"v")
+	                                        // Only rename generic names - descriptive names like "query" should be preserved!
                                         inline function isGenericBinder(name:String):Bool {
                                             if (name == null || name.length == 0) return true;
                                             if (name.charAt(0) == "_") return true;
@@ -1076,7 +1325,39 @@ using StringTools;
             };
         }
 
-        return rewriteExpr(body, new Map<String, Bool>());
+        // If the body assigns an infra-temp name (g/_g/gN/_gN) locally, do not rewrite it.
+        // This avoids corrupting nested switches that happen to use the same infra temp names.
+        var initialBound = new Map<String, Bool>();
+        function markBound(name: String): Void {
+            if (name == null || name.length == 0) return;
+            initialBound.set(name, true);
+            if (!isInfrastructureVar(name)) return;
+
+            var base = (name.charAt(0) == "_") ? name.substr(1) : name;
+            initialBound.set(base, true);
+            initialBound.set("_" + base, true);
+
+            // Alias: some Haxe lowerings use g/_g and g0/_g0 interchangeably for index 0
+            if (base == "g") {
+                initialBound.set("g0", true);
+                initialBound.set("_g0", true);
+            } else if (base == "g0") {
+                initialBound.set("g", true);
+                initialBound.set("_g", true);
+            }
+        }
+        ASTUtils.walk(body, function(n: ElixirAST) {
+            if (n == null || n.def == null) return;
+            switch (n.def) {
+                case EMatch(PVar(lhs), _):
+                    markBound(lhs);
+                case EBinary(Match, {def: EVar(lhs)}, _):
+                    markBound(lhs);
+                default:
+            }
+        });
+
+        return rewriteExpr(body, initialBound);
     }
     
     /**
@@ -1252,7 +1533,7 @@ using StringTools;
             // alias shape `TVar(binder, TLocal(tmp))` where tmp was an extracted parameter.
             // If an extraction TVar was removed by preprocessing, consult infraVarSubstitutions
             // to recover the original `TEnumParameter` index.
-	            function recoverEnumParamBinders(body: TypedExpr, ctorName: String, paramCount: Int, rootVarName: Null<String>): Array<Null<String>> {
+	            function recoverEnumParamBinders(body: TypedExpr, ctorName: String, paramCount: Int, rootVarName: Null<String>, extractedTempNames: Array<Null<String>>): Array<Null<String>> {
 	                var out:Array<Null<String>> = [for (_ in 0...paramCount) null];
 	                var extractedIdByIndex:Array<Null<Int>> = [for (_ in 0...paramCount) null];
 
@@ -1265,6 +1546,9 @@ using StringTools;
                                 continue;
                             case TMeta(_, innerExpr):
                                 cur = innerExpr;
+                                continue;
+                            case TCast(innerCast, _):
+                                cur = innerCast;
                                 continue;
                             default:
                                 return cur;
@@ -1353,9 +1637,14 @@ using StringTools;
                     };
                 }
 
-                function rememberExtraction(index:Int, v:TVar):Void {
-                    if (index >= 0 && index < paramCount) extractedIdByIndex[index] = v.id;
-                }
+	                function rememberExtraction(index:Int, v:TVar):Void {
+	                    if (index >= 0 && index < paramCount) {
+	                        extractedIdByIndex[index] = v.id;
+	                        if (extractedTempNames != null && extractedTempNames[index] == null) {
+	                            extractedTempNames[index] = v.name;
+	                        }
+	                    }
+	                }
 
 	                function tryPromoteAlias(targetVar:TVar, initExpr:TypedExpr):Bool {
 	                    var initUnwrapped = unwrapNoOp(initExpr);
@@ -1487,18 +1776,29 @@ using StringTools;
                 return out;
             }
 
-	            var recoveredBinders = recoverEnumParamBinders(caseBody, ef.name, parameterNames.length, targetVarName);
+	            var extractedTempNames:Array<Null<String>> = [for (_ in 0...parameterNames.length) null];
+	            var recoveredBinders = recoverEnumParamBinders(caseBody, ef.name, parameterNames.length, targetVarName, extractedTempNames);
 	            #if debug_switch_builder
 	            trace('[SwitchBuilder]   recoveredBinders(target=${targetVarName}) = ${recoveredBinders != null ? "[" + recoveredBinders.join(", ") + "]" : "null"}');
 	            #end
 
-            // Helper: check if a name corresponds to a current function parameter (shape-based exclusion)
-            function isFunctionParamByName(n:String):Bool {
-                if (n == null || n.length == 0) return false;
-                // Find first matching TLocal id for this name in the case body
-                var foundId:Null<Int> = null;
-                function findId(e:TypedExpr):Void {
-                    if (e == null || foundId != null) return;
+	            // Helper: check if a name corresponds to a current function parameter (shape-based exclusion)
+	            function isFunctionParamByName(n:String):Bool {
+	                if (n == null || n.length == 0) return false;
+	                // Prefer the compiler's existing rename-map bindings by name.
+	                // For top-level defs (compiled by ElixirCompiler), parameter IDs are not always
+	                // available at this stage, but the original parameter names are registered in
+	                // tempVarRenameMap before the body is compiled.
+	                //
+	                // This prevents guardVars from selecting outer parameters (e.g. `defaultValue`)
+	                // as enum payload binders during enum-index recovery.
+	                if (context != null && context.tempVarRenameMap != null && context.tempVarRenameMap.exists(n)) {
+	                    return true;
+	                }
+	                // Find first matching TLocal id for this name in the case body
+	                var foundId:Null<Int> = null;
+	                function findId(e:TypedExpr):Void {
+	                    if (e == null || foundId != null) return;
                     switch (e.expr) {
                         case TLocal(v) if (v.name == n):
                             foundId = v.id;
@@ -1573,15 +1873,20 @@ using StringTools;
                 // - For single-parameter constructors, this override is safe even when the enum
                 //   signature parameter name is meaningful (e.g. Error(error)). Haxe pattern
                 //   binders (e.g. Error(msg)) must win to prevent unbound body references.
-                // - For multi-parameter constructors, restrict to generic/auto names to avoid
-                //   positional corruption from inner destructuring.
-                if (parameterNames.length == 1 || isGenericOrAutoName(enumParamName)) {
-                    var rb:Null<String> = (recoveredBinders != null && i < recoveredBinders.length) ? recoveredBinders[i] : null;
-                    var rbUsed = (rb != null) && (bodyIsLarge || localUsage.exists(rb));
-                    if (rb != null && rbUsed && !isEnvLikeName(rb) && !isFunctionParamByName(rb) && !isAutoTempName(rb)) {
-                        candidate = rb;
-                    }
-                }
+	                // - For multi-parameter constructors, we still prefer the enum signature name
+	                //   when it is used in the clause body. If it is NOT used, a recovered binder
+	                //   that IS used must win, otherwise the body references become undefined.
+	                var rb:Null<String> = (recoveredBinders != null && i < recoveredBinders.length) ? recoveredBinders[i] : null;
+	                if (rb != null && !isEnvLikeName(rb) && !isAutoTempName(rb) && !isFunctionParamByName(rb)) {
+	                    var rbUsed = bodyIsLarge || localUsage.exists(rb);
+	                    if (rbUsed) {
+	                        var enumNameUsed = bodyIsLarge || localUsage.exists(enumParamName);
+	                        var canOverride = (parameterNames.length == 1) || isGenericOrAutoName(enumParamName) || !enumNameUsed;
+	                        if (canOverride) {
+	                            candidate = rb;
+	                        }
+	                    }
+	                }
 
                 // Only use guardVars as a *last resort* for single-parameter constructors with a
                 // generic enum param name (e.g., `value`). If we already recovered a meaningful
@@ -1614,6 +1919,12 @@ using StringTools;
                     if (recoveredBinder != null && !isEnvLikeName(recoveredBinder) && !isFunctionParamByName(recoveredBinder) && !isGenericOrAutoName(recoveredBinder)) {
                         candidate = recoveredBinder;
                     }
+                }
+
+                // Final guard: never select a function parameter name as a payload binder.
+                // This would shadow the outer binding and can silently corrupt semantics.
+                if (candidate != null && isFunctionParamByName(candidate)) {
+                    candidate = enumParamName;
                 }
 
                 #if debug_switch_builder
@@ -1658,6 +1969,27 @@ using StringTools;
                         finalName: paramName,
                         isUsed: isUsed
                     });
+
+                    // When Haxe lowers enum-index switches, it may extract payload into infra temps
+                    // with unstable naming (e.g. `_g1` might hold index 0 while `_g` holds index 1).
+                    // Record the *actual* temp name observed for this param index so later repairs
+                    // can rewrite lingering temp references deterministically.
+                    var tempName = (extractedTempNames != null && i < extractedTempNames.length) ? extractedTempNames[i] : null;
+                    if (tempName != null && isInfrastructureVar(tempName)) {
+                        var elixirTemp = VariableAnalyzer.toElixirVarName(tempName);
+                        if (elixirTemp != null && elixirTemp.length > 0) {
+                            var base = (elixirTemp.charAt(0) == "_") ? elixirTemp.substr(1) : elixirTemp;
+                            context.currentClauseContext.infraTempVarToBinderName.set(base, paramName);
+                            context.currentClauseContext.infraTempVarToBinderName.set("_" + base, paramName);
+                            if (base == "g") {
+                                context.currentClauseContext.infraTempVarToBinderName.set("g0", paramName);
+                                context.currentClauseContext.infraTempVarToBinderName.set("_g0", paramName);
+                            } else if (base == "g0") {
+                                context.currentClauseContext.infraTempVarToBinderName.set("g", paramName);
+                                context.currentClauseContext.infraTempVarToBinderName.set("_g", paramName);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -1903,20 +2235,26 @@ using StringTools;
 	        var usedFlags:Array<Bool> = bodyIsLarge ? [for (_ in 0...paramCount) true] : computeEnumParamUsage(caseBody, paramCount);
 	        var localUsage = bodyIsLarge ? new Map<String,Bool>() : collectReadLocalNameUsage(caseBody);
 
-	        function extractBinderNameFromArg(arg: TypedExpr): Null<String> {
-	            var cur = arg;
-	            while (cur != null) {
-	                switch (cur.expr) {
-	                    case TParenthesis(inner):
-	                        cur = inner;
-	                        continue;
-	                    case TMeta(_, innerExpr):
-	                        cur = innerExpr;
-	                        continue;
-	                    default:
-	                        break;
-	                }
-	            }
+		        function extractBinderNameFromArg(arg: TypedExpr): Null<String> {
+		            var cur = arg;
+		            while (cur != null) {
+		                switch (cur.expr) {
+		                    case TParenthesis(inner):
+		                        cur = inner;
+		                        continue;
+		                    case TMeta(_, innerExpr):
+		                        cur = innerExpr;
+		                        continue;
+		                    case TEnumParameter(innerExpr, _, _):
+		                        cur = innerExpr;
+		                        continue;
+		                    case TCast(innerExpr, _):
+		                        cur = innerExpr;
+		                        continue;
+		                    default:
+		                        break;
+		                }
+		            }
 	            if (cur == null) return null;
 	            return switch (cur.expr) {
 	                case TLocal(v): v.name;
@@ -1953,18 +2291,21 @@ using StringTools;
                 return hasDigit;
             }
 
-            // Choose best name: prefer enum signature names, then pattern-arg locals, then guardName.
+            // Choose best name:
+            // - Prefer the explicit binder name from the case pattern args (argLocal). In Haxe, pattern
+            //   binders are user-controlled and the case body references them directly (they may differ
+            //   from the enum constructor signature names).
+            // - Fall back to guard-derived names (enum-index recovery), then enum signature names.
             var chosen: Null<String> = null;
-            if (enumParamName != null && !isGenericParamName(enumParamName)) {
-                // Prefer meaningful enum parameter name over potentially generic argLocal
-                chosen = enumParamName;
-            } else if (argLocal != null && !isGenericParamName(argLocal)) {
+            if (argLocal != null && !isGenericParamName(argLocal)) {
                 chosen = argLocal;
             } else if (guardName != null && !isGenericParamName(guardName)) {
                 chosen = guardName;
+            } else if (enumParamName != null && !isGenericParamName(enumParamName)) {
+                chosen = enumParamName;
             } else {
                 // Fallback: use whatever we have (prefer non-null)
-                chosen = guardName != null ? guardName : (enumParamName != null ? enumParamName : argLocal);
+                chosen = argLocal != null ? argLocal : (guardName != null ? guardName : enumParamName);
             }
             var baseParamName = VariableAnalyzer.toElixirVarName(chosen);
             // Result.Ok/1 and Result.Error/1 are commonly named `value`/`reason` in Elixir,
@@ -2561,7 +2902,7 @@ using StringTools;
      *   Guard has: TBinop(OpGt, TLocal(id=42, name="n"), TConst(0))
      *   Mapping: {42 => "n"} so guard compiles to "n > 0" not "n2 > 0"
      */
-    static function extractTLocalIDsFromGuard(expr: TypedExpr, patternNames: Array<String>): Map<Int, String> {
+    static function extractTLocalIDsFromGuard(expr: TypedExpr, patternNames: Array<String>, context: CompilationContext): Map<Int, String> {
         var mapping = new Map<Int, String>();
 
         function traverse(e: TypedExpr) {
@@ -2574,16 +2915,41 @@ using StringTools;
                     var baseName = stripNumericSuffix(v.name);
 
                     if (patternNames.contains(baseName)) {
-                        // Map this TLocal ID to the canonical name (not the renamed version)
-                        mapping.set(v.id, baseName);
+                        // Map this TLocal ID to a canonical *Elixir* variable name.
+                        //
+                        // Prefer tempVarRenameMap when available (keeps consistency with function
+                        // parameters and shadowing renames). Otherwise, fall back to standard
+                        // Elixir naming.
+                        var canonical:Null<String> = null;
+                        if (context != null && context.tempVarRenameMap != null) {
+                            var idKey = Std.string(v.id);
+                            if (context.tempVarRenameMap.exists(idKey)) {
+                                canonical = context.tempVarRenameMap.get(idKey);
+                            } else if (context.tempVarRenameMap.exists(v.name)) {
+                                canonical = context.tempVarRenameMap.get(v.name);
+                            } else if (context.tempVarRenameMap.exists(baseName)) {
+                                canonical = context.tempVarRenameMap.get(baseName);
+                            }
+                        }
+                        if (canonical == null) {
+                            canonical = VariableAnalyzer.toElixirVarName(baseName);
+                        }
+                        mapping.set(v.id, canonical);
                     }
                 case TBinop(_, e1, e2):
                     traverse(e1);
                     traverse(e2);
                 case TIf(econd, eif, eelse):
+                    // Only the condition is relevant for guard-local mapping.
                     traverse(econd);
-                    traverse(eif);
-                    if (eelse != null) traverse(eelse);
+                    // Preserve else-if chains by recursing into the else branch only when it is another TIf.
+                    if (eelse != null) {
+                        switch (eelse.expr) {
+                            case TIf(_, _, _):
+                                traverse(eelse);
+                            default:
+                        }
+                    }
                 case TUnop(_, _, e1):
                     traverse(e1);
                 case TParenthesis(e1):
@@ -2591,7 +2957,19 @@ using StringTools;
                 case TMeta(_, e1):
                     traverse(e1);
                 case TBlock(el):
-                    for (e in el) traverse(e);
+                    // If this block contains an if/else guard chain, only traverse the TIf nodes
+                    // (and within them, only the conditions). Otherwise, traverse normally.
+                    var hasIf = false;
+                    for (sub in el) {
+                        if (sub != null && Type.enumConstructor(sub.expr) == "TIf") { hasIf = true; break; }
+                    }
+                    if (hasIf) {
+                        for (sub in el) {
+                            if (sub != null && Type.enumConstructor(sub.expr) == "TIf") traverse(sub);
+                        }
+                    } else {
+                        for (sub in el) traverse(sub);
+                    }
                 case TCall(_, el):
                     for (e in el) traverse(e);
                 case TField(e, _):
@@ -2794,9 +3172,22 @@ using StringTools;
      * HOW: Pattern matches on expression structure
      */
     static function extractTargetVarName(e: TypedExpr): Null<String> {
-        return switch(e.expr) {
+        var cur = e;
+        while (cur != null) {
+            switch (cur.expr) {
+                case TParenthesis(inner):
+                    cur = inner;
+                    continue;
+                case TMeta(_, innerExpr):
+                    cur = innerExpr;
+                    continue;
+                default:
+                    break;
+            }
+        }
+
+        return switch (cur.expr) {
             case TLocal(v): v.name;
-            case TParenthesis({expr: TLocal(v)}): v.name;
             default: null;
         };
     }

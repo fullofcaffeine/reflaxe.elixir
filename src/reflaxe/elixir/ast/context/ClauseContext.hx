@@ -54,6 +54,17 @@ class ClauseContext {
     // Example: case {:some, action} extracts "action", so TEnumParameter shouldn't extract it again
     public var patternExtractedParams: Array<String> = [];
 
+    /**
+     * Infrastructure temp name → binder name mapping for this clause.
+     *
+     * Haxe lowers some enum-index switches by extracting constructor payload into
+     * infrastructure temporaries like `_g`, `_g1`, etc. When we compile those cases
+     * to idiomatic Elixir tuple patterns, those temps may no longer be emitted, but
+     * body references can still remain. This per-clause map lets late repairs rewrite
+     * the temp references deterministically to the correct pattern binders.
+     */
+    public var infraTempVarToBinderName: Map<String, String> = new Map();
+
     // Synthetic bindings for variables that only exist in Elixir
     public var syntheticBindings: Array<{name: String, init: ElixirAST}> = [];
 

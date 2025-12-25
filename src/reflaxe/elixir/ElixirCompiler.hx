@@ -1940,6 +1940,13 @@ class ElixirCompiler extends GenericCompiler<
             // Populate tempVarRenameMap for function parameters BEFORE building the body
             // This fixes the issue where parameters with numeric suffixes (like options2)
             // aren't mapped correctly in the function body
+            //
+            // ALSO: Mark function parameter IDs in the compilation context so builder heuristics
+            // (e.g. enum-index pattern recovery) can distinguish true function params from
+            // pattern payload binders. This prevents incorrect binder selection like
+            // `{:error, default_value} -> default_value` when the body simply references a
+            // function parameter.
+            var functionParameterIdKeys:Array<String> = [];
             if (funcData.tfunc != null) {
                 #if debug_variable_renaming
                 // DISABLED: trace('[ElixirCompiler] Processing ${funcData.field.name} - funcData.tfunc is NOT null, registering ${funcData.tfunc.args.length} parameters');
@@ -1949,6 +1956,8 @@ class ElixirCompiler extends GenericCompiler<
                 for (arg in funcData.tfunc.args) {
                     var originalName = arg.v.name;
                     var idKey = Std.string(arg.v.id);
+                    functionParameterIdKeys.push(idKey);
+                    context.functionParameterIds.set(idKey, true);
 
                     #if debug_variable_renaming
                     // DISABLED: trace('[ElixirCompiler] Processing parameter for ${funcData.field.name}: "$originalName" (id: $idKey)');
@@ -2104,6 +2113,12 @@ class ElixirCompiler extends GenericCompiler<
             #if debug_ast_builder
             // DISABLED: trace('[ElixirCompiler] Function ${funcData.field.name} body AST: ${funcBody.def}');
             #end
+
+            // Clear function parameter tracking now that the body has been built.
+            // This prevents parameter IDs from leaking into subsequent function compilations.
+            for (idKey in functionParameterIdKeys) {
+                context.functionParameterIds.remove(idKey);
+            }
 
             // Get function parameters from tfunc
             var params: Array<EPattern> = [];
