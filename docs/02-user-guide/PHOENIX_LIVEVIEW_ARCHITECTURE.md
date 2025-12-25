@@ -449,7 +449,7 @@ class AutoFocusHookTest {
 ## 📚 Reference Resources
 
 - **Phoenix LiveView Docs**: https://hexdocs.pm/phoenix_live_view/
-- **LiveView Chat Example**: Reference implementation in `/REDACTED_LOCAL_PATH`
+- **Example App**: [`examples/todo-app`](../../examples/todo-app/README.md)
 - **Haxe→Elixir Patterns**: [Phoenix LiveView Patterns](../07-patterns/PHOENIX_LIVEVIEW_PATTERNS.md)
 - **Implementation Guide**: [Phoenix Integration Guide](../06-guides/PHOENIX_INTEGRATION_GUIDE.md)
 - **Testing Approach**: [ExUnit Testing](exunit-testing.md)

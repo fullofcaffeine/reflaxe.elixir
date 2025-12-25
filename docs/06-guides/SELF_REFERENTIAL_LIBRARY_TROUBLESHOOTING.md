@@ -30,7 +30,7 @@ When developing a Haxe library that IS ITSELF a compiler (like reflaxe.elixir), 
 While absolute paths work locally:
 ```hxml
 # DON'T DO THIS - breaks on other machines
--cp /REDACTED_LOCAL_PATH
+-cp /abs/path/to/reflaxe.elixir/src/
 ```
 
 They break portability and CI/CD pipelines. Always use relative paths.

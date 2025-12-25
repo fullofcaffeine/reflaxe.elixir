@@ -55,7 +55,7 @@ end
 
 ### Root Cause Analysis
 
-**Location**: `/REDACTED_LOCAL_PATH`
+**Location**: `src/reflaxe/elixir/ast/ElixirASTPrinter.hx`
 **Function**: `isSimpleExpression()` at line 1368
 
 **The Bug**:

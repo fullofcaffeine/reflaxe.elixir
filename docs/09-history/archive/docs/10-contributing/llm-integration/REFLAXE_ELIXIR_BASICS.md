@@ -606,7 +606,7 @@ When implementing Reflaxe.Elixir features, reference these local sources:
 **Reflaxe.Elixir Compiler Source**:
 ```bash
 # Current project source (for understanding implementation)
-/REDACTED_LOCAL_PATH
+<REPO_ROOT>/src/reflaxe/elixir/
 
 # Key files to reference:
 # - ElixirCompiler.hx - Main compiler implementation
@@ -618,7 +618,7 @@ When implementing Reflaxe.Elixir features, reference these local sources:
 **Working Examples**:
 ```bash
 # Live examples showing all patterns in action
-/REDACTED_LOCAL_PATH
+<REPO_ROOT>/examples/
 
 # Each example has complete implementation:
 # - 02-mix-project: Basic Haxe→Elixir compilation
@@ -630,14 +630,14 @@ When implementing Reflaxe.Elixir features, reference these local sources:
 **Reference Implementations**:
 ```bash
 # Other Reflaxe compilers for architecture patterns
-/REDACTED_LOCAL_PATH
-/REDACTED_LOCAL_PATH
+$HAXE_ELIXIR_REFERENCE_PATH/reflaxe.CPP/ (optional local checkout)
+$HAXE_ELIXIR_REFERENCE_PATH/reflaxe/src/ (optional local checkout)
 
 # Phoenix applications for Elixir patterns
-/REDACTED_LOCAL_PATH (Phoenix projects)
+$HAXE_ELIXIR_REFERENCE_PATH/ (Phoenix projects, optional local checkout)
 
 # HXX template processing reference
-/REDACTED_LOCAL_PATH
+$HAXE_ELIXIR_REFERENCE_PATH/tink_hxx/ (optional local checkout)
 ```
 
 **When to Check Source Code**:

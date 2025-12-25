@@ -112,7 +112,7 @@ end
 ## The Fix
 
 ### Implementation Location
-`/REDACTED_LOCAL_PATH` (lines 52-112)
+`src/reflaxe/elixir/ast/builders/CallExprBuilder.hx` (lines 52-112)
 
 ### Key Changes:
 
