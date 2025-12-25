@@ -13,7 +13,7 @@ defmodule DeleteLive do
         id = deleted
         s2 = remove_todo_from_list(id, socket)
         %{:noreply => s2}
-      {:error, reason} -> %{:noreply => reason}
+      {:error, _reason} -> %{:noreply => socket}
     end)
   end
   defp remove_todo_from_list(id_like, socket) do

@@ -2,6 +2,8 @@ package;
 
 import exunit.TestCase;
 import exunit.Assert.*;
+import haxe.ds.Option;
+import haxe.functional.Result;
 
 /**
  * Comprehensive ExUnit test showcasing ALL features:
@@ -130,9 +132,9 @@ class Main extends TestCase {
     @:describe("Domain Assertions")
     @:test
     function testResultAssertions(): Void {
-        // Simulating Result type operations
-        var okResult = {_0: 0, _1: "success"};  // Ok variant
-        var errorResult = {_0: 1, _1: "error message"};  // Error variant
+        // Result<T,E> compiles to {:ok, v} / {:error, e}
+        var okResult: Result<String, String> = Ok("success");
+        var errorResult: Result<String, String> = Error("error message");
         
         assertIsOk(okResult, "Should be Ok result");
         assertIsError(errorResult, "Should be Error result");
@@ -148,9 +150,9 @@ class Main extends TestCase {
     @:describe("Domain Assertions")
     @:test
     function testOptionAssertions(): Void {
-        // Simulating Option type operations
-        var someValue = {_0: 0, _1: 42};  // Some variant
-        var noneValue = 1;  // None variant (using enum index)
+        // Option<T> compiles to {:some, v} / :none
+        var someValue: Option<Int> = Some(42);
+        var noneValue: Option<Int> = None;
         
         assertIsSome(someValue, "Should be Some");
         assertIsNone(noneValue, "Should be None");
@@ -261,20 +263,20 @@ class Main extends TestCase {
     
     // ========== HELPER METHODS ==========
     
-    private function safeDivide(a: Float, b: Float): Dynamic {
+    private function safeDivide(a: Float, b: Float): Result<Float, String> {
         if (b == 0) {
-            return {_0: 1, _1: "Division by zero"};  // Error
+            return Error("Division by zero");
         }
-        return {_0: 0, _1: a / b};  // Ok
+        return Ok(a / b);
     }
     
-    private function findInArray(arr: Array<String>, item: String): Dynamic {
+    private function findInArray(arr: Array<String>, item: String): Option<String> {
         for (element in arr) {
             if (element == item) {
-                return {_0: 0, _1: element};  // Some
+                return Some(element);
             }
         }
-        return 1;  // None (enum index)
+        return None;
     }
     
     private function performAsyncCalculation(): Int {

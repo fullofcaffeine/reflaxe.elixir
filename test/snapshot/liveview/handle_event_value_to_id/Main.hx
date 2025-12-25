@@ -8,7 +8,10 @@ class Main {
   public static function handle_event(event: String, params: elixir.types.Term, socket: phoenix.Phoenix.Socket<{}>): phoenix.Phoenix.HandleEventResult<{}> {
     switch (event) {
       case "toggle_todo":
-        // First arg Map.get(params, "value") should be normalized to id (int) by the transform.
+        // The current pipeline treats `Map.get(params, "value")` as a legacy default and normalizes
+        // it to just `params` (matching the common LiveView params shape). Apps that want typed id
+        // extraction should do so explicitly (or via framework helpers), rather than relying on
+        // a late pass that guesses payload structure.
         toggleTodo(elixir.ElixirMap.get(params, "value"), socket);
       default:
     }
