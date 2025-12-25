@@ -1542,7 +1542,7 @@ Completing the HXX integration that was started in the previous session. HxxComp
 ### Technical Insights Gained
 
 1. **EReg.map API Confirmation**
-   - Investigation of `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/haxe/std/EReg.hx` confirmed correct API
+   - Investigation of `$HAXE_ELIXIR_REFERENCE_PATH/haxe/std/EReg.hx` (optional local checkout) confirmed correct API
    - Function signature: `map(s:String, f:EReg->String):String`
    - Pattern: `ereg.map(string, function(r) { return r.matched(1); })`
    - **Lesson**: Always verify against Haxe source code rather than assuming API issues

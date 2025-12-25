@@ -591,13 +591,13 @@ This provides the **best balance** of:
 - **Switch Cases**: `reflaxe.CSharp/src/cscompiler/components/CSCompiler_Expr.hx` lines 624-651
 
 ### Reflaxe.Elixir (Our Compiler)
-- **Switch Builder**: `/Users/fullofcaffeine/workspace/code/haxe.elixir/src/reflaxe/elixir/ast/builders/SwitchBuilder.hx`
+- **Switch Builder**: `src/reflaxe/elixir/ast/builders/SwitchBuilder.hx`
 - **Current Guard Detection**: Lines 200-250 (approximate)
 
 ## Appendix B: Test Cases
 
 ### Current Test (enum_guard_clauses)
-**Location**: `/Users/fullofcaffeine/workspace/code/haxe.elixir/test/snapshot/regression/enum_guard_clauses/`
+**Location**: `test/snapshot/regression/enum_guard_clauses/`
 
 **Expected Output** (intended/Main.ex):
 ```elixir

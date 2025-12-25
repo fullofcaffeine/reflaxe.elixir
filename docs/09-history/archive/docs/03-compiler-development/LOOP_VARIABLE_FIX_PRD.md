@@ -58,7 +58,7 @@ When Haxe's `-D analyzer-optimize` flag is enabled, loop variables in string con
 - **File Size**: Refactor when files exceed 2000 lines
 
 ## Reference Resources
-- `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` - Reference implementations
+- `$HAXE_ELIXIR_REFERENCE_PATH` - Reference implementations (optional local checkout)
 - Reflaxe compiler patterns
 - Haxe source code
 - Phoenix and Elixir patterns

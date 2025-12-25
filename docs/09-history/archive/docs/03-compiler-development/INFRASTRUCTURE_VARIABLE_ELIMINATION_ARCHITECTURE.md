@@ -48,7 +48,7 @@ The preprocessor's pattern detection **only looks for adjacent expressions**. Wh
 
 ### Key Discovery: Reflaxe Uses Different Architecture
 
-After examining `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/`, I found:
+After examining `$HAXE_ELIXIR_REFERENCE_PATH/reflaxe/` (optional local checkout), I found:
 
 #### RemoveTemporaryVariablesImpl Pattern
 

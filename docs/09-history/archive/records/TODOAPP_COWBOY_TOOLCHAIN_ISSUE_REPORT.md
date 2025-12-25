@@ -167,7 +167,7 @@ src/cowboy_http.erl:595:1: Warning: function parse_uri_path/5 is unused
 src/cowboy_http.erl:605:1: Warning: function parse_uri_query/6 is unused
 src/cowboy_http.erl:614:1: Warning: function skip_uri_fragment/6 is unused
 
-** (Mix) Could not compile dependency :cowboy, "/Users/fullofcaffeine/.mix/elixir/1-18/rebar3 bare compile --paths /Users/fullofcaffeine/workspace/code/haxe.elixir/examples/todo-app/_build/dev/lib/*/ebin" command failed.
+** (Mix) Could not compile dependency :cowboy, "$HOME/.mix/elixir/1-18/rebar3 bare compile --paths <REPO_ROOT>/examples/todo-app/_build/dev/lib/*/ebin" command failed.
 ```
 
 We also explicitly installed fresh `rebar3` and Hex:
@@ -212,8 +212,8 @@ These are standard includes used across cowboy versions. The corresponding files
 The failing command is:
 
 ```text
-/Users/fullofcaffeine/.mix/elixir/1-18/rebar3 bare compile \
-  --paths /Users/fullofcaffeine/workspace/code/haxe.elixir/examples/todo-app/_build/dev/lib/*/ebin
+$HOME/.mix/elixir/1-18/rebar3 bare compile \
+  --paths <REPO_ROOT>/examples/todo-app/_build/dev/lib/*/ebin
 ```
 
 So Mix is letting rebar3 drive the `cowboy` compilation against `_build/dev/lib/*`.

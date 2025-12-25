@@ -79,7 +79,7 @@ Element (click, focus, innerHTML) - The HTML element you usually want
 2. **Verify task completion status** - Check if the task is already done through existing files, examples, or alternative approaches before implementing from scratch
 3. **Check deprecation warnings** - Never ignore Haxe compiler warnings about deprecated APIs
 4. **Reference modern docs** - Use https://api.haxe.org/ for Haxe 4.3+ patterns
-5. **Use reference folder** - Check `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/haxe/std/js/` for modern implementations
+5. **Use upstream sources** - When unsure, check the Haxe stdlib sources (e.g. `haxe/std/js/**` in the Haxe repo) for modern implementations
 6. **Type safety first** - Always use `js.Syntax.instanceof()` before casting DOM elements
 7. **Performance APIs** - Use `PerformanceNavigationTiming` instead of deprecated `PerformanceTiming`
 

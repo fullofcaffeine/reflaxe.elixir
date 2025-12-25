@@ -118,7 +118,7 @@ for (guard in guards) {
 
 ## Implementation Location
 
-**File**: `/Users/fullofcaffeine/workspace/code/haxe.elixir/src/reflaxe/elixir/ast/builders/SwitchBuilder.hx`
+**File**: `src/reflaxe/elixir/ast/builders/SwitchBuilder.hx`
 
 **Current State**: Detects FIRST guard only (lines ~200-250)
 

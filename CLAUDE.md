@@ -2317,7 +2317,7 @@ class StringBuf {
 **Where test files MUST go:**
 - ✅ **Snapshot tests**: `test/snapshot/{category}/{test_name}/` (e.g., `test/snapshot/regression/MapIteration/`)
 - ✅ **Categories**: core, phoenix, ecto, otp, stdlib, exunit, loops, regression
-- ❌ **NEVER in project root**: Do not create `TestSomething.hx` files in `/Users/fullofcaffeine/workspace/code/haxe.elixir/`
+- ❌ **NEVER in repo root**: Do not create ad-hoc `TestSomething.hx` files at the repository root
 - ❌ **NEVER in test/tests/**: This directory should not exist (use `test/snapshot/` instead)
 
 **If you need to debug compiler issues:**
@@ -2338,12 +2338,11 @@ npm run test:stdlib          # Test stdlib if working on standard library
 
 #### Full Validation (Before Commit)
 1. **Run Full Test Suite**: `npm test` - ALL tests must pass
-2. **Test Todo-App Integration**:
+2. **Test Todo-App Integration (non-blocking)**:
    ```bash
-   cd examples/todo-app
-   npx haxe build-server.hxml
-   mix compile --force
-   mix phx.server        # Ensure app starts
+   # Do not run `mix phx.server` in the foreground during agent work.
+   scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose
+   scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120
    ```
 
 **Rule**: If ANY step fails, the compiler change is incomplete. Fix the root cause.
@@ -3083,8 +3082,8 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force
 # 1. Run full test suite (ALL tests must pass)
 npm test
 
-# 2. Verify todo-app compiles and runs
-cd examples/todo-app && npx haxe build-server.hxml && mix compile --force && mix phx.server
+# 2. Verify todo-app compiles and runs (non-blocking)
+scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose
 ```
 
 **Rule**: If ANY step in this loop fails, the development change is incomplete.
@@ -3098,13 +3097,13 @@ cd examples/todo-app && npx haxe build-server.hxml && mix compile --force && mix
 **See**: [`docs/03-compiler-development/testing-infrastructure.md`](docs/03-compiler-development/testing-infrastructure.md) - Complete test architecture and status
 
 ## Development Resources & Reference Strategy
-- **Reference Codebase**: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` - **CRITICAL**: Contains working Reflaxe compiler patterns, Haxe API usage examples, and Phoenix integration patterns. ALWAYS check here first for:
+- **Reference Codebase (optional)**: If you keep a separate local “reference” checkout, point it via `HAXE_ELIXIR_REFERENCE_PATH` and consult it for:
   - Haxe macro API usage patterns
   - Reflaxe compiler implementation examples  
   - Working AST processing patterns
   - Test infrastructure patterns
-  - **Elixir Language Source**: `/elixir/` - Official Elixir language implementation
-  - **Phoenix Framework Source**: `/phoenix/` and `/phoenix_live_view/` - Framework patterns
+  - **Elixir Language Source**: `elixir-lang/elixir`
+  - **Phoenix Framework Source**: `phoenixframework/phoenix` and `phoenixframework/phoenix_live_view`
 - **Haxe API Documentation**: https://api.haxe.org/ - For type system and language features  
 - **Haxe Manual**: https://haxe.org/manual/ - **CRITICAL**: Always consult for advanced features
 - **Web Resources**: Use WebSearch and WebFetch for current documentation

@@ -4,7 +4,7 @@
 Recent compiler changes removed redundant temp-variable alias assignments (e.g. `g = data`). While targeted regressions now pass, the broader snapshot suite and the todo app still need to be validated and updated. Snapshot failures largely arise from intentional behaviour changes; we must capture the new idiomatic Elixir output and re-confirm e2e correctness.
 
 Reference materials:
-- `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference` for canonical Haxe/Reflaxe patterns.
+- `$HAXE_ELIXIR_REFERENCE_PATH` (optional local checkout) for canonical Haxe/Reflaxe patterns.
 - Existing PRDs under `docs/03-compiler-development/` for enum handling context.
 
 ## Goals

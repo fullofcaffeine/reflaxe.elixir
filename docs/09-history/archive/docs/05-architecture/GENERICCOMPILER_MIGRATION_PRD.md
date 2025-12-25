@@ -232,7 +232,7 @@ The key insight: **Elixir is too different from imperative OOP languages to use 
 
 ## References
 
-- Reflaxe.CSharp implementation: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe.CSharp/`
+- Reflaxe.CSharp implementation: `$HAXE_ELIXIR_REFERENCE_PATH/reflaxe.CSharp/` (optional local checkout)
 - Current problematic code: `ElixirCompiler.hx`, `ElixirASTBuilder.hx` (lines 576-644)
 - Reflaxe documentation: `reflaxe/src/reflaxe/GenericCompiler.hx`
 

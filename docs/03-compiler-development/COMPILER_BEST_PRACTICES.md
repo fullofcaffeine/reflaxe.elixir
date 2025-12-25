@@ -293,7 +293,7 @@ if (target != null && js.Syntax.instanceof(target, js.html.Element)) {
 2. **Verify task completion status** - Check if the task is already done through existing files, examples, or alternative approaches before implementing from scratch
 3. **Check deprecation warnings** - Never ignore Haxe compiler warnings about deprecated APIs
 4. **Reference modern docs** - Use https://api.haxe.org/ for Haxe 4.3+ patterns
-5. **Use reference folder** - Check `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/haxe/std/js/` for modern implementations
+5. **Use upstream sources** - When unsure, check the Haxe stdlib sources (e.g. `haxe/std/js/**` in the Haxe repo) for modern implementations
 6. **Type safety first** - Always use `js.Syntax.instanceof()` before casting DOM elements
 7. **Performance APIs** - Use `PerformanceNavigationTiming` instead of deprecated `PerformanceTiming`
 
@@ -515,6 +515,6 @@ grep "undefined variable" test/tests/orphaned_enum_params/out/*.ex
 - **Haxe API Documentation**: https://api.haxe.org/ - For type system, standard library, and language features
 - **Haxe Manual**: https://haxe.org/manual/ - **CRITICAL**: For any advanced feature, always consult the official manual
 - **Haxe Code Cookbook**: https://code.haxe.org/ - Modern patterns and best practices
-- **Reference Codebase**: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` - Reflaxe patterns, Phoenix examples, Haxe source
+- **Reference Sources**: `vendor/reflaxe/`, Haxe stdlib sources, and other Reflaxe compiler implementations (C#, C++, etc.)
 
 **Principle**: Always reference existing working code and official documentation rather than guessing or assuming implementation details.

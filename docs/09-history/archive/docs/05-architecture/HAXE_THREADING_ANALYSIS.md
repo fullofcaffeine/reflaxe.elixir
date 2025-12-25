@@ -328,5 +328,5 @@ The logical next evolution is **separate worker processes** (not threads), follo
 
 - [Haxe Threading Manual](https://haxe.org/manual/std-threading.html)
 - [sys.thread API Documentation](https://api.haxe.org/sys/thread/)
-- Haxe source code analysis: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/haxe/std/sys/thread/`
+- Haxe source code analysis: `$HAXE_ELIXIR_REFERENCE_PATH/haxe/std/sys/thread/` (optional local checkout)
 - Jest worker process architecture (research reference)
