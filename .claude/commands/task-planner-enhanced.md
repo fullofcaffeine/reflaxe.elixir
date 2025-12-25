@@ -29,7 +29,7 @@ Every task plan must:
 - **Check AGENT_INSTRUCTIONS.md** at `documentation/plans/AGENT_INSTRUCTIONS.md` for task management guidance
 - **Use DOCUMENTATION_INDEX.md** at `documentation/DOCUMENTATION_INDEX.md` to find relevant documentation
 - **Extract specific requirements** from PRD sections
-- **Reference implementations** from `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/`
+- **Reference implementations** from `$HAXE_ELIXIR_REFERENCE_PATH` (if set) and from `vendor/reflaxe/`
 - **Identify performance targets** from PRD (e.g., <15ms compilation, <300ms watch mode)
 - **Map user stories** to technical implementation tasks
 - **Validate against acceptance criteria** in PRD and test docs

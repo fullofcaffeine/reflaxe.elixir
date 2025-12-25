@@ -1142,7 +1142,7 @@ Request:
 - `examples/todo-app/lib/phoenix/safe_pub_sub.ex`
 
 **Reference Implementations**:
-- `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/`
+- `$HAXE_ELIXIR_REFERENCE_PATH/reflaxe/` (optional local checkout)
 - Check: reflaxe.CSharp, reflaxe.CPP for abstract type patterns
 
 ### Appendix B: Testing Commands Reference

@@ -286,7 +286,7 @@ test/snapshot/
 ./scripts/test-runner.sh --pattern "infrastructure_var_naming"
 
 # Method 2: Direct compilation (from project root)
-cd /Users/fullofcaffeine/workspace/code/haxe.elixir
+cd <REPO_ROOT>
 npx haxe test/snapshot/regression/infrastructure_var_naming/compile.hxml
 
 # Method 3: From test directory (compile.hxml must use relative paths)
@@ -324,7 +324,7 @@ cat > compile.hxml << 'EOF'
 EOF
 
 # 4. Compile and check output
-cd /Users/fullofcaffeine/workspace/code/haxe.elixir
+cd <REPO_ROOT>
 npx haxe test/snapshot/regression/my_bug_fix/compile.hxml
 cat test/snapshot/regression/my_bug_fix/out/Main.ex
 
@@ -333,7 +333,7 @@ cd test/snapshot/regression/my_bug_fix
 cp -r out intended
 
 # 6. Verify test passes
-cd /Users/fullofcaffeine/workspace/code/haxe.elixir
+cd <REPO_ROOT>
 ./scripts/test-runner.sh --pattern "my_bug_fix"
 ```
 
@@ -492,7 +492,7 @@ class Main {
 **STEP 5: Generate Output and Validate**
 ```bash
 # From project root
-cd /Users/fullofcaffeine/workspace/code/haxe.elixir
+cd <REPO_ROOT>
 
 # Compile the test (generates out/ directory)
 haxe test/snapshot/regression/your_test_name/compile.hxml
@@ -574,7 +574,7 @@ echo '-cp .
 # 4. Fix the compiler
 
 # 5. Generate correct output
-cd /Users/fullofcaffeine/workspace/code/haxe.elixir
+cd <REPO_ROOT>
 haxe test/snapshot/regression/issue_description/compile.hxml
 
 # 6. Save as intended if correct
@@ -582,7 +582,7 @@ cd test/snapshot/regression/issue_description
 cp -r out intended
 
 # 7. Verify test passes
-cd /Users/fullofcaffeine/workspace/code/haxe.elixir
+cd <REPO_ROOT>
 ./scripts/test-runner.sh --pattern "issue_description"
 ```
 

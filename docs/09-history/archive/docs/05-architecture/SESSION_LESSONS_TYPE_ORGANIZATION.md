@@ -21,7 +21,7 @@ User questioned the organization of type abstracts we created:
 ## 🔬 Research Process
 
 ### 1. Reference Directory Investigation
-Examined `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/` to understand:
+Examined `$HAXE_ELIXIR_REFERENCE_PATH/` (optional local checkout) to understand:
 - **Elixir source structure** (`elixir/lib/`)
 - **Phoenix source structure** (`phoenix_live_view/lib/`)
 - **Reflaxe.CPP patterns** (`reflaxe.CPP/std/`)
@@ -181,7 +181,7 @@ mv std/phoenix/types/Application.hx std/elixir/otp/Application.hx
 4. **Pattern Recognition**: How do other Reflaxe targets organize their standard libraries?
 
 ### Research Tools Used
-- **Reference Directory**: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/`
+- **Reference Directory**: `$HAXE_ELIXIR_REFERENCE_PATH/` (optional local checkout)
 - **WebSearch**: "Plug.Conn Elixir Phoenix is Conn part of Plug or Phoenix"
 - **Source Code Examination**: Actual framework file locations
 

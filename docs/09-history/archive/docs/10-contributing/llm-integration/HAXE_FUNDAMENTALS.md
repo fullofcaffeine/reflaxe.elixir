@@ -381,7 +381,7 @@ When working with Reflaxe.Elixir, you have access to Haxe source code:
 # Or check with: haxe -v (shows std path)
 
 # Also available in reference directory
-/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/haxe/std/
+$HAXE_ELIXIR_REFERENCE_PATH/haxe/std/ (optional local checkout)
 ```
 
 **Essential Standard Library Files to Reference**:
@@ -395,7 +395,7 @@ When working with Reflaxe.Elixir, you have access to Haxe source code:
 ### Reflaxe Base Classes Source
 ```bash
 # Reflaxe base implementation (for understanding compiler architecture)
-/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/src/
+$HAXE_ELIXIR_REFERENCE_PATH/reflaxe/src/ (optional local checkout)
 ```
 
 **Key Reflaxe Files**:
@@ -407,7 +407,7 @@ When working with Reflaxe.Elixir, you have access to Haxe source code:
 ### Reference Examples and Patterns
 ```bash
 # Working example projects (great for pattern learning)
-/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/
+$HAXE_ELIXIR_REFERENCE_PATH/ (optional local checkout)
 
 # Key directories:
 # - Phoenix projects showing real-world usage
@@ -450,13 +450,13 @@ When working with Reflaxe.Elixir, you have access to Haxe source code:
 find /opt/homebrew/Cellar/haxe/*/share/haxe/std/ -name "StringTools.hx"
 
 # Or in reference directory  
-find /Users/fullofcaffeine/workspace/code/haxe.elixir.reference/ -name "*.hx" | grep StringTools
+find "$HAXE_ELIXIR_REFERENCE_PATH" -name "*.hx" | grep StringTools
 
 # Search for specific function in std lib
 grep -r "function trim" /opt/homebrew/Cellar/haxe/*/share/haxe/std/
 
 # Find Reflaxe base classes
-ls /Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/src/
+ls "$HAXE_ELIXIR_REFERENCE_PATH/reflaxe/src/"
 ```
 
 ## Quick Debugging Tips

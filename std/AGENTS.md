@@ -329,7 +329,7 @@ The compiler automatically generates runtime support modules from different sour
    - Our custom implementation with Elixir-specific optimizations
    - Compiles to `std.ex` with methods like `string()`, `int()`, `parseFloat()`
    - Uses `untyped __elixir__()` for native Elixir implementations
-   - Located at: `/Users/fullofcaffeine/workspace/code/haxe.elixir/std/Std.cross.hx`
+   - Located at: `std/Std.cross.hx`
 
 2. **`Log` module** → Generated from our override `/std/haxe/Log.cross.hx`
    - **OVERRIDE PATTERN**: We use `.cross.hx` files to override Haxe's standard library behavior

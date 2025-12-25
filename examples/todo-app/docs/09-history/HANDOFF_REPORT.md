@@ -147,7 +147,7 @@ curl http://localhost:4000
 - `lib/server/live/type_safe_conversions.ex` - Fixed example
 
 ### Reference Implementation
-- `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/reflaxe/src/reflaxe/preprocessors/implementations/RemoveTemporaryVariablesImpl.hx`
+- `$HAXE_ELIXIR_REFERENCE_PATH/reflaxe/src/reflaxe/preprocessors/implementations/RemoveTemporaryVariablesImpl.hx` (optional local checkout)
 - Shows how Reflaxe's temporary variable removal works
 
 ## Architecture Notes

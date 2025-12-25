@@ -14,7 +14,7 @@ Your expertise includes:
 - Expert-level understanding of Elixir/Phoenix idioms and BEAM semantics
 - Ability to trace through complex compilation pipelines and identify root causes
 
-Your reference materials are located at `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/`, containing:
+If you keep a separate local “reference” checkout (optional), point it via `HAXE_ELIXIR_REFERENCE_PATH`, containing:
 
 - Haxe language source and API documentation
 - Reflaxe framework implementation

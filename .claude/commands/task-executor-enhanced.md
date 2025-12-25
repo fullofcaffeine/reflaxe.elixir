@@ -33,7 +33,7 @@ Professional task execution with snapshot-first development, Reflaxe compiler te
    - Organized by purpose, audience, and task type
 
 3. **Reference Implementations**:
-   - Location: `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/`
+   - Location: `$HAXE_ELIXIR_REFERENCE_PATH` (optional local checkout)
    - Contains: Reflaxe examples (CPP, CSharp, GDScript, Go), Phoenix patterns, Haxe source, compiler implementations
    - Use for: Pattern reference, API checking, implementation examples
    - Key folders: `reflaxe.CPP/` (mature reference), `haxe/std/` (standard library), `phoenix_live_view/` (LiveView patterns)
@@ -124,7 +124,7 @@ npm run test:mix           # Layer 2: Mix tests only
 Before implementing any task:
 1. **Review PRD**: Check active plan in `documentation/plans/staging/`
 2. **Find Documentation**: Use `documentation/DOCUMENTATION_INDEX.md` for navigation
-3. **Check References**: Look for patterns in `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/`
+3. **Check References**: Look for patterns in `$HAXE_ELIXIR_REFERENCE_PATH` (if set) and in `vendor/reflaxe/`
 4. **Understand Dependencies**: How this task fits into the overall architecture
 5. **Identify Interfaces**: What other components will interact with this code
 6. **Performance Considerations**: Apply timing requirements from PRD
@@ -137,7 +137,7 @@ Before implementing any task:
 2. Check current PRD in `documentation/plans/staging/` for context
 3. Reference `documentation/DOCUMENTATION_INDEX.md` for relevant guides
 4. Identify test strategy from `documentation/TESTING_OVERVIEW.md`
-5. Look for patterns in `/Users/fullofcaffeine/workspace/code/haxe.elixir.reference/`
+5. Look for patterns in `$HAXE_ELIXIR_REFERENCE_PATH` (if set) and in `vendor/reflaxe/`
 6. Determine if test-first approach is appropriate
 7. Plan implementation phases based on project conventions
 ```

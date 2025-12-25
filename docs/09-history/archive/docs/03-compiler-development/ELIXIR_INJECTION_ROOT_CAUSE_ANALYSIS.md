@@ -112,7 +112,7 @@ end
 ## The Fix
 
 ### Implementation Location
-`/Users/fullofcaffeine/workspace/code/haxe.elixir/src/reflaxe/elixir/ast/builders/CallExprBuilder.hx` (lines 52-112)
+`src/reflaxe/elixir/ast/builders/CallExprBuilder.hx` (lines 52-112)
 
 ### Key Changes:
 
