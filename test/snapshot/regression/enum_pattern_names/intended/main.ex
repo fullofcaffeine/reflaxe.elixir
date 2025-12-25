@@ -12,9 +12,7 @@ end))
     (case status do
       {:loading} -> "Still loading"
       {:success, data} -> "Nested success: #{(fn -> data end).()}"
-      {:failure, error, code} ->
-        error = status
-        "Nested failure #{(fn -> Kernel.to_string(code) end).()}: #{(fn -> error end).()}"
+      {:failure, error, code} -> "Nested failure #{(fn -> Kernel.to_string(code) end).()}: #{(fn -> error end).()}"
     end)
   {:error, message} -> "Top level error: #{(fn -> message end).()}"
 end))

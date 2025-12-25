@@ -16,18 +16,82 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  */
 class CaseErrorVarUnifyTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {
-    return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-      return switch (n.def) {
-        case ECase(expr, clauses):
-          var newClauses = [];
-          for (cl in clauses) newClauses.push(processClause(cl));
-          makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);
-        default: n;
-      }
-    });
+    return transformWithScope(ast, new Map());
   }
 
-  static function processClause(cl: {pattern:EPattern, guard:ElixirAST, body:ElixirAST}): {pattern:EPattern, guard:ElixirAST, body:ElixirAST} {
+  /**
+   * Walk the AST with a lightweight function-parameter scope.
+   *
+   * WHY
+   * - Case clause bodies share the surrounding function scope in Elixir.
+   * - Treating function parameters as "undefined vars" inside clauses can corrupt semantics by
+   *   rewriting outer vars to the case binder (regression: enum_index_usage unwrap_or/2).
+   */
+  static function transformWithScope(node: ElixirAST, inScope: Map<String, Bool>): ElixirAST {
+    if (node == null || node.def == null) return node;
+
+    return switch (node.def) {
+      case EDef(name, args, guards, body):
+        var paramNames = collectPatternVars(args);
+        makeASTWithMeta(
+          EDef(
+            name,
+            args,
+            guards != null ? transformWithScope(guards, paramNames) : null,
+            transformWithScope(body, paramNames)
+          ),
+          node.metadata,
+          node.pos
+        );
+
+      case EDefp(name, args, guards, body):
+        var paramNames = collectPatternVars(args);
+        makeASTWithMeta(
+          EDefp(
+            name,
+            args,
+            guards != null ? transformWithScope(guards, paramNames) : null,
+            transformWithScope(body, paramNames)
+          ),
+          node.metadata,
+          node.pos
+        );
+
+      case EFn(clauses):
+        makeASTWithMeta(
+          EFn(clauses.map(cl -> {
+            var fnParams = collectPatternVars(cl.args);
+            {
+              args: cl.args,
+              guard: cl.guard != null ? transformWithScope(cl.guard, fnParams) : null,
+              body: transformWithScope(cl.body, fnParams)
+            };
+          })),
+          node.metadata,
+          node.pos
+        );
+
+      case ECase(expr, clauses):
+        var newClauses = [];
+        for (cl in clauses) {
+          var rewritten = {
+            pattern: cl.pattern,
+            guard: cl.guard != null ? transformWithScope(cl.guard, inScope) : null,
+            body: transformWithScope(cl.body, inScope)
+          };
+          newClauses.push(processClause(rewritten, inScope));
+        }
+        makeASTWithMeta(ECase(transformWithScope(expr, inScope), newClauses), node.metadata, node.pos);
+
+      default:
+        // Recurse into child expressions with the same scope.
+        ElixirASTTransformer.transformAST(node, function(child: ElixirAST): ElixirAST {
+          return transformWithScope(child, inScope);
+        });
+    };
+  }
+
+  static function processClause(cl: {pattern:EPattern, guard:ElixirAST, body:ElixirAST}, inScope: Map<String, Bool>): {pattern:EPattern, guard:ElixirAST, body:ElixirAST} {
     // Only {:error, PVar(b)}
     var tag = switch (cl.pattern) {
       case PTuple(es) if (es.length == 2):
@@ -56,7 +120,11 @@ class CaseErrorVarUnifyTransforms {
     // Only do replacement when a single undefined lower-case var exists
     var declared = collectDeclared(cl.pattern, cl.body);
     var undef:Array<String> = [];
-    for (u in used.keys()) if (!declared.exists(u) && isLower(u)) undef.push(u);
+    for (u in used.keys()) {
+      if (!declared.exists(u) && isLower(u) && (inScope == null || !inScope.exists(u))) {
+        undef.push(u);
+      }
+    }
     if (undef.length == 1) {
       var target = binder;
       var newBody = ElixirASTTransformer.transformNode(cl.body, function(x: ElixirAST): ElixirAST {
@@ -99,6 +167,36 @@ class CaseErrorVarUnifyTransforms {
     });
     return d;
   }
+
+  static function collectPatternVars(args: Array<EPattern>): Map<String, Bool> {
+    var out = new Map<String, Bool>();
+    if (args == null) return out;
+    for (p in args) collectPatternVarsInto(p, out);
+    return out;
+  }
+
+  static function collectPatternVarsInto(p: EPattern, out: Map<String, Bool>): Void {
+    if (p == null) return;
+    switch (p) {
+      case PVar(n) if (n != null && n.length > 0):
+        out.set(n, true);
+      case PAlias(nm, inner):
+        if (nm != null && nm.length > 0) out.set(nm, true);
+        collectPatternVarsInto(inner, out);
+      case PPin(inner):
+        collectPatternVarsInto(inner, out);
+      case PTuple(es) | PList(es):
+        for (e in es) collectPatternVarsInto(e, out);
+      case PCons(h, t):
+        collectPatternVarsInto(h, out);
+        collectPatternVarsInto(t, out);
+      case PMap(kvs):
+        for (kv in kvs) collectPatternVarsInto(kv.value, out);
+      case PStruct(_, fs):
+        for (f in fs) collectPatternVarsInto(f.value, out);
+      default:
+    }
+  }
   static inline function isLower(s:String):Bool {
     if (s == null || s.length == 0) return false;
     var c = s.charAt(0);
@@ -107,4 +205,3 @@ class CaseErrorVarUnifyTransforms {
 }
 
 #end
-

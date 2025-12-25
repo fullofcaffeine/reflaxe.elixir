@@ -81,8 +81,8 @@ defmodule Main do
   end
   describe "Domain Assertions" do
     test "result assertions" do
-      ok_result = {0, "success"}
-      error_result = {1, "error message"}
+      ok_result = "success"
+      error_result = "error message"
       assert match?({:ok, _}, ok_result)
       assert match?({:error, _}, error_result)
       division_result = context.safeDivide(10, 2)
@@ -91,8 +91,8 @@ defmodule Main do
       assert match?({:error, _}, invalid_division)
     end
     test "option assertions" do
-      some_value = {0, 42}
-      none_value = 1
+      some_value = 42
+      none_value = {:none}
       assert match?({:some, _}, some_value)
       assert none_value == :none
       found = context.findInArray(context[:test_data], "banana")

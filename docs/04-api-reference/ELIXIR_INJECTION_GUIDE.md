@@ -12,9 +12,14 @@ Reflaxe.Elixir provides direct Elixir code injection using:
 > `__elixir__()` remains available in user apps as an escape hatch, but relying on it heavily
 > makes it harder for compiler transforms to stay structural/idiomatic.
 >
-> In this repository, shipped examples enable `-D reflaxe_elixir_strict_examples`, which
-> fails the build if code under `examples/<app>/src_haxe/**` uses `__elixir__()` (or ad-hoc
-> `extern class` escape hatches).
+> In this repository, shipped examples **opt in** to a stricter policy by defining
+> `-D reflaxe_elixir_strict_examples`. This guard is **examples-only**: it fails compilation
+> when `examples/<app>/src_haxe/**` uses `untyped __elixir__()` (or introduces new app-local
+> extern bridges), so the examples stay “Haxe-first” and keep compiler transforms structural.
+>
+> Your own applications are not required to enable this flag. `__elixir__()` and typed
+> `extern` definitions remain supported in user apps — just use them intentionally and prefer
+> promoting reusable Phoenix/Ecto interop into the framework/stdlib layer when it’s generic.
 >
 > If you need access to a Phoenix/Ecto/Elixir API from app code, add a typed wrapper in `std/`
 > (or a compiler-supported annotation module like `@:repo`) so the surface is reusable and documented.

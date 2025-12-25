@@ -18,6 +18,11 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - LiveView can send form payloads where `value` is a URL-encoded string. Our helpers expect a
  *   map. This pass makes the call sites resilient without app-specific knowledge.
+ *
+ * STATUS
+ * - Currently disabled in `ElixirASTPassRegistry` because it interacted badly with the typed
+ *   LiveView event pipeline (it could rewrite params in ways that were hard to reason about).
+ * - Kept as a reference implementation until the lean pass set is finalized.
  */
 class HandleEventDecodeValueQueryIfBinaryUltimateTransforms {
   /**
@@ -26,10 +31,10 @@ class HandleEventDecodeValueQueryIfBinaryUltimateTransforms {
    *   @:liveview class Main {
    *     public static function handle_event(event:String, params:elixir.types.Term, socket:phoenix.Phoenix.Socket<{}>) {
    *       switch (event) {
-   *         case "search_todos": performSearch(params.value, socket);
+   *         case "search_todos": performSearch(elixir.ElixirMap.get(params, "value"), socket);
    *         default:
    *       }
-   *       return {status: "noreply", socket: socket};
+   *       return phoenix.Phoenix.HandleEventResult.NoReply(socket);
    *     }
    *   }
    * Elixir (before):
