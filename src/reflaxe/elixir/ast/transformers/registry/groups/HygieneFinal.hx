@@ -102,14 +102,6 @@ class HygieneFinal {
       pass: reflaxe.elixir.ast.transformers.DropTempNilAssignTransforms.pass
     });
 
-    // Late scoped underscore (disabled; keep for parity)
-    passes.push({
-      name: "LocalAssignUnderscoreLate",
-      description: "Underscore local assigns when unused later; also nested inner assigns",
-      enabled: false,
-      pass: reflaxe.elixir.ast.transformers.LocalAssignUnderscoreLateTransforms.pass
-    });
-
     // EFn and assignment-chain simplifications
     passes.push({
       name: "EFnTempChainSimplify",
@@ -123,13 +115,6 @@ class HygieneFinal {
       enabled: true,
       pass: reflaxe.elixir.ast.transformers.TrailingTempReturnSimplifyTransforms.pass
     });
-    // Move NestedAssignCollapseGlobal to the very end to catch any reintroduced chains
-    passes.push({
-      name: "NestedAssignCollapseGlobal",
-      description: "(disabled here; re-added at end) Collapse nested chain assignments outer=(inner=expr) → outer=expr",
-      enabled: false,
-      pass: reflaxe.elixir.ast.transformers.NestedAssignCollapseGlobalTransforms.pass
-    });
     passes.push({
       name: "DefTrailingAssignedVarReturn",
       description: "Append trailing var when last statement is assignment to non-temp",
@@ -137,32 +122,10 @@ class HygieneFinal {
       pass: reflaxe.elixir.ast.transformers.DefTrailingAssignedVarReturnTransforms.pass
     });
     passes.push({
-      name: "EctoChangesetReturnFix",
-      description: "(disabled) Legacy fix that appended cs; superseded by ChangesetEnsureReturn",
-      enabled: false,
-      pass: reflaxe.elixir.ast.transformers.EctoChangesetReturnFixTransforms.pass
-    });
-    passes.push({
       name: "ChangesetChainCleanup",
       description: "Collapse changeset nested assigns cs/thisN → direct cs assign",
       enabled: true,
       pass: reflaxe.elixir.ast.transformers.ChangesetChainCleanupTransforms.pass
-    });
-
-    // Debug (kept enabled as in registry)
-    passes.push({
-      name: "DebugCaseBinderUndefScan",
-      description: "Debug-only: log binder and undefined locals in case clauses",
-      enabled: #if debug_case_binder_undef_scan true #else false #end,
-      pass: reflaxe.elixir.ast.transformers.DebugCaseBinderUndefScanTransforms.pass
-    });
-
-    // Optional discards
-    passes.push({
-      name: "BlockUnusedAssignmentDiscard",
-      description: "Rewrite var = expr to _ = expr in function bodies when var unused later",
-      enabled: false,
-      pass: reflaxe.elixir.ast.transformers.BlockUnusedAssignmentDiscardTransforms.pass
     });
 
     // Changeset return/binder repairs
@@ -213,34 +176,10 @@ class HygieneFinal {
       pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreSafeTransforms.pass
     });
     passes.push({
-      name: "DefParamUnusedUnderscoreGlobalSafe",
-      description: "Globally underscore unused function params when provably unused (disabled)",
-      enabled: false,
-      pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreGlobalSafeTransforms.pass
-    });
-    passes.push({
       name: "ParamUnderscoreUsedRepair",
       description: "Rename `_name` to `name` for parameters used in function body (disabled for runtime stabilization)",
       enabled: true,
       pass: reflaxe.elixir.ast.transformers.ParamUnderscoreUsedRepairTransforms.pass
-    });
-    passes.push({
-      name: "ChangesetParamUsedRepair",
-      description: "In changeset/2, rename underscored params to base names when body uses base (disabled for stabilization)",
-      enabled: false,
-      pass: reflaxe.elixir.ast.transformers.ChangesetParamUsedRepairTransforms.pass
-    });
-    passes.push({
-      name: "ChangesetBodyAlignToParam",
-      description: "Rewrite body vars user/attrs to _user/_attrs when params are underscored (disabled for stabilization)",
-      enabled: false,
-      pass: reflaxe.elixir.ast.transformers.ChangesetBodyAlignToParamTransforms.pass
-    });
-    passes.push({
-      name: "ChangesetParamUnderscore",
-      description: "Prefix unused params with underscore in changeset functions (final order)",
-      enabled: false,
-      pass: reflaxe.elixir.ast.transformers.ChangesetParamUnderscoreTransforms.pass
     });
 
     // App start helper
@@ -291,12 +230,6 @@ class HygieneFinal {
       pass: reflaxe.elixir.ast.transformers.DuplicateEffectfulCallPruneTransforms.pass
     });
     passes.push({
-      name: "DuplicateCaseAssignFold",
-      description: "Fold var = _ = call; case call do ... end -> var = case call do ... end",
-      enabled: false,
-      pass: reflaxe.elixir.ast.transformers.DuplicateCaseAssignFoldTransforms.pass
-    });
-    passes.push({
       name: "SafePubSubAliasInject",
       description: "Ultimate alias injection for Phoenix.SafePubSub as SafePubSub",
       enabled: true,
@@ -322,13 +255,6 @@ class HygieneFinal {
       enabled: true,
       pass: reflaxe.elixir.ast.transformers.DowncaseInlineFromPriorAssignTransforms.pass,
       runAfter: ["UnderscoreTempInlineDowncase"]
-    });
-    passes.push({
-      name: "LocalAssignUnusedUnderscore_Global_Final",
-      description: "Absolute-final: underscore unused local assignment binders across blocks/functions",
-      enabled: false,
-      pass: reflaxe.elixir.ast.transformers.LocalAssignUnusedUnderscoreGlobalFinalTransforms.pass,
-      runAfter: ["DowncaseInlineFromPriorAssign_Final"]
     });
 
     // Re-add NestedAssignCollapseGlobal as absolute-final cleanup

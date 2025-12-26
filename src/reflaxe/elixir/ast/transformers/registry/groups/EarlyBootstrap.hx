@@ -154,45 +154,12 @@ class EarlyBootstrap {
       pass: ElixirASTTransformer.alias_bitwiseImportPass
     });
 
-    // Loop transformation pass (convert reduce_while patterns to idiomatic loops)
-    passes.push({
-      name: "LoopTransformation",
-      description: "Transform non-idiomatic loop patterns (reduce_while with Stream.iterate) to idiomatic Enum operations and comprehensions",
-      enabled: false, // Disabled: unsound (analyzeLoopBody hardcodes hasSideEffectsOnly=true) and can corrupt accumulator semantics
-      pass: ElixirASTTransformer.alias_loopTransformationPass
-    });
-
     // Collapse simple temp-binding blocks in expression contexts
     passes.push({
       name: "InlineTempBindingInExpr",
       description: "Collapse EBlock([tmp = exprA, exprB(tmp)]) to exprB(exprA) in expression positions",
       enabled: true,
       pass: reflaxe.elixir.ast.transformers.TempVariableTransforms.inlineTempBindingInExprPass
-    });
-
-    // Debug: XRay map field values that contain EBlock (flag gated)
-    passes.push({
-      name: "XRayMapBlocks",
-      description: "Debug pass to log map fields containing EBlock values",
-      enabled: #if debug_temp_binding true #else false #end,
-      pass: function(ast) {
-        return ElixirASTTransformer.transformNode(ast, function(node) {
-          switch(node.def) {
-            case EMap(pairs):
-              for (p in pairs) {
-                switch(p.value.def) {
-                  case EBlock(exprs):
-                    // DISABLED: trace('[XRayMapBlocks] Found EBlock in map value with ' + exprs.length + ' exprs');
-                    for (i in 0...exprs.length) trace('  expr[' + i + ']: ' + ElixirASTPrinter.print(exprs[i], 0));
-                  default:
-                }
-              }
-              return node;
-            default:
-              return node;
-          }
-        });
-      }
     });
 
     return passes;

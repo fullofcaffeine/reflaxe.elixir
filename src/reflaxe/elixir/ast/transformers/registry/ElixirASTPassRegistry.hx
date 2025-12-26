@@ -50,13 +50,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.liveViewTransformPass
         });
 
-        // Bridge typed handleEvent(enum, socket) → handle_event/3 callbacks
-        passes.push({
-            name: "LiveViewTypedEventBridge",
-            description: "Generate handle_event/3 clauses that map string events + params to typed enums and delegate to handleEvent/2",
-            enabled: false, // DISABLED: Conflicts with LiveEventCaseToCallbacks - generates delegating calls to non-existent handle_event/2
-            pass: reflaxe.elixir.ast.transformers.LiveViewTypedEventBridgeTransforms.transformPass
-        });
         // Immediately normalize locals camel→snake and repair/extract handler params after event generation
         passes.push({
             name: "LocalCamelToSnakeDecl_AfterEventBridge",
@@ -98,19 +91,6 @@ class ElixirASTPassRegistry {
             pass: function(ast) return ElixirASTTransformer.alias_guardGroupingPass(ast)
         });
         
-        // Constant folding pass
-        // Harmonize underscore binders with the sole undefined body var (usage-driven, generic)
-        // Disabled: Caused incorrect rebinding when the “undefined” name was actually
-        // a function parameter or outer binding (e.g., default_value), leading to
-        // wrong semantics in regression/switch_return_sanitizer. Prefer body-side
-        // replacement passes (ClauseUndefinedVarToBinder) which do not change pattern binders.
-        passes.push({
-            name: "PatternBindingHarmonize",
-            description: "Rename underscore binder in clause pattern to body’s sole undefined local (disabled: scope ambiguity)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.PatternBindingHarmonizeTransforms.transformPass
-        });
-
         // Pre-interpolation: normalize list-builder args and wrap multi-statement args
         // so interpolation prints valid expressions (no raw statements inside #{}).
         passes.push({
@@ -161,16 +141,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.CaseScrutineeVarToTupleBinderTransforms.transformPass
         });
 
-        // Flatten nested case-of-binder to single case, merging tuple patterns and
-        // substituting outer binder references with inner payload binder.
-        passes.push({
-            name: "CaseNestedTupleFlatten",
-            description: "Flatten outer {:tag, v} → inner case v do {:tag2, b} into single case {:tag, {:tag2, b}}",
-            // Disable by default for snapshot parity; limit flattening to explicit Option/Result pass.
-            enabled: #if enable_case_nested_tuple_flatten false #else false #end,
-            pass: reflaxe.elixir.ast.transformers.CaseNestedTupleFlattenTransforms.transformPass
-        });
-
         // Then apply the generic binder-avoid transform which will now be a no-op
         // for handle_info clauses already repaired above.
         passes.push({
@@ -217,40 +187,12 @@ class ElixirASTPassRegistry {
         // Guard + interpolation prelude (order preserved via group)
         passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.CoreGuardsAndInterpolation.build());
 
-        // Canonicalize unused second binders in two-tuple patterns to `_value` (generic, shape-based)
-        passes.push({
-            name: "CaseSecondBinderCanonicalUnderscore",
-            description: "Rewrite {:tag, binder} to {:tag, _value} when binder is unused in body/guard (gated off; handled by canonicalize+alias)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.CaseSecondBinderCanonicalUnderscoreTransforms.pass
-        });
-
-        // Enforce canonical payload + clause-local aliasing when body uses undefined locals
-        passes.push({
-            name: "CasePayloadCanonicalizeThenAlias",
-            description: "Canonicalize {:tag, binder} -> {:tag, _value} and prepend `u = _value` aliases for undefined locals in body",
-            enabled: false, // disabled to avoid alias pollution in LiveView handle_info
-            pass: reflaxe.elixir.ast.transformers.CasePayloadCanonicalizeThenAliasTransforms.pass
-        });
-
         // Normalize bare calls in statement position to `_ = call(...)` (effects with unused result)
         passes.push({
             name: "BareCallToUnderscoreAssign",
             description: "Rewrite bare ECall/ERemoteCall statements to `_ = <call>`",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BareCallToUnderscoreAssignTransforms.pass
-        });
-
-        // HEEx/HXX prelude group (order preserved)
-        // PERF DIAG: temporarily disable HEEx prelude to locate slow pass
-        // passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.HeexPrelude.build());
-        
-        // Normalize trivial IIFEs returning anonymous functions before further pipeline work
-        passes.push({
-            name: "InlineIIFEOfFunction",
-            description: "Inline (fn -> (fn args -> body end) end).() to (fn args -> body end) (disabled pending full sweep)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.IIFEInlineTransforms.pass
         });
 
         // Loop variable restoration pass (must run after string interpolation)
@@ -286,18 +228,7 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_removeRedundantNilInitPass
         });
         
-        // String method transformation pass (before pipeline optimization)
-        // NOTE: Disabled because we now use String.cross.hx to generate idiomatic code directly
-        // The .cross.hx pattern is better as it generates correct code from the start
-        // rather than transforming it after the fact
-        /*
-        passes.push({
-            name: "StringMethodTransform",
-            description: "Convert string method calls to String module calls",
-            enabled: true,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_stringMethodTransformPass
-        });
-        */
+        // String method rewrites are handled in String.cross.hx (generate idiomatic code directly).
         
         // Pipeline optimization pass
         #if !disable_pipeline_optimization
@@ -344,15 +275,7 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ApplicationEnsureStartLinkTransforms.transformPass
         });
-        // Override problematic Haxe DS modules with minimal native implementations
-        // Disabled by default: overriding std DS modules is a band-aid and breaks tests.
-        // If ever needed for a specific app, gate via a define and enable conditionally.
-        passes.push({
-            name: "StdDsOverrides",
-            description: "Override haxe.ds BalancedTree/EnumValueMap modules with minimal Elixir implementations (disabled by default)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.StdDsOverrideTransforms.transformPass
-        });
+        // Override select Haxe stdlib pieces with native Elixir implementations when justified.
         passes.push({
             name: "StdStringBufOverride",
             description: "Override StringBuf with native parts-list implementation",
@@ -393,15 +316,6 @@ class ElixirASTPassRegistry {
         
         // Statement context transformation pass (MUST run after immutability)
         // Map iterator transformation pass was already registered earlier (line 413)
-        
-        #if !disable_statement_context_transform
-        passes.push({
-            name: "StatementContextTransform",
-            description: "Add reassignments for immutable operations in statement context",
-            enabled: false,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_statementContextTransformPass
-        });
-        #end
         
         // Self reference transformation pass (should run early)
         passes.unshift({
@@ -670,14 +584,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.casePatternTempAssignmentRemovalPass
         });
 
-        // Rename single tuple binders from case expr var (alert_level -> level)
-        passes.push({
-            name: "BinderRenameFromExpr",
-            description: "Rename single binders based on case expr var (e.g., alert_level -> level)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.caseClauseBinderRenameFromExprPass
-        });
-
         // Remove numeric suffixes from binders and references within local scopes
         passes.push({
             name: "NumericSuffixVarNormalize",
@@ -709,88 +615,7 @@ class ElixirASTPassRegistry {
             description: "Promote tuple binders (_a, _b, ...) to (a, b, ...) when used in body (AST or interpolation)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseTupleMultiBinderPromoteByUseTransforms.pass,
-            runAfter: ["ClauseCamelRefToSnake", "CaseSecondBinderCanonicalUnderscore"]
-        });
-
-        // Prefix unused case-pattern binders with underscore to avoid warnings
-        passes.push({
-            name: "ClauseUnusedBinderUnderscore",
-            description: "Within case arms, prefix unused binders with underscore",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.ClauseUnusedBinderUnderscoreTransforms.clauseUnusedBinderUnderscorePass
-        });
-        passes.push({
-            name: "ClauseUnusedBinderUnderscore",
-            description: "Final sweep to underscore unused binders in case arms",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.ClauseUnusedBinderUnderscoreTransforms.clauseUnusedBinderUnderscorePass
-        });
-        passes.push({
-            name: "CaseUnderscoreBinderPromoteByUse",
-            description: "Promote underscored binders (_name) to name when body uses name (disabled for parity)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.CaseUnderscoreBinderPromoteByUseTransforms.transformPass
-        });
-
-        // If body references the underscored binder itself, promote binder and body refs to base name
-        passes.push({
-            name: "ClauseUnderscoreUsedPromote",
-            description: "When clause body uses underscored binder (_val), rename binder and refs to base (disabled)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.ClauseUnderscoreUsedPromoteTransforms.transformPass
-        });
-
-        /**
-         * BinderRenameByTag
-         *
-         * WHAT
-         * - Previously renamed {:tag, var} binders based on tag heuristics.
-         *
-         * WHY
-         * - Tag-driven renames risk coupling to app/domain semantics. Keep compiler generic
-         *   by avoiding tag name heuristics.
-         *
-         * HOW
-         * - Disabled in favor of the generic SingleBinderByUsage pass which aligns binder
-         *   names to actual clause body usage without relying on tags.
-         */
-        passes.push({
-            name: "BinderRenameByTag",
-            description: "Disabled: avoid tag→binder heuristics",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.caseClauseBinderRenameByTagPass
-        });
-
-        // In LiveView modules, rename {:error, _} to {:error, reason}
-        passes.push({
-            name: "LiveViewErrorBinderRename",
-            description: "Rename LiveView error binders to reason (disabled for snapshot parity)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.liveViewErrorBinderRenamePass
-        });
-
-        // Rename Repo result binders based on body usage (user/data/changeset/reason)
-        passes.push({
-            name: "ResultBinderRenameByBodyUsage",
-            description: "Rename {:ok,_}/{:error,_} binder to names used in bodies (disabled for snapshot parity)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.resultBinderRenameByBodyUsagePass
-        });
-
-        // Generic: rename single payload binder in case arms based on clause body usage
-        passes.push({
-            name: "SingleBinderByUsage",
-            description: "Rename {:tag, value} binder to the unique undefined var used in body (e.g., todo/id/params)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.SingleBinderByUsageTransforms.renameSingleBinderByBodyUsagePass
-        });
-
-        // Generic: replace undefined vars in clause bodies with the single bound binder when unambiguous
-        passes.push({
-            name: "ClauseUndefinedVarToBinder",
-            description: "Within {:tag, value} arms, replace unique undefined var in body with binder",
-            enabled: false, // Disabled: caused parameter shadowing in switch_return_sanitizer; rework with full scope awareness
-            pass: reflaxe.elixir.ast.transformers.ClauseUndefinedVarToBinderTransforms.replaceUndefinedVarWithBinderPass
+            runAfter: ["ClauseCamelRefToSnake"]
         });
         // Safer variant: rewrite undefined body var to the existing payload binder (does not rename binder)
         passes.push({
@@ -828,102 +653,6 @@ class ElixirASTPassRegistry {
             description: "Normalize {:system_alert, message, flash_type} and fix flashType usage",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.systemAlertClauseNormalizationPass
-        });
-
-        /**
-         * LiveViewCancelEditInlinePresence
-         *
-         * WHAT
-         * - Previously inlined Presence.update_user_editing within a specific "cancel_edit" event branch.
-         *
-         * WHY
-         * - This was coupled to example-app behavior and event naming. We must avoid
-         *   app-specific assumptions in the compiler pipeline.
-         *
-         * HOW
-         * - Disabled in favor of generic, pattern-driven passes that do not depend on
-         *   concrete event tags or helper functions.
-         *
-         * EXAMPLES
-         * - Before: Special-cased {:cancel_edit, _} to inject Presence.update_user_editing.
-         * - After: No special-casing; Presence-related logic should live in user code.
-         */
-        passes.push({
-            name: "LiveViewCancelEditInlinePresence",
-            description: "Disabled: remove app-specific Presence inline transform for cancel_edit",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.liveViewCancelEditInlinePresencePass
-        });
-
-        /**
-         * EventParamAliasInjection
-         *
-         * WHAT
-         * - Injected clause-local aliases for event payloads based on tag heuristics.
-         *
-         * WHY
-         * - Tag→alias mapping risks coupling to app/domain semantics. Maintain target-agnostic
-         *   compiler by avoiding tag-name driven behavior in the core pipeline.
-         *
-         * HOW
-         * - Disable this pass; rely on generic binder alignment and usage-driven renaming.
-         *
-         * EXAMPLES
-         * - Before: "delete_todo" -> alias id; "save_todo" -> alias params.
-         * - After: No automatic alias injection; user code remains explicit or other
-         *   generic passes align identifiers based on actual usage.
-         */
-        passes.push({
-            name: "EventParamAliasInjection",
-            description: "Disabled: remove tag→alias injection to avoid app coupling",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.eventParamAliasInjectionPass
-        });
-
-        /**
-         * BinderAliasInjection
-         *
-         * WHAT
-         * - Injected clause-local aliases to reconcile binder names with body usage,
-         *   using a preferred-name list that included app/domain terms.
-         *
-         * WHY
-         * - Preferred-name tables risk app coupling. We preserve only pattern-driven,
-         *   usage-based alignment in other passes.
-         *
-         * HOW
-         * - Disable this pass. Keep generic RefDeclAlignment/UsageAnalysis passes to
-         *   ensure declarations and references converge without app-specific bias.
-         */
-        passes.push({
-            name: "BinderAliasInjection",
-            description: "Disabled: avoid alias injection based on preferred-name tables",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.caseClauseBinderAliasInjectionPass
-        });
-
-        // Normalize Repo {:ok,_}/{:error,_} result binders to canonical names in case arm bodies
-        passes.push({
-            name: "RepoResultBinderNormalization",
-            description: "Alias Repo result binder to canonical names (user/data/changeset/reason) used in clause bodies",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoResultBinderNormalizationPass
-        });
-
-        // Controller-specific Repo result binder normalization
-        passes.push({
-            name: "ControllerResultBinderNormalization",
-            description: "In controllers, rename {:ok,_}/{:error,_} binders and alias data as needed",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.controllerResultBinderNormalizationPass
-        });
-
-        // Ensure Phoenix.Controller.json bodies have aliases (user/changeset/data) from result binders
-        passes.push({
-            name: "ControllerPhoenixJsonAliasInjection",
-            description: "Inject aliases (user/changeset/data) for Phoenix.Controller.json bodies from {:ok,_}/{:error,_}",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.controllerPhoenixJsonAliasInjectionPass
         });
         // Ensure controller actions have conn parameter when body references it
         passes.push({
@@ -1048,14 +777,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.EctoERawTransforms.fromInModuleQualificationPass
         });
 
-        // Insert alias <App>.Repo as Repo in Web modules that reference Repo.*
-        passes.push({
-            name: "RepoAliasInjection",
-            description: "Inject `alias <App>.Repo, as: Repo` when Repo.* is used in Web modules",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionPass
-        });
-
         // Normalize Ecto query variable usage and fix where/Repo.all first-arg to canonical binding
         passes.push({
             name: "EctoQueryVarConsistency",
@@ -1145,24 +866,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.LocalVarReferenceFixTransforms.localVarReferenceFixPass
         });
 
-        // Fallback: ensure references to plain names resolve to underscored
-        // locals when only the underscored variant is declared in function scope.
-        passes.push({
-            name: "LocalUnderscoreReferenceFallback",
-            description: "Fallback renaming of EVar(name) -> EVar(_name) when only _name declared (disabled to prevent false-positive flips)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.fallbackUnderscoreReferenceFixPass
-        });
-
-        // Finally, if a local is declared underscored but used later, rename declaration
-        // to non-underscored to eliminate warnings and undefined refs
-        passes.push({
-            name: "UsedUnderscoreRename",
-            description: "Rename _var to var when var is referenced and var is not declared (disabled near release to avoid drift)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.UnderscoreVarTransforms.removeUnderscoreFromUsedLocalsPass
-        });
-
         // Note: Avoid feature/app-specific passes. Prefer generic variable alignment transforms
         // that operate on all modules and rely on injection shaping to expose usage to AST.
 
@@ -1196,43 +899,9 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.StdHaxeRuntimeOverrideTransforms.transformPass
         });
 
-        // Wrap parse_* helpers to return {:some, v} | :none to match caller patterns
-        // PERF DIAG: temporarily disable changeset/option passes
-        // passes.push({
-        //     name: "OptionWrapParseFunctions",
-        //     description: "Wrap results of parse_* functions into {:some, v} | :none",
-        //     enabled: true,
-        //     pass: reflaxe.elixir.ast.transformers.OptionWrapTransforms.optionWrapParseFunctionsPass
-        // });
-
-        // Introduce cs binder when validations reference cs before it is bound
-        // passes.push({
-        //     name: "IntroduceChangesetBinder",
-        //     description: "When validate_* references cs without prior binding, bind cs = <prev expr>",
-        //     enabled: true,
-        //     pass: reflaxe.elixir.ast.transformers.IntroduceChangesetBinderTransforms.pass
-        // });
-
-        // Promote leading `_ = _ = ... = <changeset>` to `cs = <changeset>` inside changeset/2
-        // passes.push({
-        //     name: "WildcardChangesetAssignPromote",
-        //     description: "In changeset/2, rewrite nested wildcard assign chain to `cs = <expr>`",
-        //     enabled: true,
-        //     pass: reflaxe.elixir.ast.transformers.WildcardChangesetAssignPromoteTransforms.pass
-        // });
-        // (moved later in pipeline, after validate_* rewrites)
-
-        // Changeset normalization: canonicalize cs variable, opts binding, and validate_* targets
-        // passes.push({
-        //     name: "ChangesetNormalize",
-        //     description: "Normalize Ecto.Changeset pipelines (cs/opts/thisN)",
-        //     enabled: true,
-        //     pass: reflaxe.elixir.ast.transformers.ChangesetTransforms.normalizeChangesetPass
-        // });
-        // Replace x == nil checks with Kernel.is_nil(x) AFTER Map.get(opts, :key) rewrites
         passes.push({
             name: "EqNilToIsNil",
-            description: "Replace (x == nil) with Kernel.is_nil(x) (post-ChangesetNormalize)",
+            description: "Replace (x == nil) with Kernel.is_nil(x) (post opts rewrites)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
         });
@@ -1368,13 +1037,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ArithmeticIncrementTransforms.transformPass
         });
-        // NOTE: FnArgUnusedUnderscore disabled due to false-positives in LiveView filters
-        // passes.push({
-        //     name: "FnArgUnusedUnderscore",
-        //     description: "Underscore unused anonymous function argument binders",
-        //     enabled: false,
-        //     pass: reflaxe.elixir.ast.transformers.FnArgUnusedUnderscoreTransforms.transformPass
-        // });
         // Final sweep: convert String.to_atom("field") to :field when literal
         passes.push({
             name: "StringToAtomLiteral",
@@ -1390,15 +1052,8 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.liveViewUseInjectionPass
         });
-        // Rename unused local assignment binders to underscore to silence warnings
-        // Disabled: mis-detected usage inside nested expressions (e.g., HEEx arg maps)
-        // leading to prefixing real locals with underscore and later undefined refs.
-        passes.push({
-            name: "UnusedLocalAssignmentUnderscore",
-            description: "Prefix unused local assignment names with underscore in blocks",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.UnusedLocalAssignmentUnderscoreTransforms.transformPass
-        });
+        // NOTE: We intentionally avoid auto-underscoring unused locals here.
+        // It can mis-detect usage inside nested expressions (e.g. HEEx arg maps) and cause undefined refs.
         // Promote binders underscored earlier when body uses the base name
         passes.push({
             name: "LocalUnderscoreBinderPromote",
@@ -1419,40 +1074,15 @@ class ElixirASTPassRegistry {
                 "HandleEventParamsUltraFinal_Last"
             ]
         });
-        passes.push({
-            name: "LocalUnderscoreGenericPromotion_UltraFinal",
-            description: "Ultra-final replay: promote underscored local binders when referenced (late shapes)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.LocalUnderscoreGenericPromotionFinalTransforms.pass,
-            runAfter: [
-                "SuccessBinderPrefixMostUsedUndefined_UltraFinal"
-            ]
-        });
-        // Inline one-shot locals in Web/Controller/LiveView bodies late to remove warning temporaries
-        passes.push({
-            name: "InlineLocalAssignUsedOnce_Final",
-            description: "Final (Controller-only): inline name = expr when name is used exactly once later in the same body (disabled)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.InlineLocalAssignUsedOnceTransforms.pass,
-            runAfter: [
-                "ControllerLocalUnusedUnderscore_Final",
-                "LocalUnderscoreGenericPromotion_UltraFinal"
-            ]
-        });
-        // Web-only: underscore unused locals in Web.* modules (LiveView + Controllers)
-        passes.push({
-            name: "WebLocalUnusedUnderscore",
-            description: "In <App>Web.*, underscore local assignment binders unused later in the body",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.WebLocalUnusedUnderscoreTransforms.pass,
-            runAfter: [
-                "MountSessionExtractCleanup_Final",
-                "MountParamsSideEffectAssignDiscard_Final",
-                "HandleEventBodyAlignToHead_Final",
-                "ControllerLocalUnusedUnderscore_Final",
-                "UnderscoreParamPromotion_Final"
-            ]
-        });
+	        passes.push({
+	            name: "LocalUnderscoreGenericPromotion_UltraFinal",
+	            description: "Ultra-final replay: promote underscored local binders when referenced (late shapes)",
+	            enabled: true,
+	            pass: reflaxe.elixir.ast.transformers.LocalUnderscoreGenericPromotionFinalTransforms.pass,
+	            runAfter: [
+	                "SuccessBinderPrefixMostUsedUndefined_Final"
+	            ]
+	        });
 
         // (moved later in pipeline; after functions are finalized)
         // Within a block, prefer consistent underscore references when only underscored binder exists
@@ -1600,14 +1230,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.ListMapFilterFixTransforms.filterRemoveFixPass
         });
         
-        // Pattern exhaustiveness check pass
-        passes.push({
-            name: "PatternExhaustivenessCheck",
-            description: "Add compile-time verification for pattern completeness",
-            enabled: false, // Disabled by default as it may be verbose
-            pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.exhaustivenessCheckPass
-        });
-        
         // Underscore variable cleanup pass (should run late to catch all generated vars)
         #if !disable_underscore_cleanup
         passes.push({
@@ -1705,14 +1327,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.casePatternTempAssignmentRemovalPass
         });
 
-        // Final local reference fixes (run late to avoid being undone by later passes)
-        passes.push({
-            name: "LocalUnderscoreReferenceFallback",
-            description: "Fallback renaming of EVar(name) -> EVar(_name) when only _name declared (late, disabled)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.fallbackUnderscoreReferenceFixPass
-        });
-
         // Late: Inline trailing return variables from their last assignments to avoid undefined vars
         passes.push({
             name: "InlineTrailingReturnVar",
@@ -1721,13 +1335,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.InlineTrailingReturnVarTransforms.pass
         });
         
-        // Consolidated hygiene sweep (usage-driven), orchestrating core hygiene steps in order
-        passes.push({
-            name: "HygieneConsolidated",
-            description: "Consolidated pass: params underscore, underscore fallback, used underscore promotion, ref/decl alignment, case binder hygiene",
-            enabled: false, // perf diag: suspected hang hotspot
-            pass: reflaxe.elixir.ast.transformers.HygieneConsolidatedTransforms.pass
-        });
         // Late binder repair again after hygiene may rewrite locals
         passes.push({
             name: "SwitchInnerCaseBinderRepair",
@@ -1741,13 +1348,6 @@ class ElixirASTPassRegistry {
             description: "Promote underscored def/defp params when trimmed name is used in body",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DefParamUnderscorePromoteTransforms.promotePass
-        });
-        // Unify declarations and references to a canonical local name per base
-        passes.push({
-            name: "RefDeclAlignment",
-            description: "Align declaration/reference spellings (underscore/numeric) to canonical name",
-            enabled: false, // perf diag: run after hygiene; disable for hang isolation
-            pass: reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass
         });
         passes.push({
             name: "StringToolsLocalFix",
@@ -1779,14 +1379,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
         });
 
-        // Run underscore rename again late to catch flows introduced by earlier passes (e.g., Presence)
-        passes.push({
-            name: "UsedUnderscoreRename",
-            description: "Rename _var to var when var is referenced (late stage, disabled near release to avoid drift)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.UnderscoreVarTransforms.removeUnderscoreFromUsedLocalsPass
-        });
-
         // Final alignment after usage analysis may have prefixed underscores again
         passes.push({
             name: "RefDeclAlignment",
@@ -1808,27 +1400,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.eqNilToIsNilPass
         });
-        // Drop stray numeric literals (final)
-        passes.push({
-            name: "DropStandaloneLiteralOne",
-            description: "Final sweep to remove standalone numeric literals (1/0)",
-            enabled: false, // hang isolation
-            pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
-        });
-        // Replace inline if assignments with discard (final)
-        passes.push({
-            name: "InlineIfAssignmentDiscard",
-            description: "Final rewrite of inline if assignments to _ = expr (disabled: causes search-filter regressions)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.InlineIfAssignmentDiscardTransforms.fixPass
-        });
-        // Inject @compile nowarn for defp main/0 so it's preserved by prune passes
-        passes.push({
-            name: "MainNowarnAndPreserve",
-            description: "Ensure defp main/0 is annotated with @compile nowarn [main: 0] (disabled for snapshot parity)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.MainNowarnAndPreserveTransforms.transformPass
-        });
 
         // Prune unused defp helpers at the very end
         passes.push({
@@ -1836,50 +1407,6 @@ class ElixirASTPassRegistry {
             description: "Final pruning of unused private functions",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.UnusedDefpPrune.prunePass
-        });
-        // Ensure functions ending with assignment return the assigned variable
-        passes.push({
-            name: "AssignReturnInjection",
-            description: "Append var as final expression when function ends with var = expr",
-            enabled: false, // hang isolation
-            pass: reflaxe.elixir.ast.transformers.AssignReturnInjectionTransforms.injectPass
-        });
-        // Absolute final sweep to drop stray numeric literals reintroduced by later passes
-        passes.push({
-            name: "DropStandaloneLiteralOne",
-            description: "Absolute final sweep to remove standalone numeric literals (1/0)",
-            enabled: false, // isolate AssignReturnInjection
-            pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
-        });
-        // Absolute final: convert any lingering `0 = call(...)` back to bare calls
-        passes.push({
-            name: "ZeroAssignCallToBareCall_Final",
-            description: "Absolute final: rewrite numeric-sentinel call assignments to bare calls",
-            enabled: false, // isolate AssignReturnInjection
-            pass: reflaxe.elixir.ast.transformers.ZeroAssignCallToBareCallTransforms.pass
-        });
-        // Ultra-final safety net: ensure any remaining unused function parameters are underscored
-        // This runs at the very end to catch cases missed earlier due to ordering/analysis gaps.
-        passes.push({
-            name: "UnderscoreParamPromotion_Final",
-            description: "Ultra-final: prefix unused function parameters with underscore",
-            enabled: false, // isolate AssignReturnInjection
-            runAfter: ["ZeroAssignCallToBareCall_Final"],
-            pass: reflaxe.elixir.ast.transformers.SimplePrefixUnusedParamsFinalTransforms.pass
-        });
-        // Absolute final binder repair for any late-emitted shapes
-        passes.push({
-            name: "SwitchInnerCaseBinderRepair_Final",
-            description: "Absolute final: rewrite inner case scrutinee to clause binder when needed",
-            enabled: false, // isolate AssignReturnInjection
-            pass: reflaxe.elixir.ast.transformers.SwitchInnerCaseBinderRepairTransforms.repairPass
-        });
-        // Late simplification: fold is_nil(var) -> false when var provably non-nil literal
-        passes.push({
-            name: "SimplifyIsNilFalse",
-            description: "Fold Kernel.is_nil(var) to false when var assigned literal non-nil earlier",
-            enabled: false, // isolate AssignReturnInjection
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.simplifyProvableIsNilFalsePass
         });
 
         // Ensure Phoenix.Component is used in LiveView modules to make assign/2 available even in ERaw code
@@ -1983,14 +1510,6 @@ class ElixirASTPassRegistry {
             }
         });
 
-        // Rewrite Phoenix.Presence.* calls to <App>Web.Presence.* where appropriate
-        passes.push({
-            name: "PresenceApiModuleRewrite",
-            description: "Rewrite Phoenix.Presence.track/update/list/untrack to <App>Web.Presence.*",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.presenceApiModuleRewritePass
-        });
-
         // Rewrite <App>.Presence.* to <App>Web.Presence.* (qualified module form)
         passes.push({
             name: "PresenceQualifiedModuleRewrite",
@@ -2030,20 +1549,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.SafePubSubAliasInjectTransforms.injectPass
         });
 
-        // Normalize Presence helpers to avoid Atom.to_string on Presence string keys
-        passes.push({
-            name: "PresenceHelpersNormalization",
-            description: "(disabled) Do not rewrite Presence key helpers; preserve original shapes",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.PresenceHelpersTransforms.presenceHelpersNormalizationPass
-        });
-        // Presence ERaw normalization for Reflect.fields expansion
-        passes.push({
-            name: "PresenceERawNormalization",
-            description: "(disabled) Do not rewrite ERaw Map.keys pipelines inside Presence modules",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.PresenceERawTransforms.erawPresenceKeysNormalizePass
-        });
         // Presence shadowed binder rename inside EFn clauses (entry vs item clashes)
         passes.push({
             name: "PresenceEFnShadowedBinderRename",
@@ -2129,21 +1634,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.UnusedImportCleanup.cleanupPass
         });
-        // Drop unused local assignments entirely when safe (side-effects preserved)
-        passes.push({
-            name: "LocalAssignDiscardIfUnused",
-            description: "Replace `var = expr` with `expr` when var is never referenced later in the block",
-            enabled: false, // disabled after SafeAssigns false positive; refine before enabling
-            pass: reflaxe.elixir.ast.transformers.LocalAssignDiscardIfUnusedTransforms.pass
-        });
-
-        // Focused cleanup: drop unused Enum.* assigns to underscore (safe, limited scope)
-        passes.push({
-            name: "DropUnusedEnumAssignToUnderscore",
-            description: "Rewrite unused assigns to Enum.map/filter/... into `_ = ...` (snapshot canonical)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.DropUnusedEnumAssignToUnderscoreTransforms.pass
-        });
 
         // Drop trivial unused alias locals introduced by hygiene passes
         passes.push({
@@ -2196,16 +1686,6 @@ class ElixirASTPassRegistry {
             runAfter: ["NormalizeBlankMatchLhsToUnderscore"]
         });
 
-        // Usage-driven recovery: promote `_ = rhs` to the unique undeclared variable used soon after
-        passes.push({
-            name: "PromoteUnderscoreAssignToUniqueUndeclared",
-            description: "Promote `_` assignment to unique undeclared variable referenced in a small lookahead window",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.PromoteUnderscoreAssignToUniqueUndeclaredTransforms.pass,
-            runAfter: ["SanitizeAssignLhsIdentifier"],
-            runBefore: ["WildcardPromoteByUndeclaredUse"]
-        });
-
         // Module-local: prune private functions that are not referenced
         passes.push({
             name: "UnusedDefpPrune",
@@ -2253,21 +1733,6 @@ class ElixirASTPassRegistry {
             description: "Normalize ERaw validate_* atoms and opts nil comparisons (final)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoERawTransforms.erawEctoValidateAtomNormalizePass
-        });
-
-        // Absolute-final: enforce handle_event/3 second param name `params`
-        // and rewrite body references from old binder (e.g., _params) → params.
-        passes.push({
-            name: "HandleEventParamsUltraFinal",
-            description: "Ensure handle_event/3 uses `params` as second arg and align body refs (absolute-final)",
-            enabled: false, // re-inserted later as absolute last
-            pass: reflaxe.elixir.ast.transformers.HandleEventParamsUltraFinalTransforms.transformPass
-        });
-        passes.push({
-            name: "MountParamsUltraFinal",
-            description: "Ensure mount/3 uses `params` as first arg and align body refs (absolute-final)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.MountParamsUltraFinalTransforms.transformPass
         });
         // Repair malformed mount heads to canonical arity and names prior to ultra-final param normalization
         passes.push({
@@ -2356,36 +1821,11 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.MountSessionExtractCleanupTransforms.pass
         });
         passes.push({
-            name: "MountDropHeadIdentityReassign_Final",
-            description: "Drop trivial head reassignments (session/socket/params) inside mount/3",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.MountDropHeadIdentityReassignTransforms.pass,
-            runAfter: [
-                "MountBodyAlignToHead_Final",
-                "MountSessionExtractCleanup_Final",
-                "MountParamsSideEffectAssignDiscard_Final"
-            ]
-        });
-        passes.push({
             name: "HandleEventBodyAlignToHead_Final",
             description: "Align body references (params/_params) to handle_event/3 head binder (absolute-final)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleEventBodyAlignToHeadTransforms.pass,
             runAfter: ["HandleEventParamsUltraFinal"]
-        });
-        // HandleEvent local hygiene: underscore unused local Map.get extractions
-        passes.push({
-            name: "HandleEventLocalUnusedUnderscore_Final",
-            description: "Rename unused local binders in handle_event/3 to underscore (shape-based)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleEventLocalUnusedUnderscoreTransforms.pass,
-            runAfter: [
-                "HandleEventParamsUltraFinal",
-                "HandleEventParamsUltraFinal_Last",
-                "HandleEventBodyAlignToHead_Final",
-                "ParamUnderscoreGlobalAlign_Final",
-                "DefParamHeadUnderscoreWhenUnused_Final"
-            ]
         });
         // Inject @compile nowarn for local Ecto DSL shims (from/3, where/3)
         passes.push({
@@ -2424,13 +1864,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DropInvalidMapGetSelfAssignTransforms.pass
         });
-        // Migration: inject nowarn + stubs (scheduled in absolute-final section below for final shapes)
-        passes.push({
-            name: "EctoMigrationNowarnAndStubs",
-            description: "(Deferred) Inject @compile nowarn and defp stubs for migration helpers at absolute-final",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.transformPass
-        });
         // Qualify StringBuf usage to <App>.StringBuf inside Ecto DSL shim modules
         passes.push({
             name: "EctoStringBufQualification",
@@ -2461,13 +1894,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.PresenceERawCleanupTransforms.transformPass
         });
 
-        // Absolute last: ensure declarations and references agree after all prior rewrites
-        passes.push({
-            name: "RefDeclAlignment",
-            description: "Absolute final alignment of local names to canonical spelling",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.RefDeclAlignmentTransforms.alignLocalsPass
-        });
         // Align def/defp parameters with body usage before fixing underscored refs
         passes.push({
             name: "DefParamBinderAlignByBodyUse",
@@ -2524,14 +1950,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.SplitChainedAssignmentsTransforms.transformPass
         });
-        // Late binder harmonization for {:tag, binder} based on clause-local body usage
-        // Safe after strengthening scope awareness (excludes function params and reserved names)
-        passes.push({
-            name: "CasePayloadBinderAlignByBodyUse",
-            description: "(late) Rename {:tag, binder} to the clause's sole undefined local used in body (scope-aware)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.CasePayloadBinderAlignByBodyUseTransforms.alignPass
-        });
         passes.push({
             name: "DropStandaloneLiteralOne",
             description: "Ultra-final sweep to remove any bare numeric sentinels left by late injections",
@@ -2572,18 +1990,7 @@ class ElixirASTPassRegistry {
             name: "ParamUnderscoreArgRefAlign_Global",
             description: "Align body references to underscored head params globally (e.g., v → _v)",
             enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ParamUnderscoreArgRefAlignGlobalTransforms.pass,
-            runAfter: ["DefParamUnusedUnderscoreGlobalSafe_Final"]
-        });
-
-        // Robust inliner: works on render/1 EBlock/EDo, nested parens, any var name
-        // TEMPORARILY DISABLED: Performance issue with O(n²) string processing on large templates
-        // NOTE: Re-enable after addressing the O(n²) template-processing cost.
-        passes.push({
-            name: "HeexInlineCapturedContent",
-            description: "Inline string assigned to a var referenced by Phoenix.HTML.raw(var|@var) inside ~H; drop scaffolding",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HeexInlineCapturedContentTransforms.transformPass
+            pass: reflaxe.elixir.ast.transformers.ParamUnderscoreArgRefAlignGlobalTransforms.pass
         });
 
         // Fallback inliner using simple preceding-literal heuristic
@@ -2649,14 +2056,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HeexStripDanglingQuoteLinesTransforms.transformPass
         });
 
-        // Absolute-final: convert unused local assignments to wildcard `_ = expr`
-        passes.push({
-            name: "LocalAssignUnusedToWildcard_AbsoluteFinal",
-            description: "Rewrite name = expr to _ = expr when name is unused later in the same block",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.LocalAssignUnusedToWildcardFinalTransforms.pass
-        });
-
         // Ultra-final: split any remaining chained assignments
         passes.push({
             name: "SplitChainedAssignments_Final",
@@ -2671,16 +2070,6 @@ class ElixirASTPassRegistry {
             description: "Rewrite Phoenix.* enum helpers from numeric tags to atom tags using function names",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.PhoenixEnumAtomTagTransforms.transformPass
-        });
-
-        // Flatten nested case for Option/Result-style constructs where a branch matches
-        // {:some, v} and immediately switches on v. This restores single-case nested
-        // tuple patterns like {:some, {:todo_created, todo}}.
-        passes.push({
-            name: "CaseFlattenNestedSwitch",
-            description: "Flatten {:some, v} -> case v do ... end into combined nested tuple patterns",
-            enabled: #if enable_case_flatten_nested_switch false #else false #end,
-            pass: reflaxe.elixir.ast.transformers.CaseFlattenNestedSwitchTransforms.transformPass
         });
 
         // Prune completely empty defmodule bodies (post-DCE clean up noise)
@@ -2707,14 +2096,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.globalRepoQualificationPass
         });
 
-        // Global Repo alias injection for any module that references Repo.*
-        passes.push({
-            name: "RepoAliasInjection",
-            description: "Inject alias <App>.Repo as Repo in any module referencing Repo.*",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionGlobalPass
-        });
-
         // Qualify project-local support modules (e.g., UserChangeset) to <App>.<Name>
         // in repository/query contexts without adding aliases
         passes.push({
@@ -2730,14 +2111,6 @@ class ElixirASTPassRegistry {
             description: "Qualify call-sites of single-segment project-local modules to <App>.<Name>",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ProjectLocalModuleQualificationTransforms.transformPass
-        });
-
-        // Late alias injection to ensure Repo alias exists when used
-        passes.push({
-            name: "RepoAliasInjection",
-            description: "Inject alias <App>.Repo as Repo in Web modules if Repo.* is referenced",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.repoAliasInjectionPass
         });
 
         // Late sweep: collapse nested aliasing chains like `lhs = g = expr` when alias is unused.
@@ -2845,13 +2218,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalUnderscoreReferenceFallbackTransforms.fallbackUnderscoreReferenceFixPass
         });
-        // Ultra-final Phoenix sweeps: underscore unused case binders and params
-        passes.push({
-            name: "ClauseUnusedBinderUnderscore",
-            description: "Ultra-final underscore of unused case binders in Phoenix modules",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.ClauseUnusedBinderUnderscoreTransforms.clauseUnusedBinderUnderscorePass
-        });
         passes.push({
             name: "DefParamUnusedUnderscore",
             description: "Ultra-final underscore of unused def/defp params in Web/Live/Presence",
@@ -2864,13 +2230,6 @@ class ElixirASTPassRegistry {
             description: "Rewrite var = nil to _ = nil when var is not used later in function",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.TopLevelNilAssignDiscardTransforms.transformPass
-        });
-        // Absolutely last: promote underscore binders by use one more time
-        passes.push({
-            name: "CaseUnderscoreBinderPromoteByUse",
-            description: "Absolute sweep: promote _name binders when body uses name (disabled for snapshot parity)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.CaseUnderscoreBinderPromoteByUseTransforms.transformPass
         });
         // Absolutely last: unify {:ok, var} success var references in clause body
         passes.push({
@@ -2893,13 +2252,6 @@ class ElixirASTPassRegistry {
             description: "Absolute sweep: drop bare numeric sentinels in Enum.each fn bodies",
             enabled: #if (fast_boot || disable_hygiene_final) false #else true #end,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.enumEachSentinelCleanupPass
-        });
-        // Ultra-final: promote underscored case binders to base name when body uses base name
-        passes.push({
-            name: "CaseUnderscoreBinderPromoteByUse",
-            description: "Promote _name -> name in case patterns when body uses name (ultra-final) (disabled for snapshot parity)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.CaseUnderscoreBinderPromoteByUseTransforms.transformPass
         });
         // Ultra-final: unify success vars in {:ok, v} branches again to harmonize with late renames
         passes.push({
@@ -3018,25 +2370,10 @@ class ElixirASTPassRegistry {
         });
 
         // Convert Module.new() (Haxe-style) to %Module{} struct literal for Ecto schemas
-        // NOTE: Prefer the guarded ModuleNewToStructLiteral pass; BinderTransforms variant disabled to avoid
+        // NOTE: Prefer the guarded ModuleNewToStructLiteral pass; the BinderTransforms variant was removed to avoid
         // rewriting non-schema modules (e.g., BalancedTree) into struct literals.
-        // passes.push({
-        //     name: "ModuleNewToStructLiteral",
-        //     description: "Rewrite Module.new() to %Module{}",
-        //     enabled: false,
-        //     pass: reflaxe.elixir.ast.transformers.BinderTransforms.moduleNewToStructLiteralPass
-        // });
 
-        // Inline ~H content by replacing Phoenix.HTML.raw(content) with the actual string literal
-        // assigned to `content` earlier in render(assigns), removing the intermediate var.
         // Duplicate registration removed: HeexContentInline already ran earlier.
-        // Keep disabled here to avoid interfering with HXX interpolation conversion.
-        passes.push({
-            name: "HeexContentInline (dup)",
-            description: "(disabled duplicate) Inline ~H content",
-            enabled: false,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_heexContentInlinePass
-        });
 
         // (moved earlier) HeexStringReturnToSigil & HeexRenderHelperCallWrap now run before
         // parameter underscore passes to preserve the `assigns` binder required by HEEx.
@@ -3126,12 +2463,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.countBinderNormalizePass
         });
         passes.push({
-            name: "MapJoinRewrite",
-            description: "Collapse temp += concat inside Enum.each + Enum.join to Enum.map |> Enum.join",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapJoinRewritePass
-        });
-        passes.push({
             name: "JoinArgListBuilderToMapJoin",
             description: "Rewrite Enum.join(<block temp-builder>, sep) to Enum.map(list, fn -> ...) |> Enum.join(sep)",
             enabled: true,
@@ -3171,69 +2502,20 @@ class ElixirASTPassRegistry {
                 "HandleEventParamsUltraFinal_Last"
             ]
         });
+        // Preserve Haxe return semantics for loops lowered to Enum.each/2.
+        // Rewrite to Enum.reduce_while/3 and wrap the remainder of the surrounding block in a case.
         passes.push({
-            name: "MapConcatEachToMapAssign",
-            description: "Rewrite temp=[], Enum.each(... temp=Enum.concat(temp,[expr]) ...) → temp = Enum.map(list, fn -> expr) end",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapConcatEachToMapAssignPass
+            name: "EnumEachEarlyReturn",
+            description: "Preserve Haxe return semantics for loops lowered to Enum.each/2 (rewrite to Enum.reduce_while + case)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EnumEachEarlyReturnTransforms.pass
         });
+        // Fix Enum.find self-compare drift (`v.id == v`) by using the enclosing `id`/`_id` parameter.
         passes.push({
-            name: "ConcatEachToReduce",
-            description: "Rewrite temp=[], Enum.each(... if cond do temp=concat(temp,[expr]) end ...) → Enum.reduce(list, [], ...)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.concatEachToReducePass
-        });
-	        passes.push({
-	            name: "FindRewrite",
-	            description: "Rewrite Enum.each scans ending with nil into Enum.find(list, &pred/1)",
-	            // Disabled: unsafe (can drop preceding statements in the block and/or
-	            // produce predicates that reference locals declared inside the Enum.each body,
-	            // yielding invalid Elixir like `fn i -> item > 2 end` without binding `item`).
-	            enabled: false,
-	            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.findRewritePass
-	        });
-	        // Safe alternative to FindRewrite: preserves Haxe `return` semantics inside for-loops
-	        // lowered to Enum.each/2 by rewriting to Enum.reduce_while/3 and wrapping the remainder
-	        // of the surrounding block in a case.
-	        passes.push({
-	            name: "EnumEachEarlyReturn",
-	            description: "Preserve Haxe return semantics for loops lowered to Enum.each/2 (rewrite to Enum.reduce_while + case)",
-	            enabled: true,
-	            pass: reflaxe.elixir.ast.transformers.EnumEachEarlyReturnTransforms.pass
-	        });
-	        // Post-rewrite cleanup: once loops have become Enum.find/2, repair any remaining
-	        // `v.id == v` self-compare drift by using the enclosing `id`/`_id` parameter.
-	        passes.push({
-	            name: "ListFindByIdFix_PostFindRewrite",
-            description: "Fix Enum.find self-compare v.id == v using enclosing id/_id param (after FindRewrite)",
+            name: "ListFindByIdFix",
+            description: "Fix Enum.find self-compare v.id == v using enclosing id/_id param",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ListMapFilterFixTransforms.filterRemoveFixPass
-        });
-        // Avoid duplicate side-effect calls: reuse prior assignment as case scrutinee
-        passes.push({
-            name: "CaseCallReuse",
-            description: "Rewrite case Mod.func(args) to case tmp when tmp = Mod.func(args) was evaluated earlier in block",
-            enabled: false, // perf bisection
-            pass: reflaxe.elixir.ast.transformers.CaseCallReuseTransforms.transformPass
-        });
-        passes.push({
-            name: "FlattenNestedUnderscoreAssign",
-            description: "Flatten nested underscore matches: lhs = _ = expr -> lhs = expr",
-            enabled: false, // perf bisection
-            pass: reflaxe.elixir.ast.transformers.FlattenNestedUnderscoreAssignTransforms.pass
-        });
-        // Early fold to align assigned var with case result before later hygiene
-        passes.push({
-            name: "DuplicateCaseAssignFold_Early",
-            description: "EARLY: Fold var = _ = call; case call do ... -> var = case call do ...",
-            enabled: false, // perf bisection
-            pass: reflaxe.elixir.ast.transformers.DuplicateCaseAssignFoldTransforms.pass
-        });
-        passes.push({
-            name: "CaseBindSuccessToAssignedVar_Early",
-            description: "EARLY: Bind {:ok, u} to preceding assigned var inside case",
-            enabled: false, // perf bisection
-            pass: reflaxe.elixir.ast.transformers.CaseBindSuccessToAssignedVarTransforms.pass
         });
         passes.push({
             name: "CamelAtomAccessToSnake",
@@ -3299,26 +2581,6 @@ class ElixirASTPassRegistry {
             description: "Rewrite _name -> name in EFn bodies when a matching binder exists",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnScopedUnderscoreRefCleanup.cleanupPass
-        });
-        // Align single-arg anonymous fn bodies to their binder when exactly one undefined var exists
-        passes.push({
-            name: "EFnSingleArgUndefinedAlign",
-            description: "Rewrite single free var in 1-arg EFn body to binder (shape-based, no coupling)",
-            enabled: false, // Too unsafe: can rewrite legitimate outer captures (e.g., comparing binder.id to an outer id)
-            pass: reflaxe.elixir.ast.transformers.EFnSingleArgUndefinedAlignTransforms.alignPass
-        });
-        // Early: also align when binder is used; prefer binder over single free var
-        passes.push({
-            name: "EFnSingleFreeVarToBinder_Early",
-            description: "Early: rewrite single free var in 1-arg EFn to binder even if binder used",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.EFnSingleFreeVarToBinderTransforms.pass
-        });
-        passes.push({
-            name: "EFnFieldObjectToBinder_Early",
-            description: "Early: rewrite EField(free, field) -> EField(binder, field) in 1-arg EFn bodies",
-            enabled: false, // Too unsafe: breaks legitimate outer captures like `t.id == todo.id`
-            pass: reflaxe.elixir.ast.transformers.EFnFieldObjectToBinderTransforms.pass
         });
         passes.push({
             name: "EFnNumericSentinelCleanup",
@@ -3397,48 +2659,12 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnScopedUnderscoreRefCleanup.cleanupPass
         });
-        passes.push({
-            name: "EFnSingleArgUndefinedAlign",
-            description: "Absolute last: rewrite single free var in 1-arg EFn body to binder",
-            enabled: false, // Too unsafe: can rewrite legitimate outer captures
-            pass: reflaxe.elixir.ast.transformers.EFnSingleArgUndefinedAlignTransforms.alignPass
-        });
-        // Absolute last: align single free var to binder even if binder is used
-        passes.push({
-            name: "EFnSingleFreeVarToBinder",
-            description: "Absolute last: rewrite single free var in 1-arg EFn to binder (binder may be used)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.EFnSingleFreeVarToBinderTransforms.pass
-        });
-        passes.push({
-            name: "EFnFieldObjectToBinder",
-            description: "Absolute last: rewrite EField(free, field) -> EField(binder, field) in 1-arg EFn bodies",
-            enabled: false, // Too unsafe: breaks legitimate outer captures like `t.id == todo.id`
-            pass: reflaxe.elixir.ast.transformers.EFnFieldObjectToBinderTransforms.pass
-        });
         // Convert Enum.each counting patterns to Enum.count with predicate (very late)
         passes.push({
             name: "CountEachToEnumCount",
             description: "Rewrite Enum.each(list, fn b -> if cond, do: b = b + 1 end) to Enum.count(list, fn b -> cond end)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CountEachToEnumCountTransforms.transformPass
-        });
-        passes.push({
-            name: "EFnLastChanceFix",
-            description: "Absolute last-chance EFn binder/body fix: _binder -> binder, single free var -> binder",
-            // Disabled: rewriting single free vars to the binder is semantically unsafe (breaks legitimate outer captures).
-            // Keep the safer underscore/binder alignment passes earlier in the pipeline instead.
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.EFnLastChanceFixTransforms.pass
-        });
-        passes.push({
-            name: "EFnEnumClosureAlign",
-            description: "Final alignment of Enum.* anonymous function closures (primary binder repairs)",
-            // Disabled: over-aggressive variable rewrites can change semantics (e.g. rewriting
-            // an outer accumulator like `results` to the Enum binder). Prefer upstream binder
-            // alignment at generation time; keep this pass for future experiments behind flags.
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.EFnEnumClosureAlignTransforms.pass
         });
         // Replay: promote underscored def/defp arg binders to base name when body (or ERaw) uses base
         passes.push({
@@ -3468,34 +2694,6 @@ class ElixirASTPassRegistry {
             description: "Rewrite outer = inner = expr → outer = expr when inner is unused later in function block",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.FunctionHygieneTransforms.blockAssignChainSimplifyPass
-        });
-        // Late sanitation of reduce bodies after most rewrites
-        passes.push({
-            name: "ReduceBodySanitize",
-            description: "Fix head extraction and accumulator rebinds inside Enum.reduce bodies; drop stray arithmetic (late)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.ReduceBodySanitizeTransforms.transformPass
-        });
-        // After reduce bodies are sanitized, rewrite trivial list-building reduces to comprehensions
-        passes.push({
-            name: "ReduceToComprehension",
-            description: "Rewrite Enum.reduce(range, [], fn iter, acc -> Enum.concat(acc, [v]) end) to for-comprehension",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.ReduceToComprehensionTransforms.rewritePass
-        });
-        // Sanitize any leftover push(...) sentinels to nil to avoid invalid syntax in non-reduce contexts
-        passes.push({
-            name: "PushSentinelSanitize",
-            description: "Replace stray push(...) sentinel calls with nil in non-reduce contexts",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.PushSentinelSanitizeTransforms.transformPass
-        });
-        // Late cleanup: unwrap Map.values(coll) in Enum.reduce when reducer does not use Presence metas
-        passes.push({
-            name: "ReduceInputValuesCleanup",
-            description: "Unwrap Map.values(coll) in Enum.reduce when iterating lists (no binder.metas usage)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.ReduceInputValuesCleanupTransforms.pass
         });
         // Replay: ensure multi-statement function arguments are IIFEs after late rewrites
         passes.push({
@@ -3611,20 +2809,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.TupleLhsDiscardTransforms.discardPass
         });
         
-        // Safety net: ensure `require Ecto.Query` after all late passes
-        passes.push({
-            name: "EctoQueryRequireInjection",
-            description: "Final sweep to inject `require Ecto.Query` in modules using Ecto.Query macros",
-            enabled: false,
-            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_ectoQueryRequirePass
-        });
-        // Absolute-final ensure for Ecto.Query require after any late rewrites
-        passes.push({
-            name: "EctoQueryRequireEnsure",
-            description: "Ensure `require Ecto.Query` when Ecto.Query remote macros are present",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.EctoQueryRequireEnsureTransforms.transformPass
-        });
         // Absolute Final 3: if pin operator exists anywhere in the module and require is missing, inject it
         passes.push({
             name: "PinnedVarRequireEctoQuery",
@@ -3646,14 +2830,6 @@ class ElixirASTPassRegistry {
             description: "In *.Gettext modules, add arity shims and de-underscore used params like count",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.GettextArityAndParamRepairTransforms.transformPass
-        });
-
-        // PostFinal: underscore unused params in changeset/2 helpers for repository tests (moved later)
-        passes.push({
-            name: "ChangesetParamUnderscore",
-            description: "(Disabled here; moved to AbsoluteFinal8 after Ecto.Changeset injection)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.ChangesetParamUnderscoreTransforms.pass
         });
 
         // Absolute success-case alignment: must run as the very last shape-affecting passes
@@ -3747,13 +2923,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.MountCaseSocketAssignDropTransforms.pass
         });
-        passes.push({
-            name: "ControllerLocalAssignUnusedUnderscore_Final",
-            description: "In conn actions, underscore unused local assignment binders",
-            enabled: #if fast_boot false #else true #end,
-            pass: reflaxe.elixir.ast.transformers.ControllerLocalAssignUnusedUnderscoreTransforms.pass,
-            runAfter: ["LocalAssignUnusedUnderscore_Global_Final"]
-        });
+	        passes.push({
+	            name: "ControllerLocalAssignUnusedUnderscore_Final",
+	            description: "In conn actions, underscore unused local assignment binders",
+	            enabled: #if fast_boot false #else true #end,
+	            pass: reflaxe.elixir.ast.transformers.ControllerLocalAssignUnusedUnderscoreTransforms.pass,
+	            runAfter: ["LocalAssignUnusedUnderscore_Scoped_Final"]
+	        });
         passes.push({
             name: "AlignBaseRefToUnderscoredBinder_Final",
             description: "Rewrite base name refs to existing underscored local binders in the same block",
@@ -3860,12 +3036,6 @@ class ElixirASTPassRegistry {
         });
         // Align case binder names in {:ok, binder}/{:error, binder} to the single undefined
         // lower-case name used within the clause body (usage-driven, no app coupling)
-        passes.push({
-            name: "CaseBinderAlignByBodyUse_Final",
-            description: "Rename case tuple binder to the single undefined lower-case var used in body",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.CaseBinderAlignByBodyUseTransforms.pass
-        });
         // Controller-only cleanup: drop json/data/conn alias chains before Phoenix.Controller.json calls
         passes.push({
             name: "ControllerJsonCallCleanup_Final",
@@ -3898,13 +3068,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.WebDropUnusedSimpleAssignTransforms.pass
         });
-        // Web.* scope (controllers, LiveView, components): drop simple unused assigns anywhere
-        passes.push({
-            name: "WebDropUnusedSimpleAssignAny_AbsoluteFinal",
-            description: "Absolute-final: in Web.* modules, drop simple unused assignments (pure RHS) in all bodies",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.WebDropUnusedSimpleAssignAnyTransforms.pass
-        });
         passes.push({
             name: "ControllerAliasAssignDrop_Replay_Ultimate",
             description: "Ultimate replay: drop alias assigns json/data/conn in controllers after all rewrites",
@@ -3922,8 +3085,6 @@ class ElixirASTPassRegistry {
                 "CaseClauseHygieneCleanup_Final",
                 "CaseNilAssignCleanup_Final",
                 "ControllerAliasAssignDrop_Replay_Ultimate",
-                "CaseBinderAlignFinal",
-                "CaseBinderAlignByBodyUse_Final",
                 "SuccessVarAbsoluteReplaceUndefined_Replay_Final",
                 "HandleEventParamsUltraFinal_Last"
             ]
@@ -3957,20 +3118,6 @@ class ElixirASTPassRegistry {
         });
 
         // Final: underscore unused case payload binders (e.g., {:error, reason} -> {:error, _reason})
-        passes.push({
-            name: "CasePatternUnusedBinderUnderscore_Final",
-            description: "Underscore case payload binder when not referenced in the clause body",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.CasePatternUnusedBinderUnderscoreTransforms.pass
-        });
-
-        // Scoped unused local assignment drop for Web modules (controllers, LiveView)
-        passes.push({
-            name: "WebDropUnusedLocalAssignment_AbsoluteFinal",
-            description: "Absolute-final: in Web.* modules, drop local assigns unused later in the same block",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.WebDropUnusedLocalAssignmentTransforms.pass
-        });
 
         // Absolute-final, Web.* scope: drop alias chains before Phoenix.Controller.json and rewrite arg2
         passes.push({
@@ -4081,17 +3228,16 @@ class ElixirASTPassRegistry {
         // Normalize case payload binder references to the declared binder when they differ
         // only by underscores (e.g., okvalue -> ok_value). Run late to repair accidental
         // renames from previous passes without app coupling.
-        passes.push({
-            name: "CaseBinderRefNormalizeByFlattenUnderscores_Final",
-            description: "Unify clause body refs that flatten to the binder name (remove underscores)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.CaseBinderRefNormalizeByFlattenUnderscoresTransforms.pass,
-            runAfter: [
-                "ControllerJsonSecondArgUndefinedRewrite_Ultimate",
-                "ControllerJsonFinalize_AbsoluteFinal",
-                "CaseBinderAlignByBodyUse_Final"
-            ]
-        });
+	        passes.push({
+	            name: "CaseBinderRefNormalizeByFlattenUnderscores_Final",
+	            description: "Unify clause body refs that flatten to the binder name (remove underscores)",
+	            enabled: true,
+	            pass: reflaxe.elixir.ast.transformers.CaseBinderRefNormalizeByFlattenUnderscoresTransforms.pass,
+	            runAfter: [
+	                "ControllerJsonSecondArgUndefinedRewrite_Ultimate",
+	                "ControllerJsonFinalize_AbsoluteFinal"
+	            ]
+	        });
 
         // Ensure multi-statement argument blocks are safe in function calls by wrapping them
         // into immediately-invoked anonymous functions. This is target-generic and prevents
@@ -4167,7 +3313,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ControllerCaseRenameBinderIfBodyRefsBaseTransforms.pass,
             runAfter: [
-                "CaseBinderAlignByBodyUse_Final",
                 "CaseErrorVarUnify_Final",
                 "ControllerJsonCallCleanup_Final"
             ]
@@ -4193,18 +3338,6 @@ class ElixirASTPassRegistry {
                 "ControllerJsonDataArgToBinder_Final",
                 "ControllerCaseRenameBinderIfBodyRefsBase_Final"
             ]
-        });
-        passes.push({
-            name: "DropUnusedAssignToCase",
-            description: "Replace v = case ... end with case ... end when v is unused later",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.DropUnusedAssignToCaseTransforms.pass
-        });
-        passes.push({
-            name: "DropUnusedLocalAssignment",
-            description: "Remove local assignments to variables unused later in the same block (uses VarUseAnalyzer for proper closure detection)",
-            enabled: false,  // TEMPORARILY DISABLED - VarUseAnalyzer causing timeout on strings test
-            pass: reflaxe.elixir.ast.transformers.DropUnusedLocalAssignmentTransforms.pass
         });
         passes.push({
             name: "ListIndexAccessToEnumAt",
@@ -4310,21 +3443,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.UnderscoreToParamFixTransforms.pass
         });
-        // handle_info alias cleanup: drop `alias = _socket` and rewrite noreply payload
-        passes.push({
-            name: "HandleInfoAliasCleanup_Final",
-            description: "In handle_info/2, remove alias lines `x = _socket` and replace `{:noreply, _socket|x}` with `{:noreply, socket}`",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleInfoAliasCleanupTransforms.pass
-        });
-
-        // Final LiveView message arg normalization for list helpers in {:tag, id} tuples
-        passes.push({
-            name: "HandleInfoTupleArgToSecondElem",
-            description: "In case msg of {:tag, v}, pass v instead of msg to *_from_list/*_in_list helpers",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.ListHelpersFixTransforms.handleInfoTupleArgToSecondElemPass
-        });
         // Late promote of underscored case binders used in body
         passes.push({
             name: "CaseUnderscoreBinderPromote_Final",
@@ -4398,14 +3516,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.GlobalNumericSentinelCleanupTransforms.cleanupPass
         });
 
-        // Final cleanup: inline trivial IIFEs that only return an anonymous function
-        passes.push({
-            name: "InlineIIFEOfFunction_Final",
-            description: "Final sweep to inline (fn -> (fn args -> ... end) end).() to (fn args -> ... end) (disabled pending full sweep)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.IIFEInlineTransforms.pass
-        });
-
         // As the very last guard, drop any remaining standalone literal 1/0 occurrences
         passes.push({
             name: "DropStandaloneLiteralOne",
@@ -4414,13 +3524,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
         });
 
-        // Absolute-final: replace the single undefined var in clause body with the binder (or rename binder)
-        passes.push({
-            name: "ClauseUndefinedVarToBinder_Final",
-            description: "(absolute final) Harmonize clause payload binder with the sole undefined local used in body (disabled here; re-added later for ordering)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.ClauseUndefinedVarToBinderTransforms.replaceUndefinedVarWithBinderPass
-        });
         // Absolute-final: alternatively, bind the undefined local to the binder (safer when binder name collides with env)
         passes.push({
             name: "ClauseUndefinedVarBindToBinder_Final",
@@ -4464,14 +3567,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseClauseCamelAliasToSnakeBinderTransforms.aliasPass
         });
-        // One more absolute-last alignment to ensure {:tag, binder} matches the sole undefined body var
-        passes.push({
-            name: "CaseBinderAlignFinal",
-            description: "(absolute final) Rename {:tag, binder} pattern to match the body’s sole undefined local (disabled here; re-added later)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.CaseBinderAlignFinalTransforms.pass
-        });
-
         // Very last replay to collapse duplicate self-assignments that might be reintroduced late
         passes.push({
             name: "SelfAssignCompression",
@@ -4551,23 +3646,6 @@ class ElixirASTPassRegistry {
         // Removed duplicate absolute final mount promotion; covered by LiveMountLatePromote earlier
         // Final section kept lean; mount and presence fixes are handled in their domain passes
 
-        // Return only enabled passes (names carry no scheduling semantics)
-        // Extra-late binder alignment for {:tag, binder} (safety net)
-        passes.push({
-            name: "CasePayloadBinderAlignByBodyUse_Final",
-            description: "Run CasePayloadBinderAlignByBodyUse as absolute last safety net (scope-aware)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.CasePayloadBinderAlignByBodyUseTransforms.alignPass
-        });
-
-        // Absolute-last heuristic: when usage lives only in string interpolation, infer binder from it
-        passes.push({
-            name: "CaseBinderNameFromStringUsage",
-            description: "Infer {:tag, binder} name from identifiers inside string interpolation in clause bodies (disabled)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.CaseBinderNameFromStringUsageTransforms.transformPass
-        });
-
         // Absolute last: split chained assignments again to catch any reintroduced by late passes
         passes.push({
             name: "SplitChainedAssignments_AbsoluteFinal",
@@ -4621,25 +3699,12 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.LocalCamelToSnakeDeclTransforms.transformPass
         });
-        // Absolute final: for handle_event/3, synthesize param extracts for any undefined locals used in body
-        passes.push({
-            name: "HandleEventParamExtractFromBodyUse_Final",
-            description: "Prepend var = Map.get(params, snake(var)) for undefined body locals in handle_event/3",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleEventParamExtractFromBodyUseTransforms.transformPass
-        });
         // Final handle_info normalizations
         passes.push({
             name: "HandleInfoReturnSocketNormalize_Final",
             description: "In handle_info/2, ensure helper calls end with socket and {:noreply, socket} shapes",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleInfoReturnSocketNormalizeTransforms.transformPass
-        });
-        passes.push({
-            name: "HandleInfoScrutineeToPayloadRef_Final",
-            description: "Rewrite scrutinee references to payload binder within handle_info case clauses",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleInfoScrutineeToPayloadRefTransforms.transformPass
         });
         // Ultra-final: for toggle_* events, replace helper first-arg `params` with Map.get(params, suffix)
         passes.push({
@@ -4653,18 +3718,6 @@ class ElixirASTPassRegistry {
             description: "Repair handle_event/3: turn discarded Map.get into named binds and insert any missing binds",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleEventParamRepairTransforms.transformPass
-        });
-        passes.push({
-            name: "UndefinedLocalExtractFromParams_Final",
-            description: "For any def with params/_params arg, bind undefined locals from params generically",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.UndefinedLocalExtractFromParamsTransforms.transformPass
-        });
-        passes.push({
-            name: "InlineUndefinedFromParams_Final",
-            description: "Inline undefined locals from params where prefix binding was not possible",
-            enabled: false, // DISABLED: Incorrectly replaces case-pattern-bound variables like {:noreply, s} -> s with Map.get(params, "s")
-            pass: reflaxe.elixir.ast.transformers.InlineUndefinedFromParamsTransforms.transformPass
         });
         // Re-add clause binder harmonization after handler param extractions, before wrapper repair
         passes.push({
@@ -4687,18 +3740,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.SuccessBinderPrefixMostUsedUndefinedTransforms.pass
         });
-        passes.push({
-            name: "ClauseUndefinedVarToBinder_Final",
-            description: "(absolute final) Harmonize clause payload binder with the sole undefined local used in body (disabled for snapshot parity)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.ClauseUndefinedVarToBinderTransforms.replaceUndefinedVarWithBinderPass
-        });
-        passes.push({
-            name: "CaseBinderAlignFinal",
-            description: "(absolute final) Rename {:tag, binder} pattern to match the body’s sole undefined local (disabled for snapshot parity)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.CaseBinderAlignFinalTransforms.pass
-        });
 
         // Absolute final: upgrade wildcard Map.get assigns to named snake_case variables
         passes.push({
@@ -4714,14 +3755,6 @@ class ElixirASTPassRegistry {
             description: "Debug-only: print Main.main body AST when -D debug_case_hoist is set",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DebugDumpMainBodyTransforms.transformPass
-        });
-
-        // One more absolute-last attempt to harmonize {:tag, value/_x} binders using string interpolation hints
-        passes.push({
-            name: "CaseBinderNameFromStringUsage_Final",
-            description: "Absolute last: infer binder name from string interpolation identifiers in clause bodies (disabled)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.CaseBinderNameFromStringUsageTransforms.transformPass
         });
 
         // Very late: simplify inspect(Map.get(obj, :field)) → obj.field for readability/idiomatic output
@@ -4885,47 +3918,12 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.CaseTupleBinderUnshadowTransforms.pass
         });
-        // Replay var name normalization very late so camel refs map to newly created snake_case binds
-        passes.push({
-            name: "VarNameNormalization_Final",
-            description: "Absolute final: normalize camelCase references to existing snake_case variables",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.VarNameNormalizationTransforms.varNameNormalizationPass
-        });
-        passes.push({
-            name: "VarRefSuffixParamNormalize_Final",
-            description: "Absolute final: map short refs to a unique param that ends with _<short> (e.g., query -> search_query)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.VarRefSuffixParamNormalizeTransforms.pass
-        });
-        // Re-run binder safety for {:ok, binder} after all late ref/name rewrites
-        passes.push({
-            name: "SuccessBinderPrefixMostUsedUndefined_UltraFinal",
-            description: "Ultra-final: prefix-bind most-used undefined var to {:ok, binder} after late rewrites",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.SuccessBinderPrefixMostUsedUndefinedTransforms.pass
-        });
-        // Repair handle_info tuple-binder collisions before normalizing call tails
-        // (Moved earlier as HandleInfoCaseBinderCollisionRepair_Pre)
-        passes.push({
-            name: "HandleInfoCaseBinderCollisionRepair_PreFinal",
-            description: "(disabled; pass now runs earlier)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleInfoCaseBinderCollisionRepairTransforms.transformPass
-        });
         // Normalize handle_info helper call tails to pass the function-parameter socket
         passes.push({
             name: "HandleInfoReturnSocketNormalize_UltraFinal",
             description: "Ultra-final: in handle_info/2, rewrite calls with duplicated first/last arg to end with socket",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HandleInfoReturnSocketNormalizeTransforms.transformPass
-        });
-        // Absolute final: ensure handle_info nested case bodies refer to tuple payload binder
-        passes.push({
-            name: "HandleInfoScrutineeToPayloadRef_AbsoluteFinal",
-            description: "Absolute final: rewrite handle_info/2 nested case scrutinee refs to tuple payload binder (value)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleInfoScrutineeToPayloadRefTransforms.transformPass
         });
         // One more binder safety replay at the very end (covers any late ref/name rewrites)
         passes.push({
@@ -5015,46 +4013,36 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HandleEventParamsForceBodyRewriteFinalTransforms.pass,
             runAfter: [
                 "ParamUnderscoreGlobalAlign_Final",
-                "DefParamUnusedUnderscoreGlobalSafe_Final",
                 "DropInvalidMapGetSelfAssign_Final",
                 "MountSessionExtractCleanup_Final",
                 "EctoQueryBranchSelfAssignUnderscore_Final",
                 "AssignWhereSelfBinderUnderscore_Final"
             ]
         });
-        passes.push({
-            name: "DefParamUsedBaseNamePromotion_Final",
-            description: "Promote underscored def params to base name when body uses base name (absolute final)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.DefParamUsedBaseNamePromotionFinalTransforms.pass,
-            // Make this truly last across hygiene by running after all late underscore/align replays
-            runAfter: [
-                "ParamUnderscoreArgRefAlign_Final",
-                "ParamUnderscoreGlobalAlign_Final",
-                "HandleEventParamsForceBodyRewrite_Final",
-                "DefParamUnusedUnderscoreGlobalSafe_Final",
-                "DropInvalidMapGetSelfAssign_Final",
-                "MountSessionExtractCleanup_Final",
-                "EctoQueryBranchSelfAssignUnderscore_Final",
-                "AssignWhereSelfBinderUnderscore_Final",
-                "LocalAssignUnusedUnderscore_Final"
-            ]
-        });
-        // Re-run safe unused-def-param underscore promotion at the very end
-        passes.push({
-            name: "DefParamUnusedUnderscoreGlobalSafe_Final",
-            description: "Final replay: underscore unused def params (safe, global) [disabled due to false positives in Web helpers]",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreGlobalSafeTransforms.pass,
-            runAfter: ["ParamUnderscoreGlobalAlign_Final"]
-        });
+	        passes.push({
+	            name: "DefParamUsedBaseNamePromotion_Final",
+	            description: "Promote underscored def params to base name when body uses base name (absolute final)",
+	            enabled: true,
+	            pass: reflaxe.elixir.ast.transformers.DefParamUsedBaseNamePromotionFinalTransforms.pass,
+	            // Make this truly last across hygiene by running after all late underscore/align replays
+	            runAfter: [
+	                "ParamUnderscoreArgRefAlign_Final",
+	                "ParamUnderscoreGlobalAlign_Final",
+	                "HandleEventParamsForceBodyRewrite_Final",
+	                "DropInvalidMapGetSelfAssign_Final",
+	                "MountSessionExtractCleanup_Final",
+	                "EctoQueryBranchSelfAssignUnderscore_Final",
+	                "AssignWhereSelfBinderUnderscore_Final",
+	                "LocalAssignUnusedUnderscore_Scoped_Final"
+	            ]
+	        });
         // Absolute-final sanitizer: drop any self-assign Map.get artifacts
         passes.push({
             name: "DropInvalidMapGetSelfAssign_Final",
             description: "Absolute final: remove Map.get(params, key) = Map.get(params, key) statements in defs",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.DropInvalidMapGetSelfAssignTransforms.pass,
-            runAfter: ["DefParamUnusedUnderscoreGlobalSafe_Final", "ParamUnderscoreGlobalAlign_Final", "HandleEventParamsUltraFinal", "MountParamsUltraFinal"]
+            runAfter: ["ParamUnderscoreGlobalAlign_Final", "HandleEventParamsUltraFinal", "MountParamsUltraFinal"]
         });
         // Absolute-final: ensure mount/3 session extraction is dropped if still present
         passes.push({
@@ -5074,10 +4062,7 @@ class ElixirASTPassRegistry {
                 "MountSessionExtractCleanup_Final",
                 "MountParamsSideEffectAssignDiscard_Final",
                 "ParamUnderscoreGlobalAlign_Final",
-                "HandleEventParamsUltraFinal_Last",
-                "VarNameNormalization_Final",
-                "VarRefSuffixParamNormalize_Final",
-                "SuccessBinderPrefixMostUsedUndefined_UltraFinal"
+                "HandleEventParamsUltraFinal_Last"
             ]
         });
         // Absolute final: discard `params = expr` side-effect-only assignments in mount/3
@@ -5088,7 +4073,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.MountParamsSideEffectAssignDiscardTransforms.pass,
             runAfter: [
                 "MountSessionExtractCleanup_Final",
-                "DefParamUnusedUnderscoreGlobalSafe_Final",
                 "ParamUnderscoreArgRefAlign_Final",
                 "ParamUnderscoreGlobalAlign_Final",
                 "MountBodyAlignToHead_Final",
@@ -5108,32 +4092,8 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ControllerLocalUnusedUnderscoreTransforms.pass,
             runAfter: [
-                "MountSessionExtractCleanup_Final",
-                "VarNameNormalization_Final",
-                "VarRefSuffixParamNormalize_Final",
-                "SuccessBinderPrefixMostUsedUndefined_UltraFinal"
+                "MountSessionExtractCleanup_Final"
             ]
-        });
-        // Absolute-final: drop pure var-copy assignments in <App>Web.* when binder unused later
-        passes.push({
-            name: "WebDropUnusedPureAssign_Final",
-            description: "Drop `x = y` when x unused later in Web.* modules",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.WebDropUnusedPureAssignTransforms.pass,
-            runAfter: ["ControllerLocalUnusedUnderscore_Final"]
-        });
-        // Replay controller result binder normalization very late to ensure clause bodies align with Phoenix.Controller.json usage
-        passes.push({
-            name: "ControllerResultBinderNormalization_Replay_Final",
-            description: "Late replay: rename {:ok,_}/{:error,_} binders (user/changeset) and alias `data` when referenced",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.controllerResultBinderNormalizationPass
-        });
-        passes.push({
-            name: "ControllerPhoenixJsonAliasInjection_Replay_Final",
-            description: "Late replay: inject `data = <binder>` when Phoenix.Controller.json(conn, data) is used",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.BinderTransforms.controllerPhoenixJsonAliasInjectionPass
         });
         // Absolute-final: underscore self-assign concat binders to avoid overshadow warnings
         passes.push({
@@ -5141,7 +4101,7 @@ class ElixirASTPassRegistry {
             description: "Rewrite `x = Enum.concat(x, ...)` → `_x = Enum.concat(x, ...)` in blocks",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ConcatSelfAssignBinderUnderscoreTransforms.pass,
-            runAfter: ["WebDropUnusedPureAssign_Final"]
+            runAfter: ["ControllerLocalUnusedUnderscore_Final"]
         });
         passes.push({
             name: "EctoQueryBranchSelfAssignUnderscore_Final",
@@ -5173,42 +4133,41 @@ class ElixirASTPassRegistry {
             runAfter: ["EctoRepoFinalArgFromLatestQueryVar"]
         });
         // Absolute-final: ensure Phoenix component functions using ~H have `assigns` as the first arg
-        passes.push({
-            name: "HeexAssignsParamRename_Final",
-            description: "Absolute final safety: rename _assigns → assigns when ~H is present in body",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HeexAssignsParamRenameFinalTransforms.pass,
-            runAfter: ["AssignWhereSelfBinderUnderscore_Final", "DefParamUnusedUnderscoreGlobalSafe_Final"]
-        });
+	        passes.push({
+	            name: "HeexAssignsParamRename_Final",
+	            description: "Absolute final safety: rename _assigns → assigns when ~H is present in body",
+	            enabled: true,
+	            pass: reflaxe.elixir.ast.transformers.HeexAssignsParamRenameFinalTransforms.pass,
+	            runAfter: ["AssignWhereSelfBinderUnderscore_Final", "DefParamUnusedUnderscoreSafe"]
+	        });
         // Absolute-final: underscore `params` head binder in mount/3 and handle_event/3
         // when unused in the body to silence warnings
-        passes.push({
-            name: "DefParamHeadUnderscoreWhenUnused_Final",
-            description: "Rename params→_params in mount/3 & handle_event/3 when body does not reference params",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.DefParamHeadUnderscoreWhenUnusedTransforms.pass,
-            runAfter: [
-                "MountBodyAlignToHead_Final",
-                "MountSessionExtractCleanup_Final",
-                "MountDropHeadIdentityReassign_Final",
-                "HandleEventParamsForceBodyRewrite_Final"
-            ]
-        });
+	        passes.push({
+	            name: "DefParamHeadUnderscoreWhenUnused_Final",
+	            description: "Rename params→_params in mount/3 & handle_event/3 when body does not reference params",
+	            enabled: true,
+	            pass: reflaxe.elixir.ast.transformers.DefParamHeadUnderscoreWhenUnusedTransforms.pass,
+	            runAfter: [
+	                "MountBodyAlignToHead_Final",
+	                "MountSessionExtractCleanup_Final",
+	                "HandleEventParamsForceBodyRewrite_Final"
+	            ]
+	        });
         // Absolute-last: guarantee no `_params` uses remain in handle_event/3
-        passes.push({
-            name: "HandleEventParamsUltraFinal_Last",
-            description: "Last guard: if body uses _params, set head to params and rewrite body",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.HandleEventParamsUltraFinalLastTransforms.pass,
-            runAfter: [
-                "DefParamHeadUnderscoreWhenUnused_Final",
-                "DefParamUnusedUnderscoreGlobalSafe_Final",
-                "DropInvalidMapGetSelfAssign_Final",
-                "MountSessionExtractCleanup_Final",
-                "EctoRepoFinalArgFromLatestQueryVar",
-                "AssignWhereSelfBinderUnderscore_Final"
-            ]
-        });
+	        passes.push({
+	            name: "HandleEventParamsUltraFinal_Last",
+	            description: "Last guard: if body uses _params, set head to params and rewrite body",
+	            enabled: true,
+	            pass: reflaxe.elixir.ast.transformers.HandleEventParamsUltraFinalLastTransforms.pass,
+	            runAfter: [
+	                "DefParamHeadUnderscoreWhenUnused_Final",
+	                "DefParamUnusedUnderscoreSafe",
+	                "DropInvalidMapGetSelfAssign_Final",
+	                "MountSessionExtractCleanup_Final",
+	                "EctoRepoFinalArgFromLatestQueryVar",
+	                "AssignWhereSelfBinderUnderscore_Final"
+	            ]
+	        });
         passes.push({
             name: "HandleEventParamsHeadToParams_Final",
             description: "Absolute-final: force handle_event/3 second arg to params when referenced; rewrite _params to params in body",
@@ -5237,7 +4196,6 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ParamUnderscoreArgRefAlignGlobalTransforms.pass,
             runAfter: [
-                "DefParamUnusedUnderscoreGlobalSafe_Final",
                 "DefParamHeadUnderscoreWhenUnused_Final",
                 "HeexAssignsParamRename_Final"
             ]
@@ -5250,17 +4208,8 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AssignMultipleNormalizeTransforms.pass,
             runAfter: [
-                "HandleEventParamsHeadToParams_Ultimate",
                 "HandleEventMapGetUnderscoreParams_Final"
             ]
-        });
-        // Re-introduce: ensure head binder is `params` when body uses it, but BEFORE
-        // DefParamHeadUnderscoreWhenUnused_Final so unused flows can still underscore.
-        passes.push({
-            name: "HandleEventParamsUltraForceRewrite_PreUnderscoreFinal",
-            description: "Force handle_event/3 second arg to params and rewrite body (pre-underscore-final)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleEventParamsUltraForceRewriteAbsoluteFinalTransforms.pass
         });
         passes.push({
             name: "HandleEventMapGetUnderscoreParams_Final",
@@ -5270,7 +4219,6 @@ class ElixirASTPassRegistry {
             runAfter: [
                 // Ensure the head binder has been promoted decisively to `params`
                 // before rewriting Map.get(_params, …) in the body.
-                "HandleEventParamsHeadToParams_Ultimate",
                 "HandleEventParamsHeadToParams_Final",
                 "HandleEventParamsUltraFinal_Last"
             ]
@@ -5283,9 +4231,7 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HandleInfoUnderscoreBinderPromoteFinalTransforms.pass,
             runAfter: [
                 "HandleInfoUnderscoreSocketFix_Final",
-                "HandleInfoAliasCleanup_Final",
-                "HandleInfoReturnSocketNormalize_Final",
-                "HandleInfoScrutineeToPayloadRef_Final"
+                "HandleInfoReturnSocketNormalize_Final"
             ]
         });
         // LiveView-only: discard local assignments never read later (var = expr -> _ = expr)
@@ -5298,50 +4244,6 @@ class ElixirASTPassRegistry {
                 "ListUpdateAndFilterFix",
                 "WebParamFinalFix",
                 "HandleEventParamRepair_Final"
-            ]
-        });
-        // Ultimate: if body references `params`, ensure head binder is params
-        passes.push({
-            name: "HandleEventParamsHeadToParams_Ultimate",
-            description: "Absolute-ultimate: when body uses params, force head binder to params",
-            enabled: false, // perf bisection
-            pass: reflaxe.elixir.ast.transformers.HandleEventParamsHeadToParamsUltimateTransforms.pass,
-            runAfter: [
-                "LocalAssignDiscardIfUnused_LiveView_Final",
-                "ParamUnderscoreArgRefAlign_Global_Final",
-                "HandleEventParamExtractFromBodyUse_Final",
-                "HandleEventParamRepair_Final",
-                "HandleEventParamsUltraFinal",
-                "HandleEventParamsUltraFinal_Last"
-            ]
-        });
-        passes.push({
-            name: "HandleEventValueIdToParams_Ultimate",
-            description: "Absolute-ultimate: force Map.get(value, \"id\") to Map.get(paramsVar, \"id\") inside handle_event/3",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleEventValueIdToParamsUltimateTransforms.pass,
-            runAfter: [
-                "HandleEventParamsHeadToParams_Ultimate",
-                "HandleEventMapGetUnderscoreParams_Final"
-            ]
-        });
-        passes.push({
-            name: "HandleEventIdValueToParamsFix_Ultimate",
-            description: "Ultimate guard: rewrite Map.get(value, \"id\") and bare value to paramsVar in handle_event/3 bodies",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleEventIdValueToParamsFixTransforms.pass,
-            runAfter: [
-                "HandleEventValueIdToParams_Ultimate"
-            ]
-        });
-        passes.push({
-            name: "HandleEventValueToParams_Global_Ultimate",
-            description: "Replace any bare `value` with paramsVar inside handle_event/3 bodies (ultimate guard)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.HandleEventValueToParamsGlobalTransforms.pass,
-            runAfter: [
-                "HandleEventIdValueToParamsFix_Ultimate",
-                "HandleEventParamsHeadToParams_Ultimate"
             ]
         });
         #if debug_handle_event_dump
@@ -5362,29 +4264,6 @@ class ElixirASTPassRegistry {
                 "DowncaseInlineFromPriorAssign_Final"
             ]
         });
-        passes.push({
-            name: "HandleEventArg0FromValueToId_Ultimate",
-            description: "When a helper call uses Map.get(params, \"value\", …) as first arg, replace with integer id from nested value map (or params id fallback)",
-            enabled: false, // DISABLED: Causes mangled params in typed event handlers
-            pass: reflaxe.elixir.ast.transformers.HandleEventArg0FromValueToIdUltimateTransforms.pass,
-            runAfter: [
-                "HandleEventParamsHeadToParams_Ultimate",
-                "HandleEventMapGetUnderscoreParams_Final",
-                "HandleEventMapGetValueDefaultToParams_Final",
-                "HandleEventParamsUltraFinal_Last"
-            ]
-        });
-        passes.push({
-            name: "HandleEventDecodeValueQueryIfBinary_Ultimate",
-            description: "Decode Map.get(params, \"value\") when it is a URL-encoded query string (URI.decode_query)",
-            enabled: false, // DISABLED: Causes mangled params in typed event handlers
-            pass: reflaxe.elixir.ast.transformers.HandleEventDecodeValueQueryIfBinaryUltimateTransforms.pass,
-            runAfter: [
-                "HandleEventParamsHeadToParams_Ultimate",
-                "HandleEventMapGetUnderscoreParams_Final",
-                "HandleEventMapGetValueDefaultToParams_Final"
-            ]
-        });
         // Very late: ensure Map.get(<payload>, "value") uses `<payload>` as default when missing (forms)
         passes.push({
             name: "HandleEventMapGetValueDefaultToParams_Final",
@@ -5397,15 +4276,6 @@ class ElixirASTPassRegistry {
                 "HandleEventMapGetUnderscoreParams_Final"
             ]
         });
-        passes.push({
-            name: "FunctionParamUnusedUnderscore_Final",
-            description: "Underscore unused def/defp parameters (absolute-final)",
-            // Fixed: collectUsed now extracts identifiers from ERaw/EString using regex
-            // to detect usage in IIFE call arguments like: end).(user, attrs)
-            // NOTE: Disabled by default; uses a suffix usage index (O(n) build + O(1) checks).
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.FunctionParamUnusedUnderscoreFinalTransforms.pass
-        });
         // Late semantic fix: if a match binds to a block value (pat = (stmt1; stmt2; expr)),
         // ensure the match binds to the *last* expression once flattened into statement context.
         // This is intentionally late to avoid perturbing earlier pattern-based transforms.
@@ -5413,8 +4283,7 @@ class ElixirASTPassRegistry {
             name: "MatchBlockRhsExtractLast_Final",
             description: "Expand `pat = <block>` into block prefix statements + `pat = last_expr` (semantic fix)",
             enabled: true,
-            pass: reflaxe.elixir.ast.transformers.MatchBlockRhsExtractLastTransforms.pass,
-            runAfter: ["HandleInfoAliasCleanup_Final"]
+            pass: reflaxe.elixir.ast.transformers.MatchBlockRhsExtractLastTransforms.pass
         });
         passes.push({
             name: "CaseClauseUnusedBinderUnderscore_Final",
@@ -5440,20 +4309,8 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.HandleInfoAliasAndNoreplyAbsoluteFinalTransforms.pass,
             runAfter: [
                 "HandleInfoReturnSocketNormalize_Final",
-                "HandleInfoScrutineeToPayloadRef_Final",
                 "UnderscoreToParamSocketFix_Final",
-                "HandleInfoAliasCleanup_Final"
-            ]
-        });
-
-        // Late hygiene: underscore truly unused vars (params, locals, helper binds)
-        passes.push({
-            name: "UnusedVarUnderscore_Final",
-            description: "Prefix unused vars with underscore after all helper binds are injected (value/sort_by/payload/broadcast_result)",
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.UnusedVarUnderscoreFinalTransforms.pass,
-            runAfter: [
-                "HandleInfoAliasAndNoreply_AbsoluteFinal"
+                "HandleInfoUnderscoreSocketFix_Final"
             ]
         });
 

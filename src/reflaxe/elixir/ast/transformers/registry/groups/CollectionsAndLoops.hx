@@ -54,13 +54,6 @@ class CollectionsAndLoops {
       pass: ElixirASTTransformer.alias_listEffectLiftingPass
     });
 
-    passes.push({
-      name: "ForToEnumEachSideEffect",
-      description: "Rewrite EFor with side-effect body to Enum.each(collection, fn -> body end)",
-      enabled: false,
-      pass: reflaxe.elixir.ast.transformers.ForToEnumEachSideEffectTransforms.pass
-    });
-
     return passes;
   }
 }
