@@ -2,7 +2,7 @@ defmodule Main do
   defp test_while_loop() do
     k = 10
     pos = 0
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, (fn -> fn _, {k, pos} ->
+    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {k, pos} ->
       if (k > 0) do
         (old_pos = pos
 pos = pos + 1
@@ -14,7 +14,7 @@ old_k)
       else
         {:halt, {k, pos}}
       end
-    end end).())
+    end)
     nil
     nil
   end

@@ -5,9 +5,9 @@ defmodule Main do
     _ = Enum.each(numbers, fn n -> [] ++ [n * 2] end)
     doubled = []
     _ = 0
-    _ = Enum.each(numbers, (fn -> fn n ->
+    _ = Enum.each(numbers, fn n ->
   if (rem(n, 2) == 0), do: [] ++ [n]
-end end).())
+end)
     evens = []
     x = 1
     y = "a"
@@ -22,7 +22,7 @@ end end).())
     pairs = []
     i = 0
     collected = []
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, collected}, (fn -> fn _, {i, collected} ->
+    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, collected}, fn _, {i, collected} ->
       if (i < 5) do
         _ = collected ++ [i * i]
         (old_i = i
@@ -32,11 +32,11 @@ old_i)
       else
         {:halt, {i, collected}}
       end
-    end end).())
+    end)
     nil
     j = 0
     results = []
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, results}, (fn -> fn _, {j, results} ->
+    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, results}, fn _, {j, results} ->
       if (j < 3) do
         _ = results ++ [j]
         (old_j = j
@@ -46,18 +46,18 @@ old_j)
       else
         {:halt, {j, results}}
       end
-    end end).())
+    end)
     nil
     sum = 0
     _g = 0
     _ = Enum.each(numbers, fn n -> sum = sum + n end)
     output = []
     _g = 0
-    _ = Enum.each(numbers, (fn -> fn n ->
+    _ = Enum.each(numbers, fn n ->
   if (n > 2) do
     output = output ++ [n]
   end
-end end).())
+end)
     nil
   end
 end

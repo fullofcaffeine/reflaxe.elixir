@@ -358,6 +358,43 @@ class BinderTransforms {
             scan(n);
             return found;
         }
+        inline function containsVarRef(n: ElixirAST, name: String): Bool {
+            var found = false;
+            function scan(x: ElixirAST): Void {
+                if (found || x == null || x.def == null) return;
+                switch (x.def) {
+                    case EVar(v) if (v == name):
+                        found = true;
+                    case EField(target, _):
+                        scan(target);
+                    case EMatch(_, rhs):
+                        scan(rhs);
+                    case EBlock(es):
+                        for (e in es) scan(e);
+                    case EBinary(_, l, r):
+                        scan(l); scan(r);
+                    case ECase(e, cs):
+                        scan(e);
+                        for (c in cs) {
+                            if (c.guard != null) scan(c.guard);
+                            scan(c.body);
+                        }
+                    case ECall(t, _, as):
+                        if (t != null) scan(t);
+                        if (as != null) for (a in as) scan(a);
+                    case ERemoteCall(m2, _, as2):
+                        scan(m2);
+                        if (as2 != null) for (a in as2) scan(a);
+                    case ETuple(items) | EList(items):
+                        for (i in items) scan(i);
+                    case EMap(pairs):
+                        for (p in pairs) { scan(p.key); scan(p.value); }
+                    default:
+                }
+            }
+            scan(n);
+            return found;
+        }
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
                 case ERemoteCall(mod, func, args) if ((func == "filter") && args != null && args.length == 2):
@@ -365,22 +402,45 @@ class BinderTransforms {
                     var pred = args[1];
                     switch(pred.def) {
                         case EFn(clauses) if (clauses.length > 0):
+                            var changed = false;
                             var newClauses = [];
                             for (cl in clauses) {
                                 var tVar: Null<String> = null;
                                 if (cl.args != null && cl.args.length > 0) switch(cl.args[0]) { case PVar(n): tVar = n; default: }
                                 if (tVar == null) { newClauses.push(cl); continue; }
-                                // Build: in_title or (t.description != nil and in_desc)
+
+                                // Only normalize when the predicate already uses a downcased search `query`
+                                // and references at least one of the common search fields.
+                                // This prevents corrupting unrelated Enum.filter predicates (e.g., tag trimming).
+                                var usesQuery = containsVarRef(cl.body, "query");
+                                var usesTitle = containsFieldOfVar(cl.body, tVar, "title");
+                                var usesDesc = containsFieldOfVar(cl.body, tVar, "description");
+                                if (!usesQuery || (!usesTitle && !usesDesc)) {
+                                    newClauses.push(cl);
+                                    continue;
+                                }
+
+                                changed = true;
+
                                 var tVarRef = makeAST(EVar(tVar));
-                                var titleField = makeAST(EField(tVarRef, "title"));
-                                var titleBool = makeIsNotNil(binaryMatch(downcase(titleField), makeAST(EVar("query"))));
-                                var descField = makeAST(EField(tVarRef, "description"));
-                                var descPresent = makeAST(EBinary(NotEqual, descField, makeAST(ENil)));
-                                var descBool = makeIsNotNil(binaryMatch(downcase(descField), makeAST(EVar("query"))));
-                                var right = makeAST(EBinary(And, descPresent, descBool));
-                                var combined = makeAST(EBinary(Or, titleBool, right));
+                                var queryRef = makeAST(EVar("query"));
+
+                                var parts:Array<ElixirAST> = [];
+                                if (usesTitle) {
+                                    var titleField = makeAST(EField(tVarRef, "title"));
+                                    parts.push(makeIsNotNil(binaryMatch(downcase(titleField), queryRef)));
+                                }
+                                if (usesDesc) {
+                                    var descField = makeAST(EField(tVarRef, "description"));
+                                    var descPresent = makeAST(EBinary(NotEqual, descField, makeAST(ENil)));
+                                    var descBool = makeIsNotNil(binaryMatch(downcase(descField), queryRef));
+                                    parts.push(makeAST(EBinary(And, descPresent, descBool)));
+                                }
+
+                                var combined = parts.length == 1 ? parts[0] : makeAST(EBinary(Or, parts[0], parts[1]));
                                 newClauses.push({ args: cl.args, guard: cl.guard, body: combined });
                             }
+                            if (!changed) return node;
                             var newPred = makeAST(EFn(newClauses));
                             #if debug_filter_predicate
                             // DISABLED: trace('[FilterNorm] Rewriting Enum.filter predicate to pure boolean');
@@ -393,21 +453,42 @@ class BinderTransforms {
                     var pred = args[1];
                     switch(pred.def) {
                         case EFn(clauses) if (clauses.length > 0):
+                            var changed = false;
                             var newClauses = [];
                             for (cl in clauses) {
                                 var tVar: Null<String> = null;
                                 if (cl.args != null && cl.args.length > 0) switch(cl.args[0]) { case PVar(n): tVar = n; default: }
                                 if (tVar == null) { newClauses.push(cl); continue; }
+
+                                var usesQuery = containsVarRef(cl.body, "query");
+                                var usesTitle = containsFieldOfVar(cl.body, tVar, "title");
+                                var usesDesc = containsFieldOfVar(cl.body, tVar, "description");
+                                if (!usesQuery || (!usesTitle && !usesDesc)) {
+                                    newClauses.push(cl);
+                                    continue;
+                                }
+
+                                changed = true;
+
                                 var tVarRef = makeAST(EVar(tVar));
-                                var titleField = makeAST(EField(tVarRef, "title"));
-                                var titleBool = makeIsNotNil(binaryMatch(downcase(titleField), makeAST(EVar("query"))));
-                                var descField = makeAST(EField(tVarRef, "description"));
-                                var descPresent = makeAST(EBinary(NotEqual, descField, makeAST(ENil)));
-                                var descBool = makeIsNotNil(binaryMatch(downcase(descField), makeAST(EVar("query"))));
-                                var right = makeAST(EBinary(And, descPresent, descBool));
-                                var combined = makeAST(EBinary(Or, titleBool, right));
+                                var queryRef = makeAST(EVar("query"));
+
+                                var parts:Array<ElixirAST> = [];
+                                if (usesTitle) {
+                                    var titleField = makeAST(EField(tVarRef, "title"));
+                                    parts.push(makeIsNotNil(binaryMatch(downcase(titleField), queryRef)));
+                                }
+                                if (usesDesc) {
+                                    var descField = makeAST(EField(tVarRef, "description"));
+                                    var descPresent = makeAST(EBinary(NotEqual, descField, makeAST(ENil)));
+                                    var descBool = makeIsNotNil(binaryMatch(downcase(descField), queryRef));
+                                    parts.push(makeAST(EBinary(And, descPresent, descBool)));
+                                }
+
+                                var combined = parts.length == 1 ? parts[0] : makeAST(EBinary(Or, parts[0], parts[1]));
                                 newClauses.push({ args: cl.args, guard: cl.guard, body: combined });
                             }
+                            if (!changed) return node;
                             var newPred = makeAST(EFn(newClauses));
                             makeASTWithMeta(ECall(target, func, [args[0], newPred]), node.metadata, node.pos);
                         default:
@@ -751,8 +832,9 @@ class BinderTransforms {
      * - Within modules whose name matches "<App>Web.*", derive "<App>" prefix.
      * - For remote/calls whose target is a single-segment, UpperCamelCase identifier
      *   and not a known global module (Kernel, Enum, Map, String, etc.),
-     *   if a module named "<App>.<Target>" exists in the collected set, rewrite
-     *   the call to use that fully qualified module name.
+     *   if a module named "<App>Web.<Target>" or "<App>.<Target>" exists in the collected set,
+     *   rewrite the call to use that fully qualified module name (preferring the Web namespace).
+     * - Map `SafePubSub` to `Phoenix.SafePubSub` regardless of app prefix.
      *
      * EXAMPLES
      * Haxe:
@@ -809,6 +891,20 @@ class BinderTransforms {
             return c.toUpperCase() == c && c.toLowerCase() != c; // starts uppercase letter
         }
 
+        inline function resolveQualifiedModule(moduleName: String, appPrefix: String): Null<String> {
+            if (appPrefix == null || moduleName == null) return null;
+            // Phoenix uses a top-level <App>Web module (no dot). Never qualify it to <App>.<App>Web.
+            if (moduleName == appPrefix || moduleName == appPrefix + "Web") return null;
+
+            var webCandidate = appPrefix + "Web." + moduleName;
+            if (definedModules.exists(webCandidate)) return webCandidate;
+
+            var appCandidate = appPrefix + "." + moduleName;
+            if (definedModules.exists(appCandidate)) return appCandidate;
+
+            return null;
+        }
+
         function qualifyIn(subtree: ElixirAST, appPrefix: String): ElixirAST {
             // Note: SafePubSub mapping does not require appPrefix; we still
             // traverse even when appPrefix is null but only apply prefix-based
@@ -821,17 +917,13 @@ class BinderTransforms {
                             case ERemoteCall(mod, func, args):
                                 switch (mod.def) {
                                     case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
-                                        if (m == "Presence" && appPrefix != null) {
-                                            var fqP = appPrefix + "Web." + m;
-                                            return makeASTWithMeta(ECapture(makeAST(ERemoteCall(makeAST(EVar(fqP)), func, args)), arity), n.metadata, n.pos);
-                                        }
                                         if (m == "SafePubSub") {
                                             return makeASTWithMeta(ECapture(makeAST(ERemoteCall(makeAST(EVar("Phoenix.SafePubSub")), func, args)), arity), n.metadata, n.pos);
                                         }
-                                        if (appPrefix != null) {
-                                            var fq = appPrefix + "." + m;
-                                            return makeASTWithMeta(ECapture(makeAST(ERemoteCall(makeAST(EVar(fq)), func, args)), arity), n.metadata, n.pos);
-                                        } else n;
+                                        var fq = resolveQualifiedModule(m, appPrefix);
+                                        fq != null
+                                            ? makeASTWithMeta(ECapture(makeAST(ERemoteCall(makeAST(EVar(fq)), func, args)), arity), n.metadata, n.pos)
+                                            : n;
                                     default: n;
                                 }
                             default: n;
@@ -839,35 +931,22 @@ class BinderTransforms {
                     case ERemoteCall(mod, func, args):
                         switch (mod.def) {
                             case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
-                                // Always map Presence to <App>Web.Presence
-                                if (m == "Presence" && appPrefix != null) {
-                                    var fqP = appPrefix + "Web." + m;
-                                    return makeASTWithMeta(ERemoteCall(makeAST(EVar(fqP)), func, args), n.metadata, n.pos);
-                                }
                                 // Map SafePubSub -> Phoenix.SafePubSub
                                 if (m == "SafePubSub") {
                                     return makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.SafePubSub")), func, args), n.metadata, n.pos);
                                 }
-                                if (appPrefix != null) {
-                                    var fq = appPrefix + "." + m;
-                                    return makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
-                                } else n;
+                                var fq = resolveQualifiedModule(m, appPrefix);
+                                fq != null ? makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos) : n;
                             default: n;
                         }
                     case ECall(target, func, args) if (target != null):
                         switch (target.def) {
                             case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
-                                if (m == "Presence" && appPrefix != null) {
-                                    var fqP = appPrefix + "Web." + m;
-                                    return makeASTWithMeta(ERemoteCall(makeAST(EVar(fqP)), func, args), n.metadata, n.pos);
-                                }
                                 if (m == "SafePubSub") {
                                     return makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.SafePubSub")), func, args), n.metadata, n.pos);
                                 }
-                                if (appPrefix != null) {
-                                    var fq = appPrefix + "." + m;
-                                    return makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
-                                } else n;
+                                var fq = resolveQualifiedModule(m, appPrefix);
+                                fq != null ? makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos) : n;
                             default: n;
                         }
                     default:
@@ -928,6 +1007,10 @@ class BinderTransforms {
             var idx = moduleName.indexOf("Web");
             return idx > 0 ? moduleName.substring(0, idx) : null;
         }
+        inline function isAppOrWebRootModule(moduleName: String, appPrefix: String): Bool {
+            if (appPrefix == null || moduleName == null) return false;
+            return moduleName == appPrefix || moduleName == appPrefix + "Web";
+        }
         inline function isSingleSegmentModule(name: String): Bool {
             return name != null && name.indexOf(".") == -1 && name.length > 0;
         }
@@ -944,7 +1027,7 @@ class BinderTransforms {
                     case ERemoteCall(mod, func, args):
                         switch (mod.def) {
                             case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
-                                if (appPrefix != null) {
+                                if (appPrefix != null && !isAppOrWebRootModule(m, appPrefix)) {
                                     var fq = appPrefix + "." + m;
                                     makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
                                 } else n;
@@ -953,7 +1036,7 @@ class BinderTransforms {
                     case ECall(target, func, args) if (target != null):
                         switch (target.def) {
                             case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
-                                if (appPrefix != null) {
+                                if (appPrefix != null && !isAppOrWebRootModule(m, appPrefix)) {
                                     var fq = appPrefix + "." + m;
                                     makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
                                 } else n;
@@ -1000,6 +1083,10 @@ class BinderTransforms {
             var idx = moduleName.indexOf("Web");
             return idx > 0 ? moduleName.substring(0, idx) : null;
         }
+        inline function isAppOrWebRootModule(moduleName: String, appPrefix: String): Bool {
+            if (appPrefix == null || moduleName == null) return false;
+            return moduleName == appPrefix || moduleName == appPrefix + "Web";
+        }
         inline function isSingleSegmentModule(name: String): Bool {
             return name != null && name.indexOf(".") == -1 && name.length > 0;
         }
@@ -1016,7 +1103,7 @@ class BinderTransforms {
                     case ERemoteCall(mod, func, args):
                         switch (mod.def) {
                             case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
-                                if (appPrefix != null) {
+                                if (appPrefix != null && !isAppOrWebRootModule(m, appPrefix)) {
                                     var fq = appPrefix + "." + m;
                                     makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
                                 } else n;
@@ -1025,7 +1112,7 @@ class BinderTransforms {
                     case ECall(target, func, args) if (target != null):
                         switch (target.def) {
                             case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isGlobalWhitelisted(m)):
-                                if (appPrefix != null) {
+                                if (appPrefix != null && !isAppOrWebRootModule(m, appPrefix)) {
                                     var fq = appPrefix + "." + m;
                                     makeASTWithMeta(ERemoteCall(makeAST(EVar(fq)), func, args), n.metadata, n.pos);
                                 } else n;
@@ -1119,7 +1206,9 @@ class BinderTransforms {
                     // Next char must be '.' to be a module call
                     if (j < code.length && code.charAt(j) == '.') {
                         // Do not qualify whitelisted roots
-                        if (!reflaxe.elixir.ast.StdModuleWhitelist.isWhitelistedRoot(token) && app != null && app.length > 0) {
+                        // Also avoid <App>.<App> and <App>.<App>Web (Phoenix uses a top-level <App>Web module).
+                        var isAppOrWebRoot = (app != null && app.length > 0) && (token == app || token == app + "Web");
+                        if (!isAppOrWebRoot && !reflaxe.elixir.ast.StdModuleWhitelist.isWhitelistedRoot(token) && app != null && app.length > 0) {
                             out.add(app);
                             out.add(".");
                         }

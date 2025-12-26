@@ -67,12 +67,32 @@ class VariableUsageCollector {
             // References
             case EVar(v):
                 if (!shadowed.exists(v)) refs.set(v, true);
+                // Some passes or builder shapes may encode dotted field access as a single EVar
+                // (e.g., "todo.completed", "socket.assigns.todos"). Treat the base binder as a
+                // reference as well so hygiene passes can correctly detect binder usage.
+                var dotIndex = v.indexOf(".");
+                if (dotIndex > 0) {
+                    var base = v.substring(0, dotIndex);
+                    var c = base.charAt(0);
+                    var looksLikeVar = (c == '_') || (c.toLowerCase() == c && c.toUpperCase() != c);
+                    if (looksLikeVar && !shadowed.exists(base)) refs.set(base, true);
+                }
 
             // Do not treat LHS as reference; only RHS can reference
-            case EBinary(Match, left, rhs):
-                walk(rhs, shadowed, refs);
+            case EBinary(op, left, right):
+                // Assignment/match binds on the LHS; only RHS can reference.
+                // All other binary ops may reference from both sides.
+                switch (op) {
+                    case Match:
+                        walk(right, shadowed, refs);
+                    default:
+                        walk(left, shadowed, refs);
+                        walk(right, shadowed, refs);
+                }
             case EMatch(_, rhsExpr):
                 walk(rhsExpr, shadowed, refs);
+            case EUnary(_, expr):
+                walk(expr, shadowed, refs);
 
             // Blocks / groups
             case EBlock(stmts):

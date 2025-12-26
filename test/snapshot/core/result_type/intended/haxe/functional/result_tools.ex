@@ -77,12 +77,12 @@ defmodule ResultTools do
   def sequence(results) do
     values = []
     _g = 0
-    _ = Enum.each(results, (fn -> fn result ->
+    _ = Enum.each(results, fn result ->
   (case result do
     {:ok, value} -> values = values ++ [value]
     {:error, error} -> {:error, error}
   end)
-end end).())
+end)
     {:ok, values}
   end
   def traverse(array, transform) do

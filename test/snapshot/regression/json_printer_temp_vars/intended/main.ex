@@ -1,7 +1,7 @@
 defmodule Main do
   def test_temp_variable_scoping() do
     obj = %{:finite_number => 42.5, :infinite_number => 1 / 0, :string_value => "test"}
-    result = MyApp.JsonPrinter.print(obj, nil, nil)
+    result = JsonPrinter.print(obj, nil, nil)
     nil
   end
   def test_ternary_with_temp_vars() do
