@@ -15,6 +15,11 @@ End-to-end reference app showcasing Reflaxe.Elixir in a real Phoenix LiveView ap
 - PubSub broadcasts so multiple sessions update live
 - Bulk actions (complete all / delete completed)
 
+Note on “multiple instances”:
+- The default Phoenix PubSub in this example broadcasts **within a single Phoenix node**.
+- Live updates propagate across multiple **browser sessions** connected to the same server process.
+- If you run multiple `mix phx.server` instances, you’ll only get cross-instance sync if you also configure node clustering / distributed PubSub.
+
 ### Frontend (Haxe → JavaScript)
 - LiveView hooks authored in Haxe (progressive enhancement)
 - Keyboard shortcuts + small UX helpers
