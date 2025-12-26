@@ -721,9 +721,10 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
     }
     static inline function priorityRankForSort(priority: String): Int {
         return switch (priority) {
-            case "low": 0;
+            // Higher priority first (ascending sort key)
+            case "high": 0;
             case "medium": 1;
-            case "high": 2;
+            case "low": 2;
             case _: 3;
         };
     }
