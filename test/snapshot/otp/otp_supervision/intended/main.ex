@@ -16,15 +16,15 @@ defmodule Main do
     _ = Process.exit(supervisor, "normal")
   end
   defp test_task() do
-    task = task.async((fn -> fn ->
+    task = task.async(fn ->
       _ = Process.sleep(100)
       42
-    end end).())
+    end)
     result = task.await(task)
-    slow_task = task.async((fn -> fn ->
+    slow_task = task.async(fn ->
       _ = Process.sleep(5000)
       "slow"
-    end end).())
+    end)
     yield_result = task.yield(slow_task, 100)
     if (Kernel.is_nil(yield_result)) do
       task.shutdown(slow_task)
@@ -34,22 +34,22 @@ defmodule Main do
     tasks = [task.async(fn -> nil end), task.async(fn -> 2 end), task.async(fn -> 3 end)]
     results = task.yield_many(tasks)
     _g = 0
-    _ = Enum.each(results, (fn -> fn task_result ->
+    _ = Enum.each(results, fn task_result ->
   if (not Kernel.is_nil(task_result.result)), do: nil
-end end).())
+end)
     task = task.async(fn -> "quick" end)
     quick_result = _ = task.await(task)
     funs = [fn -> "a" end, fn -> "b" end, fn -> "c" end]
     _ = 0
-    _ = Enum.each(funs, fn fun -> [] ++ [fun.async(fun)] end)
+    _ = Enum.each(funs, fn fun -> [] ++ [task.async(fun)] end)
     tasks = []
     concurrent_results = _ = 0
     _ = Enum.each(tasks, fn task -> [] ++ [task.await(task)] end)
     []
-    task = task.async((fn -> fn ->
+    task = task.async(fn ->
       _ = Process.sleep(50)
       "timed"
-    end end).())
+    end)
     result = task.yield(task, 100)
     timed_result = if (Kernel.is_nil(result)) do
       _ = task.shutdown(task)
@@ -83,7 +83,7 @@ end end).())
       _ = Enum.each(funs, fn fun -> g ++ [Task.Supervisor.async(supervisor, fun)] end)
       tasks = []
       concurrent_results = g = 0
-      _ = Enum.each(tasks, fn task -> task ++ [task.await(task)] end)
+      _ = Enum.each(tasks, fn task -> g ++ [task.await(task)] end)
       []
       _ = Task.Supervisor.start_child(supervisor, fn -> nil end)
     end

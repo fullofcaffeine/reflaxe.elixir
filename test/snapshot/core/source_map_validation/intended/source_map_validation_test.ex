@@ -13,7 +13,7 @@ defmodule SourceMapValidationTest do
     obj_name = "Test"
     obj_value = 100
     obj_nested_field = "nested value"
-    instance = MyApp.TestClass.new("example")
+    instance = TestClass.new("example")
     _ = instance.doSomething()
     nil
   end

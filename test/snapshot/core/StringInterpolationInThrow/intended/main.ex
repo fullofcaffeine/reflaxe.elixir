@@ -51,7 +51,7 @@ defmodule Main do
     module = "UserController"
     func = "show"
     try do
-      throw(MyApp.CustomError.new("Error in " <> module <> "." <> func))
+      throw(CustomError.new("Error in " <> module <> "." <> func))
     rescue
       e ->
         nil

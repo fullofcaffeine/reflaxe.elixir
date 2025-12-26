@@ -12,6 +12,6 @@ defmodule Container do
     _g = 0
     _g1 = struct.items
     _ = Enum.each(g_value, fn item -> StringBuf.add(result, fn_param.(item)) end)
-    MyApp.Container.new()
+    %Container{}
   end
 end

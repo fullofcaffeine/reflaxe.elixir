@@ -20,7 +20,7 @@ defmodule Main do
   def factorial(struct, n) do
     result = 1
     i = n
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, 0}, (fn -> fn _, {result, i} ->
+    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, 0}, fn _, {result, i} ->
       if (i > 1) do
         result = result * i
         (old_i = i
@@ -30,7 +30,7 @@ old_i)
       else
         {:halt, {result, i}}
       end
-    end end).())
+    end)
     nil
     result
   end
@@ -50,7 +50,7 @@ old_i)
     "Hello, #{(fn -> name end).()}!"
   end
   def main() do
-    instance = MyApp.Main.new(10)
+    instance = Main.new(10)
     nil
   end
 end

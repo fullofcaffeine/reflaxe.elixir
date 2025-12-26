@@ -19,10 +19,10 @@ defmodule Main do
   def map_literals() do
     colors = %{"red" => 16711680, "green" => 65280, "blue" => 255}
     color = colors.keys()
-    _ = Enum.each(colors, (fn -> fn _ ->
+    _ = Enum.each(colors, fn _ ->
   hex = StringTools.hex(colors.get(color), 6)
   nil
-end end).())
+end)
     squares = %{1 => 1, 2 => 4, 3 => 9, 4 => 16, 5 => 25}
     n = squares.keys()
     _ = Enum.each(colors, fn _ -> nil end)
@@ -43,12 +43,12 @@ end end).())
     _ = Enum.each(colors, fn _ -> nil end)
     filtered = %{}
     key = original.keys()
-    Enum.each(filtered, (fn -> fn _ ->
+    Enum.each(filtered, fn _ ->
       value = original.get(key)
       if (value > 2) do
         filtered = Map.put(filtered, key, value)
       end
-    end end).())
+    end)
     nil
     key = filtered.keys()
     _ = Enum.each(colors, fn _ -> nil end)
@@ -56,16 +56,16 @@ end end).())
     map2 = %{"c" => 3, "d" => 4, "a" => 10}
     merged = %{}
     key = map1.keys()
-    Enum.each(merged, (fn -> fn _ ->
+    Enum.each(merged, fn _ ->
       value = map1.get(key)
       _ = Map.put(merged, key, value)
-    end end).())
+    end)
     nil
     key = map2.keys()
-    Enum.each(merged, (fn -> fn _ ->
+    Enum.each(merged, fn _ ->
       value = map2.get(key)
       _ = Map.put(merged, key, value)
-    end end).())
+    end)
     nil
     key = merged.keys()
     _ = Enum.each(colors, fn _ -> nil end)
@@ -78,10 +78,10 @@ end end).())
   def process_map(input) do
     result = %{}
     key = input.keys()
-    Enum.each(result, (fn -> fn _ ->
+    Enum.each(result, fn _ ->
       value = input.get(key)
       _ = Map.put(result, key, "Value: " <> Kernel.to_string(value))
-    end end).())
+    end)
     nil
     result
   end

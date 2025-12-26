@@ -133,7 +133,7 @@ defmodule Main do
     first = Enum.at(test_array, 0)
     found = Enum.find(test_array, fn x -> x > 3 end)
     doubled = Enum.map(test_array, fn x -> x * 2 end)
-    filtered = Enum.filter(test_array, fn x -> String.contains?(String.downcase(x.title), query) or x.description != nil and String.contains?(String.downcase(x.description), query) end)
+    filtered = Enum.filter(test_array, fn x -> rem(x, 2) == 0 end)
     _reduced = Enum.reduce(test_array, 0, fn acc, x -> acc + x end)
     sum = Enum.sum(test_array)
     max = Enum.max(test_array)

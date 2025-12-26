@@ -3183,19 +3183,28 @@ class ElixirASTPassRegistry {
             enabled: false,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.concatEachToReducePass
         });
-        passes.push({
-            name: "FindRewrite",
-            description: "Rewrite Enum.each scans ending with nil into Enum.find(list, &pred/1)",
-            // Disabled: unsafe (can drop preceding statements in the block and/or
-            // produce predicates that reference locals declared inside the Enum.each body,
-            // yielding invalid Elixir like `fn i -> item > 2 end` without binding `item`).
-            enabled: false,
-            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.findRewritePass
-        });
-        // Post-rewrite cleanup: once loops have become Enum.find/2, repair any remaining
-        // `v.id == v` self-compare drift by using the enclosing `id`/`_id` parameter.
-        passes.push({
-            name: "ListFindByIdFix_PostFindRewrite",
+	        passes.push({
+	            name: "FindRewrite",
+	            description: "Rewrite Enum.each scans ending with nil into Enum.find(list, &pred/1)",
+	            // Disabled: unsafe (can drop preceding statements in the block and/or
+	            // produce predicates that reference locals declared inside the Enum.each body,
+	            // yielding invalid Elixir like `fn i -> item > 2 end` without binding `item`).
+	            enabled: false,
+	            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.findRewritePass
+	        });
+	        // Safe alternative to FindRewrite: preserves Haxe `return` semantics inside for-loops
+	        // lowered to Enum.each/2 by rewriting to Enum.reduce_while/3 and wrapping the remainder
+	        // of the surrounding block in a case.
+	        passes.push({
+	            name: "EnumEachEarlyReturn",
+	            description: "Preserve Haxe return semantics for loops lowered to Enum.each/2 (rewrite to Enum.reduce_while + case)",
+	            enabled: true,
+	            pass: reflaxe.elixir.ast.transformers.EnumEachEarlyReturnTransforms.pass
+	        });
+	        // Post-rewrite cleanup: once loops have become Enum.find/2, repair any remaining
+	        // `v.id == v` self-compare drift by using the enclosing `id`/`_id` parameter.
+	        passes.push({
+	            name: "ListFindByIdFix_PostFindRewrite",
             description: "Fix Enum.find self-compare v.id == v using enclosing id/_id param (after FindRewrite)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ListMapFilterFixTransforms.filterRemoveFixPass
@@ -3295,20 +3304,20 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "EFnSingleArgUndefinedAlign",
             description: "Rewrite single free var in 1-arg EFn body to binder (shape-based, no coupling)",
-            enabled: true,
+            enabled: false, // Too unsafe: can rewrite legitimate outer captures (e.g., comparing binder.id to an outer id)
             pass: reflaxe.elixir.ast.transformers.EFnSingleArgUndefinedAlignTransforms.alignPass
         });
         // Early: also align when binder is used; prefer binder over single free var
         passes.push({
             name: "EFnSingleFreeVarToBinder_Early",
             description: "Early: rewrite single free var in 1-arg EFn to binder even if binder used",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.EFnSingleFreeVarToBinderTransforms.pass
         });
         passes.push({
             name: "EFnFieldObjectToBinder_Early",
             description: "Early: rewrite EField(free, field) -> EField(binder, field) in 1-arg EFn bodies",
-            enabled: true,
+            enabled: false, // Too unsafe: breaks legitimate outer captures like `t.id == todo.id`
             pass: reflaxe.elixir.ast.transformers.EFnFieldObjectToBinderTransforms.pass
         });
         passes.push({
@@ -3391,20 +3400,20 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "EFnSingleArgUndefinedAlign",
             description: "Absolute last: rewrite single free var in 1-arg EFn body to binder",
-            enabled: true,
+            enabled: false, // Too unsafe: can rewrite legitimate outer captures
             pass: reflaxe.elixir.ast.transformers.EFnSingleArgUndefinedAlignTransforms.alignPass
         });
         // Absolute last: align single free var to binder even if binder is used
         passes.push({
             name: "EFnSingleFreeVarToBinder",
             description: "Absolute last: rewrite single free var in 1-arg EFn to binder (binder may be used)",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.EFnSingleFreeVarToBinderTransforms.pass
         });
         passes.push({
             name: "EFnFieldObjectToBinder",
             description: "Absolute last: rewrite EField(free, field) -> EField(binder, field) in 1-arg EFn bodies",
-            enabled: true,
+            enabled: false, // Too unsafe: breaks legitimate outer captures like `t.id == todo.id`
             pass: reflaxe.elixir.ast.transformers.EFnFieldObjectToBinderTransforms.pass
         });
         // Convert Enum.each counting patterns to Enum.count with predicate (very late)
@@ -3417,7 +3426,9 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "EFnLastChanceFix",
             description: "Absolute last-chance EFn binder/body fix: _binder -> binder, single free var -> binder",
-            enabled: true,
+            // Disabled: rewriting single free vars to the binder is semantically unsafe (breaks legitimate outer captures).
+            // Keep the safer underscore/binder alignment passes earlier in the pipeline instead.
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.EFnLastChanceFixTransforms.pass
         });
         passes.push({
@@ -5488,6 +5499,18 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexAssignsLocalVarRenameTransforms.transformPass,
             runAfter: ["PhoenixComponentModuleNormalize_AbsoluteLast"]
+        });
+
+        // Absolute-last cleanup: if EnumEachEarlyReturn rewrote a terminal Enum.each into a
+        // `case Enum.reduce_while(...)` expression, some later return-shaping code may still
+        // append a trailing `nil`, which would override the intended return value. Drop that
+        // redundant nil when the preceding expression is the reflaxe return-tagged case.
+        passes.push({
+            name: "EnumEachEarlyReturnTrailingNilCleanup_AbsoluteLast",
+            description: "Absolute-last: drop redundant trailing nil after reflaxe return-tagged reduce_while case",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EnumEachEarlyReturnTrailingNilCleanupTransforms.pass,
+            runAfter: ["HeexAssignsLocalVarRename_AbsoluteLast"]
         });
 
         // Filter disabled passes first

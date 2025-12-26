@@ -23,11 +23,11 @@ defmodule Main do
   end
   def type_checking() do
     value = 42
-    if (MyApp.Std.is(value, Int)), do: nil
+    if (Std.is(value, Int)), do: nil
     value = "Hello"
-    if (MyApp.Std.is(value, String)), do: nil
+    if (Std.is(value, String)), do: nil
     value = [1, 2, 3]
-    if (MyApp.Std.is(value, Array)), do: nil
+    if (Std.is(value, Array)), do: nil
     num = "123"
     int_value = ((case Integer.parse(num) do
   {num, _} -> num
@@ -53,11 +53,11 @@ end))
   def process_dynamic(value) do
     cond do
       Kernel.is_nil(value) -> "null"
-      MyApp.Std.is(value, Bool) -> "Bool: " <> inspect(value)
-      MyApp.Std.is(value, Int) -> "Int: " <> inspect(value)
-      MyApp.Std.is(value, Float) -> "Float: " <> inspect(value)
-      MyApp.Std.is(value, String) -> "String: " <> inspect(value)
-      MyApp.Std.is(value, Array) -> "Array of length: " <> length(value)
+      Std.is(value, Bool) -> "Bool: " <> inspect(value)
+      Std.is(value, Int) -> "Int: " <> inspect(value)
+      Std.is(value, Float) -> "Float: " <> inspect(value)
+      Std.is(value, String) -> "String: " <> inspect(value)
+      Std.is(value, Array) -> "Array of length: " <> length(value)
       :true -> "Unknown type"
     end
   end

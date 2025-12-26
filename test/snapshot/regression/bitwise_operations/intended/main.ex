@@ -64,7 +64,7 @@ defmodule Main do
     n = 255
     hex_chars = "0123456789ABCDEF"
     s = ""
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s}, (fn -> fn _, {n, s} ->
+    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s}, fn _, {n, s} ->
       if (n > 0) do
         digit = Bitwise.band(n, 15)
         s = String.at(hex_chars, digit) || "" <> s
@@ -73,7 +73,7 @@ defmodule Main do
       else
         {:halt, {n, s}}
       end
-    end end).())
+    end)
     nil
     r = 255
     b = 64

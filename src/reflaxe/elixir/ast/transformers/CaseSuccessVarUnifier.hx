@@ -153,8 +153,17 @@ class CaseSuccessVarUnifier {
             }
         });
 
-        // Undefined references in body that are simple vars
-        var undefined = [for (k in referenced.keys()) if (!declared.exists(k) && !funcDefined.exists(k)) k];
+        // Undefined references in body that look like simple local variables.
+        // IMPORTANT: Module names and dotted access (e.g. `TodoApp.Repo`, `socket.assigns.todos`) are
+        // represented as EVar in some builder shapes and must never be rewritten to the success binder.
+        var undefined = [
+            for (k in referenced.keys())
+                if (
+                    isCandidatePlaceholder(k)
+                    && !declared.exists(k)
+                    && !funcDefined.exists(k)
+                ) k
+        ];
         #if debug_success_unifier
         if (undefined.length > 0) {
         }
@@ -163,13 +172,28 @@ class CaseSuccessVarUnifier {
 
         return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
-                case EVar(name) if (!declared.exists(name) && !funcDefined.exists(name)):
-                    // Replace undefined local with successVar
+                case EVar(name) if (!declared.exists(name) && !funcDefined.exists(name) && undefined.indexOf(name) != -1):
+                    // Replace undefined placeholder local with successVar
                     makeASTWithMeta(EVar(successVar), n.metadata, n.pos);
                 default:
                     n;
             }
         });
+    }
+
+    static inline function isCandidatePlaceholder(name: String): Bool {
+        if (name == null || name.length == 0) return false;
+        // Never treat modules or dotted access as placeholders.
+        if (name.indexOf(".") != -1) return false;
+        // Exclude conventional environment bindings.
+        if (name == "socket" || name == "live_socket" || name == "liveSocket") return false;
+        // Only lowercase-starting locals are eligible (avoid module aliases like `Repo`, `Enum`, `Phoenix`).
+        var c = name.charAt(0);
+        var isLower = (c.toLowerCase() == c) && (c.toUpperCase() != c);
+        if (!isLower) return false;
+        // Avoid underscore-leading locals; those are deliberate and should not be repointed.
+        if (c == "_") return false;
+        return true;
     }
 
     static function collectPatternDecls(p: EPattern, declared: Map<String, Bool>): Void {

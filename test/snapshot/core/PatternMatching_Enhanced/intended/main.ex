@@ -51,26 +51,26 @@ end))
   defp test_guard_patterns() do
     numbers = [1, 5, 10, 15, 20]
     _g = 0
-    _ = Enum.each(numbers, (fn -> fn num ->
-  _n = num
-  category = if (num < 5) do
+    _ = Enum.each(numbers, fn num ->
+  n = num
+  category = if (n < 5) do
     "small"
   else
-    _n = num
-    if (num >= 5 and num < 15) do
+    n = num
+    if (n >= 5 and n < 15) do
       "medium"
     else
-      _n = num
-      if (num >= 15), do: "large", else: "unknown"
+      n = num
+      if (n >= 15), do: "large", else: "unknown"
     end
   end
   nil
-end end).())
+end)
   end
   defp test_array_patterns() do
     arrays = [[], [1], [1, 2], [1, 2, 3], [1, 2, 3, 4, 5]]
     _g = 0
-    _ = Enum.each(arrays, (fn -> fn arr ->
+    _ = Enum.each(arrays, fn arr ->
   description = ((case arr do
   [] -> "empty"
   [_head | _tail] ->
@@ -88,7 +88,7 @@ end end).())
   _ -> "length=" <> Kernel.to_string(length(arr)) <> ", first=" <> (if (length(arr) > 0), do: inspect(arr[0]), else: "none")
 end))
   nil
-end end).())
+end)
   end
   defp test_object_patterns() do
     point_y = nil

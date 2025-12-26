@@ -2087,23 +2087,23 @@ class ElixirASTBuilder {
                             case EVar(n): n;
                             default: null;
                         };
-                        var op2 = (op == OpIncrement) ? Add : Subtract;
+                        var arithmeticOp = (op == OpIncrement) ? Add : Subtract;
                         if (targetVar != null) {
                             if (postFix) {
                                 // old = x; x = x + 1; old
                                 var oldVarName = "__old_" + targetVar;
                                 EParen(makeAST(EBlock([
                                     makeAST(EMatch(PVar(oldVarName), makeAST(EVar(targetVar)))),
-                                    makeAST(EMatch(PVar(targetVar), makeAST(EBinary(op2, makeAST(EVar(targetVar)), one)))),
+                                    makeAST(EMatch(PVar(targetVar), makeAST(EBinary(arithmeticOp, makeAST(EVar(targetVar)), one)))),
                                     makeAST(EVar(oldVarName))
                                 ])));
                             } else {
                                 // x = x + 1
-                                EMatch(PVar(targetVar), makeAST(EBinary(op2, makeAST(EVar(targetVar)), one)));
+                                EMatch(PVar(targetVar), makeAST(EBinary(arithmeticOp, makeAST(EVar(targetVar)), one)));
                             }
                         } else {
                             // Fallback: compute the arithmetic value when we can't safely rebind.
-                            EBinary(op2, built, one);
+                            EBinary(arithmeticOp, built, one);
                         }
                     case OpSpread:
                         // Spread operator for destructuring
@@ -3782,6 +3782,11 @@ class ElixirASTBuilder {
             purity: PatternDetector.isPure(expr),
             tailPosition: false, // Will be set by transformer
             fromReturn: switch (expr.expr) { case TReturn(_): true; default: false; }, // Enables early-return reconstruction in transformer
+            loopContainsReturn: switch (expr.expr) {
+                case TFor(_, _, body): LoopBuilder.containsNonLocalReturn(body);
+                case TWhile(_, body, _): LoopBuilder.containsNonLocalReturn(body);
+                default: false;
+            },
             async: false, // Will be detected by transformer
             requiresReturn: false, // Will be set by context
             requiresTempVar: false, // Will be set by transformer

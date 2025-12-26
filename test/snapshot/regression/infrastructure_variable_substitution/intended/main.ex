@@ -1,6 +1,6 @@
 defmodule Main do
   def main() do
-    result = (case MyApp.TestPubSub.subscribe("notifications") do
+    result = (case TestPubSub.subscribe("notifications") do
       {:ok, value} -> "Success: #{(fn -> value end).()}"
       {:error, reason} -> "Failed: #{(fn -> reason end).()}"
     end)

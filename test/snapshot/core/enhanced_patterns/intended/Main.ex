@@ -7,10 +7,10 @@ defmodule Main do
   _g = []
   _g1 = 1
   _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
     _g
-  end end).())
+  end)
   _g
   _g
 end).(), ",") end).()}"
@@ -24,10 +24,10 @@ end).(), ",") end).()}"
         "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   _g1 = 1
   _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
     _g
-  end end).())
+  end)
   _g
   _g
 end).(), ",") end).()}"
@@ -47,10 +47,10 @@ end).(), ",") end).()}"
   _g = []
   _g1 = 1
   _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
     _g
-  end end).())
+  end)
   _g
   _g
 end).(), ",") end).()}"
@@ -75,10 +75,10 @@ end).(), ",") end).()}"
   _g = []
   _g1 = 1
   _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
     _g
-  end end).())
+  end)
   _g
   _g
 end).(), ",") end).()}"
@@ -106,10 +106,10 @@ end).(), ",") end).()}"
   _g = []
   _g1 = 1
   _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
     _g
-  end end).())
+  end)
   _g
   _g
 end).(), ",") end).()}"
@@ -138,10 +138,10 @@ end))
           "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
   _g1 = 3
   _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
     _g
-  end end).())
+  end)
   _g
   _g
 end).(), ",") end).()}"
@@ -163,10 +163,10 @@ end).(), ",") end).()}"
         "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
   _g1 = 3
   _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
     _g
-  end end).())
+  end)
   _g
   _g
 end).(), ",") end).()}"
@@ -189,10 +189,10 @@ end).(), ",") end).()}"
   _g = []
   _g1 = 3
   _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
     _g
-  end end).())
+  end)
   _g
   _g
 end).(), ",") end).()}"
@@ -210,10 +210,10 @@ end).(), ",") end).()}"
   _g = []
   _g1 = 3
   _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
     _g
-  end end).())
+  end)
   _g
   _g
 end).(), ",") end).()}"
@@ -288,32 +288,32 @@ end))
   def test_type_guards() do
     value = "Hello World"
     v = value
-    if (MyApp.Std.is(v, String) and Map.get(v, :length) > 10) do
+    if (Std.is(v, String) and Map.get(v, :length) > 10) do
       "Long string: #{(fn -> inspect(v) end).()}"
     else
       v = value
-      if (MyApp.Std.is(v, String) and Map.get(v, :length) <= 10) do
+      if (Std.is(v, String) and Map.get(v, :length) <= 10) do
         "Short string: #{(fn -> inspect(v) end).()}"
       else
         v = value
-        if (MyApp.Std.is(v, Int) and v > 0) do
+        if (Std.is(v, Int) and v > 0) do
           "Positive integer: #{(fn -> inspect(v) end).()}"
         else
           v = value
-          if (MyApp.Std.is(v, Int) and v <= 0) do
+          if (Std.is(v, Int) and v <= 0) do
             "Non-positive integer: #{(fn -> inspect(v) end).()}"
           else
             v = value
-            if (MyApp.Std.is(v, Float)) do
+            if (Std.is(v, Float)) do
               "Float value: #{(fn -> inspect(v) end).()}"
             else
               v = value
-              if (MyApp.Std.is(v, Bool)) do
+              if (Std.is(v, Bool)) do
                 "Boolean value: #{(fn -> inspect(v) end).()}"
               else
                 v = value
                 cond do
-                  MyApp.Std.is(v, Array) -> "Array with " <> length(v) <> " elements"
+                  Std.is(v, Array) -> "Array with " <> length(v) <> " elements"
                   Kernel.is_nil(value) -> "Null value"
                   :true -> "Unknown type"
                 end

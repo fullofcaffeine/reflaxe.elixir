@@ -233,24 +233,24 @@ defmodule Main do
   end
   def classify_value(value) do
     v = value
-    if (MyApp.Std.is(v, String)) do
+    if (Std.is(v, String)) do
       "string: \"#{(fn -> inspect(v) end).()}\""
     else
       v = value
-      if (MyApp.Std.is(v, Int)) do
+      if (Std.is(v, Int)) do
         "integer: #{(fn -> inspect(v) end).()}"
       else
         v = value
-        if (MyApp.Std.is(v, Float)) do
+        if (Std.is(v, Float)) do
           "float: #{(fn -> inspect(v) end).()}"
         else
           v = value
-          if (MyApp.Std.is(v, Bool)) do
+          if (Std.is(v, Bool)) do
             "boolean: #{(fn -> inspect(v) end).()}"
           else
             v = value
             cond do
-              MyApp.Std.is(v, Array) -> "array of length " <> length(v)
+              Std.is(v, Array) -> "array of length " <> length(v)
               Kernel.is_nil(value) -> "null value"
               :true -> "unknown type"
             end

@@ -46,12 +46,23 @@ class EFnArgCleanupTransforms {
                                 case PVar(name):
                                     var trimmed = (name != null && name.length > 1 && name.charAt(0) == '_') ? name.substr(1) : name;
                                     argNames.push({orig: name, trimmed: trimmed, idx: idx});
-                                    // If underscored and used later, rename binder now; body will be rewritten below
-                                    if (name != null && name.length > 1 && name.charAt(0) == '_') newArgs.push(PVar(trimmed)) else newArgs.push(a);
+                                    if (name != null && name.length > 1 && name.charAt(0) == '_') {
+                                        // Only strip the underscore when the binder is actually used; otherwise
+                                        // keep it to avoid "unused variable" warnings.
+                                        var used = bodyUsesVar(cl.body, name) || bodyUsesVar(cl.body, trimmed);
+                                        newArgs.push(used ? PVar(trimmed) : a);
+                                    } else {
+                                        newArgs.push(a);
+                                    }
                                 case PAlias(name, pat):
-                                    var trimmed2 = (name != null && name.length > 1 && name.charAt(0) == '_') ? name.substr(1) : name;
-                                    argNames.push({orig: name, trimmed: trimmed2, idx: idx});
-                                    if (name != null && name.length > 1 && name.charAt(0) == '_') newArgs.push(PAlias(trimmed2, pat)) else newArgs.push(a);
+                                    var trimmedAliasName = (name != null && name.length > 1 && name.charAt(0) == '_') ? name.substr(1) : name;
+                                    argNames.push({orig: name, trimmed: trimmedAliasName, idx: idx});
+                                    if (name != null && name.length > 1 && name.charAt(0) == '_') {
+                                        var aliasIsUsed = bodyUsesVar(cl.body, name) || bodyUsesVar(cl.body, trimmedAliasName);
+                                        newArgs.push(aliasIsUsed ? PAlias(trimmedAliasName, pat) : a);
+                                    } else {
+                                        newArgs.push(a);
+                                    }
                                 default:
                                     newArgs.push(a);
                             }

@@ -35,7 +35,7 @@ defmodule Main do
   end
   defp test_loop_counters() do
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, (fn -> fn _, {i} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {i} ->
       if (i < 5) do
         (old_i = i
 i = i + 1
@@ -44,10 +44,10 @@ old_i)
       else
         {:halt, {i}}
       end
-    end end).())
+    end)
     nil
     j = 5
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, (fn -> fn _, {j} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {j} ->
       if (j > 0) do
         (old_j = j
 j = (j - 1)
@@ -56,11 +56,11 @@ old_j)
       else
         {:halt, {j}}
       end
-    end end).())
+    end)
     nil
     sum = 0
     k = 1
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, (fn -> fn _, {sum, k} ->
+    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {sum, k} ->
       if (k <= 5) do
         sum = sum + k
         (old_k = k
@@ -70,14 +70,14 @@ old_k)
       else
         {:halt, {sum, k}}
       end
-    end end).())
+    end)
     nil
     total = 0
     x = 0
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, (fn -> fn _, {total, x} ->
+    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {total, x} ->
       if (x < 3) do
         y = 0
-        {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, (fn -> fn _, {total, y} ->
+        {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {total, y} ->
           if (y < 3) do
             total = total + 1
             (old_y = y
@@ -87,7 +87,7 @@ old_y)
           else
             {:halt, {total, y}}
           end
-        end end).())
+        end)
         nil
         (old_x = x
 x = x + 1
@@ -96,7 +96,7 @@ old_x)
       else
         {:halt, {total, x}}
       end
-    end end).())
+    end)
     nil
     nil
   end

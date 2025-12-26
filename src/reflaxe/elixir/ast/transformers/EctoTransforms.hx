@@ -187,6 +187,38 @@ class EctoTransforms {
                             }
                         default:
                     }
+                case EBinary(Match, left, expr):
+                    // Collect simple local assignments: name = expr
+                    switch (left.def) {
+                        case EVar(name):
+                            declared.set(name, true);
+                            // Detect Ecto.Queryable.to_query binding
+                            switch (expr.def) {
+                                case ERemoteCall(mod, func, _):
+                                    if (canonicalQuery == null && func == "to_query") {
+                                        switch (mod.def) {
+                                            case EVar(n) if (n == "Ecto.Queryable"):
+                                                canonicalQuery = name;
+                                            default:
+                                        }
+                                    }
+                                    // Detect Ecto.Query.from binding as canonical query as well
+                                    if (canonicalQuery == null && func == "from") {
+                                        switch (mod.def) {
+                                            case EVar(nf) if (nf == "Ecto.Query"):
+                                                canonicalQuery = name;
+                                            default:
+                                        }
+                                    }
+                                case ERaw(code):
+                                    // Detect canonical query binding from raw Ecto.Query.from
+                                    if (canonicalQuery == null && code.indexOf("Ecto.Query.from") != -1) {
+                                        canonicalQuery = name;
+                                    }
+                                default:
+                            }
+                        default:
+                    }
                 default:
                     // no-op; traversal is driven by a top-level walk
             }
@@ -292,11 +324,12 @@ class EctoTransforms {
                         default: n;
                     }
                 // Rewrite Ecto.Query.where/order_by/preload first arg to canonical query var
+                // only when the referenced query var is actually undefined in this function.
                 case ERemoteCall(mod2, func2, args2) if ((func2 == "where" || func2 == "order_by" || func2 == "preload") && args2.length >= 1 && canonicalQuery != null):
                     switch (mod2.def) {
                         case EVar(mn2) if (mn2 == "Ecto.Query"):
                             switch (args2[0].def) {
-                                case EVar(arg0) if (arg0 != canonicalQuery):
+                                case EVar(arg0) if (arg0 != canonicalQuery && !declared.exists(arg0)):
                                     var newArgs = args2.copy();
                                     newArgs[0] = makeAST(EVar(canonicalQuery));
                                     makeASTWithMeta(ERemoteCall(mod2, func2, newArgs), n.metadata, n.pos);

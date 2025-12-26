@@ -190,13 +190,13 @@ end).()]
     n = 3
     g = []
     g = n
-    Enum.reduce(0..(g - 1)//1, g, (fn -> fn i, g ->
+    Enum.reduce(0..(g - 1)//1, g, fn i, g ->
       Enum.concat(g, (fn -> [(fn ->
   _ = Enum.concat(g, [i])
   _ = Enum.concat(g, [i + 1])
   []
 end).()] end).())
-    end end).())
+    end)
     g
   end
   def nested_in_expression() do
@@ -221,10 +221,10 @@ end).()]
 end).()]
     data = []
     _g = 0
-    _ = Enum.each(data, (fn -> fn row ->
+    _ = Enum.each(data, fn row ->
   _g = 0
-  _ = row.each(row, fn val -> sum = sum + val end)
-end end).())
+  _ = Enum.each(row, fn val -> sum = sum + val end)
+end)
     sum
   end
   def with_meta_and_parens() do
@@ -254,14 +254,13 @@ end).()]
   def comprehension_from_iterable() do
     source = [1, 2, 3]
     g = 0
-    _ = Enum.each(source, (fn -> fn x ->
-  x ++ [(fn ->
-  g = []
+    _ = Enum.each(source, fn x ->
+  g ++ [(fn ->
   g = 0
-  _ = Enum.each(source, fn y -> x ++ [x * y] end)
-  x
+  _ = Enum.each(source, fn y -> g ++ [x * y] end)
+  []
 end).()]
-end end).())
+end)
     []
   end
   def empty_comprehensions() do

@@ -2,6 +2,7 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 
+import haxe.macro.Context;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
@@ -24,7 +25,8 @@ import reflaxe.elixir.ast.StdModuleWhitelist;
  * HOW
  * - Collect all module names defined in the current AST (EModule/EDefmodule) that
  *   are single-segment CamelCase and not whitelisted std/framework roots.
- * - Transform ERemoteCall/ECall targets using those names to <App>.<Name>.
+ * - Exclude modules already prefixed by <App> (e.g., <App>Web) to avoid double-qualification.
+ * - Transform ERemoteCall/ECall targets using the collected names to <App>.<Name>.
  * - Shape-based: no app-specific heuristics beyond the configured app prefix.
  */
 class ProjectLocalModuleQualificationTransforms {
@@ -44,12 +46,35 @@ class ProjectLocalModuleQualificationTransforms {
     }
 
     public static function transformPass(ast: ElixirAST): ElixirAST {
-        var defined = new Map<String,Bool>();
+        var app: Null<String> = null;
+        // Only qualify when the app namespace is explicitly configured.
+        // PhoenixMapper defaults to "MyApp" when app_name is unset, which would
+        // incorrectly qualify arbitrary modules in non-Phoenix compilation contexts.
+        try app = Context.definedValue("app_name") catch (e) {}
+        if (app == null || app.length == 0) return ast;
+
+        // Collect single-segment, project-local modules that are *not* already app-prefixed.
+        // Example: `UserChangeset` → qualify to `MyApp.UserChangeset`, but keep `MyAppWeb` intact.
+        var localRoots = new Map<String, Bool>();
         function collect(n: ElixirAST): Void {
             if (n == null || n.def == null) return;
             switch (n.def) {
-                case EModule(name, _, body): defined.set(name, true); for (b in body) collect(b);
-                case EDefmodule(name, doBlock): defined.set(name, true); collect(doBlock);
+                case EModule(name, _, body):
+                    if (isSingleSegmentModule(name)
+                        && isUpperCamel(name)
+                        && !StdModuleWhitelist.isWhitelistedRoot(name)
+                        && !StringTools.startsWith(name, app)) {
+                        localRoots.set(name, true);
+                    }
+                    for (b in body) collect(b);
+                case EDefmodule(name, doBlock):
+                    if (isSingleSegmentModule(name)
+                        && isUpperCamel(name)
+                        && !StdModuleWhitelist.isWhitelistedRoot(name)
+                        && !StringTools.startsWith(name, app)) {
+                        localRoots.set(name, true);
+                    }
+                    collect(doBlock);
                 default:
                     switch (n.def) {
                         case EBlock(es): for (e in es) collect(e);
@@ -64,21 +89,17 @@ class ProjectLocalModuleQualificationTransforms {
         }
         collect(ast);
 
-        var app: Null<String> = null;
-        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
-        if (app == null) return ast;
-
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 // Rewrite Module.func(args) → <App>.<Module>.func(args)
                 case ERemoteCall({def: EVar(moduleName)}, functionName, argumentList)
-                    if (isSingleSegmentModule(moduleName) && isUpperCamel(moduleName) && !StdModuleWhitelist.isWhitelistedRoot(moduleName)):
+                    if (localRoots.exists(moduleName)):
                     var qualifiedModule = qualifyAppLocalModule(moduleName, app);
                     makeASTWithMeta(ERemoteCall(makeAST(EVar(qualifiedModule)), functionName, argumentList), n.metadata, n.pos);
 
                 // Rewrite call form: Module.func(args) → <App>.<Module>.func(args)
                 case ECall({def: EVar(moduleName)}, functionName, argumentList)
-                    if (isSingleSegmentModule(moduleName) && isUpperCamel(moduleName) && !StdModuleWhitelist.isWhitelistedRoot(moduleName)):
+                    if (localRoots.exists(moduleName)):
                     var qualifiedModule = qualifyAppLocalModule(moduleName, app);
                     makeASTWithMeta(ERemoteCall(makeAST(EVar(qualifiedModule)), functionName, argumentList), n.metadata, n.pos);
 

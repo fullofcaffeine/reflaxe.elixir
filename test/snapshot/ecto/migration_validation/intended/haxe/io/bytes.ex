@@ -58,7 +58,7 @@ defmodule Bytes do
       throw("Out of bounds")
     end
     sub_binary = :binary.part(struct.b, pos, len)
-    _ = MyApp.Bytes.new(len, sub_binary)
+    _ = Bytes.new(len, sub_binary)
   end
   def fill(struct, pos, len, value) do
     if (pos < 0 or len < 0 or pos + len > length(struct)) do
@@ -211,12 +211,12 @@ defmodule Bytes do
   end
   def alloc(length) do
     b = :binary.copy(<<0>>, length)
-    _ = MyApp.Bytes.new(length, b)
+    _ = Bytes.new(length, b)
   end
   def of_string(s, encoding) do
     binary = :unicode.characters_to_binary(s, :utf8)
     length = byte_size(binary)
-    _ = MyApp.Bytes.new(length, binary)
+    _ = Bytes.new(length, binary)
   end
   def fast_get(b, pos) do
     :binary.at(b, pos)
@@ -224,10 +224,10 @@ defmodule Bytes do
   def of_hex(s) do
     binary = Base.decode16!(s, case: :mixed)
     length = byte_size(binary)
-    _ = MyApp.Bytes.new(length, binary)
+    _ = Bytes.new(length, binary)
   end
   def of_data(b) do
     length = byte_size(b)
-    _ = MyApp.Bytes.new(length, b)
+    _ = Bytes.new(length, b)
   end
 end

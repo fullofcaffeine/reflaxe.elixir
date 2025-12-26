@@ -12,8 +12,8 @@ defmodule Main do
     none_value = {:none}
     name = "world"
     nullable_name = nil
-    option_from_value = MyApp.OptionTools.from_nullable(name)
-    option_from_null = MyApp.OptionTools.from_nullable(nullable_name)
+    option_from_value = OptionTools.from_nullable(name)
+    option_from_null = OptionTools.from_nullable(nullable_name)
     some_person = {:some, "Alice"}
     no_person = {:none}
   end
@@ -39,45 +39,45 @@ end))
   end
   defp test_functional_operations() do
     user = {:some, "David"}
-    upper_name = MyApp.OptionTools.map(user, fn name -> String.upcase(name) end)
-    long_name = MyApp.OptionTools.filter(user, fn name -> String.contains?(String.downcase(name.title), query) or name.description != nil and String.contains?(String.downcase(name.description), query) end)
-    processed_user = MyApp.OptionTools.then(user, (fn -> fn name ->
+    upper_name = OptionTools.map(user, fn name -> String.upcase(name) end)
+    long_name = OptionTools.filter(user, fn name -> length(name) > 3 end)
+    processed_user = OptionTools.then(user, fn name ->
       if (length(name) > 0), do: {:some, name <> "!"}, else: {:none}
-    end end).())
-    final_result = MyApp.OptionTools.then(MyApp.OptionTools.filter(MyApp.OptionTools.map(user, fn name -> String.upcase(name) end), fn name -> String.contains?(String.downcase(name.title), query) or name.description != nil and String.contains?(String.downcase(name.description), query) end), fn name -> {:some, name <> " [PROCESSED]"} end)
-    greeting = MyApp.OptionTools.unwrap(user, "Anonymous")
-    expensive_default = MyApp.OptionTools.lazy_unwrap(user, fn -> "Computed default" end)
+    end)
+    final_result = OptionTools.then(OptionTools.filter(OptionTools.map(user, fn name -> String.upcase(name) end), fn name -> length(name) > 2 end), fn name -> {:some, name <> " [PROCESSED]"} end)
+    greeting = OptionTools.unwrap(user, "Anonymous")
+    expensive_default = OptionTools.lazy_unwrap(user, fn -> "Computed default" end)
     first = {:some, "First"}
     second = {:none}
-    combined = MyApp.OptionTools.or_(first, second)
-    lazy_second = MyApp.OptionTools.lazy_or(first, fn -> {:some, "Lazy second"} end)
+    combined = OptionTools.or_(first, second)
+    lazy_second = OptionTools.lazy_or(first, fn -> {:some, "Lazy second"} end)
   end
   defp test_beam_integration() do
     user = {:some, "Eve"}
-    user_result = MyApp.OptionTools.to_result(user, "User not found")
+    user_result = OptionTools.to_result(user, "User not found")
     ok_result = {:ok, "Frank"}
     error_result = {:error, "Not found"}
-    option_from_ok = MyApp.OptionTools.from_result(ok_result)
-    option_from_error = MyApp.OptionTools.from_result(error_result)
-    reply = MyApp.OptionTools.to_reply(user)
+    option_from_ok = OptionTools.from_result(ok_result)
+    option_from_error = OptionTools.from_result(error_result)
+    reply = OptionTools.to_reply(user)
     valid_user = {:some, "Grace"}
-    confirmed_user = MyApp.OptionTools.expect(valid_user, "Expected valid user")
+    confirmed_user = OptionTools.expect(valid_user, "Expected valid user")
   end
   defp test_null_safety() do
     maybe_null = nil
-    safe_option = MyApp.OptionTools.from_nullable(maybe_null)
-    result = MyApp.OptionTools.unwrap(MyApp.OptionTools.map(safe_option, fn s -> length(s) end), 0)
-    has_value = MyApp.OptionTools.is_some(safe_option)
-    is_empty = MyApp.OptionTools.is_none(safe_option)
-    back_to_nullable = MyApp.OptionTools.to_nullable(safe_option)
+    safe_option = OptionTools.from_nullable(maybe_null)
+    result = OptionTools.unwrap(OptionTools.map(safe_option, fn s -> length(s) end), 0)
+    has_value = OptionTools.is_some(safe_option)
+    is_empty = OptionTools.is_none(safe_option)
+    back_to_nullable = OptionTools.to_nullable(safe_option)
   end
   defp test_collection_operations() do
     options = [{:some, 1}, {:none}, {:some, 3}, {:some, 4}, {:none}]
-    values = MyApp.OptionTools.values(options)
+    values = OptionTools.values(options)
     all_options = [{:some, 1}, {:some, 2}, {:some, 3}]
-    combined = MyApp.OptionTools.all(all_options)
+    combined = OptionTools.all(all_options)
     mixed_options = [{:some, 1}, {:none}, {:some, 3}]
-    failed_combine = MyApp.OptionTools.all(mixed_options)
-    processed_values = Enum.filter(Enum.map(options, fn opt -> MyApp.OptionTools.map(opt, fn x -> x * 2 end) end), fn opt -> MyApp.OptionTools.is_some(opt) end)
+    failed_combine = OptionTools.all(mixed_options)
+    processed_values = Enum.filter(Enum.map(options, fn opt -> OptionTools.map(opt, fn x -> x * 2 end) end), fn opt -> OptionTools.is_some(opt) end)
   end
 end

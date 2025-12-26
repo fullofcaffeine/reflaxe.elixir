@@ -742,6 +742,9 @@ typedef ElixirMetadata = {
     ?tempToBinderMap: Map<Int, Int>, // Maps extraction temp var IDs to pattern binder IDs
     ?isUnused: Bool,               // Whether this variable is actually used in the code
 
+    // Loop semantics
+    ?loopContainsReturn: Bool,      // Loop body contains a non-local `return` (used to preserve Haxe semantics when lowered to Enum.each)
+
     // Case/switch helpers
     ?primaryCaseBinder: String,     // Selected binder name for primary enum payload (used for nested-case repair)
     ?usedLocalsFromTyped: Array<String>, // Lower-case locals used in a TypedExpr body (for binder alignment passes)

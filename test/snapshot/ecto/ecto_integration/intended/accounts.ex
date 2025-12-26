@@ -7,11 +7,11 @@ defmodule Accounts do
   end
   def create_user(attrs) do
     user = %User{}
-    changeset = MyApp.UserChangeset.changeset(user, attrs)
+    changeset = UserChangeset.changeset(user, attrs)
     _ = MyApp.Repo.insert(changeset)
   end
   def update_user(user, attrs) do
-    changeset = MyApp.UserChangeset.changeset(user, attrs)
+    changeset = UserChangeset.changeset(user, attrs)
     _ = MyApp.Repo.update(changeset)
   end
   def delete_user(user) do

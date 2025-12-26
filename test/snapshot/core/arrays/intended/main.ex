@@ -23,7 +23,7 @@ defmodule Main do
     _ = length(fruits)
     _ = Enum.each(0..(fruits_length - 1)//1, fn _ -> nil end)
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, (fn -> fn _, {i} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {i} ->
       if (i < length(fruits)) do
         (old_i = i
 i = i + 1
@@ -32,7 +32,7 @@ old_i)
       else
         {:halt, {i}}
       end
-    end end).())
+    end)
     nil
   end
   def array_methods() do
@@ -75,10 +75,10 @@ old_i)
   def multi_dimensional() do
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
     _g = 0
-    _ = Enum.each(matrix, (fn -> fn row ->
+    _ = Enum.each(matrix, fn row ->
   _g = 0
-  _ = row.each(row, fn _ -> nil end)
-end end).())
+  _ = Enum.each(row, fn _ -> nil end)
+end)
     _ = [(fn ->
   _ = [0]
   _ = [1]
@@ -114,22 +114,22 @@ end).()]
   def functional_methods() do
     numbers = [1, 2, 3, 4, 5]
     strings = ["hello", "world", "haxe", "elixir"]
-    sum = MyApp.ArrayTools.reduce(numbers, fn acc, item -> acc + item end, 0)
-    product = MyApp.ArrayTools.fold(numbers, fn acc, item -> acc * item end, 1)
-    first_even = MyApp.ArrayTools.find(numbers, fn n -> rem(n, 2) == 0 end)
-    long_word = MyApp.ArrayTools.find(strings, fn s -> length(s) > 4 end)
-    even_index = MyApp.ArrayTools.find_index(numbers, fn n -> rem(n, 2) == 0 end)
-    long_word_index = MyApp.ArrayTools.find_index(strings, fn s -> length(s) > 4 end)
-    has_even = MyApp.ArrayTools.exists(numbers, fn n -> rem(n, 2) == 0 end)
-    has_very_long = MyApp.ArrayTools.any(strings, fn s -> length(s) > 10 end)
-    all_positive = MyApp.ArrayTools.foreach(numbers, fn n -> n > 0 end)
-    all_short = MyApp.ArrayTools.all(strings, fn s -> length(s) < 10 end)
-    _ = MyApp.ArrayTools.for_each(numbers, fn n -> nil end)
-    _ = MyApp.ArrayTools.take(numbers, 3)
-    _ = MyApp.ArrayTools.drop(numbers, 2)
+    sum = ArrayTools.reduce(numbers, fn acc, item -> acc + item end, 0)
+    product = ArrayTools.fold(numbers, fn acc, item -> acc * item end, 1)
+    first_even = ArrayTools.find(numbers, fn n -> rem(n, 2) == 0 end)
+    long_word = ArrayTools.find(strings, fn s -> length(s) > 4 end)
+    even_index = ArrayTools.find_index(numbers, fn n -> rem(n, 2) == 0 end)
+    long_word_index = ArrayTools.find_index(strings, fn s -> length(s) > 4 end)
+    has_even = ArrayTools.exists(numbers, fn n -> rem(n, 2) == 0 end)
+    has_very_long = ArrayTools.any(strings, fn s -> length(s) > 10 end)
+    all_positive = ArrayTools.foreach(numbers, fn n -> n > 0 end)
+    all_short = ArrayTools.all(strings, fn s -> length(s) < 10 end)
+    _ = ArrayTools.for_each(numbers, fn n -> nil end)
+    _ = ArrayTools.take(numbers, 3)
+    _ = ArrayTools.drop(numbers, 2)
     nested_arrays = [[1, 2], [3, 4], [5]]
-    flattened = MyApp.ArrayTools.flat_map(nested_arrays, fn arr -> Enum.map(arr, fn x -> x * 2 end) end)
-    processed = MyApp.ArrayTools.reduce(MyApp.ArrayTools.take(Enum.map(Enum.filter(numbers, fn n -> n > 2 end), fn n -> n * n end), 2), fn acc, n -> acc + n end, 0)
+    flattened = ArrayTools.flat_map(nested_arrays, fn arr -> Enum.map(arr, fn x -> x * 2 end) end)
+    processed = ArrayTools.reduce(ArrayTools.take(Enum.map(Enum.filter(numbers, fn n -> n > 2 end), fn n -> n * n end), 2), fn acc, n -> acc + n end, 0)
     nil
   end
   def main() do

@@ -11,6 +11,6 @@ defmodule Circle do
     y
   end
   def create_unit() do
-    MyApp.Circle.new(0, 0, 1)
+    Circle.new(0, 0, 1)
   end
 end
