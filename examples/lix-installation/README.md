@@ -15,7 +15,7 @@ npm install lix
 npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # 3. (Optional) Install a specific version
-# npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.6
+# npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.7
 
 # 4. Use the scope (makes dependencies available)
 npx lix use
@@ -102,5 +102,5 @@ Ensure your `-lib reflaxe.elixir` directive is present in your .hxml file.
 npx lix install github:fullofcaffeine/reflaxe.elixir --force
 
 # Or update to a specific version
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.6 --force
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.7 --force
 ```
