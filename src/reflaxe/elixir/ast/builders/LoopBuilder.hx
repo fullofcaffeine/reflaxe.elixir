@@ -2746,10 +2746,10 @@ class LoopBuilder {
                 function inferFromRhs(lhsName: String, rhs: ElixirAST): Void {
                     if (rhs == null || rhs.def == null) return;
                     switch (rhs.def) {
-                        case EBinary(Add, {def: EVar(v)}, _) if (v == lhsName): inferred = makeAST(EInteger(0));
-                        case EBinary(Subtract, {def: EVar(v2)}, _) if (v2 == lhsName): inferred = makeAST(EInteger(0));
-                        case EBinary(StringConcat, {def: EVar(v3)}, _) if (v3 == lhsName): inferred = makeAST(EString(""));
-                        case EBinary(Concat, {def: EVar(v4)}, _) if (v4 == lhsName): inferred = makeAST(EList([]));
+                        case EBinary(Add, {def: EVar(varName)}, _) if (varName == lhsName): inferred = makeAST(EInteger(0));
+                        case EBinary(Subtract, {def: EVar(varName)}, _) if (varName == lhsName): inferred = makeAST(EInteger(0));
+                        case EBinary(StringConcat, {def: EVar(varName)}, _) if (varName == lhsName): inferred = makeAST(EString(""));
+                        case EBinary(Concat, {def: EVar(varName)}, _) if (varName == lhsName): inferred = makeAST(EList([]));
                         default:
                     }
                 }
@@ -2758,8 +2758,8 @@ class LoopBuilder {
                     case EMatch(pattern, rhs):
                         var lhsName: Null<String> = switch (pattern) { case PVar(nm): nm; default: null; };
                         if (lhsName != null && matchesTarget(lhsName)) inferFromRhs(lhsName, rhs);
-                    case EBinary(Match, {def: EVar(lhs)}, rhs2) if (matchesTarget(lhs)):
-                        inferFromRhs(lhs, rhs2);
+                    case EBinary(Match, {def: EVar(lhs)}, rhs) if (matchesTarget(lhs)):
+                        inferFromRhs(lhs, rhs);
                     default:
                 }
 

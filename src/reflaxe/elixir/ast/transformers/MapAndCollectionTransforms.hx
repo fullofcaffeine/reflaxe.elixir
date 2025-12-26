@@ -111,7 +111,7 @@ class MapAndCollectionTransforms {
                                 while (cur != null && cur.length == 1 && cur[0] != null && cur[0].def != null) {
                                     switch (cur[0].def) {
                                         case EBlock(inner): cur = inner;
-                                        case EDo(inner2): cur = inner2;
+                                        case EDo(innerDo): cur = innerDo;
                                         default: return cur;
                                     }
                                 }
@@ -179,9 +179,9 @@ class MapAndCollectionTransforms {
                     case ECase(expr, cs): collectUsedVars(expr, out); for (c in cs) collectUsedVars(c.body, out);
                     case EBinary(_, l, r): collectUsedVars(l, out); collectUsedVars(r, out);
                     case EField(obj, _): collectUsedVars(obj, out);
-                    case EAccess(obj2, key2):
-                        collectUsedVars(obj2, out);
-                        collectUsedVars(key2, out);
+                    case EAccess(accessTarget, accessKey):
+                        collectUsedVars(accessTarget, out);
+                        collectUsedVars(accessKey, out);
                     case EParen(inner):
                         collectUsedVars(inner, out);
                     case EMatch(_, rhs): collectUsedVars(rhs, out);
@@ -255,9 +255,9 @@ class MapAndCollectionTransforms {
                                             if (argsR != null) for (a2 in argsR) walkStmt(a2);
                                         case EField(obj, _):
                                             walkStmt(obj);
-                                        case EAccess(obj2, key2):
-                                            walkStmt(obj2);
-                                            walkStmt(key2);
+                                        case EAccess(accessTarget, accessKey):
+                                            walkStmt(accessTarget);
+                                            walkStmt(accessKey);
                                         case EKeywordList(ps):
                                             for (p in ps) walkStmt(p.value);
                                         case EMap(pairs):
@@ -359,25 +359,25 @@ class MapAndCollectionTransforms {
                                          * EDo support
                                          * - Handle do/end bodies by filtering out numeric sentinel-only statements.
                                          */
-                                        case EDo(stmts2):
-                                            var out2: Array<ElixirAST> = [];
-                                            for (s in stmts2) switch (s.def) {
-                                                case EInteger(v2) if (v2 == 0 || v2 == 1):
-                                                case EFloat(f2) if (f2 == 0.0):
-                                                default: out2.push(s);
+                                        case EDo(doStatements):
+                                            var doOut: Array<ElixirAST> = [];
+                                            for (s in doStatements) switch (s.def) {
+                                                case EInteger(value) if (value == 0 || value == 1):
+                                                case EFloat(value) if (value == 0.0):
+                                                default: doOut.push(s);
                                             }
-                                            makeASTWithMeta(EDo(out2), cl.body.metadata, cl.body.pos);
+                                            makeASTWithMeta(EDo(doOut), cl.body.metadata, cl.body.pos);
                                         default:
                                             cl.body;
                                     };
                                     // If binder is unused after cleanup, set wildcard
-                                    var arg0 = cl.args.length > 0 ? cl.args[0] : PWildcard;
-                                    var finalArg = switch (arg0) {
+                                    var firstArgPattern = cl.args.length > 0 ? cl.args[0] : PWildcard;
+                                    var finalArg = switch (firstArgPattern) {
                                         case PVar(nm):
                                             // Treat `_binder` references as binder usage too; later passes normalize `_binder` → `binder`.
-                                            (bodyUsesVar(cleanedBody, nm) || bodyUsesVar(cleanedBody, "_" + nm)) ? arg0 : PWildcard;
+                                            (bodyUsesVar(cleanedBody, nm) || bodyUsesVar(cleanedBody, "_" + nm)) ? firstArgPattern : PWildcard;
                                         default:
-                                            arg0;
+                                            firstArgPattern;
                                     };
                                     var newFn = makeAST(EFn([{ args: [finalArg], guard: cl.guard, body: cleanedBody }]));
                                     makeASTWithMeta(ERemoteCall(mod, "each", [listExpr, newFn]), n.metadata, n.pos);
@@ -509,7 +509,7 @@ class MapAndCollectionTransforms {
                                 while (cur != null && cur.length == 1 && cur[0] != null && cur[0].def != null) {
                                     switch (cur[0].def) {
                                         case EBlock(inner): cur = inner;
-                                        case EDo(inner2): cur = inner2;
+                                        case EDo(innerDo): cur = innerDo;
                                         default: return cur;
                                     }
                                 }
@@ -533,15 +533,15 @@ class MapAndCollectionTransforms {
                                                 }
                                             default:
                                         }
-                                    case EMatch(pattern, right2):
+                                    case EMatch(pattern, rhs):
                                         // Left is a pattern; match PVar(alias)
                                         switch (pattern) {
-                                            case PVar(aliasVar2):
-                                                if (isHeadAccessOf(right2, listExpr)) {
-                                                    removedAlias = aliasVar2; matched = true;
+                                            case PVar(aliasVar):
+                                                if (isHeadAccessOf(rhs, listExpr)) {
+                                                    removedAlias = aliasVar; matched = true;
                                                     // Detect Reflect.fields(listExpr)[0] on RHS
-                                                    switch (right2.def) {
-                                                        case EAccess(tgt2, key2) if (switch (tgt2.def) { case ERemoteCall({def: EVar(mod2)}, fn2, args2) if (mod2 == "Reflect" && fn2 == "fields" && args2 != null && args2.length == 1 && astEquals(args2[0], listExpr)): true; default: false; }):
+                                                    switch (rhs.def) {
+                                                        case EAccess(accessTarget, accessKey) if (switch (accessTarget.def) { case ERemoteCall({def: EVar(moduleName)}, functionName, callArgs) if (moduleName == "Reflect" && functionName == "fields" && callArgs != null && callArgs.length == 1 && astEquals(callArgs[0], listExpr)): true; default: false; }):
                                                             promoteFieldsList = true;
                                                         default:
                                                     }
@@ -1061,19 +1061,19 @@ class MapAndCollectionTransforms {
                                         }
                                     default:
                                 }
-                            case EMatch(pat, right2):
-                                switch (right2.def) {
-                                    case EAccess(tgt2, _):
-                                        switch (tgt2.def) {
-                                            case ERemoteCall({def: EVar("Reflect")}, "fields", [arg2]) if (ElixirASTPrinter.print(arg2, 0) == ElixirASTPrinter.print(listExpr, 0)):
+                            case EMatch(pattern, rhs):
+                                switch (rhs.def) {
+                                    case EAccess(accessTarget, _):
+                                        switch (accessTarget.def) {
+                                            case ERemoteCall({def: EVar("Reflect")}, "fields", [reflectFieldsArg]) if (ElixirASTPrinter.print(reflectFieldsArg, 0) == ElixirASTPrinter.print(listExpr, 0)):
                                                 drop = true; presenceShape = true;
                                             default:
                                         }
                                     default:
                                 }
-	                                if (!drop) switch (pat) {
+	                                if (!drop) switch (pattern) {
 	                                    case PVar(entryAliasName):
-	                                        switch (right2.def) {
+	                                        switch (rhs.def) {
 	                                            case ERemoteCall({def: EVar("Map")}, "get", [mapExpr, _unusedKey]) if (ElixirASTPrinter.print(mapExpr, 0) == ElixirASTPrinter.print(listExpr, 0)):
 	                                                localEntryAlias = entryAliasName; drop = true; presenceShape = true;
 	                                            default:
@@ -1081,7 +1081,7 @@ class MapAndCollectionTransforms {
 	                                    default:
 	                                }
                                 // Detect <entry>.metas or binder.metas in pattern match contexts as well
-                                switch (right2.def) {
+                                switch (rhs.def) {
                                     case EAccess(arrY, _):
                                         switch (arrY.def) {
                                             case EField(_, fieldY) if (fieldY == "metas"): presenceUsesMetas = true;

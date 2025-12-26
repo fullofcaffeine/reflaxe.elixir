@@ -77,8 +77,8 @@ class EnumEachEarlyReturnTrailingNilCleanupTransforms {
     core = switch (core.def) {
       case EMatch(PVar("_"), rhs):
         unwrapParens(rhs);
-      case EBinary(Match, {def: EVar("_")}, rhs2):
-        unwrapParens(rhs2);
+      case EBinary(Match, {def: EVar("_")}, rhs):
+        unwrapParens(rhs);
       default:
         core;
     };
