@@ -297,10 +297,8 @@ abstract TypedQuery<T>(EctoQueryStruct) {
      * @return A new TypedQuery instance
      */
     extern inline public static function from<T>(schemaClass: Class<T>): TypedQuery<T> {
-        // Build an Ecto query struct directly (no intermediate local variable)
-        return new TypedQuery<T>(
-            untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}, []))', schemaClass)
-        );
+        // Build an Ecto query struct directly (no intermediate locals / wrapper constructor call)
+        return cast untyped __elixir__('(require Ecto.Query; Ecto.Query.from(t in {0}, []))', schemaClass);
     }
     
     
@@ -346,7 +344,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
             this.query,
             ordering
         );
-        return new TypedQuery<T>(newQuery);
+        return cast newQuery;
     }
     
     /**
@@ -377,7 +375,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
             this.query,
             projection
         );
-        return new TypedQuery<R>(newQuery);
+        return cast newQuery;
     }
     
     /**
@@ -427,7 +425,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
                 ':' + association
             );
         }
-        return new TypedQuery<T>(newQuery);
+        return cast newQuery;
     }
     
     /**
@@ -457,7 +455,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
             this.query,
             atomList
         );
-        return new TypedQuery<T>(newQuery);
+        return cast newQuery;
     }
     
     /**
@@ -480,7 +478,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
             '(require Ecto.Query; Ecto.Query.limit({0}, ^{1}))',
             this, count
         );
-        return new TypedQuery<T>(newQuery);
+        return cast newQuery;
     }
     
     /**
@@ -503,7 +501,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
             '(require Ecto.Query; Ecto.Query.offset({0}, ^{1}))',
             this, count
         );
-        return new TypedQuery<T>(newQuery);
+        return cast newQuery;
     }
     
     /**
@@ -647,7 +645,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
             '(require Ecto.Query; Ecto.Query.where({0}, fragment({1})))',
             this, sql
         );
-        return new TypedQuery<T>(newQuery);
+        return cast newQuery;
     }
     
     // 1 parameter overload
@@ -656,7 +654,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
             '(require Ecto.Query; Ecto.Query.where({0}, fragment({1}, ^{2})))',
             this, sql, p1
         );
-        return new TypedQuery<T>(newQuery);
+        return cast newQuery;
     }
     
     // 2 parameters overload
@@ -665,7 +663,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
             '(require Ecto.Query; Ecto.Query.where({0}, fragment({1}, ^{2}, ^{3})))',
             this, sql, p1, p2
         );
-        return new TypedQuery<T>(newQuery);
+        return cast newQuery;
     }
     
     // 3 parameters overload
@@ -674,7 +672,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
             '(require Ecto.Query; Ecto.Query.where({0}, fragment({1}, ^{2}, ^{3}, ^{4})))',
             this, sql, p1, p2, p3
         );
-        return new TypedQuery<T>(newQuery);
+        return cast newQuery;
     }
     
     /**
@@ -697,7 +695,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
             '(require Ecto.Query; Ecto.Query.order_by({0}, fragment({1})))',
             this, sql
         );
-        return new TypedQuery<T>(newQuery);
+        return cast newQuery;
     }
     
     /**

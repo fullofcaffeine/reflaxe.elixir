@@ -103,6 +103,24 @@ class LoopBuilder {
     // Confidence threshold for using new emission vs legacy
     static inline var CONFIDENCE_THRESHOLD = 0.7;
 
+    public static function containsNonLocalReturn(body: TypedExpr): Bool {
+        var found = false;
+        function walk(expr: TypedExpr): Void {
+            if (found || expr == null) return;
+            switch (expr.expr) {
+                case TReturn(_):
+                    found = true;
+                case TFunction(_):
+                    // Returns inside nested functions are local to that function, not the enclosing loop.
+                    return;
+                default:
+                    TypedExprTools.iter(expr, walk);
+            }
+        }
+        walk(body);
+        return found;
+    }
+
     /**
      * Analyze a for loop and return transformation instructions
      *
@@ -321,7 +339,8 @@ class LoopBuilder {
                 var metadata: ElixirMetadata = {
                     loopContextStack: [loopContext],
                     isWithinLoop: true,
-                    loopVariableName: varName
+                    loopVariableName: varName,
+                    loopContainsReturn: containsNonLocalReturn(body)
                 };
                 
                 // Attach metadata to body AST for propagation
@@ -398,7 +417,8 @@ class LoopBuilder {
                 var metadata: ElixirMetadata = {
                     loopContextStack: [loopContext],
                     isWithinLoop: true,
-                    loopVariableName: varName
+                    loopVariableName: varName,
+                    loopContainsReturn: containsNonLocalReturn(body)
                 };
                 
                 // Attach metadata to body AST
@@ -2339,6 +2359,7 @@ class LoopBuilder {
         loopMetadata.loopVariableName = v.name;
         loopMetadata.originalLoopExpression = captureExpressionText(e2, v.name);
         loopMetadata.isWithinLoop = true;
+        loopMetadata.loopContainsReturn = containsNonLocalReturn(e2);
         
         // Check if LoopBuilder enhanced features are enabled
         // FIX: Use correct flag name - "loop_builder_enabled" not "loop_builder_enhanced"

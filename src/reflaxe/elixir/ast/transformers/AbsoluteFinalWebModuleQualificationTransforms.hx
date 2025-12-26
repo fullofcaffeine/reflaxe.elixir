@@ -70,7 +70,7 @@ class AbsoluteFinalWebModuleQualificationTransforms {
                         switch (mod.def) {
                             case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isWhitelisted(m)):
                                 var fq = (app != null) ? (app + "." + m) : null;
-                                if (fq != null) {
+                                if (fq != null && defined.exists(fq)) {
                                     makeASTWithMeta(ERemoteCall(makeAST(ElixirASTDef.EVar(fq)), func, args), n.metadata, n.pos);
                                 } else n;
                             default: n;
@@ -79,7 +79,7 @@ class AbsoluteFinalWebModuleQualificationTransforms {
                         switch (target.def) {
                             case EVar(m) if (isSingleSegmentModule(m) && isUpperCamel(m) && !isWhitelisted(m)):
                                 var fq2 = (app != null) ? (app + "." + m) : null;
-                                if (fq2 != null) {
+                                if (fq2 != null && defined.exists(fq2)) {
                                     makeASTWithMeta(ERemoteCall(makeAST(ElixirASTDef.EVar(fq2)), func, args), n.metadata, n.pos);
                                 } else n;
                             default: n;

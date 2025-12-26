@@ -6,7 +6,7 @@ defmodule SourceMapTest do
     if (value > 0), do: true, else: false
   end
   def main() do
-    test = MyApp.SourceMapTest.new()
+    test = %SourceMapTest{}
     result = test.simpleMethod()
     condition = test.conditionalMethod(42)
     nil

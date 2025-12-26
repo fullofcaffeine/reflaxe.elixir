@@ -59,12 +59,12 @@ defmodule Main do
   end
   def regex_operations() do
     text = "The year is 2024 and the time is 15:30"
-    digit_regex = MyApp.EReg.new("\\d+", "")
+    digit_regex = EReg.new("\\d+", "")
     if (digit_regex.match(text)), do: nil
-    all_numbers = MyApp.EReg.new("\\d+", "g")
+    all_numbers = EReg.new("\\d+", "g")
     numbers = []
     temp = text
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, temp}, (fn -> fn _, {numbers, temp} ->
+    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, temp}, fn _, {numbers, temp} ->
       if (all_numbers.match(temp)) do
         _ = numbers ++ [all_numbers.matched(0)]
         temp = all_numbers.matchedRight()
@@ -72,11 +72,11 @@ defmodule Main do
       else
         {:halt, {numbers, temp}}
       end
-    end end).())
+    end)
     nil
-    replaced = MyApp.EReg.new("\\d+", "").replace(text, "XXX")
+    replaced = EReg.new("\\d+", "").replace(text, "XXX")
     email = "user@example.com"
-    email_regex = MyApp.EReg.new("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "")
+    email_regex = EReg.new("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "")
     nil
   end
   def string_formatting() do

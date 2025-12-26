@@ -276,11 +276,11 @@ class MapAndCollectionTransforms {
                                 for (sSt in stmts2) walkStmt(sSt);
                                 return m;
                             }
-            var used = new Map<String,Bool>();
-            collectUsedVars(bodyExpr, used);
-            var bound = collectBoundVars(newStmts);
-            var free:Array<String> = [];
-            for (k in used.keys()) if (!bound.exists(k)) free.push(k);
+	                            var used = new Map<String,Bool>();
+	            collectUsedVars(bodyExpr, used);
+	            var bound = collectBoundVars(newStmts);
+	            var free:Array<String> = [];
+	            for (k in used.keys()) if (!bound.exists(k)) free.push(k);
             // Prefer candidates that appear as receiver/arg or in interpolations
             function appearsAsReceiverOrArg(n: ElixirAST, name:String): Bool {
                 var found = false;
@@ -299,18 +299,23 @@ class MapAndCollectionTransforms {
                 });
                 return found;
             }
-            var eligible:Array<String> = [];
-            for (nm in free) if (appearsAsReceiverOrArg(bodyExpr, nm)) eligible.push(nm);
-            var didReplace = false;
-            if (eligible.length == 1) {
-                var aliasName = eligible[0];
-                bodyExpr = replaceVarInExpr(bodyExpr, aliasName, replacementName);
-                didReplace = true;
-            } else if (free.length == 1) {
-                var aliasName2 = free[0];
-                bodyExpr = replaceVarInExpr(bodyExpr, aliasName2, replacementName);
-                didReplace = true;
-            }
+	            var eligible:Array<String> = [];
+	            for (nm in free) if (appearsAsReceiverOrArg(bodyExpr, nm)) eligible.push(nm);
+	            var didReplace = false;
+	            // IMPORTANT: Only attempt "single free var → binder" repair when the original binder
+	            // is a wildcard. When a binder is present, the closure can legitimately capture outer
+	            // variables (e.g., `if todo.id == id, do: todo`), and rewriting the capture breaks semantics.
+	            if (binderName == null) {
+		                if (eligible.length == 1) {
+		                    var aliasName = eligible[0];
+		                    bodyExpr = replaceVarInExpr(bodyExpr, aliasName, replacementName);
+		                    didReplace = true;
+		                } else if (free.length == 1) {
+		                    var freeAliasName = free[0];
+		                    bodyExpr = replaceVarInExpr(bodyExpr, freeAliasName, replacementName);
+		                    didReplace = true;
+		                }
+		            }
                             // If alias was dropped or free-var replaced, body will reference replacementName now
             var finalBinder: EPattern = (didReplace || bodyUsesVar(bodyExpr, replacementName) || bodyUsesVar(bodyExpr, "_" + replacementName))
                 ? PVar(replacementName)
@@ -1066,15 +1071,15 @@ class MapAndCollectionTransforms {
                                         }
                                     default:
                                 }
-                                if (!drop) switch (pat) {
-                                    case PVar(aliasName2):
-                                        switch (right2.def) {
-                                            case ERemoteCall({def: EVar("Map")}, "get", [m2, _key2]) if (ElixirASTPrinter.print(m2, 0) == ElixirASTPrinter.print(listExpr, 0)):
-                                                localEntryAlias = aliasName2; drop = true; presenceShape = true;
-                                            default:
-                                        }
-                                    default:
-                                }
+	                                if (!drop) switch (pat) {
+	                                    case PVar(entryAliasName):
+	                                        switch (right2.def) {
+	                                            case ERemoteCall({def: EVar("Map")}, "get", [mapExpr, _unusedKey]) if (ElixirASTPrinter.print(mapExpr, 0) == ElixirASTPrinter.print(listExpr, 0)):
+	                                                localEntryAlias = entryAliasName; drop = true; presenceShape = true;
+	                                            default:
+	                                        }
+	                                    default:
+	                                }
                                 // Detect <entry>.metas or binder.metas in pattern match contexts as well
                                 switch (right2.def) {
                                     case EAccess(arrY, _):

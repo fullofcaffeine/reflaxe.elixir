@@ -39,9 +39,9 @@ class ClauseUndefinedRefRewriteTransforms {
         makeASTWithMeta(EDef(name, args, guards, rewriteNode(body, fnEnv)), node.metadata, node.pos);
 
       case EDefp(name, args, guards, body):
-        var fnEnv2 = cloneEnv(env);
-        for (a in args) collectPatternVars(a, fnEnv2);
-        makeASTWithMeta(EDefp(name, args, guards, rewriteNode(body, fnEnv2)), node.metadata, node.pos);
+        var functionEnv = cloneEnv(env);
+        for (a in args) collectPatternVars(a, functionEnv);
+        makeASTWithMeta(EDefp(name, args, guards, rewriteNode(body, functionEnv)), node.metadata, node.pos);
 
       case EBlock(stmts):
         var blockEnv = cloneEnv(env);
@@ -181,7 +181,7 @@ class ClauseUndefinedRefRewriteTransforms {
   }
 
   static function collectLhs(l: ElixirAST, vars: Map<String,Bool>): Void {
-    switch (l.def) { case EVar(n): vars.set(n, true); case EBinary(Match, l2, _): collectLhs(l2, vars); default: }
+    switch (l.def) { case EVar(n): vars.set(n, true); case EBinary(Match, nestedLeft, _): collectLhs(nestedLeft, vars); default: }
   }
 }
 

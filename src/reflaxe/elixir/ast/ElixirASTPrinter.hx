@@ -1190,24 +1190,10 @@ class ElixirASTPrinter {
                                                     }
                                                 };
                                             case EVar(name):
-                                                // If target looks like a module (UpperCamel) and we're inside <App>Web.*,
-                                                // qualify to <App>.<Name> (fallback for cases missed by AST pass)
-                                                var first = name.charAt(0);
-                                                var isUpper = first == first.toUpperCase() && first != first.toLowerCase();
-                                                var idx = (currentModuleName != null) ? currentModuleName.indexOf("Web") : -1;
-                                                inline function isStdModule(n: String): Bool {
-                                                    return switch (n) {
-                                                        case "Enum" | "String" | "Map" | "List" | "Tuple" | "DateTime" |
-                                                             "Bitwise" | "Kernel" | "IO" | "File" | "Regex" | "Process" |
-                                                             "Task" | "Agent" | "GenServer" | "Stream" | "Keyword" | "Access" |
-                                                             "Path" | "System" | "Application" | "Logger" | "Ecto" | "Ecto.Query" |
-                                                             "Phoenix" | "Phoenix.LiveView" | "Phoenix.Component" | "Phoenix.Controller":
-                                                            true;
-                                                        default:
-                                                            false;
-                                                    };
-                                                }
-                                                if (isUpper && idx > 0 && !isStdModule(name)) currentModuleName.substring(0, idx) + "." + name else name;
+                                                // Avoid print-time module qualification heuristics.
+                                                // Module qualification must be handled by AST passes that can validate
+                                                // whether the qualified module actually exists.
+                                                name;
                                             default:
                                                 print(target, indent);
                                         };
@@ -2721,9 +2707,11 @@ class ElixirASTPrinter {
         if (trimmed.length == 0) return s;
         var hasBreak = (s.indexOf('\n') != -1);
         var alreadyIIFE = StringTools.startsWith(trimmed, "(fn ->");
+        var alreadyParen = StringTools.startsWith(trimmed, "(");
+        var isFnLiteral = StringTools.startsWith(trimmed, "fn ");
         // Allow multi-line string literals as arguments without wrapping
         var isStringLiteral = StringTools.startsWith(trimmed, '"');
-        if (hasBreak && !alreadyIIFE && !isStringLiteral) {
+        if (hasBreak && !alreadyIIFE && !alreadyParen && !isFnLiteral && !isStringLiteral) {
             return '(fn -> ' + s + ' end).()';
         }
         return s;

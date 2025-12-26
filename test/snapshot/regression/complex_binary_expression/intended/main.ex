@@ -9,7 +9,7 @@ defmodule Main do
     nil
   end
   defp test_method_call_in_binary_expression() do
-    s = MyApp.TestString.new("test")
+    s = TestString.new("test")
     i = 0
     index = 0
     c = 0

@@ -19,12 +19,12 @@ defmodule StringUtils do
       parts = String.split(_this, " ")
       formatted = []
       _g = 0
-      _ = Enum.each(parts, (fn -> fn part ->
+      _ = Enum.each(parts, fn part ->
   if (length(part) > 0) do
     capitalized = (fn -> String.upcase(_this) end).() <> (fn -> String.downcase(_this) end).()
     _ = formatted ++ [capitalized]
   end
-end end).())
+end)
       _ = Enum.join((fn -> " " end).())
     end
   end
@@ -46,8 +46,8 @@ end end).())
     else
       s = String.downcase(text)
       slug = _ = StringTools.ltrim(StringTools.rtrim(s))
-      slug = slug |> MyApp.EReg.new("[^a-z0-9\\s-]", "g").replace("") |> MyApp.EReg.new("\\s+", "g").replace("-") |> MyApp.EReg.new("-+", "g").replace("-")
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, (fn -> fn _, {slug} ->
+      slug = slug |> EReg.new("[^a-z0-9\\s-]", "g").replace("") |> EReg.new("\\s+", "g").replace("-") |> EReg.new("-+", "g").replace("-")
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {slug} ->
         if (String.at(slug, 0) || "" == "-") do
           len = nil
           slug = if (Kernel.is_nil(len)) do
@@ -64,9 +64,9 @@ end end).()}}
         else
           {:halt, {slug}}
         end
-      end end).())
+      end)
       nil
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, (fn -> fn _, {slug} ->
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {slug} ->
         if ((fn ->
   index = (length(slug) - 1)
   String.at(slug, index) || ""
@@ -86,7 +86,7 @@ end end).()}}
         else
           {:halt, {slug}}
         end
-      end end).())
+      end)
       nil
       slug
     end

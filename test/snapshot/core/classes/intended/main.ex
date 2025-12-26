@@ -1,7 +1,7 @@
 defmodule Main do
   def main() do
-    _ = MyApp.Point.new(3, 4)
-    _ = MyApp.Point.new(0, 0)
+    _ = Point.new(3, 4)
+    _ = Point.new(0, 0)
     shape = shape.new(10, 20, "Rectangle")
     _ = shape.move(5, 5)
     circle = circle.new(0, 0, 10)

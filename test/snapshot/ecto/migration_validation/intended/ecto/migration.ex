@@ -1,12 +1,12 @@
 defmodule Migration do
   def create_table(struct, name, options) do
-    MyApp.TableBuilder.new(name, options)
+    TableBuilder.new(name, options)
   end
   def drop_table(struct, name, options) do
     
   end
   def alter_table(struct, name) do
-    MyApp.AlterTableBuilder.new(name)
+    AlterTableBuilder.new(name)
   end
   def create_index(struct, table, columns, options) do
     

@@ -88,13 +88,13 @@ defmodule Main do
     iter_array = nil
     iter_current = 0
     iter_array = numbers
-    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, (fn -> fn _, acc ->
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   if (iter_current < length(iter_array)) do
     nil
     {:cont, acc}
   else
     {:halt, acc}
   end
-end end).())
+end)
   end
 end

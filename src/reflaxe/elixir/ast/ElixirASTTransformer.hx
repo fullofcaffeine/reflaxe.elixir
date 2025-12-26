@@ -2251,17 +2251,17 @@ class ElixirASTTransformer {
                     makeASTWithMeta(EBlock(out), n.metadata, n.pos);
                 case EDo(stmts):
                     var outDo: Array<ElixirAST> = [];
-                    for (idx2 in 0...stmts.length) {
-                        var s2 = stmts[idx2];
-                        var isLast2 = (idx2 == stmts.length - 1);
-                        var incRewrite2 = rewriteStandaloneInc(s2);
-                        if (incRewrite2 != null) s2 = incRewrite2;
-                        var drop2 = switch (s2.def) {
-                            case EBinary(_, l2, r2) if (isNumericLiteral(l2) && isNumericLiteral(r2)): true;
-                            case EInteger(_) if (!isLast2): true;
+                    for (idx in 0...stmts.length) {
+                        var stmt = stmts[idx];
+                        var isLast = (idx == stmts.length - 1);
+                        var incRewrite = rewriteStandaloneInc(stmt);
+                        if (incRewrite != null) stmt = incRewrite;
+                        var drop = switch (stmt.def) {
+                            case EBinary(_, l, r) if (isNumericLiteral(l) && isNumericLiteral(r)): true;
+                            case EInteger(_) if (!isLast): true;
                             default: false;
                         };
-                        if (!drop2) outDo.push(rewriteIfIncrements(s2));
+                        if (!drop) outDo.push(rewriteIfIncrements(stmt));
                     }
                     makeASTWithMeta(EDo(outDo), n.metadata, n.pos);
                 default:
