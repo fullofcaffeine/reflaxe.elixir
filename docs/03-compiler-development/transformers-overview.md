@@ -15,6 +15,8 @@ This file is the “read me first” for working on passes.
   - `src/reflaxe/elixir/ast/ElixirASTTransformer.hx`
 - Generated ordering snapshot:
   - `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md`
+- Lean pipeline + golden LiveView fixture guide:
+  - `docs/03-compiler-development/LEAN_PASS_PIPELINE.md`
 
 ## Design Rules (Hard Requirements)
 
@@ -38,4 +40,3 @@ This file is the “read me first” for working on passes.
 
 - `-D debug_pass_metrics` — emits when a pass changes the AST.
 - `-D debug_ast_pipeline` / `-D debug_ast_transformer` — stage‑level tracing.
-
