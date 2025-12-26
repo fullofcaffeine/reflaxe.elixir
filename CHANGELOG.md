@@ -1,5 +1,23 @@
 ## [Unreleased]
 
+## [1.0.6](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.0.5...v1.0.6) (2025-12-26)
+
+### 🐞 Bug Fixes
+
+- Compiler: Fix overly-aggressive `handle_info/2` `{:noreply, socket}` normalization that could clobber legitimate locals like `next_socket`.
+
+### 🧪 Testing
+
+- Snapshot: Add a focused “golden” LiveView fixture to guard callback shaping (`mount/3`, `handle_event/3`, `handle_info/2`, `render/1`) without relying on the todo-app.
+
+### 📚 Documentation
+
+- Docs: Add a lean pass pipeline guide and link it from the transformer overview.
+
+### 🔧 Tooling
+
+- CI: Bound the acceptance gate’s todo-app runtime smoke via `qa-sentinel --deadline`.
+
 ## [1.0.5](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.0.4...v1.0.5) (2025-12-19)
 
 ### 🐞 Bug Fixes

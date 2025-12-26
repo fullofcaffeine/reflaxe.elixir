@@ -103,7 +103,7 @@ For the complete roadmap including AI tooling, universal deployment, and multi-p
 npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # Or install a specific version/tag
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.5
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.6
 
 # Download pinned Haxe libraries for the project
 npx lix download
@@ -231,7 +231,7 @@ defp deps do
   [
     # ... other deps
     # Mix tasks only (build-time): pin to a tag or use a commit SHA
-    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.0.5", only: [:dev, :test], runtime: false}
+    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.0.6", only: [:dev, :test], runtime: false}
   ]
 end
 
