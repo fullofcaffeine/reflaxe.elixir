@@ -37,13 +37,13 @@ test('sort by priority reorders list', async ({ page }) => {
   await page.selectOption('select[name="sort_by"]', 'priority')
   await page.waitForFunction(() => document.querySelector('select[name="sort_by"]').value === 'priority')
 
-  // Expect priority ascending: low → medium → high
+  // Expect priority descending: high → medium → low
   await expect.poll(async () => {
     const cards = page.locator('[data-testid="todo-card"]').filter({ hasText: group })
     const priorities = await cards.locator('span').allTextContents()
     const ranks = priorities
       .filter(t => /Priority:/i.test(t))
-      .map(t => t.toLowerCase().includes('low') ? 0 : t.toLowerCase().includes('medium') ? 1 : 2)
+      .map(t => t.toLowerCase().includes('high') ? 0 : t.toLowerCase().includes('medium') ? 1 : 2)
     // We created exactly three with the same stamp; ensure we have 3 readings
     if (ranks.length < 3) return false
     return ranks[0] <= ranks[1] && ranks[1] <= ranks[2]
