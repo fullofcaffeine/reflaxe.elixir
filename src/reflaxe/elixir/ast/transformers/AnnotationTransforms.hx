@@ -4,6 +4,7 @@ package reflaxe.elixir.ast.transformers;
 
 import reflaxe.elixir.ast.ElixirAST;
 import haxe.macro.Context;
+import reflaxe.elixir.ast.ASTUtils;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
@@ -1812,20 +1813,29 @@ class AnnotationTransforms {
             statements.push(makeAST(EUse("ExUnit.Case", [])));
         }
 
-        // Optional Phoenix test helpers: only inject when app_name is defined (indicates Phoenix app context)
-        var appName = Context.definedValue("app_name");
+        // Optional Phoenix test helpers: inject only when the test body references them.
+        // (Avoid unused import warnings in plain ExUnit-only tests.)
         var needsLiveViewHelpers = usesLiveViewHelpers(existingBody);
-        if (appName != null && appName.length > 0) {
-            // Import brings functions like build_conn/0 into scope; alias supports ConnTest.* calls.
-            statements.push(makeAST(EImport("Phoenix.ConnTest", null, null)));
-            statements.push(makeAST(EAlias("Phoenix.ConnTest", "ConnTest")));
-            // ExUnit.ConnCase expects @endpoint to be set for request helpers
-            var endpointModule = appName + "Web.Endpoint";
+        var needsConnTestHelpers = usesConnTestHelpers(existingBody);
+        if (needsConnTestHelpers || needsLiveViewHelpers) {
+            // Phoenix.ConnTest request macros expect @endpoint to be set in the test module.
+            // We infer the app module from the test module name instead of depending on `-D app_name`,
+            // so ExUnit tests work out-of-the-box for Phoenix apps.
+            var appModule = extractAppModule(moduleName);
+            var endpointModule = appModule + "Web.Endpoint";
             statements.push(makeAST(EModuleAttribute("endpoint", makeAST(EVar(endpointModule)))));
+
+            // Phoenix.ConnTest HTTP helpers are macros (get/post/...), and Haxe emits fully-qualified
+            // calls like `Phoenix.ConnTest.get(conn, "/")`, so we must `require` the module.
+            if (needsConnTestHelpers) {
+                statements.push(makeAST(ERequire("Phoenix.ConnTest", null)));
+            }
+
             if (needsLiveViewHelpers) {
-                // Inject Phoenix.LiveViewTest helpers and alias for LiveViewTest.* calls
-                statements.push(makeAST(EImport("Phoenix.LiveViewTest", null, null)));
-                statements.push(makeAST(EAlias("Phoenix.LiveViewTest", "LiveViewTest")));
+                // Phoenix.LiveViewTest.live/2 expands to `get(conn, path)`, so Phoenix.ConnTest must be imported.
+                statements.push(makeAST(EImport("Phoenix.ConnTest", null, null)));
+                // LiveViewTest helpers are macros and are emitted as fully-qualified calls.
+                statements.push(makeAST(ERequire("Phoenix.LiveViewTest", null)));
             }
         }
         
@@ -2015,59 +2025,93 @@ class AnnotationTransforms {
      * HOW: Shallow recursive traversal of the ElixirAST node tree with early exit once a match is found.
      */
     static function usesLiveViewHelpers(ast: ElixirAST): Bool {
+        if (ast == null || ast.def == null) return false;
+
         var found = false;
-        function visit(e: ElixirAST): Void {
-            if (found || e == null) return;
-            switch (e.def) {
+
+        function dottedName(expr: ElixirAST): Null<String> {
+            if (expr == null || expr.def == null) return null;
+            return switch (expr.def) {
+                case EVar(name):
+                    name;
+                case EField(target, field):
+                    var base = dottedName(target);
+                    base == null ? null : base + "." + field;
+                default:
+                    null;
+            }
+        }
+
+        ASTUtils.walk(ast, (node) -> {
+            if (found || node == null || node.def == null) return;
+            switch (node.def) {
                 case EVar(name):
                     if (name == "LiveViewTest" || name == "Phoenix.LiveViewTest" || name == "LiveView") {
                         found = true;
-                        return;
                     }
                 case EImport(moduleName, _, _):
-                    if (moduleName == "Phoenix.LiveViewTest") {
-                        found = true;
-                        return;
-                    }
+                    if (moduleName == "Phoenix.LiveViewTest") found = true;
                 case EAlias(moduleName, aliasName):
-                    if (moduleName == "Phoenix.LiveViewTest" || aliasName == "LiveViewTest") {
-                        found = true;
-                        return;
-                    }
-                case ECall(target, _, args):
-                    if (target != null) visit(target);
-                    if (args != null) for (a in args) visit(a);
-                case ERemoteCall(targetExpr, _, argsList):
-                    visit(targetExpr);
-                    if (argsList != null) for (a in argsList) visit(a);
-                case EBlock(exprs):
-                    for (expr in exprs) visit(expr);
-                case EIf(condition, thenExpr, elseExpr):
-                    visit(condition); visit(thenExpr); if (elseExpr != null) visit(elseExpr);
-                case ECase(scrutinee, clauses):
-                    visit(scrutinee);
-                    for (c in clauses) {
-                        if (c.guard != null) visit(c.guard);
-                        visit(c.body);
-                    }
-                case EDef(_, _, _, body) | EDefp(_, _, _, body):
-                    visit(body);
-                case EKeywordList(kvs):
-                    for (kv in kvs) visit(kv.value);
-                case EList(items):
-                    for (item in items) visit(item);
-                case ETuple(items):
-                    for (item in items) visit(item);
-                case EMap(kvs):
-                    for (kv in kvs) { visit(kv.key); visit(kv.value); }
-                case EPipe(left, right):
-                    visit(left); visit(right);
-                case EModuleAttribute(_, value):
-                    visit(value);
+                    if (moduleName == "Phoenix.LiveViewTest" || aliasName == "LiveViewTest") found = true;
+                case ERequire(moduleName, _):
+                    if (moduleName == "Phoenix.LiveViewTest") found = true;
+                case ERemoteCall(moduleExpr, funcName, _):
+                    var modulePath = dottedName(moduleExpr);
+                    var fullName = modulePath == null ? funcName : modulePath + "." + funcName;
+                    if (fullName.indexOf("Phoenix.LiveViewTest") != -1) found = true;
                 default:
             }
+        });
+
+        return found;
+    }
+
+    /**
+     * Detect whether an ExUnit module body references Phoenix.ConnTest helpers.
+     *
+     * WHY: Phoenix.ConnTest expects @endpoint to be set when using request helpers.
+     *      We only inject @endpoint when tests actually reference ConnTest/LiveViewTest.
+     * HOW: Shallow recursive traversal of the ElixirAST node tree with early exit once a match is found.
+     */
+    static function usesConnTestHelpers(ast: ElixirAST): Bool {
+        if (ast == null || ast.def == null) return false;
+
+        var found = false;
+
+        function dottedName(expr: ElixirAST): Null<String> {
+            if (expr == null || expr.def == null) return null;
+            return switch (expr.def) {
+                case EVar(name):
+                    name;
+                case EField(target, field):
+                    var base = dottedName(target);
+                    base == null ? null : base + "." + field;
+                default:
+                    null;
+            }
         }
-        visit(ast);
+
+        ASTUtils.walk(ast, (node) -> {
+            if (found || node == null || node.def == null) return;
+            switch (node.def) {
+                case EVar(name):
+                    if (name == "ConnTest" || name == "Phoenix.ConnTest") {
+                        found = true;
+                    }
+                case EImport(moduleName, _, _):
+                    if (moduleName == "Phoenix.ConnTest") found = true;
+                case EAlias(moduleName, aliasName):
+                    if (moduleName == "Phoenix.ConnTest" || aliasName == "ConnTest") found = true;
+                case ERequire(moduleName, _):
+                    if (moduleName == "Phoenix.ConnTest") found = true;
+                case ERemoteCall(moduleExpr, funcName, _):
+                    var modulePath = dottedName(moduleExpr);
+                    var fullName = modulePath == null ? funcName : modulePath + "." + funcName;
+                    if (fullName.indexOf("Phoenix.ConnTest") != -1) found = true;
+                default:
+            }
+        });
+
         return found;
     }
     

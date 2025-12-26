@@ -27,3 +27,6 @@ npm-debug.log*
 test_*.js
 test*.html
 *.beam
+
+# Generated ExUnit modules (Haxe → Elixir)
+test/generated/

@@ -75,8 +75,8 @@ defmodule TodoApp.MixProject do
       setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
-      # Tests rely on compiled Haxe app; Haxe test generation is temporarily disabled to avoid duplicate std modules
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      # Tests rely on compiled Haxe app; compile Haxe-authored ExUnit modules before `mix test`.
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "haxe.compile.tests", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["haxe.compile.client", "tailwind todo_app", "esbuild todo_app"],
       "assets.deploy": ["haxe.compile.client", "tailwind todo_app --minify", "esbuild todo_app --minify --tree-shaking=true --drop:debugger --drop:console", "phx.digest"],
