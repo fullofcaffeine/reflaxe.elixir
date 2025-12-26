@@ -43,9 +43,10 @@ RESET := \033[0m
 # Keep them available, but exclude them from the default `summary` so that the
 # repo's primary test entrypoints are stable and deterministic.
 #
-# Run them explicitly if you want to work on them:
-# - make -C test summary-loops
-POSITIVE_TESTS := $(shell find $(TEST_DIR) -name compile.hxml -not -path "$(NEGATIVE_DIR)/*" -not -path "$(TEST_DIR)/loops/*" -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sort)
+# Archived suites live under snapshot/_archive/* and are excluded from all default
+# targets. They are preserved for historical context and may not reflect current
+# compiler behavior.
+POSITIVE_TESTS := $(shell find $(TEST_DIR) -name compile.hxml -not -path "$(NEGATIVE_DIR)/*" -not -path "$(TEST_DIR)/_archive/*" -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sort)
 NEGATIVE_TESTS := $(shell if [ -d "$(NEGATIVE_DIR)" ]; then find $(NEGATIVE_DIR) -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sort; fi)
 
 # Legacy alias used by helper targets (update-intended, list, etc.)
@@ -54,10 +55,6 @@ TESTS := $(POSITIVE_TESTS)
 
 # Targets for positive tests (default summary uses these)
 TEST_TARGETS := $(shell echo "$(POSITIVE_TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
-
-# Legacy/experimental snapshot sub-suites (not part of default `summary`)
-LOOPS_TESTS := $(shell if [ -d "$(TEST_DIR)/loops" ]; then find "$(TEST_DIR)/loops" -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sort; fi)
-LOOPS_TARGETS := $(shell echo "$(LOOPS_TESTS)" | tr ' ' '\n' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
 
 # Targets for negative tests (expected-to-fail compilation)
 # Use a dedicated prefix (neg-*) to avoid overlapping the generic test-% rule
@@ -99,25 +96,6 @@ summary: $(TEST_TARGETS)
 		exit 1; \
 	else \
 		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
-		rm -f test-results*.tmp; \
-	fi
-
-# Optional: run the legacy/experimental loop snapshot suite
-.PHONY: summary-loops
-summary-loops: $(LOOPS_TARGETS)
-	@echo ""
-	@echo "========================================"
-	@passed=$$(cat test-results*.tmp 2>/dev/null | grep -c "✅") || passed=0; \
-	failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "❌") || failed=0; \
-	total=$$((passed + failed)); \
-	echo "Loop Snapshot Results $(PIPELINE_MODE): $$passed/$$total passed"; \
-	if [ $$failed -gt 0 ]; then \
-		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
-		cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'; \
-		rm -f test-results*.tmp; \
-		exit 1; \
-	else \
-		echo "$(GREEN)SUCCESS: All loop snapshots passed! ✅$(RESET)"; \
 		rm -f test-results*.tmp; \
 	fi
 
