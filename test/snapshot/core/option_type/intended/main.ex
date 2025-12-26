@@ -25,8 +25,7 @@ defmodule Main do
 end))
     scores = {:some, [1, 2, 3]}
     total = ((case scores do
-  {:some, score_list} ->
-    length(score_list)
+  {:some, score_list} -> length(score_list)
   {:none} -> 0
 end))
     _ = process_user({:some, "Charlie"})
@@ -41,11 +40,11 @@ end))
   defp test_functional_operations() do
     user = {:some, "David"}
     upper_name = MyApp.OptionTools.map(user, fn name -> String.upcase(name) end)
-    long_name = MyApp.OptionTools.filter(user, fn name -> not Kernel.is_nil(:binary.match(String.downcase(name.title), query)) or name.description != nil and not Kernel.is_nil(:binary.match(String.downcase(name.description), query)) end)
+    long_name = MyApp.OptionTools.filter(user, fn name -> String.contains?(String.downcase(name.title), query) or name.description != nil and String.contains?(String.downcase(name.description), query) end)
     processed_user = MyApp.OptionTools.then(user, (fn -> fn name ->
       if (length(name) > 0), do: {:some, name <> "!"}, else: {:none}
     end end).())
-    final_result = MyApp.OptionTools.then(OptionTools.filter(OptionTools.map(user, fn name -> String.upcase(name) end), fn name -> length(name) > 2 end), fn name -> {:some, name <> " [PROCESSED]"} end)
+    final_result = MyApp.OptionTools.then(MyApp.OptionTools.filter(MyApp.OptionTools.map(user, fn name -> String.upcase(name) end), fn name -> String.contains?(String.downcase(name.title), query) or name.description != nil and String.contains?(String.downcase(name.description), query) end), fn name -> {:some, name <> " [PROCESSED]"} end)
     greeting = MyApp.OptionTools.unwrap(user, "Anonymous")
     expensive_default = MyApp.OptionTools.lazy_unwrap(user, fn -> "Computed default" end)
     first = {:some, "First"}
@@ -67,7 +66,7 @@ end))
   defp test_null_safety() do
     maybe_null = nil
     safe_option = MyApp.OptionTools.from_nullable(maybe_null)
-    result = MyApp.OptionTools.unwrap(OptionTools.map(safe_option, fn s -> length(s) end), 0)
+    result = MyApp.OptionTools.unwrap(MyApp.OptionTools.map(safe_option, fn s -> length(s) end), 0)
     has_value = MyApp.OptionTools.is_some(safe_option)
     is_empty = MyApp.OptionTools.is_none(safe_option)
     back_to_nullable = MyApp.OptionTools.to_nullable(safe_option)

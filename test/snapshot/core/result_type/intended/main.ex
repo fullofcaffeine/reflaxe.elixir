@@ -8,7 +8,7 @@ end))
   end
   def divide_numbers(a, b) do
     MyApp.ResultTools.flat_map(parse_number(a), (fn -> fn num_a ->
-      ResultTools.flat_map(parse_number(b), (fn -> fn num_b ->
+      MyApp.ResultTools.flat_map(parse_number(num_a), (fn -> fn num_b ->
         if (num_b == 0), do: {:error, "Division by zero"}, else: {:ok, num_a / num_b}
       end end).())
     end end).())
@@ -23,7 +23,7 @@ end))
     end)
   end
   def get_value_or_default(result) do
-    MyApp.ResultTools.fold(result, fn value -> value end, fn _error -> -1 end)
+    MyApp.ResultTools.fold(result, fn value -> value end, fn error -> -1 end)
   end
   def test_extension_methods() do
     result = {:ok, "hello"}
@@ -37,7 +37,7 @@ end))
     value
   end
   def process_user(user_data) do
-    MyApp.ResultTools.map(parse_number(user_data.age), fn parsed_age -> %{:name => user_data.name, :age => parsed_age} end)
+    MyApp.ResultTools.map(parse_number(user_data.age), fn parsed_age -> %{:name => parsed_age.name, :age => parsed_age} end)
   end
   def demonstrate_utilities() do
     success = {:ok, 42}
@@ -56,7 +56,7 @@ end))
     _ = MyApp.ResultTools.sequence(results)
   end
   def validate_and_double(inputs) do
-    MyApp.ResultTools.traverse(inputs, fn input -> ResultTools.map(parse_number(input), fn num -> num * 2 end) end)
+    MyApp.ResultTools.traverse(inputs, fn input -> MyApp.ResultTools.map(parse_number(input), fn num -> num * 2 end) end)
   end
   def main() do
     result1 = parse_number("123")

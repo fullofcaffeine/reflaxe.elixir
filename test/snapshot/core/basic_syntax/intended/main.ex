@@ -11,24 +11,27 @@ defmodule Main do
   end
   def sum_range(struct, start, end_param) do
     sum = 0
-    _ = Enum.each(0..(end_param - 1), (fn -> fn start ->
-  i = start + 1
-  sum = sum + i
-end end).())
+    _g = start
+    _ = end_param
+    sum = Enum.reduce(0..(g_value - 1)//1, sum, fn i, sum -> sum + i end)
+    sum
     sum
   end
   def factorial(struct, n) do
     result = 1
     i = n
-    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, i}, (fn -> fn _, {result, i} ->
-  if (i > 1) do
-    result = result * i
-    (i - 1)
-    {:cont, {result, i}}
-  else
-    {:halt, {result, i}}
-  end
-end end).())
+    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, 0}, (fn -> fn _, {result, i} ->
+      if (i > 1) do
+        result = result * i
+        (old_i = i
+i = (i - 1)
+old_i)
+        {:cont, {result, i}}
+      else
+        {:halt, {result, i}}
+      end
+    end end).())
+    nil
     result
   end
   def day_name(struct, day) do

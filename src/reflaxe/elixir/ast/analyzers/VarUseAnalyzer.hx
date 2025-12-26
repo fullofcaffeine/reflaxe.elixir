@@ -139,9 +139,10 @@ class VarUseAnalyzer {
                         walk(cl.condition, false);
                         walk(cl.body, false);
                     }
-                case ERange(startExpr, endExpr, _):
+                case ERange(startExpr, endExpr, _, step):
                     walk(startExpr, false);
                     walk(endExpr, false);
+                    if (step != null) walk(step, false);
                 case EUnary(_, innerExpr):
                     walk(innerExpr, false);
                 case EParen(innerExpr):
@@ -319,10 +320,11 @@ class VarUseAnalyzer {
                         walk(cl.condition, false);
                         walk(cl.body, false);
                     }
-                case ERange(startExpr, endExpr, _):
+                case ERange(startExpr, endExpr, _, step):
                     // Range expressions can use variables
                     walk(startExpr, false);
                     walk(endExpr, false);
+                    if (step != null) walk(step, false);
                 case EUnary(_, innerExpr):
                     // Unary operators wrap expressions
                     walk(innerExpr, false);

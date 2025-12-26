@@ -17,27 +17,23 @@ defmodule Main do
   end
   def array_iteration() do
     fruits = ["apple", "banana", "orange", "grape"]
-    _ = Enum.each(fruits, (fn -> fn _ ->
-    nil
-end end).())
-    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fruits}, (fn -> fn _, {fruits} ->
-  if (0 < length(fruits)) do
-    i = 1
-    nil
-    {:cont, {fruits}}
-  else
-    {:halt, {fruits}}
-  end
-end end).())
+    _g = 0
+    _ = Enum.each(fruits, fn _ -> nil end)
+    _g = 0
+    _ = length(fruits)
+    _ = Enum.each(0..(fruits_length - 1)//1, fn _ -> nil end)
     i = 0
-    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {fruits, i}, (fn -> fn _, {fruits, i} ->
-  if (i < length(fruits)) do
-    i + 1
-    {:cont, {fruits, i}}
-  else
-    {:halt, {fruits, i}}
-  end
-end end).())
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, (fn -> fn _, {i} ->
+      if (i < length(fruits)) do
+        (old_i = i
+i = i + 1
+old_i)
+        {:cont, {i}}
+      else
+        {:halt, {i}}
+      end
+    end end).())
+    nil
   end
   def array_methods() do
     numbers = [1, 2, 3, 4, 5]
@@ -78,16 +74,10 @@ end end).())
   end
   def multi_dimensional() do
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    _g = 0
     _ = Enum.each(matrix, (fn -> fn row ->
-    Enum.reduce_while(Stream.iterate(0, fn n -> row + 1 end), {row}, (fn -> fn _, {row} ->
-    if (0 < length(row)) do
-      elem = row[0]
-      nil
-      {:cont, {row}}
-    else
-      {:halt, {row}}
-    end
-  end end).())
+  _g = 0
+  _ = row.each(row, fn _ -> nil end)
 end end).())
     _ = [(fn ->
   _ = [0]
@@ -114,16 +104,11 @@ end).()]
     Enum.filter(Enum.map(arr, fn x -> x * x end), fn x -> x > 10 end)
   end
   def first_n(arr, n) do
-    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {arr, n, b}, (fn -> fn _, {arr, n, b} ->
-  if (0 < trunc.((fn -> b = length(arr)
-  if (n < b), do: n, else: b end).())) do
-    i = 1
-    [].push(arr[i])
-    {:cont, {arr, n, b}}
-  else
-    {:halt, {arr, n, b}}
-  end
-end end).())
+    g = trunc.((fn ->
+        b = length(arr)
+        if (n < b), do: n, else: b
+      end).())
+    _ = Enum.each(0..(g - 1)//1, fn _ -> [] ++ [arr[i]] end)
     []
   end
   def functional_methods() do
@@ -139,12 +124,12 @@ end end).())
     has_very_long = MyApp.ArrayTools.any(strings, fn s -> length(s) > 10 end)
     all_positive = MyApp.ArrayTools.foreach(numbers, fn n -> n > 0 end)
     all_short = MyApp.ArrayTools.all(strings, fn s -> length(s) < 10 end)
-    _ = MyApp.ArrayTools.for_each(numbers, fn _n -> nil end)
+    _ = MyApp.ArrayTools.for_each(numbers, fn n -> nil end)
     _ = MyApp.ArrayTools.take(numbers, 3)
     _ = MyApp.ArrayTools.drop(numbers, 2)
     nested_arrays = [[1, 2], [3, 4], [5]]
     flattened = MyApp.ArrayTools.flat_map(nested_arrays, fn arr -> Enum.map(arr, fn x -> x * 2 end) end)
-    processed = MyApp.ArrayTools.reduce(ArrayTools.take(Enum.map(Enum.filter(numbers, fn n -> n > 2 end), fn n -> n * n end), 2), fn acc, n -> acc + n end, 0)
+    processed = MyApp.ArrayTools.reduce(MyApp.ArrayTools.take(Enum.map(Enum.filter(numbers, fn n -> n > 2 end), fn n -> n * n end), 2), fn acc, n -> acc + n end, 0)
     nil
   end
   def main() do

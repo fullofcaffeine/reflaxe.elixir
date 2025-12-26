@@ -8,7 +8,7 @@ defmodule Main do
         nil
     end
     try do
-      throw(Exception.new("Exception object"))
+      throw(MyApp.Exception.new("Exception object"))
     rescue
       e ->
         nil
@@ -20,7 +20,7 @@ defmodule Main do
         (case type do
           1 -> throw("String error")
           2 -> throw(42)
-          3 -> throw(Exception.new("Exception error"))
+          3 -> throw(MyApp.Exception.new("Exception error"))
           4 -> throw(%{:error => "Object error"})
           _ -> nil
         end)
@@ -72,7 +72,7 @@ defmodule Main do
   end
   def custom_exception() do
     try do
-      throw(CustomException.new("Custom error", 404))
+      throw(MyApp.CustomException.new("Custom error", 404))
     rescue
       e ->
         nil
@@ -80,7 +80,7 @@ defmodule Main do
   end
   def divide(a, b) do
     if (b == 0) do
-      throw(Exception.new("Division by zero"))
+      throw(MyApp.Exception.new("Division by zero"))
     end
     a / b
   end
@@ -95,7 +95,7 @@ defmodule Main do
     end
   end
   def rethrow_example() do
-    inner_function = fn -> throw(Exception.new("Original error")) end
+    inner_function = fn -> throw(MyApp.Exception.new("Original error")) end
     middle_function = fn ->
       try do
         inner_function.()
@@ -113,10 +113,10 @@ defmodule Main do
   end
   def stack_trace_example() do
     try do
-      level3 = fn -> throw(Exception.new("Deep error")) end
+      level3 = fn -> throw(MyApp.Exception.new("Deep error")) end
       level2 = fn -> level3.() end
       level1 = fn -> level2.() end
-      level1.()
+      _ = level1.()
     rescue
       e ->
         nil

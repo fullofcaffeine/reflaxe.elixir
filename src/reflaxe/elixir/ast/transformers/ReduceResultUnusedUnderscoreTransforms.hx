@@ -28,32 +28,89 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  */
 class ReduceResultUnusedUnderscoreTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-	            return switch (n.def) {
-	                case EBlock(stmts):
-	                    var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
-	                    var out:Array<ElixirAST> = [];
-	                    for (i in 0...stmts.length) {
-	                        var stmt = stmts[i];
-	                        switch (stmt.def) {
-	                            case EMatch(pat, rhs) if (isEnumReduceOrWhile(rhs)):
-	                                var names = extractNames(pat);
-	                                if (names.length > 0) {
-	                                    var unused = names.filter(name -> !OptimizedVarUseAnalyzer.usedLater(useIndex, i + 1, name));
-	                                    if (unused.length > 0) {
-	                                        var newPat = underscoreUnusedInPattern(pat, unused);
-	                                        out.push(makeASTWithMeta(EMatch(newPat, rhs), stmt.metadata, stmt.pos));
-	                                    } else out.push(stmt);
-	                                } else out.push(stmt);
-	                            default:
-	                                out.push(stmt);
-	                        }
-	                    }
-	                    makeASTWithMeta(EBlock(out), n.metadata, n.pos);
-	                default:
-                    n;
+        return rewriteNode(ast, new Map());
+    }
+
+    /**
+     * Context-aware block rewrite.
+     *
+     * WHY
+     * - This pass used to treat every EBlock independently. When loop lowerings
+     *   compiled a `for` into a nested EBlock statement that ends with:
+     *     acc = Enum.reduce(...)
+     *   the `acc` rebind is often used *after the block* in the parent statement list.
+     *   Block-local analysis would incorrectly underscore it to `_acc`, breaking semantics.
+     *
+     * HOW
+     * - Thread an `outerUsedAfter` set into nested blocks, derived from the parent block's
+     *   suffix-use index (plus any usage after the parent block itself).
+     * - A reduce binder is considered "used" if referenced later in the same block OR in
+     *   `outerUsedAfter`.
+     */
+    static function rewriteNode(node: ElixirAST, outerUsedAfter: Map<String, Bool>): ElixirAST {
+        if (node == null || node.def == null) return node;
+
+        return switch (node.def) {
+            case EBlock(stmts):
+                makeASTWithMeta(EBlock(rewriteStatements(stmts, outerUsedAfter)), node.metadata, node.pos);
+            case EDo(stmts):
+                makeASTWithMeta(EDo(rewriteStatements(stmts, outerUsedAfter)), node.metadata, node.pos);
+            default:
+                // Recurse and rewrite any nested EBlock nodes using the same `outerUsedAfter`
+                ElixirASTTransformer.transformNode(node, function(n: ElixirAST): ElixirAST {
+                    return switch (n.def) {
+                        case EBlock(innerStmts):
+                            makeASTWithMeta(EBlock(rewriteStatements(innerStmts, outerUsedAfter)), n.metadata, n.pos);
+                        case EDo(innerStmts):
+                            makeASTWithMeta(EDo(rewriteStatements(innerStmts, outerUsedAfter)), n.metadata, n.pos);
+                        default:
+                            n;
+                    }
+                });
+        }
+    }
+
+    static function rewriteStatements(stmts: Array<ElixirAST>, outerUsedAfter: Map<String, Bool>): Array<ElixirAST> {
+        if (stmts == null) return stmts;
+
+        var useIndex = OptimizedVarUseAnalyzer.buildExact(stmts);
+        var out: Array<ElixirAST> = [];
+
+        for (i in 0...stmts.length) {
+            var stmt = stmts[i];
+            var usedAfter = mergeUseSets(useIndex.suffix[i + 1], outerUsedAfter);
+
+            // Rewrite nested blocks within the statement using "used after this statement".
+            var rewrittenStmt = rewriteNode(stmt, usedAfter);
+
+            // Then apply reduce-result underscoring to the statement itself (top-level in this block).
+            switch (rewrittenStmt.def) {
+                case EMatch(pat, rhs) if (isEnumReduceOrWhile(rhs)):
+                    var names = extractNames(pat);
+                    if (names.length > 0) {
+                        var unused: Array<String> = [];
+                        for (name in names) {
+                            if (!usedAfter.exists(name)) unused.push(name);
+                        }
+                        if (unused.length > 0) {
+                            var newPat = underscoreUnusedInPattern(pat, unused);
+                            rewrittenStmt = makeASTWithMeta(EMatch(newPat, rhs), rewrittenStmt.metadata, rewrittenStmt.pos);
+                        }
+                    }
+                default:
             }
-        });
+
+            out.push(rewrittenStmt);
+        }
+
+        return out;
+    }
+
+    static function mergeUseSets(a: Map<String, Bool>, b: Map<String, Bool>): Map<String, Bool> {
+        var out = new Map<String, Bool>();
+        if (a != null) for (k in a.keys()) out.set(k, true);
+        if (b != null) for (k in b.keys()) out.set(k, true);
+        return out;
     }
 
     static function isEnumReduceOrWhile(rhs: ElixirAST): Bool {

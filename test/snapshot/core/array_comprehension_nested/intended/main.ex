@@ -188,15 +188,16 @@ end).()]
   end
   def mixed_constant_variable() do
     n = 3
+    g = []
     g = n
-    _ = Enum.each(0..(_g2 - 1), (fn -> fn _ ->
-  i = _g1 + 1
-  _g = Enum.concat(_g, [(fn -> g = []
-_g = Enum.concat(_g, [i])
-_g = Enum.concat(_g, [i + 1])
-_g end).()])
-end end).())
-    []
+    Enum.reduce(0..(g - 1)//1, g, (fn -> fn i, g ->
+      Enum.concat(g, (fn -> [(fn ->
+  _ = Enum.concat(g, [i])
+  _ = Enum.concat(g, [i + 1])
+  []
+end).()] end).())
+    end end).())
+    g
   end
   def nested_in_expression() do
     sum = 0
@@ -219,22 +220,10 @@ end).()]
   []
 end).()]
     data = []
-    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, data}, (fn -> fn _, {sum, data} ->
-  if (0 < length(data)) do
-    row = data[0]
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {sum, row}, (fn -> fn _, {sum, row} ->
-      if (0 < length(row)) do
-        val = row[0]
-        sum = sum + val
-        {:cont, {sum, row}}
-      else
-        {:halt, {sum, row}}
-      end
-    end end).())
-    {:cont, {sum, data}}
-  else
-    {:halt, {sum, data}}
-  end
+    _g = 0
+    _ = Enum.each(data, (fn -> fn row ->
+  _g = 0
+  _ = row.each(row, fn val -> sum = sum + val end)
 end end).())
     sum
   end
@@ -265,17 +254,13 @@ end).()]
   def comprehension_from_iterable() do
     source = [1, 2, 3]
     g = 0
-    _ = Enum.map(source, (fn -> fn item ->
-  x = source[_g1]
-  _g1 + 1
-  _g = Enum.concat(_g, [(fn -> g = []
-g1 = 0
-Enum.map(source, (fn -> fn item ->
-  y = source[_g1]
-  _g1 + 1
-  _g = Enum.concat(_g, [x * y])
-end end).())
-_g end).()])
+    _ = Enum.each(source, (fn -> fn x ->
+  x ++ [(fn ->
+  g = []
+  g = 0
+  _ = Enum.each(source, fn y -> x ++ [x * y] end)
+  x
+end).()]
 end end).())
     []
   end

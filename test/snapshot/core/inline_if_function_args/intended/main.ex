@@ -3,7 +3,7 @@ defmodule Main do
     map = %{}
     condition = true
     value = 42
-    map = Map.put(map, :bool_key, (if (condition), do: "true", else: "false"))
+    map = map.put(map, :bool_key, (if (condition), do: "true", else: "false"))
     _ = map
   end
   defp test_function_calls() do

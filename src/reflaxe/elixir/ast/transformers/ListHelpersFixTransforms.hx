@@ -96,8 +96,13 @@ class ListHelpersFixTransforms {
                             default: return x;
                         }
                     });
-                    // Replace the EIf node with an inline if that returns the (potentially fixed) then-branch
-                    return makeASTWithMeta(EIf(cond, fixedThen, listExpr), n.metadata, n.pos);
+                    // Preserve the existing else branch when present (e.g. toggle patterns that add an item
+                    // when it is not present). Only default to returning the original list when there is no
+                    // else branch at all.
+                    if (fixedThen == thenB && elseB != null) return n;
+
+                    var finalElse = elseB != null ? elseB : listExpr;
+                    return makeASTWithMeta(EIf(cond, fixedThen, finalElse), n.metadata, n.pos);
                 default:
                     return n;
             }

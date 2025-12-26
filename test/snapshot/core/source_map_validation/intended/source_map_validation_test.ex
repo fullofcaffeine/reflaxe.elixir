@@ -5,9 +5,8 @@ defmodule SourceMapValidationTest do
     _ = test_function(simple_var, number)
     if (number > 0), do: nil, else: nil
     array = [1, 2, 3, 4, 5]
-    _ = Enum.each(array, (fn -> fn item ->
-    process_item(item)
-end end).())
+    _g = 0
+    _ = Enum.each(array, fn item -> process_item(item) end)
     _ = nil
     _ = nil
     _ = nil

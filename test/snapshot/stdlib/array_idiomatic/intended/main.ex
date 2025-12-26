@@ -82,13 +82,19 @@ defmodule Main do
   end
   defp test_iterator_function() do
     numbers = [1, 2, 3]
-    _ = Enum.each(numbers, (fn -> fn _ ->
-    nil
-end end).())
-    _ = nil
+    _g = 0
+    _ = Enum.each(numbers, fn _ -> nil end)
+    iter_current = nil
     iter_array = nil
     iter_current = 0
     iter_array = numbers
-    _ = Enum.each(0..(length(iter_array) - 1), fn _ -> nil end)
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, (fn -> fn _, acc ->
+  if (iter_current < length(iter_array)) do
+    nil
+    {:cont, acc}
+  else
+    {:halt, acc}
+  end
+end end).())
   end
 end

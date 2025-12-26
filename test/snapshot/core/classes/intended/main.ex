@@ -7,7 +7,7 @@ defmodule Main do
     circle = circle.new(0, 0, 10)
     _ = circle.setVelocity(1, 2)
     _ = circle.update(1.5)
-    unit_circle = MyApp.Circle.create_unit()
+    unit_circle = circle.create_unit()
     container = %container{}
     _ = StringBuf.add(container, "Hello")
     _ = StringBuf.add(container, "World")

@@ -4,14 +4,14 @@ defmodule Main do
     setup = true
   end
   setup context do
-    on_exit(fn -> nil end)
+    _ = on_exit(fn -> nil end)
     :ok
   end
   setup_all context do
     global = "initialized"
   end
   setup_all context do
-    on_exit(fn -> global = nil end)
+    _ = on_exit(fn -> global = nil end)
     :ok
   end
   test "without assertions" do
@@ -22,7 +22,7 @@ defmodule Main do
     assert true
   end
   test "async with lifecycle" do
-    Process.sleep(1)
+    _ = Process.sleep(1)
     assert true
   end
   test "with underscores and caps" do
@@ -80,7 +80,7 @@ defmodule Main do
   end
   describe "Full featured" do
     test "everything" do
-      Process.sleep(1)
+      _ = Process.sleep(1)
       assert true
     end
   end

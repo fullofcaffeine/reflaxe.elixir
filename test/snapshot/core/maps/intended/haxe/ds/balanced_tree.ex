@@ -5,13 +5,14 @@ defmodule BalancedTree do
   end
   def exists(struct, key) do
     node = struct.root
-    _ = Enum.each(node, (fn -> fn _ ->
-  cond do
-    c == 0 -> true
-    c < 0 -> node = node.left
-    :true -> node = node.right
-  end
-end end).())
+    Enum.each(node, (fn -> fn _ ->
+      cond do
+        c == 0 -> true
+        c < 0 -> node = node.left
+        :true -> node = node.right
+      end
+    end end).())
+    nil
     false
   end
   def keys(struct) do

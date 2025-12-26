@@ -14,12 +14,12 @@ defmodule Main do
   end
   defp test_basic_map_operations() do
     map = %{}
-    map = Map.put(map, :name, "Alice")
+    map = map.put(map, :name, "Alice")
     _ = map
   end
   defp test_map_queries() do
     map = %{}
-    map = Map.put(map, :a, 1)
+    map = map.put(map, :a, 1)
     _ = map
   end
   defp test_map_transformations() do
@@ -29,7 +29,7 @@ defmodule Main do
   end
   defp test_map_utilities() do
     map = %{}
-    map = Map.put(map, :string, "hello")
+    map = map.put(map, :string, "hello")
     _ = map
   end
 end

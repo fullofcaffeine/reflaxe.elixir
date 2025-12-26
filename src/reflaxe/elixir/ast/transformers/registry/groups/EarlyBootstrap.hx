@@ -158,7 +158,7 @@ class EarlyBootstrap {
     passes.push({
       name: "LoopTransformation",
       description: "Transform non-idiomatic loop patterns (reduce_while with Stream.iterate) to idiomatic Enum operations and comprehensions",
-      enabled: true,
+      enabled: false, // Disabled: unsound (analyzeLoopBody hardcodes hasSideEffectsOnly=true) and can corrupt accumulator semantics
       pass: ElixirASTTransformer.alias_loopTransformationPass
     });
 
