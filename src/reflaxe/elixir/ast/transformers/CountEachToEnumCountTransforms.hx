@@ -216,9 +216,9 @@ class CountEachToEnumCountTransforms {
                         switch (rhs.def) { case EInteger(i) if (i == 0): true; default: false; }
                     default: false;
                 }
-            case EMatch(pat, rhs2):
-                var lhs = switch (pat) { case PVar(v2): v2; default: null; };
-                if (lhs == name) switch (rhs2.def) { case EInteger(i2) if (i2 == 0): true; default: false; } else false;
+            case EMatch(pattern, rhs):
+                var lhs = switch (pattern) { case PVar(varName): varName; default: null; };
+                if (lhs == name) switch (rhs.def) { case EInteger(intValue) if (intValue == 0): true; default: false; } else false;
             default:
                 false;
         };
@@ -233,10 +233,10 @@ class CountEachToEnumCountTransforms {
                 var lhs = switch (left.def) { case EVar(v): v; default: null; };
                 if (lhs == null || lhs.charAt(0) != '_') return false;
                 switch (rhs.def) { case EInteger(i) if (i == 0): true; default: false; }
-            case EMatch(pat, rhs2):
-                var lhs = switch (pat) { case PVar(v2): v2; default: null; };
+            case EMatch(pattern, rhs):
+                var lhs = switch (pattern) { case PVar(varName): varName; default: null; };
                 if (lhs == null || lhs.charAt(0) != '_') return false;
-                switch (rhs2.def) { case EInteger(i2) if (i2 == 0): true; default: false; }
+                switch (rhs.def) { case EInteger(intValue) if (intValue == 0): true; default: false; }
             default:
                 false;
         };
@@ -251,8 +251,8 @@ class CountEachToEnumCountTransforms {
                 call = s;
             case EMatch(_, rhs):
                 call = rhs;
-            case EBinary(Match, _, rhs2):
-                call = rhs2;
+            case EBinary(Match, _, rhs):
+                call = rhs;
             default:
         }
         if (call == null) return null;
