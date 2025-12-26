@@ -29,15 +29,6 @@ class PhoenixLiveCore {
       pass: ElixirASTTransformer.alias_liveViewCoreComponentsImportPass
     });
 
-    // Disabled globally: typed event bridge is handled directly in user code.
-
-    passes.push({
-      name: "LiveViewTypedEventBridge",
-      description: "Synthesize handle_event/3 callbacks from typed handleEvent/2 (enum) dispatcher",
-      enabled: false, // DISABLED: Conflicts with LiveEventCaseToCallbacks
-      pass: reflaxe.elixir.ast.transformers.LiveViewTypedEventBridgeTransforms.transformPass
-    });
-
     passes.push({
       name: "PhoenixFunctionMapping",
       description: "Map custom function names to Phoenix conventions",
