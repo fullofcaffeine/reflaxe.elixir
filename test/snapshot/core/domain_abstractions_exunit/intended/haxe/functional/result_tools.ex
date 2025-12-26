@@ -7,8 +7,7 @@ defmodule ResultTools do
   end
   def flat_map(result, transform) do
     (case result do
-      {:ok, value} ->
-        value.(value)
+      {:ok, value} -> _ = value.(value)
       {:error, error} -> {:error, error}
     end)
   end
@@ -17,10 +16,8 @@ defmodule ResultTools do
   end
   def fold(result, on_success, on_error) do
     (case result do
-      {:ok, value} ->
-        value.(value)
-      {:error, error} ->
-        on_error.(error)
+      {:ok, value} -> _ = value.(value)
+      {:error, error} -> _ = on_error.(error)
     end)
   end
   def is_ok(result) do
@@ -50,14 +47,12 @@ defmodule ResultTools do
   def unwrap_or_else(result, error_handler) do
     (case result do
       {:ok, value} -> value
-      {:error, error} ->
-        error_handler.(error)
+      {:error, error} -> _ = error_handler.(error)
     end)
   end
   def filter(result, predicate, error_value) do
     (case result do
-      {:ok, value} ->
-        if (value.(value)), do: {:ok, value}, else: {:error, value}
+      {:ok, value} -> if (value.(value)), do: {:ok, value}, else: {:error, value}
       {:error, error} -> {:error, error}
     end)
   end
@@ -81,12 +76,11 @@ defmodule ResultTools do
   end
   def sequence(results) do
     values = []
+    _g = 0
     _ = Enum.each(results, (fn -> fn result ->
-    (case result do
-    {:ok, value} ->
-      result = Enum.concat(result, [value])
-    {:error, error} ->
-      {:error, error}
+  (case result do
+    {:ok, value} -> values = values ++ [value]
+    {:error, error} -> {:error, error}
   end)
 end end).())
     {:ok, values}

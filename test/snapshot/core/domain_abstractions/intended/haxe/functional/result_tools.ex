@@ -7,8 +7,7 @@ defmodule ResultTools do
   end
   def flat_map(result, transform) do
     (case result do
-      {:ok, value} ->
-        value.(value)
+      {:ok, value} -> _ = value.(value)
       {:error, error} -> {:error, error}
     end)
   end
@@ -17,10 +16,8 @@ defmodule ResultTools do
   end
   def fold(result, on_success, on_error) do
     (case result do
-      {:ok, value} ->
-        value.(value)
-      {:error, _error} ->
-        on_error.(on_error)
+      {:ok, value} -> _ = value.(value)
+      {:error, error} -> _ = on_error.(error)
     end)
   end
   def is_ok(result) do
@@ -43,37 +40,32 @@ defmodule ResultTools do
   end
   def unwrap_or(result, default_value) do
     (case result do
-      {:ok, value} ->
-        default_value = value
-        default_value
-      {:error, payload} -> payload
+      {:ok, value} -> value
+      {:error, _error} -> default_value
     end)
   end
   def unwrap_or_else(result, error_handler) do
     (case result do
       {:ok, value} -> value
-      {:error, error} ->
-        error.(error)
+      {:error, error} -> _ = error_handler.(error)
     end)
   end
   def filter(result, predicate, error_value) do
     (case result do
-      {:ok, value} ->
-        error_value = value
-        if (error_value.(error_value)), do: {:ok, error_value}, else: {:error, error_value}
+      {:ok, value} -> if (value.(value)), do: {:ok, value}, else: {:error, value}
       {:error, error} -> {:error, error}
     end)
   end
   def map_error(result, transform) do
     (case result do
       {:ok, value} -> {:ok, value}
-      {:error, error} -> {:error, error.(error)}
+      {:error, error} -> {:error, transform.(error)}
     end)
   end
   def bimap(result, on_success, on_error) do
     (case result do
       {:ok, value} -> {:ok, value.(value)}
-      {:error, _error} -> {:error, on_error.(on_error)}
+      {:error, error} -> {:error, on_error.(error)}
     end)
   end
   def ok(value) do
@@ -84,12 +76,11 @@ defmodule ResultTools do
   end
   def sequence(results) do
     values = []
+    _g = 0
     _ = Enum.each(results, (fn -> fn result ->
-    (case result do
-    {:ok, value} ->
-      result = Enum.concat(result, [value])
-    {:error, error} ->
-      {:error, error}
+  (case result do
+    {:ok, value} -> values = values ++ [value]
+    {:error, error} -> {:error, error}
   end)
 end end).())
     {:ok, values}

@@ -797,7 +797,8 @@ class LoopTransforms {
         var outerRange = makeAST(ERange(
             makeAST(EInteger(0)), 
             makeAST(EInteger(count - 1)),
-            false  // inclusive range
+            false,  // inclusive range
+            makeAST(EInteger(1))
         ));
         
         // Build function body: execute outer statement then inner loop
@@ -2467,7 +2468,8 @@ class LoopTransforms {
         var range = makeAST(ERange(
             makeAST(EInteger(0)),
             makeAST(EInteger(count - 1)),
-            false
+            false,
+            makeAST(EInteger(1))
         ));
         
         // Use "k" as the loop variable to match expected output

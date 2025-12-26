@@ -18,7 +18,7 @@ defmodule MemoryStorage do
   def list(struct) do
     this1 = struct.data
     k = _ = this1.keys()
-    _ = Enum.each(k, fn item -> [].push(item) end)
+    _ = Enum.each(colors, fn item -> _ = [item] end)
     []
   end
 end

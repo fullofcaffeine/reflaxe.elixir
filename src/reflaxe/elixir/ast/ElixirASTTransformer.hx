@@ -2185,6 +2185,29 @@ class ElixirASTTransformer {
                 default: false;
             }
         }
+        function isOneLiteral(n: ElixirAST): Bool {
+            return switch (n.def) {
+                case EInteger(v) if (v == 1): true;
+                case EFloat(f) if (f == 1.0): true;
+                default: false;
+            }
+        }
+        function rewriteStandaloneInc(n: ElixirAST): Null<ElixirAST> {
+            if (n == null || n.def == null) return null;
+            return switch (n.def) {
+                // Standalone increments/decrements (from ++/-- statements) must rebind the variable
+                // to preserve side effects in Elixir.
+                case EBinary(Add, {def: EVar(v)}, rhs) if (v != null && isOneLiteral(rhs)):
+                    makeASTWithMeta(EMatch(PVar(v), makeAST(EBinary(Add, makeAST(EVar(v)), rhs))), n.metadata, n.pos);
+                case EBinary(Subtract, {def: EVar(v2)}, rhs2) if (v2 != null && isOneLiteral(rhs2)):
+                    makeASTWithMeta(EMatch(PVar(v2), makeAST(EBinary(Subtract, makeAST(EVar(v2)), rhs2))), n.metadata, n.pos);
+                case EParen(inner):
+                    var rewritten = rewriteStandaloneInc(inner);
+                    rewritten != null ? rewritten : null;
+                default:
+                    null;
+            }
+        }
         function rewriteIfIncrements(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EBinary(Add, {def: EInteger(a)}, {def: EInteger(b)}):
@@ -2216,6 +2239,8 @@ class ElixirASTTransformer {
                         // bare numeric literal as it may represent an intentional return value
                         // (e.g., final 0 in compare/2).
                         var isLast = (idx == stmts.length - 1);
+                        var incRewrite = rewriteStandaloneInc(s);
+                        if (incRewrite != null) s = incRewrite;
                         var drop = switch (s.def) {
                             case EBinary(_, l, r) if (isNumericLiteral(l) && isNumericLiteral(r)): true;
                             case EInteger(_) if (!isLast): true; // Only drop bare integer when not last
@@ -2224,6 +2249,21 @@ class ElixirASTTransformer {
                         if (!drop) out.push(rewriteIfIncrements(s));
                     }
                     makeASTWithMeta(EBlock(out), n.metadata, n.pos);
+                case EDo(stmts):
+                    var outDo: Array<ElixirAST> = [];
+                    for (idx2 in 0...stmts.length) {
+                        var s2 = stmts[idx2];
+                        var isLast2 = (idx2 == stmts.length - 1);
+                        var incRewrite2 = rewriteStandaloneInc(s2);
+                        if (incRewrite2 != null) s2 = incRewrite2;
+                        var drop2 = switch (s2.def) {
+                            case EBinary(_, l2, r2) if (isNumericLiteral(l2) && isNumericLiteral(r2)): true;
+                            case EInteger(_) if (!isLast2): true;
+                            default: false;
+                        };
+                        if (!drop2) outDo.push(rewriteIfIncrements(s2));
+                    }
+                    makeASTWithMeta(EDo(outDo), n.metadata, n.pos);
                 default:
                     n;
             }
@@ -3149,7 +3189,8 @@ class ElixirASTTransformer {
                                                                         var range = makeAST(ERange(
                                                                             makeAST(EInteger(0), node.pos),
                                                                             makeAST(EBinary(Subtract, loopInfo.upperBound, makeAST(EInteger(1), node.pos)), node.pos),
-                                                                            false // inclusive range (0..n-1)
+                                                                            false, // inclusive range (0..n-1)
+                                                                            makeAST(EInteger(1), node.pos)
                                                                         ), node.pos);
                                                                         
                                                                         var eachFunc = makeAST(EFn([{
@@ -4670,9 +4711,20 @@ class ElixirASTTransformer {
         var transformed = switch(ast.def) {
             case EModule(name, attributes, body):
                 var bodyResult = transformArray(body, transformer);
-                if (bodyResult.changed) {
+                var attrChanged = false;
+                var newAttributes: Array<EAttribute> = attributes;
+                if (attributes != null) {
+                    var outAttrs: Array<EAttribute> = [];
+                    for (a in attributes) {
+                        var newVal = transformNode(a.value, transformer);
+                        if (newVal != a.value) attrChanged = true;
+                        outAttrs.push({name: a.name, value: newVal});
+                    }
+                    if (attrChanged) newAttributes = outAttrs;
+                }
+                if (bodyResult.changed || attrChanged) {
                     makeASTWithMeta(
-                        EModule(name, attributes, bodyResult.array),
+                        EModule(name, newAttributes, bodyResult.array),
                         ast.metadata,
                         ast.pos
                     );
@@ -4694,6 +4746,26 @@ class ElixirASTTransformer {
                     EDefp(name, args,
                           guards != null ? transformNode(guards, transformer) : null,
                           transformNode(body, transformer)),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EDefmacro(name, args, guards, body):
+                makeASTWithMeta(
+                    EDefmacro(name, args,
+                        guards != null ? transformNode(guards, transformer) : null,
+                        transformNode(body, transformer)
+                    ),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EDefmacrop(name, args, guards, body):
+                makeASTWithMeta(
+                    EDefmacrop(name, args,
+                        guards != null ? transformNode(guards, transformer) : null,
+                        transformNode(body, transformer)
+                    ),
                     ast.metadata,
                     ast.pos
                 );
@@ -4732,6 +4804,17 @@ class ElixirASTTransformer {
                     ast.metadata,
                     ast.pos
                 );
+
+            case EUnless(condition, body, elseBranch):
+                makeASTWithMeta(
+                    EUnless(
+                        transformNode(condition, transformer),
+                        transformNode(body, transformer),
+                        elseBranch != null ? transformNode(elseBranch, transformer) : null
+                    ),
+                    ast.metadata,
+                    ast.pos
+                );
                 
             case ECase(expr, clauses):
                 makeASTWithMeta(
@@ -4741,6 +4824,57 @@ class ElixirASTTransformer {
                               guard: c.guard != null ? transformNode(c.guard, transformer) : null,
                               body: transformNode(c.body, transformer)
                           })),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case ECond(clauses):
+                makeASTWithMeta(
+                    ECond(clauses.map(c -> {
+                        condition: transformNode(c.condition, transformer),
+                        body: transformNode(c.body, transformer)
+                    })),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EWith(clauses, doBlock, elseBlock):
+                makeASTWithMeta(
+                    EWith(
+                        clauses.map(c -> { pattern: c.pattern, expr: transformNode(c.expr, transformer) }),
+                        transformNode(doBlock, transformer),
+                        elseBlock != null ? transformNode(elseBlock, transformer) : null
+                    ),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
+                makeASTWithMeta(
+                    ETry(
+                        transformNode(body, transformer),
+                        rescueClauses != null ? rescueClauses.map(r -> { pattern: r.pattern, varName: r.varName, body: transformNode(r.body, transformer) }) : [],
+                        catchClauses != null ? catchClauses.map(c -> { kind: c.kind, pattern: c.pattern, body: transformNode(c.body, transformer) }) : [],
+                        afterBlock != null ? transformNode(afterBlock, transformer) : null,
+                        elseBlock != null ? transformNode(elseBlock, transformer) : null
+                    ),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case ERaise(exception, attributes):
+                makeASTWithMeta(
+                    ERaise(
+                        transformNode(exception, transformer),
+                        attributes != null ? transformNode(attributes, transformer) : null
+                    ),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EThrow(value):
+                makeASTWithMeta(
+                    EThrow(transformNode(value, transformer)),
                     ast.metadata,
                     ast.pos
                 );
@@ -4788,6 +4922,61 @@ class ElixirASTTransformer {
                     ast.metadata,
                     ast.pos
                 );
+
+            case EMacroCall(macroName, args, doBlock):
+                makeASTWithMeta(
+                    EMacroCall(
+                        macroName,
+                        args.map(a -> transformNode(a, transformer)),
+                        transformNode(doBlock, transformer)
+                    ),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case ERemoteCall(module, funcName, args):
+                makeASTWithMeta(
+                    ERemoteCall(
+                        transformNode(module, transformer),
+                        funcName,
+                        args.map(a -> transformNode(a, transformer))
+                    ),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EPipe(left, right):
+                makeASTWithMeta(
+                    EPipe(transformNode(left, transformer), transformNode(right, transformer)),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EField(target, field):
+                makeASTWithMeta(
+                    EField(transformNode(target, transformer), field),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EAccess(target, key):
+                makeASTWithMeta(
+                    EAccess(transformNode(target, transformer), transformNode(key, transformer)),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case ERange(start, end, exclusive, step):
+                makeASTWithMeta(
+                    ERange(
+                        transformNode(start, transformer),
+                        transformNode(end, transformer),
+                        exclusive,
+                        step != null ? transformNode(step, transformer) : null
+                    ),
+                    ast.metadata,
+                    ast.pos
+                );
                 
             case EList(elements):
                 makeASTWithMeta(
@@ -4808,6 +4997,39 @@ class ElixirASTTransformer {
                     EMap(pairs.map(p -> {
                         key: transformNode(p.key, transformer),
                         value: transformNode(p.value, transformer)
+                    })),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EStruct(module, fields):
+                makeASTWithMeta(
+                    EStruct(module, fields.map(f -> { key: f.key, value: transformNode(f.value, transformer) })),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EStructUpdate(struct, fields):
+                makeASTWithMeta(
+                    EStructUpdate(transformNode(struct, transformer), fields.map(f -> { key: f.key, value: transformNode(f.value, transformer) })),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EKeywordList(pairs):
+                makeASTWithMeta(
+                    EKeywordList(pairs.map(p -> { key: p.key, value: transformNode(p.value, transformer) })),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EBitstring(segments):
+                makeASTWithMeta(
+                    EBitstring(segments.map(s -> {
+                        value: transformNode(s.value, transformer),
+                        size: s.size != null ? transformNode(s.size, transformer) : null,
+                        type: s.type,
+                        modifiers: s.modifiers
                     })),
                     ast.metadata,
                     ast.pos
@@ -4835,6 +5057,90 @@ class ElixirASTTransformer {
                          transformNode(body, transformer),
                          into != null ? transformNode(into, transformer) : null,
                          uniq),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EPin(expr):
+                makeASTWithMeta(
+                    EPin(transformNode(expr, transformer)),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case ECapture(expr, arity):
+                makeASTWithMeta(
+                    ECapture(transformNode(expr, transformer), arity),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EUse(module, options):
+                makeASTWithMeta(
+                    EUse(module, options != null ? options.map(o -> transformNode(o, transformer)) : []),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EModuleAttribute(name, value):
+                makeASTWithMeta(
+                    EModuleAttribute(name, transformNode(value, transformer)),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EQuote(options, expr):
+                makeASTWithMeta(
+                    EQuote(options != null ? options.map(o -> transformNode(o, transformer)) : [], transformNode(expr, transformer)),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EUnquote(expr):
+                makeASTWithMeta(
+                    EUnquote(transformNode(expr, transformer)),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EUnquoteSplicing(expr):
+                makeASTWithMeta(
+                    EUnquoteSplicing(transformNode(expr, transformer)),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EReceive(clauses, after):
+                makeASTWithMeta(
+                    EReceive(
+                        clauses.map(c -> {
+                            pattern: c.pattern,
+                            guard: c.guard != null ? transformNode(c.guard, transformer) : null,
+                            body: transformNode(c.body, transformer)
+                        }),
+                        after != null ? {
+                            timeout: transformNode(after.timeout, transformer),
+                            body: transformNode(after.body, transformer)
+                        } : null
+                    ),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case ESend(target, message):
+                makeASTWithMeta(
+                    ESend(transformNode(target, transformer), transformNode(message, transformer)),
+                    ast.metadata,
+                    ast.pos
+                );
+
+            case EFragment(tag, attributes, children):
+                makeASTWithMeta(
+                    EFragment(
+                        tag,
+                        attributes != null ? attributes.map(a -> { name: a.name, value: transformNode(a.value, transformer) }) : [],
+                        children != null ? children.map(c -> transformNode(c, transformer)) : []
+                    ),
                     ast.metadata,
                     ast.pos
                 );
@@ -5839,6 +6145,10 @@ class ElixirASTTransformer {
             case ERemoteCall(module, funcName, args):
                 if (module != null) visitor(module);
                 for (arg in args) if (arg != null) visitor(arg);
+            case ERange(start, end, _exclusive, step):
+                if (start != null) visitor(start);
+                if (end != null) visitor(end);
+                if (step != null) visitor(step);
             case EParen(expr):
                 if (expr != null) visitor(expr);
             case EDo(body):
@@ -5994,6 +6304,17 @@ class ElixirASTTransformer {
                 makeASTWithMeta(
                     ERemoteCall(module != null ? transformer(module) : null, funcName, args.map(transformer)),
                     node.metadata, node.pos
+                );
+            case ERange(start, end, exclusive, step):
+                makeASTWithMeta(
+                    ERange(
+                        transformer(start),
+                        transformer(end),
+                        exclusive,
+                        step != null ? transformer(step) : null
+                    ),
+                    node.metadata,
+                    node.pos
                 );
             case EParen(expr):
                 // Transform the inner expression and preserve parentheses
@@ -7048,7 +7369,7 @@ class ElixirASTTransformer {
         // Generate appropriate comprehension
         if (isSimpleRange) {
             // Simple range comprehension: for i <- 0..n, do: i
-            var range = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(rangeEnd)), false));
+            var range = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(rangeEnd)), false, makeAST(EInteger(1))));
             var generator: EGenerator = {
                 pattern: PVar("i"),
                 expr: range
@@ -7059,7 +7380,7 @@ class ElixirASTTransformer {
         } else if (hasNestedComprehensions) {
             // Nested comprehension: for i <- 0..n, do: for j <- 0..m, do: expr
             // For now, reconstruct the outer comprehension
-            var range = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(rangeEnd)), false));
+            var range = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(rangeEnd)), false, makeAST(EInteger(1))));
             var generator: EGenerator = {
                 pattern: PVar("i"),
                 expr: range
@@ -7113,7 +7434,7 @@ class ElixirASTTransformer {
         if (isSimpleRange) {
             // Reconstruct as: for j <- 0..n, do: j
             var rangeEnd = elements.length - 1;
-            var range = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(rangeEnd)), false));
+            var range = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(rangeEnd)), false, makeAST(EInteger(1))));
             var generator: EGenerator = {
                 pattern: PVar("j"),
                 expr: range

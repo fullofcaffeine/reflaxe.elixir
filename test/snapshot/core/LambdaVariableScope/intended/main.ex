@@ -11,7 +11,7 @@ defmodule Main do
     filtered = Enum.filter(items, fn item -> item != target_item end)
     todos = [%{:id => 1, :name => "first"}, %{:id => 2, :name => "second"}]
     id = 2
-    filtered_todos = Enum.filter(todos, fn item -> item.id != item end)
+    filtered_todos = Enum.filter(todos, fn item -> item.id != id end)
   end
   defp test_array_map_with_outer_variable() do
     numbers = [1, 2, 3, 4, 5]

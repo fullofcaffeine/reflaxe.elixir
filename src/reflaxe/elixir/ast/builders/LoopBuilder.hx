@@ -20,6 +20,7 @@ import reflaxe.elixir.ast.context.BuildContext;
 import reflaxe.elixir.ast.loop_ir.LoopIR;
 import reflaxe.elixir.ast.analyzers.RangeIterationAnalyzer;
 import reflaxe.elixir.helpers.MutabilityDetector;
+import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.ast.builders.ComprehensionBuilder; // for unwrap helpers
 using StringTools;
 
@@ -258,7 +259,8 @@ class LoopBuilder {
                         var rangeFor = makeAST(ERange(
                             buildExpr(startExpr),
                             buildExpr(endExpr),
-                            false
+                            false,
+                            makeAST(EInteger(1))
                         ));
                         var valueAst = buildExpr(pushInfo.value);
                         var filterAsts: Array<ElixirAST> = [];
@@ -277,7 +279,7 @@ class LoopBuilder {
                     #end
                     return buildAccumulationLoop(
                         varName,
-                        makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false)),
+                        makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false, makeAST(EInteger(1)))),
                         body,
                         accumulation,
                         buildExpr,
@@ -292,7 +294,8 @@ class LoopBuilder {
                 var range = makeAST(ERange(
                     buildExpr(startExpr),
                     buildExpr(endExpr),
-                    false  // exclusive range
+                    false,  // inclusive
+                    makeAST(EInteger(1))
                 ));
 
                 var snakeVar = toSnakeCase(varName);
@@ -710,23 +713,28 @@ class LoopBuilder {
         // DISABLED: trace('[LoopBuilder] detectDesugarForLoopPattern called with cond: ${cond.expr}');
         #end
         
-        // Check for _g < _g1 pattern in condition (may be wrapped in parenthesis)
-        var actualCond = switch(cond.expr) {
-            case TParenthesis(inner): inner;
-            default: cond;
-        };
-        
-        var bounds = switch(actualCond.expr) {
-            case TBinop(OpLt | OpLte, e1, e2):
-                var counter = extractInfrastructureVarName(e1);
-                var limit = extractInfrastructureVarName(e2);
+        // Check for `_g < _g1` pattern in condition (may be wrapped in parenthesis/meta)
+        function unwrap(e: TypedExpr): TypedExpr {
+            return switch (e.expr) {
+                case TParenthesis(inner) | TMeta(_, inner): unwrap(inner);
+                default: e;
+            }
+        }
+
+        var actualCond = unwrap(cond);
+
+        var bounds: Null<{counter: String, limit: String, op: haxe.macro.Expr.Binop, counterExpr: TypedExpr, limitExpr: TypedExpr}> = switch (actualCond.expr) {
+            case TBinop(op, e1, e2) if (op == OpLt || op == OpLte):
+                var counter = extractInfrastructureVarName(unwrap(e1));
+                var limit = extractInfrastructureVarName(unwrap(e2));
                 #if debug_loop_detection
                 // DISABLED: trace('[LoopBuilder] Extracted counter: $counter, limit: $limit from e1: ${e1.expr}, e2: ${e2.expr}');
                 #end
                 if (counter != null && limit != null) {
-                    {counter: counter, limit: limit};
+                    {counter: counter, limit: limit, op: op, counterExpr: e1, limitExpr: e2};
                 } else null;
-            default: null;
+            default:
+                null;
         };
         
         if (bounds == null) return null;
@@ -735,17 +743,20 @@ class LoopBuilder {
         var bodyInfo = analyzeForLoopBody(body, bounds.counter);
         if (bodyInfo == null) return null;
         
-        // Create simple start/end expressions (will be refined later with actual init values)
+        // Default numeric-loop start: 0 (Haxe's 0...N).
+        // Use the counter expression type to avoid incorrectly typing numeric literals as Bool.
         var startExpr: TypedExpr = {
             expr: TConst(TInt(0)),
             pos: cond.pos,
-            t: cond.t
+            t: bounds.counterExpr.t
         };
-        
-        // For limit, we need to extract from context or use a placeholder
-        var endExpr = switch(cond.expr) {
-            case TBinop(_, _, limit): limit;
-            default: startExpr;
+
+        // Convert `< limit` to an inclusive range end by subtracting 1 (Elixir has no exclusive ranges).
+        var endExpr: TypedExpr = if (bounds.op == OpLt) {
+            var one: TypedExpr = {expr: TConst(TInt(1)), pos: cond.pos, t: bounds.limitExpr.t};
+            {expr: TBinop(OpSub, bounds.limitExpr, one), pos: cond.pos, t: bounds.limitExpr.t};
+        } else {
+            bounds.limitExpr;
         };
         
         return {
@@ -781,46 +792,89 @@ class LoopBuilder {
         userCode: TypedExpr,
         hasSideEffectsOnly: Bool
     }> {
-        switch(body.expr) {
-            case TBlock(exprs) if (exprs.length >= 2):
-                // Look for pattern: [optional var assignment, user code, increment]
-                var userVar = "i"; // Default
-                var userCodeStart = 0;
-                
-                // Check if first expr is var assignment from counter
-                switch(exprs[0].expr) {
+        switch (body.expr) {
+            case TBlock(exprs) if (exprs.length >= 1):
+                // Haxe emits several equivalent desugarings for `for` loops:
+                // - `var i = g; g++; ...`
+                // - `var i = g++; ...` (postfix increment in header)
+                //
+                // We extract the user-visible loop variable and remove any counter
+                // increment statement from the body so LoopBuilder can reconstruct
+                // `Enum.each(range, fn i -> <userCode> end)`.
+                var userVar = "i";
+                var removedIndices = new Map<Int, Bool>();
+                var counterIncrementHandled = false;
+
+                // Helper: unwrap wrappers so we can pattern-match on the underlying expr.
+                function unwrap(e: TypedExpr): TypedExpr {
+                    return switch (e.expr) {
+                        case TMeta(_, inner) | TParenthesis(inner): unwrap(inner);
+                        default: e;
+                    }
+                }
+
+                // Detect header assignment (`var i = g` or `var i = g++`)
+                var first = unwrap(exprs[0]);
+                switch (first.expr) {
                     case TVar(v, init) if (init != null):
-                        if (extractInfrastructureVarName(init) == counterVar) {
-                            userVar = v.name;
-                            userCodeStart = 1;
+                        var initUnwrapped = unwrap(init);
+                        switch (initUnwrapped.expr) {
+                            case TLocal(localVar) if (localVar.name == counterVar):
+                                userVar = v.name;
+                                removedIndices.set(0, true);
+                            case TUnop(OpIncrement | OpDecrement, postFix, inner) if (postFix):
+                                // Header post-inc: `var i = g++`
+                                if (extractInfrastructureVarName(unwrap(inner)) == counterVar) {
+                                    userVar = v.name;
+                                    removedIndices.set(0, true);
+                                    counterIncrementHandled = true;
+                                }
+                            default:
                         }
                     default:
                 }
-                
-                // Check last expr is increment
-                var lastExpr = exprs[exprs.length - 1];
-                var isIncrement = switch(lastExpr.expr) {
-                    case TUnop(OpIncrement, _, e): extractInfrastructureVarName(e) == counterVar;
-                    case TBinop(OpAssign, e1, _): extractInfrastructureVarName(e1) == counterVar;
-                    default: false;
-                };
-                
-                if (!isIncrement) return null;
-                
-                // Extract user code
-                var userCodeExprs = exprs.slice(userCodeStart, exprs.length - 1);
+
+                // Remove standalone counter increment if it exists (unless the header already incremented)
+                if (!counterIncrementHandled) {
+                    for (idx in 0...exprs.length) {
+                        if (removedIndices.exists(idx)) continue;
+                        var stmt = unwrap(exprs[idx]);
+                        var isIncrement = switch (stmt.expr) {
+                            case TUnop(OpIncrement | OpDecrement, _, target):
+                                extractInfrastructureVarName(unwrap(target)) == counterVar;
+                            case TBinop(OpAssign | OpAssignOp(_), left, _):
+                                extractInfrastructureVarName(unwrap(left)) == counterVar;
+                            default:
+                                false;
+                        };
+                        if (isIncrement) {
+                            removedIndices.set(idx, true);
+                            counterIncrementHandled = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!counterIncrementHandled) return null;
+
+                // Extract user code (everything except the header binding and counter increment)
+                var userCodeExprs: Array<TypedExpr> = [];
+                for (idx in 0...exprs.length) {
+                    if (!removedIndices.exists(idx)) userCodeExprs.push(exprs[idx]);
+                }
+
                 var userCode = if (userCodeExprs.length == 1) {
                     userCodeExprs[0];
                 } else {
                     {expr: TBlock(userCodeExprs), pos: body.pos, t: body.t};
                 };
-                
+
                 return {
                     userVar: userVar,
                     userCode: userCode,
                     hasSideEffectsOnly: hasSideEffectsOnly(userCode)
                 };
-            default: 
+            default:
                 return null;
         }
     }
@@ -840,10 +894,42 @@ class LoopBuilder {
         var range = makeAST(ERange(
             buildExpr(pattern.startExpr),
             buildExpr(pattern.endExpr),
-            false // inclusive
+            false, // inclusive
+            makeAST(EInteger(1))
         ));
         
         var varName = toSnakeCase(pattern.userVar);
+        // If the loop mutates an outer accumulator (e.g., `result += "x"`), lower to Enum.reduce
+        // so the mutation survives beyond the anonymous function scope.
+        var accumulation = detectAccumulationPattern(pattern.userCode);
+        if (accumulation != null) {
+            var accName = toSnakeCase(accumulation.varName);
+            var reducerBody = transformBodyForReduce(pattern.userCode, accumulation, buildExpr, toSnakeCase);
+            var reduceCall = makeAST(ERemoteCall(
+                makeAST(EVar("Enum")),
+                "reduce",
+                [
+                    range,
+                    makeAST(EVar(accName)),
+                    makeAST(EFn([{
+                        args: [PVar(varName), PVar(accName)],
+                        guard: null,
+                        body: reducerBody
+                    }]))
+                ]
+            ));
+            // IMPORTANT: This assignment is a rebind that must survive as a real update.
+            // Some ultra-late hygiene passes only analyze usage within the block produced by
+            // this loop node. By returning an explicit trailing `accName` reference, we ensure
+            // the accumulator binding is considered "used" within the same block, preventing
+            // it from being incorrectly underscored (e.g. `__result = ...`) which would break
+            // mutation semantics in translated Haxe loops.
+            return makeAST(EBlock([
+                makeAST(EMatch(PVar(accName), reduceCall)),
+                makeAST(EVar(accName))
+            ]));
+        }
+
         var body = buildExpr(pattern.userCode);
         
         // Generate Enum.each for side-effect-only loops
@@ -919,7 +1005,8 @@ class LoopBuilder {
             var range = makeAST(ERange(
                 buildExpr(startExpr),
                 buildExpr(endExpr),
-                false
+                false,
+                makeAST(EInteger(1))
             ));
             
             #if debug_loop_builder
@@ -965,7 +1052,8 @@ class LoopBuilder {
             var range = makeAST(ERange(
                 buildExpr(startExpr),
                 buildExpr(endExpr),
-                false
+                false,
+                makeAST(EInteger(1))
             ));
             return buildAccumulationLoop(
                 analysis.userVar,
@@ -1112,7 +1200,7 @@ class LoopBuilder {
                 switch(e1.expr) {
                     case TBinop(OpInterval, startExpr, endExpr):
                         // Build range expression
-                        makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false));
+                        makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false, makeAST(EInteger(1))));
                     case _:
                         // Regular collection
                         buildExpr(e1);
@@ -1160,7 +1248,7 @@ class LoopBuilder {
                 switch(e1.expr) {
                     case TBinop(OpInterval, startExpr, endExpr):
                         // Build range expression
-                        makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false));
+                        makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false, makeAST(EInteger(1))));
                     case _:
                         // Regular collection
                         buildExpr(e1);
@@ -1214,7 +1302,7 @@ class LoopBuilder {
                 switch(e1.expr) {
                     case TBinop(OpInterval, startExpr, endExpr):
                         // Build range expression
-                        makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false));
+                        makeAST(ERange(buildExpr(startExpr), buildExpr(endExpr), false, makeAST(EInteger(1))));
                     case _:
                         // Regular collection
                         buildExpr(e1);
@@ -1439,7 +1527,7 @@ class LoopBuilder {
         // Extract source
         var source = switch(ir.source) {
             case Range(start, end, _):
-                makeAST(ERange(start, end, false));
+                makeAST(ERange(start, end, false, makeAST(EInteger(1))));
             case Collection(expr):
                 expr;
             case _:
@@ -2301,6 +2389,28 @@ class LoopBuilder {
                 ).def;
             }
         }
+
+        // Detect `for (item in array)` desugared to an indexed while loop:
+        //   g = 0; while (g < array.length) { var item = array[g]; g++; <userCode> }
+        // and rewrite to Enum.each(array, fn item -> <userCode> end).
+        var forInArrayPattern = detectForInArrayPattern(econd, e);
+        if (forInArrayPattern != null) {
+            var arrayExpr = buildExpression(forInArrayPattern.arrayExpr);
+            var binderName = toElixirVarName(forInArrayPattern.elementVarName);
+            var bodyAst = buildExpression(forInArrayPattern.userBody);
+            return ERemoteCall(
+                makeAST(EVar("Enum")),
+                "each",
+                [
+                    arrayExpr,
+                    makeAST(EFn([{
+                        args: [PVar(binderName)],
+                        guard: null,
+                        body: bodyAst
+                    }]))
+                ]
+            );
+        }
         
         // Check for array iteration patterns
         var arrayPattern = detectArrayIterationPattern(econd, e);
@@ -2316,6 +2426,110 @@ class LoopBuilder {
         
         // Generate idiomatic while loop implementation
         return buildWhileLoop(econd, e, normalWhile, context, toElixirVarName);
+    }
+
+    static function detectForInArrayPattern(econd: TypedExpr, body: TypedExpr): Null<{
+        arrayExpr: TypedExpr,
+        elementVarName: String,
+        userBody: TypedExpr
+    }> {
+        // Condition: <counter> < array.length
+        var actualCond = switch (econd.expr) {
+            case TParenthesis(inner) | TMeta(_, inner): inner;
+            default: econd;
+        };
+
+        var counterVar: Null<TVar> = null;
+        var arrayExpr: Null<TypedExpr> = null;
+        switch (actualCond.expr) {
+            case TBinop(OpLt | OpLte, {expr: TLocal(counter)}, {expr: TField(arr, FInstance(_, _, cf))})
+                if (extractInfrastructureVarName({expr: TLocal(counter), pos: actualCond.pos, t: actualCond.t}) != null && cf.get().name == "length"):
+                counterVar = counter;
+                arrayExpr = arr;
+            default:
+        }
+        if (counterVar == null || arrayExpr == null) return null;
+
+        // Body: var elem = array[counter]; counter++; <userCode>
+        var exprs: Null<Array<TypedExpr>> = switch (body.expr) {
+            case TBlock(stmts): stmts;
+            default: null;
+        };
+        if (exprs == null || exprs.length < 2) return null;
+
+        var elementVarName: Null<String> = null;
+        var userStmtsStart = 0;
+
+        // First statement: var elem = array[counter]
+        var first = exprs[0];
+        switch (first.expr) {
+            case TVar(v, init) if (init != null):
+                switch (init.expr) {
+                    case TArray(arr2, idx):
+                        var idxName = extractInfrastructureVarName(idx);
+                        if (idxName != null && idxName == counterVar.name) {
+                            // Ensure we're indexing the same array as in the condition (common case: both are TLocal)
+                            var sameArray = switch ([arrayExpr.expr, arr2.expr]) {
+                                case [TLocal(a), TLocal(b)] if (a.id == b.id): true;
+                                default: false;
+                            };
+                            if (!sameArray) return null;
+                            elementVarName = v.name;
+                            userStmtsStart = 1;
+                        }
+                    default:
+                }
+            default:
+        }
+        if (elementVarName == null) return null;
+
+        // Second statement: counter++
+        var second = exprs[1];
+        var isCounterIncrement = switch (second.expr) {
+            case TUnop(OpIncrement | OpDecrement, _, target):
+                switch (target.expr) {
+                    case TLocal(v2): v2.id == counterVar.id;
+                    default: false;
+                }
+            case TBinop(OpAssign | OpAssignOp(_), left, _):
+                switch (left.expr) {
+                    case TLocal(v3): v3.id == counterVar.id;
+                    default: false;
+                }
+            default:
+                false;
+        };
+        if (!isCounterIncrement) return null;
+
+        // Remaining user statements
+        var userExprs = exprs.slice(2);
+        var userBody: TypedExpr = if (userExprs.length == 0) {
+            {expr: TBlock([]), pos: body.pos, t: body.t};
+        } else if (userExprs.length == 1) {
+            userExprs[0];
+        } else {
+            {expr: TBlock(userExprs), pos: body.pos, t: body.t};
+        };
+
+        // Avoid rewriting if the user body references the counter variable (index-based loops).
+        var usesCounter = false;
+        function scan(e: TypedExpr): Void {
+            if (e == null || usesCounter) return;
+            switch (e.expr) {
+                case TLocal(v4) if (v4.id == counterVar.id):
+                    usesCounter = true;
+                default:
+                    TypedExprTools.iter(e, scan);
+            }
+        }
+        scan(userBody);
+        if (usesCounter) return null;
+
+        return {
+            arrayExpr: arrayExpr,
+            elementVarName: elementVarName,
+            userBody: userBody
+        };
     }
     
     /**
@@ -2381,25 +2595,9 @@ class LoopBuilder {
         
         // Detect mutated variables for state threading
         var mutatedVars = MutabilityDetector.detectMutatedVariables(e);
-        
-        // Add condition variables to state threading
-        var conditionVars = new Map<Int, TVar>();
-        function findConditionVars(expr: TypedExpr): Void {
-            if (expr == null) return;
-            switch(expr.expr) {
-                case TLocal(v):
-                    conditionVars.set(v.id, v);
-                default:
-                    TypedExprTools.iter(expr, findConditionVars);
-            }
-        }
-        findConditionVars(econd);
-        
-        for (v in conditionVars) {
-            if (!mutatedVars.exists(v.id)) {
-                mutatedVars.set(v.id, v);
-            }
-        }
+        // NOTE: We only thread truly mutated locals through the reduce_while accumulator.
+        // Variables that are only *read* (e.g. function params used in the condition) are
+        // safely captured by the reducer closure and should not be included in the state tuple.
         
         // If there are variables to thread, use reduce_while with state
         if (Lambda.count(mutatedVars) > 0) {
@@ -2488,9 +2686,71 @@ class LoopBuilder {
         var accInitializers = [];
         var accPatterns = [];
         var accRebuilders = [];
-        
+
+        // Try to seed accumulator variables with a concrete initial value when we can prove it,
+        // so the reduce_while does not depend on prior bindings in the surrounding scope.
+        // This is especially important for desugared for/while loops where Haxe introduces
+        // compiler temps (_g, _g1, ...) and accumulator locals (sum/result/items) that must
+        // be initialized for the reducer to be valid Elixir.
+        var concreteContext: Null<CompilationContext> = Std.isOfType(context, CompilationContext) ? cast context : null;
+        function inferAccumulatorSeed(elixirName: String, originalName: String): Null<ElixirAST> {
+            if (elixirName == null || elixirName.length == 0) return null;
+
+            // Prefer any tracked initializer (e.g. _g = 5) captured at block level.
+            if (concreteContext != null && concreteContext.infrastructureVarInitValues != null &&
+                originalName != null && concreteContext.infrastructureVarInitValues.exists(originalName)) {
+                return concreteContext.infrastructureVarInitValues.get(originalName);
+            }
+
+            // Default seed for compiler counters (g, g1, _g, _g1, ...): 0
+            if (originalName != null && (originalName == "g" || originalName == "_g" || ~/^_?g[0-9]*$/.match(originalName))) {
+                return makeAST(EInteger(0));
+            }
+            if (elixirName == "g" || ~/^g[0-9]*$/.match(elixirName)) {
+                return makeAST(EInteger(0));
+            }
+
+            // Infer from self-accumulating assignments inside the loop body, e.g.:
+            //   sum = sum + x        -> 0
+            //   result = result <> s -> ""
+            //   items = items ++ [x] -> []
+            var inferred: Null<ElixirAST> = null;
+            function visit(n: ElixirAST): Void {
+                if (inferred != null || n == null || n.def == null) return;
+
+                function matchesTarget(name: String): Bool {
+                    return name == elixirName || name == "_" + elixirName;
+                }
+
+                function inferFromRhs(lhsName: String, rhs: ElixirAST): Void {
+                    if (rhs == null || rhs.def == null) return;
+                    switch (rhs.def) {
+                        case EBinary(Add, {def: EVar(v)}, _) if (v == lhsName): inferred = makeAST(EInteger(0));
+                        case EBinary(Subtract, {def: EVar(v2)}, _) if (v2 == lhsName): inferred = makeAST(EInteger(0));
+                        case EBinary(StringConcat, {def: EVar(v3)}, _) if (v3 == lhsName): inferred = makeAST(EString(""));
+                        case EBinary(Concat, {def: EVar(v4)}, _) if (v4 == lhsName): inferred = makeAST(EList([]));
+                        default:
+                    }
+                }
+
+                switch (n.def) {
+                    case EMatch(pattern, rhs):
+                        var lhsName: Null<String> = switch (pattern) { case PVar(nm): nm; default: null; };
+                        if (lhsName != null && matchesTarget(lhsName)) inferFromRhs(lhsName, rhs);
+                    case EBinary(Match, {def: EVar(lhs)}, rhs2) if (matchesTarget(lhs)):
+                        inferFromRhs(lhs, rhs2);
+                    default:
+                }
+
+                ElixirASTTransformer.iterateAST(n, visit);
+            }
+            visit(body);
+            return inferred;
+        }
+
         for (item in accVarList) {
-            accInitializers.push(makeAST(EVar(item.name)));
+            var seed = inferAccumulatorSeed(item.name, item.tvar != null ? item.tvar.name : null);
+            accInitializers.push(seed != null ? seed : makeAST(EVar(item.name)));
             accPatterns.push(PVar(item.name));
             accRebuilders.push(makeAST(EVar(item.name)));
         }
@@ -2573,7 +2833,13 @@ class LoopBuilder {
         // DISABLED: trace('[XRay LoopBuilder] Returning from buildReduceWhileWithState');
         #end
 
-        return result;
+        // Critical: bind the final accumulator back to the local variables so mutations
+        // are visible after the loop. The while-expression itself is Void in Haxe, so
+        // return nil as the expression value after rebinding.
+        return EBlock([
+            makeAST(EMatch(accPattern, makeAST(result))),
+            makeAST(ENil)
+        ]);
     }
     
     /**

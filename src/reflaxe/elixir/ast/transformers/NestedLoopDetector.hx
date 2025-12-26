@@ -417,7 +417,8 @@ class NestedLoopDetector {
             var range = makeAST(ERange(
                 makeAST(EInteger(0)),
                 makeAST(EInteger(dimensions[dimIndex] - 1)),
-                false
+                false,
+                makeAST(EInteger(1))
             ));
             
             var varName = varNames[dimIndex];

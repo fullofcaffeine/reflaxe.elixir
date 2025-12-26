@@ -8,9 +8,8 @@ defmodule FormTemplate do
       "<div class='no-errors'></div>"
     else
       error_items = []
-      _ = Enum.each(errors, (fn -> fn error ->
-    error = Enum.concat(error, ["<li class='error-item'>" <> error <> "</li>"])
-end end).())
+      _g = 0
+      _ = Enum.each(errors, fn item -> error_items = error_items ++ ["<li class='error-item'>" <> item <> "</li>"] end)
       "<div class='form-errors'><ul class='error-list'>#{(fn -> Enum.join((fn -> error_items end).(), "") end).()}</ul></div>"
     end
   end

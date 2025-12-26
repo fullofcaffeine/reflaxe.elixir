@@ -1,10 +1,10 @@
 defmodule User do
   use Ecto.Schema
   schema "users" do
-    field(:name, :string)
-    field(:email, :string)
-    field(:age, :integer)
-    field(:active, :boolean)
+    _ = field(:name, :string)
+    _ = field(:email, :string)
+    _ = field(:age, :integer)
+    _ = field(:active, :boolean)
   end
   
   def changeset(user, attrs) do

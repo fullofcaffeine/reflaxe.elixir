@@ -3186,7 +3186,10 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "FindRewrite",
             description: "Rewrite Enum.each scans ending with nil into Enum.find(list, &pred/1)",
-            enabled: true,
+            // Disabled: unsafe (can drop preceding statements in the block and/or
+            // produce predicates that reference locals declared inside the Enum.each body,
+            // yielding invalid Elixir like `fn i -> item > 2 end` without binding `item`).
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.findRewritePass
         });
         // Post-rewrite cleanup: once loops have become Enum.find/2, repair any remaining
@@ -3420,7 +3423,10 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "EFnEnumClosureAlign",
             description: "Final alignment of Enum.* anonymous function closures (primary binder repairs)",
-            enabled: true,
+            // Disabled: over-aggressive variable rewrites can change semantics (e.g. rewriting
+            // an outer accumulator like `results` to the Enum binder). Prefer upstream binder
+            // alignment at generation time; keep this pass for future experiments behind flags.
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.EFnEnumClosureAlignTransforms.pass
         });
         // Replay: promote underscored def/defp arg binders to base name when body (or ERaw) uses base

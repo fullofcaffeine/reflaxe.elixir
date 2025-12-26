@@ -179,13 +179,27 @@ class MapAndCollectionTransforms {
                     case ECase(expr, cs): collectUsedVars(expr, out); for (c in cs) collectUsedVars(c.body, out);
                     case EBinary(_, l, r): collectUsedVars(l, out); collectUsedVars(r, out);
                     case EField(obj, _): collectUsedVars(obj, out);
+                    case EAccess(obj2, key2):
+                        collectUsedVars(obj2, out);
+                        collectUsedVars(key2, out);
+                    case EParen(inner):
+                        collectUsedVars(inner, out);
                     case EMatch(_, rhs): collectUsedVars(rhs, out);
                     case ECall(tgt, _, argsC): if (tgt != null) collectUsedVars(tgt, out); for (a in argsC) collectUsedVars(a, out);
                     case ERemoteCall(tgt2, _, argsR): collectUsedVars(tgt2, out); for (a in argsR) collectUsedVars(a, out);
                     case EList(els): for (el in els) collectUsedVars(el, out);
                     case ETuple(els2): for (el in els2) collectUsedVars(el, out);
                     case EKeywordList(ps): for (p in ps) collectUsedVars(p.value, out);
+                    case EMap(pairs): for (p in pairs) { collectUsedVars(p.key, out); collectUsedVars(p.value, out); }
                     case EStructUpdate(base, fs): collectUsedVars(base, out); for (f in fs) collectUsedVars(f.value, out);
+                    case EStruct(_, fs2): for (f2 in fs2) collectUsedVars(f2.value, out);
+                    case EWith(clauses, doBlock, elseBlock):
+                        for (wc in clauses) collectUsedVars(wc.expr, out);
+                        collectUsedVars(doBlock, out);
+                        if (elseBlock != null) collectUsedVars(elseBlock, out);
+                    case EFn(_):
+                        // Nested functions are their own scope; do not count their vars for the outer closure's free-var repair.
+                        return;
                     default:
                 }
             }
@@ -208,12 +222,54 @@ class MapAndCollectionTransforms {
                                             switch (lft.def) { case EVar(nv): m.set(nv, true); default: }
                                         case EMatch(patY, _):
                                             collectPatternVars(patY, m);
+                                        case EIf(cond, thenB, elseB):
+                                            walkStmt(cond);
+                                            walkStmt(thenB);
+                                            if (elseB != null) walkStmt(elseB);
                                         case ECase(_, clauses):
                                             for (cl in clauses) collectPatternVars(cl.pattern, m);
+                                            // Also walk clause bodies to collect locals declared within branches
+                                            for (cl in clauses) {
+                                                if (cl.guard != null) walkStmt(cl.guard);
+                                                walkStmt(cl.body);
+                                            }
                                         case EBlock(ss):
                                             for (x in ss) walkStmt(x);
                                         case EDo(ss2):
                                             for (x in ss2) walkStmt(x);
+                                        case EWith(withClauses, doBlock, elseBlock):
+                                            for (wc in withClauses) {
+                                                collectPatternVars(wc.pattern, m);
+                                                walkStmt(wc.expr);
+                                            }
+                                            walkStmt(doBlock);
+                                            if (elseBlock != null) walkStmt(elseBlock);
+                                        case EBinary(_, l, r):
+                                            walkStmt(l);
+                                            walkStmt(r);
+                                        case ECall(tgt, _, argsC):
+                                            if (tgt != null) walkStmt(tgt);
+                                            if (argsC != null) for (a in argsC) walkStmt(a);
+                                        case ERemoteCall(tgt2, _, argsR):
+                                            walkStmt(tgt2);
+                                            if (argsR != null) for (a2 in argsR) walkStmt(a2);
+                                        case EField(obj, _):
+                                            walkStmt(obj);
+                                        case EAccess(obj2, key2):
+                                            walkStmt(obj2);
+                                            walkStmt(key2);
+                                        case EKeywordList(ps):
+                                            for (p in ps) walkStmt(p.value);
+                                        case EMap(pairs):
+                                            for (p in pairs) { walkStmt(p.key); walkStmt(p.value); }
+                                        case EStructUpdate(base, fields):
+                                            walkStmt(base);
+                                            for (f in fields) walkStmt(f.value);
+                                        case ETuple(es) | EList(es):
+                                            for (e in es) walkStmt(e);
+                                        case EFn(_):
+                                            // Treat nested functions as their own scope; do not collect binds from within.
+                                            null;
                                         default:
                                     }
                                 }
@@ -256,7 +312,7 @@ class MapAndCollectionTransforms {
                 didReplace = true;
             }
                             // If alias was dropped or free-var replaced, body will reference replacementName now
-            var finalBinder: EPattern = (didReplace || bodyUsesVar(bodyExpr, replacementName))
+            var finalBinder: EPattern = (didReplace || bodyUsesVar(bodyExpr, replacementName) || bodyUsesVar(bodyExpr, "_" + replacementName))
                 ? PVar(replacementName)
                 : PWildcard;
                             var newFn = makeAST(EFn([{ args: [finalBinder], guard: clause.guard, body: bodyExpr }]));
@@ -311,7 +367,13 @@ class MapAndCollectionTransforms {
                                     };
                                     // If binder is unused after cleanup, set wildcard
                                     var arg0 = cl.args.length > 0 ? cl.args[0] : PWildcard;
-                                    var finalArg = switch (arg0) { case PVar(nm): (bodyUsesVar(cleanedBody, nm) ? arg0 : PWildcard); default: arg0; };
+                                    var finalArg = switch (arg0) {
+                                        case PVar(nm):
+                                            // Treat `_binder` references as binder usage too; later passes normalize `_binder` → `binder`.
+                                            (bodyUsesVar(cleanedBody, nm) || bodyUsesVar(cleanedBody, "_" + nm)) ? arg0 : PWildcard;
+                                        default:
+                                            arg0;
+                                    };
                                     var newFn = makeAST(EFn([{ args: [finalArg], guard: cl.guard, body: cleanedBody }]));
                                     makeASTWithMeta(ERemoteCall(mod, "each", [listExpr, newFn]), n.metadata, n.pos);
                                 default:

@@ -4,13 +4,14 @@ defmodule Main do
     switch_result_1 = ((case data do
   [head | tail] when head == 72 and tail != [] ->
     "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
-  g = []
-  g1 = 1
+  _g = []
+  _g1 = 1
   _g2 = length(arr)
-  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
-    i = _g1 + 1
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
+    _g
   end end).())
+  _g
   _g
 end).(), ",") end).()}"
   [] -> "Empty binary"
@@ -21,12 +22,13 @@ end).(), ",") end).()}"
       arr = data
       if (arr[0] == 72 and length(arr) > 1) do
         "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
-  g1 = 1
+  _g1 = 1
   _g2 = length(arr)
-  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
-    i = _g1 + 1
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
+    _g
   end end).())
+  _g
   _g
 end).(), ",") end).()}"
       else
@@ -42,13 +44,14 @@ end).(), ",") end).()}"
     arr = data
     if (arr[0] == 72 and length(arr) > 1) do
       "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
-  g = []
-  g1 = 1
+  _g = []
+  _g1 = 1
   _g2 = length(arr)
-  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
-    i = _g1 + 1
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
+    _g
   end end).())
+  _g
   _g
 end).(), ",") end).()}"
     else
@@ -69,13 +72,14 @@ end).(), ",") end).()}"
     arr = data
     if (arr[0] == 72 and length(arr) > 1) do
       "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
-  g = []
-  g1 = 1
+  _g = []
+  _g1 = 1
   _g2 = length(arr)
-  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
-    i = _g1 + 1
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
+    _g
   end end).())
+  _g
   _g
 end).(), ",") end).()}"
     else
@@ -99,13 +103,14 @@ end).(), ",") end).()}"
     arr = data
     if (arr[0] == 72 and length(arr) > 1) do
       "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
-  g = []
-  g1 = 1
+  _g = []
+  _g1 = 1
   _g2 = length(arr)
-  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
-    i = _g1 + 1
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
+    _g
   end end).())
+  _g
   _g
 end).(), ",") end).()}"
     else
@@ -131,12 +136,13 @@ end))
         arr = packet
         if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
           "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
-  g1 = 3
+  _g1 = 3
   _g2 = length(arr)
-  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
-    i = _g1 + 1
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
+    _g
   end end).())
+  _g
   _g
 end).(), ",") end).()}"
         else
@@ -155,12 +161,13 @@ end).(), ",") end).()}"
       arr = packet
       if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
         "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
-  g1 = 3
+  _g1 = 3
   _g2 = length(arr)
-  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
-    i = _g1 + 1
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
+    _g
   end end).())
+  _g
   _g
 end).(), ",") end).()}"
       else
@@ -179,13 +186,14 @@ end).(), ",") end).()}"
     arr = packet
     if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
       "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
-  g = []
-  g1 = 3
+  _g = []
+  _g1 = 3
   _g2 = length(arr)
-  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
-    i = _g1 + 1
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
+    _g
   end end).())
+  _g
   _g
 end).(), ",") end).()}"
     else
@@ -199,13 +207,14 @@ end).(), ",") end).()}"
     arr = packet
     if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
       "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
-  g = []
-  g1 = 3
+  _g = []
+  _g1 = 3
   _g2 = length(arr)
-  Enum.each(0..(arr_length - 1), (fn -> fn _g1 ->
-    i = _g1 + 1
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, (fn -> fn i, _g ->
     _g = Enum.concat(_g, [inspect(arr[i])])
+    _g
   end end).())
+  _g
   _g
 end).(), ",") end).()}"
     else
@@ -304,8 +313,8 @@ end))
               else
                 v = value
                 cond do
-                  Std.is(v, Array) -> "Array with " <> inspect(Map.get(v, :length)) <> " elements"
-                  value == nil -> "Null value"
+                  MyApp.Std.is(v, Array) -> "Array with " <> length(v) <> " elements"
+                  Kernel.is_nil(value) -> "Null value"
                   :true -> "Unknown type"
                 end
               end
@@ -369,7 +378,7 @@ end))
   3 -> "Triple: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()}"
   _ ->
     cond do
-      3 > 3 -> "Many: " <> Kernel.to_string(3) <> " items"
+      false -> "Many: " <> Kernel.to_string(3) <> " items"
       true -> "Other array pattern"
     end
 end))

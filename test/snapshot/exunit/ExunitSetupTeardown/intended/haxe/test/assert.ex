@@ -32,7 +32,7 @@ defmodule Assert do
   def is_error(result, message) do
     throw("Assert.isError should be compiled by ExUnitCompiler")
   end
-  def raises(fn_param, exception_type, message) do
+  def raises(fn_param, exception_module, message) do
     throw("Assert.raises should be compiled by ExUnitCompiler")
   end
   def does_not_raise(fn_param, message) do

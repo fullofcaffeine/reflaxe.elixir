@@ -488,25 +488,15 @@ class HygieneTransforms {
                 state.currentContext = Expr;
                 traverseWithContext(expr, state, allBindings);
 
-                // CRITICAL FIX: In Elixir, pattern matching with = is REBINDING, not new binding
-                // When we have: v = replacer(key, v)
-                // The RHS 'v' uses the EXISTING binding
-                // The LHS 'v' REBINDS the same variable (not creates new one)
-                // So we should NOT create a new binding if variable already exists in scope
+                // Process LHS pattern AFTER RHS so reads resolve to the prior binding.
                 //
-                // However, processPatternWithLocator creates bindings unconditionally
-                // This causes the parameter 'v' to appear unused when it's actually used in RHS
-                //
-                // For now, we skip processing the LHS pattern entirely for EMatch
-                // because Elixir rebinding doesn't need hygiene tracking
-                // The variable is already bound (as parameter) and marked used (from RHS traversal)
-
-                // NOTE: This is correct for Elixir semantics where = is pattern matching/rebinding
-                // NOT variable declaration like in imperative languages
-
-                #if debug_hygiene
-                // DISABLED: trace('[XRay Hygiene] Skipping LHS pattern processing for EMatch - Elixir rebinding semantics');
-                #end
+                // IMPORTANT: Even though `=` is rebinding in Elixir, it still establishes the
+                // "current" value for subsequent reads in the same scope. Hygiene analysis must
+                // model this so later statements resolve to the rebinding rather than the stale
+                // previous binding.
+                state.currentContext = Pattern;
+                processPatternWithLocator(pattern, state, allBindings, containerId, MatchLHS, 0, []);
+                state.currentContext = Expr;
                 
             case ECase(expr, clauses):
                 // Process scrutinee in expression context
@@ -728,10 +718,21 @@ class HygieneTransforms {
                                              slotIndex: Int, path: Array<Int>): Void {
         if (pattern == null) return;
         
+        var bindingKind: BindingKind = switch (context) {
+            case DefParam | FnParam:
+                Param;
+            case CaseClause | ReceiveClause:
+                PatternVar;
+            case WithClause:
+                WithGen;
+            case MatchLHS:
+                MatchLhs;
+        };
+
         switch(pattern) {
             case PVar(name):
                 // Create binding with precise locator
-                var binding = bindVariable(state, name, PatternVar, 
+                var binding = bindVariable(state, name, bindingKind, 
                                          containerId, context, slotIndex, path);
                 allBindings.push(binding);
                 

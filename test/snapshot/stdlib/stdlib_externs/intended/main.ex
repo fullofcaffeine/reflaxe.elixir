@@ -28,15 +28,15 @@ defmodule Main do
     keys = Registry.keys("MyRegistry", Process.self())
   end
   defp test_agent_externs() do
-    agent_result = Agent.start_link(fn -> nil end)
-    state = Agent.get(nil, fn count -> count end)
-    _ = Agent.update(nil, fn count -> count + 1 end)
-    _ = Agent.cast(nil, fn count -> count + 1 end)
-    counter_agent = Agent.start_link(fn -> 10 end)
+    agent_result = agent.start_link(fn -> nil end)
+    state = agent.get(nil, fn count -> count end)
+    _ = agent.update(nil, fn count -> count + 1 end)
+    _ = agent.cast(nil, fn count -> count + 1 end)
+    counter_agent = agent.start_link(fn -> 10 end)
     agent = nil
-    _ = Agent.update(agent, fn count -> count + 5 end)
+    _ = agent.update(agent, fn count -> count + 5 end)
     agent = nil
-    current_count = _ = Agent.get(agent, fn count -> count end)
+    current_count = _ = agent.get(agent, fn count -> count end)
   end
   defp test_io_externs() do
     _ = IO.puts("Hello, World!")
@@ -133,7 +133,7 @@ defmodule Main do
     first = Enum.at(test_array, 0)
     found = Enum.find(test_array, fn x -> x > 3 end)
     doubled = Enum.map(test_array, fn x -> x * 2 end)
-    filtered = Enum.filter(test_array, fn x -> not Kernel.is_nil(:binary.match(String.downcase(x.title), query)) or x.description != nil and not Kernel.is_nil(:binary.match(String.downcase(x.description), query)) end)
+    filtered = Enum.filter(test_array, fn x -> String.contains?(String.downcase(x.title), query) or x.description != nil and String.contains?(String.downcase(x.description), query) end)
     _reduced = Enum.reduce(test_array, 0, fn acc, x -> acc + x end)
     sum = Enum.sum(test_array)
     max = Enum.max(test_array)
@@ -149,42 +149,42 @@ defmodule Main do
   end
   defp test_string_externs() do
     test_string = "  Hello, World!  "
-    length = String.length(test_string)
-    byte_size = String.byte_size(test_string)
-    is_valid = String.valid?(test_string)
-    lower = String.downcase(test_string)
-    upper = String.upcase(test_string)
-    capitalized = String.capitalize(test_string)
-    trimmed = String.trim(test_string)
-    left_trimmed = String.trim_leading(test_string)
-    padded = String.pad_leading("hello", 10)
-    slice = String.slice(test_string, 2, 5)
-    char_at = String.at(test_string, 0)
-    first = String.first(test_string)
-    last = String.last(test_string)
-    contains = String.contains?(test_string, "Hello")
-    starts_with = String.starts_with?(test_string, "  Hello")
-    ends_with = String.ends_with?(test_string, "!  ")
-    replaced = String.replace(test_string, "World", "Elixir")
-    prefix_replaced = String.replace_prefix(test_string, "  ", "")
-    split = String.split("a,b,c")
-    split_on = String.split("a,b,c", ",")
-    split_at = String.split_at(test_string, 5)
-    to_int_result = String.to_integer("123")
-    to_float_result = String.to_float("123.45")
-    is_empty = String.length("") == 0
-    string = String.trim("   ")
-    is_blank = String.length(string) == 0
+    length = string.length(test_string)
+    byte_size = string.byte_size(test_string)
+    is_valid = string.valid?(test_string)
+    lower = string.downcase(test_string)
+    upper = string.upcase(test_string)
+    capitalized = string.capitalize(test_string)
+    trimmed = string.trim(test_string)
+    left_trimmed = string.trim_leading(test_string)
+    padded = string.pad_leading("hello", 10)
+    slice = string.slice(test_string, 2, 5)
+    char_at = string.at(test_string, 0)
+    first = string.first(test_string)
+    last = string.last(test_string)
+    contains = string.contains?(test_string, "Hello")
+    starts_with = string.starts_with?(test_string, "  Hello")
+    ends_with = string.ends_with?(test_string, "!  ")
+    replaced = string.replace(test_string, "World", "Elixir")
+    prefix_replaced = string.replace_prefix(test_string, "  ", "")
+    split = string.split("a,b,c")
+    split_on = string.split("a,b,c", ",")
+    split_at = string.split_at(test_string, 5)
+    to_int_result = string.to_integer("123")
+    to_float_result = string.to_float("123.45")
+    is_empty = string.length("") == 0
+    string = string.trim("   ")
+    is_blank = string.length(string) == 0
     pad_with = "0"
     if (Kernel.is_nil(pad_with)) do
       pad_with = " "
     end
-    left_padded = if (String.length("test") >= 10) do
+    left_padded = if (string.length("test") >= 10) do
       "test"
     else
-      String.pad_leading("test", 10, pad_with)
+      string.pad_leading("test", 10, pad_with)
     end
-    repeated = String.duplicate("ha", 3)
+    repeated = string.duplicate("ha", 3)
   end
   defp test_gen_server_externs() do
     start_result = GenServer.start_link("MyGenServer", "init_arg")
