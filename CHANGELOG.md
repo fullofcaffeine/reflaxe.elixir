@@ -1,5 +1,24 @@
 ## [Unreleased]
 
+## [1.0.7](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.0.6...v1.0.7) (2025-12-26)
+
+### 🐞 Bug Fixes
+
+- Compiler: Preserve Haxe early-return semantics when `for` loops lower to `Enum.each/2` (rewrite to `Enum.reduce_while/3` + `case`).
+- Printer: Remove redundant IIFE wrapping around multiline arguments when already parenthesized or `fn ... end` literals.
+
+### 🔧 Tooling
+
+- Guards: Enforce descriptive, non-numeric-suffix binders in new compiler diffs.
+
+### 🧪 Testing
+
+- Snapshots: Refresh intended outputs across core/stdlib/regression/phoenix/ecto/otp to match the new, more idiomatic Elixir shapes.
+
+### 🧩 Examples
+
+- Todo-app: Sort by priority now orders `high` before `medium` and `low`.
+
 ## [1.0.6](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.0.5...v1.0.6) (2025-12-26)
 
 ### 🐞 Bug Fixes
