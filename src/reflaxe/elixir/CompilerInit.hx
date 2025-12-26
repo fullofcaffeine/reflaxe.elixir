@@ -142,7 +142,10 @@ class CompilerInit {
         }
 
         // Register the Elixir compiler with Reflaxe
-        var outputExtension = Context.defined("ecto_migrations_exs") ? ".exs" : ".ex";
+        // Default outputs are `.ex` (compiled modules). Use `.exs` only for script targets:
+        // - Ecto migrations (`-D ecto_migrations_exs`)
+        // - Opt-in script/test builds (`-D elixir_output_exs`)
+        var outputExtension = (Context.defined("ecto_migrations_exs") || Context.defined("elixir_output_exs")) ? ".exs" : ".ex";
         ReflectCompiler.AddCompiler(new ElixirCompiler(), {
             fileOutputExtension: outputExtension,
             outputDirDefineName: "elixir_output",
