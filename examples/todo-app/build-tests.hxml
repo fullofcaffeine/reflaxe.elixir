@@ -9,6 +9,9 @@
 # Output directory for generated test modules (isolated)
 -D elixir_output=test/generated
 
+# ExUnit tests are executed as scripts; emit `.exs` files (must end with *_test.exs).
+-D elixir_output_exs
+
 # Required flags
 -D reflaxe_runtime
 -D reflaxe_elixir_strict_examples
