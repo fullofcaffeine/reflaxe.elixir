@@ -2199,8 +2199,8 @@ class ElixirASTTransformer {
                 // to preserve side effects in Elixir.
                 case EBinary(Add, {def: EVar(v)}, rhs) if (v != null && isOneLiteral(rhs)):
                     makeASTWithMeta(EMatch(PVar(v), makeAST(EBinary(Add, makeAST(EVar(v)), rhs))), n.metadata, n.pos);
-                case EBinary(Subtract, {def: EVar(v2)}, rhs2) if (v2 != null && isOneLiteral(rhs2)):
-                    makeASTWithMeta(EMatch(PVar(v2), makeAST(EBinary(Subtract, makeAST(EVar(v2)), rhs2))), n.metadata, n.pos);
+                case EBinary(Subtract, {def: EVar(varName)}, rhs) if (varName != null && isOneLiteral(rhs)):
+                    makeASTWithMeta(EMatch(PVar(varName), makeAST(EBinary(Subtract, makeAST(EVar(varName)), rhs))), n.metadata, n.pos);
                 case EParen(inner):
                     var rewritten = rewriteStandaloneInc(inner);
                     rewritten != null ? rewritten : null;
@@ -2223,8 +2223,8 @@ class ElixirASTTransformer {
                             rewriteIfIncrements(thenB);
                     };
                     var newElse = if (elseB != null) switch (elseB.def) {
-                        case EBinary(Add, {def: EVar(v2)}, rhs2):
-                            makeAST(EMatch(PVar(v2), makeAST(EBinary(Add, makeAST(EVar(v2)), rewriteIfIncrements(rhs2)))));
+                        case EBinary(Add, {def: EVar(varName)}, rhs):
+                            makeAST(EMatch(PVar(varName), makeAST(EBinary(Add, makeAST(EVar(varName)), rewriteIfIncrements(rhs)))));
                         case EBinary(Add, l2, r2) if (isNumericLiteral(l2) && isNumericLiteral(r2)):
                             makeAST(ENil);
                         default:

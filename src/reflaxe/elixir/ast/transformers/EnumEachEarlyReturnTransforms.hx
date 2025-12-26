@@ -267,7 +267,7 @@ class EnumEachEarlyReturnTransforms {
             case EFn(clauses): clauses;
             case EParen(inner) if (inner != null && inner.def != null):
                 switch (inner.def) {
-                    case EFn(clauses2): clauses2;
+                    case EFn(clauses): clauses;
                     default: null;
                 }
             default:
@@ -282,9 +282,9 @@ class EnumEachEarlyReturnTransforms {
         return switch (cl.body.def) {
             case EFn(_):
                 cl.body;
-            case EParen(inner2) if (inner2 != null && inner2.def != null):
-                switch (inner2.def) {
-                    case EFn(_): inner2;
+            case EParen(inner) if (inner != null && inner.def != null):
+                switch (inner.def) {
+                    case EFn(_): inner;
                     default: null;
                 }
             default:
