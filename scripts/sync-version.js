@@ -2,7 +2,7 @@
 
 /**
  * Sync version to haxelib.json
- * Used by semantic-release to keep versions in sync
+ * Used by the release process to keep versions in sync
  */
 
 const fs = require('fs');
