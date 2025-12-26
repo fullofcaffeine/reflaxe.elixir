@@ -28,27 +28,31 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *     where first and last args are the same lower-case variable and that var
  *     is not `socket`, rewrite the last arg to `socket`.
  */
-class HandleInfoReturnSocketNormalizeTransforms {
-  public static function transformPass(ast: ElixirAST): ElixirAST {
-    return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-      return switch (n.def) {
-        case EDef(name, args, guards, body) if (isHandleInfo2(name, args)):
-          var socketVar = secondArgVar(args);
-          var withCallsFixed = fixCalls(body, socketVar);
-          var withReturnsFixed = fixReturns(withCallsFixed, socketVar);
-          var withPatternHygiene = underscorePatternCollisions(withReturnsFixed, socketVar);
-          makeASTWithMeta(EDef(name, args, guards, withPatternHygiene), n.metadata, n.pos);
-        case EDefp(name2, args2, guards2, body2) if (isHandleInfo2(name2, args2)):
-          var socketVar2 = secondArgVar(args2);
-          var withCallsFixed2 = fixCalls(body2, socketVar2);
-          var withReturnsFixed2 = fixReturns(withCallsFixed2, socketVar2);
-          var withPatternHygiene2 = underscorePatternCollisions(withReturnsFixed2, socketVar2);
-          makeASTWithMeta(EDefp(name2, args2, guards2, withPatternHygiene2), n.metadata, n.pos);
-        default:
-          n;
-      }
-    });
-  }
+	class HandleInfoReturnSocketNormalizeTransforms {
+	  public static function transformPass(ast: ElixirAST): ElixirAST {
+	    return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+	      return switch (n.def) {
+	        case EDef(name, args, guards, body) if (isHandleInfo2(name, args)):
+	          var msgVar = firstArgVar(args);
+	          var socketVar = secondArgVar(args);
+	          var payloadBinders = collectPayloadBinders(body, msgVar, socketVar);
+	          var withCallsFixed = fixCalls(body, socketVar);
+	          var withReturnsFixed = fixReturns(withCallsFixed, socketVar, payloadBinders);
+	          var withPatternHygiene = underscorePatternCollisions(withReturnsFixed, socketVar);
+	          makeASTWithMeta(EDef(name, args, guards, withPatternHygiene), n.metadata, n.pos);
+	        case EDefp(name, args, guards, body) if (isHandleInfo2(name, args)):
+	          var msgVar = firstArgVar(args);
+	          var socketVar = secondArgVar(args);
+	          var payloadBinders = collectPayloadBinders(body, msgVar, socketVar);
+	          var withCallsFixed = fixCalls(body, socketVar);
+	          var withReturnsFixed = fixReturns(withCallsFixed, socketVar, payloadBinders);
+	          var withPatternHygiene = underscorePatternCollisions(withReturnsFixed, socketVar);
+	          makeASTWithMeta(EDefp(name, args, guards, withPatternHygiene), n.metadata, n.pos);
+	        default:
+	          n;
+	      }
+	    });
+	  }
 
   static function isHandleInfo2(name:String, args:Array<EPattern>):Bool {
     return name == "handle_info" && args != null && args.length == 2;
@@ -58,45 +62,58 @@ class HandleInfoReturnSocketNormalizeTransforms {
     return switch (args[1]) { case PVar(n): n; default: "socket"; };
   }
 
+  static inline function firstArgVar(args:Array<EPattern>):String {
+    return switch (args[0]) { case PVar(n): n; default: "msg"; };
+  }
+
   static inline function isLowerIdent(v:String):Bool {
     if (v == null || v.length == 0) return false;
     var c = v.charAt(0);
     return c.toLowerCase() == c;
   }
 
-  static function fixCalls(body: ElixirAST, socketVar:String): ElixirAST {
-    return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
-      return switch (x.def) {
-        case ECall(target, fname, args) if (args != null && args.length >= 2):
-          var same = sameFirstLast(args);
-          if (same != null && same != socketVar && isLowerIdent(same)) {
-            var na = args.copy();
-            na[na.length - 1] = makeAST(EVar(socketVar));
-            makeASTWithMeta(ECall(target, fname, na), x.metadata, x.pos);
-          } else x;
-        case ERemoteCall(mod, fname2, args2) if (args2 != null && args2.length >= 2):
-          var same2 = sameFirstLast(args2);
-          if (same2 != null && same2 != socketVar && isLowerIdent(same2)) {
-            var nb = args2.copy();
-            nb[nb.length - 1] = makeAST(EVar(socketVar));
-            makeASTWithMeta(ERemoteCall(mod, fname2, nb), x.metadata, x.pos);
-          } else x;
-        default:
-          x;
-      }
-    });
-  }
+	  static function fixCalls(body: ElixirAST, socketVar:String): ElixirAST {
+	    return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
+	      return switch (x.def) {
+	        case ECall(target, fname, args) if (args != null && args.length >= 2):
+	          var same = sameFirstLast(args);
+	          if (same != null && same != socketVar && isLowerIdent(same)) {
+	            var na = args.copy();
+	            na[na.length - 1] = makeAST(EVar(socketVar));
+	            makeASTWithMeta(ECall(target, fname, na), x.metadata, x.pos);
+	          } else x;
+	        case ERemoteCall(mod, remoteFunctionName, remoteArgs) if (remoteArgs != null && remoteArgs.length >= 2):
+	          var duplicatedVar = sameFirstLast(remoteArgs);
+	          if (duplicatedVar != null && duplicatedVar != socketVar && isLowerIdent(duplicatedVar)) {
+	            var nb = remoteArgs.copy();
+	            nb[nb.length - 1] = makeAST(EVar(socketVar));
+	            makeASTWithMeta(ERemoteCall(mod, remoteFunctionName, nb), x.metadata, x.pos);
+	          } else x;
+	        default:
+	          x;
+	      }
+	    });
+	  }
 
-  static function fixReturns(body: ElixirAST, socketVar:String): ElixirAST {
+  static function fixReturns(body: ElixirAST, socketVar:String, payloadBinders:Map<String,Bool>): ElixirAST {
     return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
       return switch (x.def) {
         case ETuple(items) if (items.length == 2):
           switch (items[0].def) {
             case EAtom(a) if ((a : String) == "noreply"):
-              // Only rewrite when second element is a lower-case variable different from socket
+              // Only rewrite when the return variable is a payload binder from the
+              // `case msg do ... end` patterns. This avoids clobbering legitimate
+              // `next_socket` / `updated_socket` locals.
               switch (items[1].def) {
-                case EVar(v) if (v != socketVar && isLowerIdent(v)):
-                  makeASTWithMeta(ETuple([ makeAST(EAtom(reflaxe.elixir.ast.naming.ElixirAtom.raw("noreply"))), makeAST(EVar(socketVar)) ]), x.metadata, x.pos);
+                case EVar(v) if (v != socketVar && isLowerIdent(v) && payloadBinders != null && payloadBinders.exists(v)):
+                  makeASTWithMeta(
+                    ETuple([
+                      makeAST(EAtom(reflaxe.elixir.ast.naming.ElixirAtom.raw("noreply"))),
+                      makeAST(EVar(socketVar))
+                    ]),
+                    x.metadata,
+                    x.pos
+                  );
                 default: x;
               }
             default: x;
@@ -105,6 +122,42 @@ class HandleInfoReturnSocketNormalizeTransforms {
           x;
       }
     });
+  }
+
+  static function collectPayloadBinders(body: ElixirAST, msgVar:String, socketVar:String): Map<String,Bool> {
+    var out = new Map<String,Bool>();
+    if (body == null) return out;
+
+    function collectPatternVars(p:EPattern):Void {
+      switch (p) {
+        case PVar(name):
+          if (name != null && name != msgVar && name != socketVar && name.charAt(0) != '_') out.set(name, true);
+        case PTuple(items) | PList(items):
+          for (it in items) collectPatternVars(it);
+        case PCons(h, t):
+          collectPatternVars(h);
+          collectPatternVars(t);
+        case PMap(kvs):
+          for (kv in kvs) collectPatternVars(kv.value);
+        case PStruct(_, fields):
+          for (f in fields) collectPatternVars(f.value);
+        case PPin(inner):
+          collectPatternVars(inner);
+        default:
+      }
+    }
+
+    ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
+      return switch (x.def) {
+        case ECase({def: EVar(v)}, clauses) if (v == msgVar):
+          for (cl in clauses) collectPatternVars(cl.pattern);
+          x;
+        default:
+          x;
+      }
+    });
+
+    return out;
   }
 
   static function underscorePatternCollisions(body: ElixirAST, socketVar:String): ElixirAST {
@@ -149,13 +202,13 @@ class HandleInfoReturnSocketNormalizeTransforms {
     }
   }
 
-  static function sameFirstLast(args:Array<ElixirAST>):Null<String> {
-    var firstName:Null<String> = null;
-    switch (args[0].def) { case EVar(v): firstName = v; default: }
-    if (firstName == null) return null;
-    switch (args[args.length - 1].def) { case EVar(v2) if (v2 == firstName): return v2; default: }
-    return null;
-  }
-}
+	  static function sameFirstLast(args:Array<ElixirAST>):Null<String> {
+	    var firstName:Null<String> = null;
+	    switch (args[0].def) { case EVar(v): firstName = v; default: }
+	    if (firstName == null) return null;
+	    switch (args[args.length - 1].def) { case EVar(lastName) if (lastName == firstName): return lastName; default: }
+	    return null;
+	  }
+	}
 
 #end

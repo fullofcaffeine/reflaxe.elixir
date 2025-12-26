@@ -130,7 +130,7 @@ fi
 # 6) Todo‑app runtime smoke (via QA sentinel)
 msg "Todo‑app runtime smoke"
 set +e
-bash "$PROJECT_ROOT/scripts/qa-sentinel.sh" --app "$PROJECT_ROOT/examples/todo-app" --port 4001
+bash "$PROJECT_ROOT/scripts/qa-sentinel.sh" --app "$PROJECT_ROOT/examples/todo-app" --port 4001 --deadline 900 --verbose
 runtime_rc=$?
 set -e
 if [ $runtime_rc -eq 0 ]; then
