@@ -1,7 +1,7 @@
 defmodule TestApp.Product do
   use Ecto.Schema
   schema "products" do
-    timestamps()
+    _ = timestamps()
   end
   
   def changeset(product, attrs) do

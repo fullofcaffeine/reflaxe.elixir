@@ -1,20 +1,27 @@
 defmodule Lambda do
   def array(it) do
+    arr = []
     v = it.iterator.()
-    _ = Enum.each(v, fn item -> item = Enum.concat(item, [item]) end)
-    []
+    Enum.each(arr, fn item -> _ = arr ++ [v] end)
+    nil
+    arr
   end
   def list(it) do
+    arr = []
     v = it.iterator.()
-    _ = Enum.each(v, fn item -> item = Enum.concat(item, [item]) end)
-    []
+    Enum.each(arr, fn item -> _ = arr ++ [v] end)
+    nil
+    arr
   end
   def concat(a, b) do
+    arr = []
     v = a.iterator.()
-    _ = Enum.each(v, fn item -> item = Enum.concat(item, [item]) end)
+    Enum.each(arr, fn item -> _ = arr ++ [v] end)
+    nil
     v = b.iterator.()
-    _ = Enum.each(v, fn item -> item = Enum.concat(item, [item]) end)
-    []
+    Enum.each(arr, fn item -> _ = arr ++ [v] end)
+    nil
+    arr
   end
   def map(it, f) do
     Enum.map(it, f)

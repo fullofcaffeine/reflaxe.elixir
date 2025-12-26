@@ -103,11 +103,11 @@ defmodule Main do
   def match_matrix(matrix) do
     (case matrix do
       [] -> "empty matrix"
-      [_head | _tail] ->
+      [head | _tail] ->
         cond do
-          length(_g) == 1 ->
-            g = _g[0]
-            x = _g
+          length(head) == 1 ->
+            _g = head[0]
+            x = head
             "single element: " <> Kernel.to_string(x)
           true ->
             m = matrix
@@ -119,16 +119,14 @@ defmodule Main do
         end
       2 ->
         cond do
-          length(_g) == 2 ->
-            g2 = _g[0]
-            g = _g[1]
-            if (length(_g1) == 2) do
-              g3 = _g1[0]
-              g1 = _g1[1]
-              c = _g3
-              d = _g1
-              b = _g
-              a = _g2
+          length(g) == 2 ->
+            g = g[1]
+            if (length(g) == 2) do
+              g = g[1]
+              c = g
+              d = g
+              b = g
+              a = g
               "2x2 matrix: [[" <> Kernel.to_string(a) <> "," <> Kernel.to_string(b) <> "],[" <> Kernel.to_string(c) <> "," <> Kernel.to_string(d) <> "]]"
             else
               m = matrix
@@ -148,26 +146,20 @@ defmodule Main do
         end
       3 ->
         cond do
-          length(_g) == 3 ->
-            g3 = _g[0]
-            g4 = _g[1]
-            g = _g[2]
-            if (length(_g1) == 3) do
-              g5 = _g1[0]
-              g6 = _g1[1]
-              g1 = _g1[2]
-              if (length(_g2) == 3) do
-                g7 = _g2[0]
-                g8 = _g2[1]
-                g2 = _g2[2]
-                h = _g8
-                i = _g2
-                a = _g3
-                b = _g4
-                c = _g
-                f = _g1
-                e = _g6
-                d = _g5
+          length(g) == 3 ->
+            g = g[2]
+            if (length(g) == 3) do
+              g = g[2]
+              if (length(g) == 3) do
+                g = g[2]
+                _h = g
+                _i = g
+                _a = g
+                _b = g
+                _c = g
+                _f = g
+                _e = g
+                _d = g
                 "3x3 matrix"
               else
                 m = matrix
@@ -258,8 +250,8 @@ defmodule Main do
           else
             v = value
             cond do
-              Std.is(v, Array) -> "array of length " <> inspect(Map.get(v, :length))
-              value == nil -> "null value"
+              MyApp.Std.is(v, Array) -> "array of length " <> length(v)
+              Kernel.is_nil(value) -> "null value"
               :true -> "unknown type"
             end
           end

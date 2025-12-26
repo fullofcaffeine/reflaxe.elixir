@@ -601,6 +601,32 @@ class TypedExprPreprocessor {
         var processed = [];
         var i = 0;
 
+        // Preserve loop infrastructure variables (g/_g/g1/_g1...) so LoopBuilder can
+        // recover idiomatic Enum.each/comprehension forms safely.
+        //
+        // If we substitute loop counters/limits to their init expressions (e.g. 0),
+        // we destroy termination state and can generate infinite loops at runtime.
+        var protectedLoopInfraVarIds: Map<Int, Bool> = new Map();
+        for (stmt in exprs) {
+            switch (stmt.expr) {
+                case TWhile(cond, body, _):
+                    function scanLoop(e: TypedExpr): Void {
+                        if (e == null) return;
+                        switch (e.expr) {
+                            case TLocal(v) if (isInfrastructureVar(v.name)):
+                                protectedLoopInfraVarIds.set(v.id, true);
+                            case TVar(v2, _) if (isInfrastructureVar(v2.name)):
+                                protectedLoopInfraVarIds.set(v2.id, true);
+                            default:
+                                TypedExprTools.iter(e, scanLoop);
+                        }
+                    }
+                    scanLoop(cond);
+                    scanLoop(body);
+                default:
+            }
+        }
+
         #if debug_infrastructure_vars
         // DISABLED: trace('[processBlock] ===== BLOCK ANALYSIS =====');
         // DISABLED: trace('[processBlock] Block has ${exprs.length} expressions');
@@ -691,7 +717,7 @@ class TypedExprPreprocessor {
                     // DISABLED: trace('[processBlock] Found TVar: ${v.name} (ID: ${v.id}), init=${init != null}, isInfra=${isInfrastructureVar(v.name)}');
                     #end
 
-                    if (init != null && isInfrastructureVar(v.name)) {
+                    if (init != null && isInfrastructureVar(v.name) && !protectedLoopInfraVarIds.exists(v.id)) {
                         #if debug_preprocessor
                         // DISABLED: trace('[processBlock] ✓ INFRASTRUCTURE VARIABLE DETECTED: "${v.name}" (ID: ${v.id})');
                         // DISABLED: trace('[processBlock] Init expression type: ${Type.enumConstructor(init.expr)}');

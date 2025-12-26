@@ -36,6 +36,30 @@ class MutabilityDetector {
      */
     public static function detectMutatedVariables(expr: TypedExpr): Map<Int, TVar> {
         var mutatedVars = new Map<Int, TVar>();
+        var locallyDeclaredVarIds = new Map<Int, Bool>();
+
+        function isLocallyDeclared(varId: Int): Bool {
+            return locallyDeclaredVarIds.exists(varId);
+        }
+
+        function markMutated(tvar: TVar): Void {
+            if (tvar == null) return;
+            if (isLocallyDeclared(tvar.id)) return;
+            mutatedVars.set(tvar.id, tvar);
+        }
+
+        function isMutatingMethodName(name: String): Bool {
+            return switch (name) {
+                // Array-like mutation
+                case "push" | "pop" | "shift" | "unshift" | "splice" | "insert" | "remove" | "resize" | "reverse" | "sort":
+                    true;
+                // Map/collection mutation
+                case "set" | "add" | "delete" | "clear":
+                    true;
+                default:
+                    false;
+            };
+        }
 
         // Conservative stub implementation
         // Full implementation would detect actual mutations
@@ -43,27 +67,38 @@ class MutabilityDetector {
             if (e == null) return;
 
             switch(e.expr) {
-                case TBinop(OpAssign | OpAssignOp(_), e1, _):
+                case TBinop(OpAssign | OpAssignOp(_), e1, e2):
+                    traverse(e2);
+                    traverse(e1);
                     // Check if left side is a variable
                     switch(e1.expr) {
                         case TLocal(v):
                             // Mark as mutated
-                            mutatedVars.set(v.id, v);
+                            markMutated(v);
+                        default:
+                    }
+                case TUnop(OpIncrement | OpDecrement, _, target):
+                    traverse(target);
+                    // ++/-- mutates the target (when it's a local)
+                    switch (target.expr) {
+                        case TLocal(v):
+                            markMutated(v);
                         default:
                     }
 
                 case TVar(v, init):
-                    // For now, conservatively assume any var with complex init
-                    // might be mutated (safe but not optimal)
-                    if (init != null) {
-                        switch(init.expr) {
-                            case TConst(_):
-                                // Simple constants are safe
-                            default:
-                                // Conservative: might be mutated
-                                // In Phase 3, we'll do deeper analysis
-                        }
+                    // Track locals declared within this expression scope so we don't
+                    // incorrectly treat them as cross-iteration mutable state.
+                    locallyDeclaredVarIds.set(v.id, true);
+                    // Still traverse init to detect mutations of *other* vars (e.g. `_g++`).
+                    if (init != null) traverse(init);
+
+                case TCall({expr: TField({expr: TLocal(receiver)}, FInstance(_, _, cf))}, args):
+                    var methodName = cf.get().name;
+                    if (isMutatingMethodName(methodName)) {
+                        markMutated(receiver);
                     }
+                    for (a in args) traverse(a);
 
                 default:
                     TypedExprTools.iter(e, traverse);

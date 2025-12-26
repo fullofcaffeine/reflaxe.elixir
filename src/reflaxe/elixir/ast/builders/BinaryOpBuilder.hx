@@ -210,7 +210,9 @@ class BinaryOpBuilder {
 
             // Special operations
             case OpInterval:
-                ElixirASTDef.ERange(leftAST, rightAST, false);  // Inclusive range by default
+                // Haxe's `...` is ascending and empty when end <= start.
+                // Represent as an Elixir range with explicit step 1 (so 0..-1//1 is empty).
+                ElixirASTDef.ERange(leftAST, rightAST, false, makeAST(EInteger(1)));  // Inclusive by default
             case OpIn:
                 ElixirASTDef.EBinary(EBinaryOp.In, leftAST, rightAST);
             case OpNullCoal:
@@ -318,7 +320,7 @@ class BinaryOpBuilder {
 
             case OpInterval:
                 // Haxe's ... is exclusive, convert to inclusive with end-1
-                ERange(left, makeAST(EBinary(Subtract, right, makeAST(EInteger(1)))), false);
+                ERange(left, makeAST(EBinary(Subtract, right, makeAST(EInteger(1)))), false, makeAST(EInteger(1)));
 
             case OpArrow:
                 EFn([{

@@ -64,15 +64,16 @@ defmodule Main do
     all_numbers = MyApp.EReg.new("\\d+", "g")
     numbers = []
     temp = text
-    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {all_numbers, temp}, (fn -> fn _, {all_numbers, temp} ->
-  if (all_numbers.match(temp)) do
-    numbers = Enum.concat(numbers, [all_numbers.matched(0)])
-    temp = all_numbers.matchedRight()
-    {:cont, {all_numbers, temp}}
-  else
-    {:halt, {all_numbers, temp}}
-  end
-end end).())
+    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, temp}, (fn -> fn _, {numbers, temp} ->
+      if (all_numbers.match(temp)) do
+        _ = numbers ++ [all_numbers.matched(0)]
+        temp = all_numbers.matchedRight()
+        {:cont, {numbers, temp}}
+      else
+        {:halt, {numbers, temp}}
+      end
+    end end).())
+    nil
     replaced = MyApp.EReg.new("\\d+", "").replace(text, "XXX")
     email = "user@example.com"
     email_regex = MyApp.EReg.new("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "")

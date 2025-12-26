@@ -60,7 +60,9 @@ class ElixirNaming {
         if (ident == "_") return "item";
 
         // 3. Compiler temps - preserve exactly (_g, _g1, etc.)
-        if (isCompilerTemp(ident)) return stripLeadingUnderscore(ident);
+        // Haxe intentionally prefixes many temps with `_` to avoid Elixir's unused-variable warnings.
+        // Keep the name as-is; later hygiene passes can still underscore/rename when appropriate.
+        if (isCompilerTemp(ident)) return ident;
 
         // 4. Capture leading underscores (indicates unused in Elixir)
         var underscorePrefix = "";
@@ -116,15 +118,7 @@ class ElixirNaming {
         return true;
     }
 
-    /**
-     * Remove leading underscore from compiler temps (they should not have underscore in Elixir)
-     */
-    static function stripLeadingUnderscore(s: String): String {
-        if (s.charAt(0) == "_") {
-            return s.substr(1);
-        }
-        return s;
-    }
+    // NOTE: We intentionally do not strip leading underscores for compiler temps.
 
     /**
      * Check if a string starts with a numeric character

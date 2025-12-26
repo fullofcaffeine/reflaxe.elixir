@@ -7,8 +7,7 @@ defmodule OptionTools do
   end
   def then(option, transform) do
     (case option do
-      {:some, value} ->
-        transform.(value)
+      {:some, value} -> _ = transform.(value)
       {:none} -> {:none}
     end)
   end
@@ -23,14 +22,13 @@ defmodule OptionTools do
   end
   def filter(option, predicate) do
     (case option do
-      {:some, value} ->
-        if (predicate.(value)), do: {:some, value}, else: {:none}
+      {:some, value} -> if (predicate.(value)), do: {:some, value}, else: {:none}
       {:none} -> {:none}
     end)
   end
   def unwrap(option, default_value) do
     (case option do
-      {:some, _value} -> default_value
+      {:some, value} -> value
       {:none} -> default_value
     end)
   end
@@ -43,13 +41,13 @@ defmodule OptionTools do
   end
   def or_fn(first, second) do
     (case first do
-      {:some, value} -> value
+      {:some, v} -> v
       {:none} -> second
     end)
   end
   def lazy_or(first, fn_param) do
     (case first do
-      {:some, value} -> value
+      {:some, v} -> v
       {:none} ->
         fn_param.()
     end)
@@ -68,20 +66,20 @@ defmodule OptionTools do
   end
   def all(options) do
     values = []
+    _g = 0
     _ = Enum.each(options, (fn -> fn option ->
-    (case option do
-    {:some, value} ->
-      option = Enum.concat(option, [value])
+  (case option do
+    {:some, value} -> values = values ++ [value]
     {:none} -> {:none}
   end)
 end end).())
     {:some, values}
   end
   def values(options) do
+    _g = 0
     _ = Enum.each(options, (fn -> fn option ->
-    (case option do
-    {:some, value} ->
-      option = Enum.concat(option, [value])
+  (case option do
+    {:some, value} -> result = result ++ [value]
     {:none} -> nil
   end)
 end end).())
@@ -108,10 +106,10 @@ end end).())
       {:none} -> nil
     end)
   end
-  def to_reply(option) do
+  def to_reply(option, none_error) do
     (case option do
-      {:some, value} -> %{:reply => value, :status => "ok"}
-      {:none} -> %{:reply => nil, :status => "none"}
+      {:some, value} -> {:ok, value}
+      {:none} -> {:error, none_error}
     end)
   end
   def expect(option, message) do
@@ -128,8 +126,7 @@ end end).())
   end
   def apply(option, fn_param) do
     (case option do
-      {:some, value} ->
-        fn_param.(value)
+      {:some, value} -> _ = fn_param.(value)
       {:none} -> nil
     end)
     option

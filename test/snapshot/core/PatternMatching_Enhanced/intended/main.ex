@@ -25,10 +25,17 @@ end))
   {:green} -> "primary"
   {:blue} -> "primary"
   {:rgb, r, _g, b} ->
+    b = r
     if (r + r + b > 500) do
       "bright"
     else
-      if (r + r + b < 100), do: "dark", else: "medium"
+      b = r
+      if (r + r + b < 100) do
+        "dark"
+      else
+        _b = r
+        "medium"
+      end
     end
 end))
     nil
@@ -43,16 +50,17 @@ end))
   end
   defp test_guard_patterns() do
     numbers = [1, 5, 10, 15, 20]
+    _g = 0
     _ = Enum.each(numbers, (fn -> fn num ->
-    category = n = num
-  if (num < 5) do
+  _n = num
+  category = if (num < 5) do
     "small"
   else
-    n = num
+    _n = num
     if (num >= 5 and num < 15) do
       "medium"
     else
-      n = num
+      _n = num
       if (num >= 15), do: "large", else: "unknown"
     end
   end
@@ -61,23 +69,24 @@ end end).())
   end
   defp test_array_patterns() do
     arrays = [[], [1], [1, 2], [1, 2, 3], [1, 2, 3, 4, 5]]
+    _g = 0
     _ = Enum.each(arrays, (fn -> fn arr ->
-    description = (case length(arr) do
-    0 -> "empty"
-    1 ->
-      x = arr[0]
-      "single: " <> Kernel.to_string(x)
-    2 ->
-      x = arr[0]
-      y = arr[1]
-      "pair: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y)
-    3 ->
-      x = arr[0]
-      y = arr[1]
-      z = arr[2]
-      "triple: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y) <> ", " <> Kernel.to_string(z)
-    _ -> "length=" <> Kernel.to_string(length(arr)) <> ", first=" <> (if (length(arr) > 0), do: inspect(arr[0]), else: "none")
-  end)
+  description = ((case arr do
+  [] -> "empty"
+  [_head | _tail] ->
+    x = arr[0]
+    "single: " <> Kernel.to_string(x)
+  2 ->
+    x = arr[0]
+    y = arr[1]
+    "pair: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y)
+  3 ->
+    x = arr[0]
+    y = arr[1]
+    z = arr[2]
+    "triple: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y) <> ", " <> Kernel.to_string(z)
+  _ -> "length=" <> Kernel.to_string(length(arr)) <> ", first=" <> (if (length(arr) > 0), do: inspect(arr[0]), else: "none")
+end))
   nil
 end end).())
   end
@@ -106,8 +115,8 @@ end end).())
           y = g
           cond do
             x > 0 and y < 0 -> "fourth"
-            _g == 0 -> "axis"
-            _g1 == 0 -> "axis"
+            g == 0 -> "axis"
+            g == 0 -> "axis"
             :true -> "origin"
           end
         end

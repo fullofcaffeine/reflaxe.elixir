@@ -213,7 +213,14 @@ class VariableBuilder {
                 // Other infrastructure variable uses
         }
         
-        // For unhandled cases, skip the infrastructure variable
+        // Default: emit the binding so infrastructure locals exist (loop counters, iterator temps, etc).
+        // Skipping these can corrupt desugared loop state (e.g. turning `g < len` into `0 < len`).
+        var buildExpression = context.getExpressionBuilder();
+        var initAST = buildExpression(init);
+        if (initAST != null) {
+            var varName = resolveDeclarationName(v, context);
+            return EMatch(PVar(varName), initAST);
+        }
         return null;
     }
     

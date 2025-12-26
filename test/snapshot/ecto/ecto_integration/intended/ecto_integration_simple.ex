@@ -6,7 +6,7 @@ defmodule EctoIntegrationSimple do
     changeset = MyApp.UserChangeset.changeset(user, %{:name => "Updated", :email => "new@example.com"})
     _ = MyApp.CreateUsersTable.up()
     active_users = MyApp.UserQueries.active_users()
-    users = MyApp.Repo.all(User)
+    users = MyApp.Repo.all(user)
     account_users = MyApp.Accounts.list_users()
     live_view = MyApp.UserLive.new()
     org = %Organization{}

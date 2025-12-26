@@ -11,28 +11,32 @@ defmodule Main do
     %{:test_id => :rand.uniform(), :timestamp => DateTime.utc_now()}
   end
   setup context do
-    on_exit((fn -> fn ->
-        test_data = []
-        counter = 0
-      end end).())
+    _ = on_exit((fn -> fn ->
+    test_data = []
+    counter = 0
+  end end).())
     :ok
   end
   setup_all context do
-    on_exit(fn -> module_state = nil end)
+    _ = on_exit(fn -> module_state = nil end)
     :ok
   end
   describe "Performance Tests" do
     test "slow operation" do
       result = 0
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result}, (fn -> fn _, {result} ->
-        if (0 < 1000) do
-          i = 1
+      g = 0
+      {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, (fn -> fn _, {result, _g} ->
+        if (g < 1000) do
+          old__g = g
+          _g = g + 1
+          i = old__g
           result = result + i
-          {:cont, {result}}
+          {:cont, {result, g}}
         else
-          {:halt, {result}}
+          {:halt, {result, g}}
         end
       end end).())
+      nil
       assert result > 0
     end
     test "fast operation" do
@@ -63,7 +67,7 @@ defmodule Main do
   describe "Error Handling" do
     test "exception handling" do
       try do
-        context.throwError("Test error")
+        _ = context.throwError("Test error")
         flunk("Should have thrown an error")
       rescue
         e ->
@@ -128,7 +132,7 @@ defmodule Main do
       assert null_value == nil
       assert non_null_value != nil
       optional = if (:rand.uniform() > 0.5), do: 42, else: nil
-      if (optional == nil) do
+      if (Kernel.is_nil(optional)) do
         assert optional == nil
       else
         assert optional != nil

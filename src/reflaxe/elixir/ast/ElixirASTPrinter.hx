@@ -1560,8 +1560,8 @@ class ElixirASTPrinter {
             case EAccess(target, key):
                 print(target, 0) + '[' + print(key, 0) + ']';
                 
-            case ERange(start, end, exclusive):
-                print(start, 0) + (exclusive ? '...' : '..') + print(end, 0);
+            case ERange(start, end, exclusive, step):
+                print(start, 0) + (exclusive ? '...' : '..') + print(end, 0) + (step != null ? '//' + print(step, 0) : '');
                 
             // ================================================================
             // Literals

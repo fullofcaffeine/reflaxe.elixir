@@ -181,8 +181,8 @@ enum ElixirASTDef {
     /** Bracket access [] */
     EAccess(target: ElixirAST, key: ElixirAST);
     
-    /** Range operator .. or ... */
-    ERange(start: ElixirAST, end: ElixirAST, exclusive: Bool);
+    /** Range operator .. or ... with optional step (..//step) */
+    ERange(start: ElixirAST, end: ElixirAST, exclusive: Bool, ?step: ElixirAST);
     
     // ========================================================================
     // Literals

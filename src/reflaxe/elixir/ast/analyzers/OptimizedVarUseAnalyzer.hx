@@ -158,7 +158,10 @@ class OptimizedVarUseAnalyzer {
                     collectVars(cl.body, out);
                 }
             case ECond(condClauses): for (cl in condClauses) { collectVars(cl.condition, out); collectVars(cl.body, out); }
-            case ERange(s,e,_): collectVars(s,out); collectVars(e,out);
+            case ERange(s, e, _, step):
+                collectVars(s, out);
+                collectVars(e, out);
+                if (step != null) collectVars(step, out);
             case EUnary(_, inner): collectVars(inner, out);
             case EParen(inner): collectVars(inner, out);
             case EPipe(l,r): collectVars(l,out); collectVars(r,out);
@@ -356,9 +359,10 @@ class OptimizedVarUseAnalyzer {
                     collectVarsExact(cl.condition, out);
                     collectVarsExact(cl.body, out);
                 }
-            case ERange(s, e, _):
+            case ERange(s, e, _, step):
                 collectVarsExact(s, out);
                 collectVarsExact(e, out);
+                if (step != null) collectVarsExact(step, out);
             case EUnary(_, inner):
                 collectVarsExact(inner, out);
             case EParen(inner):

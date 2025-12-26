@@ -76,15 +76,15 @@ end))
   defp test_random_and_int() do
     rand1 = ((case 100 do
   std_random_max when std_random_max <= 0 -> 0
-  _std_random_max -> (:rand.uniform(_std_random_max) - 1)
+  std_random_max -> (:rand.uniform(std_random_max) - 1)
 end))
     rand2 = ((case 100 do
   std_random_max when std_random_max <= 0 -> 0
-  _std_random_max -> (:rand.uniform(_std_random_max) - 1)
+  std_random_max -> (:rand.uniform(std_random_max) - 1)
 end))
     rand3 = ((case 100 do
   std_random_max when std_random_max <= 0 -> 0
-  _std_random_max -> (:rand.uniform(_std_random_max) - 1)
+  std_random_max -> (:rand.uniform(std_random_max) - 1)
 end))
     _ = 3
     _ = 3

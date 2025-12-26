@@ -8,9 +8,8 @@ defmodule UserProfileTemplate do
   end
   def render_user_list(users) do
     items = []
-    _ = Enum.each(users, (fn -> fn user ->
-    user = Enum.concat(user, ["<li><strong>" <> user.name <> "</strong> - " <> user.email <> "</li>"])
-end end).())
+    _g = 0
+    _ = Enum.each(users, fn _ -> items = items ++ ["<li><strong>" <> user.name <> "</strong> - " <> user.email <> "</li>"] end)
     "<ul class='user-list'>#{(fn -> Enum.join((fn -> items end).(), "") end).()}</ul>"
   end
   def render_complex_layout(title, content) do

@@ -55,4 +55,3 @@ class BareCallToUnderscoreAssignTransforms {
 }
 
 #end
-

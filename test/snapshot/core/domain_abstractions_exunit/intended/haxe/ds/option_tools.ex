@@ -7,8 +7,7 @@ defmodule OptionTools do
   end
   def then(option, transform) do
     (case option do
-      {:some, value} ->
-        transform.(value)
+      {:some, value} -> _ = transform.(value)
       {:none} -> {:none}
     end)
   end
@@ -23,8 +22,7 @@ defmodule OptionTools do
   end
   def filter(option, predicate) do
     (case option do
-      {:some, value} ->
-        if (predicate.(value)), do: {:some, value}, else: {:none}
+      {:some, value} -> if (predicate.(value)), do: {:some, value}, else: {:none}
       {:none} -> {:none}
     end)
   end
@@ -68,20 +66,20 @@ defmodule OptionTools do
   end
   def all(options) do
     values = []
+    _g = 0
     _ = Enum.each(options, (fn -> fn option ->
-    (case option do
-    {:some, value} ->
-      option = Enum.concat(option, [value])
+  (case option do
+    {:some, value} -> values = values ++ [value]
     {:none} -> {:none}
   end)
 end end).())
     {:some, values}
   end
   def values(options) do
+    _g = 0
     _ = Enum.each(options, (fn -> fn option ->
-    (case option do
-    {:some, value} ->
-      option = Enum.concat(option, [value])
+  (case option do
+    {:some, value} -> result = result ++ [value]
     {:none} -> nil
   end)
 end end).())

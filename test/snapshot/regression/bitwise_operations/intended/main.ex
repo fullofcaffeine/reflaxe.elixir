@@ -64,16 +64,17 @@ defmodule Main do
     n = 255
     hex_chars = "0123456789ABCDEF"
     s = ""
-    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s}, (fn -> fn _, {n, s} ->
-  if (n > 0) do
-    digit = Bitwise.band(n, 15)
-    s = String.at(hex_chars, digit) || "" <> s
-    n = Bitwise.bsr(n, 4)
-    {:cont, {n, s}}
-  else
-    {:halt, {n, s}}
-  end
-end end).())
+    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s}, (fn -> fn _, {n, s} ->
+      if (n > 0) do
+        digit = Bitwise.band(n, 15)
+        s = String.at(hex_chars, digit) || "" <> s
+        n = Bitwise.bsr(n, 4)
+        {:cont, {n, s}}
+      else
+        {:halt, {n, s}}
+      end
+    end end).())
+    nil
     r = 255
     b = 64
     rgb = Bitwise.bor(Bitwise.bor(Bitwise.bsl(r, 16), Bitwise.bsl(128, 8)), b)

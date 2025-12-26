@@ -2076,32 +2076,35 @@ class ElixirASTBuilder {
                         var expr = buildFromTypedExpr(e, currentContext).def;
                         EUnary(BitwiseNot, makeAST(expr));
                     case OpIncrement, OpDecrement:
-                        // Elixir is immutable, so we need to handle increment/decrement carefully
-                        // Pre-increment (++x): returns the incremented value
-                        // Post-increment (x++): returns the original value (not supported in Elixir)
+                        // Elixir is immutable: ++/-- must be expressed as rebinding.
+                        //
+                        // IMPORTANT: Preserve Haxe prefix/postfix value semantics.
+                        // - Prefix (++x / --x): returns the *new* value after rebinding.
+                        // - Postfix (x++ / x--): returns the *old* value and then rebinds.
                         var one = makeAST(EInteger(1));
-                        var builtExpr = buildFromTypedExpr(e, currentContext);
-                        
-                        if (!postFix) {
-                            // Pre-increment/decrement: just return the computed value
-                            // When used in TVar(i, TUnop(OpIncrement, g)), this becomes: i = g + 1
-                            var operation = if (op == OpIncrement) {
-                                EBinary(Add, builtExpr, one);
-                            } else {
-                                EBinary(Subtract, builtExpr, one);
-                            };
-                            operation;
-                        } else {
-                            // Post-increment/decrement: return the computed value
-                            // When used in TVar context, let TVar handle the assignment
-                            // This avoids double assignment like "i = g = g + 1"
-                            var operation = if (op == OpIncrement) {
-                                EBinary(Add, builtExpr, one);
-                            } else {
-                                EBinary(Subtract, builtExpr, one);
-                            };
-                            operation;
+                        var built = buildFromTypedExpr(e, currentContext);
+                        var targetVar: Null<String> = switch (built.def) {
+                            case EVar(n): n;
+                            default: null;
                         };
+                        var op2 = (op == OpIncrement) ? Add : Subtract;
+                        if (targetVar != null) {
+                            if (postFix) {
+                                // old = x; x = x + 1; old
+                                var oldVarName = "__old_" + targetVar;
+                                EParen(makeAST(EBlock([
+                                    makeAST(EMatch(PVar(oldVarName), makeAST(EVar(targetVar)))),
+                                    makeAST(EMatch(PVar(targetVar), makeAST(EBinary(op2, makeAST(EVar(targetVar)), one)))),
+                                    makeAST(EVar(oldVarName))
+                                ])));
+                            } else {
+                                // x = x + 1
+                                EMatch(PVar(targetVar), makeAST(EBinary(op2, makeAST(EVar(targetVar)), one)));
+                            }
+                        } else {
+                            // Fallback: compute the arithmetic value when we can't safely rebind.
+                            EBinary(op2, built, one);
+                        }
                     case OpSpread:
                         // Spread operator for destructuring
                         var builtExpr = buildFromTypedExpr(e, currentContext);

@@ -42,19 +42,24 @@ defmodule EnhancedPatternMatchingTest do
           end
         end
       {:completed, result, duration} ->
+        duration = result
         if (duration < 1000) do
           "Fast completion: #{(fn -> result end).()}"
         else
+          duration = result
           if (duration >= 1000 and duration < 5000) do
             "Normal completion: #{(fn -> result end).()}"
           else
+            _duration = result
             "Slow completion: #{(fn -> result end).()}"
           end
         end
       {:failed, error, retries} ->
+        retries = error
         if (retries < 3) do
           "Recoverable failure: #{(fn -> error end).()}"
         else
+          _retries = error
           "Permanent failure: #{(fn -> error end).()}"
         end
     end)
@@ -77,17 +82,17 @@ defmodule EnhancedPatternMatchingTest do
   def chain_result_operations(input) do
     step1 = validate_input(input)
     (case ((case step1 do
-  {:success, validated} ->
-    process_data(validated)
+  {:success, validated} -> _ = process_data(validated)
   {:error, error, context} ->
+    context = error
     if (Kernel.is_nil(context)) do
       context = ""
     end
     result = {:error, error, context}
 end)) do
-      {:success, processed} ->
-        format_output(processed)
+      {:success, processed} -> _ = format_output(processed)
       {:error, error, context} ->
+        context = error
         if (Kernel.is_nil(context)) do
           context = ""
         end
@@ -166,20 +171,20 @@ end).() == "_suffix") do
     (case state do
       {:valid} -> "Data is valid"
       {:invalid, errors} ->
-        cond do
-          length(errors) == 1 -> "Single error: " <> errors[0]
-          true ->
-            if (length(errors) > 1) do
-              "Multiple errors: " <> Kernel.to_string(length(errors)) <> " issues"
-            else
-              "No specific errors"
-            end
+        if (length(errors) == 1) do
+          "Single error: #{(fn -> errors[0] end).()}"
+        else
+          if (length(errors) > 1) do
+            "Multiple errors: #{(fn -> Kernel.to_string(length(errors)) end).()} issues"
+          else
+            "No specific errors"
+          end
         end
       {:pending, validator} -> "Validation pending by: #{(fn -> validator end).()}"
     end)
   end
   def match_binary_pattern(data) do
-    (case MyApp.Bytes.of_string(data) do
+    bytes = (case bytes.of_string(data) do
       [] -> "empty"
       [_head | _tail] -> "single byte: #{(fn -> Kernel.to_string(bytes.get(0)) end).()}"
       _ ->
@@ -190,6 +195,7 @@ end).() == "_suffix") do
           "large data: #{(fn -> Kernel.to_string(n) end).()} bytes"
         end
     end)
+    bytes
   end
   defp validate_input(input) do
     if (length(input) == 0) do

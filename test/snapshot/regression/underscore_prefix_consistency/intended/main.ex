@@ -7,7 +7,12 @@ defmodule Main do
   end
   defp test_pattern_matching_unused() do
     result = (case get_some_value() do
-      {:some, v} -> v
+      {:some, value} ->
+        _g1 = value.metadata
+        _g = g_value.value
+        _meta = g_metadata
+        v = g_value
+        v
       {:none} -> 0
     end)
     nil

@@ -16,12 +16,8 @@ defmodule Main do
     fn_ = fn a, b -> a + b end
     fn_ = fn s -> String.upcase(s) end
     var_args = fn args ->
-      g = 0
-      _ = Enum.each(0..(length(args) - 1), (fn -> fn g ->
-        arg = args[g]
-        g + 1
-        sum = sum + arg
-      end end).())
+      _g = 0
+      _ = Enum.each(args, fn arg -> sum = sum + arg end)
     end
     nil
   end
@@ -48,21 +44,20 @@ end))
   end
   def dynamic_collections() do
     dyn_array = [1, "two", 3, true, %{:x => 10}]
-    _ = Enum.each(dyn_array, (fn -> fn _ ->
-    nil
-end end).())
+    _g = 0
+    _ = Enum.each(dyn_array, fn _ -> nil end)
     dyn_obj = %{}
     dyn_obj = dyn_obj |> Map.put("field1", "value1") |> Map.put("field2", 42) |> Map.put("field3", [1, 2, 3])
     nil
   end
   def process_dynamic(value) do
     cond do
-      value == nil -> "null"
-      Std.is(value, Bool) -> "Bool: " <> inspect(value)
-      Std.is(value, Int) -> "Int: " <> inspect(value)
-      Std.is(value, Float) -> "Float: " <> inspect(value)
-      Std.is(value, String) -> "String: " <> inspect(value)
-      Std.is(value, Array) -> "Array of length: " <> inspect(Map.get(value, :length))
+      Kernel.is_nil(value) -> "null"
+      MyApp.Std.is(value, Bool) -> "Bool: " <> inspect(value)
+      MyApp.Std.is(value, Int) -> "Int: " <> inspect(value)
+      MyApp.Std.is(value, Float) -> "Float: " <> inspect(value)
+      MyApp.Std.is(value, String) -> "String: " <> inspect(value)
+      MyApp.Std.is(value, Array) -> "Array of length: " <> length(value)
       :true -> "Unknown type"
     end
   end

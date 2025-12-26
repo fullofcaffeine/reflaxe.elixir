@@ -18,17 +18,11 @@ defmodule StringUtils do
     else
       parts = String.split(_this, " ")
       formatted = []
+      _g = 0
       _ = Enum.each(parts, (fn -> fn part ->
-    if (length(part) > 0) do
-    capitalized = _this = String.at(part, 0) || ""
-String.upcase(_this) <> _this = len = nil
-if (len == nil) do
-  String.slice(part, 1..-1)
-else
-  String.slice(part, 1, len)
-end
-String.downcase(_this)
-    formatted = Enum.concat(formatted, [part])
+  if (length(part) > 0) do
+    capitalized = (fn -> String.upcase(_this) end).() <> (fn -> String.downcase(_this) end).()
+    _ = formatted ++ [capitalized]
   end
 end end).())
       _ = Enum.join((fn -> " " end).())
@@ -52,44 +46,48 @@ end end).())
     else
       s = String.downcase(text)
       slug = _ = StringTools.ltrim(StringTools.rtrim(s))
-      slug = slug |> EReg.new("[^a-z0-9\\s-]", "g").replace("") |> EReg.new("\\s+", "g").replace("-") |> EReg.new("-+", "g").replace("-")
-      _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, (fn -> fn _, {slug} ->
-  if (String.at(slug, 0) || "" == "-") do
-    slug = len = nil
-    if (len == nil) do
-      String.slice(slug, 1..-1)
-    else
-      String.slice(slug, 1, len)
-    end
-    {:cont, {(fn -> len = nil
-if (len == nil) do
+      slug = slug |> MyApp.EReg.new("[^a-z0-9\\s-]", "g").replace("") |> MyApp.EReg.new("\\s+", "g").replace("-") |> MyApp.EReg.new("-+", "g").replace("-")
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, (fn -> fn _, {slug} ->
+        if (String.at(slug, 0) || "" == "-") do
+          len = nil
+          slug = if (Kernel.is_nil(len)) do
+            String.slice(slug, 1..-1)
+          else
+            String.slice(slug, 1, len)
+          end
+          {:cont, {(fn -> len = nil
+if (Kernel.is_nil(len)) do
   String.slice(slug, 1..-1)
 else
   String.slice(slug, 1, len)
 end end).()}}
-  else
-    {:halt, {slug}}
-  end
-end end).())
-      _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug, index}, (fn -> fn _, {slug, index} ->
-  if (index = (length(slug) - 1)
-String.at(slug, index) || "" == "-") do
-    slug = len = (length(slug) - 1)
-    if (len == nil) do
-      String.slice(slug, 0..-1)
-    else
-      String.slice(slug, 0, len)
-    end
-    {:cont, {(fn -> len = (length(slug) - 1)
-if (len == nil) do
+        else
+          {:halt, {slug}}
+        end
+      end end).())
+      nil
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, (fn -> fn _, {slug} ->
+        if ((fn ->
+  index = (length(slug) - 1)
+  String.at(slug, index) || ""
+end).() == "-") do
+          len = (length(slug) - 1)
+          slug = if (Kernel.is_nil(len)) do
+            String.slice(slug, 0..-1)
+          else
+            String.slice(slug, 0, len)
+          end
+          {:cont, {(fn -> len = (length(slug) - 1)
+if (Kernel.is_nil(len)) do
   String.slice(slug, 0..-1)
 else
   String.slice(slug, 0, len)
-end end).(), index}}
-  else
-    {:halt, {slug, index}}
-  end
-end end).())
+end end).()}}
+        else
+          {:halt, {slug}}
+        end
+      end end).())
+      nil
       slug
     end
   end
@@ -131,15 +129,9 @@ end end).())
     if (Kernel.is_nil(text) or length(text) <= visible_chars) do
       repeat_count = if (not Kernel.is_nil(text)), do: length(text), else: 4
       result = ""
-      _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {repeat_count, result}, (fn -> fn _, {repeat_count, result} ->
-  if (0 < repeat_count) do
-    i = 1
-    result = result <> "*"
-    {:cont, {repeat_count, result}}
-  else
-    {:halt, {repeat_count, result}}
-  end
-end end).())
+      g = repeat_count
+      result = Enum.reduce(0..(g - 1)//1, result, fn i, result -> result <> "*" end)
+      result
       result
     end
     visible = if (Kernel.is_nil(visible_chars)) do
@@ -149,15 +141,9 @@ end end).())
     end
     masked_count = (length(text) - visible_chars)
     masked = ""
-    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {masked_count, masked}, (fn -> fn _, {masked_count, masked} ->
-  if (0 < masked_count) do
-    i = 1
-    masked = masked <> "*"
-    {:cont, {masked_count, masked}}
-  else
-    {:halt, {masked_count, masked}}
-  end
-end end).())
+    g = masked_count
+    masked = Enum.reduce(0..(g - 1)//1, masked, fn i, masked -> masked <> "*" end)
+    masked
     "#{(fn -> visible end).()}#{(fn -> masked end).()}"
   end
   defp extract_domain(email) do

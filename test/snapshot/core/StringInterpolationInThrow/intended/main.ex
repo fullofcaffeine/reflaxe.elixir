@@ -12,7 +12,7 @@ defmodule Main do
     changeset = %{:errors => ["name is required", "email is invalid"]}
     try do
       errors = get_errors_map(changeset)
-      throw("Changeset has errors: " <> if (errors != nil), do: errors.to_string.(), else: "null")
+      throw("Changeset has errors: " <> (if (not Kernel.is_nil(errors)), do: errors.to_string.(), else: "null"))
     rescue
       e ->
         nil
@@ -41,7 +41,7 @@ defmodule Main do
   defp test_nil_handling() do
     maybe_value = nil
     try do
-      throw("Value is: " <> if (maybe_value == nil), do: "nil", else: maybe_value)
+      throw("Value is: " <> (if (Kernel.is_nil(maybe_value)), do: "nil", else: maybe_value))
     rescue
       e ->
         nil
@@ -51,7 +51,7 @@ defmodule Main do
     module = "UserController"
     func = "show"
     try do
-      throw(CustomError.new("Error in " <> module <> "." <> func))
+      throw(MyApp.CustomError.new("Error in " <> module <> "." <> func))
     rescue
       e ->
         nil
