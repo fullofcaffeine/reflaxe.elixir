@@ -31,21 +31,6 @@ class HygieneFinal {
       pass: reflaxe.elixir.ast.transformers.AccAliasLateRewriteTransforms.transformPass
     });
 
-    passes.push({
-      name: "ReduceStrictSelfAppendRewrite",
-      description: "Rebuild reduce body to acc concat when alias self-append detected (structural)",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.ReduceStrictSelfAppendRewriteTransforms.transformPass
-    });
-
-    // ERaw reduce canonicalization
-    passes.push({
-      name: "ReduceERawAliasCanonicalize",
-      description: "Canonicalize alias concat and binder alias inside ERaw Enum.reduce bodies (ultra-final)",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.ReduceERawAliasCanonicalizeTransforms.transformPass
-    });
-
     // Case binder hygiene
     passes.push({
       name: "CaseBinderRebindUnderscore",
@@ -78,26 +63,14 @@ class HygieneFinal {
       pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
     });
     passes.push({
+      name: "DropStandaloneVarRef",
+      description: "Drop standalone var references in statement position inside blocks/do-blocks (ultra-final)",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.DropStandaloneVarRefTransforms.pass
+    });
+    passes.push({
       name: "DropTempNilAssign",
       description: "Drop thisN/_thisN = nil sentinel assignments",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.DropTempNilAssignTransforms.pass
-    });
-    passes.push({
-      name: "ReduceResultUnusedUnderscore",
-      description: "Underscore binders in reduce/reduce_while result match when unused later in block",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.ReduceResultUnusedUnderscoreTransforms.transformPass
-    });
-    passes.push({
-      name: "ReduceWhileSentinelCleanup",
-      description: "Final sweep: drop numeric sentinel literals inside reduce_while bodies",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.ReduceWhileSentinelCleanupTransforms.transformPass
-    });
-    passes.push({
-      name: "DropTempNilAssign",
-      description: "Last guard: drop thisN/_thisN = nil sentinels if any got reintroduced",
       enabled: true,
       pass: reflaxe.elixir.ast.transformers.DropTempNilAssignTransforms.pass
     });
@@ -255,6 +228,31 @@ class HygieneFinal {
       enabled: true,
       pass: reflaxe.elixir.ast.transformers.DowncaseInlineFromPriorAssignTransforms.pass,
       runAfter: ["UnderscoreTempInlineDowncase"]
+    });
+
+    // Absolute-final replay: underscore unused anonymous fn args.
+    //
+    // WHY
+    // - Some late hygiene/promotions can adjust binder shapes in EFns. Re-running this check
+    //   at the end guarantees we don't ship unused-arg warnings (WAE) after all rewrites.
+    passes.push({
+      name: "EFnUnusedArgUnderscore_Final",
+      description: "Absolute-final: underscore unused EFn binders (Enum.reduce/map/each) after all rewrites",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.EFnUnusedArgUnderscoreTransforms.transformPass
+    });
+
+    // Reduce-result and reduce_while final sweeps must run late.
+    //
+    // WHY
+    // - Some late passes (e.g. trailing-return simplifiers) can add new uses of variables after
+    //   a reduce binding, which changes whether a binder is truly "unused".
+    // - Running these earlier risks underscoring a state-carrying binder and breaking semantics.
+    passes.push({
+      name: "ReduceWhileSentinelCleanup_Final",
+      description: "Late: drop numeric sentinel literals inside reduce_while bodies",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.ReduceWhileSentinelCleanupTransforms.transformPass
     });
 
     // Re-add NestedAssignCollapseGlobal as absolute-final cleanup

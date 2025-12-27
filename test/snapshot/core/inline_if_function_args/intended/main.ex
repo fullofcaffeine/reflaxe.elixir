@@ -3,8 +3,12 @@ defmodule Main do
     map = %{}
     condition = true
     value = 42
-    map = map.put(map, :bool_key, (if (condition), do: "true", else: "false"))
-    _ = map
+    _ = StringMap.set(map, "bool_key", (if (condition), do: "true", else: "false"))
+    _ = StringMap.set(map, "number_key", (if (value > 10), do: "high", else: "low"))
+    is_active = false
+    _ = StringMap.set(map, "status", (if (is_active), do: "active", else: "inactive"))
+    maybe = nil
+    _ = StringMap.set(map, "nullable", (if (not Kernel.is_nil(maybe)), do: maybe, else: "default"))
   end
   defp test_function_calls() do
     flag = true
@@ -38,7 +42,7 @@ defmodule Main do
     "disabled"
   end end).())
     str = "test"
-    _ = process_string((if (length(str) > 3), do: "long", else: "short"))
+    _ = process_string((if (String.length(str) > 3), do: "long", else: "short"))
   end
   defp process_string(s) do
     "Processed: #{(fn -> s end).()}"

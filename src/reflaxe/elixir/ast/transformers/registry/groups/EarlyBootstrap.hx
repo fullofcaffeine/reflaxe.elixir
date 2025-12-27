@@ -146,14 +146,6 @@ class EarlyBootstrap {
       pass: reflaxe.elixir.ast.transformers.LocalCamelToSnakeDeclTransforms.transformPass
     });
 
-    // Bitwise import pass (should run early to add imports)
-    passes.push({
-      name: "BitwiseImport",
-      description: "Add Bitwise import when bitwise operators are used",
-      enabled: true,
-      pass: ElixirASTTransformer.alias_bitwiseImportPass
-    });
-
     // Collapse simple temp-binding blocks in expression contexts
     passes.push({
       name: "InlineTempBindingInExpr",

@@ -4,10 +4,8 @@
   "string_tools.ex",
   "string_buf.ex",
   "std.ex",
-  "reflect.ex",
   "main.ex",
   "haxe/iterators/array_iterator.ex",
-  "haxe/ds/balanced_tree.ex",
   "color.ex",
   "array_tools.ex"
 ],

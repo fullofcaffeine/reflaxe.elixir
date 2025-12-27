@@ -1,6 +1,4 @@
 defmodule Main do
-  @import :Bitwise
-
   defp test_bitwise_and() do
     n = 255
     result1 = Bitwise.band(n, 15)
@@ -64,10 +62,14 @@ defmodule Main do
     n = 255
     hex_chars = "0123456789ABCDEF"
     s = ""
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s}, fn _, {n, s} ->
+    {n, s} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s}, fn _, {n, s} ->
       if (n > 0) do
         digit = Bitwise.band(n, 15)
-        s = String.at(hex_chars, digit) || "" <> s
+        s = (if (digit < 0) do
+  ""
+else
+  String.at(hex_chars, digit) || ""
+end) <> s
         n = Bitwise.bsr(n, 4)
         {:cont, {n, s}}
       else

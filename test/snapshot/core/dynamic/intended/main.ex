@@ -17,7 +17,7 @@ defmodule Main do
     fn_ = fn s -> String.upcase(s) end
     var_args = fn args ->
       _g = 0
-      _ = Enum.each(args, fn arg -> sum = sum + arg end)
+      sum = Enum.reduce(args, sum, fn arg, sum_acc -> sum_acc + arg end)
     end
     nil
   end

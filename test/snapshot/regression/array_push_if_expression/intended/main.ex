@@ -8,36 +8,37 @@ defmodule Main do
   defp test_simple_if_push() do
     errors = []
     has_error = true
-    if (has_error) do
-      errors = errors ++ ["Error occurred"]
-    end
+    errors = if (has_error), do: errors ++ ["Error occurred"], else: errors
     nil
   end
   defp test_if_else_push() do
     messages = []
     success = false
-    if (success) do
+    messages = if (success) do
       messages = messages ++ ["Success!"]
+      messages
     else
       messages = messages ++ ["Failed!"]
+      messages
     end
     nil
   end
   defp test_conditional_accumulation() do
     errors = []
-    _ = errors ++ ["Error 1"]
-    _ = errors ++ ["Error 3"]
+    errors = errors ++ ["Error 1"]
+    errors = errors ++ ["Error 3"]
     nil
   end
   defp test_nested_if_push() do
     results = []
     level1 = true
     level2 = true
-    if (level1) do
-      _ = results ++ ["Level 1"]
-      if (level2) do
-        results = results ++ ["Level 2"]
-      end
+    results = if (level1) do
+      results = results ++ ["Level 1"]
+      results = if (level2), do: results ++ ["Level 2"], else: results
+      results
+    else
+      results
     end
     nil
   end

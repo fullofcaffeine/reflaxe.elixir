@@ -1,6 +1,4 @@
 defmodule BitwiseOperations do
-  @import :Bitwise
-
   def test_bitwise() do
     a = 255
     b = 15

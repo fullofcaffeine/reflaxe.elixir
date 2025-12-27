@@ -1,7 +1,7 @@
 defmodule UserService do
   def find_user(name) do
     _g = 0
-    _g1 = UserService.users
+    g_value = UserService.users
     _ = Enum.each(g_value, fn user ->
   if (user.name == name), do: {:some, user}
 end)

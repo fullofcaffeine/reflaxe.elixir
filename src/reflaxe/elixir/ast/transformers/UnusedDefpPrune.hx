@@ -117,6 +117,11 @@ class UnusedDefpPrune {
                     visit(body);
                 case EDefp(_, _, _, body):
                     visit(body);
+                case EUnary(_, expr):
+                    visit(expr);
+                case EPipe(left, right):
+                    visit(left);
+                    visit(right);
                 case EMap(pairs):
                     for (p in pairs) { visit(p.key); visit(p.value); }
                 case EKeywordList(pairs):
@@ -127,6 +132,15 @@ class UnusedDefpPrune {
                     for (el in elements) visit(el);
                 case EStructUpdate(_, fields):
                     for (f in fields) visit(f.value);
+                case EField(target, _):
+                    visit(target);
+                case EAccess(target, key):
+                    visit(target);
+                    visit(key);
+                case ERange(start, end, _, step):
+                    visit(start);
+                    visit(end);
+                    if (step != null) visit(step);
                 case EQuote(_, expr):
                     visit(expr);
                 case ECall(null, fname, _):
@@ -172,16 +186,34 @@ class UnusedDefpPrune {
                             }
                         }
                     }
+                case EMacroCall(_, args, doBlock):
+                    for (a in args) visit(a);
+                    visit(doBlock);
+                case EWith(clauses, doBlock, elseBlock):
+                    for (c in clauses) visit(c.expr);
+                    visit(doBlock);
+                    if (elseBlock != null) visit(elseBlock);
                 case EBlock(ss): for (s in ss) visit(s);
                 case EIf(c, t, e): visit(c); visit(t); if (e != null) visit(e);
                 case ECase(expr, cls):
                     visit(expr);
                     for (cl in cls) { if (cl.guard != null) visit(cl.guard); visit(cl.body); }
+                case ECond(clauses):
+                    for (cl in clauses) { visit(cl.condition); visit(cl.body); }
                 case EBinary(_, l, r): visit(l); visit(r);
                 case EMatch(_, rhs): visit(rhs);
                 case ECall(tgt, _, args): if (tgt != null) visit(tgt); for (a in args) visit(a);
                 case ERemoteCall(tgt2, _, args2): visit(tgt2); for (a2 in args2) visit(a2);
                 case EFn(clauses): for (cl in clauses) visit(cl.body);
+                case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
+                    visit(body);
+                    if (rescueClauses != null) for (cl in rescueClauses) visit(cl.body);
+                    if (catchClauses != null) for (cl in catchClauses) visit(cl.body);
+                    if (afterBlock != null) visit(afterBlock);
+                    if (elseBlock != null) visit(elseBlock);
+                case EReceive(clauses, afterClause):
+                    for (cl in clauses) { if (cl.guard != null) visit(cl.guard); visit(cl.body); }
+                    if (afterClause != null) { visit(afterClause.timeout); visit(afterClause.body); }
                 default:
             }
         }

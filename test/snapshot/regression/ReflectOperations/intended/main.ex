@@ -45,8 +45,6 @@ defmodule Main do
     arr_is_object = Reflect.is_object(arr)
     null_is_object = Reflect.is_object(nul)
     fun_is_object = Reflect.is_object(fun)
-    _ = nil
-    _ = nil
     copied_a = 1
     copied_b_c = 2
     nil

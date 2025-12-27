@@ -3,8 +3,14 @@ defmodule EnhancedPatternMatchingTest do
     (case status do
       {:idle} -> "Currently idle"
       {:working, task} -> "Working on: #{(fn -> task end).()}"
-      {:completed, result, duration} -> "Completed \"#{(fn -> result end).()}\" in #{(fn -> Kernel.to_string(duration) end).()}ms"
-      {:failed, error, retries} -> "Failed with \"#{(fn -> error end).()}\" after #{(fn -> Kernel.to_string(retries) end).()} retries"
+      {:completed, result, duration} ->
+        g_value = duration
+        duration = g_value
+        "Completed \"#{(fn -> result end).()}\" in #{(fn -> Kernel.to_string(duration) end).()}ms"
+      {:failed, error, retries} ->
+        g_value = retries
+        retries = g_value
+        "Failed with \"#{(fn -> error end).()}\" after #{(fn -> Kernel.to_string(retries) end).()} retries"
     end)
   end
   def incomplete_match(status) do
@@ -19,9 +25,16 @@ defmodule EnhancedPatternMatchingTest do
       {:success, value} ->
         (case value do
           {:success, value} -> "Double success: #{(fn -> inspect(value) end).()}"
-          {:error, inner_error, inner_context} -> "Outer success, inner error: #{(fn -> inner_error end).()} (context: #{(fn -> inner_context end).()})"
+          {:error, inner_error, inner_context} ->
+            g_value = inner_error
+            inner_error = g_value
+            inner_context = inner_error
+            "Outer success, inner error: #{(fn -> inner_error end).()} (context: #{(fn -> inner_context end).()})"
         end)
-      {:error, outer_error, outer_context} -> "Outer error: #{(fn -> outer_error end).()} (context: #{(fn -> outer_context end).()})"
+      {:error, outer_error, outer_context} ->
+        g_value = outer_context
+        outer_context = g_value
+        "Outer error: #{(fn -> outer_error end).()} (context: #{(fn -> outer_context end).()})"
     end)
   end
   def match_with_complex_guards(status, priority, is_urgent) do
@@ -42,24 +55,26 @@ defmodule EnhancedPatternMatchingTest do
           end
         end
       {:completed, result, duration} ->
-        duration = result
+        g_value = duration
+        duration = g_value
         if (duration < 1000) do
           "Fast completion: #{(fn -> result end).()}"
         else
-          duration = result
+          duration = g_value
           if (duration >= 1000 and duration < 5000) do
             "Normal completion: #{(fn -> result end).()}"
           else
-            _duration = result
+            _duration = g_value
             "Slow completion: #{(fn -> result end).()}"
           end
         end
       {:failed, error, retries} ->
-        retries = error
+        g_value = retries
+        retries = g_value
         if (retries < 3) do
           "Recoverable failure: #{(fn -> error end).()}"
         else
-          _retries = error
+          _retries = g_value
           "Permanent failure: #{(fn -> error end).()}"
         end
     end)
@@ -84,17 +99,25 @@ defmodule EnhancedPatternMatchingTest do
     (case ((case step1 do
   {:success, validated} -> _ = process_data(validated)
   {:error, error, context} ->
-    context = error
-    if (Kernel.is_nil(context)) do
+    g_value = context
+    context = g_value
+    context = if (Kernel.is_nil(context)) do
       context = ""
+      context
+    else
+      context
     end
     result = {:error, error, context}
 end)) do
       {:success, processed} -> _ = format_output(processed)
       {:error, error, context} ->
-        context = error
-        if (Kernel.is_nil(context)) do
+        g_value = context
+        context = g_value
+        context = if (Kernel.is_nil(context)) do
           context = ""
+          context
+        else
+          context
         end
         result = {:error, error, context}
     end)
@@ -103,8 +126,17 @@ end)) do
     (case arr do
       [] -> "empty array"
       [_head | _tail] -> "single element: #{(fn -> Kernel.to_string(x) end).()}"
-      2 -> "pair: [#{(fn -> Kernel.to_string(x) end).()}, #{(fn -> Kernel.to_string(y) end).()}]"
-      3 -> "triple: [#{(fn -> Kernel.to_string(x) end).()}, #{(fn -> Kernel.to_string(y) end).()}, #{(fn -> Kernel.to_string(z) end).()}]"
+      2 ->
+        g_value = arr[1]
+        x = g
+        y = g_value
+        "pair: [#{(fn -> Kernel.to_string(x) end).()}, #{(fn -> Kernel.to_string(y) end).()}]"
+      3 ->
+        g_value = arr[1]
+        x = g
+        y = g_value
+        z = g
+        "triple: [#{(fn -> Kernel.to_string(x) end).()}, #{(fn -> Kernel.to_string(y) end).()}, #{(fn -> Kernel.to_string(z) end).()}]"
       _ ->
         a = arr
         if (length(a) > 3) do
@@ -119,7 +151,7 @@ end)) do
       "empty string"
     else
       s = input
-      if (length(s) == 1) do
+      if (String.length(s) == 1) do
         "single character: \"#{(fn -> s end).()}\""
       else
         s = input
@@ -127,26 +159,19 @@ end)) do
           "has prefix: \"#{(fn -> s end).()}\""
         else
           s = input
-          if ((fn ->
-  pos = (length(s) - 7)
-  len = nil
-  if (Kernel.is_nil(len)) do
-    String.slice(s, pos..-1)
-  else
-    String.slice(s, pos, len)
-  end
-end).() == "_suffix") do
+          if (String.slice(s, (String.length(s) - 7)..-1//1) == "_suffix") do
             "has suffix: \"#{(fn -> s end).()}\""
           else
             s = input
-            if (case :binary.match(s, "@") do
-                {pos, _} -> pos
-                :nomatch -> -1
-            end > -1) do
+            cond_value = ((case :binary.match(s, "@") do
+  {pos, _} -> pos
+  :nomatch -> -1
+end))
+            if (cond_value > -1) do
               "contains @: \"#{(fn -> s end).()}\""
             else
               s = input
-              if (length(s) > 100) do
+              if (String.length(s) > 100) do
                 "very long string"
               else
                 s = input
@@ -186,7 +211,7 @@ end).() == "_suffix") do
   def match_binary_pattern(data) do
     bytes = (case bytes.of_string(data) do
       [] -> "empty"
-      [_head | _tail] -> "single byte: #{(fn -> Kernel.to_string(bytes.get(0)) end).()}"
+      [_head | _tail] -> "single byte: #{(fn -> Kernel.to_string(bytes.get(bytes, 0)) end).()}"
       _ ->
         if (n <= 4) do
           "small data: #{(fn -> Kernel.to_string(n) end).()} bytes"
@@ -198,17 +223,23 @@ end).() == "_suffix") do
     bytes
   end
   defp validate_input(input) do
-    if (length(input) == 0) do
+    if (String.length(input) == 0) do
       context = "validation"
-      if (Kernel.is_nil(context)) do
+      context = if (Kernel.is_nil(context)) do
         context = ""
+        context
+      else
+        context
       end
       result = {:error, "Empty input", context}
     else
-      if (length(input) > 1000) do
+      if (String.length(input) > 1000) do
         context = "validation"
-        if (Kernel.is_nil(context)) do
+        context = if (Kernel.is_nil(context)) do
           context = ""
+          context
+        else
+          context
         end
         result = {:error, "Input too long", context}
       else
@@ -218,10 +249,13 @@ end).() == "_suffix") do
     end
   end
   defp format_output(data) do
-    if (length(data) == 0) do
+    if (String.length(data) == 0) do
       context = "formatting"
-      if (Kernel.is_nil(context)) do
+      context = if (Kernel.is_nil(context)) do
         context = ""
+        context
+      else
+        context
       end
       result = {:error, "No data to format", context}
     else

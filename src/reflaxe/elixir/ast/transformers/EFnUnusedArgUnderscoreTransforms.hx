@@ -49,8 +49,27 @@ class EFnUnusedArgUnderscoreTransforms {
                                 || containsVarName(cl.body, name)
                                 || containsVarName(cl.body, underscored);
                         }
-                        inline function normalizedBinder(name:String):String {
+                        function normalizedBinder(name:String):String {
                             if (name == null) return name;
+
+                            // If a binder is already underscored but the body references the base
+                            // name (without underscore), prefer de-underscoring to avoid undefined
+                            // variable errors (e.g., `_sel` binder but body uses `sel` inside nested fns).
+                            //
+                            // We only do this when the underscored name itself is not referenced.
+                            if (name.length > 1 && name.charAt(0) == '_') {
+                                var base = name.substr(1);
+                                var usesBase = VariableUsageCollector.usedInFunctionScope(cl.body, base)
+                                    || erawUsesName(cl.body, base)
+                                    || containsVarName(cl.body, base);
+                                var usesUnderscored = VariableUsageCollector.usedInFunctionScope(cl.body, name)
+                                    || erawUsesName(cl.body, name)
+                                    || containsVarName(cl.body, name);
+                                if (usesBase && !usesUnderscored) {
+                                    return base;
+                                }
+                            }
+
                             var needsUnderscore = !isUsed(name) && (name.length == 0 || name.charAt(0) != '_');
                             return needsUnderscore ? ('_' + name) : name;
                         }
@@ -58,9 +77,23 @@ class EFnUnusedArgUnderscoreTransforms {
                             switch (a) {
                                 case PVar(name):
                                     var nn = normalizedBinder(name);
+#if debug_efn_unused_arg_underscore
+                                    if (name != nn) {
+                                        try {
+                                            trace('[EFnUnusedArgUnderscore] ' + name + ' -> ' + nn);
+                                        } catch (_: Dynamic) {}
+                                    }
+#end
                                     newArgs.push(PVar(nn));
                                 case PAlias(name, pat):
                                     var nn = normalizedBinder(name);
+#if debug_efn_unused_arg_underscore
+                                    if (name != nn) {
+                                        try {
+                                            trace('[EFnUnusedArgUnderscore] ' + name + ' -> ' + nn);
+                                        } catch (_: Dynamic) {}
+                                    }
+#end
                                     newArgs.push(PAlias(nn, pat));
                                 default:
                                     newArgs.push(a);
@@ -100,18 +133,71 @@ class EFnUnusedArgUnderscoreTransforms {
                             start = i + name.length;
                         }
                     }
+                case EParen(e):
+                    walk(e);
+                case EPin(inner):
+                    walk(inner);
+                case EUnary(_, e):
+                    walk(e);
+                case EBinary(_, l, r):
+                    walk(l); walk(r);
+                case EMatch(_, rhs):
+                    walk(rhs);
+                case EPipe(l, r):
+                    walk(l); walk(r);
                 case EBlock(ss): for (s in ss) walk(s);
                 case EDo(statements): for (s in statements) walk(s);
                 case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
+                case EUnless(c, b, e2): walk(c); walk(b); if (e2 != null) walk(e2);
                 case ECase(expr, clauses): walk(expr); for (c in clauses) { if (c.guard != null) walk(c.guard); walk(c.body); }
+                case ECond(clauses):
+                    for (c in clauses) { walk(c.condition); walk(c.body); }
                 case EWith(clauses, doBlock, elseBlock): for (wc in clauses) walk(wc.expr); walk(doBlock); if (elseBlock != null) walk(elseBlock);
+                case ETry(body, rescue, catchClauses, afterBlock, elseBlock):
+                    walk(body);
+                    for (rc in rescue) {
+                        walk(rc.body);
+                    }
+                    for (cc in catchClauses) {
+                        walk(cc.body);
+                    }
+                    if (afterBlock != null) walk(afterBlock);
+                    if (elseBlock != null) walk(elseBlock);
+                case ERaise(ex, attrs):
+                    walk(ex);
+                    if (attrs != null) walk(attrs);
+                case EThrow(v):
+                    walk(v);
                 case ECall(t,_,as): if (t != null) walk(t); for (a in as) walk(a);
+                case EMacroCall(_, args, doBlock):
+                    for (a in args) walk(a);
+                    walk(doBlock);
                 case ERemoteCall(targetExpr,_,argsList): walk(targetExpr); for (argNode in argsList) walk(argNode);
+                case ECapture(expr, _):
+                    walk(expr);
                 case EField(obj,_): walk(obj);
                 case EAccess(objectExpr,key): walk(objectExpr); walk(key);
+                case ERange(start, end, _, step):
+                    walk(start); walk(end); if (step != null) walk(step);
                 case EKeywordList(pairs): for (p in pairs) walk(p.value);
                 case EMap(pairs): for (p in pairs) { walk(p.key); walk(p.value); }
                 case EStructUpdate(base,fs): walk(base); for (f in fs) walk(f.value);
+                case EStruct(_, fs2): for (f2 in fs2) walk(f2.value);
+                case EModule(_, _, body): for (b in body) walk(b);
+                case EDef(_, _, guards, body): if (guards != null) walk(guards); walk(body);
+                case EDefp(_, _, guards, body): if (guards != null) walk(guards); walk(body);
+                case EDefmacro(_, _, guards, body): if (guards != null) walk(guards); walk(body);
+                case EDefmacrop(_, _, guards, body): if (guards != null) walk(guards); walk(body);
+                case EReceive(clauses, afterClause):
+                    for (cl in clauses) { if (cl.guard != null) walk(cl.guard); walk(cl.body); }
+                    if (afterClause != null) walk(afterClause.body);
+                case ESend(target, message):
+                    walk(target); walk(message);
+                case EFor(generators, filters, body, into, _):
+                    for (g in generators) walk(g.expr);
+                    for (f in filters) walk(f);
+                    walk(body);
+                    if (into != null) walk(into);
                 case ETuple(es) | EList(es): for (e in es) walk(e);
                 case EFn(clauses): for (cl in clauses) { if (cl.guard != null) walk(cl.guard); walk(cl.body); }
                 default:

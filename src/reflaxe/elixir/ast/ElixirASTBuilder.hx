@@ -666,41 +666,9 @@ class ElixirASTBuilder {
                 #end
 
                 if (currentContext.currentClauseContext != null) {
-                    // DEBUG: Trace every TVar in a clause context to understand 's' issue
-                    #if sys
-                    if (v.name == "s" || v.name == "ids" || v.name == "filtered" || v.name == "cleared") {
-                        var debugFile = sys.io.File.append("/tmp/switch_debug.log");
-                        debugFile.writeString('\n[TVar DEBUG] var=${v.name} id=${v.id}\n');
-                        debugFile.writeString('[TVar DEBUG]   init: ${init != null ? Type.enumConstructor(init.expr) : "null"}\n');
-                        debugFile.writeString('[TVar DEBUG]   localToName.exists(${v.id})?: ${currentContext.currentClauseContext.localToName.exists(v.id)}\n');
-                        var keys = [for (k in currentContext.currentClauseContext.localToName.keys()) Std.string(k)];
-                        debugFile.writeString('[TVar DEBUG]   localToName keys: [${keys.join(", ")}]\n');
-                        var vals = [for (val in currentContext.currentClauseContext.localToName) val];
-                        debugFile.writeString('[TVar DEBUG]   localToName values: [${vals.join(", ")}]\n');
-                        debugFile.close();
-                    }
-                    #end
-                    #if debug_ast_builder
-                    #if sys
-                    var debugFile4 = sys.io.File.append("/tmp/enum_debug.log");
-                    debugFile4.writeString('[TVar CHECK] var=${v.name} id=${v.id}\n');
-                    debugFile4.writeString('[TVar CHECK]   init: ${init != null ? Type.enumConstructor(init.expr) : "null"}\n');
-                    debugFile4.writeString('[TVar CHECK]   localToName.exists(${v.id})?: ${currentContext.currentClauseContext.localToName.exists(v.id)}\n');
-                    debugFile4.writeString('[TVar CHECK]   localToName keys: [${[for (k in currentContext.currentClauseContext.localToName.keys()) k].join(", ")}]\n');
-                    debugFile4.close();
-                    #end
-                    #end
-
                     // Check localToName mapping (pattern variable bindings)
                     // CRITICAL: Check by ID first (exact match)
                     if (currentContext.currentClauseContext.localToName.exists(v.id)) {
-                        #if debug_ast_builder
-                        #if sys
-                        var debugFile5 = sys.io.File.append("/tmp/enum_debug.log");
-                        debugFile5.writeString('[TVar] ✅ SKIPPING (by ID): Variable ${v.name} (id=${v.id}) already bound by pattern\n');
-                        debugFile5.close();
-                        #end
-                        #end
                         // Return null to skip this TVar - the pattern already bound the variable
                         return null;
                     }
@@ -709,13 +677,6 @@ class ElixirASTBuilder {
                     // In empty case bodies, Haxe generates new TVars with different IDs but same names
                     var patternVarNames = [for (name in currentContext.currentClauseContext.localToName) name];
                     if (patternVarNames.contains(v.name)) {
-                        #if debug_ast_builder
-                        #if sys
-                        var debugFile6 = sys.io.File.append("/tmp/enum_debug.log");
-                        debugFile6.writeString('[TVar] ✅ SKIPPING (by NAME): Variable ${v.name} (id=${v.id}) matches pattern variable\n');
-                        debugFile6.close();
-                        #end
-                        #end
                         // Return null to skip this TVar - the pattern already bound a variable with this name
                         return null;
                     }
@@ -724,24 +685,7 @@ class ElixirASTBuilder {
                 // Delegate simple variable declarations to VariableBuilder
                 // Complex patterns (blocks, comprehensions) are handled below
                 if (init == null || isSimpleInit(init)) {
-                    // DEBUG: Trace VariableBuilder delegation
-                    #if sys
-                    if (v.name == "s" || v.name == "ids" || v.name == "filtered" || v.name == "cleared") {
-                        var debugFile = sys.io.File.append("/tmp/switch_debug.log");
-                        debugFile.writeString('[TVar DEBUG] Delegating to VariableBuilder: ${v.name}\n');
-                        debugFile.close();
-                    }
-                    #end
                     var result = VariableBuilder.buildVariableDeclaration(v, init, currentContext);
-
-                    // DEBUG: Trace VariableBuilder result
-                    #if sys
-                    if (v.name == "s" || v.name == "ids" || v.name == "filtered" || v.name == "cleared") {
-                        var debugFile = sys.io.File.append("/tmp/switch_debug.log");
-                        debugFile.writeString('[TVar DEBUG] VariableBuilder result for ${v.name}: ${result != null ? Type.enumConstructor(result) : "NULL"}\n');
-                        debugFile.close();
-                    }
-                    #end
 
                     #if debug_ast_builder
                     if (v.name == "_g" || v.name == "g") {
@@ -752,15 +696,6 @@ class ElixirASTBuilder {
                     if (result != null) {
                         return result;
                     }
-                } else {
-                    // DEBUG: Trace why not delegating
-                    #if sys
-                    if (v.name == "s" || v.name == "ids" || v.name == "filtered" || v.name == "cleared") {
-                        var debugFile = sys.io.File.append("/tmp/switch_debug.log");
-                        debugFile.writeString('[TVar DEBUG] NOT delegating ${v.name} - init not simple\n');
-                        debugFile.close();
-                    }
-                    #end
                 }
                 
                 // COMPLETE FIX: Eliminate ALL infrastructure variable assignments at source
@@ -802,8 +737,13 @@ class ElixirASTBuilder {
                                     if (currentContext.tempVarRenameMap == null) {
                                         currentContext.tempVarRenameMap = new Map();
                                     }
-                                    // Map the infrastructure variable name to the extracted variable name
+                                    // Map the infrastructure variable name to the extracted variable name.
+                                    //
+                                    // Store BOTH keys to keep declarations and references consistent:
+                                    // - Name-based lookup is used when Haxe reuses names with new IDs.
+                                    // - ID-based lookup is used for stable binder alignment within a scope.
                                     currentContext.tempVarRenameMap.set(v.name, extractedVarName);
+                                    currentContext.tempVarRenameMap.set(Std.string(v.id), extractedVarName);
                                     
                                     #if debug_infrastructure_vars
                                     // DISABLED: trace('[Infrastructure Variable Mapping] ${v.name} (id: ${v.id}) = ${localVar.name}.${fieldName} -> will use ${extractedVarName}');
@@ -1918,7 +1858,7 @@ class ElixirASTBuilder {
 
                         var pattern = (isLocalFieldAssign && baseLocalName != null)
                             ? PVar(baseLocalName)
-                            : PatternBuilder.extractPattern(e1);
+                            : PatternBuilder.extractPattern(e1, currentContext);
 
                         // Flatten nested underscore assignment: x = _ = expr → x = expr
                         var rightIsUnderscoreAssign = false;
@@ -2010,7 +1950,7 @@ class ElixirASTBuilder {
 
                     case OpAssignOp(innerOp):
                         // Compound assignment: x += 1 becomes x = x + 1
-                        var pattern = PatternBuilder.extractPattern(e1);
+                        var pattern = PatternBuilder.extractPattern(e1, currentContext);
                         var leftAST = buildFromTypedExpr(e1, currentContext);
                         var rightAST = buildFromTypedExpr(e2, currentContext);
 
@@ -3178,27 +3118,8 @@ class ElixirASTBuilder {
                 // TASK 4.5 FIX: Check if this parameter was already extracted by the pattern
                 // If the enum field name is in patternExtractedParams, the pattern already bound it
 
-                // DEBUG: Show what we're checking BEFORE the condition
-                #if sys
-                var debugFile = sys.io.File.append("/tmp/enum_debug.log");
-                debugFile.writeString('[TEnumParameter] *** PRE-CHECK DEBUG ***\n');
-                debugFile.writeString('[TEnumParameter]   ef.name: "${ef.name}"\n');
-                debugFile.writeString('[TEnumParameter]   Has currentClauseContext: ${currentContext.currentClauseContext != null}\n');
-                if (currentContext.currentClauseContext != null) {
-                    debugFile.writeString('[TEnumParameter]   patternExtractedParams: [${currentContext.currentClauseContext.patternExtractedParams.join(", ")}]\n');
-                    debugFile.writeString('[TEnumParameter]   Contains ef.name?: ${currentContext.currentClauseContext.patternExtractedParams.contains(ef.name)}\n');
-                }
-                debugFile.close();
-                #end
-
                 if (currentContext.currentClauseContext != null &&
                     currentContext.currentClauseContext.patternExtractedParams.contains(ef.name)) {
-
-                    #if debug_enum_parameter
-                    var debugFile3 = sys.io.File.append("/tmp/enum_debug.log");
-                    debugFile3.writeString('[TEnumParameter] ✅ CONDITION MATCHED: Parameter "${ef.name}" already extracted by pattern\n');
-                    debugFile3.close();
-                    #end
 
                     // The pattern already extracted this parameter
                     // Use the binding plan to find the actual variable name

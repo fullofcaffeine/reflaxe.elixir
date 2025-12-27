@@ -1124,11 +1124,16 @@ class ElixirASTPrinter {
 
                             if (isEnumMethod) {
                                 // Transform: list.map(fn) → Enum.map(list, fn)
-                                // Special-case join: ensure first arg is a single expression (wrap via IIFE if needed),
-                                // mirroring the remote-call branch handling to avoid leaking multi-statement builders.
+                                // Special-case join: if the receiver is a multi-statement block, wrap via IIFE so the
+                                // first argument is a single valid Elixir expression. Keep simple receivers as-is.
                                 var receiverPrinted = print(target, indent);
                                 var firstArgStr = (function(){
                                     if (funcName == "join") {
+                                        var needsIife = switch (target.def) {
+                                            case EBlock(_) | EDo(_): true;
+                                            default: false;
+                                        };
+                                        if (!needsIife) return receiverPrinted;
                                         var trimmed = StringTools.trim(receiverPrinted);
                                         return StringTools.startsWith(trimmed, '(fn ->') ? receiverPrinted : '(fn -> ' + receiverPrinted + ' end).()';
                                     } else {
@@ -1276,8 +1281,16 @@ class ElixirASTPrinter {
                         if (mstrTmp == "Enum" && funcName == "join" && args.length >= 1) {
                             var parts: Array<String> = [];
                             var firstPrintedRaw = print(args[0], indent);
-                            var trimmed = StringTools.trim(firstPrintedRaw);
-                            var firstPrinted = StringTools.startsWith(trimmed, '(fn ->') ? firstPrintedRaw : '(fn -> ' + firstPrintedRaw + ' end).()';
+                            var needsIife = switch (args[0].def) {
+                                case EBlock(_) | EDo(_): true;
+                                default: false;
+                            };
+                            var firstPrinted = if (needsIife) {
+                                var trimmed = StringTools.trim(firstPrintedRaw);
+                                StringTools.startsWith(trimmed, '(fn ->') ? firstPrintedRaw : '(fn -> ' + firstPrintedRaw + ' end).()';
+                            } else {
+                                firstPrintedRaw;
+                            };
                             parts.push(firstPrinted);
                             for (i in 1...args.length) parts.push(sanitizeArgPrinted(printFunctionArg(args[i], indent), indent));
                             s = parts.join(', ');
@@ -1477,30 +1490,50 @@ class ElixirASTPrinter {
                             default:
                         }
                     }
-                    var needsParens = needsParentheses(node);
-                    var opStr = binaryOpToString(op);
+	                    var needsParens = needsParentheses(node);
+	                    var opStr = binaryOpToString(op);
 
-                    // Check if operands need parentheses (e.g., if expressions in comparisons)
-                    var leftStr = switch(left.def) {
-                        case EIf(_, _, _) | ECase(_, _) | ECond(_) | EWith(_,_,_):
-                            // If expressions in binary operations need parentheses
-                            '(' + print(left, 0) + ')';
-                        default:
-                            print(left, 0);
-                    };
+	                    // Operand parenthesization
+	                    // - Control-flow operands (`if`/`case`/`cond`/`with`) need parentheses in most infix contexts.
+	                    // - Binary operands must respect precedence (e.g., (a + b) / 2).
+	                    function printOperand(operand: ElixirAST, isRight: Bool): String {
+	                        if (operand == null) return '0';
 
-                    var rightStr = switch(right) {
-                        case null:
-                            '0';
-                        case _:
-                            switch(right.def) {
-                        case EIf(_, _, _) | ECase(_, _) | ECond(_) | EWith(_,_,_):
-                            // In assignments, prefer no extra parens around case/cond/if on RHS
-                            if (op == Match) print(right, 0) else '(' + print(right, 0) + ')';
-                        default:
-                            print(right, 0);
-                            }
-                    };
+	                        // Keep explicit parentheses as-is
+	                        switch (operand.def) {
+	                            case EParen(_):
+	                                return print(operand, 0);
+	                            default:
+	                        }
+
+	                        // Control flow operands need parentheses in infix contexts (except RHS of assignment).
+	                        switch (operand.def) {
+	                            case EIf(_, _, _) | ECase(_, _) | ECond(_) | EWith(_, _, _):
+	                                return (op == Match && isRight) ? print(operand, 0) : '(' + print(operand, 0) + ')';
+	                            default:
+	                        }
+
+	                        // Precedence: wrap a child binary op when it would change meaning.
+	                        //
+	                        // Example:
+	                        // - Haxe: (a + b) / 2
+	                        // - AST:  Divide(Add(a, b), 2)
+	                        // - Must print: (a + b) / 2  (NOT: a + b / 2)
+	                        var rendered = print(operand, 0);
+	                        switch (operand.def) {
+	                            case EBinary(childOp, _, _) if (childOp != Match && op != Match):
+	                                var parentPrec = binaryOpPrecedence(op);
+	                                var childPrec = binaryOpPrecedence(childOp);
+	                                var needs = (childPrec < parentPrec) ||
+	                                    (isRight && childPrec == parentPrec && (isNonAssociative(op) || childOp != op));
+	                                return needs ? '(' + rendered + ')' : rendered;
+	                            default:
+	                        }
+	                        return rendered;
+	                    }
+
+	                    var leftStr = printOperand(left, false);
+	                    var rightStr = right == null ? '0' : printOperand(right, true);
                     
                     // Defensive: avoid invalid syntax if an operand prints empty (or whitespace-only)
                     if (leftStr == null || leftStr.length == 0 || StringTools.trim(leftStr).length == 0) {
@@ -2101,8 +2134,30 @@ class ElixirASTPrinter {
                 }
                 var normalized = normalizeHeexIndent(content);
                 normalized = flattenNestedHeex(normalized);
+
+                // IMPORTANT: ~H heredocs cannot contain the same heredoc delimiter.
+                // HXX templates can legitimately contain nested `~H""" ... """` inside `<%= ... %>`
+                // (e.g., map/join patterns that return inner templates). If we always emit `~H"""`,
+                // the inner `"""` will terminate the outer sigil early and produce invalid Elixir.
+                //
+                // Strategy:
+                // - Prefer the standard `"""` heredoc.
+                // - If the content contains `"""`, fall back to `'''` (still a heredoc, still valid sigil syntax).
+                // - If both are present (rare), fall back to a pipe-delimited sigil `~H|...|` when safe.
+                var heredocOpen = '"""';
+                var heredocClose = '"""';
+                if (type == "H" && normalized != null && normalized.indexOf('"""') != -1) {
+                    if (normalized.indexOf("'''") == -1) {
+                        heredocOpen = "'''";
+                        heredocClose = "'''";
+                    } else if (normalized.indexOf("|") == -1) {
+                        // Preserve inline-if forms inside ~H; avoid rewriting to block form here.
+                        return '~' + type + '|' + '\n' + normalized + '\n' + '|' + modifiers;
+                    }
+                }
+
                 // Preserve inline-if forms inside ~H; avoid rewriting to block form here.
-                '~' + type + '"""' + '\n' + normalized + '\n' + '"""' + modifiers;
+                '~' + type + heredocOpen + '\n' + normalized + '\n' + heredocClose + modifiers;
                 
             case ERaw(code):
                 // Raw code injection with conservative Ecto.from atom→module qualification
@@ -2491,6 +2546,45 @@ class ElixirASTPrinter {
                 // Add more cases as needed
                 false;
             default: false;
+        };
+    }
+
+    /**
+     * Binary operator precedence (higher = binds tighter).
+     *
+     * WHY
+     * - The printer must preserve AST semantics when rendering nested binaries.
+     *   Example: `(a + b) / 2` must not print as `a + b / 2`.
+     *
+     * NOTE
+     * - This is a minimal precedence model covering the operators we emit in the AST.
+     * - It does not aim to be a complete Elixir precedence table; it only needs to be
+     *   correct relative to the operators we generate.
+     */
+    static function binaryOpPrecedence(op: EBinaryOp): Int {
+        return switch (op) {
+            case Match: 10;
+            case Or: 20;
+            case And: 30;
+            case In | Equal | NotEqual | Greater | GreaterEqual | Less | LessEqual: 40;
+            case Concat | StringConcat | Add | Subtract: 50;
+            case Multiply | Divide | Remainder: 60;
+            default: 50;
+        };
+    }
+
+    /**
+     * Non-associative binary operators.
+     *
+     * Used when deciding whether to parenthesize a right operand with equal precedence.
+     */
+    static function isNonAssociative(op: EBinaryOp): Bool {
+        return switch (op) {
+            case Subtract | Divide | Remainder |
+                 Equal | NotEqual | Greater | GreaterEqual | Less | LessEqual | In:
+                true;
+            default:
+                false;
         };
     }
     

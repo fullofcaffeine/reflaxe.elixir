@@ -8,6 +8,7 @@ import haxe.macro.TypedExprTools;
 import haxe.macro.Context;
 
 import reflaxe.BaseCompiler;
+import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.context.BuildContext;
@@ -536,9 +537,23 @@ class PatternBuilder {
     /**
      * Extract pattern from left-hand side expression
      */
-    public static function extractPattern(expr: TypedExpr): EPattern {
+    public static function extractPattern(expr: TypedExpr, ?context: BuildContext): EPattern {
         return switch(expr.expr) {
-            case TLocal(v): PVar(ElixirASTHelpers.toElixirVarName(v.name));
+            case TLocal(v):
+                // Prefer CompilationContext tempVarRenameMap when available so assignments inside
+                // remapped contexts (e.g., loop reducers) bind the correct accumulator names.
+                var resolved = ElixirASTHelpers.toElixirVarName(v.name);
+                if (v.name == "__" || resolved == "__") resolved = "_";
+                var compilationCtx:Null<CompilationContext> = Std.isOfType(context, CompilationContext) ? cast context : null;
+                if (compilationCtx != null && compilationCtx.tempVarRenameMap != null) {
+                    var idKey = Std.string(v.id);
+                    if (compilationCtx.tempVarRenameMap.exists(idKey)) {
+                        resolved = compilationCtx.tempVarRenameMap.get(idKey);
+                    } else if (compilationCtx.tempVarRenameMap.exists(v.name)) {
+                        resolved = compilationCtx.tempVarRenameMap.get(v.name);
+                    }
+                }
+                PVar(resolved);
             case TField(e, fa): 
                 // Map/struct field pattern
                 PVar(extractFieldName(fa));

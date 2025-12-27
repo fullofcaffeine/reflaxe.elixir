@@ -23,13 +23,13 @@ end))
     end)
   end
   def get_value_or_default(result) do
-    ResultTools.fold(result, fn value -> value end, fn error -> -1 end)
+    ResultTools.fold(result, fn value -> value end, fn _error -> -1 end)
   end
   def test_extension_methods() do
     result = {:ok, "hello"}
     upper_result = ResultTools.map(result, fn s -> String.upcase(s) end)
     chained_result = ResultTools.flat_map(result, fn s ->
-      if (length(s) > 0), do: {:ok, s <> "!"}, else: {:error, "empty"}
+      if (String.length(s) > 0), do: {:ok, s <> "!"}, else: {:error, "empty"}
     end)
     is_valid = ResultTools.is_ok(result)
     has_error = ResultTools.is_error(result)

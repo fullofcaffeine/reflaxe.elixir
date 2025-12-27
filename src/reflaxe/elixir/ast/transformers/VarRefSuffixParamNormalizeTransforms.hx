@@ -52,6 +52,23 @@ class VarRefSuffixParamNormalizeTransforms {
   }
 
   static function collectUniqueSuffixParams(args:Array<EPattern>): haxe.ds.StringMap<String> {
+    // Collect all parameter names first so we never rewrite a reference that already
+    // resolves to a real parameter.
+    //
+    // Example bug:
+    //   def list_users(page, per_page) do
+    //     ... page * per_page ...
+    //   end
+    //
+    // With a naive suffix map, `page` would be rewritten to `per_page` because
+    // `per_page` has suffix `page`. That breaks semantics and triggers WAE.
+    var paramNames = new haxe.ds.StringMap<Bool>();
+    if (args != null) for (a in args) switch (a) {
+      case PVar(p):
+        paramNames.set(p, true);
+      default:
+    }
+
     var counts = new haxe.ds.StringMap<Int>();
     var firstSeen = new haxe.ds.StringMap<String>();
     var result = new haxe.ds.StringMap<String>();
@@ -60,6 +77,9 @@ class VarRefSuffixParamNormalizeTransforms {
         var idx = p.lastIndexOf("_");
         if (idx > 0 && idx < p.length - 1) {
           var suff = p.substr(idx + 1);
+          // If the short name itself is a parameter (e.g., `page` alongside `per_page`),
+          // do not create a suffix mapping for it.
+          if (paramNames.exists(suff)) continue;
           var c = counts.exists(suff) ? counts.get(suff) + 1 : 1;
           counts.set(suff, c);
           if (!firstSeen.exists(suff)) firstSeen.set(suff, p);

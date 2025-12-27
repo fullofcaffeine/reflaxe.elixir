@@ -327,7 +327,7 @@ class ElixirCompiler extends GenericCompiler<
         }
 
         // Debug: detect any @:repo classes already present
-        try {
+		            try {
             for (mt in result) {
                 switch (mt) {
                     case TClassDecl(clsRef):
@@ -1842,16 +1842,25 @@ class ElixirCompiler extends GenericCompiler<
         // Build fields from the funcFields parameter (which is already ClassFuncData array)
         var fields: Array<reflaxe.elixir.ast.ElixirAST> = [];
 
-        // Compile each function field
-        for (funcData in funcFields) {
-            // Skip constructor for now
-            if (funcData.field.name == "new") continue;
+	        // Compile each function field
+	        for (funcData in funcFields) {
+	            // Skip constructor for now
+	            if (funcData.field.name == "new") continue;
 
-            // Get the function expression and preprocess it
-            var expr = funcData.expr;
-            // Skip functions without body - they might be extern or abstract
-            if (expr == null) continue;
-            
+	            // Skip functions without body - they might be extern or abstract
+	            var expr = funcData.expr;
+	            if (expr == null) continue;
+
+	            // IMPORTANT: tempVarRenameMap must be function-scoped.
+	            // We store both ID-based and NAME-based keys in this map (for declaration/reference
+	            // alignment). If we reuse it across functions, NAME-based entries can leak and cause
+	            // cross-function renames (e.g. `page` references rewritten to `per_page` in an
+	            // unrelated function). Keep the map isolated per function body compilation.
+	            var previousTempVarRenameMap = context.tempVarRenameMap;
+	            context.tempVarRenameMap = new Map();
+
+	            try {
+	            
             // Preprocess the function body to eliminate infrastructure variables
             expr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(expr);
 
@@ -2231,13 +2240,21 @@ class ElixirCompiler extends GenericCompiler<
                 }
             }
 
-            // Create AST node directly (makeAST is an inline function, not a static method)
-            fields.push({
-                def: funcDef,
-                metadata: funcMetadata,
-                pos: funcData.field.pos
-            });
-        }
+	            // Create AST node directly (makeAST is an inline function, not a static method)
+		            fields.push({
+		                def: funcDef,
+		                metadata: funcMetadata,
+		                pos: funcData.field.pos
+		            });
+		            } catch (e: Dynamic) {
+		                // Restore the class-level context map for the next function.
+		                context.tempVarRenameMap = previousTempVarRenameMap;
+		                throw e;
+		            }
+
+		            // Restore the class-level context map for the next function.
+		            context.tempVarRenameMap = previousTempVarRenameMap;
+		        }
 
         // Prepare metadata for special module types BEFORE building the module
         var metadata: ElixirMetadata = {};

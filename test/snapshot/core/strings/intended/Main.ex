@@ -10,13 +10,8 @@ defmodule Main do
     name = "Alice"
     age = 30
     pi = 3.14159
-    _ = nil
-    _ = nil
     person_name = "Bob"
     person_age = 25
-    _ = nil
-    _ = nil
-    _ = nil
     _ = "apple"
     _ = "banana"
     _ = "orange"
@@ -25,8 +20,12 @@ defmodule Main do
   def string_methods() do
     str = "  Hello, World!  "
     text = "Hello, World!"
-    parts = String.split(text, ", ")
-    joined = Enum.join((fn -> " - " end).())
+    parts = if (", " == "") do
+      String.graphemes(text)
+    else
+      String.split(text, ", ")
+    end
+    joined = Enum.join(parts, " - ")
     replaced = StringTools.replace(text, "World", "Haxe")
     nil
   end
@@ -49,32 +48,32 @@ defmodule Main do
     _ = StringBuf.add(buf, "!")
     result = StringBuf.to_string(buf)
     parts = []
-    _ = parts ++ ["Item #{(fn -> Kernel.to_string(1) end).()}"]
-    _ = parts ++ ["Item #{(fn -> Kernel.to_string(2) end).()}"]
-    _ = parts ++ ["Item #{(fn -> Kernel.to_string(3) end).()}"]
-    _ = parts ++ ["Item #{(fn -> Kernel.to_string(4) end).()}"]
-    _ = parts ++ ["Item #{(fn -> Kernel.to_string(5) end).()}"]
-    list = Enum.join((fn -> ", " end).())
+    parts = parts ++ ["Item #{(fn -> Kernel.to_string(1) end).()}"]
+    parts = parts ++ ["Item #{(fn -> Kernel.to_string(2) end).()}"]
+    parts = parts ++ ["Item #{(fn -> Kernel.to_string(3) end).()}"]
+    parts = parts ++ ["Item #{(fn -> Kernel.to_string(4) end).()}"]
+    parts = parts ++ ["Item #{(fn -> Kernel.to_string(5) end).()}"]
+    list = Enum.join(parts, ", ")
     nil
   end
   def regex_operations() do
     text = "The year is 2024 and the time is 15:30"
     digit_regex = EReg.new("\\d+", "")
-    if (digit_regex.match(text)), do: nil
+    if (EReg.match(digit_regex, text)), do: nil
     all_numbers = EReg.new("\\d+", "g")
     numbers = []
     temp = text
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, temp}, fn _, {numbers, temp} ->
-      if (all_numbers.match(temp)) do
-        _ = numbers ++ [all_numbers.matched(0)]
-        temp = all_numbers.matchedRight()
+    {numbers, temp} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {[], temp}, fn _, {numbers, temp} ->
+      if (EReg.match(all_numbers, temp)) do
+        numbers = numbers ++ [EReg.matched(all_numbers, 0)]
+        temp = EReg.matched_right(all_numbers)
         {:cont, {numbers, temp}}
       else
         {:halt, {numbers, temp}}
       end
     end)
     nil
-    replaced = EReg.new("\\d+", "").replace(text, "XXX")
+    replaced = EReg.replace(EReg.new("\\d+", ""), text, "XXX")
     email = "user@example.com"
     email_regex = EReg.new("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "")
     nil

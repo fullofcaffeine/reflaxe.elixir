@@ -5,13 +5,12 @@ defmodule Main do
   [head | tail] when head == 72 and tail != [] ->
     "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   _g = []
-  _g1 = 1
-  _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
-    _g = Enum.concat(_g, [inspect(arr[i])])
-    _g
+  g_value = 1
+  arr_length = length(arr)
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+    _g = _g ++ [inspect(arr[i])]
+    _g_acc
   end)
-  _g
   _g
 end).(), ",") end).()}"
   [] -> "Empty binary"
@@ -22,13 +21,12 @@ end).(), ",") end).()}"
       arr = data
       if (arr[0] == 72 and length(arr) > 1) do
         "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
-  _g1 = 1
-  _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
-    _g = Enum.concat(_g, [inspect(arr[i])])
-    _g
+  g_value = 1
+  arr_length = length(arr)
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+    _g = _g ++ [inspect(arr[i])]
+    _g_acc
   end)
-  _g
   _g
 end).(), ",") end).()}"
       else
@@ -41,22 +39,22 @@ end).(), ",") end).()}"
       end
     end
   2 ->
+    g_value = data[1]
     arr = data
     if (arr[0] == 72 and length(arr) > 1) do
       "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   _g = []
-  _g1 = 1
-  _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
-    _g = Enum.concat(_g, [inspect(arr[i])])
-    _g
+  g_value = 1
+  arr_length = length(arr)
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+    _g = _g ++ [inspect(arr[i])]
+    _g_acc
   end)
-  _g
   _g
 end).(), ",") end).()}"
     else
       first = g
-      _second = g
+      _second = g_value
       if (first > 64 and first < 90) do
         "2-byte uppercase start"
       else
@@ -69,22 +67,23 @@ end).(), ",") end).()}"
       end
     end
   5 ->
+    g_value = data[1]
+    arr_length = data[2]
     arr = data
     if (arr[0] == 72 and length(arr) > 1) do
       "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   _g = []
-  _g1 = 1
-  _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
-    _g = Enum.concat(_g, [inspect(arr[i])])
-    _g
+  g_value = 1
+  arr_length = length(arr)
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+    _g = _g ++ [inspect(arr[i])]
+    _g_acc
   end)
-  _g
   _g
 end).(), ",") end).()}"
     else
       a = g
-      _b = g
+      _b = g_value
       _c = arr_length
       _d = g
       _e = g
@@ -104,13 +103,12 @@ end).(), ",") end).()}"
     if (arr[0] == 72 and length(arr) > 1) do
       "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   _g = []
-  _g1 = 1
-  _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
-    _g = Enum.concat(_g, [inspect(arr[i])])
-    _g
+  g_value = 1
+  arr_length = length(arr)
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+    _g = _g ++ [inspect(arr[i])]
+    _g_acc
   end)
-  _g
   _g
 end).(), ",") end).()}"
     else
@@ -128,26 +126,26 @@ end))
     packet = [1, 0, 8, 72, 101, 108, 108, 111]
     switch_result_2 = ((case packet do
   3 ->
+    g_value = packet[1]
     if (g == 1) do
-      if (g == 0) do
-        size = arr_length
+      if (g_value == 0) do
+        size = g
         "Protocol v1, size=#{(fn -> Kernel.to_string(size) end).()} (header only)"
       else
         arr = packet
         if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
           "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
-  _g1 = 3
-  _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
-    _g = Enum.concat(_g, [inspect(arr[i])])
-    _g
+  g_value = 3
+  arr_length = length(arr)
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+    _g = _g ++ [inspect(arr[i])]
+    _g_acc
   end)
-  _g
   _g
 end).(), ",") end).()}"
         else
           version = g
-          _flags = g
+          _flags = g_value
           _size = arr_length
           if (version > 1) do
             "Future protocol v#{(fn -> Kernel.to_string(version) end).()}"
@@ -161,18 +159,17 @@ end).(), ",") end).()}"
       arr = packet
       if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
         "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
-  _g1 = 3
-  _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
-    _g = Enum.concat(_g, [inspect(arr[i])])
-    _g
+  g_value = 3
+  arr_length = length(arr)
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+    _g = _g ++ [inspect(arr[i])]
+    _g_acc
   end)
-  _g
   _g
 end).(), ",") end).()}"
       else
         version = g
-        _flags = g
+        _flags = g_value
         _size = arr_length
         if (version > 1) do
           "Future protocol v#{(fn -> Kernel.to_string(version) end).()}"
@@ -183,22 +180,23 @@ end).(), ",") end).()}"
       end
     end
   4 ->
+    g_value = packet[1]
+    arr_length = packet[2]
     arr = packet
     if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
       "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
   _g = []
-  _g1 = 3
-  _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
-    _g = Enum.concat(_g, [inspect(arr[i])])
-    _g
+  g_value = 3
+  arr_length = length(arr)
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+    _g = _g ++ [inspect(arr[i])]
+    _g_acc
   end)
-  _g
   _g
 end).(), ",") end).()}"
     else
       version = g
-      flags = g
+      flags = g_value
       size = arr_length
       _payload = g
       "Packet: v#{(fn -> Kernel.to_string(version) end).()}, flags=#{(fn -> Kernel.to_string(flags) end).()}, size=#{(fn -> Kernel.to_string(size) end).()}"
@@ -208,13 +206,12 @@ end).(), ",") end).()}"
     if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
       "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
   _g = []
-  _g1 = 3
-  _g2 = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g ->
-    _g = Enum.concat(_g, [inspect(arr[i])])
-    _g
+  g_value = 3
+  arr_length = length(arr)
+  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+    _g = _g ++ [inspect(arr[i])]
+    _g_acc
   end)
-  _g
   _g
 end).(), ",") end).()}"
     else
@@ -365,17 +362,23 @@ end))
   3 -> "Error"
   _ -> "Unknown status"
 end))
-    _ = nil
-    _ = nil
-    _ = nil
     _ = 1
-    _ = 2
+    arr_1 = 2
     _ = 3
     array_result = ((case 3 do
   0 -> "Empty"
   1 -> "Single: #{(fn -> Kernel.to_string(x) end).()}"
-  2 -> "Pair: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()}"
-  3 -> "Triple: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()}"
+  2 ->
+    g_value = arr_1
+    x = g
+    y = g_value
+    "Pair: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()}"
+  3 ->
+    g_value = arr_1
+    x = g
+    y = g_value
+    z = g
+    "Triple: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()}"
   _ ->
     cond do
       false -> "Many: " <> Kernel.to_string(3) <> " items"
@@ -385,46 +388,42 @@ end))
     "#{(fn -> bool_result end).()} | #{(fn -> enum_result end).()} | #{(fn -> array_result end).()}"
   end
   def test_nested_patterns_with_guards() do
-    _ = nil
-    _ = nil
-    data_user_active = nil
-    _ = nil
-    _ = nil
-    _ = nil
     data_user_name = "Alice"
     data_user_age = 28
     data_user_active = true
     _ = "read"
     _ = "write"
     data_last_login = 1640995200
+    g = data_user_age
+    g_value = 2
     g = data_user_active
     age = g
-    perms = g_entry
-    active = arr_length
+    perms = g_value
+    active = g_value
     if (age >= 18 and age < 25 and perms > 0 and active) do
       "Young adult with permissions"
     else
       age = g
-      perms = g_entry
-      active = arr_length
+      perms = g_value
+      active = g_value
       if (age >= 25 and age < 65 and perms >= 2 and active) do
         "Adult with full permissions"
       else
         age = g
-        perms = g_entry
-        active = arr_length
+        perms = g_value
+        active = g_value
         if (age >= 65 and active) do
           "Senior user"
         else
           _age = g
-          perms = g_entry
-          active = arr_length
+          perms = g_value
+          active = g_value
           if (not active) do
             "Inactive user"
           else
             _age = g
-            perms = g_entry
-            _active = arr_length
+            perms = g_value
+            _active = g_value
             if (perms == 0), do: "User without permissions", else: "Other user type"
           end
         end
@@ -432,39 +431,37 @@ end))
     end
   end
   def test_complex_guard_performance() do
-    metrics_network = nil
-    _ = nil
-    _ = nil
-    _ = nil
     metrics_cpu = 45.2
     metrics_memory = 68.7
     metrics_disk = 23.1
     metrics_network = 12.8
+    g = metrics_cpu
+    g_value = metrics_memory
     g = metrics_network
     cpu = g
-    mem = g_next
-    disk = arr_length
+    mem = g_value
+    disk = g_entry
     net = g_value
     if (cpu > 80 or mem > 90 or disk > 90 or net > 80) do
       "Critical resource usage"
     else
       cpu = g
-      mem = g_next
-      disk = arr_length
+      mem = g_value
+      disk = g_entry
       net = g_value
       if (cpu > 60 or mem > 75 or disk > 75 or net > 60) do
         "High resource usage"
       else
         cpu = g
-        mem = g_next
-        disk = arr_length
+        mem = g_value
+        disk = g_entry
         net = g_value
         if (cpu > 40 and mem > 50 and disk > 50 and net > 30) do
           "Moderate resource usage"
         else
           cpu = g
-          mem = g_next
-          disk = arr_length
+          mem = g_value
+          disk = g_entry
           net = g_value
           if (cpu <= 40 and mem <= 50 and disk <= 50 and net <= 30), do: "Low resource usage", else: "Unknown resource state"
         end

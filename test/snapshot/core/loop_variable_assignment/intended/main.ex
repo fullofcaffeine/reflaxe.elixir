@@ -1,33 +1,33 @@
 defmodule Main do
   def main() do
     numbers = [1, 2, 3, 4, 5]
-    _ = 0
-    _ = Enum.each(numbers, fn n -> [] ++ [n * 2] end)
+    g_value = 0
+    _ = Enum.each(numbers, fn n -> [n * 2] end)
     doubled = []
-    _ = 0
+    g_value = 0
     _ = Enum.each(numbers, fn n ->
-  if (rem(n, 2) == 0), do: [] ++ [n]
+  if (rem(n, 2) == 0), do: [n]
 end)
     evens = []
     x = 1
     y = "a"
-    _ = [%{:x => x, :y => y}]
+    [%{:x => x, :y => y}]
     y = "b"
-    _ = [%{:x => x, :y => y}]
+    [%{:x => x, :y => y}]
     x = 2
     y = "a"
-    _ = [%{:x => x, :y => y}]
+    [%{:x => x, :y => y}]
     y = "b"
-    _ = [%{:x => x, :y => y}]
+    [%{:x => x, :y => y}]
     pairs = []
     i = 0
     collected = []
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, collected}, fn _, {i, collected} ->
+    {i, collected} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, []}, fn _, {i, collected} ->
       if (i < 5) do
-        _ = collected ++ [i * i]
-        (old_i = i
-i = i + 1
-old_i)
+        collected = collected ++ [i * i]
+        old_i = i
+        i = i + 1
+        old_i
         {:cont, {i, collected}}
       else
         {:halt, {i, collected}}
@@ -36,12 +36,12 @@ old_i)
     nil
     j = 0
     results = []
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, results}, fn _, {j, results} ->
+    {j, results} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, []}, fn _, {j, results} ->
       if (j < 3) do
-        _ = results ++ [j]
-        (old_j = j
-j = j + 1
-old_j)
+        results = results ++ [j]
+        old_j = j
+        j = j + 1
+        old_j
         {:cont, {j, results}}
       else
         {:halt, {j, results}}
@@ -50,14 +50,17 @@ old_j)
     nil
     sum = 0
     _g = 0
-    _ = Enum.each(numbers, fn n -> sum = sum + n end)
+    sum = Enum.reduce(numbers, sum, fn n, sum_acc -> sum_acc + n end)
     output = []
     _g = 0
-    _ = Enum.each(numbers, fn n ->
-  if (n > 2) do
-    output = output ++ [n]
-  end
-end)
+    output = Enum.reduce(numbers, output, fn n, output_acc ->
+      if (n > 2) do
+        output_acc = Enum.concat(output_acc, [n])
+        output_acc
+      else
+        output_acc
+      end
+    end)
     nil
   end
 end

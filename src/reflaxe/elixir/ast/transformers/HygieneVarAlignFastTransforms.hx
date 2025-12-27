@@ -78,23 +78,29 @@ class HygieneVarAlignFastTransforms {
     // Filter bases to lowercase starters to avoid atoms/module aliases.
     function toBase(name:String):String {
       if (name == null || name.length == 0) return null;
-      var base = stripNumeric(stripUnderscore(name));
+      var base = stripNumeric(stripLeadingUnderscores(name));
+      if (base == null || base.length == 0) return null;
       var c = base.charAt(0);
       return (c == c.toLowerCase() && c != "_") ? base : null;
     }
 
     var canonical = new Map<String,String>();
+    var referencedBases = new Map<String, Bool>();
+    for (ref in referenced.keys()) {
+      var b = toBase(ref);
+      if (b != null) referencedBases.set(b, true);
+    }
 
     for (decl in declared.keys()) {
       var base = toBase(decl);
       if (base == null) continue;
       var plainRef = referenced.exists(base);
-      var underscoreDecl = declared.exists("_" + base);
-      var baseRef = referenced.exists(base) || referenced.exists("_" + base);
+      var hasUnderscoreDecl = (decl.length > 0 && decl.charAt(0) == "_");
+      var anyRef = referencedBases.exists(base);
 
       if (plainRef) {
         canonical.set(base, base);
-      } else if (underscoreDecl && baseRef) {
+      } else if (hasUnderscoreDecl && anyRef) {
         canonical.set(base, base);
       }
     }
@@ -178,8 +184,10 @@ class HygieneVarAlignFastTransforms {
     }
   }
 
-  static inline function stripUnderscore(name:String):String {
-    return (name.length > 0 && name.charAt(0) == "_") ? name.substr(1) : name;
+  static function stripLeadingUnderscores(name:String):String {
+    var i = 0;
+    while (i < name.length && name.charAt(i) == "_") i++;
+    return name.substr(i);
   }
 
   static function stripNumeric(name:String):String {

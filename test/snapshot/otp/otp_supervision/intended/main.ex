@@ -40,11 +40,11 @@ end)
     task = task.async(fn -> "quick" end)
     quick_result = _ = task.await(task)
     funs = [fn -> "a" end, fn -> "b" end, fn -> "c" end]
-    _ = 0
-    _ = Enum.each(funs, fn fun -> [] ++ [task.async(fun)] end)
+    g_value = 0
+    _ = Enum.each(funs, fn fun -> [task.async(fun)] end)
     tasks = []
-    concurrent_results = _ = 0
-    _ = Enum.each(tasks, fn task -> [] ++ [task.await(task)] end)
+    concurrent_results = g_value = 0
+    _ = Enum.each(tasks, fn task -> [task.await(task)] end)
     []
     task = task.async(fn ->
       _ = Process.sleep(50)
@@ -79,12 +79,14 @@ end)
       task = Task.Supervisor.async(supervisor, fn -> "helper result" end)
       supervised_result = _ = task.await(task)
       funs = [fn -> 100 end, fn -> 200 end, fn -> 300 end]
-      g = 0
-      _ = Enum.each(funs, fn fun -> g ++ [Task.Supervisor.async(supervisor, fun)] end)
-      tasks = []
-      concurrent_results = g = 0
-      _ = Enum.each(tasks, fn task -> g ++ [task.await(task)] end)
-      []
+      g = []
+      g_value = 0
+      _g = Enum.reduce(funs, g, fn fun, g_acc -> Enum.concat(g_acc, [Task.Supervisor.async(supervisor, fun)]) end)
+      tasks = g
+      concurrent_results = g = []
+      g_value = 0
+      _g = Enum.reduce(tasks, g, fn task, g_acc -> Enum.concat(g_acc, [task.await(task)]) end)
+      g
       _ = Task.Supervisor.start_child(supervisor, fn -> nil end)
     end
   end

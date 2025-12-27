@@ -9,8 +9,8 @@ defmodule FormTemplate do
     else
       error_items = []
       _g = 0
-      _ = Enum.each(errors, fn item -> error_items = error_items ++ ["<li class='error-item'>" <> item <> "</li>"] end)
-      "<div class='form-errors'><ul class='error-list'>#{(fn -> Enum.join((fn -> error_items end).(), "") end).()}</ul></div>"
+      error_items = Enum.reduce(errors, error_items, fn error, error_items_acc -> Enum.concat(error_items_acc, ["<li class='error-item'>" <> error <> "</li>"]) end)
+      "<div class='form-errors'><ul class='error-list'>#{(fn -> Enum.join(error_items, "") end).()}</ul></div>"
     end
   end
   defp get_csrf_token() do

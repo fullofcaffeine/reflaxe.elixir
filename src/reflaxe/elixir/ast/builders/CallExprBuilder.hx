@@ -462,9 +462,150 @@ class CallExprBuilder {
             case TField(obj, fa):
                 // Method or field call
                 switch(fa) {
-                    case FInstance(_, _, cf):
+                    case FInstance(classRef, _, cf):
                         // Instance method call
+                        var classType = classRef.get();
+                        var className = classType.name;
+                        var moduleName = ModuleBuilder.extractModuleName(classType);
                         var methodName = cf.get().name;
+
+                        // ------------------------------------------------------------
+                        // String instance methods (extern declarations in std/String.cross.hx)
+                        //
+                        // WHY:
+                        // - Elixir has no `obj.method()` dispatch. Emitting ECall for String
+                        //   methods prints invalid Elixir (`str.toLowerCase()`), or worse,
+                        //   triggers Enum.* remaps in the printer (e.g., `split`/`join`).
+                        //
+                        // HOW:
+                        // - Use typed info from the receiver to detect String and lower
+                        //   to `String.*` / `Enum.*` calls with Haxe-compatible behavior.
+                        // ------------------------------------------------------------
+                        var isStringReceiver = switch (haxe.macro.TypeTools.follow(obj.t)) {
+                            case TInst(_.get() => {name: "String"}, _): true;
+                            case TAbstract(_.get() => {name: "String"}, _): true;
+                            default: false;
+                        };
+                        if (isStringReceiver) {
+                            var receiverAst = buildExpression(obj);
+                            var lowered: Null<ElixirASTDef> = null;
+
+                            inline function stringRemote(fnName: String, callArgs: Array<ElixirAST>): ElixirASTDef {
+                                return ERemoteCall(makeAST(EVar("String")), fnName, callArgs);
+                            }
+
+                            switch (methodName) {
+                                case "toString":
+                                    lowered = receiverAst.def;
+
+                                case "toLowerCase":
+                                    lowered = stringRemote("downcase", [receiverAst]);
+
+                                case "toUpperCase":
+                                    lowered = stringRemote("upcase", [receiverAst]);
+
+                                case "split" if (argASTs != null && argASTs.length == 1):
+                                    var delim = argASTs[0];
+                                    // Haxe: "".split("") -> ["a","b","c"] (no empties)
+                                    // Elixir: String.split(str, "") includes empty segments unless we special-case.
+                                    var cond = makeAST(EBinary(Equal, delim, makeAST(EString(""))));
+                                    var graphemes = makeAST(stringRemote("graphemes", [receiverAst]));
+                                    var splitCall = makeAST(stringRemote("split", [receiverAst, delim]));
+                                    lowered = EIf(cond, graphemes, splitCall);
+
+                                case "substr" if (argASTs != null && (argASTs.length == 1 || argASTs.length == 2)):
+                                    var pos = argASTs[0];
+                                    var lenOpt: Null<ElixirAST> = (argASTs.length == 2) ? argASTs[1] : null;
+                                    var isOmitted = (lenOpt == null) || switch (lenOpt.def) { case ENil: true; default: false; };
+                                    if (isOmitted) {
+                                        // Elixir 1.18 warns on descending default step for negative indices in String.slice/2.
+                                        // Use explicit positive step so String.slice treats -1 as "until end".
+                                        var range = makeAST(ERange(pos, makeAST(EInteger(-1)), false, makeAST(EInteger(1))));
+                                        lowered = stringRemote("slice", [receiverAst, range]);
+                                    } else {
+                                        lowered = stringRemote("slice", [receiverAst, pos, lenOpt]);
+                                    }
+
+                                case "substring" if (argASTs != null && (argASTs.length == 1 || argASTs.length == 2)):
+                                    var startIdx = argASTs[0];
+                                    var endOpt: Null<ElixirAST> = (argASTs.length == 2) ? argASTs[1] : null;
+                                    var endOmitted = (endOpt == null) || switch (endOpt.def) { case ENil: true; default: false; };
+                                    if (endOmitted) {
+                                        // Elixir 1.18 warns on descending default step for negative indices in String.slice/2.
+                                        // Use explicit positive step so String.slice treats -1 as "until end".
+                                        var range = makeAST(ERange(startIdx, makeAST(EInteger(-1)), false, makeAST(EInteger(1))));
+                                        lowered = stringRemote("slice", [receiverAst, range]);
+                                    } else {
+                                        var lenExpr = makeAST(EBinary(Subtract, endOpt, startIdx));
+                                        lowered = stringRemote("slice", [receiverAst, startIdx, lenExpr]);
+                                    }
+
+                                case "charAt" if (argASTs != null && argASTs.length == 1):
+                                    var idx = argASTs[0];
+                                    var atCall = makeAST(stringRemote("at", [receiverAst, idx]));
+                                    var fallback = makeAST(EString(""));
+                                    var orElse = makeAST(EBinary(OrElse, atCall, fallback));
+                                    // Preserve Haxe semantics for negative indices: return "".
+                                    var isNegative = makeAST(EBinary(Less, idx, makeAST(EInteger(0))));
+                                    lowered = EIf(isNegative, fallback, orElse);
+
+                                case "charCodeAt" if (argASTs != null && argASTs.length == 1):
+                                    var index = argASTs[0];
+                                    // Enum.at(String.to_charlist(str), idx) returns nil when out-of-range.
+                                    var charlist = makeAST(stringRemote("to_charlist", [receiverAst]));
+                                    var enumAt = makeAST(ERemoteCall(makeAST(EVar("Enum")), "at", [charlist, index]));
+                                    var isNegativeIndex = makeAST(EBinary(Less, index, makeAST(EInteger(0))));
+                                    lowered = EIf(isNegativeIndex, makeAST(ENil), enumAt);
+
+                                case "indexOf" if (argASTs != null && (argASTs.length == 1 || argASTs.length == 2)):
+                                    var needle = argASTs[0];
+                                    var startOpt: Null<ElixirAST> = (argASTs.length == 2) ? argASTs[1] : null;
+                                    var startIsZero = (startOpt == null) || switch (startOpt.def) { case ENil: true; case EInteger(n) if (n == 0): true; default: false; };
+                                    var subject = receiverAst;
+                                    var offset: Null<ElixirAST> = null;
+                                    if (!startIsZero && startOpt != null) {
+                                        // Slice from start index and search within the slice, then add offset.
+                                        var sliceRange = makeAST(ERange(startOpt, makeAST(EInteger(-1)), false, null));
+                                        subject = makeAST(stringRemote("slice", [receiverAst, sliceRange]));
+                                        offset = startOpt;
+                                    }
+                                    var matchCall = makeAST(ERemoteCall(makeAST(EAtom("binary")), "match", [subject, needle]));
+                                    var clauses: Array<reflaxe.elixir.ast.ElixirAST.ECaseClause> = [
+                                        { pattern: PTuple([PVar("pos"), PWildcard]), guard: null, body: makeAST(offset != null ? EBinary(Add, makeAST(EVar("pos")), offset) : EVar("pos")) },
+                                        { pattern: PLiteral(makeAST(EAtom("nomatch"))), guard: null, body: makeAST(EInteger(-1)) }
+                                    ];
+                                    lowered = ECase(matchCall, clauses);
+
+                                case "lastIndexOf" if (argASTs != null && (argASTs.length == 1 || argASTs.length == 2)):
+                                    // Best-effort: mirror previous std/String.cross.hx behavior using split/join.
+                                    var needle = argASTs[0];
+                                    var startOpt: Null<ElixirAST> = (argASTs.length == 2) ? argASTs[1] : null;
+                                    var startExpr = (startOpt == null || switch (startOpt.def) { case ENil: true; default: false; })
+                                        ? makeAST(stringRemote("length", [receiverAst]))
+                                        : startOpt;
+                                    var sub = makeAST(stringRemote("slice", [receiverAst, makeAST(EInteger(0)), startExpr]));
+                                    var parts = makeAST(stringRemote("split", [sub, needle]));
+                                    // case parts do [..] when length(parts) > 1 -> String.length(Enum.join(Enum.slice(parts, 0..-2), needle)); _ -> -1 end
+                                    var partsVar = makeAST(EVar("parts"));
+                                    var condLen = makeAST(EBinary(Greater, makeAST(ERemoteCall(makeAST(EVar("Kernel")), "length", [partsVar])), makeAST(EInteger(1))));
+                                    // Enum.slice/2 warns on descending default step for negative indices; force step 1.
+                                    var sliceRange = makeAST(ERange(makeAST(EInteger(0)), makeAST(EInteger(-2)), false, makeAST(EInteger(1))));
+                                    var sliced = makeAST(ERemoteCall(makeAST(EVar("Enum")), "slice", [partsVar, sliceRange]));
+                                    var joined = makeAST(ERemoteCall(makeAST(EVar("Enum")), "join", [sliced, needle]));
+                                    var lenJoined = makeAST(stringRemote("length", [joined]));
+                                    lowered = ECase(parts, [
+                                        { pattern: PVar("parts"), guard: condLen, body: lenJoined },
+                                        { pattern: PWildcard, guard: null, body: makeAST(EInteger(-1)) }
+                                    ]);
+
+                                default:
+                            }
+
+                            if (lowered != null) {
+                                return lowered;
+                            }
+                        }
+
                         // Elixir values don't support method syntax; for certain extern-backed
                         // structs (e.g., NaiveDateTime), rewrite method-style calls to proper
                         // module calls.
@@ -487,7 +628,88 @@ class CallExprBuilder {
                             }
                         }
 
-                        return ECall(buildExpression(obj), methodName, argASTs);
+                        // Array instance methods: arrays are represented as plain Elixir lists, not as a
+                        // runtime `Array` module. Lower common ops directly to `Enum.*`/`++` so the
+                        // generated code stays self-contained and idiomatic.
+                        if (className == "Array" && (classType.pack == null || classType.pack.length == 0)) {
+                            var receiverAst = buildExpression(obj);
+                            var receiverVarName: Null<String> = switch (obj.expr) {
+                                case TLocal(vLocal): VariableBuilder.resolveVariableName(vLocal, context);
+                                default: null;
+                            };
+
+                            inline function listOf(single: ElixirAST): ElixirAST {
+                                return makeAST(EList([single]));
+                            }
+
+                                switch (methodName) {
+                                    case "copy":
+                                        return receiverAst.def;
+
+                                    case "map" if (argASTs != null && argASTs.length == 1):
+                                        return ERemoteCall(makeAST(EVar("Enum")), "map", [receiverAst, argASTs[0]]);
+
+                                    case "filter" if (argASTs != null && argASTs.length == 1):
+                                        return ERemoteCall(makeAST(EVar("Enum")), "filter", [receiverAst, argASTs[0]]);
+
+                                    case "join" if (argASTs != null && argASTs.length == 1):
+                                        return ERemoteCall(makeAST(EVar("Enum")), "join", [receiverAst, argASTs[0]]);
+
+                                    case "push" if (argASTs != null && argASTs.length == 1):
+                                        // Haxe: mutates array in-place; Elixir: rebind to appended list.
+                                        var appended = makeAST(EBinary(Concat, receiverAst, listOf(argASTs[0])));
+                                        if (receiverVarName != null) return EMatch(PVar(receiverVarName), appended);
+                                        return appended.def;
+
+                                    case "sort" if (argASTs != null && argASTs.length == 1):
+                                        // Haxe comparator returns Int (-1/0/1); Enum.sort/2 expects boolean comparator.
+                                        var cmp = argASTs[0];
+                                        var aVar = makeAST(EVar("a"));
+                                        var bVar = makeAST(EVar("b"));
+                                        var cmpCall = makeAST(ECall(cmp, "", [aVar, bVar]));
+                                        var cmpLessThanZero = makeAST(EBinary(Less, cmpCall, makeAST(EInteger(0))));
+                                        var wrapper = makeAST(EFn([{
+                                            args: [PVar("a"), PVar("b")],
+                                            guard: null,
+                                            body: cmpLessThanZero
+                                        }]));
+                                        var sortedCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "sort", [receiverAst, wrapper]));
+                                        if (receiverVarName != null) return EMatch(PVar(receiverVarName), sortedCall);
+                                        return sortedCall.def;
+
+                                default:
+                            }
+                        }
+
+                        // Respect `@:native` on instance fields when present.
+                        // See FStatic handling for the rationale.
+                        var nativeFieldName = extractNativeModuleName(cf.get().meta);
+                        var resolvedMethodName: Null<String> = null;
+                        if (nativeFieldName != null) {
+                            var lastDot = nativeFieldName.lastIndexOf(".");
+                            if (lastDot != -1) {
+                                moduleName = nativeFieldName.substr(0, lastDot);
+                                resolvedMethodName = nativeFieldName.substr(lastDot + 1);
+                            } else {
+                                resolvedMethodName = nativeFieldName;
+                            }
+                        }
+
+                        var elixirMethodName = resolvedMethodName != null
+                            ? resolvedMethodName
+                            : ElixirNaming.toVarName(methodName);
+
+                        // Instance methods compile to module functions with the instance
+                        // passed as the first argument: Module.method(struct, ...).
+                        var receiverAst = buildExpression(obj);
+                        var callArgs = [receiverAst].concat(argASTs);
+
+                        var currentClass = context.getCurrentClass();
+                        var isSameModule = currentClass != null && currentClass.name == className;
+                        if (isSameModule) {
+                            return ECall(null, elixirMethodName, callArgs);
+                        }
+                        return ERemoteCall(makeAST(EVar(moduleName)), elixirMethodName, callArgs);
                         
                     case FStatic(classRef, cf):
                         // Static method call
@@ -720,7 +942,8 @@ class CallExprBuilder {
                             };
                             
                             if (typeCheck != null) {
-                                return ECall(makeAST(EVar(typeCheck)), "", [value]);
+                                // Emit a plain Kernel predicate call (e.g. is_integer(value))
+                                return ECall(null, typeCheck, [value]);
                             }
                         }
                         
@@ -761,7 +984,8 @@ class CallExprBuilder {
                         // Std.int(float) → trunc(float)
                         if (args.length == 1) {
                             var value = buildExpression(args[0]);
-                            return ECall(makeAST(EVar("trunc")), "", [value]);
+                            // `trunc/1` is a Kernel function; emit a direct call.
+                            return ECall(null, "trunc", [value]);
                         }
                         
                     case "random":
@@ -790,7 +1014,7 @@ class CallExprBuilder {
                         if (args.length == 1) {
                             var value = buildExpression(args[0]);
                             // This would need a helper function in Elixir
-                            return ECall(makeAST(EVar("typeof")), "", [value]);
+                            return ECall(null, "typeof", [value]);
                         }
                         
                     case "getClassName":
@@ -805,7 +1029,7 @@ class CallExprBuilder {
                         // Type.getEnumName(e) → elem(e, 0) for tagged tuples
                         if (args.length == 1) {
                             var enumValue = buildExpression(args[0]);
-                            return ECall(makeAST(EVar("elem")), "", [enumValue, makeAST(EInteger(0))]);
+                            return ECall(null, "elem", [enumValue, makeAST(EInteger(0))]);
                         }
                 }
                 

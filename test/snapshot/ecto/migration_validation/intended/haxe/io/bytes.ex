@@ -1,7 +1,10 @@
 defmodule Bytes do
   def get_string(struct, pos, len, encoding) do
-    if (Kernel.is_nil(encoding)) do
+    encoding = if (Kernel.is_nil(encoding)) do
       encoding = {:utf8}
+      encoding
+    else
+      encoding
     end
     if (pos < 0 or len < 0 or pos + len > length(struct)) do
       throw("Out of bounds")
@@ -10,7 +13,7 @@ defmodule Bytes do
     :unicode.characters_to_list(slice, :utf8)
   end
   def to_string(struct) do
-    struct.getString(0, length(struct))
+    get_string(struct, 0, length(struct))
   end
   def get(struct, pos) do
     if (pos < 0 or pos >= length(struct)) do
@@ -204,7 +207,7 @@ defmodule Bytes do
     b
   end
   def read_string(struct, pos, len) do
-    struct.getString(pos, len)
+    get_string(struct, pos, len)
   end
   def to_hex(struct) do
     Base.encode16(struct.b, case: :lower)

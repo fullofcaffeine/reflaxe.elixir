@@ -3,8 +3,7 @@ defmodule Main do
     items = [1, 2, 3, 4, 5]
     result = []
     result = items
-    result = Enum.filter(result, fn x -> x > 2 end)
-    result = Enum.map(result, fn x -> x * 2 end)
+    result = result |> Enum.filter(fn x -> x > 2 end) |> Enum.map(fn x -> x * 2 end)
     text = "hello world"
     text = StringTools.ltrim(StringTools.rtrim(text))
     text = StringTools.replace(text, "world", "universe")

@@ -9,8 +9,7 @@ defmodule DeleteLive do
   def delete_todo(id, socket) do
     todo = nil
     (case MyApp.Repo.delete(todo) do
-      {:ok, deleted} ->
-        id = deleted
+      {:ok, _deleted} ->
         s2 = remove_todo_from_list(id, socket)
         %{:noreply => s2}
       {:error, _reason} -> %{:noreply => socket}

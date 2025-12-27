@@ -3,9 +3,8 @@ defmodule Main do
     i = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {i} ->
       if (i < 5) do
-        (old_i = i
-i = i + 1
-old_i)
+        _old_i = i
+        i = i + 1
         {:cont, {i}}
       else
         {:halt, {i}}
@@ -15,9 +14,8 @@ old_i)
     j = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {j} ->
       if (j < 3) do
-        (old_j = j
-j = j + 1
-old_j)
+        _old_j = j
+        j = j + 1
         {:cont, {j}}
       else
         {:halt, {j}}
@@ -39,15 +37,14 @@ old_j)
     nil
     k = 0
     evens = []
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, evens}, fn _, {k, evens} ->
+    {k, evens} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, []}, fn _, {k, evens} ->
       if (k < 10) do
-        (old_k = k
-k = k + 1
-old_k)
+        _old_k = k
+        k = k + 1
         if (rem(k, 2) != 0) do
           throw(:continue)
         end
-        _ = evens ++ [k]
+        evens = evens ++ [k]
         {:cont, {k, evens}}
       else
         {:halt, {k, evens}}
@@ -56,9 +53,8 @@ old_k)
     nil
     count = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {count} ->
-      (old_count = count
-count = count + 1
-old_count)
+      _old_count = count
+      count = count + 1
       if (count == 10) do
         throw(:break)
       end
@@ -71,18 +67,17 @@ old_count)
         inner = 0
         Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {inner} ->
           if (inner < 2) do
-            (old_inner = inner
-inner = inner + 1
-old_inner)
+            _old_inner = inner
+            inner = inner + 1
             {:cont, {inner}}
           else
             {:halt, {inner}}
           end
         end)
         nil
-        (old_outer = outer
-outer = outer + 1
-old_outer)
+        old_outer = outer
+        outer = outer + 1
+        old_outer
         {:cont, {outer}}
       else
         {:halt, {outer}}
@@ -91,14 +86,13 @@ old_outer)
     nil
     a = 0
     b = 10
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {a, b} ->
+    {a, b} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {a, b} ->
       if (a < 5 and b > 5) do
-        (old_a = a
-a = a + 1
-old_a)
-        (old_b = b
-b = (b - 1)
-old_b)
+        _old_a = a
+        a = a + 1
+        old_b = b
+        b = (b - 1)
+        old_b
         {:cont, {a, b}}
       else
         {:halt, {a, b}}
@@ -108,9 +102,8 @@ old_b)
     x = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {x} ->
       if (x < 10) do
-        (old_x = x
-x = x + 1
-old_x)
+        _old_x = x
+        x = x + 1
         if (x == 5) do
           throw(:break)
         end

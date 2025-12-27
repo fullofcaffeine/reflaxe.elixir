@@ -3,7 +3,8 @@
  * 
  * WHY: Override String instance methods to generate idiomatic Elixir code
  * WHAT: Provides String methods that compile to Elixir String module calls
- * HOW: Uses extern inline functions with __elixir__() for zero-cost abstractions
+ * HOW: Uses extern method declarations that the compiler lowers to Elixir AST
+ *      (String.*, :binary.*, Enum.*) with correct Haxe semantics.
  * 
  * NOTE: This overrides Haxe's default String implementation for the Elixir target
  * 
@@ -21,115 +22,62 @@ extern class String {
     /**
      * Returns the String itself.
      */
-    extern inline public function toString(): String {
-        return this;
-    }
+    extern public function toString(): String;
     
     /**
      * Returns the character at position `index` of `this` String.
      * If `index` is negative or exceeds `this.length`, the empty String ""
      * is returned.
      */
-    extern inline public function charAt(index: Int): String {
-        return untyped __elixir__('String.at({0}, {1}) || ""', this, index);
-    }
+    extern public function charAt(index: Int): String;
     
     /**
      * Returns the character code at position `index` of `this` String.
      * If `index` is negative or exceeds `this.length`, `null` is returned.
      */
-    extern inline public function charCodeAt(index: Int): Null<Int> {
-        var result = untyped __elixir__(':binary.at({0}, {1})', this, index);
-        return untyped __elixir__('if {0} == nil, do: nil, else: {0}', result);
-    }
+    extern public function charCodeAt(index: Int): Null<Int>;
     
     /**
      * Returns the position of the leftmost occurrence of `str` within `this`
      * String.
      * If `str` cannot be found, -1 is returned.
      */
-    extern inline public function indexOf(str: String, ?startIndex: Int = 0): Int {
-        if (startIndex != 0) {
-            // Handle substring search with start index
-            var sub = untyped __elixir__('String.slice({0}, {1}..-1)', this, startIndex);
-            var idx = untyped __elixir__('case :binary.match({0}, {1}) do
-                {pos, _} -> pos + {2}
-                :nomatch -> -1
-            end', sub, str, startIndex);
-            return idx;
-        } else {
-            return untyped __elixir__('case :binary.match({0}, {1}) do
-                {pos, _} -> pos
-                :nomatch -> -1
-            end', this, str);
-        }
-    }
+    extern public function indexOf(str: String, ?startIndex: Int = 0): Int;
     
     /**
      * Returns the position of the rightmost occurrence of `str` within `this`
      * String.
      * If `str` cannot be found, -1 is returned.
      */
-    extern inline public function lastIndexOf(str: String, ?startIndex: Int): Int {
-        // Elixir doesn't have a direct lastIndexOf, so we need to work around it
-        // Using a simple approach: reverse and find
-        if (startIndex == null) {
-            startIndex = length;
-        }
-        var sub = untyped __elixir__('String.slice({0}, 0, {1})', this, startIndex);
-        return untyped __elixir__('case String.split({0}, {1}) do
-            parts when length(parts) > 1 ->
-                String.length(Enum.join(Enum.slice(parts, 0..-2), {1}))
-            _ -> -1
-        end', sub, str);
-    }
+    extern public function lastIndexOf(str: String, ?startIndex: Int): Int;
     
     /**
      * Splits `this` String at each occurrence of `delimiter`.
      */
-    extern inline public function split(delimiter: String): Array<String> {
-        return untyped __elixir__('String.split({0}, {1})', this, delimiter);
-    }
+    extern public function split(delimiter: String): Array<String>;
     
     /**
      * Returns `len` characters of `this` String, starting at position `pos`.
      * If `len` is omitted, all characters from position `pos` to the end of
      * `this` String are included.
      */
-    extern inline public function substr(pos: Int, ?len: Int): String {
-        if (len == null) {
-            return untyped __elixir__('String.slice({0}, {1}..-1)', this, pos);
-        } else {
-            return untyped __elixir__('String.slice({0}, {1}, {2})', this, pos, len);
-        }
-    }
+    extern public function substr(pos: Int, ?len: Int): String;
     
     /**
      * Returns the part of `this` String from `startIndex` to but not including
      * `endIndex`.
      */
-    extern inline public function substring(startIndex: Int, ?endIndex: Int): String {
-        if (endIndex == null) {
-            return untyped __elixir__('String.slice({0}, {1}..-1)', this, startIndex);
-        } else {
-            var len = endIndex - startIndex;
-            return untyped __elixir__('String.slice({0}, {1}, {2})', this, startIndex, len);
-        }
-    }
+    extern public function substring(startIndex: Int, ?endIndex: Int): String;
     
     /**
      * Returns a String where all characters of `this` String are lower case.
      */
-    extern inline public function toLowerCase(): String {
-        return untyped __elixir__('String.downcase({0})', this);
-    }
+    extern public function toLowerCase(): String;
     
     /**
      * Returns a String where all characters of `this` String are upper case.
      */
-    extern inline public function toUpperCase(): String {
-        return untyped __elixir__('String.upcase({0})', this);
-    }
+    extern public function toUpperCase(): String;
     
     /**
      * Returns the String corresponding to the character code `code`.

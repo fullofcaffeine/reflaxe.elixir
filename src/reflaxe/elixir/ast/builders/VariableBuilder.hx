@@ -158,7 +158,11 @@ class VariableBuilder {
                         if (context.tempVarRenameMap == null) {
                             context.tempVarRenameMap = new Map<String, String>();
                         }
+                        // Store BOTH keys to keep declarations and references consistent.
+                        // - Name-based lookup is used when Haxe reuses names with new IDs.
+                        // - ID-based lookup is used for stable binder alignment within a scope.
                         context.tempVarRenameMap.set(v.name, extractedVarName);
+                        context.tempVarRenameMap.set(Std.string(v.id), extractedVarName);
                         
                         #if debug_infrastructure_vars
                         // DISABLED: trace('[Infrastructure Variable] Mapping ${v.name} -> $extractedVarName');
@@ -212,6 +216,28 @@ class VariableBuilder {
             default:
                 // Other infrastructure variable uses
         }
+
+        // Normalize Haxe's first numbered infrastructure temp (`g1` / `_g1`) to a stable,
+        // descriptive binder (`g_value`).
+        //
+        // WHY:
+        // - Haxe commonly uses `_g` for counters and `_g1` for the paired limit/value.
+        // - Many later builders/transforms repair/align references to `g_value` for readability,
+        //   but if the declaration stays as `_g1` (or gets discarded), we can end up with
+        //   undefined-variable errors.
+        //
+        // HOW:
+        // - If no explicit mapping was produced above (e.g., via `.field` extraction),
+        //   register a deterministic mapping for this binder so declarations and references
+        //   remain aligned.
+        if (context != null && (v.name == "g1" || v.name == "_g1")) {
+            if (context.tempVarRenameMap == null) context.tempVarRenameMap = new Map<String, String>();
+            var idKey = Std.string(v.id);
+            if (!context.tempVarRenameMap.exists(idKey) && !context.tempVarRenameMap.exists(v.name)) {
+                context.tempVarRenameMap.set(v.name, "g_value");
+                context.tempVarRenameMap.set(idKey, "g_value");
+            }
+        }
         
         // Default: emit the binding so infrastructure locals exist (loop counters, iterator temps, etc).
         // Skipping these can corrupt desugared loop state (e.g. turning `g < len` into `0 < len`).
@@ -250,6 +276,21 @@ class VariableBuilder {
         // In Elixir, `__` is reserved for compiler variables (e.g., __MODULE__), so emitting
         // it as a binder produces warnings. Treat it as the wildcard discard instead.
         if (v.name == "__") return "_";
+
+        // If this local was explicitly remapped (e.g., infrastructure extraction temps),
+        // ensure we emit the remapped binder name so declarations and references stay aligned.
+        //
+        // IMPORTANT: This must happen before snake_casing, because the remapped name is
+        // already in Elixir form (and may include reserved-keyword escaping like `end_`).
+        if (context != null && context.tempVarRenameMap != null) {
+            var idKey = Std.string(v.id);
+            if (context.tempVarRenameMap.exists(idKey)) {
+                return context.tempVarRenameMap.get(idKey);
+            }
+            if (context.tempVarRenameMap.exists(v.name)) {
+                return context.tempVarRenameMap.get(v.name);
+            }
+        }
 
         // Convert variable name to snake_case
         var varName = reflaxe.elixir.ast.NameUtils.toSnakeCase(v.name);

@@ -89,7 +89,7 @@ defmodule Sys do
         
   end
   def sleep(seconds) do
-    milliseconds = trunc.(seconds * 1000)
+    milliseconds = trunc(seconds * 1000)
     Process.sleep(milliseconds)
   end
   def system_name() do

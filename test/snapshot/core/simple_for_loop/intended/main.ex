@@ -6,9 +6,8 @@ defmodule Main do
     i = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {i} ->
       if (i < length(fruits)) do
-        (old_i = i
-i = i + 1
-old_i)
+        _old_i = i
+        i = i + 1
         {:cont, {i}}
       else
         {:halt, {i}}

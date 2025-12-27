@@ -40,11 +40,11 @@ end))
   defp test_functional_operations() do
     user = {:some, "David"}
     upper_name = OptionTools.map(user, fn name -> String.upcase(name) end)
-    long_name = OptionTools.filter(user, fn name -> length(name) > 3 end)
+    long_name = OptionTools.filter(user, fn name -> String.length(name) > 3 end)
     processed_user = OptionTools.then(user, fn name ->
-      if (length(name) > 0), do: {:some, name <> "!"}, else: {:none}
+      if (String.length(name) > 0), do: {:some, name <> "!"}, else: {:none}
     end)
-    final_result = OptionTools.then(OptionTools.filter(OptionTools.map(user, fn name -> String.upcase(name) end), fn name -> length(name) > 2 end), fn name -> {:some, name <> " [PROCESSED]"} end)
+    final_result = OptionTools.then(OptionTools.filter(OptionTools.map(user, fn name -> String.upcase(name) end), fn name -> String.length(name) > 2 end), fn name -> {:some, name <> " [PROCESSED]"} end)
     greeting = OptionTools.unwrap(user, "Anonymous")
     expensive_default = OptionTools.lazy_unwrap(user, fn -> "Computed default" end)
     first = {:some, "First"}
@@ -66,7 +66,7 @@ end))
   defp test_null_safety() do
     maybe_null = nil
     safe_option = OptionTools.from_nullable(maybe_null)
-    result = OptionTools.unwrap(OptionTools.map(safe_option, fn s -> length(s) end), 0)
+    result = OptionTools.unwrap(OptionTools.map(safe_option, fn s -> String.length(s) end), 0)
     has_value = OptionTools.is_some(safe_option)
     is_empty = OptionTools.is_none(safe_option)
     back_to_nullable = OptionTools.to_nullable(safe_option)

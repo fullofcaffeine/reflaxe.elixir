@@ -41,13 +41,13 @@ end)
 end)
     invalid_ids = ["ab", "user@123", "user 123", "user-123", "", Enum.join((fn ->
   (fn ->
-  g = 0
+  g_value = 0
   Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {g} ->
-    if (g < 60) do
-      old__g1 = g
-      _g = g + 1
-      i = old__g1
-      _ = ["a"]
+    if (g_value < 60) do
+      old_g_value = g_value
+      g_value = g_value + 1
+      i = old_g_value
+      ["a"]
       {:cont, {g}}
     else
       {:halt, {g}}
@@ -201,15 +201,18 @@ end)
     registration_data = [%{:user_id => "alice123", :email => "alice@example.com", :preferred_name => "Alice Smith"}, %{:user_id => "bob456", :email => "bob.jones@company.org", :preferred_name => "Bob"}, %{:user_id => "charlie", :email => "charlie@test.dev", :preferred_name => "Charlie Brown"}]
     valid_users = []
     _g = 0
-    _ = Enum.each(registration_data, fn user_data ->
-  user_result = create_user(user_data.user_id, user_data.email, user_data.preferred_name)
-  (case user_result do
-    {:ok, user} ->
-      _ = user ++ [user]
-      nil
-    {:error, _error} -> nil
-  end)
-end)
+    valid_users = Enum.reduce(registration_data, valid_users, fn user_data, valid_users_acc ->
+      user_result = create_user(user_data.user_id, user_data.email, user_data.preferred_name)
+      ((case user_result do
+  {:ok, user} ->
+    valid_users_acc = Enum.concat(valid_users_acc, [user])
+    nil
+    valid_users_acc
+  {:error, error} ->
+    nil
+    error
+end))
+    end)
     config_data = [%{:timeout => "30", :retries => "3", :name => "production"}, %{:timeout => "0", :retries => "5", :name => ""}, %{:timeout => "60", :retries => "-1", :name => "test"}]
     _g = 0
     _ = Enum.each(config_data, fn config ->

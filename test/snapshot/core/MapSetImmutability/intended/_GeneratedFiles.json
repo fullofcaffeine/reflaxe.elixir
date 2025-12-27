@@ -3,7 +3,6 @@
   "type.ex",
   "string_buf.ex",
   "std.ex",
-  "reflect.ex",
   "haxe/iterators/array_iterator.ex",
   "array_tools.ex"
 ],

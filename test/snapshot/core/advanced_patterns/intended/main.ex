@@ -18,9 +18,24 @@ defmodule Main do
     (case arr do
       [] -> "empty"
       [_head | _tail] -> "single: #{(fn -> Kernel.to_string(x) end).()}"
-      2 -> "pair: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()}"
-      3 -> "triple: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()}"
-      4 -> "quad: #{(fn -> Kernel.to_string(first) end).()},#{(fn -> Kernel.to_string(second) end).()},#{(fn -> Kernel.to_string(third) end).()},#{(fn -> Kernel.to_string(fourth) end).()}"
+      2 ->
+        g_value = arr[1]
+        x = g
+        y = g_value
+        "pair: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()}"
+      3 ->
+        g_value = arr[1]
+        x = g
+        y = g_value
+        z = g
+        "triple: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()}"
+      4 ->
+        g_value = arr[1]
+        first = g
+        second = g_value
+        third = g
+        fourth = g
+        "quad: #{(fn -> Kernel.to_string(first) end).()},#{(fn -> Kernel.to_string(second) end).()},#{(fn -> Kernel.to_string(third) end).()},#{(fn -> Kernel.to_string(fourth) end).()}"
       _ ->
         a = arr
         if (length(a) > 4) do
@@ -37,15 +52,15 @@ defmodule Main do
       "hello" -> "greeting"
       s ->
         s = str
-        if (length(s) == 1) do
+        if (String.length(s) == 1) do
           "single char"
         else
           s = str
-          if (length(s) > 10 and length(s) <= 20) do
+          if (String.length(s) > 10 and String.length(s) <= 20) do
             "medium"
           else
             s = str
-            if (length(s) > 20), do: "long", else: "other"
+            if (String.length(s) > 20), do: "long", else: "other"
           end
         end
     end)
@@ -118,72 +133,74 @@ defmodule Main do
             end
         end
       2 ->
-        cond do
-          length(g) == 2 ->
-            g = g[1]
-            if (length(g) == 2) do
-              g = g[1]
-              c = g
-              d = g
-              b = g
-              a = g
-              "2x2 matrix: [[" <> Kernel.to_string(a) <> "," <> Kernel.to_string(b) <> "],[" <> Kernel.to_string(c) <> "," <> Kernel.to_string(d) <> "]]"
-            else
-              m = matrix
-              if (length(m) == length(m[0])) do
-                "square matrix " <> Kernel.to_string(length(m)) <> "x" <> Kernel.to_string(length(m))
-              else
-                "non-square matrix"
-              end
-            end
-          true ->
+        g_value = matrix[1]
+        if (length(g) == 2) do
+          g = g[1]
+          if (length(g_value) == 2) do
+            g = g_value[0]
+            g_value = g_value[1]
+            c = g
+            d = g_value
+            b = g
+            a = g
+            "2x2 matrix: [[#{(fn -> Kernel.to_string(a) end).()},#{(fn -> Kernel.to_string(b) end).()}],[#{(fn -> Kernel.to_string(c) end).()},#{(fn -> Kernel.to_string(d) end).()}]]"
+          else
             m = matrix
             if (length(m) == length(m[0])) do
-              "square matrix " <> Kernel.to_string(length(m)) <> "x" <> Kernel.to_string(length(m))
+              "square matrix #{(fn -> Kernel.to_string(length(m)) end).()}x#{(fn -> Kernel.to_string(length(m)) end).()}"
             else
               "non-square matrix"
             end
+          end
+        else
+          m = matrix
+          if (length(m) == length(m[0])) do
+            "square matrix #{(fn -> Kernel.to_string(length(m)) end).()}x#{(fn -> Kernel.to_string(length(m)) end).()}"
+          else
+            "non-square matrix"
+          end
         end
       3 ->
-        cond do
-          length(g) == 3 ->
-            g = g[2]
+        g_value = matrix[1]
+        if (length(g) == 3) do
+          g = g[2]
+          if (length(g_value) == 3) do
+            g = g_value[1]
+            g_value = g_value[2]
             if (length(g) == 3) do
               g = g[2]
-              if (length(g) == 3) do
-                g = g[2]
-                _h = g
-                _i = g
-                _a = g
-                _b = g
-                _c = g
-                _f = g
-                _e = g
-                _d = g
-                "3x3 matrix"
-              else
-                m = matrix
-                if (length(m) == length(m[0])) do
-                  "square matrix " <> Kernel.to_string(length(m)) <> "x" <> Kernel.to_string(length(m))
-                else
-                  "non-square matrix"
-                end
-              end
+              _h = g
+              _i = g
+              _a = g
+              _b = g
+              _c = g
+              _f = g_value
+              _e = g
+              _d = g
+              "3x3 matrix"
             else
               m = matrix
               if (length(m) == length(m[0])) do
-                "square matrix " <> Kernel.to_string(length(m)) <> "x" <> Kernel.to_string(length(m))
+                "square matrix #{(fn -> Kernel.to_string(length(m)) end).()}x#{(fn -> Kernel.to_string(length(m)) end).()}"
               else
                 "non-square matrix"
               end
             end
-          true ->
+          else
             m = matrix
             if (length(m) == length(m[0])) do
-              "square matrix " <> Kernel.to_string(length(m)) <> "x" <> Kernel.to_string(length(m))
+              "square matrix #{(fn -> Kernel.to_string(length(m)) end).()}x#{(fn -> Kernel.to_string(length(m)) end).()}"
             else
               "non-square matrix"
             end
+          end
+        else
+          m = matrix
+          if (length(m) == length(m[0])) do
+            "square matrix #{(fn -> Kernel.to_string(length(m)) end).()}x#{(fn -> Kernel.to_string(length(m)) end).()}"
+          else
+            "non-square matrix"
+          end
         end
       _ ->
         m = matrix

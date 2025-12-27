@@ -5,7 +5,7 @@ defmodule MyAppWeb.Sample do
     ys[0]
   end
   def string_len_guard(s) do
-    length(s)
+    String.length(s)
   end
   def reflect_map_get() do
     m = %{}

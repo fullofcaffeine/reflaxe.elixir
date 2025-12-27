@@ -6,7 +6,7 @@ defmodule UserService do
     data
   end
   def complex_function(arg1, arg2, arg3, arg4) do
-    if (arg3) do
+    if (arg) do
       "#{(fn -> arg1 end).()} #{(fn -> Kernel.to_string(arg2) end).()}"
     else
       "default"

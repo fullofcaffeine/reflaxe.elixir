@@ -39,12 +39,16 @@ class Math {
     /**
      * A special Float constant which denotes negative infinity.
      */
-    public static inline var NEGATIVE_INFINITY: Float = 1.0 / 0.0 * -1.0;
+    // NOTE: The BEAM raises on float overflow and division-by-zero, so we cannot
+    // construct IEEE Infinity values at runtime like some Haxe targets do (e.g. 1/0).
+    // We approximate infinities with the largest finite float value representable.
+    public static inline var NEGATIVE_INFINITY: Float = -1.7976931348623157e308;
     
     /**
      * A special Float constant which denotes positive infinity.
      */
-    public static inline var POSITIVE_INFINITY: Float = 1.0 / 0.0;
+    // See NEGATIVE_INFINITY note above.
+    public static inline var POSITIVE_INFINITY: Float = 1.7976931348623157e308;
     
     /**
      * A special Float constant which denotes an invalid number.

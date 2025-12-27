@@ -8,8 +8,8 @@ defmodule Main do
   defp test_pattern_matching_unused() do
     result = (case get_some_value() do
       {:some, value} ->
-        _g1 = value.metadata
-        _g = g_value.value
+        g_metadata = value.metadata
+        g_value = g_value.value
         _meta = g_metadata
         v = g_value
         v

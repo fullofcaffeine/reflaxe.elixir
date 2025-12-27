@@ -57,14 +57,39 @@ class CaseErrorVarUnifyTransforms {
           node.pos
         );
 
+      case EBlock(expressions):
+        // Sequential scope: variables bound in earlier statements are in-scope for later ones.
+        var localScope = cloneScope(inScope);
+        var out:Array<ElixirAST> = [];
+        for (expr in expressions) {
+          var next = transformWithScope(expr, localScope);
+          out.push(next);
+          bindFromStatement(next, localScope);
+        }
+        makeASTWithMeta(EBlock(out), node.metadata, node.pos);
+
+      case EDo(expressions2):
+        var localScope = cloneScope(inScope);
+        var out:Array<ElixirAST> = [];
+        for (expr in expressions2) {
+          var next = transformWithScope(expr, localScope);
+          out.push(next);
+          bindFromStatement(next, localScope);
+        }
+        makeASTWithMeta(EDo(out), node.metadata, node.pos);
+
       case EFn(clauses):
         makeASTWithMeta(
           EFn(clauses.map(cl -> {
+            // Closure scope: args bind locally, free vars come from the outer scope at the
+            // point the closure is defined.
             var fnParams = collectPatternVars(cl.args);
+            var closureScope = cloneScope(inScope);
+            for (k in fnParams.keys()) closureScope.set(k, true);
             {
               args: cl.args,
-              guard: cl.guard != null ? transformWithScope(cl.guard, fnParams) : null,
-              body: transformWithScope(cl.body, fnParams)
+              guard: cl.guard != null ? transformWithScope(cl.guard, closureScope) : null,
+              body: transformWithScope(cl.body, closureScope)
             };
           })),
           node.metadata,
@@ -74,12 +99,15 @@ class CaseErrorVarUnifyTransforms {
       case ECase(expr, clauses):
         var newClauses = [];
         for (cl in clauses) {
+          var clauseScope = cloneScope(inScope);
+          // Pattern binds are available in the clause guard/body.
+          collectPatternVarsInto(cl.pattern, clauseScope);
           var rewritten = {
             pattern: cl.pattern,
-            guard: cl.guard != null ? transformWithScope(cl.guard, inScope) : null,
-            body: transformWithScope(cl.body, inScope)
+            guard: cl.guard != null ? transformWithScope(cl.guard, clauseScope) : null,
+            body: transformWithScope(cl.body, clauseScope)
           };
-          newClauses.push(processClause(rewritten, inScope));
+          newClauses.push(processClause(rewritten, clauseScope));
         }
         makeASTWithMeta(ECase(transformWithScope(expr, inScope), newClauses), node.metadata, node.pos);
 
@@ -89,6 +117,43 @@ class CaseErrorVarUnifyTransforms {
           return transformWithScope(child, inScope);
         });
     };
+  }
+
+  static function bindFromStatement(stmt: ElixirAST, scope: Map<String, Bool>): Void {
+    if (stmt == null || stmt.def == null) return;
+    switch (stmt.def) {
+      case EMatch(pat, _):
+        collectPatternVarsInto(pat, scope);
+      case EBinary(Match, left, _):
+        collectLhsVars(left, scope);
+      default:
+    }
+  }
+
+  static function collectLhsVars(lhs: ElixirAST, out: Map<String, Bool>): Void {
+    if (lhs == null || lhs.def == null) return;
+    switch (lhs.def) {
+      case EVar(nm) if (nm != null && nm.length > 0):
+        out.set(nm, true);
+      case EPin(_):
+        // pinned vars do not bind
+      case ETuple(items) | EList(items):
+        for (i in items) collectLhsVars(i, out);
+      case EKeywordList(pairs):
+        for (p in pairs) collectLhsVars(p.value, out);
+      case EMap(pairs2):
+        for (p in pairs2) collectLhsVars(p.value, out);
+      case EBinary(Match, l, r):
+        collectLhsVars(l, out);
+        collectLhsVars(r, out);
+      default:
+    }
+  }
+
+  static function cloneScope(m: Map<String, Bool>): Map<String, Bool> {
+    var out = new Map<String, Bool>();
+    if (m != null) for (k in m.keys()) out.set(k, true);
+    return out;
   }
 
   static function processClause(cl: {pattern:EPattern, guard:ElixirAST, body:ElixirAST}, inScope: Map<String, Bool>): {pattern:EPattern, guard:ElixirAST, body:ElixirAST} {

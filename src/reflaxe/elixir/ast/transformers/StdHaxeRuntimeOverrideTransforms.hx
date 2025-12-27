@@ -36,7 +36,11 @@ class StdHaxeRuntimeOverrideTransforms {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EDefmodule(name, _):
-                    if (name == "ArrayIterator") arrayIteratorDef(n) else if (name == "PosException") posExceptionDef(n) else if (name == "StringTools") stringToolsDef(n) else n;
+                    if (name == "ArrayIterator") arrayIteratorDef(n)
+                    else if (name == "PosException") posExceptionDef(n)
+                    else if (name == "StringTools") stringToolsDef(n)
+                    else if (name == "EReg") eRegDef(n)
+                    else n;
                 case EModule(name, attrs, _):
                     if (name == "ArrayIterator") {
                         var blk = arrayIteratorBlock(n.metadata, n.pos);
@@ -47,6 +51,9 @@ class StdHaxeRuntimeOverrideTransforms {
                     } else if (name == "StringTools") {
                         var blk3 = stringToolsBlock(n.metadata, n.pos);
                         makeASTWithMeta(EModule(name, attrs, [blk3]), n.metadata, n.pos);
+                    } else if (name == "EReg") {
+                        var block = eRegBlock(n.metadata, n.pos);
+                        makeASTWithMeta(EModule(name, attrs, [block]), n.metadata, n.pos);
                     } else n;
                 default:
                     n;
@@ -82,7 +89,26 @@ class StdHaxeRuntimeOverrideTransforms {
         var raw = makeAST(ERaw(
             "  def is_space(s, pos), do: (:binary.at(s, pos) > 8 and :binary.at(s, pos) < 14) or :binary.at(s, pos) == 32\n" +
             "  def ltrim(s), do: String.trim_leading(s)\n" +
-            "  def rtrim(s), do: String.trim_trailing(s)\n"
+            "  def rtrim(s), do: String.trim_trailing(s)\n" +
+            "  def replace(s, sub, by), do: String.replace(s, sub, by)\n"
+        ));
+        return makeASTWithMeta(EBlock([raw]), meta, pos);
+    }
+
+    static inline function eRegDef(orig: ElixirAST): ElixirAST {
+        return makeASTWithMeta(EDefmodule("EReg", eRegBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
+    }
+    static inline function eRegBlock(meta: ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
+        var raw = makeAST(ERaw(
+            "  defstruct regex: nil, global: false\n" +
+            "  def new(pattern, options) do\n" +
+            "    opts = if Kernel.is_nil(options), do: \"\", else: options\n" +
+            "    global = String.contains?(opts, \"g\")\n" +
+            "    compile_opts = String.replace(opts, \"g\", \"\")\n" +
+            "    %__MODULE__{regex: Regex.compile!(pattern, compile_opts), global: global}\n" +
+            "  end\n" +
+            "  def match(struct, s), do: Regex.match?(struct.regex, s)\n" +
+            "  def replace(struct, s, by), do: Regex.replace(struct.regex, s, by, global: struct.global)\n"
         ));
         return makeASTWithMeta(EBlock([raw]), meta, pos);
     }

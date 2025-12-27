@@ -31,98 +31,186 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
                 case EDef(name, args, guards, body):
-                    var newBody = process(body);
-                    makeASTWithMeta(EDef(name, args, guards, newBody), node.metadata, node.pos);
+                    var bound = collectBoundFromArgs(args);
+                    var newGuards = guards != null ? process(guards, clone(bound)) : null;
+                    var newBody = process(body, bound);
+                    makeASTWithMeta(EDef(name, args, newGuards, newBody), node.metadata, node.pos);
                 case EDefp(name, args, guards, body):
-                    var newBody = process(body);
-                    makeASTWithMeta(EDefp(name, args, guards, newBody), node.metadata, node.pos);
+                    var bound = collectBoundFromArgs(args);
+                    var newGuards = guards != null ? process(guards, clone(bound)) : null;
+                    var newBody = process(body, bound);
+                    makeASTWithMeta(EDefp(name, args, newGuards, newBody), node.metadata, node.pos);
                 default:
                     node;
             }
         });
     }
 
-    static function process(body: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case ECase(target, clauses):
-                    var newClauses = [];
-                    for (cl in clauses) {
-                        // Respect canonical payload binder lock
-                        if (isLockedPayload(cl)) { newClauses.push(cl); continue; }
-                        var binder = extractOkBinder(cl.pattern);
-                        if (binder != null) {
-                            var declared = new Map<String,Bool>();
-                            collectPatternDecls(cl.pattern, declared);
-                            collectLhsDeclsInBody(cl.body, declared);
-                            // Collect used simple var names in body
-                            var used = new Map<String,Bool>();
-                            ASTUtils.walk(cl.body, function(u: ElixirAST) {
-                                switch (u.def) { case EVar(v): used.set(v, true); default: }
-                            });
-                            // Prefer binder promotion when body uses the trimmed name
-                            if (binder.length > 1 && binder.charAt(0) == '_') {
-                                var trimmed = binder.substr(1);
-                                if (used.exists(trimmed) && !declared.exists(trimmed)) {
-                                    var newPattern2 = rewriteOkBinder(cl.pattern, trimmed);
-                                    newClauses.push({ pattern: newPattern2, guard: cl.guard, body: cl.body });
-                                    continue;
-                                }
-                            }
-                            // Otherwise, collect undefined lowercase vars
-                            var undef:Array<String> = [];
-                            for (k in used.keys()) if (isLower(k) && allowReplace(k) && !declared.exists(k)) undef.push(k);
-                            // If binder is underscored and exactly one undefined exists, prefer renaming binder to that name
-                            if (binder.length > 1 && binder.charAt(0) == '_' && undef.length == 1) {
-                                var newName = undef[0];
-                                var newPattern = rewriteOkBinder(cl.pattern, newName);
-                                // Body already references newName; no need to map undefined refs
-                                newClauses.push({ pattern: newPattern, guard: cl.guard, body: cl.body });
-                                continue;
-                            }
-                            var undefinedSet = new Map<String,Bool>();
-                            for (u in undef) undefinedSet.set(u, true);
-                            var newBody = ElixirASTTransformer.transformNode(cl.body, function(x: ElixirAST): ElixirAST {
-                                return switch (x.def) {
-                                    case EVar(v) if (isLower(v) && allowReplace(v) && !declared.exists(v)):
-                                        makeASTWithMeta(EVar(binder), x.metadata, x.pos);
-                                    case ERaw(s) if (s != null):
-                                        // Carefully replace undefined simple vars inside raw code fragments.
-                                        var updated = s;
-                                        for (k in undefinedSet.keys()) {
-                                            var u = k;
-                                            if (!allowReplace(u)) continue;
-                                            // Match whole-word u not preceded by ':' (avoid atoms)
-                                            var re = new EReg('(^|[^:A-Za-z0-9_])' + u + '([^A-Za-z0-9_]|$)', "g");
-                                            // Haxe EReg lacks global replace with groups; do manual loop
-                                            var buf = new StringBuf();
-                                            var pos = 0;
-                                            while (re.matchSub(updated, pos)) {
-                                                var mp = re.matchedPos();
-                                                var matchStr = re.matched(0);
-                                                var startIdx = matchStr.indexOf(u);
-                                                buf.add(updated.substr(pos, mp.pos - pos));
-                                                buf.add(matchStr.substr(0, startIdx));
-                                                buf.add(binder);
-                                                buf.add(matchStr.substr(startIdx + u.length));
-                                                pos = mp.pos + mp.len;
-                                            }
-                                            if (pos > 0) { buf.add(updated.substr(pos)); updated = buf.toString(); }
-                                        }
-                                        if (updated != s) makeASTWithMeta(ERaw(updated), x.metadata, x.pos) else x;
-                                    default: x;
-                                }
-                            });
-                            newClauses.push({ pattern: cl.pattern, guard: cl.guard, body: newBody });
+    static function process(n: ElixirAST, bound: Map<String, Bool>): ElixirAST {
+        if (n == null || n.def == null) return n;
+
+        return switch (n.def) {
+            case EBlock(stmts):
+                var localBound = clone(bound);
+                var out: Array<ElixirAST> = [];
+                for (s in stmts) {
+                    var newStmt = process(s, localBound);
+                    out.push(newStmt);
+                    bindFromStatement(newStmt, localBound);
+                }
+                makeASTWithMeta(EBlock(out), n.metadata, n.pos);
+
+            case EDo(stmts2):
+                var localBound = clone(bound);
+                var out: Array<ElixirAST> = [];
+                for (s in stmts2) {
+                    var newStmt = process(s, localBound);
+                    out.push(newStmt);
+                    bindFromStatement(newStmt, localBound);
+                }
+                makeASTWithMeta(EDo(out), n.metadata, n.pos);
+
+            case EIf(cond, thenB, elseB):
+                var newCond = process(cond, bound);
+                var newThen = process(thenB, clone(bound));
+                var newElse = elseB != null ? process(elseB, clone(bound)) : null;
+                makeASTWithMeta(EIf(newCond, newThen, newElse), n.metadata, n.pos);
+
+            case EUnless(condition, body, elseBranch):
+                var newCond = process(condition, bound);
+                var newBody = process(body, clone(bound));
+                var newElse = elseBranch != null ? process(elseBranch, clone(bound)) : null;
+                makeASTWithMeta(EUnless(newCond, newBody, newElse), n.metadata, n.pos);
+
+            case EFn(clauses):
+                var newClauses = [];
+                for (cl in clauses) {
+                    // Anonymous fn scope: args bind locally, but free vars come from the outer bound set.
+                    var clauseBound = clone(bound);
+                    for (a in cl.args) collectPatternDecls(a, clauseBound);
+                    var newGuard = cl.guard != null ? process(cl.guard, clone(clauseBound)) : null;
+                    var newBody = process(cl.body, clauseBound);
+                    newClauses.push({ args: cl.args, guard: newGuard, body: newBody });
+                }
+                makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
+
+            case ECase(target, clauses):
+                var newTarget = process(target, bound);
+                var newClauses = [];
+                for (cl in clauses) {
+                    // Respect canonical payload binder lock
+                    if (isLockedPayload(cl)) { newClauses.push(cl); continue; }
+
+                    // Pattern binds are available in the clause body for nested cases.
+                    var clauseBound = clone(bound);
+                    collectPatternDecls(cl.pattern, clauseBound);
+
+                    var newGuard = cl.guard != null ? process(cl.guard, clone(clauseBound)) : null;
+                    var processedBody = process(cl.body, clauseBound);
+
+                    var binder = extractOkBinder(cl.pattern);
+                    if (binder == null) {
+                        newClauses.push({ pattern: cl.pattern, guard: newGuard, body: processedBody });
+                        continue;
+                    }
+
+                    var declared = new Map<String,Bool>();
+                    collectPatternDecls(cl.pattern, declared);
+                    collectLhsDeclsInBody(processedBody, declared);
+
+                    // Collect used simple var names in body
+                    var used = new Map<String,Bool>();
+                    ASTUtils.walk(processedBody, function(u: ElixirAST) {
+                        switch (u.def) { case EVar(v): used.set(v, true); default: }
+                    });
+
+                    // Prefer binder promotion when body uses the trimmed name, as long as it doesn't
+                    // capture a variable from the outer scope.
+                    if (binder.length > 1 && binder.charAt(0) == '_') {
+                        var trimmed = binder.substr(1);
+                        if (used.exists(trimmed) && !declared.exists(trimmed) && !bound.exists(trimmed)) {
+                            var newPattern = rewriteOkBinder(cl.pattern, trimmed);
+                            newClauses.push({ pattern: newPattern, guard: newGuard, body: processedBody });
                             continue;
                         }
-                        newClauses.push(cl);
                     }
-                    makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        });
+
+                    // Collect undefined lowercase vars (excluding those available from the outer scope).
+                    var undef:Array<String> = [];
+                    for (k in used.keys()) {
+                        if (isLower(k) && allowReplace(k) && !declared.exists(k) && !bound.exists(k)) undef.push(k);
+                    }
+
+                    // If binder is underscored and exactly one undefined exists, prefer renaming binder to that name.
+                    if (binder.length > 1 && binder.charAt(0) == '_' && undef.length == 1) {
+                        var newName = undef[0];
+                        var newPattern = rewriteOkBinder(cl.pattern, newName);
+                        // Body already references newName; no need to map undefined refs
+                        newClauses.push({ pattern: newPattern, guard: newGuard, body: processedBody });
+                        continue;
+                    }
+
+                    var undefinedSet = new Map<String,Bool>();
+                    for (u in undef) undefinedSet.set(u, true);
+                    var newBody = ElixirASTTransformer.transformNode(processedBody, function(x: ElixirAST): ElixirAST {
+                        return switch (x.def) {
+                            case EVar(v) if (isLower(v) && allowReplace(v) && !declared.exists(v) && !bound.exists(v)):
+                                makeASTWithMeta(EVar(binder), x.metadata, x.pos);
+                            case ERaw(s) if (s != null):
+                                // Carefully replace undefined simple vars inside raw code fragments.
+                                var updated = s;
+                                for (k in undefinedSet.keys()) {
+                                    var u = k;
+                                    if (!allowReplace(u)) continue;
+                                    // Match whole-word u not preceded by ':' (avoid atoms)
+                                    var re = new EReg('(^|[^:A-Za-z0-9_])' + u + '([^A-Za-z0-9_]|$)', "g");
+                                    // Haxe EReg lacks global replace with groups; do manual loop
+                                    var buf = new StringBuf();
+                                    var pos = 0;
+                                    while (re.matchSub(updated, pos)) {
+                                        var mp = re.matchedPos();
+                                        var matchStr = re.matched(0);
+                                        var startIdx = matchStr.indexOf(u);
+                                        buf.add(updated.substr(pos, mp.pos - pos));
+                                        buf.add(matchStr.substr(0, startIdx));
+                                        buf.add(binder);
+                                        buf.add(matchStr.substr(startIdx + u.length));
+                                        pos = mp.pos + mp.len;
+                                    }
+                                    if (pos > 0) { buf.add(updated.substr(pos)); updated = buf.toString(); }
+                                }
+                                if (updated != s) makeASTWithMeta(ERaw(updated), x.metadata, x.pos) else x;
+                            default: x;
+                        }
+                    });
+
+                    newClauses.push({ pattern: cl.pattern, guard: newGuard, body: newBody });
+                }
+                makeASTWithMeta(ECase(newTarget, newClauses), n.metadata, n.pos);
+
+            default:
+                // Recursively process children in the same bound-scope (sequential binding is handled
+                // explicitly in EBlock/EDo branches above).
+                ElixirASTTransformer.transformAST(n, child -> process(child, bound));
+        }
+    }
+
+    static function bindFromStatement(stmt: ElixirAST, bound: Map<String, Bool>): Void {
+        if (stmt == null || stmt.def == null) return;
+        switch (stmt.def) {
+            case EMatch(p, _):
+                collectPatternDecls(p, bound);
+            case EBinary(Match, lhs, _):
+                collectLhs(lhs, bound);
+            default:
+        }
+    }
+
+    static function collectBoundFromArgs(args: Array<EPattern>): Map<String, Bool> {
+        var m = new Map<String, Bool>();
+        if (args == null) return m;
+        for (a in args) collectPatternDecls(a, m);
+        return m;
     }
 
     static inline function isLockedPayload(cl: ECaseClause): Bool {
@@ -196,6 +284,12 @@ class SuccessVarAbsoluteReplaceUndefinedTransforms {
 
     static function collectLhs(lhs: ElixirAST, vars: Map<String,Bool>): Void {
         switch (lhs.def) { case EVar(n): vars.set(n, true); case EBinary(Match, l2, r2): collectLhs(l2, vars); collectLhs(r2, vars); default: }
+    }
+
+    static function clone(m: Map<String, Bool>): Map<String, Bool> {
+        var out = new Map<String, Bool>();
+        if (m != null) for (k in m.keys()) out.set(k, true);
+        return out;
     }
 
     static inline function isLower(s: String): Bool {

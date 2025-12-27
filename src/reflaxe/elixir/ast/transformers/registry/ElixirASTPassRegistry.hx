@@ -219,6 +219,15 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_conditionalReassignmentPass
         });
+
+        // Hoist state updates from statement-position control-flow (if/case/cond) so
+        // rebinding survives Elixir branch scoping (and avoids WAE shadow warnings).
+        passes.push({
+            name: "ControlFlowStateHoist",
+            description: "Hoist stateful rebinds from if/case/cond statements into outer matches",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ControlFlowStateHoistTransforms.pass
+        });
         
         // Remove redundant nil initialization pass (should run before pipeline optimization)
         passes.push({
@@ -4368,6 +4377,21 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EnumEachEarlyReturnTrailingNilCleanupTransforms.pass,
             runAfter: ["HeexAssignsLocalVarRename_AbsoluteLast"]
+        });
+
+        // Absolute-last safety: underscore unused anonymous fn args (Enum.reduce/map/each).
+        //
+        // WHY
+        // - Late hygiene/promotions can adjust binder shapes after the main EFn hygiene passes,
+        //   reintroducing unused-arg warnings that are fatal under --warnings-as-errors.
+        // - Running this at the end is safe (it only prefixes truly-unused binders) and keeps
+        //   fast_boot example builds warning-free.
+        passes.push({
+            name: "EFnUnusedArgUnderscore_AbsoluteLast",
+            description: "Absolute-last: underscore unused EFn binders to avoid warnings",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EFnUnusedArgUnderscoreTransforms.transformPass,
+            runAfter: ["EnumEachEarlyReturnTrailingNilCleanup_AbsoluteLast"]
         });
 
         // Filter disabled passes first
