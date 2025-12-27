@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
 
 /**
@@ -106,9 +107,9 @@ class SuccessBinderAlignByBodyUseTransforms {
                             if (fnDeclared != null) for (k in fnDeclared.keys()) clauseDeclared.set(k, true);
                             // Collect used names in clause body (+ guard) so we don't ignore names
                             // that only appear in guards.
-                            var used = collectUsedNames(cl.body);
+                            var used = OptimizedVarUseAnalyzer.referencedVarsExact(cl.body);
                             if (cl.guard != null) {
-                                var guardUsed = collectUsedNames(cl.guard);
+                                var guardUsed = OptimizedVarUseAnalyzer.referencedVarsExact(cl.guard);
                                 for (k in guardUsed.keys()) used.set(k, true);
                             }
                             #if (sys && debug_ast_transformer) {
@@ -224,18 +225,6 @@ class SuccessBinderAlignByBodyUseTransforms {
             case EBinary(Match, l2, r2): collectLhsDecls(l2, vars); collectLhsDecls(r2, vars);
             default:
         }
-    }
-
-    static function collectUsedNames(ast: ElixirAST): Map<String,Bool> {
-        var names = new Map<String,Bool>();
-        ASTUtils.walk(ast, function(x: ElixirAST) {
-            if (x == null || x.def == null) return;
-            switch (x.def) {
-                case EVar(v): names.set(v, true);
-                default:
-            }
-        });
-        return names;
     }
 
     static function extractOkBinder(p: EPattern): Null<String> {
