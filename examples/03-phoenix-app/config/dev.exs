@@ -5,7 +5,9 @@ config :phoenix_haxe_example, PhoenixHaxeExampleWeb.Endpoint,
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
-  secret_key_base: "development_secret",
+  # Prefer env in dev when provided, otherwise use a stable (but non-secret) fallback.
+  # NOTE: Keep this low-entropy so secret scanners don't flag example config.
+  secret_key_base: System.get_env("DEV_SECRET_KEY_BASE") || String.duplicate("a", 64),
   watchers: []
 
 config :phoenix_haxe_example, PhoenixHaxeExampleWeb.Endpoint,
