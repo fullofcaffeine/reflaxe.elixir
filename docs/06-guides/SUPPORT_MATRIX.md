@@ -6,10 +6,16 @@ This page describes what toolchain versions Reflaxe.Elixir is **known to work wi
 
 Our GitHub Actions CI runs on **Ubuntu** and currently tests:
 
-- Node.js: `20`
-- Haxe: `4.3.7`
-- Elixir: `1.18.3`
-- Erlang/OTP: `27.2`
+- Full suite (primary toolchain):
+  - Node.js: `20`
+  - Haxe: `4.3.7`
+  - Elixir: `1.18.3`
+  - Erlang/OTP: `27.2`
+
+- Minimum toolchain smoke (compat check):
+  - Elixir: `1.14.x`
+  - Erlang/OTP: `25.x`
+  - Runs a bounded subset (`npm run test:quick` + `npm run test:mix-fast`)
 
 Phoenix coverage:
 
@@ -17,7 +23,7 @@ Phoenix coverage:
 
 ## Minimum versions (documented)
 
-These are the minimum versions we **document** (not necessarily CI‑tested on every combination):
+These are the minimum versions we **document**:
 
 - Haxe `4.3.7+`
 - Node `16+` (Node `20` recommended)
@@ -32,4 +38,3 @@ If you need support for a specific older version, open an issue and include your
 - Phoenix `1.6.x` and earlier
 
 If you run successfully on other versions, please report it so we can expand the matrix.
-

@@ -61,6 +61,7 @@ Additional (uncurated) architecture notes were archived to **[09-history/archive
 - [Quickstart](06-guides/QUICKSTART.md) - Fast track to productivity
 - [Phoenix (New App)](06-guides/PHOENIX_NEW_APP.md) - Greenfield Phoenix setup
 - [Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md) - Gradual adoption in an existing app
+- [Production Readiness](06-guides/PRODUCTION_READINESS.md) - Non-alpha criteria + checklist
 - [Production Deployment](06-guides/PRODUCTION_DEPLOYMENT.md) - CI/Docker/release patterns
 - [Performance Guide](06-guides/PERFORMANCE_GUIDE.md) - Compilation performance
 - [Troubleshooting](06-guides/TROUBLESHOOTING.md) - Common issues and solutions
