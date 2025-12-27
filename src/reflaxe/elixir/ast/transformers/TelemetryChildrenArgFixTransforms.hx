@@ -10,36 +10,6 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * TelemetryChildrenArgFixTransforms
  *
  * WHAT
- * - In <App>Web.Telemetry.start_link/1 function bodies, if a local variable
- *   assignment to _children exists and Supervisor.start_link(children, ...) uses
- *   the non-underscore name, rewrite the call to use _children to avoid
- *   undefined variable errors when unused-local renaming occurs earlier.
- *
- * WHY
- * - The UnusedLocalAssignmentUnderscoreTransforms may underscore-bind children,
- *   but Supervisor.start_link(children, ...) can still reference the old name.
- *   This pass reconciles names to prevent undefined variable errors.
- *
- * HOW
- * - Detect presence of a PVar("_children") binding in the subtree.
- * - Rewrite ERemoteCall(Supervisor, start_link, [EVar("children"), opts]) to
- *   use EVar("_children") when the underscored binding exists.
- *
- * EXAMPLES
- * Before:
- *   _children = [...]
- *   Supervisor.start_link(children, strategy: :one_for_one)
- * After:
- *   _children = [...]
- *   Supervisor.start_link(_children, strategy: :one_for_one)
- *
- * SCOPE
- * - Limited to modules whose name ends with ".Telemetry" to avoid overreach.
- */
-/**
- * TelemetryChildrenArgFixTransforms
- *
- * WHAT
  * - Repairs `Supervisor.start_link(children, ...)` calls in <App>Web.Telemetry when
  *   local binders were altered by hygiene (e.g., `_children = ...` or `_ = ...`).
  *

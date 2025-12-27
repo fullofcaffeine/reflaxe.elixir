@@ -45,8 +45,8 @@ class DropStandaloneVarRefTransforms {
       return switch (n.def) {
         case EBlock(stmts):
           makeASTWithMeta(EBlock(drop(stmts)), n.metadata, n.pos);
-        case EDo(stmts2):
-          makeASTWithMeta(EDo(drop(stmts2)), n.metadata, n.pos);
+        case EDo(stmts):
+          makeASTWithMeta(EDo(drop(stmts)), n.metadata, n.pos);
         default:
           n;
       }
@@ -76,9 +76,9 @@ class DropStandaloneVarRefTransforms {
       case EBlock(stmts):
         var trimmed = trimTrailingVarRefs(stmts);
         if (trimmed == stmts) s else makeASTWithMeta(EBlock(trimmed), s.metadata, s.pos);
-      case EDo(stmts2):
-        var trimmed2 = trimTrailingVarRefs(stmts2);
-        if (trimmed2 == stmts2) s else makeASTWithMeta(EDo(trimmed2), s.metadata, s.pos);
+      case EDo(stmts):
+        var trimmed = trimTrailingVarRefs(stmts);
+        if (trimmed == stmts) s else makeASTWithMeta(EDo(trimmed), s.metadata, s.pos);
       default:
         s;
     }
@@ -100,7 +100,7 @@ class DropStandaloneVarRefTransforms {
       case EParen(inner):
         inner != null && inner.def != null && switch (inner.def) {
           case EVar(_): true;
-          case ERaw(code2): isBareVarIdentifier(code2);
+          case ERaw(code): isBareVarIdentifier(code);
           default: false;
         };
       default:
