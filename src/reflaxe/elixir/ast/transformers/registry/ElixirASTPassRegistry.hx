@@ -17,7 +17,32 @@ import reflaxe.elixir.ast.ElixirASTTransformer; // qualify local pass fns
  * - Uses fully qualified references to ElixirASTTransformer's local pass functions.
  */
 class ElixirASTPassRegistry {
+    /**
+     * getEnabledPasses
+     *
+     * WHAT
+     * - Returns the effective transform pass list used by ElixirASTTransformer.
+     *
+     * WHY
+     * - Default to a small, audited "lean" pass bundle list (<=20 entries) so
+     *   contributors can reason about ordering without scrolling a 500+ pass list.
+     * - Preserve an opt-in granular registry for deep debugging/profiling when needed.
+     *
+     * HOW
+     * - The lean registry is a small list of *bundle* passes. Each bundle pass runs a
+     *   contiguous slice of the granular pass list, preserving the exact behavior and
+     *   topological ordering of the current pipeline.
+     * - Opt-in to the full granular list with `-D hxx_granular_pass_registry`.
+     */
     public static function getEnabledPasses(): Array<ElixirASTTransformer.PassConfig> {
+        #if hxx_granular_pass_registry
+        return getGranularPasses();
+        #else
+        return getLeanPasses();
+        #end
+    }
+
+    static function getGranularPasses(): Array<ElixirASTTransformer.PassConfig> {
 
         var passes: Array<reflaxe.elixir.ast.ElixirASTTransformer.PassConfig> = [];
 
@@ -4402,6 +4427,107 @@ class ElixirASTPassRegistry {
         enabled = sortPassesByConstraints(enabled);
         return enabled;
     
+    }
+
+    static function getLeanPasses(): Array<ElixirASTTransformer.PassConfig> {
+        // Build the fully validated + topologically sorted granular pass list, then wrap it into a
+        // small number of bundle passes for contributor-friendly ordering docs.
+        var granular = getGranularPasses();
+
+        function indexOfPass(passName: String): Int {
+            for (i in 0...granular.length) {
+                if (granular[i].name == passName) return i;
+            }
+            return -1;
+        }
+
+        // Key boundaries (stable in the pipeline and expected to exist in normal builds).
+        var phoenixStart = indexOfPass("PhoenixWebTransform");
+        var guardsStart = indexOfPass("GuardGrouping");
+        var coreStart = indexOfPass("BareCallToUnderscoreAssign");
+        var heexStart = indexOfPass("HeexStringReturnToSigil");
+        var absoluteFinalStart = indexOfPass("EFnTempChainSimplify_AlwaysRun");
+
+        if (phoenixStart < 0 || guardsStart < 0 || coreStart < 0 || heexStart < 0 || absoluteFinalStart < 0) {
+            // Fallback: if expected boundaries are missing, use the granular list to avoid surprising behavior.
+            return granular;
+        }
+
+        // Optional boundary: when HygieneFinal is enabled, its first pass is stable; when hygiene is
+        // disabled (e.g. `-D disable_hygiene_final`), we point hygieneStart at absoluteFinalStart,
+        // resulting in an empty hygiene slice.
+        var hygieneStart = indexOfPass("AccAliasLateRewrite");
+        if (hygieneStart < 0 || hygieneStart <= heexStart || hygieneStart >= absoluteFinalStart) {
+            hygieneStart = absoluteFinalStart;
+        }
+
+        function applyPassSlice(ast: ElixirAST, slice: Array<ElixirASTTransformer.PassConfig>, ?context: reflaxe.elixir.CompilationContext): ElixirAST {
+            var result = ast;
+            for (passConfig in slice) {
+                if (!passConfig.enabled) continue;
+                if (passConfig.contextualPass != null && context != null) {
+                    result = passConfig.contextualPass(result, context);
+                } else {
+                    result = passConfig.pass(result);
+                }
+            }
+            return result;
+        }
+
+        function makeBundle(name: String, description: String, slice: Array<ElixirASTTransformer.PassConfig>): ElixirASTTransformer.PassConfig {
+            return {
+                name: name,
+                description: description,
+                enabled: true,
+                pass: function(ast) return applyPassSlice(ast, slice, null),
+                contextualPass: function(ast, context) return applyPassSlice(ast, slice, context)
+            };
+        }
+
+        var bundles: Array<ElixirASTTransformer.PassConfig> = [];
+        bundles.push(makeBundle(
+            "BundleBootstrap",
+            "Lean bundle: early normalization + binder alignment (granular slice)",
+            granular.slice(0, phoenixStart)
+        ));
+        bundles.push(makeBundle(
+            "BundlePhoenixAnnotations",
+            "Lean bundle: Phoenix/Ecto/LiveView annotation transforms + early framework wiring (granular slice)",
+            granular.slice(phoenixStart, guardsStart)
+        ));
+        bundles.push(makeBundle(
+            "BundleGuardsAndInterpolation",
+            "Lean bundle: case/guard normalization + interpolation prelude (granular slice)",
+            granular.slice(guardsStart, coreStart)
+        ));
+        bundles.push(makeBundle(
+            "BundleCoreTransforms",
+            "Lean bundle: core idiom + control-flow + collection rewrites up to HEEx entrypoint (granular slice)",
+            granular.slice(coreStart, heexStart)
+        ));
+
+        bundles.push(makeBundle(
+            "BundleHeexPipeline",
+            "Lean bundle: HEEx/HXX transforms up to ultra-late hygiene entrypoint (granular slice)",
+            granular.slice(heexStart, hygieneStart)
+        ));
+        bundles.push(makeBundle(
+            "BundleHygieneFinal",
+            "Lean bundle: ultra-late hygiene/safety sweeps (granular slice)",
+            granular.slice(hygieneStart, absoluteFinalStart)
+        ));
+
+        bundles.push(makeBundle(
+            "BundleAbsoluteFinal",
+            "Lean bundle: absolute-final warning suppression + last-resort cleanups (granular slice)",
+            granular.slice(absoluteFinalStart, granular.length)
+        ));
+
+        var enabled = bundles.filter(p -> p.enabled);
+        enabled = reflaxe.elixir.ast.transformers.registry.RegistryCore.validate(enabled);
+        // Keep deterministic (stable) ordering, though bundles intentionally do not declare constraints.
+        enabled = sortPassesByConstraints(enabled);
+        return enabled;
     }
 
     /**

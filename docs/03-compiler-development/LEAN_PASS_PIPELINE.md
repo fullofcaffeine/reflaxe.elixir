@@ -28,6 +28,15 @@ Regenerate it (pure Haxe `--interp`, no Node required):
 haxe --interp tools/RegistryOrderDoc.hx
 ```
 
+### Granular vs lean registry
+
+By default, the registry exposes a small **lean** list of bundle passes (<=20) to keep the
+order understandable for contributors. For deep debugging (per-pass metrics/timing), you can
+opt into the full granular list:
+
+- Build flag: `-D hxx_granular_pass_registry`
+- Doc output: `docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md`
+
 ## LiveView “golden” fixture
 
 The todo-app is a great integration test, but it’s too large and app-specific for a stable
@@ -57,4 +66,3 @@ make -C test update-intended TEST=liveview/golden_liveview_fixture
 - Prefer **shape-based** transforms over name-based heuristics.
 - Avoid ERaw-dependent rewrites (passes can’t “see” inside raw strings).
 - Fix root causes in builder/transformer; keep the printer as a pretty-printer only.
-
