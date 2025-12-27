@@ -508,6 +508,7 @@ The project uses a dual-ecosystem testing approach with self-referential library
 npm test              # Full suite (snapshots + Elixir validation + Mix)
 npm run test:quick    # Snapshot suite only
 npm run test:mix      # Mix/Elixir tests only
+npm run test:generator # Generator + Mix task scaffolds
 npm run test:update   # Update expected snapshot outputs
 npm run qa:sentinel   # Todo-app build + boot probe (async)
 npm run ci:guards     # Guardrails (no app heuristics, etc.)
