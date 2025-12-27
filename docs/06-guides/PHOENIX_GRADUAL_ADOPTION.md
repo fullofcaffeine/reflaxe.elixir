@@ -132,10 +132,14 @@ Add Reflaxe.Elixir as a dev/test dependency so your project has the Mix tasks:
 # mix.exs
 defp deps do
   [
-    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.0.7", only: [:dev, :test]}
+    # Compiler + Mix tasks (build-time only)
+    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.0.7", runtime: false}
   ]
 end
 ```
+
+If you *only* want the compiler dependency in dev/test, you can add `only: [:dev, :test]` — but then you must
+compile Haxe output before building a production release (so CI/build still has the generated `.ex` files).
 
 Then add the Haxe compiler to your compilers list:
 

@@ -10,7 +10,29 @@ If you already have an existing Phoenix app, use `docs/06-guides/PHOENIX_GRADUAL
 - Add Haxe **incrementally**: start with one module, then expand.
 - Generate Elixir code that looks hand-written.
 
-## 1) Create a Phoenix App (normal Phoenix)
+## Option A (recommended): scaffold via the project generator
+
+If you have Haxe + Node installed, you can generate a ready-to-run Phoenix+Haxe project in one go:
+
+```bash
+# From an empty directory where you want the project folder created:
+npm init -y
+npm install --save-dev lix
+
+# Install the generator (pinned tag recommended)
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.7
+
+# Generate a Phoenix app (omit --skip-install to let the generator install deps for you)
+npx lix run reflaxe.elixir create my_app --type phoenix --no-interactive --skip-install
+
+cd my_app
+npm install
+mix deps.get
+npx lix download
+mix phx.server
+```
+
+## Option B: create a Phoenix app (normal Phoenix) + add Haxe (gradual adoption)
 
 Use Phoenix as you normally would:
 
