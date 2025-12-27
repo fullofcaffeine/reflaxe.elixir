@@ -293,9 +293,9 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   # E2E_SPEC contained spaces. Invoke the script directly with an argv array.
   CHILD_CMD=( "$0" "${CHILD_FLAGS[@]}" )
   if command -v setsid >/dev/null 2>&1; then
-    setsid env ASYNC_CHILD=1 E2E_SPEC="$E2E_SPEC" E2E_WORKERS="$E2E_WORKERS" QA_SKIP_HAXE="${QA_SKIP_HAXE:-}" QA_FORCE_FAST_BUILD="${QA_FORCE_FAST_BUILD:-}" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" "${CHILD_CMD[@]}" </dev/null >"$LOG_MAIN" 2>&1 &
+    setsid env ASYNC_CHILD=1 E2E_SPEC="$E2E_SPEC" E2E_WORKERS="$E2E_WORKERS" QA_SKIP_HAXE="${QA_SKIP_HAXE:-}" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" "${CHILD_CMD[@]}" </dev/null >"$LOG_MAIN" 2>&1 &
   else
-    nohup env ASYNC_CHILD=1 E2E_SPEC="$E2E_SPEC" E2E_WORKERS="$E2E_WORKERS" QA_SKIP_HAXE="${QA_SKIP_HAXE:-}" QA_FORCE_FAST_BUILD="${QA_FORCE_FAST_BUILD:-}" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" "${CHILD_CMD[@]}" </dev/null >"$LOG_MAIN" 2>&1 &
+    nohup env ASYNC_CHILD=1 E2E_SPEC="$E2E_SPEC" E2E_WORKERS="$E2E_WORKERS" QA_SKIP_HAXE="${QA_SKIP_HAXE:-}" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" "${CHILD_CMD[@]}" </dev/null >"$LOG_MAIN" 2>&1 &
   fi
   SENTINEL_PID=$!
   # Disown the child so shells never warn/wait on background jobs
@@ -414,42 +414,9 @@ fi
 # Generate .ex files.
 # Default: run the full build (`build-server.hxml`) so the generated output is
 # complete and consistent.
-# Optional: callers can opt into faster-but-incomplete strategies via env vars.
 if [[ -n "${QA_SKIP_HAXE:-}" ]]; then
   log "[QA] Step 1: Skipping Haxe build (QA_SKIP_HAXE set)"
   : > /tmp/qa-haxe.log
-elif [[ -n "${QA_FORCE_FAST_BUILD:-}" ]]; then
-  FAST_HXML=""
-  if [[ -f "build-server-fast.hxml" ]]; then
-    FAST_HXML="build-server-fast.hxml"
-  elif [[ -f "hxml/legacy/build-server-fast.hxml" ]]; then
-    FAST_HXML="hxml/legacy/build-server-fast.hxml"
-  fi
-  if [[ -n "$FAST_HXML" ]]; then
-    run_step_with_log "Step 1: Haxe build (fast) ($HAXE_CMD $FAST_HXML)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD $FAST_HXML" || exit 1
-  else
-    run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
-  fi
-elif [[ -n "${QA_USE_PASSES:-}" ]]; then
-  PASS_DIR=""
-  if ls build-server-pass*.hxml >/dev/null 2>&1; then
-    PASS_DIR="."
-  elif ls hxml/legacy/build-server-pass*.hxml >/dev/null 2>&1; then
-    PASS_DIR="hxml/legacy"
-  fi
-
-  if [[ -n "$PASS_DIR" ]]; then
-    i=0
-    for h in $(ls -1 "$PASS_DIR"/build-server-pass*.hxml | sort); do
-      i=$((i+1))
-      # Use the compilation server for all micro‑passes so later passes reuse cache
-      run_step_with_log "Step 1.${i}: Haxe build pass ($HAXE_CMD $h)" "$BUILD_TIMEOUT" "/tmp/qa-haxe-pass${i}.log" "$HAXE_CMD $h" || exit 1
-    done
-    # Consolidated tail for convenience
-    : > /tmp/qa-haxe.log; for h in /tmp/qa-haxe-pass*.log; do tail -n 60 "$h" >> /tmp/qa-haxe.log 2>/dev/null || true; echo >> /tmp/qa-haxe.log; done
-  else
-    run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
-  fi
 else
   run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
 fi

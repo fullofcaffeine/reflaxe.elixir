@@ -23,8 +23,5 @@ Use these files in `examples/todo-app/`:
 
 ## QA sentinel integration (optional)
 
-The QA sentinel (`scripts/qa-sentinel.sh`) can optionally use these when configured:
-
-- `QA_FORCE_FAST_BUILD=1` – uses `hxml/legacy/build-server-fast.hxml` (if present)
-- `QA_USE_PASSES=1` – uses `hxml/legacy/build-server-pass*.hxml` (if present)
-
+These configs are archived and no longer integrated into the repo’s QA sentinel. They remain in git
+history and under this archive directory for reference only.
