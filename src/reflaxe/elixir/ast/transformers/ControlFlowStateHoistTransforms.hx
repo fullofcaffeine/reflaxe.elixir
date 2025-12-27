@@ -68,10 +68,10 @@ class ControlFlowStateHoistTransforms {
 	          makeASTWithMeta(EDef(name, args, newGuards, newBody), node.metadata, node.pos);
 
 	        case EDefp(name, args, guards, body):
-	          var bound2 = collectBoundFromArgs(args);
-	          var newGuards2 = guards != null ? rewriteInScope(guards, bound2, true) : null;
-	          var newBody2 = rewriteInScope(body, bound2, true);
-	          makeASTWithMeta(EDefp(name, args, newGuards2, newBody2), node.metadata, node.pos);
+	          var bound = collectBoundFromArgs(args);
+	          var newGuards = guards != null ? rewriteInScope(guards, bound, true) : null;
+	          var newBody = rewriteInScope(body, bound, true);
+	          makeASTWithMeta(EDefp(name, args, newGuards, newBody), node.metadata, node.pos);
 
 	        case EFn(clauses):
 	          var newClauses = [];
@@ -106,11 +106,11 @@ class ControlFlowStateHoistTransforms {
         var newElse = elseB != null ? rewriteInScope(elseB, clone(bound), true) : null;
         makeASTWithMeta(EIf(newCond, newThen, newElse), node.metadata, node.pos);
 
-      case EUnless(cond2, body2, elseB2):
-        var newCond2 = rewriteInScope(cond2, bound, true);
-        var newBody2 = rewriteInScope(body2, clone(bound), true);
-        var newElse2 = elseB2 != null ? rewriteInScope(elseB2, clone(bound), true) : null;
-        makeASTWithMeta(EUnless(newCond2, newBody2, newElse2), node.metadata, node.pos);
+      case EUnless(cond, body, elseBranch):
+        var newCond = rewriteInScope(cond, bound, true);
+        var newBody = rewriteInScope(body, clone(bound), true);
+        var newElse = elseBranch != null ? rewriteInScope(elseBranch, clone(bound), true) : null;
+        makeASTWithMeta(EUnless(newCond, newBody, newElse), node.metadata, node.pos);
 
       case ECase(expr, clauses):
         var newExpr = rewriteInScope(expr, bound, true);
@@ -123,21 +123,21 @@ class ControlFlowStateHoistTransforms {
         makeASTWithMeta(ECase(newExpr, newClauses), node.metadata, node.pos);
 
       case ECond(clauses):
-        var newClauses2 = [];
+        var newClauses = [];
         for (cl in clauses) {
-          newClauses2.push({
+          newClauses.push({
             condition: rewriteInScope(cl.condition, bound, true),
             body: rewriteInScope(cl.body, clone(bound), true)
           });
         }
-        makeASTWithMeta(ECond(newClauses2), node.metadata, node.pos);
+        makeASTWithMeta(ECond(newClauses), node.metadata, node.pos);
 
       case EWith(clauses, doBlock, elseBlock):
-        var newClauses3 = [];
-        for (c in clauses) newClauses3.push({ pattern: c.pattern, expr: rewriteInScope(c.expr, bound, true) });
+        var newClauses = [];
+        for (c in clauses) newClauses.push({ pattern: c.pattern, expr: rewriteInScope(c.expr, bound, true) });
         var newDo = rewriteInScope(doBlock, clone(bound), true);
-        var newElse3 = elseBlock != null ? rewriteInScope(elseBlock, clone(bound), true) : null;
-        makeASTWithMeta(EWith(newClauses3, newDo, newElse3), node.metadata, node.pos);
+        var newElse = elseBlock != null ? rewriteInScope(elseBlock, clone(bound), true) : null;
+        makeASTWithMeta(EWith(newClauses, newDo, newElse), node.metadata, node.pos);
 
       case EBinary(op, left, right):
         makeASTWithMeta(EBinary(op, rewriteInScope(left, bound, true), rewriteInScope(right, bound, true)), node.metadata, node.pos);
@@ -151,26 +151,26 @@ class ControlFlowStateHoistTransforms {
         makeASTWithMeta(EPipe(rewriteInScope(l, bound, true), rewriteInScope(r, bound, true)), node.metadata, node.pos);
       case ECall(tgt, fnName, args):
         makeASTWithMeta(ECall(tgt != null ? rewriteInScope(tgt, bound, true) : null, fnName, [for (a in args) rewriteInScope(a, bound, true)]), node.metadata, node.pos);
-      case ERemoteCall(tgt2, fnName2, args2):
-        makeASTWithMeta(ERemoteCall(rewriteInScope(tgt2, bound, true), fnName2, [for (a in args2) rewriteInScope(a, bound, true)]), node.metadata, node.pos);
+      case ERemoteCall(target, functionName, args):
+        makeASTWithMeta(ERemoteCall(rewriteInScope(target, bound, true), functionName, [for (a in args) rewriteInScope(a, bound, true)]), node.metadata, node.pos);
       case EField(obj, fieldName):
         makeASTWithMeta(EField(rewriteInScope(obj, bound, true), fieldName), node.metadata, node.pos);
-      case EAccess(obj2, key):
-        makeASTWithMeta(EAccess(rewriteInScope(obj2, bound, true), rewriteInScope(key, bound, true)), node.metadata, node.pos);
+      case EAccess(obj, key):
+        makeASTWithMeta(EAccess(rewriteInScope(obj, bound, true), rewriteInScope(key, bound, true)), node.metadata, node.pos);
       case EKeywordList(pairs):
         makeASTWithMeta(EKeywordList([for (p in pairs) { key: p.key, value: rewriteInScope(p.value, bound, true) }]), node.metadata, node.pos);
-      case EMap(pairs2):
-        makeASTWithMeta(EMap([for (p in pairs2) { key: rewriteInScope(p.key, bound, true), value: rewriteInScope(p.value, bound, true) }]), node.metadata, node.pos);
+      case EMap(pairs):
+        makeASTWithMeta(EMap([for (p in pairs) { key: rewriteInScope(p.key, bound, true), value: rewriteInScope(p.value, bound, true) }]), node.metadata, node.pos);
       case EStructUpdate(base, fields):
         makeASTWithMeta(EStructUpdate(rewriteInScope(base, bound, true), [for (f in fields) { key: f.key, value: rewriteInScope(f.value, bound, true) }]), node.metadata, node.pos);
       case ETuple(elems):
         makeASTWithMeta(ETuple([for (e in elems) rewriteInScope(e, bound, true)]), node.metadata, node.pos);
-      case EList(elems2):
-        makeASTWithMeta(EList([for (e in elems2) rewriteInScope(e, bound, true)]), node.metadata, node.pos);
+      case EList(elems):
+        makeASTWithMeta(EList([for (e in elems) rewriteInScope(e, bound, true)]), node.metadata, node.pos);
       case ERange(start, end, exclusive, step):
         makeASTWithMeta(ERange(rewriteInScope(start, bound, true), rewriteInScope(end, bound, true), exclusive, step != null ? rewriteInScope(step, bound, true) : null), node.metadata, node.pos);
-      case EPin(inner2):
-        makeASTWithMeta(EPin(rewriteInScope(inner2, bound, true)), node.metadata, node.pos);
+      case EPin(inner):
+        makeASTWithMeta(EPin(rewriteInScope(inner, bound, true)), node.metadata, node.pos);
 
       // Nested scopes are handled by the outer transformNode walk.
       case EDef(_, _, _, _) | EDefp(_, _, _, _) | EFn(_):
@@ -221,8 +221,8 @@ class ControlFlowStateHoistTransforms {
       // If the RHS is a control-flow form, treat it as a statement to hoist.
       case EBinary(Match, left, rhs) if (isUnderscoredVar(left) && isControlFlowExpr(rhs)):
         maybeHoistControlFlowStatement(rhs, bound);
-      case EMatch(PVar(lhs), rhs2) if (lhs != null && lhs.length > 0 && lhs.charAt(0) == '_' && isControlFlowExpr(rhs2)):
-        maybeHoistControlFlowStatement(rhs2, bound);
+      case EMatch(PVar(lhs), rhs) if (lhs != null && lhs.length > 0 && lhs.charAt(0) == '_' && isControlFlowExpr(rhs)):
+        maybeHoistControlFlowStatement(rhs, bound);
 
       case EIf(cond, thenB, elseB):
         var updates = collectAssignedToBoundVars([thenB, elseB], bound);
@@ -239,45 +239,45 @@ class ControlFlowStateHoistTransforms {
         var rewrittenIf = rewriteInScope(newIf, clone(bound), true);
         makeHoistMatch(updates, rewrittenIf, stmt);
 
-      case EUnless(cond2, body2, elseB2):
-        var updates2 = collectAssignedToBoundVars([body2, elseB2], bound);
-        if (updates2.length == 0) return stmt;
-        var ret2 = makeReturnExpr(updates2);
+      case EUnless(cond, body, elseBranch):
+        var updates = collectAssignedToBoundVars([body, elseBranch], bound);
+        if (updates.length == 0) return stmt;
+        var ret = makeReturnExpr(updates);
 
-        var newBody = ensureReturns(body2, ret2);
-        var newElse2 = (elseB2 != null) ? ensureReturns(elseB2, ret2) : ret2;
+        var newBody = ensureReturns(body, ret);
+        var newElse = (elseBranch != null) ? ensureReturns(elseBranch, ret) : ret;
 
-        var newUnless = makeASTWithMeta(EUnless(cond2, newBody, newElse2), stmt.metadata, stmt.pos);
+        var newUnless = makeASTWithMeta(EUnless(cond, newBody, newElse), stmt.metadata, stmt.pos);
         var rewrittenUnless = rewriteInScope(newUnless, clone(bound), true);
-        makeHoistMatch(updates2, rewrittenUnless, stmt);
+        makeHoistMatch(updates, rewrittenUnless, stmt);
 
       case ECase(expr, clauses):
         var bodies:Array<ElixirAST> = [for (c in clauses) c.body];
-        var updates3 = collectAssignedToBoundVars(bodies, bound);
-        if (updates3.length == 0) return stmt;
-        var ret3 = makeReturnExpr(updates3);
+        var updates = collectAssignedToBoundVars(bodies, bound);
+        if (updates.length == 0) return stmt;
+        var ret = makeReturnExpr(updates);
 
         var newClauses = [];
         for (c in clauses) {
-          newClauses.push({ pattern: c.pattern, guard: c.guard, body: ensureReturns(c.body, ret3) });
+          newClauses.push({ pattern: c.pattern, guard: c.guard, body: ensureReturns(c.body, ret) });
         }
         var newCase = makeASTWithMeta(ECase(expr, newClauses), stmt.metadata, stmt.pos);
         var rewrittenCase = rewriteInScope(newCase, clone(bound), true);
-        makeHoistMatch(updates3, rewrittenCase, stmt);
+        makeHoistMatch(updates, rewrittenCase, stmt);
 
-      case ECond(clauses2):
-        var bodies2:Array<ElixirAST> = [for (c in clauses2) c.body];
-        var updates4 = collectAssignedToBoundVars(bodies2, bound);
-        if (updates4.length == 0) return stmt;
-        var ret4 = makeReturnExpr(updates4);
+      case ECond(clauses):
+        var bodies:Array<ElixirAST> = [for (c in clauses) c.body];
+        var updates = collectAssignedToBoundVars(bodies, bound);
+        if (updates.length == 0) return stmt;
+        var ret = makeReturnExpr(updates);
 
-        var newClauses2 = [];
-        for (c in clauses2) {
-          newClauses2.push({ condition: c.condition, body: ensureReturns(c.body, ret4) });
+        var newClauses = [];
+        for (c in clauses) {
+          newClauses.push({ condition: c.condition, body: ensureReturns(c.body, ret) });
         }
-        var newCond = makeASTWithMeta(ECond(newClauses2), stmt.metadata, stmt.pos);
+        var newCond = makeASTWithMeta(ECond(newClauses), stmt.metadata, stmt.pos);
         var rewrittenCond = rewriteInScope(newCond, clone(bound), true);
-        makeHoistMatch(updates4, rewrittenCond, stmt);
+        makeHoistMatch(updates, rewrittenCond, stmt);
 
       default:
         stmt;
@@ -323,10 +323,10 @@ class ControlFlowStateHoistTransforms {
         var out = stmts == null ? [] : stmts.copy();
         out.push(returnExpr);
         makeASTWithMeta(EBlock(out), body.metadata, body.pos);
-      case EDo(stmts2):
-        var out2 = stmts2 == null ? [] : stmts2.copy();
-        out2.push(returnExpr);
-        makeASTWithMeta(EDo(out2), body.metadata, body.pos);
+      case EDo(stmts):
+        var out = stmts == null ? [] : stmts.copy();
+        out.push(returnExpr);
+        makeASTWithMeta(EDo(out), body.metadata, body.pos);
       default:
         makeASTWithMeta(EBlock([body, returnExpr]), body.metadata, body.pos);
     };
@@ -363,13 +363,13 @@ class ControlFlowStateHoistTransforms {
         }
         collectAssignedVars(rhs, bound, out);
 
-      case EBinary(Match, left, rhs2):
+      case EBinary(Match, left, rhs):
         switch (left.def) {
-          case EVar(name2) if (isBindableName(name2) && bound.exists(name2)):
-            out.set(name2, true);
+          case EVar(name) if (isBindableName(name) && bound.exists(name)):
+            out.set(name, true);
           default:
         }
-        collectAssignedVars(rhs2, bound, out);
+        collectAssignedVars(rhs, bound, out);
 
       default:
         reflaxe.elixir.ast.ElixirASTTransformer.transformAST(node, function(n: ElixirAST): ElixirAST {
@@ -404,8 +404,8 @@ class ControlFlowStateHoistTransforms {
     switch (p) {
       case PVar(name):
         if (isBindableName(name)) out.set(name, true);
-      case PAlias(name2, pat):
-        if (isBindableName(name2)) out.set(name2, true);
+      case PAlias(aliasName, pat):
+        if (isBindableName(aliasName)) out.set(aliasName, true);
         bindFromPattern(pat, out);
       case PTuple(items) | PList(items):
         for (i in items) bindFromPattern(i, out);
@@ -414,8 +414,8 @@ class ControlFlowStateHoistTransforms {
         bindFromPattern(t, out);
       case PMap(fields):
         for (f in fields) bindFromPattern(f.value, out);
-      case PStruct(_, fields2):
-        for (f in fields2) bindFromPattern(f.value, out);
+      case PStruct(_, structFields):
+        for (f in structFields) bindFromPattern(f.value, out);
       case PBinary(segs):
         for (s in segs) bindFromPattern(s.pattern, out);
       case PPin(inner):
