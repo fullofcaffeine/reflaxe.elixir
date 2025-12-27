@@ -12,20 +12,19 @@ defmodule Main do
   def sum_range(struct, start, end_param) do
     sum = 0
     _g = start
-    _ = end_param
-    sum = Enum.reduce(0..(g_value - 1)//1, sum, fn i, sum -> sum + i end)
-    sum
+    g_value = end_param
+    sum = Enum.reduce(0..(g_value - 1)//1, sum, fn i, sum_acc -> sum_acc + i end)
     sum
   end
   def factorial(struct, n) do
     result = 1
     i = n
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, 0}, fn _, {result, i} ->
+    {result, i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, 0}, fn _, {result, i} ->
       if (i > 1) do
         result = result * i
-        (old_i = i
-i = (i - 1)
-old_i)
+        old_i = i
+        i = (i - 1)
+        old_i
         {:cont, {result, i}}
       else
         {:halt, {result, i}}

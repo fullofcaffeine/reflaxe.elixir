@@ -16,6 +16,7 @@ import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.ElixirASTPatterns;
 import reflaxe.elixir.ast.ElixirASTPrinter;
+import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.context.BuildContext;
 import reflaxe.elixir.ast.loop_ir.LoopIR;
 import reflaxe.elixir.ast.analyzers.RangeIterationAnalyzer;
@@ -135,7 +136,7 @@ class LoopBuilder {
         // CRITICAL: Check for accumulation patterns BEFORE checking side effects
         // Accumulation needs special handling with Enum.reduce
         var accumulation = detectAccumulationPattern(e2);
-        var hasSideEffects = hasSideEffectsOnly(e2);
+        var hasSideEffects = hasSideEffectsOnly(e2) || (accumulation != null);
         
         #if debug_loop_builder
         if (accumulation != null) {
@@ -504,6 +505,21 @@ class LoopBuilder {
         isStringConcat: Bool,
         isListAppend: Bool
     }> {
+        function isStringType(t: Type): Bool {
+            return switch (haxe.macro.TypeTools.follow(t)) {
+                case TInst(_.get() => {name: "String"}, _): true;
+                case TAbstract(_.get() => {name: "String"}, _): true;
+                default: false;
+            };
+        }
+
+        function isArrayType(t: Type): Bool {
+            return switch (haxe.macro.TypeTools.follow(t)) {
+                case TInst(_.get() => {name: "Array"}, _): true;
+                default: false;
+            };
+        }
+
         #if debug_loop_builder
         // DISABLED: trace('[LoopBuilder] detectAccumulationPattern checking: ${body.expr}');
         #end
@@ -517,23 +533,20 @@ class LoopBuilder {
                 
             case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, rhs):
                 // Pattern: var += value
-                // Distinguish list append vs string concat by RHS shape
+                // Distinguish list append vs string concat vs numeric add by type.
                 #if debug_loop_builder
                 // DISABLED: trace('[LoopBuilder] Found accumulation pattern: ${v.name} += ...');
                 #end
-                return switch (rhs.expr) {
-                    case TArrayDecl(_): { varName: v.name, isStringConcat: false, isListAppend: true };
-                    default:           { varName: v.name, isStringConcat: true,  isListAppend: false };
-                };
+                var isList = isArrayType(v.t) || switch (rhs.expr) { case TArrayDecl(_): true; default: false; };
+                var isString = !isList && isStringType(v.t);
+                return { varName: v.name, isStringConcat: isString, isListAppend: isList };
                 
             case TBinop(OpAssign, {expr: TLocal(v1)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, rhsAdd)})
                 if (v1.name == v2.name):
                 // Pattern: var = var + value
-                // Distinguish list append vs string concat by RHS shape
-                return switch (rhsAdd.expr) {
-                    case TArrayDecl(_): { varName: v1.name, isStringConcat: false, isListAppend: true };
-                    default:            { varName: v1.name, isStringConcat: true,  isListAppend: false };
-                };
+                var isListAppend = isArrayType(v1.t) || switch (rhsAdd.expr) { case TArrayDecl(_): true; default: false; };
+                var isStringConcat = !isListAppend && isStringType(v1.t);
+                return { varName: v1.name, isStringConcat: isStringConcat, isListAppend: isListAppend };
                 
             case TBinop(OpAssign, {expr: TLocal(v1)}, {expr: TCall({expr: TField({expr: TLocal(v2)}, FInstance(_, _, cf))}, _)})
                 if (v1.name == v2.name && cf.get().name == "concat"):
@@ -924,7 +937,8 @@ class LoopBuilder {
         var accumulation = detectAccumulationPattern(pattern.userCode);
         if (accumulation != null) {
             var accName = toSnakeCase(accumulation.varName);
-            var reducerBody = transformBodyForReduce(pattern.userCode, accumulation, buildExpr, toSnakeCase);
+            var accNameInReducer = (accName == "_") ? "_acc" : accName + "_acc";
+            var reducerBody = transformBodyForReduce(pattern.userCode, accumulation, buildExpr, toSnakeCase, accNameInReducer);
             var reduceCall = makeAST(ERemoteCall(
                 makeAST(EVar("Enum")),
                 "reduce",
@@ -932,22 +946,15 @@ class LoopBuilder {
                     range,
                     makeAST(EVar(accName)),
                     makeAST(EFn([{
-                        args: [PVar(varName), PVar(accName)],
+                        args: [PVar(varName), PVar(accNameInReducer)],
                         guard: null,
                         body: reducerBody
                     }]))
                 ]
             ));
-            // IMPORTANT: This assignment is a rebind that must survive as a real update.
-            // Some ultra-late hygiene passes only analyze usage within the block produced by
-            // this loop node. By returning an explicit trailing `accName` reference, we ensure
-            // the accumulator binding is considered "used" within the same block, preventing
-            // it from being incorrectly underscored (e.g. `__result = ...`) which would break
-            // mutation semantics in translated Haxe loops.
-            return makeAST(EBlock([
-                makeAST(EMatch(PVar(accName), reduceCall)),
-                makeAST(EVar(accName))
-            ]));
+            // Rebind the accumulator in the surrounding scope so the mutation survives
+            // beyond the anonymous reduce function.
+            return makeAST(EMatch(PVar(accName), reduceCall));
         }
 
         var body = buildExpr(pattern.userCode);
@@ -1849,9 +1856,20 @@ class LoopBuilder {
     ): ElixirAST {
         var snakeIterator = toSnakeCase(iteratorVar);
         var snakeAccum = toSnakeCase(accumulation.varName);
-        
-        // Determine initial value based on accumulation type
-        var initialValue = if (accumulation.isStringConcat) {
+        var snakeAccumInReducer = (snakeAccum == "_") ? "_acc" : snakeAccum + "_acc";
+
+        // Determine initial value.
+        //
+        // WHY
+        // - Accumulators can be initialized before the loop (not always empty).
+        // - Using a constant here loses user intent and can break semantics.
+        //
+        // HOW
+        // - Prefer the current accumulator variable binding when possible.
+        // - Fall back to a sensible empty value only when the accumulator is the wildcard.
+        var initialValue = if (snakeAccum != "_" && snakeAccum != null && snakeAccum.length > 0) {
+            makeAST(EVar(snakeAccum));
+        } else if (accumulation.isStringConcat) {
             makeAST(EString(""));  // Empty string for concatenation
         } else if (accumulation.isListAppend) {
             makeAST(EList([]));    // Empty list for appending
@@ -1866,7 +1884,7 @@ class LoopBuilder {
         
         // Transform the body to use accumulator pattern
         // We need to replace assignments with accumulator returns
-        var transformedBody = transformBodyForReduce(body, accumulation, buildExpr, toSnakeCase);
+        var transformedBody = transformBodyForReduce(body, accumulation, buildExpr, toSnakeCase, snakeAccumInReducer);
         
         #if debug_loop_builder
         // DISABLED: trace('[LoopBuilder] Building Enum.reduce for accumulation');
@@ -1876,19 +1894,64 @@ class LoopBuilder {
         }
         #end
         
-        var reduceAst = makeAST(ERemoteCall(
+        // If the loop index is unused, emit `_` as the binder to avoid warnings.
+        function mentionsIterator(ast: ElixirAST): Bool {
+            if (ast == null || ast.def == null) return false;
+            function mentionsInRaw(code: String): Bool {
+                if (code == null || snakeIterator == null || snakeIterator.length == 0) return false;
+                if (code.indexOf(snakeIterator) == -1) return false;
+                try {
+                    return new EReg('(^|[^A-Za-z0-9_])' + snakeIterator + '([^A-Za-z0-9_]|$)', '').match(code);
+                } catch (_) {
+                    return true;
+                }
+            }
+            return switch (ast.def) {
+                case EVar(v): v == snakeIterator;
+                case ERaw(code): mentionsInRaw(code);
+                case EString(str): mentionsInRaw(str);
+                default:
+                    var found = false;
+                    ElixirASTTransformer.transformAST(ast, function(n: ElixirAST): ElixirAST {
+                        if (!found && n != null) {
+                            switch (n.def) {
+                                case EVar(v2) if (v2 == snakeIterator):
+                                    found = true;
+                                case ERaw(code2) if (mentionsInRaw(code2)):
+                                    found = true;
+                                case EString(str2) if (mentionsInRaw(str2)):
+                                    found = true;
+                                default:
+                            }
+                        }
+                        return n;
+                    });
+                    found;
+            }
+        }
+
+        var iteratorPattern:EPattern = mentionsIterator(transformedBody) ? PVar(snakeIterator) : PWildcard;
+
+        var reduceCall = makeAST(ERemoteCall(
             makeAST(EVar("Enum")),
             "reduce",
             [
                 source,
                 initialValue,
                 makeAST(EFn([{
-                    args: [PVar(snakeIterator), PVar(snakeAccum)],
+                    args: [iteratorPattern, PVar(snakeAccumInReducer)],
                     body: transformedBody
                 }]))
             ]
         ));
-        
+
+        // Rebind the accumulator in the surrounding scope so the mutation survives beyond the reducer closure.
+        var reduceAst = if (snakeAccum != "_" && snakeAccum != null && snakeAccum.length > 0) {
+            makeAST(EMatch(PVar(snakeAccum), reduceCall));
+        } else {
+            reduceCall;
+        }
+
         // Wrap with any additional initializations
         return wrapWithInitializations(reduceAst, initializations, toSnakeCase);
     }
@@ -1909,7 +1972,8 @@ class LoopBuilder {
         expr: TypedExpr,
         accumulation: {varName: String, isStringConcat: Bool, isListAppend: Bool},
         buildExpr: TypedExpr -> ElixirAST,
-        toSnakeCase: String -> String
+        toSnakeCase: String -> String,
+        accumulatorVarName: String
     ): ElixirAST {
         switch(expr.expr) {
             case TBlock(exprs):
@@ -1924,20 +1988,23 @@ class LoopBuilder {
                         case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, _) if (v.name == accumulation.varName): true;
                         case TBinop(OpAssign, {expr: TLocal(v1)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, _)}) 
                             if (v1.name == accumulation.varName && v2.name == accumulation.varName): true;
+                        case TCall({expr: TField({expr: TLocal(v3)}, FInstance(_, _, cf))}, _)
+                            if (accumulation.isListAppend && v3.name == accumulation.varName && cf.get().name == "push"):
+                            true;
                         default: false;
                     };
                     
                     if (isAccumulation) {
                         foundAccumulation = true;
                         // Transform accumulation to return new value
-                        var newValue = extractAccumulationValue(e, accumulation, buildExpr, toSnakeCase);
+                        var newValue = extractAccumulationValue(e, accumulation, buildExpr, toSnakeCase, accumulatorVarName);
                         // Always return the new accumulator value at the end
                         if (i == exprs.length - 1) {
                             // Last statement is the accumulation - return it directly
                             transformed.push(newValue);
                         } else {
                             // Not the last statement - need to capture in variable and continue
-                            var accVar = toSnakeCase(accumulation.varName);
+                            var accVar = accumulatorVarName;
                             transformed.push(makeAST(EBinary(
                                 Match,
                                 makeAST(EVar(accVar)),
@@ -2002,7 +2069,7 @@ class LoopBuilder {
                     
                     if (!lastIsAccumulation) {
                         // Need to explicitly return the accumulator
-                        transformed.push(makeAST(EVar(toSnakeCase(accumulation.varName))));
+                        transformed.push(makeAST(EVar(accumulatorVarName)));
                     }
                 }
                 
@@ -2012,7 +2079,7 @@ class LoopBuilder {
                 // Simple expression - compile and return accumulator
                 return makeAST(EBlock([
                     buildExpr(expr),
-                    makeAST(EVar(toSnakeCase(accumulation.varName)))
+                    makeAST(EVar(accumulatorVarName))
                 ]));
         }
     }
@@ -2024,26 +2091,32 @@ class LoopBuilder {
         expr: TypedExpr,
         accumulation: {varName: String, isStringConcat: Bool, isListAppend: Bool},
         buildExpr: TypedExpr -> ElixirAST,
-        toSnakeCase: String -> String
+        toSnakeCase: String -> String,
+        accumulatorVarName: String
     ): ElixirAST {
-        var accVar = makeAST(EVar(toSnakeCase(accumulation.varName)));
+        var accVar = makeAST(EVar(accumulatorVarName));
         
         switch(expr.expr) {
             case TBinop(OpAssignOp(OpAdd), _, value):
-                // var += value -> accumulator <> value (for strings)
-                if (accumulation.isStringConcat) {
-                    return makeAST(EBinary(StringConcat, accVar, buildExpr(value)));
-                } else {
-                    return makeAST(EBinary(Add, accVar, buildExpr(value)));
+                // var += value -> list concat / string concat / numeric add
+                if (accumulation.isListAppend) {
+                    return makeAST(EBinary(Concat, accVar, buildExpr(value)));
                 }
+                if (accumulation.isStringConcat) return makeAST(EBinary(StringConcat, accVar, buildExpr(value)));
+                return makeAST(EBinary(Add, accVar, buildExpr(value)));
                 
             case TBinop(OpAssign, _, {expr: TBinop(OpAdd, _, value)}):
-                // var = var + value -> accumulator <> value
-                if (accumulation.isStringConcat) {
-                    return makeAST(EBinary(StringConcat, accVar, buildExpr(value)));
-                } else {
-                    return makeAST(EBinary(Add, accVar, buildExpr(value)));
+                // var = var + value -> list concat / string concat / numeric add
+                if (accumulation.isListAppend) {
+                    return makeAST(EBinary(Concat, accVar, buildExpr(value)));
                 }
+                if (accumulation.isStringConcat) return makeAST(EBinary(StringConcat, accVar, buildExpr(value)));
+                return makeAST(EBinary(Add, accVar, buildExpr(value)));
+
+            case TCall({expr: TField({expr: TLocal(_)}, FInstance(_, _, cf))}, args)
+                if (accumulation.isListAppend && cf.get().name == "push" && args != null && args.length == 1):
+                // var.push(value) -> accumulator ++ [value]
+                return makeAST(EBinary(Concat, accVar, makeAST(EList([buildExpr(args[0])]))));
                 
             default:
                 // Fallback: just return accumulator unchanged
@@ -2413,24 +2486,145 @@ class LoopBuilder {
 
         // Detect `for (item in array)` desugared to an indexed while loop:
         //   g = 0; while (g < array.length) { var item = array[g]; g++; <userCode> }
-        // and rewrite to Enum.each(array, fn item -> <userCode> end).
+        // and rewrite to Enum.each/Enum.reduce(array, ...).
         var forInArrayPattern = detectForInArrayPattern(econd, e);
         if (forInArrayPattern != null) {
             var arrayExpr = buildExpression(forInArrayPattern.arrayExpr);
             var binderName = toElixirVarName(forInArrayPattern.elementVarName);
-            var bodyAst = buildExpression(forInArrayPattern.userBody);
-            return ERemoteCall(
+
+            // If the user body mutates outer locals, lower to Enum.reduce with an explicit
+            // state accumulator so mutations survive across iterations.
+            var mutated = MutabilityDetector.detectMutatedVariables(forInArrayPattern.userBody);
+            if (Lambda.count(mutated) == 0) {
+                var bodyAst = buildExpression(forInArrayPattern.userBody);
+                return ERemoteCall(
+                    makeAST(EVar("Enum")),
+                    "each",
+                    [
+                        arrayExpr,
+                        makeAST(EFn([{
+                            args: [PVar(binderName)],
+                            guard: null,
+                            body: bodyAst
+                        }]))
+                    ]
+                );
+            }
+
+            var compilationContext: Null<CompilationContext> = Std.isOfType(context, CompilationContext) ? cast context : null;
+
+            var mutatedList: Array<{ id: Int, originalName: String, outerName: String, accName: String }> = [];
+            for (id => tvar in mutated) {
+                var outerName = toElixirVarName(tvar.name);
+                var accName = if (outerName == "_") {
+                    "_acc";
+                } else if (outerName.endsWith("_acc")) {
+                    outerName + "_state";
+                } else {
+                    outerName + "_acc";
+                };
+                mutatedList.push({ id: id, originalName: tvar.name, outerName: outerName, accName: accName });
+            }
+            mutatedList.sort((a, b) -> a.id - b.id);
+
+            function makeTupleVars(names: Array<String>): Array<ElixirAST> {
+                return [for (nm in names) makeAST(EVar(nm))];
+            }
+
+            var initialState: ElixirAST = if (mutatedList.length == 1) {
+                makeAST(EVar(mutatedList[0].outerName));
+            } else {
+                makeAST(ETuple(makeTupleVars([for (m in mutatedList) m.outerName])));
+            };
+
+            var statePattern: EPattern = if (mutatedList.length == 1) {
+                PVar(mutatedList[0].accName);
+            } else {
+                PTuple([for (m in mutatedList) PVar(m.accName)]);
+            };
+
+            var outerBindPattern: EPattern = if (mutatedList.length == 1) {
+                PVar(mutatedList[0].outerName);
+            } else {
+                PTuple([for (m in mutatedList) PVar(m.outerName)]);
+            };
+
+            var stateReturn: ElixirAST = if (mutatedList.length == 1) {
+                makeAST(EVar(mutatedList[0].accName));
+            } else {
+                makeAST(ETuple(makeTupleVars([for (m in mutatedList) m.accName])));
+            };
+
+            // Temporarily remap mutated outer vars to accumulator names while compiling the reducer body.
+            var savedMappings: Array<{ key: String, had: Bool, value: Null<String> }> = [];
+            if (compilationContext != null) {
+                for (m in mutatedList) {
+                    var idKey = Std.string(m.id);
+                    for (k in [idKey, m.originalName]) {
+                        var had = compilationContext.tempVarRenameMap.exists(k);
+                        var old = had ? compilationContext.tempVarRenameMap.get(k) : null;
+                        savedMappings.push({ key: k, had: had, value: old });
+                        compilationContext.tempVarRenameMap.set(k, m.accName);
+                    }
+                }
+            }
+
+            var compiledBody = buildExpression(forInArrayPattern.userBody);
+
+            if (compilationContext != null) {
+                for (s in savedMappings) {
+                    if (s.had) compilationContext.tempVarRenameMap.set(s.key, s.value);
+                    else compilationContext.tempVarRenameMap.remove(s.key);
+                }
+            }
+
+            function ensureReturnsState(bodyAst: ElixirAST, ret: ElixirAST): ElixirAST {
+                if (bodyAst == null) return ret;
+                return switch (bodyAst.def) {
+                    case EIf(cond, then_, else_):
+                        var newThen = ensureReturnsState(then_, ret);
+                        var newElse = if (else_ == null) {
+                            ret;
+                        } else switch (else_.def) {
+                            case ENil: ret;
+                            default: ensureReturnsState(else_, ret);
+                        };
+                        makeAST(EIf(cond, newThen, newElse));
+                    case EUnless(condition, body, elseBranch):
+                        var newBody = ensureReturnsState(body, ret);
+                        var newElse = if (elseBranch == null) {
+                            ret;
+                        } else switch (elseBranch.def) {
+                            case ENil: ret;
+                            default: ensureReturnsState(elseBranch, ret);
+                        };
+                        makeAST(EUnless(condition, newBody, newElse));
+                    case EBlock(stmts):
+                        var out = stmts == null ? [] : stmts.copy();
+                        out.push(ret);
+                        makeAST(EBlock(out));
+                    default:
+                        makeAST(EBlock([bodyAst, ret]));
+                };
+            }
+
+            var reducerBody = ensureReturnsState(compiledBody, stateReturn);
+
+            var reduceCall = makeAST(ERemoteCall(
                 makeAST(EVar("Enum")),
-                "each",
+                "reduce",
                 [
                     arrayExpr,
+                    initialState,
                     makeAST(EFn([{
-                        args: [PVar(binderName)],
+                        args: [PVar(binderName), statePattern],
                         guard: null,
-                        body: bodyAst
+                        body: reducerBody
                     }]))
                 ]
-            );
+            ));
+
+            return EMatch(outerBindPattern, reduceCall);
         }
         
         // Check for array iteration patterns

@@ -23,6 +23,7 @@
   "ecto/option.ex",
   "ecto/changeset_utils.ex",
   "ecto/changeset_action.ex",
+  "e_reg.ex",
   "test_app/presence.ex"
 ],
   "id": 0,

@@ -4,21 +4,21 @@ defmodule MemoryStorage do
   end
   def get(struct, key) do
     this1 = struct.data
-    _ = this1.get(key)
+    _ = StringMap.get(this1, key)
   end
   def put(struct, key, value) do
     this1 = struct.data
-    _ = Map.put(this1, key, value)
+    _ = StringMap.set(this1, key, value)
     true
   end
   def delete(struct, key) do
     this1 = struct.data
-    _ = this1.remove(key)
+    _ = StringMap.remove(this1, key)
   end
   def list(struct) do
     this1 = struct.data
-    k = _ = this1.keys()
-    _ = Enum.each(colors, fn item -> _ = [item] end)
+    k = _ = StringMap.keys(this1)
+    _ = Enum.each(colors, fn item -> [item] end)
     []
   end
 end

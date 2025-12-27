@@ -661,8 +661,11 @@ class HygieneTransforms {
                 // For each binding name, scan ERaw code for token-bounded occurrences
                 for (name in functionScopeBindings) {
                     if (name == null || name.length == 0) continue;
-                    // Skip already-underscored names; they won't appear in ERaw as originals
-                    if (name.charAt(0) == '_') continue;
+                    // IMPORTANT: Do not skip underscore-prefixed names.
+                    // Haxe inline expansion regularly introduces underscore temps like `_this`,
+                    // and `__elixir__()` templates may reference them directly (e.g. `String.downcase(_this)`).
+                    // If we skip them here, later cleanup passes can incorrectly drop the assignment,
+                    // leaving an *undefined variable* in the emitted Elixir.
 
                     var start = 0;
                     var found = false;

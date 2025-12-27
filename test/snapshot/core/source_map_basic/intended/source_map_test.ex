@@ -7,8 +7,8 @@ defmodule SourceMapTest do
   end
   def main() do
     test = %SourceMapTest{}
-    result = test.simpleMethod()
-    condition = test.conditionalMethod(42)
+    result = simple_method(test)
+    condition = conditional_method(test, 42)
     nil
   end
 end

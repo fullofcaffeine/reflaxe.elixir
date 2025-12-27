@@ -1,6 +1,4 @@
 defmodule Main do
-  @import :Bitwise
-
   defp test_complex_assignment_with_binary() do
     c = 60000
     i = 0
@@ -13,8 +11,12 @@ defmodule Main do
     i = 0
     index = 0
     c = 0
-    c = s.cca(index = i + 1)
-    c = if (c > 55296), do: Bitwise.bor(Bitwise.bsl((c - 55232), 10), Bitwise.band(s.cca(index = i + 1), 1023)), else: c
+    c = TestString.cca(s, index = i + 1)
+    c = if (c > 55296) do
+      Bitwise.bor(Bitwise.bsl((c - 55232), 10), Bitwise.band(TestString.cca(s, index = i + 1), 1023))
+    else
+      c
+    end
     nil
   end
 end

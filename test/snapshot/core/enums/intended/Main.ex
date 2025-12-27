@@ -17,7 +17,8 @@ defmodule Main do
     (case tree do
       {:leaf, value} -> value
       {:node, left, right} ->
-        right = left
+        g_value = right
+        right = g_value
         tree_sum(left) + tree_sum(right)
     end)
   end
@@ -39,14 +40,15 @@ defmodule Main do
   def compare_trees(t1, t2) do
     (case t1 do
       {:leaf, value} when t2 == 0 ->
-        v2 = value
+        g_value = value
+        v2 = g_value
         v1 = value
         v1 == v2
       {:leaf, _value} -> false
-      {:node, left, right} when t2 == 1 ->
+      {:node, left, _right} when t2 == 1 ->
         l2 = left
         r2 = left
-        r1 = right
+        r1 = g_value
         l1 = left
         compare_trees(l1, l2) and compare_trees(r1, r2)
       {:node, _left, _right} -> false

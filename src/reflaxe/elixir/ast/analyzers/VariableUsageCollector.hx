@@ -103,6 +103,10 @@ class VariableUsageCollector {
                 walk(e, shadowed, refs);
             case EPipe(l, r):
                 walk(l, shadowed, refs); walk(r, shadowed, refs);
+            case ERange(start, end, _exclusive, step):
+                walk(start, shadowed, refs);
+                walk(end, shadowed, refs);
+                if (step != null) walk(step, shadowed, refs);
 
             // Control flow
             case EIf(c,t,e):

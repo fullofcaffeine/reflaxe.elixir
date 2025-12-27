@@ -24,10 +24,7 @@ defmodule Main do
   end
   defp test_complex_transformations() do
     users = [%{:name => "Alice", :age => 30}, %{:name => "Bob", :age => 25}, %{:name => "Charlie", :age => 35}]
-    user_info = Enum.map(users, fn u ->
-        this = u.name
-        %{:name => String.upcase(_this), :age_group => (if (u.age < 30), do: "young", else: "adult"), :id => generate_id(u.name)}
-      end)
+    user_info = Enum.map(users, fn u -> %{:name => String.upcase(u.name), :age_group => (if (u.age < 30), do: "young", else: "adult"), :id => generate_id(u.name)} end)
     adults = Enum.map(Enum.filter(users, fn u -> u.age >= 30 end), fn u -> u.name end)
     processed = Enum.map(Enum.filter(Enum.map(Enum.filter(users, fn u -> u.age > 20 end), fn u -> %{:name => u.name, :valid => true} end), fn u -> u.valid end), fn u -> u.name end)
   end
@@ -35,7 +32,7 @@ defmodule Main do
     "Processed: #{(fn -> Kernel.to_string(n) end).()}"
   end
   defp generate_id(name) do
-    length(name) * 100
+    String.length(name) * 100
   end
   defp string_value(s) do
     %{:type => "StringValue", :value => s}

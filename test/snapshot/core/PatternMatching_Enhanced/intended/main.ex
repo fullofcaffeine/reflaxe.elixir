@@ -91,32 +91,31 @@ end))
 end)
   end
   defp test_object_patterns() do
-    point_y = nil
-    _ = nil
     point_x = 10
     point_y = 20
-    g = point_y
+    g = point_x
+    g_value = point_y
     quadrant = x = g
-    y = g
+    y = g_value
     if (x > 0 and y > 0) do
       "first"
     else
       x = g
-      y = g
+      y = g_value
       if (x < 0 and y > 0) do
         "second"
       else
         x = g
-        y = g
+        y = g_value
         if (x < 0 and y < 0) do
           "third"
         else
           x = g
-          y = g
+          y = g_value
           cond do
             x > 0 and y < 0 -> "fourth"
             g == 0 -> "axis"
-            g == 0 -> "axis"
+            g_value == 0 -> "axis"
             :true -> "origin"
           end
         end

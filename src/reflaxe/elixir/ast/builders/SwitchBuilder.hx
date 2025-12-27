@@ -3136,14 +3136,6 @@ using StringTools;
 
         // TASK 4.5 FIX: Store pattern-extracted ENUM FIELD NAME in ClauseContext
         // This allows TEnumParameter handling to know this enum constructor was already pattern-matched
-        #if sys
-        var debugFile = sys.io.File.append("/tmp/enum_debug.log");
-        debugFile.writeString('[SwitchBuilder.buildEnumPattern] About to store ef.name\n');
-        debugFile.writeString('[SwitchBuilder]   ef: ${ef}\n');
-        debugFile.writeString('[SwitchBuilder]   ef.name: ${ef != null ? ef.name : "NULL"}\n');
-        debugFile.writeString('[SwitchBuilder]   currentClauseContext: ${context.currentClauseContext != null}\n');
-        debugFile.close();
-        #end
 
         if (context.currentClauseContext != null && ef != null) {
             // Store the ENUM FIELD NAME (constructor name like "Click", "Hover")
@@ -3151,13 +3143,6 @@ using StringTools;
             // TEnumParameter checks: patternExtractedParams.contains(ef.name)
             // So we need to store ef.name here
             context.currentClauseContext.patternExtractedParams.push(ef.name);
-
-            #if sys
-            var debugFile2 = sys.io.File.append("/tmp/enum_debug.log");
-            debugFile2.writeString('[SwitchBuilder] ✅ STORED enum field "${ef.name}" in patternExtractedParams\n');
-            debugFile2.writeString('[SwitchBuilder]   patternExtractedParams now: [${context.currentClauseContext.patternExtractedParams.join(", ")}]\n');
-            debugFile2.close();
-            #end
         }
 
         // Return tuple pattern for enum constructor

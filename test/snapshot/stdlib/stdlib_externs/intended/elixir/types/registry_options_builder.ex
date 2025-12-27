@@ -19,7 +19,7 @@ defmodule RegistryOptionsBuilder do
     else
       options
     end
-    _ = options.meta.push(%{:key => key, :value => value})
+    options.meta ++ [%{:key => key, :value => value}]
     options
   end
 end

@@ -21,7 +21,7 @@ defmodule Main do
                 end
             
     list = [1, 2, 3]
-    _ = list ++ [4]
+    list = list ++ [4]
     combined = list ++ [5, 6, 7]
     has_two = 
                 case Enum.find_index(list, fn item -> item == 2 end) do

@@ -11,21 +11,48 @@ defmodule Main do
     %{:test_id => :rand.uniform(), :timestamp => DateTime.utc_now()}
   end
   setup context do
-    _ = on_exit((fn -> fn ->
+    _ = on_exit(fn ->
     test_data = []
     counter = 0
-  end end).())
+  end)
     :ok
   end
   setup_all context do
     _ = on_exit(fn -> module_state = nil end)
     :ok
   end
+  defp safe_divide(struct, a, b) do
+    if (b == 0), do: {:error, "Division by zero"}, else: {:ok, a / b}
+  end
+  defp find_in_array(struct, arr, item) do
+    _g = 0
+    _ = Enum.each(arr, fn element ->
+  if (element == item), do: {:some, element}
+end)
+    {:none}
+  end
+  defp perform_async_calculation(struct) do
+    sum = 0
+    sum = sum + 1
+    sum = sum + 2
+    sum = sum + 3
+    sum = sum + 4
+    sum = sum + 5
+    sum = sum + 6
+    sum = sum + 7
+    sum = sum + 8
+    sum = sum + 9
+    sum = sum + 10
+    sum * 2
+  end
+  defp throw_error(struct, message) do
+    throw(message)
+  end
   describe "Performance Tests" do
     test "slow operation" do
       result = 0
       g = 0
-      {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, (fn -> fn _, {result, _g} ->
+      {result, _g} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {result, _g} ->
         if (g < 1000) do
           old__g = g
           _g = g + 1
@@ -35,7 +62,7 @@ defmodule Main do
         else
           {:halt, {result, g}}
         end
-      end end).())
+      end)
       nil
       assert result > 0
     end
@@ -67,7 +94,7 @@ defmodule Main do
   describe "Error Handling" do
     test "exception handling" do
       try do
-        _ = context.throwError("Test error")
+        _ = throw_error(context, "Test error")
         flunk("Should have thrown an error")
       rescue
         e ->
@@ -89,9 +116,9 @@ defmodule Main do
       error_result = "error message"
       assert match?({:ok, _}, ok_result)
       assert match?({:error, _}, error_result)
-      division_result = context.safeDivide(10, 2)
+      division_result = safe_divide(context, 10, 2)
       assert match?({:ok, _}, division_result)
-      invalid_division = context.safeDivide(10, 0)
+      invalid_division = safe_divide(context, 10, 0)
       assert match?({:error, _}, invalid_division)
     end
     test "option assertions" do
@@ -99,9 +126,9 @@ defmodule Main do
       none_value = {:none}
       assert match?({:some, _}, some_value)
       assert none_value == :none
-      found = context.findInArray(context[:test_data], "banana")
+      found = find_in_array(context, context[:test_data], "banana")
       assert match?({:some, _}, found)
-      not_found = context.findInArray(context[:test_data], "dragonfruit")
+      not_found = find_in_array(context, context[:test_data], "dragonfruit")
       assert not_found == :none
     end
   end
@@ -141,7 +168,7 @@ defmodule Main do
   end
   describe "Async Operations" do
     test "async operation" do
-      result = context.performAsyncCalculation()
+      result = perform_async_calculation(context)
       assert result == 100
     end
     test "parallel execution" do

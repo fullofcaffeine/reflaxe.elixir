@@ -16,14 +16,14 @@ defmodule MixProjectExample do
     # Use Haxe-compiled UserService
     user_data = %{name: "John Doe", email: "john@example.com", age: 30}
     
-    case Services.UserService.create_user(user_data) do
+    case UserService.create_user(user_data) do
       {:ok, user} ->
         IO.puts("✅ User created successfully!")
         IO.puts("📧 Email: #{user.email}")
-        IO.puts("👤 Display name: #{Utils.StringUtils.format_display_name(user.name)}")
+        IO.puts("👤 Display name: #{StringUtils.format_display_name(user.name)}")
         
         # Use Haxe-compiled MathHelper for age calculations
-        years_to_retirement = Utils.MathHelper.calculate_years_to_retirement(user.age)
+        years_to_retirement = MathHelper.calculate_years_to_retirement(user.age)
         IO.puts("🎯 Years to retirement: #{years_to_retirement}")
         
         {:ok, user}
@@ -49,7 +49,7 @@ defmodule MixProjectExample do
     IO.puts("🔤 String Processing Examples:")
     
     Enum.each(test_strings, fn str ->
-      processed = Utils.StringUtils.process_string(str)
+      processed = StringUtils.process_string(str)
       IO.puts("  '#{str}' -> '#{processed}'")
     end)
   end
@@ -69,7 +69,7 @@ defmodule MixProjectExample do
     ]
     
     Enum.each(test_cases, fn {number, description} ->
-      result = Utils.MathHelper.process_number(number)
+      result = MathHelper.process_number(number)
       IO.puts("  #{description}: #{number} -> #{result}")
     end)
   end

@@ -1,6 +1,6 @@
 defmodule Container do
   def add(struct, item) do
-    items = items ++ [item]
+    struct.items ++ [item]
   end
   def get(struct, index) do
     struct.items[index]
@@ -9,9 +9,13 @@ defmodule Container do
     length(struct.items)
   end
   def map(struct, fn_param) do
+    result = %Container{}
     _g = 0
-    _g1 = struct.items
-    _ = Enum.each(g_value, fn item -> StringBuf.add(result, fn_param.(item)) end)
-    %Container{}
+    g_value = struct.items
+    result = Enum.reduce(g_value, result, fn item, result_acc ->
+      _ = add(result_acc, fn_param.(item))
+      result_acc
+    end)
+    result
   end
 end

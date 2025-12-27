@@ -2,9 +2,6 @@ defmodule Main do
   def main() do
     pos1 = 10
     pos2 = 20
-    _ = nil
-    _ = nil
-    _ = nil
     _ = 1
     _ = 2
     _ = 3

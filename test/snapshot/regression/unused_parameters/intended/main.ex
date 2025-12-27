@@ -4,7 +4,7 @@ defmodule Main do
   end
   def main() do
     _ = test_unused_parameters(5, "test", true)
-    _ = callback_example(fn x, y -> x end)
+    _ = callback_example(fn x, _y -> x end)
   end
   defp test_unused_parameters(used1, unused, used2) do
     if (used2), do: used1 * 2, else: used1

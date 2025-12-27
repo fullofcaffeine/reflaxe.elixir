@@ -22,10 +22,12 @@ defmodule Main do
     count = count + 1
     count = count + 1
     value = 5
-    if (value > 0) do
+    value = if (value > 0) do
       value = value * 2
+      value
     else
       value = value * -1
+      value
     end
     result = 1
     result = result * 2
@@ -37,9 +39,8 @@ defmodule Main do
     i = 0
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {i} ->
       if (i < 5) do
-        (old_i = i
-i = i + 1
-old_i)
+        _old_i = i
+        i = i + 1
         {:cont, {i}}
       else
         {:halt, {i}}
@@ -49,9 +50,8 @@ old_i)
     j = 5
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {j} ->
       if (j > 0) do
-        (old_j = j
-j = (j - 1)
-old_j)
+        _old_j = j
+        j = (j - 1)
         {:cont, {j}}
       else
         {:halt, {j}}
@@ -60,12 +60,12 @@ old_j)
     nil
     sum = 0
     k = 1
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {sum, k} ->
+    {sum, k} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {sum, k} ->
       if (k <= 5) do
         sum = sum + k
-        (old_k = k
-k = k + 1
-old_k)
+        old_k = k
+        k = k + 1
+        old_k
         {:cont, {sum, k}}
       else
         {:halt, {sum, k}}
@@ -74,24 +74,24 @@ old_k)
     nil
     total = 0
     x = 0
-    {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {total, x} ->
+    {total, x} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {total, x} ->
       if (x < 3) do
         y = 0
-        {_, _} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {total, y} ->
+        {total, y} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {total, y} ->
           if (y < 3) do
             total = total + 1
-            (old_y = y
-y = y + 1
-old_y)
+            old_y = y
+            y = y + 1
+            old_y
             {:cont, {total, y}}
           else
             {:halt, {total, y}}
           end
         end)
         nil
-        (old_x = x
-x = x + 1
-old_x)
+        old_x = x
+        x = x + 1
+        old_x
         {:cont, {total, x}}
       else
         {:halt, {total, x}}

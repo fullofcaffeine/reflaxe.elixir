@@ -28,7 +28,46 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  */
 class ReduceResultUnusedUnderscoreTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
-        return rewriteNode(ast, new Map());
+        // IMPORTANT: Do not rewrite the entire tree starting at the module root.
+        //
+        // WHY
+        // - Rewriting nested EBlock nodes without statement-list context loses the "used after this statement"
+        //   information needed to decide whether a reduce binder is truly unused.
+        // - This can incorrectly underscore state-carrying rebinds produced by loop lowerings, breaking
+        //   semantics (e.g., `users = Enum.reduce(...)` turning into `_users = ...` while `users` is used later).
+        //
+        // HOW
+        // - Apply the rewrite only at function boundaries (def/defp/fn clauses), where the outermost
+        //   statement list is the full lexical scope for local variables.
+        // - Nested blocks are still handled via statement-level recursion inside rewriteNode, which is
+        //   supplied with the correct `usedAfter` set from the parent statement list.
+        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+            if (n == null || n.def == null) return n;
+
+            return switch (n.def) {
+                case EDef(name, args, guards, body):
+                    var fresh = new Map<String, Bool>();
+                    var newGuards = guards != null ? rewriteNode(guards, fresh) : null;
+                    var newBody = rewriteNode(body, fresh);
+                    makeASTWithMeta(EDef(name, args, newGuards, newBody), n.metadata, n.pos);
+                case EDefp(name, args, guards, body):
+                    var fresh = new Map<String, Bool>();
+                    var newGuards = guards != null ? rewriteNode(guards, fresh) : null;
+                    var newBody = rewriteNode(body, fresh);
+                    makeASTWithMeta(EDefp(name, args, newGuards, newBody), n.metadata, n.pos);
+                case EFn(clauses):
+                    var updated = [];
+                    for (cl in clauses) {
+                        var clauseScope = new Map<String, Bool>();
+                        var newGuard = cl.guard != null ? rewriteNode(cl.guard, clauseScope) : null;
+                        var newBody = rewriteNode(cl.body, clauseScope);
+                        updated.push({ args: cl.args, guard: newGuard, body: newBody });
+                    }
+                    makeASTWithMeta(EFn(updated), n.metadata, n.pos);
+                default:
+                    n;
+            }
+        });
     }
 
     /**
@@ -93,6 +132,13 @@ class ReduceResultUnusedUnderscoreTransforms {
                             if (!usedAfter.exists(name)) unused.push(name);
                         }
                         if (unused.length > 0) {
+#if debug_reduce_result_unused
+                            try {
+                                var usedKeys = [];
+                                for (k in usedAfter.keys()) usedKeys.push(k);
+                                trace('[ReduceResultUnused] idx=' + i + ' names=' + names.join(',') + ' unused=' + unused.join(',') + ' usedAfter=' + usedKeys.join(','));
+                            } catch (_) {}
+#end
                             var newPat = underscoreUnusedInPattern(pat, unused);
                             rewrittenStmt = makeASTWithMeta(EMatch(newPat, rhs), rewrittenStmt.metadata, rewrittenStmt.pos);
                         }
@@ -134,7 +180,10 @@ class ReduceResultUnusedUnderscoreTransforms {
     static function underscoreUnusedInPattern(pat: EPattern, unused: Array<String>): EPattern {
         return switch (pat) {
             case PVar(n):
-                if (unused.indexOf(n) >= 0) PVar('_' + n) else pat;
+                if (unused.indexOf(n) >= 0) {
+                    // Avoid stacking underscores: `_x`/`__x` are already suppression prefixes.
+                    (n != null && n.length > 0 && n.charAt(0) == '_') ? pat : PVar('_' + n);
+                } else pat;
             case PTuple(elems):
                 var outElems:Array<EPattern> = [];
                 for (p in elems) switch (p) {

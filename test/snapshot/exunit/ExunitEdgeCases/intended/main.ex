@@ -14,6 +14,12 @@ defmodule Main do
     _ = on_exit(fn -> global = nil end)
     :ok
   end
+  defp helper_method(struct) do
+    assert true
+  end
+  defp static_helper() do
+    42
+  end
   test "without assertions" do
     x = 2
     y = "hello"
@@ -35,7 +41,7 @@ defmodule Main do
     
   end
   test "delegation" do
-    context.helperMethod()
+    helper_method(context)
   end
   test "123 numbers456" do
     assert 123 == 123

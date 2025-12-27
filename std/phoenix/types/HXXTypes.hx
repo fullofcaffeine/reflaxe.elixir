@@ -188,7 +188,8 @@ typedef GlobalAttributes = {
  * };
  * ```
  */
-typedef InputAttributes = GlobalAttributes & {
+typedef InputAttributes = {
+    > GlobalAttributes,
     ?type: InputType,
     ?name: String,
     ?value: Term,
@@ -248,7 +249,8 @@ enum abstract InputType(String) to String {
 /**
  * Button element attributes
  */
-typedef ButtonAttributes = GlobalAttributes & {
+typedef ButtonAttributes = {
+    > GlobalAttributes,
     ?type: ButtonType,
     ?name: String,
     ?value: String,
@@ -269,7 +271,8 @@ enum abstract ButtonType(String) to String {
 /**
  * Select element attributes
  */
-typedef SelectAttributes = GlobalAttributes & {
+typedef SelectAttributes = {
+    > GlobalAttributes,
     ?name: String,
     ?multiple: Bool,
     ?size: Int,
@@ -281,7 +284,8 @@ typedef SelectAttributes = GlobalAttributes & {
 /**
  * Option element attributes
  */
-typedef OptionAttributes = GlobalAttributes & {
+typedef OptionAttributes = {
+    > GlobalAttributes,
     ?value: String,
     ?label: String,
     ?selected: Bool,
@@ -291,7 +295,8 @@ typedef OptionAttributes = GlobalAttributes & {
 /**
  * Textarea element attributes
  */
-typedef TextAreaAttributes = GlobalAttributes & {
+typedef TextAreaAttributes = {
+    > GlobalAttributes,
     ?name: String,
     ?rows: Int,
     ?cols: Int,
@@ -308,7 +313,8 @@ typedef TextAreaAttributes = GlobalAttributes & {
 /**
  * Form element attributes
  */
-typedef FormAttributes = GlobalAttributes & {
+typedef FormAttributes = {
+    > GlobalAttributes,
     ?action: String,
     ?method: String,  // "get" | "post"
     ?enctype: String,
@@ -325,7 +331,8 @@ typedef FormAttributes = GlobalAttributes & {
 /**
  * Label element attributes
  */
-typedef LabelAttributes = GlobalAttributes & {
+typedef LabelAttributes = {
+    > GlobalAttributes,
     ?htmlFor: String,  // Maps to 'for' in output
     ?form: String,
 }
@@ -337,7 +344,8 @@ typedef LabelAttributes = GlobalAttributes & {
 /**
  * Anchor (link) element attributes
  */
-typedef AnchorAttributes = GlobalAttributes & {
+typedef AnchorAttributes = {
+    > GlobalAttributes,
     ?href: String,
     ?target: String,
     ?rel: String,
@@ -354,22 +362,22 @@ typedef AnchorAttributes = GlobalAttributes & {
 /**
  * Heading element attributes (h1-h6)
  */
-typedef HeadingAttributes = GlobalAttributes & {}
+typedef HeadingAttributes = GlobalAttributes;
 
 /**
  * Paragraph element attributes
  */
-typedef ParagraphAttributes = GlobalAttributes & {}
+typedef ParagraphAttributes = GlobalAttributes;
 
 /**
  * Div element attributes
  */
-typedef DivAttributes = GlobalAttributes & {}
+typedef DivAttributes = GlobalAttributes;
 
 /**
  * Span element attributes
  */
-typedef SpanAttributes = GlobalAttributes & {}
+typedef SpanAttributes = GlobalAttributes;
 
 // ============================================================================
 // MEDIA ELEMENTS
@@ -378,7 +386,8 @@ typedef SpanAttributes = GlobalAttributes & {}
 /**
  * Image element attributes
  */
-typedef ImageAttributes = GlobalAttributes & {
+typedef ImageAttributes = {
+    > GlobalAttributes,
     ?src: String,
     ?alt: String,
     ?width: Int,
@@ -395,7 +404,8 @@ typedef ImageAttributes = GlobalAttributes & {
 /**
  * Video element attributes
  */
-typedef VideoAttributes = GlobalAttributes & {
+typedef VideoAttributes = {
+    > GlobalAttributes,
     ?src: String,
     ?poster: String,
     ?width: Int,
@@ -411,7 +421,8 @@ typedef VideoAttributes = GlobalAttributes & {
 /**
  * Audio element attributes
  */
-typedef AudioAttributes = GlobalAttributes & {
+typedef AudioAttributes = {
+    > GlobalAttributes,
     ?src: String,
     ?autoplay: Bool,
     ?controls: Bool,
@@ -428,7 +439,8 @@ typedef AudioAttributes = GlobalAttributes & {
 /**
  * List element attributes (ul, ol)
  */
-typedef ListAttributes = GlobalAttributes & {
+typedef ListAttributes = {
+    > GlobalAttributes,
     // ol specific
     ?reversed: Bool,
     ?start: Int,
@@ -438,7 +450,8 @@ typedef ListAttributes = GlobalAttributes & {
 /**
  * List item element attributes
  */
-typedef ListItemAttributes = GlobalAttributes & {
+typedef ListItemAttributes = {
+    > GlobalAttributes,
     ?value: Int,
 }
 
@@ -449,17 +462,18 @@ typedef ListItemAttributes = GlobalAttributes & {
 /**
  * Table element attributes
  */
-typedef TableAttributes = GlobalAttributes & {}
+typedef TableAttributes = GlobalAttributes;
 
 /**
  * Table row element attributes
  */
-typedef TableRowAttributes = GlobalAttributes & {}
+typedef TableRowAttributes = GlobalAttributes;
 
 /**
  * Table cell element attributes (td, th)
  */
-typedef TableCellAttributes = GlobalAttributes & {
+typedef TableCellAttributes = {
+    > GlobalAttributes,
     ?colspan: Int,
     ?rowspan: Int,
     ?headers: String,
@@ -538,7 +552,8 @@ typedef LinkAttributes = {
 /**
  * Script element attributes
  */
-typedef ScriptAttributes = GlobalAttributes & {
+typedef ScriptAttributes = {
+    > GlobalAttributes,
     ?src: String,
     ?type: String,
     ?async: Bool,
@@ -552,7 +567,8 @@ typedef ScriptAttributes = GlobalAttributes & {
 /**
  * Style element attributes
  */
-typedef StyleAttributes = GlobalAttributes & {
+typedef StyleAttributes = {
+    > GlobalAttributes,
     ?media: String,
     ?nonce: String,
 }
@@ -564,29 +580,31 @@ typedef StyleAttributes = GlobalAttributes & {
 /**
  * Generic semantic element attributes (article, section, nav, aside, header, footer, main)
  */
-typedef SemanticAttributes = GlobalAttributes & {}
+typedef SemanticAttributes = GlobalAttributes;
 
 /**
  * Figure element attributes
  */
-typedef FigureAttributes = GlobalAttributes & {}
+typedef FigureAttributes = GlobalAttributes;
 
 /**
  * Details element attributes
  */
-typedef DetailsAttributes = GlobalAttributes & {
+typedef DetailsAttributes = {
+    > GlobalAttributes,
     ?open: Bool,
 }
 
 /**
  * Summary element attributes
  */
-typedef SummaryAttributes = GlobalAttributes & {}
+typedef SummaryAttributes = GlobalAttributes;
 
 /**
  * Dialog element attributes
  */
-typedef DialogAttributes = GlobalAttributes & {
+typedef DialogAttributes = {
+    > GlobalAttributes,
     ?open: Bool,
 }
 
