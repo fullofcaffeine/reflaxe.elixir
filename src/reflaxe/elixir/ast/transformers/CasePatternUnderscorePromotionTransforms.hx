@@ -5,6 +5,8 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.ASTUtils;
+import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
 
 /**
  * CasePatternUnderscorePromotionTransforms
@@ -128,12 +130,20 @@ class CasePatternUnderscorePromotionTransforms {
   }
 
   static function collectUsedVars(body:ElixirAST, guard:Null<ElixirAST>):Map<String,Bool> {
-    var s = new Map<String,Bool>();
-    // Ingest builder metadata if present
-    var arr = body != null ? body.metadata.usedLocalsFromTyped : null;
-    if (arr != null) {
-      for (n in arr) if (n != null && n.length > 0) s.set(n, true);
+    var used = new Map<String,Bool>();
+
+    inline function mergeFromTyped(node: ElixirAST): Void {
+      if (node == null) return;
+      var arr = node.metadata.usedLocalsFromTyped;
+      if (arr != null) for (n in arr) if (n != null && n.length > 0) used.set(n, true);
     }
+
+    inline function mergeRefs(node: ElixirAST): Void {
+      if (node == null) return;
+      var refs = VariableUsageCollector.referencedInFunctionScope(node);
+      for (k in refs.keys()) used.set(k, true);
+    }
+
     function markTextInterps(str:String):Void {
       if (str == null) return;
       var re = new EReg("\\#\\{([^}]*)\\}", "g");
@@ -144,76 +154,36 @@ class CasePatternUnderscorePromotionTransforms {
         var tpos = 0;
         while (tok.matchSub(inner, tpos)) {
           var id = tok.matched(0);
-          if (id != null && id.length > 0 && id.charAt(0) != '_') s.set(id, true);
+          if (id != null && id.length > 0 && id.charAt(0) != '_') used.set(id, true);
           tpos = tok.matchedPos().pos + tok.matchedPos().len;
         }
         pos = re.matchedPos().pos + re.matchedPos().len;
       }
     }
-    inline function noteName(v:String):Void {
-      if (v != null && v.length > 0) s.set(v, true);
+
+    inline function scanInterpolations(node: ElixirAST): Void {
+      if (node == null) return;
+      ASTUtils.walk(node, function(n: ElixirAST) {
+        if (n == null || n.def == null) return;
+        switch (n.def) {
+          case EString(v): markTextInterps(v);
+          case ERaw(code): markTextInterps(code);
+          default:
+        }
+      });
     }
-    function visitor(n:ElixirAST):Void {
-      if (n == null || n.def == null) return;
-      switch (n.def) {
-        case EVar(v): noteName(v);
-        case EString(sv): markTextInterps(sv);
-        case ERaw(code): markTextInterps(code);
-        default:
-      }
-    }
-    function walk(n:ElixirAST):Void {
-      if (n == null || n.def == null) return;
-      visitor(n);
-      switch (n.def) {
-        case EParen(inner):
-          walk(inner);
-        case EBlock(stmts) | EDo(stmts):
-          for (st in stmts) walk(st);
-        case EIf(c, t, e):
-          walk(c);
-          walk(t);
-          if (e != null) walk(e);
-        case EBinary(_, l, r):
-          walk(l);
-          walk(r);
-        case EMatch(_, rhs):
-          walk(rhs);
-        case ECall(tgt, _, args):
-          if (tgt != null) walk(tgt);
-          for (a in args) walk(a);
-        case ERemoteCall(mod, _, args):
-          walk(mod);
-          for (a in args) walk(a);
-        case ECase(expr, clauses):
-          walk(expr);
-          for (cl in clauses) {
-            if (cl.guard != null) walk(cl.guard);
-            walk(cl.body);
-          }
-        case EFn(clauses):
-          for (cl in clauses) {
-            if (cl.guard != null) walk(cl.guard);
-            walk(cl.body);
-          }
-        default:
-          // Fallback: traverse children defensively.
-          ElixirASTTransformer.transformAST(n, function(child:ElixirAST):ElixirAST {
-            walk(child);
-            return child;
-          });
-      }
-    }
-    walk(body);
-    if (guard != null) walk(guard);
-    // Include guard metadata and interpolation scan
+
+    mergeFromTyped(body);
+    mergeRefs(body);
+    scanInterpolations(body);
+
     if (guard != null) {
-      var garr = guard.metadata.usedLocalsFromTyped;
-      if (garr != null) {
-        for (n in garr) if (n != null && n.length > 0) s.set(n, true);
-      }
+      mergeFromTyped(guard);
+      mergeRefs(guard);
+      scanInterpolations(guard);
     }
-    return s;
+
+    return used;
   }
 }
 

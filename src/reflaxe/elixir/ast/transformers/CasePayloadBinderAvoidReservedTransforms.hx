@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
 
 /**
  * CasePayloadBinderAvoidReservedTransforms
@@ -50,7 +51,9 @@ class CasePayloadBinderAvoidReservedTransforms {
               var declared = new Map<String,Bool>();
               collectPatternVars(cl.pattern, declared);
               collectLhsVarsInBody(cl.body, declared);
-              var used = collectUsedVars(cl.body);
+              // NOTE: Intentionally ignores ERaw/HEEx bodies because we cannot safely
+              // rename variables inside raw strings.
+              var used = VariableUsageCollector.referencedInFunctionScope(cl.body);
               var cands:Array<String> = [];
               for (u in used.keys()) if (allow(u) && !declared.exists(u) && u != binder) cands.push(u);
               // Prefer common payload names when multiple candidates exist
@@ -100,15 +103,6 @@ class CasePayloadBinderAvoidReservedTransforms {
     return ElixirASTTransformer.transformNode(body, function(x:ElixirAST): ElixirAST {
       return switch (x.def) { case EVar(v) if (v == from): makeASTWithMeta(EVar(to), x.metadata, x.pos); default: x; };
     });
-  }
-
-  static function collectUsedVars(ast: ElixirAST): Map<String,Bool> {
-    var names = new Map<String,Bool>();
-    ElixirASTTransformer.transformNode(ast, function(e:ElixirAST): ElixirAST {
-      switch (e.def) { case EVar(v): names.set(v, true); default: }
-      return e;
-    });
-    return names;
   }
 
   static function collectLhsVarsInBody(body: ElixirAST, vars: Map<String,Bool>): Void {

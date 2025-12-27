@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * CaseTupleMultiBinderPromoteByUseTransforms
@@ -42,8 +43,15 @@ class CaseTupleMultiBinderPromoteByUseTransforms {
   }
 
   static function promoteInClause(cl: ECaseClause): ECaseClause {
-    var used = collectUsedNames(cl.body);
-    if (cl.guard != null) mergeInto(used, collectUsedNames(cl.guard));
+    var used = OptimizedVarUseAnalyzer.referencedVarsExact(cl.body);
+    // Prefer builder-attached metadata when available
+    var usedFromTyped = cl.body != null ? cl.body.metadata.usedLocalsFromTyped : null;
+    if (usedFromTyped != null) for (n in usedFromTyped) if (n != null && n.length > 0) used.set(n, true);
+    if (cl.guard != null) {
+      mergeInto(used, OptimizedVarUseAnalyzer.referencedVarsExact(cl.guard));
+      var guardFromTyped = cl.guard.metadata.usedLocalsFromTyped;
+      if (guardFromTyped != null) for (n2 in guardFromTyped) if (n2 != null && n2.length > 0) used.set(n2, true);
+    }
     var promoted = promoteInPattern(cl.pattern, used);
     // Fallback: if nothing changed and pattern has underscored binders, promote
     // when the clause body text contains the base name anywhere (best-effort),
@@ -87,27 +95,6 @@ class CaseTupleMultiBinderPromoteByUseTransforms {
     }
   }
 
-  static function collectUsedNames(body: ElixirAST): Map<String,Bool> {
-    var used = new Map<String,Bool>();
-    if (body == null) return used;
-    // Prefer builder-attached metadata when available
-    var arr = body.metadata.usedLocalsFromTyped;
-    if (arr != null) {
-      for (n in arr) if (n != null && n.length > 0) used.set(n, true);
-    }
-    // AST variable uses
-    reflaxe.elixir.ast.ASTUtils.walk(body, function(n: ElixirAST) {
-      if (n == null || n.def == null) return;
-      switch (n.def) {
-        case EVar(v): if (looksLower(v)) used.set(v, true);
-        case EString(s): markInterpolations(s, used);
-        case ERaw(code): markInterpolations(code, used);
-        default:
-      }
-    });
-    return used;
-  }
-
   static inline function mergeInto(dst: Map<String,Bool>, src: Map<String,Bool>): Void {
     if (src == null) return;
     for (k in src.keys()) dst.set(k, true);
@@ -148,28 +135,6 @@ class CaseTupleMultiBinderPromoteByUseTransforms {
     return found;
   }
 
-  static inline function looksLower(name:String): Bool {
-    if (name == null || name.length == 0) return false;
-    var c = name.charAt(0);
-    return c == c.toLowerCase();
-  }
-
-  static function markInterpolations(s:String, used:Map<String,Bool>):Void {
-    if (s == null) return;
-    var re = new EReg("\\#\\{([^}]*)\\}", "g");
-    var pos = 0;
-    while (re.matchSub(s, pos)) {
-      var inner = re.matched(1);
-      var tok = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
-      var tpos = 0;
-      while (tok.matchSub(inner, tpos)) {
-        var id = tok.matched(0);
-        if (looksLower(id)) used.set(id, true);
-        tpos = tok.matchedPos().pos + tok.matchedPos().len;
-      }
-      pos = re.matchedPos().pos + re.matchedPos().len;
-    }
-  }
 }
 
 #end

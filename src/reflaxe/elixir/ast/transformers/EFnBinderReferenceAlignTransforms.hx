@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * EFnBinderReferenceAlignTransforms
@@ -43,7 +44,7 @@ class EFnBinderReferenceAlignTransforms {
                     for (cl in clauses) {
                         // Collect binder bases and current names
                         var binders:Array<{orig:String, base:String, pat:EPattern}> = [];
-                        var used = collectUsedVars(cl.body);
+                        var used = OptimizedVarUseAnalyzer.referencedVarsExact(cl.body);
                         var newArgs:Array<EPattern> = [];
                         for (a in cl.args) {
                             switch (a) {
@@ -81,33 +82,6 @@ class EFnBinderReferenceAlignTransforms {
                     n;
             }
         });
-    }
-
-    static function collectUsedVars(node: ElixirAST): Map<String, Bool> {
-        var used = new Map<String, Bool>();
-        function visit(e: ElixirAST): Void {
-            if (e == null || e.def == null) return;
-            switch (e.def) {
-                case EVar(name): used.set(name, true);
-                case EField(target, _): visit(target);
-                case EBlock(stmts): for (s in stmts) visit(s);
-                case EIf(c,t,el): visit(c); visit(t); if (el != null) visit(el);
-                case ECase(expr, clauses): visit(expr); for (c in clauses) { if (c.guard != null) visit(c.guard); visit(c.body); }
-                case EBinary(_, l, r): visit(l); visit(r);
-                case EMatch(_, rhs): visit(rhs);
-                case ECall(tgt, _, args): if (tgt != null) visit(tgt); for (a in args) visit(a);
-                case ERemoteCall(tgt2, _, args2): visit(tgt2); for (a2 in args2) visit(a2);
-                case EList(els): for (el in els) visit(el);
-                case ETuple(els): for (el in els) visit(el);
-                case EMap(pairs): for (p in pairs) { visit(p.key); visit(p.value); }
-                case EKeywordList(pairs): for (p in pairs) visit(p.value);
-                case EStructUpdate(base, fields): visit(base); for (f in fields) visit(f.value);
-                case EFn(clauses): for (cl in clauses) visit(cl.body);
-                default:
-            }
-        }
-        visit(node);
-        return used;
     }
 
     static function renameVarInNode(node: ElixirAST, from: String, to: String): ElixirAST {
