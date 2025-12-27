@@ -26,7 +26,7 @@ class HygieneFinal {
 
     passes.push({
       name: "AccAliasLateRewrite",
-      description: "Rewrite alias self-append to acc within any two-arg EFn (ultra-final safety)",
+      description: "Rewrite accumulator alias self-append to canonical acc updates (ultra-final safety)",
       enabled: true,
       pass: reflaxe.elixir.ast.transformers.AccAliasLateRewriteTransforms.transformPass
     });
@@ -47,32 +47,18 @@ class HygieneFinal {
       pass: reflaxe.elixir.ast.transformers.CaseClausePinExistingBindingsTransforms.pass
     });
 
-    // Normalize list concat into direct list literal for nested match patterns
-    passes.push({
-      name: "ConcatListLiteralNormalize",
-      description: "Rewrite lhs = _ = [] ++ [expr] and lhs = [] ++ [expr] into lhs = [expr]",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.ConcatListLiteralNormalizeTransforms.pass
-    });
-
     // Numeric sentinel and temp-nil cleanup
     passes.push({
-      name: "DropStandaloneLiteralOne",
-      description: "Drop stray 1/0/0.0 literals in blocks, do-blocks, EFn bodies (ultra-final)",
+      name: "DropTempNilAssign",
+      description: "Drop thisN/_thisN = nil sentinel assignments",
       enabled: true,
-      pass: reflaxe.elixir.ast.transformers.DropStandaloneLiteralOneTransforms.dropPass
+      pass: reflaxe.elixir.ast.transformers.DropTempNilAssignTransforms.pass
     });
     passes.push({
       name: "DropStandaloneVarRef",
       description: "Drop standalone var references in statement position inside blocks/do-blocks (ultra-final)",
       enabled: true,
       pass: reflaxe.elixir.ast.transformers.DropStandaloneVarRefTransforms.pass
-    });
-    passes.push({
-      name: "DropTempNilAssign",
-      description: "Drop thisN/_thisN = nil sentinel assignments",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.DropTempNilAssignTransforms.pass
     });
 
     // EFn and assignment-chain simplifications
@@ -134,26 +120,6 @@ class HygieneFinal {
       enabled: true,
       pass: reflaxe.elixir.ast.transformers.RepoGetBinderRepairTransforms.pass
     });
-    passes.push({
-      name: "BareGetterRepoGetRepair",
-      description: "For bare-var function bodies in Repo modules, rewrite to Repo.get(:var, id)",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.BareGetterRepoGetRepairTransforms.pass
-    });
-
-    // Param hygiene
-    passes.push({
-      name: "DefParamUnusedUnderscoreSafe",
-      description: "Underscore unused def parameters when truly unused (safe)",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.DefParamUnusedUnderscoreSafeTransforms.pass
-    });
-    passes.push({
-      name: "ParamUnderscoreUsedRepair",
-      description: "Rename `_name` to `name` for parameters used in function body (disabled for runtime stabilization)",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.ParamUnderscoreUsedRepairTransforms.pass
-    });
 
     // App start helper
     passes.push({
@@ -165,12 +131,6 @@ class HygieneFinal {
 
     // Wildcard and pinned var promotions
     passes.push({
-      name: "WildcardPromoteByUndeclaredUse",
-      description: "Final promotion of `_ = rhs` to binder by targeted usage (length/assign/DateTime)",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.WildcardPromoteByUndeclaredUseTransforms.pass
-    });
-    passes.push({
       name: "PinnedVarBinderPromote",
       description: "Promote `_ = <literal>` to `<name> = <literal>` when a unique ^(name) is used later",
       enabled: true,
@@ -181,53 +141,6 @@ class HygieneFinal {
       description: "Repair wildcard literal binder before where/2 that pins its value later",
       enabled: true,
       pass: reflaxe.elixir.ast.transformers.EctoWherePinnedBinderRepairTransforms.pass
-    });
-
-    // Ultimate EFns and small global safety helpers
-    passes.push({
-      name: "EFnNumericSentinelCleanup",
-      description: "Ultimate pass to remove 0/1/0.0 numeric sentinel statements inside EFns",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.EFnNumericSentinelCleanupTransforms.cleanupPass
-    });
-    passes.push({
-      name: "SelfAssignCompression",
-      description: "Ultimate replay: compress duplicated self-assignments x = x = expr to x = expr",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.BinderTransforms.selfAssignCompressionPass
-    });
-    passes.push({
-      name: "DuplicateEffectfulCallPrune",
-      description: "Remove immediately duplicated effectful calls prior to case on same call",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.DuplicateEffectfulCallPruneTransforms.pass
-    });
-    passes.push({
-      name: "SafePubSubAliasInject",
-      description: "Ultimate alias injection for Phoenix.SafePubSub as SafePubSub",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.SafePubSubAliasInjectTransforms.injectPass
-    });
-    passes.push({
-      name: "SafePubSubConverterCapture",
-      description: "Ensure parse_with_converter/2 receives a function capture (&mod.func/1)",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.SafePubSubConverterCaptureTransforms.pass
-    });
-    passes.push({
-      name: "UnderscoreTempInlineDowncase",
-      description: "Inline _tmp followed by String.downcase(_tmp) to String.downcase(rhs)",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.UnderscoreTempInlineDowncaseTransforms.pass,
-      runAfter: ["LocalUnderscoreBinderPromotionWhenUsed_Final"]
-    });
-    // (Concat identity normalization folded into existing loop transforms; no extra pass here)
-    passes.push({
-      name: "DowncaseInlineFromPriorAssign_Final",
-      description: "Inline prior assignments into String.downcase(var) and drop the assignment when safe",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.DowncaseInlineFromPriorAssignTransforms.pass,
-      runAfter: ["UnderscoreTempInlineDowncase"]
     });
 
     // Absolute-final replay: underscore unused anonymous fn args.
