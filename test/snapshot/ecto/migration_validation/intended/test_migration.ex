@@ -1,10 +1,10 @@
 defmodule TestMigration do
   def up(struct) do
-    _ = struct.createTable("users").addColumn("id", {:integer}, %{:primary_key => true, :auto_generate => true}).addColumn("name", {:string}, %{:nullable => false}).addColumn("email", {:string}, %{:nullable => false}).addTimestamps().addIndex(["email"], %{:unique => true})
-    _ = struct.createTable("posts").addColumn("id", {:integer}, %{:primary_key => true, :auto_generate => true}).addColumn("title", {:string}, %{:nullable => false}).addColumn("content", {:text}).addColumn("author_id", {:integer}).addTimestamps().addForeignKey("author_id", "userz")
+    _ = TableBuilder.add_index(TableBuilder.add_timestamps(TableBuilder.add_column(TableBuilder.add_column(TableBuilder.add_column(Migration.create_table(struct, "users"), "id", {:integer}, %{:primary_key => true, :auto_generate => true}), "name", {:string}, %{:nullable => false}), "email", {:string}, %{:nullable => false})), ["email"], %{:unique => true})
+    _ = TableBuilder.add_foreign_key(TableBuilder.add_timestamps(TableBuilder.add_column(TableBuilder.add_column(TableBuilder.add_column(TableBuilder.add_column(Migration.create_table(struct, "posts"), "id", {:integer}, %{:primary_key => true, :auto_generate => true}), "title", {:string}, %{:nullable => false}), "content", {:text}), "author_id", {:integer})), "author_id", "userz")
   end
   def down(struct) do
-    _ = struct.dropTable("posts")
-    _ = struct.dropTable("users")
+    _ = Migration.drop_table(struct, "posts")
+    _ = Migration.drop_table(struct, "users")
   end
 end

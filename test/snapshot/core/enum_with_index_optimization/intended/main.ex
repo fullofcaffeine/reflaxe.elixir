@@ -9,36 +9,41 @@ defmodule Main do
     items = ["apple", "banana", "cherry"]
     results = []
     _g = 0
-    _ = length(items)
-    results = Enum.reduce(0..(items_length - 1)//1, results, fn i, results -> Enum.concat(results, ["" <> Kernel.to_string(i) <> ": " <> item]) end)
-    results
+    items_length = length(items)
+    results = Enum.reduce(0..(items_length - 1)//1, results, fn i, results_acc ->
+      item = items[i]
+      Enum.concat(results_acc, ["" <> Kernel.to_string(i) <> ": " <> item])
+    end)
     nil
   end
   defp test_indexed_map() do
     items = ["first", "second", "third"]
     indexed = []
     _g = 0
-    _ = length(items)
-    indexed = Enum.reduce(0..(items_length - 1)//1, indexed, fn i, indexed -> Enum.concat(indexed, ["Item #" <> Kernel.to_string(i + 1) <> ": " <> items[i]]) end)
-    indexed
+    items_length = length(items)
+    indexed = Enum.reduce(0..(items_length - 1)//1, indexed, fn i, indexed_acc -> Enum.concat(indexed_acc, ["Item #" <> Kernel.to_string(i + 1) <> ": " <> items[i]]) end)
     indexed
   end
   defp test_indexed_filter() do
     items = ["a", "b", "c", "d", "e"]
     even_indexed = []
     _g = 0
-    _ = length(items)
-    even_indexed = Enum.reduce(0..(items_length - 1)//1, even_indexed, fn i, even_indexed -> Enum.concat(even_indexed, [items[i]]) end)
-    even_indexed
+    items_length = length(items)
+    even_indexed = Enum.reduce(0..(items_length - 1)//1, even_indexed, fn i, even_indexed_acc ->
+      if (rem(i, 2) == 0) do
+        Enum.concat(even_indexed_acc, [items[i]])
+      else
+        even_indexed_acc
+      end
+    end)
     even_indexed
   end
   defp test_complex_indexed_operation() do
     numbers = [10, 20, 30, 40, 50]
     sum = 0
     _g = 0
-    _ = length(numbers)
-    sum = Enum.reduce(0..(numbers_length - 1)//1, sum, fn i, sum -> sum + numbers[i] * i + 1 end)
-    sum
+    numbers_length = length(numbers)
+    sum = Enum.reduce(0..(numbers_length - 1)//1, sum, fn i, sum_acc -> sum_acc + numbers[i] * (i + 1) end)
     sum
   end
 end

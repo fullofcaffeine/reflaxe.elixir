@@ -125,7 +125,6 @@ class ElixirASTTransformer {
     // Public aliases for local transform passes (for registry access)
     public static var alias_abstractMethodThisPass: TransformPass = abstractMethodThisPass;
     public static var alias_arrayLengthFieldToFunctionPass: TransformPass = arrayLengthFieldToFunctionPass;
-    public static var alias_bitwiseImportPass: TransformPass = bitwiseImportPass;
     public static var alias_comprehensionConversionPass: TransformPass = comprehensionConversionPass;
     public static var alias_conditionalReassignmentPass: TransformPass = conditionalReassignmentPass;
     public static var alias_constantFoldingPass: TransformPass = constantFoldingPass;
@@ -3529,186 +3528,7 @@ class ElixirASTTransformer {
             }
         });
     }
-    
-    /**
-     * Bitwise Import Pass
-     * 
-     * WHY: Elixir requires "import Bitwise" to use bitwise operators like &&&, |||, ^^^
-     * but the generated code doesn't include this import automatically.
-     * 
-     * WHAT: Detects usage of bitwise operators and adds "import Bitwise" to the module.
-     * - Scans the entire AST for bitwise operators
-     * - Adds the import statement if any are found
-     * 
-     * HOW: Two-phase approach:
-     * 1. Detection: Walk the AST to find bitwise operators
-     * 2. Injection: Add import to module (handles both EModule and EDefmodule formats)
-     * 
-     * IMPORTANT AST STRUCTURE: Modules can be represented in two ways:
-     * 
-     * EDefmodule(name, doBlock): Standard Elixir "defmodule Name do ... end" format
-     *   This is the most common format. The import must be added as the first 
-     *   statement in the do block.
-     *   
-     *   Original Haxe code:
-     *     class StringTools {
-     *         public static function ltrim(s: String): String {
-     *             // Uses bitwise operators &&&
-     *         }
-     *     }
-     *   
-     *   Example AST:
-     *     EDefmodule("StringTools", 
-     *       EBlock([
-     *         EImport("Bitwise", null, null),  // <-- Insert here
-     *         EFunction(...),
-     *         EFunction(...)
-     *       ])
-     *     )
-     * 
-     * EModule(name, attributes, body): Alternative format with attributes array
-     *   Less common format. The import is added to the attributes array.
-     *   
-     *   This format may be used internally by the compiler for certain constructs
-     *   or intermediate representations. Most user-defined Haxe classes generate
-     *   EDefmodule, not EModule. The exact conditions that produce EModule vs
-     *   EDefmodule depend on the AST builder's internal logic.
-     *   
-     *   Example AST:
-     *     EModule("StringTools",
-     *       [
-     *         EImport("Bitwise", null, null),  // <-- Insert here
-     *         EAttribute(...)
-     *       ],
-     *       [EFunction(...), EFunction(...)]
-     *     )
-     * 
-     * The original pass only handled EModule, which is why it wasn't working for
-     * most generated code that uses EDefmodule format.
-     */
-    static function bitwiseImportPass(ast: ElixirAST): ElixirAST {
-        // Detect bitwise operators per module
-        function containsBitwise(node: ElixirAST): Bool {
-            var found = false;
-            function walk(n: ElixirAST): Void {
-                if (n == null || n.def == null || found) return;
-                switch (n.def) {
-                    case EBinary(op, left, right):
-                        switch (op) {
-                            case BitwiseAnd | BitwiseOr | BitwiseXor | ShiftLeft | ShiftRight:
-                                found = true;
-                            default:
-                        }
-                        walk(left);
-                        walk(right);
-                    case EUnary(BitwiseNot, expr):
-                        found = true;
-                        walk(expr);
-                    default:
-                        iterateAST(n, walk);
-                }
-            }
-            walk(node);
-            return found;
-        }
 
-        // Add import when needed; drop it when no bitwise ops remain
-        return transformNode(ast, function(node: ElixirAST): ElixirAST {
-            switch (node.def) {
-                case EDefmodule(name, doBlock):
-                    var hasBitwise = containsBitwise(node);
-
-                    switch (doBlock.def) {
-                        case EBlock(statements):
-                            var filtered = new Array<ElixirAST>();
-                            var hasImport = false;
-
-                            for (stmt in statements) {
-                                var isBitwiseImport = switch (stmt.def) {
-                                    case EImport(module, _, _): module == "Bitwise";
-                                    default: false;
-                                };
-
-                                if (isBitwiseImport) {
-                                    if (hasBitwise) {
-                                        hasImport = true;
-                                        filtered.push(stmt);
-                                    } else {
-                                        // drop unused Bitwise import
-                                    }
-                                } else {
-                                    filtered.push(stmt);
-                                }
-                            }
-
-                            if (hasBitwise && !hasImport) {
-                                filtered.insert(0, makeAST(EImport("Bitwise", null, null)));
-                            }
-
-                            if (filtered.length == statements.length && (!hasBitwise || hasImport)) {
-                                return node;
-                            }
-
-                            return makeASTWithMeta(
-                                EDefmodule(name, makeAST(EBlock(filtered))),
-                                node.metadata,
-                                node.pos
-                            );
-
-                        default:
-                            return node;
-                    }
-
-                case EModule(name, attributes, body):
-                var hasBitwise = containsBitwise(node);
-                    var newAttributes = new Array<EAttribute>();
-                    var hasImport = false;
-
-                    for (attr in attributes) {
-                        var isBitwiseImport = false;
-                        if (attr.name == "import" && attr.value != null) {
-                            switch (attr.value.def) {
-                                case EAtom(atomVal) if (atomVal == "Bitwise"):
-                                    isBitwiseImport = true;
-                                case EVar("Bitwise"):
-                                    isBitwiseImport = true;
-                                default:
-                            }
-                        }
-
-                        if (isBitwiseImport) {
-                            if (hasBitwise) {
-                                hasImport = true;
-                                newAttributes.push(attr);
-                            } // else drop it
-                        } else {
-                            newAttributes.push(attr);
-                        }
-                    }
-
-                    if (hasBitwise && !hasImport) {
-                        newAttributes.insert(0, {
-                            name: "import",
-                            value: makeAST(EAtom(ElixirAtom.raw("Bitwise")))
-                        });
-                    }
-
-                    if (newAttributes.length == attributes.length && (!hasBitwise || hasImport)) {
-                        return node;
-                    }
-
-                    return makeASTWithMeta(
-                        EModule(name, newAttributes, body),
-                        node.metadata,
-                        node.pos
-                    );
-
-                default:
-                    return node;
-            }
-        });
-    }
-    
     /**
      * List Effect Lifting Pass
      * 
@@ -5531,7 +5351,7 @@ class ElixirASTTransformer {
                                 if (isNilValue(nilValue)) {
                                     // Special handling for 'this1' and similar abstract constructor variables
                                     // These are ALWAYS immediately reassigned in abstract constructors
-                                    if (varName == "this1" || varName == "this" || varName.startsWith("this")) {
+	                                    if (varName == "this1" || varName == "this" || varName.startsWith("this")) {
                                         #if debug_ast_transformer
                                         // DISABLED: trace('[XRay RemoveRedundantNilInit] Found "this1" nil assignment at index $i');
                                         #end
@@ -5583,9 +5403,9 @@ class ElixirASTTransformer {
                                         }
 
                                         // If not skipped yet, check if this variable is assigned again later
-                                        if (!shouldSkip) {
-                                            var j = i + 1;
-                                            while (j < expressions.length) {
+	                                        if (!shouldSkip) {
+	                                            var j = i + 1;
+	                                            while (j < expressions.length) {
                                                 var checkExpr = expressions[j];
                                                 if (checkExpr == null || checkExpr.def == null) {
                                                     j++;
@@ -5607,18 +5427,64 @@ class ElixirASTTransformer {
                                                     default:
                                                 }
                                                 j++;
-                                            }
-                                        }
-                                    }
-                                }
+	                                            }
+	                                        }
+	                                    } else {
+	                                        // Generic redundant-nil elimination for ordinary locals.
+	                                        //
+	                                        // WHY
+	                                        // - Haxe often emits uninitialized locals as `var x;` which we lower to
+	                                        //   `x = nil` followed by a dominating `x = <value>` assignment.
+	                                        // - In Elixir this triggers WAE: the initial binding is overwritten before use.
+	                                        //
+	                                        // HOW
+	                                        // - If we see `x = nil` and, before any read of `x`, we see a later *top-level*
+	                                        //   reassignment `x = <non-nil>`, we can drop the initial nil bind.
+	                                        // - We stay conservative: any read of `x` before the reassignment keeps the init.
+	                                        var j = i + 1;
+	                                        while (j < expressions.length) {
+	                                            var checkExpr = expressions[j];
+	                                            if (checkExpr == null || checkExpr.def == null) {
+	                                                j++;
+	                                                continue;
+	                                            }
+
+	                                            // Stop when we see a reassignment to the same variable.
+	                                            var reassigned: Null<ElixirAST> = null;
+	                                            switch (checkExpr.def) {
+	                                                case EMatch(PVar(nextVarName), value) if (nextVarName == varName):
+	                                                    reassigned = value;
+	                                                case EBinary(Match, leftAst, valueAst):
+	                                                    reassigned = switch (leftAst.def) {
+	                                                        case EVar(nextVarName) if (nextVarName == varName): valueAst;
+	                                                        default: null;
+	                                                    };
+	                                                default:
+	                                            }
+
+	                                            if (reassigned != null) {
+	                                                if (!isNilValue(reassigned)) {
+	                                                    shouldSkip = true;
+	                                                }
+	                                                break;
+	                                            }
+
+	                                            // Any read of the variable before reassignment means the nil init is meaningful.
+	                                            if (reflaxe.elixir.ast.analyzers.VariableUsageCollector.usedInFunctionScope(checkExpr, varName)) {
+	                                                break;
+	                                            }
+
+	                                            j++;
+	                                        }
+	                                    }
+	                                }
                             default:
                                 // Not a match expression
                         }
 
                         if (!shouldSkip) {
-                            // Recursively process the expression to handle nested structures
-                            var processed = removeRedundantNilInitPass(expr);
-                            filtered.push(processed);
+                            // Children are already transformed by transformNode; do not recurse here.
+                            filtered.push(expr);
                         } else {
                             #if debug_ast_transformer
                             // DISABLED: trace('[XRay RemoveRedundantNilInit] Skipping redundant nil init at index $i');
@@ -5637,114 +5503,6 @@ class ElixirASTTransformer {
                         return node;
                     }
                     
-                case EFn(clauses):
-                    // Also handle anonymous function bodies
-                    var transformedClauses = [for (clause in clauses) {
-                        args: clause.args,
-                        guard: clause.guard,
-                        body: removeRedundantNilInitPass(clause.body)
-                    }];
-                    return makeASTWithMeta(EFn(transformedClauses), node.metadata, node.pos);
-                    
-                case EDef(name, args, guards, body):
-                    // Handle public function definitions
-                    var transformedBody = removeRedundantNilInitPass(body);
-                    return makeASTWithMeta(EDef(name, args, guards, transformedBody), node.metadata, node.pos);
-                    
-                case EDefp(name, args, guards, body):
-                    // Handle private function definitions
-                    var transformedBody = removeRedundantNilInitPass(body);
-                    return makeASTWithMeta(EDefp(name, args, guards, transformedBody), node.metadata, node.pos);
-                    
-                case EIf(cond, thenBranch, elseBranch):
-                    // Recursively process if branches
-                    #if debug_ast_transformer
-                    // DISABLED: trace('[XRay RemoveRedundantNilInit] Processing EIf - recursing into branches');
-                    #end
-                    var processedCond = removeRedundantNilInitPass(cond);
-                    var processedThen = removeRedundantNilInitPass(thenBranch);
-                    var processedElse = elseBranch != null ? removeRedundantNilInitPass(elseBranch) : null;
-                    return makeASTWithMeta(EIf(processedCond, processedThen, processedElse), node.metadata, node.pos);
-
-                case ECase(expr, clauses):
-                    // Recursively process case expressions
-                    #if debug_ast_transformer
-                    // DISABLED: trace('[XRay RemoveRedundantNilInit] Processing ECase');
-                    #end
-                    var processedExpr = removeRedundantNilInitPass(expr);
-                    var processedClauses = [for (clause in clauses) {
-                        pattern: clause.pattern,
-                        guard: clause.guard != null ? removeRedundantNilInitPass(clause.guard) : null,
-                        body: removeRedundantNilInitPass(clause.body)
-                    }];
-                    return makeASTWithMeta(ECase(processedExpr, processedClauses), node.metadata, node.pos);
-
-                case EFor(generators, filters, body, into, uniq):
-                    // Recursively process for comprehensions
-                    #if debug_ast_transformer
-                    // DISABLED: trace('[XRay RemoveRedundantNilInit] Processing EFor');
-                    #end
-                    var processedGenerators = [for (gen in generators) {
-                        pattern: gen.pattern,
-                        expr: removeRedundantNilInitPass(gen.expr)
-                    }];
-                    var processedFilters = [for (filter in filters) removeRedundantNilInitPass(filter)];
-                    var processedBody = removeRedundantNilInitPass(body);
-                    var processedInto = into != null ? removeRedundantNilInitPass(into) : null;
-                    return makeASTWithMeta(EFor(processedGenerators, processedFilters, processedBody, processedInto, uniq), node.metadata, node.pos);
-
-                case EParen(inner):
-                    // Handle parenthesized expressions (often contains this1 = nil pattern)
-                    #if debug_ast_transformer
-                    // DISABLED: trace('[XRay RemoveRedundantNilInit] Processing EParen');
-                    #end
-
-                    // Check if the inner expression is a sequence with redundant nil init
-                    var transformedInner = switch(inner.def) {
-                        case EBlock(expressions) if (expressions.length == 3):
-                            // Pattern: (this1 = nil; this1 = value; this1)
-                            var hasRedundantNil = false;
-
-                            // Check for this1 = nil as first expression
-                            switch(expressions[0].def) {
-                                case EMatch(PVar("this1"), nilValue):
-                                    if (isNilValue(nilValue)) {
-                                        // Check second expression is also assignment to this1
-                                        switch(expressions[1].def) {
-                                            case EMatch(PVar("this1"), _):
-                                                // Check third expression is just this1
-                                                switch(expressions[2].def) {
-                                                    case EVar("this1"):
-                                                        hasRedundantNil = true;
-                                                    default:
-                                                }
-                                            default:
-                                        }
-                                    }
-                                default:
-                            }
-
-                            if (hasRedundantNil) {
-                                #if debug_ast_transformer
-                                // DISABLED: trace('[XRay RemoveRedundantNilInit] Removing redundant nil from EParen block');
-                                #end
-                                // Remove the first expression (this1 = nil)
-                                makeASTWithMeta(
-                                    EBlock([expressions[1], expressions[2]]),
-                                    inner.metadata,
-                                    inner.pos
-                                );
-                            } else {
-                                // Recursively process the block
-                                removeRedundantNilInitPass(inner);
-                            }
-                        default:
-                            // For other patterns, process recursively
-                            removeRedundantNilInitPass(inner);
-                    };
-
-                    return makeASTWithMeta(EParen(transformedInner), node.metadata, node.pos);
-
                 default:
                     return node;
             }

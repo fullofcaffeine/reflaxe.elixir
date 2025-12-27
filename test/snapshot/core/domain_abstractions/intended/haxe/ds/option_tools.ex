@@ -67,23 +67,32 @@ defmodule OptionTools do
   def all(options) do
     values = []
     _g = 0
-    _ = Enum.each(options, fn option ->
-  (case option do
-    {:some, value} -> values = values ++ [value]
-    {:none} -> {:none}
-  end)
-end)
+    values = Enum.reduce(options, values, fn option, values_acc ->
+      ((case option do
+  {:some, value} ->
+    values_acc = Enum.concat(values_acc, [value])
+    values_acc
+  {:none} ->
+    {:none}
+    values_acc
+end))
+    end)
     {:some, values}
   end
   def values(options) do
+    result = []
     _g = 0
-    _ = Enum.each(options, fn option ->
-  (case option do
-    {:some, value} -> result = result ++ [value]
-    {:none} -> nil
-  end)
-end)
-    []
+    result = Enum.reduce(options, result, fn option, result_acc ->
+      ((case option do
+  {:some, value} ->
+    result_acc = Enum.concat(result_acc, [value])
+    result_acc
+  {:none} ->
+    nil
+    result_acc
+end))
+    end)
+    result
   end
   def to_result(option, error) do
     (case option do

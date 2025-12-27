@@ -51,11 +51,9 @@ defmodule Main do
     (case pos1 do
       {:ok, a} ->
         b = a
-        pos2 = a
         (case pos2 do
           {:ok, b} ->
             result = b
-            a = b
             sum = PositiveInt_Impl_.add(a, b)
             actual = PositiveInt_Impl_.to_int(sum)
             assert actual == 8
@@ -132,8 +130,7 @@ defmodule Main do
     email_option = ResultTools.to_option(email_result)
     assert match?({:some, _}, email_option)
     (case email_option do
-      {:some, v} ->
-        email = v
+      {:some, email} ->
         actual = Email_Impl_.get_domain(email)
         assert actual == "example.com"
       {:none} -> flunk("Valid email should not be None")
@@ -147,10 +144,10 @@ defmodule Main do
     (case invalid_email do
       {:ok, _value} -> flunk("Invalid email should not parse")
       {:error, message} ->
-        condition = case :binary.match(message, "Invalid email") do
-                {pos, _} -> pos
-                :nomatch -> -1
-            end >= 0
+        condition = ((case :binary.match(message, "Invalid email") do
+  {_pos, _} -> message
+  :nomatch -> -1
+end)) >= 0
         assert condition
     end)
     large_int = PositiveInt_Impl_.parse(1000000)
@@ -174,24 +171,15 @@ defmodule Main do
     assert match?({:ok, _}, user_name)
     (case user_email do
       {:ok, email} ->
-        user_id = email
+        id = email
         (case user_id do
           {:ok, id} ->
-            user_age = id
+            age = id
             (case user_age do
               {:ok, age} ->
                 name = age
-                user_name = age
                 (case user_name do
                   {:ok, name} ->
-                    id = name
-                    email = name
-                    age = name
-                    profile_normalized_id = nil
-                    profile_is_company_email = nil
-                    profile_email = nil
-                    profile_display_name = nil
-                    profile_age_in_months = nil
                     profile_email = Email_Impl_.to_string(email)
                     profile_normalized_id = UserId_Impl_.to_string(UserId_Impl_.normalize(id))
                     profile_is_company_email = Email_Impl_.has_domain(email, "company.com")

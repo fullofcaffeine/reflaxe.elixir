@@ -47,8 +47,11 @@ defmodule Main do
     _ = IO.puts("Using helper function")
     _ = IO.puts("stderr", "This is an error message")
     label = "label"
-    if (Kernel.is_nil(label)) do
+    label = if (Kernel.is_nil(label)) do
       label = ""
+      label
+    else
+      label
     end
     if (label != "") do
       IO.puts("#{(fn -> label end).()}: ")
@@ -61,8 +64,11 @@ defmodule Main do
     color = IO.IO.ANSI.blue
     _ = IO.write("#{(fn -> color end).()}Info text#{(fn -> IO.IO.ANSI.reset end).()}")
     label = "Array"
-    if (Kernel.is_nil(label)) do
+    label = if (Kernel.is_nil(label)) do
       label = ""
+      label
+    else
+      label
     end
     result = IO.iodata_to_binary(IO.inspect([1, 2, 3]))
     formatted = if (label != "") do
@@ -91,7 +97,11 @@ defmodule Main do
     result = File.read("multi_line.txt")
     content = if (result._0 == "ok"), do: result._1, else: nil
     lines = if (not Kernel.is_nil(content)) do
-      String.split(content, "\n")
+      if ("\n" == "") do
+        String.graphemes(content)
+      else
+        String.split(content, "\n")
+      end
     else
       nil
     end
@@ -99,7 +109,7 @@ defmodule Main do
     dir_created = result._0 == "ok"
   end
   defp test_path_externs() do
-    joined = Path.join((fn -> ["home", "user", "documents"] end).())
+    joined = Path.join(["home", "user", "documents"])
     joined_two = Path.join((fn -> "/home" end).(), "user")
     basename = Path.basename("/home/user/file.txt")
     dirname = Path.dirname("/home/user/file.txt")
@@ -113,17 +123,13 @@ defmodule Main do
     filename = Path.basename("/home/user/file.txt")
     filename_no_ext = Path.rootname(Path.basename("/home/user/file.txt"))
     ext = Path.extname("/home/user/file.txt")
-    ext = if (length(ext) > 0 and String.at(ext, 0) || "" == ".") do
-      len = nil
-      if (Kernel.is_nil(len)) do
-        String.slice(ext, 1..-1)
-      else
-        String.slice(ext, 1, len)
-      end
+    ext = cond_value = String.at(ext, 0) || "" == "."
+    if (String.length(ext) > 0 and cond_value) do
+      String.slice(ext, 1..-1//1)
     else
       ext
     end
-    combined = Path.join((fn -> ["home", "user", "file.txt"] end).())
+    combined = Path.join(["home", "user", "file.txt"])
   end
   defp test_enum_externs() do
     test_array = [1, 2, 3, 4, 5]
@@ -134,7 +140,7 @@ defmodule Main do
     found = Enum.find(test_array, fn x -> x > 3 end)
     doubled = Enum.map(test_array, fn x -> x * 2 end)
     filtered = Enum.filter(test_array, fn x -> rem(x, 2) == 0 end)
-    _reduced = Enum.reduce(test_array, 0, fn acc, x -> acc + x end)
+    reduced = Enum.reduce(test_array, 0, fn acc, x -> acc + x end)
     sum = Enum.sum(test_array)
     max = Enum.max(test_array)
     min = Enum.min(test_array)
@@ -176,8 +182,11 @@ defmodule Main do
     string = string.trim("   ")
     is_blank = string.length(string) == 0
     pad_with = "0"
-    if (Kernel.is_nil(pad_with)) do
+    pad_with = if (Kernel.is_nil(pad_with)) do
       pad_with = " "
+      pad_with
+    else
+      pad_with
     end
     left_padded = if (string.length("test") >= 10) do
       "test"

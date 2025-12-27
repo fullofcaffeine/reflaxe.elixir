@@ -1,13 +1,13 @@
 defmodule ResultTools do
   def map(result, transform) do
     (case result do
-      {:ok, value} -> {:ok, value.(value)}
+      {:ok, value} -> {:ok, transform.(value)}
       {:error, error} -> {:error, error}
     end)
   end
   def flat_map(result, transform) do
     (case result do
-      {:ok, value} -> _ = value.(value)
+      {:ok, value} -> _ = transform.(value)
       {:error, error} -> {:error, error}
     end)
   end
@@ -16,7 +16,7 @@ defmodule ResultTools do
   end
   def fold(result, on_success, on_error) do
     (case result do
-      {:ok, value} -> _ = value.(value)
+      {:ok, value} -> _ = on_success.(value)
       {:error, error} -> _ = on_error.(error)
     end)
   end
@@ -52,7 +52,9 @@ defmodule ResultTools do
   end
   def filter(result, predicate, error_value) do
     (case result do
-      {:ok, value} -> if (value.(value)), do: {:ok, value}, else: {:error, value}
+      {:ok, value} ->
+        error_value = value
+        if (predicate.(value)), do: {:ok, value}, else: {:error, error_value}
       {:error, error} -> {:error, error}
     end)
   end
@@ -64,7 +66,7 @@ defmodule ResultTools do
   end
   def bimap(result, on_success, on_error) do
     (case result do
-      {:ok, value} -> {:ok, value.(value)}
+      {:ok, value} -> {:ok, on_success.(value)}
       {:error, error} -> {:error, on_error.(error)}
     end)
   end
@@ -77,12 +79,16 @@ defmodule ResultTools do
   def sequence(results) do
     values = []
     _g = 0
-    _ = Enum.each(results, fn result ->
-  (case result do
-    {:ok, value} -> values = values ++ [value]
-    {:error, error} -> {:error, error}
-  end)
-end)
+    values = Enum.reduce(results, values, fn result, values_acc ->
+      ((case result do
+  {:ok, value} ->
+    values_acc = Enum.concat(values_acc, [value])
+    values_acc
+  {:error, error} ->
+    {:error, error}
+    error
+end))
+    end)
     {:ok, values}
   end
   def traverse(array, transform) do

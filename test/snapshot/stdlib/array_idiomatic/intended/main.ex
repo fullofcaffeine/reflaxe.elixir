@@ -36,14 +36,14 @@ defmodule Main do
   end
   defp test_reverse_function() do
     numbers = [1, 2, 3, 4, 5]
-    copy = numbers.copy()
-    _ = Enum.reverse(copy)
+    copy = numbers
+    _ = Array.reverse(copy)
     nil
   end
   defp test_sort_function() do
     numbers = [5, 2, 8, 1, 9, 3]
-    copy = numbers.copy()
-    _ = Enum.sort(copy, fn a, b -> (a - b) end)
+    copy = numbers
+    copy = Enum.sort(copy, fn a, b -> (fn a, b -> (a - b) end).(a, b) < 0 end)
     nil
   end
   defp test_contains_function() do
@@ -70,22 +70,20 @@ defmodule Main do
   end
   defp test_join_function() do
     words = ["Hello", "Elixir", "World"]
-    sentence = Enum.join((fn -> " " end).())
-    csv = Enum.join((fn -> ", " end).())
+    sentence = Enum.join(words, " ")
+    csv = Enum.join(words, ", ")
     nil
   end
   defp test_slice_function() do
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    from_third = numbers.slice(2)
-    middle = numbers.slice(2, 5)
+    from_third = Array.slice(numbers, 2)
+    middle = Array.slice(numbers, 2, 5)
     nil
   end
   defp test_iterator_function() do
     numbers = [1, 2, 3]
     _g = 0
     _ = Enum.each(numbers, fn _ -> nil end)
-    iter_current = nil
-    iter_array = nil
     iter_current = 0
     iter_array = numbers
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->

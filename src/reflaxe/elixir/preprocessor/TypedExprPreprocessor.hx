@@ -194,9 +194,17 @@ class TypedExprPreprocessor {
         #if debug_preprocessor trace('[TypedExprPreprocessor] Starting preprocessing - pattern detected'); #end
         #end
 
-        // CRITICAL FIX: Use existing substitutions map instead of creating new one
-        // This allows accumulation across multiple preprocess() calls
-        var substitutions = lastSubstitutions != null ? lastSubstitutions : new Map<Int, TypedExpr>();
+        // IMPORTANT: substitutions must be scoped to a single preprocess() invocation.
+        //
+        // WHY:
+        // - TVar IDs are not guaranteed to be globally unique across independent TypedExpr trees.
+        // - Reusing a shared substitution map across multiple preprocess() calls can cause
+        //   cross-function substitutions (e.g., swapping a param reference for an unrelated
+        //   previous temp), leading to incorrect variable binding in generated Elixir.
+        //
+        // We still store the last map for debugging/inspection via getLastSubstitutions(),
+        // but we never reuse it for subsequent preprocess() calls.
+        var substitutions = new Map<Int, TypedExpr>();
 
         // Process the expression
         var result = processExpr(expr, substitutions);

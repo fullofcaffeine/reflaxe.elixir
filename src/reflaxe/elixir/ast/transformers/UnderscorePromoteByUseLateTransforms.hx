@@ -116,30 +116,23 @@ class UnderscorePromoteByUseLateTransforms {
           n;
       }
     });
-
-    // Helper to rewrite pattern or var on the LHS of match binary
-    function rewPatInLhs(lhs:ElixirAST):ElixirAST {
-      if (lhs == null || lhs.def == null) return lhs;
-      return switch (lhs.def) {
-        case EVar(v):
-          var nv = promote(v);
-          (nv == v) ? lhs : makeASTWithMeta(EVar(nv), lhs.metadata, lhs.pos);
-        case EMatch(p, rhs):
-          makeASTWithMeta(EMatch(rewPat(p), rhs), lhs.metadata, lhs.pos);
-        default:
-          lhs;
-      }
-    }
   }
 
   static function base(name:String):String {
     if (name == null || name.length == 0) return null;
-    var s = (name.charAt(0) == "_") ? name.substr(1) : name;
+    var s = stripLeadingUnderscores(name);
+    if (s == null || s.length == 0) return null;
     var i = s.length - 1;
     while (i >= 0 && s.charAt(i) >= "0" && s.charAt(i) <= "9") i--;
     var b = s.substr(0, i + 1);
     if (b == "" || b.charAt(0) != b.charAt(0).toLowerCase() || b.charAt(0) == "_") return null;
     return b;
+  }
+
+  static function stripLeadingUnderscores(name:String):String {
+    var i = 0;
+    while (i < name.length && name.charAt(i) == "_") i++;
+    return name.substr(i);
   }
 }
 

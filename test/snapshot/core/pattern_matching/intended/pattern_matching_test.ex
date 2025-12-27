@@ -33,15 +33,24 @@ defmodule PatternMatchingTest do
       "hello" -> "greeting"
       s ->
         s = str
-        if (length(s) > 10), do: "long", else: "other"
+        if (String.length(s) > 10), do: "long", else: "other"
     end)
   end
   def match_array(arr) do
     (case arr do
       [] -> "empty"
       [_head | _tail] -> "single(#{(fn -> Kernel.to_string(x) end).()})"
-      2 -> "pair(#{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()})"
-      3 -> "triple(#{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()})"
+      2 ->
+        g_value = arr[1]
+        x = g
+        y = g_value
+        "pair(#{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()})"
+      3 ->
+        g_value = arr[1]
+        x = g
+        y = g_value
+        z = g
+        "triple(#{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()})"
       _ -> "many"
     end)
   end
@@ -53,7 +62,15 @@ defmodule PatternMatchingTest do
           {:red} -> "red color"
           {:green} -> "green color"
           {:blue} -> "blue color"
-          {:rgb, r, _g, _b} -> if (r > 128), do: "bright rgb", else: "dark rgb"
+          {:rgb, r, _g, _b} ->
+            g_value = r
+            r = g_value
+            if (r > 128) do
+              "bright rgb"
+            else
+              _r = g_value
+              "dark rgb"
+            end
         end)
     end)
   end

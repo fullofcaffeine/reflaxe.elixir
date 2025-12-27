@@ -57,4 +57,7 @@ defmodule Main do
         nil
     end
   end
+  defp get_errors_map(changeset) do
+    Map.get(changeset, :errors)
+  end
 end

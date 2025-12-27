@@ -9,8 +9,8 @@ defmodule UserProfileTemplate do
   def render_user_list(users) do
     items = []
     _g = 0
-    _ = Enum.each(users, fn _ -> items = items ++ ["<li><strong>" <> user.name <> "</strong> - " <> user.email <> "</li>"] end)
-    "<ul class='user-list'>#{(fn -> Enum.join((fn -> items end).(), "") end).()}</ul>"
+    items = Enum.reduce(users, items, fn user, items_acc -> Enum.concat(items_acc, ["<li><strong>" <> user.name <> "</strong> - " <> user.email <> "</li>"]) end)
+    "<ul class='user-list'>#{(fn -> Enum.join(items, "") end).()}</ul>"
   end
   def render_complex_layout(title, content) do
     "<!DOCTYPE html><html><head><title>#{(fn -> title end).()}</title></head><body><h1>#{(fn -> title end).()}</h1><main>#{(fn -> content end).()}</main></body></html>"

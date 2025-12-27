@@ -259,6 +259,26 @@ class FieldAccessBuilder {
             return null;
         }
 
+        // Special-case: String.length (Haxe) must lower to String.length/1 (Elixir).
+        //
+        // WHY:
+        // - The printer has a generic `field == "length"` shortcut that prints `length(obj)`,
+        //   which is correct for lists but wrong for strings.
+        //
+        // HOW:
+        // - Use typed information from the receiver to detect String and emit an explicit
+        //   remote call so the printer cannot misinterpret the access.
+        if (fieldName == "length") {
+            var isString = switch (haxe.macro.TypeTools.follow(e.t)) {
+                case TInst(_.get() => {name: "String"}, _): true;
+                case TAbstract(_.get() => {name: "String"}, _): true;
+                default: false;
+            };
+            if (isString) {
+                return ERemoteCall(makeAST(EVar("String")), "length", [objAST]);
+            }
+        }
+
         // Generate field access (use snake_case for Elixir struct/map fields)
         var snakeField = NameUtils.toSnakeCase(fieldName);
         return EField(objAST, snakeField);

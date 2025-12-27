@@ -20,18 +20,27 @@ defmodule Main do
     filter = %{:name => "John", :email => "john@example.com", :is_active => true}
     if (not Kernel.is_nil(filter)) do
       query = "SELECT * FROM users"
-      _query = this1
-      if (not Kernel.is_nil(filter.name)) do
+      query = this1
+      query = if (not Kernel.is_nil(filter.name)) do
         value = "%#{(fn -> filter.name end).()}%"
-        _query = this2
+        query = this2
+        query
+      else
+        query
       end
-      if (not Kernel.is_nil(filter.email)) do
+      query = if (not Kernel.is_nil(filter.email)) do
         value = "%#{(fn -> filter.email end).()}%"
-        _query = this3
+        query = this3
+        query
+      else
+        query
       end
-      if (filter.is_active == true) do
+      query = if (filter.is_active == true) do
         value = filter.is_active
-        _query = this4
+        query = this4
+        query
+      else
+        query
       end
       nil
     end
@@ -39,11 +48,9 @@ defmodule Main do
   defp test_query_builder_pattern() do
     base_query = build_base_query()
     transformed1 = apply_filter(base_query, "name", "Alice")
-    temp1 = nil
     temp1 = transformed1
     base_query = temp1
     transformed2 = apply_filter(base_query, "age", "25")
-    temp2 = nil
     temp2 = transformed2
     _base_query = temp2
     nil

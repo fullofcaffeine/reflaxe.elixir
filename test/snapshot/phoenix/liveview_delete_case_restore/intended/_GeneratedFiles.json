@@ -4,7 +4,6 @@
   "string_buf.ex",
   "std.ex",
   "result.ex",
-  "reflect.ex",
   "phoenix/types/flash_type_tools.ex",
   "phoenix/types/flash_type.ex",
   "phoenix/types/flash_map_tools.ex",
@@ -22,6 +21,7 @@
   "ecto/option.ex",
   "ecto/changeset_utils.ex",
   "ecto/changeset_action.ex",
+  "e_reg.ex",
   "delete_live.ex"
 ],
   "id": 0,
