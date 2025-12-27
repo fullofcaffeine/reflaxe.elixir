@@ -113,7 +113,7 @@ todo-app/
 
 Build note:
 - The canonical entrypoints are `build.hxml` (server), `build-client.hxml` (client), and `build-tests.hxml` (tests).
-- Any legacy multi-pass/prewarm experiments live under `examples/todo-app/hxml/legacy/` and are not required for normal development.
+- Historical multi-pass/prewarm build experiments were archived under `docs/09-history/archive/records/todo-app-hxml-legacy/` and are not required for normal development.
 
 ### Is the todo-app “100% Haxe”?
 
