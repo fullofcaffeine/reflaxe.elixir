@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * LocalAssignUnusedUnderscoreScopedTransforms
@@ -141,12 +142,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
   }
 
   static function collectUsedVars(node: ElixirAST, out: Map<String,Bool>): Void {
-    reflaxe.elixir.ast.ASTUtils.walk(node, function(x:ElixirAST){
-      switch (x.def) {
-        case EVar(v) if (v != null): out.set(v, true);
-        default:
-      }
-    });
+    OptimizedVarUseAnalyzer.collectReferencedVarsExactInto(node, out);
   }
 
   static function isEphemeralRhs(rhs: ElixirAST): Bool {

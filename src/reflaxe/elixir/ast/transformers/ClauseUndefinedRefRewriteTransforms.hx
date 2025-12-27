@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * ClauseUndefinedRefRewriteTransforms
@@ -79,7 +80,7 @@ class ClauseUndefinedRefRewriteTransforms {
             var declared = cloneEnv(clauseEnv);
             collectLhsVarsInBody(newBody, declared);
 
-            var used = collectUsedVars(newBody);
+            var used = OptimizedVarUseAnalyzer.referencedVarsExact(newBody);
             var undef: Array<String> = [];
             for (u in used.keys()) if (!declared.exists(u) && u != binder && allow(u)) undef.push(u);
 
@@ -131,15 +132,6 @@ class ClauseUndefinedRefRewriteTransforms {
 
   static function extractSingleBinder(p:EPattern): Null<String> {
     return switch (p) { case PTuple(es) if (es.length == 2): switch (es[1]) { case PVar(n): n; default: null; } default: null; }
-  }
-
-  static function collectUsedVars(ast: ElixirAST): Map<String,Bool> {
-    var names = new Map<String,Bool>();
-    ElixirASTTransformer.transformNode(ast, function(e: ElixirAST): ElixirAST {
-      switch (e.def) { case EVar(v): names.set(v, true); default: }
-      return e;
-    });
-    return names;
   }
 
   static function collectDeclaredFromStatement(stmt: ElixirAST, vars: Map<String, Bool>): Void {

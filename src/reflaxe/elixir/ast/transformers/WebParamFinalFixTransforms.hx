@@ -265,31 +265,9 @@ class WebParamFinalFixTransforms {
     }
 
     static function collectUsedVars(node: ElixirAST): Map<String,Bool> {
-        var used = new Map<String,Bool>();
-        function visit(e: ElixirAST): Void {
-            if (e == null || e.def == null) return;
-            switch (e.def) {
-                case EVar(name): used.set(name, true);
-                case EPin(inner): visit(inner);
-                case EField(target, _): visit(target);
-                case EBlock(stmts): for (s in stmts) visit(s);
-                case EIf(c,t,el): visit(c); visit(t); if (el != null) visit(el);
-                case ECase(expr, clauses): visit(expr); for (c in clauses) { if (c.guard != null) visit(c.guard); visit(c.body); }
-                case EBinary(_, l, r): visit(l); visit(r);
-                case EMatch(_, rhs): visit(rhs);
-                case ECall(tgt, _, args): if (tgt != null) visit(tgt); for (a in args) visit(a);
-                case ERemoteCall(tgt2, _, args2): visit(tgt2); for (a2 in args2) visit(a2);
-                case EList(els): for (el in els) visit(el);
-                case ETuple(els): for (el in els) visit(el);
-                case EMap(pairs): for (p in pairs) { visit(p.key); visit(p.value); }
-                case EKeywordList(pairs): for (p in pairs) visit(p.value);
-                case EStructUpdate(base, fields): visit(base); for (f in fields) visit(f.value);
-                case EFn(clauses): for (cl in clauses) visit(cl.body);
-                default:
-            }
-        }
-        visit(node);
-        return used;
+        // NOTE: Intentionally ignores ERaw/HEEx bodies because we cannot safely
+        // rename variables inside raw strings.
+        return VariableUsageCollector.referencedInFunctionScope(node);
     }
 
     static function pinUsesName(body: ElixirAST, name: String): Bool {

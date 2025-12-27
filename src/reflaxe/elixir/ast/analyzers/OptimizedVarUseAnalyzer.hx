@@ -97,6 +97,42 @@ class OptimizedVarUseAnalyzer {
         return VarUseAnalyzer.stmtUsesVar(n, name);
     }
 
+    /**
+     * referencedVars / referencedVarsExact
+     *
+     * WHAT
+     * - Collect the set of variable names referenced within a node.
+     *
+     * WHY
+     * - Several hygiene transforms need a *set* of referenced names, and older
+     *   implementations duplicated ad-hoc collectors with inconsistent coverage
+     *   (missed pins, closures, ERaw tokens, interpolations, etc.).
+     *
+     * HOW
+     * - Delegates to the same internal collectors used by the suffix index builder.
+     * - `referencedVars` includes canonical variants (underscore/base/camel/snake).
+     * - `referencedVarsExact` tracks only exact names as they appear in the AST.
+     */
+    public static function referencedVars(node: ElixirAST): Map<String, Bool> {
+        var out = new Map<String, Bool>();
+        collectVars(node, out);
+        return out;
+    }
+
+    public static function referencedVarsExact(node: ElixirAST): Map<String, Bool> {
+        var out = new Map<String, Bool>();
+        collectVarsExact(node, out);
+        return out;
+    }
+
+    public static inline function collectReferencedVarsInto(node: ElixirAST, out: Map<String, Bool>): Void {
+        collectVars(node, out);
+    }
+
+    public static inline function collectReferencedVarsExactInto(node: ElixirAST, out: Map<String, Bool>): Void {
+        collectVarsExact(node, out);
+    }
+
     // --- helpers ---
 
     static function collectVars(n:ElixirAST, out:Map<String,Bool>):Void {
