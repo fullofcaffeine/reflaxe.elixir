@@ -484,11 +484,12 @@ fi
 # Second prune in case codegen emitted unused std helpers during the build loop
 run_step_with_log "Step 2.cleanup: prune unused Elixir helper outputs" 30s /tmp/qa-haxe-prune2.log "bash -lc 'rm -rf lib/elixir/types'" || exit 1
 
-# Compile first so DB tasks do not incur compile cost repeatedly
-# Compile application only (skip deps recompile inside per-run root to avoid rebar include_lib issues)
-if ! run_step_with_log "Step 3: mix compile (no deps)" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile --no-deps-check"; then
-  # As a bounded fallback, attempt normal compile once more
-  run_step_with_log "Step 3 (retry): mix compile" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile" || exit 1
+# Compile first so DB tasks do not incur compile cost repeatedly.
+# Gate on Elixir warnings via --warnings-as-errors (WAE) for public-release hygiene.
+# Compile application only (skip deps recompile inside per-run root to avoid rebar include_lib issues).
+if ! run_step_with_log "Step 3: mix compile (WAE, no deps)" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile --warnings-as-errors --no-deps-check"; then
+  # As a bounded fallback, attempt normal compile once more (still WAE).
+  run_step_with_log "Step 3 (retry): mix compile (WAE)" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile --warnings-as-errors" || exit 1
 fi
 if [[ "$ENV_NAME" != "dev" ]]; then
   if [[ "$REUSE_DB" -eq 1 ]]; then
@@ -634,7 +635,7 @@ else
   fi
 fi
 
-log "[QA] OK: build + runtime smoke passed with zero warnings (WAE)"
+log "[QA] OK: build + runtime smoke passed (app compiled with --warnings-as-errors)"
 
 # Optional: run Playwright tests after readiness
 if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
