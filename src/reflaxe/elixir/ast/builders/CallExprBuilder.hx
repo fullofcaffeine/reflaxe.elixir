@@ -756,11 +756,31 @@ class CallExprBuilder {
                         if (className == "TypedQuery" && classPack == "ecto" && methodName == "from") {
                             // Expect signature from<T>(schemaClass: Class<T>)
                             if (args.length >= 1) {
-                                var schemaAst = buildExpression(args[0]);
-                                // Render schema AST to string for injection composition
-                                var schemaStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(schemaAst);
-                                var code = '(require Ecto.Query; Ecto.Query.from(t in ' + schemaStr + ', []))';
-                                return ERaw(code);
+                                // Build a structured AST: Ecto.Query.from(t in Schema, [])
+                                // IMPORTANT: Do not emit ERaw here; downstream Ecto/where transforms
+                                // need visibility into the query structure.
+                                var schemaModuleAst: reflaxe.elixir.ast.ElixirAST = null;
+                                switch (args[0].expr) {
+                                    case TTypeExpr(TClassDecl(classDecl)):
+                                        var cls = classDecl.get();
+                                        var nativeName: Null<String> = null;
+                                        if (cls.meta.has(":native")) {
+                                            var meta = cls.meta.extract(":native");
+                                            if (meta != null && meta.length > 0 && meta[0].params != null && meta[0].params.length > 0) {
+                                                switch (meta[0].params[0].expr) {
+                                                    case EConst(CString(s, _)): nativeName = s;
+                                                    default:
+                                                }
+                                            }
+                                        }
+                                        var moduleName = nativeName != null ? nativeName : cls.name;
+                                        schemaModuleAst = makeAST(EVar(moduleName));
+                                    default:
+                                        schemaModuleAst = buildExpression(args[0]);
+                                }
+                                var inExpr = makeAST(EBinary(In, makeAST(EVar("t")), schemaModuleAst));
+                                var emptyOpts = makeAST(EList([]));
+                                return ERemoteCall(makeAST(EVar("Ecto.Query")), "from", [inExpr, emptyOpts]);
                             }
                         }
 
