@@ -3,13 +3,14 @@ package tools;
 import haxe.io.Path;
 
 class RegistryOrderDoc {
-  static inline var OUT:String = "docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md";
+  static inline var OUT_LEAN:String = "docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md";
+  static inline var OUT_GRANULAR:String = "docs/05-architecture/TRANSFORM_PASS_REGISTRY_ORDER_GRANULAR.md";
 
   /**
    * Pure Haxe/eval generator for the deterministic transform‑pass order doc.
    *
    * IMPLEMENTATION NOTE
-   * - Avoids compiling the full compiler by parsing the registry source and group files.
+   * - Avoids compiling the full compiler by parsing registry source and group files.
    * - Runs under --interp with only sys APIs; no Node/JS required.
    */
   public static function main() {
@@ -20,8 +21,13 @@ class RegistryOrderDoc {
     final REG = 'src/reflaxe/elixir/ast/transformers/registry/ElixirASTPassRegistry.hx';
     final GROUP_DIR = 'src/reflaxe/elixir/ast/transformers/registry/groups';
     var reg = sys.io.File.getContent(REG);
-    var lines = reg.split('\n');
     var order:Array<String> = [];
+
+    var outPath = #if hxx_granular_pass_registry OUT_GRANULAR #else OUT_LEAN #end;
+
+    #if hxx_granular_pass_registry
+    // Granular mode: parse inline pass entries + expand groups.Foo.build()
+    var lines = reg.split('\n');
 
     function extractNamesFromGroup(groupFile:String):Array<String> {
       var txt = sys.io.File.getContent(groupFile);
@@ -76,16 +82,35 @@ class RegistryOrderDoc {
         }
       }
     }
+    #else
+    // Lean mode: extract bundle names from getLeanPasses() via makeBundle("BundleName", ...).
+    var cursor = 0;
+    while (true) {
+      var pos = reg.indexOf('makeBundle(', cursor);
+      if (pos < 0) break;
+      var q1 = reg.indexOf('"', pos);
+      if (q1 < 0) break;
+      var q2 = reg.indexOf('"', q1 + 1);
+      if (q2 < 0) break;
+      order.push(reg.substr(q1 + 1, q2 - q1 - 1));
+      cursor = q2 + 1;
+    }
+    #end
 
     var sb = new StringBuf();
     sb.add('# Transform Pass Registry Order\n\n');
     sb.add('Generated: ' + Date.now().toString() + "\n\n");
+    #if hxx_granular_pass_registry
+    sb.add('Mode: granular (`-D hxx_granular_pass_registry`)\n\n');
+    #else
+    sb.add('Mode: lean (default)\n\n');
+    #end
     var i = 0;
     for (n in order) { i++; sb.add(i + '. ' + n + "\n"); }
 
-    var dir = Path.directory(OUT);
+    var dir = Path.directory(outPath);
     if (!sys.FileSystem.exists(dir)) sys.FileSystem.createDirectory(dir);
-    sys.io.File.saveContent(OUT, sb.toString());
-    Sys.println('[registry-doc] Wrote ' + OUT + ' with ' + i + ' passes.');
+    sys.io.File.saveContent(outPath, sb.toString());
+    Sys.println('[registry-doc] Wrote ' + outPath + ' with ' + i + ' passes.');
   }
 }
