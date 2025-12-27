@@ -22,7 +22,7 @@
   "scripts": {
     "postinstall": "lix download",
     "build": "echo 'Reflaxe.Elixir is a compiler - no build step needed'",
-    "test": "scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 && npm run test:elixir-validate && npm run test:mix",
+    "test": "scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 && npm run test:generator && npm run test:elixir-validate && npm run test:mix",
     "test:bounded": "scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120",
     "test:sequential": "make -C test -j1 && npm run test:elixir-validate && npm run test:generator && npm run test:mix",
     "test:quick": "scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 --categories core,stdlib,regression",
