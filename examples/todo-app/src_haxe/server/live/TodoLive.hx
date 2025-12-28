@@ -1258,7 +1258,14 @@ import server.pubsub.TodoPubSub.TodoPubSubTopic;
             case Priority:
                 Enum.sortBy(filtered, function(t) return (cast ([priorityRankForSort(t.priority), -t.id] : Array<Term>)));
             case DueDate:
-                Enum.sortBy(filtered, function(t) return (cast ([elixir.Kernel.isNil(t.dueDate), t.dueDate, -t.id] : Array<Term>)));
+                // `NaiveDateTime` is a struct; relying on term ordering would compare fields in key order,
+                // which does not correspond to chronological ordering (e.g. day is compared before year).
+                // Sort by ISO8601 strings to guarantee stable chronological order without raw Elixir injection.
+                Enum.sortBy(filtered, function(t) {
+                    var isNilDue = elixir.Kernel.isNil(t.dueDate);
+                    var dueIso = isNilDue ? "" : t.dueDate.to_iso8601();
+                    return (cast ([isNilDue, dueIso, -t.id] : Array<Term>));
+                });
             case Created:
                 // Newest first (stable): use id desc as a proxy for creation order.
                 Enum.sortBy(filtered, function(t) return (cast ([-t.id] : Array<Term>)));
