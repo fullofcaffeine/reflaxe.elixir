@@ -2,7 +2,7 @@
 
 This example demonstrates **Haxe-authored, type-safe Ecto migrations** via the `@:migration` annotation.
 
-> **Status (Alpha)**: Migrations are now executable by Ecto via an **opt-in migration build**
+> **Status (Experimental)**: Migrations are executable by Ecto via an **opt-in migration build**
 > (`build-migrations.hxml`) that emits timestamped `.exs` files under `priv/repo/migrations/`.
 > The DSL is still evolving; treat `alterTable` support as experimental.
 
@@ -23,7 +23,7 @@ This example demonstrates **Haxe-authored, type-safe Ecto migrations** via the `
 - **Foreign Keys**: Automatic relationship creation and constraints  
 - **Indexes**: Single and composite index creation
 - **Constraints**: Check constraints and validation rules
-- **Compile-time validation**: Registry-backed checks during macro expansion (alpha)
+- **Compile-time validation**: Registry-backed checks during macro expansion (experimental)
 
 ## Quick Start
 
