@@ -90,8 +90,8 @@ class NilGuardFieldAccessCaseNarrowTransforms {
         var narrowedElse = replaceFieldAccesses(elseBranch, varName, fieldToBinder);
 
         var mapPairs: Array<{key: ElixirAST, value: EPattern}> = [];
-        for (f2 in fieldNames) {
-            mapPairs.push({key: makeAST(EAtom(f2)), value: PVar(fieldToBinder.get(f2))});
+        for (fieldName in fieldNames) {
+            mapPairs.push({key: makeAST(EAtom(fieldName)), value: PVar(fieldToBinder.get(fieldName))});
         }
 
         var caseExpr = makeASTWithMeta(
@@ -145,11 +145,11 @@ class NilGuardFieldAccessCaseNarrowTransforms {
         switch (e.def) {
             case ERemoteCall(mod, "is_nil", args) if (args != null && args.length == 1 && isKernel(mod)):
                 arg = args[0];
-            case ECall(target, "is_nil", args2) if (args2 != null && args2.length == 1 && target != null && isKernel(target)):
-                arg = args2[0];
-            case ECall(null, "is_nil", args3) if (args3 != null && args3.length == 1):
+            case ECall(target, "is_nil", args) if (args != null && args.length == 1 && target != null && isKernel(target)):
+                arg = args[0];
+            case ECall(null, "is_nil", args) if (args != null && args.length == 1):
                 // Imported Kernel.is_nil/1
-                arg = args3[0];
+                arg = args[0];
             default:
         }
 
@@ -217,4 +217,3 @@ class NilGuardFieldAccessCaseNarrowTransforms {
 }
 
 #end
-
