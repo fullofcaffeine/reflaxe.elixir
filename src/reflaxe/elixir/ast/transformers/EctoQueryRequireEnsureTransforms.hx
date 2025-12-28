@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - For EDefmodule/EModule, scan children for ERemoteCall(EVar("Ecto.Query"), ...).
  * - If found and no existing ERequire("Ecto.Query"), prepend one.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EctoQueryRequireEnsureTransforms {
     static function moduleNeedsRequire(blockOrBody: ElixirAST): {needs:Bool, has:Bool} {

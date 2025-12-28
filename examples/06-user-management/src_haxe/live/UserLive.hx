@@ -23,6 +23,42 @@ private typedef UserLiveAssigns = {
     showForm: Bool
 }
 
+// ---------------------------------------------------------------------
+// Minimal CoreComponents
+//
+// NOTE: This example keeps lightweight component stubs local to avoid relying
+// on generated Phoenix CoreComponents. They are intentionally small and only
+// aim to keep the example compileable under --warnings-as-errors.
+// ---------------------------------------------------------------------
+
+private typedef ButtonAssigns = {
+    ?type: String,
+    ?disabled: Bool,
+    inner_content: String
+};
+
+private typedef IconAssigns = {
+    name: String
+};
+
+private typedef InputAssigns = {
+    ?type: String,
+    ?name: String,
+    ?value: String,
+    ?placeholder: String,
+    ?required: Bool,
+    ?label: String,
+    ?field: Term
+};
+
+private typedef LabelAssigns = {
+    inner_content: String
+};
+
+private typedef ErrorAssigns = {
+    ?field: Term
+};
+
 /**
  * Phoenix LiveView for user management
  * Demonstrates real-time user CRUD operations
@@ -164,7 +200,7 @@ class UserLive {
             </div>
             
             <div class="search-bar">
-                <.form phx-change="search">
+                <.form for={%{}} phx-change="search">
                     <.input 
                         name="search" 
                         value={@searchTerm}
@@ -233,13 +269,11 @@ class UserLive {
     private static function renderUserForm(assigns: UserLiveAssigns): String {
         if (!assigns.showForm) return "";
 
-        var title = assigns.selectedUser == null ? "New User" : "Edit User";
-
         return hxx('
         <div class="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>${title}</h2>
+                    <h2>${assigns.selectedUser == null ? "New User" : "Edit User"}</h2>
                     <button phx-click="cancel" class="close">&times;</button>
                 </div>
                 
@@ -293,6 +327,48 @@ class UserLive {
         var value = getStringParam(params, key);
         if (value == null) return null;
         return Std.parseInt(value);
+    }
+
+    public static function button(assigns: ButtonAssigns): String {
+        return hxx('
+        <button
+            type={if (@type != nil), do: @type, else: "button"}
+            disabled={@disabled}
+        >
+            <%= @inner_content %>
+        </button>
+        ');
+    }
+
+    public static function icon(assigns: IconAssigns): String {
+        return hxx('
+        <span class={("icon icon-" <> Kernel.to_string(@name))}></span>
+        ');
+    }
+
+    public static function input(assigns: InputAssigns): String {
+        return hxx('
+        <input
+            type={if (@type != nil), do: @type, else: "text"}
+            name={@name}
+            value={@value}
+            placeholder={@placeholder}
+            required={@required}
+        />
+        ');
+    }
+
+    public static function label(assigns: LabelAssigns): String {
+        return hxx('
+        <label>
+            <%= @inner_content %>
+        </label>
+        ');
+    }
+
+    public static function error(assigns: ErrorAssigns): String {
+        // Keep minimal to avoid coupling to Ecto.Changeset error formatting here.
+        return hxx('<span class="error"></span>');
     }
 
     public static function main(): Void {

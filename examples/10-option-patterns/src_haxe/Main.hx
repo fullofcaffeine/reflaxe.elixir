@@ -235,10 +235,12 @@ class Main {
         // Filter and transform
         var activeUserNames = [];
         for (id in userIds) {
-            UserRepository.find(id)
+            switch (UserRepository.find(id)
                 .filter(user -> user.active)
-                .map(user -> user.name)
-                .apply(name -> activeUserNames.push(name));
+                .map(user -> user.name)) {
+                case Some(name): activeUserNames.push(name);
+                case None: // Skip inactive/missing users
+            }
         }
         
         trace('Active user names: ${activeUserNames.join(", ")}');

@@ -38,6 +38,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * SCOPE
  * - Shape-based only; no app-specific names. Works for any v/x identifiers.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ListUpdateAndFilterFixTransforms {
     static inline function baseName(n:String):String {

@@ -381,6 +381,16 @@ class ElixirASTBuilder {
             }
         }
 
+        // Preserve module/class identity across nested compilation contexts.
+        // Some helpers invoke nested buildFromTypedExpr calls with a fresh CompilationContext;
+        // those contexts must inherit the current module/class so same-module optimizations
+        // (and private-constructor local calls) remain correct.
+        if (previousContext != null) {
+            if (context.currentClass == null) context.currentClass = previousContext.currentClass;
+            if (context.currentModule == null) context.currentModule = previousContext.currentModule;
+            if (!context.currentModuleHasPresence && previousContext.currentModuleHasPresence) context.currentModuleHasPresence = true;
+        }
+
         currentContext = context;
 
         #if debug_variable_renaming
@@ -477,10 +487,36 @@ class ElixirASTBuilder {
             default:
         }
 
-        var result = makeASTWithMeta(astDef, metadata, expr.pos);
-        if (currentContext != null && currentContext.builderCache != null) {
-            currentContext.builderCache.set(expr, result);
-        }
+	        var result = makeASTWithMeta(astDef, metadata, expr.pos);
+
+	        // Propagate loop early-return intent down to the lowered Enum.each node.
+	        //
+	        // WHY:
+	        // - Haxe `return` inside loops must become a non-local return from the enclosing
+	        //   function when the loop is lowered to `Enum.each/2`.
+	        // - We perform the rewrite in a transformer pass (EnumEachEarlyReturn), but the
+	        //   pass needs a reliable signal that the source loop contained a return.
+	        // - The top-level loop node has `metadata.loopContainsReturn`, but the lowered
+	        //   Enum.each call may be nested inside blocks and lose the flag.
+	        //
+	        // HOW:
+	        // - When the source TypedExpr was a loop containing a return, walk the generated
+	        //   subtree and tag any `Enum.each/2` calls with `loopContainsReturn = true`.
+	        if (metadata != null && metadata.loopContainsReturn == true) {
+	            reflaxe.elixir.ast.ASTUtils.walk(result, function(n: ElixirAST): Void {
+	                if (n == null || n.def == null) return;
+	                switch (n.def) {
+	                    case ERemoteCall({def: EVar("Enum")}, "each", _) | ECall({def: EVar("Enum")}, "each", _):
+	                        if (n.metadata == null) n.metadata = {};
+	                        n.metadata.loopContainsReturn = true;
+	                    default:
+	                }
+	            });
+	        }
+
+	        if (currentContext != null && currentContext.builderCache != null) {
+	            currentContext.builderCache.set(expr, result);
+	        }
 
         #if debug_ast_builder
         // DISABLED: trace('[XRay AST Builder] Generated AST: ${astDef}');
@@ -1817,6 +1853,18 @@ class ElixirASTBuilder {
                 // Handle assignments specially since they need pattern extraction
                 var result = switch(op) {
                     case OpAssign:
+                        // Abstract constructors assign to `this` to define the underlying value:
+                        //   this = expr;
+                        // In Elixir there is no mutable `this`, so the assignment expression should
+                        // simply evaluate to the RHS (which becomes the constructor return value).
+                        //
+                        // This prevents generating invalid/self-referential binders like `struct = ...`
+                        // and avoids empty bodies (which trigger warnings-as-errors for unused params).
+                        switch (e1.expr) {
+                            case TConst(TThis):
+                                var rhsAst = buildFromTypedExpr(e2, currentContext);
+                                rhsAst != null ? rhsAst.def : ENil;
+                            default:
                         // Assignment needs pattern extraction for the left side
                         // SPECIAL: Map/struct-like field assignment on a local variable
                         // params.userId = value -> params = Map.put(params, "user_id", value)
@@ -1946,6 +1994,7 @@ class ElixirASTBuilder {
                                 default:
                             }
                             matchNode.def;
+                        }
                         }
 
                     case OpAssignOp(innerOp):
@@ -2140,10 +2189,10 @@ class ElixirASTBuilder {
                                 EAtom(atomName);
                             }
                         }
-                    case FStatic(classRef, cf):
-                        // Static field access
-                        var className = classRef.get().name;
-                        var fieldName = extractFieldName(fa);
+	                    case FStatic(classRef, cf):
+	                        // Static field access
+	                        var className = classRef.get().name;
+	                        var fieldName = extractFieldName(fa);
                         
                         #if debug_ast_builder
                         // DISABLED: trace('[AST TField] FStatic - className: $className, fieldName: $fieldName');
@@ -2267,9 +2316,9 @@ class ElixirASTBuilder {
                             // DISABLED: trace('[Atom Debug TField] Not an atom field or no expr, using normal field access');
                             #end
                             #end
-                            // Normal static field access
-                            // Convert to snake_case for Elixir function names
-                            fieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+	                        // Normal static field access
+	                        // Convert to snake_case for Elixir function names
+	                        fieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
                             
                             // Always use full qualification for function references
                             // When a static method is passed as a function reference (not called directly),
@@ -2298,27 +2347,33 @@ class ElixirASTBuilder {
                                     null;
                                 };
                                 
-                                // If target is null, we can't generate a proper field access
-                                if (target == null) {
+	                                // If target is null, we can't generate a proper field access
+	                                if (target == null) {
                                     #if debug_ast_builder
                                     // DISABLED: trace('[ERROR TField] Failed to build target for static field ${className}.${fieldName}');
                                     #end
-                                    // Return a placeholder that will be caught by TCall
-                                    EVar("UnknownModule." + fieldName);
-                                } else {
-                                    // For static fields on extern classes with @:native, we already have the full module name
-                                    // in the target. Just return EField which will be handled properly by TCall
-                                    // when this is used in a function call context.
-                                    //
+	                                    // Return a placeholder that will be caught by TCall
+	                                    EVar("UnknownModule." + fieldName);
+	                                } else {
+	                                    // Static variables compile as 0-arity functions in Elixir.
+	                                    // Emit `Module.var()` for reads so we can back static state with a store.
+	                                    if (field.kind.match(FVar(_, _))) {
+	                                        ERemoteCall(target, fieldName, []);
+	                                    } else {
+	                                    // For static fields on extern classes with @:native, we already have the full module name
+	                                    // in the target. Just return EField which will be handled properly by TCall
+	                                    // when this is used in a function call context.
+	                                    //
                                     // The TCall handler will detect that this is a static method call on an extern class
                                     // and will generate the proper ERemoteCall.
                                     //
-                                    // Note: Function references are now handled at the TCall level
-                                    // when a function is passed as an argument to another function
-                                    EField(target, fieldName);
-                                }
-                            }
-                        }
+	                                    // Note: Function references are now handled at the TCall level
+	                                    // when a function is passed as an argument to another function
+	                                    EField(target, fieldName);
+	                                    }
+	                                }
+	                            }
+	                        }
                     case FAnon(cf):
                         // Anonymous field access - check for tuple pattern
                         var fieldName = cf.get().name;
@@ -2641,11 +2696,11 @@ class ElixirASTBuilder {
                 
             case TBreak:
                 // Delegate to ExceptionBuilder for break control flow
-                ExceptionBuilder.buildBreak();
+                ExceptionBuilder.buildBreak(currentContext);
                 
             case TContinue:
                 // Delegate to ExceptionBuilder for continue control flow
-                ExceptionBuilder.buildContinue();
+                ExceptionBuilder.buildContinue(currentContext);
                 
             // ================================================================
             // Pattern Matching (Switch/Case)
@@ -3694,6 +3749,21 @@ class ElixirASTBuilder {
      * Create metadata from TypedExpr
      */
     static function createMetadata(expr: TypedExpr): ElixirMetadata {
+        var fromReturn = switch (expr.expr) { case TReturn(_): true; default: false; };
+        var loopContainsReturn = switch (expr.expr) {
+            case TFor(_, _, body): LoopBuilder.containsNonLocalReturn(body);
+            case TWhile(_, body, _): LoopBuilder.containsNonLocalReturn(body);
+            default: false;
+        };
+
+        #if debug_enum_each_early_return
+        switch (expr.expr) {
+            case TFor(_, _, _) | TWhile(_, _, _):
+                trace('[createMetadata] ' + Type.enumConstructor(expr.expr) + ' loopContainsReturn=' + loopContainsReturn + ' fromReturn=' + fromReturn);
+            default:
+        }
+        #end
+
         return {
             sourceExpr: expr,
             sourceLine: expr.pos != null ? Context.getPosInfos(expr.pos).min : 0,
@@ -3702,12 +3772,8 @@ class ElixirASTBuilder {
             elixirType: typeToElixir(expr.t),
             purity: PatternDetector.isPure(expr),
             tailPosition: false, // Will be set by transformer
-            fromReturn: switch (expr.expr) { case TReturn(_): true; default: false; }, // Enables early-return reconstruction in transformer
-            loopContainsReturn: switch (expr.expr) {
-                case TFor(_, _, body): LoopBuilder.containsNonLocalReturn(body);
-                case TWhile(_, body, _): LoopBuilder.containsNonLocalReturn(body);
-                default: false;
-            },
+            fromReturn: fromReturn, // Enables early-return reconstruction in transformer
+            loopContainsReturn: loopContainsReturn,
             async: false, // Will be detected by transformer
             requiresReturn: false, // Will be set by context
             requiresTempVar: false, // Will be set by transformer

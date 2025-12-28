@@ -23,16 +23,16 @@ end))
     end)
   end
   def get_value_or_default(result) do
-    ResultTools.fold(result, fn value -> value end, fn _error -> -1 end)
+    ResultTools.fold(result, fn value -> value end, fn _ -> -1 end)
   end
   def test_extension_methods() do
     result = {:ok, "hello"}
-    upper_result = ResultTools.map(result, fn s -> String.upcase(s) end)
-    chained_result = ResultTools.flat_map(result, fn s ->
+    _upper_result = ResultTools.map(result, fn s -> String.upcase(s) end)
+    _chained_result = ResultTools.flat_map(result, fn s ->
       if (String.length(s) > 0), do: {:ok, s <> "!"}, else: {:error, "empty"}
     end)
-    is_valid = ResultTools.is_ok(result)
-    has_error = ResultTools.is_error(result)
+    _is_valid = ResultTools.is_ok(result)
+    _has_error = ResultTools.is_error(result)
     value = ResultTools.unwrap_or(result, "default")
     value
   end
@@ -52,7 +52,7 @@ end))
     %{:is_success_ok => is_success_ok, :is_failure_ok => is_failure_ok, :is_success_error => is_success_error, :is_failure_error => is_failure_error, :success_value => success_value, :failure_value => failure_value, :mapped_error => mapped_error}
   end
   def process_multiple_numbers(inputs) do
-    results = Enum.map(inputs, Main.parseNumber)
+    results = Enum.map(inputs, &parse_number/1)
     _ = ResultTools.sequence(results)
   end
   def validate_and_double(inputs) do
@@ -61,18 +61,18 @@ end))
   def main() do
     result1 = parse_number("123")
     result2 = parse_number("abc")
-    div_result = divide_numbers("10", "2")
-    div_error = divide_numbers("10", "0")
-    doubled = double_if_valid("21")
+    _div_result = divide_numbers("10", "2")
+    _div_error = divide_numbers("10", "0")
+    _doubled = double_if_valid("21")
     _ = handle_result(result1)
     _ = handle_result(result2)
     _ = get_value_or_default(result1)
     _ = get_value_or_default(result2)
-    user = process_user(%{:name => "Alice", :age => "25"})
-    utils = demonstrate_utilities()
-    numbers = process_multiple_numbers(["1", "2", "3"])
-    numbers_error = process_multiple_numbers(["1", "x", "3"])
-    doubled_numbers = validate_and_double(["5", "10", "15"])
+    _user = process_user(%{:name => "Alice", :age => "25"})
+    _utils = demonstrate_utilities()
+    _numbers = process_multiple_numbers(["1", "2", "3"])
+    _numbers_error = process_multiple_numbers(["1", "x", "3"])
+    _doubled_numbers = validate_and_double(["5", "10", "15"])
     nil
   end
 end

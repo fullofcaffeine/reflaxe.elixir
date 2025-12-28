@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  *   or `=` bind to a variable `v` and `v` is not used in any later statement
  *   in the same sequence, replace the statement with just its RHS expression.
  *   Applies recursively inside anonymous function bodies as well.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DropUnusedLocalAssignmentTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -41,7 +41,7 @@ class ElixirNaming {
      * HOW: Special case handling → snake_case conversion → keyword escaping
      *
      * Examples:
-     * - "_" → "item" (avoid wildcard)
+     * - "_" → "_" (preserve wildcard semantics)
      * - "_g" → "_g" (compiler temp preserved)
      * - "__MODULE__" → "__MODULE__" (special macro)
      * - "_FooBar" → "_foo_bar" (unused variable)
@@ -56,8 +56,8 @@ class ElixirNaming {
         // 1. Special macros - preserve exactly
         if (isSpecialMacro(ident)) return ident;
 
-        // 2. Single underscore - convert to meaningful name
-        if (ident == "_") return "item";
+        // 2. Single underscore - preserve wildcard semantics
+        if (ident == "_") return "_";
 
         // 3. Compiler temps - preserve exactly (_g, _g1, etc.)
         // Haxe intentionally prefixes many temps with `_` to avoid Elixir's unused-variable warnings.

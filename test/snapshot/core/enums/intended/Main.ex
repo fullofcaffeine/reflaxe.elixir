@@ -55,11 +55,6 @@ defmodule Main do
     end)
   end
   def main() do
-    color = {:rgb, 255, 128, 0}
-    some = {:some, "Hello"}
-    none = {:none}
-    tree = {:node, {:leaf, 1}, {:node, {:leaf, 2}, {:leaf, 3}}}
-    tree2 = {:node, {:leaf, 1}, {:node, {:leaf, 2}, {:leaf, 3}}}
     nil
   end
 end

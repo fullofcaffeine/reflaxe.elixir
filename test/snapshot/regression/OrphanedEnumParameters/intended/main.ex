@@ -1,6 +1,14 @@
 defmodule Main do
+  def main() do
+    _ = test_basic_enum()
+    _ = test_multiple_parameters()
+    _ = test_empty_cases()
+    _ = test_fall_through()
+    _ = test_nested_enums()
+    _ = test_mixed_cases()
+  end
   defp test_basic_enum() do
-    msg = (case {:created, "item"} do
+    _msg = (case {:created, "item"} do
       {:created, _content} -> nil
       {:updated, _id, _content} -> nil
       {:deleted, _id} -> nil
@@ -8,14 +16,14 @@ defmodule Main do
     end)
   end
   defp test_multiple_parameters() do
-    action = (case {:move, 10, 20, 30} do
+    _action = (case {:move, 10, 20, 30} do
       {:move, _x, _y, _z} -> nil
       {:rotate, _angle, _axis} -> nil
       {:scale, _factor} -> nil
     end)
   end
   defp test_empty_cases() do
-    event = (case {:click, 100, 200} do
+    _event = (case {:click, 100, 200} do
       {:click, _x, _y} -> nil
       {:hover, _x, _y} -> nil
       {:key_press, _key} -> nil
@@ -40,7 +48,7 @@ end))
     nil
   end
   defp test_nested_enums() do
-    container = (case {:box, {:text, "Hello"}} do
+    _container = (case {:box, {:text, "Hello"}} do
       {:box, content} ->
         (case content do
           {:text, _str} -> nil
@@ -52,7 +60,7 @@ end))
     end)
   end
   defp test_mixed_cases() do
-    result = (case {:success, "Done", 42} do
+    _result = (case {:success, "Done", 42} do
       {:success, _message, _code} -> nil
       {:warning, _message} -> nil
       {:error, _message, _code} -> nil

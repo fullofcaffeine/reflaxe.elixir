@@ -16,6 +16,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Prevent unused local variable warnings from closure-local rebinds that don't affect
  *   outer scope (common in lowered list-building patterns).
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EFnLocalAssignDiscardTransforms {
     public static function discardPass(ast: ElixirAST): ElixirAST {

@@ -49,13 +49,18 @@ class TemplateHelpers {
                 name;
             case EField(obj, field):
                 var base = renderExpr(obj);
-                // If base starts with "assigns.", convert to HEEx assigns shorthand
-                if (StringTools.startsWith(base, "assigns.")) {
-                    '@' + base.substr("assigns.".length) + '.' + field;
-                } else if (base == "assigns") {
+                // Map `assigns.*` access to HEEx shorthand `@*` before applying field rules.
+                var heexBase = StringTools.startsWith(base, "assigns.")
+                    ? ('@' + base.substr("assigns.".length))
+                    : base;
+                if (base == "assigns") {
                     '@' + field;
+                } else if (field == "length") {
+                    // Keep TemplateHelpers consistent with the printer:
+                    // `x.length` (non-string) should become `length(x)` in Elixir.
+                    'length(' + heexBase + ')';
                 } else {
-                    base + '.' + field;
+                    heexBase + '.' + field;
                 }
             case EAccess(target, key):
                 var t = renderExpr(target);
@@ -305,24 +310,28 @@ class TemplateHelpers {
         }
         s = rewriteAttributeInterpolations(s);
         s = rewriteAttributeEexInterpolations(s);
+        // HEEx does not allow `<%=` interpolations inside quoted attribute values. When the
+        // author writes mixed quoted values like `class="status ${expr}"`, rewrite the entire
+        // attribute value to a brace expression: `class={"status " <> Kernel.to_string(expr)}`.
+        s = rewriteQuotedAttributeMixedInterpolations(s);
         s = rewriteForBlocks(s);
-        var parts:Array<String> = [];
-        var i = 0;
-        while (i < s.length) {
-            var j1 = s.indexOf("#{", i);
-            var j2 = s.indexOf("${", i);
-            var j = (j1 == -1) ? j2 : (j2 == -1 ? j1 : (j1 < j2 ? j1 : j2));
-            if (j == -1) { parts.push(s.substr(i)); break; }
-            parts.push(s.substr(i, j - i));
-            var k = j + 2;
-            var depth = 1;
-            while (k < s.length && depth > 0) {
-                var ch = s.charAt(k);
-                if (ch == "{") depth++; else if (ch == "}") depth--;
-                k++;
-            }
-            var inner = s.substr(j + 2, (k - 1) - (j + 2));
-            var expr = StringTools.trim(inner);
+	        var parts:Array<String> = [];
+	        var i = 0;
+	        while (i < s.length) {
+	            var hashInterpIndex = s.indexOf("#{", i);
+	            var dollarInterpIndex = s.indexOf("${", i);
+	            var nextInterpIndex = (hashInterpIndex == -1) ? dollarInterpIndex : (dollarInterpIndex == -1 ? hashInterpIndex : (hashInterpIndex < dollarInterpIndex ? hashInterpIndex : dollarInterpIndex));
+	            if (nextInterpIndex == -1) { parts.push(s.substr(i)); break; }
+	            parts.push(s.substr(i, nextInterpIndex - i));
+	            var k = nextInterpIndex + 2;
+	            var depth = 1;
+	            while (k < s.length && depth > 0) {
+	                var ch = s.charAt(k);
+	                if (ch == "{") depth++; else if (ch == "}") depth--;
+	                k++;
+	            }
+	            var inner = s.substr(nextInterpIndex + 2, (k - 1) - (nextInterpIndex + 2));
+	            var expr = StringTools.trim(inner);
             if (expr.length >= 2 && expr.charAt(0) == '"' && expr.charAt(1) == '<') {
                 #if macro
                 haxe.macro.Context.error("HXX: injecting HTML via string inside interpolation is not allowed. Use HXX.block('...') or inline markup.", haxe.macro.Context.currentPos());
@@ -348,6 +357,217 @@ class TemplateHelpers {
             i = k;
         }
         return parts.join("");
+    }
+
+    static function escapeElixirStringLiteral(s: String): String {
+        if (s == null || s.length == 0) return "";
+        var out = new StringBuf();
+        for (i in 0...s.length) {
+            var ch = s.charAt(i);
+            switch (ch) {
+                case "\\":
+                    out.add("\\\\");
+                case "\"":
+                    out.add("\\\"");
+                case "\n":
+                    out.add("\\n");
+                case "\r":
+                    out.add("\\r");
+                case "\t":
+                    out.add("\\t");
+                default:
+                    out.add(ch);
+            }
+        }
+        return out.toString();
+    }
+
+    static function convertInlineExprForAttrInterpolation(expr: String): String {
+        if (expr == null) return "";
+        var e = StringTools.trim(expr);
+        e = StringTools.replace(e, "assigns.", "@");
+        var tern = splitTopLevelTernary(e);
+        if (tern != null) {
+            var cond = StringTools.replace(StringTools.trim(tern.cond), "assigns.", "@");
+            var th = StringTools.trim(tern.thenPart);
+            var el = StringTools.trim(tern.elsePart);
+            return 'if ' + cond + ', do: ' + th + ', else: ' + el;
+        }
+        return e;
+    }
+
+    static function buildInterpolatedAttrExpr(value: String): String {
+        if (value == null) return "\"\"";
+	        var parts: Array<String> = [];
+	        var i = 0;
+	        while (i < value.length) {
+	            var hashInterpIndex = value.indexOf("#{", i);
+	            var dollarInterpIndex = value.indexOf("${", i);
+	            var eexInterpIndex = value.indexOf("<%=", i);
+	            var nextMarkerIndex = -1;
+	            if (hashInterpIndex != -1) nextMarkerIndex = hashInterpIndex;
+	            if (dollarInterpIndex != -1 && (nextMarkerIndex == -1 || dollarInterpIndex < nextMarkerIndex)) nextMarkerIndex = dollarInterpIndex;
+	            if (eexInterpIndex != -1 && (nextMarkerIndex == -1 || eexInterpIndex < nextMarkerIndex)) nextMarkerIndex = eexInterpIndex;
+	            if (nextMarkerIndex == -1) {
+	                var tail = value.substr(i);
+	                if (tail != "") parts.push('"' + escapeElixirStringLiteral(tail) + '"');
+	                break;
+	            }
+
+	            var staticPart = value.substr(i, nextMarkerIndex - i);
+	            if (staticPart != "") parts.push('"' + escapeElixirStringLiteral(staticPart) + '"');
+
+	            if (eexInterpIndex != -1 && nextMarkerIndex == eexInterpIndex) {
+	                var endTag = value.indexOf("%>", eexInterpIndex + 3);
+	                if (endTag == -1) {
+	                    // Malformed; bail out by keeping the rest verbatim as a string segment.
+	                    var rest = value.substr(nextMarkerIndex);
+	                    if (rest != "") parts.push('"' + escapeElixirStringLiteral(rest) + '"');
+	                    break;
+	                }
+	                var inner = StringTools.trim(value.substr(eexInterpIndex + 3, endTag - (eexInterpIndex + 3)));
+	                inner = StringTools.replace(inner, "assigns.", "@");
+	                parts.push('Kernel.to_string(' + inner + ')');
+	                i = endTag + 2;
+	                continue;
+	            }
+
+	            // ${...} / #{...}
+	            var k = nextMarkerIndex + 2;
+	            var depth = 1;
+	            var inS = false;
+	            var inD = false;
+            while (k < value.length && depth > 0) {
+                var ch = value.charAt(k);
+                if (!inS && ch == '"' && !inD) { inD = true; k++; continue; }
+                else if (inD && ch == '"') { inD = false; k++; continue; }
+                if (!inD && ch == '\'' && !inS) { inS = true; k++; continue; }
+                else if (inS && ch == '\'') { inS = false; k++; continue; }
+                if (inS || inD) { k++; continue; }
+                if (ch == "{") depth++;
+                else if (ch == "}") depth--;
+                k++;
+            }
+	            var raw = value.substr(nextMarkerIndex + 2, (k - 1) - (nextMarkerIndex + 2));
+	            var expr = StringTools.trim(raw);
+	            if (expr.length >= 2 && expr.charAt(0) == '"' && expr.charAt(1) == '<') {
+	                #if macro
+	                haxe.macro.Context.error("HXX: injecting HTML via string inside attribute interpolation is not allowed. Use HXX.block('...') or inline markup.", haxe.macro.Context.currentPos());
+	                #else
+	                throw "HXX: injecting HTML via string inside attribute interpolation is not allowed. Use HXX.block('...') or inline markup.";
+	                #end
+	            }
+	            parts.push('Kernel.to_string(' + convertInlineExprForAttrInterpolation(expr) + ')');
+	            i = k;
+	        }
+
+        if (parts.length == 0) return "\"\"";
+        if (parts.length == 1) return parts[0];
+        return '(' + parts.join(" <> ") + ')';
+    }
+
+    static function rewriteQuotedAttributeMixedInterpolations(s: String): String {
+        if (s == null) return s;
+        // Fast-path: only run when there is a chance of mixed interpolation in quoted attrs.
+        if (s.indexOf("${") == -1 && s.indexOf("#{") == -1 && s.indexOf("<%=") == -1) return s;
+
+        function findQuotedAttrEnd(start:Int, quote:String): Int {
+            var i = start;
+            var interpDepth = 0;
+            var inEex = false;
+            var inS = false;
+            var inD = false;
+            while (i < s.length) {
+                var ch = s.charAt(i);
+
+                if (inEex) {
+                    var endTag = s.indexOf("%>", i);
+                    if (endTag == -1) return -1;
+                    i = endTag + 2;
+                    inEex = false;
+                    continue;
+                }
+
+                if (interpDepth > 0) {
+                    if (!inS && ch == '"' && !inD) { inD = true; i++; continue; }
+                    else if (inD && ch == '"') { inD = false; i++; continue; }
+                    if (!inD && ch == '\'' && !inS) { inS = true; i++; continue; }
+                    else if (inS && ch == '\'') { inS = false; i++; continue; }
+                    if (inS || inD) { i++; continue; }
+                    if (ch == "{") interpDepth++;
+                    else if (ch == "}") interpDepth--;
+                    i++;
+                    continue;
+                }
+
+                // Not inside interpolation/EEx
+                if (ch == quote) return i;
+                if ((ch == "$" || ch == "#") && i + 1 < s.length && s.charAt(i + 1) == "{") {
+                    interpDepth = 1;
+                    inS = false;
+                    inD = false;
+                    i += 2;
+                    continue;
+                }
+                if (ch == "<" && i + 2 < s.length && s.charAt(i + 1) == "%" && s.charAt(i + 2) == "=") {
+                    inEex = true;
+                    i += 3;
+                    continue;
+                }
+                i++;
+            }
+            return -1;
+        }
+
+        var out = new StringBuf();
+        var inTag = false;
+        var i = 0;
+        while (i < s.length) {
+            var ch = s.charAt(i);
+            if (!inTag) {
+                if (ch == "<") inTag = true;
+                out.add(ch);
+                i++;
+                continue;
+            }
+
+            if (ch == ">") {
+                inTag = false;
+                out.add(ch);
+                i++;
+                continue;
+            }
+
+            if (ch == "=") {
+                var vpos = i + 1;
+                while (vpos < s.length && ~/^\\s$/.match(s.charAt(vpos))) vpos++;
+                if (vpos < s.length && (s.charAt(vpos) == "\"" || s.charAt(vpos) == "'")) {
+                    var quote = s.charAt(vpos);
+                    var startVal = vpos + 1;
+                    var endVal = findQuotedAttrEnd(startVal, quote);
+                    if (endVal != -1) {
+                        var j = endVal;
+                        var value = s.substr(startVal, j - startVal);
+                        if (value.indexOf("${") != -1 || value.indexOf("#{") != -1 || value.indexOf("<%=") != -1) {
+                            out.add("={");
+                            out.add(buildInterpolatedAttrExpr(value));
+                            out.add("}");
+                        } else {
+                            out.add("=");
+                            out.add(quote);
+                            out.add(value);
+                            out.add(quote);
+                        }
+                        i = j + 1;
+                        continue;
+                    }
+                }
+            }
+
+            out.add(ch);
+            i++;
+        }
+        return out.toString();
     }
 
     /**

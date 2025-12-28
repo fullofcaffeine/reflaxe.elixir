@@ -26,6 +26,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - If stmts[i+1] is ESigil("H", content, mods) and content contains `Phoenix.HTML.raw(content)`
  *     or `Phoenix.HTML.raw(@content)`, replace stmts[i+1] body with the string literal and
  *     remove stmts[i].
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexRawInlineFromPrecedingLiteralTransforms {
     static function extractStringLiteral(e: ElixirAST): Null<String> {

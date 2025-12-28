@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   1) For each param pattern PVar(name), compute snake_case.
  *   2) When snake != name, rename the pattern to snake.
  *   3) In the function body, replace EVar(name) → EVar(snake).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DefParamCamelToSnakeTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

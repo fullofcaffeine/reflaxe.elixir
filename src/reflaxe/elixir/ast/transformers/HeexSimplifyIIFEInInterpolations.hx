@@ -20,6 +20,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - String-level rewrite on ESigil("H", content) bodies using conservative patterns.
  *   Only removes the outer (fn -> … end).() around a single interpolation with no nested %>.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexSimplifyIIFEInInterpolations {
     public static function transformPass(ast: ElixirAST): ElixirAST {

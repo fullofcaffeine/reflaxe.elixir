@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For EBlock([...]): iterate statements; when encountering an underscored assignment
  *   at i, rewrite EVar(base) to EVar(_base) inside statement i+1 only (if present)
  *   and only when base has no declaration in the block.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class AdjacentUnderscoreBinderRefFixTransforms {
     public static function fixPass(ast: ElixirAST): ElixirAST {

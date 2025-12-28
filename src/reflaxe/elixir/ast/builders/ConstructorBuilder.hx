@@ -2,13 +2,14 @@ package reflaxe.elixir.ast.builders;
 
 #if (macro || reflaxe_runtime)
 
-import haxe.macro.Type;
-import haxe.macro.Expr;
-import haxe.macro.Context;
-import reflaxe.elixir.ast.ElixirAST;
-import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
-import reflaxe.elixir.ast.ElixirAST.makeAST;
-import reflaxe.elixir.CompilationContext;
+	import haxe.macro.Type;
+	import haxe.macro.Expr;
+	import haxe.macro.Context;
+	import reflaxe.elixir.ast.ElixirAST;
+	import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
+	import reflaxe.elixir.ast.ElixirAST.makeAST;
+	import reflaxe.elixir.ast.builders.ModuleBuilder;
+	import reflaxe.elixir.CompilationContext;
 
 /**
  * ConstructorBuilder: Handles constructor call compilation (TNew)
@@ -61,14 +62,15 @@ class ConstructorBuilder {
      * @param context Compilation context
      * @return ElixirASTDef for the constructor call
      */
-    public static function build(c: Ref<ClassType>, params: Array<Type>, el: Array<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
-        var classType = c.get();
-        var className = classType.name;
-        
-        #if debug_ast_builder
-        #if debug_ast_builder trace('[ConstructorBuilder] Building constructor for class: $className'); #end
-        #if debug_ast_builder trace('[ConstructorBuilder]   Arguments: ${el.length}'); #end
-        #if debug_ast_builder trace('[ConstructorBuilder]   Has @:schema: ${classType.meta.has(":schema")}'); #end
+	    public static function build(c: Ref<ClassType>, params: Array<Type>, el: Array<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
+	        var classType = c.get();
+	        var className = classType.name;
+	        var moduleName = ModuleBuilder.extractModuleName(classType);
+	        
+	        #if debug_ast_builder
+	        #if debug_ast_builder trace('[ConstructorBuilder] Building constructor for class: $className'); #end
+	        #if debug_ast_builder trace('[ConstructorBuilder]   Arguments: ${el.length}'); #end
+	        #if debug_ast_builder trace('[ConstructorBuilder]   Has @:schema: ${classType.meta.has(":schema")}'); #end
         #end
 
         // CRITICAL FIX: Bypass compileExpressionImpl to preserve context
@@ -84,13 +86,13 @@ class ConstructorBuilder {
         context.isInConstructorArgContext = false;
         #if debug_ast_builder trace('[ConstructorBuilder] RESET FLAG isInConstructorArgContext = false'); #end
 
-        // ====================================================================
-        // PATTERN 1: Ecto Schemas
-        // ====================================================================
-        if (classType.meta.has(":schema")) {
-            #if debug_ast_builder trace('[ConstructorBuilder] ✓ Detected Ecto schema, generating struct literal'); #end
-            return buildEctoSchema(classType, className);
-        }
+	        // ====================================================================
+	        // PATTERN 1: Ecto Schemas
+	        // ====================================================================
+	        if (classType.meta.has(":schema")) {
+	            #if debug_ast_builder trace('[ConstructorBuilder] ✓ Detected Ecto schema, generating struct literal'); #end
+	            return buildEctoSchema(moduleName);
+	        }
         
         // ====================================================================
         // PATTERN 2: Map Types
@@ -105,6 +107,16 @@ class ConstructorBuilder {
         // ====================================================================
         var hasInstanceMethods = hasInstanceMethodsCheck(classType);
         var hasConstructor = classType.constructor != null;
+        var ctorIsPublic = classType.constructor == null || classType.constructor.get().isPublic;
+        var isSameClass = false;
+        if (context.currentClass != null) {
+            // Reference equality is not reliable across Haxe macro type refs; compare stable identity.
+            if (context.currentClass == classType) {
+                isSameClass = true;
+            } else if (context.currentClass.module == classType.module && context.currentClass.name == classType.name) {
+                isSameClass = true;
+            }
+        }
         
         #if debug_ast_builder
         #if debug_ast_builder trace('[ConstructorBuilder] Class analysis:'); #end
@@ -112,19 +124,28 @@ class ConstructorBuilder {
         #if debug_ast_builder trace('[ConstructorBuilder]   Has constructor: $hasConstructor'); #end
         #end
         
-        if (hasInstanceMethods || hasConstructor) {
-            // Call the module's new function: ModuleName.new(args)
-            #if debug_ast_builder trace('[ConstructorBuilder] Generating Module.new() call'); #end
-            var moduleRef = makeAST(EVar(className));
-            return ECall(moduleRef, "new", args);
-        } else {
-            // Simple data class (no methods/ctor) -> prefer Module.new() for non-schema classes
-            // to avoid generating invalid struct literals for modules without defstruct.
-            #if debug_ast_builder trace('[ConstructorBuilder] Generating Module.new() call for data class (non-schema)'); #end
-            var moduleRef2 = makeAST(EVar(className));
-            return ECall(moduleRef2, "new", args);
+        // Constructors compile to `new/arity` functions in the module.
+        //
+        // When a class has a private constructor, Haxe only allows `new Class(...)`
+        // within that same class. In Elixir, private functions (`defp new/...`) must be
+        // called locally (not as `Module.new(...)`), otherwise Elixir warns/fails with
+        // "undefined or private".
+        //
+        // So:
+        // - private ctor + same module: call local `new(...)`
+        // - otherwise: call `Module.new(...)`
+        var shouldCallLocalNew = hasConstructor && !ctorIsPublic && isSameClass;
+
+        if (shouldCallLocalNew) {
+            #if debug_ast_builder trace('[ConstructorBuilder] Generating local new() call (private ctor)'); #end
+            return ECall(null, "new", args);
         }
-    }
+
+	        // Default: call the module's new function: ModuleName.new(args)
+	        #if debug_ast_builder trace('[ConstructorBuilder] Generating Module.new() call'); #end
+	        var moduleRef = makeAST(EVar(moduleName));
+	        return ECall(moduleRef, "new", args);
+	    }
     
     /**
      * Build Ecto schema struct literal
@@ -133,27 +154,10 @@ class ConstructorBuilder {
      * WHAT: Extract module name from metadata and generate struct
      * HOW: Check @:native metadata for custom module name
      */
-    static function buildEctoSchema(classType: ClassType, defaultName: String): ElixirASTDef {
-        // Get the full module name from @:native or use className
-        var moduleName = if (classType.meta.has(":native")) {
-            var nativeMeta = classType.meta.extract(":native");
-            if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
-                switch(nativeMeta[0].params[0].expr) {
-                    case EConst(CString(s, _)):
-                        s;
-                    default:
-                        defaultName;
-                }
-            } else {
-                defaultName;
-            }
-        } else {
-            defaultName;
-        };
-        
-        // Generate struct literal: %ModuleName{}
-        return EStruct(moduleName, []);
-    }
+	    static function buildEctoSchema(moduleName: String): ElixirASTDef {
+	        // Generate struct literal: %ModuleName{}
+	        return EStruct(moduleName, []);
+	    }
     
     /**
      * Check if class name represents a Map type

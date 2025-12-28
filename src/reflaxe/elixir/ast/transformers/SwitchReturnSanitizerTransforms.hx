@@ -26,6 +26,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *     RHS is ECase(_, _).
  *   - If found, replace trailing `EVar(name)` with that ECase and remove that
  *     assignment statement.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SwitchReturnSanitizerTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

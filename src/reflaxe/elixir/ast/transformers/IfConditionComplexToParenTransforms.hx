@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Visit EIf/ EUnless. If condition AST contains any of ECase/ECond/EWith/EIf,
  *   wrap the entire condition in EParen.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class IfConditionComplexToParenTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

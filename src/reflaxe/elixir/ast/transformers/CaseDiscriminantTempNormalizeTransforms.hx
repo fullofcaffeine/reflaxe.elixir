@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - In an EBlock context, when a statement `lhs = ...` or `lhs <- ...` is immediately
  *   followed by `case var do ... end` where `var` equals `lhs` modulo a single leading
  *   underscore, rewrite the case discriminant to use `lhs` exactly.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseDiscriminantTempNormalizeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

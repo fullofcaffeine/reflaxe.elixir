@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Detect ERemoteCall(Assert, "is_true"|"is_false", [arg | rest]) and replace arg with
  *   (fn -> arg end).() when arg AST is not a trivial literal/var.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class AssertArgIIFETransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -8,7 +8,7 @@ defmodule Main do
   g_value = 1
   arr_length = length(arr)
   _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g = _g ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
   _g
@@ -24,7 +24,7 @@ end).(), ",") end).()}"
   g_value = 1
   arr_length = length(arr)
   _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g = _g ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
   _g
@@ -47,7 +47,7 @@ end).(), ",") end).()}"
   g_value = 1
   arr_length = length(arr)
   _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g = _g ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
   _g
@@ -76,7 +76,7 @@ end).(), ",") end).()}"
   g_value = 1
   arr_length = length(arr)
   _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g = _g ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
   _g
@@ -106,7 +106,7 @@ end).(), ",") end).()}"
   g_value = 1
   arr_length = length(arr)
   _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g = _g ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
   _g
@@ -138,7 +138,7 @@ end))
   g_value = 3
   arr_length = length(arr)
   _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g = _g ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
   _g
@@ -162,7 +162,7 @@ end).(), ",") end).()}"
   g_value = 3
   arr_length = length(arr)
   _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g = _g ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
   _g
@@ -189,7 +189,7 @@ end).(), ",") end).()}"
   g_value = 3
   arr_length = length(arr)
   _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g = _g ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
   _g
@@ -209,7 +209,7 @@ end).(), ",") end).()}"
   g_value = 3
   arr_length = length(arr)
   _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
-    _g = _g ++ [inspect(arr[i])]
+    _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
   _g
@@ -238,7 +238,7 @@ end))
       if (v == expected_value) do
         "Value matches, name different"
       else
-        _v = test_value
+        v = test_value
         n = test_name
         if (n == expected_name), do: "Name matches, value different", else: "Neither matches"
       end
@@ -388,12 +388,10 @@ end))
     "#{(fn -> bool_result end).()} | #{(fn -> enum_result end).()} | #{(fn -> array_result end).()}"
   end
   def test_nested_patterns_with_guards() do
-    data_user_name = "Alice"
     data_user_age = 28
     data_user_active = true
     _ = "read"
     _ = "write"
-    data_last_login = 1640995200
     g = data_user_age
     g_value = 2
     g = data_user_active
@@ -415,15 +413,15 @@ end))
         if (age >= 65 and active) do
           "Senior user"
         else
-          _age = g
+          age = g
           perms = g_value
           active = g_value
           if (not active) do
             "Inactive user"
           else
-            _age = g
+            age = g
             perms = g_value
-            _active = g_value
+            active = g_value
             if (perms == 0), do: "User without permissions", else: "Other user type"
           end
         end
@@ -437,6 +435,7 @@ end))
     metrics_network = 12.8
     g = metrics_cpu
     g_value = metrics_memory
+    g = metrics_disk
     g = metrics_network
     cpu = g
     mem = g_value

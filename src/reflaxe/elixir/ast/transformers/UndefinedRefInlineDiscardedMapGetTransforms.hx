@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ASTUtils;
  *   map `snakeKey -> Map.get(expr)` for discarded Map.get assignments encountered so far.
  *   When an undefined `EVar(camelName)` appears and `toSnake(camelName)` exists in the
  *   map, replace it with the stored `Map.get` AST.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class UndefinedRefInlineDiscardedMapGetTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

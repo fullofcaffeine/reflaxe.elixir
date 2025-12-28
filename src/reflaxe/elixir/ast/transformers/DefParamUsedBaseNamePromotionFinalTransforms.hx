@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For every def/defp, scan params; for each `PVar(name)` starting with `_`,
  *   let `base = name.substr(1)`. If the body contains `EVar(base)`, rename the
  *   parameter binder to `base`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DefParamUsedBaseNamePromotionFinalTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -34,6 +34,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   rewrite the function body to `RepoModule.get(schemaArg, firstParam)`.
  * - Shape-derived only; no reliance on app/project naming beyond existing
  *   Repo.get evidence within the module.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class RepoGetBinderRepairTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -18,6 +18,18 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * SCOPE
  * - Modules detected as Controllers by metadata (AnnotationTransforms) or by
  *   module name ending in "Controller" under Web namespace.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ControllerLocalUnusedUnderscoreTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

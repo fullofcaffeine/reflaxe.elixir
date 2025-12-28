@@ -36,6 +36,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - Dropping the `if` wrapper (Enum.each already handles empty lists)
  *   - Removing `elemVar = listVar[0]` (elemVar becomes the fn binder)
  *   - Filtering out standalone literal sentinel statements and {:cont/:halt} scaffolding
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ReduceWhileToEnumEachTransforms {
     static function isStreamIterateZero(e: ElixirAST): Bool {

@@ -19,6 +19,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Returns the exact PassConfig list previously pushed inline, in the identical order.
  * - Some passes reference runAfter constraints that remain valid across groups; ordering is preserved
  *   by the registry’s stable topological sort.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HygieneFinal {
   public static function build():Array<ElixirASTTransformer.PassConfig> {

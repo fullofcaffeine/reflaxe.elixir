@@ -19,6 +19,14 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * WHY
  * - Eliminates WAE warnings for throwaway locals introduced during lowering
  *   (e.g., data/json/user/changeset), without relying on specific names.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ControllerLocalAssignUnusedUnderscoreTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

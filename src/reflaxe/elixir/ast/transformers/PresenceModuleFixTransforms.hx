@@ -28,6 +28,10 @@ import StringTools;
  *   - Rewrite body to return the first parameter `socket`.
  *   - Underscore other parameters.
  * - Remove direct calls to <App>Web.Repo.get(...) by replacing bodies with `socket`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class PresenceModuleFixTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

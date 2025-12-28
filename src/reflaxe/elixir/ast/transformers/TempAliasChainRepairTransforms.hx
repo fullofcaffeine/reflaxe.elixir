@@ -22,6 +22,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Some normalization passes can reorder chains around temps (`thisN`) in ways that
  *   momentarily expose use-before-assign. This pass removes the temp entirely, producing
  *   a straightforward assignment. Shape-based and target-agnostic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class TempAliasChainRepairTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -16,6 +16,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Prevent lingering `ok_value` names from earlier shape repairs; aligns with the
  *   variable hygiene directive to avoid ok_value leaks in output.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class OkValueGlobalCleanupTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

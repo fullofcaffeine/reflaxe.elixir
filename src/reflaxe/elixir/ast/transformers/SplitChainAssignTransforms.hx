@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Walks EBlock/EDo statements and replaces any `a = (b = rhs)` or `EMatch(PVar(a), EBinary(Match, EVar(b), rhs))`
  *   with two statements preserving metadata/positions.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SplitChainAssignTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

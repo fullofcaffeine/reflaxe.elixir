@@ -1,8 +1,11 @@
 defmodule ConsoleLogger do
-  def log(struct, message) do
+  def new() do
+    %{}
+  end
+  def log(_, _) do
     nil
   end
-  def debug(struct, message) do
+  def debug(_, _) do
     nil
   end
 end

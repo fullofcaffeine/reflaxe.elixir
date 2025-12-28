@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
  * HOW
  * - Walk the AST and rewrite EIf nodes: when `thenBranch` is EDo([...]) emit
  *   `EIf(cond, EBlock([...]), elseBranch)`. Non-destructive for else-branch.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class IfThenDoToBlockTransforms {
     public static function normalizePass(ast: ElixirAST): ElixirAST {

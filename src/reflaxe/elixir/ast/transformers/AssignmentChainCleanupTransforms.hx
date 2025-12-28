@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  *   another match `EMatch(PVar(alias), expr)` or `EBinary(Match, EVar(alias), expr)` and `alias`
  *   is not referenced in subsequent statements of the same block, rewrite the
  *   outer statement to bind directly to `expr`, removing the alias binding.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class AssignmentChainCleanupTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

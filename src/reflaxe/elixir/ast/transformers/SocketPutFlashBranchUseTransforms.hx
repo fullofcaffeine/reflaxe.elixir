@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Phoenix warnings-as-errors complain if `socket` appears only on the LHS inside a clause body.
  *   Adding a terminal `socket` use silences the warning without changing overall behavior, since
  *   case expressions in our code paths are used for side-effects and their values are ignored.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SocketPutFlashBranchUseTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

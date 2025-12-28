@@ -21,6 +21,14 @@ typedef DeclIndex = {
  *
  * WHY
  * - Avoids warnings like "the underscored variable `_this` is used after being set".
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class UnderscoreLocalPromotionTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

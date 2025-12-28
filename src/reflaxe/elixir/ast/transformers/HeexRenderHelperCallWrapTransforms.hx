@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - Replace occurrences of `<%= <call> %>` where `<call>` matches `render_[a-z_0-9]+(…)`
  *     and is not already wrapped in `Phoenix.HTML.raw(` with
  *     `<%= Phoenix.HTML.raw(<call>) %>`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexRenderHelperCallWrapTransforms {
     static function wrap(content:String):String {

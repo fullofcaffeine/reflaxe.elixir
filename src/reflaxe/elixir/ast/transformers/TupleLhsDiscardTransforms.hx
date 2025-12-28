@@ -15,6 +15,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Loop-lowering may introduce tuple-pattern matches solely to force evaluation order.
  *   When the LHS is not used, it creates unused-variable warnings. Keeping RHS preserves semantics.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class TupleLhsDiscardTransforms {
     public static function discardPass(ast: ElixirAST): ElixirAST {

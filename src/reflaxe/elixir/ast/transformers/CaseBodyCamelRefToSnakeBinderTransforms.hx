@@ -28,6 +28,10 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
  *   whose snake_case S is bound in the pattern (as S or _S), rewrite body
  *   occurrences of V -> S. If the binder exists as _S, rewrite the pattern
  *   binder to S as well. This is strictly shape-based.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseBodyCamelRefToSnakeBinderTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

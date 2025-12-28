@@ -23,6 +23,10 @@ import StringTools;
  * - Runs late in the pipeline. For any def/defp named `mount` with >= 3 params, if
  *   the 3rd param is PVar starting with an underscore, rename to `socket` and rewrite
  *   all EVar occurrences of the old name in the body.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class LiveViewMountLatePromoteTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

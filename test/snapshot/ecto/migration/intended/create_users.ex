@@ -1,6 +1,4 @@
 defmodule CreateUsers do
-  @compile {:nowarn_unused_function, [drop_table: 3]}
-
   def up(struct) do
     _ = create_table(struct, "users")
     _ = add_column(struct, "users", "id", "serial", true, nil)
@@ -11,31 +9,28 @@ defmodule CreateUsers do
     _ = add_column(struct, "users", "active", "boolean", nil, true)
     _ = add_timestamps(struct, "users")
     _ = add_index(struct, "users", ["email"], %{:unique => true})
-    _ = add_index(struct, "users", ["name", "active"])
+    _ = add_index(struct, "users", ["name", "active"], nil)
     _ = add_check_constraint(struct, "users", "age_check", "age >= 0 AND age <= 150")
   end
   def down(struct) do
     drop_table(struct, "users")
   end
-  defp create_table(struct, name) do
+  defp create_table(_, _) do
     
   end
-  defp add_column(struct, table, name, type, primary_key, default_value) do
+  defp add_column(_, _, _, _, _, _) do
     
   end
-  defp add_timestamps(struct, table) do
+  defp add_timestamps(_, _) do
     
   end
-  defp drop_table(struct, name) do
+  defp drop_table(_, _) do
     
   end
-  defp add_index(struct, table, columns, options) do
+  defp add_index(_, _, _, _) do
     
   end
-  defp add_check_constraint(struct, table, name, condition) do
-    
-  end
-  defp drop_table(struct, _name) do
+  defp add_check_constraint(_, _, _, _) do
     
   end
 end

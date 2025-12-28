@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Other hygiene passes may underscore unused head parameters without updating
  *   all body references. This fixes mismatches that cause undefined variable
  *   errors in modules like `Log` or small helper modules.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ParamUnderscoreArgRefAlignGlobalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -16,6 +16,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Late passes can reintroduce numeric sentinels; this global sweep ensures
  *   warnings-as-errors do not trigger on bare 1/0/0.0 statements anywhere.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class GlobalNumericSentinelCleanupTransforms {
     public static function cleanupPass(ast: ElixirAST): ElixirAST {

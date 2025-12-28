@@ -31,6 +31,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - EStructUpdate field values
  *   - EKeywordList values
  * - Creates: (fn -> <block> end).() as ECall(EFn([{body: block}]), "", [])
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class FunctionArgBlockToIIFETransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

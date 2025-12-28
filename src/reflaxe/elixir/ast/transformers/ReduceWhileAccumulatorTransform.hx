@@ -172,6 +172,28 @@ class ReduceWhileAccumulatorTransform {
         if (body == null) return null;
         
         switch(body.def) {
+            case ETry(tryBody, rescueClauses, catchClauses, afterBlock, elseBlock):
+                // Preserve try/catch structure while still rewriting accumulator assignments
+                // inside the try body (common for break/continue lowering).
+                var transformedTryBody = transformBodyRecursive(tryBody, accVarNames, accUpdates.copy(), preserveAssignments);
+                var transformedRescue = rescueClauses == null ? [] : [
+                    for (r in rescueClauses) {
+                        pattern: r.pattern,
+                        varName: r.varName,
+                        body: transformBodyRecursive(r.body, accVarNames, accUpdates.copy(), true)
+                    }
+                ];
+                var transformedCatch = catchClauses == null ? [] : [
+                    for (c in catchClauses) {
+                        kind: c.kind,
+                        pattern: c.pattern,
+                        body: transformBodyRecursive(c.body, accVarNames, accUpdates.copy(), true)
+                    }
+                ];
+                var transformedAfter = afterBlock != null ? transformBodyRecursive(afterBlock, accVarNames, accUpdates.copy(), true) : null;
+                var transformedElse = elseBlock != null ? transformBodyRecursive(elseBlock, accVarNames, accUpdates.copy(), true) : null;
+                return makeAST(ETry(transformedTryBody, transformedRescue, transformedCatch, transformedAfter, transformedElse));
+
             case EIf(condition, thenBranch, elseBranch):
                 // ⚠️ FIX: Don't remove if-expressions that contain return tuples
                 // These are the lambda's main control flow (do-while pattern)
@@ -245,14 +267,36 @@ class ReduceWhileAccumulatorTransform {
                 }
                 
                 if (hasAccAssignments && accVarName != null) {
-                    // Transform case branches to return values instead of assigning
+                    // Transform case branches to return values instead of assigning.
+                    // When we are preserving assignments (main control-flow with return tuples),
+                    // we cannot rely on update-substitution into {:cont/:halt, acc} because that
+                    // would double-apply updates. Instead, rewrite to a direct rebinding:
+                    //
+                    //   acc = case ... do
+                    //     {:some, v} -> Map.put(acc, k, v)
+                    //     {:none} -> acc
+                    //   end
+                    //
+                    // This avoids Elixir's "unused/shadowed variable" warnings inside clause bodies
+                    // and keeps the accumulator threaded correctly within the reducer.
                     var transformedBranches = [];
                     for (branch in branches) {
-                        var transformedBody = extractValueFromAssignment(branch.body, accVarName);
-                        // If no assignment found in this branch, keep original body
+                        var extracted = extractValueFromAssignment(branch.body, accVarName);
+                        var transformedBody = extracted;
                         if (transformedBody == branch.body) {
-                            // Still need to recursively transform
-                            transformedBody = transformBodyRecursive(branch.body, accVarNames, accUpdates.copy());
+                            // No assignment in this branch: preserve side effects, but ensure we
+                            // return the accumulator unchanged so all branches unify.
+                            var inner = transformBodyRecursive(branch.body, accVarNames, accUpdates.copy(), preserveAssignments);
+                            if (preserveAssignments) {
+                                transformedBody = switch (inner.def) {
+                                    case EBlock(sts): makeAST(EBlock(sts.concat([makeAST(EVar(accVarName))])));
+                                    case EDo(sts2): makeAST(EBlock(sts2.concat([makeAST(EVar(accVarName))])));
+                                    case ENil: makeAST(EVar(accVarName));
+                                    default: makeAST(EBlock([inner, makeAST(EVar(accVarName))]));
+                                };
+                            } else {
+                                transformedBody = inner;
+                            }
                         }
                         transformedBranches.push({
                             pattern: branch.pattern,
@@ -260,16 +304,21 @@ class ReduceWhileAccumulatorTransform {
                             body: transformedBody
                         });
                     }
-                    
-                    // Store the case expression as an update
+
                     var transformedCase = makeAST(ECase(expr, transformedBranches));
+
+                    if (preserveAssignments) {
+                        return makeAST(EBinary(Match, makeAST(EVar(accVarName)), transformedCase));
+                    }
+
+                    // Non-control-flow context: store the case expression as an update and splice it
+                    // into the next {:cont/:halt, acc} tuple.
                     accUpdates.set(accVarName, transformedCase);
-                    
+
                     #if debug_reduce_while_transform
                     // DISABLED: trace('[XRay ReduceWhile] Found accumulator update in case: $accVarName');
                     #end
-                    
-                    // Return empty block
+
                     return makeAST(EBlock([]));
                 } else {
                     // Regular case without accumulator assignments
@@ -310,6 +359,11 @@ class ReduceWhileAccumulatorTransform {
                                 transformedExprs.push(makeAST(EMatch(PVar(varName), value)));
                             }
                             // Otherwise, don't add the assignment to the output (will be merged into return tuple)
+                        case EBinary(Match, {def: EVar(varName)}, value) if (accVarNames.indexOf(varName) >= 0):
+                            localUpdates.set(varName, value);
+                            if (preserveAssignments) {
+                                transformedExprs.push(makeAST(EBinary(Match, makeAST(EVar(varName)), value)));
+                            }
                             
                         case ETuple([atom, accTuple]):
                             // This is a return statement {:cont, acc} or {:halt, acc}
@@ -317,7 +371,17 @@ class ReduceWhileAccumulatorTransform {
                                 // OR patterns like "cont" | "halt" don't work with abstract types, use guard clause instead
                                 case EAtom(atom) if (atom == "cont" || atom == "halt"):
                                     // Build new accumulator with updates
-                                    var newAcc = applyAccumulatorUpdates(accTuple, accVarNames, localUpdates);
+                                    // IMPORTANT:
+                                    // When `preserveAssignments` is true, accumulator assignments were kept in the
+                                    // block (to preserve control-flow shapes). In that case the accumulator vars
+                                    // already hold the updated values, and substituting RHS expressions into the
+                                    // return tuple can silently change semantics:
+                                    //   acc_len = acc_len + n
+                                    //   {:cont, {acc_len}}  -- correct
+                                    // would become:
+                                    //   {:cont, {acc_len + n}} -- double-add (incorrect)
+                                    // So only apply RHS-substitution when we *removed* the assignments.
+                                    var newAcc = preserveAssignments ? accTuple : applyAccumulatorUpdates(accTuple, accVarNames, localUpdates);
                                     transformedExprs.push(makeAST(ETuple([makeAST(EAtom(atom)), newAcc])));
                                     
                                 default:
@@ -342,7 +406,7 @@ class ReduceWhileAccumulatorTransform {
                     // OR patterns like "cont" | "halt" don't work with abstract types, use guard clause instead
                     case EAtom(atom) if (atom == "cont" || atom == "halt"):
                         // Apply any accumulated updates
-                        var newAcc = applyAccumulatorUpdates(accTuple, accVarNames, accUpdates);
+                        var newAcc = preserveAssignments ? accTuple : applyAccumulatorUpdates(accTuple, accVarNames, accUpdates);
                         return makeAST(ETuple([makeAST(EAtom(atom)), newAcc]));
                     default:
                         return body;
@@ -471,6 +535,8 @@ class ReduceWhileAccumulatorTransform {
         switch(node.def) {
             case EMatch(PVar(varName), _) if (accVarNames.indexOf(varName) >= 0):
                 return true;
+            case EBinary(Match, {def: EVar(varName)}, _) if (accVarNames.indexOf(varName) >= 0):
+                return true;
             case EBlock(exprs):
                 for (expr in exprs) {
                     if (checkForAccumulatorAssignments(expr, accVarNames)) {
@@ -511,6 +577,8 @@ class ReduceWhileAccumulatorTransform {
         switch(node.def) {
             case EMatch(PVar(varName), _) if (accVarNames.indexOf(varName) >= 0):
                 return varName;
+            case EBinary(Match, {def: EVar(varName)}, _) if (accVarNames.indexOf(varName) >= 0):
+                return varName;
             case EBlock(exprs):
                 for (expr in exprs) {
                     var result = findAssignedAccumulator(expr, accVarNames);
@@ -530,6 +598,8 @@ class ReduceWhileAccumulatorTransform {
         
         switch(node.def) {
             case EMatch(PVar(name), value) if (name == varName):
+                return value;
+            case EBinary(Match, {def: EVar(name)}, value) if (name == varName):
                 return value;
             case EBlock(exprs):
                 for (expr in exprs) {

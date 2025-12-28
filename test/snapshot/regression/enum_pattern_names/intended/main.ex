@@ -1,7 +1,7 @@
 defmodule Main do
   def main() do
     status = {:success, "Hello World"}
-    result1 = ((case status do
+    _result1 = ((case status do
   {:loading} -> "Loading..."
   {:success, data} -> "Got data: #{(fn -> data end).()}"
   {:failure, error, code} ->
@@ -10,7 +10,7 @@ defmodule Main do
     "Error #{(fn -> Kernel.to_string(code) end).()}: #{(fn -> error end).()}"
 end))
     nested = {:ok, {:success, "Nested"}}
-    result2 = ((case nested do
+    _result2 = ((case nested do
   {:ok, status} ->
     (case status do
       {:loading} -> "Still loading"
@@ -24,7 +24,7 @@ end))
   {:error, message} -> "Top level error: #{(fn -> message end).()}"
 end))
     mixed = {:failure, "Network error", 500}
-    result3 = ((case mixed do
+    _result3 = ((case mixed do
   {:loading} -> "Loading"
   {:success, _data} -> "Success (data ignored)"
   {:failure, error, _code} -> "Error occurred: #{(fn -> error end).()}"

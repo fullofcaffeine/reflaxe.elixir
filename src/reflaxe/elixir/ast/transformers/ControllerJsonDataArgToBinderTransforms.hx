@@ -14,6 +14,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - In controllers, within case arms `{:ok, binder}` or `{:error, binder}`,
  *   if encountering `Phoenix.Controller.json(conn, data)`, rewrite second arg
  *   to the case binder. Generic safety net to eliminate undefined `data` aliases.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ControllerJsonDataArgToBinderTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

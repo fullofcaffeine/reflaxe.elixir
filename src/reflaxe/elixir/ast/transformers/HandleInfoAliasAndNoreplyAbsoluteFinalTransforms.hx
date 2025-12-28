@@ -26,6 +26,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - If the clause body is EBlock/EDo and its first statement matches an alias
  *     to `_socket` or `socket`, drop that statement.
  *   - Recursively rewrite ETuple `{:noreply, _socket}` to `{:noreply, socket}`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleInfoAliasAndNoreplyAbsoluteFinalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

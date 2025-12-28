@@ -26,6 +26,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   a clause pattern is `{:atom, PVar(b)}` (or pinned variant), transform the
  *   clause body by replacing `EVar(s)` with `EVar(b)`. Remote calls/fields are
  *   handled naturally by the generic EVar replacement.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseScrutineeVarToTupleBinderTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

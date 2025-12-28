@@ -135,6 +135,7 @@ defmodule Main do
       2 ->
         g_value = matrix[1]
         if (length(g) == 2) do
+          g = g[0]
           g = g[1]
           if (length(g_value) == 2) do
             g = g_value[0]
@@ -163,11 +164,16 @@ defmodule Main do
       3 ->
         g_value = matrix[1]
         if (length(g) == 3) do
+          g = g[0]
+          g = g[1]
           g = g[2]
           if (length(g_value) == 3) do
+            g = g_value[0]
             g = g_value[1]
             g_value = g_value[2]
             if (length(g) == 3) do
+              g = g[0]
+              g = g[1]
               g = g[2]
               _h = g
               _i = g

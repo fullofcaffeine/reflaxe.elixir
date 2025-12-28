@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Late hygiene passes or generator choices can produce head/body
  *   mismatches (e.g., head uses `_params` while body uses `params`).
  *   This pass ensures consistency without renaming the head.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleEventBodyAlignToHeadTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -14,7 +14,7 @@ defmodule Main do
     nil
   end
   defp test_params(pos1, pos2) do
-    sum = pos1 + pos2
+    _sum = pos1 + pos2
     nil
   end
 end

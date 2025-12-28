@@ -12,6 +12,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHY
  * - Modularize registry with no behavior change; preserve exact ordering.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexMain {
   public static function build():Array<ElixirASTTransformer.PassConfig> {
@@ -86,13 +94,6 @@ class HeexMain {
       enabled: #if fast_boot false #else true #end,
       pass: reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.transformPass,
       contextualPass: reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms.contextualPass
-    });
-
-    passes.push({
-      name: "HeexEnsureAssignsForNestedSigils",
-      description: "Wrap functions containing ~H without assigns param with assigns = %{}",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.HeexEnsureAssignsForNestedSigilsTransforms.transformPass
     });
 
     return passes;

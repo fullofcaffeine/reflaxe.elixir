@@ -44,13 +44,19 @@ private typedef UserGenServerCastResponse = {
  * OTP GenServer for user-related background processes
  * Demonstrates caching, background jobs, and user analytics
  */
-@:genserver
 class UserGenServer {
+    /**
+     * NOTE
+     * This example includes a GenServer *skeleton* to demonstrate service patterns, but it is not
+     * wired into a supervision tree here. To keep `mix compile --warnings-as-errors` clean, the
+     * callback and helper functions are declared `public` so the generated Elixir does not emit
+     * "unused defp" warnings for compile-only modules.
+     */
     private static inline function makeState(userCache: Map<Int, User>, statsCache: Null<UserStats>, lastStatsUpdate: Float): UserGenServerState {
         return {userCache: userCache, statsCache: statsCache, lastStatsUpdate: lastStatsUpdate};
     }
 
-    function init(_initialState: Term): {status: String, state: UserGenServerState} {
+    public function init(_initialState: Term): {status: String, state: UserGenServerState} {
         trace("UserGenServer starting...");
         scheduleStatsRefresh();
 
@@ -58,7 +64,7 @@ class UserGenServer {
         return {status: "ok", state: makeState(userCache, null, 0)};
     }
 
-    function handle_call(request: UserCallRequest, _from: Term, state: UserGenServerState): UserGenServerCallResponse {
+    public function handle_call(request: UserCallRequest, _from: Term, state: UserGenServerState): UserGenServerCallResponse {
         return switch (request) {
             case GetUser(userId):
                 handleGetUser(userId, state);
@@ -71,7 +77,7 @@ class UserGenServer {
         }
     }
 
-    function handle_cast(message: UserCastMessage, state: UserGenServerState): UserGenServerCastResponse {
+    public function handle_cast(message: UserCastMessage, state: UserGenServerState): UserGenServerCastResponse {
         return switch (message) {
             case RefreshStats:
                 handleRefreshStats(state);
@@ -82,7 +88,7 @@ class UserGenServer {
         }
     }
 
-    function handle_info(message: UserInfoMessage, state: UserGenServerState): UserGenServerCastResponse {
+    public function handle_info(message: UserInfoMessage, state: UserGenServerState): UserGenServerCastResponse {
         return switch (message) {
             case StatsRefreshTimer:
                 var refreshed = refreshUserStats(state);
@@ -95,7 +101,7 @@ class UserGenServer {
     }
 
     // Call handlers
-    private function handleGetUser(userId: Int, state: UserGenServerState): UserGenServerCallResponse {
+    public function handleGetUser(userId: Int, state: UserGenServerState): UserGenServerCallResponse {
         if (state.userCache.exists(userId)) {
             var user = state.userCache.get(userId);
             return {status: "reply", response: {user: user}, state: state};
@@ -110,7 +116,7 @@ class UserGenServer {
         return {status: "reply", response: "user_not_found", state: state};
     }
 
-    private function handleGetStats(state: UserGenServerState): UserGenServerCallResponse {
+    public function handleGetStats(state: UserGenServerState): UserGenServerCallResponse {
         var now = Date.now().getTime();
         var cacheAge = now - state.lastStatsUpdate;
 
@@ -123,30 +129,30 @@ class UserGenServer {
         return {status: "reply", response: stats, state: updated};
     }
 
-    private function handleCacheUser(user: User, state: UserGenServerState): UserGenServerCallResponse {
+    public function handleCacheUser(user: User, state: UserGenServerState): UserGenServerCallResponse {
         state.userCache.set(user.id, user);
         return {status: "reply", response: "cached", state: state};
     }
 
-    private function handleClearCache(): UserGenServerCallResponse {
+    public function handleClearCache(): UserGenServerCallResponse {
         var cleared = makeState(new Map(), null, 0);
         return {status: "reply", response: "cache_cleared", state: cleared};
     }
 
     // Cast handlers
-    private function handleRefreshStats(state: UserGenServerState): UserGenServerCastResponse {
+    public function handleRefreshStats(state: UserGenServerState): UserGenServerCastResponse {
         var stats = Users.user_stats();
         var updatedAt = Date.now().getTime();
         var updated = makeState(state.userCache, stats, updatedAt);
         return {status: "noreply", state: updated};
     }
 
-    private function handleInvalidateUserCache(state: UserGenServerState): UserGenServerCastResponse {
+    public function handleInvalidateUserCache(state: UserGenServerState): UserGenServerCastResponse {
         var updated = makeState(new Map(), state.statsCache, state.lastStatsUpdate);
         return {status: "noreply", state: updated};
     }
 
-    private function handlePreloadActiveUsers(state: UserGenServerState): UserGenServerCastResponse {
+    public function handlePreloadActiveUsers(state: UserGenServerState): UserGenServerCastResponse {
         var activeUsers = Users.list_users({active: true});
         var updatedCache: Map<Int, User> = new Map();
 
@@ -160,18 +166,18 @@ class UserGenServer {
     }
 
     // Helpers
-    private function refreshUserStats(state: UserGenServerState): UserGenServerState {
+    public function refreshUserStats(state: UserGenServerState): UserGenServerState {
         var stats = Users.user_stats();
         return makeState(state.userCache, stats, Date.now().getTime());
     }
 
-    private function cleanupOldCacheEntries(state: UserGenServerState): UserGenServerState {
+    public function cleanupOldCacheEntries(state: UserGenServerState): UserGenServerState {
         var keyArray = [for (key in state.userCache.keys()) key];
         trace('User cache contains ${keyArray.length} entries');
         return state;
     }
 
-    private function scheduleStatsRefresh(): Void {
+    public function scheduleStatsRefresh(): Void {
         trace("Scheduling stats refresh in 5 minutes");
     }
 

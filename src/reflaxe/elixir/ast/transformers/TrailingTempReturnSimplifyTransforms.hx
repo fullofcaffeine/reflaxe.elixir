@@ -15,6 +15,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHY
  * - Removes temp names like `this1` returned via `var` at end of anonymous functions or blocks.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class TrailingTempReturnSimplifyTransforms {
     static inline function isTemp(name:String):Bool {

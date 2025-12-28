@@ -25,6 +25,10 @@ import StringTools;
  *   - If a success clause uses a binder matching /^(?:_)?[gs]\d+$/ (e.g., g3, _s2), rename to
  *     `deleted` when used; otherwise `_deleted`.
  * - The transformation is shape- and API-based; no app-specific names.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class RepoCaseBinderNormalizeTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -16,6 +16,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHY
  * - Avoids Phoenix warnings-as-errors while keeping semantics identical (both statements are no-ops).
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseClauseHygieneCleanupTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

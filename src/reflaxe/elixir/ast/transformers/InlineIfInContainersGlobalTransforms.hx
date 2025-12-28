@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Outside LiveView code (e.g., PubSub helpers), inline if inside tuples
  *   produces invalid `{:tag, if ..., do: ..., else: ...}` without parens.
  *   Adding parentheses fixes the ambiguity.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class InlineIfInContainersGlobalTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

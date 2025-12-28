@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Walks EDef/EDefp/EFn/EBlock/EDo bodies. For each block, collect candidates:
  *   variables whose name starts with `_` and that appear in expression context.
  *   Then rewrite all occurrences in that block scope to the de-underscored name.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class UnderscoreVarUsageFixTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

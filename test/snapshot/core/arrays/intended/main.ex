@@ -3,8 +3,8 @@ defmodule Main do
     numbers = [1, 2, 3, 4, 5]
     numbers = numbers ++ [6]
     _ = Array.unshift(numbers, 0)
-    popped = Array.pop(numbers)
-    shifted = Array.shift(numbers)
+    _popped = Array.pop(numbers)
+    _shifted = Array.shift(numbers)
     _ = 1
     _ = "hello"
     _ = true
@@ -19,25 +19,35 @@ defmodule Main do
     fruits_length = length(fruits)
     _ = Enum.each(0..(fruits_length - 1)//1, fn _ -> nil end)
     i = 0
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {i} ->
-      if (i < length(fruits)) do
-        _old_i = i
-        i = i + 1
-        {:cont, {i}}
-      else
-        {:halt, {i}}
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
+      try do
+        if (acc_i < length(fruits)) do
+          old_i = acc_i
+          acc_i = acc_i + 1
+          {:cont, {acc_i}}
+        else
+          {:halt, {acc_i}}
+        end
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc_i}}
+        :throw, :continue ->
+          {:cont, {acc_i}}
       end
     end)
-    nil
   end
   def array_methods() do
     numbers = [1, 2, 3, 4, 5]
-    doubled = Enum.map(numbers, fn n -> n * 2 end)
-    evens = Enum.filter(numbers, fn n -> rem(n, 2) == 0 end)
+    _doubled = Enum.map(numbers, fn n -> n * 2 end)
+    _evens = Enum.filter(numbers, fn n -> rem(n, 2) == 0 end)
     more = [6, 7, 8]
-    combined = numbers ++ more
+    _combined = numbers ++ more
     words = ["Hello", "World", "from", "Haxe"]
-    sentence = Enum.join(words, " ")
+    _sentence = Enum.join(words, " ")
     reversed = numbers
     _ = Array.reverse(reversed)
     unsorted = [3, 1, 4, 1, 5, 9, 2, 6]
@@ -45,46 +55,47 @@ defmodule Main do
     nil
   end
   def array_comprehensions() do
-    squares = [1, 4, 9, 16, 25]
     g = []
-    g ++ [4]
-    g ++ [16]
-    g ++ [36]
-    g ++ [64]
-    even_squares = g
+    g = g ++ [4]
+    g = g ++ [16]
+    g = g ++ [36]
+    _even_squares = g ++ [64]
     g = []
-    _g = g ++ [%{:x => 1, :y => 3}]
-    _g = g ++ [%{:x => 2, :y => 3}]
-    _g = g ++ [%{:x => 3, :y => 2}]
-    pairs = g
+    g = g ++ [%{:x => 1, :y => 2}]
+    g = g ++ [%{:x => 1, :y => 3}]
+    g = g ++ [%{:x => 2, :y => 1}]
+    g = g ++ [%{:x => 2, :y => 3}]
+    g = g ++ [%{:x => 3, :y => 1}]
+    g = g ++ [%{:x => 3, :y => 2}]
+    _pairs = g
     nil
   end
   def multi_dimensional() do
     matrix = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
-    _g = 0
+    g = 0
     _ = Enum.each(matrix, fn row ->
   _g = 0
   _ = Enum.each(row, fn _ -> nil end)
 end)
-    [(fn ->
-  [0]
-  [1]
-  [2]
-  []
+    _grid = [(fn ->
+  g = []
+  g = g ++ [0]
+  g = g ++ [1]
+  g = g ++ [2]
+  g
+end).(), (fn ->
+  g = []
+  g = g ++ [3]
+  g = g ++ [4]
+  g = g ++ [5]
+  g
+end).(), (fn ->
+  g = []
+  g = g ++ [6]
+  g = g ++ [7]
+  g = g ++ [8]
+  g
 end).()]
-    [(fn ->
-  [3]
-  [4]
-  [5]
-  []
-end).()]
-    [(fn ->
-  [6]
-  [7]
-  [8]
-  []
-end).()]
-    grid = []
     nil
   end
   def process_array(arr) do
@@ -96,28 +107,28 @@ end).()]
         b = length(arr)
         if (n < b), do: n, else: b
       end).())
-    _ = Enum.each(0..(g - 1)//1, fn _ -> [arr[i]] end)
-    []
+    g = Enum.reduce(0..(g_value - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [arr[i]]) end)
+    g
   end
   def functional_methods() do
     numbers = [1, 2, 3, 4, 5]
     strings = ["hello", "world", "haxe", "elixir"]
-    sum = ArrayTools.reduce(numbers, fn acc, item -> acc + item end, 0)
-    product = ArrayTools.fold(numbers, fn acc, item -> acc * item end, 1)
-    first_even = ArrayTools.find(numbers, fn n -> rem(n, 2) == 0 end)
-    long_word = ArrayTools.find(strings, fn s -> String.length(s) > 4 end)
-    even_index = ArrayTools.find_index(numbers, fn n -> rem(n, 2) == 0 end)
-    long_word_index = ArrayTools.find_index(strings, fn s -> String.length(s) > 4 end)
-    has_even = ArrayTools.exists(numbers, fn n -> rem(n, 2) == 0 end)
-    has_very_long = ArrayTools.any(strings, fn s -> String.length(s) > 10 end)
-    all_positive = ArrayTools.foreach(numbers, fn n -> n > 0 end)
-    all_short = ArrayTools.all(strings, fn s -> String.length(s) < 10 end)
-    _ = ArrayTools.for_each(numbers, fn _n -> nil end)
+    _sum = ArrayTools.reduce(numbers, fn acc, item -> acc + item end, 0)
+    _product = ArrayTools.fold(numbers, fn acc, item -> acc * item end, 1)
+    _first_even = ArrayTools.find(numbers, fn n -> rem(n, 2) == 0 end)
+    _long_word = ArrayTools.find(strings, fn s -> String.length(s) > 4 end)
+    _even_index = ArrayTools.find_index(numbers, fn n -> rem(n, 2) == 0 end)
+    _long_word_index = ArrayTools.find_index(strings, fn s -> String.length(s) > 4 end)
+    _has_even = ArrayTools.exists(numbers, fn n -> rem(n, 2) == 0 end)
+    _has_very_long = ArrayTools.any(strings, fn s -> String.length(s) > 10 end)
+    _all_positive = ArrayTools.foreach(numbers, fn n -> n > 0 end)
+    _all_short = ArrayTools.all(strings, fn s -> String.length(s) < 10 end)
+    _ = ArrayTools.for_each(numbers, fn _ -> nil end)
     _ = ArrayTools.take(numbers, 3)
     _ = ArrayTools.drop(numbers, 2)
     nested_arrays = [[1, 2], [3, 4], [5]]
-    flattened = ArrayTools.flat_map(nested_arrays, fn arr -> Enum.map(arr, fn x -> x * 2 end) end)
-    processed = ArrayTools.reduce(ArrayTools.take(Enum.map(Enum.filter(numbers, fn n -> n > 2 end), fn n -> n * n end), 2), fn acc, n -> acc + n end, 0)
+    _flattened = ArrayTools.flat_map(nested_arrays, fn arr -> Enum.map(arr, fn x -> x * 2 end) end)
+    _processed = ArrayTools.reduce(ArrayTools.take(Enum.map(Enum.filter(numbers, fn n -> n > 2 end), fn n -> n * n end), 2), fn acc, n -> acc + n end, 0)
     nil
   end
   def main() do
@@ -126,7 +137,7 @@ end).()]
     _ = array_methods()
     _ = array_comprehensions()
     _ = multi_dimensional()
-    result = process_array([1, 2, 3, 4, 5])
+    _result = process_array([1, 2, 3, 4, 5])
     _ = first_n(["a", "b", "c", "d", "e"], 3)
     _ = functional_methods()
   end

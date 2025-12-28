@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - If the second arg is `PVar` with a leading underscore and the body
  *   references that name, rename arg to the base (without underscore) and
  *   rewrite body occurrences to the base.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleEventParamsPromoteTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

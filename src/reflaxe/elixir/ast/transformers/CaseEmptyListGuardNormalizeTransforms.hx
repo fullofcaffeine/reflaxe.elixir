@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   pattern to PCons(PVar("first"), PVar("rest")) and rewrite guard:
  *     any [x][0] → first
  *     length(_)>1 → rest != []
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseEmptyListGuardNormalizeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

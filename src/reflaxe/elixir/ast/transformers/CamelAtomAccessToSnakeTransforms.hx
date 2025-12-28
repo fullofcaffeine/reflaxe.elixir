@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.NameUtils;
  * - Transform EAccess where the key is EAtom and NameUtils.toSnakeCase(key)
  *   differs from the original. Replace with the snake_case atom. Conservative,
  *   shape-based; does not depend on variable names or app-specific modules.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CamelAtomAccessToSnakeTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -18,6 +18,18 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  *
  * SCOPE
  * - Applied within function bodies; conservative scan.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class LocalUnderscoreUsedPromotionTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

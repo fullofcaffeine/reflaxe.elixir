@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Scan statement lists (EBlock/EDo). When [i] is a=b and [i+1] is EIf whose
  *   else is exactly b and whose condition references a, rewrite condition/body
  *   occurrences of a to b and promote into a single assignment.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class AssignAliasIfPromoteTransforms {
   static inline function replaceVar(n: ElixirAST, from: String, to: String): ElixirAST {

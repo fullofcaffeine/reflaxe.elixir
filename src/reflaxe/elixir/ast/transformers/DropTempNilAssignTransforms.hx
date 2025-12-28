@@ -14,6 +14,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHY
  * - These are compiler-generated sentinels that trigger unused-variable warnings.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DropTempNilAssignTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

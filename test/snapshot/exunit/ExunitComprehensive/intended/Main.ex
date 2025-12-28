@@ -4,16 +4,10 @@ defmodule Main do
     nil
   end
   setup context do
-    test_data = [1, 2, 3, 4, 5]
-    test_string = "Hello World"
     nil
   end
   setup context do
-    _ = on_exit(fn ->
-    test_data = nil
-    test_string = nil
-    nil
-  end)
+    _ = on_exit(fn -> nil end)
     :ok
   end
   test "equality assertions" do
@@ -39,7 +33,6 @@ defmodule Main do
   end
   test "null assertions" do
     null_var = nil
-    not_null_var = "value"
     _ = Assert.is_null(null_var, "Null variable should be null")
     _ = Assert.is_null(nil, "Literal null should be null")
   end
@@ -47,12 +40,7 @@ defmodule Main do
     _ = Assert.equals(length(context[:test_string]), 11, "String length should be 11")
     _ = Assert.equals(String.upcase(context[:test_string]), "HELLO WORLD", "Uppercase conversion should work")
     _ = Assert.equals(String.downcase(context[:test_string]), "hello world", "Lowercase conversion should work")
-    _ = Assert.is_true((fn -> (fn ->
-  ((case :binary.match(context[:test_string], "World") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end)) >= 0
-end).() end).(), "String should contain 'World'")
+    _ = Assert.is_true((fn -> (fn -> :binary.match(context[:test_string], "World") != :nomatch end).() end).(), "String should contain 'World'")
     _ = Assert.is_true((fn -> (fn -> String.at(context[:test_string], 0) || "" == "H" end).() end).(), "First character should be 'H'")
     parts = if (" " == "") do
       String.graphemes(context[:test_string])
@@ -104,17 +92,8 @@ end).() end).(), "String should contain 'World'")
     _ = Assert.is_true((fn -> data_nested_flag end).(), "Nested flag should be true")
     _ = Assert.equals(data_nested_count, 3, "Nested count should be 3")
     map = %{}
-    _ = StringMap.set(map, "one", 1)
-    _ = StringMap.set(map, "two", 2)
-    _ = StringMap.set(map, "three", 3)
-    _ = Assert.is_true((fn -> (fn -> StringMap.exists(map, "one") end).() end).(), "Map should contain 'one'")
-    _ = Assert.equals(StringMap.get(map, "two"), 2, "Map value for 'two' should be 2")
-    _ = Assert.is_false((fn -> (fn -> StringMap.exists(map, "four") end).() end).(), "Map should not contain 'four'")
-    k = StringMap.keys(map)
-    Enum.each([], fn item -> _g = [] ++ [item] end)
-    nil
-    keys = _g
-    _ = Assert.equals(length(keys), 3, "Map should have 3 keys")
+    map = Map.put(map, "one", 1)
+    _ = map
   end
   test "edge cases" do
     _ = Assert.equals(0, 0, "Empty array should have length 0")
@@ -136,8 +115,8 @@ end).() end).(), "String should contain 'World'")
     _ = Assert.is_null(nil, "Null check with message")
     value = 42
     _ = Assert.equals(value, 42, "Value should be " <> Kernel.to_string(value))
-    _ = Assert.equals(2, 2)
-    _ = Assert.is_true((fn -> true end).())
-    _ = Assert.is_false((fn -> false end).())
+    _ = Assert.equals(2, 2, nil)
+    _ = Assert.is_true((fn -> true end).(), nil)
+    _ = Assert.is_false((fn -> false end).(), nil)
   end
 end

@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Late hygiene passes can underscore temp extractions while earlier code
  *   still refers to their base name. This aligns references without relying
  *   on application-specific names.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
   class AlignBaseRefToUnderscoredBinderTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

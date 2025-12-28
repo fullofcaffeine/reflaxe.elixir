@@ -1,7 +1,7 @@
 defmodule TestAppWeb.TestLive do
   use Phoenix.Component
   use Phoenix.LiveView, layout: {TestAppWeb.Layouts, :app}
-  def mount(_params, session, socket) do
+  def mount(_, _, socket) do
     {:ok, socket}
   end
   def render(assigns) do
@@ -21,7 +21,7 @@ defmodule TestAppWeb.TestLive do
 </div>
 """
   end
-  def handle_event(event, _params, socket) do
+  def handle_event(_, _, socket) do
     {:noreply, socket}
   end
 end

@@ -28,6 +28,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   3) If a camelCase name is referenced in the body (via ERaw/printed scan or EVar)
  *      and not declared, prepend `camel = snake` to the clause body.
  * - Skip tagged tuples {:tag, ...} to avoid fighting binder-promotion.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseClauseCamelAliasToSnakeBinderTransforms {
   public static function aliasPass(ast: ElixirAST): ElixirAST {

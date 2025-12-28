@@ -38,6 +38,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *     bind ≡ (EVar|PVar)(b) = rhs
  *     if   ≡ EIf(_, _, else) with else ≡ EVar(b)
  *   then rewrite that single statement into two statements as above, preserving metadata.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class AssignIfFoldInRhsTransforms {
   static inline function rhsIsTwoStmtBlock(e: ElixirAST): Null<{first: ElixirAST, second: ElixirAST, ctor:String}> {

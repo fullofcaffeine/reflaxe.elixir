@@ -7,6 +7,22 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirASTPrinter;
 
+/**
+ * DebugDumpMainBodyTransforms
+ *
+ * WHAT
+ * - (Documented in-file; see the existing code below.)
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
+ */
+
 class DebugDumpMainBodyTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {
     #if debug_case_hoist

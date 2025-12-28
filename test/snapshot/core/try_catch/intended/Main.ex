@@ -42,7 +42,6 @@ defmodule Main do
     _ = test_error.(0)
   end
   def try_catch_finally() do
-    resource = "resource"
     try do
       throw("Error during operation")
     rescue
@@ -123,7 +122,7 @@ defmodule Main do
     end
   end
   def try_as_expression() do
-    value = try do
+    _value = try do
       (case Integer.parse("123") do
         {num, _} -> num
         :error -> nil
@@ -132,7 +131,7 @@ defmodule Main do
       e ->
         0
     end
-    value2 = try do
+    _value2 = try do
       (case Integer.parse("not a number") do
         {num, _} -> num
         :error -> nil

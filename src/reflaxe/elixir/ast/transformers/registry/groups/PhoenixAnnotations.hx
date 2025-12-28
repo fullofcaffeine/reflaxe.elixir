@@ -11,6 +11,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHY
  * - Keep registry modular while preserving exact order from the monolith.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class PhoenixAnnotations {
   public static function build():Array<ElixirASTTransformer.PassConfig> {

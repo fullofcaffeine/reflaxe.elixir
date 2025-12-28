@@ -157,36 +157,65 @@ class ExceptionBuilder {
      * Build break control flow exception
      * 
      * WHY: Loops need break capability in Elixir
-     * WHAT: Generates throw(:break) for loop control
-     * HOW: Creates atom throw that loop handlers catch
+     * WHAT: Generates a throw payload for loop control
+     * HOW:
+     * - When inside a reduce_while-lowered loop, we throw a tagged tuple carrying the
+     *   loop's current state so the reducer can convert it to {:halt, state}.
+     * - Outside of a known loop context, we fall back to throw(:break) (legacy).
      * 
      * @return ElixirASTDef for break exception
      */
-    public static function buildBreak(): ElixirASTDef {
+    public static function buildBreak(context: CompilationContext): ElixirASTDef {
         #if debug_ast_builder
         // DISABLED: trace('[ExceptionBuilder] Building break exception');
         #end
         
-        // Throw :break atom that will be caught by loop transformation
-        return EThrow(makeAST(EAtom("break")));
+        if (context == null || context.loopControlStateStack == null || context.loopControlStateStack.length == 0) {
+            // Legacy fallback: throw :break atom (may be caught by reducer wrappers).
+            return EThrow(makeAST(EAtom("break")));
+        }
+
+        var top = context.loopControlStateStack[context.loopControlStateStack.length - 1];
+        var stateExpr: ElixirAST = if (top == null) {
+            // Stateless loops use `acc` as their reduce_while state.
+            makeAST(EVar("acc"));
+        } else {
+            makeAST(ETuple([for (name in top) makeAST(EVar(name))]));
+        };
+
+        return EThrow(makeAST(ETuple([makeAST(EAtom("break")), stateExpr])));
     }
     
     /**
      * Build continue control flow exception
      * 
      * WHY: Loops need continue capability in Elixir
-     * WHAT: Generates throw(:continue) for loop control
-     * HOW: Creates atom throw that loop handlers catch
+     * WHAT: Generates a throw payload for loop control
+     * HOW:
+     * - When inside a reduce_while-lowered loop, we throw a tagged tuple carrying the
+     *   loop's current state so the reducer can convert it to {:cont, state}.
+     * - Outside of a known loop context, we fall back to throw(:continue) (legacy).
      * 
      * @return ElixirASTDef for continue exception
      */
-    public static function buildContinue(): ElixirASTDef {
+    public static function buildContinue(context: CompilationContext): ElixirASTDef {
         #if debug_ast_builder
         // DISABLED: trace('[ExceptionBuilder] Building continue exception');
         #end
         
-        // Throw :continue atom that will be caught by loop transformation
-        return EThrow(makeAST(EAtom("continue")));
+        if (context == null || context.loopControlStateStack == null || context.loopControlStateStack.length == 0) {
+            // Legacy fallback: throw :continue atom (may be caught by reducer wrappers).
+            return EThrow(makeAST(EAtom("continue")));
+        }
+
+        var top = context.loopControlStateStack[context.loopControlStateStack.length - 1];
+        var stateExpr: ElixirAST = if (top == null) {
+            makeAST(EVar("acc"));
+        } else {
+            makeAST(ETuple([for (name in top) makeAST(EVar(name))]));
+        };
+
+        return EThrow(makeAST(ETuple([makeAST(EAtom("continue")), stateExpr])));
     }
     
     /**

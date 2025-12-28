@@ -16,6 +16,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Elixir warns that the inner `var = ...` binding inside the if-branch is unused.
  *   This shape commonly appears in compiler-generated code that incrementally
  *   refines a query variable.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EctoQueryIfAssignSimplifyTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

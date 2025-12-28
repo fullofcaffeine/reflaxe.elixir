@@ -4,6 +4,7 @@
   "test_struct.ex",
   "string_buf.ex",
   "std.ex",
+  "main.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

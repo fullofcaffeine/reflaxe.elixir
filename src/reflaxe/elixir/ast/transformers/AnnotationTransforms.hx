@@ -2049,7 +2049,7 @@ class AnnotationTransforms {
                     if (name == "LiveViewTest" || name == "Phoenix.LiveViewTest" || name == "LiveView") {
                         found = true;
                     }
-                case EImport(moduleName, _, _):
+                case EImport(moduleName, _, _, _):
                     if (moduleName == "Phoenix.LiveViewTest") found = true;
                 case EAlias(moduleName, aliasName):
                     if (moduleName == "Phoenix.LiveViewTest" || aliasName == "LiveViewTest") found = true;
@@ -2098,7 +2098,7 @@ class AnnotationTransforms {
                     if (name == "ConnTest" || name == "Phoenix.ConnTest") {
                         found = true;
                     }
-                case EImport(moduleName, _, _):
+                case EImport(moduleName, _, _, _):
                     if (moduleName == "Phoenix.ConnTest") found = true;
                 case EAlias(moduleName, aliasName):
                     if (moduleName == "Phoenix.ConnTest" || aliasName == "ConnTest") found = true;

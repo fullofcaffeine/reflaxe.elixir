@@ -5,6 +5,22 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 
+/**
+ * AssignmentIfElseCombineTransforms
+ *
+ * WHAT
+ * - (Documented in-file; see the existing code below.)
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
+ */
+
 class AssignmentIfElseCombineTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {

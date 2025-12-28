@@ -1,4 +1,5 @@
 defmodule StringBuf do
+  defstruct parts: []
   def add(struct, x) do
     str = if Kernel.is_nil(x), do: "null", else: inspect(x)
     %{struct | parts: struct.parts ++ [str]}

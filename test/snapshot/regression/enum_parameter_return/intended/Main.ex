@@ -1,6 +1,6 @@
 defmodule Main do
   def main() do
-    result = to_int({:custom, 418})
+    _result = to_int({:custom, 418})
     nil
   end
   def to_int(status) do

@@ -16,6 +16,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Some generic passes can synthesize names that inadvertently match
  *   keywords. This breaks parsing and yields misleading terminator errors.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ReservedWordVarSanitizeTransforms {
     static final reserved = [

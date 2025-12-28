@@ -13,6 +13,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHAT
  * - Absolute-final guard to ensure handle_event/3 second arg is `params` when
  *   referenced in the body, rewriting `_params` occurrences to `params`.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleEventParamsHeadToParamsFinalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

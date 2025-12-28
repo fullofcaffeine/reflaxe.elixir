@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * WHY
  * - Prevent undefined-variable errors when bodies use meaningful names (todo/id/sort_by)
  *   while the pattern binds a generic name. Keeps transforms generic and shape-based.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ClauseUndefinedRefRewriteTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

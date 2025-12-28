@@ -1857,7 +1857,12 @@ class MapAndCollectionTransforms {
                                 // DISABLED: trace('[MapIteratorTransform] Found Map iteration pattern in reduce_while - transforming to Enum.each');
                                 #end
 
-                                // Extract the map variable from the initial value (second argument)
+                                // Extract the map variable from the initial value (second argument).
+                                //
+                                // IMPORTANT:
+                                // - Do not guess/fallback to a hard-coded name. If we cannot determine
+                                //   the map source reliably, skip this transform and preserve the
+                                //   original reduce_while AST (it is ugly but correct).
                                 var mapVar = switch(args[1].def) {
                                     case ETuple([mapExpr, _]) | ETuple([mapExpr]):
                                         switch(mapExpr.def) {
@@ -1867,14 +1872,14 @@ class MapAndCollectionTransforms {
                                     case EVar(name): name;
                                     default: null;
                                 };
-                                if (mapVar == null) mapVar = "colors"; // fallback
+                                if (mapVar == null) return node;
 
                                 #if debug_map_iterator
                                 // DISABLED: trace('[MapIteratorTransform] Map variable identified: ' + mapVar);
                                 #end
 
-                                var keyVarName = "name";
-                                var valueVarName = "hex";
+                                var keyVarName: Null<String> = null;
+                                var valueVarName: Null<String> = null;
                                 var loopBody: ElixirAST = null;
 
                                 switch(loopFunc.def) {
@@ -1964,6 +1969,9 @@ class MapAndCollectionTransforms {
                                 }
 
                                 if (loopBody != null) {
+                                    // Require a key binder; value binder is optional for key-only iteration.
+                                    if (keyVarName == null || keyVarName == "") return node;
+                                    if (valueVarName == null || valueVarName == "") valueVarName = "_value";
                                     #if debug_map_iterator
                                     // DISABLED: trace('[MapIteratorTransform] Creating Enum.each with {' + keyVarName + ', ' + valueVarName + '} destructuring');
                                     // DISABLED: trace('[MapIteratorTransform] Map variable: ' + mapVar);

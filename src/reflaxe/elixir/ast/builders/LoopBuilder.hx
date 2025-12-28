@@ -166,6 +166,49 @@ class LoopBuilder {
                     return StandardFor(v, e1, e2);
                 }
 
+            case TCall(callTarget, _):
+                // Calls that return a collection/iterator (e.g. map.keys()) should be treated as
+                // collection iteration (Enum.each/Enum.reduce) rather than falling back to the
+                // legacy iterator/hasNext lowering.
+                //
+                // This is critical for Elixir, where many helpers (Map.keys/1) return lists.
+                // If we treat those as iterator objects with has_next/next closures, the generated
+                // code becomes invalid and breaks under `--warnings-as-errors`.
+                inline function isArrayType(t: Type): Bool {
+                    return switch (haxe.macro.TypeTools.follow(t)) {
+                        case TInst(_.get() => {name: "Array"}, _): true;
+                        default: false;
+                    };
+                }
+                inline function isMapType(t: Type): Bool {
+                    return switch (haxe.macro.TypeTools.follow(t)) {
+                        case TInst(_.get() => {name: n}, _) if (n == "Map" || n == "StringMap" || n == "IntMap" || StringTools.endsWith(n, "Map")): true;
+                        case TAbstract(_.get() => {name: n2}, _) if (n2 == "Map" || n2 == "StringMap" || n2 == "IntMap" || StringTools.endsWith(n2, "Map")): true;
+                        default: false;
+                    };
+                }
+                inline function isKeysCallOnMap(callTargetExpr: TypedExpr): Bool {
+                    return switch (callTargetExpr.expr) {
+                        case TField(obj, FInstance(_, _, cf)) if (cf.get().name == "keys"):
+                            isMapType(obj.t);
+                        case TField(obj, FAnon(cf)) if (cf.get().name == "keys"):
+                            isMapType(obj.t);
+                        case TField(obj, FDynamic(name)) if (name == "keys"):
+                            isMapType(obj.t);
+                        default:
+                            false;
+                    };
+                }
+
+                var treatAsCollection = isArrayType(e1.t) || isKeysCallOnMap(callTarget);
+                if (treatAsCollection) {
+                    if (hasSideEffects) return EnumEachCollection(v.name, e1, e2);
+                    return StandardFor(v, e1, e2);
+                }
+
+                // Unknown call-returning iterator: use standard for loop fallback.
+                return StandardFor(v, e1, e2);
+
             default:
                 // Unknown pattern - use standard for loop
                 return StandardFor(v, e1, e2);
@@ -837,6 +880,7 @@ class LoopBuilder {
                 var userVar = "i";
                 var removedIndices = new Map<Int, Bool>();
                 var counterIncrementHandled = false;
+                var headerBindingHandled = false;
 
                 // Helper: unwrap wrappers so we can pattern-match on the underlying expr.
                 function unwrap(e: TypedExpr): TypedExpr {
@@ -855,12 +899,14 @@ class LoopBuilder {
                             case TLocal(localVar) if (localVar.name == counterVar):
                                 userVar = v.name;
                                 removedIndices.set(0, true);
+                                headerBindingHandled = true;
                             case TUnop(OpIncrement | OpDecrement, postFix, inner) if (postFix):
                                 // Header post-inc: `var i = g++`
                                 if (extractInfrastructureVarName(unwrap(inner)) == counterVar) {
                                     userVar = v.name;
                                     removedIndices.set(0, true);
                                     counterIncrementHandled = true;
+                                    headerBindingHandled = true;
                                 }
                             default:
                         }
@@ -889,6 +935,11 @@ class LoopBuilder {
                 }
 
                 if (!counterIncrementHandled) return null;
+                // Desugared numeric `for (i in start...end)` always binds the user var directly
+                // from the infrastructure counter (or counter++ in the header). If we didn't
+                // see that binding, this is likely an indexed collection loop and should be
+                // handled by the dedicated array/collection pattern detection instead.
+                if (!headerBindingHandled) return null;
 
                 // Extract user code (everything except the header binding and counter increment)
                 var userCodeExprs: Array<TypedExpr> = [];
@@ -1975,7 +2026,33 @@ class LoopBuilder {
         toSnakeCase: String -> String,
         accumulatorVarName: String
     ): ElixirAST {
-        switch(expr.expr) {
+        function unwrap(e: TypedExpr): TypedExpr {
+            return switch (e.expr) {
+                case TMeta({name: ":mergeBlock" | ":implicitReturn"}, inner) | TParenthesis(inner):
+                    unwrap(inner);
+                default:
+                    e;
+            };
+        }
+
+        var unwrapped = unwrap(expr);
+
+        // Handle single-expression bodies (not wrapped in TBlock) so accumulator mutations
+        // like `result += "*"`, when lowered to Enum.reduce, return the new accumulator value
+        // instead of emitting an unused outer assignment (result = result <> "*"; acc).
+        switch (unwrapped.expr) {
+            case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, _) if (v.name == accumulation.varName):
+                return extractAccumulationValue(unwrapped, accumulation, buildExpr, toSnakeCase, accumulatorVarName);
+            case TBinop(OpAssign, {expr: TLocal(v1)}, {expr: TBinop(OpAdd, {expr: TLocal(v2)}, _)})
+                if (v1.name == accumulation.varName && v2.name == accumulation.varName):
+                return extractAccumulationValue(unwrapped, accumulation, buildExpr, toSnakeCase, accumulatorVarName);
+            case TCall({expr: TField({expr: TLocal(v3)}, FInstance(_, _, cf))}, _)
+                if (accumulation.isListAppend && v3.name == accumulation.varName && cf.get().name == "push"):
+                return extractAccumulationValue(unwrapped, accumulation, buildExpr, toSnakeCase, accumulatorVarName);
+            default:
+        }
+
+        switch(unwrapped.expr) {
             case TBlock(exprs):
                 var transformed = [];
                 var foundAccumulation = false;
@@ -2078,7 +2155,7 @@ class LoopBuilder {
             default:
                 // Simple expression - compile and return accumulator
                 return makeAST(EBlock([
-                    buildExpr(expr),
+                    buildExpr(unwrapped),
                     makeAST(EVar(accumulatorVarName))
                 ]));
         }
@@ -2472,16 +2549,19 @@ class LoopBuilder {
                                               toElixirVarName: String -> String): ElixirASTDef {
         var buildExpression = context.getExpressionBuilder();
         
-        // First check if this is a desugared for loop
+        // First check if this is a desugared numeric for loop (range iteration).
+        //
+        // WHY
+        // - Haxe desugars `for (i in a...b)` into a counter var + while loop.
+        // - In Elixir, lowering this shape to Enum.each/Enum.reduce over a range is both
+        //   more idiomatic and avoids control-flow scoping pitfalls of list comprehensions.
+        //
+        // NOTE
+        // - We intentionally prefer Enum.* over `for ... do:` comprehensions here.
+        //   Comprehensions introduce a new scope and will not update outer bindings.
         if (context.isFeatureEnabled("loop_builder_enabled")) {
-            var forPattern = detectDesugarForLoopPattern(econd, e);
-            if (forPattern != null) {
-                return buildFromForPattern(
-                    forPattern,
-                    expr -> buildExpression(expr),
-                    s -> toElixirVarName(s)
-                ).def;
-            }
+            var desugaredRange = buildDesugaredForRangeLoop(econd, e, context, toElixirVarName);
+            if (desugaredRange != null) return desugaredRange;
         }
 
         // Detect `for (item in array)` desugared to an indexed while loop:
@@ -2643,6 +2723,195 @@ class LoopBuilder {
         return buildWhileLoop(econd, e, normalWhile, context, toElixirVarName);
     }
 
+    static function buildDesugaredForRangeLoop(
+        econd: TypedExpr,
+        body: TypedExpr,
+        context: BuildContext,
+        toElixirVarName: String -> String
+    ): Null<ElixirASTDef> {
+        // Unwrap common wrappers in the while condition.
+        function unwrap(e: TypedExpr): TypedExpr {
+            return switch (e.expr) {
+                case TParenthesis(inner) | TMeta(_, inner): unwrap(inner);
+                default: e;
+            };
+        }
+
+        var actualCond = unwrap(econd);
+        var bounds: Null<{ counterName: String, op: haxe.macro.Expr.Binop, limitExpr: TypedExpr }> = switch (actualCond.expr) {
+            case TBinop(op, e1, e2) if (op == OpLt || op == OpLte):
+                var counterName = extractInfrastructureVarName(unwrap(e1));
+                counterName == null ? null : { counterName: counterName, op: op, limitExpr: e2 };
+            default:
+                null;
+        };
+        if (bounds == null) return null;
+
+        // Ensure the body matches Haxe's for-loop desugaring shape (user var header + counter increment).
+        var bodyInfo = analyzeForLoopBody(body, bounds.counterName);
+        if (bodyInfo == null) return null;
+
+        var buildExpression = context.getExpressionBuilder();
+        var compilationContext: Null<CompilationContext> = Std.isOfType(context, CompilationContext) ? cast context : null;
+
+        // Prefer a tracked initializer for the counter var (supports non-zero starts, e.g. (i + 1)...len).
+        var startAst: ElixirAST = makeAST(EInteger(0));
+        if (compilationContext != null && compilationContext.infrastructureVarInitValues != null &&
+            compilationContext.infrastructureVarInitValues.exists(bounds.counterName)) {
+            var init = compilationContext.infrastructureVarInitValues.get(bounds.counterName);
+            if (init != null) startAst = init;
+        }
+
+        // Prefer a tracked initializer for the limit var when the condition uses an infrastructure temp.
+        var limitName = extractInfrastructureVarName(unwrap(bounds.limitExpr));
+        var limitAst: Null<ElixirAST> = null;
+        if (limitName != null && compilationContext != null && compilationContext.infrastructureVarInitValues != null &&
+            compilationContext.infrastructureVarInitValues.exists(limitName)) {
+            limitAst = compilationContext.infrastructureVarInitValues.get(limitName);
+        }
+        if (limitAst == null) limitAst = buildExpression(bounds.limitExpr);
+
+        var endAst: ElixirAST = if (bounds.op == OpLt) {
+            makeAST(EBinary(EBinaryOp.Subtract, limitAst, makeAST(EInteger(1))));
+        } else {
+            limitAst;
+        };
+
+        var rangeAst = makeAST(ERange(startAst, endAst, false, makeAST(EInteger(1))));
+        var binderName = toElixirVarName(bodyInfo.userVar);
+
+        // If the loop mutates outer locals, use Enum.reduce and thread state explicitly.
+        var mutated = MutabilityDetector.detectMutatedVariables(bodyInfo.userCode);
+        if (Lambda.count(mutated) == 0) {
+            var bodyAst = buildExpression(bodyInfo.userCode);
+            return ERemoteCall(
+                makeAST(EVar("Enum")),
+                "each",
+                [
+                    rangeAst,
+                    makeAST(EFn([{
+                        args: [PVar(binderName)],
+                        guard: null,
+                        body: bodyAst
+                    }]))
+                ]
+            );
+        }
+
+        var mutatedList: Array<{ id: Int, originalName: String, outerName: String, accName: String }> = [];
+        for (id => tvar in mutated) {
+            var outerName = toElixirVarName(tvar.name);
+            var accName = if (outerName == "_") {
+                "_acc";
+            } else if (outerName.endsWith("_acc")) {
+                outerName + "_state";
+            } else {
+                outerName + "_acc";
+            };
+            mutatedList.push({ id: id, originalName: tvar.name, outerName: outerName, accName: accName });
+        }
+        mutatedList.sort((a, b) -> a.id - b.id);
+
+        function makeTupleVars(names: Array<String>): Array<ElixirAST> {
+            return [for (nm in names) makeAST(EVar(nm))];
+        }
+
+        var initialState: ElixirAST = if (mutatedList.length == 1) {
+            makeAST(EVar(mutatedList[0].outerName));
+        } else {
+            makeAST(ETuple(makeTupleVars([for (m in mutatedList) m.outerName])));
+        };
+
+        var statePattern: EPattern = if (mutatedList.length == 1) {
+            PVar(mutatedList[0].accName);
+        } else {
+            PTuple([for (m in mutatedList) PVar(m.accName)]);
+        };
+
+        var outerBindPattern: EPattern = if (mutatedList.length == 1) {
+            PVar(mutatedList[0].outerName);
+        } else {
+            PTuple([for (m in mutatedList) PVar(m.outerName)]);
+        };
+
+        var stateReturn: ElixirAST = if (mutatedList.length == 1) {
+            makeAST(EVar(mutatedList[0].accName));
+        } else {
+            makeAST(ETuple(makeTupleVars([for (m in mutatedList) m.accName])));
+        };
+
+        // Temporarily remap mutated outer vars to accumulator names while compiling the reducer body.
+        var savedMappings: Array<{ key: String, had: Bool, value: Null<String> }> = [];
+        if (compilationContext != null) {
+            for (m in mutatedList) {
+                var idKey = Std.string(m.id);
+                for (k in [idKey, m.originalName]) {
+                    var had = compilationContext.tempVarRenameMap.exists(k);
+                    var old = had ? compilationContext.tempVarRenameMap.get(k) : null;
+                    savedMappings.push({ key: k, had: had, value: old });
+                    compilationContext.tempVarRenameMap.set(k, m.accName);
+                }
+            }
+        }
+
+        var compiledBody = buildExpression(bodyInfo.userCode);
+
+        if (compilationContext != null) {
+            for (s in savedMappings) {
+                if (s.had) compilationContext.tempVarRenameMap.set(s.key, s.value);
+                else compilationContext.tempVarRenameMap.remove(s.key);
+            }
+        }
+
+        function ensureReturnsState(bodyAst: ElixirAST, ret: ElixirAST): ElixirAST {
+            if (bodyAst == null) return ret;
+            return switch (bodyAst.def) {
+                case EIf(cond, then_, else_):
+                    var newThen = ensureReturnsState(then_, ret);
+                    var newElse = if (else_ == null) {
+                        ret;
+                    } else switch (else_.def) {
+                        case ENil: ret;
+                        default: ensureReturnsState(else_, ret);
+                    };
+                    makeAST(EIf(cond, newThen, newElse));
+                case EUnless(condition, b, elseBranch):
+                    var newBody = ensureReturnsState(b, ret);
+                    var newElse = if (elseBranch == null) {
+                        ret;
+                    } else switch (elseBranch.def) {
+                        case ENil: ret;
+                        default: ensureReturnsState(elseBranch, ret);
+                    };
+                    makeAST(EUnless(condition, newBody, newElse));
+                case EBlock(stmts):
+                    var out = stmts == null ? [] : stmts.copy();
+                    out.push(ret);
+                    makeAST(EBlock(out));
+                default:
+                    makeAST(EBlock([bodyAst, ret]));
+            };
+        }
+
+        var reducerBody = ensureReturnsState(compiledBody, stateReturn);
+
+        var reduceCall = makeAST(ERemoteCall(
+            makeAST(EVar("Enum")),
+            "reduce",
+            [
+                rangeAst,
+                initialState,
+                makeAST(EFn([{
+                    args: [PVar(binderName), statePattern],
+                    guard: null,
+                    body: reducerBody
+                }]))
+            ]
+        ));
+
+        return EMatch(outerBindPattern, reduceCall);
+    }
+    
     static function detectForInArrayPattern(econd: TypedExpr, body: TypedExpr): Null<{
         arrayExpr: TypedExpr,
         elementVarName: String,
@@ -2726,6 +2995,11 @@ class LoopBuilder {
             {expr: TBlock(userExprs), pos: body.pos, t: body.t};
         };
 
+        #if debug_enum_each_early_return
+        trace('[detectForInArrayPattern] userBody=' + Type.enumConstructor(userBody.expr)
+            + ' containsReturn=' + containsNonLocalReturn(userBody));
+        #end
+
         // Avoid rewriting if the user body references the counter variable (index-based loops).
         var usesCounter = false;
         function scan(e: TypedExpr): Void {
@@ -2782,6 +3056,43 @@ class LoopBuilder {
     /**
      * Build idiomatic while loop using reduce_while
      */
+    static function wrapLoopControlTry(body: ElixirAST, currentAcc: ElixirAST): ElixirAST {
+        if (body == null) return body;
+
+        var breakAtom = makeAST(EAtom(ElixirAtom.raw("break")));
+        var continueAtom = makeAST(EAtom(ElixirAtom.raw("continue")));
+        var haltAtom = makeAST(EAtom(ElixirAtom.raw("halt")));
+        var contAtom = makeAST(EAtom(ElixirAtom.raw("cont")));
+
+        var catchClauses: Array<ECatchClause> = [
+            // Preferred: carry state explicitly.
+            {
+                kind: Throw,
+                pattern: PTuple([PLiteral(breakAtom), PVar("break_state")]),
+                body: makeAST(ETuple([haltAtom, makeAST(EVar("break_state"))]))
+            },
+            {
+                kind: Throw,
+                pattern: PTuple([PLiteral(continueAtom), PVar("continue_state")]),
+                body: makeAST(ETuple([contAtom, makeAST(EVar("continue_state"))]))
+            },
+
+            // Back-compat: bare atoms (state falls back to current accumulator).
+            {
+                kind: Throw,
+                pattern: PLiteral(breakAtom),
+                body: makeAST(ETuple([haltAtom, currentAcc]))
+            },
+            {
+                kind: Throw,
+                pattern: PLiteral(continueAtom),
+                body: makeAST(ETuple([contAtom, currentAcc]))
+            }
+        ];
+
+        return makeAST(ETry(body, [], catchClauses, null, null));
+    }
+
     static function buildWhileLoop(econd: TypedExpr, e: TypedExpr,
                                    normalWhile: Bool,
                                    context: BuildContext,
@@ -2795,8 +3106,34 @@ class LoopBuilder {
         #end
 
         var buildExpression = context.getExpressionBuilder();
+
+        // Detect mutated variables for state threading
+        var mutatedVars = MutabilityDetector.detectMutatedVariables(e);
+        // NOTE: We only thread truly mutated locals through the reduce_while accumulator.
+        // Variables that are only *read* (e.g. function params used in the condition) are
+        // safely captured by the reducer closure and should not be included in the state tuple.
+
+        // Provide loop-control state info (break/continue) during body compilation so
+        // ExceptionBuilder can emit `throw({:break, state})` / `throw({:continue, state})`.
+        var compilationContext: Null<CompilationContext> = Std.isOfType(context, CompilationContext) ? cast context : null;
+        if (compilationContext != null) {
+            if (Lambda.count(mutatedVars) > 0) {
+                var accVarList: Array<{ name: String, tvar: TVar }> = [];
+                for (id => v in mutatedVars) accVarList.push({ name: toElixirVarName(v.name), tvar: v });
+                accVarList.sort((a, b) -> Reflect.compare(a.tvar.id, b.tvar.id));
+                compilationContext.loopControlStateStack.push([for (it in accVarList) it.name]);
+            } else {
+                // Stateless reduce_while uses `acc`.
+                compilationContext.loopControlStateStack.push(null);
+            }
+        }
+
         var condition = buildExpression(econd);
         var body = buildExpression(e);
+
+        if (compilationContext != null && compilationContext.loopControlStateStack != null && compilationContext.loopControlStateStack.length > 0) {
+            compilationContext.loopControlStateStack.pop();
+        }
 
         #if debug_loop_builder
         // DISABLED: trace('[XRay LoopBuilder] After compiling from TypedExpr:');
@@ -2808,12 +3145,6 @@ class LoopBuilder {
         }
         #end
         
-        // Detect mutated variables for state threading
-        var mutatedVars = MutabilityDetector.detectMutatedVariables(e);
-        // NOTE: We only thread truly mutated locals through the reduce_while accumulator.
-        // Variables that are only *read* (e.g. function params used in the condition) are
-        // safely captured by the reducer closure and should not be included in the state tuple.
-        
         // If there are variables to thread, use reduce_while with state
         if (Lambda.count(mutatedVars) > 0) {
             return buildReduceWhileWithState(
@@ -2824,6 +3155,24 @@ class LoopBuilder {
                 toElixirVarName
             );
         } else {
+            // Flatten body blocks so downstream hygiene can see assignments and the {:cont, acc}
+            // tuple in a single block (avoids incorrect "unused assignment" underscoring).
+            function buildThenBlock(bodyExpr: ElixirAST): ElixirAST {
+                var cont = makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), makeAST(EVar("acc"))]));
+                return switch (bodyExpr.def) {
+                    case EBlock(stmts):
+                        var merged = stmts.copy();
+                        merged.push(cont);
+                        makeAST(EBlock(merged));
+                    case EDo(stmts):
+                        var merged = stmts.copy();
+                        merged.push(cont);
+                        makeAST(EBlock(merged));
+                    default:
+                        makeAST(EBlock([bodyExpr, cont]));
+                }
+            }
+
             // Simple reduce_while without state
             return ERemoteCall(
                 makeAST(EVar("Enum")),  
@@ -2846,14 +3195,14 @@ class LoopBuilder {
                         {
                             args: [PWildcard, PVar("acc")],
                             guard: null,
-                            body: makeAST(EIf(
-                                condition,
-                                makeAST(EBlock([
-                                    body,
-                                    makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), makeAST(EVar("acc"))]))
-                                ])),
-                                makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), makeAST(EVar("acc"))]))
-                            ))
+                            body: wrapLoopControlTry(
+                                makeAST(EIf(
+                                    condition,
+                                    buildThenBlock(body),
+                                    makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), makeAST(EVar("acc"))]))
+                                )),
+                                makeAST(EVar("acc"))
+                            )
                         }
                     ]))
                 ]
@@ -2899,8 +3248,10 @@ class LoopBuilder {
         accVarList.sort((a, b) -> Reflect.compare(a.tvar.id, b.tvar.id));
         
         var accInitializers = [];
-        var accPatterns = [];
-        var accRebuilders = [];
+        var finalAccPatterns = [];
+        var reducerAccPatterns = [];
+        var reducerAccRebuilders = [];
+        var outerToReducerVar: Map<String, String> = new Map();
 
         // Try to seed accumulator variables with a concrete initial value when we can prove it,
         // so the reduce_while does not depend on prior bindings in the surrounding scope.
@@ -2925,65 +3276,41 @@ class LoopBuilder {
                 return makeAST(EInteger(0));
             }
 
-            // Infer from self-accumulating assignments inside the loop body, e.g.:
-            //   sum = sum + x        -> 0
-            //   result = result <> s -> ""
-            //   items = items ++ [x] -> []
-            var inferred: Null<ElixirAST> = null;
-            function visit(n: ElixirAST): Void {
-                if (inferred != null || n == null || n.def == null) return;
-
-                function matchesTarget(name: String): Bool {
-                    return name == elixirName || name == "_" + elixirName;
-                }
-
-                function inferFromRhs(lhsName: String, rhs: ElixirAST): Void {
-                    if (rhs == null || rhs.def == null) return;
-                    switch (rhs.def) {
-                        case EBinary(Add, {def: EVar(varName)}, _) if (varName == lhsName): inferred = makeAST(EInteger(0));
-                        case EBinary(Subtract, {def: EVar(varName)}, _) if (varName == lhsName): inferred = makeAST(EInteger(0));
-                        case EBinary(StringConcat, {def: EVar(varName)}, _) if (varName == lhsName): inferred = makeAST(EString(""));
-                        case EBinary(Concat, {def: EVar(varName)}, _) if (varName == lhsName): inferred = makeAST(EList([]));
-                        default:
-                    }
-                }
-
-                switch (n.def) {
-                    case EMatch(pattern, rhs):
-                        var lhsName: Null<String> = switch (pattern) { case PVar(nm): nm; default: null; };
-                        if (lhsName != null && matchesTarget(lhsName)) inferFromRhs(lhsName, rhs);
-                    case EBinary(Match, {def: EVar(lhs)}, rhs) if (matchesTarget(lhs)):
-                        inferFromRhs(lhs, rhs);
-                    default:
-                }
-
-                ElixirASTTransformer.iterateAST(n, visit);
-            }
-            visit(body);
-            return inferred;
+            // IMPORTANT:
+            // We intentionally do not infer seeds from self-accumulating assignments (x = x + 1, etc.)
+            // because the initial value may come from a function argument or prior binding. Seeding to
+            // 0/""/[] would silently corrupt semantics (e.g., Input.readBytes/4 where `pos` and `k`
+            // begin from caller-provided values).
+            return null;
         }
 
         for (item in accVarList) {
+            var outerName = item.name;
+            var reducerName = 'acc_${outerName}';
+            outerToReducerVar.set(outerName, reducerName);
+
             var seed = inferAccumulatorSeed(item.name, item.tvar != null ? item.tvar.name : null);
-            accInitializers.push(seed != null ? seed : makeAST(EVar(item.name)));
-            accPatterns.push(PVar(item.name));
-            accRebuilders.push(makeAST(EVar(item.name)));
+            accInitializers.push(seed != null ? seed : makeAST(EVar(outerName)));
+            finalAccPatterns.push(PVar(outerName));
+            reducerAccPatterns.push(PVar(reducerName));
+            reducerAccRebuilders.push(makeAST(EVar(reducerName)));
         }
         
         var initAcc = makeAST(ETuple(accInitializers));
-        var accPattern = PTuple(accPatterns);
-        var newAccTuple = makeAST(ETuple(accRebuilders));
+        var finalAccPattern = PTuple(finalAccPatterns);
+        var reducerAccPattern = PTuple(reducerAccPatterns);
+        var newAccTuple = makeAST(ETuple(reducerAccRebuilders));
         
         // Transform condition to use pattern-matched variables
         var transformedCondition = transformExpressionWithMapping(
             condition,
-            accVarList.map(item -> item.name)
+            outerToReducerVar
         );
         
         // Transform body similarly
         var transformedBody = transformExpressionWithMapping(
             body,
-            accVarList.map(item -> item.name)
+            outerToReducerVar
         );
 
         #if debug_loop_builder
@@ -2991,13 +3318,26 @@ class LoopBuilder {
         // DISABLED: trace('[XRay LoopBuilder]   transformedBody will be in EBlock with cont tuple');
         #end
 
+        function buildThenBlock(bodyExpr: ElixirAST): ElixirAST {
+            var cont = makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), newAccTuple]));
+            return switch (bodyExpr.def) {
+                case EBlock(stmts):
+                    var merged = stmts.copy();
+                    merged.push(cont);
+                    makeAST(EBlock(merged));
+                case EDo(stmts):
+                    var merged = stmts.copy();
+                    merged.push(cont);
+                    makeAST(EBlock(merged));
+                default:
+                    makeAST(EBlock([bodyExpr, cont]));
+            }
+        }
+
         // Build the lambda body EIf structure
         var lambdaIfBody = makeAST(EIf(
             transformedCondition,
-            makeAST(EBlock([
-                transformedBody,
-                makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("cont"))), newAccTuple]))
-            ])),
+            buildThenBlock(transformedBody),
             makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("halt"))), newAccTuple]))
         ));
 
@@ -3010,9 +3350,9 @@ class LoopBuilder {
         // Build the complete reducer function
         var reducerFn = makeAST(EFn([
             {
-                args: [PWildcard, accPattern],
+                args: [PWildcard, reducerAccPattern],
                 guard: null,
-                body: lambdaIfBody
+                body: wrapLoopControlTry(lambdaIfBody, newAccTuple)
             }
         ]));
 
@@ -3049,22 +3389,72 @@ class LoopBuilder {
         #end
 
         // Critical: bind the final accumulator back to the local variables so mutations
-        // are visible after the loop. The while-expression itself is Void in Haxe, so
-        // return nil as the expression value after rebinding.
-        return EBlock([
-            makeAST(EMatch(accPattern, makeAST(result))),
-            makeAST(ENil)
-        ]);
+        // are visible after the loop.
+        //
+        // IMPORTANT:
+        // - Avoid wrapping this rebinding in an EBlock. Nested EBlocks are printed as
+        //   plain statement sequences in Elixir (no scope), but several hygiene passes
+        //   treat EBlocks as analysis boundaries and can incorrectly underscore binders
+        //   that are used *after* the loop in the surrounding function block.
+        //
+        // Haxe while/for expressions are Void, so the match expression's value is ignored
+        // in statement position.
+        return EMatch(finalAccPattern, makeAST(result));
     }
     
     /**
      * Transform expression to use pattern-matched variables
      *
-     * NOTE: Currently identity because the reducer binds the accumulator variables using
-     * their original Elixir names (so references already resolve correctly).
+     * NOTE: We intentionally use distinct reducer binder names (acc_<var>) to avoid
+     * Elixir shadowing warnings when the loop variables already exist in the outer scope.
+     * This helper rewrites references/assignments inside the reducer body accordingly.
      */
-    static function transformExpressionWithMapping(expr: ElixirAST, varNames: Array<String>): ElixirAST {
-        return expr;
+    static function transformExpressionWithMapping(expr: ElixirAST, rename: Map<String, String>): ElixirAST {
+        if (expr == null || rename == null) return expr;
+
+        inline function mapped(name: String): Null<String> {
+            return (name != null && rename.exists(name)) ? rename.get(name) : null;
+        }
+
+        function renamePattern(p: EPattern): EPattern {
+            return switch (p) {
+                case PVar(nm):
+                    var to = mapped(nm);
+                    to != null ? PVar(to) : p;
+                case PTuple(items): PTuple([for (it in items) renamePattern(it)]);
+                case PList(items): PList([for (it in items) renamePattern(it)]);
+                case PCons(h, t): PCons(renamePattern(h), renamePattern(t));
+                case PMap(pairs):
+                    PMap([for (pair in pairs) { key: pair.key, value: renamePattern(pair.value) }]);
+                case PStruct(name, fields):
+                    PStruct(name, [for (f in fields) { key: f.key, value: renamePattern(f.value) }]);
+                case PPin(inner): PPin(renamePattern(inner));
+                case PAlias(aliasName, inner):
+                    var toAlias = mapped(aliasName);
+                    var renamedInner = renamePattern(inner);
+                    (toAlias != null) ? PAlias(toAlias, renamedInner) : PAlias(aliasName, renamedInner);
+                default:
+                    p;
+            }
+        }
+
+        return ElixirASTTransformer.transformNode(expr, function(n: ElixirAST): ElixirAST {
+            if (n == null || n.def == null) return n;
+
+            return switch (n.def) {
+                case EVar(name):
+                    var to = mapped(name);
+                    to != null ? makeASTWithMeta(EVar(to), n.metadata, n.pos) : n;
+
+                // Match with pattern binder (assignments): rewrite LHS patterns for threaded vars.
+                case EMatch(pattern, rhs):
+                    var newPattern = renamePattern(pattern);
+                    newPattern != pattern ? makeASTWithMeta(EMatch(newPattern, rhs), n.metadata, n.pos) : n;
+
+                default:
+                    n;
+            }
+        });
     }
     
     /**

@@ -1,4 +1,19 @@
 defmodule Main do
+  def main() do
+    _ = test_end("hello", "world")
+    _ = test_after(100)
+    _ = test_rescue("exception")
+    _ = test_def("definition")
+    _ = test_defp("private")
+    _ = test_defmodule("MyModule")
+    _ = test_alias("MyAlias")
+    _ = test_receive("message")
+    _ = test_quote("expression")
+    _ = test_unquote("value")
+    _ = test_require("library")
+    _ = test_use("framework")
+    _ = test_multiple("start", "middle", "result")
+  end
   defp test_end(start, end_param) do
     "#{(fn -> start end).()} to #{(fn -> end_param end).()}"
   end

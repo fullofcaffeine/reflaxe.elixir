@@ -30,6 +30,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *       PVar(tailName)
  *   - Only acts when scrutinee is EVar (avoids guessing for literals)
  *   - Leaves [] clauses unchanged
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ListGuardIndexToHeadTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

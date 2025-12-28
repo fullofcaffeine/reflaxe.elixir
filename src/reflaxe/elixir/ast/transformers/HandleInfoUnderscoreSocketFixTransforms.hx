@@ -16,6 +16,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Avoids warnings "underscored variable used after being set" and unused
  *   alias variables in the {:some, _socket} branch produced by neutral lowering.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleInfoUnderscoreSocketFixTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

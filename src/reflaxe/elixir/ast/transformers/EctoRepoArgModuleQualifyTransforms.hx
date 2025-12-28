@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Match ERemoteCall(module=EVar("<App>.Repo"), func in ["get","one"]) with args[0]=EVar(Name)
  *   where Name is a single CamelCase segment without dots, and rewrite to EVar("<App>." + Name).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EctoRepoArgModuleQualifyTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

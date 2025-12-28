@@ -1618,6 +1618,23 @@ class ElixirASTTransformer {
                                 };
                                 
                                 if (parentModule != null) {
+                                    // Constructor super-call: `super(...)` in Haxe becomes a call on the
+                                    // synthetic `super` variable with an empty method name (function var call).
+                                    //
+                                    // Elixir has no inheritance; constructors compile to `Module.new/arity`.
+                                    // Rebind `struct` to the parent constructor result so downstream code
+                                    // sees the initialized base fields and we avoid invalid `Parent.(...)` calls.
+                                    if (methodName == "") {
+                                        return makeAST(EMatch(
+                                            PVar("struct"),
+                                            makeAST(ERemoteCall(
+                                                makeAST(EVar(parentModule)),
+                                                "new",
+                                                args
+                                            ))
+                                        ));
+                                    }
+
                                     // Special handling for Exception parent (it's a behaviour, not a module with methods)
                                     if (parentModule == "Exception" && (methodName == "toString" || methodName == "to_string")) {
                                         #if debug_super_handling
@@ -1823,7 +1840,7 @@ class ElixirASTTransformer {
                     // Scan existing body for EUse/EImport Phoenix.Component
                     for (stmt in body) switch (stmt.def) {
                         case EUse(mod, _): if (mod == "Phoenix.Component") { hasImport = true; }
-                        case EImport(mod, _, _): if (mod == "Phoenix.Component") { hasImport = true; }
+                        case EImport(mod, _, _, _): if (mod == "Phoenix.Component") { hasImport = true; }
                         default:
                     }
                     if (!hasImport) {
@@ -1849,7 +1866,7 @@ class ElixirASTTransformer {
                             var hasLiveViewUse = false;
                             for (stmt in statements) {
                                 switch(stmt.def) {
-                                    case EImport(module, _, _):
+                                    case EImport(module, _, _, _):
                                         // module is a string in EImport
                                         if (module == "Phoenix.Component") {
                                             hasImport = true;
@@ -2389,7 +2406,7 @@ class ElixirASTTransformer {
                             var hasImport = false;
                             for (stmt in statements) {
                                 switch(stmt.def) {
-                                    case EImport(module, _, _):
+                                    case EImport(module, _, _, _):
                                         if (module == coreComponentsModule) {
                                             hasImport = true;
                                             break;
@@ -3823,6 +3840,16 @@ class ElixirASTTransformer {
                         newExpressions.push(transformWithContext(expressions[i], childContext));
                     }
                     makeASTWithMeta(EBlock(newExpressions), node.metadata, node.pos);
+
+                case EDo(expressions):
+                    // EDo behaves like a block for statement/expression context purposes.
+                    var newExpressions = [];
+                    for (i in 0...expressions.length) {
+                        var isLast = (i == expressions.length - 1);
+                        var childContext = isLast ? isStatementContext : true;
+                        newExpressions.push(transformWithContext(expressions[i], childContext));
+                    }
+                    makeASTWithMeta(EDo(newExpressions), node.metadata, node.pos);
                     
                 case EDef(name, args, guards, body):
                     // Function body is a block - let it handle its own statement/expression context
@@ -3854,6 +3881,15 @@ class ElixirASTTransformer {
                             elseBranch != null ? transformWithContext(elseBranch, isStatementContext) : null),
                         node.metadata, node.pos
                     );
+
+                case ECond(clauses):
+                    makeASTWithMeta(
+                        ECond(clauses.map(c -> {
+                            condition: transformWithContext(c.condition, false),
+                            body: transformWithContext(c.body, isStatementContext)
+                        })),
+                        node.metadata, node.pos
+                    );
                     
                 case ECase(expr, clauses):
                     // All clauses inherit parent context
@@ -3864,6 +3900,42 @@ class ElixirASTTransformer {
                                   guard: c.guard != null ? transformWithContext(c.guard, false) : null,
                                   body: transformWithContext(c.body, isStatementContext)
                               })),
+                        node.metadata, node.pos
+                    );
+
+                case EWith(clauses, doBlock, elseBlock):
+                    makeASTWithMeta(
+                        EWith(
+                            clauses.map(c -> { pattern: c.pattern, expr: transformWithContext(c.expr, false) }),
+                            transformWithContext(doBlock, isStatementContext),
+                            elseBlock != null ? transformWithContext(elseBlock, isStatementContext) : null
+                        ),
+                        node.metadata, node.pos
+                    );
+
+                case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
+                    makeASTWithMeta(
+                        ETry(
+                            transformWithContext(body, isStatementContext),
+                            rescueClauses != null ? rescueClauses.map(r -> { pattern: r.pattern, varName: r.varName, body: transformWithContext(r.body, isStatementContext) }) : [],
+                            catchClauses != null ? catchClauses.map(c -> { kind: c.kind, pattern: c.pattern, body: transformWithContext(c.body, isStatementContext) }) : [],
+                            afterBlock != null ? transformWithContext(afterBlock, true) : null,
+                            elseBlock != null ? transformWithContext(elseBlock, isStatementContext) : null
+                        ),
+                        node.metadata, node.pos
+                    );
+
+                case EParen(inner):
+                    makeASTWithMeta(EParen(transformWithContext(inner, isStatementContext)), node.metadata, node.pos);
+
+                case EFn(clauses):
+                    // Anonymous functions have their own block context; treat clause bodies like def bodies.
+                    makeASTWithMeta(
+                        EFn(clauses.map(cl -> {
+                            args: cl.args,
+                            guard: cl.guard != null ? transformWithContext(cl.guard, false) : null,
+                            body: transformWithContext(cl.body, false)
+                        })),
                         node.metadata, node.pos
                     );
                     
@@ -3915,60 +3987,118 @@ class ElixirASTTransformer {
             
             // Now check if this node needs reassignment wrapping
             if (isStatementContext) {
+                inline function remoteCallNeedsRebind(module: ElixirAST, funcName: String): Bool {
+                    var moduleName: Null<String> = switch(module.def) {
+                        case EAtom(atom): atom; // ElixirAtom implicitly converts to String
+                        case EVar(name): name;  // name is already String
+                        default: null;
+                    };
+
+                    if (moduleName == null) return false;
+
+                    return switch(moduleName) {
+                        case "Map":
+                            ["put", "delete", "merge", "update", "drop", "put_new", "put_new_lazy", "replace"].indexOf(funcName) >= 0;
+                        case "List":
+                            ["delete", "delete_at", "insert_at", "replace_at", "update_at", "pop_at", "flatten", "wrap"].indexOf(funcName) >= 0;
+                        case "MapSet":
+                            ["put", "delete", "union", "intersection", "difference"].indexOf(funcName) >= 0;
+                        case "Keyword":
+                            ["put", "delete", "merge", "update", "drop", "put_new", "put_new_lazy", "replace"].indexOf(funcName) >= 0;
+                        case "String":
+                            ["replace", "trim", "upcase", "downcase", "capitalize", "reverse", "slice"].indexOf(funcName) >= 0;
+                        case "Bytes":
+                            // Haxe Bytes API is mutable, but Elixir binaries are immutable; our Bytes module
+                            // returns updated structs from mutating operations. In statement position, ensure
+                            // the first argument is rebound so mutations persist.
+                            funcName == "set" || funcName == "blit" || funcName == "fill" || funcName.startsWith("set_");
+                        default:
+                            false;
+                    };
+                }
+
+                inline function isInfraDiscardVar(name: String): Bool {
+                    if (name == null) return false;
+                    if (name == "g" || name == "_g") return true;
+                    return ~/^_?g[0-9]+$/.match(name);
+                }
+
                 switch(transformed.def) {
                     case ERemoteCall(module, funcName, args):
                         #if debug_ast_transformer
                         // DISABLED: trace('[XRay StatementContext] Checking ERemoteCall: module=${module.def}, func=$funcName, args=${args.length}');
                         #end
-                        // Check for immutable operations that need reassignment in statement context
-                        var moduleName: Null<String> = switch(module.def) {
-                            case EAtom(atom): atom; // ElixirAtom implicitly converts to String
-                            case EVar(name): name;  // name is already String
-                            default: null;
-                        };
-                        
-                        if (moduleName != null) {
-                            #if debug_ast_transformer
-                            // DISABLED: trace('[XRay StatementContext] Found module $moduleName, checking function: $funcName');
-                            #end
-                            
-                            // Define immutable operations for each Elixir module
-                            // Future improvement: move this metadata to Haxe source files.
-                            // Instead of hardcoding here, each module (Map.hx, List.hx, etc.) could
-                            // use metadata annotations like @:immutable or @:reassignsVar on methods
-                            // that return new instances. This would make the system more maintainable
-                            // and allow custom types to opt into this behavior.
-                            // Example: @:immutable function put(key: K, value: V): Map<K,V> { ... }
-                            var needsReassignment = switch(moduleName) {
-                                case "Map":
-                                    ["put", "delete", "merge", "update", "drop", "put_new", "put_new_lazy", "replace"].indexOf(funcName) >= 0;
-                                case "List":
-                                    ["delete", "delete_at", "insert_at", "replace_at", "update_at", "pop_at", "flatten", "wrap"].indexOf(funcName) >= 0;
-                                case "MapSet":
-                                    ["put", "delete", "union", "intersection", "difference"].indexOf(funcName) >= 0;
-                                case "Keyword":
-                                    ["put", "delete", "merge", "update", "drop", "put_new", "put_new_lazy", "replace"].indexOf(funcName) >= 0;
-                                case "String":
-                                    ["replace", "trim", "upcase", "downcase", "capitalize", "reverse", "slice"].indexOf(funcName) >= 0;
+                        if (remoteCallNeedsRebind(module, funcName) && args.length >= 1) {
+                            // First arg should be the variable being modified
+                            switch(args[0].def) {
+                                case EVar(varName):
+                                    // Transform to: varName = Module.operation(varName, ...)
+                                    return makeASTWithMeta(
+                                        EMatch(PVar(varName), transformed),
+                                        node.metadata, node.pos
+                                    );
                                 default:
-                                    false;
-                            };
-                            
-                            if (needsReassignment && args.length >= 1) {
-                                // First arg should be the variable being modified
-                                switch(args[0].def) {
-                                    case EVar(varName):
-                                        #if debug_ast_transformer
-                                        // DISABLED: trace('[XRay StatementContext] Wrapping $moduleName.$funcName with reassignment to: $varName');
-                                        #end
-                                        // Transform to: varName = Module.operation(varName, ...)
-                                        return makeASTWithMeta(
-                                            EMatch(PVar(varName), transformed),
-                                            node.metadata, node.pos
-                                        );
-                                    default:
-                                        // Not a simple variable, can't reassign
-                                }
+                                    // Not a simple variable, can't reassign
+                            }
+                        }
+
+                    case ECall(target, funcName, args) if (target != null):
+                        if (remoteCallNeedsRebind(target, funcName) && args.length >= 1) {
+                            switch (args[0].def) {
+                                case EVar(varName):
+                                    return makeASTWithMeta(
+                                        EMatch(PVar(varName), transformed),
+                                        node.metadata, node.pos
+                                    );
+                                default:
+                            }
+                        }
+
+                    // Discard binder form: `_ = Module.op(var, ...)` should still rebind the var.
+                    case EMatch(pattern, expr):
+                        var isDiscard = switch (pattern) {
+                            case PWildcard: true;
+                            case PVar("_"): true;
+                            default: false;
+                        };
+                        if (isDiscard) {
+                            switch (expr.def) {
+                                case ERemoteCall(module, funcName, args) if (args != null && args.length >= 1 && remoteCallNeedsRebind(module, funcName)):
+                                    switch (args[0].def) {
+                                        case EVar(varName):
+                                            return makeASTWithMeta(EMatch(PVar(varName), expr), node.metadata, node.pos);
+                                        default:
+                                    }
+                                case ECall(target, funcName, args) if (target != null && args != null && args.length >= 1 && remoteCallNeedsRebind(target, funcName)):
+                                    switch (args[0].def) {
+                                        case EVar(varName):
+                                            return makeASTWithMeta(EMatch(PVar(varName), expr), node.metadata, node.pos);
+                                        default:
+                                    }
+                                default:
+                            }
+                        }
+
+                    case EBinary(Match, left, right):
+                        var isDiscard = switch (left.def) {
+                            case EVar(name) if (name == "_" || isInfraDiscardVar(name)): true;
+                            default: false;
+                        };
+                        if (isDiscard) {
+                            switch (right.def) {
+                                case ERemoteCall(module, funcName, args) if (args != null && args.length >= 1 && remoteCallNeedsRebind(module, funcName)):
+                                    switch (args[0].def) {
+                                        case EVar(varName):
+                                            return makeASTWithMeta(EMatch(PVar(varName), right), node.metadata, node.pos);
+                                        default:
+                                    }
+                                case ECall(target, funcName, args) if (target != null && args != null && args.length >= 1 && remoteCallNeedsRebind(target, funcName)):
+                                    switch (args[0].def) {
+                                        case EVar(varName):
+                                            return makeASTWithMeta(EMatch(PVar(varName), right), node.metadata, node.pos);
+                                        default:
+                                    }
+                                default:
                             }
                         }
                         
@@ -5464,7 +5594,11 @@ class ElixirASTTransformer {
 
 	                                            if (reassigned != null) {
 	                                                if (!isNilValue(reassigned)) {
-	                                                    shouldSkip = true;
+	                                                    // Only remove the nil init when the reassignment does not depend
+	                                                    // on the prior binding (e.g., `x = if cond, do: v, else: x`).
+	                                                    if (!reflaxe.elixir.ast.analyzers.VariableUsageCollector.usedInFunctionScope(reassigned, varName)) {
+	                                                        shouldSkip = true;
+	                                                    }
 	                                                }
 	                                                break;
 	                                            }
@@ -5619,12 +5753,14 @@ class ElixirASTTransformer {
     static function handleFunctionParameters(args: Array<EPattern>, guards: Null<ElixirAST>, body: ElixirAST): {args: Array<EPattern>, body: ElixirAST, hasChanges: Bool} {
         // Extract parameter names from patterns
         var paramNames: Map<String, Bool> = new Map();
-        var paramRenames: Map<String, String> = new Map();
         
         function extractParamNames(pattern: EPattern) {
             switch(pattern) {
                 case PVar(name):
-                    if (!name.startsWith("_")) { // Don't track already underscored params
+                    // Track all named parameters (including underscored ones) so we can:
+                    // - mark usage accurately (even for `_arg` style params)
+                    // - replace truly unused params with `_` (wildcard) to avoid duplicate-binder warnings.
+                    if (name != null && name != "" && name != "_") {
                         paramNames.set(name, false); // false = not yet seen as used
                     }
                 case PTuple(patterns):
@@ -5732,6 +5868,48 @@ class ElixirASTTransformer {
                         // DISABLED: trace('[XRay PrefixUnusedParams] Checking keyword list value for parameter usage');
                         #end
                     }
+                case ESigil(type, _content, _modifiers) if (type == "H" || type == "h"):
+                    // Phoenix HEEx (~H) requires an `assigns` variable in scope, even when
+                    // the function body only references assigns implicitly via `@foo`.
+                    if (paramNames.exists("assigns")) paramNames.set("assigns", true);
+                    if (paramNames.exists("_assigns")) paramNames.set("_assigns", true);
+
+                    // Also treat any function parameters referenced inside the ~H content string
+                    // as "used" so we don't rewrite their binders to `_`. This is required for
+                    // cases like `defp render_post(post) do ~H"... <%= post.title %> ..." end`.
+                    if (_content != null) {
+                        for (name => _ in paramNames) {
+                            if (!paramNames.exists(name) || paramNames.get(name) == true) continue;
+                            var pattern = '\\b' + name + '\\b';
+                            if (new EReg(pattern, "").match(_content)) {
+                                paramNames.set(name, true);
+                            }
+                        }
+                    }
+
+                    // When available, traverse the builder-attached typed HEEx AST so that
+                    // parameter usage inside attribute expressions is counted as "used".
+                    var meta = ast.metadata;
+                    if (meta != null && meta.heexAST != null) {
+                        function walkHeex(node: ElixirAST) {
+                            if (node == null || node.def == null) return;
+                            switch (node.def) {
+                                case EFragment(_tag, attributes, children):
+                                    if (attributes != null) {
+                                        for (a in attributes) if (a != null && a.value != null) markUsedVars(a.value);
+                                    }
+                                    if (children != null) {
+                                        for (c in children) if (c != null) walkHeex(c);
+                                    }
+                                default:
+                                    markUsedVars(node);
+                            }
+                        }
+
+                        for (node in meta.heexAST) {
+                            if (node != null) walkHeex(node);
+                        }
+                    }
                 default:
                     iterateAST(ast, markUsedVars);
             }
@@ -5745,68 +5923,62 @@ class ElixirASTTransformer {
         // Check body for parameter usage
         markUsedVars(body);
         
-        // M0 STABILIZATION: Disable underscore prefixing temporarily
         var hasChanges = false;
-        /* Disabled to prevent variable mismatches
-        for (name => used in paramNames) {
-            if (!used && !name.startsWith("_")) {
-                var newName = "_" + name;
-                paramRenames.set(name, newName);
-                hasChanges = true;
-                #if debug_ast_transformer
-                // DISABLED: trace('[XRay PrefixUnusedParams] Will rename unused param: $name -> $newName');
-                #end
-            }
-        }
-        */
-        
-        // If no changes needed, return original
-        if (!hasChanges) {
-            return {args: args, body: body, hasChanges: false};
-        }
-        
-        // Apply renames to argument patterns
-        function renameInPattern(pattern: EPattern): EPattern {
-            switch(pattern) {
+
+        // Replace unused parameters with the wildcard `_` (PWildcard).
+        //
+        // WHY:
+        // - Prefixing unused params with `_name` can still produce warnings when the same
+        //   underscored binder appears multiple times (e.g., `_arg, _arg`), because those
+        //   are real variables and must match equal values.
+        // - Haxe cannot emit duplicate argument names, so repeated binders are always
+        //   compiler-generated hygiene artifacts; `_` is the correct Elixir idiom.
+        //
+        // HOW:
+        // - After usage analysis, convert any unused `PVar(name)` (including underscored)
+        //   into `PWildcard`. No body rewrite is needed because the variable is unused.
+        function rewriteUnusedInPattern(pattern: EPattern): EPattern {
+            if (pattern == null) return pattern;
+            return switch(pattern) {
                 case PVar(name):
-                    if (paramRenames.exists(name)) {
-                        return PVar(paramRenames.get(name));
+                    var used = (name != null && paramNames.exists(name)) ? paramNames.get(name) : true;
+                    if (name != null && name != "" && name != "_" && used == false) {
+                        hasChanges = true;
+                        PWildcard;
+                    } else {
+                        pattern;
                     }
-                    return pattern;
                 case PTuple(patterns):
-                    return PTuple(patterns.map(renameInPattern));
+                    PTuple(patterns.map(rewriteUnusedInPattern));
                 case PList(patterns):
-                    return PList(patterns.map(renameInPattern));
-                case PMap(pairs):
-                    return PMap([for (pair in pairs) {key: pair.key, value: renameInPattern(pair.value)}]);
+                    PList(patterns.map(rewriteUnusedInPattern));
                 case PCons(head, tail):
-                    return PCons(renameInPattern(head), renameInPattern(tail));
+                    PCons(rewriteUnusedInPattern(head), rewriteUnusedInPattern(tail));
+                case PMap(pairs):
+                    PMap([for (pair in pairs) {key: pair.key, value: rewriteUnusedInPattern(pair.value)}]);
+                case PStruct(name, fields):
+                    PStruct(name, [for (f in fields) {key: f.key, value: rewriteUnusedInPattern(f.value)}]);
                 case PPin(p):
-                    return PPin(renameInPattern(p));
-                default:
-                    return pattern;
-            }
-        }
-        
-        var newArgs = args.map(renameInPattern);
-        
-        // Apply renames to the body as well to handle cases where usage detection
-        // might be incomplete (e.g., field access patterns that weren't detected)
-        function renameInAST(ast: ElixirAST): ElixirAST {
-            switch(ast.def) {
-                case EVar(name):
-                    if (paramRenames.exists(name)) {
-                        return {def: EVar(paramRenames.get(name)), metadata: ast.metadata};
+                    PPin(rewriteUnusedInPattern(p));
+                case PAlias(varName, inner):
+                    // If the alias binder itself is unused, drop it to `_` and keep matching on inner.
+                    var used = (varName != null && paramNames.exists(varName)) ? paramNames.get(varName) : true;
+                    if (varName != null && varName != "" && varName != "_" && used == false) {
+                        hasChanges = true;
+                        rewriteUnusedInPattern(inner);
+                    } else {
+                        PAlias(varName, rewriteUnusedInPattern(inner));
                     }
-                    return ast;
+                case PBinary(segments):
+                    PBinary([for (seg in segments) {size: seg.size, type: seg.type, modifiers: seg.modifiers, pattern: rewriteUnusedInPattern(seg.pattern)}]);
                 default:
-                    return transformAST(ast, renameInAST);
-            }
+                    pattern;
+            };
         }
-        
-        var newBody = renameInAST(body);
-        
-        return {args: newArgs, body: newBody, hasChanges: true};
+
+        var newArgs = args.map(rewriteUnusedInPattern);
+        if (!hasChanges) return {args: args, body: body, hasChanges: false};
+        return {args: newArgs, body: body, hasChanges: true};
     }
     
     /**
@@ -5826,133 +5998,166 @@ class ElixirASTTransformer {
             return;
         }
 
-        switch(node.def) {
-            case EBlock(expressions):
-                for (expr in expressions) if (expr != null) visitor(expr);
-            case EModule(name, attributes, body):
-                for (b in body) if (b != null) visitor(b);
-            case EDefmodule(name, doBlock):
-                if (doBlock != null) visitor(doBlock);
-            case EDef(name, args, guards, body):
-                if (body != null) visitor(body);
-            case EDefp(name, args, guards, body):
-                if (body != null) visitor(body);
-            case EIf(condition, thenBranch, elseBranch):
-                if (condition != null) visitor(condition);
-                if (thenBranch != null) visitor(thenBranch);
-                if (elseBranch != null) visitor(elseBranch);
-            case ECase(expr, clauses):
-                if (expr != null) visitor(expr);
-                for (clause in clauses) {
-                    if (clause != null) {
-                        if (clause.guard != null) visitor(clause.guard);
-                        if (clause.body != null) visitor(clause.body);
-                    }
-                }
-            case EMatch(pattern, expr):
-                if (expr != null) visitor(expr);
-            case EBinary(op, left, right):
-                if (left != null) visitor(left);
-                if (right != null) visitor(right);
-            case EUnary(op, expr):
-                if (expr != null) visitor(expr);
-            case ECall(target, funcName, args):
-                if (target != null) visitor(target);
-                for (arg in args) if (arg != null) visitor(arg);
-            case EMacroCall(macroName, args, doBlock):
-                for (arg in args) if (arg != null) visitor(arg);
-                if (doBlock != null) visitor(doBlock);
-            case ETuple(elements):
-                for (elem in elements) if (elem != null) visitor(elem);
-            case EList(elements):
-                for (elem in elements) if (elem != null) visitor(elem);
-            case EMap(pairs):
-                for (pair in pairs) {
-                    if (pair != null) {
-                        if (pair.key != null) visitor(pair.key);
-                        if (pair.value != null) visitor(pair.value);
-                    }
-                }
-            case EStruct(name, fields):
-                for (field in fields) if (field != null && field.value != null) visitor(field.value);
-            case EFor(generators, filters, body, into, uniq):
-                for (gen in generators) {
-                    if (gen != null && gen.expr != null) visitor(gen.expr);
-                }
-                for (filter in filters) if (filter != null) visitor(filter);
-                if (body != null) visitor(body);
-                if (into != null) visitor(into);
-            case EFn(clauses):
-                for (clause in clauses) {
-                    if (clause != null) {
-                        if (clause.guard != null) visitor(clause.guard);
-                        if (clause.body != null) visitor(clause.body);
-                    }
-                }
-            case EReceive(clauses, after):
-                for (clause in clauses) {
-                    if (clause != null) {
-                        if (clause.guard != null) visitor(clause.guard);
-                        if (clause.body != null) visitor(clause.body);
-                    }
-                }
-                if (after != null) {
-                    if (after.timeout != null) visitor(after.timeout);
-                    if (after.body != null) visitor(after.body);
-                }
-            case ERemoteCall(module, funcName, args):
-                if (module != null) visitor(module);
-                for (arg in args) if (arg != null) visitor(arg);
-            case ERange(start, end, _exclusive, step):
-                if (start != null) visitor(start);
-                if (end != null) visitor(end);
-                if (step != null) visitor(step);
-            case EParen(expr):
-                if (expr != null) visitor(expr);
-            case EDo(body):
-                for (stmt in body) if (stmt != null) visitor(stmt);
-            case ETry(body, rescue, catchClauses, afterBlock, elseBlock):
-                if (body != null) visitor(body);
-                if (rescue != null) {
-                    for (clause in rescue) {
-                        // ERescueClause structure would need checking
-                        if (clause != null && clause.body != null) visitor(clause.body);
-                    }
-                }
-                if (catchClauses != null) {
-                    for (clause in catchClauses) {
-                        if (clause != null && clause.body != null) visitor(clause.body);
-                    }
-                }
-                if (afterBlock != null) visitor(afterBlock);
-                if (elseBlock != null) visitor(elseBlock);
-            case EWith(clauses, doBlock, elseBlock):
-                for (clause in clauses) {
-                    // Pattern is not an ElixirAST, only visit the expression
-                    if (clause != null && clause.expr != null) visitor(clause.expr);
-                }
-                if (doBlock != null) visitor(doBlock);
-                if (elseBlock != null) visitor(elseBlock);
-            case ECond(clauses):
-                for (clause in clauses) {
-                    if (clause != null) {
-                        if (clause.condition != null) visitor(clause.condition);
-                        if (clause.body != null) visitor(clause.body);
-                    }
-                }
-            case EField(object, field):
-                if (object != null) visitor(object);
-            case EModuleAttribute(name, value):
-                if (value != null) visitor(value);
-            case EKeywordList(pairs):
-                // Visit values in keyword list
-                for (pair in pairs) {
-                    if (pair != null && pair.value != null) visitor(pair.value);
-                }
-            case _:
-                // Leaf nodes - nothing to iterate
-        }
-    }
+	        switch(node.def) {
+	            case EBlock(expressions):
+	                for (expr in expressions) if (expr != null) visitor(expr);
+	            case EModule(name, attributes, body):
+	                for (b in body) if (b != null) visitor(b);
+	            case EDefmodule(name, doBlock):
+	                if (doBlock != null) visitor(doBlock);
+	            case EDef(name, args, guards, body):
+	                if (body != null) visitor(body);
+	            case EDefp(name, args, guards, body):
+	                if (body != null) visitor(body);
+	            case EIf(condition, thenBranch, elseBranch):
+	                if (condition != null) visitor(condition);
+	                if (thenBranch != null) visitor(thenBranch);
+	                if (elseBranch != null) visitor(elseBranch);
+	            case EUnless(condition, body, elseBranch):
+	                if (condition != null) visitor(condition);
+	                if (body != null) visitor(body);
+	                if (elseBranch != null) visitor(elseBranch);
+	            case ECase(expr, clauses):
+	                if (expr != null) visitor(expr);
+	                for (clause in clauses) {
+	                    if (clause != null) {
+	                        if (clause.guard != null) visitor(clause.guard);
+	                        if (clause.body != null) visitor(clause.body);
+	                    }
+	                }
+	            case EMatch(pattern, expr):
+	                if (expr != null) visitor(expr);
+	            case EBinary(op, left, right):
+	                if (left != null) visitor(left);
+	                if (right != null) visitor(right);
+	            case EPipe(left, right):
+	                if (left != null) visitor(left);
+	                if (right != null) visitor(right);
+	            case EUnary(op, expr):
+	                if (expr != null) visitor(expr);
+	            case ERaise(exception, attributes):
+	                if (exception != null) visitor(exception);
+	                if (attributes != null) visitor(attributes);
+	            case EThrow(value):
+	                if (value != null) visitor(value);
+	            case ECall(target, funcName, args):
+	                if (target != null) visitor(target);
+	                for (arg in args) if (arg != null) visitor(arg);
+	            case EMacroCall(macroName, args, doBlock):
+	                for (arg in args) if (arg != null) visitor(arg);
+	                if (doBlock != null) visitor(doBlock);
+	            case ETuple(elements):
+	                for (elem in elements) if (elem != null) visitor(elem);
+	            case EList(elements):
+	                for (elem in elements) if (elem != null) visitor(elem);
+	            case EMap(pairs):
+	                for (pair in pairs) {
+	                    if (pair != null) {
+	                        if (pair.key != null) visitor(pair.key);
+	                        if (pair.value != null) visitor(pair.value);
+	                    }
+	                }
+	            case EStruct(name, fields):
+	                for (field in fields) if (field != null && field.value != null) visitor(field.value);
+	            case EStructUpdate(struct, fields):
+	                if (struct != null) visitor(struct);
+	                for (field in fields) if (field != null && field.value != null) visitor(field.value);
+	            case EAccess(target, key):
+	                if (target != null) visitor(target);
+	                if (key != null) visitor(key);
+	            case EBitstring(segments):
+	                for (seg in segments) {
+	                    if (seg == null) continue;
+	                    if (seg.value != null) visitor(seg.value);
+	                    if (seg.size != null) visitor(seg.size);
+	                }
+	            case EFor(generators, filters, body, into, uniq):
+	                for (gen in generators) {
+	                    if (gen != null && gen.expr != null) visitor(gen.expr);
+	                }
+	                for (filter in filters) if (filter != null) visitor(filter);
+	                if (body != null) visitor(body);
+	                if (into != null) visitor(into);
+	            case EFn(clauses):
+	                for (clause in clauses) {
+	                    if (clause != null) {
+	                        if (clause.guard != null) visitor(clause.guard);
+	                        if (clause.body != null) visitor(clause.body);
+	                    }
+	                }
+	            case EReceive(clauses, after):
+	                for (clause in clauses) {
+	                    if (clause != null) {
+	                        if (clause.guard != null) visitor(clause.guard);
+	                        if (clause.body != null) visitor(clause.body);
+	                    }
+	                }
+	                if (after != null) {
+	                    if (after.timeout != null) visitor(after.timeout);
+	                    if (after.body != null) visitor(after.body);
+	                }
+	            case ERemoteCall(module, funcName, args):
+	                if (module != null) visitor(module);
+	                for (arg in args) if (arg != null) visitor(arg);
+	            case ERange(start, end, _exclusive, step):
+	                if (start != null) visitor(start);
+	                if (end != null) visitor(end);
+	                if (step != null) visitor(step);
+	            case EParen(expr):
+	                if (expr != null) visitor(expr);
+	            case EDo(body):
+	                for (stmt in body) if (stmt != null) visitor(stmt);
+	            case ETry(body, rescue, catchClauses, afterBlock, elseBlock):
+	                if (body != null) visitor(body);
+	                if (rescue != null) {
+	                    for (clause in rescue) {
+	                        // ERescueClause structure would need checking
+	                        if (clause != null && clause.body != null) visitor(clause.body);
+	                    }
+	                }
+	                if (catchClauses != null) {
+	                    for (clause in catchClauses) {
+	                        if (clause != null && clause.body != null) visitor(clause.body);
+	                    }
+	                }
+	                if (afterBlock != null) visitor(afterBlock);
+	                if (elseBlock != null) visitor(elseBlock);
+	            case EWith(clauses, doBlock, elseBlock):
+	                for (clause in clauses) {
+	                    // Pattern is not an ElixirAST, only visit the expression
+	                    if (clause != null && clause.expr != null) visitor(clause.expr);
+	                }
+	                if (doBlock != null) visitor(doBlock);
+	                if (elseBlock != null) visitor(elseBlock);
+	            case EUse(_module, options):
+	                for (opt in options) if (opt != null) visitor(opt);
+	            case ECond(clauses):
+	                for (clause in clauses) {
+	                    if (clause != null) {
+	                        if (clause.condition != null) visitor(clause.condition);
+	                        if (clause.body != null) visitor(clause.body);
+	                    }
+	                }
+	            case EField(object, field):
+	                if (object != null) visitor(object);
+	            case EModuleAttribute(name, value):
+	                if (value != null) visitor(value);
+	            case EKeywordList(pairs):
+	                // Visit values in keyword list
+	                for (pair in pairs) {
+	                    if (pair != null && pair.value != null) visitor(pair.value);
+	                }
+	            case EFragment(_tag, attributes, children):
+	                if (attributes != null) {
+	                    for (a in attributes) if (a != null && a.value != null) visitor(a.value);
+	                }
+	                if (children != null) {
+	                    for (c in children) if (c != null) visitor(c);
+	                }
+	            case _:
+	                // Leaf nodes - nothing to iterate
+	        }
+	    }
     
     /**
      * Helper function to transform AST nodes recursively

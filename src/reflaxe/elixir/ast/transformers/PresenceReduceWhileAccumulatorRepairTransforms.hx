@@ -15,6 +15,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   appends to an accumulator via Enum.concat(acc, [expr]) but no prior
  *   initialization exists, inject `acc = []` before the loop and, if the
  *   function returns `[]`, change it to return `acc`.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class PresenceReduceWhileAccumulatorRepairTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

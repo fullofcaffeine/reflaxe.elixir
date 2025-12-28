@@ -64,7 +64,7 @@ defmodule EnhancedPatternMatchingTest do
           if (duration >= 1000 and duration < 5000) do
             "Normal completion: #{(fn -> result end).()}"
           else
-            _duration = g_value
+            duration = g_value
             "Slow completion: #{(fn -> result end).()}"
           end
         end
@@ -74,7 +74,7 @@ defmodule EnhancedPatternMatchingTest do
         if (retries < 3) do
           "Recoverable failure: #{(fn -> error end).()}"
         else
-          _retries = g_value
+          retries = g_value
           "Permanent failure: #{(fn -> error end).()}"
         end
     end)
@@ -101,25 +101,15 @@ defmodule EnhancedPatternMatchingTest do
   {:error, error, context} ->
     g_value = context
     context = g_value
-    context = if (Kernel.is_nil(context)) do
-      context = ""
-      context
-    else
-      context
-    end
-    result = {:error, error, context}
+    context = if (Kernel.is_nil(context)), do: "", else: context
+    _result = {:error, error, context}
 end)) do
       {:success, processed} -> _ = format_output(processed)
       {:error, error, context} ->
         g_value = context
         context = g_value
-        context = if (Kernel.is_nil(context)) do
-          context = ""
-          context
-        else
-          context
-        end
-        result = {:error, error, context}
+        context = if (Kernel.is_nil(context)), do: "", else: context
+        _result = {:error, error, context}
     end)
   end
   def match_array_patterns(arr) do
@@ -209,7 +199,7 @@ end))
     end)
   end
   def match_binary_pattern(data) do
-    bytes = (case bytes.of_string(data) do
+    bytes = (case Bytes.of_string(data, nil) do
       [] -> "empty"
       [_head | _tail] -> "single byte: #{(fn -> Kernel.to_string(bytes.get(bytes, 0)) end).()}"
       _ ->
@@ -225,46 +215,45 @@ end))
   defp validate_input(input) do
     if (String.length(input) == 0) do
       context = "validation"
-      context = if (Kernel.is_nil(context)) do
-        context = ""
-        context
-      else
-        context
-      end
-      result = {:error, "Empty input", context}
+      context = if (Kernel.is_nil(context)), do: "", else: context
+      _result = {:error, "Empty input", context}
     else
       if (String.length(input) > 1000) do
         context = "validation"
-        context = if (Kernel.is_nil(context)) do
-          context = ""
-          context
-        else
-          context
-        end
-        result = {:error, "Input too long", context}
+        context = if (Kernel.is_nil(context)), do: "", else: context
+        _result = {:error, "Input too long", context}
       else
         value = String.downcase(input)
-        result = {:success, value}
+        _result = {:success, value}
       end
+    end
+  end
+  defp process_data(data) do
+    cond_value = ((case :binary.match(data, "error") do
+  {pos, _} -> pos
+  :nomatch -> -1
+end))
+    if (cond_value >= 0) do
+      context = "processing"
+      context = if (Kernel.is_nil(context)), do: "", else: context
+      _result = {:error, "Data contains error keyword", context}
+    else
+      value = String.upcase(data)
+      _result = {:success, value}
     end
   end
   defp format_output(data) do
     if (String.length(data) == 0) do
       context = "formatting"
-      context = if (Kernel.is_nil(context)) do
-        context = ""
-        context
-      else
-        context
-      end
-      result = {:error, "No data to format", context}
+      context = if (Kernel.is_nil(context)), do: "", else: context
+      _result = {:error, "No data to format", context}
     else
-      result = {:success, "Formatted: [" <> data <> "]"}
+      _result = {:success, "Formatted: [" <> data <> "]"}
     end
   end
   def main() do
-    value = result = {:success, "deep value"}
-    nested_success = result = {:success, value}
+    value = nil
+    _nested_success = _result = {:success, value}
     nil
   end
 end

@@ -5,7 +5,8 @@
   "std.ex",
   "main.ex",
   "haxe/iterators/array_iterator.ex",
-  "haxe/functional/result.ex"
+  "haxe/functional/result.ex",
+  "elixir/types/_atom/atom_impl_.ex"
 ],
   "id": 0,
   "wasCached": false,

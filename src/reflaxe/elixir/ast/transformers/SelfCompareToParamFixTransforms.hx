@@ -20,6 +20,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Some late lowerings/hygiene leave self-compare artifacts in removal predicates.
  *   This pass corrects them at a structural level without app-specific names.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SelfCompareToParamFixTransforms {
     public static function paramSelfCompareFixPass(ast: ElixirAST): ElixirAST {

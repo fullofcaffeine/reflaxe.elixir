@@ -28,6 +28,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   that initializes a temp list, performs Enum.each with concat to temp,
  *   then returns temp as its final expression. Synthesize Enum.map(list, fn ->
  *   expr end) and pipe into Enum.join(sep).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class JoinArgListBuilderToMapJoinTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
