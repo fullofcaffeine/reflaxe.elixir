@@ -105,11 +105,11 @@ class EnumEachOuterAssignToReduceTransforms {
                     var rewrittenStmt = makeASTWithMeta(EBlock(rewrittenInner), stmt.metadata, stmt.pos);
                     out.push(rewrittenStmt);
                     continue;
-                case EDo(innerStmts2):
-                    var innerFollow2 = stmts.slice(index + 1).concat(followStmts);
-                    var rewrittenInner2 = rewriteStatementsWithContext(innerStmts2, boundSoFar, innerFollow2);
-                    var rewrittenStmt2 = makeASTWithMeta(EDo(rewrittenInner2), stmt.metadata, stmt.pos);
-                    out.push(rewrittenStmt2);
+                case EDo(innerStatements):
+                    var innerFollowStatements = stmts.slice(index + 1).concat(followStmts);
+                    var rewrittenInnerStatements = rewriteStatementsWithContext(innerStatements, boundSoFar, innerFollowStatements);
+                    var rewrittenStmt = makeASTWithMeta(EDo(rewrittenInnerStatements), stmt.metadata, stmt.pos);
+                    out.push(rewrittenStmt);
                     continue;
                 default:
             }
@@ -187,13 +187,13 @@ class EnumEachOuterAssignToReduceTransforms {
 
             var accName = assignedName + "_acc";
 
-            var cond2 = replaceVar(assignment.condition, assignedName, accName);
-            var rhs2 = replaceVar(assignment.rhs, assignedName, accName);
+            var conditionWithAcc = replaceVar(assignment.condition, assignedName, accName);
+            var rhsWithAcc = replaceVar(assignment.rhs, assignedName, accName);
 
             var reduceFn = makeAST(EFn([{
                 args: [PVar(binderName), PVar(accName)],
                 guard: null,
-                body: makeAST(EIf(cond2, rhs2, makeAST(EVar(accName))))
+                body: makeAST(EIf(conditionWithAcc, rhsWithAcc, makeAST(EVar(accName))))
             }]));
             var reduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce", [collectionExpr, makeAST(EVar(assignedName)), reduceFn]));
 
@@ -217,9 +217,9 @@ class EnumEachOuterAssignToReduceTransforms {
                 extractEnumEachCall(rhs);
             case EMatch(PWildcard, rhs):
                 extractEnumEachCall(rhs);
-            case EBinary(Match, left, rhs2):
+            case EBinary(Match, left, rhs):
                 var unwrappedLeft = unwrapParen(left);
-                switch (unwrappedLeft.def) { case EVar("_"): extractEnumEachCall(rhs2); default: null; }
+                switch (unwrappedLeft.def) { case EVar("_"): extractEnumEachCall(rhs); default: null; }
             default:
                 null;
         };
@@ -319,11 +319,11 @@ class EnumEachOuterAssignToReduceTransforms {
         return switch (unwrapped.def) {
             case EMatch(PVar(name), rhs):
                 { name: name, rhs: rhs };
-            case EBinary(Match, left, rhs2):
+            case EBinary(Match, left, rhs):
                 var unwrappedLeft = unwrapParen(left);
                 switch (unwrappedLeft.def) {
-                    case EVar(name2):
-                        { name: name2, rhs: rhs2 };
+                    case EVar(varName):
+                        { name: varName, rhs: rhs };
                     default:
                         null;
                 }
@@ -339,7 +339,7 @@ class EnumEachOuterAssignToReduceTransforms {
                 out.set(name, true);
             case EBinary(Match, left, _):
                 var unwrappedLeft = unwrapParen(left);
-                switch (unwrappedLeft.def) { case EVar(name2): out.set(name2, true); default: }
+                switch (unwrappedLeft.def) { case EVar(varName): out.set(varName, true); default: }
             default:
         }
     }
@@ -368,13 +368,13 @@ class EnumEachOuterAssignToReduceTransforms {
                 case EBinary(Match, _left, rhs):
                     // Ignore the binder; only RHS can be an expression use.
                     visit(rhs);
-                case EMatch(_pat, rhs2):
-                    visit(rhs2);
+                case EMatch(_pat, rhs):
+                    visit(rhs);
 
                 case EBlock(stmts):
                     for (s in stmts) visit(s);
-                case EDo(stmts2):
-                    for (s2 in stmts2) visit(s2);
+                case EDo(statements):
+                    for (statement in statements) visit(statement);
                 case EIf(c, t, el):
                     visit(c);
                     visit(t);
@@ -388,14 +388,14 @@ class EnumEachOuterAssignToReduceTransforms {
                         visit(cl.condition);
                         visit(cl.body);
                     }
-                case ECase(subject, clauses2):
+                case ECase(subject, clauses):
                     visit(subject);
-                    for (cl2 in clauses2) {
-                        if (cl2.guard != null) visit(cl2.guard);
-                        visit(cl2.body);
+                    for (clause in clauses) {
+                        if (clause.guard != null) visit(clause.guard);
+                        visit(clause.body);
                     }
-                case EWith(clauses3, doBlock, elseBlock):
-                    for (c in clauses3) visit(c.expr);
+                case EWith(clauses, doBlock, elseBlock):
+                    for (clause in clauses) visit(clause.expr);
                     visit(doBlock);
                     if (elseBlock != null) visit(elseBlock);
                 case EBinary(_, l, r):
@@ -403,59 +403,59 @@ class EnumEachOuterAssignToReduceTransforms {
                     visit(r);
                 case EUnary(_, inner):
                     visit(inner);
-                case EPipe(l2, r2):
-                    visit(l2);
-                    visit(r2);
+                case EPipe(left, right):
+                    visit(left);
+                    visit(right);
                 case ECall(tgt, _fn, args):
                     if (tgt != null) visit(tgt);
                     for (a in args) visit(a);
-                case ERemoteCall(mod, _fn2, args2):
+                case ERemoteCall(mod, _functionName, args):
                     visit(mod);
-                    for (a2 in args2) visit(a2);
+                    for (arg in args) visit(arg);
                 case EField(t, _):
                     visit(t);
-                case EAccess(t2, k):
-                    visit(t2);
+                case EAccess(target, k):
+                    visit(target);
                     visit(k);
                 case ETuple(elems) | EList(elems):
-                    for (el3 in elems) visit(el3);
+                    for (elem in elems) visit(elem);
                 case EMap(pairs):
                     for (p in pairs) { visit(p.key); visit(p.value); }
-                case EKeywordList(pairs2):
-                    for (p2 in pairs2) visit(p2.value);
+                case EKeywordList(pairs):
+                    for (pair in pairs) visit(pair.value);
                 case EStruct(_m, fields):
                     for (f in fields) visit(f.value);
-                case EStructUpdate(base, fields2):
+                case EStructUpdate(base, fields):
                     visit(base);
-                    for (f2 in fields2) visit(f2.value);
+                    for (field in fields) visit(field.value);
                 case ERange(a, b, _, step):
                     visit(a);
                     visit(b);
                     if (step != null) visit(step);
-                case EParen(inner2):
-                    visit(inner2);
+                case EParen(inner):
+                    visit(inner);
                 case EFor(gens, filters, body, into, _uniq):
                     for (g in gens) visit(g.expr);
-                    for (f3 in filters) visit(f3);
+                    for (filter in filters) visit(filter);
                     if (body != null) visit(body);
                     if (into != null) visit(into);
                 case ECapture(capturedExpr, _):
                     visit(capturedExpr);
-                case EReceive(clauses4, after):
-                    for (cl3 in clauses4) {
-                        if (cl3.guard != null) visit(cl3.guard);
-                        visit(cl3.body);
+                case EReceive(clauses, after):
+                    for (clause in clauses) {
+                        if (clause.guard != null) visit(clause.guard);
+                        visit(clause.body);
                     }
                     if (after != null) {
                         visit(after.timeout);
                         visit(after.body);
                     }
-                case ETry(body2, rescueClauses, catchClauses, afterBlock, elseBlock2):
-                    visit(body2);
+                case ETry(tryBody, rescueClauses, catchClauses, afterBlock, elseBlock):
+                    visit(tryBody);
                     for (r in rescueClauses) visit(r.body);
-                    for (c2 in catchClauses) visit(c2.body);
+                    for (catchClause in catchClauses) visit(catchClause.body);
                     if (afterBlock != null) visit(afterBlock);
-                    if (elseBlock2 != null) visit(elseBlock2);
+                    if (elseBlock != null) visit(elseBlock);
                 case ERaise(exception, attributes):
                     visit(exception);
                     if (attributes != null) visit(attributes);
@@ -464,18 +464,18 @@ class EnumEachOuterAssignToReduceTransforms {
                 case ESend(target, message):
                     visit(target);
                     visit(message);
-                case EModuleAttribute(_name, value2):
-                    visit(value2);
-                case EQuote(options, expr2):
+                case EModuleAttribute(_name, value):
+                    visit(value);
+                case EQuote(options, expr):
                     for (o in options) visit(o);
-                    visit(expr2);
-                case EUnquote(expr3) | EUnquoteSplicing(expr3):
-                    visit(expr3);
-                case EUse(_module, options2):
-                    for (o2 in options2) visit(o2);
+                    visit(expr);
+                case EUnquote(expr) | EUnquoteSplicing(expr):
+                    visit(expr);
+                case EUse(_module, options):
+                    for (option in options) visit(option);
                 case EFragment(_tag, attrs, children):
-                    for (a3 in attrs) visit(a3.value);
-                    for (c3 in children) visit(c3);
+                    for (attribute in attrs) visit(attribute.value);
+                    for (child in children) visit(child);
                 default:
             }
         }

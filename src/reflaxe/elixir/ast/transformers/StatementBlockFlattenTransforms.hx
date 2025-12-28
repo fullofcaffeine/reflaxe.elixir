@@ -49,9 +49,9 @@ class StatementBlockFlattenTransforms {
                 case EBlock(stmts):
                     var flattened = flattenStatementList(stmts);
                     flattened == stmts ? n : makeASTWithMeta(EBlock(flattened), n.metadata, n.pos);
-                case EDo(stmts2):
-                    var flattened2 = flattenStatementList(stmts2);
-                    flattened2 == stmts2 ? n : makeASTWithMeta(EDo(flattened2), n.metadata, n.pos);
+                case EDo(statements):
+                    var flattenedStatements = flattenStatementList(statements);
+                    flattenedStatements == statements ? n : makeASTWithMeta(EDo(flattenedStatements), n.metadata, n.pos);
                 default:
                     n;
             }
@@ -76,9 +76,9 @@ class StatementBlockFlattenTransforms {
                 case EBlock(inner):
                     changed = true;
                     for (it in inner) out.push(it);
-                case EDo(inner2):
+                case EDo(innerStatements):
                     changed = true;
-                    for (it2 in inner2) out.push(it2);
+                    for (statement in innerStatements) out.push(statement);
                 default:
                     out.push(s);
             }
@@ -89,4 +89,3 @@ class StatementBlockFlattenTransforms {
 }
 
 #end
-
