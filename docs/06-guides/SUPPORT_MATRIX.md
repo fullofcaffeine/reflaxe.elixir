@@ -26,7 +26,7 @@ Our GitHub Actions CI runs primarily on **Ubuntu** plus a macOS smoke job. CI cu
 
 - Haxe 5 preview smoke (Ubuntu, **non‑gating**):
   - Uses Haxe `nightly` (preview)
-  - Runs `npm run test:quick`
+  - Runs a bounded subset (`npm run test:quick` + `npm run test:mix-fast`)
   - This job is **allowed to fail** while Haxe 5 support is still being evaluated.
 
 Phoenix coverage:
