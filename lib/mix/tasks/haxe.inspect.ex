@@ -13,6 +13,7 @@ defmodule Mix.Tasks.Haxe.Inspect do
       mix haxe.inspect FILE --with-mappings
       mix haxe.inspect FILE --compare
       mix haxe.inspect FILE --format json
+      mix haxe.inspect FILE --json
       mix haxe.inspect --analyze-patterns
       mix haxe.inspect --list-files
   
@@ -72,6 +73,7 @@ defmodule Mix.Tasks.Haxe.Inspect do
     with_mappings: :boolean,
     compare: :boolean,
     format: :string,
+    json: :boolean,
     analyze_patterns: :boolean,
     list_files: :boolean,
     show_annotations: :boolean,
@@ -84,6 +86,7 @@ defmodule Mix.Tasks.Haxe.Inspect do
     m: :with_mappings,
     c: :compare,
     f: :format,
+    j: :json,
     a: :analyze_patterns,
     l: :list_files,
     s: :show_annotations,
@@ -97,6 +100,7 @@ defmodule Mix.Tasks.Haxe.Inspect do
   
   def run(args) do
     {opts, remaining_args} = OptionParser.parse!(args, strict: @switches, aliases: @aliases)
+    opts = normalize_opts(opts)
     
     cond do
       opts[:help] ->
@@ -115,6 +119,10 @@ defmodule Mix.Tasks.Haxe.Inspect do
       true ->
         show_usage()
     end
+  end
+
+  defp normalize_opts(opts) do
+    if Keyword.get(opts, :json, false), do: Keyword.put(opts, :format, "json"), else: opts
   end
   
   defp inspect_file(file, opts) do
@@ -421,6 +429,33 @@ defmodule Mix.Tasks.Haxe.Inspect do
   defp list_file_pairs(opts) do
     target_dir = opts[:target_dir] || get_project_directories()
     pairs = find_all_haxe_elixir_pairs(target_dir)
+
+    format = opts[:format] || "detailed"
+    if format == "json" do
+      list_file_pairs_json(pairs)
+    else
+      list_file_pairs_human(pairs)
+    end
+  end
+
+  defp list_file_pairs_json(pairs) do
+    output = %{
+      pairs:
+        Enum.map(pairs, fn {haxe_file, elixir_file, source_map_file} ->
+          %{
+            haxe_file: Path.relative_to_cwd(haxe_file),
+            elixir_file: Path.relative_to_cwd(elixir_file),
+            source_map_file: Path.relative_to_cwd(source_map_file),
+            has_source_map: File.exists?(source_map_file)
+          }
+        end),
+      total: length(pairs)
+    }
+
+    emit_json(output)
+  end
+
+  defp list_file_pairs_human(pairs) do
     
     Mix.shell().info("📂 Available Haxe↔Elixir File Pairs:")
     Mix.shell().info("")
@@ -445,12 +480,9 @@ defmodule Mix.Tasks.Haxe.Inspect do
     end
   end
   
-  defp analyze_transformation_patterns(_opts) do
-    Mix.shell().info("🔬 Haxe→Elixir Transformation Pattern Analysis")
-    Mix.shell().info("=" |> String.duplicate(60))
-    Mix.shell().info("")
-    
-    # This would analyze common patterns across the project
+  defp analyze_transformation_patterns(opts) do
+    format = opts[:format] || "detailed"
+
     patterns = [
       %{
         name: "Class → Module",
@@ -478,6 +510,18 @@ defmodule Mix.Tasks.Haxe.Inspect do
         description: "Instance functions receive implicit context parameter"
       }
     ]
+
+    if format == "json" do
+      emit_json(%{patterns: patterns, total: length(patterns)})
+    else
+      analyze_transformation_patterns_human(patterns)
+    end
+  end
+
+  defp analyze_transformation_patterns_human(patterns) do
+    Mix.shell().info("🔬 Haxe→Elixir Transformation Pattern Analysis")
+    Mix.shell().info("=" |> String.duplicate(60))
+    Mix.shell().info("")
     
     Mix.shell().info("Common Transformation Patterns:")
     Mix.shell().info("")
@@ -495,6 +539,18 @@ defmodule Mix.Tasks.Haxe.Inspect do
     Mix.shell().info("   • Better prediction of generated code structure")
     Mix.shell().info("   • Improved error analysis and resolution strategies")
     Mix.shell().info("")
+  end
+
+  defp emit_json(payload) do
+    if Code.ensure_loaded?(Jason) do
+      case Jason.encode(payload, pretty: true) do
+        {:ok, json} -> IO.puts(json)
+        {:error, reason} -> Mix.shell().error("Failed to encode JSON: #{inspect(reason)}")
+      end
+    else
+      Mix.shell().error("Jason library not available. Cannot output JSON format.")
+      Mix.shell().info("Install Jason with: mix deps.get")
+    end
   end
   
   # Helper functions
@@ -803,6 +859,7 @@ defmodule Mix.Tasks.Haxe.Inspect do
     Mix.shell().info("  --with-mappings     Include detailed source mapping information")
     Mix.shell().info("  --compare           Side-by-side comparison of source and generated code")
     Mix.shell().info("  --format FORMAT     Output format: detailed, json, table (default: detailed)")
+    Mix.shell().info("  --json              Alias for --format json")
     Mix.shell().info("  --analyze-patterns  Analyze common Haxe→Elixir transformation patterns")
     Mix.shell().info("  --list-files        List all available Haxe/Elixir file pairs")
     Mix.shell().info("  --show-annotations  Show annotations and metadata transformations")

@@ -77,21 +77,19 @@ mix haxe.source_map lib/UserService.ex 45 12 --format json
 - `--list-maps` - List all available source map files
 - `--validate-maps` - Validate all source map files
 - `--with-context` - Include surrounding code context
-- `--format` - Output format: `text`, `json`, `table`
+- `--format` - Output format: `json`, `table`, `detailed` (default: `detailed`)
+- `--json` - Alias for `--format json`
 
 **Output Example (JSON):**
 ```json
 {
-  "elixir": {
-    "file": "lib/UserService.ex",
-    "line": 45,
-    "column": 12
+  "lookup": {
+    "input": { "file": "lib/UserService.ex", "line": 45, "column": 12 },
+    "output": { "file": "src_haxe/UserService.hx", "line": 23, "column": 15 },
+    "direction": "elixir_to_haxe",
+    "accurate": true
   },
-  "haxe": {
-    "source": "src_haxe/UserService.hx",
-    "line": 23,
-    "column": 15
-  }
+  "source_map": { "generated_file": "lib/UserService.ex" }
 }
 ```
 
@@ -117,9 +115,26 @@ mix haxe.inspect src_haxe/UserService.hx --format json
 - `--analyze-patterns` - Show all transformation patterns
 - `--compare` - Side-by-side comparison of Haxe and Elixir
 - `--with-mappings` - Include detailed source map data
-- `--format` - Output format: `text`, `json`, `table`
+- `--format` - Output format: `detailed`, `json`, `table` (default: `detailed`)
+- `--json` - Alias for `--format json`
 
 ## Debugging Tasks
+
+### mix haxe.status
+
+Quick overview of the current Haxe→Elixir integration state in your Mix project (manifest, server, watcher, and stored errors).
+
+```bash
+# Human readable
+mix haxe.status
+
+# JSON output for tools/LLMs
+mix haxe.status --json
+```
+
+**Options:**
+- `--format` - Output format: `table`, `json`, `detailed` (default: `table`)
+- `--json` - Alias for `--format json`
 
 ### mix haxe.errors
 
@@ -130,7 +145,7 @@ Enhanced error reporting with source positions.
 mix haxe.errors
 
 # JSON output for LLM agents
-mix haxe.errors --format json
+mix haxe.errors --json
 
 # Filter by error type
 mix haxe.errors --filter error
@@ -144,28 +159,23 @@ mix haxe.errors --file UserService.hx
 ```
 
 **Options:**
-- `--format` - Output format: `text`, `json`, `detailed`
+- `--format` - Output format: `table`, `json`, `detailed`
+- `--json` - Alias for `--format json`
 - `--filter` - Filter by type: `error`, `warning`, `info`
 - `--recent` - Show only N most recent errors
 - `--file` - Filter errors by source file
 
 **JSON Output Example:**
 ```json
-{
-  "errors": [
-    {
-      "type": "error",
-      "file": "src_haxe/UserService.hx",
-      "line": 23,
-      "column": 15,
-      "message": "Type not found: UserModel",
-      "suggestion": "Did you mean 'User'?",
-      "timestamp": "2025-08-11T10:30:45Z"
-    }
-  ],
-  "total": 1,
-  "status": "compilation_failed"
-}
+[
+  {
+    "type": "compilation_error",
+    "file": "src_haxe/UserService.hx",
+    "line": 23,
+    "message": "Type not found : UserModel",
+    "error_id": "haxe_error_..."
+  }
+]
 ```
 
 ### mix haxe.stacktrace
@@ -190,7 +200,8 @@ mix haxe.stacktrace haxe_error_123456_0 --trace-generation
 - `--cross-reference` - Map stacktrace to Haxe source
 - `--with-context` - Include surrounding code
 - `--trace-generation` - Show compilation pipeline trace
-- `--format` - Output format: `text`, `json`
+- `--format` - Output format: `table`, `json`, `detailed` (default: `detailed`)
+- `--json` - Alias for `--format json`
 
 ## Development Tasks
 
@@ -259,7 +270,7 @@ mix haxe.compile.migrations --hxml build-migrations.hxml
 
 These options work with most Mix tasks:
 
-- `--format [text|json|table]` - Output format
+- `--format [table|json|detailed]` - Output format (when supported)
 - `--verbose` - Verbose output
 - `--quiet` - Suppress non-error output
 - `--no-color` - Disable colored output
@@ -449,9 +460,9 @@ iex> H.errors()
 Reflaxe.Elixir provides a comprehensive suite of Mix tasks for:
 
 - ✅ **Compilation** with file watching and incremental builds
-- ✅ **Source mapping** for precise debugging at Haxe level
+- 🧪 **Source mapping (experimental)** for Haxe↔Elixir position lookups
 - ✅ **Error reporting** with structured output for LLMs
 - ✅ **Development tools** for status checking and debugging
 - ✅ **Migration generation** from Haxe DSL
 
-All tasks support JSON output for programmatic access, making them ideal for both human developers and LLM agents. The source mapping feature, unique among Reflaxe targets, provides seamless debugging across the compilation boundary.
+Most tasks support JSON output for programmatic access, making them suitable for both human developers and LLM agents. Source mapping is present but remains experimental; see `docs/04-api-reference/SOURCE_MAPPING.md`.

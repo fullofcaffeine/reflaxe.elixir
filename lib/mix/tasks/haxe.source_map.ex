@@ -13,6 +13,7 @@ defmodule Mix.Tasks.Haxe.SourceMap do
       mix haxe.source_map --list-maps
       mix haxe.source_map --validate-maps
       mix haxe.source_map FILE LINE COLUMN --format json
+      mix haxe.source_map FILE LINE COLUMN --json
       mix haxe.source_map FILE LINE COLUMN --with-context
   
   ## Arguments
@@ -65,6 +66,7 @@ defmodule Mix.Tasks.Haxe.SourceMap do
   
   @switches [
     format: :string,
+    json: :boolean,
     with_context: :boolean,
     list_maps: :boolean,
     validate_maps: :boolean,
@@ -75,6 +77,7 @@ defmodule Mix.Tasks.Haxe.SourceMap do
   
   @aliases [
     f: :format,
+    j: :json,
     c: :with_context,
     l: :list_maps,
     v: :validate_maps,
@@ -88,6 +91,7 @@ defmodule Mix.Tasks.Haxe.SourceMap do
   
   def run(args) do
     {opts, remaining_args} = OptionParser.parse!(args, strict: @switches, aliases: @aliases)
+    opts = normalize_opts(opts)
     
     cond do
       opts[:help] ->
@@ -114,6 +118,10 @@ defmodule Mix.Tasks.Haxe.SourceMap do
       true ->
         show_usage()
     end
+  end
+
+  defp normalize_opts(opts) do
+    if Keyword.get(opts, :json, false), do: Keyword.put(opts, :format, "json"), else: opts
   end
   
   defp perform_lookup(file, line, column, opts) do
@@ -396,6 +404,44 @@ defmodule Mix.Tasks.Haxe.SourceMap do
   defp list_source_maps(opts) do
     target_dir = opts[:target_dir] || "lib"
     source_maps = SourceMapLookup.find_available_source_maps(target_dir)
+
+    format = opts[:format] || "detailed"
+    if format == "json" do
+      list_source_maps_json(target_dir, source_maps)
+    else
+      list_source_maps_human(target_dir, source_maps)
+    end
+  end
+
+  defp list_source_maps_json(target_dir, source_maps) do
+    entries =
+      Enum.map(source_maps, fn source_map_path ->
+        case SourceMapLookup.parse_source_map(source_map_path) do
+          {:ok, source_map} ->
+            %{
+              source_map_file: Path.relative_to_cwd(source_map_path),
+              generated_file: source_map.file,
+              source_files_count: Enum.count(source_map.sources),
+              valid: true
+            }
+
+          {:error, reason} ->
+            %{
+              source_map_file: Path.relative_to_cwd(source_map_path),
+              valid: false,
+              error: reason
+            }
+        end
+      end)
+
+    emit_json(%{
+      target_dir: target_dir,
+      source_maps: entries,
+      total: length(entries)
+    })
+  end
+
+  defp list_source_maps_human(target_dir, source_maps) do
     
     Mix.shell().info("🗺️  Available Source Maps in #{target_dir}:")
     Mix.shell().info("")
@@ -426,6 +472,54 @@ defmodule Mix.Tasks.Haxe.SourceMap do
   defp validate_source_maps(opts) do
     target_dir = opts[:target_dir] || "lib"
     source_maps = SourceMapLookup.find_available_source_maps(target_dir)
+
+    format = opts[:format] || "detailed"
+    if format == "json" do
+      validate_source_maps_json(target_dir, source_maps)
+    else
+      validate_source_maps_human(target_dir, source_maps)
+    end
+  end
+
+  defp validate_source_maps_json(target_dir, source_maps) do
+    results =
+      Enum.map(source_maps, fn source_map_path ->
+        case SourceMapLookup.parse_source_map(source_map_path) do
+          {:ok, source_map} ->
+            checks = [
+              %{name: "Has source files", ok: length(source_map.sources) > 0},
+              %{name: "Has position mappings", ok: length(source_map.mappings) > 0},
+              %{name: "Generated file exists", ok: File.exists?(source_map.file)}
+            ]
+
+            %{
+              source_map_file: Path.relative_to_cwd(source_map_path),
+              valid: Enum.all?(checks, & &1.ok),
+              checks: checks
+            }
+
+          {:error, reason} ->
+            %{
+              source_map_file: Path.relative_to_cwd(source_map_path),
+              valid: false,
+              error: reason
+            }
+        end
+      end)
+
+    summary = %{
+      valid: Enum.count(results, & &1.valid),
+      invalid: Enum.count(results, &(!&1.valid))
+    }
+
+    emit_json(%{
+      target_dir: target_dir,
+      results: results,
+      summary: summary
+    })
+  end
+
+  defp validate_source_maps_human(target_dir, source_maps) do
     
     Mix.shell().info("🔍 Validating Source Maps in #{target_dir}:")
     Mix.shell().info("")
@@ -474,6 +568,18 @@ defmodule Mix.Tasks.Haxe.SourceMap do
       Mix.shell().info("Validation Summary: #{valid_count} valid, #{invalid_count} invalid")
     end
   end
+
+  defp emit_json(payload) do
+    if Code.ensure_loaded?(Jason) do
+      case Jason.encode(payload, pretty: true) do
+        {:ok, json} -> IO.puts(json)
+        {:error, reason} -> Mix.shell().error("Failed to encode JSON: #{inspect(reason)}")
+      end
+    else
+      Mix.shell().error("Jason library not available. Cannot output JSON format.")
+      Mix.shell().info("Install Jason with: mix deps.get")
+    end
+  end
   
   defp suggest_alternatives(file, line, column, _opts) do
     Mix.shell().info("")
@@ -507,6 +613,7 @@ defmodule Mix.Tasks.Haxe.SourceMap do
     Mix.shell().info("")
     Mix.shell().info("Options:")
     Mix.shell().info("  --format FORMAT     Output format: json, table, detailed (default: detailed)")
+    Mix.shell().info("  --json              Alias for --format json")
     Mix.shell().info("  --with-context      Include source code context")
     Mix.shell().info("  --list-maps         List all available source map files")
     Mix.shell().info("  --validate-maps     Validate all source map files")

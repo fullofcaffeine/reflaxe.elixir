@@ -9,6 +9,7 @@ defmodule Mix.Tasks.Haxe.Errors do
   
       mix haxe.errors
       mix haxe.errors --format json
+      mix haxe.errors --json
       mix haxe.errors --format table
       mix haxe.errors --recent 10
       mix haxe.errors --filter error
@@ -45,6 +46,7 @@ defmodule Mix.Tasks.Haxe.Errors do
 
   @switches [
     format: :string,
+    json: :boolean,
     recent: :integer,
     filter: :string,
     file: :string,
@@ -55,6 +57,7 @@ defmodule Mix.Tasks.Haxe.Errors do
 
   @aliases [
     f: :format,
+    j: :json,
     r: :recent,
     h: :help
   ]
@@ -65,7 +68,7 @@ defmodule Mix.Tasks.Haxe.Errors do
     if opts[:help] do
       show_help()
     else
-      display_errors(opts)
+      display_errors(normalize_opts(opts))
     end
   end
 
@@ -94,6 +97,10 @@ defmodule Mix.Tasks.Haxe.Errors do
     end
   end
 
+  defp normalize_opts(opts) do
+    if Keyword.get(opts, :json, false), do: Keyword.put(opts, :format, "json"), else: opts
+  end
+
   defp apply_filters(errors, opts) do
     errors
     |> filter_by_type(opts[:filter])
@@ -104,7 +111,15 @@ defmodule Mix.Tasks.Haxe.Errors do
 
   defp filter_by_type(errors, nil), do: errors
   defp filter_by_type(errors, type) do
-    type_atom = String.to_atom(type)
+    type_atom =
+      case String.downcase(String.trim(type)) do
+        "error" -> :compilation_error
+        "compilation_error" -> :compilation_error
+        "warning" -> :warning
+        "stacktrace" -> :stacktrace
+        other -> String.to_atom(other)
+      end
+
     Enum.filter(errors, fn error -> error.type == type_atom end)
   end
 
@@ -259,6 +274,7 @@ defmodule Mix.Tasks.Haxe.Errors do
     Mix.shell().info("")
     Mix.shell().info("Options:")
     Mix.shell().info("  --format FORMAT    Output format: json, table, detailed (default: table)")
+    Mix.shell().info("  --json             Alias for --format json")
     Mix.shell().info("  --recent N         Show N most recent errors")
     Mix.shell().info("  --filter TYPE      Filter by type: error, warning, stacktrace")
     Mix.shell().info("  --file FILE        Show errors from specific file")

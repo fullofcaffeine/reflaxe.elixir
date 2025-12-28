@@ -10,6 +10,7 @@ defmodule StacktraceIntegrationTest do
 
   alias HaxeCompiler
   alias Mix.Tasks.Haxe.Errors, as: ErrorTask
+  alias Mix.Tasks.Haxe.Status, as: StatusTask
   alias Mix.Tasks.Haxe.Stacktrace, as: StacktraceTask
 
   setup do
@@ -169,6 +170,16 @@ defmodule StacktraceIntegrationTest do
       assert Map.has_key?(error, "error_id")
     end
 
+    test "outputs errors in JSON format with --json alias" do
+      output = capture_mix_task(fn ->
+        ErrorTask.run(["--json"])
+      end)
+
+      {:ok, parsed} = Jason.decode(output)
+      assert is_list(parsed)
+      assert length(parsed) > 0
+    end
+
     test "filters errors by file" do
       output = capture_mix_task(fn ->
         ErrorTask.run(["--format", "json", "--file", "User.hx"])
@@ -238,6 +249,15 @@ defmodule StacktraceIntegrationTest do
       assert parsed["error_id"] == error_id
     end
 
+    test "outputs stacktrace in JSON format with --json alias", %{error_id: error_id} do
+      output = capture_mix_task(fn ->
+        StacktraceTask.run([error_id, "--json"])
+      end)
+
+      {:ok, parsed} = Jason.decode(output)
+      assert parsed["error_id"] == error_id
+    end
+
     test "shows cross-reference information", %{error_id: error_id} do
       output = capture_mix_task(fn ->
         StacktraceTask.run([error_id, "--cross-reference"])
@@ -268,6 +288,20 @@ defmodule StacktraceIntegrationTest do
       
       assert String.contains?(output, "Error ID not found")
       assert String.contains?(output, "mix haxe.errors")
+    end
+  end
+
+  describe "Mix.Tasks.Haxe.Status functionality" do
+    test "outputs status in JSON format with --json alias" do
+      output = capture_mix_task(fn ->
+        StatusTask.run(["--json"])
+      end)
+
+      {:ok, parsed} = Jason.decode(output)
+      assert Map.has_key?(parsed, "mix_env")
+      assert Map.has_key?(parsed, "haxe_server")
+      assert Map.has_key?(parsed, "haxe_watcher")
+      assert Map.has_key?(parsed, "errors")
     end
   end
 
