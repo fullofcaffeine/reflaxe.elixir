@@ -20,7 +20,7 @@ npm init -y
 npm install --save-dev lix
 
 # Install the generator (pinned tag recommended)
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.7
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.0
 
 # Generate a Phoenix app (omit --skip-install to let the generator install deps for you)
 npx lix run reflaxe.elixir create my_app --type phoenix --no-interactive --skip-install
