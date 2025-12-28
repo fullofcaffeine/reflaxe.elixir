@@ -21,6 +21,28 @@ defmodule HaxeServerTest do
       assert pid == Process.whereis(HaxeServer)
     end
 
+    test "relocates when the requested port is already in use" do
+      ipv6_opts = [:binary, active: false, ip: {0, 0, 0, 0, 0, 0, 0, 0}, ipv6_v6only: false]
+
+      socket =
+        case :gen_tcp.listen(0, ipv6_opts) do
+          {:ok, s} -> s
+          {:error, _} -> {:ok, s} = :gen_tcp.listen(0, [:binary, active: false]); s
+        end
+
+      {:ok, {_addr, port}} = :inet.sockname(socket)
+
+      assert {:ok, _pid} = HaxeServer.start_link([port: port])
+
+      # Allow async :start_server to probe and relocate.
+      Process.sleep(100)
+
+      {_response, stats} = HaxeServer.status()
+      assert stats.port != port
+
+      :gen_tcp.close(socket)
+    end
+
     test "starts with custom port option" do
       custom_port = find_free_port()
       assert {:ok, _pid} = HaxeServer.start_link([port: custom_port])
