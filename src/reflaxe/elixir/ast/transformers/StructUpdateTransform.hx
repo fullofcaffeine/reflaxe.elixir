@@ -216,6 +216,67 @@ class StructUpdateTransform {
         if (expr == null) return null;
         
         switch(expr.def) {
+            case EBinary(Match, left, rhs):
+                // Handle statement-form `_ = call(...)` emitted as a binary match.
+                //
+                // WHY:
+                // - BareCallToUnderscoreAssignTransforms emits `_ = call(...)` as `EBinary(Match, EVar("_"), call)`.
+                // - Fluent/struct-mutating calls must still thread the updated struct to preserve semantics.
+                //
+                // HOW:
+                // - Detect discard binders (`_`) and, when the RHS is a fluent API call whose first
+                //   argument is `struct`, rebind: `struct = call(...)`.
+                var isDiscard = switch (left.def) {
+                    case EVar("_"): true;
+                    default: false;
+                };
+
+                if (isDiscard && rhs != null) {
+                    switch (rhs.def) {
+                        case ECall(callTarget, method, args):
+                            if (callTarget == null && args != null && args.length > 0) {
+                                switch (args[0].def) {
+                                    case EVar("struct") if (isFluentAPIMethod(method)):
+                                        return makeAST(EMatch(PVar("struct"), rhs));
+                                    default:
+                                }
+                            }
+                        case ERemoteCall(_, method, args):
+                            if (args != null && args.length > 0) {
+                                switch (args[0].def) {
+                                    case EVar("struct") if (isFluentAPIMethod(method)):
+                                        return makeAST(EMatch(PVar("struct"), rhs));
+                                    default:
+                                }
+                            }
+                        default:
+                    }
+                }
+
+            case EMatch(pattern, rhs):
+                // Many statements are emitted as `_ = expr` when the value is intentionally ignored.
+                // In fluent/struct-mutating contexts, we must still thread the updated struct.
+                var isDiscard = switch (pattern) {
+                    case PWildcard: true;
+                    case PVar("_"): true;
+                    default: false;
+                };
+
+                if (isDiscard && rhs != null) {
+                    switch (rhs.def) {
+                        case ECall(callTarget, method, args):
+                            // Local function style: add_column(struct, ...) → struct = add_column(struct, ...)
+                            if (callTarget == null && args != null && args.length > 0) {
+                                switch (args[0].def) {
+                                    case EVar("struct") if (isFluentAPIMethod(method)):
+                                        return makeAST(EMatch(PVar("struct"), rhs));
+                                    default:
+                                }
+                            }
+                        default:
+                    }
+                }
+
             case ECall(target, method, args):
                 // Check if target is not null and is a call on struct variable
                 if (target != null && target.def != null) {
@@ -226,6 +287,19 @@ class StructUpdateTransform {
                             #if debug_struct_update_transform
                             // DISABLED: trace('[XRay StructUpdate] Found struct method call: $method');
                             #end
+                            return makeAST(EMatch(
+                                PVar("struct"),
+                                makeAST(ECall(target, method, args))
+                            ));
+                        default:
+                    }
+                }
+
+                // Local function style within the same module: method(struct, ...) should also thread
+                // for fluent API methods when used as a statement.
+                if (target == null && args != null && args.length > 0) {
+                    switch (args[0].def) {
+                        case EVar("struct") if (isFluentAPIMethod(method)):
                             return makeAST(EMatch(
                                 PVar("struct"),
                                 makeAST(ECall(target, method, args))

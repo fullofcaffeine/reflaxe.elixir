@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * - For EBlock and EDo bodies, walk sequential statements and when encountering
  *   an assignment to `_name`, check for any subsequent reference to `_name` in the
  *   current body. If found, rewrite the binder to `name`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class LocalUnderscoreGenericPromotionTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

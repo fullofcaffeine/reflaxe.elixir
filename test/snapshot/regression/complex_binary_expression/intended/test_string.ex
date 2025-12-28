@@ -1,4 +1,9 @@
 defmodule TestString do
+  def new(s) do
+    struct = %{:str => nil}
+    struct = %{struct | str: s}
+    struct
+  end
   def cca(struct, index) do
     if (index < String.length(struct.str)) do
       if (index < 0) do

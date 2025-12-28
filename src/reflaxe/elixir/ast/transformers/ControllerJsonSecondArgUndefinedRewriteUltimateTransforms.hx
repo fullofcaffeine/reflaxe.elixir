@@ -27,6 +27,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   declared in the current scope, rewrite arg2 to the binder if present; otherwise,
  *   prefer a single lower-case candidate used in the body. If none, fall back to an
  *   empty map (extremely rare) to keep compilation sound. This pass runs at the very end.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ControllerJsonSecondArgUndefinedRewriteUltimateTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -19,6 +19,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - For ESigil("H", content): regex-rewrite `<%= ... .to_string() %>` occurrences.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexStripToStringInSigilsTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

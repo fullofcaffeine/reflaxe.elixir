@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - For each clause, collect a map of { trimmedName -> underscoredName } from the pattern.
  * - Recursively rewrite EVar occurrences in the body/guard using this map.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseBodyAlignToPatternUnderscoreTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

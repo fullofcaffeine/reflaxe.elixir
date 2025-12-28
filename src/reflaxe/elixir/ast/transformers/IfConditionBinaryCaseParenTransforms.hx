@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - For EIf/EUnless with condition EBinary(op, left, right): if left or right is
  *   ECase/ECond/EWith/EIf, wrap that side with EParen.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class IfConditionBinaryCaseParenTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -47,8 +47,8 @@ class Output {
         var k = len;
         while (k > 0) {
             writeByte(b.get(pos));
-            pos++;
-            k--;
+            pos = pos + 1;
+            k = k - 1;
         }
         return len;
     }

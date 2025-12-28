@@ -30,6 +30,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - Fixing at the AST level prevents post-processing hacks and avoids widening types to Dynamic.
  *   - Snapshot coverage can assert the exact Elixir shapes, keeping behavior deterministic.
  *
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ListHelpersFixTransforms {
     // 1) arr.contains(v) -> Enum.member?(arr, v)

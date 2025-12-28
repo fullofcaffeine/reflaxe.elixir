@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For each ECase clause, extract the binder from {:tag, binder}. Compute its
  *   flattened form by removing underscores. In the body, rewrite EVar(v) to the
  *   binder when remove_underscores(v) == remove_underscores(binder) and v != binder.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseBinderRefNormalizeByFlattenUnderscoresTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -1,4 +1,7 @@
 defmodule MyAppWeb.Sample do
+  def main() do
+    
+  end
   def enum_map_guard() do
     xs = [1, 2, 3]
     ys = Enum.map(xs, fn x -> x + 1 end)

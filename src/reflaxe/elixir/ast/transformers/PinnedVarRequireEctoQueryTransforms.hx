@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - For EModule/EDefmodule bodies, scan recursively for any EPin occurrence.
  * - If found and no existing ERequire("Ecto.Query"), prepend one at the top.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class PinnedVarRequireEctoQueryTransforms {
     static function bodyHasPin(body:Array<ElixirAST>):Bool {

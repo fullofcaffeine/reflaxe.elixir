@@ -15,6 +15,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   rewrite Phoenix.Controller.json(conn, data) to use the case binder as the
  *   second argument, and drop simple alias assignments to json/data/conn within
  *   the arm body.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ControllerJsonFinalizeAbsoluteTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

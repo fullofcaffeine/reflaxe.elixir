@@ -30,6 +30,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   is encountered, replace the argument with that latest binder.
  * - Conservative: only triggers when the call arg is exactly `EVar("query")` and
  *   a later refinement exists in the same block.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EctoRepoFinalArgFromLatestQueryVarTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

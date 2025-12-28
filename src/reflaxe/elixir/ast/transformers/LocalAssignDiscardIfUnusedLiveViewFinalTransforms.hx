@@ -15,6 +15,18 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * - In LiveView modules, replace `var = expr` / `var <- expr` with `_ = expr`
  *   when `var` is never referenced later in the same block. Semantics are
  *   preserved; warnings vanish.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class LocalAssignDiscardIfUnusedLiveViewFinalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

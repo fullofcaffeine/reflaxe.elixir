@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - For ETuple/elist/EMap, wrap any child expression of form EIf(...) with
  *   EParen(EIf(...)).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class IfInlineInContainerParenTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

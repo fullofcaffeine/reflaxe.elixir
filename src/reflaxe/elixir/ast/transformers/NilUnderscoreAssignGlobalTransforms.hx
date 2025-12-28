@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Walk EBlock/EDo recursively and filter statements where the LHS is nil (ENil,
  *   EVar("nil"), or EAtom(":nil"/"nil")) and the RHS is an underscored variable.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class NilUnderscoreAssignGlobalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

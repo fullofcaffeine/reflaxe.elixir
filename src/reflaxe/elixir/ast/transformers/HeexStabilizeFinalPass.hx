@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *     2) HeexNestedSigilFlattenFinalTransforms.flattenNestedHeex(content)
  *     3) HeexControlTagTransforms.rewriteControlTags(content)
  *   Stop early if content is unchanged in an iteration.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexStabilizeFinalPass {
   static inline var MAX_ITERS = 5;

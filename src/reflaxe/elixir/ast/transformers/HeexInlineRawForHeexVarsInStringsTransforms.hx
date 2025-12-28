@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - Collect variable names: name = ~H"..." or name = "<...>" (html-like)
  *   - Traverse and update EString nodes: replace all #{name} with
  *     #{Phoenix.HTML.raw(name)}.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexInlineRawForHeexVarsInStringsTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

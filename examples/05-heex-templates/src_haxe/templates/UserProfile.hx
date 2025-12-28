@@ -91,6 +91,23 @@ class UserProfile {
     static function truncate(text: String, length: Int): String {
         return text.length > length ? text.substr(0, length) + "..." : text;
     }
+
+    /**
+     * Minimal local component stub so this example compiles standalone.
+     *
+     * In real Phoenix apps this is typically provided by your `CoreComponents` module.
+     */
+    @:component
+    public static function button(assigns: UserProfileButtonAssigns): String {
+        return hxx('
+        <button
+            type=${assigns.type != null ? assigns.type : "button"}
+            disabled=${assigns.disabled}
+        >
+            ${assigns.inner_content}
+        </button>
+        ');
+    }
     
     // Main function for compilation
     public static function main(): Void {
@@ -116,4 +133,10 @@ typedef Post = {
     content: String,
     viewCount: Int,
     insertedAt: String
+}
+
+typedef UserProfileButtonAssigns = {
+    ?type: String,
+    ?disabled: Bool,
+    inner_content: String
 }

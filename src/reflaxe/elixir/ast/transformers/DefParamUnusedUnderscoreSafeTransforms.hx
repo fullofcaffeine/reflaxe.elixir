@@ -15,6 +15,14 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  * WHAT
  * - For function definitions, underscore unused parameters safely (only when not referenced in the body).
  *   No renaming is performed when the name is used; when rename occurs, no body rewrite is needed because it is unused.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DefParamUnusedUnderscoreSafeTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

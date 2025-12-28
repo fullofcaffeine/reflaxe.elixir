@@ -27,6 +27,10 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  *   - Let candidates = used \ declared \ {binder}, excluding other reserved names.
  *   - If candidates has exactly one name, rename binder to that name and rewrite body
  *     occurrences of the old binder to the new one.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CasePayloadBinderAvoidReservedTransforms {
   static inline function isReserved(name:String):Bool {

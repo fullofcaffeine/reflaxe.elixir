@@ -32,6 +32,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *       • replaces #{...} and ${...} with <%= ... %>
  *       • rewrites assigns.* to @
  *   - Preserve metadata and parens depth.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexStringReturnToSigilTransforms {
     static function looksLikeHtml(s:String):Bool {
@@ -41,33 +45,162 @@ class HeexStringReturnToSigilTransforms {
         return t.indexOf("<") != -1 && t.indexOf(">") != -1;
     }
 
-    static function convertInterpolations(s:String):String {
-        if (s == null) return s;
-        // Fast-path: if no interpolation tokens are present, avoid scanning
-        if (s.indexOf("${") == -1 && s.indexOf("#{") == -1) return s;
-        #if hxx_instrument
-        var t0 = haxe.Timer.stamp();
-        var loops = 0;
-        #end
-        var parts:Array<String> = [];
+    static function escapeElixirStringLiteral(s: String): String {
+        if (s == null || s.length == 0) return "";
+        var out = new StringBuf();
+        for (i in 0...s.length) {
+            var ch = s.charAt(i);
+            switch (ch) {
+                case "\\":
+                    out.add("\\\\");
+                case "\"":
+                    out.add("\\\"");
+                case "\n":
+                    out.add("\\n");
+                case "\r":
+                    out.add("\\r");
+                case "\t":
+                    out.add("\\t");
+                default:
+                    out.add(ch);
+            }
+        }
+        return out.toString();
+    }
+
+    static function convertInlineExpr(expr: String): String {
+        if (expr == null) return "";
+        var trimmed = StringTools.trim(expr);
+        var ternary = splitTopLevelTernary(trimmed);
+        if (ternary != null) {
+            var cond = mapAssigns(ternary.cond);
+            var thenPart = mapAssigns(StringTools.trim(ternary.thenPart));
+            var elsePart = mapAssigns(StringTools.trim(ternary.elsePart));
+            return 'if ' + cond + ', do: ' + thenPart + ', else: ' + elsePart;
+        }
+        return mapAssigns(trimmed);
+    }
+
+    static function buildInterpolatedAttrExpr(value: String): String {
+        if (value == null) return "\"\"";
+        var parts: Array<String> = [];
         var i = 0;
-        while (i < s.length) {
-            #if hxx_instrument loops++; #end
-            var j1 = s.indexOf("#{", i);
-            var j2 = s.indexOf("${", i);
-            var j = (j1 == -1) ? j2 : (j2 == -1 ? j1 : (j1 < j2 ? j1 : j2));
-            if (j == -1) { parts.push(s.substr(i)); break; }
-            parts.push(s.substr(i, j - i));
-            var k = j + 2;
+        while (i < value.length) {
+            var hashInterpIndex = value.indexOf("#{", i);
+            var dollarInterpIndex = value.indexOf("${", i);
+            var nextInterpIndex = (hashInterpIndex == -1) ? dollarInterpIndex : (dollarInterpIndex == -1 ? hashInterpIndex : (hashInterpIndex < dollarInterpIndex ? hashInterpIndex : dollarInterpIndex));
+            if (nextInterpIndex == -1) {
+                var tail = value.substr(i);
+                if (tail != "") parts.push('"' + escapeElixirStringLiteral(tail) + '"');
+                break;
+            }
+            var staticPart = value.substr(i, nextInterpIndex - i);
+            if (staticPart != "") parts.push('"' + escapeElixirStringLiteral(staticPart) + '"');
+
+            var k = nextInterpIndex + 2;
             var depth = 1;
-            while (k < s.length && depth > 0) {
-                var ch = s.charAt(k);
+            while (k < value.length && depth > 0) {
+                var ch = value.charAt(k);
                 if (ch == '{') depth++;
                 else if (ch == '}') depth--;
                 k++;
             }
-            var raw = s.substr(j + 2, (k - 1) - (j + 2));
-            var expr = StringTools.trim(raw);
+            var raw = value.substr(nextInterpIndex + 2, (k - 1) - (nextInterpIndex + 2));
+            var expr = convertInlineExpr(raw);
+            parts.push('Kernel.to_string(' + expr + ')');
+            i = k;
+        }
+
+        if (parts.length == 0) return "\"\"";
+        if (parts.length == 1) return parts[0];
+        return '(' + parts.join(" <> ") + ')';
+    }
+
+    static function rewriteQuotedAttributeInterpolations(s: String): String {
+        if (s == null || s.length == 0) return s;
+        // Only bother scanning if there are interpolation tokens.
+        if (s.indexOf("${") == -1 && s.indexOf("#{") == -1) return s;
+
+        var out = new StringBuf();
+        var inTag = false;
+        var i = 0;
+        while (i < s.length) {
+            var ch = s.charAt(i);
+            if (!inTag) {
+                if (ch == "<") inTag = true;
+                out.add(ch);
+                i++;
+                continue;
+            }
+
+            // Inside a tag: rewrite quoted attribute values containing interpolation into `{expr}`.
+            if (ch == ">") {
+                inTag = false;
+                out.add(ch);
+                i++;
+                continue;
+            }
+
+            if (ch == "=" && i + 1 < s.length) {
+                var q = s.charAt(i + 1);
+                if (q == "\"" || q == "'") {
+                    var startVal = i + 2;
+                    var j = startVal;
+                    while (j < s.length && s.charAt(j) != q) j++;
+                    if (j < s.length) {
+                        var value = s.substr(startVal, j - startVal);
+                        if (value.indexOf("${") != -1 || value.indexOf("#{") != -1) {
+                            out.add("={");
+                            out.add(buildInterpolatedAttrExpr(value));
+                            out.add("}");
+                        } else {
+                            out.add("=");
+                            out.add(q);
+                            out.add(value);
+                            out.add(q);
+                        }
+                        i = j + 1;
+                        continue;
+                    }
+                }
+            }
+
+            out.add(ch);
+            i++;
+        }
+        return out.toString();
+    }
+
+    static function convertInterpolations(s:String):String {
+        if (s == null) return s;
+        // Fast-path: if no interpolation tokens are present, avoid scanning
+        if (s.indexOf("${") == -1 && s.indexOf("#{") == -1) return s;
+        // HEEx does not allow `<%=` interpolation inside quoted attribute values.
+        // Rewrite `attr="foo ${expr} bar"` into `attr={"foo " <> Kernel.to_string(expr) <> " bar"}` first.
+        s = rewriteQuotedAttributeInterpolations(s);
+        #if hxx_instrument
+        var t0 = haxe.Timer.stamp();
+        var loops = 0;
+        #end
+	        var parts:Array<String> = [];
+	        var i = 0;
+	        while (i < s.length) {
+	            #if hxx_instrument loops++; #end
+	            var hashInterpIndex = s.indexOf("#{", i);
+	            var dollarInterpIndex = s.indexOf("${", i);
+	            var nextInterpIndex = (hashInterpIndex == -1) ? dollarInterpIndex : (dollarInterpIndex == -1 ? hashInterpIndex : (hashInterpIndex < dollarInterpIndex ? hashInterpIndex : dollarInterpIndex));
+	            if (nextInterpIndex == -1) { parts.push(s.substr(i)); break; }
+	            parts.push(s.substr(i, nextInterpIndex - i));
+	            var k = nextInterpIndex + 2;
+	            var depth = 1;
+	            while (k < s.length && depth > 0) {
+	                var ch = s.charAt(k);
+	                if (ch == '{') depth++;
+	                else if (ch == '}') depth--;
+	                k++;
+	            }
+	            var raw = s.substr(nextInterpIndex + 2, (k - 1) - (nextInterpIndex + 2));
+	            var expr = StringTools.trim(raw);
             // Special case: ternary inside interpolation → HEEx block if
             var ternary = splitTopLevelTernary(expr);
             if (ternary != null) {

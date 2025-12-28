@@ -29,6 +29,10 @@ import reflaxe.elixir.ast.ASTUtils;
  *        drop the underscore.
  *      - Applies to vars in match LHS, patterns, and references.
  * - Ignores atoms/module aliases by requiring lowercase initial char.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class UnderscorePromoteByUseLateTransforms {
   public static function promotePass(ast: ElixirAST): ElixirAST {

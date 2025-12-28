@@ -29,6 +29,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *     `socket = <that call>`.
  * - Does not invent APIs; simply binds the call result to `socket` when the
  *   body returns `socket`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class PresenceWithSocketAssignNormalizeTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

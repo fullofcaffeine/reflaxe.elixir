@@ -16,6 +16,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - These assignments are alias artifacts and trigger WAE unused-variable warnings.
  *   Removing them keeps the body clean and warning-free.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ControllerAliasAssignDropTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

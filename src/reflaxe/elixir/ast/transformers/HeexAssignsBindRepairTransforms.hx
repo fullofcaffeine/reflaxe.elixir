@@ -29,6 +29,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   `content`, assigns it into assigns, then renders `~H` with
  *   `Phoenix.HTML.raw(@content)`, replace the ~H body with the literal HTML and
  *   drop the scaffolding lines. This produces a proper ~H template tree.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexAssignsBindRepairTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Visits EBlock/EDo and rewrites top-level items that are ECall/ERemoteCall
  *   into EBinary(Match, EVar("_"), <call>). Does not touch calls nested inside
  *   expressions or control flow.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class BareCallToUnderscoreAssignTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

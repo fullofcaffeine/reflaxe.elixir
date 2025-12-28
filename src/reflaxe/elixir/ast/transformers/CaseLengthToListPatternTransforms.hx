@@ -28,6 +28,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Conservatively rewrite guard bodies by replacing a free `arr` variable with
  *   the actual list variable to avoid undefined variable errors. This is
  *   shape‑based and scoped to the rewritten case only.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseLengthToListPatternTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Removes underscored temp usage that trips warnings-as-errors in nested
  *   branches produced by earlier neutral lowerings.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class IfBranchDowncaseTempInlineFinalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

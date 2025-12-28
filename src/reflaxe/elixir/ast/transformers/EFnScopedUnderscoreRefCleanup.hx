@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - This is a shallow transform: it only handles EFn nodes. For each clause, collect binder
  *   names (PVar/PAlias), then run a body rename that replaces EVar("_" + binder) with EVar(binder).
  * - ERaw nodes are untouched.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EFnScopedUnderscoreRefCleanup {
     public static function cleanupPass(ast: ElixirAST): ElixirAST {

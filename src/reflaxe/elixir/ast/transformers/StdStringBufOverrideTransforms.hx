@@ -52,6 +52,7 @@ class StdStringBufOverrideTransforms {
     static inline function bodyBlock(meta: ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
         // Align to intended HXXTypeSafety snapshot shape
         var code = (
+        "  defstruct parts: []\n" +
         "  def add(struct, x) do\n" +
         "    str = if Kernel.is_nil(x), do: \"null\", else: inspect(x)\n" +
         "    %{struct | parts: struct.parts ++ [str]}\n" +

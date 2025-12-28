@@ -3,7 +3,9 @@
   "type.ex",
   "string_buf.ex",
   "std.ex",
-  "haxe/iterators/array_iterator.ex"
+  "main.ex",
+  "haxe/iterators/array_iterator.ex",
+  "elixir/types/_atom/atom_impl_.ex"
 ],
   "id": 0,
   "wasCached": false,

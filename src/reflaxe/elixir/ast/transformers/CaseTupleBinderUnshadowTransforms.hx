@@ -20,6 +20,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Prevents shadowing of function args in tuple patterns and repairs bodies
  *   that expect a meaningful name (e.g., `todo`). Shape-based; no app coupling.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseTupleBinderUnshadowTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

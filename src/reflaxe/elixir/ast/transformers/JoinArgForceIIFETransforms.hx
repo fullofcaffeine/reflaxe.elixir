@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Detect ERemoteCall(Enum, "join", [arg, sep]) where arg is a complex node
  *   (EBlock, EDo, EMatch, EBinary(Concat|StringConcat), or a Paren-wrapped
  *   complex). Replace arg with (fn -> <arg> end).().
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class JoinArgForceIIFETransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

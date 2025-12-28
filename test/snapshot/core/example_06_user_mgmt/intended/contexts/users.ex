@@ -1,17 +1,17 @@
 defmodule Users do
-  def list_users(filter) do
+  def list_users(_) do
     []
   end
-  def change_user(user) do
+  def change_user(_) do
     %{:valid => true}
   end
   def main() do
     nil
   end
-  def get_user(id) do
+  def get_user(_) do
     nil
   end
-  def get_user_safe(id) do
+  def get_user_safe(_) do
     nil
   end
   def create_user(attrs) do
@@ -25,7 +25,7 @@ defmodule Users do
   def delete_user(user) do
     update_user(user, %{:active => false})
   end
-  def search_users(term) do
+  def search_users(_) do
     []
   end
   def users_with_posts() do

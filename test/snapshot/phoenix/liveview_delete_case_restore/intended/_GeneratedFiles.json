@@ -18,6 +18,8 @@
   "phoenix/conn_state.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/exceptions/pos_exception.ex",
+  "haxe/exceptions/not_implemented_exception.ex",
+  "elixir/types/_atom/atom_impl_.ex",
   "ecto/option.ex",
   "ecto/changeset_utils.ex",
   "ecto/changeset_action.ex",

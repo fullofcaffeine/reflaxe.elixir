@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - Standardize names to (params, _session, socket) when patterns are simple PVar.
  *   - Rewrite body references from old names to the standardized binders.
  * - Shape-based only; no app-specific heuristics.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class LiveMountArityRepairTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

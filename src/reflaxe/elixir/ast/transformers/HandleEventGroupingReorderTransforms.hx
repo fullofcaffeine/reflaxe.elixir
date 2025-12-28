@@ -28,6 +28,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * NOTES
  * - Shape-only; no app heuristics. Idempotent.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleEventGroupingReorderTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

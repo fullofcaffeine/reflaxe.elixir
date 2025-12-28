@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Some late stages may introduce alias variables that trigger warnings and obscure intent.
  *   This pass restores the straightforward API call shape without app coupling.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ControllerJsonCallCleanupTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

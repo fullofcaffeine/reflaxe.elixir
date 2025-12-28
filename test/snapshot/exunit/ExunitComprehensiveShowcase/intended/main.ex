@@ -1,37 +1,57 @@
 defmodule Main do
   use ExUnit.Case, async: :true
   setup_all context do
-    module_state = "initialized"
     %{:shared_resource => "database_connection", :test_environment => "test"}
   end
   setup context do
-    test_data = ["apple", "banana", "cherry"]
-    counter = 0
     shared_resource = Map.get(context, :shared_resource)
     %{:test_id => :rand.uniform(), :timestamp => DateTime.utc_now()}
   end
   setup context do
-    _ = on_exit(fn ->
-    test_data = []
-    counter = 0
-  end)
+    _ = on_exit(fn -> nil end)
     :ok
   end
   setup_all context do
     _ = on_exit(fn -> module_state = nil end)
     :ok
   end
-  defp safe_divide(struct, a, b) do
+  defp __haxe_static_get__(key, init) do
+    static_key = {:__haxe_static__, Main, key}
+    (case Process.get(static_key) do
+      {:set, value} -> value
+      nil ->
+        value = init
+        _ = Process.put(static_key, {:set, value})
+        value
+    end)
+  end
+  defp __haxe_static_put__(key, value) do
+    static_key = {:__haxe_static__, Main, key}
+    _ = Process.put(static_key, {:set, value})
+    value
+  end
+  def module_state() do
+    __haxe_static_get__(:module_state, nil)
+  end
+  def module_state(value) do
+    __haxe_static_put__(:module_state, value)
+  end
+  def new() do
+    TestCase.new()
+  end
+  defp safe_divide(_, a, b) do
     if (b == 0), do: {:error, "Division by zero"}, else: {:ok, a / b}
   end
-  defp find_in_array(struct, arr, item) do
+  defp find_in_array(_, arr, item) do
     _g = 0
-    _ = Enum.each(arr, fn element ->
-  if (element == item), do: {:some, element}
-end)
-    {:none}
+    (case Enum.reduce_while(arr, :__reflaxe_no_return__, fn element, _ ->
+  if (element == item), do: {:halt, {:__reflaxe_return__, {:some, element}}}, else: {:cont, :__reflaxe_no_return__}
+end) do
+      {:__reflaxe_return__, reflaxe_return_value} -> reflaxe_return_value
+      _ -> {:none}
+    end)
   end
-  defp perform_async_calculation(struct) do
+  defp perform_async_calculation(_) do
     sum = 0
     sum = sum + 1
     sum = sum + 2
@@ -45,25 +65,14 @@ end)
     sum = sum + 10
     sum * 2
   end
-  defp throw_error(struct, message) do
+  defp throw_error(_, message) do
     throw(message)
   end
   describe "Performance Tests" do
     test "slow operation" do
       result = 0
-      g = 0
-      {result, _g} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0, 0}, fn _, {result, _g} ->
-        if (g < 1000) do
-          old__g = g
-          _g = g + 1
-          i = old__g
-          result = result + i
-          {:cont, {result, g}}
-        else
-          {:halt, {result, g}}
-        end
-      end)
-      nil
+      _g = 0
+      result = Enum.reduce(0..999//1, result, fn i, result_acc -> result_acc + i end)
       assert result > 0
     end
     test "fast operation" do
@@ -81,13 +90,13 @@ end)
       assert actual == 0
     end
     test "module state available" do
-      actual = Main.module_state
+      actual = Main.module_state()
       assert actual == "initialized"
     end
   end
   describe "Integration Tests" do
     test "database integration" do
-      connected = Main.module_state == "initialized"
+      connected = Main.module_state() == "initialized"
       assert connected
     end
   end

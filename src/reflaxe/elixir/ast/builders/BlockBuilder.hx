@@ -98,6 +98,24 @@ class BlockBuilder {
             var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(el[0], context);
             return result != null ? result.def : ENil;
         }
+
+        // ====================================================================
+        // PATTERN DETECTION: Map Literal Builder Blocks
+        // ====================================================================
+        //
+        // Haxe desugars Map literals to a temp + repeated `set` calls:
+        //   var g = new Map();
+        //   g.set(k1, v1);
+        //   g.set(k2, v2);
+        //   g;
+        //
+        // For the Elixir target, emitting this shape and relying on later rebinding
+        // is fragile (and can break when infra vars are eliminated too early).
+        // Prefer compiling directly to an Elixir map literal `%{k1 => v1, k2 => v2}`.
+        var mapLiteral = detectMapLiteralBuilder(el, context);
+        if (mapLiteral != null) {
+            return mapLiteral;
+        }
         
         // ====================================================================
         // PATTERN DETECTION PHASE 4: Null Coalescing
@@ -501,6 +519,120 @@ class BlockBuilder {
     }
 
     /**
+     * Detect and compile Haxe's desugared Map-literal builder blocks into a literal `%{}`.
+     *
+     * Pattern (TypedExpr, simplified):
+     *   TVar(mapVar, TNew(Map, ...))
+     *   [zero or more TVar value temps]
+     *   TCall(TField(TLocal(mapVar), "set"), [keyExpr, valueExpr])
+     *   ...
+     *   TLocal(mapVar)
+     */
+    static function detectMapLiteralBuilder(el: Array<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
+        if (el == null || el.length < 3) return null;
+
+        // First statement must declare the map var.
+        var mapVar: Null<TVar> = null;
+        var mapInit: Null<TypedExpr> = null;
+        switch (el[0].expr) {
+            case TVar(v, init) if (init != null):
+                mapVar = v;
+                mapInit = init;
+            default:
+                return null;
+        }
+
+        // Must be a map constructor (`new Map()` / `new StringMap()` etc).
+        var isMapCtor = switch (mapInit.expr) {
+            case TNew(c, _, _):
+                var ct = c.get();
+                ct != null && (ct.name == "Map" || ct.name == "StringMap" || ct.name == "IntMap" || StringTools.endsWith(ct.name, "Map"));
+            default:
+                false;
+        }
+        if (!isMapCtor) return null;
+
+        // Last statement must be returning the same var.
+        var returnsMapVar = switch (el[el.length - 1].expr) {
+            case TLocal(v) if (v.id == mapVar.id): true;
+            default: false;
+        }
+        if (!returnsMapVar) return null;
+
+        // Track simple value temps declared in the block and used as the value of a set call.
+        var tempInits = new Map<Int, TypedExpr>(); // TVar.id -> init expr
+
+        // Collect map.set calls.
+        var pairs: Array<{ key: TypedExpr, value: TypedExpr }> = [];
+        for (i in 1...el.length - 1) {
+            var stmt = el[i];
+            switch (stmt.expr) {
+                case TVar(v, init) if (init != null):
+                    // Keep temp initializers around for inline substitution when used once.
+                    tempInits.set(v.id, init);
+
+                case TCall(target, args) if (args != null && args.length == 2):
+                    // Must be `mapVar.set(key, value)`.
+                    var isSetOnMapVar = false;
+                    switch (target.expr) {
+                        case TField(obj, FInstance(_, _, cf)):
+                            if (cf.get().name == "set") {
+                                switch (obj.expr) {
+                                    case TLocal(v) if (v.id == mapVar.id): isSetOnMapVar = true;
+                                    default:
+                                }
+                            }
+                        case TField(obj, FAnon(cf)):
+                            if (cf.get().name == "set") {
+                                switch (obj.expr) {
+                                    case TLocal(v) if (v.id == mapVar.id): isSetOnMapVar = true;
+                                    default:
+                                }
+                            }
+                        case TField(obj, FDynamic(name)):
+                            if (name == "set") {
+                                switch (obj.expr) {
+                                    case TLocal(v) if (v.id == mapVar.id): isSetOnMapVar = true;
+                                    default:
+                                }
+                            }
+                        default:
+                    }
+                    if (!isSetOnMapVar) return null;
+
+                    var keyExpr = args[0];
+                    var valueExpr = args[1];
+
+                    // Inline a simple `tmp` value when the set call uses it directly.
+                    switch (valueExpr.expr) {
+                        case TLocal(v) if (tempInits.exists(v.id)):
+                            valueExpr = tempInits.get(v.id);
+                        default:
+                    }
+
+                    pairs.push({ key: keyExpr, value: valueExpr });
+
+                default:
+                    // Unknown statement in the middle - not a pure map builder.
+                    return null;
+            }
+        }
+
+        if (pairs.length == 0) return null;
+
+        var buildExpression = context.getExpressionBuilder();
+        var mapPairs: Array<reflaxe.elixir.ast.ElixirAST.EMapPair> = [];
+        for (p in pairs) {
+            var keyAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(p.key, context);
+            var valueAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(p.value, context);
+            if (keyAst == null || valueAst == null) return null;
+            mapPairs.push({ key: keyAst, value: valueAst });
+        }
+
+        return EMap(mapPairs);
+    }
+
+    /**
      * Check for inline expansion patterns
      */
     static function checkForInlineExpansion(el: Array<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
@@ -519,24 +651,48 @@ class BlockBuilder {
     /**
      * Track infrastructure variables
      */
-    static function trackInfrastructureVars(el: Array<TypedExpr>, context: CompilationContext): Void {
-        // Track infrastructure variables for later use
+    static function trackInfrastructureVars(el: Array<TypedExpr>, context: CompilationContext): Array<{name: String, had: Bool, value: Null<ElixirAST>}> {
+        if (el == null) return [];
+
+        // Track infrastructure variables for later use, but keep mappings scoped to this block.
+        // Haxe often reuses infra names like `_g1` across nested blocks; using a single global
+        // map without restoration can leak incorrect bounds into later codegen.
+        var snapshots: Array<{name: String, had: Bool, value: Null<ElixirAST>}> = [];
+        var captured = new Map<String, Bool>();
+
         for (expr in el) {
             switch(expr.expr) {
-                case TVar(v, init) if (init != null):
-                    // Check if this is an infrastructure variable
-                    if (isInfrastructureVar(v.name)) {
-                        // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
-                        // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
-                        var initAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(init, context);
-                        context.infrastructureVarInitValues.set(v.name, initAST);
-                        
-                        #if debug_infrastructure_vars
-                        // DISABLED: trace('[BlockBuilder] Tracked infrastructure var ${v.name}');
-                        #end
+                case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
+                    if (!captured.exists(v.name)) {
+                        var had = context.infrastructureVarInitValues.exists(v.name);
+                        var value = had ? context.infrastructureVarInitValues.get(v.name) : null;
+                        snapshots.push({name: v.name, had: had, value: value});
+                        captured.set(v.name, true);
                     }
+
+                    // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                    // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                    var initAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(init, context);
+                    context.infrastructureVarInitValues.set(v.name, initAST);
+
+                    #if debug_infrastructure_vars
+                    // DISABLED: trace('[BlockBuilder] Tracked infrastructure var ${v.name}');
+                    #end
                 default:
-                    // Not a variable declaration
+                    // Not an infrastructure variable declaration
+            }
+        }
+
+        return snapshots;
+    }
+
+    static function restoreInfrastructureVars(snapshots: Array<{name: String, had: Bool, value: Null<ElixirAST>}>, context: CompilationContext): Void {
+        if (snapshots == null) return;
+        for (snapshot in snapshots) {
+            if (snapshot.had) {
+                context.infrastructureVarInitValues.set(snapshot.name, snapshot.value);
+            } else {
+                context.infrastructureVarInitValues.remove(snapshot.name);
             }
         }
     }
@@ -548,46 +704,58 @@ class BlockBuilder {
         if (context.compiler == null) {
             return ENil;
         }
-        
-        // Track infrastructure variables first
-        trackInfrastructureVars(el, context);
-        
-        // Check for inline expansion patterns
-        var inlineResult = checkForInlineExpansion(el, context);
-        if (inlineResult != null) {
-            return inlineResult;
-        }
-        
-        var expressions: Array<ElixirAST> = [];
 
-        for (expr in el) {
-            // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
-            // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
-            var compiled = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
-            if (compiled != null) {
-                expressions.push(compiled);
+        // Track infrastructure variables first (scoped to this block).
+        var infraSnapshots = trackInfrastructureVars(el, context);
+
+        var result: ElixirASTDef = ENil;
+        var didSetResult = false;
+        try {
+            // Check for inline expansion patterns
+            var inlineResult = checkForInlineExpansion(el, context);
+            if (inlineResult != null) {
+                result = inlineResult;
+                didSetResult = true;
+            } else {
+                var expressions: Array<ElixirAST> = [];
+
+                for (expr in el) {
+                    // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                    // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                    var compiled = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
+                    if (compiled != null) {
+                        expressions.push(compiled);
+                    }
+                }
+
+                // Check for combining TVar and TBinop patterns
+                if (expressions.length >= 2) {
+                    var combined = attemptStatementCombining(expressions);
+                    if (combined != null) {
+                        result = combined;
+                        didSetResult = true;
+                    }
+                }
+
+                if (!didSetResult) {
+                    // Handle empty blocks
+                    if (expressions.length == 0) {
+                        result = ENil;
+                    } else if (expressions.length == 1) {
+                        // Single expression blocks can be unwrapped
+                        result = expressions[0].def;
+                    } else {
+                        result = EBlock(expressions);
+                    }
+                }
             }
+        } catch (e: Any) {
+            restoreInfrastructureVars(infraSnapshots, context);
+            throw e;
         }
-        
-        // Check for combining TVar and TBinop patterns
-        if (expressions.length >= 2) {
-            var combined = attemptStatementCombining(expressions);
-            if (combined != null) {
-                return combined;
-            }
-        }
-        
-        // Handle empty blocks
-        if (expressions.length == 0) {
-            return ENil;
-        }
-        
-        // Single expression blocks can be unwrapped
-        if (expressions.length == 1) {
-            return expressions[0].def;
-        }
-        
-        return EBlock(expressions);
+
+        restoreInfrastructureVars(infraSnapshots, context);
+        return result;
     }
     
     /**

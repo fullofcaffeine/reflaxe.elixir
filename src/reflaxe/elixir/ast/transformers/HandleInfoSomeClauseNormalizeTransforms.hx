@@ -15,6 +15,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   `case parse_message(msg) do {:some, b} -> alias = b; case b do ... end end`
  *   to a cleaner form without the alias and ensures noreply returns use the
  *   actual socket argument, avoiding WAE warnings.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleInfoSomeClauseNormalizeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

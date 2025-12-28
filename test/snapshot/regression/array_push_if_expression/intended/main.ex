@@ -14,13 +14,7 @@ defmodule Main do
   defp test_if_else_push() do
     messages = []
     success = false
-    messages = if (success) do
-      messages = messages ++ ["Success!"]
-      messages
-    else
-      messages = messages ++ ["Failed!"]
-      messages
-    end
+    messages = if (success), do: messages ++ ["Success!"], else: messages ++ ["Failed!"]
     nil
   end
   defp test_conditional_accumulation() do
@@ -35,8 +29,7 @@ defmodule Main do
     level2 = true
     results = if (level1) do
       results = results ++ ["Level 1"]
-      results = if (level2), do: results ++ ["Level 2"], else: results
-      results
+      if (level2), do: results ++ ["Level 2"], else: results
     else
       results
     end

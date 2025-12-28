@@ -26,6 +26,10 @@ import reflaxe.elixir.ast.ASTUtils;
  *     undefined = used − declared − {params, socket}
  *   For each undefined name n, prepend: n = extract(n).
  * - Runs late so it sees near-final body shapes and avoids being undone by later passes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleEventParamExtractFromBodyUseTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

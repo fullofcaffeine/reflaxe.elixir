@@ -635,6 +635,59 @@ class TypedExprPreprocessor {
             }
         }
 
+        // Preserve infrastructure variables that act as mutable collection builders (Map/Array).
+        //
+        // WHY
+        // - Haxe desugars map/array literals to a temp (often named g/_g/...) with a series of
+        //   `.set`/`.push` calls and returns that temp.
+        // - Eliminating such temps by substitution in an immutable target breaks semantics:
+        //   `tmp.set(k, v)` becomes `Map.put(%{}, k, v)` (discarded), and the initializer returns `%{}`/`[]`.
+        //
+        // HOW
+        // - Pre-scan the block and mark infra vars that appear as the receiver of known mutation methods.
+        // - Do not eliminate these vars; later ElixirAST passes will thread updates and collapse builders.
+        var protectedMutationInfraVarIds: Map<Int, Bool> = new Map();
+        inline function isMutationMethod(methodName: String): Bool {
+            return methodName == "set" || methodName == "push" || methodName == "add" || methodName == "remove" || methodName == "insert";
+        }
+        function unwrapLocal(expr: TypedExpr): Null<TVar> {
+            if (expr == null) return null;
+            return switch (expr.expr) {
+                case TLocal(v): v;
+                case TParenthesis(inner): unwrapLocal(inner);
+                case TMeta(_, inner): unwrapLocal(inner);
+                default: null;
+            }
+        }
+        for (stmt in exprs) {
+            function scanMutationReceiver(e: TypedExpr): Void {
+                if (e == null) return;
+                switch (e.expr) {
+                    case TCall(target, _):
+                        switch (target.expr) {
+                            case TField(obj, fieldAccess):
+                                var localVar = unwrapLocal(obj);
+                                if (localVar != null && isInfrastructureVar(localVar.name)) {
+                                    var methodName: Null<String> = switch (fieldAccess) {
+                                        case FInstance(_, _, cf): cf.get().name;
+                                        case FStatic(_, cf): cf.get().name;
+                                        case FAnon(cf): cf.get().name;
+                                        case FDynamic(s): s;
+                                        default: null;
+                                    };
+                                    if (methodName != null && isMutationMethod(methodName)) {
+                                        protectedMutationInfraVarIds.set(localVar.id, true);
+                                    }
+                                }
+                            default:
+                        }
+                    default:
+                }
+                TypedExprTools.iter(e, scanMutationReceiver);
+            }
+            scanMutationReceiver(stmt);
+        }
+
         #if debug_infrastructure_vars
         // DISABLED: trace('[processBlock] ===== BLOCK ANALYSIS =====');
         // DISABLED: trace('[processBlock] Block has ${exprs.length} expressions');
@@ -725,7 +778,10 @@ class TypedExprPreprocessor {
                     // DISABLED: trace('[processBlock] Found TVar: ${v.name} (ID: ${v.id}), init=${init != null}, isInfra=${isInfrastructureVar(v.name)}');
                     #end
 
-                    if (init != null && isInfrastructureVar(v.name) && !protectedLoopInfraVarIds.exists(v.id)) {
+                    if (init != null
+                        && isInfrastructureVar(v.name)
+                        && !protectedLoopInfraVarIds.exists(v.id)
+                        && !protectedMutationInfraVarIds.exists(v.id)) {
                         #if debug_preprocessor
                         // DISABLED: trace('[processBlock] ✓ INFRASTRUCTURE VARIABLE DETECTED: "${v.name}" (ID: ${v.id})');
                         // DISABLED: trace('[processBlock] Init expression type: ${Type.enumConstructor(init.expr)}');

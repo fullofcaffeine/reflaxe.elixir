@@ -57,10 +57,10 @@ defmodule UserQueries do
     end
     query
   end
-  defp from(table, alias_param, opts) do
+  defp from(_, _, _) do
     nil
   end
-  defp where(query, alias_param, condition) do
+  defp where(_, _, _) do
     nil
   end
 end

@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * WHY
  * - Avoids WAE warnings without touching semantics. The case already returns
  *   `{:noreply, socket}` in each branch.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleInfoDropUnusedAssignTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

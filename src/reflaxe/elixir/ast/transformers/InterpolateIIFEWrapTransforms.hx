@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Upstream desugarings can introduce multi-line/assignment blocks inside
  *   interpolation (e.g., Enum.join list-builders). Wrapping ensures validity
  *   regardless of earlier detection.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class InterpolateIIFEWrapTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   1) For each argument pattern PVar(`_name`), check if body uses `name`.
  *   2) If used and `_name` is not used, rename binder to `name` and rewrite body
  *      references `_name`→`name`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DefArgUnderscorePromoteByBodyUseTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

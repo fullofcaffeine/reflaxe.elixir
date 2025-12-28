@@ -12,6 +12,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHY
  * - Modularize registry without behavior change; preserve order.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CollectionsAndLoops {
   public static function build():Array<ElixirASTTransformer.PassConfig> {
@@ -22,6 +30,20 @@ class CollectionsAndLoops {
       description: "Transform unrolled loops (sequential statements) back to Enum.each",
       enabled: #if no_traces false #else true #end,
       pass: reflaxe.elixir.ast.transformers.LoopTransforms.unrolledLoopTransformPass
+    });
+
+    passes.push({
+      name: "HaxeMapModuleCallRewrite",
+      description: "Rewrite IntMap/StringMap/ObjectMap calls to native Map operations",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.HaxeMapModuleCallRewriteTransforms.pass
+    });
+
+    passes.push({
+      name: "MapKeysIteratorReduceWhileRewrite",
+      description: "Rewrite iterator-driven reduce_while loops over Map.keys/1 into direct Enum.reduce_while",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.MapKeysIteratorReduceWhileRewriteTransforms.pass
     });
 
     passes.push({

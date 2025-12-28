@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For each ERaw string, scan all #{...} segments with balanced braces.
  *   Within each segment, detect Enum.join( ... , ...) and, if the first
  *   argument contains newlines or assignment markers, wrap it with an IIFE.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class InterpolateJoinArgSanitizeTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

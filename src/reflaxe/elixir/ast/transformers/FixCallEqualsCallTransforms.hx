@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - In EBlock/EDo, replace `EBinary(Match, E(Call|RemoteCall), E(Call|RemoteCall))`
  *   with `[_ = leftCall, _ = rightCall]`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class FixCallEqualsCallTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -32,7 +32,7 @@ class UnusedImportCleanup {
                     var newBody: Array<ElixirAST> = [];
                     for (b in body) {
                         switch (b.def) {
-                            case EImport(module, _, _) if (module == "Ecto.Changeset" && (!usesChangeset || usesQualifiedChangeset)):
+                            case EImport(module, _, _, _) if (module == "Ecto.Changeset" && (!usesChangeset || usesQualifiedChangeset)):
                                 // Skip
                             case EAlias(module, as) if ((as == null || as == "Repo") && !usesRepoAlias):
                                 // Remove unused alias Repo
@@ -54,7 +54,7 @@ class UnusedImportCleanup {
                     var filtered: Array<ElixirAST> = [];
                     for (b in stmts) {
                         switch (b.def) {
-                            case EImport(module, _, _) if (module == "Ecto.Changeset" && (!usesChangeset2 || usesQualifiedChangeset2)):
+                            case EImport(module, _, _, _) if (module == "Ecto.Changeset" && (!usesChangeset2 || usesQualifiedChangeset2)):
                                 // drop
                             case EAlias(module, as) if ((as == null || as == "Repo") && !usesRepoAlias2):
                                 // drop

@@ -1,11 +1,11 @@
 defmodule User do
-  def changeset(struct, user, value) do
+  def changeset(_, _, _) do
     nil
   end
-  def validate_email_domain(struct, changeset) do
+  def validate_email_domain(_, changeset) do
     changeset
   end
-  def update_changeset(struct, user, value) do
+  def update_changeset(_, _, _) do
     nil
   end
 end

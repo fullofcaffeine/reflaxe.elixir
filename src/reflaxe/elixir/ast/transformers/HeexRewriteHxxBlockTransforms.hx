@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   • `<%=\s*HXX.block("...")\s*%>` → `...`
  *   • `<%=\s*hxx\.HXX\.block("...")\s*%>` → `...`
  * - Supports both single and double quotes, does not unescape inner content.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexRewriteHxxBlockTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

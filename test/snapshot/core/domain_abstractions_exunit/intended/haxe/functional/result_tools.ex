@@ -35,7 +35,7 @@ defmodule ResultTools do
   def unwrap(result) do
     (case result do
       {:ok, value} -> value
-      {:error, _error} -> throw("Attempted to unwrap Error result: " <> inspect(error))
+      {:error, error} -> throw("Attempted to unwrap Error result: " <> inspect(error))
     end)
   end
   def unwrap_or(result, default_value) do
@@ -52,9 +52,7 @@ defmodule ResultTools do
   end
   def filter(result, predicate, error_value) do
     (case result do
-      {:ok, value} ->
-        error_value = value
-        if (predicate.(value)), do: {:ok, value}, else: {:error, error_value}
+      {:ok, value} -> if (predicate.(value)), do: {:ok, value}, else: {:error, error_value}
       {:error, error} -> {:error, error}
     end)
   end

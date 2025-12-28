@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Neutral lowering sometimes introduces `_socket` references and alias lines that
  *   cause WAE warnings. This pass fixes them generically, scoped only to functions
  *   that actually have a `socket` parameter.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class UnderscoreToParamFixTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

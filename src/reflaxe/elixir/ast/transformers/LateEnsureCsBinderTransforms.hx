@@ -29,6 +29,10 @@ import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
  *      - direct remote call Ecto.Changeset.cast/change
  *   3) Rewrite that statement to `cs = <expr>` and keep subsequent statements unchanged.
  * - Purely shape/API-based; avoids app-specific names.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class LateEnsureCsBinderTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

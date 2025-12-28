@@ -1,111 +1,177 @@
 defmodule Main do
   def string_map() do
     map = %{}
-    _ = StringMap.set(map, "one", 1)
-    _ = StringMap.set(map, "two", 2)
-    _ = StringMap.set(map, "three", 3)
-    _ = StringMap.remove(map, "two")
-    key = StringMap.keys(map)
-    _ = Enum.each(colors, fn _ -> nil end)
-    _ = StringMap.clear(map)
-    nil
+    map = Map.put(map, "one", 1)
+    _ = map
   end
   def int_map() do
     map = %{}
-    _ = IntMap.set(map, 1, "first")
-    _ = IntMap.set(map, 2, "second")
-    _ = IntMap.set(map, 10, "tenth")
-    _ = IntMap.set(map, 100, "hundredth")
-    key = IntMap.keys(map)
-    _ = Enum.each(colors, fn _ -> nil end)
-    k = IntMap.keys(map)
-    Enum.each(colors, fn item -> g = g ++ [item] end)
-    nil
-    keys = []
-    k = IntMap.keys(map)
-    Enum.each(colors, fn _ -> g = g ++ [IntMap.get(map, k)] end)
-    nil
-    values = []
-    nil
+    map = Map.put(map, 1, "first")
+    _ = map
   end
   def object_map() do
     map = %{}
     obj1 = %{:id => 1}
-    obj2 = %{:id => 2}
-    _ = ObjectMap.set(map, obj1, "Object 1")
-    _ = ObjectMap.set(map, obj2, "Object 2")
-    obj3_id = 1
-    nil
+    map = Map.put(map, obj1, "Object 1")
+    _ = map
   end
   def map_literals() do
     colors = %{"red" => 16711680, "green" => 65280, "blue" => 255}
-    color = StringMap.keys(colors)
-    _ = Enum.each(colors, fn _ ->
-  hex = StringTools.hex(StringMap.get(colors, color), 6)
-  nil
+    _ = Enum.reduce_while(Map.keys(colors), :ok, fn color, acc ->
+  try do
+    hex = StringTools.hex(Map.get(colors, color), 6)
+    nil
+    {:cont, acc}
+  catch
+    :throw, {:break, break_state} ->
+      {:halt, break_state}
+    :throw, {:continue, continue_state} ->
+      {:cont, continue_state}
+    :throw, :break ->
+      {:halt, acc}
+    :throw, :continue ->
+      {:cont, acc}
+  end
 end)
     squares = %{1 => 1, 2 => 4, 3 => 9, 4 => 16, 5 => 25}
-    n = IntMap.keys(squares)
-    _ = Enum.each(colors, fn _ -> nil end)
+    _ = Enum.reduce_while(Map.keys(squares), :ok, fn _, acc ->
+  try do
+    nil
+    {:cont, acc}
+  catch
+    :throw, {:break, break_state} ->
+      {:halt, break_state}
+    :throw, {:continue, continue_state} ->
+      {:cont, continue_state}
+    :throw, :break ->
+      {:halt, acc}
+    :throw, :continue ->
+      {:cont, acc}
+  end
+end)
   end
   def nested_maps() do
-    users = %{}
     alice = %{}
-    _ = StringMap.set(alice, "age", 30)
-    _ = StringMap.set(alice, "email", "alice@example.com")
-    _ = StringMap.set(alice, "active", true)
-    bob = %{}
-    _ = StringMap.set(bob, "age", 25)
-    _ = StringMap.set(bob, "email", "bob@example.com")
-    _ = StringMap.set(bob, "active", false)
-    _ = StringMap.set(users, "alice", alice)
-    _ = StringMap.set(users, "bob", bob)
-    username = StringMap.keys(users)
-    _ = Enum.each(colors, fn _ ->
-  user_data = StringMap.get(users, username)
-  field = StringMap.keys(user_data)
-  _ = Enum.each(colors, fn _ -> nil end)
-end)
+    alice = Map.put(alice, "age", 30)
+    _ = alice
   end
   def map_transformations() do
     original = %{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
     doubled = %{}
-    key = StringMap.keys(original)
-    Enum.each(doubled, fn _ ->
-      value = StringMap.get(original, key) * 2
-      _ = StringMap.set(doubled, key, value)
-    end)
-    nil
-    key = StringMap.keys(doubled)
-    _ = Enum.each(colors, fn _ -> nil end)
-    filtered = %{}
-    key = StringMap.keys(original)
-    Enum.each(filtered, fn _ ->
-      value = StringMap.get(original, key)
-      if (value > 2) do
-        StringMap.set(filtered, key, value)
+    Enum.reduce_while(Map.keys(original), {doubled}, fn key, {acc_doubled} ->
+      try do
+        value = Map.get(original, key) * 2
+        _ = Map.put(acc_doubled, key, value)
+        {:cont, {acc_doubled}}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc_doubled}}
+        :throw, :continue ->
+          {:cont, {acc_doubled}}
       end
     end)
+    _ = Enum.reduce_while(Map.keys(doubled), :ok, fn _, acc ->
+  try do
     nil
-    key = StringMap.keys(filtered)
-    _ = Enum.each(colors, fn _ -> nil end)
+    {:cont, acc}
+  catch
+    :throw, {:break, break_state} ->
+      {:halt, break_state}
+    :throw, {:continue, continue_state} ->
+      {:cont, continue_state}
+    :throw, :break ->
+      {:halt, acc}
+    :throw, :continue ->
+      {:cont, acc}
+  end
+end)
+    filtered = %{}
+    Enum.reduce_while(Map.keys(original), {filtered}, fn key, {acc_filtered} ->
+      try do
+        value = Map.get(original, key)
+        {:cont, {(if (value > 2) do
+  Map.put(acc_filtered, key, value)
+end)}}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc_filtered}}
+        :throw, :continue ->
+          {:cont, {acc_filtered}}
+      end
+    end)
+    _ = Enum.reduce_while(Map.keys(filtered), :ok, fn _, acc ->
+  try do
+    nil
+    {:cont, acc}
+  catch
+    :throw, {:break, break_state} ->
+      {:halt, break_state}
+    :throw, {:continue, continue_state} ->
+      {:cont, continue_state}
+    :throw, :break ->
+      {:halt, acc}
+    :throw, :continue ->
+      {:cont, acc}
+  end
+end)
     map1 = %{"a" => 1, "b" => 2}
     map2 = %{"c" => 3, "d" => 4, "a" => 10}
     merged = %{}
-    key = StringMap.keys(map1)
-    Enum.each(merged, fn _ ->
-      value = StringMap.get(map1, key)
-      _ = StringMap.set(merged, key, value)
+    Enum.reduce_while(Map.keys(map1), {merged}, fn key, {acc_merged} ->
+      try do
+        value = Map.get(map1, key)
+        _ = Map.put(acc_merged, key, value)
+        {:cont, {acc_merged}}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc_merged}}
+        :throw, :continue ->
+          {:cont, {acc_merged}}
+      end
     end)
-    nil
-    key = StringMap.keys(map2)
-    Enum.each(merged, fn _ ->
-      value = StringMap.get(map2, key)
-      _ = StringMap.set(merged, key, value)
+    Enum.reduce_while(Map.keys(map2), {merged}, fn key, {acc_merged} ->
+      try do
+        value = Map.get(map2, key)
+        _ = Map.put(acc_merged, key, value)
+        {:cont, {acc_merged}}
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc_merged}}
+        :throw, :continue ->
+          {:cont, {acc_merged}}
+      end
     end)
+    _ = Enum.reduce_while(Map.keys(merged), :ok, fn _, acc ->
+  try do
     nil
-    key = StringMap.keys(merged)
-    _ = Enum.each(colors, fn _ -> nil end)
+    {:cont, acc}
+  catch
+    :throw, {:break, break_state} ->
+      {:halt, break_state}
+    :throw, {:continue, continue_state} ->
+      {:cont, continue_state}
+    :throw, :break ->
+      {:halt, acc}
+    :throw, :continue ->
+      {:cont, acc}
+  end
+end)
   end
   def enum_map() do
     map = %{}
@@ -113,17 +179,46 @@ end)
     _ = BalancedTree.set(map, {:green}, "00FF00")
     _ = BalancedTree.set(map, {:blue}, "0000FF")
     color = BalancedTree.keys(map)
-    _ = Enum.each(colors, fn _ -> nil end)
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  try do
+    if (color.has_next.()) do
+      color = color.next.()
+      nil
+      {:cont, acc}
+    else
+      {:halt, acc}
+    end
+  catch
+    :throw, {:break, break_state} ->
+      {:halt, break_state}
+    :throw, {:continue, continue_state} ->
+      {:cont, continue_state}
+    :throw, :break ->
+      {:halt, acc}
+    :throw, :continue ->
+      {:cont, acc}
+  end
+end)
     if (BalancedTree.exists(map, {:red})), do: nil
   end
   def process_map(input) do
     result = %{}
-    key = StringMap.keys(input)
-    Enum.each(result, fn _ ->
-      value = StringMap.get(input, key)
-      _ = StringMap.set(result, key, "Value: " <> Kernel.to_string(value))
+    Enum.reduce_while(Map.keys(input), {result}, fn key, {acc_result} ->
+      try do
+        value = Map.get(input, key)
+        acc_result = Map.put(acc_result, key, "Value: " <> Kernel.to_string(value))
+        _ = acc_result
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc_result}}
+        :throw, :continue ->
+          {:cont, {acc_result}}
+      end
     end)
-    nil
     result
   end
   def main() do
@@ -136,7 +231,20 @@ end)
     _ = enum_map()
     input = %{"x" => 10, "y" => 20, "z" => 30}
     output = process_map(input)
-    key = StringMap.keys(output)
-    _ = Enum.each(colors, fn _ -> nil end)
+    _ = Enum.reduce_while(Map.keys(output), :ok, fn _, acc ->
+  try do
+    nil
+    {:cont, acc}
+  catch
+    :throw, {:break, break_state} ->
+      {:halt, break_state}
+    :throw, {:continue, continue_state} ->
+      {:cont, continue_state}
+    :throw, :break ->
+      {:halt, acc}
+    :throw, :continue ->
+      {:cont, acc}
+  end
+end)
   end
 end

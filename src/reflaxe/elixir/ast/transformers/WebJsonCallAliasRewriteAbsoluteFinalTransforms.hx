@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Guarantees removal of alias artifacts at the absolute final stage even if
  *   earlier controller-specific passes did not trigger due to ordering.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class WebJsonCallAliasRewriteAbsoluteFinalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

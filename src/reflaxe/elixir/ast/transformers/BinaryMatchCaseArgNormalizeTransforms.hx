@@ -23,8 +23,23 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For each ECall/ERemoteCall, inspect args; when an arg is a two-statement block
  *   (assignment to a simple var followed by comparison of a case on :binary.match),
  *   replace it with a NotEqual comparison against :nomatch using the RHS of the assignment.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class BinaryMatchCaseArgNormalizeTransforms {
+  static inline function isBinaryModule(mod: ElixirAST): Bool {
+    return switch (mod.def) {
+      case EVar(m): (m == ":binary" || m == "binary");
+      case EAtom(a):
+        var s: String = a;
+        s == ":binary" || s == "binary";
+      default:
+        false;
+    };
+  }
+
   public static function pass(ast: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
       return switch (n.def) {
@@ -84,9 +99,12 @@ class BinaryMatchCaseArgNormalizeTransforms {
           case ECase(matchExpr, clauses):
             // matchExpr must be :binary.match(varName, sub)
             switch (matchExpr.def) {
-              case ERemoteCall({def: EVar(m)}, fnName, margs) if (m == ":binary" && fnName == "match" && margs != null && margs.length == 2):
+              case ERemoteCall(mod, fnName, margs) if (fnName == "match" && margs != null && margs.length == 2 && isBinaryModule(mod)):
                 switch (margs[0].def) { case EVar(v) if (v == varName): ok = true; default: }
                 if (ok) subExpr = margs[1];
+              case ECall(target, fnName2, margs2) if (target != null && fnName2 == "match" && margs2 != null && margs2.length == 2 && isBinaryModule(target)):
+                switch (margs2[0].def) { case EVar(v2) if (v2 == varName): ok = true; default: }
+                if (ok) subExpr = margs2[1];
               default:
             }
           default:

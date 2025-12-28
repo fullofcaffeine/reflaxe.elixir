@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Scans EBlock/EDo statements and rewrites any statement where the LHS of `=` is itself
  *   an EBinary/EMatch into two statements: the inner match first, followed by `_ = <rhs>`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class FlattenNestedMatchLhsTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

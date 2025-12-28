@@ -26,6 +26,10 @@ import StringTools;
  *   assignment to EVar(name) (i.e., `name = ...`) or the body references both the
  *   binder name and a different local with the same name (detected by prior match
  *   to EVar(name) on LHS), rename the binder to `entry` (or `entry2` if occupied).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class PresenceEFnShadowedBinderRenameTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

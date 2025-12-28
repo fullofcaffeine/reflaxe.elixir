@@ -2,31 +2,24 @@ defmodule Main do
   def string_basics() do
     str1 = "Hello"
     str2 = "World"
-    str3 = "#{(fn -> str1 end).()} #{(fn -> str2 end).()}"
-    multiline = "This is\na multi-line\nstring"
+    _str3 = "#{(fn -> str1 end).()} #{(fn -> str2 end).()}"
     nil
   end
   def string_interpolation() do
-    name = "Alice"
-    age = 30
-    pi = 3.14159
-    person_name = "Bob"
-    person_age = 25
     _ = "apple"
     _ = "banana"
     _ = "orange"
     nil
   end
   def string_methods() do
-    str = "  Hello, World!  "
     text = "Hello, World!"
     parts = if (", " == "") do
       String.graphemes(text)
     else
       String.split(text, ", ")
     end
-    joined = Enum.join(parts, " - ")
-    replaced = StringTools.replace(text, "World", "Haxe")
+    _joined = Enum.join(parts, " - ")
+    _replaced = StringTools.replace(text, "World", "Haxe")
     nil
   end
   def string_comparison() do
@@ -46,14 +39,14 @@ defmodule Main do
     _ = StringBuf.add(buf, "!")
     _ = StringBuf.add(buf, "!")
     _ = StringBuf.add(buf, "!")
-    result = StringBuf.to_string(buf)
+    _result = StringBuf.to_string(buf)
     parts = []
     parts = parts ++ ["Item #{(fn -> Kernel.to_string(1) end).()}"]
     parts = parts ++ ["Item #{(fn -> Kernel.to_string(2) end).()}"]
     parts = parts ++ ["Item #{(fn -> Kernel.to_string(3) end).()}"]
     parts = parts ++ ["Item #{(fn -> Kernel.to_string(4) end).()}"]
     parts = parts ++ ["Item #{(fn -> Kernel.to_string(5) end).()}"]
-    list = Enum.join(parts, ", ")
+    _list = Enum.join(parts, ", ")
     nil
   end
   def regex_operations() do
@@ -63,37 +56,42 @@ defmodule Main do
     all_numbers = EReg.new("\\d+", "g")
     numbers = []
     temp = text
-    {numbers, temp} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {[], temp}, fn _, {numbers, temp} ->
-      if (EReg.match(all_numbers, temp)) do
-        numbers = numbers ++ [EReg.matched(all_numbers, 0)]
-        temp = EReg.matched_right(all_numbers)
-        {:cont, {numbers, temp}}
-      else
-        {:halt, {numbers, temp}}
+    {_numbers, _temp} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, temp}, fn _, {acc_numbers, acc_temp} ->
+      try do
+        if (EReg.match(all_numbers, acc_temp)) do
+          acc_numbers = acc_numbers ++ [EReg.matched(all_numbers, 0)]
+          acc_temp = EReg.matched_right(all_numbers)
+          {:cont, {acc_numbers, acc_temp}}
+        else
+          {:halt, {acc_numbers, acc_temp}}
+        end
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc_numbers, acc_temp}}
+        :throw, :continue ->
+          {:cont, {acc_numbers, acc_temp}}
       end
     end)
-    nil
-    replaced = EReg.replace(EReg.new("\\d+", ""), text, "XXX")
-    email = "user@example.com"
-    email_regex = EReg.new("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "")
+    _replaced = EReg.replace(EReg.new("\\d+", ""), text, "XXX")
+    _email_regex = EReg.new("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "")
     nil
   end
   def string_formatting() do
     num = 42
-    padded = StringTools.lpad(inspect(num), "0", 5)
+    _padded = StringTools.lpad(inspect(num), "0", 5)
     text = "Hi"
-    rpadded = "#{(fn -> StringTools.rpad(text, " ", 10) end).()}|"
-    hex = StringTools.hex(255)
+    _rpadded = "#{(fn -> StringTools.rpad(text, " ", 10) end).()}|"
+    _hex = StringTools.hex(255, nil)
     url = "Hello World!"
     encoded = StringTools.url_encode(url)
-    decoded = StringTools.url_decode(encoded)
+    _decoded = StringTools.url_decode(encoded)
     nil
   end
   def unicode_strings() do
-    unicode = "Hello 世界 🌍"
-    escaped = "Line 1\nLine 2\tTabbed\r\nLine 3"
-    quote_ = "She said \"Hello\""
-    backslash = "Path: C:\\Users\\Name"
     nil
   end
   def main() do

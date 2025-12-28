@@ -1,4 +1,10 @@
 defmodule Shape do
+  def new(x, y, name_param) do
+    struct = %{:position => nil, :name => nil}
+    struct = %{struct | position: Point.new(x, y)}
+    struct = %{struct | name: name_param}
+    struct
+  end
   def draw(struct) do
     "#{(fn -> struct.name end).()} at #{(fn -> Point.to_string(struct.position) end).()}"
   end
@@ -7,7 +13,7 @@ defmodule Shape do
   end
   def move(struct, dx, dy) do
     fh = struct.position
-    x = fh.x + dx
+    _x = fh.x + dx
     fh = struct.position
     y = fh.y + dy
     y

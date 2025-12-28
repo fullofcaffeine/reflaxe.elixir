@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - When encountering the first ERemoteCall with module EVar("Ecto.Query") and
  *     func in {"from","where","order_by","preload"} and no prior require found,
  *     insert `require Ecto.Query` just before that statement.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EctoLocalRequireInlineTransforms {
     static inline function isEctoQueryCall(n: ElixirAST): Bool {

@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For any EBlock([...]) walk statements; when a statement is
  *   `EBinary(Match, EVar(a), EBinary(Match, EVar(b), rhs))`, rewrite it into
  *   two consecutive statements. Applies recursively within EBlock/EDo/EFn bodies.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SplitChainedAssignmentsTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

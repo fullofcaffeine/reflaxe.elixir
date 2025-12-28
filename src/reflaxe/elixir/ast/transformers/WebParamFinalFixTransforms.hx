@@ -27,6 +27,10 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  *   - Rewrite body `_param` → `param` when necessary.
  * - For each EFn clause:
  *   - Rename `_x` → `x` when body references `x` or `_x`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class WebParamFinalFixTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

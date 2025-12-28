@@ -20,6 +20,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   "acc ++ [entry.metas[0]]".
  * - Remove trailing "\n  acc\nend)" following an if-block in the reduce body by
  *   collapsing to just "end)".
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class PresenceERawCleanupTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

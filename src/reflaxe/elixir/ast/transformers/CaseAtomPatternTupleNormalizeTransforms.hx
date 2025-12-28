@@ -16,6 +16,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Snapshot expectations prefer {:none} instead of :none when matching alongside {:some, v}.
  * - This stays generic and shape-based without app coupling.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseAtomPatternTupleNormalizeTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

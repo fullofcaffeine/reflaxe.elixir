@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Walk the AST and detect `EUnary(Not, ERemoteCall(Kernel, "is_nil", [ERemoteCall(:binary, "match", [a,b])]))`
  *   and rewrite to `ERemoteCall(String, "contains?", [a,b])` preserving metadata/pos.
  * - This is shape-only, no app-coupled heuristics.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class StringBinaryMatchContainsRewriteTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Traverse the AST and rewrite ETuple whose first element is the atom `no_reply`
  *   to the atom `noreply`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class LiveNoreplyAtomFixTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

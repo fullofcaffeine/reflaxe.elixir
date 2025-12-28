@@ -16,6 +16,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - The assignment is redundant and triggers WAE when the resulting value is
  *   not rebound (common in branches).
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SocketPutFlashAssignDropTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

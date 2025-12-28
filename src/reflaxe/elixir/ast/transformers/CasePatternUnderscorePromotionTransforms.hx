@@ -31,6 +31,10 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  *   in the body/guard, rewrite the pattern binder to `PVar("name")`.
  * - No renames occur if the trimmed name is not referenced, preserving existing
  *   underscore hygiene.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CasePatternUnderscorePromotionTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

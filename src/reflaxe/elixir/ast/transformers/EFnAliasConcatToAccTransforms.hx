@@ -28,6 +28,10 @@ import reflaxe.elixir.ast.ASTUtils;
  *   or
  *     `EMatch(PVar(lhs), ERemoteCall(_, "concat", [EVar(lhs), rhs]))`
  *   rewrite lhs to acc on both sides.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EFnAliasConcatToAccTransforms {
     static function isSelfAppend(rhs: ElixirAST, lhs: String): Bool {

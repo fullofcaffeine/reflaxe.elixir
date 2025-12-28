@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
  * InlineTrailingReturnVarTransforms
@@ -23,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For each def/defp body that is a block ending with EVar(name):
  *   - Scan backward to find the last assignment to `name` (EMatch/EBinary Match).
  *   - Remove that assignment statement and replace the trailing EVar with the RHS.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class InlineTrailingReturnVarTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
@@ -48,21 +53,13 @@ class InlineTrailingReturnVarTransforms {
                 // Safety: only inline if retName is NOT referenced in any prior statement
                 // to avoid removing a needed binding used in guards or checks.
                 var referenced = false;
-                function containsVar(e: ElixirAST, name:String): Bool {
-                    if (e == null) return false;
-                    return switch (e.def) {
-                        case EVar(v) if (v == name): true;
-                        case EBlock(es): for (x in es) if (containsVar(x, name)) return true; false;
-                        case EIf(c,t,el): containsVar(c, name) || containsVar(t, name) || (el != null && containsVar(el, name));
-                        case ECase(ex, cs): containsVar(ex, name) || (function(){ for (c in cs) if (containsVar(c.body, name)) return true; return false; })();
-                        case EBinary(_, l, r): containsVar(l, name) || containsVar(r, name);
-                        case EMatch(_, r2): containsVar(r2, name);
-                        case ECall(tgt, _, args): (tgt != null && containsVar(tgt, name)) || (function(){ for (a in args) if (containsVar(a, name)) return true; return false; })();
-                        case ERemoteCall(tgt2, _, args2): containsVar(tgt2, name) || (function(){ for (a in args2) if (containsVar(a, name)) return true; return false; })();
-                        default: false;
-                    };
+                for (i in 0...stmts.length - 1) {
+                    var used = OptimizedVarUseAnalyzer.referencedVarsExact(stmts[i]);
+                    if (used != null && used.exists(retName)) {
+                        referenced = true;
+                        break;
+                    }
                 }
-                for (i in 0...stmts.length - 1) if (containsVar(stmts[i], retName)) { referenced = true; break; }
                 if (referenced) return body;
                 var idx = -1;
                 var rhs: ElixirAST = null;

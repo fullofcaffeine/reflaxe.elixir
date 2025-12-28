@@ -1,7 +1,11 @@
 defmodule SimpleTree do
+  def new(root_param) do
+    struct = %{:root => nil}
+    struct = %{struct | root: root_param}
+    struct
+  end
   def set(struct, key, value) do
-    root = insert_node(struct, struct.root, key, value)
-    %{struct | root: root}
+    struct = %{struct | root: insert_node(struct, struct.root, key, value)}
   end
   def get(struct, key) do
     find_node(struct, struct.root, key)

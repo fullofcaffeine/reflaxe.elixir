@@ -20,6 +20,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - For ESigil("H", content), drop lines where `String.trim(line)` is exactly '"' or '\''. Preserve
  *   all other whitespace and formatting.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexStripDanglingQuoteLinesTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

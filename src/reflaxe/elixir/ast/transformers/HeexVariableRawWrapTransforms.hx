@@ -27,6 +27,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   to
  *     <%= Phoenix.HTML.raw(name) %>
  *   when name is in the collected set.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexVariableRawWrapTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

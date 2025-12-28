@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  * - Some safe underscore passes may incorrectly underscore parameters later used
  *   in the body (e.g., generated helper modules). This repair ensures correctness
  *   and aligns snapshots that expect non-underscored names when used.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ParamUnderscoreUsedRepairTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -24,6 +24,10 @@ import StringTools;
  *   and name starts with `_` and is referenced in the clause body/guard, then:
  *     - Rename pattern binder to `payload` (or trimmed name if safe).
  *     - Replace EVar(old) occurrences in the clause body/guard with the new name.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseSomeBinderNormalizeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

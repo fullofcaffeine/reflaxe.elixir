@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Some late rewrites can reintroduce `_params` or disturb earlier ordering.
  *   This pass guarantees consistency without app-specific coupling.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ParamUnderscoreGlobalAlignFinalTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

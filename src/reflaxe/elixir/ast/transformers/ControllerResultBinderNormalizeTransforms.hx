@@ -20,6 +20,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - For each ECase clause pattern PTuple([PLiteral(:ok), PVar(_x)]) → PVar("value")
  *   PTuple([PLiteral(:error), PVar(_y)]) → PVar("reason"). Body unchanged.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ControllerResultBinderNormalizeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

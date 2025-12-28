@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Desugared code can leave EBlock/EDo in expression position. Elixir requires
  *   a single expression there.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class BinaryOperandBlockToIIFETransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -14,6 +14,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - In controllers, when encountering Phoenix.Controller.json(conn, data),
  *   if the surrounding clause/function body references exactly one lower-case
  *   variable (excluding conn/params/socket), rewrite arg2 to that variable.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ControllerJsonDataArgPickSingleVarTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

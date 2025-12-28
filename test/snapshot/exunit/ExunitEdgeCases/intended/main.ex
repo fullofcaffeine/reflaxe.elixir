@@ -14,15 +14,17 @@ defmodule Main do
     _ = on_exit(fn -> global = nil end)
     :ok
   end
-  defp helper_method(struct) do
+  def new() do
+    TestCase.new()
+  end
+  defp helper_method(_) do
     assert true
   end
   defp static_helper() do
     42
   end
   test "without assertions" do
-    x = 2
-    y = "hello"
+    
   end
   test "with many tags" do
     assert true

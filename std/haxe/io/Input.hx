@@ -54,8 +54,8 @@ class Input {
                 break;
             }
             b.set(pos, byte);
-            pos++;
-            k--;
+            pos = pos + 1;
+            k = k - 1;
         }
         return len - k;
     }

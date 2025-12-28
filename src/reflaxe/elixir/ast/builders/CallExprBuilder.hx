@@ -425,9 +425,11 @@ class CallExprBuilder {
         // HOW:
         // - When the callee type is TFun, peek the expected arg types and, for Atom-typed
         //   arguments, rewrite literal strings to atoms at the AST level.
+        var expectedFunArgs: Null<Array<{name: String, opt: Bool, t: Type}>> = null;
         var expectedArgTypes: Null<Array<Type>> = null;
         switch (haxe.macro.TypeTools.follow(e.t)) {
             case TFun(fnArgs, _):
+                expectedFunArgs = fnArgs;
                 expectedArgTypes = [for (a in fnArgs) a.t];
             default:
         }
@@ -455,6 +457,21 @@ class CallExprBuilder {
                 }
             }
             argASTs.push(builtArg);
+        }
+
+        // Optional args: Haxe typed calls can omit trailing optional parameters.
+        // Elixir requires exact arity, so pad omitted trailing optionals with `nil`.
+        //
+        // Example (Haxe):
+        //   getString(pos, len) // where getString(pos, len, ?encoding)
+        // Elixir (desired):
+        //   get_string(struct, pos, len, nil)
+        if (expectedFunArgs != null && args.length < expectedFunArgs.length) {
+            for (i in args.length...expectedFunArgs.length) {
+                if (expectedFunArgs[i].opt) {
+                    argASTs.push(makeAST(ENil));
+                }
+            }
         }
         
         // Determine the call type
@@ -633,10 +650,44 @@ class CallExprBuilder {
                         // generated code stays self-contained and idiomatic.
                         if (className == "Array" && (classType.pack == null || classType.pack.length == 0)) {
                             var receiverAst = buildExpression(obj);
-                            var receiverVarName: Null<String> = switch (obj.expr) {
-                                case TLocal(vLocal): VariableBuilder.resolveVariableName(vLocal, context);
+                            var receiverLocal: Null<TVar> = switch (obj.expr) {
+                                case TLocal(vLocal): vLocal;
                                 default: null;
                             };
+                            var receiverVarName: Null<String> = receiverLocal != null
+                                ? VariableBuilder.resolveVariableName(receiverLocal, context)
+                                : null;
+
+                            function isFunctionParam(local: Null<TVar>): Bool {
+                                if (local == null) return false;
+                                return context.functionParameterIds.exists(Std.string(local.id));
+                            }
+
+                            function isCurrentClassInstanceField(varName: String): Bool {
+                                if (varName == null || varName == "") return false;
+                                var currentClass = context.getCurrentClass();
+                                if (currentClass == null) return false;
+
+                                // Only consider actual instance vars (FVar) and compare using Elixir snake_case.
+                                for (field in currentClass.fields.get()) {
+                                    switch (field.kind) {
+                                        case FVar(_, _):
+                                            var snakeFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
+                                            if (snakeFieldName == varName) {
+                                                return true;
+                                            }
+                                        default:
+                                    }
+                                }
+                                return false;
+                            }
+
+                            function structUpdateFieldAppend(fieldName: String, item: ElixirAST): ElixirASTDef {
+                                var structVar = makeAST(EVar("struct"));
+                                var newValue = makeAST(EBinary(Concat, makeAST(EField(structVar, fieldName)), makeAST(EList([item]))));
+                                var updatedStruct = makeAST(EStructUpdate(structVar, [{ key: fieldName, value: newValue }]));
+                                return EMatch(PVar("struct"), updatedStruct);
+                            }
 
                             inline function listOf(single: ElixirAST): ElixirAST {
                                 return makeAST(EList([single]));
@@ -657,6 +708,14 @@ class CallExprBuilder {
 
                                     case "push" if (argASTs != null && argASTs.length == 1):
                                         // Haxe: mutates array in-place; Elixir: rebind to appended list.
+                                        // Special-case: instance-field arrays in class method context should update the struct field.
+                                        if (context.isInClassMethodContext
+                                            && receiverVarName != null
+                                            && !isFunctionParam(receiverLocal)
+                                            && isCurrentClassInstanceField(receiverVarName)) {
+                                            return structUpdateFieldAppend(receiverVarName, argASTs[0]);
+                                        }
+
                                         var appended = makeAST(EBinary(Concat, receiverAst, listOf(argASTs[0])));
                                         if (receiverVarName != null) return EMatch(PVar(receiverVarName), appended);
                                         return appended.def;
@@ -674,6 +733,21 @@ class CallExprBuilder {
                                             body: cmpLessThanZero
                                         }]));
                                         var sortedCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "sort", [receiverAst, wrapper]));
+                                        // Special-case: instance-field arrays in class method context should update the struct field.
+                                        if (context.isInClassMethodContext
+                                            && receiverVarName != null
+                                            && !isFunctionParam(receiverLocal)
+                                            && isCurrentClassInstanceField(receiverVarName)) {
+                                            var structVar = makeAST(EVar("struct"));
+                                            var fieldAst = makeAST(EField(structVar, receiverVarName));
+                                            var sortedFieldCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "sort", [fieldAst, wrapper]));
+                                            var updatedStruct = makeAST(EStructUpdate(
+                                                structVar,
+                                                [{ key: receiverVarName, value: sortedFieldCall }]
+                                            ));
+                                            return EMatch(PVar("struct"), updatedStruct);
+                                        }
+
                                         if (receiverVarName != null) return EMatch(PVar(receiverVarName), sortedCall);
                                         return sortedCall.def;
 

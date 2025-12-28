@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Elixir warns when a variable is assigned but never read; returning the var at end prevents warnings
  *   and matches expected functional style.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DefTrailingAssignedVarReturnTransforms {
     static inline function isTemp(name:String):Bool {

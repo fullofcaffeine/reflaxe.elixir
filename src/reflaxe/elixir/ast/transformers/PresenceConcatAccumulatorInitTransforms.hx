@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Some rewrite passes may remove the explicit `acc = []` initializer when
  *   converting iteration shapes. This restores the missing initialization to
  *   keep code valid and warnings-free.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class PresenceConcatAccumulatorInitTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

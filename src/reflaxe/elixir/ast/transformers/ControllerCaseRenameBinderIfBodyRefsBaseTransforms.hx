@@ -12,6 +12,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHAT
  * - In controller case arms `{:tag, _name}` where the body references `name`,
  *   rename the binder to `name`. Usage-driven; avoids WAE from underscored vars used.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ControllerCaseRenameBinderIfBodyRefsBaseTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - If name == "ok_value", rename binder to "value".
  *   - Replace EVar("ok_value") occurrences in the clause body with the effective binder name.
  * - Applies equally when the atom is either ":ok" or "ok".
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ResultOkBinderNormalizeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

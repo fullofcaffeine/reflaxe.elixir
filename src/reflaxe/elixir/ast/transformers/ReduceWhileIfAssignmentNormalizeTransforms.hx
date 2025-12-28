@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Walk EFn clause bodies under ERemoteCall(Enum, "reduce_while", ...); for each EBlock, search windows
  *   for `a = (b = rhs)` followed by an EIf whose else branch is `b`, and rewrite to two statements,
  *   dropping the standalone if.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ReduceWhileIfAssignmentNormalizeTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

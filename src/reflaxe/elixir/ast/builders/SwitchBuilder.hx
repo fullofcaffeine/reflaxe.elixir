@@ -1782,23 +1782,13 @@ using StringTools;
 	            trace('[SwitchBuilder]   recoveredBinders(target=${targetVarName}) = ${recoveredBinders != null ? "[" + recoveredBinders.join(", ") + "]" : "null"}');
 	            #end
 
-	            // Helper: check if a name corresponds to a current function parameter (shape-based exclusion)
-	            function isFunctionParamByName(n:String):Bool {
-	                if (n == null || n.length == 0) return false;
-	                // Prefer the compiler's existing rename-map bindings by name.
-	                // For top-level defs (compiled by ElixirCompiler), parameter IDs are not always
-	                // available at this stage, but the original parameter names are registered in
-	                // tempVarRenameMap before the body is compiled.
-	                //
-	                // This prevents guardVars from selecting outer parameters (e.g. `defaultValue`)
-	                // as enum payload binders during enum-index recovery.
-	                if (context != null && context.tempVarRenameMap != null && context.tempVarRenameMap.exists(n)) {
-	                    return true;
-	                }
-	                // Find first matching TLocal id for this name in the case body
-	                var foundId:Null<Int> = null;
-	                function findId(e:TypedExpr):Void {
-	                    if (e == null || foundId != null) return;
+            // Helper: check if a name corresponds to a current function parameter (shape-based exclusion)
+            function isFunctionParamByName(n:String):Bool {
+                if (n == null || n.length == 0) return false;
+                // Find first matching TLocal id for this name in the case body
+                var foundId:Null<Int> = null;
+                function findId(e:TypedExpr):Void {
+                    if (e == null || foundId != null) return;
                     switch (e.expr) {
                         case TLocal(v) if (v.name == n):
                             foundId = v.id;
