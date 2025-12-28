@@ -61,8 +61,16 @@ jobs:
       - name: Validate examples Elixir (warnings as errors)
         run: npm run test:examples-elixir
 
+      - name: Verify repo hygiene (no build artifacts tracked)
+        run: |
+          set -euo pipefail
+          if git ls-files node_modules deps _build | grep -q .; then
+            echo "ERROR: Tracked build artifacts detected (expected these to be gitignored):"
+            git ls-files node_modules deps _build
+            exit 1
+          fi
+
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
-

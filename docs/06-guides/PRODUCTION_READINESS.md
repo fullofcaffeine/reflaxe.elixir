@@ -37,7 +37,8 @@ Related docs:
 
 - [ ] Todo‑app remains a “real Phoenix app” and stays green under the QA sentinel (boot + Playwright) without manual steps.
 - [ ] LiveView multi‑session updates are tested (PubSub broadcast + handle_info wiring).
-- [ ] Ecto schema/changeset/migration flows are exercised by examples and tests.
+- [ ] Ecto schema/changeset flows are exercised by examples and tests.
+- [ ] Migrations are either **production‑ready** (documented subset + tests) or explicitly **experimental** and opt‑in (clearly labeled).
 - [ ] OTP surfaces (GenServer/Supervisor/Registry) have snapshot + Mix/runtime validation.
 
 ### C) Output quality (idiomatic Elixir)
@@ -52,6 +53,7 @@ Related docs:
   - [Phoenix (New App)](PHOENIX_NEW_APP.md)
   - [Phoenix (Existing App)](PHOENIX_GRADUAL_ADOPTION.md)
 - [ ] CI covers both a modern toolchain and a minimum supported toolchain (see [Support Matrix](SUPPORT_MATRIX.md)).
+- [ ] Experimental tooling (e.g., source mapping) is clearly labeled and does not affect the default UX.
 - [ ] Performance budgets are documented and met on the reference apps (see [Performance Guide](PERFORMANCE_GUIDE.md)).
 
 ### E) Release process + security posture
@@ -71,4 +73,3 @@ We should remove the “Alpha software” banner from the root README only when:
 - The docs no longer require “tribal knowledge” to build and run the examples.
 
 Until then, `v1.0.x` remains the “API stabilized, not production‑hardened” line (see `ROADMAP.md`).
-

@@ -19,6 +19,9 @@ Source mapping is **not yet fully wired end‑to‑end** in the AST pipeline:
 As a result, you should treat source mapping as **experimental** and avoid relying on it for
 production debugging.
 
+Non‑alpha / production‑ready status for Reflaxe.Elixir does **not** require source mapping. Until
+this document is updated to say otherwise, source maps remain an opt‑in, experimental capability.
+
 ## Where the Pieces Live
 
 - Haxe source map writer (planned emission point):
@@ -39,4 +42,3 @@ production debugging.
    - Use (or extend) the fixtures under `test/snapshot/core/source_map_validation/` to ensure:
      - `.ex.map` files are created when enabled
      - lookups map to the correct Haxe file/line/column
-
