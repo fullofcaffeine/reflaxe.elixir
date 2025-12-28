@@ -60,18 +60,23 @@ Recommendation:
 
 ## Tooling / watcher port conflicts
 
-When using Phoenix watchers (`mix phx.server`), Haxe’s `--wait` mode uses a TCP port (commonly `6001`). If something else is already bound to that port you may see `EADDRINUSE`.
+Phoenix watchers (`mix phx.server`) often run the Haxe client compiler in `--wait <port>` mode. If something else is already bound to that port you may see `EADDRINUSE`.
 
 Fix options:
 
 - Stop the process using the port and restart.
-- Change the watcher `--wait` port to a free port.
+- Change the watcher `--wait` port to a free port (example apps use `HAXE_CLIENT_WAIT_PORT` and will probe for a nearby free port automatically).
 - Disable Haxe server usage for a single build with `HAXE_NO_SERVER=1` (see `docs/06-guides/PRODUCTION_DEPLOYMENT.md`).
 
 See also: `docs/06-guides/TROUBLESHOOTING.md`.
 
-## Not yet covered (common “alpha” gaps)
+## Coverage notes
 
-- **Long‑tail Haxe feature coverage**: some patterns are still being refined to produce the most idiomatic Elixir shapes.
-- **Version breadth**: CI only covers a small set of toolchain versions; see `docs/06-guides/SUPPORT_MATRIX.md`.
+For what is supported vs experimental, see:
 
+- `docs/04-api-reference/FEATURES.md`
+- `docs/06-guides/SUPPORT_MATRIX.md`
+
+For examples of intentionally rejected/invalid DSL usages (stable compile-time errors), see:
+
+- `test/snapshot/negative/**`
