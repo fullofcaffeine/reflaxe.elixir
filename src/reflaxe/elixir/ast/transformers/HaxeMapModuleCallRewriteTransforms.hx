@@ -84,8 +84,8 @@ class HaxeMapModuleCallRewriteTransforms {
                                     // Direct field target (rare, but handle it): state.field = Map.put(state.field, k, v)
                                     var receiverVar = makeAST(EVar(receiverName));
                                     var currentField = makeAST(EField(receiverVar, fieldName));
-                                    var putCall2 = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [currentField, args[1], args[2]]));
-                                    var updated = makeAST(EStructUpdate(receiverVar, [{ key: fieldName, value: putCall2 }]));
+                                    var putCall = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [currentField, args[1], args[2]]));
+                                    var updated = makeAST(EStructUpdate(receiverVar, [{ key: fieldName, value: putCall }]));
                                     makeASTWithMeta(EMatch(PVar(receiverName), updated), node.metadata, node.pos);
                                 default:
                                     // Fallback: keep match but rewrite to Map.put to avoid missing-module warnings.
@@ -93,11 +93,11 @@ class HaxeMapModuleCallRewriteTransforms {
                             }
                         case ECall(target, "set", args) if (target != null && target.def != null):
                             switch (target.def) {
-                                case EVar(modName2) if (isHaxeMapModule(modName2) && args != null && args.length == 3):
+                                case EVar(moduleName) if (isHaxeMapModule(moduleName) && args != null && args.length == 3):
                                     switch (args[0].def) {
-                                        case EVar(mapVar2):
-                                            var putCall3 = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [args[0], args[1], args[2]]));
-                                            makeASTWithMeta(EMatch(PVar(mapVar2), putCall3), node.metadata, node.pos);
+                                        case EVar(mapVar):
+                                            var putCall = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [args[0], args[1], args[2]]));
+                                            makeASTWithMeta(EMatch(PVar(mapVar), putCall), node.metadata, node.pos);
                                         default:
                                             makeASTWithMeta(EMatch(PVar("_"), makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [args[0], args[1], args[2]]))), node.metadata, node.pos);
                                     }
@@ -124,11 +124,11 @@ class HaxeMapModuleCallRewriteTransforms {
                                     }
                                 case ECall(target, "set", args) if (target != null):
                                     switch (target.def) {
-                                        case EVar(modName2) if (isHaxeMapModule(modName2) && args != null && args.length == 3):
+                                        case EVar(moduleName) if (isHaxeMapModule(moduleName) && args != null && args.length == 3):
                                             switch (args[0].def) {
-                                                case EVar(mapVar2):
-                                                    var putCall2 = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [args[0], args[1], args[2]]));
-                                                    makeASTWithMeta(EMatch(PVar(mapVar2), putCall2), node.metadata, node.pos);
+                                                case EVar(mapVar):
+                                                    var putCall = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [args[0], args[1], args[2]]));
+                                                    makeASTWithMeta(EMatch(PVar(mapVar), putCall), node.metadata, node.pos);
                                                 default:
                                                     makeASTWithMeta(EBinary(Match, left, makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [args[0], args[1], args[2]]))), node.metadata, node.pos);
                                             }
@@ -153,11 +153,11 @@ class HaxeMapModuleCallRewriteTransforms {
                     }
                 case ECall(target, "set", args) if (target != null):
                     switch (target.def) {
-                        case EVar(modName2) if (isHaxeMapModule(modName2) && args != null && args.length == 3):
+                        case EVar(moduleName) if (isHaxeMapModule(moduleName) && args != null && args.length == 3):
                             switch (args[0].def) {
-                                case EVar(mapVar2):
-                                    var putCall2 = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [args[0], args[1], args[2]]));
-                                    makeASTWithMeta(EMatch(PVar(mapVar2), putCall2), node.metadata, node.pos);
+                                case EVar(mapVar):
+                                    var putCall = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [args[0], args[1], args[2]]));
+                                    makeASTWithMeta(EMatch(PVar(mapVar), putCall), node.metadata, node.pos);
                                 default:
                                     makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "put", [args[0], args[1], args[2]]), node.metadata, node.pos);
                             }
@@ -179,7 +179,7 @@ class HaxeMapModuleCallRewriteTransforms {
                     }
                 case ECall(target, funcName, args) if (target != null && args != null):
                     switch (target.def) {
-                        case EVar(modName2) if (isHaxeMapModule(modName2)):
+                        case EVar(moduleName) if (isHaxeMapModule(moduleName)):
                             switch (funcName) {
                                 case "exists" if (args.length == 2):
                                     makeASTWithMeta(ERemoteCall(makeAST(EVar("Map")), "has_key?", args), node.metadata, node.pos);
@@ -211,8 +211,8 @@ class HaxeMapModuleCallRewriteTransforms {
                 { name: name, rhs: rhs };
             case EBinary(Match, left, rhs):
                 switch (left.def) {
-                    case EVar(name2):
-                        { name: name2, rhs: rhs };
+                    case EVar(varName):
+                        { name: varName, rhs: rhs };
                     default:
                         null;
                 }
@@ -256,14 +256,14 @@ class HaxeMapModuleCallRewriteTransforms {
                 }
             case ECall(target, "set", args) if (target != null):
                 switch (target.def) {
-                    case EVar(modName2) if (isHaxeMapModule(modName2) && args != null && args.length == 3):
+                    case EVar(moduleName) if (isHaxeMapModule(moduleName) && args != null && args.length == 3):
                         switch (args[0].def) {
-                            case EVar(v2) if (v2 == tmpName):
-                                var receiverVar2 = makeAST(EVar(receiverName));
-                                var currentField2 = makeAST(EField(receiverVar2, fieldName));
-                                var putCall2 = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [currentField2, args[1], args[2]]));
-                                var updated2 = makeAST(EStructUpdate(receiverVar2, [{ key: fieldName, value: putCall2 }]));
-                                return makeASTWithMeta(EMatch(PVar(receiverName), updated2), second.metadata, second.pos);
+                            case EVar(tmpVarName) if (tmpVarName == tmpName):
+                                var receiverVar = makeAST(EVar(receiverName));
+                                var currentField = makeAST(EField(receiverVar, fieldName));
+                                var putCall = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [currentField, args[1], args[2]]));
+                                var updated = makeAST(EStructUpdate(receiverVar, [{ key: fieldName, value: putCall }]));
+                                return makeASTWithMeta(EMatch(PVar(receiverName), updated), second.metadata, second.pos);
                             default:
                         }
                     default:

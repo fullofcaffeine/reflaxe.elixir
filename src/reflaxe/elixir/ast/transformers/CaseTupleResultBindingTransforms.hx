@@ -74,9 +74,9 @@ class CaseTupleResultBindingTransforms {
                 case EBlock(stmts):
                     var rewritten = rewriteSeq(stmts);
                     rewritten == stmts ? n : makeASTWithMeta(EBlock(rewritten), n.metadata, n.pos);
-                case EDo(stmts2):
-                    var rewritten2 = rewriteSeq(stmts2);
-                    rewritten2 == stmts2 ? n : makeASTWithMeta(EDo(rewritten2), n.metadata, n.pos);
+                case EDo(statements):
+                    var rewrittenStatements = rewriteSeq(statements);
+                    rewrittenStatements == statements ? n : makeASTWithMeta(EDo(rewrittenStatements), n.metadata, n.pos);
                 default:
                     n;
             }
@@ -103,9 +103,9 @@ class CaseTupleResultBindingTransforms {
                     var rewrittenInner = rewriteSeqWithContext(innerStmts, nilInitLocations);
                     out.push(makeASTWithMeta(EBlock(rewrittenInner), stmt.metadata, stmt.pos));
                     continue;
-                case EDo(innerStmts2):
-                    var rewrittenInner2 = rewriteSeqWithContext(innerStmts2, nilInitLocations);
-                    out.push(makeASTWithMeta(EDo(rewrittenInner2), stmt.metadata, stmt.pos));
+                case EDo(innerStatements):
+                    var rewrittenInnerStatements = rewriteSeqWithContext(innerStatements, nilInitLocations);
+                    out.push(makeASTWithMeta(EDo(rewrittenInnerStatements), stmt.metadata, stmt.pos));
                     continue;
                 default:
             }
@@ -134,11 +134,11 @@ class CaseTupleResultBindingTransforms {
         return switch (stmt.def) {
             case EMatch(PVar(name), rhs) if (rhs != null && rhs.def != null):
                 switch (rhs.def) { case ENil: name; default: null; }
-            case EBinary(Match, left, rhs2) if (rhs2 != null && rhs2.def != null):
-                switch (rhs2.def) {
+            case EBinary(Match, left, rhs) if (rhs != null && rhs.def != null):
+                switch (rhs.def) {
                     case ENil:
                         var unwrappedLeft = unwrapParen(left);
-                        switch (unwrappedLeft.def) { case EVar(name2): name2; default: null; }
+                        switch (unwrappedLeft.def) { case EVar(varName): varName; default: null; }
                     default:
                         null;
                 }
@@ -198,12 +198,12 @@ class CaseTupleResultBindingTransforms {
         var rewrittenStmt = tupleMatch.build(resultVarNames, newCaseExpr);
 
         // Drop the original nil initializers now that the tuple binding is authoritative.
-        for (nm2 in nilInitNames) {
-            var loc = nilInitLocations.get(nm2);
+        for (name in nilInitNames) {
+            var loc = nilInitLocations.get(name);
             if (loc != null && loc.out != null && loc.idx >= 0 && loc.idx < loc.out.length) {
                 loc.out[loc.idx] = null;
             }
-            nilInitLocations.remove(nm2);
+            nilInitLocations.remove(name);
         }
 
         return rewrittenStmt;
@@ -234,7 +234,7 @@ class CaseTupleResultBindingTransforms {
                     default:
                         null;
                 }
-            case EBinary(Match, left, rhs2):
+            case EBinary(Match, left, rhs):
                 // Some builders encode tuple patterns as ETuple expressions on the LHS of Match.
                 var lhsUnwrapped = unwrapParen(left);
                 var isTuplePattern = switch (lhsUnwrapped.def) {
@@ -254,16 +254,16 @@ class CaseTupleResultBindingTransforms {
                 if (!isTuplePattern) {
                     null;
                 } else {
-                    var rhsUnwrapped2 = unwrapParen(rhs2);
-                    switch (rhsUnwrapped2.def) {
-                        case ECase(expr2, clauses2):
+                    var rhsUnwrapped = unwrapParen(rhs);
+                    switch (rhsUnwrapped.def) {
+                        case ECase(expr, clauses):
                             {
-                                build: function(resultVarNames2: Array<String>, newCaseExpr2: ElixirAST): ElixirAST {
-                                    var lhsTuple = makeAST(ETuple([for (nm2 in resultVarNames2) makeAST(EVar(nm2))]));
-                                    return makeASTWithMeta(EBinary(Match, lhsTuple, newCaseExpr2), stmt.metadata, stmt.pos);
+                                build: function(resultVarNames: Array<String>, newCaseExpr: ElixirAST): ElixirAST {
+                                    var lhsTuple = makeAST(ETuple([for (name in resultVarNames) makeAST(EVar(name))]));
+                                    return makeASTWithMeta(EBinary(Match, lhsTuple, newCaseExpr), stmt.metadata, stmt.pos);
                                 },
-                                caseNode: rhsUnwrapped2,
-                                caseExpr: { expr: expr2, clauses: clauses2 }
+                                caseNode: rhsUnwrapped,
+                                caseExpr: { expr: expr, clauses: clauses }
                             };
                         default:
                             null;
@@ -306,8 +306,8 @@ class CaseTupleResultBindingTransforms {
         return switch (body.def) {
             case EBlock(stmts) if (stmts != null && stmts.length > 0):
                 extractTrailingTupleElems(stmts[stmts.length - 1]);
-            case EDo(stmts2) if (stmts2 != null && stmts2.length > 0):
-                extractTrailingTupleElems(stmts2[stmts2.length - 1]);
+            case EDo(statements) if (statements != null && statements.length > 0):
+                extractTrailingTupleElems(statements[statements.length - 1]);
             case EParen(inner):
                 extractTrailingTupleElems(inner);
             case ETuple(elems) if (elems != null && elems.length > 0):
@@ -358,8 +358,8 @@ class CaseTupleResultBindingTransforms {
         return switch (body.def) {
             case EBlock(stmts) if (stmts != null && stmts.length > 0):
                 { wrapper: "block", stmts: stmts };
-            case EDo(stmts2) if (stmts2 != null && stmts2.length > 0):
-                { wrapper: "do", stmts: stmts2 };
+            case EDo(statements) if (statements != null && statements.length > 0):
+                { wrapper: "do", stmts: statements };
             case EParen(inner):
                 unwrapBodyStatements(inner);
             default:
@@ -372,7 +372,7 @@ class CaseTupleResultBindingTransforms {
         return switch (stmt.def) {
             case EMatch(PVar(nm), _): nm == name;
             case EBinary(Match, left, _):
-                switch (unwrapParen(left).def) { case EVar(nm2): nm2 == name; default: false; }
+                switch (unwrapParen(left).def) { case EVar(varName): varName == name; default: false; }
             default:
                 false;
         };
@@ -386,10 +386,10 @@ class CaseTupleResultBindingTransforms {
             switch (s.def) {
                 case EMatch(PVar(nm), r) if (nm == name):
                     rhs = r;
-                case EBinary(Match, left, r2):
+                case EBinary(Match, left, rhsCandidate):
                     switch (unwrapParen(left).def) {
-                        case EVar(nm2) if (nm2 == name):
-                            rhs = r2;
+                        case EVar(varName) if (varName == name):
+                            rhs = rhsCandidate;
                         default:
                     }
                 default:

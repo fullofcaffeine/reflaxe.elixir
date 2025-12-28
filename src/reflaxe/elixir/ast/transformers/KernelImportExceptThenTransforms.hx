@@ -107,9 +107,9 @@ class KernelImportExceptThenTransforms {
         }
 
         var importNode = makeAST(EImport("Kernel", null, ensureExceptHasAll(null, requiredExcept), false));
-        var out2 = body.copy();
-        out2.insert(insertAt, importNode);
-        return out2;
+        var updatedBody = body.copy();
+        updatedBody.insert(insertAt, importNode);
+        return updatedBody;
     }
 
     static function collectKernelConflictExcepts(body: Array<ElixirAST>): Array<EImportOption> {
