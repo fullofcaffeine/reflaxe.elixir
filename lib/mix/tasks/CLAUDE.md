@@ -17,6 +17,7 @@ lib/mix/tasks/
 ├── compile.haxe.ex             # Mix compiler integration for Haxe→Elixir
 ├── haxe.watch.ex               # File watching for auto-recompilation
 ├── haxe.errors.ex              # Error display and debugging tools
+├── haxe.status.ex              # Status overview (server/watcher/errors)
 ├── haxe.stacktrace.ex          # Stacktrace analysis for debugging
 ├── haxe.inspect.ex             # Code inspection and analysis tools
 ├── haxe.source_map.ex          # Source map generation and validation
@@ -51,6 +52,12 @@ lib/mix/tasks/
 - Provides JSON output for LLM agents
 - Filters and searches through error history
 - Essential for debugging compilation issues
+
+#### `Mix.Tasks.Haxe.Status`
+**File**: `haxe.status.ex`
+- Shows whether the Haxe server/watcher are running
+- Reports the last compile manifest details (if present)
+- Summarizes currently stored structured errors (counts by type)
 
 #### `Mix.Tasks.Haxe.Stacktrace`
 **File**: `haxe.stacktrace.ex`
