@@ -8,15 +8,14 @@
 
 **Type-safe Haxe to Elixir compiler with Phoenix/LiveView support.** Write business logic in Haxe, compile to idiomatic Elixir code for the BEAM ecosystem.
 
-> [!WARNING]
-> **Alpha software — not ready for production.**
+> [!NOTE]
+> Reflaxe.Elixir is production‑ready for the **documented subset**.
 >
-> Reflaxe.Elixir is under active development and may have breaking changes, bugs, and incomplete semantics. Use in production at your own risk.
->
-> See: [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md), [Production Readiness Criteria](docs/06-guides/PRODUCTION_READINESS.md), and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
+> Some features remain **experimental/opt‑in** (e.g. source mapping, migrations `.exs` emission, `fast_boot`).
+> See: [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
 
 > **Future Vision**: See [docs/08-roadmap/vision.md](docs/08-roadmap/vision.md) for long-term plans including AI tooling and universal platform support  
-> **Current Status**: Alpha (feature-complete Phoenix/LiveView/Ecto coverage, but not production hardened yet)
+> **Current Status**: Stable (v1.1) for the documented subset; experimental features are clearly labeled.
 
 ## Why Reflaxe.Elixir?
 
@@ -71,12 +70,12 @@ The foundation for multi-target development:
 
 ## Current Status & Roadmap
 
-### 🧪 Alpha (v1.0)
+### ✅ Stable (v1.1)
 - **Phoenix Integration** - LiveView, controllers, templates, routers 100% supported
 - **HXX Template System** - Complete compile-time JSX→HEEx transformation with AST-based processing
   - **Template Helper Metadata** ✨ NEW - Uses @:templateHelper metadata for extensible Phoenix function compilation
   - **Type-Safe Phoenix Abstractions** ✨ NEW - Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with operator overloading
-- **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations are runnable via opt-in `.exs` emission** (`-D ecto_migrations_exs`)  
+- **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations remain opt‑in/experimental** (`-D ecto_migrations_exs`)  
 - **Mix Integration** - Seamless build pipeline with file watching and incremental compilation
 - **Source Mapping (experimental)** - Design/scaffolding exists, but `.ex.map` emission/lookup is not yet fully wired end‑to‑end (see `docs/04-api-reference/SOURCE_MAPPING.md`)
 - **OTP Support** - GenServers, Supervisors, Registry with type-safe compilation
@@ -105,7 +104,7 @@ For the complete roadmap including AI tooling, universal deployment, and multi-p
 npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # Or install a specific version/tag
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.0.7
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.0
 
 # Download pinned Haxe libraries for the project
 npx lix download
@@ -272,7 +271,7 @@ Start at **[docs/README.md](docs/README.md)** for the curated documentation inde
 - **[Phoenix (Existing App)](docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md)** - Add Haxe to an existing Phoenix app
 - **[Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)** - Controllers, LiveView, Ecto, Channels
 - **[Escape Hatches](docs/02-user-guide/ESCAPE_HATCHES.md)** - Calling Elixir from Haxe safely
-- **[Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md)** - Alpha gaps and sharp edges
+- **[Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md)** - Sharp edges and experimental surfaces
 - **[Support Matrix](docs/06-guides/SUPPORT_MATRIX.md)** - CI-tested toolchain versions
 - **[Licensing & Distribution](docs/06-guides/LICENSING_AND_DISTRIBUTION.md)** - GPL notes (not legal advice)
 

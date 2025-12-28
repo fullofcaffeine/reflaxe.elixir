@@ -18,7 +18,7 @@ Write once, deploy everywhere, with built-in AI that understands your entire sta
 
 Access the full power of every modern runtime without language fragmentation:
 
-- **BEAM Runtime**: Phoenix, LiveView, Ecto, OTP, GenServers (✅ Feature complete — Alpha)
+- **BEAM Runtime**: Phoenix, LiveView, Ecto, OTP, GenServers (✅ Feature complete)
 - **JavaScript Runtime**: React, npm ecosystem, TypeScript libraries (🚧 In Development)  
 - **Mobile Runtime**: iOS/Android via Capacitor, then React Native/Expo (🔮 Planned)
 - **Desktop Runtime**: Cross-platform via Electron/Tauri (🔮 Planned)

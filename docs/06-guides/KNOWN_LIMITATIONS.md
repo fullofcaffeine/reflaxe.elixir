@@ -1,6 +1,7 @@
-# Known Limitations (Alpha)
+# Known Limitations
 
-Reflaxe.Elixir is **alpha software**: the project is usable today for building Haxe→Elixir / Phoenix applications, but it is not yet production‑hardened. This page documents the sharp edges that most commonly surprise early adopters.
+This page documents the remaining sharp edges and experimental surfaces that may surprise early adopters.
+Reflaxe.Elixir is production‑ready for the **documented subset**, but some features remain opt‑in/experimental.
 
 If you hit something not covered here, please open an issue and include your **Haxe/Elixir/OTP/Phoenix versions** and a small repro.
 

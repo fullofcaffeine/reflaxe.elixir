@@ -1,6 +1,6 @@
-# Feature Support Matrix (Alpha)
+# Feature Support Matrix
 
-Reflaxe.Elixir is **alpha software**. The goal of this document is to be honest and useful: it describes what is *currently* supported by the compiler + stdlib + tooling, and what is still experimental.
+The goal of this document is to be honest and useful: it describes what is *currently* supported by the compiler + stdlib + tooling, and what is still experimental/opt‑in.
 
 If you’re evaluating the project, also read:
 - `docs/06-guides/KNOWN_LIMITATIONS.md`
@@ -8,7 +8,7 @@ If you’re evaluating the project, also read:
 - `docs/06-guides/VERSIONING_AND_STABILITY.md`
 - `examples/README.md`
 
-## ✅ Supported (Alpha)
+## ✅ Supported
 
 ### Core Haxe → Elixir compilation
 - **AST pipeline**: TypedExpr → ElixirAST → transformer passes → printer (no string-concat codegen).
