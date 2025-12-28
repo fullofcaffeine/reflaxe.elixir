@@ -194,8 +194,8 @@ class StaticVarMutationRewriteTransforms {
             switch (s.def) {
                 case EDef(name, args, _g, _b):
                     defs.push('def ' + name + '/' + (args != null ? Std.string(args.length) : "null"));
-                case EDefp(name2, args2, _g2, _b2):
-                    defs.push('defp ' + name2 + '/' + (args2 != null ? Std.string(args2.length) : "null"));
+                case EDefp(privateName, privateArgs, _guard, _body):
+                    defs.push('defp ' + privateName + '/' + (privateArgs != null ? Std.string(privateArgs.length) : "null"));
                 default:
             }
         }
@@ -288,14 +288,14 @@ class StaticVarMutationRewriteTransforms {
                 var tmpConcat = extractTempConcatUpdate(stmt);
                 if (tmpConcat != null && tempToAccessor.exists(tmpConcat.tempName)) {
                     var accessorName = tempToAccessor.get(tmpConcat.tempName);
-                    var tmpAssign2 = makeASTWithMeta(EMatch(PVar(tmpConcat.tempName), tmpConcat.concatExpr), stmt.metadata, stmt.pos);
-                    var setterCall2 = makeASTWithMeta(
+                    var tmpAssign = makeASTWithMeta(EMatch(PVar(tmpConcat.tempName), tmpConcat.concatExpr), stmt.metadata, stmt.pos);
+                    var setterCall = makeASTWithMeta(
                         ERemoteCall(moduleExpr, accessorName, [makeAST(EVar(tmpConcat.tempName))]),
                         stmt.metadata,
                         stmt.pos
                     );
-                    out.push(tmpAssign2);
-                    out.push(setterCall2);
+                    out.push(tmpAssign);
+                    out.push(setterCall);
                     continue;
                 }
             }
@@ -355,10 +355,10 @@ class StaticVarMutationRewriteTransforms {
         return switch (expr.def) {
             case ERemoteCall(mod, fn, args) if (args != null && args.length == 0 && sameModule(mod, moduleExpr) && accessors.exists(fn)):
                 fn;
-            case ECall(target, fn2, args2) if (args2 != null && args2.length == 0 && target != null && sameModule(target, moduleExpr) && accessors.exists(fn2)):
-                fn2;
-            case ECall(null, fn3, args3) if (args3 != null && args3.length == 0 && accessors.exists(fn3)):
-                fn3;
+            case ECall(target, fn, callArgs) if (callArgs != null && callArgs.length == 0 && target != null && sameModule(target, moduleExpr) && accessors.exists(fn)):
+                fn;
+            case ECall(null, fn, callArgs) if (callArgs != null && callArgs.length == 0 && accessors.exists(fn)):
+                fn;
             default:
                 null;
         };
@@ -406,11 +406,11 @@ class StaticVarMutationRewriteTransforms {
             case EMatch(PVar(name), value):
                 lhsName = name;
                 rhs = value;
-            case EBinary(Match, left, value2):
+            case EBinary(Match, left, value):
                 switch (left.def) {
-                    case EVar(name2):
-                        lhsName = name2;
-                        rhs = value2;
+                    case EVar(varName):
+                        lhsName = varName;
+                        rhs = value;
                     default:
                 }
             default:
@@ -431,7 +431,7 @@ class StaticVarMutationRewriteTransforms {
         // We treat the *first argument* as the mutated temp name regardless of the assignment target.
         var rhs: ElixirAST = switch (stmt.def) {
             case EMatch(_pat, value): value;
-            case EBinary(Match, _left, value2): value2;
+            case EBinary(Match, _left, value): value;
             default: stmt;
         };
 
@@ -449,14 +449,14 @@ class StaticVarMutationRewriteTransforms {
                         if (s == "Map") { args = callArgs; putCall = rhs; }
                     default:
                 }
-            case ECall(target, "put", callArgs2) if (target != null && callArgs2 != null && callArgs2.length == 3):
+            case ECall(target, "put", callArgs) if (target != null && callArgs != null && callArgs.length == 3):
                 switch (target.def) {
                     case EVar("Map"):
-                        args = callArgs2;
+                        args = callArgs;
                         putCall = rhs;
-                    case EAtom(a2):
-                        var s2: String = a2;
-                        if (s2 == "Map") { args = callArgs2; putCall = rhs; }
+                    case EAtom(atom):
+                        var atomName: String = atom;
+                        if (atomName == "Map") { args = callArgs; putCall = rhs; }
                     default:
                 }
             default:
@@ -483,24 +483,24 @@ class StaticVarMutationRewriteTransforms {
                     default:
                         return null;
                 }
-            case EMatch(PVar(tmp2), rhs):
+            case EMatch(PVar(tempName), rhs):
                 switch (rhs.def) {
-                    case EBinary(Concat, left2, right2):
-                        switch (left2.def) {
-                            case EVar(v2) if (v2 == tmp2):
-                                return { tempName: tmp2, concatExpr: rhs };
+                    case EBinary(Concat, concatLeft, concatRight):
+                        switch (concatLeft.def) {
+                            case EVar(varName) if (varName == tempName):
+                                return { tempName: tempName, concatExpr: rhs };
                             default:
                         }
                     default:
                 }
-            case EBinary(Match, left3, rhs3):
-                switch (left3.def) {
-                    case EVar(tmp3):
-                        switch (rhs3.def) {
-                            case EBinary(Concat, left4, _right4):
-                                switch (left4.def) {
-                                    case EVar(v4) if (v4 == tmp3):
-                                        return { tempName: tmp3, concatExpr: rhs3 };
+            case EBinary(Match, left, rhs):
+                switch (left.def) {
+                    case EVar(tempName):
+                        switch (rhs.def) {
+                            case EBinary(Concat, concatLeft, _concatRight):
+                                switch (concatLeft.def) {
+                                    case EVar(varName) if (varName == tempName):
+                                        return { tempName: tempName, concatExpr: rhs };
                                     default:
                                 }
                             default:
