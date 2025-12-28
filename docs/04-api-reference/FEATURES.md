@@ -5,6 +5,7 @@ Reflaxe.Elixir is **alpha software**. The goal of this document is to be honest 
 If you’re evaluating the project, also read:
 - `docs/06-guides/KNOWN_LIMITATIONS.md`
 - `docs/06-guides/SUPPORT_MATRIX.md`
+- `docs/06-guides/VERSIONING_AND_STABILITY.md`
 - `examples/README.md`
 
 ## ✅ Supported (Alpha)

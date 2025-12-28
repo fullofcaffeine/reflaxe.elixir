@@ -62,6 +62,7 @@ Additional (uncurated) architecture notes were archived to **[09-history/archive
 - [Phoenix (New App)](06-guides/PHOENIX_NEW_APP.md) - Greenfield Phoenix setup
 - [Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md) - Gradual adoption in an existing app
 - [Production Readiness](06-guides/PRODUCTION_READINESS.md) - Non-alpha criteria + checklist
+- [Versioning & Stability](06-guides/VERSIONING_AND_STABILITY.md) - SemVer + stability tiers + deprecation policy
 - [Production Deployment](06-guides/PRODUCTION_DEPLOYMENT.md) - CI/Docker/release patterns
 - [Performance Guide](06-guides/PERFORMANCE_GUIDE.md) - Compilation performance
 - [Troubleshooting](06-guides/TROUBLESHOOTING.md) - Common issues and solutions

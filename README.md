@@ -13,7 +13,7 @@
 >
 > Reflaxe.Elixir is under active development and may have breaking changes, bugs, and incomplete semantics. Use in production at your own risk.
 >
-> See: [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Production Readiness Criteria](docs/06-guides/PRODUCTION_READINESS.md).
+> See: [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md), [Production Readiness Criteria](docs/06-guides/PRODUCTION_READINESS.md), and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
 
 > **Future Vision**: See [docs/08-roadmap/vision.md](docs/08-roadmap/vision.md) for long-term plans including AI tooling and universal platform support  
 > **Current Status**: Alpha (feature-complete Phoenix/LiveView/Ecto coverage, but not production hardened yet)
