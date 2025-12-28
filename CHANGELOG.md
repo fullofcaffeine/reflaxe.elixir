@@ -1,5 +1,26 @@
 ## [Unreleased]
 
+## [1.1.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.0.7...v1.1.0) (2025-12-28)
+
+### ✅ Non‑Alpha Release
+
+- Reflaxe.Elixir is now considered **non‑alpha** for the documented subset. Experimental/opt‑in
+  features remain explicitly labeled (e.g. source mapping, migrations `.exs` emission, `fast_boot`).
+
+### 🐞 Bug Fixes
+
+- Todo-app: Fix “Sort by Due Date” to be truly chronological (avoid `NaiveDateTime` term-order pitfalls).
+
+### 🔧 Tooling
+
+- Mix tasks: Add `mix haxe.status` for quick integration health checks (manifest/server/watcher/errors).
+- Mix tasks: Add `--json` alias across core debugging tasks and fix `mix haxe.errors --filter error`.
+- QA sentinel: Expand the default Playwright smoke suite to cover tags/sort/live updates.
+
+### 📚 Documentation
+
+- Remove “Alpha” banner wording from the README and align docs with stability tiers.
+
 ## [1.0.7](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.0.6...v1.0.7) (2025-12-26)
 
 ### 🐞 Bug Fixes

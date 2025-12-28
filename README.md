@@ -232,7 +232,7 @@ defp deps do
   [
     # ... other deps
     # Mix tasks only (build-time): pin to a tag or use a commit SHA
-    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.0.7", only: [:dev, :test], runtime: false}
+    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.1.0", only: [:dev, :test], runtime: false}
   ]
 end
 
