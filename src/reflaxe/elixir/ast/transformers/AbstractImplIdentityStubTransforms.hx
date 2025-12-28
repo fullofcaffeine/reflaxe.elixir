@@ -44,19 +44,19 @@ class AbstractImplIdentityStubTransforms {
                 case EModule(name, attrs, body) if (StringTools.endsWith(name, "_Impl_")):
                     var newBody = [for (b in body) fixStubDef(b)];
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
-                case EDefmodule(name2, doBlock) if (StringTools.endsWith(name2, "_Impl_")):
+                case EDefmodule(moduleName, doBlock) if (StringTools.endsWith(moduleName, "_Impl_")):
                     var statements: Array<ElixirAST> = switch (doBlock.def) {
                         case EBlock(stmts): stmts;
                         case EParen(inner):
                             switch (inner.def) {
-                                case EBlock(stmts2): stmts2;
+                                case EBlock(nestedStatements): nestedStatements;
                                 default: [inner];
                             }
                         default: [doBlock];
                     };
                     var fixed = [for (s in statements) fixStubDef(s)];
                     var newDo = makeASTWithMeta(EBlock(fixed), doBlock.metadata, doBlock.pos);
-                    makeASTWithMeta(EDefmodule(name2, newDo), n.metadata, n.pos);
+                    makeASTWithMeta(EDefmodule(moduleName, newDo), n.metadata, n.pos);
                 default:
                     n;
             }
@@ -106,8 +106,8 @@ class AbstractImplIdentityStubTransforms {
                 isPrintedEmptyStatements(stmts);
             case EParen(inner):
                 isPrintedEmpty(inner);
-            case EDo(stmts2):
-                isPrintedEmptyStatements(stmts2);
+            case EDo(statements):
+                isPrintedEmptyStatements(statements);
             case ERaw(code):
                 code == null || StringTools.trim(code).length == 0;
             default:
@@ -136,4 +136,3 @@ class AbstractImplIdentityStubTransforms {
     }
 }
 #end
-
