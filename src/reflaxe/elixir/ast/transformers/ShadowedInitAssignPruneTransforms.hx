@@ -109,7 +109,7 @@ class ShadowedInitAssignPruneTransforms {
                 switch (left.def) {
                     case EVar(name): name;
                     case EParen(inner):
-                        switch (inner.def) { case EVar(name2): name2; default: null; }
+                        switch (inner.def) { case EVar(varName): varName; default: null; }
                     default:
                         null;
                 }
@@ -122,7 +122,7 @@ class ShadowedInitAssignPruneTransforms {
         if (name == null || name == "_" || StringTools.startsWith(name, "_")) return false;
         var rhs = switch (stmt.def) {
             case EMatch(_, value): value;
-            case EBinary(Match, _, value2): value2;
+            case EBinary(Match, _, value): value;
             default: null;
         };
         return rhs != null && isLiteral(rhs);
@@ -161,8 +161,8 @@ class ShadowedInitAssignPruneTransforms {
             // Do not treat assignment LHS as a "read" of the name.
             case EBinary(Match, _l, r):
                 exprReadsName(r, name);
-            case EMatch(_pat, r2):
-                exprReadsName(r2, name);
+            case EMatch(_pat, rhs):
+                exprReadsName(rhs, name);
             default:
                 exprReadsName(stmt, name);
         };
@@ -181,8 +181,8 @@ class ShadowedInitAssignPruneTransforms {
                     if (code != null && code.indexOf(name) != -1) found = true;
                 case EBlock(stmts):
                     for (s in stmts) visit(s);
-                case EDo(stmts2):
-                    for (s2 in stmts2) visit(s2);
+                case EDo(statements):
+                    for (statement in statements) visit(statement);
                 case EIf(c, t, el):
                     visit(c); visit(t); if (el != null) visit(el);
                 case ECond(clauses):
@@ -202,18 +202,18 @@ class ShadowedInitAssignPruneTransforms {
                     visit(inner);
                 case EMatch(_, rhs):
                     visit(rhs);
-                case EPipe(l2, r2):
-                    visit(l2); visit(r2);
+                case EPipe(left, right):
+                    visit(left); visit(right);
                 case ECall(tgt, _, args):
                     if (tgt != null) visit(tgt);
                     for (a in args) visit(a);
-                case ERemoteCall(mod, _, args2):
+                case ERemoteCall(mod, _, args):
                     visit(mod);
-                    for (a2 in args2) visit(a2);
+                    for (arg in args) visit(arg);
                 case EList(els):
                     for (el in els) visit(el);
-                case ETuple(els2):
-                    for (el2 in els2) visit(el2);
+                case ETuple(els):
+                    for (el in els) visit(el);
                 case EMap(pairs):
                     for (p in pairs) { visit(p.key); visit(p.value); }
                 case EKeywordList(pairs):
@@ -223,14 +223,14 @@ class ShadowedInitAssignPruneTransforms {
                     for (f in fields) visit(f.value);
                 case EField(t, _):
                     visit(t);
-                case EAccess(t2, k):
-                    visit(t2); visit(k);
+                case EAccess(target, k):
+                    visit(target); visit(k);
                 case ERange(a, b, _, step):
                     visit(a); visit(b); if (step != null) visit(step);
                 case EFn(clauses):
                     for (cl in clauses) visit(cl.body);
-                case EParen(inner2):
-                    visit(inner2);
+                case EParen(inner):
+                    visit(inner);
                 default:
             }
         }

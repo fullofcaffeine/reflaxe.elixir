@@ -144,11 +144,11 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
             case EMatch(PVar(name), value):
                 lhs = name;
                 rhs = value;
-            case EBinary(Match, left, value2):
+            case EBinary(Match, left, value):
                 switch (left.def) {
-                    case EVar(name2):
-                        lhs = name2;
-                        rhs = value2;
+                    case EVar(varName):
+                        lhs = varName;
+                        rhs = value;
                     default:
                 }
             default:
@@ -169,8 +169,8 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
         return switch (expr.def) {
             case EBinary(Match, left, rhs):
                 switch (left.def) { case EVar("_"): rhs; default: expr; }
-            case EMatch(PVar("_"), rhs2):
-                rhs2;
+            case EMatch(PVar("_"), rhs):
+                rhs;
             default:
                 expr;
         };
@@ -201,8 +201,8 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
         switch (stmt.def) {
             case EMatch(pat, rhs):
                 callNode = rhs;
-            case EBinary(Match, left, rhs2):
-                switch (left.def) { case EVar("_"): callNode = rhs2; default: callNode = stmt; }
+            case EBinary(Match, left, rhs):
+                switch (left.def) { case EVar("_"): callNode = rhs; default: callNode = stmt; }
             default:
                 callNode = stmt;
         }
@@ -324,7 +324,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
         if (thenBranch == null || thenBranch.def == null) return thenBranch;
         var stmts: Array<ElixirAST> = switch (unwrapParen(thenBranch).def) {
             case EBlock(ss): ss;
-            case EDo(ss2): ss2;
+            case EDo(ss): ss;
             default: [thenBranch];
         };
         if (stmts.length == 0) return thenBranch;
@@ -357,10 +357,10 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
         return switch (stmt.def) {
             case EMatch(PVar(name), rhs) if (name == iterVar):
                 isNextCall(rhs, iterVar);
-            case EBinary(Match, left, rhs2):
+            case EBinary(Match, left, rhs):
                 switch (left.def) {
-                    case EVar(name2) if (name2 == iterVar):
-                        isNextCall(rhs2, iterVar);
+                    case EVar(varName) if (varName == iterVar):
+                        isNextCall(rhs, iterVar);
                     default:
                         false;
                 }
