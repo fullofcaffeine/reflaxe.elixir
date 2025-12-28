@@ -3,9 +3,8 @@
 Reflaxe.Elixir uses **semantic versioning** (`MAJOR.MINOR.PATCH`) and a **stability tier** model to
 make it clear what is safe to depend on and what may change.
 
-> Reflaxe.Elixir `v1.0.x` is still **alpha** (see `docs/06-guides/PRODUCTION_READINESS.md`).
-> “Alpha” here refers to *production hardening* and *semantics completeness*, not an intent to
-> churn user-facing APIs without warning.
+> Reflaxe.Elixir `v1.1.x` is **non‑alpha** for the documented subset.
+> `v1.0.x` was the “API stabilized, still alpha hardening” line (see `docs/06-guides/PRODUCTION_READINESS.md`).
 
 ## Stability tiers
 
@@ -97,4 +96,3 @@ The only versions we claim to support are those tested in CI. The source of trut
 - `docs/06-guides/SUPPORT_MATRIX.md`
 
 If you need a different toolchain version, open an issue with your constraints and a small repro.
-

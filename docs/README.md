@@ -66,7 +66,7 @@ Additional (uncurated) architecture notes were archived to **[09-history/archive
 - [Production Deployment](06-guides/PRODUCTION_DEPLOYMENT.md) - CI/Docker/release patterns
 - [Performance Guide](06-guides/PERFORMANCE_GUIDE.md) - Compilation performance
 - [Troubleshooting](06-guides/TROUBLESHOOTING.md) - Common issues and solutions
-- [Known Limitations](06-guides/KNOWN_LIMITATIONS.md) - Alpha gaps and sharp edges
+- [Known Limitations](06-guides/KNOWN_LIMITATIONS.md) - Sharp edges and experimental surfaces
 - [Support Matrix](06-guides/SUPPORT_MATRIX.md) - CI-tested toolchain versions
 - [Licensing & Distribution](06-guides/LICENSING_AND_DISTRIBUTION.md) - GPL notes (not legal advice)
 
@@ -121,7 +121,7 @@ This documentation is optimized for AI assistant development with **AGENTS.md** 
 - **[Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md)** - Add Haxe to an existing Phoenix app
 - **[Phoenix Guide](02-user-guide/PHOENIX_INTEGRATION.md)** - Building Phoenix applications
 - **[Troubleshooting](06-guides/TROUBLESHOOTING.md)** - Solve common issues
-- **[Known Limitations](06-guides/KNOWN_LIMITATIONS.md)** - Alpha gaps and sharp edges
+- **[Known Limitations](06-guides/KNOWN_LIMITATIONS.md)** - Sharp edges and experimental surfaces
 - **[Support Matrix](06-guides/SUPPORT_MATRIX.md)** - CI-tested versions
 - **[Contributing](10-contributing/contributing.md)** - Help improve the project
 

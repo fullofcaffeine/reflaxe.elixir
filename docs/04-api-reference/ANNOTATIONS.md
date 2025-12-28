@@ -399,7 +399,7 @@ end
 
 Marks a Haxe migration (built on `std/ecto/Migration.hx`) so the compiler can process it.
 
-  > **Status (Alpha)**: Runnable via **opt-in `.exs` emission**.
+  > **Status (Experimental)**: Runnable via **opt-in `.exs` emission**.
   >
   > Ecto executes migrations from `priv/repo/migrations/*.exs`. Reflaxe.Elixir can emit runnable
   > migrations when you compile **only** your `@:migration` classes with:
