@@ -10,6 +10,7 @@ defmodule Mix.Tasks.Haxe.Stacktrace do
   
       mix haxe.stacktrace ERROR_ID
       mix haxe.stacktrace ERROR_ID --format json
+      mix haxe.stacktrace ERROR_ID --json
       mix haxe.stacktrace ERROR_ID --with-context
       mix haxe.stacktrace ERROR_ID --cross-reference
   
@@ -41,6 +42,7 @@ defmodule Mix.Tasks.Haxe.Stacktrace do
 
   @switches [
     format: :string,
+    json: :boolean,
     with_context: :boolean,
     cross_reference: :boolean,
     trace_generation: :boolean,
@@ -49,6 +51,7 @@ defmodule Mix.Tasks.Haxe.Stacktrace do
 
   @aliases [
     f: :format,
+    j: :json,
     c: :with_context,
     x: :cross_reference,
     t: :trace_generation,
@@ -64,7 +67,7 @@ defmodule Mix.Tasks.Haxe.Stacktrace do
     if opts[:help] do
       show_help()
     else
-      display_stacktrace(error_id, opts)
+      display_stacktrace(error_id, normalize_opts(opts))
     end
   end
 
@@ -94,6 +97,10 @@ defmodule Mix.Tasks.Haxe.Stacktrace do
             Mix.shell().error("Available formats: json, table, detailed")
         end
     end
+  end
+
+  defp normalize_opts(opts) do
+    if Keyword.get(opts, :json, false), do: Keyword.put(opts, :format, "json"), else: opts
   end
 
   defp find_error_by_id(error_id) do
@@ -310,6 +317,8 @@ defmodule Mix.Tasks.Haxe.Stacktrace do
         }
         
       :elixir ->
+        column = Map.get(error, :column_start) || 0
+
         %{
           primary_action: "Inspect generated Elixir code",
           debug_level: "ELIXIR (target level)",
@@ -321,7 +330,7 @@ defmodule Mix.Tasks.Haxe.Stacktrace do
           ],
           related_commands: [
             "mix haxe.inspect #{error.file}",
-            "mix haxe.map #{error.file} #{error.line}"
+            "mix haxe.source_map #{error.file} #{error.line} #{column}"
           ]
         }
         
@@ -501,6 +510,7 @@ defmodule Mix.Tasks.Haxe.Stacktrace do
     Mix.shell().info("")
     Mix.shell().info("Options:")
     Mix.shell().info("  --format FORMAT        Output format: json, table, detailed (default: detailed)")
+    Mix.shell().info("  --json                 Alias for --format json")
     Mix.shell().info("  --with-context         Include source code context")
     Mix.shell().info("  --cross-reference      Show Haxe to Elixir mapping")
     Mix.shell().info("  --trace-generation     Show code generation path")
