@@ -35,6 +35,7 @@ defmodule PhoenixRouter.MixProject do
       {:reflaxe_elixir, path: "../..", runtime: false},
       {:phoenix, "~> 1.7.0"},
       {:phoenix_html, "~> 3.3"},
+      {:phoenix_live_view, "~> 0.20.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},

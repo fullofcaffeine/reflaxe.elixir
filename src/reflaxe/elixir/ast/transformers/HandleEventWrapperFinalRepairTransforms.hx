@@ -26,6 +26,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - Walk the body, repairing ECall helper invocations whose first argument equals socketVar
  *     and last argument equals socketVar by rewriting the first argument to paramsVar.
  *   - Inline any remaining undefined lower-case EVar(v) from paramsVar.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleEventWrapperFinalRepairTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

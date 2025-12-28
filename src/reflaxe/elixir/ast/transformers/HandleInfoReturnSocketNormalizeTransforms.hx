@@ -27,6 +27,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - Walk the body; when encountering a call (local or remote) with >=2 args
  *     where first and last args are the same lower-case variable and that var
  *     is not `socket`, rewrite the last arg to `socket`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 	class HandleInfoReturnSocketNormalizeTransforms {
 	  public static function transformPass(ast: ElixirAST): ElixirAST {

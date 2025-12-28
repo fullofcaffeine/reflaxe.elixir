@@ -26,6 +26,10 @@ import reflaxe.elixir.ast.ASTUtils;
  *   - Collect pattern binders; if exactly one payload binder exists and starts with '_',
  *     and the body references that exact underscored name, rewrite the pattern binder
  *     to its trimmed base and replace EVar("_name") with EVar("name") in the body.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ClauseUnderscoreUsedPromoteTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

@@ -20,6 +20,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   ECase clause (if any) and extract its binder when the tag is :ok or :error.
  *   Otherwise, scan the enclosing body for declared names and pick the single
  *   lower-case candidate among {value, user, changeset}. If found, rewrite arg2.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class WebJsonSecondArgRewriteFinalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

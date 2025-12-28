@@ -458,8 +458,10 @@ class ElixirCompiler extends GenericCompiler<
         var n = classType.name;
         if (n == null) return false;
 
-        // Skip Haxe internal implementation modules
-        if (n.endsWith("_Impl_")) return true;
+        // NOTE: Do not suppress `_Impl_` modules globally.
+        // Haxe abstracts compile to `<Abstract>_Impl_` modules which contain required
+        // runtime functions (e.g. PositiveInt_Impl_.parse/1). We only suppress
+        // truly-internal implementations via package-level rules (e.g. haxe._*).
 
         // Skip packages that are compiler/macro-only or Haxe-internal
         if (classType.pack != null && classType.pack.length > 0) {
@@ -1839,34 +1841,181 @@ class ElixirCompiler extends GenericCompiler<
         // Set current class in context for same-module optimization
         context.currentClass = classType;
 
-        // Build fields from the funcFields parameter (which is already ClassFuncData array)
-        var fields: Array<reflaxe.elixir.ast.ElixirAST> = [];
+        // Collect instance field names (snake_case) for this class.
+        // Used to avoid parameter/field naming collisions and to drive instance-field lowering.
+        var instanceFieldNames: Map<String, Bool> = new Map();
+        for (field in classType.fields.get()) {
+            switch (field.kind) {
+                case FVar(_, _):
+                    instanceFieldNames.set(reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name), true);
+                default:
+            }
+        }
 
-	        // Compile each function field
-	        for (funcData in funcFields) {
-	            // Skip constructor for now
-	            if (funcData.field.name == "new") continue;
+	        // Build fields from the funcFields parameter (which is already ClassFuncData array)
+	        var fields: Array<reflaxe.elixir.ast.ElixirAST> = [];
 
-	            // Skip functions without body - they might be extern or abstract
-	            var expr = funcData.expr;
-	            if (expr == null) continue;
+	        inline function ast(def: ElixirASTDef): reflaxe.elixir.ast.ElixirAST {
+	            return reflaxe.elixir.ast.ElixirAST.makeAST(def);
+	        }
 
-	            // IMPORTANT: tempVarRenameMap must be function-scoped.
+	        // --------------------------------------------------------------------
+	        // Static variable backing store (process-local)
+	        //
+	        // Haxe static vars are mutable and global in their target runtime. Elixir has
+	        // no mutable module-level state, so we emulate statics using the process
+	        // dictionary. This provides:
+	        // - Correct semantics within a process (including ExUnit test isolation)
+	        // - No global ETS/Agent lifecycle requirements
+	        //
+	        // NOTE: This is intentionally process-local; cross-process shared state should
+	        // be modeled explicitly (GenServer/Agent/ETS) in user code.
+	        // --------------------------------------------------------------------
+	        if (varFields != null) {
+	            var staticVars: Array<{ name: String, init: reflaxe.elixir.ast.ElixirAST }> = [];
+
+	            for (varData in varFields) {
+	                if (!varData.isStatic) continue;
+
+	                var elixirName = reflaxe.elixir.ast.NameUtils.toSnakeCase(varData.field.name);
+	                var initExpr: Null<TypedExpr> = null;
+
+	                try initExpr = varData.field.expr() catch (e) {}
+	                if (initExpr == null) {
+	                    var untypedDefault = varData.getDefaultUntypedExpr();
+	                    if (untypedDefault != null) {
+	                        try initExpr = Context.typeExpr(untypedDefault) catch (e) {}
+	                    }
+	                }
+
+	                var initAst = if (initExpr != null) {
+	                    initExpr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(initExpr);
+	                    reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(initExpr, context);
+	                } else {
+	                    ast(ENil);
+	                };
+
+	                staticVars.push({ name: elixirName, init: initAst });
+	            }
+
+	            if (staticVars.length > 0) {
+	                // Internal helpers:
+	                // - __haxe_static_key__/1: {:__haxe_static__, __MODULE__, key}
+	                // - __haxe_static_get__/2: read-or-init
+	                // - __haxe_static_put__/2: write
+	                // Plus per-var wrappers: var/0 + var/1
+
+	                var staticNs = ast(EAtom("__haxe_static__"));
+	                var setTag = ast(EAtom("set"));
+	                var selfModule = ast(EVar(reflaxe.elixir.ast.builders.ModuleBuilder.extractModuleName(classType)));
+
+	                function buildStaticKeyExpr(keyAtom: reflaxe.elixir.ast.ElixirAST): reflaxe.elixir.ast.ElixirAST {
+	                    return ast(ETuple([staticNs, selfModule, keyAtom]));
+	                }
+
+	                // __haxe_static_get__(key, init)
+	                var getKeyPat: EPattern = PVar("key");
+	                var getInitPat: EPattern = PVar("init");
+	                var getKeyVar = ast(EVar("key"));
+	                var getInitVar = ast(EVar("init"));
+	                var getStaticKeyVar = ast(EVar("static_key"));
+	                var getValueVar = ast(EVar("value"));
+
+	                var getBody = ast(EBlock([
+	                    ast(EMatch(PVar("static_key"), buildStaticKeyExpr(getKeyVar))),
+	                    ast(ECase(
+	                        ast(ERemoteCall(ast(EVar("Process")), "get", [getStaticKeyVar])),
+	                        [
+	                            {
+	                                pattern: PTuple([PLiteral(setTag), PVar("value")]),
+	                                body: getValueVar
+	                            },
+	                            {
+	                                pattern: PLiteral(ast(ENil)),
+	                                body: ast(EBlock([
+	                                    ast(EMatch(PVar("value"), getInitVar)),
+	                                    ast(ERemoteCall(ast(EVar("Process")), "put", [
+	                                        getStaticKeyVar,
+	                                        ast(ETuple([setTag, getValueVar]))
+	                                    ])),
+	                                    getValueVar
+	                                ]))
+	                            }
+	                        ]
+	                    ))
+	                ]));
+
+	                fields.push(ast(EDefp("__haxe_static_get__", [getKeyPat, getInitPat], null, getBody)));
+
+	                // __haxe_static_put__(key, value)
+	                var putKeyPat: EPattern = PVar("key");
+	                var putValuePat: EPattern = PVar("value");
+	                var putKeyVar = ast(EVar("key"));
+	                var putValueVar = ast(EVar("value"));
+	                var putStaticKeyVar = ast(EVar("static_key"));
+	                var putBody = ast(EBlock([
+	                    ast(EMatch(PVar("static_key"), buildStaticKeyExpr(putKeyVar))),
+	                    ast(ERemoteCall(ast(EVar("Process")), "put", [
+	                        putStaticKeyVar,
+	                        ast(ETuple([setTag, putValueVar]))
+	                    ])),
+	                    putValueVar
+	                ]));
+
+	                fields.push(ast(EDefp("__haxe_static_put__", [putKeyPat, putValuePat], null, putBody)));
+
+	                // Per-static-var wrappers (public) for local + remote reads/writes:
+	                // def var(), do: __haxe_static_get__(:var, <init>)
+	                // def var(value), do: __haxe_static_put__(:var, value)
+	                for (sv in staticVars) {
+	                    var keyAtom = ast(EAtom(sv.name));
+	                    var getCall = ast(ECall(null, "__haxe_static_get__", [keyAtom, sv.init]));
+	                    fields.push(ast(EDef(sv.name, [], null, getCall)));
+
+	                    var setCall = ast(ECall(null, "__haxe_static_put__", [keyAtom, ast(EVar("value"))]));
+	                    fields.push(ast(EDef(sv.name, [PVar("value")], null, setCall)));
+	                }
+	            }
+	        }
+
+		        // Compile each function field
+		        for (funcData in funcFields) {
+		            var isConstructor = funcData.field.name == "new";
+
+		            // Skip functions without body - they might be extern or abstract
+		            var expr = funcData.expr;
+		            if (expr == null) continue;
+
+		            // IMPORTANT: tempVarRenameMap must be function-scoped.
 	            // We store both ID-based and NAME-based keys in this map (for declaration/reference
 	            // alignment). If we reuse it across functions, NAME-based entries can leak and cause
-	            // cross-function renames (e.g. `page` references rewritten to `per_page` in an
-	            // unrelated function). Keep the map isolated per function body compilation.
-	            var previousTempVarRenameMap = context.tempVarRenameMap;
-	            context.tempVarRenameMap = new Map();
+		            // cross-function renames (e.g. `page` references rewritten to `per_page` in an
+		            // unrelated function). Keep the map isolated per function body compilation.
+		            var previousTempVarRenameMap = context.tempVarRenameMap;
+		            context.tempVarRenameMap = new Map();
+		            // Infrastructure-var init tracking is also name-keyed (g/_g/etc) and must be
+		            // function-scoped to avoid cross-function leakage when Haxe reuses temp names.
+		            var previousInfraVarInitValues = context.infrastructureVarInitValues;
+		            context.infrastructureVarInitValues = new Map();
+		            // Preprocessor substitutions are TVar.id-keyed but IDs are not guaranteed globally
+		            // unique across independent TypedExpr trees. Keep substitutions scoped per function.
+		            var previousInfraVarSubstitutions = context.infraVarSubstitutions;
+		            context.infraVarSubstitutions = new Map();
+		            // Loop control state must not leak across functions (break/continue context).
+		            var previousLoopControlStateStack = context.loopControlStateStack;
+		            context.loopControlStateStack = [];
 
-	            try {
-	            
-            // Preprocess the function body to eliminate infrastructure variables
-            expr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(expr);
+		            try {
+		            
+		            // Preprocess the function body to eliminate infrastructure variables
+		            expr = reflaxe.elixir.preprocessor.TypedExprPreprocessor.preprocess(expr);
+		            // Capture infrastructure-variable substitutions produced by the preprocessor for
+		            // any builder paths that recompile sub-expressions by TVar.id.
+		            context.infraVarSubstitutions = reflaxe.elixir.preprocessor.TypedExprPreprocessor.getLastSubstitutions();
 
-            #if debug_ast_builder
-            // DISABLED: trace('[ElixirCompiler] Compiling function: ${funcData.field.name}');
-            if (expr != null) {
+		            #if debug_ast_builder
+		            // DISABLED: trace('[ElixirCompiler] Compiling function: ${funcData.field.name}');
+		            if (expr != null) {
                 // DISABLED: trace('[ElixirCompiler]   Body type: ${Type.enumConstructor(expr.expr)}');
                 switch(expr.expr) {
                     case TReturn(e) if (e != null):
@@ -2003,6 +2152,14 @@ class ElixirCompiler extends GenericCompiler<
                     // Register the mapping for use in function body
                     // Use toSafeElixirParameterName to handle reserved keywords
                     var baseName = reflaxe.elixir.ast.NameUtils.toSafeElixirParameterName(strippedName);
+
+                    // Avoid colliding with instance-field binders inside methods/constructors.
+                    // Many Haxe patterns use ctor args like `options` while also having a field named `options`.
+                    // If we emit both as `options`, later passes cannot reliably distinguish param reads from
+                    // instance-field state. Prefer a descriptive, stable suffix over numeric shadow suffixes.
+                    if (instanceFieldNames.exists(baseName) && !StringTools.endsWith(baseName, "_param")) {
+                        baseName = baseName + "_param";
+                    }
                     // Add underscore prefix for unused parameters
                     var finalName = if (isUnused && !baseName.startsWith("_")) {
                         "_" + baseName;
@@ -2134,7 +2291,7 @@ class ElixirCompiler extends GenericCompiler<
 
             // For instance methods, add struct as first parameter
             // BUT NOT for ExUnit test methods - they don't get struct parameters
-            if (!isStaticMethod && !isExUnitTestMethod) {
+            if (!isStaticMethod && !isExUnitTestMethod && !isConstructor) {
                 params.push(PVar("struct"));
             }
 
@@ -2175,9 +2332,121 @@ class ElixirCompiler extends GenericCompiler<
             // Use toSafeElixirFunctionName to handle reserved keywords
             var elixirName = reflaxe.elixir.ast.NameUtils.toSafeElixirFunctionName(funcData.field.name);
 
-            var funcDef = funcData.field.isPublic ?
+            // Haxe entrypoints (`static function main()`) are not required to be `public`,
+            // but Elixir warnings-as-errors will flag unused private functions in examples.
+            // Emit `main/0` as a public `def` so downstream code can call `Module.main()`
+            // (and to keep any private helpers it calls from being flagged as unused).
+            var isMainEntrypoint = isStaticMethod && funcData.field.name == "main";
+
+            // Constructors compile to a module-level `new/arity` that returns an initialized struct/map.
+            // Haxe constructors mutate `this`; in Elixir we build a fresh `struct` map, run the body
+            // against it, and return it.
+            if (isConstructor) {
+                // Build initial map with all instance fields present so `%{struct | field: ...}` updates are safe.
+                var initPairs: Array<reflaxe.elixir.ast.ElixirAST.EMapPair> = [];
+                for (field in classType.fields.get()) {
+                    switch (field.kind) {
+                        case FVar(_, _):
+                            var snakeFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
+                            initPairs.push({
+                                key: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EAtom(snakeFieldName)),
+                                value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ENil)
+                            });
+                        default:
+                    }
+                }
+
+                var initStruct = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EMap(initPairs));
+                var initAssign = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EMatch(PVar("struct"), initStruct));
+
+                var ctorExprs: Array<reflaxe.elixir.ast.ElixirAST> = [initAssign];
+                switch (funcBody.def) {
+                    case EBlock(exprs):
+                        for (e in exprs) if (e != null) ctorExprs.push(e);
+                    default:
+                        if (funcBody != null) ctorExprs.push(funcBody);
+                }
+                // Ensure the constructor returns the constructed struct.
+                ctorExprs.push(reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar("struct")));
+                funcBody = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EBlock(ctorExprs));
+            }
+
+            // Abstract implementation identity stubs.
+            //
+            // WHY
+            // - For trivial abstracts (e.g., `abstract Atom(String) from String to String`), Haxe may
+            //   emit empty bodies for constructor/helpers because the runtime representation is a
+            //   no-op conversion.
+            // - Elixir warnings-as-errors flags unused parameters in these empty functions.
+            //
+            // WHAT
+            // - When compiling an abstract impl module and we see an empty `_new/1` or `fromString/1`,
+            //   treat it as an identity function and return the single argument.
+            //
+            // HOW
+            // - Only applies when the body is empty (`nil` or empty block) and arity is 1.
+            var isAbstractImpl = switch (classType.kind) { case KAbstractImpl(_): true; default: false; };
+            if (!isAbstractImpl && classType.name != null && classType.name.endsWith("_Impl_")) isAbstractImpl = true;
+
+            function isEmptyBody(body: Null<reflaxe.elixir.ast.ElixirAST>): Bool {
+                if (body == null || body.def == null) return true;
+                return switch (body.def) {
+                    case ENil:
+                        true;
+                    case ERaw(code):
+                        code == null || code.trim() == "";
+                    case EBlock(exprs):
+                        if (exprs == null || exprs.length == 0) {
+                            true;
+                        } else {
+                            var allEmpty = true;
+                            for (e in exprs) {
+                                if (!isEmptyBody(e)) {
+                                    allEmpty = false;
+                                    break;
+                                }
+                            }
+                            allEmpty;
+                        }
+                    case EDo(exprs):
+                        if (exprs == null || exprs.length == 0) {
+                            true;
+                        } else {
+                            var allEmpty = true;
+                            for (e in exprs) {
+                                if (!isEmptyBody(e)) {
+                                    allEmpty = false;
+                                    break;
+                                }
+                            }
+                            allEmpty;
+                        }
+                    default:
+                        false;
+                };
+            }
+
+            var isAbstractIdentityStub = (funcData.field.name == "_new" || funcData.field.name == "fromString" || funcData.field.name == "from_string"
+                || elixirName == "_new" || elixirName == "from_string");
+
+            if (isAbstractImpl && funcBody != null && params.length == 1 && isAbstractIdentityStub) {
+                var bodyIsEmpty = isEmptyBody(funcBody);
+
+                if (bodyIsEmpty) {
+                    var argName = switch (params[0]) { case PVar(n): n; default: null; };
+                    if (argName != null && argName.length > 0) {
+                        funcBody = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar(argName));
+                    }
+                }
+            }
+
+            var funcDef = (funcData.field.isPublic || isMainEntrypoint) ?
                 EDef(elixirName, params, null, funcBody) :
                 EDefp(elixirName, params, null, funcBody);
+
+            if (isMainEntrypoint && currentCompiledModule != null && modulesWithBootstrap.indexOf(currentCompiledModule) < 0) {
+                modulesWithBootstrap.push(currentCompiledModule);
+            }
 
             // Check for test-related metadata on the function field
             var funcMetadata: reflaxe.elixir.ast.ElixirAST.ElixirMetadata = {};
@@ -2241,20 +2510,26 @@ class ElixirCompiler extends GenericCompiler<
             }
 
 	            // Create AST node directly (makeAST is an inline function, not a static method)
-		            fields.push({
-		                def: funcDef,
-		                metadata: funcMetadata,
-		                pos: funcData.field.pos
-		            });
-		            } catch (e: Dynamic) {
-		                // Restore the class-level context map for the next function.
-		                context.tempVarRenameMap = previousTempVarRenameMap;
-		                throw e;
-		            }
+			            fields.push({
+			                def: funcDef,
+			                metadata: funcMetadata,
+			                pos: funcData.field.pos
+			            });
+			            } catch (e: Dynamic) {
+			                // Restore the class-level context map for the next function.
+			                context.tempVarRenameMap = previousTempVarRenameMap;
+			                context.infrastructureVarInitValues = previousInfraVarInitValues;
+			                context.infraVarSubstitutions = previousInfraVarSubstitutions;
+			                context.loopControlStateStack = previousLoopControlStateStack;
+			                throw e;
+			            }
 
-		            // Restore the class-level context map for the next function.
-		            context.tempVarRenameMap = previousTempVarRenameMap;
-		        }
+			            // Restore the class-level context map for the next function.
+			            context.tempVarRenameMap = previousTempVarRenameMap;
+			            context.infrastructureVarInitValues = previousInfraVarInitValues;
+			            context.infraVarSubstitutions = previousInfraVarSubstitutions;
+			            context.loopControlStateStack = previousLoopControlStateStack;
+			        }
 
         // Prepare metadata for special module types BEFORE building the module
         var metadata: ElixirMetadata = {};
@@ -2500,6 +2775,14 @@ class ElixirCompiler extends GenericCompiler<
             // DISABLED: trace('[ElixirCompiler] Set isPhoenixWeb=true metadata for ${classType.name}');
             #end
         }
+
+        // Record snake_case instance fields for downstream struct/map lowering passes.
+        // This enables generic, shape-based rewriting of `field = ...` to `%{struct | field: ...}`.
+        var instanceFieldList = [for (k in instanceFieldNames.keys()) k];
+        instanceFieldList.sort(function(a, b) {
+            return a < b ? -1 : (a > b ? 1 : 0);
+        });
+        metadata.instanceFields = instanceFieldList;
 
         // Build the module using ModuleBuilder with metadata
         var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, fields, metadata);

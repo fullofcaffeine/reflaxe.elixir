@@ -20,13 +20,28 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - Scan EBlock/EDo sequential statements for [assign, call] pairs and apply shape-based rewrite.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class InlinePrevAssignIntoArgTransforms {
+  static inline function isBinaryModule(mod: ElixirAST): Bool {
+    return switch (mod.def) {
+      case EVar(m): (m == ":binary" || m == "binary");
+      case EAtom(a):
+        var s: String = a;
+        s == ":binary" || s == "binary";
+      default:
+        false;
+    };
+  }
+
   public static function pass(ast: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
       return switch (n.def) {
         case EBlock(stmts): makeASTWithMeta(EBlock(rewriteSeq(stmts)), n.metadata, n.pos);
-        case EDo(stmts2): makeASTWithMeta(EDo(rewriteSeq(stmts2)), n.metadata, n.pos);
+        case EDo(stmts): makeASTWithMeta(EDo(rewriteSeq(stmts)), n.metadata, n.pos);
         default: n;
       }
     });
@@ -42,7 +57,7 @@ class InlinePrevAssignIntoArgTransforms {
         var rhsExpr: Null<ElixirAST> = null;
         switch (stmts[i].def) {
           case EBinary(Match, {def: EVar(v)}, rhs): lhsVar = v; rhsExpr = rhs;
-          case EMatch(PVar(v2), rhs2): lhsVar = v2; rhsExpr = rhs2;
+          case EMatch(PVar(v), rhs): lhsVar = v; rhsExpr = rhs;
           default:
         }
         if (lhsVar != null && rhsExpr != null) {
@@ -67,7 +82,14 @@ class InlinePrevAssignIntoArgTransforms {
           switch (left.def) {
             case ECase(matchExpr, _):
               switch (matchExpr.def) {
-                case ERemoteCall({def: EVar(m)}, fnName, margs) if (m == ":binary" && fnName == "match" && margs != null && margs.length == 2):
+                case ERemoteCall(mod, fnName, margs) if (fnName == "match" && margs != null && margs.length == 2 && isBinaryModule(mod)):
+                  switch (margs[0].def) { case EVar(v) if (v == varName):
+                    var binMod = makeAST(EVar(":binary"));
+                    var newCall = makeAST(ERemoteCall(binMod, "match", [rhs, margs[1]]));
+                    var nomatch = makeAST(EAtom(":nomatch"));
+                    makeAST(EBinary(NotEqual, newCall, nomatch));
+                  default: null; }
+                case ECall(target, fnName, margs) if (target != null && fnName == "match" && margs != null && margs.length == 2 && isBinaryModule(target)):
                   switch (margs[0].def) { case EVar(v) if (v == varName):
                     var binMod = makeAST(EVar(":binary"));
                     var newCall = makeAST(ERemoteCall(binMod, "match", [rhs, margs[1]]));
@@ -86,8 +108,8 @@ class InlinePrevAssignIntoArgTransforms {
         var newFirst = normalizeArg(args[0]);
         if (newFirst != null) makeASTWithMeta(ECall(t, fnName, [newFirst].concat(args.slice(1))), callNode.metadata, callNode.pos) else null;
       case ERemoteCall(m, fnName, args) if (args != null && args.length >= 1):
-        var newFirst2 = normalizeArg(args[0]);
-        if (newFirst2 != null) makeASTWithMeta(ERemoteCall(m, fnName, [newFirst2].concat(args.slice(1))), callNode.metadata, callNode.pos) else null;
+        var newFirst = normalizeArg(args[0]);
+        if (newFirst != null) makeASTWithMeta(ERemoteCall(m, fnName, [newFirst].concat(args.slice(1))), callNode.metadata, callNode.pos) else null;
       default: null;
     }
   }

@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For consecutive statements: `_x = rhs; String.downcase(_x)` →
  *   `String.downcase(rhs)`.
  * - Also handles ERaw nodes containing `String.downcase(_x)` (from __elixir__).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class UnderscoreTempInlineDowncaseTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

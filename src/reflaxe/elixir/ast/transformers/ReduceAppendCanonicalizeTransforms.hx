@@ -33,6 +33,10 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  *   2) Rewrite any `alias = Enum.concat(alias, [expr])` to `acc = Enum.concat(acc, [expr'])` where expr' replaces
  *      occurrences of the local alias with the binder.
  *   3) Keep all other statements; ensure body still returns acc.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ReduceAppendCanonicalizeTransforms {
     static function containsVar(ast: ElixirAST, name: String): Bool {

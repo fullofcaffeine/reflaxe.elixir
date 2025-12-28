@@ -29,6 +29,10 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  *   quadratic behavior on large generated functions.
  * - Conservative: does not attempt cross-block dataflow; only same-level
  *   block siblings are considered.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class UnusedLocalAssignUnderscoreFinalTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
@@ -78,16 +82,6 @@ class UnusedLocalAssignUnderscoreFinalTransforms {
                 return name == "g" || StringTools.startsWith(name, "this");
             }
 
-            // Dead store pattern: `x = a; x = b` where x is immediately reassigned.
-            // Drop the first assignment entirely (it is guaranteed unused).
-            var varName = getAssignedVarName(s);
-            if (varName != null && canRename(varName) && i + 1 < stmts.length) {
-                var nextVarName = getAssignedVarName(stmts[i + 1]);
-                if (nextVarName == varName) {
-                    continue;
-                }
-            }
-
             var renamed = switch (s.def) {
                 case EMatch(PVar(vn), rhs) if (canRename(vn) && !OptimizedVarUseAnalyzer.usedLater(usage, i + 1, vn)):
                     makeASTWithMeta(EMatch(PVar('_' + vn), rhs), s.metadata, s.pos);
@@ -115,4 +109,3 @@ class UnusedLocalAssignUnderscoreFinalTransforms {
 }
 
 #end
-

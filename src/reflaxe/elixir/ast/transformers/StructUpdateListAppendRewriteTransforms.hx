@@ -3,7 +3,6 @@ package reflaxe.elixir.ast.transformers;
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.ast.ElixirAST;
-import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -26,29 +25,69 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Detect EStructUpdate with exactly one field where the value is a concat of
  *   EField(EVar(base), fieldName) ++ RHS and the key matches fieldName. Replace the
  *   entire expression with EMatch(PVar(fieldName), EBinary(Concat, EVar(fieldName), RHS)).
+ *
+ * SAFETY
+ * - Only rewrites *standalone* struct-update expressions used as statements in a block.
+ *   If the update is already bound/returned (e.g., `struct = %{struct | ...}`), it is not
+ *   a "local accumulator" case and must remain a struct update.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class StructUpdateListAppendRewriteTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            switch (n.def) {
-                case EStructUpdate(structExpr, fields) if (fields != null && fields.length == 1):
-                    var f = fields[0];
-                    var keyName = f.key;
-                    var baseName = extractBaseVarName(structExpr);
-                    var out: ElixirAST = switch (f.value.def) {
-                        case EBinary(op, left, right) if (op == Concat && baseName != null && keyName != null):
-                            if (isStructFieldRef(left, baseName, keyName)) {
-                                // Build: keyName = keyName ++ right
-                                var assign = makeAST(EMatch(PVar(keyName), makeAST(EBinary(Concat, makeAST(EVar(keyName)), right))));
-                                makeASTWithMeta(assign.def, n.metadata, n.pos);
-                            } else n;
-                        default: n;
+            return switch (n.def) {
+                case EBlock(exprs) if (exprs != null && exprs.length > 0):
+                    var changed = false;
+                    var out: Array<ElixirAST> = [];
+                    for (e in exprs) {
+                        var rewritten = rewriteStandalone(e);
+                        if (rewritten != e) changed = true;
+                        out.push(rewritten);
                     }
-                    return out;
+                    changed ? makeASTWithMeta(EBlock(out), n.metadata, n.pos) : n;
+
+                case EDo(exprs) if (exprs != null && exprs.length > 0):
+                    var changed = false;
+                    var out: Array<ElixirAST> = [];
+                    for (e in exprs) {
+                        var rewritten = rewriteStandalone(e);
+                        if (rewritten != e) changed = true;
+                        out.push(rewritten);
+                    }
+                    changed ? makeASTWithMeta(EDo(out), n.metadata, n.pos) : n;
+
                 default:
-                    return n;
+                    n;
             }
         });
+    }
+
+    static function rewriteStandalone(e: ElixirAST): ElixirAST {
+        if (e == null) return e;
+        return switch (e.def) {
+            // Only rewrite standalone struct updates used as statements.
+            case EStructUpdate(structExpr, fields) if (fields != null && fields.length == 1):
+                var f = fields[0];
+                var keyName = f.key;
+                var baseName = extractBaseVarName(structExpr);
+                switch (f.value.def) {
+                    case EBinary(op, left, right) if (op == Concat && baseName != null && keyName != null):
+                        if (isStructFieldRef(left, baseName, keyName)) {
+                            // Build: keyName = keyName ++ right
+                            var assign = makeAST(EMatch(PVar(keyName), makeAST(EBinary(Concat, makeAST(EVar(keyName)), right))));
+                            makeASTWithMeta(assign.def, e.metadata, e.pos);
+                        } else {
+                            e;
+                        }
+                    default:
+                        e;
+                }
+            default:
+                e;
+        };
     }
 
     static function extractBaseVarName(e: ElixirAST): Null<String> {

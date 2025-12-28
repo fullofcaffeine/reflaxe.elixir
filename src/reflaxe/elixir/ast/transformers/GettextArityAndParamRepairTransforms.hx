@@ -26,6 +26,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - If gettext/2 exists and gettext/1 missing, insert wrapper calling gettext/2 with %{}.
  *   - Similar for dgettext/3→/2, ngettext/4→/3, dngettext/5→/4.
  *   - For each defp/def, rename `_name` pattern binder to `name` when the body references `name`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class GettextArityAndParamRepairTransforms {
     static inline function endsWithGettext(name:String):Bool {

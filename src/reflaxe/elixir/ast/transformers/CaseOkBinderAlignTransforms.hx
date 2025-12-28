@@ -26,6 +26,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   env-like names and already-declared locals), rename the binder to that name and rewrite
  *   body references from the old binder to the new one.
  * - Skip renames when ambiguous to avoid changing semantics.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseOkBinderAlignTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

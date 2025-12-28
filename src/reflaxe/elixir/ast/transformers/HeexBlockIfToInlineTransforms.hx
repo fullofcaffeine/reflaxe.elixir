@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - For ESigil("H", content): scan segments, detect if/else blocks, ensure THEN/ELSE contain no
  *   '<%' markers, and replace with inline form using quoted strings.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexBlockIfToInlineTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

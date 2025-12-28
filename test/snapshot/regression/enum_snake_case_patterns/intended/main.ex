@@ -1,7 +1,12 @@
 defmodule Main do
+  def main() do
+    _ = test_topic_conversion()
+    _ = test_message_patterns()
+    _ = test_complex_names()
+  end
   defp test_topic_conversion() do
     topic = {:todo_updates}
-    topic_string = ((case topic do
+    _topic_string = ((case topic do
   {:todo_updates} -> "todo:updates"
   {:user_activity} -> "user:activity"
   {:system_notifications} -> "system:notifications"
@@ -12,7 +17,7 @@ end))
   end
   defp test_message_patterns() do
     message = {:todo_created, %{:id => 1, :title => "Test"}}
-    result = ((case message do
+    _result = ((case message do
   {:todo_created, todo} -> "Created todo: #{(fn -> inspect(todo) end).()}"
   {:todo_updated, todo} -> "Updated todo: #{(fn -> inspect(todo) end).()}"
   {:todo_deleted, id} -> "Deleted todo: #{(fn -> Kernel.to_string(id) end).()}"
@@ -29,7 +34,7 @@ end))
   end
   defp test_complex_names() do
     request = {:xml_http_request}
-    description = ((case request do
+    _description = ((case request do
   {:xml_http_request} -> "XML HTTP Request"
   {:jsonapi_response} -> "JSON API Response"
   {:otp_supervisor} -> "OTP Supervisor"

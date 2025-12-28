@@ -16,6 +16,9 @@ MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 TEST_DIR := $(MAKEFILE_DIR)snapshot
 NEGATIVE_DIR := $(TEST_DIR)/negative
 TIMEOUT := 120s
+# Timeout for per-test Elixir syntax parsing (`elixir -e Code.string_to_quoted`).
+# This runs during `make test-*` and can spuriously fail under high parallelism if too low.
+PARSE_TIMEOUT ?= 20s
 # Timeout for snapshot updates (reuses TIMEOUT by default)
 UPDATE_TIMEOUT ?= $(TIMEOUT)
 UPDATE_JOBS ?= 4
@@ -214,7 +217,7 @@ test-%:
 			syntax_valid=true; \
 			if [ -n "$$ex_files" ]; then \
 				parse_cmd='files = System.argv(); ok = Enum.all?(files, fn f -> case File.read(f) do {:ok, s} -> case Code.string_to_quoted(s, file: f) do {:ok, _} -> true; {:error, _} -> false end; {:error, _} -> false end end); if not ok, do: System.halt(1)'; \
-				if ! timeout 5s elixir -e "$$parse_cmd" $$testdir/$(OUTPUT_DIR)/*.ex > /dev/null 2>&1; then \
+				if ! timeout $(PARSE_TIMEOUT) elixir -e "$$parse_cmd" $$testdir/$(OUTPUT_DIR)/*.ex > /dev/null 2>&1; then \
 					syntax_valid=false; \
 				fi; \
 			fi; \

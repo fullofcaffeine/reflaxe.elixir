@@ -27,6 +27,10 @@ import reflaxe.elixir.ast.ASTUtils;
  *   - Collect used lowercase names in the clause body.
  *   - Let `undef = used \\ declared \\ {b}` excluding env names (socket/live_socket).
  *   - If `undef.length == 1`, rename binder to `undef[0]` and return updated clause.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class UnderscoreBinderAlignByBodyUseTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

@@ -27,6 +27,10 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  *   identifiers). For tuple patterns (PTuple), scan each PVar("_name") and if
  *   `name` is in used set, rewrite to PVar("name"). Also normalizes nested
  *   tuple/list/map/struct binders recursively.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseTupleMultiBinderPromoteByUseTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

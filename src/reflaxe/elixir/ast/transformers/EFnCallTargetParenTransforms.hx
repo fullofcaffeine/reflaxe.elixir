@@ -20,6 +20,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - For ECall(target, "", args) where target is EFn, rewrite to ECall(EParen(target), "", args).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EFnCallTargetParenTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

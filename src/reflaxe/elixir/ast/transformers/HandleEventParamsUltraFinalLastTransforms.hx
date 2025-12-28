@@ -15,6 +15,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Earlier hygiene passes may re-underscore the head or fail to rewrite body
  *   occurrences. This final pass ensures we never ship code that uses `_params`.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleEventParamsUltraFinalLastTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

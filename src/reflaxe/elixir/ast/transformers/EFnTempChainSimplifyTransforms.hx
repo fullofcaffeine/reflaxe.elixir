@@ -11,8 +11,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHAT
  * - Inside single-clause anonymous functions (EFn), collapse temp chains:
- *   `var = nil; var = expr; var` → `expr`. Also tolerates intervening statements
- *   as long as the last two references are `var = expr` then trailing `var`.
+ *   `var = nil; var = expr; var` → `expr`.
  *
  * WHY
  * - Lowerings and pattern rewrites often introduce sentinel assigns and trailing
@@ -21,8 +20,11 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - For single-clause EFn: if the last expression is `EVar(name)`, scan backwards
- *   to find the most recent assignment to that name (EMatch or EBinary Match) and
- *   replace the tail with the RHS, dropping intervening `name = nil` sentinels.
+ *   to find the most recent assignment to that name (EMatch or EBinary Match).
+ * - Only apply when there are no intervening statements except `name = nil`
+ *   sentinels, to avoid reordering side effects or invalidating references.
+ * - Replace the trailing `name` with the assignment RHS and drop the assignment
+ *   statement and any `name = nil` sentinels in between.
  *
  * EXAMPLES
  * Before: fn -> this1 = nil; this1 = build(); this1 end
@@ -96,7 +98,7 @@ class EFnTempChainSimplifyTransforms {
                             case EBinary(Match, left, r):
                                 switch (left.def) { case EVar(nm) if (nm == name): assignIdx = idx; rhs = r; default: }
                             case EMatch(pat, r2):
-                                switch (pat) { case PVar(nm2) if (nm2 == name): assignIdx = idx; rhs = r2; default: }
+                                switch (pat) { case PVar(varName) if (varName == name): assignIdx = idx; rhs = r2; default: }
                             default:
                         }
                         if (assignIdx != -1) break;
@@ -105,23 +107,34 @@ class EFnTempChainSimplifyTransforms {
                     // DISABLED: trace('[EFnTempChainSimplify.simplify] assignIdx=$assignIdx, hasRhs=${rhs != null}');
                     #end
                     if (assignIdx != -1 && rhs != null) {
+                        // Only simplify when all intervening statements (between the assignment and the
+                        // trailing `name`) are `name = nil` sentinels that we can safely drop.
+                        // This avoids reordering side effects and prevents removing bindings that are
+                        // referenced by later statements (e.g., `name` used as an argument).
+                        var onlyNilSentinels = true;
+                        for (j in assignIdx + 1...stmts.length - 1) {
+                            var s = stmts[j];
+                            if (s == null || s.def == null) continue;
+                            var isNilSentinel = switch (s.def) {
+                                case EBinary(Match, matchLeft, rnil):
+                                    var isNil = switch (rnil.def) { case ENil: true; default: false; };
+                                    if (isNil) switch (matchLeft.def) { case EVar(varName) if (varName == name): true; default: false; } else false;
+                                case EMatch(matchPattern, matchRhs):
+                                    var rhsIsNil = switch (matchRhs.def) { case ENil: true; default: false; };
+                                    if (rhsIsNil) switch (matchPattern) { case PVar(varName) if (varName == name): true; default: false; } else false;
+                                default:
+                                    false;
+                            }
+                            if (!isNilSentinel) {
+                                onlyNilSentinels = false;
+                                break;
+                            }
+                        }
+                        if (!onlyNilSentinels) return stmts;
+
                         var out:Array<ElixirAST> = [];
                         for (j in 0...assignIdx) out.push(stmts[j]);
-                        // Drop any prior 'name = nil' sentinels
-                        for (j in assignIdx + 1...stmts.length - 1) {
-                            var d = stmts[j].def;
-                            var dropped = false;
-                            switch (d) {
-                                case EBinary(Match, left2, rnil):
-                                    var isNil = switch (rnil.def) { case ENil: true; default: false; };
-                                    if (isNil) switch (left2.def) { case EVar(nm3) if (nm3 == name): dropped = true; default: }
-                                case EMatch(pat2, rnil2):
-                                    var isNil2 = switch (rnil2.def) { case ENil: true; default: false; };
-                                    if (isNil2) switch (pat2) { case PVar(nm4) if (nm4 == name): dropped = true; default: }
-                                default:
-                            }
-                            if (!dropped) out.push(stmts[j]);
-                        }
+                        // Drop intervening `name = nil` sentinels (guaranteed by `onlyNilSentinels` above).
                         out.push(rhs);
                         #if debug_efn_temp_chain
                         // DISABLED: trace('[EFnTempChainSimplify.simplify] SIMPLIFIED: ${stmts.length} -> ${out.length} stmts');

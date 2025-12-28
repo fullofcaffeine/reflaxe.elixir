@@ -11,6 +11,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHAT
  * - Collapses multiple trailing blank lines in ~H content to a single blank line for parity.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexTrimTrailingBlankLinesTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

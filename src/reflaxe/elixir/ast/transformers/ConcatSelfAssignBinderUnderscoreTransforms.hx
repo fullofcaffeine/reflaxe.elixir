@@ -21,6 +21,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   code generation may emit `item = Enum.concat(item, [...])` inside a block
  *   where `item` is also a surrounding variable. Elixir warns about the local
  *   `item` being unused. Underscoring the binder is idiomatic and silences it.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ConcatSelfAssignBinderUnderscoreTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Some late alias injectors may add a Repo alias even when all calls are
  *   fully-qualified (e.g., `TodoApp.Repo.update/1`). Elixir warns on unused
  *   aliases; dropping them keeps output clean.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class UnusedRepoAliasCleanupFinalPass {
     public static function pass(ast: ElixirAST): ElixirAST {

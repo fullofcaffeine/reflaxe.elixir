@@ -1,5 +1,8 @@
 defmodule Main do
   use ExUnit.Case
+  def new() do
+    TestCase.new()
+  end
   test "email validation" do
     valid_email = Email_Impl_.parse("user@example.com")
     assert match?({:ok, _}, valid_email)
@@ -119,7 +122,7 @@ defmodule Main do
     domain_result = ResultTools.filter(ResultTools.map(Email_Impl_.parse("test@example.com"), fn email -> Email_Impl_.get_domain(email) end), fn domain -> domain == "example.com" end, "Wrong domain")
     assert match?({:ok, _}, domain_result)
     (case domain_result do
-      {:ok, _value} -> assert domain == "example.com"
+      {:ok, domain} -> assert domain == "example.com"
       {:error, reason} -> flunk("Domain extraction should not fail: " <> reason)
     end)
     failed_filter = ResultTools.filter(ResultTools.map(Email_Impl_.parse("test@wrong.com"), fn email -> Email_Impl_.get_domain(email) end), fn domain -> domain == "example.com" end, "Wrong domain")
@@ -144,10 +147,7 @@ defmodule Main do
     (case invalid_email do
       {:ok, _value} -> flunk("Invalid email should not parse")
       {:error, message} ->
-        condition = ((case :binary.match(message, "Invalid email") do
-  {_pos, _} -> message
-  :nomatch -> -1
-end)) >= 0
+        condition = :binary.match(message, "Invalid email") != :nomatch
         assert condition
     end)
     large_int = PositiveInt_Impl_.parse(1000000)
@@ -183,7 +183,7 @@ end)) >= 0
                     profile_email = Email_Impl_.to_string(email)
                     profile_normalized_id = UserId_Impl_.to_string(UserId_Impl_.normalize(id))
                     profile_is_company_email = Email_Impl_.has_domain(email, "company.com")
-                    profile_age_in_months = PositiveInt_Impl_.to_int(age) * 12
+                    _profile_age_in_months = PositiveInt_Impl_.to_int(age) * 12
                     profile_display_name = NonEmptyString_Impl_.to_string(name)
                     actual = profile_email
                     assert actual == "john.doe@company.com"

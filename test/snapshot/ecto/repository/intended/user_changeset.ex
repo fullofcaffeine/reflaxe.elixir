@@ -1,5 +1,5 @@
 defmodule UserChangeset do
-  def changeset(user, attrs) do
+  def changeset(_, _) do
     nil
   end
 end

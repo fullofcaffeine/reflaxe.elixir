@@ -26,6 +26,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   2) Collect base declarations: name = ... or match with PVar("name").
  *   3) For each base that has only underscored declaration and no base decl,
  *      rewrite EVar("name") in this block subtree to EVar("_name").
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class BlockUnderscoreReferenceFixTransforms {
     public static function fixPass(ast: ElixirAST): ElixirAST {

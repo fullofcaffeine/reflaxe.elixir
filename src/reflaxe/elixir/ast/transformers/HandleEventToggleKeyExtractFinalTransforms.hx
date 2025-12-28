@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Compute key = suffix after "toggle_" (e.g., "tag")
  * - Within the body, rewrite any ECall/ERemoteCall whose first arg is the
  *   `params` var to use Map.get(params, key) instead.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleEventToggleKeyExtractFinalTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

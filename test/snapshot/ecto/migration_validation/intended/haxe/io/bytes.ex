@@ -1,11 +1,12 @@
 defmodule Bytes do
-  def get_string(struct, pos, len, encoding) do
-    encoding = if (Kernel.is_nil(encoding)) do
-      encoding = {:utf8}
-      encoding
-    else
-      encoding
-    end
+  import Kernel, except: [to_string: 1], warn: false
+  defp new(length_param, b_param) do
+    struct = %{:length => nil, :b => nil}
+    struct = %{struct | length: length_param}
+    struct = %{struct | b: b_param}
+    struct
+  end
+  def get_string(struct, pos, len, _) do
     if (pos < 0 or len < 0 or pos + len > length(struct)) do
       throw("Out of bounds")
     end
@@ -13,7 +14,7 @@ defmodule Bytes do
     :unicode.characters_to_list(slice, :utf8)
   end
   def to_string(struct) do
-    get_string(struct, 0, length(struct))
+    get_string(struct, 0, length(struct), nil)
   end
   def get(struct, pos) do
     if (pos < 0 or pos >= length(struct)) do
@@ -35,8 +36,8 @@ defmodule Bytes do
     else
       <<>>
     end
-    b = <<before_part::binary, v::8, after_part::binary>>
-    b
+    struct = %{struct | b: <<before_part::binary, v::8, after_part::binary>>}
+    struct
   end
   def blit(struct, pos, src, srcpos, len) do
     if (pos < 0 or srcpos < 0 or len < 0 or pos + len > length(struct) or srcpos + len > length(src)) do
@@ -53,15 +54,15 @@ defmodule Bytes do
     else
       <<>>
     end
-    b = <<before_part::binary, src_slice::binary, after_part::binary>>
-    b
+    struct = %{struct | b: <<before_part::binary, src_slice::binary, after_part::binary>>}
+    struct
   end
   def sub(struct, pos, len) do
     if (pos < 0 or len < 0 or pos + len > length(struct)) do
       throw("Out of bounds")
     end
     sub_binary = :binary.part(struct.b, pos, len)
-    _ = Bytes.new(len, sub_binary)
+    _ = new(len, sub_binary)
   end
   def fill(struct, pos, len, value) do
     if (pos < 0 or len < 0 or pos + len > length(struct)) do
@@ -78,8 +79,8 @@ defmodule Bytes do
     else
       <<>>
     end
-    b = <<before_part::binary, fill_bytes::binary, after_part::binary>>
-    b
+    struct = %{struct | b: <<before_part::binary, fill_bytes::binary, after_part::binary>>}
+    struct
   end
   def compare(struct, other) do
     case struct.b do
@@ -111,8 +112,8 @@ defmodule Bytes do
     else
       <<>>
     end
-    b = <<before_part::binary, v::float-little-size(64), after_part::binary>>
-    b
+    struct = %{struct | b: <<before_part::binary, v::float-little-size(64), after_part::binary>>}
+    struct
   end
   def get_float(struct, pos) do
     if (pos < 0 or pos + 4 > length(struct)) do
@@ -134,8 +135,8 @@ defmodule Bytes do
     else
       <<>>
     end
-    b = <<before_part::binary, v::float-little-size(32), after_part::binary>>
-    b
+    struct = %{struct | b: <<before_part::binary, v::float-little-size(32), after_part::binary>>}
+    struct
   end
   def get_u_int16(struct, pos) do
     if (pos < 0 or pos + 2 > length(struct)) do
@@ -157,8 +158,8 @@ defmodule Bytes do
     else
       <<>>
     end
-    b = <<before_part::binary, v::little-unsigned-size(16), after_part::binary>>
-    b
+    struct = %{struct | b: <<before_part::binary, v::little-unsigned-size(16), after_part::binary>>}
+    struct
   end
   def get_int32(struct, pos) do
     if (pos < 0 or pos + 4 > length(struct)) do
@@ -180,8 +181,8 @@ defmodule Bytes do
     else
       <<>>
     end
-    b = <<before_part::binary, v::little-signed-size(32), after_part::binary>>
-    b
+    struct = %{struct | b: <<before_part::binary, v::little-signed-size(32), after_part::binary>>}
+    struct
   end
   def get_int64(struct, pos) do
     if (pos < 0 or pos + 8 > length(struct)) do
@@ -203,34 +204,34 @@ defmodule Bytes do
     else
       <<>>
     end
-    b = <<before_part::binary, v::little-signed-size(64), after_part::binary>>
-    b
+    struct = %{struct | b: <<before_part::binary, v::little-signed-size(64), after_part::binary>>}
+    struct
   end
   def read_string(struct, pos, len) do
-    get_string(struct, pos, len)
+    get_string(struct, pos, len, nil)
   end
   def to_hex(struct) do
     Base.encode16(struct.b, case: :lower)
   end
-  def alloc(length) do
-    b = :binary.copy(<<0>>, length)
-    _ = Bytes.new(length, b)
+  def alloc(length_param) do
+    b = :binary.copy(<<0>>, length_param)
+    _ = new(length_param, b)
   end
-  def of_string(s, encoding) do
+  def of_string(s, _) do
     binary = :unicode.characters_to_binary(s, :utf8)
     length = byte_size(binary)
-    _ = Bytes.new(length, binary)
+    _ = new(length, binary)
   end
-  def fast_get(b, pos) do
-    :binary.at(b, pos)
+  def fast_get(b_param, pos) do
+    :binary.at(b_param, pos)
   end
   def of_hex(s) do
     binary = Base.decode16!(s, case: :mixed)
     length = byte_size(binary)
-    _ = Bytes.new(length, binary)
+    _ = new(length, binary)
   end
-  def of_data(b) do
-    length = byte_size(b)
-    _ = Bytes.new(length, b)
+  def of_data(b_param) do
+    length = byte_size(b_param)
+    _ = new(length, b_param)
   end
 end

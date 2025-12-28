@@ -3,9 +3,11 @@ package reflaxe.elixir.ast.transformers;
 #if (macro || reflaxe_runtime)
 
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.ElixirAST.PhoenixContext;
 
 /**
  * SuccessBinderPrefixMostUsedUndefinedTransforms
@@ -24,10 +26,38 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - Compute declared names (pattern + LHS binds in body)
  *   - Count EVar occurrences in body; choose the most frequent name not declared/reserved
  *   - Prefix `name = binder` and keep the original body unchanged
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SuccessBinderPrefixMostUsedUndefinedTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
-    return transformWithScope(ast, new Map());
+    return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
+      return switch (node.def) {
+        case EModule(name, attrs, body) if (isPhoenixModule(name, node.metadata)):
+          makeASTWithMeta(EModule(name, attrs, body.map(stmt -> transformWithScope(stmt, new Map()))), node.metadata, node.pos);
+        case EDefmodule(name, doBlock) if (isPhoenixModule(name, node.metadata)):
+          makeASTWithMeta(EDefmodule(name, transformWithScope(doBlock, new Map())), node.metadata, node.pos);
+        default:
+          node;
+      }
+    });
+  }
+
+  static function isPhoenixModule(name: Null<String>, metadata: Null<ElixirMetadata>): Bool {
+    if (metadata != null) {
+      if (metadata.phoenixContext != null && metadata.phoenixContext != PhoenixContext.None) return true;
+      if (metadata.isPhoenixWeb == true) return true;
+      if (metadata.isLiveView == true) return true;
+      if (metadata.isController == true) return true;
+      if (metadata.isRouter == true) return true;
+      if (metadata.isEndpoint == true) return true;
+      if (metadata.isPresence == true) return true;
+    }
+
+    // Fallback: common Phoenix namespace convention (e.g., MyAppWeb.*).
+    return name != null && name.indexOf("Web.") != -1;
   }
 
   /**

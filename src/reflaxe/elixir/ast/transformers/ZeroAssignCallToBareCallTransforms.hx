@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Pattern-match on EBinary(Match, EInteger(0), <call> | EParen(<call>))
  *   and replace the whole expression with the call expression itself.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ZeroAssignCallToBareCallTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

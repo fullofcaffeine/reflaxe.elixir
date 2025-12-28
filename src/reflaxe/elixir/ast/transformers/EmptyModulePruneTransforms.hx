@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   block (caller context will naturally drop it from parent EBlock).
  * - Conservatively keeps modules that contain any statements (aliases, docs,
  *   attributes, defs, uses, imports, requires).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EmptyModulePruneTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

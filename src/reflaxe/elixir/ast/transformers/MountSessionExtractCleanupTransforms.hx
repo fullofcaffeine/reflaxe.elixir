@@ -26,6 +26,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   top-level statement that matches:
  *     session = Map.get(<arg0>, "session")
  * - Purely shape-based, no app-specific names beyond Phoenix mount signature.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class MountSessionExtractCleanupTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

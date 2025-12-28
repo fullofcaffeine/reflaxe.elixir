@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  * WHY
  * - Defensive guard against rare rename chains that yield invalid or empty identifiers
  *   in assignment position, which would render invalid Elixir like ` = expr`.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SanitizeAssignLhsIdentifierTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

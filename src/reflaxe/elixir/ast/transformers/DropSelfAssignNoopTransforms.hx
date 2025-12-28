@@ -12,6 +12,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHAT
  * - Remove no-op self-assignments like `v = v` (EBinary(Match, EVar(v), EVar(v)))
  *   that may appear in clause bodies after guard/pattern rewrites.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DropSelfAssignNoopTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

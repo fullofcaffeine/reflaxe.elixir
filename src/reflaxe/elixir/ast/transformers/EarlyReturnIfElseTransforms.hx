@@ -59,7 +59,16 @@ class EarlyReturnIfElseTransforms {
     }
 
     static inline function isFromReturn(n: ElixirAST): Bool {
-        return n != null && n.metadata != null && n.metadata.fromReturn == true;
+        if (n == null) return false;
+        if (n.metadata != null && n.metadata.fromReturn == true) return true;
+        return switch (n.def) {
+            case EBlock(stmts) | EDo(stmts):
+                stmts != null && stmts.length > 0 && isFromReturn(stmts[stmts.length - 1]);
+            case EParen(inner):
+                isFromReturn(inner);
+            default:
+                false;
+        };
     }
 
     static function rewriteSequenceAsSameKind(stmts: Array<ElixirAST>, wrap: Array<ElixirAST> -> ElixirAST): ElixirAST {

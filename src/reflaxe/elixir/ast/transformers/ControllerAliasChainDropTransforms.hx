@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Scan EBlock/EDo sequences and drop runs of assignments to json/data/conn
  *   where RHS is the same simple variable name.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ControllerAliasChainDropTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

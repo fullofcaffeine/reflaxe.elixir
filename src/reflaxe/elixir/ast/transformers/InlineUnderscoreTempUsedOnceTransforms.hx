@@ -22,6 +22,18 @@ import Type;
  *   String.downcase(_this)
  * becomes
  *   String.downcase(t.title)
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class InlineUnderscoreTempUsedOnceTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

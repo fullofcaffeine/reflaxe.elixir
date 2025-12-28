@@ -20,6 +20,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Match `def mount/3` with first arg PVar not equal to `params`, rename to
  *   `params` and rewrite body EVar occurrences.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class MountParamsUltraFinalTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

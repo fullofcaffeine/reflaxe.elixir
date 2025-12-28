@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - If EBinary(Add|Subtract, EVar(v), EInteger(1|…)) → EMatch(PVar(v), EBinary(...))
  *   - Drop EInteger(1|0) and EFloat(0.0)
  * - Apply the same normalization to EFn clause bodies when they are blocks.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ArithmeticIncrementTransforms {
     static function rewriteStmt(stmt: ElixirAST): Null<ElixirAST> {

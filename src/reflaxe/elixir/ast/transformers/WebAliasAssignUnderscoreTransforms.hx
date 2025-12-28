@@ -13,6 +13,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - In Web.* modules, rewrite alias assignments to json/data/conn so that the
  *   left-hand variable is underscored (e.g., `json = v` → `_json = v`). This
  *   silences unused-variable warnings when such aliases are not consumed.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class WebAliasAssignUnderscoreTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

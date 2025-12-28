@@ -13,6 +13,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Ultimate safety net for Web.* modules: drop alias assignments to json/data/conn
  *   regardless of position. These are frequently introduced by earlier normalizers
  *   and are not required when we call Phoenix.Controller.json/2 directly.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class WebDropAliasAssignUltimateTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -8,37 +8,31 @@ defmodule Main do
     nil
   end
   defp test_basic_shadowing() do
-    value = "test"
     nil
   end
   defp test_shadowing_with_intervening_statements() do
-    query = "SELECT * FROM users"
     _query = this1
     nil
   end
   defp test_shadowing_in_if_blocks() do
     filter = %{:name => "John", :email => "john@example.com", :is_active => true}
     if (not Kernel.is_nil(filter)) do
-      query = "SELECT * FROM users"
       query = this1
       query = if (not Kernel.is_nil(filter.name)) do
-        value = "%#{(fn -> filter.name end).()}%"
-        query = this2
-        query
+        _value = "%#{(fn -> filter.name end).()}%"
+        this2
       else
         query
       end
       query = if (not Kernel.is_nil(filter.email)) do
-        value = "%#{(fn -> filter.email end).()}%"
-        query = this3
-        query
+        _value = "%#{(fn -> filter.email end).()}%"
+        this3
       else
         query
       end
       query = if (filter.is_active == true) do
-        value = filter.is_active
-        query = this4
-        query
+        _value = filter.is_active
+        this4
       else
         query
       end
@@ -52,7 +46,7 @@ defmodule Main do
     base_query = temp1
     transformed2 = apply_filter(base_query, "age", "25")
     temp2 = transformed2
-    _base_query = temp2
+    base_query = temp2
     nil
   end
   defp build_base_query() do
@@ -62,7 +56,7 @@ defmodule Main do
     "#{(fn -> query end).()} WHERE #{(fn -> field end).()} = '#{(fn -> value end).()}'"
   end
   defp test_abstract_constructor_pattern() do
-    result = create_abstract_value("test_value")
+    _result = create_abstract_value("test_value")
     nil
   end
   defp create_abstract_value(value) do

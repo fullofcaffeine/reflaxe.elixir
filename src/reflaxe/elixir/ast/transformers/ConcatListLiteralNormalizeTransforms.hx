@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For any EBinary(Match, left, EBinary(Match, _, EBinary(Concat, EList([]), EList([elem]))))
  *   rewrite to EBinary(Match, left, EList([elem])).
  * - Also handle the variant without the inner match: EBinary(Match, left, EBinary(Concat, EList([]), EList([elem]))).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ConcatListLiteralNormalizeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

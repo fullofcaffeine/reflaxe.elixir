@@ -21,6 +21,10 @@ using StringTools;
  * HOW
  * - In EBlock([...]) and EDo([...]) filter out EInteger(1|0) and EFloat(0.0)
  *   when they appear as top-level statements (not within expressions).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DropStandaloneLiteralOneTransforms {
     public static function dropPass(ast: ElixirAST): ElixirAST {

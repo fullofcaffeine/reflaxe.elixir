@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Scope: only within module `HXXComponentRegistry`.
  * - Rewrites EField(_, "allowed_attributes") → EField(_, "allowedAttributes").
  * - Extendable: add additional field mappings as needed for registry internals.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HXXRegistryFieldCasePreserveTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Late pass order can cause earlier prefix-binds to be dropped or not seen by
  *   VarNameNormalization. Inlining is robust and avoids ordering hazards while staying
  *   shape-based and target-agnostic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleEventCamelRefInlineFromParamsFinalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

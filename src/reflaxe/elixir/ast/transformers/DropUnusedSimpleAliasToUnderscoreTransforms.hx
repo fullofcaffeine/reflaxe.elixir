@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * - For each statement in EBlock/EDo: if it is an assignment with a simple LHS variable and
  *   RHS that is a simple expression (var, atom, number, string, remote/local call) and the
  *   LHS is not used later in the same container, rewrite the LHS to `_`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DropUnusedSimpleAliasToUnderscoreTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

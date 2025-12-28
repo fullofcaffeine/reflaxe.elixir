@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For each def/defp:
  *   - If body is EVar(v) or EBlock([EVar(v)]), and v is not declared in the body, rewrite to RepoMod.get(:v, firstParam).
  * - Function-name agnostic; shape- and API-based only.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class BareGetterRepoGetRepairTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

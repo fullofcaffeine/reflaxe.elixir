@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   guard contains head/tail conditions (index 0 or length>1). Replace pattern
  *   with PCons(PVar("head"), PVar("tail")) and apply guard substitutions:
  *     list[0] → head; length(list) > 1 → tail != [] (shape-only).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseListGuardToConsTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

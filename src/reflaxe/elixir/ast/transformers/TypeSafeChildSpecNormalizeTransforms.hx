@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - For EDef within module TypeSafeChildSpec where name == "supervisor" and arity == 3,
  *   replace the body with a clean ERaw implementation using module/args/opts.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class TypeSafeChildSpecNormalizeTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

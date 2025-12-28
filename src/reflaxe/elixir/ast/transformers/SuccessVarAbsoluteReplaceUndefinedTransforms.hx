@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ASTUtils;
  *   - Replace all `EVar(name)` where `name` is lowercase, not declared, and not an env name
  *     (socket/live_socket) with `EVar(binder)`.
  * - Runs at the absolute end of the pipeline.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SuccessVarAbsoluteReplaceUndefinedTransforms {
     public static function replacePass(ast: ElixirAST): ElixirAST {

@@ -20,6 +20,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - For each EDef/EDefp with args containing `PVar("_assigns")` and body subtree containing
  *   `ESigil("H", ...)`, rewrite that arg to `PVar("assigns")`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexAssignsParamRenameTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

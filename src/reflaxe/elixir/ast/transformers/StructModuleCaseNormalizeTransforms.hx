@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   lowercase letter, capitalize that segment’s first letter. Leaves fully
  *   qualified names and standard library modules intact (they already follow
  *   alias casing). Does not touch field names or other nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class StructModuleCaseNormalizeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

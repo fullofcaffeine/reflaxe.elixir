@@ -261,6 +261,15 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_removeRedundantNilInitPass
         });
+
+        // Lower instance-field locals (field = ...) to struct/map updates (struct = %{struct | field: ...}).
+        // This prevents undefined-variable errors and preserves mutation semantics for class instance fields.
+        passes.push({
+            name: "InstanceFieldLowering",
+            description: "Rewrite instance field locals to struct/map updates",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.InstanceFieldLoweringTransforms.pass
+        });
         
         // String method rewrites are handled in String.cross.hx (generate idiomatic code directly).
         
@@ -339,7 +348,19 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_immutabilityTransformPass
         });
         #end
-        
+
+        // Rebind immutable operations used as statements (Map.put/3, ++/2, etc.).
+        //
+        // This is correctness-critical for the Elixir target: Haxe APIs often appear "mutating"
+        // (Map.set, Array.push), and builder/lowering stages emit their immutable equivalents
+        // which must be rebound to persist.
+        passes.push({
+            name: "StatementContextTransform",
+            description: "In statement position, rebind immutable ops to their first-arg variable (Map.put, ++, etc.)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_statementContextTransformPass
+        });
+
         // Null coalescing inline transformation pass
         passes.push({
             name: "NullCoalescingInline",
@@ -358,6 +379,25 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_selfReferenceTransformPass
         });
+
+        // If EnumEachEarlyReturn rewrote a desugared loop block, lift the remainder of the
+        // surrounding statement sequence into the wildcard clause so the intended return
+        // value is not overridden by subsequent expressions.
+        passes.unshift({
+            name: "EnumEachEarlyReturnRemainderLift",
+            description: "Lift outer remainder statements into reflaxe return-tagged reduce_while case else-branch",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EnumEachEarlyReturnRemainderLiftTransforms.pass
+        });
+
+        // Preserve Haxe return semantics for loops lowered to Enum.each/2.
+        // Rewrite to Enum.reduce_while/3 and wrap the remainder of the surrounding block in a case.
+        passes.unshift({
+            name: "EnumEachEarlyReturn",
+            description: "Preserve Haxe return semantics for loops lowered to Enum.each/2 (rewrite to Enum.reduce_while + case)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EnumEachEarlyReturnTransforms.pass
+        });
         
         // Struct field assignment transformation pass
         passes.push({
@@ -365,6 +405,15 @@ class ElixirASTPassRegistry {
             description: "Convert struct field assignments to struct update syntax",
             enabled: true,
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_structFieldAssignmentTransformPass
+        });
+
+        // Rewrite imperative Map.set/2 calls into functional Map.put rebindings.
+        // This must run before map builder collapse so Map.put sequences can be recognized.
+        passes.push({
+            name: "MapSetRewrite",
+            description: "Rewrite `m.set(k, v)` to `m = Map.put(m, k, v)` for valid, WAE-clean Elixir",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapSetRewritePass
         });
 
         passes.push({
@@ -774,6 +823,15 @@ class ElixirASTPassRegistry {
             description: "Late rewrite of list.push(v) to assignment with Enum.concat",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.BinderTransforms.listPushRewritePass
+        });
+
+        // Persist Haxe static-field "mutations" after list push lowering has produced
+        // list/map update expressions (e.g., `mod.field() ++ [x]`, `Map.put(tmp, k, v)`).
+        passes.push({
+            name: "StaticVarMutationRewrite",
+            description: "Persist static var mutations by calling static accessor setters",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StaticVarMutationRewriteTransforms.pass
         });
 
         // Qualify bare Repo.* calls to <App>.Repo.* by deriving <App> from the enclosing module name (e.g., TodoAppWeb.* -> TodoApp)
@@ -1661,6 +1719,14 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.AnonFnArgBinderFixTransforms.fixPass
         });
 
+        // Avoid conflicts with Kernel.then/2 on modern Elixir when user code defines then/2
+        passes.push({
+            name: "KernelImportExceptThen",
+            description: "Inject `import Kernel, except: [then: 2]` when a module defines local then/2",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.KernelImportExceptThenTransforms.pass
+        });
+
         // Remove unused imports like Ecto.Changeset when unreferenced
         passes.push({
             name: "UnusedImportCleanup",
@@ -2379,6 +2445,40 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.transformers.IfResultAssignmentSimplifyTransforms.transformPass
         });
 
+        // Flatten nested statement blocks to keep sequential analyses continuation-aware.
+        passes.push({
+            name: "StatementBlockFlatten",
+            description: "Flatten nested EBlock/EDo in statement position to a single statement list (scope-transparent)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.StatementBlockFlattenTransforms.pass
+        });
+
+        // Convert discarded tuple-result case patterns into real bindings (prevents Elixir nil-type WAE).
+        passes.push({
+            name: "CaseTupleResultBinding",
+            description: "Bind case-returned tuples to real vars and drop nil pre-binds (WAE + idiomaticity)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseTupleResultBindingTransforms.pass
+        });
+
+        // Drop dead initializers like `x = nil` / `x = %{}` when a later top-level assignment overwrites x
+        // before any reads (avoids WAE "variable is unused" warnings).
+        passes.push({
+            name: "ShadowedInitAssignPrune",
+            description: "Prune trivial initializers overwritten later in the same block (WAE hygiene)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ShadowedInitAssignPruneTransforms.pass
+        });
+
+        // Elixir 1.18+ has limited flow-narrowing across boolean nil guards (WAE).
+        // Rewrite `if other_cond or is_nil(v)` to a case-narrowed shape when v.field is accessed.
+        passes.push({
+            name: "NilGuardFieldAccessCaseNarrow",
+            description: "Rewrite if/or-nil guards to case-narrowed patterns for safe field access under WAE",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.NilGuardFieldAccessCaseNarrowTransforms.pass
+        });
+
         // Qualify struct literals passed to changeset/2 inside <App>Web.* modules
         passes.push({
             name: "ChangesetStructQualification",
@@ -2453,6 +2553,16 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.ReduceWhileToEnumEachTransforms.transformPass
         });
+
+        // After late reduce_while→Enum.each rewrites, repair cross-scope "mutations" inside Enum.each
+        // by threading the updated value through Enum.reduce.
+        passes.push({
+            name: "EnumEachOuterAssignToReduce",
+            description: "Rewrite Enum.each outer-var assignments to Enum.reduce accumulator threading",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.EnumEachOuterAssignToReduceTransforms.pass
+        });
+
         // Normalize Enum.filter predicates to structured EFn for deterministic downstream passes
         passes.push({
             name: "FilterPredicateNormalize",
@@ -2535,14 +2645,6 @@ class ElixirASTPassRegistry {
                 "HandleEventParamsForceBodyRewrite_Final",
                 "HandleEventParamsUltraFinal_Last"
             ]
-        });
-        // Preserve Haxe return semantics for loops lowered to Enum.each/2.
-        // Rewrite to Enum.reduce_while/3 and wrap the remainder of the surrounding block in a case.
-        passes.push({
-            name: "EnumEachEarlyReturn",
-            description: "Preserve Haxe return semantics for loops lowered to Enum.each/2 (rewrite to Enum.reduce_while + case)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.EnumEachEarlyReturnTransforms.pass
         });
         // Fix Enum.find self-compare drift (`v.id == v`) by using the enclosing `id`/`_id` parameter.
         passes.push({
@@ -2943,6 +3045,16 @@ class ElixirASTPassRegistry {
             description: "Inside EFn, rewrite var=nil; var=expr; var → expr (runs even with fast_boot)",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnTempChainSimplifyTransforms.pass
+        });
+
+        // CRITICAL: Haxe can emit empty bodies for inline abstract impl stubs (e.g. Atom_Impl_._new/1).
+        // In strict Elixir builds (`--warnings-as-errors`) this triggers unused-argument warnings and fails compilation.
+        // Keep this pass outside fast_boot/hygiene guards so all builds stay warning-free.
+        passes.push({
+            name: "AbstractImplIdentityStub_AlwaysRun",
+            description: "Ensure empty abstract-impl stubs (_new/from_string) return their single argument (prevents unused-arg warnings)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AbstractImplIdentityStubTransforms.transformPass
         });
 
         passes.push({
@@ -3427,13 +3539,6 @@ class ElixirASTPassRegistry {
             description: "Rewrite @:migration builder chains into runnable Ecto.Migration DSL when ecto_migrations_exs",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EctoMigrationExsTransforms.transformPass
-        });
-        // Migration: inject nowarn + stubs (absolute final to see final call shapes)
-        passes.push({
-            name: "EctoMigrationNowarnAndStubs",
-            description: "Inject @compile nowarn and defp stubs for migration helpers (absolute final)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.EctoMigrationNowarnAndStubTransforms.transformPass
         });
         // Absolute last controller normalization to ensure conn is present and not underscored
         passes.push({
@@ -4382,6 +4487,17 @@ class ElixirASTPassRegistry {
             runAfter: ["CaseBinderUnderscoreAlign_AbsoluteFinal_Replay"]
         });
 
+        // Absolute-last: for any function containing ~H that lacks an assigns param,
+        // inject a local `assigns = %{}` binding so Phoenix can compile the sigil.
+        // This runs late to avoid other hygiene passes discarding the binder.
+        passes.push({
+            name: "HeexEnsureAssignsForNestedSigils",
+            description: "Absolute-last: insert local assigns map for ~H helpers without assigns param",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.HeexEnsureAssignsForNestedSigilsTransforms.transformPass,
+            runAfter: ["PhoenixComponentModuleNormalize_AbsoluteLast"]
+        });
+
         // Absolute-last: ensure HEEx functions don't retain a stray `_assigns` local binder.
         // Phoenix ~H requires a variable literally named `assigns` in scope.
         passes.push({
@@ -4389,7 +4505,7 @@ class ElixirASTPassRegistry {
             description: "Absolute-last: rename _assigns → assigns inside function bodies containing ~H",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.HeexAssignsLocalVarRenameTransforms.transformPass,
-            runAfter: ["PhoenixComponentModuleNormalize_AbsoluteLast"]
+            runAfter: ["HeexEnsureAssignsForNestedSigils"]
         });
 
         // Absolute-last cleanup: if EnumEachEarlyReturn rewrote a terminal Enum.each into a
@@ -4417,6 +4533,21 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.EFnUnusedArgUnderscoreTransforms.transformPass,
             runAfter: ["EnumEachEarlyReturnTrailingNilCleanup_AbsoluteLast"]
+        });
+
+        // Absolute-last safety: remote call modules must be aliases, not lowercase locals.
+        //
+        // WHY
+        // - `users.list_users()` is parsed as a variable `users` (undefined) rather than a module alias.
+        // - Upstream builder/transform interactions can accidentally downcase module references in rare cases.
+        // - This pass restores valid alias casing deterministically (snake_case → UpperCamel) without
+        //   relying on app-specific names.
+        passes.push({
+            name: "RemoteCallModuleAliasCaseNormalize_AbsoluteLast",
+            description: "Absolute-last: normalize lowercase remote-call module targets to valid aliases",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.RemoteCallModuleAliasCaseNormalizeTransforms.pass,
+            runAfter: ["EFnUnusedArgUnderscore_AbsoluteLast"]
         });
 
         // Filter disabled passes first

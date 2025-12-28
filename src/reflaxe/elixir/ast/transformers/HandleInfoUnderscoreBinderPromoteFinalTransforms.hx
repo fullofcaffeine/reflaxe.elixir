@@ -14,6 +14,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - In handle_info/2, promote {:some, _x} tuple binder to a safe name (payload)
  *   and rewrite clause body references `_x` → `payload`. Also fixes inner
  *   `case _x do ... end` scrutinee to use `payload`.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleInfoUnderscoreBinderPromoteFinalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

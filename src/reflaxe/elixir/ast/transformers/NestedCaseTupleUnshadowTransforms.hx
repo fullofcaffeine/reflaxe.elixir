@@ -20,6 +20,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHY
  * - Prevents nested self-shadowing and repairs common “payload” tuple patterns without app coupling.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class NestedCaseTupleUnshadowTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

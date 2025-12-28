@@ -19,6 +19,14 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * WHY
  * - Prevents Elixir warnings about using underscored variables while keeping
  *   the code idiomatic and readable.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
   class LocalUnderscoreBinderPromotionWhenUsedTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

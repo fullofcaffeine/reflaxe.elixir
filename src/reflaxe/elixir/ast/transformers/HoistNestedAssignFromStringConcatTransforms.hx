@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   `EBinary(StringConcat, left, inner)` and `inner` is an assignment to a simple variable,
  *   emit two statements: the inner assignment first, then the original outer assignment with
  *   the inner replaced by the bound variable.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HoistNestedAssignFromStringConcatTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

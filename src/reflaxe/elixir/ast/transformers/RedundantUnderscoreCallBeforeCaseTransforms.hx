@@ -27,6 +27,10 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  *   underscore assignment to a remote call and the next statement is a case on
  *   an identical remote call (module, function, and argument list match by
  *   AST print equality), drop the underscore assignment.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class RedundantUnderscoreCallBeforeCaseTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

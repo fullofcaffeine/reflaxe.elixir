@@ -34,6 +34,10 @@ private typedef EachFnInfo = { binder: String, body: ElixirAST };
  *   the binder (binder = binder + 1). Replace with `Enum.count(list, fn binder -> normalizedCond end)`.
  * - Normalizes the predicate to use the binder by replacing any single free, lowercase variable name
  *   in the condition with the binder (handles cases like `todo.completed`).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CountEachToEnumCountTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

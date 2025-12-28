@@ -13,6 +13,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Flatten temp alias chains globally:
  *     outer = (temp = expr)  → outer = expr     when temp is a compiler temp (thisN/_thisN/g...)
  *     temp  = (outer = expr) → outer = expr
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class TempAssignFlattenGlobalTransforms {
     static inline function isTempName(nm:String):Bool {

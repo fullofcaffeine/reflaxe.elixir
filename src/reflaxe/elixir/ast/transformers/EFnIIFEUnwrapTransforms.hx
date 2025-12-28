@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Some argument wrappers convert a block to an IIFE even when the block
  *   simply returns an anonymous function. This breaks places expecting a plain
  *   anonymous function (e.g., Enum.each/map second arg).
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EFnIIFEUnwrapTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

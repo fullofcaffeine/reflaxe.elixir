@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   exactly `<Prefix>.Presence` (one dot) and not already `<Prefix>Web.Presence`.
  *   Replace the module with `<Prefix>Web.Presence` preserving function and args.
  * - Shape-based only; no app-name heuristics beyond module suffix check.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class PresenceQualifiedModuleRewriteTransforms {
     static inline function toWebPresence(modName:String): Null<String> {

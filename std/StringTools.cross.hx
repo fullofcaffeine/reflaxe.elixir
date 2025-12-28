@@ -27,8 +27,11 @@
  * WHAT: Replaces Haxe's default StringTools with Elixir-optimized version
  * HOW: Pure Haxe implementation that generates clean Elixir code
  * 
- * NOTE: Cannot use __elixir__() here because StringTools is used by macros
- * which run at compile-time in Haxe, not in Elixir runtime.
+ * NOTE:
+ * - `StringTools` is used by macros at Haxe compile-time (macro context).
+ * - For functions that benefit from native Elixir implementations at runtime, we use
+ *   `#if macro` to keep a pure-Haxe version for macro evaluation, and `#else` to
+ *   inject idiomatic Elixir via `__elixir__()` for the Elixir target runtime.
  */
 class StringTools {
     /**
@@ -65,6 +68,7 @@ class StringTools {
      * Decode an URL using the standard format.
      */
     public static function urlDecode(s: String): String {
+        #if macro
         var result = "";
         var i = 0;
         while (i < s.length) {
@@ -84,6 +88,10 @@ class StringTools {
             i++;
         }
         return result;
+        #else
+        // Elixir: `URI.decode/1` safely percent-decodes and does not treat '+' specially.
+        return untyped __elixir__('URI.decode({0})', s);
+        #end
     }
 
     /**
@@ -211,6 +219,7 @@ class StringTools {
      * Encode a number into a hexadecimal representation, with an optional number of zeros for left padding.
      */
     public static function hex(n: Int, ?digits: Int): String {
+        #if macro
         var s = "";
         var hexChars = "0123456789ABCDEF";
         do {
@@ -224,6 +233,13 @@ class StringTools {
             }
         }
         return s;
+        #else
+        // Elixir: match Haxe Int semantics (32-bit) via an explicit mask.
+        if (digits == null) {
+            return untyped __elixir__('Integer.to_string(Bitwise.band({0}, 0xFFFFFFFF), 16) |> String.upcase()', n);
+        }
+        return untyped __elixir__('Integer.to_string(Bitwise.band({0}, 0xFFFFFFFF), 16) |> String.upcase() |> String.pad_leading({1}, \"0\")', n, digits);
+        #end
     }
 
     /**
@@ -286,6 +302,7 @@ class StringTools {
      * Convert a string to an integer value, returning null if not possible
      */
     public static function parseInt(str: String): Null<Int> {
+        #if macro
         // Handle hex numbers
         if (str.substr(0, 2) == "0x") {
             var hex = str.substr(2);
@@ -328,6 +345,22 @@ class StringTools {
         }
         
         return negative ? -result : result;
+        #else
+        return untyped __elixir__('
+            case {0} do
+              <<\"0x\", rest::binary>> ->
+                case Integer.parse(rest, 16) do
+                  {num, \"\"} -> num
+                  _ -> nil
+                end
+              _ ->
+                case Integer.parse({0}) do
+                  {num, \"\"} -> num
+                  _ -> nil
+                end
+            end
+        ', str);
+        #end
     }
 
     /**

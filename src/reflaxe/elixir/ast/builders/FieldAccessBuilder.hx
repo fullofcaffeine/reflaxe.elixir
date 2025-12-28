@@ -204,29 +204,73 @@ class FieldAccessBuilder {
             #end
             return EAtom(atomValue);
         }
-        
-        // Regular static field access
-        // Build the object expression first
-        var objAST = if (context.compiler != null) {
+
+	        // Build the object expression first
+	        var objAST = if (context.compiler != null) {
             // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
             // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
             reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context);
         } else {
             null;
-        }
+	        }
+
+	        // Static variables compile as 0-arity functions in Elixir and must be invoked
+	        // with parentheses to avoid ambiguity (`Module.field` parses as a 0-arity call).
+	        //
+	        // This also enables the compiler to back mutable statics with a store.
+	        if (field.kind.match(FVar(_, _))) {
+	            var moduleExpr = (objAST != null)
+	                ? objAST
+	                : makeAST(EVar(ModuleBuilder.extractModuleName(classRef.get())));
+	            return ERemoteCall(moduleExpr, NameUtils.toSnakeCase(fieldName), []);
+	        }
+
+	        // Static method reference (closure): emit a function capture.
+        //
+        // WHY:
+        // - Elixir requires capture syntax when passing a function value, e.g. `&Mod.fun/1`.
+        // - A bare `Mod.fun` in expression position is parsed as a 0-arity call (`Mod.fun()`),
+        //   which is incorrect for higher-arity callbacks like Enum.map/2.
+        //
+        // HOW:
+        // - When the static field is a method and we're compiling a TField (not a TCall),
+        //   produce `ECapture(EField(Mod, fun), arity)` so the printer outputs `&Mod.fun/arity`.
+        switch (field.kind) {
+            case FMethod(_):
+                var arity = switch (field.type) {
+                    case TFun(args, _): args.length;
+                    default: 0;
+                };
+                var funName = NameUtils.toSafeElixirFunctionName(fieldName);
+                // If referencing a method on the current module, prefer a local capture so
+                // private functions (defp) remain callable (remote capture requires def).
+                var isSameClass = false;
+                if (context != null && context.currentClass != null) {
+                    var cur = context.currentClass;
+                    var ref = classRef.get();
+                    isSameClass = (ref != null && cur != null && ref.name == cur.name && ref.pack.join(".") == cur.pack.join("."));
+                }
+                if (isSameClass) {
+                    return ECapture(makeAST(EVar(funName)), arity);
+                }
+
+	                var moduleExpr = (objAST != null) ? objAST : makeAST(EVar(ModuleBuilder.extractModuleName(classRef.get())));
+	                return ECapture(makeAST(EField(moduleExpr, funName)), arity);
+	            default:
+	        }
         
-        if (objAST == null) {
-            // Fallback to module reference
-            return ERemoteCall(
-                makeAST(EVar(className)),
-                fieldName,
-                []
-            );
-        }
-        
-        // Field access on the compiled object
-        return EField(objAST, fieldName);
-    }
+	        if (objAST == null) {
+	            // Fallback to module reference
+	            return ERemoteCall(
+	                makeAST(EVar(ModuleBuilder.extractModuleName(classRef.get()))),
+	                NameUtils.toSnakeCase(fieldName),
+	                []
+	            );
+	        }
+	        
+	        // Field access on the compiled object
+	        return EField(objAST, NameUtils.toSnakeCase(fieldName));
+	    }
     
     /**
      * Build instance field access
@@ -259,6 +303,19 @@ class FieldAccessBuilder {
             return null;
         }
 
+        var receiverType = haxe.macro.TypeTools.follow(e.t);
+        var receiverInnerType = switch (receiverType) {
+            case TAbstract(absRef, params):
+                var abs = absRef.get();
+                if (abs != null && abs.pack.length == 0 && abs.name == "Null" && params != null && params.length == 1) {
+                    haxe.macro.TypeTools.follow(params[0]);
+                } else {
+                    receiverType;
+                }
+            default:
+                receiverType;
+        };
+
         // Special-case: String.length (Haxe) must lower to String.length/1 (Elixir).
         //
         // WHY:
@@ -269,7 +326,7 @@ class FieldAccessBuilder {
         // - Use typed information from the receiver to detect String and emit an explicit
         //   remote call so the printer cannot misinterpret the access.
         if (fieldName == "length") {
-            var isString = switch (haxe.macro.TypeTools.follow(e.t)) {
+            var isString = switch (receiverInnerType) {
                 case TInst(_.get() => {name: "String"}, _): true;
                 case TAbstract(_.get() => {name: "String"}, _): true;
                 default: false;
@@ -346,13 +403,21 @@ class FieldAccessBuilder {
             case TFun(args, _): args.length;
             default: 0;
         };
-        
+
         // Generate function capture: &Module.function/arity
-        var functionRef = ERemoteCall(
-            makeAST(EVar(className)),
-            methodName,
-            []
-        );
+        // Note: The capture operand must not include call parentheses.
+        var funName = NameUtils.toSafeElixirFunctionName(methodName);
+        // Prefer local capture for same-module refs so defp closures remain valid.
+        var isSameClass = false;
+        if (context != null && context.currentClass != null) {
+            var cur = context.currentClass;
+            var ref = closureType.c.get();
+            isSameClass = (ref != null && cur != null && ref.name == cur.name && ref.pack.join(".") == cur.pack.join("."));
+        }
+        if (isSameClass) {
+            return ECapture(makeAST(EVar(funName)), arity);
+        }
+        var functionRef = EField(makeAST(EVar(className)), funName);
         return ECapture(makeAST(functionRef), arity);
     }
     

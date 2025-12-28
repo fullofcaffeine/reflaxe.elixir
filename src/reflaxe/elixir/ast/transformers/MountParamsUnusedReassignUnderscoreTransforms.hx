@@ -14,6 +14,18 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * WHAT
  * - In def mount/3 bodies, rename `params = ...` to `_params = ...` when `params`
  *   is not referenced later in the same body. Preserves RHS side-effects.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class MountParamsUnusedReassignUnderscoreTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

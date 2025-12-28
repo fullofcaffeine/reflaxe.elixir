@@ -20,6 +20,14 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * WHY
  * - Eliminates "underscored variable _this is used" warnings by inlining
  *   temporary variables directly into the downcase call.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DowncaseInlineFromPriorAssignTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

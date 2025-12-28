@@ -1,6 +1,7 @@
 {
   "filesGenerated": [
   "type.ex",
+  "tree_node.ex",
   "string_buf.ex",
   "std.ex",
   "main.ex",

@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For each EFn clause with exactly one argument PVar(name), rewrite in the
  *   clause body any top-level or nested `EMatch(PVar(name), rhs)` or
  *   `EBinary(Match, EVar(name), rhs)` to use `_` instead of the binder name.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ClosureSelfRebindDiscardTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

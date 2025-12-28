@@ -56,30 +56,50 @@ defmodule StringUtils do
       slug = EReg.replace(EReg.new("[^a-z0-9\\s-]", "g"), slug, "")
       slug = EReg.replace(EReg.new("\\s+", "g"), slug, "-")
       slug = EReg.replace(EReg.new("-+", "g"), slug, "-")
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {slug} ->
-        cond_value = (String.at(slug, 0) || "")
-        if (cond_value == "-") do
-          slug = String.slice(slug, 1..-1//1)
-          {:cont, {String.slice(slug, 1..-1//1)}}
-        else
-          {:halt, {slug}}
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {acc_slug} ->
+        try do
+          cond_value = (String.at(acc_slug, 0) || "")
+          if (cond_value == "-") do
+            acc_slug = String.slice(acc_slug, 1..-1//1)
+            {:cont, {acc_slug}}
+          else
+            {:halt, {acc_slug}}
+          end
+        catch
+          :throw, {:break, break_state} ->
+            {:halt, break_state}
+          :throw, {:continue, continue_state} ->
+            {:cont, continue_state}
+          :throw, :break ->
+            {:halt, {acc_slug}}
+          :throw, :continue ->
+            {:cont, {acc_slug}}
         end
       end)
-      nil
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {slug} ->
-        cond_value = (if ((String.length(slug) - 1) < 0) do
+      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {acc_slug} ->
+        try do
+          cond_value = (if ((String.length(acc_slug) - 1) < 0) do
   ""
 else
-  String.at(slug, (String.length(slug) - 1)) || ""
+  String.at(acc_slug, (String.length(acc_slug) - 1)) || ""
 end)
-        if (cond_value == "-") do
-          slug = String.slice(slug, 0, (String.length(slug) - 1))
-          {:cont, {String.slice(slug, 0, (String.length(slug) - 1))}}
-        else
-          {:halt, {slug}}
+          if (cond_value == "-") do
+            acc_slug = String.slice(acc_slug, 0, (String.length(acc_slug) - 1))
+            {:cont, {acc_slug}}
+          else
+            {:halt, {acc_slug}}
+          end
+        catch
+          :throw, {:break, break_state} ->
+            {:halt, break_state}
+          :throw, {:continue, continue_state} ->
+            {:cont, continue_state}
+          :throw, :break ->
+            {:halt, {acc_slug}}
+          :throw, :continue ->
+            {:cont, {acc_slug}}
         end
       end)
-      nil
       slug
     end
   end
@@ -115,16 +135,17 @@ end))
       result = ""
       _g = 0
       g_value = repeat_count
-      result = Enum.reduce(0..(g_value - 1)//1, result, fn _i, result_acc -> result_acc <> "*" end)
+      result = Enum.reduce(0..(g_value - 1)//1, result, fn _, result_acc -> result_acc <> "*" end)
       result
+    else
+      visible = String.slice(text, 0, visible_chars)
+      masked_count = (String.length(text) - visible_chars)
+      masked = ""
+      _g = 0
+      g_value = masked_count
+      masked = Enum.reduce(0..(g_value - 1)//1, masked, fn _, masked_acc -> masked_acc <> "*" end)
+      "#{(fn -> visible end).()}#{(fn -> masked end).()}"
     end
-    visible = String.slice(text, 0, visible_chars)
-    masked_count = (String.length(text) - visible_chars)
-    masked = ""
-    _g = 0
-    g_value = masked_count
-    masked = Enum.reduce(0..(g_value - 1)//1, masked, fn _i, masked_acc -> masked_acc <> "*" end)
-    "#{(fn -> visible end).()}#{(fn -> masked end).()}"
   end
   defp remove_excess_whitespace(text) do
     EReg.replace(EReg.new("\\s+", "g"), text, " ")

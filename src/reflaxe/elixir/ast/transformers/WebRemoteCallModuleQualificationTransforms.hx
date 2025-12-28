@@ -20,6 +20,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Detect current module name like `MyAppWeb.SafeAssigns`; extract `MyAppWeb`
  *   prefix; for ERemoteCall with module = EVar("X") and no dot, rewrite to
  *   EVar(prefix + "." + X).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class WebRemoteCallModuleQualificationTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

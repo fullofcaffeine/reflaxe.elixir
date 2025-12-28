@@ -28,6 +28,10 @@ import StringTools;
  *   - Remove that ECase from its position and replace the trailing var with it.
  *   - This preserves evaluation order for preceding statements and ensures the
  *     function returns the case expression result.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SwitchResultInlineReturnFixTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Scans function bodies for the sequence of two statements matching the shape above, and rewrites
  *   them into a single assignment to the original LHS. Runs late; app-agnostic and shape-based.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class AssignMultipleNormalizeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -6,7 +6,7 @@ defmodule Main do
   end
   defp test_basic_ternary() do
     config = %{:name => "test"}
-    id = if (not Kernel.is_nil(config)) do
+    _id = if (not Kernel.is_nil(config)) do
       Map.get(config, :id)
     else
       "default"
@@ -16,7 +16,7 @@ defmodule Main do
   defp test_nested_ternary() do
     a = 5
     b = 10
-    result = if (a > 0) do
+    _result = if (a > 0) do
       if (b > 0), do: "both positive", else: "a positive"
     else
       "a not positive"
@@ -27,7 +27,7 @@ defmodule Main do
     module = "MyModule"
     args = [1, 2, 3]
     id = nil
-    spec = create_spec(module, args, id)
+    _spec = create_spec(module, args, id)
     nil
   end
   defp create_spec(module, args, id) do

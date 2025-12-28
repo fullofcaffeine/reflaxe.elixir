@@ -20,6 +20,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Runs late; scans EBlock/EDo (and recursively within EFn bodies via transformNode).
  * - Matches adjacent or small-window patterns and rewrites as two statements.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DoubleAssignIfFoldTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

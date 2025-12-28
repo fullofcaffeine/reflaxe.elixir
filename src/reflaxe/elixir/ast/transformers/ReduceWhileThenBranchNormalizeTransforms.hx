@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - Runs late and matches any EIf node; if its then-branch is EBlock, apply the normalization.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ReduceWhileThenBranchNormalizeTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

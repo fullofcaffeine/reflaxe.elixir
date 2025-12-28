@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   head, and the body references either the underscored or base name, rename the
  *   parameter to base and rewrite body EVar occurrences from underscored -> base.
  * - Idempotent and generic; runs at absolute-final phase.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class UnderscoreParamPromotionFinalTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

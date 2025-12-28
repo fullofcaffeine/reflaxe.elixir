@@ -1,4 +1,5 @@
 defmodule OptionTools do
+  import Kernel, except: [then: 2], warn: false
   def map(option, transform) do
     (case option do
       {:some, value} -> {:some, transform.(value)}

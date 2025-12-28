@@ -34,6 +34,10 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
  * - If that clause body contains an immediate `ECase(EVar(lhs), ...)`, rewrite
  *   its scrutinee to `EVar(binder)`.
  * - Handles bodies wrapped in simple EBlock[…, ECase(..)] as well.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SwitchInnerCaseBinderRepairTransforms {
     public static function repairPass(ast: ElixirAST): ElixirAST {

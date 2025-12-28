@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Guarantees no references to `_params` remain in Map.get calls after head
  *   promotions and other repairs, avoiding WAE.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleEventMapGetUnderscoreParamsFinalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

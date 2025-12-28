@@ -4,7 +4,7 @@ defmodule IntDisplay do
   end
   def format(value, options) do
     if (Map.get(options, :hex)) do
-      "0x#{(fn -> StringTools.hex(value) end).()}"
+      "0x#{(fn -> StringTools.hex(value, nil) end).()}"
     else
       inspect(value)
     end

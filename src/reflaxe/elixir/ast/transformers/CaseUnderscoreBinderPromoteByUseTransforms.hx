@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Prevents undefined-variable errors where body interpolations or references use
  *   the non-underscored name while the pattern binds only the underscored variant.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseUnderscoreBinderPromoteByUseTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

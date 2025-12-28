@@ -13,6 +13,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Marks the generated HXX module (std/HXX.hx) as compile-time only so the
  *   emitter skips writing hxx.ex. HXX.hxx()/block() are inlined and handled by the
  *   AST pipeline; no runtime module is needed in server outputs.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SuppressHXXRuntimeModuleTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Some late rewrites can produce incorrect LHS expressions. This shape-only
  *   fixer restores a valid assignment without app-specific logic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DowncaseAssignLhsNormalizeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

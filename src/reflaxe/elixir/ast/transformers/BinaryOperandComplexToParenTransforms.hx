@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - Visit EBinary nodes and replace complex left/right operands with EParen.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class BinaryOperandComplexToParenTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Traverses the AST and replaces `ECall(nil, "inspect", [ERemoteCall(Map, "get", [obj, EAtom(field)])])`
  *   with `EField(obj, field)`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class InterpolationInspectMapGetSimplifyTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

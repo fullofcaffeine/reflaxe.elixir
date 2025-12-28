@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Scan EBlock/EDo statements; when statement[i] is a=(b=rhs) and statement[i+1] is an EIf
  *   whose else branch is exactly `b`, rewrite as above. Handles both EBinary/EMatch on outer assign.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ChainAssignIfPromoteTransforms {
   static function unwrapChain(e: ElixirAST): Null<{outer:String, inner:String, rhs:ElixirAST}> {

@@ -20,6 +20,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Returns the exact same PassConfig list (and order) that previously lived
  *   at the top of ElixirASTPassRegistry.getEnabledPasses(). No behavior change.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EarlyBootstrap {
   public static function build():Array<ElixirASTTransformer.PassConfig> {

@@ -57,6 +57,27 @@ class EnumEachEarlyReturnTransforms {
     static inline var RETURN_TAG: ElixirAtom = ElixirAtom.raw("__reflaxe_return__");
     static inline var NO_RETURN_TAG: ElixirAtom = ElixirAtom.raw("__reflaxe_no_return__");
 
+    static inline function debugLog(message: String): Void {
+        #if debug_enum_each_early_return
+        #if sys
+        Sys.println('[EnumEachEarlyReturn] ' + message);
+        #else
+        trace('[EnumEachEarlyReturn] ' + message);
+        #end
+        #end
+    }
+
+    static inline function debugMetaInfo(node: ElixirAST): String {
+        #if debug_enum_each_early_return
+        if (node == null || node.metadata == null) return "<no-meta>";
+        var file = node.metadata.sourceFile != null ? node.metadata.sourceFile : "?";
+        var line = node.metadata.sourceLine != null ? Std.string(node.metadata.sourceLine) : "?";
+        return file + ":" + line;
+        #else
+        return "";
+        #end
+    }
+
     public static function pass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             return switch (node.def) {
@@ -84,6 +105,18 @@ class EnumEachEarlyReturnTransforms {
         return n != null && n.metadata != null && n.metadata.fromReturn == true;
     }
 
+    static function subtreeContainsFromReturn(node: ElixirAST): Bool {
+        if (node == null || node.def == null) return false;
+        if (isFromReturn(node)) return true;
+
+        var found = false;
+        ElixirASTTransformer.iterateAST(node, function(child: ElixirAST): Void {
+            if (found) return;
+            if (subtreeContainsFromReturn(child)) found = true;
+        });
+        return found;
+    }
+
     static function rewriteSequenceAsSameKind(
         stmts: Array<ElixirAST>,
         wrap: Array<ElixirAST> -> ElixirAST,
@@ -99,6 +132,11 @@ class EnumEachEarlyReturnTransforms {
 
             var extracted = extractEarlyReturnEnumEach(stmt);
             if (extracted != null) {
+                debugLog('Matched Enum.each early-return pattern; binder=${extracted.binderName} prefix_len='
+                    + (extracted.prefix != null ? Std.string(extracted.prefix.length) : "null")
+                    + ' container_len=' + Std.string(stmts.length)
+                    + ' index=' + Std.string(index)
+                    + ' rest_count=' + Std.string(stmts.length - index - 1));
                 var elseExpr = (index < stmts.length - 1)
                     ? buildRestExpr(stmts.slice(index + 1), meta, pos)
                     : makeAST(ENil);
@@ -131,6 +169,9 @@ class EnumEachEarlyReturnTransforms {
                     stmt.pos
                 );
 
+                if (extracted.prefix != null) {
+                    for (p in extracted.prefix) out.push(p);
+                }
                 out.push(caseExpr);
                 return wrap(out);
             }
@@ -154,6 +195,7 @@ class EnumEachEarlyReturnTransforms {
     }
 
     static function extractEarlyReturnEnumEach(stmt: ElixirAST): Null<{
+        prefix: Array<ElixirAST>,
         collection: ElixirAST,
         binderName: String,
         condition: ElixirAST,
@@ -161,63 +203,172 @@ class EnumEachEarlyReturnTransforms {
     }> {
         if (stmt == null || stmt.def == null) return null;
 
-        var callExpr: ElixirAST = switch (stmt.def) {
-            case EMatch(PVar("_"), rhs): rhs;
-            case EBinary(Match, {def: EVar("_")}, rhs): rhs;
-            default: stmt;
-        };
+        inline function isBareNumericSentinel(e: ElixirAST): Bool {
+            return switch (e.def) {
+                case EInteger(v) if (v == 0 || v == 1): true;
+                case EFloat(f) if (f == 0.0): true;
+                case ERaw(code) if (code != null && (StringTools.trim(code) == "0" || StringTools.trim(code) == "1")): true;
+                default: false;
+            };
+        }
 
-        var loopContainsReturn = (stmt.metadata != null && stmt.metadata.loopContainsReturn == true)
-            || (callExpr != null && callExpr.metadata != null && callExpr.metadata.loopContainsReturn == true);
+        inline function isImplicitNilElse(e: Null<ElixirAST>): Bool {
+            if (e == null) return true;
+            if (e.def == null) return false;
+            return switch (e.def) {
+                case ENil: true;
+                case EBlock(stmts) if (stmts == null || stmts.length == 0): true;
+                case EDo(stmts2) if (stmts2 == null || stmts2.length == 0): true;
+                default: false;
+            };
+        }
 
-        var eachCall = switch (callExpr.def) {
-            case ERemoteCall({def: EVar("Enum")}, "each", args) if (args != null && args.length == 2):
-                {collection: args[0], fnArg: args[1]};
-            case ECall({def: EVar("Enum")}, "each", args) if (args != null && args.length == 2):
-                {collection: args[0], fnArg: args[1]};
-            default:
-                null;
-        };
-        if (eachCall == null) return null;
+        inline function branchSignalsReturn(branch: ElixirAST): Bool {
+            if (branch == null) return false;
+            var core = unwrapSingleStmtBlock(branch);
+            return isFromReturn(core) || subtreeContainsFromReturn(branch);
+        }
 
-        var fnAst = unwrapFnArg(eachCall.fnArg);
-        if (fnAst == null) return null;
+        function tryExtractSingle(singleStmt: ElixirAST): Null<{
+            collection: ElixirAST,
+            binderName: String,
+            condition: ElixirAST,
+            returnValue: ElixirAST
+        }> {
+            if (singleStmt == null || singleStmt.def == null) return null;
 
-        var clause = switch (fnAst.def) {
-            case EFn(clauses) if (clauses != null && clauses.length == 1):
-                clauses[0];
-            default:
-                null;
-        };
-        if (clause == null) return null;
+            // Some builder paths wrap single statements in a one-off block; unwrap to match
+            // the canonical Enum.each statement shape.
+            var stmtCore = unwrapSingleStmtBlock(singleStmt);
 
-        var binderName: Null<String> = null;
-        if (clause.args != null && clause.args.length == 1) {
-            switch (clause.args[0]) {
-                case PVar(name): binderName = name;
+            var callExpr: ElixirAST = switch (stmtCore.def) {
+                case EMatch(PVar("_"), rhs): rhs;
+                case EBinary(Match, {def: EVar("_")}, rhs): rhs;
+                default: stmtCore;
+            };
+
+            var loopContainsReturn = (singleStmt.metadata != null && singleStmt.metadata.loopContainsReturn == true)
+                || (stmtCore.metadata != null && stmtCore.metadata.loopContainsReturn == true)
+                || (callExpr != null && callExpr.metadata != null && callExpr.metadata.loopContainsReturn == true);
+
+            var eachCall = switch (callExpr.def) {
+                case ERemoteCall({def: EVar("Enum")}, "each", args) if (args != null && args.length == 2):
+                    {collection: args[0], fnArg: args[1]};
+                case ECall({def: EVar("Enum")}, "each", args) if (args != null && args.length == 2):
+                    {collection: args[0], fnArg: args[1]};
+                default:
+                    null;
+            };
+            if (eachCall == null) return null;
+
+            var fnAst = unwrapFnArg(eachCall.fnArg);
+            if (fnAst == null) {
+                debugLog('Found Enum.each but could not unwrap fn arg; def=' + Type.enumConstructor(eachCall.fnArg.def));
+                return null;
+            }
+
+            var clause = switch (fnAst.def) {
+                case EFn(clauses) if (clauses != null && clauses.length == 1):
+                    clauses[0];
+                default:
+                    null;
+            };
+            if (clause == null) {
+                debugLog('Found Enum.each but unexpected fn shape; def=' + Type.enumConstructor(fnAst.def));
+                return null;
+            }
+
+            var binderName: Null<String> = null;
+            if (clause.args != null && clause.args.length == 1) {
+                switch (clause.args[0]) {
+                    case PVar(name): binderName = name;
+                    default:
+                }
+            }
+            if (binderName == null) {
+                debugLog('Found Enum.each but binder pattern was not PVar; args=' + (clause.args != null ? Std.string(clause.args.length) : 'null'));
+                return null;
+            }
+
+            var bodyExpr = unwrapSingleStmtBlock(clause.body);
+
+            #if debug_enum_each_early_return
+            switch (bodyExpr.def) {
+                case EIf(_c, thenBranch, elseBranch):
+                    debugLog('Enum.each binder=' + binderName + ' meta=' + debugMetaInfo(callExpr)
+                        + ' if? elseNil=' + isImplicitNilElse(elseBranch)
+                        + ' loopContainsReturn=' + loopContainsReturn
+                        + ' then.fromReturn=' + isFromReturn(thenBranch)
+                        + ' then.subtreeFromReturn=' + subtreeContainsFromReturn(thenBranch)
+                        + ' then.unwrapped.fromReturn=' + isFromReturn(unwrapSingleStmtBlock(thenBranch)));
+                case EUnless(_c, body, elseBranch):
+                    debugLog('Enum.each binder=' + binderName + ' meta=' + debugMetaInfo(callExpr)
+                        + ' unless? elseNil=' + isImplicitNilElse(elseBranch)
+                        + ' loopContainsReturn=' + loopContainsReturn
+                        + ' body.fromReturn=' + isFromReturn(body)
+                        + ' body.subtreeFromReturn=' + subtreeContainsFromReturn(body)
+                        + ' body.unwrapped.fromReturn=' + isFromReturn(unwrapSingleStmtBlock(body)));
                 default:
             }
+            #end
+
+            var earlyReturn = switch (bodyExpr.def) {
+                case EIf(cond, thenBranch, elseBranch) if (isImplicitNilElse(elseBranch) && (branchSignalsReturn(thenBranch) || loopContainsReturn)):
+                    {condition: cond, value: thenBranch};
+                case EUnless(cond, body, elseBranch) if (isImplicitNilElse(elseBranch) && (branchSignalsReturn(body) || loopContainsReturn)):
+                    {condition: cond, value: body};
+                default:
+                    null;
+            };
+            if (earlyReturn == null) {
+                debugLog('Found Enum.each but body did not match early-return shape; binder=' + binderName + ' body=' + Type.enumConstructor(bodyExpr.def));
+                return null;
+            }
+
+            return {
+                collection: eachCall.collection,
+                binderName: binderName,
+                condition: earlyReturn.condition,
+                returnValue: earlyReturn.value
+            };
         }
-        if (binderName == null) return null;
 
-        var bodyExpr = unwrapSingleStmtBlock(clause.body);
+        var direct = tryExtractSingle(stmt);
+        if (direct != null) {
+            return {
+                prefix: [],
+                collection: direct.collection,
+                binderName: direct.binderName,
+                condition: direct.condition,
+                returnValue: direct.returnValue
+            };
+        }
 
-        var earlyReturn = switch (bodyExpr.def) {
-            case EIf(cond, thenBranch, null) if (isFromReturn(thenBranch) || loopContainsReturn):
-                {condition: cond, value: thenBranch};
-            case EUnless(cond, body, null) if (isFromReturn(body) || loopContainsReturn):
-                {condition: cond, value: body};
-            default:
-                null;
+        // Handle a desugared loop represented as a statement block whose last statement is the Enum.each call.
+        var stmtCore = unwrapSingleStmtBlock(stmt);
+        var innerStmts = switch (stmtCore.def) {
+            case EBlock(stmts) | EDo(stmts): stmts;
+            default: null;
         };
-        if (earlyReturn == null) return null;
 
-        return {
-            collection: eachCall.collection,
-            binderName: binderName,
-            condition: earlyReturn.condition,
-            returnValue: earlyReturn.value
-        };
+        if (innerStmts != null) {
+            var meaningful = [for (s in innerStmts) if (s != null && s.def != null && !isBareNumericSentinel(s)) s];
+            if (meaningful.length > 0) {
+                var last = meaningful[meaningful.length - 1];
+                var extractedLast = tryExtractSingle(last);
+                if (extractedLast != null) {
+                    return {
+                        prefix: meaningful.slice(0, meaningful.length - 1),
+                        collection: extractedLast.collection,
+                        binderName: extractedLast.binderName,
+                        condition: extractedLast.condition,
+                        returnValue: extractedLast.returnValue
+                    };
+                }
+            }
+        }
+
+        return null;
     }
 
     static function unwrapFnArg(arg: ElixirAST): Null<ElixirAST> {

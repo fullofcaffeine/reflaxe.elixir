@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  *   second arg (`handle_event`) or first arg (`mount`) and rename when:
  *     - It is exactly `PVar("params")`, and
  *     - `VariableUsageCollector.usedInFunctionScope(body, "params")` is false.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DefParamHeadUnderscoreWhenUnusedTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

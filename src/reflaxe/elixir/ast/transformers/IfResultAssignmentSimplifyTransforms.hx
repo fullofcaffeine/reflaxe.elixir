@@ -30,6 +30,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * SCOPE/SAFETY
  * - Shape-based only; never uses name heuristics beyond binder equality.
  * - Skips modules containing ERaw in the immediate then-branch to avoid extern mismatches.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class IfResultAssignmentSimplifyTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

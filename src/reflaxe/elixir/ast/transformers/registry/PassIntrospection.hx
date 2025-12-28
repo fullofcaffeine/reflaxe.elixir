@@ -17,6 +17,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Maps ElixirASTPassRegistry.getEnabledPasses() → Array<PassInfo>
  *   (name + optional ordering hints). No behavior change.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 typedef PassInfo = {
   var name:String;

@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *     - ERemoteCall(_, "sigil_H", _), or
  *     - ERaw with token-bounded "~H" substring,
  *   then rename that param to PVar("assigns"). No body rewrite needed.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexAssignsParamRenameFinalTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -21,6 +21,10 @@ using StringTools;
  * HOW
  * - For any ERemoteCall(..., "reduce_while", [_, _, fn]), recursively walk the
  *   fn body and remove EInteger(1|0) and EFloat(0.0) statements in EBlock/EDo.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ReduceWhileSentinelCleanupTransforms {
     static function cleanupNode(n: ElixirAST): ElixirAST {

@@ -26,41 +26,196 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - Collect declared names (pattern + LHS binds in body)
  *   - Scan body for ETuple of two elements with first a literal and second an
  *     EVar candidate `v` (allow-list: lowercase, not reserved)
- *   - If any candidate v is undefined, prefix `v = binder` and preserve body
+ *   - If any candidate v is undefined *and not bound in the outer scope*, prefix
+ *     `v = binder` and preserve body
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ClauseSuccessBinderTupleSecondBindTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
-    return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-      return switch (n.def) {
-        case ECase(target, clauses):
-          var out:Array<ECaseClause> = [];
-          for (cl in clauses) {
-            var okBinder = extractOkBinder(cl.pattern);
-            if (okBinder != null) {
-              var declared = new Map<String,Bool>();
-              collectPatternDecls(cl.pattern, declared);
-              collectLhsDeclsInBody(cl.body, declared);
-              var candidates = findTupleSecondVars(cl.body);
-              var chosen:Null<String> = null;
-              for (v in candidates) if (!declared.exists(v) && allow(v)) { chosen = v; break; }
-              if (chosen != null) {
-                var prefix = makeAST(EBinary(Match, makeAST(EVar(chosen)), makeAST(EVar(okBinder))));
-                var newBody = switch (cl.body.def) {
-                  case EBlock(sts): makeASTWithMeta(EBlock([prefix].concat(sts)), cl.body.metadata, cl.body.pos);
-                  case EDo(sts2): makeASTWithMeta(EDo([prefix].concat(sts2)), cl.body.metadata, cl.body.pos);
-                  default: makeASTWithMeta(EBlock([prefix, cl.body]), cl.body.metadata, cl.body.pos);
-                };
-                out.push({ pattern: cl.pattern, guard: cl.guard, body: newBody });
-                continue;
-              }
-            }
-            out.push(cl);
-          }
-          makeASTWithMeta(ECase(target, out), n.metadata, n.pos);
-        default:
-          n;
+    return transformWithScope(ast, new Map());
+  }
+
+  static function transformWithScope(node: ElixirAST, inScope: Map<String, Bool>): ElixirAST {
+    if (node == null || node.def == null) return node;
+
+    return switch (node.def) {
+      case EDef(name, args, guards, body):
+        var scope = collectPatternVars(args);
+        makeASTWithMeta(
+          EDef(
+            name,
+            args,
+            guards != null ? transformWithScope(guards, scope) : null,
+            transformWithScope(body, scope)
+          ),
+          node.metadata,
+          node.pos
+        );
+
+      case EDefp(name, args, guards, body):
+        var scope = collectPatternVars(args);
+        makeASTWithMeta(
+          EDefp(
+            name,
+            args,
+            guards != null ? transformWithScope(guards, scope) : null,
+            transformWithScope(body, scope)
+          ),
+          node.metadata,
+          node.pos
+        );
+
+      case EFn(clauses):
+        makeASTWithMeta(
+          EFn(clauses.map(cl -> {
+            // Closure scope: args bind locally, free vars come from outer scope.
+            var fnScope = cloneScope(inScope);
+            for (a in cl.args) collectPatternVarsInto(a, fnScope);
+            {
+              args: cl.args,
+              guard: cl.guard != null ? transformWithScope(cl.guard, fnScope) : null,
+              body: transformWithScope(cl.body, fnScope)
+            };
+          })),
+          node.metadata,
+          node.pos
+        );
+
+      case EBlock(expressions):
+        // Sequential scope: binders from earlier statements are in scope for later ones.
+        var localScope = cloneScope(inScope);
+        var out:Array<ElixirAST> = [];
+        for (expr in expressions) {
+          var next = transformWithScope(expr, localScope);
+          out.push(next);
+          bindFromStatement(next, localScope);
+        }
+        makeASTWithMeta(EBlock(out), node.metadata, node.pos);
+
+      case EDo(expressions):
+        var localScope = cloneScope(inScope);
+        var out:Array<ElixirAST> = [];
+        for (expr in expressions) {
+          var next = transformWithScope(expr, localScope);
+          out.push(next);
+          bindFromStatement(next, localScope);
+        }
+        makeASTWithMeta(EDo(out), node.metadata, node.pos);
+
+      case ECase(target, clauses):
+        var outClauses:Array<ECaseClause> = [];
+        for (clause in clauses) {
+          var clauseScope = cloneScope(inScope);
+          collectPatternVarsInto(clause.pattern, clauseScope);
+
+          var newGuard = clause.guard != null ? transformWithScope(clause.guard, clauseScope) : null;
+          var newBody = transformWithScope(clause.body, clauseScope);
+
+          outClauses.push(processClause({ pattern: clause.pattern, guard: newGuard, body: newBody }, inScope));
+        }
+        makeASTWithMeta(ECase(transformWithScope(target, inScope), outClauses), node.metadata, node.pos);
+
+      default:
+        // Recurse into children with the same scope.
+        ElixirASTTransformer.transformAST(node, child -> transformWithScope(child, inScope));
+    };
+  }
+
+  static function processClause(cl: ECaseClause, outerScope: Map<String, Bool>): ECaseClause {
+    var okBinder = extractOkBinder(cl.pattern);
+    if (okBinder == null) return cl;
+
+    var declared = new Map<String,Bool>();
+    collectPatternDecls(cl.pattern, declared);
+    collectLhsDeclsInBody(cl.body, declared);
+
+    var candidates = findTupleSecondVars(cl.body);
+    var chosen:Null<String> = null;
+    for (v in candidates) {
+      if (!declared.exists(v) && allow(v) && (outerScope == null || !outerScope.exists(v))) {
+        chosen = v;
+        break;
       }
-    });
+    }
+    if (chosen == null) return cl;
+
+    var prefix = makeAST(EBinary(Match, makeAST(EVar(chosen)), makeAST(EVar(okBinder))));
+    var newBody = switch (cl.body.def) {
+      case EBlock(sts): makeASTWithMeta(EBlock([prefix].concat(sts)), cl.body.metadata, cl.body.pos);
+      case EDo(sts2): makeASTWithMeta(EDo([prefix].concat(sts2)), cl.body.metadata, cl.body.pos);
+      default: makeASTWithMeta(EBlock([prefix, cl.body]), cl.body.metadata, cl.body.pos);
+    };
+    return { pattern: cl.pattern, guard: cl.guard, body: newBody };
+  }
+
+  static function bindFromStatement(stmt: ElixirAST, scope: Map<String, Bool>): Void {
+    if (stmt == null || stmt.def == null) return;
+    switch (stmt.def) {
+      case EMatch(pat, _):
+        collectPatternVarsInto(pat, scope);
+      case EBinary(Match, left, _):
+        collectLhsVars(left, scope);
+      default:
+    }
+  }
+
+  static function collectLhsVars(lhs: ElixirAST, out: Map<String, Bool>): Void {
+    if (lhs == null || lhs.def == null) return;
+    switch (lhs.def) {
+      case EVar(nm) if (nm != null && nm.length > 0):
+        out.set(nm, true);
+      case EPin(_):
+        // pinned vars do not bind
+      case ETuple(items) | EList(items):
+        for (i in items) collectLhsVars(i, out);
+      case EKeywordList(pairs):
+        for (p in pairs) collectLhsVars(p.value, out);
+      case EMap(pairs2):
+        for (p in pairs2) collectLhsVars(p.value, out);
+      case EBinary(Match, l, r):
+        collectLhsVars(l, out);
+        collectLhsVars(r, out);
+      default:
+    }
+  }
+
+  static function cloneScope(m: Map<String, Bool>): Map<String, Bool> {
+    var out = new Map<String, Bool>();
+    if (m != null) for (k in m.keys()) out.set(k, true);
+    return out;
+  }
+
+  static function collectPatternVars(args: Array<EPattern>): Map<String, Bool> {
+    var out = new Map<String, Bool>();
+    if (args == null) return out;
+    for (p in args) collectPatternVarsInto(p, out);
+    return out;
+  }
+
+  static function collectPatternVarsInto(p: EPattern, out: Map<String, Bool>): Void {
+    if (p == null) return;
+    switch (p) {
+      case PVar(n) if (n != null && n.length > 0):
+        out.set(n, true);
+      case PAlias(nm, inner):
+        if (nm != null && nm.length > 0) out.set(nm, true);
+        collectPatternVarsInto(inner, out);
+      case PPin(_):
+        // pinned vars do not bind; outer scope must already contain them
+      case PTuple(es) | PList(es):
+        for (e in es) collectPatternVarsInto(e, out);
+      case PCons(h, t):
+        collectPatternVarsInto(h, out);
+        collectPatternVarsInto(t, out);
+      case PMap(kvs):
+        for (kv in kvs) collectPatternVarsInto(kv.value, out);
+      case PStruct(_, fs):
+        for (f in fs) collectPatternVarsInto(f.value, out);
+      default:
+    }
   }
 
   static function extractOkBinder(p:EPattern): Null<String> {

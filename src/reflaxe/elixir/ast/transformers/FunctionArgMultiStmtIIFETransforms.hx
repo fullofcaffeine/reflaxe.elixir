@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Visit ECall/ERemoteCall nodes and replace any arg that is EBlock/EDo with >1 statements
  *   (or EParen wrapping such) with an IIFE node.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class FunctionArgMultiStmtIIFETransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

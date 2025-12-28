@@ -19,6 +19,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   branch when a shadowed binding is introduced unnecessarily.
  * - The assignment expression returns the RHS, so renaming the binder to `_x`
  *   preserves semantics for the branch result while avoiding the warning.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EctoQueryBranchSelfAssignUnderscoreTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -65,7 +65,7 @@ class ChangesetTransforms {
                 case EModule(modName, attrs, body):
                     var usesChangeset = false;
                     for (b in body) switch (b.def) {
-                        case EImport(m, _, _) if (m == "Ecto.Changeset"): usesChangeset = true;
+                        case EImport(m, _, _, _) if (m == "Ecto.Changeset"): usesChangeset = true;
                         default:
                     }
                     if (!usesChangeset) {
@@ -139,7 +139,7 @@ class ChangesetTransforms {
                     function scanDefBlock(x: ElixirAST): Void {
                         if (usesChangeset2 || x == null || x.def == null) return;
                         switch (x.def) {
-                            case EImport(m, _, _) if (m == "Ecto.Changeset"): usesChangeset2 = true;
+                            case EImport(m, _, _, _) if (m == "Ecto.Changeset"): usesChangeset2 = true;
                             case ERemoteCall(m, _, as):
                                 switch (m.def) { case EVar(n) if (n == "Ecto.Changeset"): usesChangeset2 = true; default: }
                                 scanDefBlock(m); if (as != null) for (a in as) scanDefBlock(a);

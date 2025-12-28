@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For any Web module (<App>Web.*), derive app prefix (<App>).
  * - Rewrite ERemoteCall/ECall targets that are single-segment CamelCase and not whitelisted
  *   (Kernel/Enum/Map/etc.) to <App>.<Target> if such a module exists in the set.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class AbsoluteFinalWebModuleQualificationTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

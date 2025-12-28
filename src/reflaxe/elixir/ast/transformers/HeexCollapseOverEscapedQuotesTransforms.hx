@@ -18,6 +18,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - For ESigil("H", content): perform textual replacement of \\\" with \".
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexCollapseOverEscapedQuotesTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

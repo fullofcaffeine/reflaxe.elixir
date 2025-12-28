@@ -17,6 +17,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Returns the exact PassConfig entries previously inlined in the registry,
  *   preserving order.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class PhoenixLiveCore {
   public static function build():Array<ElixirASTTransformer.PassConfig> {

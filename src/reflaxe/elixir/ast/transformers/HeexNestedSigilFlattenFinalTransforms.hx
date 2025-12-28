@@ -20,6 +20,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - For ESigil("H", content), scan for `<%= ~H"""` … `""" %>` segments and replace with the
  *   inner body between the triple quotes. Conservative, whitespace‑tolerant.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexNestedSigilFlattenFinalTransforms {
   static function flattenNestedHeex(s:String):String {

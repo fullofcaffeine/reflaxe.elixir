@@ -20,6 +20,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For each EDef body, detect if the body contains calls to Ecto.Changeset.* and assignments to a variable.
  *   If the last statement is not a reference to an assigned variable, append the last assigned variable as
  *   the final expression of the block.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ChangesetEnsureReturnTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

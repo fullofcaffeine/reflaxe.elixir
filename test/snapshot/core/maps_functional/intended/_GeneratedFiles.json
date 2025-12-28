@@ -4,6 +4,7 @@
   "string_buf.ex",
   "std.ex",
   "map_tools.ex",
+  "main.ex",
   "haxe/iterators/array_iterator.ex",
   "array_tools.ex"
 ],

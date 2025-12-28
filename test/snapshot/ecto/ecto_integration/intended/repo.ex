@@ -1,20 +1,20 @@
 defmodule Repo do
-  def all(schema) do
+  def all(_) do
     []
   end
-  def get(schema, id) do
+  def get(_, _) do
     nil
   end
-  def insert(changeset) do
+  def insert(_) do
     nil
   end
-  def update(changeset) do
+  def update(_) do
     nil
   end
-  def delete(entity) do
+  def delete(_) do
     nil
   end
-  def preload(entity, associations) do
+  def preload(entity, _) do
     entity
   end
 end

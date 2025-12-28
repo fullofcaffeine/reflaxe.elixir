@@ -19,6 +19,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   as an outer variable inside match contexts (suggesting ^ pin). Using an
  *   underscored binder makes intent explicit and silences the warning while
  *   preserving expression value.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class AssignWhereSelfBinderUnderscoreTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Walk ECase; for each clause body that is an EBlock/EDo, filter statements by
  *   dropping any assignment where the LHS is the literal nil (EVar("nil") | ENil | :nil).
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseNilAssignCleanupTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

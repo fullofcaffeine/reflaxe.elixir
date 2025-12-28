@@ -8,6 +8,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * WHAT
  * - Ultra-late HEEx cleanups (final quote/blank-line trims) preserving snapshot style.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexFinal {
   public static function build():Array<ElixirASTTransformer.PassConfig> {

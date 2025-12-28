@@ -155,6 +155,26 @@ class CompilationContext implements BuildContext {
     public var infrastructureVarInitValues: Map<String, ElixirAST>;
 
     /**
+     * Loop control state stack (break/continue)
+     *
+     * WHY
+     * - Break/continue are represented as `throw` during AST building.
+     * - reduce_while-based loop lowering must convert those throws into `{:halt, acc}` / `{:cont, acc}`.
+     * - When the loop threads state (mutated vars), we must preserve the latest state at the
+     *   break/continue site, so ExceptionBuilder needs to know how to build the current state tuple.
+     *
+     * WHAT
+     * - Stack of loop-state specifications for the current build context.
+     * - Top of stack is the innermost loop (supports nesting).
+     *
+     * HOW
+     * - Each entry is either:
+     *   - `null` for stateless loops (use reducer `acc` var), or
+     *   - an ordered list of Elixir variable names to pack into a state tuple.
+     */
+    public var loopControlStateStack: Array<Null<Array<String>>>;
+
+    /**
      * Infrastructure variable substitutions from TypedExprPreprocessor.
      *
      * WHY
@@ -275,6 +295,7 @@ class CompilationContext implements BuildContext {
         loopCounter = 0;
         whileLoopCounter = 0;
         infrastructureVarInitValues = new Map();
+        loopControlStateStack = [];
 
         // Initialize infrastructure variable substitutions
         // Preserve infrastructure-variable substitutions produced by the TypedExpr preprocessor.

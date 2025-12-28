@@ -1,10 +1,6 @@
 defmodule Main do
   def dynamic_vars() do
-    dyn = 42
-    dyn = "Hello"
-    dyn = [1, 2, 3]
-    dyn = %{:name => "John", :age => 30}
-    dyn = fn x -> x * 2 end
+    _dyn = fn x -> x * 2 end
     nil
   end
   def dynamic_field_access() do
@@ -13,11 +9,12 @@ defmodule Main do
     nil
   end
   def dynamic_functions() do
-    fn_ = fn a, b -> a + b end
+    _fn_ = fn a, b -> a + b end
     fn_ = fn s -> String.upcase(s) end
-    var_args = fn args ->
+    _var_args = fn args ->
+      sum = 0
       _g = 0
-      sum = Enum.reduce(args, sum, fn arg, sum_acc -> sum_acc + arg end)
+      Enum.reduce(args, sum, fn arg, sum_acc -> sum_acc + arg end)
     end
     nil
   end
@@ -29,11 +26,11 @@ defmodule Main do
     value = [1, 2, 3]
     if (Std.is(value, Array)), do: nil
     num = "123"
-    int_value = ((case Integer.parse(num) do
+    _int_value = ((case Integer.parse(num) do
   {num, _} -> num
   :error -> nil
 end))
-    float_value = ((case Float.parse("3.14") do
+    _float_value = ((case Float.parse("3.14") do
   {num, _} -> num
   :error -> nil
 end))
@@ -76,7 +73,7 @@ end))
     _ = type_checking()
     _ = dynamic_collections()
     _ = dynamic_method_calls()
-    str = dynamic_generics("Hello from dynamic")
+    _str = dynamic_generics("Hello from dynamic")
     nil
   end
 end

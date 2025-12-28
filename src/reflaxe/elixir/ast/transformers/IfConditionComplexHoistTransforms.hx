@@ -20,6 +20,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   side contains ECase/ECond/EWith/EIf, rewrite to an EBlock:
  *   cond_value = <complex>
  *   if cond_value <op> <other> do ... else ... end
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class IfConditionComplexHoistTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Scan for `_ = expr` or `children = expr` preceding `Supervisor.start_link(children, ...)`.
  * - If found, either bind `_children` explicitly or inline the RHS into the call,
  *   preserving semantics and avoiding WAE.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class TelemetryChildrenArgFixTransforms {
     public static function fixPass(ast: ElixirAST): ElixirAST {

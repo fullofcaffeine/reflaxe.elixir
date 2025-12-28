@@ -14,6 +14,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - Controlled by -D debug_handle_event_dump. No-op otherwise.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DebugHandleEventDumpTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

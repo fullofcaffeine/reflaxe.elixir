@@ -19,6 +19,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Some late-emitted shapes can still surface as raw statement sequences in
  *   argument position. This pass guarantees validity without relying on
  *   printed-string heuristics.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class JoinArgAlwaysIIFETransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

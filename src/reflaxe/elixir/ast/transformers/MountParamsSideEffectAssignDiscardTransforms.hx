@@ -13,6 +13,18 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * WHAT
  * - Inside `def mount/3`, drop statements of the form `params = expr` when the
  *   `params` binder is not referenced later. Keeps side effects, removes warning.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class MountParamsSideEffectAssignDiscardTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

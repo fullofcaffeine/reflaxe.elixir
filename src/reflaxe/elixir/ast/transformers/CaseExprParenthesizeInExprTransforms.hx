@@ -20,6 +20,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - For EMatch(_, rhs) and EBinary(Match, _, rhs) when rhs is ECase, wrap rhs in EParen.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseExprParenthesizeInExprTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

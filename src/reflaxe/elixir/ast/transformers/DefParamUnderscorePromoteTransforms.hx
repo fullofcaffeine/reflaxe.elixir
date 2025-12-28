@@ -33,6 +33,10 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  * LIMITS
  * - Skips promotion when a param named `name` already exists to avoid shadowing.
  * - Does not modify anonymous function clauses (covered by other passes).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DefParamUnderscorePromoteTransforms {
     public static function promotePass(ast: ElixirAST): ElixirAST {

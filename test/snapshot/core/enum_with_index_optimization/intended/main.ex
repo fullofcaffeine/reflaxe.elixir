@@ -31,7 +31,8 @@ defmodule Main do
     items_length = length(items)
     even_indexed = Enum.reduce(0..(items_length - 1)//1, even_indexed, fn i, even_indexed_acc ->
       if (rem(i, 2) == 0) do
-        Enum.concat(even_indexed_acc, [items[i]])
+        even_indexed_acc = Enum.concat(even_indexed_acc, [items[i]])
+        even_indexed_acc
       else
         even_indexed_acc
       end

@@ -68,7 +68,7 @@ defmodule PatternMatchingTest do
             if (r > 128) do
               "bright rgb"
             else
-              _r = g_value
+              r = g_value
               "dark rgb"
             end
         end)

@@ -15,7 +15,7 @@ defmodule Main do
     _ = "outer"
     _inner_first = nested__1__1
     _inner_second = nested__1__2
-    result = get_tuple()
+    _result = get_tuple()
     nil
   end
   defp get_tuple() do

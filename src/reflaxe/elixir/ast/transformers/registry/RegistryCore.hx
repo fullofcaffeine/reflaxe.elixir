@@ -18,6 +18,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Provides validation helpers that operate on the existing PassConfig list.
  *   Does not change ordering (no behavior drift) — only validates and returns
  *   the original list.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class RegistryCore {
   public static function validate(passes:Array<ElixirASTTransformer.PassConfig>):Array<ElixirASTTransformer.PassConfig> {

@@ -13,6 +13,18 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * WHAT
  * - Discard top-level assignments to nil in function bodies when the variable
  *   is not used later: `var = nil` → `_ = nil` to eliminate unused-variable warnings.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class TopLevelNilAssignDiscardTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

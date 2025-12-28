@@ -12,6 +12,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Aligns body references to the declared first parameter name of `mount/3`,
  *   replacing both `params` and `_params` occurrences with the actual binder
  *   used in the head.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class MountBodyAlignToHeadTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

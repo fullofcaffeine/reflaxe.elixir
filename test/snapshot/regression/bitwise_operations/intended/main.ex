@@ -1,88 +1,107 @@
 defmodule Main do
+  def main() do
+    _ = test_bitwise_and()
+    _ = test_bitwise_or()
+    _ = test_bitwise_xor()
+    _ = test_shift_left()
+    _ = test_shift_right()
+    _ = test_nested_operations()
+    _ = test_operator_precedence()
+    _ = test_complex_expressions()
+  end
   defp test_bitwise_and() do
     n = 255
-    result1 = Bitwise.band(n, 15)
+    _result1 = Bitwise.band(n, 15)
     a = 255
     b = 15
-    result2 = Bitwise.band(a, b)
-    result3 = Bitwise.band(Bitwise.band(n, 240), 15)
+    _result2 = Bitwise.band(a, b)
+    _result3 = Bitwise.band(Bitwise.band(n, 240), 15)
     nil
   end
   defp test_bitwise_or() do
     flags = 0
-    result1 = Bitwise.bor(flags, 1)
+    _result1 = Bitwise.bor(flags, 1)
     read = 1
     write = 2
-    result2 = Bitwise.bor(read, write)
+    _result2 = Bitwise.bor(read, write)
     _ = 15
     nil
   end
   defp test_bitwise_xor() do
     x = 170
     y = 85
-    result1 = Bitwise.bxor(x, y)
+    _result1 = Bitwise.bxor(x, y)
     flag = true
     toggle = if (flag), do: 1, else: 0
-    result2 = Bitwise.bxor(toggle, 1)
+    _result2 = Bitwise.bxor(toggle, 1)
     nil
   end
   defp test_shift_left() do
     value = 1
-    result1 = Bitwise.bsl(value, 4)
+    _result1 = Bitwise.bsl(value, 4)
     _ = 256
     shift_by = 3
-    result3 = Bitwise.bsl(value, shift_by)
+    _result3 = Bitwise.bsl(value, shift_by)
     nil
   end
   defp test_shift_right() do
     value = 256
-    result1 = Bitwise.bsr(value, 4)
+    _result1 = Bitwise.bsr(value, 4)
     _ = 256
     shift_by = 3
-    result3 = Bitwise.bsr(value, shift_by)
+    _result3 = Bitwise.bsr(value, shift_by)
     nil
   end
   defp test_nested_operations() do
     n = 43981
-    high_nibble = Bitwise.band(Bitwise.bsr(n, 12), 15)
-    result = Bitwise.bor(Bitwise.bsl(Bitwise.band(n, 255), 8), Bitwise.band(Bitwise.bsr(n, 8), 255))
-    masked = Bitwise.bor(Bitwise.band(n, 65280), Bitwise.band(n, 255))
+    _high_nibble = Bitwise.band(Bitwise.bsr(n, 12), 15)
+    _result = Bitwise.bor(Bitwise.bsl(Bitwise.band(n, 255), 8), Bitwise.band(Bitwise.bsr(n, 8), 255))
+    _masked = Bitwise.bor(Bitwise.band(n, 65280), Bitwise.band(n, 255))
     nil
   end
   defp test_operator_precedence() do
     a = 240
     b = 15
     c = 8
-    result1 = Bitwise.bor(Bitwise.band(a, b), c)
-    result2 = Bitwise.band(a, Bitwise.bor(b, c))
-    result3 = Bitwise.band(Bitwise.bsl(a, 2), 255)
+    _result1 = Bitwise.bor(Bitwise.band(a, b), c)
+    _result2 = Bitwise.band(a, Bitwise.bor(b, c))
+    _result3 = Bitwise.band(Bitwise.bsl(a, 2), 255)
     nil
   end
   defp test_complex_expressions() do
     n = 255
-    hex_chars = "0123456789ABCDEF"
     s = ""
-    {n, s} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s}, fn _, {n, s} ->
-      if (n > 0) do
-        digit = Bitwise.band(n, 15)
-        s = (if (digit < 0) do
+    {_n, _s} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {n, s}, fn _, {acc_n, acc_s} ->
+      try do
+        if (acc_n > 0) do
+          digit = Bitwise.band(acc_n, 15)
+          acc_s = (if (digit < 0) do
   ""
 else
   String.at(hex_chars, digit) || ""
-end) <> s
-        n = Bitwise.bsr(n, 4)
-        {:cont, {n, s}}
-      else
-        {:halt, {n, s}}
+end) <> acc_s
+          acc_n = Bitwise.bsr(acc_n, 4)
+          {:cont, {acc_n, acc_s}}
+        else
+          {:halt, {acc_n, acc_s}}
+        end
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc_n, acc_s}}
+        :throw, :continue ->
+          {:cont, {acc_n, acc_s}}
       end
     end)
-    nil
     r = 255
     b = 64
     rgb = Bitwise.bor(Bitwise.bor(Bitwise.bsl(r, 16), Bitwise.bsl(128, 8)), b)
-    extracted_r = Bitwise.band(Bitwise.bsr(rgb, 16), 255)
-    extracted_g = Bitwise.band(Bitwise.bsr(rgb, 8), 255)
-    extracted_b = Bitwise.band(rgb, 255)
+    _extracted_r = Bitwise.band(Bitwise.bsr(rgb, 16), 255)
+    _extracted_g = Bitwise.band(Bitwise.bsr(rgb, 8), 255)
+    _extracted_b = Bitwise.band(rgb, 255)
     nil
   end
 end

@@ -10,7 +10,7 @@ defmodule Main do
   end
   defp test_simple_enum_pattern() do
     color = {:red}
-    result = ((case color do
+    _result = ((case color do
   {:red} -> "red"
   {:green} -> "green"
   {:blue} -> "blue"
@@ -20,7 +20,7 @@ end))
   end
   defp test_complex_enum_pattern() do
     color = {:rgb, 255, 128, 0}
-    brightness = ((case color do
+    _brightness = ((case color do
   {:red} -> "primary"
   {:green} -> "primary"
   {:blue} -> "primary"
@@ -33,7 +33,7 @@ end))
       if (r + r + b < 100) do
         "dark"
       else
-        _b = r
+        b = r
         "medium"
       end
     end
@@ -42,7 +42,7 @@ end))
   end
   defp test_result_pattern() do
     result = {:ok, "success"}
-    message = ((case result do
+    _message = ((case result do
   {:ok, value} -> "Got value: #{(fn -> value end).()}"
   {:error, error} -> "Got error: #{(fn -> error end).()}"
 end))
@@ -53,7 +53,7 @@ end))
     _g = 0
     _ = Enum.each(numbers, fn num ->
   n = num
-  category = if (n < 5) do
+  _category = if (n < 5) do
     "small"
   else
     n = num
@@ -71,7 +71,7 @@ end)
     arrays = [[], [1], [1, 2], [1, 2, 3], [1, 2, 3, 4, 5]]
     _g = 0
     _ = Enum.each(arrays, fn arr ->
-  description = ((case arr do
+  _description = ((case arr do
   [] -> "empty"
   [_head | _tail] ->
     x = arr[0]
@@ -95,9 +95,9 @@ end)
     point_y = 20
     g = point_x
     g_value = point_y
-    quadrant = x = g
+    x = g
     y = g_value
-    if (x > 0 and y > 0) do
+    _quadrant = if (x > 0 and y > 0) do
       "first"
     else
       x = g

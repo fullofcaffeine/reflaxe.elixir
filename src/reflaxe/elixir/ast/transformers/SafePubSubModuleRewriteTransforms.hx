@@ -18,6 +18,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - Replace ERemoteCall(mod=EVar("SafePubSub"), func, args) with ERemoteCall(EVar("Phoenix.SafePubSub"), func, args).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SafePubSubModuleRewriteTransforms {
     public static function rewritePass(ast: ElixirAST): ElixirAST {

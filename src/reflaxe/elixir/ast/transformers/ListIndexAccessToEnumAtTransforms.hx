@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Targeted, safe rewrite: if we see EAccess(EField(_, "metas"), EInteger(_)),
  *   rewrite to Enum.at(fieldExpr, index). This covers Phoenix Presence entries
  *   (entry.metas) without risking map integer-key access.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ListIndexAccessToEnumAtTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

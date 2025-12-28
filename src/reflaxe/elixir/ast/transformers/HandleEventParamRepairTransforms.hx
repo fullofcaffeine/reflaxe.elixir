@@ -21,6 +21,14 @@ import reflaxe.elixir.ast.ASTUtils;
  * WHY
  * - Some earlier passes may discard Map.get results or omit binds. This pass
  *   deterministically aligns extraction with actual body usage without app coupling.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleEventParamRepairTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

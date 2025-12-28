@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  * HOW
  * - Detect EMatch(PVar("_"), ECase(ECall/ERemoteCall parse_* ...)) and rewrite to:
  *   EBlock([ EBinary(Match, EVar("parsed_result"), scrutinee), ECase(EVar("parsed_result"), clauses) ])
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseScrutineeHoistTransforms {
   static inline function isParseCall(e: ElixirAST): Bool {

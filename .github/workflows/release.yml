@@ -4,12 +4,6 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Existing tag to release (e.g. v1.0.4)"
-        required: true
-        type: string
 
 concurrency:
   group: release-${{ github.ref }}
@@ -18,30 +12,28 @@ concurrency:
 permissions:
   contents: write
 
+env:
+  NODE_VERSION: "20"
+  HAXE_VERSION: "4.3.7"
+  ELIXIR_VERSION: "1.18.3"
+  OTP_VERSION: "27.2"
+
 jobs:
-  verify:
-    name: Verify (tests + guards)
+  verify-and-release:
+    name: Verify + Publish Release
     runs-on: ubuntu-latest
-    timeout-minutes: 45
-    permissions:
-      contents: read
-    env:
-      NODE_VERSION: '20'
-      HAXE_VERSION: '4.3.7'
-      ELIXIR_VERSION: '1.18.3'
-      OTP_VERSION: '27.2'
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: "npm"
 
       - name: Setup Erlang/Elixir
         uses: erlef/setup-beam@v1
@@ -54,18 +46,6 @@ jobs:
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
 
-      - name: Cache Mix deps
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.mix
-            ~/.hex
-            deps
-            _build
-          key: ${{ runner.os }}-mix-${{ hashFiles('mix.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-mix-
-
       - name: Install npm dependencies
         run: npm ci
 
@@ -75,41 +55,14 @@ jobs:
       - name: Run guardrails
         run: npm run ci:guards
 
-      - name: Run full test suite
+      - name: Run tests
         run: npm test
 
-      - name: Compile-check examples
-        run: npm run test:examples
+      - name: Validate examples Elixir (warnings as errors)
+        run: npm run test:examples-elixir
 
-  github-release:
-    name: GitHub Release
-    runs-on: ubuntu-latest
-    needs: [verify]
-    timeout-minutes: 15
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/tags/{0}', inputs.tag) || github.ref }}
-
-      - name: Create source archive
-        run: |
-          set -euo pipefail
-          tag="${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}"
-          out="reflaxe.elixir-${tag}.zip"
-          zip -r "${out}" \
-            src std vendor haxe_libraries \
-            haxelib.json package.json package-lock.json mix.exs mix.lock \
-            README.md CHANGELOG.md LICENSE RELEASING.md SECURITY.md CONTRIBUTING.md CODE_OF_CONDUCT.md \
-            docs examples scripts tools \
-            -x "**/node_modules/**" "**/.git/**" "**/_build/**" "**/deps/**" "**/priv/static/**"
-          echo "ASSET_PATH=${out}" >> "$GITHUB_ENV"
-
-      - name: Publish GitHub release
+      - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
           generate_release_notes: true
-          files: |
-            ${{ env.ASSET_PATH }}
+

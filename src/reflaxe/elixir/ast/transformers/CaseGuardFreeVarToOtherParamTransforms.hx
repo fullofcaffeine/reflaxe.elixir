@@ -27,6 +27,10 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
  *   pattern and not equal to s, and there is exactly one function parameter P
  *   different from s, rewrite occurrences of V -> P in the guard and body of
  *   the clause. This is purely shape-based.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseGuardFreeVarToOtherParamTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

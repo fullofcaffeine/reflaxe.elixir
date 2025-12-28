@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   (or a block whose last expression is `cs` and earlier statements contain no `cs = ...` binding),
  *   rewrite the body to `Ecto.Changeset.change(p1, p2)`. This is a safe, idiomatic baseline that
  *   restores correctness without app-specific heuristics.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ChangesetBareCsRepairTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

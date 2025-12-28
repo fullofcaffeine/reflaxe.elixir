@@ -13,6 +13,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Promotes error-binder names in `{:error, _x}` patterns to `{:error, x}` when the
  *   clause body clearly references `x`. Also replaces undefined lower-case refs in the
  *   error clause body with the bound binder when appropriate.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseErrorVarUnifyTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

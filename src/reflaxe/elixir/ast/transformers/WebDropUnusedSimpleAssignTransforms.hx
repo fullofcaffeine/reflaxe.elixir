@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * - Walk EBlock/EDo statement lists: if a statement is `EMatch(PVar(name), rhs)` and
  *   `rhs` is pure (EVar/ELiteral/EMap/EKeywordList/EAtom/ENil/ETuple/List/Struct) and
  *   `name` does not appear in any statement that follows in that list, drop it.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class WebDropUnusedSimpleAssignTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

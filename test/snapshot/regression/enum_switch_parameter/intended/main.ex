@@ -1,8 +1,8 @@
 defmodule Main do
   def main() do
     test_result = {:ok, "success"}
-    opt = to_option(test_result)
-    unwrapped = unwrap_or(test_result, "default")
+    _opt = to_option(test_result)
+    _unwrapped = unwrap_or(test_result, "default")
     nil
   end
   def to_option(result) do

@@ -16,6 +16,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Snapshot style prefers a named scrutinee variable over discarding the assignment.
  * - Keeps changes generic and shape-based without coupling to app code.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseUnderscoreCaseHoistBlockTransforms {
   static inline function isDiscardPattern(p: EPattern): Bool {

@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For every EFn clause, if an argument is PVar("elem"), rename it to
  *   "entry" and replace all EVar("elem") references in the clause body with
  *   EVar("entry"). Additional names can be added to the mapping as needed.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EFnForbiddenBinderRenameTransforms {
     static inline function replacementFor(name:String):Null<String> {

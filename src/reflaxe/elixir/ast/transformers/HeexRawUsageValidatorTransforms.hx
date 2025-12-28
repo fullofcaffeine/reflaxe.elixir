@@ -19,6 +19,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Stateless scan over ESigil("H", content) and ERaw(code) containing ~H.
  * - Contextual variant uses CompilationContext.warning for proper positioning.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HeexRawUsageValidatorTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  * - Defensive hygiene: rare rename/order interactions can leave the match LHS with an
  *   empty identifier, which prints as ` = rhs` (invalid). Normalizing to `_` preserves
  *   intent (discard) and restores valid syntax.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class NormalizeBlankMatchLhsToUnderscoreTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -1,4 +1,9 @@
 defmodule Container do
+  def new() do
+    struct = %{:items => nil}
+    struct = %{struct | items: []}
+    struct
+  end
   def add(struct, item) do
     struct.items ++ [item]
   end

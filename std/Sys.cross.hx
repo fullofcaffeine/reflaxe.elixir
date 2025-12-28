@@ -93,31 +93,26 @@ class Sys {
      * @return The character code
      */
     public static function getChar(echo: Bool): Int {
-        // Read a single character from stdin
-        // In Elixir, we need to use IO.getn to read a single character
-        var char = untyped __elixir__('
-            # Save current terminal settings
+        // Read a single character from stdin.
+        //
+        // NOTE
+        // - Use a raw Elixir block here because terminal echo control is BEAM/IO-specific.
+        // - Return the character code as an Int (or 0 on failure).
+        return untyped __elixir__('
             {:ok, old_settings} = :io.getopts(:standard_io)
-            
-            # Set terminal to raw mode if echo is false
+
             if not {0} do
                 :io.setopts(:standard_io, [{:echo, false}])
             end
-            
-            # Read single character
-            char = IO.getn("", 1)
-            
-            # Restore terminal settings
+
+            input = IO.getn("", 1)
             :io.setopts(:standard_io, old_settings)
-            
-            # Convert to character code
-            case char do
+
+            case input do
                 <<c::utf8>> -> c
                 _ -> 0
             end
         ', echo);
-        
-        return char;
     }
     
     /**
@@ -125,16 +120,9 @@ class Sys {
      * @return A map of environment variable names to values
      */
     public static function environment(): Map<String, String> {
-        var env = new Map<String, String>();
-        var elixirEnv: Dynamic = untyped __elixir__('System.get_env()');
-        untyped __elixir__('
-            Enum.each({0}, fn {k, v} -> 
-                {1}.set(k, v)
-                nil
-            end)',
-            elixirEnv, env
-        );
-        return env;
+        // System.get_env/0 already returns an Elixir map of string keys/values.
+        // Expose it directly as a Haxe Map<String, String> for the Elixir target.
+        return cast untyped __elixir__('System.get_env()');
     }
     
     /**

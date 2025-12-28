@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Elixir warns when underscored variables are later used. This pass fixes the
  *   root by promoting the binder name when it is actually referenced.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseUnderscoreBinderPromoteTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

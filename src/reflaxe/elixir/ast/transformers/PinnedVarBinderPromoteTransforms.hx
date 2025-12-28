@@ -26,6 +26,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *      look ahead for pinned variable usages `EPin(EVar(name))` or raw pattern `^(name)`.
  *   3) If exactly one candidate `name` is found and it is not declared before its first
  *      usage and not declared at the assignment site, rewrite the wildcard to `name`.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class PinnedVarBinderPromoteTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

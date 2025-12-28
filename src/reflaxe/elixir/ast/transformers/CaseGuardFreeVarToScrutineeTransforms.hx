@@ -28,6 +28,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   binder names used in all clause patterns. For each clause, compute bound
  *   names in its pattern; in guard, rewrite EVar(v) to the scrutinee var when
  *   v is in union but not in bound set.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseGuardFreeVarToScrutineeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

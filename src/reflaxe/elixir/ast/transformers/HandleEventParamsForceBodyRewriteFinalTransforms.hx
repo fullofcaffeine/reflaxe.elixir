@@ -11,6 +11,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHAT
  * - Absolute safety net that rewrites any `_params` occurrences inside
  *   `def handle_event/3` bodies to `params` regardless of head binder state.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class HandleEventParamsForceBodyRewriteFinalTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

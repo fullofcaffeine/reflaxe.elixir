@@ -90,6 +90,9 @@ typedef ProcessorState = {
     var ?total_items: Int;
     var ?last_batch_time: Float;
     var ?last_processed: ProcessedItem;
+    // Optional processor-specific state (used by BatchProcessor)
+    var ?batch_size: Int;
+    var ?current_batch: Array<DataItem>;
 }
 
 typedef InitResponse = {

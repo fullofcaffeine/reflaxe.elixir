@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Picks a non-colliding local name from ["parsed_result","value","result_value"].
  * - Emits EBlock([var = scrut, case var do ... end]).
  * - Runs ultra-late so no later pass reverts it.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseUnderscoreAssignHoistAnyTransforms {
   static function pickName(env: Map<String,Bool>): String {

@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Earlier safety/collision passes may mint placeholder names; later alignment can
  *   rename the binder but miss body references in nested closures. This pass enforces
  *   clause-local coherence deterministically without app coupling.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseClauseSuccessBodyBinderRewriteTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

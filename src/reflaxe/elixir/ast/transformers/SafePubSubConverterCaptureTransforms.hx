@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   is an EVar("name"), rewrite to ECapture(ERemoteCall(__MODULE__, name, []), 1).
  * - If parser is already an ECapture, leave unchanged. If parser is a fully
  *   qualified remote call target (Module.func), wrap in ECapture with arity 1.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SafePubSubConverterCaptureTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

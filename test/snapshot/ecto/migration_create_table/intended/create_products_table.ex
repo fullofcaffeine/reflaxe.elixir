@@ -1,6 +1,4 @@
 defmodule CreateProductsTable do
-  @compile {:nowarn_unused_function, [drop_table: 3, add_column: 5, should_add_inventory: 2]}
-
   def up(struct) do
     _ = create_table(struct, "products")
     _ = add_column(struct, "products", "name", "string")
@@ -13,28 +11,19 @@ defmodule CreateProductsTable do
   def down(struct) do
     drop_table(struct, "products")
   end
-  defp should_add_inventory(struct) do
+  defp should_add_inventory(_) do
     true
   end
-  defp create_table(struct, table_name) do
+  defp create_table(_, _) do
     
   end
-  defp drop_table(struct, table_name) do
+  defp drop_table(_, _) do
     
   end
-  defp add_column(struct, table, column, type) do
+  defp add_column(_, _, _, _) do
     
   end
-  defp timestamps(struct) do
+  defp timestamps(_) do
     
-  end
-  defp drop_table(struct, _name) do
-    
-  end
-  defp add_column(struct, _arg, _arg, _arg, _arg) do
-    
-  end
-  defp should_add_inventory(struct, _arg) do
-    true
   end
 end

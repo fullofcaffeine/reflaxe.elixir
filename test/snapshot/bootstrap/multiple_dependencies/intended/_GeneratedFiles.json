@@ -5,6 +5,7 @@
   "string_tools.ex",
   "string_buf.ex",
   "std.ex",
+  "main.ex",
   "haxe/log.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/io/output.ex",

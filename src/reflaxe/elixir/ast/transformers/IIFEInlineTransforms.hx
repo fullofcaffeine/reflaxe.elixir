@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Walk nodes; whenever encountering ECall(EFn([{args:[], body: inner}]), "", [])
  *   with inner.def == EFn(_), replace the call with inner, preserving metadata.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class IIFEInlineTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

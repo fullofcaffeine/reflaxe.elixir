@@ -1,6 +1,7 @@
 {
   "filesGenerated": [
   "user_display.ex",
+  "user.ex",
   "type.ex",
   "string_tools.ex",
   "string_display.ex",

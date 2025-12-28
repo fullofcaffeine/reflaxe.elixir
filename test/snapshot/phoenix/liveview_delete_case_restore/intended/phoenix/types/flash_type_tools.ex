@@ -1,4 +1,5 @@
 defmodule FlashTypeTools do
+  import Kernel, except: [to_string: 1], warn: false
   def to_string(type) do
     (case type do
       {:info} -> "info"

@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For each case clause with pattern `{:ok, PVar(name)}`, if `name` collides
  *   with any function argument (e.g., `socket`), rename the binder to a safe
  *   identifier (e.g., `ok_value`) and rewrite references in the clause body.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseSuccessVarRenameCollisionFixTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

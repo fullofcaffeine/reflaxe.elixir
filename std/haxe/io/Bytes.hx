@@ -69,8 +69,6 @@ class Bytes {
      * @param encoding Optional encoding (defaults to UTF8)
      */
     public function getString(pos: Int, len: Int, ?encoding: Encoding): String {
-        if (encoding == null) encoding = UTF8;
-        
         if (pos < 0 || len < 0 || pos + len > length) {
             throw "Out of bounds";
         }

@@ -24,6 +24,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   EList/EBitstring, emit:
  *     list_value = scrutinee
  *     lhs = case list_value do ... end
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseScrutineeHoistInAssignTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

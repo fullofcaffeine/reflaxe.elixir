@@ -45,7 +45,7 @@ class UnusedDefpPrune {
                     // Skip pruning in Phoenix Web macro modules; macro quoting confuses usage detection
                     var isPhoenixWeb = (n.metadata?.isPhoenixWeb == true) || (name != null && StringTools.endsWith(name, "Web") && name.indexOf(".") == -1);
                     if (isPhoenixWeb) return n;
-                    var pruned = pruneModuleBody(body, attrs);
+                    var pruned = pruneModuleBody(name, body, attrs);
                     makeASTWithMeta(EModule(name, attrs, pruned), n.metadata, n.pos);
                 case EDefmodule(name, doBlock):
                     var isPhoenixWeb2 = (n.metadata?.isPhoenixWeb == true) || (name != null && StringTools.endsWith(name, "Web") && name.indexOf(".") == -1);
@@ -55,7 +55,7 @@ class UnusedDefpPrune {
                         case EDo(ss): ss;
                         default: [doBlock];
                     };
-                    var pruned = pruneModuleBody(stmts, []);
+                    var pruned = pruneModuleBody(name, stmts, []);
                     var newDo = makeAST(EBlock(pruned));
                     makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
                 default:
@@ -64,7 +64,7 @@ class UnusedDefpPrune {
         });
     }
 
-    static function pruneModuleBody(stmts: Array<ElixirAST>, attrs: Array<EAttribute>): Array<ElixirAST> {
+    static function pruneModuleBody(moduleName: String, stmts: Array<ElixirAST>, attrs: Array<EAttribute>): Array<ElixirAST> {
         var defpNames = new StringMap<Bool>();
         for (s in stmts) switch (s.def) {
             case EDefp(name, _, _, _): defpNames.set(name, true);
@@ -76,6 +76,19 @@ class UnusedDefpPrune {
         // Respect compile nowarn list for defp names
         var nowarn = collectNowarnNames(attrs);
         if (nowarn != null) for (k in nowarn.keys()) used.set(k, true);
+
+        var moduleAlias = moduleName;
+        if (moduleAlias != null && moduleAlias.indexOf(".") != -1) {
+            moduleAlias = moduleAlias.substr(moduleAlias.lastIndexOf(".") + 1);
+        }
+
+        function isSelfModuleExpr(tgt: ElixirAST): Bool {
+            if (tgt == null || tgt.def == null) return false;
+            return switch (tgt.def) {
+                case EVar(v): v == moduleName || v == moduleAlias;
+                default: false;
+            };
+        }
         // Prepare name candidates for robust matching (snake/camel variants)
         function toSnake(n:String):String {
             var b = new StringBuf();
@@ -143,14 +156,19 @@ class UnusedDefpPrune {
                     if (step != null) visit(step);
                 case EQuote(_, expr):
                     visit(expr);
-                case ECall(null, fname, _):
+                case EParen(expr):
+                    visit(expr);
+                case EDo(body):
+                    for (s in body) visit(s);
+                case ECall(null, fname, args):
                     if (defpNames.exists(fname)) used.set(fname, true);
+                    for (a in args) visit(a);
                 case ECapture(inner, _):
                     switch (inner.def) {
                         case EVar(v) if (defpNames.exists(v)):
                             used.set(v, true);
-                        case ECall(null, fname2, _):
-                            if (defpNames.exists(fname2)) used.set(fname2, true);
+                        case ECall(null, fname, _):
+                            if (defpNames.exists(fname)) used.set(fname, true);
                         default:
                     }
                 case ERaw(code):
@@ -177,8 +195,17 @@ class UnusedDefpPrune {
                             var names = candidates.get(k);
                             if (names != null) {
                                 for (n in names) {
-                                    var needle = n + "(";
-                                    if (content.indexOf(needle) != -1) {
+                                    var callNeedle = n + "(";
+                                    // Capture needles:
+                                    // - local capture: &name/1
+                                    // - remote capture: &Module.name/1
+                                    var localCapNeedle = "&" + n + "/";
+                                    var aliasCapNeedle = moduleAlias != null ? ("&" + moduleAlias + "." + n + "/") : null;
+                                    var moduleCapNeedle = moduleName != null ? ("&" + moduleName + "." + n + "/") : null;
+                                    if (content.indexOf(callNeedle) != -1
+                                        || content.indexOf(localCapNeedle) != -1
+                                        || (aliasCapNeedle != null && content.indexOf(aliasCapNeedle) != -1)
+                                        || (moduleCapNeedle != null && content.indexOf(moduleCapNeedle) != -1)) {
                                         used.set(k, true);
                                         break;
                                     }
@@ -202,8 +229,14 @@ class UnusedDefpPrune {
                     for (cl in clauses) { visit(cl.condition); visit(cl.body); }
                 case EBinary(_, l, r): visit(l); visit(r);
                 case EMatch(_, rhs): visit(rhs);
-                case ECall(tgt, _, args): if (tgt != null) visit(tgt); for (a in args) visit(a);
-                case ERemoteCall(tgt2, _, args2): visit(tgt2); for (a2 in args2) visit(a2);
+                case ECall(tgt, fname, args):
+                    if (tgt != null && isSelfModuleExpr(tgt) && defpNames.exists(fname)) used.set(fname, true);
+                    if (tgt != null) visit(tgt);
+                    for (a in args) visit(a);
+                case ERemoteCall(tgt, fname, args):
+                    if (tgt != null && isSelfModuleExpr(tgt) && defpNames.exists(fname)) used.set(fname, true);
+                    visit(tgt);
+                    for (a in args) visit(a);
                 case EFn(clauses): for (cl in clauses) visit(cl.body);
                 case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
                     visit(body);

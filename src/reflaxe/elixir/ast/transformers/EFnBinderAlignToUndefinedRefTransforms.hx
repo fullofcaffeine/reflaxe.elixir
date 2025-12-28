@@ -33,6 +33,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   binder to a free variable captures and shadows outer values, breaking
  *   semantics (e.g., list update-by-id patterns that compare against a function
  *   parameter like `todo`).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EFnBinderAlignToUndefinedRefTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

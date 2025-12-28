@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - For ECase(scrutinee, clauses) where scrutinee is not EVar(_):
  *   emit EBlock([ list_value = scrutinee, case list_value do ... end ]).
  *   Keeps metadata/position.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseListScrutineeHoistTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

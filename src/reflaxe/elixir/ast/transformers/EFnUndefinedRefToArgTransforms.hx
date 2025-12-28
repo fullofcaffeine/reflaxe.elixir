@@ -27,6 +27,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   3) Compute undefined = referenced − declared.
  *   4) If undefined has exactly one element U, rewrite EVar(U) → EVar(argName).
  * - Never affects clauses with multiple args or multiple undefineds (safety guard).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class EFnUndefinedRefToArgTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

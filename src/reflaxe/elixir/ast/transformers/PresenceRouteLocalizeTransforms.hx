@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Detect EDefmodule/EModule name suffix "Presence"; traverse body and rewrite
  *   ERemoteCall(EVar("Phoenix"), "Presence", ...) to ERemoteCall(EVar(currentModuleName), fn, args).
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class PresenceRouteLocalizeTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

@@ -12,6 +12,18 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHAT
  * - In `def mount/3`, drop clause bodies of the form `socket = Phoenix.LiveView.put_flash(socket, ...)`
  *   to just the call expression, avoiding unused-variable warnings.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class MountCaseSocketAssignDropTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

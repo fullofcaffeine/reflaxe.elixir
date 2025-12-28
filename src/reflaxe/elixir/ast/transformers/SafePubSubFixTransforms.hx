@@ -20,6 +20,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Detect module Phoenix.SafePubSub; within it, locate def/defp named is_valid_message
  *   and rename PVar("_msg") -> PVar("msg").
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SafePubSubFixTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

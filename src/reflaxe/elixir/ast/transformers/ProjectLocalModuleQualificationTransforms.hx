@@ -28,6 +28,10 @@ import reflaxe.elixir.ast.StdModuleWhitelist;
  * - Exclude modules already prefixed by <App> (e.g., <App>Web) to avoid double-qualification.
  * - Transform ERemoteCall/ECall targets using the collected names to <App>.<Name>.
  * - Shape-based: no app-specific heuristics beyond the configured app prefix.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ProjectLocalModuleQualificationTransforms {
     /**

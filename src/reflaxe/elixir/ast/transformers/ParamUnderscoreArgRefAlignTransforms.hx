@@ -15,6 +15,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Prevents "underscored variable _params is used" warnings without changing
  *   semantics. Shape-based and generic for LiveView wrappers.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ParamUnderscoreArgRefAlignTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

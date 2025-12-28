@@ -15,6 +15,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - Returns the exact pass list and order that previously lived inline in the registry.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class AssignChainEarly {
   public static function build():Array<ElixirASTTransformer.PassConfig> {

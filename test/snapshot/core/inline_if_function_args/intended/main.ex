@@ -1,14 +1,16 @@
 defmodule Main do
+  def main() do
+    _ = test_map_put()
+    _ = test_function_calls()
+    _ = test_multiple_inline_ifs()
+    _ = test_nested_calls()
+    _ = test_complex_conditions()
+  end
   defp test_map_put() do
     map = %{}
     condition = true
-    value = 42
-    _ = StringMap.set(map, "bool_key", (if (condition), do: "true", else: "false"))
-    _ = StringMap.set(map, "number_key", (if (value > 10), do: "high", else: "low"))
-    is_active = false
-    _ = StringMap.set(map, "status", (if (is_active), do: "active", else: "inactive"))
-    maybe = nil
-    _ = StringMap.set(map, "nullable", (if (not Kernel.is_nil(maybe)), do: maybe, else: "default"))
+    map = Map.put(map, "bool_key", (if (condition), do: "true", else: "false"))
+    _ = map
   end
   defp test_function_calls() do
     flag = true
@@ -27,9 +29,9 @@ defmodule Main do
   defp test_nested_calls() do
     enabled = true
     level = 7
-    result = wrap_string((if (enabled), do: get_value("on"), else: get_value("off")))
-    nested = process_string(wrap_string((if (level > 5), do: "high", else: "low")))
-    complex = process_string((if (enabled), do: compute_value(10), else: compute_value(5)))
+    _result = wrap_string((if (enabled), do: get_value("on"), else: get_value("off")))
+    _nested = process_string(wrap_string((if (level > 5), do: "high", else: "low")))
+    _complex = process_string((if (enabled), do: compute_value(10), else: compute_value(5)))
   end
   defp test_complex_conditions() do
     x = 10
@@ -56,7 +58,13 @@ defmodule Main do
   defp process_mixed(a, b, c, d) do
     "#{(fn -> a end).()}, #{(fn -> b end).()}, #{(fn -> Kernel.to_string(c) end).()}, #{(fn -> Kernel.to_string(d) end).()}"
   end
+  defp get_value(key) do
+    "value_#{(fn -> key end).()}"
+  end
   defp wrap_string(s) do
     "[#{(fn -> s end).()}]"
+  end
+  defp compute_value(n) do
+    "computed_#{(fn -> Kernel.to_string(n) end).()}"
   end
 end

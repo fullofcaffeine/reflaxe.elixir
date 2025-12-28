@@ -1,4 +1,12 @@
 defmodule Main do
+  def main() do
+    _ = test_function("TodoApp", 42, true)
+    _ = test_optional("MyApp", nil)
+    _ = test_optional("MyApp", 8080)
+    _result = build_name("Phoenix", "App")
+    _processed = process_config(%{:name => "test"})
+    nil
+  end
   defp test_function(app_name, port, enabled) do
     config = "#{(fn -> app_name end).()}.Config"
     url = "http://localhost:#{(fn -> Kernel.to_string(port) end).()}"

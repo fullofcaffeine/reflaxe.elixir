@@ -16,6 +16,18 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
  *
  * SCOPE
  * - Modules whose name ends with ".Application" (framework-level pattern), function name == "start" and arity 2.
+
+ *
+ * WHY
+ * - Avoid warnings and keep generated Elixir output idiomatic.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ApplicationEnsureStartLinkTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {

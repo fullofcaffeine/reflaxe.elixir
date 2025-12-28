@@ -248,7 +248,7 @@ enum ElixirASTDef {
     EAlias(module: String, as: Null<String>);
     
     /** Import directive */
-    EImport(module: String, only: Null<Array<EImportOption>>, except: Null<Array<EImportOption>>);
+    EImport(module: String, only: Null<Array<EImportOption>>, except: Null<Array<EImportOption>>, ?warn: Null<Bool>);
     
     /** Use macro */
     EUse(module: String, options: Array<ElixirAST>);
@@ -719,6 +719,7 @@ typedef ElixirMetadata = {
     // Emission control (module/file output)
     ?forceEmit: Bool,               // Force emitting even if structurally empty
     ?suppressEmission: Bool,        // Suppress emitting this module/file
+    ?instanceFields: Array<String>, // Snake_case instance fields for module-level lowering (class -> struct/map)
 
     // Array Comprehension Reconstruction
     ?isUnrolledComprehension: Bool, // Block contains unrolled array comprehension

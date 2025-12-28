@@ -18,6 +18,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Haxe code commonly uses camelCase locals (sortBy, updatedTodo, parsedResult).
  *   Elixir idioms and other passes expect snake_case. Normalizing declarations
  *   eliminates undefined references like sortBy when later code refers to sort_by.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class LocalCamelToSnakeDeclTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

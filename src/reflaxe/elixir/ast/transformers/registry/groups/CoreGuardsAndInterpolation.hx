@@ -14,6 +14,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *
  * HOW
  * - Returns the same PassConfig entries in the same order as previously inlined.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CoreGuardsAndInterpolation {
   public static function build():Array<ElixirASTTransformer.PassConfig> {

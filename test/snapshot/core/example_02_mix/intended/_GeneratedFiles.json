@@ -8,6 +8,7 @@
   "main.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/exceptions/pos_exception.ex",
+  "haxe/exceptions/not_implemented_exception.ex",
   "e_reg.ex"
 ],
   "id": 0,

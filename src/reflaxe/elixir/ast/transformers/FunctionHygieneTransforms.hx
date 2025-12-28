@@ -28,6 +28,10 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  * - Block-based pass for chained assignments with a forward usage scan
  * - Function-body pass to drop bare numeric literals at top level
  * - Parameter usage analysis to underscore unused params
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class FunctionHygieneTransforms {
     public static function blockAssignChainSimplifyPass(ast: ElixirAST): ElixirAST {

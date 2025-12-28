@@ -53,6 +53,16 @@ class CompilerInit {
         try {
             Compiler.addGlobalMetadata("haxe.functional.Result", "@:elixirIdiomatic");
         } catch (e: haxe.Exception) {}
+        // Treat Option as an Elixir-idiomatic enum as well.
+        //
+        // WHY
+        // - Without idiomatic tagging, Haxe may apply enum-index optimizations that erase
+        //   constructor argument binders in switch/case (e.g., `case Some(u)` becomes `case 0`),
+        //   which can later surface as undefined variables in generated Elixir.
+        // - With `@:elixirIdiomatic`, the AST pipeline can preserve and print `{:some, v}` / `{:none}`.
+        try {
+            Compiler.addGlobalMetadata("haxe.ds.Option", "@:elixirIdiomatic");
+        } catch (e: haxe.Exception) {}
         // Initialize LiveView preservation to prevent DCE from removing Phoenix methods.
         // Even in fast_boot mode we must keep LiveView callbacks (mount/handle_event/etc.)
         // or DCE will drop them and Phoenix will raise at runtime.

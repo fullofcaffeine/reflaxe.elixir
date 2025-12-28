@@ -23,7 +23,7 @@ class UserUtil {
      * This will compile to "def create_user(name, email)"
      * Uses private helper functions for validation and formatting
      */
-    function createUser(name: String, email: String): User {
+    public static function createUser(name: String, email: String): User {
         // Validate inputs using private functions
         if (!isValidName(name)) {
             throw "Invalid name provided";
@@ -49,7 +49,7 @@ class UserUtil {
      * Public function - updates user information
      * Demonstrates how public functions can call private helpers
      */
-    function updateUser(user: User, newName: String, newEmail: String): User {
+    public static function updateUser(user: User, newName: String, newEmail: String): User {
         var updatedUser: User = {
             name: user.name,
             email: user.email,
@@ -72,7 +72,7 @@ class UserUtil {
      * Public function - formats user for display
      * Uses private formatting helpers
      */
-    function formatUserForDisplay(user: User): String {
+    public static function formatUserForDisplay(user: User): String {
         var displayName = formatDisplayName(user.name);
         var maskedEmail = maskEmail(user.email);
         
@@ -86,7 +86,7 @@ class UserUtil {
      * Compiles to: defp is_valid_name(name)
      */
     @:private
-    function isValidName(name: String): Bool {
+    static function isValidName(name: String): Bool {
         if (name == null || name.length == 0) {
             return false;
         }
@@ -100,7 +100,7 @@ class UserUtil {
      * Basic email validation for demonstration
      */
     @:private
-    function isValidEmail(email: String): Bool {
+    static function isValidEmail(email: String): Bool {
         if (email == null || email.length == 0) {
             return false;
         }
@@ -114,7 +114,7 @@ class UserUtil {
      * Trims whitespace and capitalizes properly
      */
     @:private
-    function formatName(name: String): String {
+    static function formatName(name: String): String {
         var trimmed = StringTools.trim(name);
         var words = trimmed.split(" ");
         var formatted = [];
@@ -133,7 +133,7 @@ class UserUtil {
      * Private function - normalizes email to lowercase
      */
     @:private
-    function normalizeEmail(email: String): String {
+    static function normalizeEmail(email: String): String {
         return StringTools.trim(email).toLowerCase();
     }
     
@@ -142,7 +142,7 @@ class UserUtil {
      * In real implementation, this would use proper UUID generation
      */
     @:private
-    function generateUserId(): String {
+    static function generateUserId(): String {
         return "user_" + Math.floor(Math.random() * 1000000);
     }
     
@@ -151,7 +151,7 @@ class UserUtil {
      * In real implementation, this would use proper datetime functions
      */
     @:private
-    function getCurrentTimestamp(): String {
+    static function getCurrentTimestamp(): String {
         return "2024-01-01T00:00:00Z";
     }
     
@@ -159,7 +159,7 @@ class UserUtil {
      * Private function - formats name for display
      */
     @:private
-    function formatDisplayName(name: String): String {
+    static function formatDisplayName(name: String): String {
         // For display, we might want to show only first name + last initial
         var parts = name.split(" ");
         if (parts.length > 1) {
@@ -172,7 +172,7 @@ class UserUtil {
      * Private function - masks email for privacy
      */
     @:private
-    function maskEmail(email: String): String {
+    static function maskEmail(email: String): String {
         var parts = email.split("@");
         if (parts.length != 2) return email;
         
@@ -196,5 +196,11 @@ class UserUtil {
         trace("UserUtil example compiled successfully!");
         trace("This demonstrates public/private function patterns.");
         trace("Public functions provide the API, private functions handle implementation details.");
+
+        // Ensure the public API is exercised so private helpers are not unused in Elixir output.
+        var user = createUser("marcelo", "demo@example.com");
+        var updated = updateUser(user, "Alice Smith", "alice@example.com");
+        var display = formatUserForDisplay(updated);
+        trace("Example output: " + display);
     }
 }

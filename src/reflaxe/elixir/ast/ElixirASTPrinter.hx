@@ -1506,6 +1506,22 @@ class ElixirASTPrinter {
 	                            default:
 	                        }
 
+	                        // Match expressions must be parenthesized when used as operands of other
+	                        // infix operators to preserve Elixir precedence.
+	                        //
+	                        // Example:
+	                        //   (last = read_byte()) >= 0
+	                        // Without parentheses, Elixir parses:
+	                        //   last = (read_byte() >= 0)
+	                        // which changes semantics and can cause type/logic bugs.
+	                        if (op != Match) {
+	                            switch (operand.def) {
+	                                case EBinary(Match, _, _) | EMatch(_, _):
+	                                    return '(' + print(operand, 0) + ')';
+	                                default:
+	                            }
+	                        }
+
 	                        // Control flow operands need parentheses in infix contexts (except RHS of assignment).
 	                        switch (operand.def) {
 	                            case EIf(_, _, _) | ECase(_, _) | ECond(_) | EWith(_, _, _):
@@ -1757,8 +1773,33 @@ class ElixirASTPrinter {
                 if (into != null) options.push('into: ' + print(into, 0));
                 if (uniq) options.push('uniq: true');
                 var optStr = options.length > 0 ? ', ' + options.join(', ') : '';
-                
-                'for ' + genStr + filterStr + optStr + ', do: ' + print(body, 0);
+
+                // Comprehensions support both `do:` and `do ... end`. The single-line `do:`
+                // form cannot contain multi-statement blocks.
+                //
+                // If we print a block body with `do:`, the first statement appears on the same
+                // line and the remaining statements are rendered on subsequent lines *outside*
+                // the comprehension, which breaks scoping and compilation.
+                var bodyStr = print(body, indent + 1);
+                if (bodyStr == null || StringTools.trim(bodyStr).length == 0) bodyStr = 'nil';
+
+                var isMultiLine = switch (body.def) {
+                    case EIf(_, _, _): true;
+                    case ECase(_, _): true;
+                    case ECond(_): true;
+                    case EWith(_, _, _): true;
+                    case EBlock(exprs) if (exprs.length > 1): true;
+                    case EDo(stmts) if (stmts.length > 0): true;
+                    case _: bodyStr.indexOf('\n') >= 0;
+                };
+
+                if (isMultiLine) {
+                    'for ' + genStr + filterStr + optStr + ' do\n' +
+                    indentStr(indent + 1) + bodyStr + '\n' +
+                    indentStr(indent) + 'end';
+                } else {
+                    'for ' + genStr + filterStr + optStr + ', do: ' + print(body, 0);
+                }
                 
             // ================================================================
             // Anonymous Functions
@@ -1881,15 +1922,18 @@ class ElixirASTPrinter {
                     'alias ' + module;
                 }
                 
-            case EImport(module, only, except):
+            case EImport(module, only, except, warn):
                 var result = 'import ' + module;
+                var options: Array<String> = [];
                 if (only != null) {
-                    result += ', only: [' + 
-                        [for (o in only) o.name + ': ' + o.arity].join(', ') + ']';
+                    options.push('only: [' + [for (o in only) o.name + ': ' + o.arity].join(', ') + ']');
                 } else if (except != null) {
-                    result += ', except: [' +
-                        [for (e in except) e.name + ': ' + e.arity].join(', ') + ']';
+                    options.push('except: [' + [for (e in except) e.name + ': ' + e.arity].join(', ') + ']');
                 }
+                if (warn != null) {
+                    options.push('warn: ' + (warn ? 'true' : 'false'));
+                }
+                if (options.length > 0) result += ', ' + options.join(', ');
                 result;
                 
             case EUse(module, options):

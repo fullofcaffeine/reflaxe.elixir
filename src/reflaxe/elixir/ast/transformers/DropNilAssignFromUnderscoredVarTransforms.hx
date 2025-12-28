@@ -21,6 +21,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Walk EBlock/EDo statement lists and filter out EBinary(Match, left=EVar("nil"),
  *   right=EVar(name)) when `name` starts with an underscore.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DropNilAssignFromUnderscoredVarTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

@@ -25,6 +25,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - Replace the binder with `PVar("value")` in the pattern
  *   - Rewrite `EVar("g")` occurrences to `EVar("value")` in the clause body
  * - Scope: only within the affected clause body to avoid cross‑clause changes
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseSomeBinderRenameTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Walk all nodes and pattern-match wildcard assignment shapes. When the RHS is
  *   a Map.get/2 call with a literal string key, replace the LHS wildcard with a
  *   PVar/EVar named exactly as the key string.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class UpgradeWildcardMapGetToNamedTransforms {
   public static function transformPass(ast: ElixirAST): ElixirAST {

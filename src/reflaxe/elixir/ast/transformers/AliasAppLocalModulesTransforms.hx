@@ -22,6 +22,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Collect defined modules and referenced CamelCase roots in each Web module.
  * - If `<App>.<Name>` exists, add `alias <App>.<Name>` attribute into the module header.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class AliasAppLocalModulesTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

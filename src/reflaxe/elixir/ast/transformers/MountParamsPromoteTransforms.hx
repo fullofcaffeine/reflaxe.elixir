@@ -19,6 +19,10 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - Detect EDef name "mount" with 3 args, first arg PVar `_...` used in body.
  * - Rename to base and rewrite body occurrences from underscored → base.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class MountParamsPromoteTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {

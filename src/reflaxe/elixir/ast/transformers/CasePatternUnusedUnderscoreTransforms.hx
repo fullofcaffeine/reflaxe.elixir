@@ -23,6 +23,10 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer.OptimizedUsageIndex;
  * HOW
  * - Builds a suffix usage index for each clause body/expression once, then checks
  *   binder usage in O(1) per pattern variable.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CasePatternUnusedUnderscoreTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

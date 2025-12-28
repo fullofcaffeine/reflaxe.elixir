@@ -17,6 +17,14 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHY
  * - Common pattern: param `search_query` but body references `query`. This pass normalizes
  *   the reference to `search_query` without app-specific knowledge.
+
+ *
+ * HOW
+ * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+
+ *
+ * EXAMPLES
+ * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class VarRefSuffixParamNormalizeTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {

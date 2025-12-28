@@ -16,35 +16,23 @@ defmodule Sys do
   end
   def get_char(echo) do
     
-            # Save current terminal settings
             {:ok, old_settings} = :io.getopts(:standard_io)
-            
-            # Set terminal to raw mode if echo is false
+
             if not echo do
                 :io.setopts(:standard_io, [{:echo, false}])
             end
-            
-            # Read single character
-            char = IO.getn("", 1)
-            
-            # Restore terminal settings
+
+            input = IO.getn("", 1)
             :io.setopts(:standard_io, old_settings)
-            
-            # Convert to character code
-            case char do
+
+            case input do
                 <<c::utf8>> -> c
                 _ -> 0
             end
         
   end
   def environment() do
-    elixir_env = System.get_env()
-    
-            Enum.each(elixir_env, fn {k, v} -> 
-                env.set(k, v)
-                nil
-            end)
-    %{}
+    System.get_env()
   end
   def get_env(s) do
     System.get_env(s)
