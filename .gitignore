@@ -4,6 +4,16 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Secrets (never commit)
+.env
+.env.*
+.envrc
+.direnv/
+*.pem
+*.key
+*.p12
+*.pfx
+
 # Build outputs
 out/
 _build/
