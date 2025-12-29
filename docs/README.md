@@ -67,6 +67,7 @@ Additional (uncurated) architecture notes were archived to **[09-history/archive
 - [Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md) - Gradual adoption in an existing app
 - [Dogfooding](06-guides/DOGFOODING.md) - External Phoenix app upgrade validation
 - [Production Readiness](06-guides/PRODUCTION_READINESS.md) - Exit alpha criteria + checklist
+- [Strict Mode](06-guides/STRICT_MODE.md) - Opt-in Gleam-like safety profile
 - [Versioning & Stability](06-guides/VERSIONING_AND_STABILITY.md) - SemVer + stability tiers + deprecation policy
 - [Production Deployment](06-guides/PRODUCTION_DEPLOYMENT.md) - CI/Docker/release patterns
 - [Performance Guide](06-guides/PERFORMANCE_GUIDE.md) - Compilation performance
