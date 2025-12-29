@@ -251,7 +251,19 @@ class ElixirASTPrinter {
                     // For exceptions, use defmodule with defexception inside
                     // This is the proper Elixir pattern for custom exceptions
                     var result = 'defmodule ${name} do\n';
-                    result += indentStr(indent + 1) + 'defexception [:message]\n';
+                    // Include :message plus any additional instance fields so `%{struct | field: ...}`
+                    // updates remain valid for exception structs (e.g., CustomException.code).
+                    var exceptionFields: Array<String> = ["message"];
+                    if (ast.metadata != null && ast.metadata.instanceFields != null) {
+                        for (f in ast.metadata.instanceFields) {
+                            if (f == null || f.length == 0) continue;
+                            if (f == "message") continue;
+                            exceptionFields.push(f);
+                        }
+                    }
+                    // Preserve stable ordering: message first, then sorted instance fields (already sorted in metadata).
+                    var fieldsList = exceptionFields.map(f -> ":" + f).join(", ");
+                    result += indentStr(indent + 1) + 'defexception [' + fieldsList + ']\n';
                     // Set module context while printing body for proper qualification
                     var prevModuleCtx = currentModuleName;
                     currentModuleName = name;
@@ -261,7 +273,7 @@ class ElixirASTPrinter {
                         // Skip defstruct calls as defexception handles that
                         var exprStr = print(expr, indent + 1);
                         if (!exprStr.startsWith("defstruct")) {
-                            result += '\n' + indentStr(indent + 1) + exprStr + '\n';
+                            result += indentStr(indent + 1) + exprStr + '\n';
                         }
                     }
                     // Restore printer module context
