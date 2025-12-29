@@ -367,7 +367,8 @@ class ElixirASTTransformer {
                 // Append timing to a deterministic file so partial logs survive.
                 try {
                     var __log = sys.io.File.append("/tmp/passF-macro.log", false);
-                    __log.writeString("[PassTiming] module=" + rootName + " name=" + passConfig.name + " ms=" + Std.int(__elapsedPass) + "\n");
+                    var __ms = Math.round(__elapsedPass * 100.0) / 100.0;
+                    __log.writeString("[PassTiming] module=" + rootName + " name=" + passConfig.name + " ms=" + Std.string(__ms) + "\n");
                     __log.close();
                 } catch (e) {
                     // Fallback to stdout if append fails.
@@ -418,7 +419,8 @@ class ElixirASTTransformer {
         #if sys
         try {
             var __totalLog = sys.io.File.append("/tmp/passF-macro.log", false);
-            __totalLog.writeString("[PassTiming] module=" + rootName + " name=ElixirASTTransformer.total ms=" + Std.int(__pipelineElapsed) + "\n");
+            var __ms = Math.round(__pipelineElapsed * 100.0) / 100.0;
+            __totalLog.writeString("[PassTiming] module=" + rootName + " name=ElixirASTTransformer.total ms=" + Std.string(__ms) + "\n");
             __totalLog.close();
         } catch (e) {
             // DISABLED: Sys.println('[PassTiming] name=ElixirASTTransformer.total ms=' + Std.int(__pipelineElapsed));
