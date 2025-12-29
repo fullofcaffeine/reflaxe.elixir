@@ -21,6 +21,10 @@ Reflaxe.Elixir provides direct Elixir code injection using:
 > `extern` definitions remain supported in user apps — just use them intentionally and prefer
 > promoting reusable Phoenix/Ecto interop into the framework/stdlib layer when it’s generic.
 >
+> If you want a Gleam-like safety profile, enable **strict mode** with `-D reflaxe_elixir_strict`.
+> That mode rejects `untyped`, `Dynamic`, and ad-hoc externs in project-local sources (see
+> `src/reflaxe/elixir/macros/StrictModeEnforcer.hx`).
+>
 > If you need access to a Phoenix/Ecto/Elixir API from app code, add a typed wrapper in `std/`
 > (or a compiler-supported annotation module like `@:repo`) so the surface is reusable and documented.
 
