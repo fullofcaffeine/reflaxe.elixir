@@ -965,7 +965,7 @@ Just like `__elixir__()`, extern definitions for existing Elixir modules should 
 Example of emergency extern (should be replaced with Haxe implementation):
 ```haxe
 // EMERGENCY: Using extern for existing Elixir module
-// TODO: Replace with proper Haxe implementation by [date]
+// Prefer promoting reusable externs/wrappers into std/ (framework layer) rather than leaving them app-local.
 // Justification: Migration from legacy codebase
 // Ticket: #1234
 @:native("LegacyModule")
