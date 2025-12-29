@@ -13,7 +13,6 @@ import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 import reflaxe.elixir.ast.ElixirASTHelpers;
 import reflaxe.elixir.ast.naming.ElixirNaming;
 import reflaxe.elixir.helpers.PatternDetector;
-import reflaxe.elixir.helpers.UsageDetector;
 
 using StringTools;
 
@@ -164,19 +163,6 @@ class FunctionBuilder {
         // DISABLED: trace('[FunctionBuilder] Processing parameter "$originalName" (ID: ${arg.v.id})');
         #end
         
-        // Detect unused parameters
-        var isActuallyUnused = if (arg.v.meta != null && arg.v.meta.has("-reflaxe.unused")) {
-            true;  // Marked by Reflaxe preprocessor
-        } else if (body != null) {
-            !UsageDetector.isParameterUsed(arg.v, body);
-        } else {
-            // When body is unavailable (macro/analysis edge-cases), fall back to conservative
-            // defaults for common Phoenix shapes to keep output idiomatic and warning-free.
-            // Specifically, treat typical environment params as unused by default.
-            var oname = arg.v.name;
-            (oname == "socket" || oname == "_socket" || oname == "conn" || oname == "_conn");
-        };
-        
         // Check for numeric suffix (parameter shadowing)
         var strippedName = stripNumericSuffix(originalName);
         var hasNumericSuffix = (strippedName != originalName);
@@ -196,12 +182,11 @@ class FunctionBuilder {
             baseName = baseName + "_param";
         }
         
-        // Prefix with underscore if unused
-        var finalName = if (isActuallyUnused && !baseName.startsWith("_")) {
-            "_" + baseName;
-        } else {
-            baseName;
-        };
+        // NOTE: Do not prefix unused parameters here.
+        // Unused parameter hygiene is handled centrally in `prefixUnusedParametersPass`,
+        // which also accounts for template-string usage (EEx/HEEx) that Haxe's TypedExpr
+        // usage detection cannot see.
+        var finalName = baseName;
         
         // Register mapping in context with dual-key storage
         if (!context.tempVarRenameMap.exists(idKey)) {

@@ -25,7 +25,7 @@ class Main {
     /**
      * Test camelCase to kebab-case attribute conversion
      */
-    static function testAttributeConversion() {
+    static function testAttributeConversion(): String {
         // Test className -> class conversion
         var div1 = HXX.hxx('<div className="container">Content</div>');
         
@@ -43,12 +43,14 @@ class Main {
         
         // Test multiple conversions in one element
         var complex = HXX.hxx('<div className="card" dataUserId="123" phxHook="ScrollLock">Card</div>');
+        
+        return div1 + label1 + div2 + button1 + button2 + complex;
     }
     
     /**
      * Test snake_case attribute support alongside camelCase
      */
-    static function testSnakeCaseSupport() {
+    static function testSnakeCaseSupport(): String {
         // Test snake_case Phoenix directives (phx_click -> phx-click)
         var button1 = HXX.hxx('<button phx_click="handle_click">Click me</button>');
         
@@ -76,12 +78,14 @@ class Main {
                    data_field_name="user_email"
                    aria_describedby="email_help" />
         ');
+        
+        return button1 + div1 + button2 + mixed + kebab + complex;
     }
     
     /**
      * Test type validation for HTML elements
      */
-    static function testTypeValidation() {
+    static function testTypeValidation(): String {
         // Valid input attributes
         var input1: InputAttributes = {
             type: Text,
@@ -117,12 +121,14 @@ class Main {
                 <option value="mx">Mexico</option>
             </select>
         ');
+        
+        return inputElem + buttonElem + formElem + selectElem;
     }
     
     /**
      * Test Phoenix LiveView directives
      */
-    static function testPhoenixDirectives() {
+    static function testPhoenixDirectives(): String {
         // Test all Phoenix LiveView events
         var liveDiv = HXX.hxx('
             <div phxClick="clicked"
@@ -149,12 +155,14 @@ class Main {
                 View Users
             </a>
         ');
+        
+        return liveDiv + liveLink;
     }
     
     /**
      * Test complex real-world templates
      */
-    static function testComplexTemplates() {
+    static function testComplexTemplates(): String {
         // Define test data
         var todo: Todo = {id: 1, title: "Test Todo", completed: false};
         var user: User = {id: 1, name: "John", email: "john@example.com", active: true};
@@ -225,29 +233,31 @@ class Main {
                     </tr>
                 </thead>
                 <tbody>
-                    ${users.map(user -> HXX.hxx('
+                    <for {user in users}>
                         <tr key="${user.id}">
                             <td>${user.id}</td>
                             <td>${user.name}</td>
                             <td className="${user.active ? "active" : "inactive"}">
-                                ${user.active ? "Active" : "Inactive"}
+                                #{user.active ? "Active" : "Inactive"}
                             </td>
                             <td>
                                 <button phxClick="edit_user" phxValue="${user.id}">Edit</button>
                                 <button phxClick="delete_user" phxValue="${user.id}">Delete</button>
                             </td>
                         </tr>
-                    ')).join("")}
+                    </for>
                 </tbody>
             </table>
         ');
+        
+        return todoItem + userForm + dataTable;
     }
     
     /**
      * Test error messages and validation
      * These would normally cause compile-time errors with helpful messages
      */
-    static function testErrorMessages() {
+    static function testErrorMessages(): String {
         // This section documents what WOULD cause errors
         // In actual usage, these would be caught at compile time
         
@@ -276,6 +286,8 @@ class Main {
                 Complex element with many attributes
             </div>
         ');
+        
+        return phoenixComponent + complexElement;
     }
 }
 
