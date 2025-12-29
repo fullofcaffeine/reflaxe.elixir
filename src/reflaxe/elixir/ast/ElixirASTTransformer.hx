@@ -4392,7 +4392,7 @@ class ElixirASTTransformer {
                         #if debug_fluent_api
                         // DISABLED: trace('[FluentApiOptimization] Optimized function: $name');
                         #end
-                        return makeAST(EDef(name, args, guards, optimizedBody));
+                        return makeASTWithMeta(EDef(name, args, guards, optimizedBody), node.metadata, node.pos);
                     }
                 case EDefp(name, args, guards, body):
                     var optimizedBody = optimizeFluentBody(body);
@@ -4400,7 +4400,7 @@ class ElixirASTTransformer {
                         #if debug_fluent_api
                         // DISABLED: trace('[FluentApiOptimization] Optimized private function: $name');
                         #end
-                        return makeAST(EDefp(name, args, guards, optimizedBody));
+                        return makeASTWithMeta(EDefp(name, args, guards, optimizedBody), node.metadata, node.pos);
                     }
                 default:
             }

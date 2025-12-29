@@ -9,18 +9,21 @@ to original Haxe source positions, enabling:
 
 ## Current Status (December 2025)
 
-Source mapping is **not yet fully wired end‑to‑end** in the AST pipeline:
+Source mapping is implemented, but remains **experimental**:
 
-- The Haxe‑side writer (`src/reflaxe/elixir/SourceMapWriter.hx`) exists, but emission is not currently
-  integrated into `ElixirASTPrinter`/`ElixirOutputIterator` for normal builds.
-- The Elixir‑side lookup module (`lib/source_map_lookup.ex`) contains placeholder decoding logic and
-  is not a production‑ready source map implementation.
+- The Haxe‑side writer (`src/reflaxe/elixir/SourceMapWriter.hx`) is wired into the output phase
+  (`src/reflaxe/elixir/ElixirOutputIterator.hx`) and emits `.ex.map` files when enabled.
+- The Elixir‑side lookup module (`lib/source_map_lookup.ex`) implements Source Map v3 VLQ decoding
+  and can resolve Elixir `{file,line,column}` back to Haxe positions.
 
-As a result, you should treat source mapping as **experimental** and avoid relying on it for
-production debugging.
+### What “experimental” still means
 
-Non‑alpha / production‑ready status for Reflaxe.Elixir does **not** require source mapping. Until
-this document is updated to say otherwise, source maps remain an opt‑in, experimental capability.
+- Mappings are currently **coarse/line‑level**: each generated line maps to the nearest enclosing
+  top‑level definition (module start and `def`/`defp`/macro boundaries), not every expression.
+- More granular mapping would require threading the writer through a printer buffer (planned).
+
+Non‑alpha / production‑ready status for Reflaxe.Elixir does **not** require source mapping; it is
+opt‑in and intended as a debugging aid.
 
 ## Where the Pieces Live
 
@@ -31,14 +34,27 @@ this document is updated to say otherwise, source maps remain an opt‑in, exper
   - `lib/mix/tasks/haxe.source_map.ex`
   - `lib/phoenix_error_handler.ex` (optional runtime enrichment)
 
+## How to Enable
+
+Add a define to your Elixir build:
+
+```hxml
+-D source_map_enabled
+```
+
+Then compile normally. The compiler will emit sibling files:
+
+- `lib/my_module.ex`
+- `lib/my_module.ex.map`
+
 ## Recommended Next Steps (If You Want This Feature)
 
-1. **Implement real emission**
-   - Thread a `SourceMapWriter` through the print/output phase so the printer can map positions as it
-     writes Elixir source.
-2. **Implement VLQ decoding in Elixir**
-   - Replace placeholder decoding in `lib/source_map_lookup.ex` with a real Source Map v3 decoder.
-3. **Add integration coverage**
-   - Use (or extend) the fixtures under `test/snapshot/core/source_map_validation/` to ensure:
-     - `.ex.map` files are created when enabled
-     - lookups map to the correct Haxe file/line/column
+1. **Increase granularity**
+   - Thread a `SourceMapWriter` through the printer so we can map at expression‑level, not just
+     per generated line.
+2. **Harden reverse lookup**
+   - Improve `mix haxe.source_map --reverse` by searching maps by referenced source file rather than
+     assuming filename equivalence.
+3. **Expand integration coverage**
+   - Extend the fixture coverage under `test/snapshot/core/source_map_*` to assert specific mappings
+     (not just structure).

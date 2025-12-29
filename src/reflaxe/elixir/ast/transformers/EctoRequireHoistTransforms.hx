@@ -49,18 +49,18 @@ class EctoRequireHoistTransforms {
             switch (b.def) {
                 case EDef(name, args, guards, inner):
                     var newInner = switch (inner.def) {
-                        case EBlock(ss): makeAST( EBlock([for (s in ss) switch (s.def) { case ERequire(mod, _) if (mod == "Ecto.Query"): null; default: s; }].filter(x -> x != null)) );
-                        case EDo(ss2): makeAST( EDo([for (s in ss2) switch (s.def) { case ERequire(mod, _) if (mod == "Ecto.Query"): null; default: s; }].filter(x -> x != null)) );
+                        case EBlock(ss): makeASTWithMeta(EBlock([for (s in ss) switch (s.def) { case ERequire(mod, _) if (mod == "Ecto.Query"): null; default: s; }].filter(x -> x != null)), inner.metadata, inner.pos);
+                        case EDo(ss2): makeASTWithMeta(EDo([for (s in ss2) switch (s.def) { case ERequire(mod, _) if (mod == "Ecto.Query"): null; default: s; }].filter(x -> x != null)), inner.metadata, inner.pos);
                         default: inner;
                     };
-                    out.push(makeAST(EDef(name, args, guards, newInner)));
+                    out.push(makeASTWithMeta(EDef(name, args, guards, newInner), b.metadata, b.pos));
                 case EDefp(privateName, privateArgs, privateGuards, inner):
                     var newInner = switch (inner.def) {
-                        case EBlock(ss3): makeAST( EBlock([for (s in ss3) switch (s.def) { case ERequire(mod, _) if (mod == "Ecto.Query"): null; default: s; }].filter(x -> x != null)) );
-                        case EDo(ss4): makeAST( EDo([for (s in ss4) switch (s.def) { case ERequire(mod, _) if (mod == "Ecto.Query"): null; default: s; }].filter(x -> x != null)) );
+                        case EBlock(ss3): makeASTWithMeta(EBlock([for (s in ss3) switch (s.def) { case ERequire(mod, _) if (mod == "Ecto.Query"): null; default: s; }].filter(x -> x != null)), inner.metadata, inner.pos);
+                        case EDo(ss4): makeASTWithMeta(EDo([for (s in ss4) switch (s.def) { case ERequire(mod, _) if (mod == "Ecto.Query"): null; default: s; }].filter(x -> x != null)), inner.metadata, inner.pos);
                         default: inner;
                     };
-                    out.push(makeAST(EDefp(privateName, privateArgs, privateGuards, newInner)));
+                    out.push(makeASTWithMeta(EDefp(privateName, privateArgs, privateGuards, newInner), b.metadata, b.pos));
                 default:
                     out.push(b);
             }
