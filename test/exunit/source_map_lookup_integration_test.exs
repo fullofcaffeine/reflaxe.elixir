@@ -1,7 +1,8 @@
 defmodule SourceMapLookupIntegrationTest do
   use ExUnit.Case, async: false
 
-  @fixture_dir Path.expand("snapshot/core/source_map_basic", __DIR__)
+  @project_root Path.expand("../..", __DIR__)
+  @fixture_dir Path.join(@project_root, "test/snapshot/core/source_map_basic")
   @out_dir Path.join(@fixture_dir, "out")
   @generated_ex Path.join(@out_dir, "source_map_test.ex")
   @generated_map Path.join(@out_dir, "source_map_test.ex.map")
@@ -43,4 +44,3 @@ defmodule SourceMapLookupIntegrationTest do
     assert mapped.line == expected_line
   end
 end
-

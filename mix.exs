@@ -7,6 +7,7 @@ defmodule ReflaxeElixir.MixProject do
       version: "1.0.7",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
+      test_paths: ["test/exunit"],
       deps: deps(),
       package: package(),
       description: description(),
@@ -28,7 +29,7 @@ defmodule ReflaxeElixir.MixProject do
       {:ex_doc, "~> 0.32", only: :dev, runtime: false},
       # FileSystem is optional - only needed for dev file watching functionality
       # HaxeWatcher checks at runtime if available and provides helpful messages if not
-      {:file_system, "~> 0.2", only: [:dev, :test]}
+      {:file_system, "~> 1.1", only: [:dev, :test]}
     ]
   end
 
