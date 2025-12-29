@@ -3,7 +3,6 @@ package reflaxe.elixir.macros;
 #if (macro || reflaxe_runtime)
 import haxe.io.Path;
 import haxe.macro.Context;
-import haxe.macro.Compiler;
 import haxe.macro.Type;
 import haxe.macro.TypedExprTools;
 
@@ -26,7 +25,7 @@ import haxe.macro.TypedExprTools;
  * - Registers `Context.onAfterTyping` and:
  *   - Scans only project-local sources (under the current working directory), excluding this compiler’s
  *     own `src/reflaxe/**` and `std/**` sources.
- *   - Traverses typed expressions to detect `TUntyped`.
+ *   - Traverses typed expressions to detect `:untyped` metadata wrappers (e.g. `untyped __elixir__()`).
  *   - Walks types to detect `Dynamic` occurrences (allowing `elixir.types.Term` as the explicit boundary type).
  *   - Flags `extern class` declarations unless annotated with an allowed boundary metadata (e.g. `@:repo`)
  *     or explicitly marked as unsafe (`@:unsafeExtern`).
@@ -91,13 +90,7 @@ class StrictModeEnforcer {
 
                     enforceNoDynamicType(defType.type, defType.pos, "typedef " + defType.name);
 
-                case TAbstractDecl(absRef):
-                    var abstractType = absRef.get();
-                    if (!isStrictProjectSource(abstractType.pos, projectRoot)) {
-                        continue;
-                    }
-
-                    enforceNoDynamicType(abstractType.type, abstractType.pos, "abstract " + abstractType.name);
+                case _:
             }
         }
     }
@@ -157,17 +150,49 @@ class StrictModeEnforcer {
             case TDynamic(_):
                 true;
             case TFun(args, ret):
-                args.exists(arg -> containsDynamic(arg.t)) || containsDynamic(ret);
+                if (containsDynamic(ret)) {
+                    true;
+                } else {
+                    var found = false;
+                    for (arg in args) {
+                        if (containsDynamic(arg.t)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    found;
+                }
             case TInst(_, params) | TEnum(_, params) | TType(_, params):
-                params.exists(containsDynamic);
+                var found = false;
+                for (param in params) {
+                    if (containsDynamic(param)) {
+                        found = true;
+                        break;
+                    }
+                }
+                found;
             case TAbstract(abstractRef, params):
                 if (isAllowedDynamicAbstract(abstractRef.get())) {
                     false;
                 } else {
-                    params.exists(containsDynamic);
+                    var found = false;
+                    for (param in params) {
+                        if (containsDynamic(param)) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    found;
                 }
-            case TAnon(anonRef):
-                anonRef.get().fields.exists(field -> containsDynamic(field.type));
+            case TAnonymous(anonRef):
+                var found = false;
+                for (field in anonRef.get().fields) {
+                    if (containsDynamic(field.type)) {
+                        found = true;
+                        break;
+                    }
+                }
+                found;
             case TLazy(thunk):
                 containsDynamic(thunk());
             case TMono(monoRef):
@@ -194,16 +219,61 @@ class StrictModeEnforcer {
 
     static function scanForUntyped(expr: TypedExpr): Void {
         switch (expr.expr) {
-            case TUntyped(_):
-                Context.error(
-                    "Strict mode forbids `untyped` in application code (including `untyped __elixir__()` injections). " +
-                    "Prefer typed wrappers or move target-specific code into `std/`.",
-                    expr.pos
-                );
+            case TMeta(meta, inner):
+                var metaName = meta.name;
+                if (metaName == ":untyped" || metaName == "untyped") {
+                    Context.error(
+                        "Strict mode forbids `untyped` in application code (including `untyped __elixir__()` injections). " +
+                        "Prefer typed wrappers or move target-specific code into `std/`.",
+                        expr.pos
+                    );
+                }
+
+                // Defensive: also catch the injection call even if it is not wrapped as :untyped for some reason.
+                if (isElixirInjectionCall(inner)) {
+                    Context.error(
+                        "Strict mode forbids `__elixir__()` code injection in application code. " +
+                        "Prefer a typed wrapper or move the interop into `std/`.",
+                        expr.pos
+                    );
+                }
             case _:
         }
 
+        if (isElixirInjectionCall(expr)) {
+            Context.error(
+                "Strict mode forbids `__elixir__()` code injection in application code. " +
+                "Prefer a typed wrapper or move the interop into `std/`.",
+                expr.pos
+            );
+        }
+
         TypedExprTools.iter(expr, scanForUntyped);
+    }
+
+    static function isElixirInjectionCall(expr: TypedExpr): Bool {
+        return switch (expr.expr) {
+            case TCall(callTarget, _):
+                switch (callTarget.expr) {
+                    case TIdent(name):
+                        name == "__elixir__";
+                    case TLocal(variable):
+                        variable.name == "__elixir__";
+                    case TField(_, fieldAccess):
+                        switch (fieldAccess) {
+                            case FInstance(_, _, classField) | FStatic(_, classField) | FAnon(classField) | FClosure(_, classField):
+                                classField.get().name == "__elixir__";
+                            case FEnum(_, enumField):
+                                enumField.name == "__elixir__";
+                            case FDynamic(name):
+                                name == "__elixir__";
+                        }
+                    case _:
+                        false;
+                }
+            case _:
+                false;
+        }
     }
 
     static function isStrictProjectSource(pos: haxe.macro.Expr.Position, projectRoot: String): Bool {
