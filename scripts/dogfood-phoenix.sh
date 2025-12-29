@@ -259,9 +259,11 @@ else
   run_step "lix install reflaxe.elixir (${FROM_TAG}) (project)" 600 "$app_dir" "npx lix install github:fullofcaffeine/reflaxe.elixir#${FROM_TAG}"
 fi
 run_step "lix download (project)" 900 "$app_dir" "npx lix download"
-run_step "mix deps.get (project)" 900 "$app_dir" "mix deps.get"
-run_step "mix ecto.create (project)" 300 "$app_dir" "mix ecto.create --quiet || true"
-run_step "mix ecto.migrate (project)" 300 "$app_dir" "mix ecto.migrate"
+# Avoid starting the Haxe compilation server during DB setup; the sentinel will
+# run a clean, bounded compile later.
+run_step "mix deps.get (project)" 900 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix deps.get"
+run_step "mix ecto.create (project)" 300 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix ecto.create --quiet || true"
+run_step "mix ecto.migrate (project)" 300 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix ecto.migrate"
 
 # 4) Validate boot + compile via QA sentinel.
 sentinel_run "$app_dir" "build.hxml" "baseline (${FROM_TAG})"
@@ -273,15 +275,15 @@ if [[ "$MODE" == "local" ]]; then
   run_step "lix dev haxe deps (reflaxe, upgraded vendored)" 60 "$app_dir" "npx lix dev reflaxe '${to_src}/vendor/reflaxe'"
   run_step "lix dev reflaxe.elixir (${TO_TAG}) (project, local)" 60 "$app_dir" "npx lix dev reflaxe.elixir '${to_src}'"
   run_step "lix download (project, upgraded)" 900 "$app_dir" "npx lix download"
-  run_step "mix deps.clean reflaxe_elixir (project)" 300 "$app_dir" "mix deps.clean reflaxe_elixir"
-  run_step "mix deps.get (project, upgraded)" 900 "$app_dir" "mix deps.get"
-  run_step "mix ecto.create (project, upgraded)" 300 "$app_dir" "mix ecto.create --quiet || true"
-  run_step "mix ecto.migrate (project, upgraded)" 300 "$app_dir" "mix ecto.migrate"
+  run_step "mix deps.clean reflaxe_elixir (project)" 300 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix deps.clean reflaxe_elixir"
+  run_step "mix deps.get (project, upgraded)" 900 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix deps.get"
+  run_step "mix ecto.create (project, upgraded)" 300 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix ecto.create --quiet || true"
+  run_step "mix ecto.migrate (project, upgraded)" 300 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix ecto.migrate"
 else
   run_step "lix install reflaxe.elixir (${TO_TAG}) (project)" 600 "$app_dir" "npx lix install github:fullofcaffeine/reflaxe.elixir#${TO_TAG}"
   run_step "lix download (project, upgraded)" 900 "$app_dir" "npx lix download"
   update_mix_exs_tag "$app_dir" "$TO_TAG"
-  run_step "mix deps.update reflaxe_elixir (project)" 900 "$app_dir" "mix deps.update reflaxe_elixir"
+  run_step "mix deps.update reflaxe_elixir (project)" 900 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix deps.update reflaxe_elixir"
 fi
 
 sentinel_run "$app_dir" "build.hxml" "upgraded (${TO_TAG})"
