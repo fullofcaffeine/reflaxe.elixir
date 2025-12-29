@@ -1159,7 +1159,7 @@ haxe.elixir/                          # Project root (Reflaxe convention)
 ├── examples/                          # 📝 Example applications
 │   └── todo-app/                     # Main integration test & showcase
 │       └── src_haxe/                  # User application code in Haxe
-└── extraParams.hxml                  # Configures -cp src and -cp std
+└── extraParams.hxml                  # haxelib/lix defaults (boots CompilerInit.Start())
 ```
 
 ### Why This Structure (Reflaxe Convention)
@@ -1168,7 +1168,7 @@ haxe.elixir/                          # Project root (Reflaxe convention)
    - This is where ElixirCompiler.hx lives - the actual transpiler
    - Only exists at macro-time, not in generated output
 
-2. **`std/`** - Standard library included in classpath (`-cp std` in extraParams.hxml)
+2. **`std/`** - Standard library (added to the classpath by `CompilerInit.Start()` for Elixir builds)
    - Provides Haxe externs for Elixir/Phoenix/Ecto functionality
    - Available to all user code during compilation
    - Similar to how Reflaxe.CPP has `std/` for C++ standard library

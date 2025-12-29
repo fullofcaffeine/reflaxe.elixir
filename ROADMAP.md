@@ -1,8 +1,10 @@
-# Reflaxe.Elixir Roadmap (Alpha)
+# Reflaxe.Elixir Roadmap (v1.1+)
 
-Reflaxe.Elixir is **alpha software**: it is usable today (especially for Phoenix/LiveView/Ecto experimentation), but it is **not production‑hardened** yet.
+Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset. This roadmap tracks
+what’s next as we expand coverage, harden experimental features, and improve ergonomics.
 
-Version `v1.0.x` reflects API/feature stabilization and CI coverage — **not** a promise of production readiness.
+Version `v1.0.x` is the historical “API stabilized, still alpha hardening” line; `v1.1.0+` is the first
+non‑alpha release line (see `docs/06-guides/PRODUCTION_READINESS.md`).
 
 - **Long‑term vision**: `docs/08-roadmap/vision.md`
 - **Curated docs index**: `docs/README.md`
@@ -24,6 +26,6 @@ Version `v1.0.x` reflects API/feature stabilization and CI coverage — **not** 
 
 ## Status Legend
 
-- **Supported (Alpha)**: exercised by CI/tests/examples, but not production‑hardened.
-- **Experimental**: may compile, but expect rough edges and breaking changes.
+- **Stable**: exercised by CI/tests/examples and covered by the documented subset.
+- **Experimental (opt‑in)**: may compile, but expect rough edges and possible breaking changes.
 - **Planned**: not implemented yet.

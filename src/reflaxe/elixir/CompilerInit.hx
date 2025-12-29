@@ -119,11 +119,13 @@ class CompilerInit {
             var d0 = Path.directory(thisFile);           // .../src/reflaxe/elixir
             var d1 = Path.directory(d0);                 // .../src/reflaxe
             var d2 = Path.directory(d1);                 // .../src
-            var repoRoot = Path.directory(d2);           // .../
-            var stagedStd = Path.normalize(Path.join([repoRoot, "std/_std"]));
+            var libraryRoot = Path.directory(d2);        // .../
+            var standardLibrary = Path.normalize(Path.join([libraryRoot, "std"]));
+            var stagedStd = Path.normalize(Path.join([libraryRoot, "std/_std"]));
             // Gate injection strictly to Elixir target. Fallback for Haxe 4 builds where
             // target.name may be unset: rely on presence of -D elixir_output define used by this target.
             if (targetName == "elixir" || Context.defined("elixir_output")) {
+                Compiler.addClassPath(standardLibrary);
                 Compiler.addClassPath(stagedStd);
             }
         } catch (e: haxe.Exception) {
