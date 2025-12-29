@@ -52,11 +52,11 @@ class CompilerInit {
         var targetName = Context.definedValue("target.name");
         // Derive repository root from this file's location: <root>/src/reflaxe/elixir/CompilerInit.hx
         try {
-            var thisFile = Context.resolvePath("reflaxe/elixir/CompilerInit.hx");
-            var d0 = Path.directory(thisFile);           // .../src/reflaxe/elixir
-            var d1 = Path.directory(d0);                 // .../src/reflaxe
-            var d2 = Path.directory(d1);                 // .../src
-            var libraryRoot = Path.directory(d2);        // .../
+            var compilerInitPath = Context.resolvePath("reflaxe/elixir/CompilerInit.hx");
+            var elixirDir = Path.directory(compilerInitPath);      // .../src/reflaxe/elixir
+            var reflaxeDir = Path.directory(elixirDir);            // .../src/reflaxe
+            var srcDir = Path.directory(reflaxeDir);               // .../src
+            var libraryRoot = Path.directory(srcDir);              // .../
             var standardLibrary = Path.normalize(Path.join([libraryRoot, "std"]));
             var stagedStd = Path.normalize(Path.join([libraryRoot, "std/_std"]));
             // Gate injection strictly to Elixir target. Fallback for Haxe 4 builds where
