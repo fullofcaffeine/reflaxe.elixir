@@ -1009,7 +1009,6 @@ typedef PatchOptions = {
  * Provides type-safe abstractions over Phoenix Presence, eliminating the need
  * for __elixir__() calls in application code.
  */
-@:native("Phoenix.Presence")
 // Presence functionality has been moved to the dedicated phoenix/Presence.hx module
 // Import phoenix.Presence for Phoenix.Presence functionality
 

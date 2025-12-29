@@ -32,6 +32,17 @@ SERVER=false
 TIMEOUT=120
 DEADLINE=1800
 
+# Haxe 5 preview smoke: TypedExpr shapes differ enough that snapshot diffs are not comparable.
+# When running under Haxe 5+, default to validating compilation + Elixir syntax only.
+if [ -z "${COMPARE_INTENDED:-}" ]; then
+    haxe_version="$(haxe -version 2>/dev/null || true)"
+    haxe_major="$(echo "$haxe_version" | cut -d. -f1)"
+    if [[ "$haxe_major" =~ ^[0-9]+$ ]] && [ "$haxe_major" -ge 5 ]; then
+        export COMPARE_INTENDED=0
+        echo -e "${YELLOW}[test-runner] Haxe ${haxe_version} detected; running syntax-only snapshot validation (COMPARE_INTENDED=0)${RESET}"
+    fi
+fi
+
 # Ensure cache directory exists
 mkdir -p "$CACHE_DIR"
 

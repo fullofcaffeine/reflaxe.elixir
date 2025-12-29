@@ -161,8 +161,6 @@ import phoenix.types.HXXComponentRegistry;
  * @see docs/02-user-guide/HXX_TYPE_SAFETY.md For complete user guide
  */
 class HXX {
-
-    #if macro
     /**
      * Process a template string into type-safe Phoenix HEEx
      *
@@ -199,6 +197,23 @@ class HXX {
         #end
     }
 
+    /**
+     * HXX.block – marks a nested template fragment to be inlined as HEEx content.
+     * Accepts a string literal containing HXX/HTML and returns it as-is at macro time.
+     * TemplateHelpers recognizes HXX.block() when nested inside another HXX.hxx() and
+     * will inline its processed content without wrapping it in an interpolation tag.
+     */
+    public static macro function block(content: Expr): Expr {
+        return switch (content.expr) {
+            case EConst(CString(s, _)):
+                // Return the string literal as-is; outer processing will handle it
+                macro $v{s};
+            case _:
+                Context.error("block() expects a string literal", content.pos);
+        }
+    }
+
+    #if macro
     static function hxxInternal(templateStr: Expr): Expr {
         return switch (templateStr.expr) {
             case EConst(CString(s, _)):
@@ -231,22 +246,6 @@ class HXX {
                 macro @:heex $v{processed};
             case _:
                 Context.error("hxx() expects a string literal", templateStr.pos);
-        }
-    }
-
-    /**
-     * HXX.block – marks a nested template fragment to be inlined as HEEx content.
-     * Accepts a string literal containing HXX/HTML and returns it as-is at macro time.
-     * TemplateHelpers recognizes HXX.block() when nested inside another HXX.hxx() and
-     * will inline its processed content without wrapping it in an interpolation tag.
-     */
-    public static macro function block(content: Expr): Expr {
-        return switch (content.expr) {
-            case EConst(CString(s, _)):
-                // Return the string literal as-is; outer processing will handle it
-                macro $v{s};
-            case _:
-                Context.error("block() expects a string literal", content.pos);
         }
     }
 
@@ -525,12 +524,12 @@ class HXX {
      * Process Phoenix component syntax
      * Preserves <.component> syntax and handles attributes
      */
-    static function processComponents(template: String): String {
-        // Phoenix components with dot prefix are already valid HEEx
-        // Just ensure attributes are properly formatted
-        var componentPattern = ~/<\.([a-zA-Z_][a-zA-Z0-9_]*)(\s+[^>]*)?\/>/g;
-        return componentPattern.replace(template, "$0");
-    }
+	    static function processComponents(template: String): String {
+	        // Phoenix components with dot prefix are already valid HEEx
+	        // Just ensure attributes are properly formatted
+	        var componentPattern = ~/<\.([a-zA-Z_][a-zA-Z0-9_]*)(\s+[^>]*)?\/>/g;
+	        return componentPattern.replace(template, "$&");
+	    }
 
     /**
      * Process LiveView event handlers

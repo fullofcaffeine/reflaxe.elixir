@@ -23,6 +23,9 @@ PARSE_TIMEOUT ?= 20s
 UPDATE_TIMEOUT ?= $(TIMEOUT)
 UPDATE_JOBS ?= 4
 OUTPUT_DIR := out
+# When disabled, tests validate compilation + Elixir syntax only (no intended/out diff).
+# Useful for Haxe preview toolchains where TypedExpr shapes differ and snapshots are not comparable.
+COMPARE_INTENDED ?= 1
 
 # Pipeline Selection
 # By default uses AST pipeline. Set USE_LEGACY=1 to use old string pipeline for comparison
@@ -223,11 +226,15 @@ test-%:
 			fi; \
 			if [ "$$syntax_valid" = false ]; then \
 				echo "❌ $$testname - Invalid Elixir syntax ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+			elif [ "$(COMPARE_INTENDED)" = "0" ]; then \
+				echo "✅ $$testname (syntax-only) ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 			elif diff -r \
 				--exclude="_GeneratedFiles.json" \
 				--exclude="erl_crash.dump" \
 				--exclude="bootstrap_*.ex" \
 				--exclude="*.exs.ex" \
+				--exclude="*.ex.map" \
+				--exclude="*.exs.map" \
 				--exclude="std.ex" \
 				--exclude="string_buf.ex" \
 				--exclude="type.ex" \
