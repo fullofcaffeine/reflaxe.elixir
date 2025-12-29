@@ -4,6 +4,10 @@
 
 Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilation target that generates idiomatic Elixir code with complete Phoenix/OTP integration.
 
+> [!WARNING]
+> Reflaxe.Elixir is currently **alpha** and is not recommended for production use yet.
+> See `docs/06-guides/PRODUCTION_READINESS.md` for the exit criteria and checklist.
+
 ## 📚 Documentation Sections
 
 ### 🚀 Getting Started
@@ -62,7 +66,7 @@ Additional (uncurated) architecture notes were archived to **[09-history/archive
 - [Phoenix (New App)](06-guides/PHOENIX_NEW_APP.md) - Greenfield Phoenix setup
 - [Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md) - Gradual adoption in an existing app
 - [Dogfooding](06-guides/DOGFOODING.md) - External Phoenix app upgrade validation
-- [Production Readiness](06-guides/PRODUCTION_READINESS.md) - Non-alpha criteria + checklist
+- [Production Readiness](06-guides/PRODUCTION_READINESS.md) - Exit alpha criteria + checklist
 - [Versioning & Stability](06-guides/VERSIONING_AND_STABILITY.md) - SemVer + stability tiers + deprecation policy
 - [Production Deployment](06-guides/PRODUCTION_DEPLOYMENT.md) - CI/Docker/release patterns
 - [Performance Guide](06-guides/PERFORMANCE_GUIDE.md) - Compilation performance
