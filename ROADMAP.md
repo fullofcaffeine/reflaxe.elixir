@@ -1,10 +1,9 @@
 # Reflaxe.Elixir Roadmap (v1.1+)
 
-Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset. This roadmap tracks
-what’s next as we expand coverage, harden experimental features, and improve ergonomics.
+Reflaxe.Elixir is currently **alpha** overall. This roadmap tracks what’s next as we expand coverage,
+harden experimental features, and improve ergonomics on the path to “exit alpha”.
 
-Version `v1.0.x` is the historical “API stabilized, still alpha hardening” line; `v1.1.0+` is the first
-non‑alpha release line (see `docs/06-guides/PRODUCTION_READINESS.md`).
+See `docs/06-guides/PRODUCTION_READINESS.md` for the exit criteria and checklist.
 
 - **Long‑term vision**: `docs/08-roadmap/vision.md`
 - **Curated docs index**: `docs/README.md`
