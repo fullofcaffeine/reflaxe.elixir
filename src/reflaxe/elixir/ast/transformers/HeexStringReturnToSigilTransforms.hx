@@ -800,10 +800,10 @@ class HeexStringReturnToSigilTransforms {
                                 var content2 = (extracted2 != null) ? extracted2 : collected2;
                                 var normalized2 = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(content2);
                                 var sig2 = makeAST(ESigil("H", normalized2, ""));
-                                var newDef2 = reflaxe.elixir.util.EnumReflection.enumConstructor(n.def) == "EDef"
+                                var defWithSigil = reflaxe.elixir.util.EnumReflection.enumConstructor(n.def) == "EDef"
                                     ? EDef(name, argsRenamed, guards, sig2)
                                     : EDefp(name, argsRenamed, guards, sig2);
-                                makeASTWithMeta(newDef2, n.metadata, n.pos);
+                                makeASTWithMeta(defWithSigil, n.metadata, n.pos);
                             }
                         } else n;
                     }
