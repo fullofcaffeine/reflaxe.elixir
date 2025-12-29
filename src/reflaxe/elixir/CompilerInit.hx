@@ -9,6 +9,7 @@ import haxe.io.Path;
 import reflaxe.elixir.ElixirCompiler;
 import reflaxe.elixir.macros.LiveViewPreserver;
 import reflaxe.elixir.macros.BoundaryEnforcer;
+import reflaxe.elixir.macros.StrictModeEnforcer;
 
 // Import preprocessor types
 import reflaxe.preprocessors.ExpressionPreprocessor;
@@ -101,6 +102,10 @@ class CompilerInit {
         // This keeps our public examples as "Haxe -> Elixir" references and pushes missing
         // framework surfaces into std/ (Phoenix/Ecto/etc.) instead of app-local escape hatches.
         BoundaryEnforcer.init();
+
+        // Optional safety profile: forbid `untyped` / `Dynamic` / ad-hoc externs in app code.
+        // Enabled by defining `-D reflaxe_elixir_strict` in user projects.
+        StrictModeEnforcer.init();
 
         // Ensure @:repo externs are kept by DCE so they can be scheduled normally
         // for compilation via the AST pipeline (repoTransformPass).
