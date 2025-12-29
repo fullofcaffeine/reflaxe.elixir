@@ -2139,16 +2139,6 @@ class ElixirCompiler extends GenericCompiler<
                         }
                     }
 
-                    // Check if this parameter is unused in the function body
-                    var isUnused = if (arg.v.meta != null && arg.v.meta.has("-reflaxe.unused")) {
-                        true;
-                    } else if (funcData.expr != null) {
-                        // Use UsageDetector to check if parameter is actually used
-                        !reflaxe.elixir.helpers.UsageDetector.isParameterUsed(arg.v, funcData.expr);
-                    } else {
-                        false;
-                    };
-                    
                     // Register the mapping for use in function body
                     // Use toSafeElixirParameterName to handle reserved keywords
                     var baseName = reflaxe.elixir.ast.NameUtils.toSafeElixirParameterName(strippedName);
@@ -2160,12 +2150,11 @@ class ElixirCompiler extends GenericCompiler<
                     if (instanceFieldNames.exists(baseName) && !StringTools.endsWith(baseName, "_param")) {
                         baseName = baseName + "_param";
                     }
-                    // Add underscore prefix for unused parameters
-                    var finalName = if (isUnused && !baseName.startsWith("_")) {
-                        "_" + baseName;
-                    } else {
-                        baseName;
-                    };
+                    // NOTE: Do not prefix unused parameters here.
+                    // Unused parameter hygiene is handled centrally in `prefixUnusedParametersPass`,
+                    // which also accounts for template-string usage (EEx/HEEx) that Haxe's TypedExpr
+                    // usage detection cannot see.
+                    var finalName = baseName;
                     #if debug_variable_renaming
                     // DISABLED: trace('[ElixirCompiler] About to register for ${funcData.field.name}: idKey="$idKey" originalName="$originalName" finalName="$finalName" unused=$isUnused');
                     // DISABLED: trace('[ElixirCompiler] Map exists check: ${context.tempVarRenameMap.exists(idKey)}');

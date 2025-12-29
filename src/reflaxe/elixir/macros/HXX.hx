@@ -217,24 +217,15 @@ class HXX {
     static function hxxInternal(templateStr: Expr): Expr {
         return switch (templateStr.expr) {
             case EConst(CString(s, _)):
-                #if macro
-                haxe.macro.Context.warning("[HXX] hxx() invoked", templateStr.pos);
-                #end
                 // Fast-path: if author already provided EEx/HEEx markers, do not rewrite.
                 // This avoids unnecessary processing and prevents pathological regex scans.
                 // We still tag it so the builder emits a ~H sigil.
                 if (s.indexOf("<%=") != -1 || s.indexOf("<% ") != -1 || s.indexOf("<%\n") != -1) {
-                    #if macro
-                    haxe.macro.Context.warning("[HXX] fast-path (pre-EEx detected) + for-rewrite", templateStr.pos);
-                    #end
                     var preProcessed = rewriteForBlocks(s);
                     return macro @:heex $v{preProcessed};
                 }
 
                 // Validate the template and proceed with HXX → HEEx conversion
-                #if macro
-                haxe.macro.Context.warning("[HXX] processing template string", templateStr.pos);
-                #end
                 var validation = validateTemplateTypes(s);
                 if (!validation.valid) {
                     for (error in validation.errors) Context.warning(error, templateStr.pos);
@@ -267,21 +258,56 @@ class HXX {
      * @param template The raw template string from the user
      * @return Processed HEEx-compatible template string
      */
-    static function processTemplateString(template: String, ?pos: haxe.macro.Expr.Position): String {
-        #if (macro && hxx_instrument_sys)
-        var labelParts = [
-            "HXX.processTemplateString bytes=",
-            Std.string(template != null ? template.length : 0)
-        ];
-        return MacroTimingHelper.time(labelParts.join(""), () -> processTemplateStringInternal(template, pos));
-        #else
-        return processTemplateStringInternal(template, pos);
-        #end
-    }
+	    static function processTemplateString(template: String, ?pos: haxe.macro.Expr.Position): String {
+	        #if (macro && hxx_instrument_sys)
+	        var labelParts = [
+	            "HXX.processTemplateString bytes=",
+	            Std.string(template != null ? template.length : 0)
+	        ];
+	        return MacroTimingHelper.time(labelParts.join(""), () -> processTemplateStringInternal(template, pos));
+	        #else
+	        return processTemplateStringInternal(template, pos);
+	        #end
+	    }
 
-    static function processTemplateStringInternal(template: String, ?pos: haxe.macro.Expr.Position): String {
-        // Convert Haxe ${} interpolation to Elixir #{} interpolation
-        var processed = template;
+	    static function rewriteTopLevelTernary(expr: String): String {
+	        if (expr == null) return expr;
+	        var questionIndex = -1;
+	        var colonIndex = -1;
+	        var parenDepth = 0;
+	        var bracketDepth = 0;
+	        var braceDepth = 0;
+	        var quote: Null<String> = null;
+	        var i = 0;
+	        while (i < expr.length) {
+	            var ch = expr.charAt(i);
+	            if (quote != null) {
+	                if (ch == "\\" && i + 1 < expr.length) { i += 2; continue; }
+	                if (ch == quote) quote = null;
+	                i++;
+	                continue;
+	            }
+	            if (ch == "\"" || ch == "'") { quote = ch; i++; continue; }
+	            if (ch == "(") parenDepth++; else if (ch == ")") parenDepth = Std.int(Math.max(0, parenDepth - 1));
+	            else if (ch == "[") bracketDepth++; else if (ch == "]") bracketDepth = Std.int(Math.max(0, bracketDepth - 1));
+	            else if (ch == "{") braceDepth++; else if (ch == "}") braceDepth = Std.int(Math.max(0, braceDepth - 1));
+	            else if (parenDepth == 0 && bracketDepth == 0 && braceDepth == 0) {
+	                if (questionIndex == -1 && ch == "?") questionIndex = i;
+	                else if (questionIndex != -1 && ch == ":") { colonIndex = i; break; }
+	            }
+	            i++;
+	        }
+	        if (questionIndex == -1 || colonIndex == -1) return expr;
+	        var cond = StringTools.trim(expr.substr(0, questionIndex));
+	        var thenPart = StringTools.trim(expr.substr(questionIndex + 1, colonIndex - (questionIndex + 1)));
+	        var elsePart = StringTools.trim(expr.substr(colonIndex + 1));
+	        if (cond.length == 0 || thenPart.length == 0 || elsePart.length == 0) return expr;
+	        return "if " + cond + ", do: " + thenPart + ", else: " + elsePart;
+	    }
+
+	    static function processTemplateStringInternal(template: String, ?pos: haxe.macro.Expr.Position): String {
+	        // Convert Haxe ${} interpolation to Elixir #{} interpolation
+	        var processed = template;
 
         // 0) Rewrite HXX control/loop tags that must be lowered before interpolation scanning
         //    - <for {item in expr}> ... </for> → <% for item <- expr do %> ... <% end %>
@@ -295,9 +321,9 @@ class HXX {
         //    ${expr} or #{expr} -> <%= expr %> (convert assigns.* -> @*)
         // Fix: Use proper regex escaping - single backslash in Haxe regex literals
         var interp = ~/\$\{([^}]+)\}/g;
-        processed = interp.map(processed, function (re) {
-            var expr = re.matched(1);
-            expr = StringTools.trim(expr);
+	        processed = interp.map(processed, function (re) {
+	            var expr = re.matched(1);
+	            expr = StringTools.trim(expr);
             // Guard: disallow injecting HTML as string via ${"<div ..."}
             if (expr.length >= 2) {
                 var first = expr.charAt(0);
@@ -311,18 +337,20 @@ class HXX {
                         #end
                     }
                 }
-            }
-            expr = StringTools.replace(expr, "assigns.", "@");
-            return '<%= ' + expr + ' %>';
-        });
+	            }
+	            expr = StringTools.replace(expr, "assigns.", "@");
+	            expr = rewriteTopLevelTernary(expr);
+	            return '<%= ' + expr + ' %>';
+	        });
 
         // Support #{expr} placeholders to avoid Haxe compile-time interpolation conflicts
         var interpHash = ~/#\{([^}]+)\}/g;
-        processed = interpHash.map(processed, function (re) {
-            var expr = StringTools.trim(re.matched(1));
-            expr = StringTools.replace(expr, "assigns.", "@");
-            return '<%= ' + expr + ' %>';
-        });
+	        processed = interpHash.map(processed, function (re) {
+	            var expr = StringTools.trim(re.matched(1));
+	            expr = StringTools.replace(expr, "assigns.", "@");
+	            expr = rewriteTopLevelTernary(expr);
+	            return '<%= ' + expr + ' %>';
+	        });
 
         // 2b) Convert attribute-level EEx back into HEEx attribute expressions
         //    name=<%= expr %>  → name={expr}
@@ -478,14 +506,7 @@ class HXX {
             var expr = StringTools.trim(inner);
             // Map assigns.* → @*
             expr = StringTools.replace(expr, "assigns.", "@");
-            // Ternary to inline-if for attribute context
-            var tern = ~/(.*)\?(.*):(.*)/;
-            if (tern.match(expr)) {
-                var cond = StringTools.trim(tern.matched(1));
-                var th = StringTools.trim(tern.matched(2));
-                var el = StringTools.trim(tern.matched(3));
-                expr = "if " + cond + ", do: " + th + ", else: " + el;
-            }
+            expr = rewriteTopLevelTernary(expr);
             parts.push("{"); parts.push(expr); parts.push("}");
             // Skip closing quote if present
             if (quote != null) {
