@@ -130,8 +130,9 @@ class GettextArityAndParamRepairTransforms {
                                         }
                                     });
                                 })() : bd;
-                            makeAST(EDef(nm, newArgs, guards, newBody));
-                        case EDefp(nm2, args2, guards2, bd2): makeAST(EDefp(nm2, repairParams(args2, bd2), guards2, bd2));
+                            makeASTWithMeta(EDef(nm, newArgs, guards, newBody), b.metadata, b.pos);
+                        case EDefp(nm2, args2, guards2, bd2):
+                            makeASTWithMeta(EDefp(nm2, repairParams(args2, bd2), guards2, bd2), b.metadata, b.pos);
                         default: b;
                     }];
                     var withShims = insertArityShims(repaired);
@@ -151,8 +152,9 @@ class GettextArityAndParamRepairTransforms {
                                         }
                                     });
                                 })() : bd;
-                            makeAST(EDef(nm, newArgs, guards, newBody));
-                        case EDefp(nm2, args2, guards2, bd2): makeAST(EDefp(nm2, repairParams(args2, bd2), guards2, bd2));
+                            makeASTWithMeta(EDef(nm, newArgs, guards, newBody), b.metadata, b.pos);
+                        case EDefp(nm2, args2, guards2, bd2):
+                            makeASTWithMeta(EDefp(nm2, repairParams(args2, bd2), guards2, bd2), b.metadata, b.pos);
                         default: b;
                     }];
                     var withShims2 = insertArityShims(repaired2);

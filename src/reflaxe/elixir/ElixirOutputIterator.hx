@@ -2,6 +2,11 @@ package reflaxe.elixir;
 
 #if (macro || elixir_runtime)
 
+import haxe.io.Path;
+#if macro
+import haxe.macro.Context;
+import haxe.macro.Expr.Position;
+#end
 import reflaxe.output.DataAndFileInfo;
 import reflaxe.output.StringOrBytes;
 import reflaxe.elixir.ast.builders.ModuleBuilder; // For strategy
@@ -9,6 +14,9 @@ import reflaxe.elixir.ast.NameUtils; // snake_case helpers
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirASTPrinter;
+import reflaxe.elixir.SourceMapWriter;
+
+using reflaxe.helpers.BaseTypeHelper;
 
 /**
  * ElixirOutputIterator: Handles AST to String Conversion
@@ -268,10 +276,202 @@ class ElixirOutputIterator {
                 }
             }
 
+            #if macro
+            if (compiler.sourceMapOutputEnabled) {
+                queueSourceMap(astData, transformedAST, output);
+            }
+            #end
+
             // Return the same DataAndFileInfo but with string output instead of AST
             return astData.withOutput(output);
         }
     }
+
+    #if macro
+    /**
+     * queueSourceMap
+     *
+     * WHAT
+     * - Creates a SourceMapWriter for the generated `.ex` file and records coarse-grained
+     *   mappings so `mix haxe.source_map` (and error enrichment) can translate Elixir
+     *   file/line locations back to Haxe source positions.
+     *
+     * WHY
+     * - The compiler already has a SourceMapWriter implementation, but it was not wired
+     *   into the output phase. Emitting usable `.ex.map` files is a major DevEx win for:
+     *   - mapping stacktraces back to Haxe
+     *   - LLM-friendly navigation between generated and source
+     *
+     * HOW
+     * - We avoid invasive printer changes by emitting a coarse mapping at **column 0 for
+     *   every generated line**, using the most recent “context” mapping point:
+     *   - module start (fallback)
+     *   - each top-level function definition (def/defp/defmacro/defmacrop)
+     * - This yields full line coverage without depending on fragile string heuristics for
+     *   every expression. More granular mapping can be added later by threading the writer
+     *   directly through the printer buffer.
+     */
+    static function queueSourceMap(astData: DataAndFileInfo<reflaxe.elixir.ast.ElixirAST>, ast: ElixirAST, output: String): Void {
+        if (ast == null || output == null) return;
+
+        var startPos = findFirstPos(ast);
+        if (startPos == null) return;
+
+        var generatedFile = computeGeneratedFilePath(astData);
+        if (generatedFile == null || generatedFile.length == 0) return;
+
+        var mappingPoints = computeMappingPoints(ast, output, startPos);
+        if (mappingPoints.length == 0) return;
+
+        mappingPoints.sort((a, b) -> a.index - b.index);
+
+        var writer = new SourceMapWriter(generatedFile);
+        emitLineMappings(writer, output, mappingPoints);
+
+        // Defer actual file writes until all output files exist.
+        ElixirCompiler.instance.pendingSourceMapWriters.push(writer);
+    }
+
+    static function computeGeneratedFilePath(astData: DataAndFileInfo<reflaxe.elixir.ast.ElixirAST>): String {
+        var outputDir = ElixirCompiler.instance.output != null ? ElixirCompiler.instance.output.outputDir : null;
+        if (outputDir == null || outputDir.length == 0) {
+            var defineName = ElixirCompiler.instance.options != null ? ElixirCompiler.instance.options.outputDirDefineName : null;
+            if (defineName != null && defineName.length > 0) {
+                var defined = Context.definedValue(defineName);
+                if (defined != null && defined.length > 0) outputDir = defined;
+            }
+        }
+        if (outputDir == null || outputDir.length == 0) {
+            outputDir = ElixirCompiler.instance.outputDirectory;
+        }
+
+        var extension = ElixirCompiler.instance.options.fileOutputExtension;
+        if (extension == null || extension.length == 0) extension = ".ex";
+
+        var baseName = astData.overrideFileName != null ? astData.overrideFileName : astData.baseType.moduleId();
+        var relativePath = (astData.overrideDirectory != null ? astData.overrideDirectory + "/" : "") + baseName + extension;
+
+        if (haxe.io.Path.isAbsolute(relativePath) || outputDir == null || outputDir.length == 0) {
+            return relativePath;
+        }
+
+        return Path.join([outputDir, relativePath]);
+    }
+
+    static function emitLineMappings(writer: SourceMapWriter, output: String, mappingPoints: Array<{index: Int, pos: Position}>): Void {
+        var lines = output.split("\n");
+        var cursor = 0;
+        var pointIndex = 0;
+        var activePos = mappingPoints[0].pos;
+
+        for (i in 0...lines.length) {
+            while (pointIndex + 1 < mappingPoints.length && mappingPoints[pointIndex + 1].index <= cursor) {
+                pointIndex++;
+                activePos = mappingPoints[pointIndex].pos;
+            }
+
+            writer.mapPosition(activePos);
+            writer.stringWritten(lines[i]);
+            if (i < lines.length - 1) writer.stringWritten("\n");
+
+            // +1 for the newline we just wrote (or would have written in the original string)
+            cursor += lines[i].length + 1;
+        }
+    }
+
+    static function computeMappingPoints(ast: ElixirAST, output: String, startPos: Position): Array<{index: Int, pos: Position}> {
+        var points: Array<{index: Int, pos: Position}> = [];
+        points.push({index: 0, pos: startPos});
+
+        var statements = extractTopLevelStatements(ast);
+        if (statements.length == 0) return points;
+
+        var searchFrom = 0;
+        for (stmt in statements) {
+            var pos = stmt != null ? stmt.pos : null;
+            if (pos == null) continue;
+
+            var isTopLevelFunction = switch (stmt.def) {
+                case EDef(_, _, _, _) | EDefp(_, _, _, _) | EDefmacro(_, _, _, _) | EDefmacrop(_, _, _, _): true;
+                default: false;
+            };
+            if (!isTopLevelFunction) continue;
+
+            // For mapping purposes we only need the function *header* location.
+            // Searching by header is significantly more robust than matching the full body string.
+            var printed = ElixirASTPrinter.print(stmt, 1);
+            var firstLine = printed != null ? printed.split("\n")[0] : null;
+            if (firstLine == null || firstLine.length == 0) continue;
+
+            var idx = output.indexOf(firstLine, searchFrom);
+
+            if (idx >= 0) {
+                // Our output-to-index cursor advances line-by-line (column 0 only).
+                // If `firstLine` was found without leading indentation (or with differing indentation),
+                // `idx` may point to a column inside the line, which would apply the mapping starting
+                // on the *next* line. Snap to the beginning of the containing line for correctness.
+                var lineStart = output.lastIndexOf("\n", idx);
+                lineStart = lineStart < 0 ? 0 : lineStart + 1;
+                points.push({index: lineStart, pos: pos});
+                searchFrom = idx + firstLine.length;
+            }
+        }
+
+        return points;
+    }
+
+    static function extractTopLevelStatements(ast: ElixirAST): Array<ElixirAST> {
+        if (ast == null) return [];
+
+        var stmts: Array<ElixirAST> = switch (ast.def) {
+            case EModule(_, _, body): body != null ? body : [];
+            case EDefmodule(_, doBlock):
+                switch (doBlock.def) {
+                    case EDo(exprs) | EBlock(exprs): exprs != null ? exprs : [];
+                    default: [];
+                }
+            default: [];
+        };
+
+        var flat: Array<ElixirAST> = [];
+        for (s in stmts) {
+            if (s == null) continue;
+            switch (s.def) {
+                case EDo(exprs) | EBlock(exprs):
+                    if (exprs != null) for (e in exprs) if (e != null) flat.push(e);
+                default:
+                    flat.push(s);
+            }
+        }
+        return flat;
+    }
+
+    static function findFirstPos(ast: ElixirAST): Null<Position> {
+        if (ast == null) return null;
+        if (ast.pos != null) return ast.pos;
+
+        return switch (ast.def) {
+            case EModule(_, _, body):
+                if (body != null) findFirstPosInList(body) else null;
+            case EDefmodule(_, doBlock):
+                findFirstPos(doBlock);
+            case EDo(exprs) | EBlock(exprs):
+                if (exprs != null) findFirstPosInList(exprs) else null;
+            case EDef(_, _, _, body) | EDefp(_, _, _, body) | EDefmacro(_, _, _, body) | EDefmacrop(_, _, _, body):
+                findFirstPos(body);
+            default:
+                null;
+        };
+    }
+
+    static function findFirstPosInList(nodes: Array<ElixirAST>): Null<Position> {
+        for (n in nodes) {
+            var p = findFirstPos(n);
+            if (p != null) return p;
+        }
+        return null;
+    }
+    #end
 
     /**
      * Returns true when the transformed AST corresponds to an empty module that

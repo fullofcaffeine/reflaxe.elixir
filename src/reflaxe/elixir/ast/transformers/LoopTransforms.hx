@@ -24,6 +24,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
+import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.naming.ElixirAtom;
@@ -156,66 +157,67 @@ class LoopTransforms {
      * without using ElixirASTTransformer.transformNode to avoid infinite recursion
      */
     static function transformChildrenManually(node: ElixirAST, transformer: ElixirAST -> ElixirAST): ElixirAST {
+        var meta = node.metadata != null ? node.metadata : {};
         // Handle the most common node types that might contain unrolled loops
         switch(node.def) {
             case EIf(cond, thenBranch, elseBranch):
-                return makeAST(EIf(
+                return makeASTWithMeta(EIf(
                     transformer(cond),
                     transformer(thenBranch),
                     elseBranch != null ? transformer(elseBranch) : null
-                ));
+                ), meta, node.pos);
                 
             case ECase(expr, clauses):
-                return makeAST(ECase(
+                return makeASTWithMeta(ECase(
                     transformer(expr),
                     clauses.map(c -> {
                         pattern: c.pattern,
                         guard: c.guard != null ? transformer(c.guard) : null,
                         body: transformer(c.body)
                     })
-                ));
+                ), meta, node.pos);
                 
             case ECall(target, funcName, args):
-                return makeAST(ECall(
+                return makeASTWithMeta(ECall(
                     target != null ? transformer(target) : null,
                     funcName,
                     args.map(a -> transformer(a))
-                ));
+                ), meta, node.pos);
                 
             case ERemoteCall(module, funcName, args):
-                return makeAST(ERemoteCall(
+                return makeASTWithMeta(ERemoteCall(
                     transformer(module),
                     funcName,
                     args.map(a -> transformer(a))
-                ));
+                ), meta, node.pos);
                 
             case EList(elements):
-                return makeAST(EList(elements.map(e -> transformer(e))));
+                return makeASTWithMeta(EList(elements.map(e -> transformer(e))), meta, node.pos);
                 
             case ETuple(elements):
-                return makeAST(ETuple(elements.map(e -> transformer(e))));
+                return makeASTWithMeta(ETuple(elements.map(e -> transformer(e))), meta, node.pos);
                 
             case EMap(pairs):
-                return makeAST(EMap(pairs.map(p -> {
+                return makeASTWithMeta(EMap(pairs.map(p -> {
                     key: transformer(p.key),
                     value: transformer(p.value)
-                })));
+                })), meta, node.pos);
                 
             case EBinary(op, left, right):
-                return makeAST(EBinary(op, transformer(left), transformer(right)));
+                return makeASTWithMeta(EBinary(op, transformer(left), transformer(right)), meta, node.pos);
                 
             case EUnary(op, expr):
-                return makeAST(EUnary(op, transformer(expr)));
+                return makeASTWithMeta(EUnary(op, transformer(expr)), meta, node.pos);
                 
             case EFn(clauses):
-                return makeAST(EFn(clauses.map(c -> {
+                return makeASTWithMeta(EFn(clauses.map(c -> {
                     args: c.args,
                     guard: c.guard != null ? transformer(c.guard) : null,
                     body: transformer(c.body)
-                })));
+                })), meta, node.pos);
                 
             case EDo(body):
-                return makeAST(EDo(body.map(stmt -> transformer(stmt))));
+                return makeASTWithMeta(EDo(body.map(stmt -> transformer(stmt))), meta, node.pos);
                 
             // Leaf nodes that don't need transformation
             case EVar(_) | EAtom(_) | EInteger(_) | EFloat(_) | EString(_) | ENil:
@@ -366,23 +368,23 @@ class LoopTransforms {
                 case EModule(name, attributes, body):
                 #if debug_loop_transforms trace('[XRay LoopTransforms] Found EModule: $name with ${body.length} body items'); #end
                     var transformedBody = body.map(b -> detectAndTransformUnrolledLoops(b));
-                    return makeAST(EModule(name, attributes, transformedBody));
+                    return makeASTWithMeta(EModule(name, attributes, transformedBody), node.metadata, node.pos);
                     
                 case EDefmodule(name, doBlock):
                     #if debug_loop_transforms trace('[XRay LoopTransforms] Found EDefmodule: $name'); #end
                     var transformedBlock = detectAndTransformUnrolledLoops(doBlock);
-                    return makeAST(EDefmodule(name, transformedBlock));
+                    return makeASTWithMeta(EDefmodule(name, transformedBlock), node.metadata, node.pos);
                     
                 // Check function definitions for unrolled loops in their body
                 case EDef(name, args, guards, body):
                     #if debug_loop_transforms trace('[XRay LoopTransforms] Found EDef (public function): $name'); #end
                     var transformedBody = detectAndTransformUnrolledLoops(body);
-                    return makeAST(EDef(name, args, guards, transformedBody));
+                    return makeASTWithMeta(EDef(name, args, guards, transformedBody), node.metadata, node.pos);
                     
                 case EDefp(name, args, guards, body):
                     #if debug_loop_transforms trace('[XRay LoopTransforms] Found EDefp (private function): $name'); #end
                     var transformedBody = detectAndTransformUnrolledLoops(body);
-                    return makeAST(EDefp(name, args, guards, transformedBody));
+                    return makeASTWithMeta(EDefp(name, args, guards, transformedBody), node.metadata, node.pos);
                     
                 // CRITICAL: Check for EMatch with comprehension pattern BEFORE generic EBlock handling
                 case EMatch(pattern, rhsBlock):
@@ -390,7 +392,7 @@ class LoopTransforms {
                     var rhsIsBlock = (rhsBlock != null) && (switch(rhsBlock.def) { case EBlock(_): true; default: false; });
                     if (!rhsIsBlock) {
                         // Not a block RHS: descend normally
-                        return makeAST(EMatch(pattern, detectAndTransformUnrolledLoops(rhsBlock)));
+                        return makeASTWithMeta(EMatch(pattern, detectAndTransformUnrolledLoops(rhsBlock)), node.metadata, node.pos);
                     }
                     #if debug_loop_transforms
                     // DISABLED: trace('[XRay LoopTransforms] ✅ MATCHED EMatch case with EBlock RHS!');
@@ -587,9 +589,9 @@ class LoopTransforms {
                                     #if debug_loop_transforms trace('[XRay LoopTransforms]   Generated: for $loopVar <- [${filteredValues.length} values], do: $loopVar'); #end
                                     #end
 
-                                    return makeAST(EMatch(PVar(resultVar), comprehension));
-                                }
+                                    return makeASTWithMeta(EMatch(PVar(resultVar), comprehension), node.metadata, node.pos);
                             }
+                        }
                         }
                     }
 
@@ -599,7 +601,7 @@ class LoopTransforms {
 
                     // Not a comprehension, process RHS normally
                     var transformedRhs = detectAndTransformUnrolledLoops(rhsBlock);
-                    return makeAST(EMatch(pattern, transformedRhs));
+                    return makeASTWithMeta(EMatch(pattern, transformedRhs), node.metadata, node.pos);
 
                 case EBlock(stmts):
                     #if debug_transforms
@@ -627,16 +629,16 @@ class LoopTransforms {
                         if (remainingStmts.length > 0) {
                             #if debug_loop_transforms trace('[XRay LoopTransforms] Processing ${remainingStmts.length} remaining statements after nested loop'); #end
 
-                            // Check if remaining statements form an unrolled loop
+                                // Check if remaining statements form an unrolled loop
                             var remainingUnrolled = detectUnrolledLoop(remainingStmts);
                             if (remainingUnrolled != null) {
                                 #if debug_loop_transforms trace('[XRay LoopTransforms] ✅ Remaining statements form an unrolled loop!'); #end
-                                return makeAST(EBlock([nestedLoop.transformed, remainingUnrolled]));
+                                return makeASTWithMeta(EBlock([nestedLoop.transformed, remainingUnrolled]), node.metadata, node.pos);
                             }
 
                             // Otherwise process them individually
                             var processedRemaining = remainingStmts.map(stmt -> detectAndTransformUnrolledLoops(stmt));
-                            return makeAST(EBlock([nestedLoop.transformed].concat(processedRemaining)));
+                            return makeASTWithMeta(EBlock([nestedLoop.transformed].concat(processedRemaining)), node.metadata, node.pos);
                         }
                         return nestedLoop.transformed;
                     }
@@ -652,7 +654,7 @@ class LoopTransforms {
 
                     // Otherwise, recursively transform statements
                     var transformedStmts = stmts.map(stmt -> detectAndTransformUnrolledLoops(stmt));
-                    return makeAST(EBlock(transformedStmts));
+                    return makeASTWithMeta(EBlock(transformedStmts), node.metadata, node.pos);
                     
                 default:
                     // For other node types, manually transform children to avoid infinite recursion

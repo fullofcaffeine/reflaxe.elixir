@@ -70,14 +70,14 @@ class StructUpdateTransform {
                 // Check if this public function has field assignments that need transformation
                 var transformedBody = transformFunctionBody(body, name);
                 if (transformedBody != body) {
-                    return makeAST(EDef(name, args, guards, transformedBody));
+                    return makeASTWithMeta(EDef(name, args, guards, transformedBody), transformedNode.metadata, transformedNode.pos);
                 }
                 
             case EDefp(name, args, guards, body):
                 // Check if this private function has field assignments that need transformation
                 var transformedBody = transformFunctionBody(body, name);
                 if (transformedBody != body) {
-                    return makeAST(EDefp(name, args, guards, transformedBody));
+                    return makeASTWithMeta(EDefp(name, args, guards, transformedBody), transformedNode.metadata, transformedNode.pos);
                 }
                 
             default:
@@ -112,18 +112,22 @@ class StructUpdateTransform {
         switch(body.def) {
             case EBlock(exprs):
                 var filteredExprs = [];
+                var didChange = false;
                 for (expr in exprs) {
                     if (!isProblematicFieldAssignment(expr, functionName)) {
-                        filteredExprs.push(transformFunctionBody(expr, functionName));
+                        var transformed = transformFunctionBody(expr, functionName);
+                        if (transformed != expr) didChange = true;
+                        filteredExprs.push(transformed);
                     } else {
                         #if debug_struct_update_transform
                         // DISABLED: trace('[XRay StructUpdate] Removing problematic assignment in $functionName');
                         #end
+                        didChange = true;
                         // Skip this assignment to avoid the warning
                         // Future improvement: thread struct updates through the function body.
                     }
                 }
-                return makeAST(EBlock(filteredExprs));
+                return didChange ? makeASTWithMeta(EBlock(filteredExprs), body.metadata, body.pos) : body;
                 
             default:
                 // Recursively transform other expressions
