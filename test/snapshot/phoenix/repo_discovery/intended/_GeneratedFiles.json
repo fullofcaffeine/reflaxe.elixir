@@ -1,0 +1,17 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "string_buf.ex",
+  "std.ex",
+  "my_app/repo.ex",
+  "main.ex",
+  "haxe/iterators/array_iterator.ex",
+  "ecto/postgres_extension.ex",
+  "ecto/json_library.ex",
+  "ecto/database_adapter.ex",
+  "my_app/postgrex_types.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}
