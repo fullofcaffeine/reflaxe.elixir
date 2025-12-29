@@ -24,6 +24,11 @@ non‑alpha release line (see `docs/06-guides/PRODUCTION_READINESS.md`).
 - Expand example coverage and E2E tests (todo‑app QA sentinel + Playwright).
 - Tighten policy guardrails (no `Dynamic`/`Any` leaks; no `__elixir__()` in application code).
 
+### 4) Toolchain Compatibility
+- **Haxe 4.3.x** remains the baseline for snapshot comparisons and release CI.
+- **Haxe 5 preview/nightly** runs as a *non‑gating smoke* job: compile + Elixir syntax validation only
+  (`COMPARE_INTENDED=0`) until Haxe 5 TypedExpr deltas stabilize enough for meaningful diffs.
+
 ## Status Legend
 
 - **Stable**: exercised by CI/tests/examples and covered by the documented subset.
