@@ -90,7 +90,7 @@ class Main {
         var d = new Date(2024, 2, 15, 14, 30, 45); // March 15, 2024, 14:30:45
         
         // Test truncate()
-        var truncatedToMin = d.truncate(elixir.TimePrecision.Second);
+        var truncatedToMin = d.truncate(TimePrecision.Second);
         trace('Truncated to seconds: ${d.getSeconds()} -> clean seconds');
         
         // Test format() with strftime patterns
