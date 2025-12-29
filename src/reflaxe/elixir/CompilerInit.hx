@@ -40,6 +40,34 @@ class CompilerInit {
         
         var fastBoot = Context.defined("fast_boot");
 
+        // Target-conditional classpath gating for staged overrides in std/_std.
+        //
+        // IMPORTANT: This must run early.
+        // Some stdlib modules can be loaded before later initialization steps (including RepoDiscovery),
+        // and injecting staged overrides after types are already cached can lead to inconsistent typing.
+        //
+        // Only add Elixir-specific staged stdlib when compiling to Elixir target.
+        // This prevents __elixir__ usage from leaking into macro/other targets.
+        var targetName = Context.definedValue("target.name");
+        // Derive repository root from this file's location: <root>/src/reflaxe/elixir/CompilerInit.hx
+        try {
+            var thisFile = Context.resolvePath("reflaxe/elixir/CompilerInit.hx");
+            var d0 = Path.directory(thisFile);           // .../src/reflaxe/elixir
+            var d1 = Path.directory(d0);                 // .../src/reflaxe
+            var d2 = Path.directory(d1);                 // .../src
+            var libraryRoot = Path.directory(d2);        // .../
+            var standardLibrary = Path.normalize(Path.join([libraryRoot, "std"]));
+            var stagedStd = Path.normalize(Path.join([libraryRoot, "std/_std"]));
+            // Gate injection strictly to Elixir target. Fallback for Haxe 4 builds where
+            // target.name may be unset: rely on presence of -D elixir_output define used by this target.
+            if (targetName == "elixir" || Context.defined("elixir_output")) {
+                Compiler.addClassPath(standardLibrary);
+                Compiler.addClassPath(stagedStd);
+            }
+        } catch (e: haxe.Exception) {
+            // If resolvePath fails in certain contexts, skip gating silently (non-Elixir targets)
+        }
+
         // Treat Haxe's canonical Result as an Elixir-idiomatic enum.
         //
         // WHAT: Mark `haxe.functional.Result` with `@:elixirIdiomatic`.
@@ -92,7 +120,8 @@ class CompilerInit {
         // - Marking them @:keep (and @:used) guarantees they survive DCE and reach our compiler.
         //
         // HOW does compilation proceed?
-        // - Our filterTypes() schedules these externs for normal compilation.
+        // - RepoDiscovery forces typing of annotated modules so they are visible to the compiler,
+        //   and RepoEnumerator/LiveViewPreserver add @:keep where needed so DCE can't drop them.
         // - The repoTransformPass (in AnnotationTransforms) then converts the extern into an
         //   idiomatic Elixir module that calls `use Ecto.Repo, otp_app: :<app>, adapter: ...` and
         //   writes it to `lib/<app_snake>/repo.ex`.
@@ -107,29 +136,6 @@ class CompilerInit {
             try {
                 reflaxe.elixir.macros.RepoDiscovery.run();
             } catch (e: haxe.Exception) {}
-        }
-
-        // Target-conditional classpath gating for staged overrides in std/_std
-        // Only add Elixir-specific staged stdlib when compiling to Elixir target.
-        // This prevents __elixir__ usage from leaking into macro/other targets.
-        var targetName = Context.definedValue("target.name");
-        // Derive repository root from this file's location: <root>/src/reflaxe/elixir/CompilerInit.hx
-        try {
-            var thisFile = Context.resolvePath("reflaxe/elixir/CompilerInit.hx");
-            var d0 = Path.directory(thisFile);           // .../src/reflaxe/elixir
-            var d1 = Path.directory(d0);                 // .../src/reflaxe
-            var d2 = Path.directory(d1);                 // .../src
-            var libraryRoot = Path.directory(d2);        // .../
-            var standardLibrary = Path.normalize(Path.join([libraryRoot, "std"]));
-            var stagedStd = Path.normalize(Path.join([libraryRoot, "std/_std"]));
-            // Gate injection strictly to Elixir target. Fallback for Haxe 4 builds where
-            // target.name may be unset: rely on presence of -D elixir_output define used by this target.
-            if (targetName == "elixir" || Context.defined("elixir_output")) {
-                Compiler.addClassPath(standardLibrary);
-                Compiler.addClassPath(stagedStd);
-            }
-        } catch (e: haxe.Exception) {
-            // If resolvePath fails in certain contexts, skip gating silently (non-Elixir targets)
         }
 
         // Choose preprocessor profile
