@@ -46,14 +46,16 @@ class TemplateContext {
     public function copy(): TemplateContext {
         var next = new StringMap<TemplateValue>();
         for (k in values.keys()) {
-            next.set(k, values.get(k));
+            var value = values.get(k);
+            if (value != null) next.set(k, value);
         }
         return new TemplateContext(next);
     }
 
     public function mergeFrom(other: TemplateContext): Void {
         for (k in other.keys()) {
-            set(k, other.get(k));
+            var value = other.get(k);
+            if (value != null) set(k, value);
         }
     }
 }

@@ -21,6 +21,7 @@ set +m
 #
 # FLAGS
 #   --app PATH       Default: examples/todo-app
+#   --hxml FILE      Default: build-server.hxml (Haxe build file to run)
 #   --port N         Default: 4001 (auto-detect Phoenix-reported port fallback)
 #   --env NAME       Mix environment (dev|test|e2e|prod). Default: dev
 #   --reuse-db       For non-dev envs, do not drop DB; ensure created + migrate only
@@ -99,6 +100,7 @@ set +m
 # Resolve script dir to reference repo-root tools regardless of cwd
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="examples/todo-app"
+HXML_FILE="build-server.hxml"
 PORT=4001
 ENV_NAME="dev"
 REUSE_DB=0
@@ -130,6 +132,7 @@ PROGRESS_INTERVAL=${PROGRESS_INTERVAL:-10}
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --app) APP_DIR="$2"; shift 2 ;;
+    --hxml) HXML_FILE="$2"; shift 2 ;;
     --port) PORT="$2"; shift 2 ;;
     --env) ENV_NAME="$2"; shift 2 ;;
     --reuse-db) REUSE_DB=1; shift 1 ;;
@@ -278,8 +281,9 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   RUN_ID=$(date +%s)
   LOG_MAIN="/tmp/qa-sentinel.${RUN_ID}.log"
   # Reconstruct flags (omit --async to avoid recursion)
-  CHILD_FLAGS=("--app" "$APP_DIR" "--port" "$PORT" "--env" "$ENV_NAME")
+  CHILD_FLAGS=("--app" "$APP_DIR" "--hxml" "$HXML_FILE" "--port" "$PORT" "--env" "$ENV_NAME")
   if [[ "$REUSE_DB" -eq 1 ]]; then CHILD_FLAGS+=("--reuse-db"); fi
+  if [[ -n "$SEEDS_FILE" ]]; then CHILD_FLAGS+=("--seeds" "$SEEDS_FILE"); fi
   if [[ "$KEEP_ALIVE" -eq 1 ]]; then CHILD_FLAGS+=("--keep-alive"); fi
   if [[ "$VERBOSE" -eq 1 ]]; then CHILD_FLAGS+=("--verbose"); fi
   if [[ "$QUIET" -eq 1 ]]; then CHILD_FLAGS+=("--quiet"); fi
@@ -418,7 +422,7 @@ if [[ -n "${QA_SKIP_HAXE:-}" ]]; then
   log "[QA] Step 1: Skipping Haxe build (QA_SKIP_HAXE set)"
   : > /tmp/qa-haxe.log
 else
-  run_step_with_log "Step 1: Haxe build ($HAXE_CMD build-server.hxml)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD build-server.hxml" || exit 1
+  run_step_with_log "Step 1: Haxe build ($HAXE_CMD $HXML_FILE)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD $HXML_FILE" || exit 1
 fi
 
 # Remove unused std artifacts that are not needed for the app and may generate invalid code

@@ -1,48 +1,15 @@
-# Reflaxe.Elixir compilation parameters
+# Reflaxe.Elixir (haxelib/lix extra params)
+#
+# This file is consumed automatically when a project uses:
+#   -lib reflaxe.elixir
+#
+# IMPORTANT: Keep this file *cwd-agnostic*.
+# - Do not add relative classpaths like `-cp src` or `-cp std` here: those would
+#   be resolved relative to the *consumer project*, not this library.
+#
+# Bootstraps the target by registering the compiler and injecting any
+# target-conditional classpaths (e.g. std overrides) in a macro-safe way.
+--macro reflaxe.elixir.CompilerInit.Start()
 
-# Core class paths
--cp src
--cp std
-
-# Library dependencies
--lib reflaxe
--lib tink_macro
--lib tink_parse
-
-# Reflaxe target configuration
--D reflaxe-target=elixir
--D reflaxe-output-dir=lib
-
-# Elixir-specific defines
--D elixir-phoenix-support
--D elixir-ecto-support
--D elixir-hxx-macros
-
-# Development flags
--D reflaxe-trace-calls
--D reflaxe-debug-output
-
-# Target code injection support
--D reflaxe-target-code-injection=elixir
-
-# Retain untyped metadata through typing phase
-# This allows extern inline functions to use untyped __elixir__()
--D retain-untyped-meta
-
-# Pipeline Selection (AST is now DEFAULT)
-# To use legacy string-based pipeline (for comparison only):
-# -D use_legacy_string_pipeline
-
-# Debug flags for AST pipeline
-# -D debug_ast_pipeline
-# -D debug_ast_transformer
-
-# Macro context
--D macro-times
-
-# Import global functions for Elixir target
---macro include('ElixirGlobal')
-
-# Prevent loop unrolling to preserve expressions in generated code
-# Set to 0 to disable all loop unrolling (preserve array comprehensions)
+# Preserve functional shapes for Elixir output
 -D loop_unroll_max_cost=0

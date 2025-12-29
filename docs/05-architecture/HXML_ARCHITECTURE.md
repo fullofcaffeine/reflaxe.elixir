@@ -443,7 +443,7 @@ Verification:
    - No hot reload setup
 
 4. **Unused/Orphaned Files**
-   - `extraParams.hxml` is used in a few workflows (e.g., vendor packaging); keep it documented or move it under an explicit tooling/ directory
+   - `extraParams.hxml` is consumed by haxelib/lix when a project uses `-lib reflaxe.elixir`; it must remain at the repo root and stay cwd-agnostic
    - Multiple `Test*.hxml` files with unclear purpose
    - Should audit and clean up
 

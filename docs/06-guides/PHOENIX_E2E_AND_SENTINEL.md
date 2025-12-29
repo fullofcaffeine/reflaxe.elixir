@@ -97,6 +97,7 @@ The todo-app uses `--env` to pick a Mix environment:
 
 - `--reuse-db` (non-dev): skips DB drop; ensures create + migrate only
 - `--seeds PATH`: runs seeds after migrations (example: `priv/repo/seeds.e2e.exs`)
+- `--hxml FILE`: override the Haxe build file (defaults to `build-server.hxml`)
 - `--deadline SECS`: hard cap watchdog for async runs (recommended even outside CI)
 
 See `scripts/qa-sentinel.sh` for the full flag list.

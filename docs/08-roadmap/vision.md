@@ -10,7 +10,7 @@ Write once, deploy everywhere, with built-in AI that understands your entire sta
 
 > Note on status
 >
-> Reflaxe.Elixir is **alpha software**: the BEAM/Phoenix foundation is feature‑complete enough to build real projects, but the toolchain is not yet production‑hardened. This document describes long‑term direction, not a stability guarantee.
+> Reflaxe.Elixir `v1.1.x` is **non‑alpha** for the documented subset. This document describes long‑term direction (including experimental and planned work) and is not a stability guarantee for future features.
 
 ## The Three Pillars
 

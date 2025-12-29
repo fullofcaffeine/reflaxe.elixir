@@ -53,6 +53,7 @@ Related docs:
 - [ ] “Getting started” path works end‑to‑end (install → compile → run a Phoenix app) using the documented guides:
   - [Phoenix (New App)](PHOENIX_NEW_APP.md)
   - [Phoenix (Existing App)](PHOENIX_GRADUAL_ADOPTION.md)
+- [ ] Upgrade path is validated on a fresh generator-created Phoenix app (see [Dogfooding](DOGFOODING.md)).
 - [ ] CI covers both a modern toolchain and a minimum supported toolchain (see [Support Matrix](SUPPORT_MATRIX.md)).
 - [ ] Experimental tooling (e.g., source mapping) is clearly labeled and does not affect the default UX.
 - [ ] Performance budgets are documented and met on the reference apps (see [Performance Guide](PERFORMANCE_GUIDE.md)).

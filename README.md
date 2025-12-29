@@ -101,6 +101,7 @@ For the complete roadmap including AI tooling, universal deployment, and multi-p
 
 ```bash
 # Install latest version from GitHub
+npx lix scope create
 npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # Or install a specific version/tag

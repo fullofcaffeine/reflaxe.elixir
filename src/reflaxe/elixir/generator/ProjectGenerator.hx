@@ -335,6 +335,12 @@ class ProjectGenerator {
 			Sys.println("  Installing Haxe dependencies...");
 			Sys.command("npm", ["install"]);
 
+			// Ensure the project has a local lix scope so `lix install` doesn't fall back to global scope.
+			if (!FileSystem.exists(".haxelib")) {
+				Sys.println("  Creating lix scope...");
+				Sys.command("npx", ["lix", "scope", "create"]);
+			}
+
 			// Install Reflaxe.Elixir as a Haxe library in this project (via lix)
 			var haxeLibVersion = "v" + readLibraryVersion();
 			Sys.println('  Installing Haxe library: reflaxe.elixir#${haxeLibVersion} ...');
