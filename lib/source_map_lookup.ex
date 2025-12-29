@@ -23,6 +23,7 @@ defmodule SourceMapLookup do
   """
   
   require Logger
+  import Bitwise
   
   @doc """
   Parses a Source Map v3 file and returns a structured source mapping.
@@ -171,17 +172,22 @@ defmodule SourceMapLookup do
   defp process_source_map(source_map_data, source_map_path) do
     case validate_source_map_format(source_map_data) do
       :ok ->
-        mappings = decode_vlq_mappings(source_map_data["mappings"], source_map_data["sources"])
-        
-        processed_map = %{
-          version: source_map_data["version"],
-          file: source_map_data["file"],
-          sources: source_map_data["sources"],
-          mappings: mappings,
-          source_map_path: source_map_path
-        }
-        
-        {:ok, processed_map}
+        case decode_vlq_mappings(source_map_data["mappings"], source_map_data["sources"]) do
+          {:ok, {mappings, mappings_by_line}} ->
+            processed_map = %{
+              version: source_map_data["version"],
+              file: source_map_data["file"],
+              sources: source_map_data["sources"],
+              mappings: mappings,
+              mappings_by_line: mappings_by_line,
+              source_map_path: source_map_path
+            }
+            
+            {:ok, processed_map}
+            
+          {:error, reason} ->
+            {:error, reason}
+        end
         
       {:error, reason} ->
         {:error, reason}
@@ -208,86 +214,158 @@ defmodule SourceMapLookup do
   end
   
   defp decode_vlq_mappings(mappings_string, sources) do
-    # Decode VLQ mappings according to Source Map v3 specification
-    # This is a simplified implementation - in production, you might want to use
-    # a dedicated VLQ decoding library for better performance
+    lines = String.split(mappings_string, ";", trim: false)
     
-    lines = String.split(mappings_string, ";")
-    
-    # State tracking for delta decoding
+    # Source Map v3 delta state across the whole file (generated_column resets per line).
     state = %{
-      generated_column: 0,
       source_index: 0,
       source_line: 0,
       source_column: 0
     }
     
-    {decoded_lines, _final_state} = Enum.map_reduce(lines, state, fn line, acc_state ->
-      decode_vlq_line(line, sources, acc_state)
-    end)
-    
-    # Convert to indexed structure for fast lookups
-    decoded_lines
-    |> Enum.with_index()
-    |> Enum.flat_map(fn {line_mappings, line_index} ->
-      Enum.map(line_mappings, fn mapping ->
-        Map.put(mapping, :generated_line, line_index)
-      end)
-    end)
-  end
-  
-  defp decode_vlq_line(line, sources, state) do
-    if String.trim(line) == "" do
-      # Empty line
-      {[], state}
-    else
-      # Reset generated column for new line
-      line_state = %{state | generated_column: 0}
-      
-      segments = String.split(line, ",")
-      {decoded_segments, final_state} = Enum.map_reduce(segments, line_state, fn segment, acc_state ->
-        decode_vlq_segment(segment, sources, acc_state)
+    try do
+      {decoded_lines, final_state} = Enum.map_reduce(lines, state, fn line, acc_state ->
+        decode_vlq_line(line, sources, acc_state)
       end)
       
-      {decoded_segments, final_state}
+      _ = final_state
+      
+      # Flatten while keeping a per-line index for fast lookups.
+      flattened =
+        decoded_lines
+        |> Enum.with_index()
+        |> Enum.flat_map(fn {line_mappings, line_index} ->
+          Enum.map(line_mappings, fn mapping ->
+            Map.put(mapping, :generated_line, line_index)
+          end)
+        end)
+      
+      {:ok, {flattened, decoded_lines}}
+    rescue
+      e ->
+        {:error, "Failed to decode VLQ mappings: #{Exception.message(e)}"}
     end
   end
   
-  defp decode_vlq_segment(_segment, sources, state) do
-    # Simplified VLQ decoding - decode the deltas and update state
-    # In a full implementation, you would properly decode VLQ Base64 values
+  defp decode_vlq_line(line, sources, state) do
+    # Reset generated column for each new generated line (Source Map v3 spec).
+    line_state = Map.put(state, :generated_column, 0)
     
-    # For now, create a mock mapping to demonstrate the structure
-    # TODO: Implement proper VLQ Base64 decoding
+    {decoded_segments, final_state} =
+      if String.trim(line) == "" do
+        {[], line_state}
+      else
+        segments = String.split(line, ",", trim: false)
+        
+        Enum.map_reduce(segments, line_state, fn segment, acc_state ->
+          decode_vlq_segment(segment, sources, acc_state)
+        end)
+      end
     
-    mock_mapping = %{
-      generated_column: state.generated_column,
-      source_file: Enum.at(sources, state.source_index, "unknown.hx"),
-      source_line: state.source_line,
-      source_column: state.source_column
+    # Drop generated_column from the persisted cross-line state.
+    next_state = %{
+      source_index: final_state.source_index,
+      source_line: final_state.source_line,
+      source_column: final_state.source_column
     }
     
-    # Update state with mock deltas (in real implementation, decode from segment)
-    new_state = %{
-      generated_column: state.generated_column + 5,
-      source_index: state.source_index,
-      source_line: state.source_line,
-      source_column: state.source_column + 3
-    }
-    
-    {mock_mapping, new_state}
+    {Enum.reject(decoded_segments, &is_nil/1), next_state}
   end
   
+  defp decode_vlq_segment("", _sources, state), do: {nil, state}
+  
+  defp decode_vlq_segment(segment, sources, state) do
+    values = decode_vlq_values(segment)
+    
+    case values do
+      [generated_column_delta, source_index_delta, source_line_delta, source_column_delta | _rest] ->
+        generated_column = state.generated_column + generated_column_delta
+        source_index = state.source_index + source_index_delta
+        source_line = state.source_line + source_line_delta
+        source_column = state.source_column + source_column_delta
+        
+        mapping = %{
+          generated_column: generated_column,
+          source_file: Enum.at(sources, source_index, "unknown.hx"),
+          source_line: source_line,
+          source_column: source_column
+        }
+        
+        new_state = %{
+          generated_column: generated_column,
+          source_index: source_index,
+          source_line: source_line,
+          source_column: source_column
+        }
+        
+        {mapping, new_state}
+        
+      [generated_column_delta] ->
+        # Segment without source info: update generated column only.
+        generated_column = state.generated_column + generated_column_delta
+        {nil, %{state | generated_column: generated_column}}
+        
+      _ ->
+        raise "Invalid VLQ segment (expected at least 1 value): #{inspect(segment)}"
+    end
+  end
+  
+  defp decode_vlq_values(segment) when is_binary(segment) do
+    segment
+    |> String.to_charlist()
+    |> do_decode_vlq([], 0, 0)
+    |> Enum.reverse()
+  end
+  
+  # Base64 VLQ decoding (Source Map v3)
+  defp do_decode_vlq([], values, 0, 0), do: values
+  defp do_decode_vlq([], _values, _shift, _vlq), do: raise("Incomplete VLQ value at end of segment")
+  
+  defp do_decode_vlq([char | rest], values, shift, vlq) do
+    digit = decode_base64_digit(char)
+    continuation? = (digit &&& 32) != 0
+    digit_value = digit &&& 31
+    
+    vlq = vlq + (digit_value <<< shift)
+    
+    if continuation? do
+      do_decode_vlq(rest, values, shift + 5, vlq)
+    else
+      value = from_vlq_signed(vlq)
+      do_decode_vlq(rest, [value | values], 0, 0)
+    end
+  end
+  
+  defp from_vlq_signed(vlq) do
+    sign = vlq &&& 1
+    value = vlq >>> 1
+    if sign == 1, do: -value, else: value
+  end
+  
+  defp decode_base64_digit(char) when char in ?A..?Z, do: char - ?A
+  defp decode_base64_digit(char) when char in ?a..?z, do: char - ?a + 26
+  defp decode_base64_digit(char) when char in ?0..?9, do: char - ?0 + 52
+  defp decode_base64_digit(?+), do: 62
+  defp decode_base64_digit(?/), do: 63
+  defp decode_base64_digit(other), do: raise("Invalid base64 digit in VLQ segment: #{inspect(<<other>>)}")
+  
   defp find_mapping_for_position(source_map, line_index, column) do
-    # Find the closest mapping for the given position
-    case Enum.find(source_map.mappings, fn mapping ->
-      mapping.generated_line == line_index and mapping.generated_column <= column
-    end) do
+    # Prefer the indexed per-line mappings if present (fast path).
+    mappings_by_line = Map.get(source_map, :mappings_by_line, [])
+    line_mappings = Enum.at(mappings_by_line, line_index, [])
+    
+    mapping =
+      line_mappings
+      |> Enum.reduce(nil, fn m, acc ->
+        if m.generated_column <= column, do: m, else: acc
+      end)
+    
+    case mapping do
       nil ->
         {:error, "No mapping found for position #{line_index + 1}:#{column}"}
         
-      mapping ->
-        {:ok, mapping}
+      m ->
+        {:ok, m}
     end
   end
   

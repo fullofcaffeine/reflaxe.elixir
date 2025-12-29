@@ -37,7 +37,7 @@ If you’re evaluating the project, also read:
 - **Mix integration**: `mix compile` support via `Mix.Tasks.Compile.Haxe` and watchers for dev.
 - **Project scaffold**: `mix haxe.gen.project` generates `src_haxe/<app>_hx/**`, `build.hxml`, and Mix config for gradual adoption.
 - **Haxe compile server**: managed `haxe --wait` lifecycle (opt‑out via `HAXE_NO_SERVER=1`).
-- **Source mapping (experimental)**: design and scaffolding exists, but `.ex.map` emission/lookup is not yet fully wired end‑to‑end (see `docs/04-api-reference/SOURCE_MAPPING.md`).
+- **Source mapping (experimental)**: `.ex.map` emission and `mix haxe.source_map` lookups are implemented (currently coarse/line‑level; see `docs/04-api-reference/SOURCE_MAPPING.md`).
 - **Guardrails**: CI checks for `Dynamic`/`Any`/`untyped` and `__elixir__()` leaks in application code.
 
 ### JavaScript (client)

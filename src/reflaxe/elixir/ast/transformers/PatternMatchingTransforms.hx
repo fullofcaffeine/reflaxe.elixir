@@ -2,6 +2,8 @@ package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.makeAST;
+import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 
 /**
@@ -43,6 +45,9 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
  */
 @:nullSafety(Off)
 class PatternMatchingTransforms {
+    static inline function safeMeta(ast: ElixirAST): ElixirMetadata {
+        return ast != null && ast.metadata != null ? ast.metadata : {};
+    }
     
     /**
      * Main pattern matching transformation pass
@@ -60,24 +65,24 @@ class PatternMatchingTransforms {
                 
             case EBlock(exprs):
                 var transformed = exprs != null ? exprs.map(e -> patternMatchingPass(e)) : [];
-                makeAST(EBlock(transformed));
+                makeASTWithMeta(EBlock(transformed), safeMeta(ast), ast.pos);
                 
             case EModule(name, attributes, body):
                 var transformedBody = body.map(b -> patternMatchingPass(b));
-                makeAST(EModule(name, attributes, transformedBody));
+                makeASTWithMeta(EModule(name, attributes, transformedBody), safeMeta(ast), ast.pos);
                 
             case EDef(name, args, guard, body):
                 var transformedBody = body != null ? patternMatchingPass(body) : null;
-                makeAST(EDef(name, args, guard, transformedBody));
+                makeASTWithMeta(EDef(name, args, guard, transformedBody), safeMeta(ast), ast.pos);
                 
             case EDefp(name, args, guard, body):
                 var transformedBody = body != null ? patternMatchingPass(body) : null;
-                makeAST(EDefp(name, args, guard, transformedBody));
+                makeASTWithMeta(EDefp(name, args, guard, transformedBody), safeMeta(ast), ast.pos);
                 
             case EIf(cond, thenBranch, elseBranch):
                 var transformedThen = thenBranch != null ? patternMatchingPass(thenBranch) : null;
                 var transformedElse = elseBranch != null ? patternMatchingPass(elseBranch) : null;
-                makeAST(EIf(cond, transformedThen, transformedElse));
+                makeASTWithMeta(EIf(cond, transformedThen, transformedElse), safeMeta(ast), ast.pos);
                 
             case EFn(clauses):
                 var transformedClauses = (clauses != null ? clauses : []).map(clause -> {
@@ -85,7 +90,7 @@ class PatternMatchingTransforms {
                     guard: clause.guard,
                     body: clause.body != null ? patternMatchingPass(clause.body) : null
                 });
-                makeAST(EFn(transformedClauses));
+                makeASTWithMeta(EFn(transformedClauses), safeMeta(ast), ast.pos);
                 
             default:
                 // For other node types, return as-is
@@ -138,12 +143,7 @@ class PatternMatchingTransforms {
         }
         
         // Create the optimized case expression
-        var optimizedCase = makeAST(ECase(target, optimizedClauses));
-        
-        // Preserve original metadata if it exists
-        if (ast.metadata != null) {
-            optimizedCase.metadata = ast.metadata;
-        }
+        var optimizedCase = makeASTWithMeta(ECase(target, optimizedClauses), safeMeta(ast), ast.pos);
         
         #if debug_pattern_matching
         // DISABLED: trace("[PatternMatchingTransforms] Generated optimized case expression with ${optimizedClauses.length} clauses");
@@ -228,7 +228,7 @@ class PatternMatchingTransforms {
         return switch(ast.def) {
             case ECase(target, clauses):
                 var optimizedClauses = clauses.map(clause -> optimizeGuardClause(clause));
-                makeAST(ECase(target, optimizedClauses));
+                makeASTWithMeta(ECase(target, optimizedClauses), safeMeta(ast), ast.pos);
                 
             default:
                 // Recursively optimize children - handle each case individually
@@ -291,7 +291,7 @@ class PatternMatchingTransforms {
         return switch(ast.def) {
             case ECase(target, clauses):
                 var boundClauses = clauses.map(clause -> bindPatternVariables(clause));
-                makeAST(ECase(target, boundClauses));
+                makeASTWithMeta(ECase(target, boundClauses), safeMeta(ast), ast.pos);
                 
             default:
                 // Recursively bind in children
@@ -380,15 +380,8 @@ class PatternMatchingTransforms {
                 // For other cases, return unchanged
                 ast.def;
         };
-        
-        var result = makeAST(newDef);
-        if (ast.metadata != null) {
-            result.metadata = ast.metadata;
-        }
-        if (ast.pos != null) {
-            result.pos = ast.pos;
-        }
-        return result;
+
+        return makeASTWithMeta(newDef, safeMeta(ast), ast.pos);
     }
 }
 
