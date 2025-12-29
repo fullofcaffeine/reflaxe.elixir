@@ -282,31 +282,21 @@ class ElixirCompiler extends GenericCompiler<
     }
 
     /**
-     * Macro-phase type filter: ensure @:repo externs are scheduled for normal compilation.
+     * Macro-phase type filter for special output modes.
      *
      * WHAT
-     * - Override BaseCompiler.filterTypes to guarantee extern classes annotated with @:repo
-     *   (and related @:postgrexTypes/@:dbTypes) are included in the module list regardless of
-     *   usage-driven reachability.
+     * - In `-D ecto_migrations_exs` mode, restrict emission to classes annotated with `@:migration`.
      *
      * WHY
-     * - Repo modules must exist at runtime even if not directly referenced by user code.
-     *   Emitting them via extra-file helpers creates drift; scheduling for normal compilation
-     *   preserves the AST pipeline (repoTransformPass) and deterministic file paths.
+     * - Ecto loads every `.exs` in `priv/repo/migrations`. If the compiler emits non-migration
+     *   helper modules into that directory, `mix ecto.migrate` can break at runtime.
      *
      * HOW
-     * - Start from the Haxe-provided moduleTypes, append any additional modules discovered
-     *   via Context.getTypes() whose classes carry @:repo/@:postgrexTypes/@:dbTypes metadata
-     *   but were omitted (e.g., due to DCE). Deduplicate by ModuleType.getPath().
+     * - Filter the already-typed module list to keep only `@:migration` classes.
      */
     public override function filterTypes(moduleTypes: Array<haxe.macro.Type.ModuleType>): Array<haxe.macro.Type.ModuleType> {
         #if eval
         var result = moduleTypes != null ? moduleTypes.copy() : [];
-        var seen = new Map<String, Bool>();
-        for (mt in result) {
-            var p = mt.getPath();
-            if (p != null) seen.set(p, true);
-        }
 
         // Migration-only compilation mode:
         // When emitting `.exs` migrations, we must avoid writing non-migration helper modules
@@ -325,31 +315,9 @@ class ElixirCompiler extends GenericCompiler<
             }
             return migrations;
         }
-
-        // Debug: detect any @:repo classes already present
-		            try {
-            for (mt in result) {
-                switch (mt) {
-                    case TClassDecl(clsRef):
-                        var cls = clsRef.get();
-                        if (cls.meta != null && cls.meta.has(":repo")) {
-                            #if debug_repo
-                            // DISABLED: Sys.println('[RepoEnumerator/filterTypes] found @:repo class in moduleTypes: ' + cls.module + '.' + cls.name);
-                            #end
-                        }
-                    case _:
-                }
-            }
-        } catch (_) {}
-
-        // Append modules discovered in macro phase without force-typing to avoid
-        // re-entrancy issues when LiveView/Router modules are still being processed.
-        // Modules already present in `result` will be emitted normally; additional
-        // discovered modules are expected to be referenced explicitly in build hxml.
-        
         return result;
         #else
-        return moduleTypes;
+        return moduleTypes != null ? moduleTypes : [];
         #end
     }
 

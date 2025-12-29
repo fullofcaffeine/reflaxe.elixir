@@ -4,86 +4,115 @@ package reflaxe.elixir.macros;
 
 import haxe.macro.Context;
 import haxe.io.Path;
+import haxe.io.Eof;
 using StringTools;
 
 /**
  * RepoDiscovery
  *
  * WHAT
- * - Macro-phase discovery of Haxe extern classes annotated with @:repo and @:presence
- *   and force-typing them so they participate in normal compilation and transformation
- *   (repoTransformPass / presenceTransformPass).
+ * - Macro-phase discovery of Haxe modules annotated with Phoenix/Ecto metadata (e.g. @:repo,
+ *   @:presence, @:router, @:endpoint, @:phoenixWebModule) and force-typing them so they are
+ *   available to the normal AST pipeline (Builder → Transformer → Printer).
  *
  * WHY
- * - Unreferenced externs may not be typed by Haxe, causing @:repo modules (e.g., <App>.Repo)
- *   or @:presence modules (e.g., <App>Web.Presence) to be omitted from moduleTypes and thus
- *   never emitted. This breaks runtime (no Repo/Presence module).
- *   Discovery + force-typing fixes this deterministically without iterator/file hacks.
+ * - Some Phoenix modules are referenced only at runtime (e.g., via supervision trees or `use AppWeb, ...`)
+ *   and therefore appear “unused” to Haxe. If they are never typed, later passes cannot transform them
+ *   and they will not be emitted, breaking runtime (missing Repo/Endpoint/Presence/etc).
+ * - Forcing typing makes the behavior deterministic without requiring users to list every module in hxml.
  *
  * HOW
- * - At CompilerInit.Start(), call RepoDiscovery.run(). It discovers @:repo/@:presence externs,
- *   derives the module path (package + class), and calls Context.getType(mod) to force typing.
- * - Discovered module names are recorded for the compiler to append in filterTypes.
+ * - At CompilerInit.Start(), call RepoDiscovery.run().
+ * - RepoDiscovery scans *project* classpaths for `.hx` files containing the relevant metadata,
+ *   parses the Haxe type path (package + class), and calls `Context.getType(typePath)` to force typing.
+ * - DCE preservation happens elsewhere:
+ *   - RepoEnumerator marks `@:repo` modules as `@:keep`.
+ *   - LiveViewPreserver adds `@:keep` to common Phoenix modules (endpoint/router/presence/components).
+ *
+ * EXAMPLES
+ * Haxe (unreferenced at compile time):
+ *   @:native("MyApp.Repo")
+ *   @:repo({ adapter: Postgres, json: Jason, extensions: [], poolSize: 10 })
+ *   extern class Repo {}
+ *
+ * Outcome:
+ * - RepoDiscovery forces typing of `myapp.Repo` so the repoTransformPass can emit `MyApp.Repo`.
  */
 class RepoDiscovery {
     static var discovered: Array<String> = [];
+    static var hasRun: Bool = false;
+
+    static final metaTokens: Array<String> = [
+        "@:repo",
+        "@:presence",
+        "@:endpoint",
+        "@:router",
+        "@:phoenixWeb",
+        "@:phoenixWebModule",
+        "@:component",
+        "@:controller",
+        "@:channel",
+        "@:socket",
+        "@:liveview",
+        "@:application"
+    ];
 
     public static function run(): Void {
-        // Prevent duplicate runs
-        if (discovered.length > 0) return;
-        // Preferred: derive app modules and force-type <App>.Repo and <App>Web.Presence directly
-        try {
-            var app: Null<String> = null;
-            try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (_) {}
-            if (app != null && app.length > 0) {
-                var repoMod = app + ".Repo";
-                if (discovered.indexOf(repoMod) == -1) discovered.push(repoMod);
+        if (hasRun) return;
+        hasRun = true;
 
-                var presenceMod = app + "Web.Presence";
-                if (discovered.indexOf(presenceMod) == -1) discovered.push(presenceMod);
+        var classPaths: Array<String> = [];
+        try classPaths = Context.getClassPath() catch (_) return;
 
-                var telemetryMod = app + "Web.Telemetry";
-                if (discovered.indexOf(telemetryMod) == -1) discovered.push(telemetryMod);
-
-                var endpointMod = app + "Web.Endpoint";
-                if (discovered.indexOf(endpointMod) == -1) discovered.push(endpointMod);
-
-                var routerMod = app + "Web.Router";
-                if (discovered.indexOf(routerMod) == -1) discovered.push(routerMod);
-
-                var webMod = app + "Web";
-                if (discovered.indexOf(webMod) == -1) discovered.push(webMod);
-            }
-        } catch (_) {}
-        // Fallback: restrict discovery to active compilation classpaths to avoid
-        // scanning the entire repository (which is expensive and unnecessary).
-        // This is target- and shape-based, not app-coupled.
-        try {
-            var cps = Context.getClassPath();
-            for (cp in cps) {
-                if (cp == null) continue;
-                var p = cp.toLowerCase();
-                if (!isProjectPath(p)) continue;
-                // Focus on app source roots; most projects mount their code under src_haxe*
-                if (p.indexOf("src_haxe") == -1) continue;
-                try if (sys.FileSystem.isDirectory(cp)) walkDir(cp) else null catch (_) {}
-            }
-        } catch (_) {}
+        for (classPath in classPaths) {
+            if (!shouldScanClassPath(classPath)) continue;
+            try walkDir(classPath) catch (_) {}
+        }
     }
 
     public static function getDiscovered(): Array<String> {
         return discovered;
     }
 
-    static function isProjectPath(p: String): Bool {
-        if (p == null) return false;
-        var lp = p.toLowerCase();
-        // Exclude staged std, vendor, node_modules, haxe libs caches
-        if (lp.indexOf('/std') != -1) return false;
-        if (lp.indexOf('/vendor') != -1) return false;
-        if (lp.indexOf('node_modules') != -1) return false;
-        if (lp.indexOf('/haxe_libraries') != -1) return false;
+    static function shouldScanClassPath(classPath: String): Bool {
+        if (classPath == null || classPath.length == 0) return false;
+
+        try {
+            if (!sys.FileSystem.isDirectory(classPath)) return false;
+        } catch (_) {
+            return false;
+        }
+
+        var normalized = normalizePath(classPath);
+        // Skip common dependency/cache roots
+        if (normalized.indexOf("/node_modules") != -1) return false;
+        if (normalized.indexOf("/haxe_libraries") != -1) return false;
+        if (normalized.indexOf("/.haxelib") != -1) return false;
+
+        // Skip this compiler's own source roots (prevents scanning thousands of library files).
+        // This is library-specific (safe), not app-specific.
+        if (looksLikeCompilerSourceRoot(classPath)) return false;
+        if (looksLikeCompilerStdRoot(classPath)) return false;
+
         return true;
+    }
+
+    static function normalizePath(path: String): String {
+        if (path == null) return "";
+        return path.split("\\").join("/").toLowerCase();
+    }
+
+    static function looksLikeCompilerSourceRoot(classPath: String): Bool {
+        return sys.FileSystem.exists(Path.join([classPath, "reflaxe", "elixir", "CompilerInit.hx"]));
+    }
+
+    static function looksLikeCompilerStdRoot(classPath: String): Bool {
+        return sys.FileSystem.exists(Path.join([classPath, "elixir", "otp", "TypeSafeChildSpec.hx"]));
+    }
+
+    static function shouldSkipDirName(name: String): Bool {
+        if (name == null) return true;
+        return name == ".git" || name == "node_modules" || name == "_build" || name == "deps" || name == ".haxelib" || name == "haxe_libraries";
     }
 
     static function walkDir(dir: String): Void {
@@ -91,6 +120,7 @@ class RepoDiscovery {
             for (entry in sys.FileSystem.readDirectory(dir)) {
                 var path = Path.join([dir, entry]);
                 if (sys.FileSystem.isDirectory(path)) {
+                    if (shouldSkipDirName(entry)) continue;
                     walkDir(path);
                 } else if (StringTools.endsWith(entry, '.hx')) {
                     processHxFile(path);
@@ -99,86 +129,75 @@ class RepoDiscovery {
         } catch (_) {}
     }
 
-    static function findDirsNamed(root:String, name:String, maxDepth:Int): Array<String> {
-        var out: Array<String> = [];
-        function loop(dir:String, depth:Int): Void {
-            if (depth < 0) return;
-            var entries: Array<String> = [];
-            try entries = sys.FileSystem.readDirectory(dir) catch (_) {}
-            for (e in entries) {
-                var p = Path.join([dir, e]);
-                if (!sys.FileSystem.exists(p)) continue;
-                if (sys.FileSystem.isDirectory(p)) {
-                    if (e == name) out.push(p);
-                    loop(p, depth - 1);
+    static function processHxFile(filePath: String): Void {
+        var file: Null<sys.io.FileInput> = null;
+        try {
+            file = sys.io.File.read(filePath, false);
+
+            var inBlock = false;
+            var hasRelevantMeta = false;
+            var pkg = "";
+            var cls: Null<String> = null;
+            var classRe = ~/^(?:extern\s+)?class\s+([A-Za-z0-9_]+)/;
+
+            while (true) {
+                var line = file.readLine();
+                var t = StringTools.trim(line);
+
+                if (t.length == 0) continue;
+
+                if (inBlock) {
+                    if (t.indexOf("*/") != -1) inBlock = false;
+                    continue;
                 }
+                if (t.startsWith("/*")) {
+                    if (t.indexOf("*/") == -1) inBlock = true;
+                    continue;
+                }
+                if (t.startsWith("//")) continue;
+
+                if (pkg.length == 0 && t.startsWith("package ")) {
+                    var rest = t.substr("package ".length);
+                    var semi = rest.indexOf(";");
+                    if (semi != -1) rest = rest.substr(0, semi);
+                    pkg = StringTools.trim(rest);
+                }
+
+                if (!hasRelevantMeta && hasRelevantMetadataToken(t)) {
+                    hasRelevantMeta = true;
+                }
+
+                if (cls == null && classRe.match(t)) {
+                    cls = classRe.matched(1);
+                }
+
+                if (hasRelevantMeta && cls != null) break;
             }
-        }
-        loop(root, maxDepth);
-        return out;
+
+            if (!hasRelevantMeta || cls == null) return;
+
+            var mod = (pkg.length > 0) ? (pkg + "." + cls) : cls;
+            forceType(mod);
+        } catch (e: Eof) {
+            // EOF
+        } catch (_) {}
+        try if (file != null) file.close() catch (_) {}
     }
 
-    static function processHxFile(filePath: String): Void {
-        try {
-            var content = sys.io.File.getContent(filePath);
-            if (content == null) return;
+    static function hasRelevantMetadataToken(line: String): Bool {
+        for (token in metaTokens) {
+            if (line.indexOf(token) != -1) return true;
+        }
+        // Phoenix generator convention: Telemetry module is often referenced only via strings.
+        if (line.indexOf("@:native(") != -1 && line.indexOf("Web.Telemetry") != -1) return true;
+        return false;
+    }
 
-            // Fast reject if no token
-            if (content.indexOf('@:repo(') == -1 && content.indexOf('@:presence') == -1 && content.indexOf('@:endpoint') == -1 && content.indexOf('@:router') == -1 && content.indexOf('@:phoenixWeb') == -1 && content.indexOf('@:phoenixWebModule') == -1 && (content.indexOf('@:native(') == -1 || (content.indexOf('Web.Telemetry') == -1 && content.indexOf('Web.Endpoint') == -1 && content.indexOf('Web.Router') == -1 && content.indexOf('Web\")') == -1))) return;
-
-            // Filter comments (line and block) in a lightweight way
-            var hasRepo = false;
-            var hasPresence = false;
-            var hasEndpoint = false;
-            var hasRouter = false;
-            var hasPhoenixWeb = false;
-            var hasPhoenixWebModule = false;
-            var hasTelemetryNative = false;
-            var inBlock = false;
-            var pkg = '';
-            var cls: Null<String> = null;
-            for (line in content.split('\n')) {
-                var raw = line;
-                var t = StringTools.trim(raw);
-                // block comment handling
-                if (inBlock) {
-                    if (t.indexOf('*/') != -1) inBlock = false;
-                    continue;
-                }
-                if (t.startsWith('/*')) {
-                    if (t.indexOf('*/') == -1) inBlock = true;
-                    continue;
-                }
-                if (t.startsWith('//')) continue;
-
-                if (!hasRepo && t.indexOf('@:repo(') != -1) hasRepo = true;
-                if (!hasPresence && t.indexOf('@:presence') != -1) hasPresence = true;
-                if (!hasEndpoint && t.indexOf('@:endpoint') != -1) hasEndpoint = true;
-                if (!hasRouter && t.indexOf('@:router') != -1) hasRouter = true;
-                if (!hasPhoenixWeb && t.indexOf('@:phoenixWeb') != -1) hasPhoenixWeb = true;
-                if (!hasPhoenixWebModule && t.indexOf('@:phoenixWebModule') != -1) hasPhoenixWebModule = true;
-                if (!hasTelemetryNative && t.indexOf('@:native(') != -1 && (t.indexOf('Web.Telemetry') != -1 || t.indexOf('Web.Endpoint') != -1 || t.indexOf('Web.Router') != -1 || t.indexOf('Web\")') != -1)) hasTelemetryNative = true;
-
-                if (pkg == '' && t.startsWith('package ')) {
-                    var semi = t.indexOf(';');
-                    pkg = semi > 0 ? t.substr(8, semi - 8) : t.substr(8);
-                    pkg = StringTools.trim(pkg);
-                }
-                if (cls == null) {
-                    // Match class declaration
-                    var re = ~/^(?:extern\s+)?class\s+([A-Za-z0-9_]+)/;
-                    if (re.match(t)) {
-                        cls = re.matched(1);
-                    }
-                }
-            }
-
-            if (!(hasRepo || hasPresence || hasEndpoint || hasRouter || hasPhoenixWeb || hasPhoenixWebModule || hasTelemetryNative) || cls == null) return;
-            var mod = (pkg != null && pkg.length > 0) ? (pkg + '.' + cls) : cls;
-
-            // Record discovered module
-            if (discovered.indexOf(mod) == -1) discovered.push(mod);
-        } catch (_) {}
+    static function forceType(typePath: String): Void {
+        if (typePath == null || typePath.length == 0) return;
+        if (discovered.indexOf(typePath) != -1) return;
+        discovered.push(typePath);
+        try Context.getType(typePath) catch (_) {}
     }
 }
 
