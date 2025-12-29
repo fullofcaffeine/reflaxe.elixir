@@ -1,6 +1,6 @@
 # Reflaxe.Elixir
 
-[![Version](https://img.shields.io/github/v/tag/fullofcaffeine/reflaxe.elixir?sort=semver)](https://github.com/fullofcaffeine/reflaxe.elixir/tags)
+[![Release](https://img.shields.io/github/v/release/fullofcaffeine/reflaxe.elixir?sort=semver)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![CI Status](https://img.shields.io/github/actions/workflow/status/fullofcaffeine/reflaxe.elixir/ci.yml?branch=main)](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml)
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org)
