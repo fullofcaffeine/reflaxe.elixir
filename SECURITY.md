@@ -2,8 +2,10 @@
 
 ## Supported Versions
 
-This project is currently **alpha** quality. Security best-effort fixes may be provided, but
-there is no formal SLA.
+Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset.
+Some features remain **experimental/opt‑in** (see `docs/06-guides/VERSIONING_AND_STABILITY.md`).
+
+Security fixes are best-effort and there is no formal SLA.
 
 ## Automated Scanning
 

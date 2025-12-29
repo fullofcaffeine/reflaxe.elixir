@@ -17,6 +17,7 @@ From your Phoenix project root:
 ```bash
 npm init -y
 npm install --save-dev lix
+npx lix scope create
 ```
 
 Install Reflaxe.Elixir as a Haxe library:

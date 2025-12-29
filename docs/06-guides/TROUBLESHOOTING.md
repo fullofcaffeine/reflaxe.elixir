@@ -557,7 +557,9 @@ This was fixed in the latest compiler version. If you still encounter this:
 
 1. **Update to latest version:**
 ```bash
+npx lix scope create
 npx lix install github:fullofcaffeine/reflaxe.elixir#latest
+npx lix download
 ```
 
 2. **Verify HXX syntax:**

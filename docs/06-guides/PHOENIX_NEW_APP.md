@@ -18,17 +18,27 @@ If you have Haxe + Node installed, you can generate a ready-to-run Phoenix+Haxe 
 # From an empty directory where you want the project folder created:
 npm init -y
 npm install --save-dev lix
+npx lix scope create
 
 # Install the generator (pinned tag recommended)
 npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.0
 
-# Generate a Phoenix app (omit --skip-install to let the generator install deps for you)
-npx lix run reflaxe.elixir create my_app --type phoenix --no-interactive --skip-install
+# Generate a Phoenix app (add --skip-install if you want to run installs manually)
+npx lix run reflaxe.elixir create my_app --type phoenix --no-interactive
 
 cd my_app
+mix phx.server
+```
+
+If you pass `--skip-install` (or installs fail), run the installs manually:
+
+```bash
+cd my_app
 npm install
-mix deps.get
+npx lix scope create
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.0
 npx lix download
+mix deps.get
 mix phx.server
 ```
 

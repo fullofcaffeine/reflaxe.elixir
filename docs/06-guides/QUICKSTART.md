@@ -1,6 +1,6 @@
 # Quickstart (Phoenix-first)
 
-This project is an **alpha** Haxe→Elixir compiler with deep Phoenix support. This quickstart is focused on helping a Phoenix developer get productive quickly.
+Reflaxe.Elixir `v1.1.x` is **non‑alpha** for the documented subset. This quickstart is focused on helping a Phoenix developer get productive quickly.
 
 ## Pick a Path
 
@@ -21,7 +21,7 @@ If you don’t have Haxe installed yet, start here: `docs/01-getting-started/ins
 ```bash
 cd examples/todo-app
 mix setup
-mix dev
+mix phx.server
 ```
 
 Open `http://localhost:4000`.
