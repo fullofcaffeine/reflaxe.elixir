@@ -975,127 +975,125 @@ function applyIdiomaticEnumTransformation(node: ElixirAST): ElixirAST {
     // Extract constructor arguments (everything after the tag)
     var args = elements.slice(1);
     var argCount = args.length;
-    
-    // Convention-based transformation based on arity
-    switch(argCount) {
-        case 0:
-            // Zero arguments → bare atom
-            // Example: Telemetry() → :telemetry
-            return makeASTWithMeta(EAtom(tag), node.metadata, node.pos);
-            
-        case 1:
-            // Single argument → unwrap the value
-            // Special handling for module names (strings that look like modules)
-            var unwrapped = switch(args[0].def) {
-                case EString(s) if (isModuleName(s)):
-                    // Module names should be bare identifiers, not strings
-                    makeAST(EVar(s), args[0].pos);
-                default: 
-                    args[0];
-            };
-            return makeASTWithMeta(unwrapped.def, node.metadata, node.pos);
-            
-        case 2:
-            // Two arguments → check for OTP child spec pattern (Module, config)
-            // Transform ModuleWithConfig("Phoenix.PubSub", config) → {Phoenix.PubSub, config}
-            
-            // First arg should be a module name
-            var moduleArg = switch(args[0].def) {
-                case EString(s) if (isModuleName(s)):
-                    // Convert string module name to bare module reference
-                    makeAST(EVar(s), args[0].pos);
-                default:
-                    args[0];
-            };
-            
-            // Second arg should be config - transform to keyword list if needed
-            var configArg = switch(args[1].def) {
-                case EKeywordList(_): 
-                    // Already a keyword list
-                    args[1];
-                    
-                case EList(elements):
-                    // Check if it's a list of {key: "...", value: ...} structures that should be keyword pairs
-                    var keywordPairs: Array<EKeywordPair> = [];
-                    var isKeyValueConfig = true;
-                    
-                    for (elem in elements) {
-                        switch(elem.def) {
-                            case EMap(pairs):
-                                // Look for {key: "name", value: data} pattern
-                                var keyName: String = null;
-                                var keyValue: ElixirAST = null;
-                                
-                                for (pair in pairs) {
-                                    switch(pair.key.def) {
-                                        case EAtom(atom) if (atom == "key"):
-                                            // Extract the key name from the value
-                                            switch(pair.value.def) {
-                                                case EString(s): keyName = s;
-                                                default: isKeyValueConfig = false;
-                                            }
-                                        case EAtom(atom) if (atom == "value"):
-                                            // This is the actual value
-                                            keyValue = pair.value;
-                                        default:
-                                            // Not the pattern we're looking for
-                                            isKeyValueConfig = false;
-                                    }
-                                }
-                                
-                                if (keyName != null && keyValue != null) {
-                                    // For certain keys, convert strings to appropriate references
-                                    var finalValue = if (keyName == "name") {
-                                        switch(keyValue.def) {
-                                            case EString(s) if (isModuleName(s)):
-                                                // Convert module name string to module reference (unquoted)
-                                                // Use EVar for module references like TodoApp.PubSub
-                                                makeAST(EVar(s), keyValue.pos);
-                                            default:
-                                                keyValue;
-                                        }
-                                    } else if (keyName == "keys") {
-                                        // Registry keys option should be an atom (:unique or :duplicate)
-                                        switch(keyValue.def) {
-                                            case EString(s) if (s == "unique" || s == "duplicate"):
-                                                // Convert to atom for Registry configuration
-                                                makeAST(EAtom(ElixirAtom.raw(s)), keyValue.pos);
-                                            default:
-                                                keyValue;
-                                        }
-                                    } else {
-                                        keyValue;
-                                    };
-                                    keywordPairs.push({key: keyName, value: finalValue});
-                                } else {
-                                    isKeyValueConfig = false;
-                                }
-                                
-                            default:
-                                isKeyValueConfig = false;
-                        }
-                    }
-                    
-                    if (isKeyValueConfig && keywordPairs.length > 0) {
-                        // Convert to keyword list
-                        makeAST(EKeywordList(keywordPairs), args[1].pos);
-                    } else {
-                        args[1];
-                    }
-                    
-                default:
-                    args[1];
-            };
-            
-            // For OTP child specs, return a 2-tuple with module and config
-            return makeASTWithMeta(
-                ETuple([moduleArg, configArg]),
-                node.metadata,
-                node.pos
-            );
+
+    // NOTE: Do NOT apply broad arity-based rewrites here.
+    //
+    // WHY:
+    // - Many `@:elixirIdiomatic` enums (Option/Result/user enums) rely on stable tagged-tuple
+    //   representations for runtime values and pattern matching (e.g., `{:some, v}`, `{:ok, v}`).
+    // - Blanket "1 arg → unwrap" breaks semantics (values no longer match their patterns) and
+    //   can incorrectly treat regular strings (e.g., "Alice") as module aliases.
+    //
+    // Instead, apply **explicit, framework-level** rewrites for the OTP child spec wrapper
+    // constructors in `elixir.otp.ChildSpecFormat`.
+    var tagName: String = tag;
+
+    // ChildSpecFormat.ModuleRef(module: String) → ModuleRef("MyApp.Repo") → MyApp.Repo (or keep string if not a module name)
+    if (tagName == "module_ref" && argCount == 1) {
+        var moduleArg = switch (args[0].def) {
+            case EString(s) if (isModuleName(s)):
+                makeAST(EVar(s), args[0].pos);
+            default:
+                args[0];
+        };
+        return makeASTWithMeta(moduleArg.def, node.metadata, node.pos);
     }
-    
-    // No convention matched, return original
+
+    // ChildSpecFormat.FullSpec(spec: ChildSpec) → unwrap the spec map/struct
+    if (tagName == "full_spec" && argCount == 1) {
+        return makeASTWithMeta(args[0].def, node.metadata, node.pos);
+    }
+
+    // ChildSpecFormat.ModuleWithArgs(module: String, args: Array<Term>) → {MyApp.Mod, args}
+    if (tagName == "module_with_args" && argCount == 2) {
+        var moduleArg = switch (args[0].def) {
+            case EString(s) if (isModuleName(s)):
+                makeAST(EVar(s), args[0].pos);
+            default:
+                args[0];
+        };
+        return makeASTWithMeta(ETuple([moduleArg, args[1]]), node.metadata, node.pos);
+    }
+
+    // ChildSpecFormat.ModuleWithConfig(module: String, config: [{key, value}]) → {MyApp.Mod, [kw...]}
+    if (tagName == "module_with_config" && argCount == 2) {
+        var moduleArg = switch(args[0].def) {
+            case EString(s) if (isModuleName(s)):
+                makeAST(EVar(s), args[0].pos);
+            default:
+                args[0];
+        };
+
+        var configArg = switch(args[1].def) {
+            case EKeywordList(_):
+                args[1];
+
+            case EList(elements):
+                var keywordPairs: Array<EKeywordPair> = [];
+                var isKeyValueConfig = true;
+
+                for (elem in elements) {
+                    switch(elem.def) {
+                        case EMap(pairs):
+                            var keyName: String = null;
+                            var keyValue: ElixirAST = null;
+
+                            for (pair in pairs) {
+                                switch(pair.key.def) {
+                                    case EAtom(atom) if (atom == "key"):
+                                        switch(pair.value.def) {
+                                            case EString(s): keyName = s;
+                                            default: isKeyValueConfig = false;
+                                        }
+                                    case EAtom(atom) if (atom == "value"):
+                                        keyValue = pair.value;
+                                    default:
+                                        isKeyValueConfig = false;
+                                }
+                            }
+
+                            if (keyName != null && keyValue != null) {
+                                var finalValue = if (keyName == "name") {
+                                    switch(keyValue.def) {
+                                        case EString(s) if (isModuleName(s)):
+                                            makeAST(EVar(s), keyValue.pos);
+                                        default:
+                                            keyValue;
+                                    }
+                                } else if (keyName == "keys") {
+                                    switch(keyValue.def) {
+                                        case EString(s) if (s == "unique" || s == "duplicate"):
+                                            makeAST(EAtom(ElixirAtom.raw(s)), keyValue.pos);
+                                        default:
+                                            keyValue;
+                                    }
+                                } else {
+                                    keyValue;
+                                };
+                                keywordPairs.push({key: keyName, value: finalValue});
+                            } else {
+                                isKeyValueConfig = false;
+                            }
+
+                        default:
+                            isKeyValueConfig = false;
+                    }
+                }
+
+                if (isKeyValueConfig && keywordPairs.length > 0) {
+                    makeAST(EKeywordList(keywordPairs), args[1].pos);
+                } else {
+                    args[1];
+                }
+
+            default:
+                args[1];
+        };
+
+        return makeASTWithMeta(ETuple([moduleArg, configArg]), node.metadata, node.pos);
+    }
+
+    // No transform matched, return original.
     return node;
 }
 
