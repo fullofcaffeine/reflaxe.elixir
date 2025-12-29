@@ -938,7 +938,7 @@ class AnnotationTransforms {
     /**
      * Build Ecto.Schema module body
      */
-    static function buildSchemaBody(moduleName: String, tableName: String, existingBody: ElixirAST, lookupName: String, meta: reflaxe.elixir.ast.ElixirMetadata): ElixirAST {
+    static function buildSchemaBody(moduleName: String, tableName: String, existingBody: ElixirAST, lookupName: String, meta: ElixirMetadata): ElixirAST {
         var statements = [];
         
         // use Ecto.Schema
@@ -1083,7 +1083,7 @@ class AnnotationTransforms {
         #if debug_annotation_transforms
         // DISABLED: trace("[XRay Repo Transform] PASS START");
         if (ast.metadata?.isRepo == true) {
-            // DISABLED: trace('[XRay Repo Transform] Found isRepo metadata on AST type: ${Type.enumConstructor(ast.def)}');
+            // DISABLED: trace('[XRay Repo Transform] Found isRepo metadata on AST type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def)}');
         }
         #end
         
@@ -1241,7 +1241,7 @@ class AnnotationTransforms {
         #if debug_annotation_transforms
         if (ast.metadata != null && ast.metadata.isApplication == true) {
             // DISABLED: trace('[XRay Application Transform] PASS START - Found Application module with metadata');
-            // DISABLED: trace('[XRay Application Transform] AST type: ${Type.enumConstructor(ast.def)}');
+            // DISABLED: trace('[XRay Application Transform] AST type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def)}');
         }
         #end
         
@@ -1297,7 +1297,7 @@ class AnnotationTransforms {
         for (func in existingBody) {
             #if debug_annotation_transforms
             if (func.def != null) {
-                // DISABLED: trace('[XRay Application Transform] Adding existing function: ${Type.enumConstructor(func.def)}');
+                // DISABLED: trace('[XRay Application Transform] Adding existing function: ${reflaxe.elixir.util.EnumReflection.enumConstructor(func.def)}');
             }
             #end
             result.push(func);
@@ -1680,7 +1680,7 @@ class AnnotationTransforms {
     public static function exunitTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
         // DISABLED: trace("[XRay ExUnit Transform] PASS START");
-        // DISABLED: trace('[XRay ExUnit Transform] AST type: ${Type.enumConstructor(ast.def)}');
+        // DISABLED: trace('[XRay ExUnit Transform] AST type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def)}');
         if (ast.metadata != null) {
             // DISABLED: trace('[XRay ExUnit Transform] AST has metadata: isExunit=${ast.metadata.isExunit}');
         } else {
@@ -2130,7 +2130,7 @@ class AnnotationTransforms {
         #if debug_annotation_transforms
         if (ast.metadata?.isSupervisor == true) {
             // DISABLED: trace('[XRay Supervisor Transform] PASS START - Found Supervisor module');
-            // DISABLED: trace('[XRay Supervisor Transform] AST type: ${Type.enumConstructor(ast.def)}');
+            // DISABLED: trace('[XRay Supervisor Transform] AST type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def)}');
         }
         #end
         

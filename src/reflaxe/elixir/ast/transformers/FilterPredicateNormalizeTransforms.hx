@@ -113,7 +113,7 @@ class FilterPredicateNormalizeTransforms {
 	                // Downstream passes may further rewrite body and binder usage.
 	                var fnNode = makeAST(EFn([{ args: [PVar("elem")], guard: null, body: pred }]));
 	                #if debug_filter_predicate
-	                // DISABLED: trace('[FilterPredNorm] Normalized non-EFn predicate of type ' + Type.enumConstructor(pred.def));
+	                // DISABLED: trace('[FilterPredNorm] Normalized non-EFn predicate of type ' + reflaxe.elixir.util.EnumReflection.enumConstructor(pred.def));
 	                #end
 	                { list: listExpr, predicate: fnNode };
 	        }

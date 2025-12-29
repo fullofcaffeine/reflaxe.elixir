@@ -59,14 +59,14 @@ class FinalUnderscoreRepairTransforms {
 
     static function transformNode(n: ElixirAST): ElixirAST {
         #if debug_underscore_repair
-        // DISABLED: trace('[UnderscoreRepair] Processing node: ${Type.enumConstructor(n.def)}');
+        // DISABLED: trace('[UnderscoreRepair] Processing node: ${reflaxe.elixir.util.EnumReflection.enumConstructor(n.def)}');
         #end
         return switch (n.def) {
             case EBlock(stmts):
                 #if debug_underscore_repair
                 // DISABLED: trace('[UnderscoreRepair] EBlock with ${stmts.length} statements');
                 for (s in stmts) {
-                    if (s != null) trace('[UnderscoreRepair]   - ${Type.enumConstructor(s.def)}');
+                    if (s != null) trace('[UnderscoreRepair]   - ${reflaxe.elixir.util.EnumReflection.enumConstructor(s.def)}');
                 }
                 #end
                 var repaired = repairUnderscoreUsageInBlock(stmts);
@@ -79,8 +79,8 @@ class FinalUnderscoreRepairTransforms {
             case EIf(cond, thenBranch, elseBranch):
                 #if debug_underscore_repair
                 // DISABLED: trace('[UnderscoreRepair] EIf detected');
-                // DISABLED: trace('[UnderscoreRepair]   thenBranch type: ${thenBranch != null ? Type.enumConstructor(thenBranch.def) : "null"}');
-                // DISABLED: trace('[UnderscoreRepair]   elseBranch type: ${elseBranch != null ? Type.enumConstructor(elseBranch.def) : "null"}');
+                // DISABLED: trace('[UnderscoreRepair]   thenBranch type: ${thenBranch != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(thenBranch.def) : "null"}');
+                // DISABLED: trace('[UnderscoreRepair]   elseBranch type: ${elseBranch != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(elseBranch.def) : "null"}');
                 // Show contents of thenBranch if it's a block
                 if (thenBranch != null && thenBranch.def != null) {
                     switch (thenBranch.def) {
@@ -89,7 +89,7 @@ class FinalUnderscoreRepairTransforms {
                             for (ti in 0...stmts.length) {
                                 var ts = stmts[ti];
                                 if (ts != null && ts.def != null) {
-                                    // DISABLED: trace('[UnderscoreRepair]     then[$ti]: ${Type.enumConstructor(ts.def)}');
+                                    // DISABLED: trace('[UnderscoreRepair]     then[$ti]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(ts.def)}');
                                     switch (ts.def) {
                                         case EMatch(pattern, _):
                                             switch (pattern) {
@@ -167,11 +167,11 @@ class FinalUnderscoreRepairTransforms {
         for (idx in 0...stmts.length) {
             var s = stmts[idx];
             if (s != null && s.def != null) {
-                // DISABLED: trace('[UnderscoreRepair] repairBlock stmt[$idx]: ${Type.enumConstructor(s.def)}');
+                // DISABLED: trace('[UnderscoreRepair] repairBlock stmt[$idx]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(s.def)}');
                 // Show more detail for match patterns
                 switch (s.def) {
                     case EMatch(pattern, _):
-                        // DISABLED: trace('[UnderscoreRepair]   EMatch pattern: ${Type.enumConstructor(pattern)}');
+                        // DISABLED: trace('[UnderscoreRepair]   EMatch pattern: ${reflaxe.elixir.util.EnumReflection.enumConstructor(pattern)}');
                         switch (pattern) {
                             case PVar(vn): trace('[UnderscoreRepair]     PVar: "$vn"');
                             default:
@@ -179,7 +179,7 @@ class FinalUnderscoreRepairTransforms {
                     case EBinary(op, lhs, _):
                         // DISABLED: trace('[UnderscoreRepair]   EBinary op: $op');
                         if (lhs != null && lhs.def != null) {
-                            // DISABLED: trace('[UnderscoreRepair]   EBinary lhs: ${Type.enumConstructor(lhs.def)}');
+                            // DISABLED: trace('[UnderscoreRepair]   EBinary lhs: ${reflaxe.elixir.util.EnumReflection.enumConstructor(lhs.def)}');
                             switch (lhs.def) {
                                 case EVar(vn): trace('[UnderscoreRepair]     EVar: "$vn"');
                                 default:
@@ -205,7 +205,7 @@ class FinalUnderscoreRepairTransforms {
                 case EMatch(pattern, rhsExpr):
                     #if debug_underscore_repair
                     // DISABLED: trace('[UnderscoreRepair] Found EMatch at index $i');
-                    // DISABLED: trace('[UnderscoreRepair]   Pattern type: ${Type.enumConstructor(pattern)}');
+                    // DISABLED: trace('[UnderscoreRepair]   Pattern type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(pattern)}');
                     switch (pattern) {
                         case PVar(varName):
                             // DISABLED: trace('[UnderscoreRepair]   PVar name: "$varName"');

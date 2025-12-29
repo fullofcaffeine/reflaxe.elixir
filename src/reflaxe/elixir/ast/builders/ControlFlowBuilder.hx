@@ -57,7 +57,7 @@ class ControlFlowBuilder {
         var buildExpression = context.getExpressionBuilder();
         
         #if debug_ast_builder
-        // DISABLED: trace('[ControlFlow] Processing TIf with condition: ${Type.enumConstructor(econd.expr)}');
+        // DISABLED: trace('[ControlFlow] Processing TIf with condition: ${reflaxe.elixir.util.EnumReflection.enumConstructor(econd.expr)}');
         #end
         
         // Check if this is an optimized enum switch
@@ -193,12 +193,12 @@ class ControlFlowBuilder {
                         case PLiteral(ast):
                             switch (ast.def) {
                                 case EAtom(a): ":" + a;
-                                default: "lit(" + Type.enumConstructor(ast.def) + ")";
+                                default: "lit(" + reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def) + ")";
                             }
                         case PTuple(elements):
                             "{" + [for (e in elements) debugPattern(e)].join(", ") + "}";
                         default:
-                            Type.enumConstructor(pattern);
+                            reflaxe.elixir.util.EnumReflection.enumConstructor(pattern);
                     };
                 }
                 #end
@@ -357,7 +357,7 @@ class ControlFlowBuilder {
         #if debug_enum_param_recovery
         var scrutineeDebug = switch (enumScrutinee.expr) {
             case TLocal(v): v.name + "#" + v.id;
-            default: Type.enumConstructor(enumScrutinee.expr);
+            default: reflaxe.elixir.util.EnumReflection.enumConstructor(enumScrutinee.expr);
         };
         trace('[EnumParamRecovery] ctor=' + constructorName + ' scrutinee=' + scrutineeDebug + ' paramCount=' + paramCount);
         #end
@@ -527,7 +527,7 @@ class ControlFlowBuilder {
                         out[info.index] = v.name;
                         rememberExtraction(info.index, v);
                         #if debug_enum_param_recovery
-                        var srcDbg = switch (info.source.expr) { case TLocal(sv): sv.name + "#" + sv.id; default: Type.enumConstructor(info.source.expr); };
+                        var srcDbg = switch (info.source.expr) { case TLocal(sv): sv.name + "#" + sv.id; default: reflaxe.elixir.util.EnumReflection.enumConstructor(info.source.expr); };
                         trace('[EnumParamRecovery] extract index=' + info.index + ' v=' + v.name + '#' + v.id + ' source=' + srcDbg);
                         #end
                     } else {

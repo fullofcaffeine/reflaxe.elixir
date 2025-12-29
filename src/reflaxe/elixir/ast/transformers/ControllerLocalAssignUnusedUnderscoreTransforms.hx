@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
 
 /**
@@ -40,7 +41,7 @@ class ControllerLocalAssignUnusedUnderscoreTransforms {
     });
   }
 
-  static inline function isConnParam(pat: reflaxe.elixir.ast.EPattern): Bool {
+  static inline function isConnParam(pat: EPattern): Bool {
     return switch (pat) { case PVar(n) if (n == "conn"): true; default: false; }
   }
 

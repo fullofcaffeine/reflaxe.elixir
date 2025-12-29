@@ -63,7 +63,7 @@ class ReturnBuilder {
         // DISABLED: trace('[ReturnBuilder] Building return expression');
         // DISABLED: trace('[ReturnBuilder]   Has expression: ${e != null}');
         if (e != null) {
-            // DISABLED: trace('[ReturnBuilder]   Expression type: ${Type.enumConstructor(e.expr)}');
+            // DISABLED: trace('[ReturnBuilder]   Expression type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
         }
         #end
         
@@ -228,7 +228,7 @@ class ReturnBuilder {
                                         case TVar(tvar, init) if (init != null && tvar.id == v.id):
                                             #if debug_ast_builder
                                             // DISABLED: trace('[ReturnBuilder] Found infrastructure variable ${tvar.name}, replacing with original expression');
-                                            // DISABLED: trace('[ReturnBuilder]   Original expression type: ${Type.enumConstructor(init.expr)}');
+                                            // DISABLED: trace('[ReturnBuilder]   Original expression type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                                             #end
                                             originalExpr = init;
                                             break;

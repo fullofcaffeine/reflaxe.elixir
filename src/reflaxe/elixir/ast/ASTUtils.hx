@@ -374,7 +374,7 @@ class ASTUtils {
         if (ast == null || ast.def == null || depth > maxDepth) return;
         
         var indent = [for (i in 0...depth) "  "].join("");
-        var nodeType = Type.enumConstructor(ast.def);
+        var nodeType = reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def);
         
         // DISABLED: trace('$indent$nodeType');
         

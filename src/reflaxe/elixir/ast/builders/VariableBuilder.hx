@@ -53,7 +53,7 @@ class VariableBuilder {
         #if debug_ast_builder
         // DISABLED: trace('[VarBuilder] Processing declaration: ${v.name} (id: ${v.id})');
         if (init != null) {
-            // DISABLED: trace('[VarBuilder] Init type: ${Type.enumConstructor(init.expr)}');
+            // DISABLED: trace('[VarBuilder] Init type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
         }
         #end
         
@@ -137,7 +137,7 @@ class VariableBuilder {
         }
         
         #if debug_infrastructure_vars
-        // DISABLED: trace('[Infrastructure Variable] Declaration: ${v.name} = ${Type.enumConstructor(init.expr)}');
+        // DISABLED: trace('[Infrastructure Variable] Declaration: ${v.name} = ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
         #end
         
         // Track infrastructure variable mappings for switch targets

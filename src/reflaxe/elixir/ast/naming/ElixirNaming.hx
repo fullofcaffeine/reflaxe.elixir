@@ -53,6 +53,14 @@ class ElixirNaming {
         // Handle null/empty
         if (ident == null || ident.length == 0) return "item";
 
+        // Haxe allows escaping identifiers with backticks (e.g. `end`, `type`).
+        // Haxe 5 preserves backticks in some macro/typed AST names; Elixir does not allow them
+        // in variable identifiers, so strip them early.
+        if (ident.indexOf("`") != -1) {
+            ident = ident.split("`").join("");
+            if (ident == null || ident.length == 0) return "item";
+        }
+
         // 1. Special macros - preserve exactly
         if (isSpecialMacro(ident)) return ident;
 

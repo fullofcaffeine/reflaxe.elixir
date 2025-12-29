@@ -42,7 +42,7 @@ class HeexAssignsParamRenameTransforms {
                             newArgs.push(a);
                     }
                     if (!hasUnderscoreAssigns) return n;
-                    var def = Type.enumConstructor(n.def) == "EDef"
+                    var def = reflaxe.elixir.util.EnumReflection.enumConstructor(n.def) == "EDef"
                         ? EDef(name, newArgs, guards, body)
                         : EDefp(name, newArgs, guards, body);
                     makeASTWithMeta(def, n.metadata, n.pos);
