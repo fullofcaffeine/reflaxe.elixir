@@ -182,9 +182,9 @@ class ReduceWhileToEnumEachTransforms {
                                                     var lt = left == null || left.def == null ? '<null>' : reflaxe.elixir.util.EnumReflection.enumConstructor(left.def);
                                                     var rt = rhs == null || rhs.def == null ? '<null>' : reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.def);
                                                     Sys.println('    lhs=' + lt + ' rhs=' + rt);
-                                                case EMatch(_, rhs2):
-                                                    var rt2 = rhs2 == null || rhs2.def == null ? '<null>' : reflaxe.elixir.util.EnumReflection.enumConstructor(rhs2.def);
-                                                    Sys.println('    rhs=' + rt2);
+                                                case EMatch(_, rhsExpr):
+                                                    var rhsTag = rhsExpr == null || rhsExpr.def == null ? '<null>' : reflaxe.elixir.util.EnumReflection.enumConstructor(rhsExpr.def);
+                                                    Sys.println('    rhs=' + rhsTag);
                                                 default:
                                             }
                                         }
