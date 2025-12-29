@@ -170,20 +170,20 @@ class ReduceWhileToEnumEachTransforms {
                                         var limit = filtered.length < 6 ? filtered.length : 6;
                                         for (i in 0...limit) {
                                             var st = filtered[i];
-                                            var tag = (st == null || st.def == null) ? '<null>' : Type.enumConstructor(st.def);
+                                            var tag = (st == null || st.def == null) ? '<null>' : reflaxe.elixir.util.EnumReflection.enumConstructor(st.def);
                                             Sys.println('  stmt[' + i + '] ' + tag);
                                             if (st != null) switch (st.def) {
                                                 case EBlock(inner):
                                                     Sys.println('    block.len=' + (inner == null ? 0 : inner.length));
                                                     if (inner != null && inner.length > 0 && inner[0] != null && inner[0].def != null) {
-                                                        Sys.println('    block[0]=' + Type.enumConstructor(inner[0].def));
+                                                        Sys.println('    block[0]=' + reflaxe.elixir.util.EnumReflection.enumConstructor(inner[0].def));
                                                     }
                                                 case EBinary(Match, left, rhs):
-                                                    var lt = left == null || left.def == null ? '<null>' : Type.enumConstructor(left.def);
-                                                    var rt = rhs == null || rhs.def == null ? '<null>' : Type.enumConstructor(rhs.def);
+                                                    var lt = left == null || left.def == null ? '<null>' : reflaxe.elixir.util.EnumReflection.enumConstructor(left.def);
+                                                    var rt = rhs == null || rhs.def == null ? '<null>' : reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.def);
                                                     Sys.println('    lhs=' + lt + ' rhs=' + rt);
                                                 case EMatch(_, rhs2):
-                                                    var rt2 = rhs2 == null || rhs2.def == null ? '<null>' : Type.enumConstructor(rhs2.def);
+                                                    var rt2 = rhs2 == null || rhs2.def == null ? '<null>' : reflaxe.elixir.util.EnumReflection.enumConstructor(rhs2.def);
                                                     Sys.println('    rhs=' + rt2);
                                                 default:
                                             }

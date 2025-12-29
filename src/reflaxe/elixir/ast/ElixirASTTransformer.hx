@@ -189,7 +189,7 @@ class ElixirASTTransformer {
         #else
         // DISABLED: trace('[XRay AST Transformer] Starting transformation pipeline');
         #end
-        // DISABLED: trace('[XRay AST Transformer] AST type: ${Type.enumConstructor(ast.def)}');
+        // DISABLED: trace('[XRay AST Transformer] AST type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def)}');
         // DISABLED: trace('[XRay AST Transformer] AST metadata: ${ast.metadata}');
         #end
         #if debug_unrolled_comprehension
@@ -771,7 +771,7 @@ class ElixirASTTransformer {
                         case EMatch(PVar(varName), rhs) if (rhs != null):
                             #if debug_guard_grouping
                             // DISABLED: trace('[XRay RemoveNil] Checking match for variable: $varName');
-                            // DISABLED: trace('[XRay RemoveNil] RHS type: ' + Type.enumConstructor(rhs.def));
+                            // DISABLED: trace('[XRay RemoveNil] RHS type: ' + reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.def));
                             #end
                             switch(rhs.def) {
                                 case EAtom(a):
@@ -899,7 +899,7 @@ class ElixirASTTransformer {
             if (node == null) return;
             
             #if debug_guard_grouping
-            // DISABLED: trace("[XRay ExtractBranches] Depth " + depth + ", node type: " + (node.def != null ? Type.enumConstructor(node.def) : "null"));
+            // DISABLED: trace("[XRay ExtractBranches] Depth " + depth + ", node type: " + (node.def != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(node.def) : "null"));
             #end
             
             // Clean up nil assignments first
@@ -1237,7 +1237,7 @@ class ElixirASTTransformer {
                                                 var rhsDebug = switch(rhs.def) {
                                                     case EVar(v): 'EVar($v)';
                                                     case ECall(_, fn, _): 'ECall($fn)';
-                                                    default: Type.enumConstructor(rhs.def);
+                                                    default: reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.def);
                                                 };
                                                 #if debug_redundant_extraction
                                                 // DISABLED: trace('[RemoveRedundantEnumExtraction] Found assignment: $varName = ... (RHS: $rhsDebug, caseTarget: $caseTargetVar)');
@@ -2794,8 +2794,8 @@ class ElixirASTTransformer {
                     #if debug_string_interpolation
                     var fullNodeStr = ElixirASTPrinter.printAST(node);
                     // DISABLED: trace('[StringInterpolation] Found concatenation pattern: ${fullNodeStr.substring(0, 200)}');
-                    // DISABLED: trace('[StringInterpolation] Left type: ${Type.enumConstructor(l.def)}');
-                    // DISABLED: trace('[StringInterpolation] Right type: ${Type.enumConstructor(r.def)}');
+                    // DISABLED: trace('[StringInterpolation] Left type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(l.def)}');
+                    // DISABLED: trace('[StringInterpolation] Right type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(r.def)}');
                     #end
                     // Collect all parts of the concatenation chain
                     var parts = [];
@@ -3044,7 +3044,7 @@ class ElixirASTTransformer {
                                 var bodyStr = ElixirASTPrinter.printAST(clause.body);
                                 if (bodyStr.indexOf("rgb(") > -1 || bodyStr.indexOf("<>") > -1) {
                                     // DISABLED: trace('[StringInterpolation] Clause body BEFORE transformation: ${bodyStr.substring(0, 200)}');
-                                    // DISABLED: trace('[StringInterpolation] Clause body type: ${Type.enumConstructor(clause.body.def)}');
+                                    // DISABLED: trace('[StringInterpolation] Clause body type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(clause.body.def)}');
                                 }
                                 #end
                                 var transformedBody = transform(clause.body);
@@ -3126,7 +3126,7 @@ class ElixirASTTransformer {
                                 // DISABLED: trace("[LoopTransform] Found Enum.reduce_while call");
                                 // DISABLED: trace("[LoopTransform]   Args length: " + args.length);
                                 if (args.length >= 3) {
-                                    // DISABLED: trace("[LoopTransform]   Third arg (reducer fn) type: " + Type.enumConstructor(args[2].def));
+                                    // DISABLED: trace("[LoopTransform]   Third arg (reducer fn) type: " + reflaxe.elixir.util.EnumReflection.enumConstructor(args[2].def));
                                 }
                                 #end
 
@@ -3833,7 +3833,7 @@ class ElixirASTTransformer {
                         var childContext = isLast ? isStatementContext : true;
                         #if debug_ast_transformer
                         if (expressions[i] != null && expressions[i].def != null) {
-                            var exprType = Type.enumConstructor(expressions[i].def);
+                            var exprType = reflaxe.elixir.util.EnumReflection.enumConstructor(expressions[i].def);
                             // DISABLED: trace('[XRay StatementContext] Block expr $i/${expressions.length}: $exprType, context: ${childContext ? "statement" : "expression"}');
                         }
                         #end
@@ -4626,7 +4626,7 @@ class ElixirASTTransformer {
         nodeVisitCounter++;
 
         // Create a unique identifier for this node
-        var nodeId = Type.enumConstructor(ast.def) + "_" + Std.string(ast.pos);
+        var nodeId = reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def) + "_" + Std.string(ast.pos);
 
         // Track visit frequency
         var visits = visitedNodes.get(nodeId);
@@ -4636,7 +4636,7 @@ class ElixirASTTransformer {
 
         // Log breadcrumbs
         if (nodeVisitCounter % 1000 == 0) {
-            // DISABLED: trace('[TRANSFORMER BREADCRUMB] Node ${nodeVisitCounter}: ${Type.enumConstructor(ast.def)}');
+            // DISABLED: trace('[TRANSFORMER BREADCRUMB] Node ${nodeVisitCounter}: ${reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def)}');
         }
 
         // Detect excessive visits to same node (cycle)
@@ -4652,7 +4652,7 @@ class ElixirASTTransformer {
         // Overall safety limit
         if (nodeVisitCounter > maxNodeVisits) {
             // DISABLED: trace('[TRANSFORMER HANG] Exceeded ${maxNodeVisits} node visits');
-            // DISABLED: trace('[TRANSFORMER HANG] Last node: ${Type.enumConstructor(ast.def)}');
+            // DISABLED: trace('[TRANSFORMER HANG] Last node: ${reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def)}');
             throw 'Transformer exceeded maximum node visit limit';
         }
         #end
@@ -6351,7 +6351,7 @@ class ElixirASTTransformer {
         function transformIdiomaticNode(node: ElixirAST): ElixirAST {
             #if (debug_otp_child_spec && debug_otp_child_spec_verbose)
             // Very verbose - show every node being checked
-            // DISABLED: trace('[XRay OTPChildSpec] Checking node type: ${Type.enumConstructor(node.def)}');
+            // DISABLED: trace('[XRay OTPChildSpec] Checking node type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(node.def)}');
             #end
             
             // First, recursively transform children

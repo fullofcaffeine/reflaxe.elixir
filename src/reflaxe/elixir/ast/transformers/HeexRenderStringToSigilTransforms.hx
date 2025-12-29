@@ -47,7 +47,7 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
 class HeexRenderStringToSigilTransforms {
     static inline function unwrapParens(n: ElixirAST): ElixirAST {
         var cur = n;
-        while (Type.enumConstructor(cur.def) == "EParen") {
+        while (reflaxe.elixir.util.EnumReflection.enumConstructor(cur.def) == "EParen") {
             switch (cur.def) {
                 case EParen(inner): cur = inner;
                 default:

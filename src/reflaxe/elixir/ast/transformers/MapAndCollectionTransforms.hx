@@ -1773,7 +1773,7 @@ class MapAndCollectionTransforms {
                                     depth++;
                                     #if debug_map_iterator
                                     if (depth <= 4) {
-                                        var nodeType = n.def != null ? Type.enumConstructor(n.def) : "null";
+                                        var nodeType = n.def != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(n.def) : "null";
                                         // DISABLED: trace('[MapIteratorTransform] Depth ' + depth + ' - Node type: ' + nodeType);
                                     }
                                     #end
@@ -1834,7 +1834,7 @@ class MapAndCollectionTransforms {
                                         default:
                                             #if debug_map_iterator
                                             if (depth <= 4) {
-                                                var nodeType = Type.enumConstructor(n.def);
+                                                var nodeType = reflaxe.elixir.util.EnumReflection.enumConstructor(n.def);
                                                 // DISABLED: trace('[MapIteratorTransform] Other node type: ' + nodeType);
                                             }
                                             #end
@@ -2062,7 +2062,7 @@ class MapAndCollectionTransforms {
                 case EVar(_), EAtom(_), EString(_):
                 default:
                     #if debug_map_iterator
-                    var nodeType = Type.enumConstructor(node.def);
+                    var nodeType = reflaxe.elixir.util.EnumReflection.enumConstructor(node.def);
                     // DISABLED: trace('[MapIteratorTransform/scan] Unhandled node type: ' + nodeType);
                     #end
             }
@@ -2080,7 +2080,7 @@ class MapAndCollectionTransforms {
     private static function printASTStructure(ast: ElixirAST, depth: Int = 0): String {
         if (ast == null || ast.def == null) return "null";
         if (depth > 3) return "...";
-        var nodeType = Type.enumConstructor(ast.def);
+        var nodeType = reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def);
         return switch(ast.def) {
             case EField(obj, field): '$nodeType(.$field on ${printASTStructure(obj, depth + 1)})';
             case ECall(func, _, args): var argsStr = args != null ? '[${args.length} args]' : '[no args]'; '$nodeType($argsStr, func=${printASTStructure(func, depth + 1)})';

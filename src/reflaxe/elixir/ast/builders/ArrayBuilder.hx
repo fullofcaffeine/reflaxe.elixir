@@ -43,14 +43,14 @@ class ArrayBuilder {
         #end
         if (elements.length > 0) {
             #if debug_ast_builder
-            // DISABLED: trace('[DEBUG ArrayBuilder] First element type: ${Type.enumConstructor(elements[0].expr)}');
+            // DISABLED: trace('[DEBUG ArrayBuilder] First element type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(elements[0].expr)}');
             #end
         }
 
         #if debug_ast_builder
         // DISABLED: trace('[AST Builder] TArrayDecl with ${elements.length} elements');
         if (elements.length > 0) {
-            // DISABLED: trace('[AST Builder] First element type: ${Type.enumConstructor(elements[0].expr)}');
+            // DISABLED: trace('[AST Builder] First element type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(elements[0].expr)}');
         }
         #end
         

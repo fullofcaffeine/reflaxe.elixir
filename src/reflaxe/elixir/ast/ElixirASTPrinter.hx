@@ -1750,6 +1750,16 @@ class ElixirASTPrinter {
                 }
                 #end
 
+                // Haxe allows escaping identifiers with backticks. Haxe 5 preserves backticks in some
+                // typed AST names; Elixir does not allow them in identifiers, so strip them.
+                var sanitizedName = name;
+                if (sanitizedName != null && sanitizedName.indexOf("`") != -1) {
+                    sanitizedName = sanitizedName.split("`").join("");
+                }
+                if (sanitizedName == null || StringTools.trim(sanitizedName).length == 0) {
+                    sanitizedName = "item";
+                }
+
                 // Normalize preserved switch result name to avoid leading underscores
                 inline function safeIdent(nm:String):String {
                     return switch (nm) {
@@ -1757,9 +1767,9 @@ class ElixirASTPrinter {
                         default: nm;
                     }
                 }
-                var printed = safeIdent(name);
-                if (name != null && name.length >= 23 && name.substr(0,23) == "__elixir_switch_result_") {
-                    printed = "switch_result_" + name.substr(23);
+                var printed = safeIdent(sanitizedName);
+                if (sanitizedName != null && sanitizedName.length >= 23 && sanitizedName.substr(0,23) == "__elixir_switch_result_") {
+                    printed = "switch_result_" + sanitizedName.substr(23);
                 }
                 printed;
                 
@@ -1844,15 +1854,15 @@ class ElixirASTPrinter {
                 if (clauses.length > 0) {
                     // DISABLED: trace('[XRay Printer] Printing EFn with ${clauses.length} clauses');
                     var clause = clauses[0];
-                    // DISABLED: trace('[XRay Printer]   Clause body type: ${Type.enumConstructor(clause.body.def)}');
+                    // DISABLED: trace('[XRay Printer]   Clause body type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(clause.body.def)}');
                     switch(clause.body.def) {
                         case EIf(cond, thenBranch, elseBranch):
-                            // DISABLED: trace('[XRay Printer]   Body is EIf - condition type: ${Type.enumConstructor(cond.def)}');
-                            // DISABLED: trace('[XRay Printer]   Then branch type: ${Type.enumConstructor(thenBranch.def)}');
+                            // DISABLED: trace('[XRay Printer]   Body is EIf - condition type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(cond.def)}');
+                            // DISABLED: trace('[XRay Printer]   Then branch type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(thenBranch.def)}');
                         case EBlock(exprs):
                             // DISABLED: trace('[XRay Printer]   Body is EBlock with ${exprs.length} expressions');
                         default:
-                            // DISABLED: trace('[XRay Printer]   Body is: ${Type.enumConstructor(clause.body.def)}');
+                            // DISABLED: trace('[XRay Printer]   Body is: ${reflaxe.elixir.util.EnumReflection.enumConstructor(clause.body.def)}');
                     }
                 }
                 #end
@@ -2308,7 +2318,8 @@ class ElixirASTPrinter {
         return switch(pattern) {
             case PVar(name):
                 var nm = name;
-                if (nm == null || StringTools.trim(nm).length == 0) nm = '_';
+                if (nm != null && nm.indexOf("`") != -1) nm = nm.split("`").join("");
+                if (nm == null || StringTools.trim(nm).length == 0) nm = "_";
                 nm;
             case PLiteral(value): print(value, 0);
             case PTuple(elements):
@@ -2319,7 +2330,7 @@ class ElixirASTPrinter {
                     switch(elem) {
                         case PVar(name): trace('[ASTPrinter]   Element $i: PVar("$name")');
                         case PLiteral(ast): trace('[ASTPrinter]   Element $i: PLiteral');
-                        default: trace('[ASTPrinter]   Element $i: ${Type.enumConstructor(elem)}');
+                        default: trace('[ASTPrinter]   Element $i: ${reflaxe.elixir.util.EnumReflection.enumConstructor(elem)}');
                     }
                 }
                 #end
@@ -2332,7 +2343,11 @@ class ElixirASTPrinter {
                 '%' + module + '{' + [for (f in fields) f.key + ': ' + printPattern(f.value)].join(', ') + '}';
             case PPin(pattern): '^' + printPattern(pattern);
             case PWildcard: '_';
-            case PAlias(varName, pattern): printPattern(pattern) + ' = ' + varName;
+            case PAlias(varName, pattern):
+                var nm = varName;
+                if (nm != null && nm.indexOf("`") != -1) nm = nm.split("`").join("");
+                if (nm == null || StringTools.trim(nm).length == 0) nm = "_";
+                printPattern(pattern) + ' = ' + nm;
             case PBinary(segments): '<<' + [for (s in segments) printPatternBinarySegment(s)].join(', ') + '>>';
         }
     }

@@ -1473,8 +1473,8 @@ class LoopBuilder {
         #if debug_loop_builder
         // DISABLED: trace('[XRay LoopBuilder] buildLegacyWhile called');
         // DISABLED: trace('[XRay LoopBuilder]   normalWhile: $normalWhile');
-        // DISABLED: trace('[XRay LoopBuilder]   condition AST type: ${cond != null ? Type.enumConstructor(cond.def) : "null"}');
-        // DISABLED: trace('[XRay LoopBuilder]   body AST type: ${body != null ? Type.enumConstructor(body.def) : "null"}');
+        // DISABLED: trace('[XRay LoopBuilder]   condition AST type: ${cond != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(cond.def) : "null"}');
+        // DISABLED: trace('[XRay LoopBuilder]   body AST type: ${body != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(body.def) : "null"}');
         if (body != null) {
             // DISABLED: trace('[XRay LoopBuilder]   body is null: false');
             // DISABLED: trace('[XRay LoopBuilder]   body toString: ${ElixirASTPrinter.print(body, 0).substring(0, 100)}');
@@ -2423,7 +2423,7 @@ class LoopBuilder {
         
         // ALWAYS trace to understand what's being compiled
         #if debug_map_iteration
-        // DISABLED: trace('[LoopBuilder] TFor iterator expression type: ${Type.enumConstructor(e1.expr)}');
+        // DISABLED: trace('[LoopBuilder] TFor iterator expression type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e1.expr)}');
         // DISABLED: trace('[LoopBuilder] TFor variable name: ${v.name}');
         // DISABLED: trace('[LoopBuilder] TFor iterator type: ${e1.t}');
         
@@ -2996,7 +2996,7 @@ class LoopBuilder {
         };
 
         #if debug_enum_each_early_return
-        trace('[detectForInArrayPattern] userBody=' + Type.enumConstructor(userBody.expr)
+        trace('[detectForInArrayPattern] userBody=' + reflaxe.elixir.util.EnumReflection.enumConstructor(userBody.expr)
             + ' containsReturn=' + containsNonLocalReturn(userBody));
         #end
 
@@ -3137,8 +3137,8 @@ class LoopBuilder {
 
         #if debug_loop_builder
         // DISABLED: trace('[XRay LoopBuilder] After compiling from TypedExpr:');
-        // DISABLED: trace('[XRay LoopBuilder]   condition AST: ${Type.enumConstructor(condition.def)}');
-        // DISABLED: trace('[XRay LoopBuilder]   body AST: ${Type.enumConstructor(body.def)}');
+        // DISABLED: trace('[XRay LoopBuilder]   condition AST: ${reflaxe.elixir.util.EnumReflection.enumConstructor(condition.def)}');
+        // DISABLED: trace('[XRay LoopBuilder]   body AST: ${reflaxe.elixir.util.EnumReflection.enumConstructor(body.def)}');
         if (body != null) {
             var bodyStr = ElixirASTPrinter.print(body, 0);
             // DISABLED: trace('[XRay LoopBuilder]   body printed (first 300 chars): ${bodyStr.substring(0, bodyStr.length > 300 ? 300 : bodyStr.length)}');
@@ -3224,8 +3224,8 @@ class LoopBuilder {
         #if debug_loop_builder
         // DISABLED: trace('[XRay LoopBuilder] buildReduceWhileWithState called');
         // DISABLED: trace('[XRay LoopBuilder]   mutatedVars count: ${Lambda.count(mutatedVars)}');
-        // DISABLED: trace('[XRay LoopBuilder]   condition AST: ${Type.enumConstructor(condition.def)}');
-        // DISABLED: trace('[XRay LoopBuilder]   body AST type: ${Type.enumConstructor(body.def)}');
+        // DISABLED: trace('[XRay LoopBuilder]   condition AST: ${reflaxe.elixir.util.EnumReflection.enumConstructor(condition.def)}');
+        // DISABLED: trace('[XRay LoopBuilder]   body AST type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(body.def)}');
         if (body != null) {
             var bodyStr = ElixirASTPrinter.print(body, 0);
             // DISABLED: trace('[XRay LoopBuilder]   body content (first 300 chars): ${bodyStr.substring(0, bodyStr.length > 300 ? 300 : bodyStr.length)}');

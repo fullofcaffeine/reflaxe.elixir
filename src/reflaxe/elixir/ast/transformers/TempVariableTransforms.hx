@@ -225,7 +225,7 @@ class TempVariableTransforms {
                             // Debug output to see what we're processing
                             #if debug_temp_binding
                             // DISABLED: trace('[InlineTempBindingInExpr] Processing block with temp var: ' + tmp);
-                            // DISABLED: trace('[InlineTempBindingInExpr] bindExpr type: ' + Type.enumConstructor(bindExpr.def));
+                            // DISABLED: trace('[InlineTempBindingInExpr] bindExpr type: ' + reflaxe.elixir.util.EnumReflection.enumConstructor(bindExpr.def));
                             #end
 
                             // Check if tmp is actually used in the second expression

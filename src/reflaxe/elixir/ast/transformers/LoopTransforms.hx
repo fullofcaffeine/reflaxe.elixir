@@ -305,7 +305,7 @@ class LoopTransforms {
                 
             default:
                 // For any unhandled cases, print the constructor name
-                // DEBUG: Sys.println(indent + prefix + 'AST Node: ' + Type.enumConstructor(ast.def));
+                // DEBUG: Sys.println(indent + prefix + 'AST Node: ' + reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def));
         }
         #else
         // Non-sys platforms use trace
@@ -1152,7 +1152,7 @@ class LoopTransforms {
                 // DISABLED: trace('[XRay LoopTransforms]   EMatch pattern: $pattern');
                 // DISABLED: trace('[XRay LoopTransforms]   EMatch RHS type: ${rhs.def}');
             default:
-                // DISABLED: trace('[XRay LoopTransforms]   Not EMatch, is: ${Type.enumConstructor(firstStmt.def)}');
+                // DISABLED: trace('[XRay LoopTransforms]   Not EMatch, is: ${reflaxe.elixir.util.EnumReflection.enumConstructor(firstStmt.def)}');
         }
         #end
 
@@ -1193,7 +1193,7 @@ class LoopTransforms {
             comprehensionInfo = switch(firstStmt.def) {
                 case EMatch(PVar(resultVar), rhs):
                     #if debug_loop_transforms
-                    // DISABLED: trace('[XRay detectComprehensionPattern]   VARIANT 2: Found EMatch, RHS type: ${Type.enumConstructor(rhs.def)}');
+                    // DISABLED: trace('[XRay detectComprehensionPattern]   VARIANT 2: Found EMatch, RHS type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.def)}');
                     #end
                     switch(rhs.def) {
                         case EBlock(blockStmts):
@@ -1291,9 +1291,9 @@ class LoopTransforms {
         // DISABLED: trace('[XRay detectBlockComprehension] Analyzing ${stmts.length} statements');
         for (idx in 0...Math.floor(Math.min(stmts.length, 3))) {
             var desc = switch(stmts[idx].def) {
-                case EMatch(p, e): 'EMatch(${Type.enumConstructor(p)}, ${Type.enumConstructor(e.def)})';
+                case EMatch(p, e): 'EMatch(${reflaxe.elixir.util.EnumReflection.enumConstructor(p)}, ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.def)})';
                 case EIf(cond, t, e): 'EIf(...)';
-                default: Type.enumConstructor(stmts[idx].def);
+                default: reflaxe.elixir.util.EnumReflection.enumConstructor(stmts[idx].def);
             };
             // DISABLED: trace('[XRay detectBlockComprehension]   Statement $idx: $desc');
         }
@@ -1304,13 +1304,13 @@ class LoopTransforms {
         if (stmts.length >= 3) {
             var firstStmt = stmts[0];
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectBlockComprehension] Checking first stmt: ${Type.enumConstructor(firstStmt.def)}');
+            // DISABLED: trace('[XRay detectBlockComprehension] Checking first stmt: ${reflaxe.elixir.util.EnumReflection.enumConstructor(firstStmt.def)}');
             #end
 
             switch(firstStmt.def) {
                 case EMatch(PVar(accumVar), rhs):
                     #if debug_loop_transforms
-                    // DISABLED: trace('[XRay detectBlockComprehension]   EMatch found, RHS: ${Type.enumConstructor(rhs.def)}');
+                    // DISABLED: trace('[XRay detectBlockComprehension]   EMatch found, RHS: ${reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.def)}');
                     #end
 
                     // Check if RHS is empty list
@@ -1323,7 +1323,7 @@ class LoopTransforms {
                             // Check if remaining statements are EIf (filtered pattern)
                             var allEIf = true;
                             for (i in 1...stmts.length - 1) {  // Skip first and last
-                                if (Type.enumConstructor(stmts[i].def) != "EIf") {
+                                if (reflaxe.elixir.util.EnumReflection.enumConstructor(stmts[i].def) != "EIf") {
                                     allEIf = false;
                                     break;
                                 }
@@ -1352,15 +1352,15 @@ class LoopTransforms {
 
                                             // Extract literal value and body expression from then branch
                                             #if debug_loop_transforms
-                                            // DISABLED: trace('[XRay detectBlockComprehension]     Then branch type: ${Type.enumConstructor(thenBranch.def)}');
+                                            // DISABLED: trace('[XRay detectBlockComprehension]     Then branch type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(thenBranch.def)}');
                                             // Detailed inspection of ECall structure
                                             switch(thenBranch.def) {
                                                 case ECall(target, funcName, args):
-                                                    // DISABLED: trace('[XRay detectBlockComprehension]       ECall target: ${target != null ? Type.enumConstructor(target.def) : "null"}');
+                                                    // DISABLED: trace('[XRay detectBlockComprehension]       ECall target: ${target != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(target.def) : "null"}');
                                                     // DISABLED: trace('[XRay detectBlockComprehension]       ECall funcName: "$funcName"');
                                                     // DISABLED: trace('[XRay detectBlockComprehension]       ECall args count: ${args.length}');
                                                     for (idx in 0...args.length) {
-                                                        // DISABLED: trace('[XRay detectBlockComprehension]         Arg $idx: ${Type.enumConstructor(args[idx].def)}');
+                                                        // DISABLED: trace('[XRay detectBlockComprehension]         Arg $idx: ${reflaxe.elixir.util.EnumReflection.enumConstructor(args[idx].def)}');
                                                     }
                                                 default:
                                             }
@@ -1370,7 +1370,7 @@ class LoopTransforms {
                                                 // Pattern 1: variable.push(expr) - the actual pattern!
                                                 case ECall({def: EVar(_)}, "push", [expr]):
                                                     #if debug_loop_transforms
-                                                    // DISABLED: trace('[XRay detectBlockComprehension]       Found variable.push with expr type: ${Type.enumConstructor(expr.def)}');
+                                                    // DISABLED: trace('[XRay detectBlockComprehension]       Found variable.push with expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expr.def)}');
                                                     #end
 
                                                     if (bodyExpr == null) {
@@ -1388,7 +1388,7 @@ class LoopTransforms {
                                                 // Pattern 2: [] ++ [expr]
                                                 case EBinary(Concat, {def: EList([])}, {def: EList([expr])}):
                                                     #if debug_loop_transforms
-                                                    // DISABLED: trace('[XRay detectBlockComprehension]       Found concat with expr type: ${Type.enumConstructor(expr.def)}');
+                                                    // DISABLED: trace('[XRay detectBlockComprehension]       Found concat with expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expr.def)}');
                                                     #end
 
                                                     if (bodyExpr == null) {
@@ -1463,7 +1463,7 @@ class LoopTransforms {
 
                                                 default:
                                                     #if debug_loop_transforms
-                                                    // DISABLED: trace('[XRay detectBlockComprehension]       Then branch didn\'t match expected patterns (${Type.enumConstructor(thenBranch.def)})');
+                                                    // DISABLED: trace('[XRay detectBlockComprehension]       Then branch didn\'t match expected patterns (${reflaxe.elixir.util.EnumReflection.enumConstructor(thenBranch.def)})');
                                                     #end
                                             }
                                         default:
@@ -1474,11 +1474,11 @@ class LoopTransforms {
                                 // DISABLED: trace('[XRay detectBlockComprehension] Extracted literal values:');
                                 // DISABLED: trace('[XRay detectBlockComprehension]   Values count: ${values.length}');
                                 if (values.length > 0) {
-                                    // DISABLED: trace('[XRay detectBlockComprehension]   First value: ${Type.enumConstructor(values[0].def)}');
-                                    // DISABLED: trace('[XRay detectBlockComprehension]   Last value: ${Type.enumConstructor(values[values.length-1].def)}');
+                                    // DISABLED: trace('[XRay detectBlockComprehension]   First value: ${reflaxe.elixir.util.EnumReflection.enumConstructor(values[0].def)}');
+                                    // DISABLED: trace('[XRay detectBlockComprehension]   Last value: ${reflaxe.elixir.util.EnumReflection.enumConstructor(values[values.length-1].def)}');
                                 }
-                                // DISABLED: trace('[XRay detectBlockComprehension]   Filter condition: ${filterCondition != null ? Type.enumConstructor(filterCondition.def) : "null"}');
-                                // DISABLED: trace('[XRay detectBlockComprehension]   Body expr: ${bodyExpr != null ? Type.enumConstructor(bodyExpr.def) : "null"}');
+                                // DISABLED: trace('[XRay detectBlockComprehension]   Filter condition: ${filterCondition != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(filterCondition.def) : "null"}');
+                                // DISABLED: trace('[XRay detectBlockComprehension]   Body expr: ${bodyExpr != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(bodyExpr.def) : "null"}');
                                 #end
 
                                 // Check if we have a valid sequential range
@@ -1516,7 +1516,7 @@ class LoopTransforms {
             var stmt = stmts[i];
 
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectBlockComprehension]   Checking statement $i: ${Type.enumConstructor(stmt.def)}');
+            // DISABLED: trace('[XRay detectBlockComprehension]   Checking statement $i: ${reflaxe.elixir.util.EnumReflection.enumConstructor(stmt.def)}');
             #end
 
             switch(stmt.def) {
@@ -1525,9 +1525,9 @@ class LoopTransforms {
                     // DISABLED: trace('[XRay detectBlockComprehension]     EBlock with ${innerStmts.length} statements');
                     for (j in 0...innerStmts.length) {
                         var desc = switch(innerStmts[j].def) {
-                            case ECall(target, name, args): 'ECall(target=${target != null ? Type.enumConstructor(target.def) : "null"}, name=$name, ${args.length} args)';
-                            case EBinary(op, left, right): 'EBinary($op, ${Type.enumConstructor(left.def)}, ${Type.enumConstructor(right.def)})';
-                            default: Type.enumConstructor(innerStmts[j].def);
+                            case ECall(target, name, args): 'ECall(target=${target != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(target.def) : "null"}, name=$name, ${args.length} args)';
+                            case EBinary(op, left, right): 'EBinary($op, ${reflaxe.elixir.util.EnumReflection.enumConstructor(left.def)}, ${reflaxe.elixir.util.EnumReflection.enumConstructor(right.def)})';
+                            default: reflaxe.elixir.util.EnumReflection.enumConstructor(innerStmts[j].def);
                         };
                         // DISABLED: trace('[XRay detectBlockComprehension]       Inner statement $j: $desc');
                     }
@@ -1680,7 +1680,7 @@ class LoopTransforms {
             var stmt = blockStmts[idx];
 
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay UnrolledFiltered]   Checking statement $idx: ${Type.enumConstructor(stmt.def)}');
+            // DISABLED: trace('[XRay UnrolledFiltered]   Checking statement $idx: ${reflaxe.elixir.util.EnumReflection.enumConstructor(stmt.def)}');
             #end
 
             switch(stmt.def) {
@@ -1716,14 +1716,14 @@ class LoopTransforms {
                             extracted;
                         default:
                             #if debug_loop_transforms
-                            // DISABLED: trace('[XRay UnrolledFiltered]       Then branch is: ${Type.enumConstructor(thenBranch.def)}');
+                            // DISABLED: trace('[XRay UnrolledFiltered]       Then branch is: ${reflaxe.elixir.util.EnumReflection.enumConstructor(thenBranch.def)}');
                             #end
                             null;
                     };
 
                     if (literalValue != null) {
                         #if debug_loop_transforms
-                        // DISABLED: trace('[XRay UnrolledFiltered]       ✓ Extracted literal: ${Type.enumConstructor(literalValue.def)}');
+                        // DISABLED: trace('[XRay UnrolledFiltered]       ✓ Extracted literal: ${reflaxe.elixir.util.EnumReflection.enumConstructor(literalValue.def)}');
                         #end
                         values.push(literalValue);
                         conditions.push(condValue);
@@ -2395,7 +2395,7 @@ class LoopTransforms {
                 
             default:
                 // For other AST types, log for debugging but return false
-                // DISABLED: trace('[XRay LoopTransforms]   ⚠ Unhandled AST type in checkForIndex: ' + Type.enumConstructor(ast.def));
+                // DISABLED: trace('[XRay LoopTransforms]   ⚠ Unhandled AST type in checkForIndex: ' + reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def));
                 return false;
         }
     }

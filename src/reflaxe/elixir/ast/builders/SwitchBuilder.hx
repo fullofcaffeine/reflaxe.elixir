@@ -278,7 +278,7 @@ using StringTools;
         // DEBUG: Log ALL switch compilations
         #if debug_switch_builder
         // DISABLED: trace('[SwitchBuilder START] Compiling switch at ${e.pos}');
-        // DISABLED: trace('[SwitchBuilder START] Switch target: ${Type.enumConstructor(e.expr)}');
+        // DISABLED: trace('[SwitchBuilder START] Switch target: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
         #end
 
         // CRITICAL: Detect TEnumIndex optimization and recover enum type
@@ -328,7 +328,7 @@ using StringTools;
 
         // DEBUG: Output switch target info
         #if debug_switch_builder
-        // DISABLED: trace('[SwitchBuilder DEBUG] Switch target expression type: ${Type.enumConstructor(actualSwitchExpr.expr)}');
+        // DISABLED: trace('[SwitchBuilder DEBUG] Switch target expression type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(actualSwitchExpr.expr)}');
         if (targetVarName != null) {
             // DISABLED: trace('[SwitchBuilder DEBUG] Extracted variable name: ${targetVarName}');
             // DISABLED: trace('[SwitchBuilder DEBUG] Is infrastructure var: ${isInfrastructureVar(targetVarName)}');
@@ -346,7 +346,7 @@ using StringTools;
             // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
             var result = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedTarget, context);
             #if debug_switch_builder
-            // DISABLED: trace('[SwitchBuilder DEBUG] Compiled target AST: ${Type.enumConstructor(result.def)}');
+            // DISABLED: trace('[SwitchBuilder DEBUG] Compiled target AST: ${reflaxe.elixir.util.EnumReflection.enumConstructor(result.def)}');
             // DEBUG: Show exact variable name if it's EVar
             switch(result.def) {
                 case EVar(name):
@@ -599,7 +599,7 @@ using StringTools;
         // The user's variable "action" is in the case BODY where it's used
         // This is the ONLY way to recover the correct variable name after TEnumIndex
         #if debug_switch_builder trace('[SwitchBuilder] ====== PATTERN ANALYSIS ======'); #end
-        #if debug_switch_builder trace('[SwitchBuilder] Pattern expr type: ${Type.enumConstructor(value.expr)}'); #end
+        #if debug_switch_builder trace('[SwitchBuilder] Pattern expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(value.expr)}'); #end
 
         // NEW FIX: Extract variables from case body (where they're actually used)
         var patternVars = extractUsedVariablesFromCaseBody(switchCase.expr);
@@ -636,7 +636,7 @@ using StringTools;
             switch (switchCase.expr.expr) {
                 case TBlock(exprs):
                     for (expr in exprs) {
-                        if (Type.enumConstructor(expr.expr) == "TIf") {
+                        if (reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr) == "TIf") {
                             exprToCheck = expr;
                             break;
                         }
@@ -730,7 +730,7 @@ using StringTools;
                 case TBlock(exprs):
                     // Search for TIf in the block
                     for (expr in exprs) {
-                        if (Type.enumConstructor(expr.expr) == "TIf") {
+                        if (reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr) == "TIf") {
                             exprToCheck = expr;
                             break;
                         }
@@ -821,7 +821,7 @@ using StringTools;
 	        var clauses: Array<ECaseClause> = [];
 	        var current = expr;
 
-	                #if debug_switch_builder trace('[GuardChain] Starting extraction, expr type: ${Type.enumConstructor(current.expr)}'); #end
+	                #if debug_switch_builder trace('[GuardChain] Starting extraction, expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(current.expr)}'); #end
 
 	        // Names that are in scope outside the clause body must NOT be considered "undefined"
 	        // for binder harmonization. In particular, function parameters are always in scope
@@ -949,7 +949,7 @@ using StringTools;
 
                     // Continue with else-branch (may be another TIf or final value)
                     if (eelse != null) {
-                        #if debug_switch_builder trace('[GuardChain]   Else-branch type: ${Type.enumConstructor(eelse.expr)}'); #end
+                        #if debug_switch_builder trace('[GuardChain]   Else-branch type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(eelse.expr)}'); #end
 
                         // Unwrap TBlock to find nested TIf
                         var nextExpr = eelse;
@@ -958,7 +958,7 @@ using StringTools;
                                 #if debug_switch_builder trace('[GuardChain]   Unwrapping TBlock with ${exprs.length} expressions'); #end
                                 // Search for TIf in the block
                                 for (expr in exprs) {
-                                    if (Type.enumConstructor(expr.expr) == "TIf") {
+                                    if (reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr) == "TIf") {
                                         #if debug_switch_builder trace('[GuardChain]   Found TIf inside TBlock'); #end
                                         nextExpr = expr;
                                         break;
@@ -975,7 +975,7 @@ using StringTools;
                     }
 
                 default:
-                    #if debug_switch_builder trace('[GuardChain] Not a TIf (type: ${Type.enumConstructor(current.expr)}), creating final clause'); #end
+                    #if debug_switch_builder trace('[GuardChain] Not a TIf (type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(current.expr)}), creating final clause'); #end
                     // Reached final else (not a TIf) - create clause without guard
                     var substitutedBody = context.substituteIfNeeded(current);
                     var rawBody = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(substitutedBody, context);
@@ -1371,7 +1371,7 @@ using StringTools;
      * @param caseBody - The case body expression for usage analysis (determines underscore prefixes)
      */
     static function buildPattern(value: TypedExpr, targetVarName: String, guardVars: Array<String>, caseBody: TypedExpr, context: CompilationContext): Null<EPattern> {
-        #if debug_switch_builder trace('[SwitchBuilder] Building pattern for: ${Type.enumConstructor(value.expr)}'); #end
+        #if debug_switch_builder trace('[SwitchBuilder] Building pattern for: ${reflaxe.elixir.util.EnumReflection.enumConstructor(value.expr)}'); #end
         switch(value.expr) {
             case TConst(c):
                 // Constant patterns
@@ -1444,7 +1444,7 @@ using StringTools;
 
             default:
                 #if debug_ast_builder
-                #if !no_traces trace('[SwitchBuilder] Unhandled pattern type: ${Type.enumConstructor(value.expr)}'); #end
+                #if !no_traces trace('[SwitchBuilder] Unhandled pattern type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(value.expr)}'); #end
                 #end
                 return null;
         }
@@ -2476,13 +2476,13 @@ using StringTools;
             return [];
         }
 
-        // DISABLED: trace('[extractVarsFromGuardExpr] Starting extraction from: ${Type.enumConstructor(guardExpr.expr)}');
+        // DISABLED: trace('[extractVarsFromGuardExpr] Starting extraction from: ${reflaxe.elixir.util.EnumReflection.enumConstructor(guardExpr.expr)}');
         var vars: Array<String> = [];
 
         function traverse(expr: TypedExpr): Void {
             if (expr == null) return;
 
-            // DISABLED: trace('[extractVarsFromGuardExpr]   Traversing: ${Type.enumConstructor(expr.expr)}');
+            // DISABLED: trace('[extractVarsFromGuardExpr]   Traversing: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr)}');
             switch(expr.expr) {
                 case TLocal(v):
                     // DISABLED: trace('[extractVarsFromGuardExpr]     FOUND TLocal: ${v.name} (id=${v.id})');
@@ -2567,7 +2567,7 @@ using StringTools;
         var seenIds: Map<Int, Bool> = new Map();  // Track by TLocal.id to avoid duplicates
 
         #if debug_enum_extraction
-        // DISABLED: trace('[extractUsedVariablesFromCaseBody] Scanning case body type: ${Type.enumConstructor(caseBodyExpr.expr)}');
+        // DISABLED: trace('[extractUsedVariablesFromCaseBody] Scanning case body type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(caseBodyExpr.expr)}');
         #end
 
         // CRITICAL: For TSwitch in case body, the switch TARGET is the variable we need!
@@ -2590,7 +2590,7 @@ using StringTools;
                 #if debug_enum_extraction
                 // DISABLED: trace('[extractUsedVariablesFromCaseBody]   TBlock has ${exprs.length} expressions');
                 for (i in 0...exprs.length) {
-                    // DISABLED: trace('[extractUsedVariablesFromCaseBody]     Expression $i type: ${Type.enumConstructor(exprs[i].expr)}');
+                    // DISABLED: trace('[extractUsedVariablesFromCaseBody]     Expression $i type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(exprs[i].expr)}');
                 }
                 #end
 
@@ -2598,14 +2598,14 @@ using StringTools;
                 function findSwitchTarget(expr: TypedExpr, depth: Int = 0): Null<String> {
                     #if debug_enum_extraction
                     var indent = [for (i in 0...depth) "  "].join("");
-                    // DISABLED: trace('[findSwitchTarget]${indent}Checking expr type: ${Type.enumConstructor(expr.expr)}');
+                    // DISABLED: trace('[findSwitchTarget]${indent}Checking expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr)}');
                     #end
 
                     switch(expr.expr) {
                         case TSwitch(e, _, _):
                             // Found a switch! Extract its target
                             #if debug_enum_extraction
-                            // DISABLED: trace('[findSwitchTarget]${indent}  Found TSwitch! Target type: ${Type.enumConstructor(e.expr)}');
+                            // DISABLED: trace('[findSwitchTarget]${indent}  Found TSwitch! Target type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
                             #end
 
                             // Unwrap target if it's wrapped in TParenthesis or TMeta
@@ -2637,7 +2637,7 @@ using StringTools;
                                 case TEnumIndex(e):
                                     // The variable was transformed to enum index - extract from inner expr
                                     #if debug_enum_extraction
-                                    // DISABLED: trace('[findSwitchTarget]${indent}    Found TEnumIndex, extracting from inner expr type: ${Type.enumConstructor(e.expr)}');
+                                    // DISABLED: trace('[findSwitchTarget]${indent}    Found TEnumIndex, extracting from inner expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
                                     #end
                                     switch(e.expr) {
                                         case TLocal(v):
@@ -2647,13 +2647,13 @@ using StringTools;
                                             return v.name;
                                         default:
                                             #if debug_enum_extraction
-                                            // DISABLED: trace('[findSwitchTarget]${indent}    ❌ TEnumIndex inner is not TLocal (type: ${Type.enumConstructor(e.expr)})');
+                                            // DISABLED: trace('[findSwitchTarget]${indent}    ❌ TEnumIndex inner is not TLocal (type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)})');
                                             #end
                                             return null;
                                     }
                                 default:
                                     #if debug_enum_extraction
-                                    // DISABLED: trace('[findSwitchTarget]${indent}    ❌ TSwitch target is not TLocal or TEnumIndex (type: ${Type.enumConstructor(unwrappedTarget.expr)})');
+                                    // DISABLED: trace('[findSwitchTarget]${indent}    ❌ TSwitch target is not TLocal or TEnumIndex (type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(unwrappedTarget.expr)})');
                                     #end
                                     return null;
                             }
@@ -2833,19 +2833,19 @@ using StringTools;
     static function extractVarsFromPatternExpr(patternExpr: TypedExpr): Array<String> {
         var vars: Array<String> = [];
 
-        // DISABLED: trace('[extractVarsFromPatternExpr] Pattern expr type: ${Type.enumConstructor(patternExpr.expr)}');
+        // DISABLED: trace('[extractVarsFromPatternExpr] Pattern expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(patternExpr.expr)}');
 
         function traverse(expr: TypedExpr): Void {
             if (expr == null) return;
 
-            // DISABLED: trace('[extractVarsFromPatternExpr]   Traversing: ${Type.enumConstructor(expr.expr)}');
+            // DISABLED: trace('[extractVarsFromPatternExpr]   Traversing: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr)}');
 
             switch(expr.expr) {
                 case TEnumParameter(e, ef, index):
                     // This is an enum constructor parameter in the pattern
                     // Extract the actual parameter name from the enum field
                     // DISABLED: trace('[extractVarsFromPatternExpr]     Found TEnumParameter, ef.name=${ef.name}, index=$index');
-                    // DISABLED: trace('[extractVarsFromPatternExpr]     Inner expr (e) type: ${Type.enumConstructor(e.expr)}');
+                    // DISABLED: trace('[extractVarsFromPatternExpr]     Inner expr (e) type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
 
                     // CRITICAL: Don't extract from enum type definition - traverse to find actual TLocal
                     // The enum parameter type has names like "value", but we need the actual variable like "n"
@@ -2951,11 +2951,11 @@ using StringTools;
                     // (and within them, only the conditions). Otherwise, traverse normally.
                     var hasIf = false;
                     for (sub in el) {
-                        if (sub != null && Type.enumConstructor(sub.expr) == "TIf") { hasIf = true; break; }
+                        if (sub != null && reflaxe.elixir.util.EnumReflection.enumConstructor(sub.expr) == "TIf") { hasIf = true; break; }
                     }
                     if (hasIf) {
                         for (sub in el) {
-                            if (sub != null && Type.enumConstructor(sub.expr) == "TIf") traverse(sub);
+                            if (sub != null && reflaxe.elixir.util.EnumReflection.enumConstructor(sub.expr) == "TIf") traverse(sub);
                         }
                     } else {
                         for (sub in el) traverse(sub);
@@ -3042,7 +3042,7 @@ using StringTools;
             var arg = args[i];
 
             #if debug_enum_extraction
-            // DISABLED: trace('[SwitchBuilder.buildEnumPattern] Processing arg $i: ${Type.enumConstructor(arg.expr)}');
+            // DISABLED: trace('[SwitchBuilder.buildEnumPattern] Processing arg $i: ${reflaxe.elixir.util.EnumReflection.enumConstructor(arg.expr)}');
             #end
 
             // Priority 1: Guard variable (from user's guard condition)
@@ -3117,7 +3117,7 @@ using StringTools;
                     // Use underscore for non-variable patterns
                     // DISABLED: trace('[SwitchBuilder] *** PATTERN VAR DEBUG (NOT TLocal!) ***');
                     // DISABLED: trace('[SwitchBuilder]   Index: $i');
-                    // DISABLED: trace('[SwitchBuilder]   Arg expr type: ${Type.enumConstructor(arg.expr)}');
+                    // DISABLED: trace('[SwitchBuilder]   Arg expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(arg.expr)}');
                     // DISABLED: trace('[SwitchBuilder]   EnumParam: ${enumParam}');
                     // DISABLED: trace('[SwitchBuilder]   GuardVar: ${guardVar}');
                     patterns.push(PWildcard);

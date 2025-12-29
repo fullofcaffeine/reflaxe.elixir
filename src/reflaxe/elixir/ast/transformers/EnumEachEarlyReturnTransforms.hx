@@ -263,7 +263,7 @@ class EnumEachEarlyReturnTransforms {
 
             var fnAst = unwrapFnArg(eachCall.fnArg);
             if (fnAst == null) {
-                debugLog('Found Enum.each but could not unwrap fn arg; def=' + Type.enumConstructor(eachCall.fnArg.def));
+                debugLog('Found Enum.each but could not unwrap fn arg; def=' + reflaxe.elixir.util.EnumReflection.enumConstructor(eachCall.fnArg.def));
                 return null;
             }
 
@@ -274,7 +274,7 @@ class EnumEachEarlyReturnTransforms {
                     null;
             };
             if (clause == null) {
-                debugLog('Found Enum.each but unexpected fn shape; def=' + Type.enumConstructor(fnAst.def));
+                debugLog('Found Enum.each but unexpected fn shape; def=' + reflaxe.elixir.util.EnumReflection.enumConstructor(fnAst.def));
                 return null;
             }
 
@@ -321,7 +321,7 @@ class EnumEachEarlyReturnTransforms {
                     null;
             };
             if (earlyReturn == null) {
-                debugLog('Found Enum.each but body did not match early-return shape; binder=' + binderName + ' body=' + Type.enumConstructor(bodyExpr.def));
+                debugLog('Found Enum.each but body did not match early-return shape; binder=' + binderName + ' body=' + reflaxe.elixir.util.EnumReflection.enumConstructor(bodyExpr.def));
                 return null;
             }
 

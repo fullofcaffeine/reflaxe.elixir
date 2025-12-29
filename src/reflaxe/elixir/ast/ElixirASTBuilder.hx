@@ -332,7 +332,7 @@ class ElixirASTBuilder {
 
     private static function buildFromTypedExprWithContext(expr: TypedExpr, context: reflaxe.elixir.CompilationContext): ElixirAST {
         #if debug_compilation_hang
-        var exprType = Type.enumConstructor(expr.expr);
+        var exprType = reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr);
         var exprId = '${exprType}_${expr.pos}';
 
         // Debug circular reference issue
@@ -342,7 +342,7 @@ class ElixirASTBuilder {
                 case TVar(v, _):
                     // DISABLED: Sys.println('[HANG DEBUG]   TVar: ${v.name} (id: ${v.id})');
                 case TParenthesis(e):
-                    // DISABLED: Sys.println('[HANG DEBUG]   TParenthesis wrapping: ${Type.enumConstructor(e.expr)}');
+                    // DISABLED: Sys.println('[HANG DEBUG]   TParenthesis wrapping: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
                 case TBinop(op, _, _):
                     // DISABLED: Sys.println('[HANG DEBUG]   TBinop operator: ${op}');
                 default:
@@ -425,7 +425,7 @@ class ElixirASTBuilder {
         if (currentContext != null && currentContext.builderCache != null) {
             cached = currentContext.builderCache.get(expr);
             if (cached != null) {
-                #if debug_compilation_hang Sys.println('[HANG DEBUG] Cache hit for ' + Type.enumConstructor(expr.expr) + ' at ' + expr.pos); #end
+                #if debug_compilation_hang Sys.println('[HANG DEBUG] Cache hit for ' + reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr) + ' at ' + expr.pos); #end
                 currentContext = previousContext;
                 #if debug_compilation_hang exitNode(exprType); #end
                 return cached;
@@ -569,7 +569,7 @@ class ElixirASTBuilder {
      */
     static function convertExpression(expr: TypedExpr): ElixirASTDef {
         #if debug_compilation_hang
-        var nodeType = Type.enumConstructor(expr.expr);
+        var nodeType = reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr);
         if (nodeType == "TSwitch" || nodeType == "TEnumIndex" || nodeType == "TWhile" || nodeType == "TFor") {
             // DISABLED: Sys.println('[HANG DEBUG] 🎯 Processing critical node: ${nodeType} at pos ${expr.pos}');
         }
@@ -577,12 +577,12 @@ class ElixirASTBuilder {
 
         #if debug_ast_builder
         // DEBUG: Trace TVar expressions at entry point
-        var exprType = Type.enumConstructor(expr.expr);
+        var exprType = reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr);
         if (exprType == "TVar") {
             switch(expr.expr) {
                 case TVar(tvar, init):
                     // DISABLED: trace('[convertExpression ENTRY] 🔍 TVar detected: ${tvar.name}');
-                    // DISABLED: trace('[convertExpression ENTRY]   TVar init: ${init != null ? Type.enumConstructor(init.expr) : "null"}');
+                    // DISABLED: trace('[convertExpression ENTRY]   TVar init: ${init != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr) : "null"}');
                 default:
             }
         }
@@ -685,7 +685,7 @@ class ElixirASTBuilder {
                 // DISABLED: trace('[DEBUG TVar] Compiling TVar: ${v.name}');
                 if (v.name.indexOf("g") >= 0 || v.name.indexOf("_") >= 0) {
                     // DISABLED: trace('[DEBUG TVar]   Name contains g or underscore: ${v.name}');
-                    // DISABLED: trace('[DEBUG TVar]   Init type: ${init != null ? Type.enumConstructor(init.expr) : "null"}');
+                    // DISABLED: trace('[DEBUG TVar]   Init type: ${init != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr) : "null"}');
                     // DISABLED: trace('[DEBUG TVar]   Is simple init: ${init == null || isSimpleInit(init)}');
                 }
                 #end
@@ -725,7 +725,7 @@ class ElixirASTBuilder {
 
                     #if debug_ast_builder
                     if (v.name == "_g" || v.name == "g") {
-                        // DISABLED: trace('[DEBUG TVar]   VariableBuilder result: ${result != null ? Type.enumConstructor(result) : "null"}');
+                        // DISABLED: trace('[DEBUG TVar]   VariableBuilder result: ${result != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(result) : "null"}');
                     }
                     #end
 
@@ -741,7 +741,7 @@ class ElixirASTBuilder {
                 // Debug: trace all infrastructure variable assignments to understand their structure
                 #if debug_infrastructure_vars
                 if (isInfrastructureVar && init != null) {
-                    // DISABLED: trace('[Infrastructure Variable Debug] TVar ${v.name} (id: ${v.id}) init type: ${Type.enumConstructor(init.expr)}');
+                    // DISABLED: trace('[Infrastructure Variable Debug] TVar ${v.name} (id: ${v.id}) init type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                     switch(init.expr) {
                         case TField(obj, fa):
                             // DISABLED: trace('[Infrastructure Variable Debug]   TField detected');
@@ -848,7 +848,7 @@ class ElixirASTBuilder {
                     #end
                     if (init != null) {
                         #if debug_ast_builder
-                        // DISABLED: trace('[XRay LoopBody] Init type: ${Type.enumConstructor(init.expr)}');
+                        // DISABLED: trace('[XRay LoopBody] Init type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                         #end
                     }
                 }
@@ -856,7 +856,7 @@ class ElixirASTBuilder {
                 
                 #if debug_null_coalescing
                 #if debug_ast_builder
-                // DISABLED: trace('[AST Builder] TVar: ${v.name}, init type: ${init != null ? Type.enumConstructor(init.expr) : "null"}');
+                // DISABLED: trace('[AST Builder] TVar: ${v.name}, init type: ${init != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr) : "null"}');
                 #end
                 #end
                 
@@ -866,7 +866,7 @@ class ElixirASTBuilder {
                 #end
                 if (init != null) {
                     #if debug_ast_builder
-                    // DISABLED: trace('[XRay AssignmentContext] Init expr: ${Type.enumConstructor(init.expr)}');
+                    // DISABLED: trace('[XRay AssignmentContext] Init expr: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                     #end
                     switch(init.expr) {
                         case TField(e, _):
@@ -889,7 +889,7 @@ class ElixirASTBuilder {
                 #if debug_array_patterns
                 if (init != null) {
                     #if debug_ast_builder
-                    // DISABLED: trace('[XRay ArrayPattern] TVar ${v.name} init: ${Type.enumConstructor(init.expr)}');
+                    // DISABLED: trace('[XRay ArrayPattern] TVar ${v.name} init: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                     #end
                     // Check if this is an array map/filter initialization
                     switch(init.expr) {
@@ -913,21 +913,21 @@ class ElixirASTBuilder {
                             #end
                             for (i in 0...blockStmts.length) {
                                 #if debug_ast_builder
-                                // DISABLED: trace('  stmt[' + i + '] = ' + Type.enumConstructor(blockStmts[i].expr));
+                                // DISABLED: trace('  stmt[' + i + '] = ' + reflaxe.elixir.util.EnumReflection.enumConstructor(blockStmts[i].expr));
                                 #end
                                 switch(blockStmts[i].expr) {
                                     case TVar(tempVar, tempInit):
-                                        var initKind = tempInit != null ? Type.enumConstructor(tempInit.expr) : "null";
+                                        var initKind = tempInit != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(tempInit.expr) : "null";
                                         #if debug_ast_builder
                                         // DISABLED: trace('    TVar ' + tempVar.name + ' init=' + initKind);
                                         #end
                                     case TBinop(op, lhs, rhs):
                                         #if debug_ast_builder
-                                        // DISABLED: trace('    TBinop op=' + Std.string(op) + ' lhs=' + Type.enumConstructor(lhs.expr) + ' rhs=' + Type.enumConstructor(rhs.expr));
+                                        // DISABLED: trace('    TBinop op=' + Std.string(op) + ' lhs=' + reflaxe.elixir.util.EnumReflection.enumConstructor(lhs.expr) + ' rhs=' + reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.expr));
                                         #end
                                     case TCall(func, args):
                                         #if debug_ast_builder
-                                        // DISABLED: trace('    TCall func=' + Type.enumConstructor(func.expr) + ' args=' + [for (a in args) Type.enumConstructor(a.expr)].join(","));
+                                        // DISABLED: trace('    TCall func=' + reflaxe.elixir.util.EnumReflection.enumConstructor(func.expr) + ' args=' + [for (a in args) reflaxe.elixir.util.EnumReflection.enumConstructor(a.expr)].join(","));
                                         #end
                                     case TLocal(localVar):
                                         #if debug_ast_builder
@@ -1301,7 +1301,7 @@ class ElixirASTBuilder {
                 var matchNode = if (init != null) {
                     #if debug_everythingisexpr
                     #if debug_ast_builder
-                    // DISABLED: trace('[TVar init] Processing init for ${v.name}, type: ${Type.enumConstructor(init.expr)}');
+                    // DISABLED: trace('[TVar init] Processing init for ${v.name}, type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                     #end
 
                     // Check if this looks like a lifted switch (static methods returning switches often get this pattern)
@@ -1323,7 +1323,7 @@ class ElixirASTBuilder {
                                 #end
                                 for (i in 0...exprs.length) {
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[TVar init]     Expr[$i]: ${Type.enumConstructor(exprs[i].expr)}');
+                                    // DISABLED: trace('[TVar init]     Expr[$i]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(exprs[i].expr)}');
                                     #end
                                 }
                             case TSwitch(e, cases, edef):
@@ -1332,7 +1332,7 @@ class ElixirASTBuilder {
                                 #end
                             default:
                                 #if debug_ast_builder
-                                // DISABLED: trace('[TVar init]   Other type: ${Type.enumConstructor(init.expr)}');
+                                // DISABLED: trace('[TVar init]   Other type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                                 #end
                         }
                     }
@@ -1379,7 +1379,7 @@ class ElixirASTBuilder {
                                     #end
                                     for (i in 0...stmts.length) {
                                         #if debug_ast_builder
-                                        // DISABLED: trace('[XRay ArrayPattern]   stmt[$i]: ${Type.enumConstructor(stmts[i].expr)}');
+                                        // DISABLED: trace('[XRay ArrayPattern]   stmt[$i]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(stmts[i].expr)}');
                                         #end
                                         // Check if stmt[1] is a nested TBlock
                                         if (i == 1) {
@@ -1390,7 +1390,7 @@ class ElixirASTBuilder {
                                                     #end
                                                     for (j in 0...Std.int(Math.min(3, innerStmts.length))) {
                                                         #if debug_ast_builder
-                                                        // DISABLED: trace('[XRay ArrayPattern]       inner[$j]: ${Type.enumConstructor(innerStmts[j].expr)}');
+                                                        // DISABLED: trace('[XRay ArrayPattern]       inner[$j]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(innerStmts[j].expr)}');
                                                         #end
                                                     }
                                                 default:
@@ -1413,7 +1413,7 @@ class ElixirASTBuilder {
                                             case TVar(v, initExpr) if (initExpr != null && (v.name.startsWith("g") || v.name.startsWith("_g"))):
                                                 #if debug_array_patterns
                                                 #if debug_ast_builder
-                                                // DISABLED: trace('[XRay ArrayPattern] Found TVar for ${v.name}, checking init type: ${initExpr != null ? Type.enumConstructor(initExpr.expr) : "null"}');
+                                                // DISABLED: trace('[XRay ArrayPattern] Found TVar for ${v.name}, checking init type: ${initExpr != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(initExpr.expr) : "null"}');
                                                 #end
                                                 #end
                                                 switch(initExpr.expr) {
@@ -2423,7 +2423,7 @@ class ElixirASTBuilder {
                         // Transform: this.test_data -> context[:test_data]
                         if (currentContext.isInExUnitTest) {
                             #if debug_exunit
-                            // DISABLED: trace('[AST Builder] TField in ExUnit test - field: ${fieldName}, e.expr: ${Type.enumConstructor(e.expr)}');
+                            // DISABLED: trace('[AST Builder] TField in ExUnit test - field: ${fieldName}, e.expr: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
                             switch(e.expr) {
                                 case TLocal(v): trace('[AST Builder]   TLocal var: ${v.name}');
                                 default:
@@ -2506,12 +2506,12 @@ class ElixirASTBuilder {
                         switch(el[0].expr) {
                             case TVar(tvar, init):
                                 // DISABLED: trace('[ElixirASTBuilder]   TVar name: ${tvar.name}');
-                                // DISABLED: trace('[ElixirASTBuilder]   TVar init: ${init != null ? Type.enumConstructor(init.expr) : "null"}');
+                                // DISABLED: trace('[ElixirASTBuilder]   TVar init: ${init != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr) : "null"}');
                             default:
                         }
                         switch(el[1].expr) {
                             case TSwitch(target, _, _):
-                                // DISABLED: trace('[ElixirASTBuilder]   TSwitch target: ${Type.enumConstructor(target.expr)}');
+                                // DISABLED: trace('[ElixirASTBuilder]   TSwitch target: ${reflaxe.elixir.util.EnumReflection.enumConstructor(target.expr)}');
                             default:
                         }
                     }
@@ -2752,7 +2752,7 @@ class ElixirASTBuilder {
                     #end
                     if (f.expr != null) {
                         #if debug_ast_builder
-                        // DISABLED: trace('[TFunction] Function body type: ${Type.enumConstructor(f.expr.expr)}');
+                        // DISABLED: trace('[TFunction] Function body type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(f.expr.expr)}');
                         #end
 
                         // Check what the function body looks like
@@ -2763,7 +2763,7 @@ class ElixirASTBuilder {
                                 #end
                                 for (i in 0...exprs.length) {
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[TFunction]   Expr[$i]: ${Type.enumConstructor(exprs[i].expr)}');
+                                    // DISABLED: trace('[TFunction]   Expr[$i]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(exprs[i].expr)}');
                                     #end
 
                                     // Check if it's a TVar with problematic init
@@ -2774,7 +2774,7 @@ class ElixirASTBuilder {
                                             #end
                                             if (init != null) {
                                                 #if debug_ast_builder
-                                                // DISABLED: trace('[TFunction]       Init type: ${Type.enumConstructor(init.expr)}');
+                                                // DISABLED: trace('[TFunction]       Init type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                                                 #end
 
                                                 // Check if it's TLocal(value)
@@ -2792,7 +2792,7 @@ class ElixirASTBuilder {
                             case TReturn(expr):
                                 if (expr != null) {
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[TFunction] Direct return, expr type: ${Type.enumConstructor(expr.expr)}');
+                                    // DISABLED: trace('[TFunction] Direct return, expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr)}');
                                     #end
                                 }
                             default:
@@ -3094,17 +3094,17 @@ class ElixirASTBuilder {
             case TFor(v, e1, e2):
                 #if debug_ast_builder
                 // DISABLED: trace('[TFor] Processing for loop, var: ${v.name}');
-                // DISABLED: trace('[TFor] Body expression type: ${Type.enumConstructor(e2.expr)}');
+                // DISABLED: trace('[TFor] Body expression type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e2.expr)}');
                 switch(e2.expr) {
                     case TBlock(exprs):
                         // DISABLED: trace('[TFor] Body is TBlock with ${exprs.length} expressions');
                         for (i in 0...exprs.length) {
-                            // DISABLED: trace('[TFor]   [$i]: ${Type.enumConstructor(exprs[i].expr)}');
+                            // DISABLED: trace('[TFor]   [$i]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(exprs[i].expr)}');
                         }
                     case TSwitch(switchExpr, _, _):
-                        // DISABLED: trace('[TFor] Body is direct TSwitch on: ${Type.enumConstructor(switchExpr.expr)}');
+                        // DISABLED: trace('[TFor] Body is direct TSwitch on: ${reflaxe.elixir.util.EnumReflection.enumConstructor(switchExpr.expr)}');
                     default:
-                        // DISABLED: trace('[TFor] Body is: ${Type.enumConstructor(e2.expr)}');
+                        // DISABLED: trace('[TFor] Body is: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e2.expr)}');
                 }
                 #end
                 
@@ -3526,7 +3526,7 @@ class ElixirASTBuilder {
                                            context: reflaxe.elixir.CompilationContext): ElixirASTDef {
         #if debug_ast_builder
         // DISABLED: trace('[buildFieldPatternSwitch] Building field pattern switch on ${fieldName}');
-        // DISABLED: trace('[buildFieldPatternSwitch] Root object type: ${Type.enumConstructor(rootObj.expr)}');
+        // DISABLED: trace('[buildFieldPatternSwitch] Root object type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(rootObj.expr)}');
         #end
         
         // Build the switch target (the root object)
@@ -3759,7 +3759,7 @@ class ElixirASTBuilder {
         #if debug_enum_each_early_return
         switch (expr.expr) {
             case TFor(_, _, _) | TWhile(_, _, _):
-                trace('[createMetadata] ' + Type.enumConstructor(expr.expr) + ' loopContainsReturn=' + loopContainsReturn + ' fromReturn=' + fromReturn);
+                trace('[createMetadata] ' + reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr) + ' loopContainsReturn=' + loopContainsReturn + ' fromReturn=' + fromReturn);
             default:
         }
         #end
@@ -3938,7 +3938,7 @@ class ElixirASTBuilder {
      */
     static function tryExpandElixirInjection(methodExpr: TypedExpr, thisExpr: TypedExpr, args: Array<TypedExpr>, context: reflaxe.elixir.CompilationContext): Null<ElixirAST> {
         #if debug_ast_builder
-        // DISABLED: trace('[AST Builder] tryExpandElixirInjection examining: ${Type.enumConstructor(methodExpr.expr)}');
+        // DISABLED: trace('[AST Builder] tryExpandElixirInjection examining: ${reflaxe.elixir.util.EnumReflection.enumConstructor(methodExpr.expr)}');
         #end
         
         // First check if this is a function, and if so, extract its body

@@ -728,7 +728,7 @@ class CompilationContext implements BuildContext {
         }
 
         #if debug_preprocessor
-        #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded] Checking expr type: ${Type.enumConstructor(expr.expr)}'); #end
+        #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded] Checking expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr)}'); #end
         #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded] Substitution map has ${Lambda.count(infraVarSubstitutions)} entries'); #end
         for (id in infraVarSubstitutions.keys()) {
             #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded]   Map entry: ID=$id'); #end
@@ -791,7 +791,7 @@ class CompilationContext implements BuildContext {
                 }
             default:
                 #if debug_preprocessor
-                #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded]   After unwrapping: ${Type.enumConstructor(unwrapped.expr)} - not a TLocal'); #end
+                #if debug_compilation_context trace('[CompilationContext.substituteIfNeeded]   After unwrapping: ${reflaxe.elixir.util.EnumReflection.enumConstructor(unwrapped.expr)} - not a TLocal'); #end
                 #end
                 // Don't substitute - the expression is not an infrastructure variable reference
                 expr;

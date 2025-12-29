@@ -429,7 +429,7 @@ class HeexStringReturnToSigilTransforms {
                 case EParen(inner): cur = inner; parens++;
                 default: break;
             }
-            if (Type.enumConstructor(cur.def) != "EParen") break;
+            if (reflaxe.elixir.util.EnumReflection.enumConstructor(cur.def) != "EParen") break;
         }
         switch (cur.def) {
             case EString(s) if (looksLikeHtml(s)):
@@ -768,7 +768,7 @@ class HeexStringReturnToSigilTransforms {
                             }
                             argsRenamed = tmp;
                         }
-                        var newDef = Type.enumConstructor(n.def) == "EDef"
+                        var newDef = reflaxe.elixir.util.EnumReflection.enumConstructor(n.def) == "EDef"
                             ? EDef(name, argsRenamed, guards, newBody)
                             : EDefp(name, argsRenamed, guards, newBody);
                         makeASTWithMeta(newDef, n.metadata, n.pos);
@@ -800,7 +800,7 @@ class HeexStringReturnToSigilTransforms {
                                 var content2 = (extracted2 != null) ? extracted2 : collected2;
                                 var normalized2 = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(content2);
                                 var sig2 = makeAST(ESigil("H", normalized2, ""));
-                                var newDef2 = Type.enumConstructor(n.def) == "EDef"
+                                var newDef2 = reflaxe.elixir.util.EnumReflection.enumConstructor(n.def) == "EDef"
                                     ? EDef(name, argsRenamed, guards, sig2)
                                     : EDefp(name, argsRenamed, guards, sig2);
                                 makeASTWithMeta(newDef2, n.metadata, n.pos);

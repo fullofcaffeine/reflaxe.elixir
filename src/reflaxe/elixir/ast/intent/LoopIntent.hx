@@ -137,7 +137,7 @@ typedef LoopIntentMetadata = {
 	/**
 	 * Original source position for error reporting
 	 */
-	var ?sourcePos: haxe.macro.Position;
+	var ?sourcePos: Position;
 	
 	/**
 	 * Whether this loop was desugared from a for loop by Haxe

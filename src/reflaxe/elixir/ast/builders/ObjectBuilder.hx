@@ -69,7 +69,7 @@ class ObjectBuilder {
         #if debug_ast_builder
         // DISABLED: trace('[ObjectBuilder] Building object with ${fields.length} fields');
         for (field in fields) {
-            // DISABLED: trace('[ObjectBuilder]   Field "${field.name}" expr type: ${Type.enumConstructor(field.expr.expr)}');
+            // DISABLED: trace('[ObjectBuilder]   Field "${field.name}" expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(field.expr.expr)}');
         }
         #end
         

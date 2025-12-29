@@ -132,6 +132,16 @@ class StringBuf {
         
         this.parts.push(substr);
     }
+
+    /**
+     * Clears the buffer.
+     *
+     * Haxe 5 added `clear()` to the std `StringBuf` core API. For Elixir,
+     * this resets the underlying iolist parts to an empty list.
+     */
+    public function clear(): Void {
+        this.parts = [];
+    }
     
     /**
      * Returns the content of `this` StringBuf as a String.

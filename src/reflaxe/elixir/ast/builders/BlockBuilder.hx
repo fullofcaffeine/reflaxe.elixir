@@ -74,7 +74,7 @@ class BlockBuilder {
         #if debug_ast_builder
         // DISABLED: trace('[BlockBuilder] Building block with ${el.length} expressions');
         for (i in 0...Math.ceil(Math.min(5, el.length))) {
-            // DISABLED: trace('[BlockBuilder]   Expr[$i]: ${Type.enumConstructor(el[i].expr)}');
+            // DISABLED: trace('[BlockBuilder]   Expr[$i]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(el[i].expr)}');
         }
         #end
         
@@ -793,8 +793,8 @@ class BlockBuilder {
         if (expressions.length == 2) {
             #if debug_ast_builder
             // DISABLED: trace('[BlockBuilder] Checking 2-expr block for infrastructure var pattern');
-            // DISABLED: trace('[BlockBuilder]   Expr[0] type: ${Type.enumConstructor(expressions[0].def)}');
-            // DISABLED: trace('[BlockBuilder]   Expr[1] type: ${Type.enumConstructor(expressions[1].def)}');
+            // DISABLED: trace('[BlockBuilder]   Expr[0] type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expressions[0].def)}');
+            // DISABLED: trace('[BlockBuilder]   Expr[1] type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expressions[1].def)}');
             #end
 
             switch(expressions[0].def) {

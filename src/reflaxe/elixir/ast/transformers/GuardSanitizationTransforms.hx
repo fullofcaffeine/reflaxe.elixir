@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
+import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirAST.EUnaryOp;
 import reflaxe.elixir.ast.ElixirASTPrinter;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -117,7 +118,7 @@ class GuardSanitizationTransforms {
         }
     }
 
-    static function makeIsMapKey(mapExpr: ElixirAST, keyExpr: ElixirAST, meta: reflaxe.elixir.ast.ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
+    static function makeIsMapKey(mapExpr: ElixirAST, keyExpr: ElixirAST, meta: ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
         return makeASTWithMeta(ERemoteCall(makeAST(EVar("Kernel")), "is_map_key", [mapExpr, keyExpr]), meta, pos);
     }
 

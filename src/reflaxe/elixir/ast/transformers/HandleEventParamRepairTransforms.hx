@@ -51,7 +51,7 @@ class HandleEventParamRepairTransforms {
           #if debug_transforms
           if (nameAny == "handle_event") {
             var kinds = [];
-            if (argsAny != null) for (a in argsAny) kinds.push(Type.enumConstructor(a));
+            if (argsAny != null) for (a in argsAny) kinds.push(reflaxe.elixir.util.EnumReflection.enumConstructor(a));
           }
           #end
           node;
@@ -63,7 +63,7 @@ class HandleEventParamRepairTransforms {
           #if debug_transforms
           if (nameAny2 == "handle_event") {
             var kinds2 = [];
-            if (argsAny2 != null) for (a2 in argsAny2) kinds2.push(Type.enumConstructor(a2));
+            if (argsAny2 != null) for (a2 in argsAny2) kinds2.push(reflaxe.elixir.util.EnumReflection.enumConstructor(a2));
           }
           #end
           node;

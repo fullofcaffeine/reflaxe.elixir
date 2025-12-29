@@ -219,7 +219,7 @@ class TypedExprPreprocessor {
             // DISABLED: trace('[TypedExprPreprocessor] ===== SUBSTITUTION MAP CONTENTS =====');
             for (id in substitutions.keys()) {
                 var subExpr = substitutions.get(id);
-                var exprType = Type.enumConstructor(subExpr.expr);
+                var exprType = reflaxe.elixir.util.EnumReflection.enumConstructor(subExpr.expr);
                 // DISABLED: trace('[TypedExprPreprocessor]   ID ${id} => ${exprType}');
             }
             // DISABLED: trace('[TypedExprPreprocessor] ====================================');
@@ -316,7 +316,7 @@ class TypedExprPreprocessor {
      */
     static function containsInfrastructurePattern(expr: TypedExpr): Bool {
         #if debug_preprocessor
-        var exprType = Type.enumConstructor(expr.expr);
+        var exprType = reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr);
         #end
 
         var result = switch(expr.expr) {
@@ -333,7 +333,7 @@ class TypedExprPreprocessor {
                 Lambda.exists(exprs, e -> containsInfrastructurePattern(e));
             case TReturn(e) if (e != null):
                 #if debug_preprocessor
-                // DISABLED: trace('[containsInfrastructurePattern] Checking TReturn, inner expr type: ${Type.enumConstructor(e.expr)}');
+                // DISABLED: trace('[containsInfrastructurePattern] Checking TReturn, inner expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
                 #end
                 var hasPattern = containsInfrastructurePattern(e);
                 #if debug_preprocessor
@@ -464,7 +464,7 @@ class TypedExprPreprocessor {
                     var result = processBlock(exprs, expr.pos, expr.t, subs);
                     #if debug_preprocessor
                     // DISABLED: trace('[applySubstitutionsRecursively] After processBlock - substitutions map size: ${Lambda.count(subs)}');
-                    // DISABLED: trace('[applySubstitutionsRecursively] Result AST type: ${Type.enumConstructor(result.expr)}');
+                    // DISABLED: trace('[applySubstitutionsRecursively] Result AST type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(result.expr)}');
                     #end
                     return result;
                 } else {
@@ -784,7 +784,7 @@ class TypedExprPreprocessor {
                         && !protectedMutationInfraVarIds.exists(v.id)) {
                         #if debug_preprocessor
                         // DISABLED: trace('[processBlock] ✓ INFRASTRUCTURE VARIABLE DETECTED: "${v.name}" (ID: ${v.id})');
-                        // DISABLED: trace('[processBlock] Init expression type: ${Type.enumConstructor(init.expr)}');
+                        // DISABLED: trace('[processBlock] Init expression type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                         // DISABLED: trace('[processBlock] Registering substitution...');
                         #end
 
@@ -792,7 +792,7 @@ class TypedExprPreprocessor {
                         substitutions.set(v.id, init);
 
                         #if debug_preprocessor
-                        // DISABLED: trace('[processBlock] ✓ REGISTERED: "${v.name}" (ID ${v.id}) => ${Type.enumConstructor(init.expr)}');
+                        // DISABLED: trace('[processBlock] ✓ REGISTERED: "${v.name}" (ID ${v.id}) => ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                         var allKeys = [for (k in substitutions.keys()) k];
                         var allNames = [];
                         for (k in allKeys) {

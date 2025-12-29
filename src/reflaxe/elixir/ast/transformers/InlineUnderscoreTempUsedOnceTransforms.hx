@@ -48,10 +48,10 @@ class InlineUnderscoreTempUsedOnceTransforms {
           for (si in 0...stmts.length) {
             var st = stmts[si];
             if (st != null && st.def != null) {
-              // DISABLED: trace('[InlineUnderscore]   stmt[$si]: ${Type.enumConstructor(st.def)}');
+              // DISABLED: trace('[InlineUnderscore]   stmt[$si]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(st.def)}');
               switch (st.def) {
                 case EMatch(pattern, _):
-                  // DISABLED: trace('[InlineUnderscore]     pattern: ${Type.enumConstructor(pattern)}');
+                  // DISABLED: trace('[InlineUnderscore]     pattern: ${reflaxe.elixir.util.EnumReflection.enumConstructor(pattern)}');
                   switch (pattern) {
                     case PVar(vn): trace('[InlineUnderscore]       PVar name: "$vn", isUnderscore: ${isUnderscore(vn)}');
                     default:

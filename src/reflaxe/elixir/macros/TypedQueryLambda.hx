@@ -3,6 +3,7 @@ package reflaxe.elixir.macros;
 #if macro
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.Expr.Position;
 import haxe.macro.Type;
 using haxe.macro.Tools;
 #end
@@ -120,7 +121,7 @@ class TypedQueryLambda {
     }
 
     // Validate left-hand side is the lambda param field, return snake-cased Elixir access like "t.user_id"
-    private static function toField(e: Expr, param: String, schemaName: String, pos:haxe.macro.Position): String {
+    private static function toField(e: Expr, param: String, schemaName: String, pos: Position): String {
         return switch (e.expr) {
             case EField(obj, field):
                 // Validate field exists on schema

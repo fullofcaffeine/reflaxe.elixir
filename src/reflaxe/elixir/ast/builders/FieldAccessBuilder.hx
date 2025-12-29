@@ -64,7 +64,7 @@ class FieldAccessBuilder {
      */
     public static function build(e: TypedExpr, fa: FieldAccess, context: CompilationContext): Null<ElixirASTDef> {
         #if debug_ast_builder
-        // DISABLED: trace('[FieldAccessBuilder] Building field access: ${Type.enumConstructor(fa)}');
+        // DISABLED: trace('[FieldAccessBuilder] Building field access: ${reflaxe.elixir.util.EnumReflection.enumConstructor(fa)}');
         #end
         
         switch(fa) {
@@ -85,7 +85,7 @@ class FieldAccessBuilder {
                 
             default:
                 #if debug_ast_builder
-                // DISABLED: trace('[FieldAccessBuilder] Unhandled field access type: ${Type.enumConstructor(fa)}');
+                // DISABLED: trace('[FieldAccessBuilder] Unhandled field access type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(fa)}');
                 #end
                 return null;
         }

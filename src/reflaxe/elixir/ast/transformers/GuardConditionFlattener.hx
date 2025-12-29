@@ -87,12 +87,12 @@ class GuardConditionCollector {
 			if (node == null) return;
 			
 			// Create node ID for cycle detection
-			var nodeId = Std.string(node.pos) + "_" + Type.enumConstructor(node.def);
+			var nodeId = Std.string(node.pos) + "_" + reflaxe.elixir.util.EnumReflection.enumConstructor(node.def);
 			if (visitedNodes.exists(nodeId)) return;
 			visitedNodes.set(nodeId, true);
 			
 			#if debug_guard_flattening
-			// DISABLED: trace('[GuardCollector] Depth $depth, examining: ${Type.enumConstructor(node.def)}');
+			// DISABLED: trace('[GuardCollector] Depth $depth, examining: ${reflaxe.elixir.util.EnumReflection.enumConstructor(node.def)}');
 			#end
 			
 			// Check for inline function expansion pattern BEFORE unwrapping

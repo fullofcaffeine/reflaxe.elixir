@@ -48,13 +48,13 @@ class EFnTempChainSimplifyTransforms {
                             #if debug_efn_temp_chain
                             // DISABLED: trace('[EFnTempChainSimplify] Body is EBlock with ${stmts.length} stmts');
                             for (i in 0...stmts.length) {
-                                // DISABLED: trace('[EFnTempChainSimplify]   stmt[$i]: ${Type.enumConstructor(stmts[i].def)}');
+                                // DISABLED: trace('[EFnTempChainSimplify]   stmt[$i]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(stmts[i].def)}');
                             }
                             #end
                             makeASTWithMeta(EBlock(simplify(stmts)), b.metadata, b.pos);
                         default:
                             #if debug_efn_temp_chain
-                            // DISABLED: trace('[EFnTempChainSimplify] Body is NOT EBlock: ${Type.enumConstructor(b.def)}');
+                            // DISABLED: trace('[EFnTempChainSimplify] Body is NOT EBlock: ${reflaxe.elixir.util.EnumReflection.enumConstructor(b.def)}');
                             #end
                             b;
                     };
@@ -82,7 +82,7 @@ class EFnTempChainSimplifyTransforms {
         if (stmts.length >= 2) {
             var last = stmts[stmts.length - 1];
             #if debug_efn_temp_chain
-            // DISABLED: trace('[EFnTempChainSimplify.simplify] Last stmt: ${Type.enumConstructor(last.def)}');
+            // DISABLED: trace('[EFnTempChainSimplify.simplify] Last stmt: ${reflaxe.elixir.util.EnumReflection.enumConstructor(last.def)}');
             #end
             switch (last.def) {
                 case EVar(name):
