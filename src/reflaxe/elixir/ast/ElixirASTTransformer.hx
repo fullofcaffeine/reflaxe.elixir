@@ -5750,20 +5750,116 @@ class ElixirASTTransformer {
      * Handle parameter detection and renaming for a function
      * Returns updated args and body if changes were made
      */
-    static function handleFunctionParameters(args: Array<EPattern>, guards: Null<ElixirAST>, body: ElixirAST): {args: Array<EPattern>, body: ElixirAST, hasChanges: Bool} {
-        // Extract parameter names from patterns
-        var paramNames: Map<String, Bool> = new Map();
+	    static function handleFunctionParameters(args: Array<EPattern>, guards: Null<ElixirAST>, body: ElixirAST): {args: Array<EPattern>, body: ElixirAST, hasChanges: Bool} {
+	        // Extract parameter names from patterns
+	        var paramNames: Map<String, Bool> = new Map();
 
-        inline function isPreservedParamName(name: String): Bool {
-            // Phoenix HEEx (~H) requires a variable literally named `assigns` in scope.
-            // We preserve `assigns`/`_assigns` so later HEEx passes can materialize ~H safely.
-            return name == "assigns" || name == "_assigns";
-        }
-        
-        function extractParamNames(pattern: EPattern) {
-            switch(pattern) {
-                case PVar(name):
-                    // Track all named parameters (including underscored ones) so we can:
+	        inline function isPreservedParamName(name: String): Bool {
+	            // Phoenix HEEx (~H) requires a variable literally named `assigns` in scope.
+	            // We preserve `assigns`/`_assigns` so later HEEx passes can materialize ~H safely.
+	            return name == "assigns" || name == "_assigns";
+	        }
+	        
+	        function markUsedNamesInTemplateString(template: String): Void {
+	            if (template == null || template.length == 0) return;
+	            if (template.indexOf("<%") == -1 && template.indexOf("{") == -1) return;
+	
+	            inline function markUsedFromElixirCode(code: String): Void {
+	                if (code == null || code.length == 0) return;
+	                inline function isIdentChar(c: String): Bool {
+	                    if (c == null || c.length == 0) return false;
+	                    var ch = c.charCodeAt(0);
+	                    return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_";
+	                }
+	                function codeUsesName(codeStr: String, varName: String): Bool {
+	                    var start = 0;
+	                    while (codeStr != null) {
+	                        var pos = codeStr.indexOf(varName, start);
+	                        if (pos == -1) break;
+	                        var before = pos > 0 ? codeStr.substr(pos - 1, 1) : null;
+	                        var afterIdx = pos + varName.length;
+	                        var after = afterIdx < codeStr.length ? codeStr.substr(afterIdx, 1) : null;
+	                        if (!isIdentChar(before) && !isIdentChar(after)) return true;
+	                        start = pos + varName.length;
+	                    }
+	                    return false;
+	                }
+	                for (name => used in paramNames) {
+	                    if (used == true) continue;
+	                    if (codeUsesName(code, name)) {
+	                        paramNames.set(name, true);
+	                    }
+	                }
+	            }
+	
+	            // Scan EEx/HEEx blocks (<% ... %>)
+	            var cursor = 0;
+	            while (cursor < template.length) {
+	                var startIndex = template.indexOf("<%", cursor);
+	                if (startIndex == -1) break;
+	                var endIndex = template.indexOf("%>", startIndex + 2);
+	                if (endIndex == -1) break;
+	                var innerCode = template.substr(startIndex + 2, endIndex - (startIndex + 2));
+	                markUsedFromElixirCode(innerCode);
+	                cursor = endIndex + 2;
+	            }
+	
+	            // Scan HEEx attribute expressions ({ ... }) outside of EEx blocks.
+	            var i = 0;
+	            while (i < template.length) {
+	                var eexStart = template.indexOf("<%", i);
+	                var braceStart = template.indexOf("{", i);
+	                if (braceStart == -1) break;
+	                if (eexStart != -1 && eexStart < braceStart) {
+	                    var eexEnd = template.indexOf("%>", eexStart + 2);
+	                    if (eexEnd == -1) break;
+	                    i = eexEnd + 2;
+	                    continue;
+	                }
+	
+	                var depth = 1;
+	                var j = braceStart + 1;
+	                var quote: Null<String> = null;
+	                while (j < template.length && depth > 0) {
+	                    var ch = template.charAt(j);
+	                    if (quote != null) {
+	                        if (ch == "\\" && j + 1 < template.length) {
+	                            j += 2;
+	                            continue;
+	                        }
+	                        if (ch == quote) quote = null;
+	                        j++;
+	                        continue;
+	                    }
+	                    if (ch == "\"" || ch == "'") {
+	                        quote = ch;
+	                        j++;
+	                        continue;
+	                    }
+	                    if (ch == "{") {
+	                        depth++;
+	                    } else if (ch == "}") {
+	                        depth--;
+	                    } else if (ch == "<" && j + 1 < template.length && template.charAt(j + 1) == "%") {
+	                        var nestedEnd = template.indexOf("%>", j + 2);
+	                        if (nestedEnd == -1) break;
+	                        j = nestedEnd + 2;
+	                        continue;
+	                    }
+	                    j++;
+	                }
+	                if (depth != 0) break;
+	
+	                var exprCode = template.substr(braceStart + 1, (j - 1) - (braceStart + 1));
+	                markUsedFromElixirCode(exprCode);
+	                i = j;
+	            }
+	        }
+	        
+	        function extractParamNames(pattern: EPattern) {
+	            switch(pattern) {
+	                case PVar(name):
+	                    // Track all named parameters (including underscored ones) so we can:
                     // - mark usage accurately (even for `_arg` style params)
                     // - replace truly unused params with `_` (wildcard) to avoid duplicate-binder warnings.
                     if (name != null && name != "" && name != "_") {
@@ -5800,14 +5896,16 @@ class ElixirASTTransformer {
             return {args: args, body: body, hasChanges: false};
         }
         
-        // Check which parameters are used in the body (and guards if present)
-        function markUsedVars(ast: ElixirAST) {
-            switch(ast.def) {
-                case EVar(name):
-                    if (paramNames.exists(name)) {
-                        paramNames.set(name, true); // Mark as used
-                        #if debug_ast_transformer
-                        // DISABLED: trace('[XRay PrefixUnusedParams] Found usage of param: $name');
+	        // Check which parameters are used in the body (and guards if present)
+	        function markUsedVars(ast: ElixirAST) {
+	            switch(ast.def) {
+	                case EString(template):
+	                    markUsedNamesInTemplateString(template);
+	                case EVar(name):
+	                    if (paramNames.exists(name)) {
+	                        paramNames.set(name, true); // Mark as used
+	                        #if debug_ast_transformer
+	                        // DISABLED: trace('[XRay PrefixUnusedParams] Found usage of param: $name');
                         #end
                     }
                 case EField(target, _):
@@ -5876,28 +5974,20 @@ class ElixirASTTransformer {
                         // DISABLED: trace('[XRay PrefixUnusedParams] Checking keyword list value for parameter usage');
                         #end
                     }
-                case ESigil(type, _content, _modifiers) if (type == "H" || type == "h"):
-                    // Phoenix HEEx (~H) requires an `assigns` variable in scope, even when
-                    // the function body only references assigns implicitly via `@foo`.
-                    if (paramNames.exists("assigns")) paramNames.set("assigns", true);
-                    if (paramNames.exists("_assigns")) paramNames.set("_assigns", true);
+	                case ESigil(type, _content, _modifiers) if (type == "H" || type == "h"):
+	                    // Phoenix HEEx (~H) requires an `assigns` variable in scope, even when
+	                    // the function body only references assigns implicitly via `@foo`.
+	                    if (paramNames.exists("assigns")) paramNames.set("assigns", true);
+	                    if (paramNames.exists("_assigns")) paramNames.set("_assigns", true);
 
-                    // Also treat any function parameters referenced inside the ~H content string
-                    // as "used" so we don't rewrite their binders to `_`. This is required for
-                    // cases like `defp render_post(post) do ~H"... <%= post.title %> ..." end`.
-                    if (_content != null) {
-                        for (name => _ in paramNames) {
-                            if (!paramNames.exists(name) || paramNames.get(name) == true) continue;
-                            var pattern = '\\b' + name + '\\b';
-                            if (new EReg(pattern, "").match(_content)) {
-                                paramNames.set(name, true);
-                            }
-                        }
-                    }
+	                    // Also treat any function parameters referenced inside the ~H content string
+	                    // as "used" so we don't rewrite their binders to `_`. This is required for
+	                    // cases like `defp render_post(post) do ~H"... <%= post.title %> ..." end`.
+	                    markUsedNamesInTemplateString(_content);
 
-                    // When available, traverse the builder-attached typed HEEx AST so that
-                    // parameter usage inside attribute expressions is counted as "used".
-                    var meta = ast.metadata;
+	                    // When available, traverse the builder-attached typed HEEx AST so that
+	                    // parameter usage inside attribute expressions is counted as "used".
+	                    var meta = ast.metadata;
                     if (meta != null && meta.heexAST != null) {
                         function walkHeex(node: ElixirAST) {
                             if (node == null || node.def == null) return;

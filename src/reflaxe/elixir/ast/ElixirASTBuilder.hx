@@ -549,7 +549,7 @@ class ElixirASTBuilder {
                 case TMeta(meta, inner):
                     // Preserve metas with known semantic effect; unwrap others
                     var name = meta.name;
-                    if (name == ":heex" || name == ":untyped") {
+                    if (name == ":heex" || name == "heex" || name == ":untyped" || name == "untyped") {
                         // stop unwrapping at semantic meta
                         return cur;
                     } else {
@@ -2841,16 +2841,10 @@ class ElixirASTBuilder {
                     #end
                     #end
                     
-                    // Use Reflaxe's metadata to detect unused parameters
-                    // First check if parameter has the -reflaxe.unused metadata
-                    var isActuallyUnused = if (arg.v.meta != null && arg.v.meta.has("-reflaxe.unused")) {
-                        true;  // Parameter is marked as unused by Reflaxe preprocessor
-                    } else if (f.expr != null) {
-                        // Use our UsageDetector to check if parameter is actually used
-                        !reflaxe.elixir.helpers.UsageDetector.isParameterUsed(arg.v, f.expr);
-                    } else {
-                        false; // If no body, consider parameter as potentially used
-                    };
+                    // NOTE: Do not prefix unused parameters here.
+                    // Unused parameter hygiene is handled centrally in `prefixUnusedParametersPass`,
+                    // which also accounts for template-string usage (EEx/HEEx) that Haxe's TypedExpr
+                    // usage detection cannot see.
                     
                     // Check if this parameter has a numeric suffix that indicates shadowing
                     var strippedName = originalName;
@@ -2886,14 +2880,7 @@ class ElixirASTBuilder {
                     }
                     #end
                     
-                    // Prefix with underscore if unused (using TypedExpr-based detection which is more accurate)
-                    // This is done here rather than in a transformer because we have full semantic information
-                    // Re-enable underscore prefixing for 1.0 quality
-                    var finalName = if (isActuallyUnused && !StringTools.startsWith(baseName, "_")) {
-                        "_" + baseName;
-                    } else {
-                        baseName;
-                    };
+                    var finalName = baseName;
                     
                     // Register the mapping for TLocal references in the body with dual-key storage
                     if (!currentContext.tempVarRenameMap.exists(idKey)) {
@@ -3447,7 +3434,7 @@ class ElixirASTBuilder {
             case TMeta(meta, e):
                 // Handle expression-level metadata with semantic meaning
                 switch (meta.name) {
-                    case ":heex":
+                    case ":heex" | "heex":
                         // HXX.hxx macro tagged this string as HEEx content.
                         // Emit ~H sigil directly. Prefer fast-path for literal strings to avoid
                         // unnecessary template collection for already-EEx content.
@@ -4011,7 +3998,7 @@ class ElixirASTBuilder {
     /**
      * Try to expand a specific __elixir__() call
      */
-    static function tryExpandElixirCall(expr: TypedExpr, thisExpr: TypedExpr, methodArgs: Array<TypedExpr>, context: reflaxe.elixir.CompilationContext): Null<ElixirAST> {
+            static function tryExpandElixirCall(expr: TypedExpr, thisExpr: TypedExpr, methodArgs: Array<TypedExpr>, context: reflaxe.elixir.CompilationContext): Null<ElixirAST> {
         #if debug_elixir_injection
         #if debug_ast_builder
         // DISABLED: trace("[XRay] tryExpandElixirCall checking expr type: " + expr.expr);
@@ -4029,7 +4016,7 @@ class ElixirASTBuilder {
                 return tryExpandElixirCall(retExpr, thisExpr, methodArgs, context);
                 
             // Handle untyped __elixir__() calls (wrapped in metadata)
-            case TMeta({name: ":untyped"}, untypedExpr):
+            case TMeta({name: metaName}, untypedExpr) if (metaName == ":untyped" || metaName == "untyped"):
                 #if debug_elixir_injection
                 #if debug_ast_builder
                 // DISABLED: trace("[XRay] Found untyped metadata, checking inner: " + untypedExpr.expr);
