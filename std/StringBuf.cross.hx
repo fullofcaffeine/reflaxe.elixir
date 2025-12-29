@@ -133,6 +133,7 @@ class StringBuf {
         this.parts.push(substr);
     }
 
+    #if (haxe_ver >= 5.0)
     /**
      * Clears the buffer.
      *
@@ -142,6 +143,7 @@ class StringBuf {
     public function clear(): Void {
         this.parts = [];
     }
+    #end
     
     /**
      * Returns the content of `this` StringBuf as a String.

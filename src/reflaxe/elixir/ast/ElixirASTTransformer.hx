@@ -5753,6 +5753,12 @@ class ElixirASTTransformer {
     static function handleFunctionParameters(args: Array<EPattern>, guards: Null<ElixirAST>, body: ElixirAST): {args: Array<EPattern>, body: ElixirAST, hasChanges: Bool} {
         // Extract parameter names from patterns
         var paramNames: Map<String, Bool> = new Map();
+
+        inline function isPreservedParamName(name: String): Bool {
+            // Phoenix HEEx (~H) requires a variable literally named `assigns` in scope.
+            // We preserve `assigns`/`_assigns` so later HEEx passes can materialize ~H safely.
+            return name == "assigns" || name == "_assigns";
+        }
         
         function extractParamNames(pattern: EPattern) {
             switch(pattern) {
@@ -5761,7 +5767,9 @@ class ElixirASTTransformer {
                     // - mark usage accurately (even for `_arg` style params)
                     // - replace truly unused params with `_` (wildcard) to avoid duplicate-binder warnings.
                     if (name != null && name != "" && name != "_") {
-                        paramNames.set(name, false); // false = not yet seen as used
+                        // Some parameter names are semantically required (or referenced indirectly)
+                        // by framework macros (e.g., Phoenix HEEx requires `assigns`).
+                        paramNames.set(name, isPreservedParamName(name)); // true = treat as used
                     }
                 case PTuple(patterns):
                     for (p in patterns) extractParamNames(p);
