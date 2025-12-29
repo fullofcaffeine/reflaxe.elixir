@@ -1,7 +1,7 @@
 # Known Limitations
 
 This page documents the remaining sharp edges and experimental surfaces that may surprise early adopters.
-Reflaxe.Elixir is production‑ready for the **documented subset**, but some features remain opt‑in/experimental.
+Reflaxe.Elixir is **alpha** and not recommended for production use yet, but the documented subset is stable enough for evaluation. Some features remain opt‑in/experimental.
 
 If you hit something not covered here, please open an issue and include your **Haxe/Elixir/OTP/Phoenix versions** and a small repro.
 

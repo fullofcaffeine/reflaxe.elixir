@@ -30,3 +30,4 @@ git push --tags
 ```
 
 Update `CHANGELOG.md`, `package.json`, and `haxelib.json` as appropriate for the release.
+Also update `mix.exs` so Mix task users see the correct version.

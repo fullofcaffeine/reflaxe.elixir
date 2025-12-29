@@ -1,6 +1,6 @@
 # Quickstart (Phoenix-first)
 
-Reflaxe.Elixir `v1.1.x` is **non‑alpha** for the documented subset. This quickstart is focused on helping a Phoenix developer get productive quickly.
+Reflaxe.Elixir is currently **alpha** overall. This quickstart is focused on helping a Phoenix developer get productive quickly while we continue hardening the compiler, stdlib, and tooling.
 
 ## Pick a Path
 
@@ -21,10 +21,23 @@ If you don’t have Haxe installed yet, start here: `docs/01-getting-started/ins
 ```bash
 cd examples/todo-app
 mix setup
+```
+
+Recommended bounded smoke (from repo root, non-blocking):
+
+```bash
+npm run qa:sentinel
+scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 600
+```
+
+Manual dev run (foreground server):
+
+```bash
+cd examples/todo-app
 mix phx.server
 ```
 
-Open `http://localhost:4000`.
+Open `http://localhost:4000` (default dev port).
 
 ## Important Notes
 

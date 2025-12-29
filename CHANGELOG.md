@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### 📚 Documentation
+
+- Reintroduce an “Alpha software” warning in the root README and align stability wording across docs.
+
 ## [1.1.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.0.7...v1.1.0) (2025-12-28)
 
 ### ✅ Non‑Alpha Release
