@@ -606,7 +606,7 @@ class ASTBuilder {
         return this;
     }
     
-    public function atPos(pos: haxe.macro.Position): ASTBuilder {
+    public function atPos(pos: Position): ASTBuilder {
         this.pos = pos;
         return this;
     }
@@ -631,7 +631,7 @@ class ASTBuilder {
     // Helper Methods
     // ================================================================
     
-    static function getLineNumber(pos: haxe.macro.Position): Int {
+    static function getLineNumber(pos: Position): Int {
         #if macro
         var posInfo = haxe.macro.Context.getPosInfos(pos);
         return posInfo.min; // This is actually the character position, not line number

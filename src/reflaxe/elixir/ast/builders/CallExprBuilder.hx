@@ -58,7 +58,7 @@ class CallExprBuilder {
         #if debug_ast_builder
         // DISABLED: trace('[CallExpr] Processing TCall with ${args.length} args');
         if (e != null) {
-            // DISABLED: trace('[CallExpr] Call target: ${Type.enumConstructor(e.expr)}');
+            // DISABLED: trace('[CallExpr] Call target: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
         }
         #end
 

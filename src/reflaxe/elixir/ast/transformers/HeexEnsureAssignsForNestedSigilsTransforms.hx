@@ -69,7 +69,7 @@ class HeexEnsureAssignsForNestedSigilsTransforms {
                             makeAST(EMatch(PVar("assigns"), assignsExpr)),
                             rewrittenBody
                         ]));
-                        var def = Type.enumConstructor(n.def) == "EDef"
+                        var def = reflaxe.elixir.util.EnumReflection.enumConstructor(n.def) == "EDef"
                             ? EDef(name, args, guards, wrapped)
                             : EDefp(name, args, guards, wrapped);
                         makeASTWithMeta(def, n.metadata, n.pos);

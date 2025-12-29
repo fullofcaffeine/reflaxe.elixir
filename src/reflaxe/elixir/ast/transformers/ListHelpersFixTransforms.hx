@@ -163,7 +163,7 @@ class ListHelpersFixTransforms {
                             }
                         default:
                     }
-                    if (newBody == body) n else makeASTWithMeta(Type.enumConstructor(n.def) == "EDef" ? EDef(name, args, guards, newBody) : EDefp(name, args, guards, newBody), n.metadata, n.pos);
+                    if (newBody == body) n else makeASTWithMeta(reflaxe.elixir.util.EnumReflection.enumConstructor(n.def) == "EDef" ? EDef(name, args, guards, newBody) : EDefp(name, args, guards, newBody), n.metadata, n.pos);
                 default:
                     n;
             }

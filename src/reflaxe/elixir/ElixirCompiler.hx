@@ -1095,7 +1095,7 @@ class ElixirCompiler extends GenericCompiler<
 
                         // Return as raw Elixir code
                         return reflaxe.elixir.ast.ElixirAST.makeAST(
-                            reflaxe.elixir.ast.ElixirASTDef.ERaw(finalCode)
+                            reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ERaw(finalCode)
                         );
                     }
 
@@ -1145,16 +1145,16 @@ class ElixirCompiler extends GenericCompiler<
                                     if (rx.match(injectionString)) {
                                         var fieldName = rx.matched(1);
                                         var opStr = rx.matched(2);
-                                        var binding = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EList([
-                                            reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("t"))
+                                        var binding = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EList([
+                                            reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar("t"))
                                         ]));
                                         var rhsStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(rhsAst);
                                         var condition = reflaxe.elixir.ast.ElixirAST.makeAST(
-                                            reflaxe.elixir.ast.ElixirASTDef.ERaw('t.' + fieldName + ' ' + opStr + ' ^(' + rhsStr + ')')
+                                            reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ERaw('t.' + fieldName + ' ' + opStr + ' ^(' + rhsStr + ')')
                                         );
                                         var whereCall = reflaxe.elixir.ast.ElixirAST.makeAST(
-                                            reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(
-                                                reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("Ecto.Query")),
+                                            reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ERemoteCall(
+                                                reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar("Ecto.Query")),
                                                 "where",
                                                 [queryAst, binding, condition]
                                             )
@@ -1230,7 +1230,7 @@ class ElixirCompiler extends GenericCompiler<
                             #end
 
                             return reflaxe.elixir.ast.ElixirAST.makeAST(
-                                reflaxe.elixir.ast.ElixirASTDef.ERaw(finalCode)
+                                reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ERaw(finalCode)
                             );
                         }
                     }
@@ -1281,19 +1281,19 @@ class ElixirCompiler extends GenericCompiler<
         }
         if (queryAst == null || rhsAst == null) return null;
         // Build AST: Ecto.Query.where(queryAst, [t], t.field <op> ^(rhs))
-        var mod = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(
-            reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("Kernel")),
+        var mod = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ERemoteCall(
+            reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar("Kernel")),
             "require",
-            [reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("Ecto.Query"))]
+            [reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar("Ecto.Query"))]
         ));
         // We do not emit explicit require; compiler can add imports elsewhere.
-        var binding = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EList([
-            reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("t"))
+        var binding = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EList([
+            reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar("t"))
         ]));
         // Build condition as structured AST to enable downstream analysis (no ERaw)
         var lhsField = reflaxe.elixir.ast.ElixirAST.makeAST(
-            reflaxe.elixir.ast.ElixirASTDef.EField(
-                reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("t")),
+            reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EField(
+                reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar("t")),
                 fieldName
             )
         );
@@ -1309,14 +1309,14 @@ class ElixirCompiler extends GenericCompiler<
             };
         }
         var pinnedRhs = reflaxe.elixir.ast.ElixirAST.makeAST(
-            reflaxe.elixir.ast.ElixirASTDef.EPin(rhsAst)
+            reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EPin(rhsAst)
         );
         var condition = reflaxe.elixir.ast.ElixirAST.makeAST(
-            reflaxe.elixir.ast.ElixirASTDef.EBinary(toOp(opStr), lhsField, pinnedRhs)
+            reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EBinary(toOp(opStr), lhsField, pinnedRhs)
         );
         var whereCall = reflaxe.elixir.ast.ElixirAST.makeAST(
-            reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(
-                reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirASTDef.EVar("Ecto.Query")),
+            reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ERemoteCall(
+                reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar("Ecto.Query")),
                 "where",
                 [queryAst, binding, condition]
             )
@@ -1460,7 +1460,7 @@ class ElixirCompiler extends GenericCompiler<
         // Pass context as second parameter to ensure isolated state
         var ast = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
 
-        // DISABLED: trace('[AST Pipeline] After Builder - AST type: ${ast != null ? Type.enumConstructor(ast.def) : "null"}');
+        // DISABLED: trace('[AST Pipeline] After Builder - AST type: ${ast != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def) : "null"}');
 
         // Apply transformations to all expressions, not just function bodies
         // Pass context to transformer as well
@@ -1485,23 +1485,23 @@ class ElixirCompiler extends GenericCompiler<
                                 if (funcName == "reduce_while" && args != null && args.length >= 3) {
                                     // DISABLED: trace('[XRay Pipeline] After transformation - Enum.reduce_while detected');
                                     var reducerArg = args[2];
-                                    // DISABLED: trace('[XRay Pipeline]   Reducer arg type: ${Type.enumConstructor(reducerArg.def)}');
+                                    // DISABLED: trace('[XRay Pipeline]   Reducer arg type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(reducerArg.def)}');
                                     switch(reducerArg.def) {
                                         case EFn(clauses):
                                             if (clauses.length > 0) {
                                                 var clause = clauses[0];
-                                                // DISABLED: trace('[XRay Pipeline]   Lambda body type: ${Type.enumConstructor(clause.body.def)}');
+                                                // DISABLED: trace('[XRay Pipeline]   Lambda body type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(clause.body.def)}');
                                                 switch(clause.body.def) {
                                                     case EBlock(exprs):
                                                         // DISABLED: trace('[XRay Pipeline]   Lambda body is EBlock with ${exprs.length} expressions');
                                                     case EIf(_, _, _):
                                                         // DISABLED: trace('[XRay Pipeline]   Lambda body is EIf (correct structure)');
                                                     default:
-                                                        // DISABLED: trace('[XRay Pipeline]   Lambda body is: ${Type.enumConstructor(clause.body.def)}');
+                                                        // DISABLED: trace('[XRay Pipeline]   Lambda body is: ${reflaxe.elixir.util.EnumReflection.enumConstructor(clause.body.def)}');
                                                 }
                                             }
                                         default:
-                                            // DISABLED: trace('[XRay Pipeline]   Reducer is not EFn: ${Type.enumConstructor(reducerArg.def)}');
+                                            // DISABLED: trace('[XRay Pipeline]   Reducer is not EFn: ${reflaxe.elixir.util.EnumReflection.enumConstructor(reducerArg.def)}');
                                     }
                                 }
                             default:
@@ -1804,8 +1804,8 @@ class ElixirCompiler extends GenericCompiler<
                 ]))
             ]));
             var mod = {
-                def: reflaxe.elixir.ast.ElixirASTDef.EDefmodule(moduleName, {
-                    def: reflaxe.elixir.ast.ElixirASTDef.EBlock([useStmt]),
+                def: reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EDefmodule(moduleName, {
+                    def: reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EBlock([useStmt]),
                     metadata: {},
                     pos: classType.pos
                 }),
@@ -2016,26 +2016,26 @@ class ElixirCompiler extends GenericCompiler<
 		            #if debug_ast_builder
 		            // DISABLED: trace('[ElixirCompiler] Compiling function: ${funcData.field.name}');
 		            if (expr != null) {
-                // DISABLED: trace('[ElixirCompiler]   Body type: ${Type.enumConstructor(expr.expr)}');
+                // DISABLED: trace('[ElixirCompiler]   Body type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr)}');
                 switch(expr.expr) {
                     case TReturn(e) if (e != null):
-                        // DISABLED: trace('[ElixirCompiler]   TReturn contains: ${Type.enumConstructor(e.expr)}');
+                        // DISABLED: trace('[ElixirCompiler]   TReturn contains: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
                         switch(e.expr) {
                             case TSwitch(_, cases, _):
                                 // DISABLED: trace('[ElixirCompiler]     Direct return of TSwitch with ${cases.length} cases');
                             case TLocal(v):
                                 // DISABLED: trace('[ElixirCompiler]     Return of TLocal: ${v.name}');
                             default:
-                                // DISABLED: trace('[ElixirCompiler]     Return of: ${Type.enumConstructor(e.expr)}');
+                                // DISABLED: trace('[ElixirCompiler]     Return of: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
                         }
                     case TBlock(exprs):
                         // DISABLED: trace('[ElixirCompiler]   TBlock with ${exprs.length} expressions');
                         if (exprs.length > 0) {
                             var last = exprs[exprs.length - 1];
-                            // DISABLED: trace('[ElixirCompiler]     Last expr: ${Type.enumConstructor(last.expr)}');
+                            // DISABLED: trace('[ElixirCompiler]     Last expr: ${reflaxe.elixir.util.EnumReflection.enumConstructor(last.expr)}');
                         }
                     default:
-                        // DISABLED: trace('[ElixirCompiler]   Other: ${Type.enumConstructor(expr.expr)}');
+                        // DISABLED: trace('[ElixirCompiler]   Other: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr)}');
                 }
             }
             #end
@@ -2211,7 +2211,7 @@ class ElixirCompiler extends GenericCompiler<
             #if debug_switch_return
             // DISABLED: trace("[SwitchReturnDebug] Building function body for: " + funcData.field.name);
             if (expr != null) {
-                // DISABLED: trace("[SwitchReturnDebug] expr.expr type: " + Type.enumConstructor(expr.expr));
+                // DISABLED: trace("[SwitchReturnDebug] expr.expr type: " + reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr));
             } else {
                 // DISABLED: trace("[SwitchReturnDebug] expr is null (no body)");
             }
@@ -2225,7 +2225,7 @@ class ElixirCompiler extends GenericCompiler<
                 case TReturn(e) if (e != null):
                     #if debug_switch_return
                     // DISABLED: trace("[SwitchReturnDebug] Found TReturn with non-null expression");
-                    // DISABLED: trace("[SwitchReturnDebug] Return expr type: " + (e != null ? Type.enumConstructor(e.expr) : "null"));
+                    // DISABLED: trace("[SwitchReturnDebug] Return expr type: " + (e != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr) : "null"));
                     #end
 
                     // Check if it's a return of a switch (potentially wrapped in metadata)
@@ -2240,7 +2240,7 @@ class ElixirCompiler extends GenericCompiler<
                     }
 
                     #if debug_switch_return
-                    // DISABLED: trace("[SwitchReturnDebug] Inner expr type: " + Type.enumConstructor(innerExpr.expr));
+                    // DISABLED: trace("[SwitchReturnDebug] Inner expr type: " + reflaxe.elixir.util.EnumReflection.enumConstructor(innerExpr.expr));
                     #end
 
                     switch(innerExpr.expr) {
@@ -2938,16 +2938,16 @@ class ElixirCompiler extends GenericCompiler<
         
         // Build extensions array - empty by default
         var extensionsAST = reflaxe.elixir.ast.ElixirAST.makeAST(
-            reflaxe.elixir.ast.ElixirASTDef.EList([])
+            reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EList([])
         );
         if (metadata.extensions != null && metadata.extensions.length > 0) {
             var extElements = metadata.extensions.map(ext -> 
                 reflaxe.elixir.ast.ElixirAST.makeAST(
-                    reflaxe.elixir.ast.ElixirASTDef.EAtom(ext)
+                    reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EAtom(ext)
                 )
             );
             extensionsAST = reflaxe.elixir.ast.ElixirAST.makeAST(
-                reflaxe.elixir.ast.ElixirASTDef.EList(extElements)
+                reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EList(extElements)
             );
         }
         
@@ -2956,33 +2956,33 @@ class ElixirCompiler extends GenericCompiler<
         if (metadata.jsonModule != null) {
             // Create a keyword list element for json: Jason
             var jsonAtom = reflaxe.elixir.ast.ElixirAST.makeAST(
-                reflaxe.elixir.ast.ElixirASTDef.EAtom(ElixirAtom.raw("json"))
+                reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EAtom(ElixirAtom.raw("json"))
             );
             var jsonModule = reflaxe.elixir.ast.ElixirAST.makeAST(
-                reflaxe.elixir.ast.ElixirASTDef.EVar(metadata.jsonModule)
+                reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar(metadata.jsonModule)
             );
             var keywordElement = reflaxe.elixir.ast.ElixirAST.makeAST(
-                reflaxe.elixir.ast.ElixirASTDef.ETuple([jsonAtom, jsonModule])
+                reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ETuple([jsonAtom, jsonModule])
             );
             options.push(keywordElement);
         }
         
         // Build the Postgrex.Types.define call
         var moduleRef = reflaxe.elixir.ast.ElixirAST.makeAST(
-            reflaxe.elixir.ast.ElixirASTDef.EVar(typesModuleName)
+            reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar(typesModuleName)
         );
         var args = [
             moduleRef,          // Module reference
             extensionsAST,      // Extensions array
             reflaxe.elixir.ast.ElixirAST.makeAST(
-                reflaxe.elixir.ast.ElixirASTDef.EList(options)
+                reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EList(options)
             )  // Options keyword list
         ];
         
         var defineCall = reflaxe.elixir.ast.ElixirAST.makeAST(
-            reflaxe.elixir.ast.ElixirASTDef.ERemoteCall(
+            reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ERemoteCall(
                 reflaxe.elixir.ast.ElixirAST.makeAST(
-                    reflaxe.elixir.ast.ElixirASTDef.EVar("Postgrex.Types")
+                    reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar("Postgrex.Types")
                 ),
                 "define",
                 args

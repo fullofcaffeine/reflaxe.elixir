@@ -545,7 +545,7 @@ class HygieneTransforms {
                         case ERaw(_): "ERaw (STRING INTERPOLATION!)";
                         case EString(_): "EString";
                         case EVar(_): "EVar";
-                        default: Type.enumConstructor(arg.def);
+                        default: reflaxe.elixir.util.EnumReflection.enumConstructor(arg.def);
                     };
                     // DISABLED: trace('[XRay Hygiene] ECall arg type: $argType');
                     #end
@@ -1297,7 +1297,7 @@ class HygieneTransforms {
             
             #if debug_hygiene_verbose
             var indent = [for (i in 0...depth) "  "].join("");
-            // DISABLED: trace('$indent[XRay Hygiene] Node #$nodeCount: ${Type.enumConstructor(node.def)}');
+            // DISABLED: trace('$indent[XRay Hygiene] Node #$nodeCount: ${reflaxe.elixir.util.EnumReflection.enumConstructor(node.def)}');
             #end
             
             // Check if this node is a variable reference
@@ -1355,7 +1355,7 @@ class HygieneTransforms {
                     // transformNode handles all other cases automatically
                     #if debug_hygiene_verbose
                     if (nodeCount < 20) { // Limit verbose output
-                        // DISABLED: trace('[XRay Hygiene] Other node type: ${Type.enumConstructor(node.def)}');
+                        // DISABLED: trace('[XRay Hygiene] Other node type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(node.def)}');
                     }
                     #end
             }
