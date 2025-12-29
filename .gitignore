@@ -123,6 +123,8 @@ examples/*/tmp/
 
 # Generated files in project root
 *.ex
+*.ex.map
+*.exs.map
 !lib/**/*.ex
 _GeneratedFiles.json
 _any/
