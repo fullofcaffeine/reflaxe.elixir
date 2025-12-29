@@ -61,7 +61,7 @@ class CaseUnderscoreCaseHoistBlockTransforms {
             }
             #if debug_case_hoist if (!hoisted) {
               var extra = switch (s.def) {
-                case EMatch(pat0, rhs): ' (lhsPattern=' + reflaxe.elixir.util.EnumReflection.enumConstructor(pat0) + ', rhs=' + reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.def) + ')';
+                case EMatch(lhsPattern, rhs): ' (lhsPattern=' + reflaxe.elixir.util.EnumReflection.enumConstructor(lhsPattern) + ', rhs=' + reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.def) + ')';
                 default: '';
               };
               // DEBUG: Sys.println('[CaseUnderscoreCaseHoist] No match for stmt[' + i + '] kind=' + reflaxe.elixir.util.EnumReflection.enumConstructor(s.def) + extra + ' = ' + ElixirASTPrinter.print(s, 0));

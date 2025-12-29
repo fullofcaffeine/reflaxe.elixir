@@ -81,9 +81,10 @@ class GettextArityAndParamRepairTransforms {
             case EDef(nm, args, _, _):
                 var m = map.exists(nm) ? map.get(nm) : new Map<Int,Bool>();
                 m.set(args != null ? args.length : 0, true); map.set(nm, m);
-            case EDefp(nm2, args2, _, _):
-                var m2 = map.exists(nm2) ? map.get(nm2) : new Map<Int,Bool>();
-                m2.set(args2 != null ? args2.length : 0, true); map.set(nm2, m2);
+            case EDefp(defpName, defpArgs, _, _):
+                var aritySet = map.exists(defpName) ? map.get(defpName) : new Map<Int,Bool>();
+                aritySet.set(defpArgs != null ? defpArgs.length : 0, true);
+                map.set(defpName, aritySet);
             default:
         }
         return map;
@@ -131,15 +132,15 @@ class GettextArityAndParamRepairTransforms {
                                     });
                                 })() : bd;
                             makeASTWithMeta(EDef(nm, newArgs, guards, newBody), b.metadata, b.pos);
-                        case EDefp(nm2, args2, guards2, bd2):
-                            makeASTWithMeta(EDefp(nm2, repairParams(args2, bd2), guards2, bd2), b.metadata, b.pos);
+                        case EDefp(defpName, defpArgs, defpGuards, defpBody):
+                            makeASTWithMeta(EDefp(defpName, repairParams(defpArgs, defpBody), defpGuards, defpBody), b.metadata, b.pos);
                         default: b;
                     }];
                     var withShims = insertArityShims(repaired);
                     makeASTWithMeta(EModule(name, attrs, withShims), n.metadata, n.pos);
-                case EDefmodule(name2, doBlock) if (endsWithGettext(name2)):
-                    var stmts:Array<ElixirAST> = switch (doBlock.def) { case EBlock(ss): ss; case EDo(ss2): ss2; default: [doBlock]; };
-                    var repaired2 = [for (b in stmts) switch (b.def) {
+                case EDefmodule(moduleName, doBlock) if (endsWithGettext(moduleName)):
+                    var stmts:Array<ElixirAST> = switch (doBlock.def) { case EBlock(ss): ss; case EDo(doStmts): doStmts; default: [doBlock]; };
+                    var repairedStmts = [for (b in stmts) switch (b.def) {
                         case EDef(nm, args, guards, bd):
                             var newArgs = repairParams(args, bd);
                             var newBody = (nm == "error" && newArgs != null && newArgs.length == 2) ?
@@ -147,23 +148,23 @@ class GettextArityAndParamRepairTransforms {
                                     return ElixirASTTransformer.transformNode(bd, function(x:ElixirAST):ElixirAST {
                                         return switch (x.def) {
                                             case ECall(null, fn, callArgs) if (fn == "gettext" && callArgs != null && callArgs.length == 1):
-                                                makeAST(ERemoteCall(makeAST(EVar(name2)), "gettext", [callArgs[0], makeAST(EMap([]))]));
+                                                makeAST(ERemoteCall(makeAST(EVar(moduleName)), "gettext", [callArgs[0], makeAST(EMap([]))]));
                                             default: x;
                                         }
                                     });
                                 })() : bd;
                             makeASTWithMeta(EDef(nm, newArgs, guards, newBody), b.metadata, b.pos);
-                        case EDefp(nm2, args2, guards2, bd2):
-                            makeASTWithMeta(EDefp(nm2, repairParams(args2, bd2), guards2, bd2), b.metadata, b.pos);
+                        case EDefp(defpName, defpArgs, defpGuards, defpBody):
+                            makeASTWithMeta(EDefp(defpName, repairParams(defpArgs, defpBody), defpGuards, defpBody), b.metadata, b.pos);
                         default: b;
                     }];
-                    var withShims2 = insertArityShims(repaired2);
-                    var newDo: ElixirAST = switch (doBlock.def) {
-                        case EBlock(_): makeASTWithMeta(EBlock(withShims2), doBlock.metadata, doBlock.pos);
-                        case EDo(_): makeASTWithMeta(EDo(withShims2), doBlock.metadata, doBlock.pos);
+                    var stmtsWithShims = insertArityShims(repairedStmts);
+                    var updatedDoBlock: ElixirAST = switch (doBlock.def) {
+                        case EBlock(_): makeASTWithMeta(EBlock(stmtsWithShims), doBlock.metadata, doBlock.pos);
+                        case EDo(_): makeASTWithMeta(EDo(stmtsWithShims), doBlock.metadata, doBlock.pos);
                         default: doBlock;
                     };
-                    makeASTWithMeta(EDefmodule(name2, newDo), n.metadata, n.pos);
+                    makeASTWithMeta(EDefmodule(moduleName, updatedDoBlock), n.metadata, n.pos);
                 default:
                     n;
             }
