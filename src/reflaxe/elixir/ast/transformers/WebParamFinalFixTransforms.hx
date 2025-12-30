@@ -33,6 +33,20 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class WebParamFinalFixTransforms {
+    static inline function looksLikeDoubleQuotedStringLiteral(code: String): Bool {
+        if (code == null) return false;
+        var trimmed = StringTools.trim(code);
+        return trimmed.length >= 2 && StringTools.startsWith(trimmed, "\"") && StringTools.endsWith(trimmed, "\"");
+    }
+
+    static inline function stripOuterQuotes(code: String): String {
+        var trimmed = StringTools.trim(code);
+        if (looksLikeDoubleQuotedStringLiteral(trimmed)) {
+            return trimmed.substr(1, trimmed.length - 2);
+        }
+        return trimmed;
+    }
+
     public static function transformPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
@@ -181,20 +195,47 @@ class WebParamFinalFixTransforms {
             var ch = c.charCodeAt(0);
             return (ch >= '0'.code && ch <= '9'.code) || (ch >= 'A'.code && ch <= 'Z'.code) || (ch >= 'a'.code && ch <= 'z'.code) || c == "_" || c == ".";
         }
+        inline function scanInterpolationInner(inner: String, needle: String): Void {
+            if (inner == null || needle == null || needle.length == 0) return;
+            var start = 0;
+            while (!found) {
+                var i = inner.indexOf(needle, start);
+                if (i == -1) break;
+                var before = i > 0 ? inner.substr(i - 1, 1) : null;
+                var afterIdx = i + needle.length;
+                var after = afterIdx < inner.length ? inner.substr(afterIdx, 1) : null;
+                if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
+                start = i + needle.length;
+            }
+        }
         function walk(n: ElixirAST): Void {
             if (n == null || n.def == null || found) return;
             switch (n.def) {
                 case ERaw(code):
                     if (code != null && name != null && name.length > 0 && name.charAt(0) != '_') {
-                        var start = 0;
-                        while (!found) {
-                            var i = code.indexOf(name, start);
-                            if (i == -1) break;
-                            var before = i > 0 ? code.substr(i - 1, 1) : null;
-                            var afterIdx = i + name.length;
-                            var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
-                            if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
-                            start = i + name.length;
+                        if (looksLikeDoubleQuotedStringLiteral(code)) {
+                            var str = stripOuterQuotes(code);
+                            var cursor = 0;
+                            while (!found && str != null && cursor < str.length) {
+                                var open = str.indexOf("#{", cursor);
+                                if (open == -1) break;
+                                var close = str.indexOf("}", open + 2);
+                                if (close == -1) break;
+                                var inner = str.substr(open + 2, close - (open + 2));
+                                scanInterpolationInner(inner, name);
+                                cursor = close + 1;
+                            }
+                        } else {
+                            var start = 0;
+                            while (!found) {
+                                var i = code.indexOf(name, start);
+                                if (i == -1) break;
+                                var before = i > 0 ? code.substr(i - 1, 1) : null;
+                                var afterIdx = i + name.length;
+                                var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
+                                if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
+                                start = i + name.length;
+                            }
                         }
                     }
                 case EBlock(ss): for (s in ss) walk(s);

@@ -1,17 +1,17 @@
 defmodule GenServerOptionBuilder do
   def with_name(name, options) do
     options = if (Kernel.is_nil(options)), do: %{}, else: options
-    options = Map.put(options, "name", elixir__.("String.to_atom(#{(fn -> name end).()})"))
+    options = Map.put(options, "name", elixir__.("String.to_atom(#{name})"))
     options
   end
   def with_via(module, name, options) do
     options = if (Kernel.is_nil(options)), do: %{}, else: options
-    options = Map.put(options, "name", elixir__.("{:via, #{(fn -> Kernel.to_string(module) end).()}, #{(fn -> Kernel.to_string(name) end).()}}"))
+    options = Map.put(options, "name", elixir__.("{:via, #{Kernel.to_string(module)}, #{Kernel.to_string(name)}}"))
     options
   end
   def with_global_name(name, options) do
     options = if (Kernel.is_nil(options)), do: %{}, else: options
-    options = Map.put(options, "name", elixir__.("{:global, String.to_atom(#{(fn -> name end).()})}"))
+    options = Map.put(options, "name", elixir__.("{:global, String.to_atom(#{name})}"))
     options
   end
   def with_infinite_timeout(options) do

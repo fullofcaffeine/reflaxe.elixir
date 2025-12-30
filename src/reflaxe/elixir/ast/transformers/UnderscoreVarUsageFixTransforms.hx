@@ -144,6 +144,102 @@ class UnderscoreVarUsageFixTransforms {
 
   // Rename leading-underscore binders in patterns (args and case clause patterns) when used in body
   static function renamePatternBinders(args: Array<EPattern>, body: ElixirAST): { args:Array<EPattern>, body:ElixirAST } {
+    function pickNonConflictingName(preferred: String, existing: Map<String, Bool>): String {
+      var base = preferred;
+      if (base == null || base == "" || base == "_") base = "value";
+      if (!existing.exists(base)) return base;
+      var fallbacks = ["value", "param", "arg", "data", "result"];
+      for (f in fallbacks) if (!existing.exists(f)) return f;
+      return base;
+    }
+
+    // Collect underscore vars that are used in expression context (not patterns).
+    // We only rename underscored binders when those underscored names are actually referenced;
+    // otherwise we'd turn intentionally-unused `_x` binders back into `x` and reintroduce warnings.
+    function collectUsedUnderscoreVars(body: ElixirAST): Map<String, Bool> {
+      var used = new Map<String, Bool>();
+      function collect(x: ElixirAST, inPattern: Bool): Void {
+        if (x == null || x.def == null) return;
+        switch (x.def) {
+          case EVar(v) if (!inPattern && v != null && v.length > 1 && v.charAt(0) == '_'):
+            used.set(v, true);
+          case EPin(inner):
+            collect(inner, false);
+          case EBinary(_, l, r):
+            collect(l, false);
+            collect(r, false);
+          case EMatch(_p, rhs):
+            // Only RHS references; keep pattern vars as-is
+            collect(rhs, false);
+          case EBlock(ss):
+            for (s in ss) collect(s, false);
+          case EDo(ss2):
+            for (s in ss2) collect(s, false);
+          case EIf(c, t, e):
+            collect(c, false);
+            collect(t, false);
+            if (e != null) collect(e, false);
+          case ECase(expr, clauses):
+            collect(expr, false);
+            for (cl in clauses) {
+              if (cl.guard != null) collect(cl.guard, false);
+              collect(cl.body, false);
+            }
+          case ECall(t, _, as):
+            if (t != null) collect(t, false);
+            if (as != null) for (a in as) collect(a, false);
+          case ERemoteCall(t2, _, as2):
+            collect(t2, false);
+            if (as2 != null) for (a2 in as2) collect(a2, false);
+          case EField(obj, _):
+            collect(obj, false);
+          case EAccess(tgt, key):
+            collect(tgt, false);
+            collect(key, false);
+          case EList(el) | ETuple(el):
+            for (e in el) collect(e, false);
+          case EKeywordList(pairs):
+            for (p in pairs) collect(p.value, false);
+          case EMap(pairs):
+            for (p in pairs) {
+              collect(p.key, false);
+              collect(p.value, false);
+            }
+          default:
+        }
+      }
+      collect(body, false);
+      return used;
+    }
+
+    // Collect existing binder names to avoid accidental collisions.
+    function collectBinderNames(patterns: Array<EPattern>): Map<String, Bool> {
+      var names = new Map<String, Bool>();
+      function walk(p: EPattern): Void {
+        switch (p) {
+          case PVar(nm) if (nm != null && nm.length > 0):
+            names.set(nm, true);
+          case PAlias(nm2, inner):
+            if (nm2 != null && nm2.length > 0) names.set(nm2, true);
+            walk(inner);
+          case PTuple(es) | PList(es):
+            for (e in es) walk(e);
+          case PCons(h, t):
+            walk(h);
+            walk(t);
+          case PMap(kvs):
+            for (kv in kvs) walk(kv.value);
+          case PStruct(_, fs):
+            for (f in fs) walk(f.value);
+          case PPin(inner2):
+            walk(inner2);
+          default:
+        }
+      }
+      if (patterns != null) for (p in patterns) walk(p);
+      return names;
+    }
+
     // Collect underscored arg names
     var underArgs:Array<{name:String, idx:Int}> = [];
     for (i in 0...args.length) switch (args[i]) {
@@ -152,17 +248,22 @@ class UnderscoreVarUsageFixTransforms {
       default:
     }
     if (underArgs.length == 0) return { args: args, body: rewrite(body) };
+    var usedUnderscored = collectUsedUnderscoreVars(body);
+    var existingNames = collectBinderNames(args);
+
     // Compute safe replacements and perform rename in body and arg list
     var newArgs = args.copy();
     var replacements = new Map<String,String>();
     for (u in underArgs) {
+      if (!usedUnderscored.exists(u.name)) continue;
       var trimmed = u.name.substr(1);
-      var candidate = (trimmed == null || trimmed == "" || trimmed == "_" ? "v" : trimmed);
-      // Avoid accidental collision with common LiveView arg names (socket, params) by picking neutral
-      if (candidate == "socket" || candidate == "params") candidate = "value";
+      var preferred = (trimmed == null || trimmed == "" || trimmed == "_" ? "value" : trimmed);
+      var candidate = pickNonConflictingName(preferred, existingNames);
+      existingNames.set(candidate, true);
       replacements.set(u.name, candidate);
       newArgs[u.idx] = PVar(candidate);
     }
+    if (Lambda.count(replacements) == 0) return { args: args, body: rewrite(body) };
     // Apply renames in body occurrences
     var newBody = ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {

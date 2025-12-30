@@ -4,13 +4,13 @@ defmodule PatternMatchingTest do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
-      {:rgb, r, g, b} -> "rgb(#{(fn -> Kernel.to_string(r) end).()},#{(fn -> Kernel.to_string(g) end).()},#{(fn -> Kernel.to_string(b) end).()})"
+      {:rgb, r, g, b} -> "rgb(#{Kernel.to_string(r)},#{Kernel.to_string(g)},#{Kernel.to_string(b)})"
     end)
   end
   def match_option(option) do
     (case option do
       {:none} -> "none"
-      {:some, value} -> "some(#{(fn -> inspect(value) end).()})"
+      {:some, value} -> "some(#{inspect(value)})"
     end)
   end
   def match_int(value) do
@@ -39,18 +39,18 @@ defmodule PatternMatchingTest do
   def match_array(arr) do
     (case arr do
       [] -> "empty"
-      [_head | _tail] -> "single(#{(fn -> Kernel.to_string(x) end).()})"
+      [_head | _tail] -> "single(#{Kernel.to_string(x)})"
       2 ->
         g_value = arr[1]
         x = g
         y = g_value
-        "pair(#{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()})"
+        "pair(#{Kernel.to_string(x)},#{Kernel.to_string(y)})"
       3 ->
         g_value = arr[1]
         x = g
         y = g_value
         z = g
-        "triple(#{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()})"
+        "triple(#{Kernel.to_string(x)},#{Kernel.to_string(y)},#{Kernel.to_string(z)})"
       _ -> "many"
     end)
   end

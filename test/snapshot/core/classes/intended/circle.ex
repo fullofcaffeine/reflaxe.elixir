@@ -6,7 +6,7 @@ defmodule Circle do
     struct
   end
   def draw(struct) do
-    "#{(fn -> Shape.draw(super) end).()} with radius #{(fn -> Kernel.to_string(struct.radius) end).()}"
+    "#{Shape.draw(super)} with radius #{Kernel.to_string(struct.radius)}"
   end
   def update(struct, dt) do
     Shape.move(struct, struct.velocity.x * dt, struct.velocity.y * dt)

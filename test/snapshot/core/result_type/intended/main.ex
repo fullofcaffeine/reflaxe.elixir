@@ -18,8 +18,8 @@ end))
   end
   def handle_result(result) do
     (case result do
-      {:ok, value} -> "Success: #{(fn -> Kernel.to_string(value) end).()}"
-      {:error, message} -> "Error: #{(fn -> message end).()}"
+      {:ok, value} -> "Success: #{Kernel.to_string(value)}"
+      {:error, message} -> "Error: #{message}"
     end)
   end
   def get_value_or_default(result) do

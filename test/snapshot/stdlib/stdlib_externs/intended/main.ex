@@ -49,20 +49,20 @@ defmodule Main do
     label = "label"
     label = if (Kernel.is_nil(label)), do: "", else: label
     if (label != "") do
-      IO.puts("#{(fn -> label end).()}: ")
+      IO.puts("#{label}: ")
     end
     _ = IO.inspect("Debug value")
     color = IO.io.ansi.red()
-    _ = IO.write("#{(fn -> color end).()}Error text#{(fn -> IO.io.ansi.reset() end).()}")
+    _ = IO.write("#{color}Error text#{IO.io.ansi.reset()}")
     color = IO.io.ansi.green()
-    _ = IO.write("#{(fn -> color end).()}Success text#{(fn -> IO.io.ansi.reset() end).()}")
+    _ = IO.write("#{color}Success text#{IO.io.ansi.reset()}")
     color = IO.io.ansi.blue()
-    _ = IO.write("#{(fn -> color end).()}Info text#{(fn -> IO.io.ansi.reset() end).()}")
+    _ = IO.write("#{color}Info text#{IO.io.ansi.reset()}")
     label = "Array"
     label = if (Kernel.is_nil(label)), do: "", else: label
     result = IO.iodata_to_binary(IO.inspect([1, 2, 3]))
     _formatted = if (label != "") do
-      "#{(fn -> label end).()}: #{(fn -> result end).()}"
+      "#{label}: #{result}"
     else
       result
     end

@@ -47,24 +47,24 @@ defmodule Main do
     _ = process_string((if (String.length(str) > 3), do: "long", else: "short"))
   end
   defp process_string(s) do
-    "Processed: #{(fn -> s end).()}"
+    "Processed: #{s}"
   end
   defp process_two(a, b) do
-    "#{(fn -> a end).()}, #{(fn -> b end).()}"
+    "#{a}, #{b}"
   end
   defp process_three(a, b, c) do
-    "#{(fn -> a end).()}, #{(fn -> b end).()}, #{(fn -> c end).()}"
+    "#{a}, #{b}, #{c}"
   end
   defp process_mixed(a, b, c, d) do
-    "#{(fn -> a end).()}, #{(fn -> b end).()}, #{(fn -> Kernel.to_string(c) end).()}, #{(fn -> Kernel.to_string(d) end).()}"
+    "#{a}, #{b}, #{Kernel.to_string(c)}, #{Kernel.to_string(d)}"
   end
   defp get_value(key) do
-    "value_#{(fn -> key end).()}"
+    "value_#{key}"
   end
   defp wrap_string(s) do
-    "[#{(fn -> s end).()}]"
+    "[#{s}]"
   end
   defp compute_value(n) do
-    "computed_#{(fn -> Kernel.to_string(n) end).()}"
+    "computed_#{Kernel.to_string(n)}"
   end
 end

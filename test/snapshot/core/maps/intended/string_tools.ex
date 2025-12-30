@@ -80,7 +80,7 @@ end).()
             {:cont, {acc_buf}}
         end
       end)
-      "#{(fn -> buf end).()}#{(fn -> s end).()}"
+      "#{buf}#{s}"
     end
   end
   def rpad(s, c, l) do

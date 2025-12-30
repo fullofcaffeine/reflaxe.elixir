@@ -19,13 +19,13 @@ defmodule Main do
     if (not Kernel.is_nil(filter)) do
       query = this1
       query = if (not Kernel.is_nil(filter.name)) do
-        _value = "%#{(fn -> filter.name end).()}%"
+        _value = "%#{filter.name}%"
         this2
       else
         query
       end
       query = if (not Kernel.is_nil(filter.email)) do
-        _value = "%#{(fn -> filter.email end).()}%"
+        _value = "%#{filter.email}%"
         this3
       else
         query
@@ -53,7 +53,7 @@ defmodule Main do
     "SELECT * FROM users"
   end
   defp apply_filter(query, field, value) do
-    "#{(fn -> query end).()} WHERE #{(fn -> field end).()} = '#{(fn -> value end).()}'"
+    "#{query} WHERE #{field} = '#{value}'"
   end
   defp test_abstract_constructor_pattern() do
     _result = create_abstract_value("test_value")

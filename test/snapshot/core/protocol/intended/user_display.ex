@@ -1,10 +1,10 @@
 defmodule UserDisplay do
   def display(user) do
-    "#{(fn -> user.name end).()} (#{(fn -> Kernel.to_string(user.age) end).()})"
+    "#{user.name} (#{Kernel.to_string(user.age)})"
   end
   def format(user, options) do
     if (Map.get(options, :verbose)) do
-      "User: #{(fn -> user.name end).()}, Age: #{(fn -> Kernel.to_string(user.age) end).()}"
+      "User: #{user.name}, Age: #{Kernel.to_string(user.age)}"
     else
       display(user)
     end
