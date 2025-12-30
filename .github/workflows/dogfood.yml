@@ -1,16 +1,13 @@
-name: Release
+name: Dogfood (Generated Phoenix App)
 
 on:
-  push:
-    tags:
-      - "v*"
-
-concurrency:
-  group: release-${{ github.ref }}
-  cancel-in-progress: false
+  workflow_dispatch:
+  schedule:
+    # Weekly smoke to keep the real-user workflow healthy.
+    - cron: "0 5 * * 1"
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   NODE_VERSION: "20"
@@ -19,10 +16,10 @@ env:
   OTP_VERSION: "27.2"
 
 jobs:
-  verify-and-release:
-    name: Verify + Publish Release
+  dogfood:
+    name: Generate + Boot + Upgrade (bounded)
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 45
     services:
       postgres:
         image: postgres:16
@@ -60,31 +57,13 @@ jobs:
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
 
-      - name: Install npm dependencies
+      - name: Install npm dependencies (repo)
         run: npm ci
 
       - name: Download Haxe libraries (lix)
         run: npx lix download
 
-      - name: Run guardrails
-        run: npm run ci:guards
-
-      - name: Run tests
-        run: npm test
-
-      - name: Validate examples Elixir (warnings as errors)
-        run: npm run test:examples-elixir
-
-      - name: Verify repo hygiene (no build artifacts tracked)
-        run: |
-          set -euo pipefail
-          if git ls-files node_modules deps _build | grep -q .; then
-            echo "ERROR: Tracked build artifacts detected (expected these to be gitignored):"
-            git ls-files node_modules deps _build
-            exit 1
-          fi
-
-      - name: Dogfood generated Phoenix app (upgrade path)
+      - name: Run dogfood script (local mode, bounded)
         env:
           PGHOST: localhost
           PGUSER: postgres
@@ -92,15 +71,12 @@ jobs:
           PGPORT: "5432"
         run: |
           set -euo pipefail
-          current="${GITHUB_REF_NAME}"
-          prev="$(git tag --list 'v*' --sort=-version:refname | sed -n '2p' || true)"
-          if [[ -z "$prev" ]]; then
-            prev="$current"
-          fi
-          echo "[release] Dogfood: ${prev} -> ${current}"
-          scripts/dogfood-phoenix.sh --mode local --from-tag "$prev" --to-tag "$current" --quiet
+          scripts/dogfood-phoenix.sh --mode local --quiet
 
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Upload QA logs
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          generate_release_notes: true
+          name: dogfood-qa-logs
+          path: |
+            /tmp/qa-*.log
