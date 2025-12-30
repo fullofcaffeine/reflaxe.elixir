@@ -9,14 +9,12 @@
 **Type-safe Haxe to Elixir compiler with Phoenix/LiveView support.** Write business logic in Haxe, compile to idiomatic Elixir code for the BEAM ecosystem.
 
 > [!WARNING]
-> Reflaxe.Elixir is **alpha** software and is **not recommended for production use** yet.
-> Expect sharp edges and breaking changes as we harden the compiler, stdlib, and tooling.
->
+> **Stability**: Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset.
 > Some features remain **experimental/opt‑in** (e.g. source mapping, migrations `.exs` emission, `fast_boot`).
 > See: [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
 
 > **Future Vision**: See [docs/08-roadmap/vision.md](docs/08-roadmap/vision.md) for long-term plans including AI tooling and universal platform support  
-> **Current Status**: Alpha (v1.1) — the documented subset is stable enough for evaluation; experimental features are clearly labeled.
+> **Current Status**: Stable subset (v1.1) — non‑alpha for the documented subset; experimental features are clearly labeled.
 
 ## Why Reflaxe.Elixir?
 
