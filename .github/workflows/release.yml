@@ -75,6 +75,9 @@ jobs:
       - name: Validate examples Elixir (warnings as errors)
         run: npm run test:examples-elixir
 
+      - name: Run budgets (perf + determinism)
+        run: npm run ci:budgets
+
       - name: Verify repo hygiene (no build artifacts tracked)
         run: |
           set -euo pipefail

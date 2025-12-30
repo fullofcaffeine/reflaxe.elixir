@@ -8,7 +8,9 @@ This project uses version tags of the form `vX.Y.Z`.
 npm install
 npm test
 npm run test:examples
+npm run test:examples-elixir
 npm run ci:guards
+npm run ci:budgets
 ```
 
 ## Todo-app Acceptance Gate (Recommended)

@@ -104,7 +104,7 @@ npx lix scope create
 npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # Or install a specific version/tag
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.1
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.2
 
 # Download pinned Haxe libraries for the project
 npx lix download
@@ -240,7 +240,7 @@ defp deps do
   [
     # ... other deps
     # Mix tasks only (build-time): pin to a tag or use a commit SHA
-    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.1.1", only: [:dev, :test], runtime: false}
+    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.1.2", only: [:dev, :test], runtime: false}
   ]
 end
 
