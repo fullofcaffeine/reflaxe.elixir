@@ -26,6 +26,8 @@ set +m
 #   --env NAME       Mix environment (dev|test|e2e|prod). Default: dev
 #   --reuse-db       For non-dev envs, do not drop DB; ensure created + migrate only
 #   --seeds PATH     Run a seeds script after migrations (e.g., priv/repo/seeds.e2e.exs)
+#   --compile-migrations   Before ecto.migrate, compile runnable `.exs` migrations (ecto_migrations_exs)
+#   --migrations-hxml FILE Migration HXML to use (default: build-migrations.hxml)
 #   --keep-alive     Do not kill Phoenix on exit; print PHX_PID, PHX_PGID, and PORT
 #   --verbose|-v     Print shell commands and tail logs during probes
 #   --async          Dispatch pipeline to background and return immediately
@@ -116,6 +118,9 @@ DEADLINE=""
 # Optional E2E
 RUN_PLAYWRIGHT=0
 E2E_WORKERS=1
+# Optional migrations compilation (ecto_migrations_exs)
+COMPILE_MIGRATIONS=0
+MIGRATIONS_HXML="build-migrations.hxml"
 # Default to fast, stable smoke specs; override with --e2e-spec as needed
 # Keep this list small but regression-focused; add high-value paths only.
 E2E_SPEC="e2e/basic.spec.ts e2e/search.spec.ts e2e/tags_sort.spec.ts e2e/live_updates.spec.ts e2e/create_todo.spec.ts e2e/edit_todo.spec.ts"
@@ -143,6 +148,8 @@ while [[ $# -gt 0 ]]; do
     --playwright) RUN_PLAYWRIGHT=1; shift 1 ;;
     --e2e-spec) E2E_SPEC="$2"; shift 2 ;;
     --e2e-workers) E2E_WORKERS="$2"; shift 2 ;;
+    --compile-migrations) COMPILE_MIGRATIONS=1; shift 1 ;;
+    --migrations-hxml) MIGRATIONS_HXML="$2"; shift 2 ;;
     --no-heartbeat) NO_HEARTBEAT=1; shift 1 ;;
     --quiet|-q) QUIET=1; VERBOSE=0; shift 1 ;;
     --deadline) DEADLINE="$2"; shift 2 ;;
@@ -288,6 +295,7 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   if [[ "$VERBOSE" -eq 1 ]]; then CHILD_FLAGS+=("--verbose"); fi
   if [[ "$QUIET" -eq 1 ]]; then CHILD_FLAGS+=("--quiet"); fi
   if [[ "$NO_HEARTBEAT" -eq 1 ]]; then CHILD_FLAGS+=("--no-heartbeat"); fi
+  if [[ "$COMPILE_MIGRATIONS" -eq 1 ]]; then CHILD_FLAGS+=("--compile-migrations" "--migrations-hxml" "$MIGRATIONS_HXML"); fi
   if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
     CHILD_FLAGS+=("--playwright" "--e2e-spec" "$E2E_SPEC" "--e2e-workers" "$E2E_WORKERS")
   fi
@@ -340,6 +348,9 @@ log "[QA] Plan:"
 log "[QA]  1) Haxe build (BUILD_TIMEOUT=$BUILD_TIMEOUT)"
 log "[QA]  2) mix deps.get (DEPS_TIMEOUT=$DEPS_TIMEOUT)"
 log "[QA]  3) mix compile (COMPILE_TIMEOUT=$COMPILE_TIMEOUT)"
+if [[ "$ENV_NAME" != "dev" && "$COMPILE_MIGRATIONS" -eq 1 ]]; then
+  log "[QA]  3.migrations) Haxe build migrations ($MIGRATIONS_HXML)"
+fi
 log "[QA]  4) Start Phoenix (background, non-blocking)"
 log "[QA]  5) Readiness probe (READY_PROBES=$READY_PROBES, 0.5s interval)"
 log "[QA]  6) GET /, scan logs, teardown (unless --keep-alive)"
@@ -461,6 +472,14 @@ run_step_with_log "Step 2.cleanup: prune unused Elixir helper outputs" 30s /tmp/
 if ! run_step_with_log "Step 3: mix compile (WAE, no deps)" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile --warnings-as-errors --no-deps-check"; then
   # As a bounded fallback, attempt normal compile once more (still WAE).
   run_step_with_log "Step 3 (retry): mix compile (WAE)" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile --warnings-as-errors" || exit 1
+fi
+
+if [[ "$ENV_NAME" != "dev" && "$COMPILE_MIGRATIONS" -eq 1 ]]; then
+  if [[ -f "$MIGRATIONS_HXML" ]]; then
+    run_step_with_log "Step 3.migrations: Haxe build ($HAXE_CMD $MIGRATIONS_HXML)" 300s /tmp/qa-haxe-migrations.log "$HAXE_CMD $MIGRATIONS_HXML" || exit 1
+  else
+    run_step_with_log "Step 3.migrations: mix haxe.compile.migrations" 300s /tmp/qa-haxe-migrations.log "MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix haxe.compile.migrations --force" || exit 1
+  fi
 fi
 if [[ "$ENV_NAME" != "dev" ]]; then
   if [[ "$REUSE_DB" -eq 1 ]]; then
