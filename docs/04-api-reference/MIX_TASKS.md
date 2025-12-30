@@ -7,9 +7,10 @@ Complete reference for all Mix tasks provided by Reflaxe.Elixir for compilation,
 2. [Source Mapping Tasks](#source-mapping-tasks)
 3. [Debugging Tasks](#debugging-tasks)
 4. [Development Tasks](#development-tasks)
-5. [Migration Tasks](#migration-tasks)
-6. [Task Options & Flags](#task-options--flags)
-7. [Examples & Workflows](#examples--workflows)
+5. [Generation Tasks](#generation-tasks)
+6. [Migration Tasks](#migration-tasks)
+7. [Task Options & Flags](#task-options--flags)
+8. [Examples & Workflows](#examples--workflows)
 
 ## Compilation Tasks
 
@@ -215,6 +216,60 @@ mix haxe.watch --verbose
 mix haxe.watch --once
 mix haxe.watch --dirs src_haxe,test
 mix haxe.watch --hxml build.hxml
+```
+
+## Generation Tasks
+
+These tasks generate **Haxe-first** scaffolding (they write `.hx` source files).
+Elixir output is produced when you run `mix compile.haxe` (or `haxe build.hxml`).
+
+### mix haxe.gen.project
+
+Adds Reflaxe.Elixir support to an existing Elixir project (creates `build.hxml`, `.haxerc`, and starter `src_haxe/` structure).
+
+```bash
+mix haxe.gen.project
+mix haxe.gen.project --phoenix
+mix haxe.gen.project --basic-modules
+```
+
+### mix haxe.gen.schema
+
+Generates an Ecto schema authored in Haxe.
+
+```bash
+mix haxe.gen.schema User
+mix haxe.gen.schema Post --table posts
+mix haxe.gen.schema Account --fields "name:string,email:string,age:integer"
+```
+
+### mix haxe.gen.context
+
+Generates a Phoenix context authored in Haxe.
+
+```bash
+mix haxe.gen.context Accounts User users
+mix haxe.gen.context Blog Post posts --schema-attrs "title:string,body:text"
+```
+
+### mix haxe.gen.live
+
+Generates a Phoenix LiveView authored in Haxe.
+
+```bash
+mix haxe.gen.live DashboardLive
+mix haxe.gen.live TodoLive --assigns "count:Int"
+mix haxe.gen.live UsersLive --events "refresh,search"
+```
+
+### mix haxe.gen.extern
+
+Generates a starter Haxe `extern` from an Elixir/Erlang module.
+
+```bash
+mix haxe.gen.extern Enum
+mix haxe.gen.extern Ecto.Changeset --package externs.ecto --out src_haxe/externs
+mix haxe.gen.extern :crypto --package externs.erlang --out src_haxe/externs
 ```
 
 ## Migration Tasks
