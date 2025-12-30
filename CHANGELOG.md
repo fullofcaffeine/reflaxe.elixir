@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+## [1.1.3](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.2...v1.1.3) (2025-12-30)
+
+### 🐞 Bug Fixes
+
+- Migrations: Fix order-dependent table validation so cross-migration foreign-key references don’t fail when Haxe types modules in an unexpected order.
+
 ## [1.1.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.1...v1.1.2) (2025-12-30)
 
 ### 🗺️ Source Maps (experimental)
