@@ -25,6 +25,14 @@ typedef TableSchema = {
 }
 
 /**
+ * Pending validation request for a table name that may be registered later in compilation.
+ */
+typedef PendingTableValidation = {
+    var tableName: String;
+    var positions: Array<Position>;
+}
+
+/**
  * MigrationRegistry: Compile-time tracking of database schema for validation
  * 
  * WHY: Catch database schema errors at compile-time instead of runtime
@@ -62,6 +70,20 @@ class MigrationRegistry {
      * Static so it persists across macro calls during compilation
      */
     static var tables: Map<String, TableSchema> = new Map();
+
+    /**
+     * Deferred validations for cross-migration references.
+     *
+     * WHY
+     * - Haxe does not guarantee the typing order of modules listed on the command line.
+     * - A migration may reference a table defined in another migration that gets typed later.
+     *
+     * HOW
+     * - When a referenced table is not yet registered, store a validation request.
+     * - Flush these requests in `Context.onAfterTyping` once all migration modules are typed.
+     */
+    static var pendingTableValidations: Map<String, PendingTableValidation> = new Map();
+    static var afterTypingHookRegistered: Bool = false;
     
     /**
      * Register a new table in the migration registry
@@ -154,6 +176,64 @@ class MigrationRegistry {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Validate that a table exists, but allow forward references across migrations.
+     *
+     * WHY
+     * - Migration validation must not depend on the compiler's module typing order.
+     *
+     * HOW
+     * - If the table is already registered, validate immediately.
+     * - Otherwise, defer the validation until after typing so other migration modules
+     *   have a chance to register the table.
+     */
+    public static function validateTableExistsDeferred(tableName: String, pos: Position): Void {
+        if (tables.exists(tableName)) {
+            return;
+        }
+
+        queueTableValidation(tableName, pos);
+        ensureAfterTypingHook();
+    }
+
+    static function queueTableValidation(tableName: String, pos: Position): Void {
+        var existing = pendingTableValidations.get(tableName);
+        if (existing == null) {
+            pendingTableValidations.set(tableName, {tableName: tableName, positions: [pos]});
+            return;
+        }
+
+        existing.positions.push(pos);
+    }
+
+    static function ensureAfterTypingHook(): Void {
+        if (afterTypingHookRegistered) {
+            return;
+        }
+
+        afterTypingHookRegistered = true;
+        Context.onAfterTyping(function(_modules: Array<ModuleType>) {
+            flushDeferredValidations();
+        });
+    }
+
+    static function flushDeferredValidations(): Void {
+        if (pendingTableValidations.keys().hasNext() == false) {
+            return;
+        }
+
+        var pending = pendingTableValidations;
+        pendingTableValidations = new Map();
+
+        for (tableName in pending.keys()) {
+            var entry = pending.get(tableName);
+            if (entry == null || entry.positions.length == 0) {
+                continue;
+            }
+            validateTableExists(tableName, entry.positions[0]);
+        }
     }
     
     /**
