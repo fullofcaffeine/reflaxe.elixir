@@ -50,7 +50,7 @@ cd reflaxe.elixir
 # installs lix + downloads pinned Haxe deps
 npm install
 
-# builds todo-app, boots Phoenix in the background, probes readiness, (optionally) runs Playwright, then shuts down
+# builds todo-app, boots Phoenix in the background, probes readiness, then shuts down
 npm run qa:sentinel
 ```
 
@@ -64,6 +64,12 @@ If you want the server to stay up for manual browsing:
 
 ```bash
 scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v
+```
+
+If you want a quick browser E2E smoke (Playwright), run:
+
+```bash
+scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --async --deadline 900 --verbose
 ```
 
 ## 2) Generate your own Phoenix app (recommended next step)
@@ -127,4 +133,3 @@ npx lix run haxe --version
 - Haxe basics: `docs/02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md`
 - Phoenix integration overview: `docs/02-user-guide/PHOENIX_INTEGRATION.md`
 - Quickstart (Phoenix-first): `docs/06-guides/QUICKSTART.md`
-
