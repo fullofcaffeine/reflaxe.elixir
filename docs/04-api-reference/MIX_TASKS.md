@@ -49,12 +49,16 @@ mix compile.haxe --force
 
 Query and validate source mapping information.
 
-> Note: Source mapping is currently **experimental**. The task is present, but `.ex.map` emission and
-> lookup are not yet fully wired end‑to‑end. See `docs/04-api-reference/SOURCE_MAPPING.md`.
+> Note: Source mapping is currently **experimental**, but is wired end‑to‑end when enabled
+> (`-D source_map_enabled`). See `docs/04-api-reference/SOURCE_MAPPING.md`.
 
 ```bash
 # Query specific position
 mix haxe.source_map lib/UserService.ex 45 12
+
+# Reverse lookup (Haxe → Elixir): `--reverse` is optional when FILE ends with `.hx`
+mix haxe.source_map src_haxe/UserService.hx 15 5 --reverse
+mix haxe.source_map src_haxe/UserService.hx 15 5
 
 # List all source maps
 mix haxe.source_map --list-maps
@@ -70,14 +74,16 @@ mix haxe.source_map lib/UserService.ex 45 12 --format json
 ```
 
 **Arguments:**
-- `file` - Path to generated Elixir file
-- `line` - Line number in Elixir file
-- `column` - Column number in Elixir file
+- `file` - Path to generated Elixir (`.ex`) or Haxe (`.hx`) file
+- `line` - Line number in the input file (1-based)
+- `column` - Column number in the input file (0-based)
 
 **Options:**
 - `--list-maps` - List all available source map files
 - `--validate-maps` - Validate all source map files
 - `--with-context` - Include surrounding code context
+- `--reverse` - Perform reverse lookup (Haxe → Elixir)
+- `--target-dir` - Directory to search for source maps (default: `lib`)
 - `--format` - Output format: `json`, `table`, `detailed` (default: `detailed`)
 - `--json` - Alias for `--format json`
 

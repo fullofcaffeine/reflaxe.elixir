@@ -70,51 +70,73 @@ console.log(`Source file: ${sourceMap.sources[0]}`);
 console.log(`Generated file: ${sourceMap.file}`);
 console.log(`Mappings string: ${sourceMap.mappings}\n`);
 
+function decodeMappings(mappings, sources) {
+    const lines = mappings.split(';');
+
+    const decodedLines = [];
+
+    // Delta state across the whole file (generated_column resets per line)
+    let sourceFileIndex = 0;
+    let sourceLine = 0;
+    let sourceColumn = 0;
+
+    for (let genLine = 0; genLine < lines.length; genLine++) {
+        const line = lines[genLine];
+        let generatedColumn = 0;
+        const segments = line.split(',');
+        const decodedSegments = [];
+
+        for (const segment of segments) {
+            if (!segment) continue;
+            const decoded = decodeVLQ(segment);
+            if (decoded.length === 0) continue;
+
+            generatedColumn += decoded[0] || 0;
+
+            if (decoded.length >= 4) {
+                sourceFileIndex += decoded[1] || 0;
+                sourceLine += decoded[2] || 0;
+                sourceColumn += decoded[3] || 0;
+
+                decodedSegments.push({
+                    generated_line: genLine,
+                    generated_column: generatedColumn,
+                    source_file: sources[sourceFileIndex] || 'unknown.hx',
+                    source_line: sourceLine,
+                    source_column: sourceColumn,
+                });
+            }
+        }
+
+        decodedLines.push(decodedSegments);
+    }
+
+    return decodedLines;
+}
+
 // Decode the mappings
 const mappings = sourceMap.mappings;
 const lines = mappings.split(';');
+const decodedLines = decodeMappings(mappings, sourceMap.sources);
 
 console.log(`Total lines in mapping: ${lines.length}`);
 console.log(`Total lines in generated file: ${generatedLines.length}\n`);
-
-// Track current position
-let sourceFileIndex = 0;
-let sourceLine = 0;
-let sourceColumn = 0;
-let nameIndex = 0;
 
 console.log('=== Decoded Mappings (first 10 non-empty) ===\n');
 
 let nonEmptyCount = 0;
 for (let genLine = 0; genLine < lines.length && nonEmptyCount < 10; genLine++) {
-    const line = lines[genLine];
-    if (line.length === 0) continue;
-    
-    const segments = line.split(',');
-    for (const segment of segments) {
-        if (segment.length === 0) continue;
-        
-        const decoded = decodeVLQ(segment);
-        
-        // VLQ fields are relative to previous position
-        const genColumn = decoded[0] || 0;
-        sourceFileIndex += decoded[1] || 0;
-        sourceLine += decoded[2] || 0;
-        sourceColumn += decoded[3] || 0;
-        
-        if (decoded.length > 4) {
-            nameIndex += decoded[4];
-        }
-        
-        console.log(`Generated Line ${genLine + 1}:`);
-        console.log(`  Maps to: ${sourceMap.sources[sourceFileIndex] || 'unknown'}:${sourceLine + 1}:${sourceColumn + 1}`);
-        console.log(`  Generated code: "${generatedLines[genLine]?.substring(0, 60)}..."`);
-        console.log(`  Source code:    "${sourceLines[sourceLine]?.substring(0, 60)}..."`);
-        console.log('');
-        
-        nonEmptyCount++;
-        break; // Only show first segment of each line for clarity
-    }
+    const mappingsForLine = decodedLines[genLine] || [];
+    if (mappingsForLine.length === 0) continue;
+
+    const mapping = mappingsForLine[0];
+    console.log(`Generated Line ${genLine + 1}:`);
+    console.log(`  Maps to: ${mapping.source_file}:${mapping.source_line + 1}:${mapping.source_column + 1}`);
+    console.log(`  Generated code: "${generatedLines[genLine]?.substring(0, 60)}..."`);
+    console.log(`  Source code:    "${sourceLines[mapping.source_line]?.substring(0, 60)}..."`);
+    console.log('');
+
+    nonEmptyCount++;
 }
 
 // Analyze the mapping pattern
@@ -122,17 +144,35 @@ console.log('=== Mapping Pattern Analysis ===\n');
 
 let emptyLines = 0;
 let mappedLines = 0;
-for (const line of lines) {
-    if (line.length === 0) {
-        emptyLines++;
-    } else {
-        mappedLines++;
-    }
+for (const lineMappings of decodedLines) {
+    if (!lineMappings || lineMappings.length === 0) emptyLines++;
+    else mappedLines++;
 }
 
 console.log(`Empty lines: ${emptyLines}`);
 console.log(`Mapped lines: ${mappedLines}`);
-console.log(`Mapping coverage: ${((mappedLines / lines.length) * 100).toFixed(1)}%`);
+const coverage = ((mappedLines / decodedLines.length) * 100);
+console.log(`Mapping coverage: ${coverage.toFixed(1)}%`);
+
+// === Assertions (fail the snapshot test if source maps regress) ===
+//
+// We want source maps to be a dependable debugging aid:
+// - Every generated line should have at least one mapping (line coverage)
+// - At least some lines should have multiple segments (column fidelity)
+const hasColumnMappings = decodedLines.some(lineMappings =>
+    (lineMappings || []).some(m => (m.generated_column || 0) > 0)
+);
+const hasMultiSegmentLine = decodedLines.some(lineMappings => (lineMappings || []).length >= 2);
+
+if (coverage < 95) {
+    console.error(`\n[ASSERT] Low mapping coverage: ${coverage.toFixed(1)}% (< 95%)`);
+    process.exit(1);
+}
+
+if (!hasColumnMappings || !hasMultiSegmentLine) {
+    console.error(`\n[ASSERT] Source map granularity too low (need column-level segments on at least one line).`);
+    process.exit(1);
+}
 
 // Check if we're tracking the Main class correctly
 const mainClassLine = sourceLines.findIndex(line => line.includes('class Main'));

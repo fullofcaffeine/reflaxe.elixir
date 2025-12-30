@@ -18,9 +18,12 @@ Source mapping is implemented, but remains **experimental**:
 
 ### What “experimental” still means
 
-- Mappings are currently **coarse/line‑level**: each generated line maps to the nearest enclosing
-  top‑level definition (module start and `def`/`defp`/macro boundaries), not every expression.
-- More granular mapping would require threading the writer through a printer buffer (planned).
+- Mappings provide **full line coverage** (every generated line maps to a Haxe position) and add
+  **column‑level segments** at many expression boundaries (AST node starts).
+- Mappings are still **best‑effort**:
+  - Not every character is mapped (we map expression starts, not identifier “names”).
+  - Compiler‑injected lines (bootstrapping, helper shims) map to the nearest reasonable Haxe
+    context.
 
 Non‑alpha / production‑ready status for Reflaxe.Elixir does **not** require source mapping; it is
 opt‑in and intended as a debugging aid.
@@ -49,12 +52,12 @@ Then compile normally. The compiler will emit sibling files:
 
 ## Recommended Next Steps (If You Want This Feature)
 
-1. **Increase granularity**
-   - Thread a `SourceMapWriter` through the printer so we can map at expression‑level, not just
-     per generated line.
-2. **Harden reverse lookup**
-   - Improve `mix haxe.source_map --reverse` by searching maps by referenced source file rather than
-     assuming filename equivalence.
-3. **Expand integration coverage**
+1. **Expand integration coverage**
    - Extend the fixture coverage under `test/snapshot/core/source_map_*` to assert specific mappings
      (not just structure).
+2. **Polish reverse lookup UX**
+   - If multiple modules reference the same `.hx` file, consider returning multiple candidate
+     matches in JSON output (or add a `--pick` flag).
+3. **Refine granularity vs size**
+   - Tune which AST node types emit mapping boundaries to keep `.map` size reasonable while still
+     mapping meaningful expression starts.

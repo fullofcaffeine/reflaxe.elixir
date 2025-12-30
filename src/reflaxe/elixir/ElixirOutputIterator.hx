@@ -6,6 +6,7 @@ import haxe.io.Path;
 #if macro
 import haxe.macro.Context;
 import haxe.macro.Expr.Position;
+import reflaxe.elixir.SourceMapMarkers;
 #end
 import reflaxe.output.DataAndFileInfo;
 import reflaxe.output.StringOrBytes;
@@ -224,11 +225,23 @@ class ElixirOutputIterator {
                 continue;
             }
 
-            // Convert AST to string
-            var output = ElixirASTPrinter.print(transformedAST, 0);
+	        // Convert AST to string
+	        var sourceMapMarkers: Null<SourceMapMarkers> = null;
+	        #if macro
+	        if (compiler.sourceMapOutputEnabled) {
+	            sourceMapMarkers = new SourceMapMarkers();
+	            ElixirASTPrinter.setSourceMapMarkerEmitter(sourceMapMarkers.emit);
+	        }
+	        #end
+	        var output = ElixirASTPrinter.print(transformedAST, 0);
+	        #if macro
+	        if (compiler.sourceMapOutputEnabled) {
+	            ElixirASTPrinter.setSourceMapMarkerEmitter(null);
+	        }
+	        #end
 
-            // Debug: Check if we're getting empty output
-            if (output == null || output.length == 0) { /* silent by default */ }
+	        // Debug: Check if we're getting empty output
+	        if (output == null || output.length == 0) { /* silent by default */ }
 
             #if debug_output_iterator trace('[ElixirOutputIterator] Generated ${output.length} characters of output'); #end
 
@@ -276,11 +289,11 @@ class ElixirOutputIterator {
                 }
             }
 
-            #if macro
-            if (compiler.sourceMapOutputEnabled) {
-                queueSourceMap(astData, transformedAST, output);
-            }
-            #end
+	        #if macro
+	        if (compiler.sourceMapOutputEnabled) {
+	            output = queueSourceMap(astData, transformedAST, output, sourceMapMarkers);
+	        }
+	        #end
 
             // Return the same DataAndFileInfo but with string output instead of AST
             return astData.withOutput(output);
@@ -288,49 +301,133 @@ class ElixirOutputIterator {
     }
 
     #if macro
-    /**
-     * queueSourceMap
-     *
-     * WHAT
-     * - Creates a SourceMapWriter for the generated `.ex` file and records coarse-grained
-     *   mappings so `mix haxe.source_map` (and error enrichment) can translate Elixir
-     *   file/line locations back to Haxe source positions.
-     *
-     * WHY
-     * - The compiler already has a SourceMapWriter implementation, but it was not wired
-     *   into the output phase. Emitting usable `.ex.map` files is a major DevEx win for:
-     *   - mapping stacktraces back to Haxe
-     *   - LLM-friendly navigation between generated and source
-     *
-     * HOW
-     * - We avoid invasive printer changes by emitting a coarse mapping at **column 0 for
-     *   every generated line**, using the most recent “context” mapping point:
-     *   - module start (fallback)
-     *   - each top-level function definition (def/defp/defmacro/defmacrop)
-     * - This yields full line coverage without depending on fragile string heuristics for
-     *   every expression. More granular mapping can be added later by threading the writer
-     *   directly through the printer buffer.
-     */
-    static function queueSourceMap(astData: DataAndFileInfo<reflaxe.elixir.ast.ElixirAST>, ast: ElixirAST, output: String): Void {
-        if (ast == null || output == null) return;
+	    /**
+	     * queueSourceMap
+	     *
+	     * WHAT
+	     * - Creates a SourceMapWriter for the generated `.ex` file and records line-complete,
+	     *   column-aware mappings so `mix haxe.source_map` (and error enrichment) can translate
+	     *   Elixir `{file,line,column}` back to Haxe source positions.
+	     *
+	     * WHY
+	     * - The compiler already has a SourceMapWriter implementation, but it was not wired
+	     *   into the output phase. Emitting usable `.ex.map` files is a major DevEx win for:
+	     *   - mapping stacktraces back to Haxe
+	     *   - LLM-friendly navigation between generated and source
+	     *
+	     * HOW
+	     * - The printer is temporarily configured to emit stable, newline-free markers at AST
+	     *   node boundaries (via `SourceMapMarkers`).
+	     * - We then stream the marker-annotated output:
+	     *   - emit a mapping at **column 0 for every generated line** (line coverage)
+	     *   - emit additional mappings at marker locations (column fidelity)
+	     *   - strip markers from the final output so generated `.ex` remains unchanged
+	     */
+	    static function queueSourceMap(astData: DataAndFileInfo<reflaxe.elixir.ast.ElixirAST>, ast: ElixirAST, outputWithMarkers: String, markers: Null<SourceMapMarkers>): String {
+	        if (ast == null || outputWithMarkers == null) return outputWithMarkers;
 
-        var startPos = findFirstPos(ast);
-        if (startPos == null) return;
+	        var startPos = findFirstPos(ast);
+	        if (startPos == null) return outputWithMarkers;
 
-        var generatedFile = computeGeneratedFilePath(astData);
-        if (generatedFile == null || generatedFile.length == 0) return;
+	        var generatedFile = computeGeneratedFilePath(astData);
+	        if (generatedFile == null || generatedFile.length == 0) return outputWithMarkers;
 
-        var mappingPoints = computeMappingPoints(ast, output, startPos);
-        if (mappingPoints.length == 0) return;
+	        var writer = new SourceMapWriter(generatedFile);
+	        var output =
+	            if (markers != null)
+	                emitMarkerMappings(writer, outputWithMarkers, markers, startPos)
+	            else {
+	                // Fallback to coarse line mapping when marker emission is unavailable.
+	                var mappingPoints = computeMappingPoints(ast, outputWithMarkers, startPos);
+	                mappingPoints.sort((a, b) -> a.index - b.index);
+	                emitLineMappings(writer, outputWithMarkers, mappingPoints);
+	                outputWithMarkers;
+	            };
 
-        mappingPoints.sort((a, b) -> a.index - b.index);
+	        // Defer actual file writes until all output files exist.
+	        ElixirCompiler.instance.pendingSourceMapWriters.push(writer);
 
-        var writer = new SourceMapWriter(generatedFile);
-        emitLineMappings(writer, output, mappingPoints);
+	        return output;
+	    }
 
-        // Defer actual file writes until all output files exist.
-        ElixirCompiler.instance.pendingSourceMapWriters.push(writer);
-    }
+	    static function emitMarkerMappings(writer: SourceMapWriter, outputWithMarkers: String, markers: SourceMapMarkers, startPos: Position): String {
+	        var lines = outputWithMarkers.split("\n");
+	        var out = new StringBuf();
+	        var activePos = startPos;
+
+	        for (i in 0...lines.length) {
+	            // Ensure every generated line has at least one mapping segment.
+	            // For line-start lookups (column 0), prefer the first marker in the line so that
+	            // `lookup_haxe_position(..., line, 0)` maps to the statement/function that begins
+	            // the line (not the previous context).
+	            var line = lines[i];
+	            var lineStartPos = activePos;
+	            var firstMarkerIdx = line.indexOf(SourceMapMarkers.PREFIX);
+	            if (firstMarkerIdx >= 0) {
+	                var idStart = firstMarkerIdx + SourceMapMarkers.PREFIX.length;
+	                var idEnd = line.indexOf(SourceMapMarkers.SUFFIX, idStart);
+	                if (idEnd >= 0) {
+	                    var idStr = line.substring(idStart, idEnd);
+	                    var id = Std.parseInt(idStr);
+	                    var pos = (id != null) ? markers.getPosition(id) : null;
+	                    if (pos != null) {
+	                        lineStartPos = pos;
+	                        activePos = pos;
+	                    }
+	                }
+	            }
+	            writer.mapPosition(lineStartPos);
+
+	            var cursor = 0;
+
+	            while (true) {
+	                var markerIdx = line.indexOf(SourceMapMarkers.PREFIX, cursor);
+	                if (markerIdx < 0) break;
+
+	                var before = line.substring(cursor, markerIdx);
+	                if (before.length > 0) {
+	                    out.add(before);
+	                    writer.stringWritten(before);
+	                }
+
+	                var idStart = markerIdx + SourceMapMarkers.PREFIX.length;
+	                var idEnd = line.indexOf(SourceMapMarkers.SUFFIX, idStart);
+	                if (idEnd < 0) {
+	                    // Malformed marker: treat remainder as normal text.
+	                    var rest = line.substring(markerIdx);
+	                    if (rest.length > 0) {
+	                        out.add(rest);
+	                        writer.stringWritten(rest);
+	                    }
+	                    cursor = line.length;
+	                    break;
+	                }
+
+	                var idStr = line.substring(idStart, idEnd);
+	                var id = Std.parseInt(idStr);
+	                var pos = (id != null) ? markers.getPosition(id) : null;
+	                if (pos != null) {
+	                    activePos = pos;
+	                    writer.mapPosition(activePos);
+	                }
+
+	                cursor = idEnd + SourceMapMarkers.SUFFIX.length;
+	            }
+
+	            var tail = line.substring(cursor);
+	            if (tail.length > 0) {
+	                out.add(tail);
+	                writer.stringWritten(tail);
+	            }
+
+	            if (i < lines.length - 1) {
+	                out.add("\n");
+	                writer.stringWritten("\n");
+	            }
+	        }
+
+	        return out.toString();
+	    }
 
     static function computeGeneratedFilePath(astData: DataAndFileInfo<reflaxe.elixir.ast.ElixirAST>): String {
         var outputDir = ElixirCompiler.instance.output != null ? ElixirCompiler.instance.output.outputDir : null;
