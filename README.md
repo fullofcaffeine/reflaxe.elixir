@@ -76,7 +76,7 @@ The foundation for multi-target development:
   - **Type-Safe Phoenix Abstractions** ✨ NEW - Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with operator overloading
 - **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations remain opt‑in/experimental** (`-D ecto_migrations_exs`)  
 - **Mix Integration** - Seamless build pipeline with file watching and incremental compilation
-- **Source Mapping (experimental)** - `.ex.map` emission + `mix haxe.source_map` lookup are implemented (currently coarse/line-level; see `docs/04-api-reference/SOURCE_MAPPING.md`)
+- **Source Mapping (experimental)** - `.ex.map` emission + `mix haxe.source_map` lookup are implemented (line coverage + many expression-level boundaries; see `docs/04-api-reference/SOURCE_MAPPING.md`)
 - **OTP Support** - GenServers, Supervisors, Registry with type-safe compilation
 - **Type Safety** - Complete Haxe→Elixir type mapping and compile-time validation
 - **JavaScript Async/Await** - Native async/await compilation for modern JS development

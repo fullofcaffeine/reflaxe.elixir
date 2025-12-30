@@ -71,6 +71,7 @@ Additional (uncurated) architecture notes were archived to **[09-history/archive
 - [Strict Mode](06-guides/STRICT_MODE.md) - Opt-in Gleam-like safety profile
 - [Versioning & Stability](06-guides/VERSIONING_AND_STABILITY.md) - SemVer + stability tiers + deprecation policy
 - [Production Deployment](06-guides/PRODUCTION_DEPLOYMENT.md) - CI/Docker/release patterns
+- [VS Code Debugging (Source Maps)](06-guides/VSCODE_DEBUGGING.md) - Jump from `.ex` runtime locations back to Haxe
 - [Performance Guide](06-guides/PERFORMANCE_GUIDE.md) - Compilation performance
 - [Troubleshooting](06-guides/TROUBLESHOOTING.md) - Common issues and solutions
 - [Known Limitations](06-guides/KNOWN_LIMITATIONS.md) - Sharp edges and experimental surfaces
