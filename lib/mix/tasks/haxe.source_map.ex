@@ -127,114 +127,221 @@ defmodule Mix.Tasks.Haxe.SourceMap do
   defp perform_lookup(file, line, column, opts) do
     target_dir = opts[:target_dir] || "lib"
     format = opts[:format] || "detailed"
-    reverse = opts[:reverse] || false
-    
-    case find_and_parse_source_map(file, target_dir, reverse) do
-      {:ok, {source_map, lookup_direction}} ->
-        result = case lookup_direction do
-          :elixir_to_haxe ->
-            SourceMapLookup.lookup_haxe_position(source_map, line, column)
-            
-          :haxe_to_elixir ->
-            # For reverse lookup, we need to search through all mappings
-            find_elixir_position_for_haxe(source_map, file, line, column)
-        end
-        
-        case result do
-          {:ok, mapped_position} ->
-            display_lookup_result(file, line, column, mapped_position, source_map, opts, lookup_direction, format)
-            
-          {:error, reason} ->
-            Mix.shell().error("Lookup failed: #{reason}")
-            suggest_alternatives(file, line, column, opts)
-        end
-        
-      {:error, reason} ->
-        Mix.shell().error("Source map error: #{reason}")
-        suggest_alternatives(file, line, column, opts)
-    end
-  end
-  
-  defp find_and_parse_source_map(file, target_dir, reverse) do
+
+    # Auto-detect reverse lookups for Haxe paths to avoid brittle `.hx -> .ex` guessing.
+    reverse = opts[:reverse] || String.ends_with?(file, ".hx")
+
     if reverse do
-      # Reverse lookup: Haxe file to Elixir
-      elixir_file = String.replace(file, ".hx", ".ex")
-      source_map_path = Path.join(target_dir, Path.basename(elixir_file) <> ".map")
-      
-      case SourceMapLookup.parse_source_map(source_map_path) do
-        {:ok, source_map} -> {:ok, {source_map, :haxe_to_elixir}}
-        {:error, reason} -> {:error, reason}
+      case find_best_elixir_position_for_haxe(target_dir, file, line, column) do
+        {:ok, {mapped_position, source_map}} ->
+          display_lookup_result(file, line, column, mapped_position, source_map, opts, :haxe_to_elixir, format)
+
+        {:error, reason} ->
+          Mix.shell().error("Lookup failed: #{reason}")
+          suggest_alternatives(file, line, column, opts)
       end
     else
-      # Forward lookup: Elixir file to Haxe
-      source_map_path = case Path.extname(file) do
-        ".ex" ->
-          file <> ".map"
-          
-        ".hx" ->
-          # User provided Haxe file, find corresponding Elixir map
-          elixir_file = String.replace(file, ".hx", ".ex")
-          elixir_file <> ".map"
-          
-        _ ->
-          file <> ".map"
-      end
-      
-      case SourceMapLookup.parse_source_map(source_map_path) do
-        {:ok, source_map} -> {:ok, {source_map, :elixir_to_haxe}}
-        {:error, reason} -> {:error, reason}
+      case resolve_and_parse_source_map(file, target_dir) do
+        {:ok, source_map} ->
+          case SourceMapLookup.lookup_haxe_position(source_map, line, column) do
+            {:ok, mapped_position} ->
+              display_lookup_result(file, line, column, mapped_position, source_map, opts, :elixir_to_haxe, format)
+
+            {:error, reason} ->
+              Mix.shell().error("Lookup failed: #{reason}")
+              suggest_alternatives(file, line, column, opts)
+          end
+
+        {:error, reason} ->
+          Mix.shell().error("Source map error: #{reason}")
+          suggest_alternatives(file, line, column, opts)
       end
     end
   end
-  
-  defp find_elixir_position_for_haxe(source_map, haxe_file, haxe_line, haxe_column) do
-    # Search through all mappings to find one that matches the Haxe position
-    matching_mapping = Enum.find(source_map.mappings, fn mapping ->
-      mapping.source_file == haxe_file and 
-      mapping.source_line == (haxe_line - 1) and  # Convert to 0-based
-      mapping.source_column == haxe_column
-    end)
-    
-    case matching_mapping do
-      nil ->
-        # Try to find the closest mapping
-        closest_mapping = Enum.min_by(source_map.mappings, fn mapping ->
-          if mapping.source_file == haxe_file do
-            abs((mapping.source_line + 1) - haxe_line) + abs(mapping.source_column - haxe_column)
+
+  defp resolve_and_parse_source_map(file, target_dir) do
+    source_map_path = resolve_source_map_path(file, target_dir)
+
+    case source_map_path do
+      {:ok, path} -> SourceMapLookup.parse_source_map(path)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp resolve_source_map_path(file, target_dir) do
+    file = Path.expand(file)
+
+    candidate =
+      cond do
+        String.ends_with?(file, ".map") -> file
+        true -> file <> ".map"
+      end
+
+    if File.exists?(candidate) do
+      {:ok, candidate}
+    else
+      desired_basename = Path.basename(candidate)
+
+      matches =
+        target_dir
+        |> SourceMapLookup.find_available_source_maps()
+        |> Enum.filter(fn path -> Path.basename(path) == desired_basename end)
+        |> Enum.sort()
+
+      case matches do
+        [single] -> {:ok, single}
+        [first | _rest] -> {:ok, first}
+        [] -> {:error, "Source map not found for #{file} (expected #{desired_basename} under #{target_dir})"}
+      end
+    end
+  end
+
+  defp find_best_elixir_position_for_haxe(target_dir, haxe_file, haxe_line, haxe_column) do
+    source_maps =
+      target_dir
+      |> SourceMapLookup.find_available_source_maps()
+      |> Enum.sort()
+
+    if Enum.empty?(source_maps) do
+      {:error, "No source map files found under #{target_dir}. Compile with -D source_map_enabled."}
+    else
+      source_file_candidates = build_haxe_source_candidates(haxe_file)
+
+      best =
+        Enum.reduce(source_maps, nil, fn source_map_path, acc ->
+          with {:ok, source_map} <- SourceMapLookup.parse_source_map(source_map_path),
+               {:ok, {mapped_position, score}} <- find_elixir_position_for_haxe_in_map(source_map, source_file_candidates, haxe_line, haxe_column) do
+            candidate = {mapped_position, source_map, score, source_map_path}
+            pick_better_reverse_match(acc, candidate)
           else
-            999999  # Large number for non-matching files
+            _ -> acc
           end
-        end, fn -> nil end)
-        
-        case closest_mapping do
-          nil ->
-            {:error, "No mapping found for Haxe position #{haxe_file}:#{haxe_line}:#{haxe_column}"}
-            
-          mapping ->
-            {:ok, %{
-              file: source_map.file,
-              line: mapping.generated_line + 1,  # Convert back to 1-based
+        end)
+
+      case best do
+        nil ->
+          {:error, "No mapping found for Haxe position #{Path.basename(haxe_file)}:#{haxe_line}:#{haxe_column}"}
+
+        {mapped_position, source_map, _score, _path} ->
+          {:ok, {mapped_position, source_map}}
+      end
+    end
+  end
+
+  defp pick_better_reverse_match(nil, candidate), do: candidate
+
+  defp pick_better_reverse_match({_, _, best_score, best_path} = best, {_, _, score, path} = candidate) do
+    cond do
+      score.approximate? != best_score.approximate? ->
+        if score.approximate?, do: best, else: candidate
+
+      score.distance < best_score.distance ->
+        candidate
+
+      score.distance > best_score.distance ->
+        best
+
+      path < best_path ->
+        candidate
+
+      true ->
+        best
+    end
+  end
+
+  defp find_elixir_position_for_haxe_in_map(source_map, source_file_candidates, haxe_line, haxe_column) do
+    mappings_for_file =
+      Enum.filter(source_map.mappings, fn mapping ->
+        source_file_matches?(mapping.source_file, source_file_candidates)
+      end)
+
+    if Enum.empty?(mappings_for_file) do
+      {:error, :no_file_match}
+    else
+      exact =
+        Enum.find(mappings_for_file, fn mapping ->
+          mapping.source_line == (haxe_line - 1) and mapping.source_column == haxe_column
+        end)
+
+      generated_file_path = Path.rootname(source_map.source_map_path)
+
+      case exact do
+        nil ->
+          closest =
+            Enum.min_by(mappings_for_file, fn mapping ->
+              abs((mapping.source_line + 1) - haxe_line) + abs(mapping.source_column - haxe_column)
+            end, fn -> nil end)
+
+          case closest do
+            nil ->
+              {:error, :no_mapping}
+
+            mapping ->
+              distance = abs((mapping.source_line + 1) - haxe_line) + abs(mapping.source_column - haxe_column)
+
+              {:ok,
+               {%{
+                  file: generated_file_path,
+                  line: mapping.generated_line + 1,
+                  column: mapping.generated_column,
+                  approximate: true,
+                  original_position: %{
+                    line: haxe_line,
+                    column: haxe_column
+                  }
+                }, %{approximate?: true, distance: distance}}}
+          end
+
+        mapping ->
+          {:ok,
+           {%{
+              file: generated_file_path,
+              line: mapping.generated_line + 1,
               column: mapping.generated_column,
-              approximate: true,
+              approximate: false,
               original_position: %{
                 line: haxe_line,
                 column: haxe_column
               }
-            }}
-        end
-        
-      mapping ->
-        {:ok, %{
-          file: source_map.file,
-          line: mapping.generated_line + 1,  # Convert back to 1-based
-          column: mapping.generated_column,
-          approximate: false,
-          original_position: %{
-            line: haxe_line,
-            column: haxe_column
-          }
-        }}
+            }, %{approximate?: false, distance: 0}}}
+      end
     end
+  end
+
+  defp build_haxe_source_candidates(haxe_file) do
+    haxe_file = haxe_file |> Path.expand() |> String.replace("\\", "/")
+
+    basename = Path.basename(haxe_file)
+    relative = Path.relative_to_cwd(haxe_file) |> String.replace("\\", "/")
+
+    normalized =
+      cond do
+        String.starts_with?(haxe_file, "src/") or String.starts_with?(haxe_file, "std/") ->
+          haxe_file
+
+        String.contains?(haxe_file, "/src/") ->
+          [_prefix, rest] = String.split(haxe_file, "/src/", parts: 2)
+          "src/" <> rest
+
+        String.contains?(haxe_file, "/std/") ->
+          [_prefix, rest] = String.split(haxe_file, "/std/", parts: 2)
+          "std/" <> rest
+
+        true ->
+          basename
+      end
+
+    [normalized, relative, basename]
+    |> Enum.uniq()
+  end
+
+  defp source_file_matches?(mapped_source_file, candidates) do
+    mapped_source_file = String.replace(mapped_source_file, "\\", "/")
+    mapped_basename = Path.basename(mapped_source_file)
+
+    Enum.any?(candidates, fn candidate ->
+      candidate == mapped_source_file or Path.basename(candidate) == mapped_basename
+    end)
   end
   
   defp display_lookup_result(input_file, input_line, input_column, mapped_position, source_map, opts, direction, format) do

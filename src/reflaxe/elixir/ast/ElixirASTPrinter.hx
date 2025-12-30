@@ -4,6 +4,7 @@ package reflaxe.elixir.ast;
 
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTBuilder;
+import haxe.macro.Expr.Position;
 using StringTools;
 
 /**
@@ -39,6 +40,11 @@ class ElixirASTPrinter {
 
     // Counter for generating unique loop function names
     static var loopIdCounter: Int = 0;
+    static var sourceMapMarkerEmitter: Null<(pos: Position) -> String> = null;
+
+    public static function setSourceMapMarkerEmitter(emitter: Null<(pos: Position) -> String>): Void {
+        sourceMapMarkerEmitter = emitter;
+    }
 
     /**
      * Public API for printing a single AST (used by ElixirASTBuilder for injection)
@@ -67,6 +73,11 @@ class ElixirASTPrinter {
         // Handle null nodes
         if (ast == null) {
             return "";
+        }
+
+        var prefix = "";
+        if (sourceMapMarkerEmitter != null && ast.pos != null) {
+            prefix = sourceMapMarkerEmitter(ast.pos);
         }
 
         #if debug_ast_printer
@@ -426,7 +437,7 @@ class ElixirASTPrinter {
         // DISABLED: trace('[XRay AST Printer] Generated: ${result.substring(0, 100)}...');
         #end
 
-        return result;
+        return prefix + result;
     }
     
     /**
