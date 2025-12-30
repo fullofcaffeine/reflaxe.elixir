@@ -1,7 +1,8 @@
-# Production Readiness (Non‑Alpha Criteria)
+# Production Hardening (Non‑Alpha Criteria)
 
-Reflaxe.Elixir is still **alpha** overall. This page defines the project’s “exit alpha / production‑ready”
-criteria and provides a checklist to keep changes honest as the compiler and framework layers harden.
+Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset. This page defines the project’s
+hardening criteria (what we mean by “production‑ready”) and provides a checklist to keep changes honest as the
+compiler and framework layers evolve.
 
 This page defines what “non‑alpha / production‑ready” means for this project and provides an actionable checklist to get there.
 
@@ -66,14 +67,10 @@ Related docs:
 
 ---
 
-## Alpha warning (current policy)
+## Stability messaging (current policy)
 
-The root README includes an “Alpha software” warning until the checklist above is substantially complete and
-verified over time in CI (and the docs no longer rely on tribal knowledge).
+The root README describes stability in terms of the **documented subset** and calls out experimental/opt‑in
+features explicitly. The goal is that the public entrypoints never over‑promise “works everywhere”.
 
-- The checklist above is substantially complete (or explicitly waived with justification), **and**
-- The CI history shows stability across multiple releases, **and**
-- The docs no longer require “tribal knowledge” to build and run the examples.
-
-`v1.0.x` remains the historical “API stabilized, not production‑hardened” line. Once the checklist is complete,
-we can explicitly declare a non‑alpha line (and update `ROADMAP.md` + `VERSIONING_AND_STABILITY.md` accordingly).
+`v1.0.x` remains the historical “API stabilized, not production‑hardened” line. `v1.1.x` is the first line that
+claims non‑alpha status for the documented subset, while continuing to iterate on experimental surfaces.

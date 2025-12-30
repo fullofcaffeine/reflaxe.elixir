@@ -10,7 +10,8 @@ Write once, deploy everywhere, with built-in AI that understands your entire sta
 
 > Note on status
 >
-> Reflaxe.Elixir is currently **alpha** overall. This document describes long‑term direction (including experimental and planned work) and is not a stability guarantee for future features.
+> Reflaxe.Elixir is **non‑alpha for the documented subset** as of `v1.1.x`. This document describes long‑term direction
+> (including experimental and planned work) and is not a stability guarantee for future features.
 
 ## The Three Pillars
 

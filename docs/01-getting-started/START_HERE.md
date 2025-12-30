@@ -8,9 +8,9 @@ This guide is for **complete beginners**:
 
 Goal: run a real Phoenix LiveView app written in Haxe and understand the “mental model” in under ~15 minutes.
 
-> [!WARNING]
-> Reflaxe.Elixir is currently **alpha** and not recommended for production use yet.
-> See `docs/06-guides/PRODUCTION_READINESS.md` for the exit criteria/checklist.
+> [!NOTE]
+> Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset.
+> Experimental/opt‑in features remain clearly labeled; see `docs/06-guides/PRODUCTION_READINESS.md` for the hardening checklist.
 
 ## 0) Install prerequisites (one-time)
 

@@ -3,8 +3,8 @@
 Reflaxe.Elixir uses **semantic versioning** (`MAJOR.MINOR.PATCH`) and a **stability tier** model to
 make it clear what is safe to depend on and what may change.
 
-> Reflaxe.Elixir is currently **alpha** overall (see `docs/06-guides/PRODUCTION_READINESS.md`).
-> We still follow SemVer, but “Stable” here means “SemVer protected once we exit alpha for the documented subset”.
+> Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset (see `docs/06-guides/PRODUCTION_READINESS.md`).
+> Experimental features remain opt‑in and may evolve in minor releases.
 
 ## Stability tiers
 

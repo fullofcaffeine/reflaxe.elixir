@@ -1,6 +1,6 @@
 # Quickstart (Phoenix-first)
 
-Reflaxe.Elixir is currently **alpha** overall. This quickstart is focused on helping a Phoenix developer get productive quickly while we continue hardening the compiler, stdlib, and tooling.
+Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset. This quickstart is focused on helping a Phoenix developer get productive quickly while we continue hardening the compiler, stdlib, and tooling.
 
 If you’re new to Haxe and/or new to Phoenix, start here first:
 

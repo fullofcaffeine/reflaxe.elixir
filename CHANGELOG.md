@@ -2,7 +2,11 @@
 
 ### 📚 Documentation
 
-- Reintroduce an “Alpha software” warning in the root README and align stability wording across docs.
+- Align stability wording across README/docs: `v1.1.x` is non‑alpha for the documented subset; experimental features remain opt‑in.
+
+### 🔧 Tooling
+
+- CI/Release: Add a bounded dogfood workflow that generates a fresh Phoenix app and validates the upgrade path via the QA sentinel.
 
 ## [1.1.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.0.7...v1.1.0) (2025-12-28)
 
