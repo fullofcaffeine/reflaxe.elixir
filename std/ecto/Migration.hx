@@ -222,7 +222,7 @@ class TableBuilder {
     public function addForeignKey(columnName: String, referencedTable: String, ?options: ReferenceOptions): TableBuilder {
         #if macro
         // Validate that the referenced table exists at compile time
-        reflaxe.elixir.macros.MigrationRegistry.validateTableExists(
+        reflaxe.elixir.macros.MigrationRegistry.validateTableExistsDeferred(
             referencedTable, 
             haxe.macro.Context.currentPos()
         );

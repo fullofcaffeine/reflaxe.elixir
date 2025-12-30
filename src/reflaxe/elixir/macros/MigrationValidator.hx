@@ -122,7 +122,7 @@ class MigrationValidator {
                     var referencedTable = extractString(args[1]);
                     
                     if (referencedTable != null) {
-                        MigrationRegistry.validateTableExists(referencedTable, pos);
+                        MigrationRegistry.validateTableExistsDeferred(referencedTable, pos);
                     }
                     if (columnName != null) {
                         MigrationRegistry.validateColumnExists(tableName, columnName, pos);

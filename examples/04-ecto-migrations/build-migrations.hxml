@@ -14,5 +14,5 @@
 -D reflaxe_elixir_strict_examples
 -D ecto_migrations_exs
 
-migrations.CreatePosts
 migrations.CreateUsers
+migrations.CreatePosts
