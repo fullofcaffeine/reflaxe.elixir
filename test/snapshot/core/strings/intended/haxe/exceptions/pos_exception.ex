@@ -1,4 +1,5 @@
 defmodule PosException do
+  defexception [:message, :pos_infos]
   def new(message, previous, pos) do
     pos_infos =
       if Kernel.is_nil(pos) do

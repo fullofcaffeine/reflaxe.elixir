@@ -15,42 +15,42 @@ defmodule Main do
     _ = test_multiple("start", "middle", "result")
   end
   defp test_end(start, end_param) do
-    "#{(fn -> start end).()} to #{(fn -> end_param end).()}"
+    "#{start} to #{end_param}"
   end
   defp test_after(after_param) do
     after_param + 1
   end
   defp test_rescue(rescue_param) do
-    "rescued: #{(fn -> rescue_param end).()}"
+    "rescued: #{rescue_param}"
   end
   defp test_def(def_param) do
-    "def: #{(fn -> def_param end).()}"
+    "def: #{def_param}"
   end
   defp test_defp(defp_param) do
-    "defp: #{(fn -> defp_param end).()}"
+    "defp: #{defp_param}"
   end
   defp test_defmodule(defmodule_param) do
-    "module: #{(fn -> defmodule_param end).()}"
+    "module: #{defmodule_param}"
   end
   defp test_alias(alias_param) do
-    "alias: #{(fn -> alias_param end).()}"
+    "alias: #{alias_param}"
   end
   defp test_receive(receive_param) do
-    "received: #{(fn -> receive_param end).()}"
+    "received: #{receive_param}"
   end
   defp test_quote(quote_param) do
-    "quoted: #{(fn -> quote_param end).()}"
+    "quoted: #{quote_param}"
   end
   defp test_unquote(unquote_param) do
-    "unquoted: #{(fn -> unquote_param end).()}"
+    "unquoted: #{unquote_param}"
   end
   defp test_require(require_param) do
-    "required: #{(fn -> require_param end).()}"
+    "required: #{require_param}"
   end
   defp test_use(use_param) do
-    "using: #{(fn -> use_param end).()}"
+    "using: #{use_param}"
   end
   defp test_multiple(start, end_param, after_param) do
-    "#{(fn -> start end).()} -> #{(fn -> end_param end).()} (after: #{(fn -> after_param end).()})"
+    "#{start} -> #{end_param} (after: #{after_param})"
   end
 end

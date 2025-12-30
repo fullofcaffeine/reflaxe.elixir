@@ -5,6 +5,6 @@ defmodule SimplePrinter do
     struct
   end
   def print(struct, suffix) do
-    "#{(fn -> struct.prefix end).()}#{(fn -> suffix end).()}"
+    "#{struct.prefix}#{suffix}"
   end
 end

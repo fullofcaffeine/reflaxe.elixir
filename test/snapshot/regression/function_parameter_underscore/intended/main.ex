@@ -8,17 +8,17 @@ defmodule Main do
     nil
   end
   defp test_function(app_name, port, enabled) do
-    config = "#{(fn -> app_name end).()}.Config"
-    url = "http://localhost:#{(fn -> Kernel.to_string(port) end).()}"
+    config = "#{app_name}.Config"
+    url = "http://localhost:#{Kernel.to_string(port)}"
     status = if (enabled), do: "active", else: "inactive"
-    "#{(fn -> config end).()} at #{(fn -> url end).()} is #{(fn -> status end).()}"
+    "#{config} at #{url} is #{status}"
   end
   defp test_optional(app_name, port) do
     actual_port = if (not Kernel.is_nil(port)), do: port, else: 4000
-    "#{(fn -> app_name end).()} on port #{(fn -> Kernel.to_string(actual_port) end).()}"
+    "#{app_name} on port #{Kernel.to_string(actual_port)}"
   end
   defp build_name(prefix, suffix) do
-    "#{(fn -> prefix end).()}.#{(fn -> suffix end).()}"
+    "#{prefix}.#{suffix}"
   end
   defp process_config(config) do
     config.name

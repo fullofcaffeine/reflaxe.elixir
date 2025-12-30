@@ -11,7 +11,7 @@ defmodule Main do
     x = x * 2
     x = rem(x, 3)
     str = "Hello"
-    str = "#{(fn -> str end).()} World"
+    str = "#{str} World"
     arr = [1, 2, 3]
     arr = arr ++ [4, 5]
     nil

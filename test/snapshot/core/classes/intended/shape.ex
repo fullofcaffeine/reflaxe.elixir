@@ -6,7 +6,7 @@ defmodule Shape do
     struct
   end
   def draw(struct) do
-    "#{(fn -> struct.name end).()} at #{(fn -> Point.to_string(struct.position) end).()}"
+    "#{struct.name} at #{Point.to_string(struct.position)}"
   end
   def get_position(struct) do
     struct.position

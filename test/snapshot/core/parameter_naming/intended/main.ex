@@ -3,7 +3,7 @@ defmodule Main do
     %{}
   end
   def greet_user(_, user_name, message) do
-    "Hello #{(fn -> user_name end).()}: #{(fn -> message end).()}"
+    "Hello #{user_name}: #{message}"
   end
   def process_order(_, order_id, customer_email, amount) do
     order_id > 0 and String.length(customer_email) > 0 and amount > 0

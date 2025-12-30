@@ -17,29 +17,29 @@ defmodule Main do
   def process_array(arr) do
     (case arr do
       [] -> "empty"
-      [_head | _tail] -> "single: #{(fn -> Kernel.to_string(x) end).()}"
+      [_head | _tail] -> "single: #{Kernel.to_string(x)}"
       2 ->
         g_value = arr[1]
         x = g
         y = g_value
-        "pair: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()}"
+        "pair: #{Kernel.to_string(x)},#{Kernel.to_string(y)}"
       3 ->
         g_value = arr[1]
         x = g
         y = g_value
         z = g
-        "triple: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()}"
+        "triple: #{Kernel.to_string(x)},#{Kernel.to_string(y)},#{Kernel.to_string(z)}"
       4 ->
         g_value = arr[1]
         first = g
         second = g_value
         third = g
         fourth = g
-        "quad: #{(fn -> Kernel.to_string(first) end).()},#{(fn -> Kernel.to_string(second) end).()},#{(fn -> Kernel.to_string(third) end).()},#{(fn -> Kernel.to_string(fourth) end).()}"
+        "quad: #{Kernel.to_string(first)},#{Kernel.to_string(second)},#{Kernel.to_string(third)},#{Kernel.to_string(fourth)}"
       _ ->
         a = arr
         if (length(a) > 4) do
-          "many: #{(fn -> Kernel.to_string(length(a)) end).()} elements"
+          "many: #{Kernel.to_string(length(a))} elements"
         else
           "unknown"
         end
@@ -144,11 +144,11 @@ defmodule Main do
             d = g_value
             b = g
             a = g
-            "2x2 matrix: [[#{(fn -> Kernel.to_string(a) end).()},#{(fn -> Kernel.to_string(b) end).()}],[#{(fn -> Kernel.to_string(c) end).()},#{(fn -> Kernel.to_string(d) end).()}]]"
+            "2x2 matrix: [[#{Kernel.to_string(a)},#{Kernel.to_string(b)}],[#{Kernel.to_string(c)},#{Kernel.to_string(d)}]]"
           else
             m = matrix
             if (length(m) == length(m[0])) do
-              "square matrix #{(fn -> Kernel.to_string(length(m)) end).()}x#{(fn -> Kernel.to_string(length(m)) end).()}"
+              "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
             else
               "non-square matrix"
             end
@@ -156,7 +156,7 @@ defmodule Main do
         else
           m = matrix
           if (length(m) == length(m[0])) do
-            "square matrix #{(fn -> Kernel.to_string(length(m)) end).()}x#{(fn -> Kernel.to_string(length(m)) end).()}"
+            "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
           else
             "non-square matrix"
           end
@@ -187,7 +187,7 @@ defmodule Main do
             else
               m = matrix
               if (length(m) == length(m[0])) do
-                "square matrix #{(fn -> Kernel.to_string(length(m)) end).()}x#{(fn -> Kernel.to_string(length(m)) end).()}"
+                "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
               else
                 "non-square matrix"
               end
@@ -195,7 +195,7 @@ defmodule Main do
           else
             m = matrix
             if (length(m) == length(m[0])) do
-              "square matrix #{(fn -> Kernel.to_string(length(m)) end).()}x#{(fn -> Kernel.to_string(length(m)) end).()}"
+              "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
             else
               "non-square matrix"
             end
@@ -203,7 +203,7 @@ defmodule Main do
         else
           m = matrix
           if (length(m) == length(m[0])) do
-            "square matrix #{(fn -> Kernel.to_string(length(m)) end).()}x#{(fn -> Kernel.to_string(length(m)) end).()}"
+            "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
           else
             "non-square matrix"
           end
@@ -211,7 +211,7 @@ defmodule Main do
       _ ->
         m = matrix
         if (length(m) == length(m[0])) do
-          "square matrix #{(fn -> Kernel.to_string(length(m)) end).()}x#{(fn -> Kernel.to_string(length(m)) end).()}"
+          "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
         else
           "non-square matrix"
         end
@@ -257,19 +257,19 @@ defmodule Main do
   def classify_value(value) do
     v = value
     if (Std.is(v, String)) do
-      "string: \"#{(fn -> inspect(v) end).()}\""
+      "string: \"#{inspect(v)}\""
     else
       v = value
       if (Std.is(v, Int)) do
-        "integer: #{(fn -> inspect(v) end).()}"
+        "integer: #{inspect(v)}"
       else
         v = value
         if (Std.is(v, Float)) do
-          "float: #{(fn -> inspect(v) end).()}"
+          "float: #{inspect(v)}"
         else
           v = value
           if (Std.is(v, Bool)) do
-            "boolean: #{(fn -> inspect(v) end).()}"
+            "boolean: #{inspect(v)}"
           else
             v = value
             cond do

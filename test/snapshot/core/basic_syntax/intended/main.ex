@@ -87,7 +87,7 @@ defmodule Main do
     end)
   end
   def greet(name) do
-    "Hello, #{(fn -> name end).()}!"
+    "Hello, #{name}!"
   end
   def main() do
     _instance = Main.new(10)
