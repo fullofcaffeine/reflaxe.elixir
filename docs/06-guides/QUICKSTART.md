@@ -2,6 +2,10 @@
 
 Reflaxe.Elixir is currently **alpha** overall. This quickstart is focused on helping a Phoenix developer get productive quickly while we continue hardening the compiler, stdlib, and tooling.
 
+If you’re new to Haxe and/or new to Phoenix, start here first:
+
+- `docs/01-getting-started/START_HERE.md`
+
 ## Pick a Path
 
 - New Phoenix app (greenfield): `docs/06-guides/PHOENIX_NEW_APP.md`

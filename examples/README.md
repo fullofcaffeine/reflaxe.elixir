@@ -73,6 +73,8 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 
 Choose an example based on your experience level:
 
+If you’re new to Haxe and/or Phoenix, start with: `docs/01-getting-started/START_HERE.md` (repo root).
+
 ### For Beginners
 Start with [01-simple-modules](./01-simple-modules/):
 ```bash

@@ -181,7 +181,15 @@ For complete compiler configuration guidance, see [docs/01-getting-started/compi
 
 ## Quick Start
 
-### Phoenix (Recommended)
+### Start Here (New to Haxe and/or Phoenix?)
+
+Follow: `docs/01-getting-started/START_HERE.md`
+
+- Run the repo todo-app (end-to-end) with a single command
+- Learn the Haxe→Elixir→Phoenix mental model
+- Generate a fresh Phoenix+Haxe project via the generator
+
+### Phoenix (Recommended Next Step)
 
 - New Phoenix project: `docs/06-guides/PHOENIX_NEW_APP.md`
 - Add Haxe gradually to an existing Phoenix project: `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`
