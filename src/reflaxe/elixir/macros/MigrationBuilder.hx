@@ -6,6 +6,8 @@ import haxe.macro.Expr;
 import haxe.macro.ExprTools;
 import haxe.macro.Type;
 
+typedef MigrationCallStep = {name: String, args: Array<Expr>, pos: Position};
+
 /**
  * Migration Builder Macro - Compile-time validation and generation for migrations
  * 
@@ -173,30 +175,166 @@ class MigrationBuilder {
      * Analyze expressions for migration operations
      */
     static function analyzeExpression(expr: Expr, isUp: Bool, migrationName: String): Void {
-        switch(expr.expr) {
-            case ECall({expr: EField(_, "createTable")}, args):
-                handleCreateTable(args, migrationName);
-                
+        if (analyzeCallChain(expr, isUp, migrationName)) {
+            return;
+        }
+
+        switch (expr.expr) {
             case ECall({expr: EField(_, "dropTable")}, args):
                 handleDropTable(args, migrationName);
-                
+            case ECall({expr: EConst(CIdent("dropTable"))}, args):
+                handleDropTable(args, migrationName);
+
             case ECall({expr: EField(_, "alterTable")}, args):
                 handleAlterTable(args, migrationName);
-                
+            case ECall({expr: EConst(CIdent("alterTable"))}, args):
+                handleAlterTable(args, migrationName);
+
             case ECall({expr: EField(_, "createIndex")}, args):
                 handleCreateIndex(args, migrationName);
-                
+            case ECall({expr: EConst(CIdent("createIndex"))}, args):
+                handleCreateIndex(args, migrationName);
+
             case EBlock(exprs):
                 for (e in exprs) {
                     analyzeExpression(e, isUp, migrationName);
                 }
-                
+
             default:
                 // Recursively analyze nested expressions
                 ExprTools.iter(expr, e -> analyzeExpression(e, isUp, migrationName));
         }
     }
-    
+
+    static function analyzeCallChain(expr: Expr, isUp: Bool, migrationName: String): Bool {
+        if (!isUp) return false;
+
+        var steps = extractCallChain(expr);
+        if (steps == null || steps.length == 0) return false;
+
+        var base = steps[0];
+        if (base.name != "createTable") return false;
+
+        handleCreateTableChain(steps, migrationName);
+        return true;
+    }
+
+    static function extractCallChain(expr: Expr): Null<Array<MigrationCallStep>> {
+        var steps: Array<MigrationCallStep> = [];
+        var current = expr;
+
+        while (true) {
+            switch (current.expr) {
+                case ECall({expr: EField(target, methodName)}, args):
+                    steps.push({name: methodName, args: args, pos: current.pos});
+                    current = target;
+                case ECall({expr: EConst(CIdent(methodName))}, args):
+                    // Unqualified calls inside a class body (e.g. `createTable("users")`)
+                    // are represented as identifier calls, not `this.createTable(...)`.
+                    steps.push({name: methodName, args: args, pos: current.pos});
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (steps.length == 0) return null;
+        steps.reverse();
+        return steps;
+    }
+
+    static function handleCreateTableChain(steps: Array<MigrationCallStep>, migrationName: String): Void {
+        var base = steps[0];
+        var tableName = (base.args.length > 0) ? extractString(base.args[0]) : null;
+
+        if (tableName == null || tableName == "") {
+            if (Context.defined("ecto_migrations_exs")) {
+                Context.error("createTable table name must be a string literal in ecto_migrations_exs builds.", base.pos);
+            }
+            return;
+        }
+
+        MigrationRegistry.registerTable(tableName, base.pos);
+        // Ecto defaults to an `id` primary key unless explicitly disabled.
+        MigrationRegistry.registerColumn(tableName, "id", "integer", false, base.pos);
+
+        for (i in 1...steps.length) {
+            var step = steps[i];
+            switch (step.name) {
+                case "addId":
+                    if (Context.defined("ecto_migrations_exs") && step.args.length > 0) {
+                        Context.error("addId(...) with custom options is not supported in ecto_migrations_exs builds. Use addId() or a manual Elixir migration.", step.pos);
+                    }
+
+                case "addTimestamps":
+                    MigrationRegistry.registerColumn(tableName, "inserted_at", "naive_datetime", false, step.pos);
+                    MigrationRegistry.registerColumn(tableName, "updated_at", "naive_datetime", false, step.pos);
+
+                case "addColumn":
+                    if (step.args.length < 2) {
+                        Context.error("addColumn expects at least (name, type).", step.pos);
+                        continue;
+                    }
+
+                    var columnName = extractString(step.args[0]);
+                    if (columnName == null || columnName == "") {
+                        if (Context.defined("ecto_migrations_exs")) {
+                            Context.error("addColumn column name must be a string literal in ecto_migrations_exs builds.", step.pos);
+                        }
+                        continue;
+                    }
+
+                    var typeName = extractColumnType(step.args[1]);
+                    var nullable = (step.args.length >= 3) ? extractNullable(step.args[2]) : false;
+                    MigrationRegistry.registerColumn(tableName, columnName, typeName, nullable, step.pos);
+
+                case "addReference" | "addForeignKey":
+                    if (step.args.length < 2) {
+                        Context.error('${step.name} expects at least (columnName, referencedTable).', step.pos);
+                        continue;
+                    }
+
+                    var fkColumn = extractString(step.args[0]);
+                    var referencedTable = extractString(step.args[1]);
+
+                    if (referencedTable == null || referencedTable == "") {
+                        if (Context.defined("ecto_migrations_exs")) {
+                            Context.error('${step.name} referencedTable must be a string literal in ecto_migrations_exs builds.', step.pos);
+                        }
+                    } else {
+                        MigrationRegistry.validateTableExists(referencedTable, step.pos);
+                    }
+
+                    if (fkColumn == null || fkColumn == "") {
+                        if (Context.defined("ecto_migrations_exs")) {
+                            Context.error('${step.name} columnName must be a string literal in ecto_migrations_exs builds.', step.pos);
+                        }
+                    } else {
+                        MigrationRegistry.registerColumn(tableName, fkColumn, "references", false, step.pos);
+                    }
+
+                case "addIndex" | "addUniqueConstraint":
+                    if (step.args.length < 1) {
+                        Context.error('${step.name} expects (columns).', step.pos);
+                        continue;
+                    }
+
+                    var columns = extractStringArray(step.args[0]);
+                    MigrationRegistry.validateColumnsExist(tableName, columns, step.pos);
+
+                case "addCheckConstraint":
+                    // No schema-level validation; expression is database-specific.
+
+                default:
+                    if (Context.defined("ecto_migrations_exs")) {
+                        Context.error('Unsupported migration operation for ecto_migrations_exs builds: ${step.name}.', step.pos);
+                    }
+            }
+        }
+
+        #if debug_migration trace('[Migration] Validated createTable chain for "$tableName" in $migrationName'); #end
+    }
+
     /**
      * Handle createTable operations
      */
@@ -281,152 +419,55 @@ class MigrationBuilder {
     static function toSnakeCase(name: String): String {
         return ~/([a-z])([A-Z])/g.replace(name, "$1_$2").toLowerCase();
     }
-}
 
-/**
- * Migration Registry - Tracks schema state at compile time
- * 
- * This registry maintains the current state of the database schema
- * as migrations are processed, allowing for compile-time validation
- * of table and column references.
- */
-class MigrationRegistry {
-    // Map of table name to table metadata
-    static var tables: Map<String, TableMetadata> = new Map();
-    
-    // Migration dependency tracking
-    static var migrationOrder: Array<String> = [];
-    
-    /**
-     * Register a new table
-     */
-    public static function registerTable(name: String, pos: Position): Void {
-        if (tables.exists(name)) {
-            Context.warning('Table "$name" already exists', pos);
-        }
-        
-        tables.set(name, {
-            name: name,
-            columns: new Map(),
-            indexes: [],
-            constraints: [],
-            createdAt: pos
-        });
-    }
-    
-    /**
-     * Unregister a table (for drop operations)
-     */
-    public static function unregisterTable(name: String): Void {
-        tables.remove(name);
-    }
-    
-    /**
-     * Register a column in a table
-     */
-    public static function registerColumn(table: String, column: String, type: String, nullable: Bool, pos: Position): Void {
-        if (!tables.exists(table)) {
-            Context.error('Table "$table" does not exist', pos);
-            return;
-        }
-        
-        var tableData = tables.get(table);
-        if (tableData.columns.exists(column)) {
-            Context.warning('Column "$column" already exists in table "$table"', pos);
-        }
-        
-        tableData.columns.set(column, {
-            name: column,
-            type: type,
-            nullable: nullable
-        });
-    }
-    
-    /**
-     * Validate that a table exists
-     */
-    public static function validateTableExists(name: String, pos: Position): Void {
-        if (!tables.exists(name)) {
-            Context.error('Table "$name" does not exist. Make sure the migration that creates it runs first.', pos);
+    static function extractString(expr: Expr): Null<String> {
+        return switch (expr.expr) {
+            case EConst(CString(s)): s;
+            default: null;
         }
     }
-    
-    /**
-     * Validate that a column exists in a table
-     */
-    public static function validateColumnExists(table: String, column: String, pos: Position): Void {
-        if (!tables.exists(table)) {
-            Context.error('Table "$table" does not exist', pos);
-            return;
-        }
-        
-        var tableData = tables.get(table);
-        if (!tableData.columns.exists(column)) {
-            Context.error('Column "$column" does not exist in table "$table"', pos);
-        }
-    }
-    
-    /**
-     * Validate that multiple columns exist
-     */
-    public static function validateColumnsExist(table: String, columns: Array<String>, pos: Position): Void {
-        if (!tables.exists(table)) {
-            Context.error('Table "$table" does not exist', pos);
-            return;
-        }
-        
-        var tableData = tables.get(table);
-        for (column in columns) {
-            if (!tableData.columns.exists(column)) {
-                Context.error('Column "$column" does not exist in table "$table"', pos);
-            }
-        }
-    }
-    
-    /**
-     * Get all registered tables (for debugging)
-     */
-    public static function getAllTables(): Map<String, TableMetadata> {
-        return tables;
-    }
-}
 
-/**
- * Table metadata structure
- */
-typedef TableMetadata = {
-    name: String,
-    columns: Map<String, ColumnMetadata>,
-    indexes: Array<IndexMetadata>,
-    constraints: Array<ConstraintMetadata>,
-    createdAt: Position
-}
+    static function extractStringArray(expr: Expr): Array<String> {
+        return switch (expr.expr) {
+            case EArrayDecl(values):
+                var columns: Array<String> = [];
+                for (v in values) {
+                    var s = extractString(v);
+                    if (s != null) columns.push(s);
+                }
+                columns;
+            default:
+                [];
+        }
+    }
 
-/**
- * Column metadata structure
- */
-typedef ColumnMetadata = {
-    name: String,
-    type: String,
-    nullable: Bool
-}
+    static function extractColumnType(expr: Expr): String {
+        return switch (expr.expr) {
+            case EField(_, name):
+                name;
+            case ECall({expr: EField(_, name)}, _):
+                name;
+            default:
+                "Unknown";
+        }
+    }
 
-/**
- * Index metadata structure
- */
-typedef IndexMetadata = {
-    name: String,
-    columns: Array<String>,
-    unique: Bool
-}
-
-/**
- * Constraint metadata structure
- */
-typedef ConstraintMetadata = {
-    name: String,
-    type: String,
-    definition: String
+    static function extractNullable(expr: Expr): Bool {
+        return switch (expr.expr) {
+            case EObjectDecl(fields):
+                for (field in fields) {
+                    if (field.field != "nullable") continue;
+                    return switch (field.expr.expr) {
+                        case EConst(CIdent("true")): true;
+                        case EConst(CIdent("false")): false;
+                        default: false;
+                    }
+                }
+                false;
+            default:
+                false;
+        }
+    }
 }
 
 #end

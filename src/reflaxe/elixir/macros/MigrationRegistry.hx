@@ -84,6 +84,16 @@ class MigrationRegistry {
             sourcePos: pos
         });
     }
+
+    /**
+     * Unregister a table (e.g. when handling drop operations).
+     *
+     * This is primarily used by validation macros to keep the registry aligned
+     * with the migration's up/down flow during analysis.
+     */
+    public static function unregisterTable(name: String): Void {
+        tables.remove(name);
+    }
     
     /**
      * Register a column in a table

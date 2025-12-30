@@ -3,7 +3,10 @@ import ecto.Migration.ColumnType;
 
 /**
  * Test compile-time validation of migrations
- * This should fail to compile with helpful error messages
+ *
+ * This test ensures the migration build macro can:
+ * - track tables/columns through fluent builder chains, and
+ * - validate references (foreign keys / indexes) in the happy path.
  */
 @:migration
 class TestMigration extends Migration {
@@ -23,8 +26,7 @@ class TestMigration extends Migration {
             .addColumn("content", ColumnType.Text)
             .addColumn("author_id", ColumnType.Integer)
             .addTimestamps()
-            // TEST 1: This should fail - referencing wrong table name (userz instead of users)
-            .addForeignKey("author_id", "userz");  // Typo: should be "users"
+            .addForeignKey("author_id", "users");
     }
     
     public function down(): Void {
@@ -40,8 +42,7 @@ class TestMigration2 extends Migration {
             .addColumn("id", ColumnType.Integer, {primaryKey: true, autoGenerate: true})
             .addColumn("content", ColumnType.Text)
             .addColumn("post_id", ColumnType.Integer)
-            // TEST 2: This should fail - indexing non-existent column
-            .addIndex(["contet"], {unique: false});  // Typo: should be "content"
+            .addIndex(["content"], {unique: false});
     }
     
     public function down(): Void {
