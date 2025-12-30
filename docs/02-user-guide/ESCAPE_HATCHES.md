@@ -8,6 +8,12 @@ Reflaxe.Elixir is designed for **pure Haxe → idiomatic Elixir**. When you need
 
 The core interop mechanism is `@:native("Module.Name")` on `extern` classes/functions.
 
+Tip: generate a starter extern automatically:
+
+```bash
+mix haxe.gen.extern Ecto.Changeset --package externs.ecto --out src_haxe/externs
+```
+
 ### Example: Erlang `:crypto`
 
 ```haxe
@@ -60,12 +66,17 @@ typedef EventParams = {
 If you must accept a raw term (e.g. very dynamic payload), decode early:
 
 ```haxe
-import elixir.ElixirMap;
 import elixir.types.Term;
+import elixir.types.TermDecoder;
+import haxe.functional.Result;
 
 function getQuery(params: Term): String {
-    var q: Term = ElixirMap.get(params, "query");
-    return q != null ? Std.string(q) : "";
+    // Prefer Map.fetch + typed decoding over Map.get (which can't distinguish
+    // missing keys from present-but-nil values).
+    return switch (TermDecoder.fetchStringKey(params, "query").flatMap(TermDecoder.asString)) {
+        case Ok(q): q;
+        case Error(_): "";
+    };
 }
 ```
 
