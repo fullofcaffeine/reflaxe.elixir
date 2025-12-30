@@ -99,7 +99,7 @@ jobs:
           PGPORT: '5432'
         run: |
           set -euo pipefail
-          scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --e2e-workers 1 --deadline 900 --verbose | tee qa-run.log
+          scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --compile-migrations --playwright --e2e-spec "e2e/*.spec.ts" --e2e-workers 1 --deadline 900 --verbose | tee qa-run.log
 
       - name: Upload QA logs
         if: always()

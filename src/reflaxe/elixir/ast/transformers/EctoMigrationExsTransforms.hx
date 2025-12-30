@@ -8,6 +8,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.ElixirASTPrinter;
 
 typedef MigrationCallStep = {name: String, args: Array<ElixirAST>};
 typedef MigrationCallChain = {base: ElixirAST, calls: Array<MigrationCallStep>};
@@ -18,7 +19,8 @@ typedef MigrationColumnTypeInfo = {typeExpr: ElixirAST, extraOptions: Array<Elix
  *
  * WHAT
  * - When `-D ecto_migrations_exs` is enabled, rewrites Haxe-authored `@:migration` modules
- *   (which currently compile into a fluent builder chain like `struct.createTable(...).addColumn(...)`)
+ *   (which currently compile into nested builder calls like
+ *     `_ = TableBuilder.add_column(Migration.create_table(struct, ...), ...)`)
  *   into runnable Ecto migrations:
  *     - Adds `use Ecto.Migration`
  *     - Rewrites `up/1` and `down/1` into `up/0` and `down/0`
@@ -32,8 +34,11 @@ typedef MigrationColumnTypeInfo = {typeExpr: ElixirAST, extraOptions: Array<Elix
  *
  * HOW
  * - Detect migration modules by presence of `def up`/`def down` (same gate as the stub pass).
- * - Parse the chained call expression into a linear sequence of calls starting at `createTable/1`
- *   or `dropTable/1`, then map the recognized operations into Ecto DSL AST nodes.
+ * - Parse each statement in the `up/1` and `down/1` bodies:
+ *     - unwrap `_ = ...` matches (emitted to avoid unused-variable warnings), then
+ *     - walk the nested builder call structure where each operation takes the previous builder
+ *       as its first argument.
+ * - Map recognized operations into Ecto DSL AST nodes.
  * - Replace the module body with a minimal `use` + `up/0` + `down/0` implementation.
  *
  * EXAMPLES
@@ -127,21 +132,69 @@ class EctoMigrationExsTransforms {
     }
 
     static function buildUpStatements(body: ElixirAST, pos: Position): Null<Array<ElixirAST>> {
-        var chain = extractCallChain(body);
-        if (chain == null) {
-            compilerError("Unsupported migration up/0 body shape. Expected a builder call chain.", pos);
+        var statements = unwrapStatements(body);
+        var out: Array<ElixirAST> = [];
+
+        for (statement in statements) {
+            var chain = extractCallChain(statement);
+            if (chain == null) {
+                if (isIgnorableStatement(statement)) continue;
+                var rendered = ElixirASTPrinter.print(statement, 0);
+                if (rendered.length > 220) rendered = rendered.substr(0, 220) + "...";
+                compilerError('Unsupported migration up/0 body shape. Expected a builder call chain. Got: ${rendered}', pos);
+                return null;
+            }
+
+            var built = buildUpStatementsFromChain(chain, pos);
+            if (built == null) return null;
+            out = out.concat(built);
+        }
+
+        if (out.length == 0) {
+            compilerError("Unsupported migration up/0: no supported statements found.", pos);
             return null;
         }
 
+        return out;
+    }
+
+    static function buildDownStatements(body: ElixirAST, pos: Position): Null<Array<ElixirAST>> {
+        var statements = unwrapStatements(body);
+        var out: Array<ElixirAST> = [];
+
+        for (statement in statements) {
+            var chain = extractCallChain(statement);
+            if (chain == null) {
+                if (isIgnorableStatement(statement)) continue;
+                var rendered = ElixirASTPrinter.print(statement, 0);
+                if (rendered.length > 220) rendered = rendered.substr(0, 220) + "...";
+                compilerError('Unsupported migration down/0 body shape. Expected a builder call chain. Got: ${rendered}', pos);
+                return null;
+            }
+
+            var built = buildDownStatementsFromChain(chain, pos);
+            if (built == null) return null;
+            out = out.concat(built);
+        }
+
+        if (out.length == 0) {
+            compilerError("Unsupported migration down/0: no supported statements found.", pos);
+            return null;
+        }
+
+        return out;
+    }
+
+    static function buildUpStatementsFromChain(chain: MigrationCallChain, pos: Position): Null<Array<ElixirAST>> {
         var first = chain.calls[0];
-        if (first.name != "createTable" || first.args.length < 1) {
-            compilerError("Unsupported migration up/0: expected createTable(\"table\").", pos);
+        if (first.name != "create_table" || first.args.length < 1) {
+            compilerError("Unsupported migration up/0: expected create_table(\"table\").", pos);
             return null;
         }
 
         var tableName = extractString(first.args[0]);
         if (tableName == null || tableName == "") {
-            compilerError("Unsupported migration up/0: createTable table name must be a string literal.", pos);
+            compilerError("Unsupported migration up/0: create_table table name must be a string literal.", pos);
             return null;
         }
 
@@ -153,27 +206,48 @@ class EctoMigrationExsTransforms {
         for (i in 1...chain.calls.length) {
             var call = chain.calls[i];
             switch (call.name) {
-                case "addId":
-                    // Default Ecto migrations already create an `id` primary key, so this is a no-op.
-                case "addTimestamps":
+                case "add_id":
+                    compilerError(
+                        "Unsupported migration up/0: add_id is not supported in ecto_migrations_exs builds (custom primary keys require create table(..., primary_key: false)). Write a manual Elixir migration for custom primary keys.",
+                        pos
+                    );
+                    return null;
+
+                case "add_timestamps":
                     tableBody.push(makeAST(ECall(null, "timestamps", [])));
-                case "addColumn":
+
+                case "add_column":
+                    var columnName = (call.args.length > 0) ? extractString(call.args[0]) : null;
+                    if (columnName == "id") {
+                        compilerError(
+                            "Unsupported migration up/0: adding an explicit \"id\" column is not supported in ecto_migrations_exs builds (create table defaults to an id primary key). Write a manual Elixir migration for custom primary keys.",
+                            pos
+                        );
+                        return null;
+                    }
                     var addStmt = buildAddColumn(call.args, pos);
                     if (addStmt != null) tableBody.push(addStmt);
-                case "addReference":
+
+                case "add_reference" | "add_foreign_key":
+                    // add_foreign_key is an alias for add_reference/3 in the builder DSL.
                     var refStmt = buildAddReference(call.args, pos);
                     if (refStmt != null) tableBody.push(refStmt);
-                case "addIndex":
+
+                case "add_index":
                     var indexStmt = buildCreateIndex(tableAtom, call.args, pos);
                     if (indexStmt != null) afterTable.push(indexStmt);
-                case "addUniqueConstraint":
+
+                case "add_unique_constraint":
                     var uniqueStmt = buildUniqueConstraint(tableAtom, call.args, pos);
                     if (uniqueStmt != null) afterTable.push(uniqueStmt);
-                case "addCheckConstraint":
+
+                case "add_check_constraint":
                     var checkStmt = buildCheckConstraint(tableAtom, call.args, pos);
                     if (checkStmt != null) afterTable.push(checkStmt);
+
                 default:
                     compilerError('Unsupported migration operation: ${call.name}.', pos);
+                    return null;
             }
         }
 
@@ -182,25 +256,19 @@ class EctoMigrationExsTransforms {
         return [createTable].concat(afterTable);
     }
 
-    static function buildDownStatements(body: ElixirAST, pos: Position): Null<Array<ElixirAST>> {
-        var chain = extractCallChain(body);
-        if (chain == null) {
-            compilerError("Unsupported migration down/0 body shape. Expected a builder call chain.", pos);
-            return null;
-        }
-
+    static function buildDownStatementsFromChain(chain: MigrationCallChain, pos: Position): Null<Array<ElixirAST>> {
         var first = chain.calls[0];
-        if (first.name == "dropTable" && first.args.length >= 1) {
+        if (first.name == "drop_table" && first.args.length >= 1) {
             var tableName = extractString(first.args[0]);
             if (tableName == null || tableName == "") {
-                compilerError("Unsupported migration down/0: dropTable table name must be a string literal.", pos);
+                compilerError("Unsupported migration down/0: drop_table table name must be a string literal.", pos);
                 return null;
             }
             var tableExpr = makeAST(ECall(null, "table", [makeAtom(tableName)]));
             return [makeAST(ECall(null, "drop", [tableExpr]))];
         }
 
-        compilerError("Unsupported migration down/0: expected dropTable(\"table\").", pos);
+        compilerError("Unsupported migration down/0: expected drop_table(\"table\").", pos);
         return null;
     }
 
@@ -325,22 +393,34 @@ class EctoMigrationExsTransforms {
     // ======================================================================
 
     static function extractCallChain(expr: ElixirAST): Null<MigrationCallChain> {
-        var current = unwrap(expr);
-        var steps: Array<MigrationCallStep> = [];
+        var current = unwrapStatement(expr);
+        var reversedSteps: Array<MigrationCallStep> = [];
 
         while (true) {
             switch (current.def) {
-                case ECall(target, funcName, args):
-                    if (target == null) break;
-                    steps.unshift({name: funcName, args: args});
-                    current = unwrap(target);
+                case ECall(_target, funcName, args):
+                    if (args.length == 0) break;
+
+                    var builder = unwrapStatement(args[0]);
+                    var stepArgs = (args.length > 1) ? args.slice(1) : [];
+                    reversedSteps.push({name: canonicalizeCallName(funcName), args: stepArgs});
+                    current = builder;
+
+                case ERemoteCall(_module, funcName, args):
+                    if (args.length == 0) break;
+
+                    var builder = unwrapStatement(args[0]);
+                    var stepArgs = (args.length > 1) ? args.slice(1) : [];
+                    reversedSteps.push({name: canonicalizeCallName(funcName), args: stepArgs});
+                    current = builder;
                 default:
                     break;
             }
         }
 
-        if (steps.length == 0) return null;
-        return {base: current, calls: steps};
+        if (reversedSteps.length == 0) return null;
+        reversedSteps.reverse();
+        return {base: current, calls: reversedSteps};
     }
 
     static inline function unwrap(expr: ElixirAST): ElixirAST {
@@ -349,6 +429,55 @@ class EctoMigrationExsTransforms {
                 inner;
             default:
                 expr;
+        };
+    }
+
+    static function unwrapStatement(expr: ElixirAST): ElixirAST {
+        var current = unwrap(expr);
+        return switch (current.def) {
+            case EMatch(_pattern, value):
+                unwrapStatement(value);
+            default:
+                current;
+        };
+    }
+
+    static function canonicalizeCallName(name: String): String {
+        return switch (name) {
+            case "createTable": "create_table";
+            case "dropTable": "drop_table";
+            case "addId": "add_id";
+            case "addTimestamps": "add_timestamps";
+            case "addColumn": "add_column";
+            case "addReference": "add_reference";
+            case "addForeignKey": "add_foreign_key";
+            case "addIndex": "add_index";
+            case "addUniqueConstraint": "add_unique_constraint";
+            case "addCheckConstraint": "add_check_constraint";
+            default: name;
+        };
+    }
+
+    static function unwrapStatements(body: ElixirAST): Array<ElixirAST> {
+        var unwrapped = unwrap(body);
+        return switch (unwrapped.def) {
+            case EBlock(expressions):
+                expressions;
+            case EDo(expressions):
+                expressions;
+            default:
+                [unwrapped];
+        };
+    }
+
+    static function isIgnorableStatement(statement: ElixirAST): Bool {
+        return switch (unwrapStatement(statement).def) {
+            case ENil:
+                true;
+            case EUnderscore:
+                true;
+            default:
+                false;
         };
     }
 

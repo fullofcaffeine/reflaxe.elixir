@@ -410,6 +410,26 @@ Marks a Haxe migration (built on `std/ecto/Migration.hx`) so the compiler can pr
   > Each migration must declare a stable timestamp (used for the filename ordering):
   > `@:migration({timestamp: "YYYYMMDDHHMMSS"})`.
 
+**Supported subset for runnable `.exs` emission** (`-D ecto_migrations_exs`)
+
+The `.exs` rewrite pass currently supports a focused, safe subset of the typed DSL:
+
+- `createTable("table")` with a fluent chain of:
+  - `.addColumn("name", ColumnType.*(...), ?options)`
+  - `.addReference("column", "referenced_table", ?options)`
+  - `.addForeignKey("column", "referenced_table", ?options)` (alias for `addReference`)
+  - `.addTimestamps()`
+  - `.addIndex(["col", ...], ?options)` (supports `unique: true`)
+  - `.addUniqueConstraint(["col", ...], ?name)`
+  - `.addCheckConstraint("name", "sql expression")`
+  - `.addId()` (default id only; custom primary keys are not supported yet in `.exs` mode)
+- `dropTable("table")` in `down()`
+
+Limitations (current)
+- Table/column names must be **string literals** in `.exs` mode.
+- `alterTable`, `execute`, `createIndex`, `dropIndex`, and custom `createTable` options are not rewritten yet.
+  Keep these migrations as hand-written Elixir when you need advanced DSL features.
+
 **Basic Usage**:
 ```haxe
 import ecto.Migration;
