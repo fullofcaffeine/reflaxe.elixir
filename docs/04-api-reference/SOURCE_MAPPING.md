@@ -50,6 +50,35 @@ Then compile normally. The compiler will emit sibling files:
 - `lib/my_module.ex`
 - `lib/my_module.ex.map`
 
+## IDE / Editor Workflow (VS Code, etc.)
+
+Elixir tooling (ElixirLS, stacktraces, etc.) does not currently consume `.ex.map` files automatically.
+Use the provided Mix task to bridge from a runtime Elixir position back to Haxe.
+
+### Find the Haxe source for an Elixir runtime position
+
+```bash
+mix haxe.source_map lib/my_module.ex 45 12
+```
+
+### Open the mapped location in VS Code
+
+`code --goto` expects 1-based columns, so use the `goto` output format:
+
+```bash
+code --goto "$(mix haxe.source_map lib/my_module.ex 45 12 --format goto)"
+```
+
+### Reverse lookup (Haxe → Elixir)
+
+If you start from a Haxe location (for example from a type error or a log you emitted), pass a `.hx` file:
+
+```bash
+mix haxe.source_map src_haxe/my_module/MyMod.hx 20 0
+```
+
+The task will auto-detect reverse mode for `.hx` inputs (or you can pass `--reverse` explicitly).
+
 ## Recommended Next Steps (If You Want This Feature)
 
 1. **Expand integration coverage**

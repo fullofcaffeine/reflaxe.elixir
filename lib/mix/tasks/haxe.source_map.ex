@@ -13,6 +13,7 @@ defmodule Mix.Tasks.Haxe.SourceMap do
       mix haxe.source_map --list-maps
       mix haxe.source_map --validate-maps
       mix haxe.source_map FILE LINE COLUMN --format json
+      mix haxe.source_map FILE LINE COLUMN --format goto
       mix haxe.source_map FILE LINE COLUMN --json
       mix haxe.source_map FILE LINE COLUMN --with-context
   
@@ -25,6 +26,7 @@ defmodule Mix.Tasks.Haxe.SourceMap do
   ## Options
   
     * `--format FORMAT` - Output format: table, json, detailed (default: detailed)
+      - `goto` prints `file:line:column` (column is 1-based for editor `--goto` compatibility)
     * `--with-context` - Include source code context around the mapped position
     * `--list-maps` - List all available source map files
     * `--validate-maps` - Validate all source map files for correctness
@@ -41,6 +43,9 @@ defmodule Mix.Tasks.Haxe.SourceMap do
       
       # JSON output for LLM agents
       mix haxe.source_map lib/UserService.ex 25 10 --format json
+
+      # Copy-paste location (VS Code / editors)
+      mix haxe.source_map lib/UserService.ex 25 10 --format goto
       
       # With source code context
       mix haxe.source_map lib/UserService.ex 25 10 --with-context
@@ -351,14 +356,32 @@ defmodule Mix.Tasks.Haxe.SourceMap do
         
       "table" ->
         display_table_result(input_file, input_line, input_column, mapped_position, source_map, opts, direction)
-        
+
+      "goto" ->
+        display_goto_result(mapped_position)
+
       "detailed" ->
         display_detailed_result(input_file, input_line, input_column, mapped_position, source_map, opts, direction)
         
       other ->
         Mix.shell().error("Unknown format: #{other}")
-        Mix.shell().error("Available formats: json, table, detailed")
+        Mix.shell().error("Available formats: json, table, detailed, goto")
     end
+  end
+
+  defp display_goto_result(mapped_position) do
+    # Many editors (including VS Code `code --goto`) use 1-based columns.
+    column =
+      case Map.get(mapped_position, :column) do
+        nil -> 1
+        col when is_integer(col) -> col + 1
+        _ -> 1
+      end
+
+    file = Map.get(mapped_position, :file, "")
+    line = Map.get(mapped_position, :line, 1)
+
+    IO.puts("#{file}:#{line}:#{column}")
   end
   
   defp display_json_result(input_file, input_line, input_column, mapped_position, source_map, direction) do
@@ -719,7 +742,7 @@ defmodule Mix.Tasks.Haxe.SourceMap do
     Mix.shell().info("  COLUMN      Column number (0-based)")
     Mix.shell().info("")
     Mix.shell().info("Options:")
-    Mix.shell().info("  --format FORMAT     Output format: json, table, detailed (default: detailed)")
+    Mix.shell().info("  --format FORMAT     Output format: json, table, detailed, goto (default: detailed)")
     Mix.shell().info("  --json              Alias for --format json")
     Mix.shell().info("  --with-context      Include source code context")
     Mix.shell().info("  --list-maps         List all available source map files")
@@ -732,6 +755,7 @@ defmodule Mix.Tasks.Haxe.SourceMap do
     Mix.shell().info("  mix haxe.source_map lib/UserService.ex 25 10")
     Mix.shell().info("  mix haxe.source_map src/UserService.hx 15 5 --reverse")
     Mix.shell().info("  mix haxe.source_map lib/UserService.ex 25 10 --format json")
+    Mix.shell().info("  mix haxe.source_map lib/UserService.ex 25 10 --format goto")
     Mix.shell().info("  mix haxe.source_map --list-maps")
   end
 end

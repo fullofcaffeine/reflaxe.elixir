@@ -71,6 +71,9 @@ mix haxe.source_map lib/UserService.ex 45 12 --with-context
 
 # JSON output
 mix haxe.source_map lib/UserService.ex 45 12 --format json
+
+# Copy-paste location (VS Code / editors)
+mix haxe.source_map lib/UserService.ex 45 12 --format goto
 ```
 
 **Arguments:**
@@ -84,7 +87,7 @@ mix haxe.source_map lib/UserService.ex 45 12 --format json
 - `--with-context` - Include surrounding code context
 - `--reverse` - Perform reverse lookup (Haxe → Elixir)
 - `--target-dir` - Directory to search for source maps (default: `lib`)
-- `--format` - Output format: `json`, `table`, `detailed` (default: `detailed`)
+- `--format` - Output format: `json`, `table`, `detailed`, `goto` (default: `detailed`)
 - `--json` - Alias for `--format json`
 
 **Output Example (JSON):**

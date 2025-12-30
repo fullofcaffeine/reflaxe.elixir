@@ -33,4 +33,22 @@ defmodule Mix.Tasks.Haxe.SourceMapTaskTest do
     assert output =~ "source_map_test.ex"
     assert String.contains?(output, "✅ Exact match") or String.contains?(output, "Approximate match")
   end
+
+  test "goto format prints an editor-friendly location string" do
+    output =
+      capture_io(fn ->
+        Mix.Tasks.Haxe.SourceMap.run([
+          @generated_ex,
+          "5",
+          "0",
+          "--format",
+          "goto",
+          "--target-dir",
+          @out_dir
+        ])
+      end)
+
+    # Example: /path/to/SourceMapTest.hx:7:1
+    assert output =~ ".hx:"
+  end
 end
