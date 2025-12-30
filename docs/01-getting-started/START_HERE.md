@@ -54,6 +54,12 @@ npm install
 npm run qa:sentinel
 ```
 
+Even easier (and keeps the app running so you can click around):
+
+```bash
+npm run demo:todo
+```
+
 That command runs async and prints a `RUN_ID`. View the final status:
 
 ```bash
@@ -133,3 +139,19 @@ npx lix run haxe --version
 - Haxe basics: `docs/02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md`
 - Phoenix integration overview: `docs/02-user-guide/PHOENIX_INTEGRATION.md`
 - Quickstart (Phoenix-first): `docs/06-guides/QUICKSTART.md`
+
+## Glossary (quick definitions)
+
+- **Haxe**: A typed language (TypeScript-like feel) designed for building compilers/generators and targeting multiple platforms.
+- **HXML**: A “build file” for Haxe (it’s basically a set of `haxe` command-line flags in a file).
+- **Reflaxe**: A compiler framework for writing Haxe→X targets (Reflaxe.Elixir is one target).
+- **Elixir**: A dynamic language running on the BEAM VM (Erlang ecosystem).
+- **BEAM / OTP**: The Erlang runtime + standard libraries for concurrency, supervision, and fault-tolerance.
+- **Phoenix**: The main Elixir web framework.
+- **LiveView**: Phoenix’s server-rendered real-time UI layer (no custom SPA required).
+- **Ecto**: Elixir’s database layer (schemas, queries, migrations).
+- **Mix**: Elixir’s build tool/package manager (think `npm`, but for Elixir).
+- **HEEx**: Phoenix’s HTML-aware template format.
+- **HXX**: Reflaxe.Elixir’s typed JSX-like syntax that compiles into HEEx/Elixir (see `docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md`).
+- **Externs**: Typed Haxe declarations for existing Elixir APIs (used to keep your Haxe code type-safe).
+- **`__elixir__()`**: An escape hatch to inject raw Elixir into generated output. Allowed, but not meant to be the “happy path” for app code.
