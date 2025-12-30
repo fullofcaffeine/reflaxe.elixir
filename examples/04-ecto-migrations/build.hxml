@@ -15,5 +15,5 @@
 -D reflaxe_elixir_strict_examples
 
 # Migration classes to compile
-migrations.CreatePosts
 migrations.CreateUsers
+migrations.CreatePosts

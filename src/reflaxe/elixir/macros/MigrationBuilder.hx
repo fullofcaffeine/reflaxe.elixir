@@ -180,19 +180,19 @@ class MigrationBuilder {
         }
 
         switch (expr.expr) {
-            case ECall({expr: EField(_, "dropTable")}, args):
+            case ECall({expr: EField(_, "dropTable")}, args) if (isUp):
                 handleDropTable(args, migrationName);
-            case ECall({expr: EConst(CIdent("dropTable"))}, args):
+            case ECall({expr: EConst(CIdent("dropTable"))}, args) if (isUp):
                 handleDropTable(args, migrationName);
 
-            case ECall({expr: EField(_, "alterTable")}, args):
+            case ECall({expr: EField(_, "alterTable")}, args) if (isUp):
                 handleAlterTable(args, migrationName);
-            case ECall({expr: EConst(CIdent("alterTable"))}, args):
+            case ECall({expr: EConst(CIdent("alterTable"))}, args) if (isUp):
                 handleAlterTable(args, migrationName);
 
-            case ECall({expr: EField(_, "createIndex")}, args):
+            case ECall({expr: EField(_, "createIndex")}, args) if (isUp):
                 handleCreateIndex(args, migrationName);
-            case ECall({expr: EConst(CIdent("createIndex"))}, args):
+            case ECall({expr: EConst(CIdent("createIndex"))}, args) if (isUp):
                 handleCreateIndex(args, migrationName);
 
             case EBlock(exprs):
@@ -302,7 +302,7 @@ class MigrationBuilder {
                             Context.error('${step.name} referencedTable must be a string literal in ecto_migrations_exs builds.', step.pos);
                         }
                     } else {
-                        MigrationRegistry.validateTableExists(referencedTable, step.pos);
+                        MigrationRegistry.validateTableExistsDeferred(referencedTable, step.pos);
                     }
 
                     if (fkColumn == null || fkColumn == "") {
