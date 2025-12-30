@@ -25,6 +25,7 @@ lib/mix/tasks/
 ├── haxe.gen.schema.ex          # Generate Ecto schemas from Haxe
 ├── haxe.gen.live.ex            # Generate Phoenix LiveView from Haxe
 ├── haxe.gen.context.ex         # Generate Phoenix contexts from Haxe
+├── haxe.gen.extern.ex          # Generate starter Haxe externs from Elixir modules
 └── haxe.gen.migration.ex       # Generate Ecto migrations from Haxe
 ```
 
@@ -102,6 +103,12 @@ lib/mix/tasks/
 - Generates Phoenix contexts
 - Creates CRUD operations
 - Sets up business logic layers
+
+#### `Mix.Tasks.Haxe.Gen.Extern`
+**File**: `haxe.gen.extern.ex`
+- Generates starter Haxe `extern` stubs from Elixir/Erlang modules
+- Uses `elixir.types.Term` boundaries by default (caller refines types)
+- Designed to reduce app-level `untyped __elixir__(...)` usage
 
 #### `Mix.Tasks.Haxe.Gen.Migration`
 **File**: `haxe.gen.migration.ex`
