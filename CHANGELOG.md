@@ -1,12 +1,14 @@
 ## [Unreleased]
 
-### 📚 Documentation
-
-- Align stability wording across README/docs: `v1.1.x` is non‑alpha for the documented subset; experimental features remain opt‑in.
+## [1.1.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.0...v1.1.1) (2025-12-30)
 
 ### 🔧 Tooling
 
 - CI/Release: Add a bounded dogfood workflow that generates a fresh Phoenix app and validates the upgrade path via the QA sentinel.
+
+### 📚 Documentation
+
+- Align stability wording across README/docs: `v1.1.x` is non‑alpha for the documented subset; experimental features remain opt‑in.
 
 ## [1.1.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.0.7...v1.1.0) (2025-12-28)
 
