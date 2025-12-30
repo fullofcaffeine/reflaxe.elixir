@@ -72,3 +72,18 @@ If you’re touching transformer passes:
 If you find a pass that must exist but is too expensive, the fix is algorithmic (data structures,
 single‑pass analysis), not arbitrary limits.
 
+## CI Budgets (Determinism + Time Bounds)
+
+To guard against “it got slow” / “output order changed” regressions without flakiness, CI runs a
+budget check on the todo‑app’s server + client builds:
+
+```bash
+npm run ci:budgets
+```
+
+This script:
+- Builds the todo‑app server and client twice and diffs the outputs (determinism).
+- Enforces generous per‑build timeouts via `scripts/with-timeout.sh` (no tight wall‑time asserts).
+
+You can override the timeouts locally:
+- `SERVER_TIMEOUT_SECS=240 CLIENT_TIMEOUT_SECS=180 npm run ci:budgets`
