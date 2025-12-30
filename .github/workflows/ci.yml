@@ -280,6 +280,49 @@ jobs:
       - name: Run Mix tests (fast)
         run: npm run test:mix-fast
 
+  smoke-windows:
+    name: Smoke (Windows)
+    runs-on: windows-latest
+    needs: [guards]
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Setup MSYS2 (bash + make)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          path-type: inherit
+          install: >-
+            make
+
+      - name: Install npm dependencies
+        shell: msys2 {0}
+        run: npm ci
+
+      - name: Download Haxe libraries (lix)
+        shell: msys2 {0}
+        run: npx lix download
+
+      - name: Run quick snapshot suite (MSYS2)
+        shell: msys2 {0}
+        run: npm run test:quick
+
   smoke-haxe5:
     name: Smoke (Haxe 5 preview, non-gating)
     runs-on: ubuntu-latest

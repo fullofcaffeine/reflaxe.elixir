@@ -4,7 +4,7 @@ This page describes what toolchain versions Reflaxe.Elixir is **known to work wi
 
 ## CI‑tested versions (source of truth)
 
-Our GitHub Actions CI runs primarily on **Ubuntu** plus a macOS smoke job. CI currently tests:
+Our GitHub Actions CI runs primarily on **Ubuntu**, plus macOS and Windows smoke jobs. CI currently tests:
 
 - Full suite (primary toolchain, Ubuntu):
   - Node.js: `20`
@@ -23,6 +23,11 @@ Our GitHub Actions CI runs primarily on **Ubuntu** plus a macOS smoke job. CI cu
   - Elixir: `1.18.3`
   - Erlang/OTP: `27.2`
   - Runs a bounded subset (`npm run test:quick` + `npm run test:mix-fast`)
+
+- Windows smoke (bounded):
+  - Node.js: `20`
+  - Haxe: `4.3.7`
+  - Runs a bounded subset (`npm run test:quick` in an MSYS2 environment)
 
 - Haxe 5 preview smoke (Ubuntu, **non‑gating**):
   - Uses Haxe `nightly` (preview)
@@ -45,7 +50,6 @@ If you need support for a specific older version, open an issue and include your
 
 ## What is *not* tested (yet)
 
-- Windows runners in CI
 - Phoenix `1.6.x` and earlier
 
 If you run successfully on other versions, please report it so we can expand the matrix.
