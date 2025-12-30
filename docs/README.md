@@ -12,6 +12,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 
 ### 🚀 Getting Started
 **[01-getting-started/](01-getting-started/)** - Setup, quickstart, and basic concepts
+- [Start Here (Beginner Quickstart)](01-getting-started/START_HERE.md) - Run the todo-app and learn the mental model (Haxe/Phoenix newcomers)
 - [Installation Guide](01-getting-started/installation.md) - Setup Haxe, Reflaxe, and dependencies
 - [Development Workflow](01-getting-started/development-workflow.md) - Day-to-day development practices
 - [Compiler Flags Guide](01-getting-started/compiler-flags-guide.md) - Recommended flags and anti-patterns
@@ -121,6 +122,7 @@ This documentation is optimized for AI assistant development with **AGENTS.md** 
 
 ## 🔗 Quick Links
 
+- **[Start Here](01-getting-started/START_HERE.md)** - Beginner quickstart (Haxe/Phoenix newcomers)
 - **[Installation](01-getting-started/installation.md)** - Get started in 5 minutes
 - **[Quickstart](06-guides/QUICKSTART.md)** - Your first Haxe→Elixir project
 - **[Phoenix (New App)](06-guides/PHOENIX_NEW_APP.md)** - Greenfield Phoenix setup
