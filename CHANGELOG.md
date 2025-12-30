@@ -1,5 +1,25 @@
 ## [Unreleased]
 
+## [1.1.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.1...v1.1.2) (2025-12-30)
+
+### 🗺️ Source Maps (experimental)
+
+- Source maps: Add expression-level mappings (marker-based) for much better Haxe→Elixir location accuracy.
+- Mix task: Harden `mix haxe.source_map` lookups (reverse lookup by referenced sources; `--format goto` for editor jumping).
+
+### 🔧 Tooling / CI
+
+- CI: Add perf + determinism budget checks (bounded, non-flaky).
+- CI: Add Windows smoke lane (MSYS2 + `npm run test:quick`).
+
+### 🧩 Examples
+
+- Todo-app: Mark Presence module `@:keep` to prevent Haxe DCE from dropping a runtime module referenced by `ModuleRef("...")`.
+
+### 📚 Documentation
+
+- Docs: Add a VS Code debugging workflow for source maps and link it from the source mapping reference.
+
 ## [1.1.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.0...v1.1.1) (2025-12-30)
 
 ### 🔧 Tooling

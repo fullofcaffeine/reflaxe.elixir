@@ -17,6 +17,8 @@ import phoenix.PresenceBehavior;
  * HOW
  * - Marked @:native to generate the runtime module `TodoAppWeb.Presence`.
  * - Marked @:presence so the compiler injects `use Phoenix.Presence, ...`.
+ * - Marked @:keep because this module is referenced by string (ModuleRef) in the
+ *   supervision tree, which Haxe DCE cannot see.
  */
 typedef PresenceMeta = {
     var onlineAt: Float;
@@ -29,5 +31,6 @@ typedef PresenceMeta = {
 
 @:native("TodoAppWeb.Presence")
 @:presence
+@:keep
 class TodoPresence implements PresenceBehavior {
 }

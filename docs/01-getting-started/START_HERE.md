@@ -89,7 +89,7 @@ npm install --save-dev lix
 npx lix scope create
 
 # Install the generator (pin a tag for reproducibility)
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.1
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.2
 
 # Generate a Phoenix app
 npx lix run reflaxe.elixir create my_app --type phoenix --no-interactive
