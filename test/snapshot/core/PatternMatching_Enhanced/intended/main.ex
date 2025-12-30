@@ -43,8 +43,8 @@ end))
   defp test_result_pattern() do
     result = {:ok, "success"}
     _message = ((case result do
-  {:ok, value} -> "Got value: #{(fn -> value end).()}"
-  {:error, error} -> "Got error: #{(fn -> error end).()}"
+  {:ok, value} -> "Got value: #{value}"
+  {:error, error} -> "Got error: #{error}"
 end))
     nil
   end

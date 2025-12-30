@@ -29,6 +29,20 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
  *   - ECase: expr and clause bodies
  */
 class VarUseAnalyzer {
+    static inline function looksLikeDoubleQuotedStringLiteral(code: String): Bool {
+        if (code == null) return false;
+        var trimmed = StringTools.trim(code);
+        return trimmed.length >= 2 && StringTools.startsWith(trimmed, "\"") && StringTools.endsWith(trimmed, "\"");
+    }
+
+    static inline function stripOuterQuotes(code: String): String {
+        var trimmed = StringTools.trim(code);
+        if (looksLikeDoubleQuotedStringLiteral(trimmed)) {
+            return trimmed.substr(1, trimmed.length - 2);
+        }
+        return trimmed;
+    }
+
     public static function usedLater(stmts:Array<ElixirAST>, startIdx:Int, name:String):Bool {
         if (name == null || name.length == 0) return false;
         for (j in startIdx...stmts.length) if (stmtUsesVar(stmts[j], name)) return true;
@@ -60,7 +74,16 @@ class VarUseAnalyzer {
                 var j = str.indexOf("}", idx + 2);
                 if (j == -1) break;
                 var inner = str.substr(idx + 2, j - (idx + 2));
-                if (inner.indexOf(name) != -1) { found = true; break; }
+                var start = 0;
+                while (!found && inner != null) {
+                    var pos = inner.indexOf(name, start);
+                    if (pos == -1) break;
+                    var before = pos > 0 ? inner.substr(pos - 1, 1) : null;
+                    var afterIdx = pos + name.length;
+                    var after = afterIdx < inner.length ? inner.substr(afterIdx, 1) : null;
+                    if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
+                    start = pos + name.length;
+                }
                 i = j + 1;
             }
         }
@@ -72,15 +95,19 @@ class VarUseAnalyzer {
                 case EPin(inner):
                     walk(inner, false);
                 case ERaw(code):
-                    var start = 0;
-                    while (!found && code != null) {
-                        var pos = code.indexOf(name, start);
-                        if (pos == -1) break;
-                        var before = pos > 0 ? code.substr(pos - 1, 1) : null;
-                        var afterIdx = pos + name.length;
-                        var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
-                        if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
-                        start = pos + name.length;
+                    if (code != null && looksLikeDoubleQuotedStringLiteral(code)) {
+                        scanStringInterpolation(stripOuterQuotes(code));
+                    } else {
+                        var start = 0;
+                        while (!found && code != null) {
+                            var pos = code.indexOf(name, start);
+                            if (pos == -1) break;
+                            var before = pos > 0 ? code.substr(pos - 1, 1) : null;
+                            var afterIdx = pos + name.length;
+                            var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
+                            if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
+                            start = pos + name.length;
+                        }
                     }
                 case EString(str):
                     scanStringInterpolation(str);
@@ -233,7 +260,23 @@ class VarUseAnalyzer {
                 var j = str.indexOf("}", idx + 2);
                 if (j == -1) break;
                 var inner = str.substr(idx + 2, j - (idx + 2));
-                if (inner.indexOf(name) != -1) { found = true; break; }
+                if (inner != null) {
+                    var start = 0;
+                    while (!found) {
+                        var chosen:String = null;
+                        var pos = -1;
+                        for (c in candidates) {
+                            var idx2 = inner.indexOf(c, start);
+                            if (idx2 != -1 && (pos == -1 || idx2 < pos)) { pos = idx2; chosen = c; }
+                        }
+                        if (pos == -1 || chosen == null) break;
+                        var before = pos > 0 ? inner.substr(pos - 1, 1) : null;
+                        var afterIdx = pos + chosen.length;
+                        var after = afterIdx < inner.length ? inner.substr(afterIdx, 1) : null;
+                        if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
+                        start = pos + chosen.length;
+                    }
+                }
                 i = j + 1;
             }
         }
@@ -246,23 +289,27 @@ class VarUseAnalyzer {
                     // Pin operator holds an expression; traverse to detect variable usage
                     walk(inner, false);
                 case ERaw(code):
-                    // NOTE: We MUST check underscore-prefixed variables too!
-                    // FinalUnderscoreRepairTransforms needs to detect _this usage in ERaw like String.downcase(_this)
-                    if (name != null && name.length > 0 && code != null) {
-                        var start = 0;
-                        while (!found) {
-                            var chosen:String = null;
-                            var pos = -1;
-                            for (c in candidates) {
-                                var idx = code.indexOf(c, start);
-                                if (idx != -1 && (pos == -1 || idx < pos)) { pos = idx; chosen = c; }
+                    if (code != null && looksLikeDoubleQuotedStringLiteral(code)) {
+                        scanStringInterpolation(stripOuterQuotes(code));
+                    } else {
+                        // NOTE: We MUST check underscore-prefixed variables too!
+                        // FinalUnderscoreRepairTransforms needs to detect _this usage in ERaw like String.downcase(_this)
+                        if (name != null && name.length > 0 && code != null) {
+                            var start = 0;
+                            while (!found) {
+                                var chosen:String = null;
+                                var pos = -1;
+                                for (c in candidates) {
+                                    var idx = code.indexOf(c, start);
+                                    if (idx != -1 && (pos == -1 || idx < pos)) { pos = idx; chosen = c; }
+                                }
+                                if (pos == -1 || chosen == null) break;
+                                var before = pos > 0 ? code.substr(pos - 1, 1) : null;
+                                var afterIdx = pos + chosen.length;
+                                var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
+                                if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
+                                start = pos + chosen.length;
                             }
-                            if (pos == -1 || chosen == null) break;
-                            var before = pos > 0 ? code.substr(pos - 1, 1) : null;
-                            var afterIdx = pos + chosen.length;
-                            var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
-                            if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
-                            start = pos + chosen.length;
                         }
                     }
                 case EString(str):

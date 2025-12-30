@@ -121,7 +121,7 @@ end))
         else
           truncated
         end
-        "#{(fn -> truncated end).()}..."
+        "#{truncated}..."
       end
     end
   end
@@ -144,7 +144,7 @@ end))
       _g = 0
       g_value = masked_count
       masked = Enum.reduce(0..(g_value - 1)//1, masked, fn _, masked_acc -> masked_acc <> "*" end)
-      "#{(fn -> visible end).()}#{(fn -> masked end).()}"
+      "#{visible}#{masked}"
     end
   end
   defp remove_excess_whitespace(text) do
@@ -155,7 +155,7 @@ end))
   ""
 else
   String.at(text, 0) || ""
-end end).()) end).()}#{(fn -> String.downcase(String.slice(text, 1..-1//1)) end).()}"
+end end).()) end).()}#{String.downcase(String.slice(text, 1..-1//1))}"
   end
   defp is_valid_email_format(email) do
     at_index = ((case :binary.match(email, "@") do

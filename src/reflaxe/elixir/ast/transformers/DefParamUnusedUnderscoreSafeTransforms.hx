@@ -26,11 +26,15 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  */
 class DefParamUnusedUnderscoreSafeTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
-        // Gate safe underscore to Phoenix contexts (Web/Live/Presence), to avoid touching stdlib and app logic
+        // Gate safe underscore to Phoenix contexts (Web/Live/Presence/Controller), to avoid touching stdlib and app logic
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EModule(name, attrs, body):
                     var isPhoenixCtx = (n.metadata?.isPhoenixWeb == true)
+                        || (n.metadata?.isController == true)
+                        || (n.metadata?.isLiveView == true)
+                        || (n.metadata?.isPresence == true)
+                        || (name != null && name.indexOf("Controller") != -1)
                         || (name != null && ((name.indexOf("Web.") >= 0) || StringTools.endsWith(name, ".Live") || StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web")));
                     if (!isPhoenixCtx || (name != null && StringTools.endsWith(name, ".Gettext"))) return n;
                     var newBody = [];
@@ -38,6 +42,10 @@ class DefParamUnusedUnderscoreSafeTransforms {
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name, doBlock):
                     var isPhoenixCtx2 = (n.metadata?.isPhoenixWeb == true)
+                        || (n.metadata?.isController == true)
+                        || (n.metadata?.isLiveView == true)
+                        || (n.metadata?.isPresence == true)
+                        || (name != null && name.indexOf("Controller") != -1)
                         || (name != null && ((name.indexOf("Web.") >= 0) || StringTools.endsWith(name, ".Live") || StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web")));
                     if (!isPhoenixCtx2 || (name != null && StringTools.endsWith(name, ".Gettext"))) return n;
                     makeASTWithMeta(EDefmodule(name, applyToDefs(doBlock)), n.metadata, n.pos);

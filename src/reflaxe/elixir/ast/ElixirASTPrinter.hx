@@ -271,9 +271,31 @@ class ElixirASTPrinter {
                     // Print any other methods (like toString)
                     for (expr in body) {
                         // Skip defstruct calls as defexception handles that
-                        var exprStr = print(expr, indent + 1);
-                        if (!exprStr.startsWith("defstruct")) {
-                            result += indentStr(indent + 1) + exprStr + '\n';
+                        //
+                        // NOTE: Some stdlib overrides use raw injected module bodies (EBlock([ERaw(...)]))
+                        // where the raw string already contains its own indentation. Avoid double-indenting
+                        // those raw blocks (match regular module printing behavior).
+                        switch (expr.def) {
+                            case EBlock(stmts) if (stmts.length == 1):
+                                switch (stmts[0].def) {
+                                    case ERaw(code):
+                                        var c = code;
+                                        if (c != null && !StringTools.endsWith(c, "\n")) c += "\n";
+                                        // Raw code already contains indentation; emit directly.
+                                        if (c != null && !StringTools.startsWith(StringTools.trim(c), "defstruct")) {
+                                            result += c;
+                                        }
+                                    default:
+                                        var exprStr = print(expr, indent + 1);
+                                        if (!exprStr.startsWith("defstruct")) {
+                                            result += indentStr(indent + 1) + exprStr + '\n';
+                                        }
+                                }
+                            default:
+                                var exprStr = print(expr, indent + 1);
+                                if (!exprStr.startsWith("defstruct")) {
+                                    result += indentStr(indent + 1) + exprStr + '\n';
+                                }
                         }
                     }
                     // Restore printer module context
@@ -2271,33 +2293,6 @@ class ElixirASTPrinter {
                         out = buf.toString();
                     }
                 }
-                // Sanitize #{...} interpolations so each interpolation is a single valid expression
-                inline function sanitizeInterpolationsInRawString(src:String):String {
-                    if (src == null || src.indexOf("#{") == -1) return src;
-                    var buf = new StringBuf();
-                    var i0 = 0;
-                    while (i0 < src.length) {
-                        var o = src.indexOf("#{", i0);
-                        if (o == -1) { buf.add(src.substr(i0)); break; }
-                        buf.add(src.substr(i0, o - i0));
-                        var k0 = o + 2; var dep = 1;
-                        while (k0 < src.length && dep > 0) {
-                            var ch = src.charAt(k0);
-                            if (ch == '{') dep++; else if (ch == '}') dep--; k0++;
-                        }
-                        var inner = src.substr(o + 2, (k0 - 1) - (o + 2));
-                        var trimmed = StringTools.trim(inner);
-                        var alreadyIife = StringTools.startsWith(trimmed, '(fn ->');
-                        // Snapshot parity: always wrap interpolation as a single expression via IIFE,
-                        // unless it is already IIFE-wrapped.
-                        var needsWrap = !alreadyIife;
-                        var innerOut = needsWrap ? '(fn -> ' + inner + ' end).()' : inner;
-                        buf.add("#{" + innerOut + "}");
-                        i0 = k0;
-                    }
-                    return buf.toString();
-                }
-                out = sanitizeInterpolationsInRawString(out);
                 // Do not add extra parentheses around multi-line strings; Elixir accepts them directly
                 out;
                 

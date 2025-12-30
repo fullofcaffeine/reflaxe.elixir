@@ -18,17 +18,17 @@ end))
   defp test_message_patterns() do
     message = {:todo_created, %{:id => 1, :title => "Test"}}
     _result = ((case message do
-  {:todo_created, todo} -> "Created todo: #{(fn -> inspect(todo) end).()}"
-  {:todo_updated, todo} -> "Updated todo: #{(fn -> inspect(todo) end).()}"
-  {:todo_deleted, id} -> "Deleted todo: #{(fn -> Kernel.to_string(id) end).()}"
-  {:bulk_update, action} -> "Bulk action: #{(fn -> action end).()}"
-  {:user_online, user_id} -> "User #{(fn -> Kernel.to_string(user_id) end).()} is online"
-  {:user_offline, user_id} -> "User #{(fn -> Kernel.to_string(user_id) end).()} is offline"
+  {:todo_created, todo} -> "Created todo: #{inspect(todo)}"
+  {:todo_updated, todo} -> "Updated todo: #{inspect(todo)}"
+  {:todo_deleted, id} -> "Deleted todo: #{Kernel.to_string(id)}"
+  {:bulk_update, action} -> "Bulk action: #{action}"
+  {:user_online, user_id} -> "User #{Kernel.to_string(user_id)} is online"
+  {:user_offline, user_id} -> "User #{Kernel.to_string(user_id)} is offline"
   {:system_alert, message, level} ->
     g_value = level
     msg = message
     level = g_value
-    "Alert [#{(fn -> level end).()}]: #{(fn -> msg end).()}"
+    "Alert [#{level}]: #{msg}"
 end))
     nil
   end

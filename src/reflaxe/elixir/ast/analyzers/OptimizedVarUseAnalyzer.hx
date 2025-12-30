@@ -139,7 +139,16 @@ class OptimizedVarUseAnalyzer {
         if (n == null || n.def == null) return;
         switch (n.def) {
             case EVar(v): addName(out, v);
-            case ERaw(code): if (code != null) for (t in tokenize(code)) addName(out, t);
+            case ERaw(code):
+                if (code != null) {
+                    // Special-case raw string literals produced by StringInterpolationPass (ERaw("\"...#{...}...\"")).
+                    // Treat them like EString: only interpolation contents represent variable uses.
+                    if (looksLikeDoubleQuotedStringLiteral(code)) {
+                        for (t in tokenizeInterpolations(stripOuterQuotes(code))) addName(out, t);
+                    } else {
+                        for (t in tokenize(code)) addName(out, t);
+                    }
+                }
             case EString(str): if (str != null) for (t in tokenizeInterpolations(str)) addName(out, t);
             // Match operator: LHS is a pattern binder; only RHS can reference vars.
             case EBinary(Match, _left, rhs):
@@ -249,6 +258,15 @@ class OptimizedVarUseAnalyzer {
                 collectVars(expr, out);
             case EUse(_module, options):
                 for (o in options) collectVars(o, out);
+            case ESigil(type, content, _modifiers) if (type == "H" || type == "h"):
+                // HEEx templates embed Elixir expressions inside <%= ... %> and attribute { ... } blocks.
+                // Attribute expressions are parsed into a typed HEEx AST and attached as metadata.heexAST.
+                if (n.metadata != null) {
+                    var heexAst: Array<ElixirAST> = cast Reflect.field(n.metadata, "heexAST");
+                    if (heexAst != null) for (frag in heexAst) collectVars(frag, out);
+                }
+                // Additionally, scan <%= ... %> segments in the string content for variable tokens.
+                if (content != null) for (t in tokenizeHeexEexSegments(content)) addName(out, t);
             case EFragment(_tag, attrs, children):
                 for (a in attrs) collectVars(a.value, out);
                 for (c in children) collectVars(c, out);
@@ -317,7 +335,13 @@ class OptimizedVarUseAnalyzer {
             case EVar(v):
                 addExact(out, v);
             case ERaw(code):
-                if (code != null) for (t in tokenize(code)) addExact(out, t);
+                if (code != null) {
+                    if (looksLikeDoubleQuotedStringLiteral(code)) {
+                        for (t in tokenizeInterpolations(stripOuterQuotes(code))) addExact(out, t);
+                    } else {
+                        for (t in tokenize(code)) addExact(out, t);
+                    }
+                }
             case EString(str):
                 if (str != null) for (t in tokenizeInterpolations(str)) addExact(out, t);
             case EBinary(Match, _left, rhs):
@@ -457,6 +481,12 @@ class OptimizedVarUseAnalyzer {
                 collectVarsExact(expr, out);
             case EUse(_module, options):
                 for (o in options) collectVarsExact(o, out);
+            case ESigil(type, content, _modifiers) if (type == "H" || type == "h"):
+                if (n.metadata != null) {
+                    var heexAst: Array<ElixirAST> = cast Reflect.field(n.metadata, "heexAST");
+                    if (heexAst != null) for (frag in heexAst) collectVarsExact(frag, out);
+                }
+                if (content != null) for (t in tokenizeHeexEexSegments(content)) addExact(out, t);
             case EFragment(_tag, attrs, children):
                 for (a in attrs) collectVarsExact(a.value, out);
                 for (c in children) collectVarsExact(c, out);
@@ -464,6 +494,22 @@ class OptimizedVarUseAnalyzer {
                 // Template assigns (`@name`) are not local variable uses.
             default:
         }
+    }
+
+    static function tokenizeHeexEexSegments(content: String): Array<String> {
+        var tokens: Array<String> = [];
+        if (content == null || content.length == 0) return tokens;
+        var cursor = 0;
+        while (cursor < content.length) {
+            var open = content.indexOf("<%=", cursor);
+            if (open == -1) break;
+            var close = content.indexOf("%>", open + 3);
+            if (close == -1) break;
+            var inner = content.substr(open + 3, close - (open + 3));
+            for (t in tokenize(inner)) tokens.push(t);
+            cursor = close + 2;
+        }
+        return tokens;
     }
 
     static function collectPinnedPatternUsesExact(pat: ElixirAST.EPattern, out: Map<String, Bool>, inPin: Bool): Void {
@@ -505,6 +551,20 @@ class OptimizedVarUseAnalyzer {
         return tokens;
     }
 
+    static inline function looksLikeDoubleQuotedStringLiteral(code: String): Bool {
+        if (code == null) return false;
+        var trimmed = StringTools.trim(code);
+        return trimmed.length >= 2 && StringTools.startsWith(trimmed, "\"") && StringTools.endsWith(trimmed, "\"");
+    }
+
+    static inline function stripOuterQuotes(code: String): String {
+        var trimmed = StringTools.trim(code);
+        if (looksLikeDoubleQuotedStringLiteral(trimmed)) {
+            return trimmed.substr(1, trimmed.length - 2);
+        }
+        return trimmed;
+    }
+
     static function tokenize(code:String):Array<String> {
         var out:Array<String> = [];
         if (code == null) return out;
@@ -530,7 +590,9 @@ class OptimizedVarUseAnalyzer {
 				var isAtom = (beforeChar == ":" && beforePrevChar != ":");
 				var isBitstringSpec = (beforeChar == ":" && beforePrevChar == ":");
 				var isKeywordKey = (afterChar == ":" && afterNextChar != ":");
-				if (!isAtom && !isBitstringSpec && !isKeywordKey) out.push(token);
+                // Exclude assigns `@token` (HEEx assigns / module attributes) which are not local vars.
+                var isAssign = (beforeChar == "@");
+				if (!isAtom && !isBitstringSpec && !isKeywordKey && !isAssign) out.push(token);
 				start = -1;
 			}
 			i++;

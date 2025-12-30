@@ -32,7 +32,7 @@ end).(), ",") end).()}"
       else
         bytes = data
         if (length(bytes) > 10) do
-          "Large binary: #{(fn -> Kernel.to_string(length(bytes)) end).()} bytes"
+          "Large binary: #{Kernel.to_string(length(bytes))} bytes"
         else
           "Other binary pattern"
         end
@@ -60,7 +60,7 @@ end).(), ",") end).()}"
       else
         bytes = data
         if (length(bytes) > 10) do
-          "Large binary: #{(fn -> Kernel.to_string(length(bytes)) end).()} bytes"
+          "Large binary: #{Kernel.to_string(length(bytes))} bytes"
         else
           "Other binary pattern"
         end
@@ -92,7 +92,7 @@ end).(), ",") end).()}"
       else
         bytes = data
         if (length(bytes) > 10) do
-          "Large binary: #{(fn -> Kernel.to_string(length(bytes)) end).()} bytes"
+          "Large binary: #{Kernel.to_string(length(bytes))} bytes"
         else
           "Other binary pattern"
         end
@@ -114,7 +114,7 @@ end).(), ",") end).()}"
     else
       bytes = data
       if (length(bytes) > 10) do
-        "Large binary: #{(fn -> Kernel.to_string(length(bytes)) end).()} bytes"
+        "Large binary: #{Kernel.to_string(length(bytes))} bytes"
       else
         "Other binary pattern"
       end
@@ -130,11 +130,11 @@ end))
     if (g == 1) do
       if (g_value == 0) do
         size = g
-        "Protocol v1, size=#{(fn -> Kernel.to_string(size) end).()} (header only)"
+        "Protocol v1, size=#{Kernel.to_string(size)} (header only)"
       else
         arr = packet
         if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
-          "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
+          "Protocol v1, size=#{Kernel.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
   g_value = 3
   arr_length = length(arr)
   _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
@@ -148,7 +148,7 @@ end).(), ",") end).()}"
           _flags = g_value
           _size = arr_length
           if (version > 1) do
-            "Future protocol v#{(fn -> Kernel.to_string(version) end).()}"
+            "Future protocol v#{Kernel.to_string(version)}"
           else
             header = packet
             if (length(header) < 3), do: "Incomplete header", else: "Unknown packet format"
@@ -158,7 +158,7 @@ end).(), ",") end).()}"
     else
       arr = packet
       if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
-        "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
+        "Protocol v1, size=#{Kernel.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
   g_value = 3
   arr_length = length(arr)
   _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
@@ -172,7 +172,7 @@ end).(), ",") end).()}"
         _flags = g_value
         _size = arr_length
         if (version > 1) do
-          "Future protocol v#{(fn -> Kernel.to_string(version) end).()}"
+          "Future protocol v#{Kernel.to_string(version)}"
         else
           header = packet
           if (length(header) < 3), do: "Incomplete header", else: "Unknown packet format"
@@ -184,7 +184,7 @@ end).(), ",") end).()}"
     arr_length = packet[2]
     arr = packet
     if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
-      "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
+      "Protocol v1, size=#{Kernel.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
   _g = []
   g_value = 3
   arr_length = length(arr)
@@ -199,12 +199,12 @@ end).(), ",") end).()}"
       flags = g_value
       size = arr_length
       _payload = g
-      "Packet: v#{(fn -> Kernel.to_string(version) end).()}, flags=#{(fn -> Kernel.to_string(flags) end).()}, size=#{(fn -> Kernel.to_string(size) end).()}"
+      "Packet: v#{Kernel.to_string(version)}, flags=#{Kernel.to_string(flags)}, size=#{Kernel.to_string(size)}"
     end
   _ ->
     arr = packet
     if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
-      "Protocol v1, size=#{(fn -> Kernel.to_string(arr[2]) end).()}, data=#{(fn -> Enum.join((fn ->
+      "Protocol v1, size=#{Kernel.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
   _g = []
   g_value = 3
   arr_length = length(arr)
@@ -243,7 +243,7 @@ end))
         if (n == expected_name), do: "Name matches, value different", else: "Neither matches"
       end
     end
-    "#{(fn -> result1 end).()} | #{(fn -> result2 end).()}"
+    "#{result1} | #{result2}"
   end
   def test_advanced_guards() do
     temperature = 23.5
@@ -286,27 +286,27 @@ end))
     value = "Hello World"
     v = value
     if (Std.is(v, String) and Map.get(v, :length) > 10) do
-      "Long string: #{(fn -> inspect(v) end).()}"
+      "Long string: #{inspect(v)}"
     else
       v = value
       if (Std.is(v, String) and Map.get(v, :length) <= 10) do
-        "Short string: #{(fn -> inspect(v) end).()}"
+        "Short string: #{inspect(v)}"
       else
         v = value
         if (Std.is(v, Int) and v > 0) do
-          "Positive integer: #{(fn -> inspect(v) end).()}"
+          "Positive integer: #{inspect(v)}"
         else
           v = value
           if (Std.is(v, Int) and v <= 0) do
-            "Non-positive integer: #{(fn -> inspect(v) end).()}"
+            "Non-positive integer: #{inspect(v)}"
           else
             v = value
             if (Std.is(v, Float)) do
-              "Float value: #{(fn -> inspect(v) end).()}"
+              "Float value: #{inspect(v)}"
             else
               v = value
               if (Std.is(v, Bool)) do
-                "Boolean value: #{(fn -> inspect(v) end).()}"
+                "Boolean value: #{inspect(v)}"
               else
                 v = value
                 cond do
@@ -367,25 +367,25 @@ end))
     _ = 3
     array_result = ((case 3 do
   0 -> "Empty"
-  1 -> "Single: #{(fn -> Kernel.to_string(x) end).()}"
+  1 -> "Single: #{Kernel.to_string(x)}"
   2 ->
     g_value = arr_1
     x = g
     y = g_value
-    "Pair: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()}"
+    "Pair: #{Kernel.to_string(x)},#{Kernel.to_string(y)}"
   3 ->
     g_value = arr_1
     x = g
     y = g_value
     z = g
-    "Triple: #{(fn -> Kernel.to_string(x) end).()},#{(fn -> Kernel.to_string(y) end).()},#{(fn -> Kernel.to_string(z) end).()}"
+    "Triple: #{Kernel.to_string(x)},#{Kernel.to_string(y)},#{Kernel.to_string(z)}"
   _ ->
     cond do
       false -> "Many: " <> Kernel.to_string(3) <> " items"
       true -> "Other array pattern"
     end
 end))
-    "#{(fn -> bool_result end).()} | #{(fn -> enum_result end).()} | #{(fn -> array_result end).()}"
+    "#{bool_result} | #{enum_result} | #{array_result}"
   end
   def test_nested_patterns_with_guards() do
     data_user_age = 28

@@ -21,8 +21,10 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer.OptimizedUsageIndex;
  *   idiomatic and explicit.
  *
  * HOW
- * - Scope to modules whose names indicate Phoenix context: contain "Web.", end
- *   with ".Live" or ".Presence". Within such modules, for each EDef/EDefp, compute
+ * - Scope to Phoenix modules by metadata (preferred) and name heuristics (fallback):
+ *   - `metadata.isPhoenixWeb` / `metadata.isController` / `metadata.isLiveView` / `metadata.isPresence`
+ *   - or module names that contain "Web.", end with ".Live"/".Presence", or end with "Web".
+ *   Within such modules, for each EDef/EDefp, compute
  *   a conservative usage index for the body + guards (O(N) once) and underscore
  *   PVar(name) parameters that are not present in that usage index (O(1) per param).
  *
@@ -39,6 +41,10 @@ class DefParamUnusedUnderscoreTransforms {
                 case EModule(name, attrs, body):
                     // Gate to Phoenix contexts only (shape-based + metadata)
                     var isPhoenixCtx = (n.metadata?.isPhoenixWeb == true)
+                        || (n.metadata?.isController == true)
+                        || (n.metadata?.isLiveView == true)
+                        || (n.metadata?.isPresence == true)
+                        || (name != null && name.indexOf("Controller") != -1)
                         || (name != null && ((name.indexOf("Web.") >= 0) || StringTools.endsWith(name, ".Live") || StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web")));
                     // Do not alter Gettext modules to avoid breaking ngettext/dngettext count param
                     if (!isPhoenixCtx || (name != null && StringTools.endsWith(name, ".Gettext"))) return n;
@@ -47,6 +53,10 @@ class DefParamUnusedUnderscoreTransforms {
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name, doBlock):
                     var isPhoenixCtx2 = (n.metadata?.isPhoenixWeb == true)
+                        || (n.metadata?.isController == true)
+                        || (n.metadata?.isLiveView == true)
+                        || (n.metadata?.isPresence == true)
+                        || (name != null && name.indexOf("Controller") != -1)
                         || (name != null && ((name.indexOf("Web.") >= 0) || StringTools.endsWith(name, ".Live") || StringTools.endsWith(name, ".Presence") || StringTools.endsWith(name, "Web")));
                     if (!isPhoenixCtx2 || (name != null && StringTools.endsWith(name, ".Gettext"))) return n;
                     makeASTWithMeta(EDefmodule(name, rewriteDefs(doBlock)), n.metadata, n.pos);

@@ -2,7 +2,7 @@ defmodule Main do
   def string_basics() do
     str1 = "Hello"
     str2 = "World"
-    _str3 = "#{(fn -> str1 end).()} #{(fn -> str2 end).()}"
+    _str3 = "#{str1} #{str2}"
     nil
   end
   def string_interpolation() do
@@ -41,11 +41,11 @@ defmodule Main do
     _ = StringBuf.add(buf, "!")
     _result = StringBuf.to_string(buf)
     parts = []
-    parts = parts ++ ["Item #{(fn -> Kernel.to_string(1) end).()}"]
-    parts = parts ++ ["Item #{(fn -> Kernel.to_string(2) end).()}"]
-    parts = parts ++ ["Item #{(fn -> Kernel.to_string(3) end).()}"]
-    parts = parts ++ ["Item #{(fn -> Kernel.to_string(4) end).()}"]
-    parts = parts ++ ["Item #{(fn -> Kernel.to_string(5) end).()}"]
+    parts = parts ++ ["Item #{Kernel.to_string(1)}"]
+    parts = parts ++ ["Item #{Kernel.to_string(2)}"]
+    parts = parts ++ ["Item #{Kernel.to_string(3)}"]
+    parts = parts ++ ["Item #{Kernel.to_string(4)}"]
+    parts = parts ++ ["Item #{Kernel.to_string(5)}"]
     _list = Enum.join(parts, ", ")
     nil
   end
@@ -84,7 +84,7 @@ defmodule Main do
     num = 42
     _padded = StringTools.lpad(inspect(num), "0", 5)
     text = "Hi"
-    _rpadded = "#{(fn -> StringTools.rpad(text, " ", 10) end).()}|"
+    _rpadded = "#{StringTools.rpad(text, " ", 10)}|"
     _hex = StringTools.hex(255, nil)
     url = "Hello World!"
     encoded = StringTools.url_encode(url)

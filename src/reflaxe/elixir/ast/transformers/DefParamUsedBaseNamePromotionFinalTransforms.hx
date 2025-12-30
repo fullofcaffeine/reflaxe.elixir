@@ -28,6 +28,20 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class DefParamUsedBaseNamePromotionFinalTransforms {
+    static inline function looksLikeDoubleQuotedStringLiteral(code: String): Bool {
+        if (code == null) return false;
+        var trimmed = StringTools.trim(code);
+        return trimmed.length >= 2 && StringTools.startsWith(trimmed, "\"") && StringTools.endsWith(trimmed, "\"");
+    }
+
+    static inline function stripOuterQuotes(code: String): String {
+        var trimmed = StringTools.trim(code);
+        if (looksLikeDoubleQuotedStringLiteral(trimmed)) {
+            return trimmed.substr(1, trimmed.length - 2);
+        }
+        return trimmed;
+    }
+
     public static function pass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
@@ -91,15 +105,38 @@ class DefParamUsedBaseNamePromotionFinalTransforms {
                 case EVar(v) if (v == name): found = true;
                 case ERaw(code):
                     if (code != null && name.charAt(0) != '_') {
-                        var start = 0;
-                        while (!found) {
-                            var i = code.indexOf(name, start);
-                            if (i == -1) break;
-                            var before = i > 0 ? code.substr(i - 1, 1) : null;
-                            var afterIdx = i + name.length;
-                            var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
-                            if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
-                            start = i + name.length;
+                        if (looksLikeDoubleQuotedStringLiteral(code)) {
+                            var str = stripOuterQuotes(code);
+                            var cursor = 0;
+                            while (!found && str != null && cursor < str.length) {
+                                var open = str.indexOf("#{", cursor);
+                                if (open == -1) break;
+                                var close = str.indexOf("}", open + 2);
+                                if (close == -1) break;
+                                var inner = str.substr(open + 2, close - (open + 2));
+                                var start = 0;
+                                while (!found && inner != null) {
+                                    var i = inner.indexOf(name, start);
+                                    if (i == -1) break;
+                                    var before = i > 0 ? inner.substr(i - 1, 1) : null;
+                                    var afterIdx = i + name.length;
+                                    var after = afterIdx < inner.length ? inner.substr(afterIdx, 1) : null;
+                                    if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
+                                    start = i + name.length;
+                                }
+                                cursor = close + 1;
+                            }
+                        } else {
+                            var start = 0;
+                            while (!found) {
+                                var i = code.indexOf(name, start);
+                                if (i == -1) break;
+                                var before = i > 0 ? code.substr(i - 1, 1) : null;
+                                var afterIdx = i + name.length;
+                                var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
+                                if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
+                                start = i + name.length;
+                            }
                         }
                     }
                     if (!found && x.metadata != null) {

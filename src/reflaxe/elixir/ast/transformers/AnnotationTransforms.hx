@@ -1420,6 +1420,19 @@ class AnnotationTransforms {
      */
     static function buildPhoenixWebBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
         var statements = [];
+        var existingDefinitions = new Map<String, Bool>();
+
+        function recordDefinition(statement: ElixirAST): Void {
+            switch (statement.def) {
+                case EDef(name, args, _, _):
+                    existingDefinitions.set(name + "/" + args.length, true);
+                case EDefp(name, args, _, _):
+                    existingDefinitions.set(name + "/" + args.length, true);
+                case EDefmacro(name, args, _, _):
+                    existingDefinitions.set(name + "/" + args.length, true);
+                case _:
+            }
+        }
         
         // Add existing functions first (like static_paths)
         switch(existingBody.def) {
@@ -1430,27 +1443,31 @@ class AnnotationTransforms {
                             // Skip
                         default:
                             statements.push(stmt);
+                            recordDefinition(stmt);
                     }
                 }
             default:
                 if (existingBody.def != ENil) {
                     statements.push(existingBody);
+                    recordDefinition(existingBody);
                 }
         }
         
         // defmacro __using__(which) when is_atom(which) do
-        var usingMacroBody = makeAST(ECall(null, "apply", [
-            makeAST(EVar("__MODULE__")),
-            makeAST(EVar("which")),
-            makeAST(EList([]))
-        ]));
-        
-        statements.push(makeAST(EDefmacro(
-            "__using__",
-            [EPattern.PVar("which")],
-            makeAST(ECall(null, "is_atom", [makeAST(EVar("which"))])),
-            usingMacroBody
-        )));
+        if (!existingDefinitions.exists("__using__/1")) {
+            var usingMacroBody = makeAST(ECall(null, "apply", [
+                makeAST(EVar("__MODULE__")),
+                makeAST(EVar("which")),
+                makeAST(EList([]))
+            ]));
+            
+            statements.push(makeAST(EDefmacro(
+                "__using__",
+                [EPattern.PVar("which")],
+                makeAST(ECall(null, "is_atom", [makeAST(EVar("which"))])),
+                usingMacroBody
+            )));
+        }
         
         // Extract base app name from module name (e.g., "TodoAppWeb" -> "TodoApp")
         var appBaseName = StringTools.replace(moduleName, "Web", "");
@@ -1467,12 +1484,14 @@ class AnnotationTransforms {
             makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
         ]))));
         
-        statements.push(makeAST(EDef(
-            "router",
-            [],
-            null,
-            routerBody
-        )));
+        if (!existingDefinitions.exists("router/0")) {
+            statements.push(makeAST(EDef(
+                "router",
+                [],
+                null,
+                routerBody
+            )));
+        }
         
         // def controller do
         var controllerBody = makeAST(EQuote([], makeAST(EBlock([
@@ -1491,12 +1510,14 @@ class AnnotationTransforms {
             makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
         ]))));
         
-        statements.push(makeAST(EDef(
-            "controller",
-            [],
-            null,
-            controllerBody
-        )));
+        if (!existingDefinitions.exists("controller/0")) {
+            statements.push(makeAST(EDef(
+                "controller",
+                [],
+                null,
+                controllerBody
+            )));
+        }
         
         // def live_view do
         var liveViewBody = makeAST(EQuote([], makeAST(EBlock([
@@ -1511,12 +1532,14 @@ class AnnotationTransforms {
             makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))]))
         ]))));
         
-        statements.push(makeAST(EDef(
-            "live_view",
-            [],
-            null,
-            liveViewBody
-        )));
+        if (!existingDefinitions.exists("live_view/0")) {
+            statements.push(makeAST(EDef(
+                "live_view",
+                [],
+                null,
+                liveViewBody
+            )));
+        }
         
         // def live_component do
         var liveComponentBody = makeAST(EQuote([], makeAST(EBlock([
@@ -1524,12 +1547,14 @@ class AnnotationTransforms {
             makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))]))
         ]))));
         
-        statements.push(makeAST(EDef(
-            "live_component",
-            [],
-            null,
-            liveComponentBody
-        )));
+        if (!existingDefinitions.exists("live_component/0")) {
+            statements.push(makeAST(EDef(
+                "live_component",
+                [],
+                null,
+                liveComponentBody
+            )));
+        }
         
         // def html do
         var htmlBody = makeAST(EQuote([], makeAST(EBlock([
@@ -1540,12 +1565,14 @@ class AnnotationTransforms {
             makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
         ]))));
         
-        statements.push(makeAST(EDef(
-            "html",
-            [],
-            null,
-            htmlBody
-        )));
+        if (!existingDefinitions.exists("html/0")) {
+            statements.push(makeAST(EDef(
+                "html",
+                [],
+                null,
+                htmlBody
+            )));
+        }
         
         // defp html_helpers do
         var htmlHelpersBody = makeAST(EQuote([], makeAST(EBlock([
@@ -1554,12 +1581,14 @@ class AnnotationTransforms {
             makeAST(EAlias("Phoenix.HTML.Form", "Form"))
         ]))));
         
-        statements.push(makeAST(EDefp(
-            "html_helpers",
-            [],
-            null,
-            htmlHelpersBody
-        )));
+        if (!existingDefinitions.exists("html_helpers/0")) {
+            statements.push(makeAST(EDefp(
+                "html_helpers",
+                [],
+                null,
+                htmlHelpersBody
+            )));
+        }
         
         // def verified_routes do
         var verifiedRoutesBody = makeAST(EQuote([], makeAST(EBlock([
@@ -1576,12 +1605,14 @@ class AnnotationTransforms {
             ]))
         ]))));
         
-        statements.push(makeAST(EDef(
-            "verified_routes",
-            [],
-            null,
-            verifiedRoutesBody
-        )));
+        if (!existingDefinitions.exists("verified_routes/0")) {
+            statements.push(makeAST(EDef(
+                "verified_routes",
+                [],
+                null,
+                verifiedRoutesBody
+            )));
+        }
         
         // def channel do
         var channelBody = makeAST(EQuote([], makeAST(EBlock([
@@ -1589,27 +1620,31 @@ class AnnotationTransforms {
             makeAST(EImport(moduleName + ".Gettext", null, null))
         ]))));
         
-        statements.push(makeAST(EDef(
-            "channel",
-            [],
-            null,
-            channelBody
-        )));
+        if (!existingDefinitions.exists("channel/0")) {
+            statements.push(makeAST(EDef(
+                "channel",
+                [],
+                null,
+                channelBody
+            )));
+        }
         
         // def static_paths do
         // This function is expected by Phoenix.VerifiedRoutes
-        statements.push(makeAST(EDef(
-            "static_paths",
-            [],
-            null,
-            makeAST(EList([
-                makeAST(EString("assets")),
-                makeAST(EString("fonts")),
-                makeAST(EString("images")),
-                makeAST(EString("favicon.ico")),
-                makeAST(EString("robots.txt"))
-            ]))
-        )));
+        if (!existingDefinitions.exists("static_paths/0")) {
+            statements.push(makeAST(EDef(
+                "static_paths",
+                [],
+                null,
+                makeAST(EList([
+                    makeAST(EString("assets")),
+                    makeAST(EString("fonts")),
+                    makeAST(EString("images")),
+                    makeAST(EString("favicon.ico")),
+                    makeAST(EString("robots.txt"))
+                ]))
+            )));
+        }
         
         return makeAST(EBlock(statements));
     }

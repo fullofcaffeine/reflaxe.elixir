@@ -23,12 +23,12 @@ defmodule Main do
       {:ok} -> "Success"
       {:custom, _code} -> "Custom status"
       {:error, msg} -> msg
-      {:redirect, url, _permanent} -> "Redirecting to #{(fn -> url end).()}"
+      {:redirect, url, _permanent} -> "Redirecting to #{url}"
     end)
   end
   defp get_redirect_info(status) do
     (case status do
-      {:redirect, url, permanent} -> "URL: #{(fn -> url end).()}, Permanent: #{(fn -> inspect(permanent) end).()}"
+      {:redirect, url, permanent} -> "URL: #{url}, Permanent: #{inspect(permanent)}"
       _ -> "Not a redirect"
     end)
   end

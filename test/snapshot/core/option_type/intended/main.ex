@@ -16,7 +16,7 @@ defmodule Main do
   defp test_pattern_matching() do
     user = {:some, "Bob"}
     _result = ((case user do
-  {:some, name} -> "Hello, #{(fn -> name end).()}"
+  {:some, name} -> "Hello, #{name}"
   {:none} -> "Hello, anonymous"
 end))
     scores = {:some, [1, 2, 3]}
