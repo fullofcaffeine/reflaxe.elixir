@@ -3,11 +3,99 @@
 var client_Boot = function() { };
 client_Boot.main = function() {
 	var hooks = { AutoFocus : { mounted : function() {
-		this.el && this.el.focus && this.el.focus();
+		client_hooks_AutoFocusHook.mounted(this);
 	}}, Ping : { mounted : function() {
-		try { this.pushEvent && this.pushEvent('ping', {}) } catch (_) {} ;
+		client_hooks_PingHook.mounted(this);
+	}}, CopyToClipboard : { mounted : function() {
+		client_hooks_CopyToClipboardHook.mounted(this);
 	}}};
-	window.Hooks = window.Hooks || hooks;
+	window.Hooks = Object.assign(window.Hooks || {}, hooks);
+};
+var client_hooks_AutoFocusHook = function() { };
+client_hooks_AutoFocusHook.mounted = function(hook) {
+	try {
+		hook.el.focus();
+	} catch( _g ) {
+	}
+};
+var client_hooks_CopyToClipboardHook = function() { };
+client_hooks_CopyToClipboardHook.mounted = function(hook) {
+	var el = hook.el;
+	el.addEventListener("click",function(_) {
+		var text = el.getAttribute("data-copy-text");
+		if(text == null || text == "") {
+			return;
+		}
+		client_hooks_CopyToClipboardHook.copyText(text,function(_success) {
+			var eventName = el.getAttribute("data-copied-event");
+			if(eventName == null || eventName == "") {
+				eventName = "clipboard_copied";
+			}
+			var message = el.getAttribute("data-copied-message");
+			if(message == null || message == "") {
+				message = "Copied.";
+			}
+			try {
+				if(hook.pushEvent != null) {
+					hook.pushEvent(eventName,{ message : message});
+				}
+			} catch( _g ) {
+			}
+			el.classList.add("copied");
+			window.setTimeout(function() {
+				el.classList.remove("copied");
+			},800);
+		});
+	});
+};
+client_hooks_CopyToClipboardHook.copyText = function(text,done) {
+	var clipboard = $global.navigator.clipboard;
+	if(clipboard != null && Object.prototype.hasOwnProperty.call(clipboard,"writeText")) {
+		try {
+			var promise = clipboard.writeText(text);
+			promise.then(function(_) {
+				done(true);
+				return null;
+			}).catch(function(_) {
+				client_hooks_CopyToClipboardHook.fallbackCopy(text,done);
+				return null;
+			});
+			return;
+		} catch( _g ) {
+		}
+	}
+	client_hooks_CopyToClipboardHook.fallbackCopy(text,done);
+};
+client_hooks_CopyToClipboardHook.fallbackCopy = function(text,done) {
+	var tmp = window.document.createElement("textarea");
+	tmp.value = text;
+	tmp.setAttribute("readonly","");
+	tmp.style.position = "absolute";
+	tmp.style.left = "-9999px";
+	window.document.body.appendChild(tmp);
+	tmp.select();
+	var ok = false;
+	try {
+		ok = window.document.execCommand("copy");
+	} catch( _g ) {
+	}
+	try {
+		tmp.remove();
+	} catch( _g ) {
+		if(tmp.parentNode != null) {
+			tmp.parentNode.removeChild(tmp);
+		}
+	}
+	done(ok);
+};
+var client_hooks_PingHook = function() { };
+client_hooks_PingHook.mounted = function(hook) {
+	try {
+		if(hook.pushEvent != null) {
+			hook.pushEvent("ping",{ });
+		}
+	} catch( _g ) {
+	}
 };
 var haxe_iterators_ArrayIterator = function(array) {
 	this.current = 0;
@@ -22,4 +110,4 @@ haxe_iterators_ArrayIterator.prototype = {
 	}
 };
 client_Boot.main();
-})({});
+})(typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : this);
