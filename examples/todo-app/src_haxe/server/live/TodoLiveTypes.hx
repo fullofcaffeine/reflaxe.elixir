@@ -90,6 +90,10 @@ typedef TodoLiveAssigns = {
 	    var flash_error: Null<String>;
 	    // Derived from show_form; assigned in render/1 for zero-logic HXX.
 	    var toggle_form_label: String;
+	    // Header avatar (zero-logic HXX)
+	    var header_avatar_initials: String;
+	    var header_avatar_class: String;
+	    var header_avatar_style: String;
 	}
 
 /**

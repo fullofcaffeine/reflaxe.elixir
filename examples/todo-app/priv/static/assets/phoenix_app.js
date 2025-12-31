@@ -1,8 +1,12 @@
 var TodoApp = (() => {
+  var __create = Object.create;
   var __defProp = Object.defineProperty;
   var __defProps = Object.defineProperties;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
   var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getOwnPropSymbols = Object.getOwnPropertySymbols;
+  var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __propIsEnum = Object.prototype.propertyIsEnumerable;
   var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
@@ -30,6 +34,148 @@ var TodoApp = (() => {
       }
     return target;
   };
+  var __commonJS = (cb, mod) => function __require() {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  };
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+    // If the importer is in node compatibility mode or this is not an ESM
+    // file that has been converted to a CommonJS file using a Babel-
+    // compatible transform (i.e. "__esModule" has not been set), then set
+    // "default" to the CommonJS "module.exports" for node compatibility.
+    isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+    mod
+  ));
+
+  // js/hx_app.js
+  var require_hx_app = __commonJS({
+    "js/hx_app.js"(exports) {
+      (function($global) {
+        "use strict";
+        var client_Boot = function() {
+        };
+        client_Boot.main = function() {
+          var hooks2 = { AutoFocus: { mounted: function() {
+            client_hooks_AutoFocusHook.mounted(this);
+          } }, Ping: { mounted: function() {
+            client_hooks_PingHook.mounted(this);
+          } }, CopyToClipboard: { mounted: function() {
+            client_hooks_CopyToClipboardHook.mounted(this);
+          } } };
+          window.Hooks = Object.assign(window.Hooks || {}, hooks2);
+        };
+        var client_hooks_AutoFocusHook = function() {
+        };
+        client_hooks_AutoFocusHook.mounted = function(hook) {
+          try {
+            hook.el.focus();
+          } catch (_g) {
+          }
+        };
+        var client_hooks_CopyToClipboardHook = function() {
+        };
+        client_hooks_CopyToClipboardHook.mounted = function(hook) {
+          var el = hook.el;
+          el.addEventListener("click", function(_) {
+            var text = el.getAttribute("data-copy-text");
+            if (text == null || text == "") {
+              return;
+            }
+            client_hooks_CopyToClipboardHook.copyText(text, function(_success) {
+              var eventName = el.getAttribute("data-copied-event");
+              if (eventName == null || eventName == "") {
+                eventName = "clipboard_copied";
+              }
+              var message = el.getAttribute("data-copied-message");
+              if (message == null || message == "") {
+                message = "Copied.";
+              }
+              try {
+                if (hook.pushEvent != null) {
+                  hook.pushEvent(eventName, { message });
+                }
+              } catch (_g) {
+              }
+              el.classList.add("copied");
+              window.setTimeout(function() {
+                el.classList.remove("copied");
+              }, 800);
+            });
+          });
+        };
+        client_hooks_CopyToClipboardHook.copyText = function(text, done) {
+          var clipboard = $global.navigator.clipboard;
+          if (clipboard != null && Object.prototype.hasOwnProperty.call(clipboard, "writeText")) {
+            try {
+              var promise = clipboard.writeText(text);
+              promise.then(function(_) {
+                done(true);
+                return null;
+              }).catch(function(_) {
+                client_hooks_CopyToClipboardHook.fallbackCopy(text, done);
+                return null;
+              });
+              return;
+            } catch (_g) {
+            }
+          }
+          client_hooks_CopyToClipboardHook.fallbackCopy(text, done);
+        };
+        client_hooks_CopyToClipboardHook.fallbackCopy = function(text, done) {
+          var tmp = window.document.createElement("textarea");
+          tmp.value = text;
+          tmp.setAttribute("readonly", "");
+          tmp.style.position = "absolute";
+          tmp.style.left = "-9999px";
+          window.document.body.appendChild(tmp);
+          tmp.select();
+          var ok = false;
+          try {
+            ok = window.document.execCommand("copy");
+          } catch (_g) {
+          }
+          try {
+            tmp.remove();
+          } catch (_g) {
+            if (tmp.parentNode != null) {
+              tmp.parentNode.removeChild(tmp);
+            }
+          }
+          done(ok);
+        };
+        var client_hooks_PingHook = function() {
+        };
+        client_hooks_PingHook.mounted = function(hook) {
+          try {
+            if (hook.pushEvent != null) {
+              hook.pushEvent("ping", {});
+            }
+          } catch (_g) {
+          }
+        };
+        var haxe_iterators_ArrayIterator = function(array) {
+          this.current = 0;
+          this.array = array;
+        };
+        haxe_iterators_ArrayIterator.prototype = {
+          hasNext: function() {
+            return this.current < this.array.length;
+          },
+          next: function() {
+            return this.array[this.current++];
+          }
+        };
+        client_Boot.main();
+      })(typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : exports);
+    }
+  });
 
   // node_modules/phoenix_html/priv/static/phoenix_html.js
   (function() {
@@ -113,7 +259,7 @@ var TodoApp = (() => {
   };
   var globalSelf = typeof self !== "undefined" ? self : null;
   var phxWindow = typeof window !== "undefined" ? window : null;
-  var global = globalSelf || phxWindow || global;
+  var global2 = globalSelf || phxWindow || global2;
   var DEFAULT_VSN = "2.0.0";
   var SOCKET_STATES = { connecting: 0, open: 1, closing: 2, closed: 3 };
   var DEFAULT_TIMEOUT = 1e4;
@@ -593,11 +739,11 @@ var TodoApp = (() => {
   };
   var Ajax = class {
     static request(method, endPoint, accept, body, timeout, ontimeout, callback) {
-      if (global.XDomainRequest) {
-        let req = new global.XDomainRequest();
+      if (global2.XDomainRequest) {
+        let req = new global2.XDomainRequest();
         return this.xdomainRequest(req, method, endPoint, body, timeout, ontimeout, callback);
       } else {
-        let req = new global.XMLHttpRequest();
+        let req = new global2.XMLHttpRequest();
         return this.xhrRequest(req, method, endPoint, accept, body, timeout, ontimeout, callback);
       }
     }
@@ -920,11 +1066,11 @@ var TodoApp = (() => {
       this.sendBuffer = [];
       this.ref = 0;
       this.timeout = opts.timeout || DEFAULT_TIMEOUT;
-      this.transport = opts.transport || global.WebSocket || LongPoll;
+      this.transport = opts.transport || global2.WebSocket || LongPoll;
       this.primaryPassedHealthCheck = false;
       this.longPollFallbackMs = opts.longPollFallbackMs;
       this.fallbackTimer = null;
-      this.sessionStore = opts.sessionStorage || global && global.sessionStorage;
+      this.sessionStore = opts.sessionStorage || global2 && global2.sessionStorage;
       this.establishedConnections = 0;
       this.defaultEncoder = serializer_default.encode.bind(serializer_default);
       this.defaultDecoder = serializer_default.decode.bind(serializer_default);
@@ -6372,37 +6518,8 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     }
   };
 
-  // js/hx_app.js
-  (function($global) {
-    "use strict";
-    var client_Boot = function() {
-    };
-    client_Boot.main = function() {
-      var hooks2 = { AutoFocus: { mounted: function() {
-        this.el && this.el.focus && this.el.focus();
-      } }, Ping: { mounted: function() {
-        try {
-          this.pushEvent && this.pushEvent("ping", {});
-        } catch (_) {
-        }
-        ;
-      } } };
-      window.Hooks = window.Hooks || hooks2;
-    };
-    var haxe_iterators_ArrayIterator = function(array) {
-      this.current = 0;
-      this.array = array;
-    };
-    haxe_iterators_ArrayIterator.prototype = {
-      hasNext: function() {
-        return this.current < this.array.length;
-      },
-      next: function() {
-        return this.array[this.current++];
-      }
-    };
-    client_Boot.main();
-  })({});
+  // js/app.js
+  var import_hx_app = __toESM(require_hx_app());
 
   // js/phoenix_app.js
   var _a;

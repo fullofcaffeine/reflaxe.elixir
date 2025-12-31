@@ -16,6 +16,7 @@ import phoenix.types.Assigns;
 import phoenix.types.Flash.FlashMap;
 import phoenix.types.Flash.FlashType;
 import plug.CSRFProtection;
+import shared.AvatarTools;
 import server.infrastructure.Repo;
 import server.types.Types.EventParams;
 import server.types.Types.MountParams;
@@ -33,6 +34,9 @@ typedef ProfileLiveRenderAssigns = {> ProfileLiveAssigns,
     var flash: FlashMap;
     var flash_info: Null<String>;
     var flash_error: Null<String>;
+    var avatar_initials: String;
+    var avatar_class: String;
+    var avatar_style: String;
 }
 
 /**
@@ -99,6 +103,11 @@ class ProfileLive {
         return switch (event) {
             case "save_profile":
                 NoReply(saveProfile(params, sock));
+            case "clipboard_copied":
+                var paramsTerm: Term = cast params;
+                var messageTerm: Term = ElixirMap.get(paramsTerm, "message");
+                var message: String = messageTerm != null ? cast messageTerm : "Copied.";
+                NoReply(LiveView.putFlash(sock, FlashType.Info, message));
             case _:
                 NoReply(sock);
         };
@@ -139,6 +148,13 @@ class ProfileLive {
         var renderAssigns: Assigns<ProfileLiveRenderAssigns> = assigns;
         renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
         renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
+        var avatarInitials = AvatarTools.initials(assigns.name, assigns.email);
+        var avatarBgClass = AvatarTools.avatarBgClass(assigns.name, assigns.email);
+        var avatarStyle = AvatarTools.avatarStyle(assigns.name, assigns.email, 96);
+        var avatarClass = "w-20 h-20 rounded-full flex items-center justify-center text-white font-semibold text-2xl shadow-sm " + avatarBgClass;
+        renderAssigns = Component.assign(renderAssigns, "avatar_initials", avatarInitials);
+        renderAssigns = Component.assign(renderAssigns, "avatar_class", avatarClass);
+        renderAssigns = Component.assign(renderAssigns, "avatar_style", avatarStyle);
         assigns = renderAssigns;
 
         return HXX.hxx('
@@ -178,6 +194,30 @@ class ProfileLive {
 
                         <if {@signed_in}>
                             <div class="space-y-4">
+                                <div class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl">
+                                    <div data-testid="profile-avatar" class={@avatar_class} style={@avatar_style}>
+                                        #{@avatar_initials}
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="text-lg font-semibold text-gray-900 dark:text-white">
+                                            #{@name}
+                                        </div>
+                                        <div class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                                            <span data-testid="profile-email-display">#{@email}</span>
+                                            <button data-testid="btn-copy-email"
+                                                id="btn-copy-email"
+                                                type="button"
+                                                phx-hook="CopyToClipboard"
+                                                data-copy-text={@email}
+                                                data-copied-event="clipboard_copied"
+                                                data-copied-message="Email copied."
+                                                class="px-2 py-1 rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+                                                Copy
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <form phx-submit="save_profile" class="space-y-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Name</label>
