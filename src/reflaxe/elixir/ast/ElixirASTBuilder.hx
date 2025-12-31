@@ -44,6 +44,7 @@ import reflaxe.elixir.ast.transformers.DesugarredForDetector;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.preprocessor.TypedExprPreprocessor;
 import reflaxe.elixir.helpers.PatternDetector;
+import phoenix.types.HXXComponentRegistry;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.TypeHelper;
 using StringTools;
@@ -2386,19 +2387,38 @@ class ElixirASTBuilder {
                             fieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
                             EField(target, fieldName);
                         }
-                    default:
-                        // Regular field access (includes FInstance for instance methods)
-                        var target = buildFromTypedExpr(e, currentContext);
-                        var fieldName = extractFieldName(fa);
-                        
-                        // Convert to snake_case for Elixir method names
-                        // This ensures struct.setLoop becomes struct.set_loop
-                        var originalFieldName = fieldName;
-                        fieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
-                        
-                        #if debug_field_names
-                        if (originalFieldName != fieldName) {
-                            #if debug_ast_builder
+	                    default:
+	                        // Regular field access (includes FInstance for instance methods)
+	                        var target = buildFromTypedExpr(e, currentContext);
+	                        var fieldName = extractFieldName(fa);
+	                        
+	                        // Convert to snake_case for Elixir method names.
+	                        // For Phoenix component assigns (`assigns.*` inside @:component modules),
+	                        // use HXX attribute naming rules so TSX-style props like `className` map
+	                        // to idiomatic assigns (`@class`) instead of `@class_name`.
+	                        var originalFieldName = fieldName;
+	                        var isComponentAssignsAccess = false;
+	                        if (currentContext != null && currentContext.currentClass != null && currentContext.currentClass.meta != null) {
+	                            var meta = currentContext.currentClass.meta;
+	                            if (meta.has(":component") || meta.has(":phoenix.components")) {
+	                                switch (e.expr) {
+	                                    case TLocal(v) if (v.name == "assigns"):
+	                                        isComponentAssignsAccess = true;
+	                                    default:
+	                                }
+	                            }
+	                        }
+	                        if (isComponentAssignsAccess) {
+	                            var htmlAttr = HXXComponentRegistry.toHtmlAttribute(fieldName);
+	                            fieldName = htmlAttr != null ? htmlAttr.split("-").join("_") : reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+	                        } else {
+	                            // This ensures struct.setLoop becomes struct.set_loop
+	                            fieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+	                        }
+	                        
+	                        #if debug_field_names
+	                        if (originalFieldName != fieldName) {
+	                            #if debug_ast_builder
                             // DISABLED: trace('[AST Builder] Converting field name: $originalFieldName -> $fieldName');
                             #end
                         }

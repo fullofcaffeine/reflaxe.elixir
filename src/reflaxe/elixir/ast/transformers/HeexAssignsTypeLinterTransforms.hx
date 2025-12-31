@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.NameUtils;
 import phoenix.types.HXXComponentRegistry;
 
 using StringTools;
@@ -12,6 +13,7 @@ using StringTools;
 #if macro
 import haxe.macro.Context;
 import haxe.macro.TypeTools;
+import reflaxe.elixir.macros.RepoDiscovery;
 #end
 
 /**
@@ -24,6 +26,7 @@ import haxe.macro.TypeTools;
  *   2) Obvious literal type mismatches in comparisons (e.g., `@sort_by == 1` when `sort_by: String`)
  *   3) Unknown HTML attributes on registered elements (e.g., `<input hreff="...">`)
  *   4) Obvious attribute value kind mismatches for boolean-ish attrs and `phx-hook`
+ *   5) Unknown / missing required component props for resolvable dot components (e.g., `<.card title="...">`)
  *
  * WHY
  * - HXX authoring must be fully type-checked like TSX. Since HEEx lives in strings until
@@ -43,6 +46,8 @@ import haxe.macro.TypeTools;
  *      - Find literal comparisons with `@field` and check kind compatibility.
  *      - Validate element attributes using `phoenix.types.HXXComponentRegistry` (kebab/camel/snake-case),
  *        allowing `data-*`, `aria-*`, `phx-value-*`, and HEEx directive attrs like `:if`.
+ *   5) When a dot component tag is encountered and its definition is discoverable via RepoDiscovery,
+ *      validate prop names, required props (including inner content), and basic prop kinds.
  *
  * EXAMPLES
  * Haxe (invalid):
@@ -51,13 +56,25 @@ import haxe.macro.TypeTools;
  * Error:
  *   HEEx assigns type error: @sort_by is String but compared to Int literal
  *
- * LIMITATIONS (Intentional for M1)
- * - Component tag validation is currently implemented for a small set of Phoenix core tags
- *   (e.g. `<.form>` and `<.link>`). Unknown components are skipped to avoid false positives.
- * - Only checks obvious attribute kind mismatches (bool-ish attrs + `phx-hook`) when the expression kind is clear.
- * - Does not fully type component props or complex HEEx expressions yet.
+ * LIMITATIONS (Intentional; keep false positives low)
+ * - Phoenix core component tags are validated via a small allowlist (`<.form>`, `<.link>`); other
+ *   dot components are validated only when an unambiguous `@:component` definition is discoverable.
+ *   Unknown or ambiguous components are skipped.
+ * - Component prop typing is shallow: only basic kinds are inferred (String/Int/Float/Bool). Complex expressions
+ *   are treated as unknown.
+ * - Module-qualified components (`<CoreComponents.button>`) and slot binding typing (`:let`) are not validated.
  */
+private typedef ComponentDefinition = {
+    var moduleTypePath: String;
+    var functionName: String; // snake_case
+    var props: Map<String, String>; // canonical prop key (snake_case) -> kind
+    var required: Map<String, Bool>; // canonical prop key (snake_case) -> required?
+};
+
 class HeexAssignsTypeLinterTransforms {
+    static var componentFunctionIndex: Null<Map<String, Array<ComponentDefinition>>> = null;
+    static var componentDefinitionCache: Map<String, Null<ComponentDefinition>> = new Map();
+
     // Public entry: non-contextual (throws on error)
     public static function transformPass(ast: ElixirAST): ElixirAST {
         return lint(ast, null);
@@ -285,6 +302,8 @@ class HeexAssignsTypeLinterTransforms {
                 for (attr in attributes) {
                     validateAttribute(tag, attr, fields, typeName, ctx, pos, enableAssignsChecks);
                 }
+                // Component-level checks (requires full attribute set + children)
+                validateComponentInvocation(tag, attributes, children, fields, ctx, pos);
                 // Children
                 for (c in children) validateNode(c, fields, typeName, ctx, pos, enableAssignsChecks);
             default:
@@ -297,6 +316,9 @@ class HeexAssignsTypeLinterTransforms {
 
         // 2) Obvious kind validation for select attributes (bool-ish attrs, phx-hook, etc.)
         validateAttributeValueKind(attr.name, attr.value, fields, ctx, pos);
+
+        // 2b) Component prop kind validation (when the component + prop is resolvable)
+        validateComponentPropValueKind(tag, attr, fields, ctx, pos);
 
         // 3) Assigns field usage within `{ ... }` attribute expressions
         validateExprForAssigns(attr.value, fields, typeName, ctx, pos, enableAssignsChecks);
@@ -313,7 +335,13 @@ class HeexAssignsTypeLinterTransforms {
         if (tag != null && tag.length > 0) {
             var first = tag.charAt(0);
             if (first == ".") {
-                validatePhoenixCoreComponentAttributeName(tag, attributeName, ctx, pos);
+                // Phoenix core component allowlist first; otherwise attempt user component prop typing.
+                var allowedCore = getAllowedPhoenixCoreComponentAttributes(tag);
+                if (allowedCore != null) {
+                    validatePhoenixCoreComponentAttributeName(tag, attributeName, ctx, pos);
+                } else {
+                    validateUserComponentAttributeName(tag, attributeName, ctx, pos);
+                }
                 return;
             }
             // Slot tags (<:inner_block>) don't validate attributes.
@@ -348,6 +376,232 @@ class HeexAssignsTypeLinterTransforms {
 
         error(ctx, 'HEEx component attribute error: <' + componentTag + '> does not allow attribute "' + attributeName + '"', pos);
     }
+
+    static function validateUserComponentAttributeName(componentTag: String, attributeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        var def = resolveComponentDefinition(componentTag);
+        if (def == null) return; // Unknown/ambiguous component; skip to avoid false positives.
+
+        var canonical = normalizeHeexAttributeName(attributeName);
+        var htmlName = HXXComponentRegistry.toHtmlAttribute(canonical);
+        if (isWildcardHeexAttribute(canonical) || isWildcardHeexAttribute(htmlName)) return;
+
+        // Allow global HTML attributes on component tags (Phoenix pattern: pass-through globals/rest attrs).
+        var globals = getGlobalHtmlAttributes();
+        if (globals.exists(attributeName) || globals.exists(canonical) || (htmlName != null && globals.exists(htmlName))) return;
+
+        var key = componentAssignKeyFromAttributeName(attributeName);
+        if (def.props.exists(key)) return;
+
+        error(ctx, 'HEEx component prop error: <' + componentTag + '> does not allow attribute "' + attributeName + '"', pos);
+    }
+
+    static function componentAssignKeyFromAttributeName(attributeName: String): String {
+        var html = HXXComponentRegistry.toHtmlAttribute(attributeName);
+        if (html == null) return attributeName;
+        return html.split("-").join("_");
+    }
+
+    static function validateComponentInvocation(
+        tag: String,
+        attributes: Array<EAttribute>,
+        children: Array<ElixirAST>,
+        fields: Map<String,String>,
+        ctx: Null<reflaxe.elixir.CompilationContext>,
+        pos: haxe.macro.Expr.Position
+    ): Void {
+        if (tag == null || tag.length == 0) return;
+        if (tag.charAt(0) != ".") return; // Only dot components for now
+
+        var def = resolveComponentDefinition(tag);
+        if (def == null) return;
+
+        var present = new Map<String, Bool>();
+        for (attr in attributes) {
+            if (attr == null || attr.name == null || attr.name.length == 0) continue;
+            if (attr.name.startsWith(":")) continue; // directives don't satisfy component assigns
+            var key = componentAssignKeyFromAttributeName(attr.name);
+            present.set(key, true);
+        }
+
+        // Treat inner_content as satisfied by non-whitespace children.
+        var hasInnerContent = present.exists("inner_content") || hasMeaningfulChildren(children);
+
+        for (k in def.required.keys()) {
+            if (k == "inner_content") {
+                if (!hasInnerContent) {
+                    error(ctx, 'HEEx component prop error: <' + tag + '> is missing required inner content', pos);
+                }
+                continue;
+            }
+            if (!present.exists(k)) {
+                error(ctx, 'HEEx component prop error: <' + tag + '> is missing required attribute "' + k + '"', pos);
+            }
+        }
+    }
+
+    static function hasMeaningfulChildren(children: Array<ElixirAST>): Bool {
+        if (children == null || children.length == 0) return false;
+        for (c in children) {
+            if (c == null) continue;
+            switch (c.def) {
+                case EString(s):
+                    if (s != null && s.trim() != "") return true;
+                case EFragment(_, _, _):
+                    return true;
+                default:
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    static function validateComponentPropValueKind(
+        tag: String,
+        attr: EAttribute,
+        fields: Map<String,String>,
+        ctx: Null<reflaxe.elixir.CompilationContext>,
+        pos: haxe.macro.Expr.Position
+    ): Void {
+        if (tag == null || tag.length == 0) return;
+        if (attr == null || attr.name == null || attr.name.length == 0) return;
+        if (attr.name.startsWith(":")) return;
+        if (tag.charAt(0) != ".") return;
+
+        var def = resolveComponentDefinition(tag);
+        if (def == null) return;
+
+        var key = componentAssignKeyFromAttributeName(attr.name);
+        if (!def.props.exists(key)) return;
+
+        var expected = def.props.get(key);
+        if (expected == null || expected == "unknown") return;
+
+        var actual = inferHeexExprKind(attr.value, fields);
+        if (!attributeKindsCompatible(expected, actual)) {
+            error(ctx, 'HEEx component prop type error: <' + tag + '> "' + key + '" expects ' + expected + ' but got ' + actual, pos);
+        }
+    }
+
+    static function resolveComponentDefinition(componentTag: String): Null<ComponentDefinition> {
+        if (componentTag == null || componentTag.length < 2) return null;
+        if (componentDefinitionCache.exists(componentTag)) return componentDefinitionCache.get(componentTag);
+
+        if (componentFunctionIndex == null) {
+            #if macro
+            buildComponentFunctionIndex();
+            #else
+            componentDefinitionCache.set(componentTag, null);
+            return null;
+            #end
+        }
+
+        var resolved: Null<ComponentDefinition> = null;
+        if (componentTag.charAt(0) == ".") {
+            var fn = componentTag.substr(1);
+            var candidates = componentFunctionIndex.get(fn);
+            if (candidates != null && candidates.length == 1) {
+                resolved = candidates[0];
+            }
+        }
+
+        componentDefinitionCache.set(componentTag, resolved);
+        return resolved;
+    }
+
+    #if macro
+    static function buildComponentFunctionIndex(): Void {
+        if (componentFunctionIndex != null) return;
+        componentFunctionIndex = new Map<String, Array<ComponentDefinition>>();
+
+        var discovered = RepoDiscovery.getDiscovered();
+        if (discovered == null || discovered.length == 0) {
+            RepoDiscovery.run();
+            discovered = RepoDiscovery.getDiscovered();
+        }
+
+        if (discovered == null) return;
+
+        for (typePath in discovered) {
+            var t: haxe.macro.Type = null;
+            try t = Context.getType(typePath) catch (_:Dynamic) t = null;
+            if (t == null) continue;
+
+            var cls: Null<haxe.macro.Type.ClassType> = null;
+            switch (TypeTools.follow(t)) {
+                case TInst(c, _):
+                    cls = c.get();
+                default:
+            }
+            if (cls == null || cls.meta == null) continue;
+
+            if (!(cls.meta.has(":component") || cls.meta.has(":phoenix.components"))) continue;
+
+            var moduleTypePath = (cls.pack != null && cls.pack.length > 0)
+                ? (cls.pack.concat([cls.name]).join("."))
+                : cls.name;
+
+            for (field in cls.statics.get()) {
+                if (field == null || field.meta == null || !field.meta.has(":component")) continue;
+
+                var fnName = NameUtils.toSnakeCase(field.name);
+                var fun = switch (field.type) {
+                    case TFun(args, _):
+                        args;
+                    default:
+                        null;
+                };
+                if (fun == null || fun.length == 0) continue;
+
+                var assignsType = fun[0].t;
+                var propInfo = propsFromAssignsType(assignsType);
+                if (propInfo == null) continue;
+
+                var def: ComponentDefinition = {
+                    moduleTypePath: moduleTypePath,
+                    functionName: fnName,
+                    props: propInfo.props,
+                    required: propInfo.required
+                };
+
+                var existing = componentFunctionIndex.get(fnName);
+                if (existing == null) {
+                    componentFunctionIndex.set(fnName, [def]);
+                } else {
+                    existing.push(def);
+                }
+            }
+        }
+    }
+
+    static function propsFromAssignsType(t: haxe.macro.Type): Null<{ props: Map<String, String>, required: Map<String, Bool> }> {
+        var followed = TypeTools.follow(t);
+        return switch (followed) {
+            case TAnonymous(a):
+                var props = new Map<String, String>();
+                var required = new Map<String, Bool>();
+                for (f in a.get().fields) {
+                    var typeStr = TypeTools.toString(f.type);
+                    var kind = normalizeKind(typeStr);
+                    var key = componentAssignKeyFromAttributeName(f.name);
+                    props.set(key, kind);
+
+                    var isOptional = fieldIsOptionalByTypeString(typeStr) || (f.meta != null && f.meta.has(":optional"));
+                    if (!isOptional) required.set(key, true);
+                }
+                { props: props, required: required };
+            case TType(tdef, params):
+                propsFromAssignsType(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
+            default:
+                null;
+        }
+    }
+
+    static function fieldIsOptionalByTypeString(typeStr: String): Bool {
+        if (typeStr == null) return true;
+        var s = typeStr.trim();
+        return s.startsWith("Null<") && s.endsWith(">");
+    }
+    #end
 
     static function getAllowedPhoenixCoreComponentAttributes(tag: String): Null<Map<String, Bool>> {
         return switch (tag) {
@@ -897,6 +1151,11 @@ class HeexAssignsTypeLinterTransforms {
                 if (snake != name && !out.exists(snake)) {
                     out.set(snake, kind);
                 }
+                // Phoenix component assigns may use HXX attribute naming (e.g. className -> @class).
+                var key = componentAssignKeyFromAttributeName(name);
+                if (key != name && !out.exists(key)) {
+                    out.set(key, kind);
+                }
             }
         }
 
@@ -960,7 +1219,14 @@ class HeexAssignsTypeLinterTransforms {
         switch (followed) {
             case TAnonymous(a):
                 for (f in a.get().fields) {
-                    out.set(f.name, normalizeKind(TypeTools.toString(f.type)));
+                    var kind = normalizeKind(TypeTools.toString(f.type));
+                    out.set(f.name, kind);
+                    // HXX/HEEx assigns normalize camelCase to snake_case (e.g. className -> @class_name).
+                    var snake = toSnakeCase(f.name);
+                    if (snake != f.name && !out.exists(snake)) out.set(snake, kind);
+                    // Phoenix component assigns may use HXX attribute naming (e.g. className -> @class).
+                    var key = componentAssignKeyFromAttributeName(f.name);
+                    if (key != f.name && !out.exists(key)) out.set(key, kind);
                 }
                 return out;
             case TType(tdef, params):
