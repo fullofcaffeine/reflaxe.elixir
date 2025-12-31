@@ -21,12 +21,16 @@ import server.infrastructure.Repo;
 import server.schemas.User;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
+import shared.AvatarTools;
 import StringTools;
 
 typedef UserRowView = {
     var id: Int;
     var name: String;
     var email: String;
+    var avatar_initials: String;
+    var avatar_class: String;
+    var avatar_style: String;
     var status_label: String;
     var status_class: String;
     var last_login_label: String;
@@ -240,6 +244,11 @@ class UsersLive {
     }
 
     static function toRowView(user: User): UserRowView {
+        var avatarInitials = AvatarTools.initials(user.name, user.email);
+        var avatarBgClass = AvatarTools.avatarBgClass(user.name, user.email);
+        var avatarStyle = AvatarTools.avatarStyle(user.name, user.email, 64);
+        var avatarClass = "h-9 w-9 rounded-full flex items-center justify-center text-white font-semibold shadow-sm bg-cover bg-center " + avatarBgClass;
+
         var statusLabel = user.active ? "Active" : "Inactive";
         var statusClass = user.active
             ? "inline-flex items-center px-2 py-1 rounded bg-green-50 text-green-700 border border-green-200 text-xs dark:bg-green-900/30 dark:text-green-200 dark:border-green-800"
@@ -256,6 +265,9 @@ class UsersLive {
             id: user.id,
             name: user.name,
             email: user.email,
+            avatar_initials: avatarInitials,
+            avatar_class: avatarClass,
+            avatar_style: avatarStyle,
             status_label: statusLabel,
             status_class: statusClass,
             last_login_label: lastLoginLabel,
@@ -348,7 +360,16 @@ class UsersLive {
                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
                                     <for {u in @visible_users}>
                                         <tr data-testid="users-row" data-id={u.id} class="text-gray-900 dark:text-gray-100">
-                                            <td class="px-4 py-3 font-medium">#{u.name}</td>
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center gap-3">
+                                                    <div data-testid="user-avatar"
+                                                        class={u.avatar_class}
+                                                        style={u.avatar_style}>
+                                                        #{u.avatar_initials}
+                                                    </div>
+                                                    <span class="font-medium">#{u.name}</span>
+                                                </div>
+                                            </td>
                                             <td class="px-4 py-3 text-gray-700 dark:text-gray-200">#{u.email}</td>
                                             <td class="px-4 py-3">
                                                 <span class={u.status_class}>#{u.status_label}</span>

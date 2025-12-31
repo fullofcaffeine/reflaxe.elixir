@@ -49,6 +49,7 @@ import server.types.Types.PresenceTopics;
 	import server.types.Types.Session;
 	import server.types.Types.User;
 	import server.types.Types.AlertLevel;
+	import shared.AvatarTools;
 	import StringTools;
 	using reflaxe.elixir.macros.TypedQueryLambda;
 
@@ -738,6 +739,10 @@ import server.types.Types.PresenceTopics;
 
 	                    var baseLabel = (meta.userName != null && meta.userName != "") ? meta.userName : presenceKey;
 	                    var displayName = isSelf ? (baseLabel + " (you)") : baseLabel;
+	                    var avatarInitials = AvatarTools.initials(meta.userName, meta.userEmail);
+	                    var avatarBgClass = AvatarTools.avatarBgClass(meta.userName, meta.userEmail);
+	                    var avatarStyle = AvatarTools.avatarStyle(meta.userName, meta.userEmail, 48);
+	                    var avatarClass = "h-6 w-6 rounded-full flex items-center justify-center text-white font-semibold shadow-sm bg-cover bg-center " + avatarBgClass;
 	                    var sublabel = isEditing ? ("editing #" + Std.string(meta.editingTodoId)) : null;
 	                    var stateClass = if (isSelf) {
 	                        "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800";
@@ -750,6 +755,9 @@ import server.types.Types.PresenceTopics;
 
 	                    views.push({
 	                        key: presenceKey,
+	                        avatar_initials: avatarInitials,
+	                        avatar_class: avatarClass,
+	                        avatar_style: avatarStyle,
 	                        display_name: displayName,
 	                        sublabel: sublabel,
 	                        chip_class: chipClass
@@ -1283,6 +1291,11 @@ import server.types.Types.PresenceTopics;
 							<div class="mt-3 flex flex-wrap gap-2">
 								<for {u in @online_user_views}>
 									<div data-testid="online-user" data-key={u.key} class={u.chip_class}>
+										<div data-testid="online-avatar"
+											class={u.avatar_class}
+											style={u.avatar_style}>
+											#{u.avatar_initials}
+										</div>
 										<span>#{u.display_name}</span>
 										<if {u.sublabel}>
 											<span class="opacity-75">#{u.sublabel}</span>

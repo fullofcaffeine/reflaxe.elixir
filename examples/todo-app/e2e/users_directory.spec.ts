@@ -39,6 +39,7 @@ test('users directory search + toggle active', async ({ page }) => {
   await page.getByTestId('users-search').fill(email)
   await expect(page.locator('[data-testid="users-row"]')).toHaveCount(1, { timeout: 20000 })
   await expect(page.locator('[data-testid="users-row"]')).toContainText(email)
+  await expect(page.locator('[data-testid="user-avatar"]')).toHaveCount(1, { timeout: 20000 })
 
   await page.getByTestId('users-toggle-active').first().click()
   await expect(page.getByTestId('flash-info')).toBeVisible({ timeout: 20000 })
@@ -47,4 +48,3 @@ test('users directory search + toggle active', async ({ page }) => {
   await expect(page.locator('[data-testid="users-row"]')).toHaveCount(1, { timeout: 20000 })
   await expect(page.locator('[data-testid="users-row"]')).toContainText(email)
 })
-

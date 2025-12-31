@@ -133,6 +133,9 @@ typedef TagView = {
  */
 typedef OnlineUserView = {
     var key: String;
+    var avatar_initials: String;
+    var avatar_class: String;
+    var avatar_style: String;
     var display_name: String;
     var sublabel: Null<String>;
     var chip_class: String;
