@@ -1085,11 +1085,18 @@ import server.types.Types.PresenceTopics;
     @:keep public static function render(assigns: TodoLiveRenderAssigns): String {
         // Phoenix warns when templates access locals defined outside ~H (it disables change tracking).
         // Compute derived flash strings into tracked assigns, then reference @flash_info/@flash_error in HEEx.
-	        var renderAssigns: Assigns<TodoLiveRenderAssigns> = assigns;
-	        renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
-	        renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
-	        renderAssigns = Component.assign(renderAssigns, "toggle_form_label", assigns.show_form ? "✖ Cancel" : "➕ Add New Todo");
-	        assigns = renderAssigns;
+		        var renderAssigns: Assigns<TodoLiveRenderAssigns> = assigns;
+		        renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
+		        renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
+		        renderAssigns = Component.assign(renderAssigns, "toggle_form_label", assigns.show_form ? "✖ Cancel" : "➕ Add New Todo");
+		        var headerAvatarInitials = AvatarTools.initials(assigns.current_user.name, assigns.current_user.email);
+		        var headerAvatarBgClass = AvatarTools.avatarBgClass(assigns.current_user.name, assigns.current_user.email);
+		        var headerAvatarStyle = AvatarTools.avatarStyle(assigns.current_user.name, assigns.current_user.email, 32);
+		        var headerAvatarClass = "inline-flex items-center justify-center w-8 h-8 rounded-full text-white font-semibold text-xs shadow-sm ring-2 ring-white dark:ring-gray-800 " + headerAvatarBgClass;
+		        renderAssigns = Component.assign(renderAssigns, "header_avatar_initials", headerAvatarInitials);
+		        renderAssigns = Component.assign(renderAssigns, "header_avatar_class", headerAvatarClass);
+		        renderAssigns = Component.assign(renderAssigns, "header_avatar_style", headerAvatarStyle);
+		        assigns = renderAssigns;
 
         return HXX.hxx('
 			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
@@ -1117,17 +1124,20 @@ import server.types.Types.PresenceTopics;
 										<div>Welcome, #{@current_user.name}!</div>
 										<div class="mt-2 flex items-center gap-3 text-sm">
 											<if {@signed_in}>
-												<a data-testid="nav-users" href="/users" class="text-blue-700 dark:text-blue-300 hover:underline">
-													Users
-												</a>
-												<a data-testid="nav-profile" href="/profile" class="text-blue-700 dark:text-blue-300 hover:underline">
-													Profile
-												</a>
-												<form action="/auth/logout" method="post" class="inline">
-													<input type="hidden" name="_csrf_token" value=${CSRFProtection.get_csrf_token()}/>
-													<button data-testid="nav-sign-out" type="submit" class="text-gray-700 dark:text-gray-200 hover:underline">
-														Sign out
-													</button>
+													<a data-testid="nav-users" href="/users" class="text-blue-700 dark:text-blue-300 hover:underline">
+														Users
+													</a>
+													<a data-testid="nav-profile" href="/profile" class="inline-flex items-center gap-2 text-blue-700 dark:text-blue-300 hover:underline">
+														<div data-testid="nav-profile-avatar" class={@header_avatar_class} style={@header_avatar_style}>
+															#{@header_avatar_initials}
+														</div>
+														<span>Profile</span>
+													</a>
+													<form action="/auth/logout" method="post" class="inline">
+														<input type="hidden" name="_csrf_token" value=${CSRFProtection.get_csrf_token()}/>
+														<button data-testid="nav-sign-out" type="submit" class="text-gray-700 dark:text-gray-200 hover:underline">
+															Sign out
+														</button>
 												</form>
 											</if>
 											<if {!@signed_in}>

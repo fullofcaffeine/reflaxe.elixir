@@ -28,9 +28,14 @@ test('optional login + profile edit', async ({ page }) => {
 
   await login(page, base, name, email)
   await expect(page.locator('body')).toContainText(`Welcome, ${name}!`)
+  await expect(page.getByTestId('nav-profile-avatar')).toBeVisible()
 
   await page.getByTestId('nav-profile').click()
   await page.waitForURL('**/profile', { timeout: 10000 })
+
+  await expect(page.getByTestId('profile-avatar')).toBeVisible()
+  await page.getByTestId('btn-copy-email').click()
+  await expect(page.getByTestId('flash-info')).toContainText(/email copied/i)
 
   const profileForm = page.locator('form[phx-submit="save_profile"]').first()
 
