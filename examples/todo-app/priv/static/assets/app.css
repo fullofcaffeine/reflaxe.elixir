@@ -1159,6 +1159,12 @@ body {
   margin-left: calc(1.5rem * calc(1 - var(--tw-space-x-reverse)));
 }
 
+.space-y-2 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+}
+
 .space-y-3 > :not([hidden]) ~ :not([hidden]) {
   --tw-space-y-reverse: 0;
   margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
@@ -1189,6 +1195,10 @@ body {
 .truncate {
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.whitespace-nowrap {
   white-space: nowrap;
 }
 
@@ -1224,6 +1234,11 @@ body {
   border-left-width: 4px;
 }
 
+.border-amber-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(253 230 138 / var(--tw-border-opacity));
+}
+
 .border-blue-200 {
   --tw-border-opacity: 1;
   border-color: rgb(191 219 254 / var(--tw-border-opacity));
@@ -1232,6 +1247,11 @@ body {
 .border-blue-500 {
   --tw-border-opacity: 1;
   border-color: rgb(59 130 246 / var(--tw-border-opacity));
+}
+
+.border-emerald-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(167 243 208 / var(--tw-border-opacity));
 }
 
 .border-gray-200 {
@@ -1269,9 +1289,19 @@ body {
   border-color: rgb(239 68 68 / var(--tw-border-opacity));
 }
 
+.border-slate-200 {
+  --tw-border-opacity: 1;
+  border-color: rgb(226 232 240 / var(--tw-border-opacity));
+}
+
 .border-yellow-500 {
   --tw-border-opacity: 1;
   border-color: rgb(234 179 8 / var(--tw-border-opacity));
+}
+
+.bg-amber-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 251 235 / var(--tw-bg-opacity));
 }
 
 .bg-amber-600 {
@@ -1302,6 +1332,11 @@ body {
 .bg-cyan-600 {
   --tw-bg-opacity: 1;
   background-color: rgb(8 145 178 / var(--tw-bg-opacity));
+}
+
+.bg-emerald-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(236 253 245 / var(--tw-bg-opacity));
 }
 
 .bg-emerald-600 {
@@ -1382,6 +1417,11 @@ body {
 .bg-rose-600 {
   --tw-bg-opacity: 1;
   background-color: rgb(225 29 72 / var(--tw-bg-opacity));
+}
+
+.bg-slate-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(248 250 252 / var(--tw-bg-opacity));
 }
 
 .bg-teal-600 {
@@ -1566,6 +1606,11 @@ body {
 .text-4xl {
   font-size: 2.25rem;
   line-height: 2.5rem;
+}
+
+.text-base {
+  font-size: 1rem;
+  line-height: 1.5rem;
 }
 
 .text-lg {
@@ -1935,9 +1980,19 @@ body {
   border-color: rgb(55 65 81 / var(--tw-divide-opacity));
 }
 
+:is(.dark .dark\:border-amber-800) {
+  --tw-border-opacity: 1;
+  border-color: rgb(146 64 14 / var(--tw-border-opacity));
+}
+
 :is(.dark .dark\:border-blue-800) {
   --tw-border-opacity: 1;
   border-color: rgb(30 64 175 / var(--tw-border-opacity));
+}
+
+:is(.dark .dark\:border-emerald-800) {
+  --tw-border-opacity: 1;
+  border-color: rgb(6 95 70 / var(--tw-border-opacity));
 }
 
 :is(.dark .dark\:border-gray-600) {
@@ -1960,13 +2015,35 @@ body {
   border-color: rgb(107 33 168 / var(--tw-border-opacity));
 }
 
+:is(.dark .dark\:border-red-800) {
+  --tw-border-opacity: 1;
+  border-color: rgb(153 27 27 / var(--tw-border-opacity));
+}
+
+:is(.dark .dark\:border-slate-700) {
+  --tw-border-opacity: 1;
+  border-color: rgb(51 65 85 / var(--tw-border-opacity));
+}
+
+:is(.dark .dark\:bg-amber-900\/20) {
+  background-color: rgb(120 53 15 / 0.2);
+}
+
 :is(.dark .dark\:bg-blue-900) {
   --tw-bg-opacity: 1;
   background-color: rgb(30 58 138 / var(--tw-bg-opacity));
 }
 
+:is(.dark .dark\:bg-blue-900\/20) {
+  background-color: rgb(30 58 138 / 0.2);
+}
+
 :is(.dark .dark\:bg-blue-900\/30) {
   background-color: rgb(30 58 138 / 0.3);
+}
+
+:is(.dark .dark\:bg-emerald-900\/20) {
+  background-color: rgb(6 78 59 / 0.2);
 }
 
 :is(.dark .dark\:bg-gray-700) {
@@ -1996,8 +2073,20 @@ body {
   background-color: rgb(20 83 45 / 0.3);
 }
 
+:is(.dark .dark\:bg-purple-900\/20) {
+  background-color: rgb(88 28 135 / 0.2);
+}
+
 :is(.dark .dark\:bg-purple-900\/30) {
   background-color: rgb(88 28 135 / 0.3);
+}
+
+:is(.dark .dark\:bg-red-900\/20) {
+  background-color: rgb(127 29 29 / 0.2);
+}
+
+:is(.dark .dark\:bg-slate-900\/20) {
+  background-color: rgb(15 23 42 / 0.2);
 }
 
 :is(.dark .dark\:from-gray-900) {

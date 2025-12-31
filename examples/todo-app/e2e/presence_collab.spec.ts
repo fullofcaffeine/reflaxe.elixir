@@ -37,6 +37,10 @@ test('presence shows online users and editing badges', async ({ browser }) => {
   const emailB = `pw-b-${runId}@example.com`
   await login(pageB, base, nameB, emailB)
 
+  // Session A should see a live activity entry for B joining.
+  await expect(pageA.getByTestId('activity-panel')).toBeVisible({ timeout: 20000 })
+  await expect(pageA.getByTestId('activity-item').filter({ hasText: nameB }).first()).toBeVisible({ timeout: 20000 })
+
   // Both sessions should see both users online
   await expect(pageA.getByTestId('online-count')).toContainText('2', { timeout: 20000 })
   await expect(pageB.getByTestId('online-count')).toContainText('2', { timeout: 20000 })

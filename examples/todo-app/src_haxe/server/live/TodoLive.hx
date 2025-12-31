@@ -30,10 +30,11 @@ import plug.CSRFProtection;
 import server.live.TodoLiveTypes.TodoLiveAssigns;
 import server.live.TodoLiveTypes.TodoLiveRenderAssigns;
 import server.live.TodoLiveTypes.TodoLiveEvent;
-import server.live.TodoLiveTypes.TodoView;
-import server.live.TodoLiveTypes.TagView;
-import server.live.TodoLiveTypes.OnlineUserView;
-import server.presence.TodoPresence;
+	import server.live.TodoLiveTypes.TodoView;
+	import server.live.TodoLiveTypes.TagView;
+	import server.live.TodoLiveTypes.OnlineUserView;
+	import server.live.TodoLiveTypes.ActivityView;
+	import server.presence.TodoPresence;
 import server.presence.TodoPresence.PresenceMeta;
 import server.pubsub.TodoPubSub.TodoPubSubMessage;
 import server.pubsub.TodoPubSub.TodoPubSubTopic;
@@ -50,13 +51,25 @@ import server.types.Types.PresenceTopics;
 	import server.types.Types.User;
 	import server.types.Types.AlertLevel;
 	import shared.AvatarTools;
-	import StringTools;
-	using reflaxe.elixir.macros.TypedQueryLambda;
+		import StringTools;
+		using reflaxe.elixir.macros.TypedQueryLambda;
 
-/**
- * LiveView component for todo management with real-time updates
- */
-	@:native("TodoAppWeb.TodoLive")
+enum ActivityKind {
+    PresenceJoin;
+    PresenceLeave;
+    EditStart;
+    EditStop;
+    TodoCreate;
+    TodoUpdate;
+    TodoDelete;
+    BulkCompleteAll;
+    BulkDeleteCompleted;
+}
+
+	/**
+	 * LiveView component for todo management with real-time updates
+	 */
+		@:native("TodoAppWeb.TodoLive")
 	@:liveview
 	class TodoLive {
 	    // Prevent DCE from stripping private helpers used by LiveView callbacks.
@@ -106,13 +119,153 @@ import server.types.Types.PresenceTopics;
 	        return TodoPresence.updateWithSocket(liveSocket, topic, key, meta);
 	    }
 
-	    static inline function clearPresenceEditing(socket: Socket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
-	        return updatePresenceEditing(socket, null);
-	    }
-		
-		/**
-		 * Mount callback with type-safe assigns
-		 * 
+		    static inline function clearPresenceEditing(socket: Socket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
+		        return updatePresenceEditing(socket, null);
+		    }
+
+		    static inline var MAX_ACTIVITY = 25;
+
+		    static function nowTimeDisplay(): String {
+		        var now = Date.now();
+		        var hh = StringTools.lpad(Std.string(now.getHours()), "0", 2);
+		        var mm = StringTools.lpad(Std.string(now.getMinutes()), "0", 2);
+		        var ss = StringTools.lpad(Std.string(now.getSeconds()), "0", 2);
+		        return hh + ":" + mm + ":" + ss;
+		    }
+
+		    static function activityIcon(kind: ActivityKind): String {
+		        return switch (kind) {
+		            case PresenceJoin: "🟢";
+		            case PresenceLeave: "⚪";
+		            case EditStart: "✏️";
+		            case EditStop: "⏹️";
+		            case TodoCreate: "➕";
+		            case TodoUpdate: "✏️";
+		            case TodoDelete: "🗑️";
+		            case BulkCompleteAll: "✅";
+		            case BulkDeleteCompleted: "🧹";
+		        };
+		    }
+
+		    static function activityRowClass(kind: ActivityKind): String {
+		        var base = "flex items-start justify-between gap-3 px-3 py-2 rounded-lg border";
+		        var style = switch (kind) {
+		            case PresenceJoin:
+		                "bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800";
+		            case PresenceLeave:
+		                "bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-700";
+		            case EditStart:
+		                "bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800";
+		            case EditStop:
+		                "bg-slate-50 border-slate-200 dark:bg-slate-900/20 dark:border-slate-700";
+		            case TodoCreate:
+		                "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800";
+		            case TodoUpdate:
+		                "bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800";
+		            case TodoDelete:
+		                "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800";
+		            case BulkCompleteAll:
+		                "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800";
+		            case BulkDeleteCompleted:
+		                "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800";
+		        };
+		        return base + " " + style;
+		    }
+
+		    static function pushActivity(socket: LiveSocket<TodoLiveAssigns>, kind: ActivityKind, message: String): LiveSocket<TodoLiveAssigns> {
+		        var item: ActivityView = {
+		            id: socket.assigns.activity_next_id,
+		            icon: activityIcon(kind),
+		            message: message,
+		            time_display: nowTimeDisplay(),
+		            row_class: activityRowClass(kind)
+		        };
+
+		        var nextItems = [item].concat(socket.assigns.activity_items);
+		        var capped = nextItems.length > MAX_ACTIVITY ? Enum.take(nextItems, MAX_ACTIVITY) : nextItems;
+
+		        return socket.merge({
+		            activity_items: capped,
+		            activity_next_id: socket.assigns.activity_next_id + 1
+		        });
+		    }
+
+		    static function presenceEntryMeta(entry: Null<phoenix.Presence.PresenceEntry<PresenceMeta>>): Null<PresenceMeta> {
+		        if (entry == null || entry.metas == null || entry.metas.length == 0) return null;
+		        return Enum.at(entry.metas, 0);
+		    }
+
+		    static function presenceDisplayName(
+		        entry: Null<phoenix.Presence.PresenceEntry<PresenceMeta>>,
+		        presenceKey: String,
+		        currentUserKey: String
+		    ): String {
+		        var meta = presenceEntryMeta(entry);
+		        var base = (meta != null && meta.userName != null && meta.userName != "") ? meta.userName : presenceKey;
+		        return presenceKey == currentUserKey ? (base + " (you)") : base;
+		    }
+
+		    static function presenceEditingTodoId(entry: Null<phoenix.Presence.PresenceEntry<PresenceMeta>>): Null<Int> {
+		        var meta = presenceEntryMeta(entry);
+		        return meta != null ? meta.editingTodoId : null;
+		    }
+
+		    static function recordPresenceDiffActivity(
+		        socket: LiveSocket<TodoLiveAssigns>,
+		        prevUsers: Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>>,
+		        newUsers: Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>>
+		    ): LiveSocket<TodoLiveAssigns> {
+		        var prevKeys: Array<String> = cast ElixirMap.keys(prevUsers);
+		        var newKeys: Array<String> = cast ElixirMap.keys(newUsers);
+
+		        var currentUserKey = Std.string(socket.assigns.current_user.id);
+
+		        var updated = socket;
+
+			        function containsKey(keys: Array<String>, key: String): Bool {
+			            var found = false;
+			            for (k in keys) {
+			                if (k == key) found = true;
+			            }
+			            return found;
+			        }
+
+		        // Join/leave messages
+		        for (key in newKeys) {
+		            if (!containsKey(prevKeys, key)) {
+		                var name = presenceDisplayName(newUsers.get(key), key, currentUserKey);
+		                updated = pushActivity(updated, PresenceJoin, name + " joined");
+		            }
+		        }
+		        for (key in prevKeys) {
+		            if (!containsKey(newKeys, key)) {
+		                var name = presenceDisplayName(prevUsers.get(key), key, currentUserKey);
+		                updated = pushActivity(updated, PresenceLeave, name + " left");
+		            }
+		        }
+
+		        // Editing transitions (start/stop)
+		        for (key in newKeys) {
+		            if (containsKey(prevKeys, key)) {
+		                var before = presenceEditingTodoId(prevUsers.get(key));
+		                var after = presenceEditingTodoId(newUsers.get(key));
+		                if (before != after) {
+		                    var name = presenceDisplayName(newUsers.get(key), key, currentUserKey);
+		                    if (after != null) {
+		                        updated = pushActivity(updated, EditStart, name + " started editing #" + Std.string(after));
+		                    } else {
+		                        updated = pushActivity(updated, EditStop, name + " stopped editing");
+		                    }
+		                }
+		            }
+		        }
+
+		        return updated;
+		    }
+			
+			/**
+			 * Mount callback with type-safe assigns
+			 * 
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
 		    public static function mount(_params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
@@ -155,14 +308,20 @@ import server.types.Types.PresenceTopics;
 	            sort_selected_created: sortSelected(shared.TodoTypes.TodoSort.Created, shared.TodoTypes.TodoSort.Created),
 	            sort_selected_priority: sortSelected(shared.TodoTypes.TodoSort.Created, shared.TodoTypes.TodoSort.Priority),
 	            sort_selected_due_date: sortSelected(shared.TodoTypes.TodoSort.Created, shared.TodoTypes.TodoSort.DueDate),
-		            total_todos: todos.length,
-		            completed_todos: countCompleted(todos),
-		            pending_todos: countPending(todos),
-		            presence_online_at: presenceOnlineAt,
-		            online_users: new Map(),
-		            online_user_count: 0,
-		            online_user_views: []
-		        };
+			            total_todos: todos.length,
+			            completed_todos: countCompleted(todos),
+			            pending_todos: countPending(todos),
+			            presence_online_at: presenceOnlineAt,
+			            presence_initialized: false,
+			            online_users: new Map(),
+			            online_user_count: 0,
+			            online_is_empty: true,
+			            online_user_views: [],
+			            activity_items: [],
+			            activity_count: 0,
+			            activity_is_empty: true,
+			            activity_next_id: 1
+			        };
 
 	        sock = LiveView.assignMultiple(sock, assigns);
 
@@ -175,9 +334,10 @@ import server.types.Types.PresenceTopics;
 	                buildPresenceMeta(currentUser, presenceOnlineAt, null, null)
 	            );
 
-	            var list: Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = cast TodoPresence.list(presenceTopic);
-	            sock = sock.assign(_.online_users, list);
-	        }
+		            var list: Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = cast TodoPresence.list(presenceTopic);
+		            sock = sock.assign(_.online_users, list);
+		            sock = sock.assign(_.presence_initialized, true);
+		        }
 
 	        var ls: LiveSocket<TodoLiveAssigns> = recomputeVisible(sock);
 	        return Ok(ls);
@@ -276,70 +436,96 @@ import server.types.Types.PresenceTopics;
 		        return handlePubSub(msg, liveSocket);
 		    }
 
-	    @:keep
-	    static inline function isPresenceDiffBroadcast(msg: Term): Bool {
-	        if (!elixir.Kernel.isMap(msg)) return false;
-	        var msgTerm: Term = msg;
-	        var structTerm: Term = ElixirMap.get(msgTerm, Atom.create("__struct__"));
-	        if (structTerm == null) return false;
+		    @:keep
+		    static function isPresenceDiffBroadcast(msg: Term): Bool {
+		        if (!elixir.Kernel.isMap(msg)) return false;
+		        var msgTerm: Term = msg;
+		        var structTerm: Term = ElixirMap.get(msgTerm, Atom.create("__struct__"));
+		        if (structTerm == null) return false;
 	        if (structTerm != Atom.fromString("Elixir.Phoenix.Socket.Broadcast")) return false;
 
 	        var eventTerm: Term = ElixirMap.get(msgTerm, Atom.create("event"));
 	        return eventTerm != null && cast eventTerm == "presence_diff";
 	    }
 
-	    @:keep
-	    static function handlePubSub(payload: Term, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
-	        // Phoenix.Presence broadcasts diffs as `%Phoenix.Socket.Broadcast{event: "presence_diff", ...}`.
-	        if (isPresenceDiffBroadcast(payload)) {
-	            var topic = presenceUsersTopic();
-	            var updatedUsers: Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = cast TodoPresence.list(topic);
-	            var updated = socket.assign(_.online_users, updatedUsers);
-	            return NoReply(recomputeVisible(updated));
-	        }
+		    @:keep
+			    static function handlePubSub(payload: Term, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
+			        // NOTE: Keep this function as a single expression to avoid Elixir codegen fallthrough.
+			        var result: HandleInfoResult<TodoLiveAssigns> = if (isPresenceDiffBroadcast(payload)) {
+			            // Phoenix.Presence broadcasts diffs as `%Phoenix.Socket.Broadcast{event: "presence_diff", ...}`.
+			            var topic = presenceUsersTopic();
+			            var updatedUsers: Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = cast TodoPresence.list(topic);
+			            if (!socket.assigns.presence_initialized) {
+			                NoReply(recomputeVisible(socket.merge({
+			                    online_users: updatedUsers,
+			                    presence_initialized: true
+			                })));
+			            } else {
+			                var withActivity = recordPresenceDiffActivity(socket, socket.assigns.online_users, updatedUsers);
+			                var updated = withActivity.assign(_.online_users, updatedUsers);
+			                NoReply(recomputeVisible(updated));
+			            }
+			        } else if (!elixir.Kernel.isTuple(payload)) {
+			            NoReply(socket);
+			        } else {
+			            switch (TodoPubSub.parseMessage(payload)) {
+			                case Some(message):
+			                    handleTodoMessage(message, socket);
+			                case None:
+			                    NoReply(socket);
+			            }
+			        };
 
-	        if (!elixir.Kernel.isTuple(payload)) return NoReply(socket);
+			        return result;
+		    }
 
-	        return switch (TodoPubSub.parseMessage(payload)) {
-	            case Some(message):
-	                handleTodoMessage(message, socket);
-	            case None:
-	                NoReply(socket);
-	        };
-	    }
-
-	    static function handleTodoMessage(payload: TodoPubSubMessage, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
-	        return switch (payload) {
-	            case TodoCreated(todo):
-	                var merged = socket.merge({
-	                    todos: [todo].concat(socket.assigns.todos),
-	                    total_todos: socket.assigns.total_todos + 1,
-	                    pending_todos: socket.assigns.pending_todos + (todo.completed ? 0 : 1),
-	                    completed_todos: socket.assigns.completed_todos + (todo.completed ? 1 : 0)
-	                });
-	                NoReply(recomputeVisible(merged));
-	            case TodoUpdated(todo):
-	                var clearedIds = socket.assigns.optimistic_toggle_ids.filter(function(x) return x != todo.id);
-	                var cleared = socket.assign(_.optimistic_toggle_ids, clearedIds);
-	                NoReply(recomputeVisible(updateTodoInList(todo, cleared)));
-	            case TodoDeleted(id):
-	                NoReply(recomputeVisible(removeTodoFromList(id, socket)));
-	            case BulkUpdate(action):
-	                switch (action) {
-	                    case CompleteAll, DeleteCompleted:
-	                        var refreshed = loadTodos(socket.assigns.current_user.id);
-	                        var merged = socket.merge({
-	                            todos: refreshed,
-	                            total_todos: refreshed.length,
-	                            completed_todos: countCompleted(refreshed),
-	                            pending_todos: countPending(refreshed)
-	                        });
-	                        NoReply(recomputeVisible(merged));
-	                    case _:
-	                        NoReply(socket);
-	                }
-	            case UserOnline(_):
-	                NoReply(socket);
+		    static function handleTodoMessage(payload: TodoPubSubMessage, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
+		        return switch (payload) {
+		            case TodoCreated(todo):
+		                var title = todo.title != null ? todo.title : "(untitled)";
+		                var withActivity = pushActivity(socket, TodoCreate, "Todo created: " + title);
+		                var merged = withActivity.merge({
+		                    todos: [todo].concat(withActivity.assigns.todos),
+		                    total_todos: withActivity.assigns.total_todos + 1,
+		                    pending_todos: withActivity.assigns.pending_todos + (todo.completed ? 0 : 1),
+		                    completed_todos: withActivity.assigns.completed_todos + (todo.completed ? 1 : 0)
+		                });
+		                NoReply(recomputeVisible(merged));
+		            case TodoUpdated(todo):
+		                var title = todo.title != null ? todo.title : ("#" + Std.string(todo.id));
+		                var withActivity = pushActivity(socket, TodoUpdate, "Todo updated: " + title);
+		                var clearedIds = withActivity.assigns.optimistic_toggle_ids.filter(function(x) return x != todo.id);
+		                var cleared = withActivity.assign(_.optimistic_toggle_ids, clearedIds);
+		                NoReply(recomputeVisible(updateTodoInList(todo, cleared)));
+		            case TodoDeleted(id):
+		                var existing = findTodo(id, socket.assigns.todos);
+		                var title = existing != null ? existing.title : ("#" + Std.string(id));
+		                var withActivity = pushActivity(socket, TodoDelete, "Todo deleted: " + title);
+		                NoReply(recomputeVisible(removeTodoFromList(id, withActivity)));
+		            case BulkUpdate(action):
+		                switch (action) {
+		                    case CompleteAll, DeleteCompleted:
+		                        var withActivity = switch (action) {
+		                            case CompleteAll:
+		                                pushActivity(socket, BulkCompleteAll, "Bulk action: completed all todos");
+		                            case DeleteCompleted:
+		                                pushActivity(socket, BulkDeleteCompleted, "Bulk action: deleted completed todos");
+		                            case _:
+		                                socket;
+		                        };
+		                        var refreshed = loadTodos(socket.assigns.current_user.id);
+		                        var merged = withActivity.merge({
+		                            todos: refreshed,
+		                            total_todos: refreshed.length,
+		                            completed_todos: countCompleted(refreshed),
+		                            pending_todos: countPending(refreshed)
+		                        });
+		                        NoReply(recomputeVisible(merged));
+		                    case _:
+		                        NoReply(socket);
+		                }
+		            case UserOnline(_):
+		                NoReply(socket);
 		            case UserOffline(_):
 		                NoReply(socket);
 		            case _:
@@ -787,16 +973,19 @@ import server.types.Types.PresenceTopics;
 		        // Precompute UI helpers
 		        var selected = ls.assigns.sort_by;
 		        var filter = ls.assigns.filter;
-		        var merged = ls.merge({
-		            visible_todos: rows,
-		            visible_count: rows.length,
-		            online_user_views: onlineUserViews,
-		            online_user_count: onlineUserViews.length,
-		            available_tags: computeAvailableTags(ls.assigns.todos, ls.assigns.selected_tags),
-		            filter_btn_all_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.All),
-		            filter_btn_active_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Active),
-		            filter_btn_completed_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Completed),
-	            sort_selected_created: sortSelected(selected, shared.TodoTypes.TodoSort.Created),
+			        var merged = ls.merge({
+			            visible_todos: rows,
+			            visible_count: rows.length,
+			            online_user_views: onlineUserViews,
+			            online_user_count: onlineUserViews.length,
+			            online_is_empty: onlineUserViews.length == 0,
+			            activity_count: ls.assigns.activity_items.length,
+			            activity_is_empty: ls.assigns.activity_items.length == 0,
+			            available_tags: computeAvailableTags(ls.assigns.todos, ls.assigns.selected_tags),
+			            filter_btn_all_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.All),
+			            filter_btn_active_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Active),
+			            filter_btn_completed_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Completed),
+		            sort_selected_created: sortSelected(selected, shared.TodoTypes.TodoSort.Created),
             sort_selected_priority: sortSelected(selected, shared.TodoTypes.TodoSort.Priority),
             sort_selected_due_date: sortSelected(selected, shared.TodoTypes.TodoSort.DueDate)
         });
@@ -1313,17 +1502,45 @@ import server.types.Types.PresenceTopics;
 									</div>
 								</for>
 
-								<if {@online_user_count == 0}>
-									<div class="text-sm text-gray-500 dark:text-gray-400">
-										No users online yet.
-									</div>
-								</if>
+									<if {@online_is_empty}>
+										<div class="text-sm text-gray-500 dark:text-gray-400">
+											No users online yet.
+										</div>
+									</if>
+								</div>
 							</div>
-						</div>
-						
-						<!-- Bulk Actions -->
-	                    <!-- Bulk Actions (typed HXX) -->
-                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center">
+
+							<!-- Activity Feed Panel -->
+							<div data-testid="activity-panel" class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6">
+								<div class="flex items-center justify-between gap-4">
+									<div class="font-semibold text-gray-800 dark:text-white">Activity</div>
+									<div class="text-sm text-gray-600 dark:text-gray-300">
+										<span data-testid="activity-count">#{@activity_count}</span>
+									</div>
+								</div>
+
+								<div class="mt-3 space-y-2">
+									<for {a in @activity_items}>
+										<div data-testid="activity-item" data-id={a.id} class={a.row_class}>
+											<div class="flex items-center gap-2">
+												<span class="text-base">#{a.icon}</span>
+												<span class="text-sm text-gray-800 dark:text-gray-200">#{a.message}</span>
+											</div>
+											<div class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">#{a.time_display}</div>
+										</div>
+									</for>
+
+									<if {@activity_is_empty}>
+										<div class="text-sm text-gray-500 dark:text-gray-400">
+											No activity yet. Open another browser to see real-time updates.
+										</div>
+									</if>
+								</div>
+							</div>
+							
+							<!-- Bulk Actions -->
+		                    <!-- Bulk Actions (typed HXX) -->
+	                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center">
                         <div class="text-sm text-gray-600 dark:text-gray-400">
                             Showing #{@visible_count} of #{@total_todos} todos
                         </div>

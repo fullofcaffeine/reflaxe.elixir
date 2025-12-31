@@ -60,11 +60,20 @@ typedef TodoLiveAssigns = {
     // Presence: store the original "online at" timestamp we advertise in Presence metadata.
     // This keeps the value stable when we update editing-related metadata.
     var presence_online_at: Float;
+    // Presence is only active once the LiveView is connected (transport_pid != nil).
+    // We use this to avoid "initial sync" activity spam.
+    var presence_initialized: Bool;
     // Presence tracking (idiomatic Phoenix pattern: single flat map)
     var online_users: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>;
     // Presence UI helpers (zero-logic HXX)
     var online_user_count: Int;
+    var online_is_empty: Bool;
     var online_user_views: Array<OnlineUserView>;
+    // Activity feed (derived from Presence + PubSub; zero-logic HXX)
+    var activity_items: Array<ActivityView>;
+    var activity_count: Int;
+    var activity_is_empty: Bool;
+    var activity_next_id: Int;
     // UI convenience fields for zero-logic HXX
     var visible_count: Int;
     var filter_btn_all_class: String;
@@ -143,4 +152,15 @@ typedef OnlineUserView = {
     var display_name: String;
     var sublabel: Null<String>;
     var chip_class: String;
+}
+
+/**
+ * Activity feed row view model (zero-logic HXX rendering).
+ */
+typedef ActivityView = {
+    var id: Int;
+    var icon: String;
+    var message: String;
+    var time_display: String;
+    var row_class: String;
 }
