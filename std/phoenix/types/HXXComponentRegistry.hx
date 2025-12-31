@@ -486,7 +486,7 @@ class HXXComponentRegistry {
             "phxClick", "phxChange", "phxSubmit", "phxBlur", "phxFocus",
             "phxKeydown", "phxKeyup", "phxMouseenter", "phxMouseleave",
             "phxHook", "phxTarget", "phxDebounce", "phxThrottle", 
-            "phxUpdate", "phxTrackStatic",
+            "phxUpdate", "phxTrackStatic", "phxShow",
             // Data attributes are dynamic
             "data*"
         ];

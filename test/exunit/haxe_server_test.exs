@@ -6,9 +6,20 @@ defmodule HaxeServerTest do
 
   setup do
     # Stop any running server before each test
-    if Process.whereis(HaxeServer) do
-      GenServer.stop(HaxeServer, :normal)
-      Process.sleep(100)
+    case Process.whereis(HaxeServer) do
+      nil ->
+        :ok
+
+      pid ->
+        # Avoid flaky :noproc exits if the server dies between whereis/stop.
+        try do
+          GenServer.stop(pid, :normal)
+        catch
+          :exit, {:noproc, _} -> :ok
+          :exit, _ -> :ok
+        end
+
+        Process.sleep(100)
     end
     
     :ok
