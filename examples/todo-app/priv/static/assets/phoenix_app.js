@@ -59,15 +59,36 @@ var TodoApp = (() => {
     "js/hx_app.js"(exports) {
       (function($global) {
         "use strict";
+        var Reflect2 = function() {
+        };
+        Reflect2.field = function(o, field) {
+          try {
+            return o[field];
+          } catch (_g) {
+            return null;
+          }
+        };
+        Reflect2.deleteField = function(o, field) {
+          if (!Object.prototype.hasOwnProperty.call(o, field)) {
+            return false;
+          }
+          delete o[field];
+          return true;
+        };
         var client_Boot = function() {
         };
         client_Boot.main = function() {
+          client_utils_Theme.applyStoredOrDefault();
           var hooks2 = { AutoFocus: { mounted: function() {
             client_hooks_AutoFocusHook.mounted(this);
           } }, Ping: { mounted: function() {
             client_hooks_PingHook.mounted(this);
           } }, CopyToClipboard: { mounted: function() {
             client_hooks_CopyToClipboardHook.mounted(this);
+          } }, ThemeToggle: { mounted: function() {
+            client_hooks_ThemeToggleHook.mounted(this);
+          }, destroyed: function() {
+            client_hooks_ThemeToggleHook.destroyed(this);
           } } };
           window.Hooks = Object.assign(window.Hooks || {}, hooks2);
         };
@@ -158,6 +179,154 @@ var TodoApp = (() => {
               hook.pushEvent("ping", {});
             }
           } catch (_g) {
+          }
+        };
+        var client_hooks_ThemeToggleHook = function() {
+        };
+        client_hooks_ThemeToggleHook.labelFor = function(preference) {
+          switch (preference) {
+            case "dark":
+              return "Dark";
+            case "light":
+              return "Light";
+            case "system":
+              return "System";
+          }
+        };
+        client_hooks_ThemeToggleHook.updateLabel = function(root, preference) {
+          root.setAttribute("data-theme-mode", preference);
+          var label = root.querySelector("[data-theme-label]");
+          if (label != null) {
+            label.textContent = client_hooks_ThemeToggleHook.labelFor(preference);
+          }
+        };
+        client_hooks_ThemeToggleHook.mounted = function(ctx) {
+          client_hooks_ThemeToggleHook.unbindClick(ctx);
+          var preference = client_utils_Theme.applyStoredOrDefault();
+          client_hooks_ThemeToggleHook.updateLabel(ctx.el, preference);
+          var handler = function(_event) {
+            var nextPreference = client_utils_Theme.cycle(client_utils_Theme.getStoredOrDefault());
+            client_utils_Theme.store(nextPreference);
+            client_utils_Theme.apply(nextPreference);
+            client_hooks_ThemeToggleHook.updateLabel(ctx.el, nextPreference);
+          };
+          ctx.el["__todoappThemeToggleOnClick"] = handler;
+          ctx.el.addEventListener("click", handler);
+        };
+        client_hooks_ThemeToggleHook.destroyed = function(ctx) {
+          client_hooks_ThemeToggleHook.unbindClick(ctx);
+        };
+        client_hooks_ThemeToggleHook.unbindClick = function(ctx) {
+          var elementDynamic = ctx.el;
+          if (!Object.prototype.hasOwnProperty.call(elementDynamic, "__todoappThemeToggleOnClick")) {
+            return;
+          }
+          var existingHandler = Reflect2.field(elementDynamic, "__todoappThemeToggleOnClick");
+          if (existingHandler != null) {
+            ctx.el.removeEventListener("click", existingHandler);
+          }
+          Reflect2.deleteField(elementDynamic, "__todoappThemeToggleOnClick");
+        };
+        var client_utils_Theme = function() {
+        };
+        client_utils_Theme.getMediaQuery = function() {
+          if (window != null) {
+            return window.matchMedia("(prefers-color-scheme: dark)");
+          } else {
+            return null;
+          }
+        };
+        client_utils_Theme.prefersDark = function() {
+          var media = client_utils_Theme.getMediaQuery();
+          if (media != null) {
+            return media.matches;
+          } else {
+            return false;
+          }
+        };
+        client_utils_Theme.getStored = function() {
+          try {
+            var storage = window != null ? window.localStorage : null;
+            if (storage == null) {
+              return null;
+            }
+            return client_utils_ThemePreference.parse(storage.getItem("todo_app_theme"));
+          } catch (_g) {
+            return null;
+          }
+        };
+        client_utils_Theme.getStoredOrDefault = function() {
+          var tmp = client_utils_Theme.getStored();
+          if (tmp != null) {
+            return tmp;
+          } else {
+            return "system";
+          }
+        };
+        client_utils_Theme.store = function(preference) {
+          try {
+            var storage = window != null ? window.localStorage : null;
+            if (storage == null) {
+              return;
+            }
+            storage.setItem("todo_app_theme", preference);
+          } catch (_g) {
+          }
+        };
+        client_utils_Theme.apply = function(preference) {
+          var root = window.document != null ? window.document.documentElement : null;
+          if (root == null) {
+            return;
+          }
+          var dark;
+          switch (preference) {
+            case "dark":
+              dark = true;
+              break;
+            case "light":
+              dark = false;
+              break;
+            case "system":
+              dark = client_utils_Theme.prefersDark();
+              break;
+          }
+          if (dark) {
+            root.classList.add("dark");
+          } else {
+            root.classList.remove("dark");
+          }
+          root.setAttribute("data-theme", preference);
+        };
+        client_utils_Theme.applyStoredOrDefault = function() {
+          var preference = client_utils_Theme.getStoredOrDefault();
+          client_utils_Theme.apply(preference);
+          return preference;
+        };
+        client_utils_Theme.cycle = function(preference) {
+          switch (preference) {
+            case "dark":
+              return "system";
+            case "light":
+              return "dark";
+            case "system":
+              return "light";
+          }
+        };
+        var client_utils_ThemePreference = {};
+        client_utils_ThemePreference.parse = function(value) {
+          if (value == null) {
+            return null;
+          } else {
+            switch (value) {
+              case "dark":
+                return "dark";
+              case "light":
+                return "light";
+              case "system":
+                return "system";
+              default:
+                return null;
+            }
           }
         };
         var haxe_iterators_ArrayIterator = function(array) {
