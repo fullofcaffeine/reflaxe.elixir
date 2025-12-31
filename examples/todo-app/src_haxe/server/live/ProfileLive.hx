@@ -166,7 +166,18 @@ class ProfileLive {
                                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Profile</h1>
                                 <p class="text-gray-600 dark:text-gray-300">Edit your display name and email.</p>
                             </div>
-                            <a href="/todos" class="text-blue-700 hover:underline">Back to todos</a>
+                            <div class="flex items-center gap-3">
+                                <button data-testid="profile-theme-toggle"
+                                    id="profile-theme-toggle"
+                                    type="button"
+                                    phx-hook="ThemeToggle"
+                                    aria-label="Toggle theme"
+                                    class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+                                    <span aria-hidden="true">🌓</span>
+                                    <span data-theme-label class="text-xs font-medium">Theme</span>
+                                </button>
+                                <a href="/todos" class="text-blue-700 hover:underline">Back to todos</a>
+                            </div>
                         </div>
 
                         <if {@flash_info}>
