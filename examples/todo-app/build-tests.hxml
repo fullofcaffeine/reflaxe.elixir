@@ -25,5 +25,7 @@
 
 # Include test modules (explicit for now; add more as needed)
 web.HealthTest
+web.AuthFlowTest
 web.TodoLiveCrudTest
+web.UsersLiveTest
 live.TodoLiveDueDateTest

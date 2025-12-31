@@ -219,7 +219,7 @@ enum abstract TimeUnit(elixir.types.Atom) to elixir.types.Atom {
 /**
  * Time precision for truncation
  */
-enum abstract TimePrecision(String) to String {
+enum abstract TimePrecision(elixir.types.Atom) to elixir.types.Atom {
     var Second = "second";
     var Millisecond = "millisecond";
     var Microsecond = "microsecond";
@@ -228,8 +228,8 @@ enum abstract TimePrecision(String) to String {
 /**
  * Result of date/time comparison
  */
-enum abstract ComparisonResult(String) to String {
-    var Lt = ":lt";  // Less than
-    var Eq = ":eq";  // Equal
-    var Gt = ":gt";  // Greater than
+enum abstract ComparisonResult(elixir.types.Atom) to elixir.types.Atom {
+    var Lt = "lt";  // Less than
+    var Eq = "eq";  // Equal
+    var Gt = "gt";  // Greater than
 }

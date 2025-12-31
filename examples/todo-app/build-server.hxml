@@ -56,6 +56,10 @@
 # which Haxe DCE cannot see. Force-keep to ensure the module is emitted.
 --macro keep('server.components.CoreComponents')
 --macro keep('server.live.TodoLive')
+--macro keep('server.live.AuthLive')
+--macro keep('server.live.ProfileLive')
+--macro keep('server.live.UsersLive')
+--macro keep('controllers.SessionController')
 # Skip problematic stdlib structures we don't use in the todo app
 
 # Debug flags are disabled by default to keep QA builds quiet and fast
@@ -74,6 +78,9 @@
 TodoApp
 TodoAppRouter
 server.live.TodoLive
+server.live.AuthLive
+server.live.ProfileLive
+server.live.UsersLive
 server.schemas.Todo
 server.schemas.User
 server.presence.TodoPresence
@@ -85,6 +92,7 @@ server.infrastructure.TodoAppWeb
 server.infrastructure.ErrorHTML
 server.infrastructure.ErrorJSON
 controllers.UserController
+controllers.SessionController
 server.components.CoreComponents
 server.i18n.Gettext
 server.support.FlashTypeTools

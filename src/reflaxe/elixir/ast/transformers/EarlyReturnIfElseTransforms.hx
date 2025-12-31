@@ -25,10 +25,12 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * HOW
  * - The builder tags nodes originating from `TReturn` using `metadata.fromReturn`.
  * - This pass scans EBlock/EDo sequences for:
- *     EIf(cond, thenBranch(fromReturn), elseBranch = null)
- *   and, when there are subsequent statements, rewrites to:
- *     EIf(cond, thenBranch, elseBranch = <rest-of-block>)
- *   recursively applying the same rewrite within the else branch.
+ *     EIf(cond, thenBranch(contains fromReturn), elseBranch = null)
+ *   and, when there are subsequent statements:
+ *   1) Moves the remainder of the sequence into the else branch
+ *   2) If the then-branch only *contains* an early return (nested), appends the remainder
+ *      to the then-branch too so fallthrough paths continue correctly.
+ *   3) Recursively rewrites early-return patterns inside the inserted remainder.
  *
  * EXAMPLES
  * Haxe:
@@ -71,6 +73,52 @@ class EarlyReturnIfElseTransforms {
         };
     }
 
+    static function containsFromReturn(n: ElixirAST): Bool {
+        if (n == null || n.def == null) return false;
+
+        var found = false;
+
+        function scan(node: ElixirAST): Void {
+            if (found || node == null || node.def == null) return;
+            if (node.metadata != null && node.metadata.fromReturn == true) {
+                found = true;
+                return;
+            }
+            ElixirASTTransformer.iterateAST(node, scan);
+        }
+
+        scan(n);
+        return found;
+    }
+
+    static function appendContinuation(branch: ElixirAST, continuation: ElixirAST): ElixirAST {
+        if (branch == null || branch.def == null) return branch;
+        if (continuation == null || continuation.def == null) return branch;
+
+        return switch (branch.def) {
+            case EBlock(stmts):
+                var combined = (stmts != null ? stmts : []).concat([continuation]);
+                rewriteSequenceAsSameKind(combined, function(exprs) return makeASTWithMeta(EBlock(exprs), branch.metadata, branch.pos));
+
+            case EDo(stmts):
+                var combined = (stmts != null ? stmts : []).concat([continuation]);
+                rewriteSequenceAsSameKind(combined, function(exprs) return makeASTWithMeta(EDo(exprs), branch.metadata, branch.pos));
+
+            case EParen(inner):
+                makeASTWithMeta(EParen(appendContinuation(inner, continuation)), branch.metadata, branch.pos);
+
+            default:
+                var combined = [branch, continuation];
+                var rewritten = rewriteSequenceAsSameKind(combined, function(exprs) return makeASTWithMeta(EBlock(exprs), branch.metadata, branch.pos));
+                switch (rewritten.def) {
+                    case EBlock(exprs) if (exprs != null && exprs.length == 1):
+                        exprs[0];
+                    default:
+                        rewritten;
+                }
+        };
+    }
+
     static function rewriteSequenceAsSameKind(stmts: Array<ElixirAST>, wrap: Array<ElixirAST> -> ElixirAST): ElixirAST {
         if (stmts == null || stmts.length == 0) return wrap([]);
 
@@ -80,16 +128,18 @@ class EarlyReturnIfElseTransforms {
             var stmt = stmts[i];
 
             switch (stmt.def) {
-                case EIf(condition, thenBranch, null) if (isFromReturn(thenBranch) && i < stmts.length - 1):
+                case EIf(condition, thenBranch, null) if (containsFromReturn(thenBranch) && i < stmts.length - 1):
                     var rest = stmts.slice(i + 1);
                     var elseExpr = buildRestExpr(rest, stmt.metadata, stmt.pos);
-                    out.push(makeASTWithMeta(EIf(condition, thenBranch, elseExpr), stmt.metadata, stmt.pos));
+                    var thenWithContinuation = isFromReturn(thenBranch) ? thenBranch : appendContinuation(thenBranch, elseExpr);
+                    out.push(makeASTWithMeta(EIf(condition, thenWithContinuation, elseExpr), stmt.metadata, stmt.pos));
                     return wrap(out);
 
-                case EUnless(condition, body, null) if (isFromReturn(body) && i < stmts.length - 1):
+                case EUnless(condition, body, null) if (containsFromReturn(body) && i < stmts.length - 1):
                     var restUnless = stmts.slice(i + 1);
                     var elseExprUnless = buildRestExpr(restUnless, stmt.metadata, stmt.pos);
-                    out.push(makeASTWithMeta(EUnless(condition, body, elseExprUnless), stmt.metadata, stmt.pos));
+                    var bodyWithContinuation = isFromReturn(body) ? body : appendContinuation(body, elseExprUnless);
+                    out.push(makeASTWithMeta(EUnless(condition, bodyWithContinuation, elseExprUnless), stmt.metadata, stmt.pos));
                     return wrap(out);
 
                 default:

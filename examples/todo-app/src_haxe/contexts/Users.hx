@@ -6,6 +6,7 @@ import ecto.TypedQuery;
 import haxe.functional.Result;
 import server.infrastructure.Repo;
 import server.schemas.User;
+import StringTools;
 using reflaxe.elixir.macros.TypedQueryLambda; // ensure extension where(...) is available
 
 /**
@@ -53,13 +54,22 @@ class Users {
      */
     public static function listUsers(?filter: UserFilter): Array<User> {
         var base = TypedQuery.from(User);
-        var filtered = if (filter == null) {
-            base;
-        } else {
-            var byName = (filter.name != null) ? base.where(u -> u.name == '%${filter.name}%') : base;
-            var byEmail = (filter.email != null) ? byName.where(u -> u.email == '%${filter.email}%') : byName;
-            (filter.isActive != null) ? byEmail.where(u -> u.active == filter.isActive) : byEmail;
+        if (filter == null) return Repo.all(base);
+
+        var filtered = base;
+
+        if (filter.name != null && StringTools.trim(filter.name) != "") {
+            filtered = filtered.where(u -> u.name == filter.name);
         }
+
+        if (filter.email != null && StringTools.trim(filter.email) != "") {
+            filtered = filtered.where(u -> u.email == filter.email);
+        }
+
+        if (filter.isActive != null) {
+            filtered = filtered.where(u -> u.active == filter.isActive);
+        }
+
         return Repo.all(filtered);
     }
 
@@ -115,7 +125,32 @@ class Users {
         return Repo.delete(user);
     }
 
-    // Placeholder/demo APIs (not currently wired into the todo-app UI).
-    public static function searchUsers(_term: String): Array<User> return [];
-    public static function userStats(): UserStats return {total: 0, active: 0, inactive: 0};
+    public static function searchUsers(term: String): Array<User> {
+        var trimmed = StringTools.trim(term);
+        if (trimmed == "") return listUsers(null);
+
+        var query = trimmed.toLowerCase();
+        var users = listUsers(null);
+        return users.filter(user -> matchesQuery(user, query));
+    }
+
+    public static function userStats(): UserStats {
+        var users = listUsers(null);
+        var total = users.length;
+        var active = 0;
+        for (user in users) {
+            if (user.active) active++;
+        }
+        return {
+            total: total,
+            active: active,
+            inactive: total - active
+        };
+    }
+
+    static function matchesQuery(user: User, queryLowercase: String): Bool {
+        var name = user.name != null ? user.name.toLowerCase() : "";
+        var email = user.email != null ? user.email.toLowerCase() : "";
+        return StringTools.contains(name, queryLowercase) || StringTools.contains(email, queryLowercase);
+    }
 }

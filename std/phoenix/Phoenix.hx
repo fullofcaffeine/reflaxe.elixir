@@ -248,6 +248,16 @@ extern class LiveView {
      */
     @:native("push_redirect")
     static function pushRedirect<TAssigns>(socket: Socket<TAssigns>, options: RedirectOptions): Socket<TAssigns>;
+
+    /**
+     * Push a full LiveView navigation to the client.
+     *
+     * NOTE
+     * - `push_redirect/2` is deprecated in Phoenix LiveView 0.20 in favor of `push_navigate/2`.
+     * - Use this for LiveView-to-LiveView navigation that mounts a new root LiveView.
+     */
+    @:native("push_navigate")
+    static function pushNavigate<TAssigns>(socket: Socket<TAssigns>, options: PatchOptions): Socket<TAssigns>;
     
     /**
      * Push an event to the client-side hooks

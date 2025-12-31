@@ -25,7 +25,7 @@ See `docs/06-guides/PRODUCTION_READINESS.md` for the exit criteria and checklist
 
 ### 4) Toolchain Compatibility
 - **Haxe 4.3.x** remains the baseline for snapshot comparisons and release CI.
-- **Haxe 5 preview/nightly** runs as a *non‑gating smoke* job: compile + Elixir syntax validation only
+- **Haxe 5 preview/nightly** runs as a smoke job: compile + Elixir syntax validation only
   (`COMPARE_INTENDED=0`) until Haxe 5 TypedExpr deltas stabilize enough for meaningful diffs.
 
 ## Status Legend

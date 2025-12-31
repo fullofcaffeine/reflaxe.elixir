@@ -10,6 +10,7 @@ import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.helpers.PatternDetector;
 import reflaxe.elixir.ast.builders.VariableBuilder;
+import reflaxe.elixir.ast.TypeUtils;
 import reflaxe.elixir.ast.naming.ElixirNaming;
 
 /**
@@ -435,14 +436,7 @@ class CallExprBuilder {
         }
 
         inline function isAtomType(t: Null<Type>): Bool {
-            if (t == null) return false;
-            return switch (haxe.macro.TypeTools.follow(t)) {
-                case TAbstract(ref, _):
-                    var at = ref.get();
-                    at.pack.join(".") == "elixir.types" && at.name == "Atom";
-                default:
-                    false;
-            }
+            return TypeUtils.isElixirAtomType(t);
         }
 
         var argASTs: Array<ElixirAST> = [];

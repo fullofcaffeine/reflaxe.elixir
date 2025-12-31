@@ -1,6 +1,6 @@
 package server.types;
 
-import elixir.DateTime.DateTime;
+import elixir.DateTime.NaiveDateTime;
 import elixir.types.Term;
 
 /**
@@ -22,8 +22,8 @@ typedef User = {
     var name: String;
     var email: String;
     var passwordHash: String;  // camelCase
-    var confirmedAt: Null<DateTime>;  // camelCase
-    var lastLoginAt: Null<DateTime>;  // camelCase
+    var confirmedAt: Null<NaiveDateTime>;  // camelCase
+    var lastLoginAt: Null<NaiveDateTime>;  // camelCase
     var active: Bool;
 }
 
@@ -420,7 +420,7 @@ enum TodoFilter {
     Completed;
     ByTag(tag: String);
     ByPriority(priority: String);
-    ByDueDate(date: DateTime);
+    ByDueDate(date: NaiveDateTime);
 }
 
 /**

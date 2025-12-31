@@ -14,9 +14,6 @@ defmodule Main do
     _ = on_exit(fn -> global = nil end)
     :ok
   end
-  def new() do
-    TestCase.new()
-  end
   defp helper_method(_) do
     assert true
   end

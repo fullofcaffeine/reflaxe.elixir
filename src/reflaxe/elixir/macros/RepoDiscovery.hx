@@ -3,8 +3,10 @@ package reflaxe.elixir.macros;
 #if (macro || reflaxe_runtime)
 
 import haxe.macro.Context;
+import haxe.crypto.Md5;
 import haxe.io.Path;
 import haxe.io.Eof;
+import haxe.Json;
 using StringTools;
 
 /**
@@ -41,6 +43,8 @@ using StringTools;
 class RepoDiscovery {
     static var discovered: Array<String> = [];
     static var hasRun: Bool = false;
+    static var afterInitScheduled: Bool = false;
+    static var pendingTypePaths: Array<String> = [];
 
     static final metaTokens: Array<String> = [
         "@:repo",
@@ -64,9 +68,29 @@ class RepoDiscovery {
         var classPaths: Array<String> = [];
         try classPaths = Context.getClassPath() catch (_) return;
 
+        var scanRoots: Array<String> = [];
         for (classPath in classPaths) {
             if (!shouldScanClassPath(classPath)) continue;
+            scanRoots.push(classPath);
+        }
+
+        var fastBoot = Context.defined("fast_boot");
+        if (fastBoot) {
+            var cached = loadCache(scanRoots);
+            if (cached != null) {
+                for (typePath in cached) {
+                    forceType(typePath);
+                }
+                return;
+            }
+        }
+
+        for (classPath in scanRoots) {
             try walkDir(classPath) catch (_) {}
+        }
+
+        if (fastBoot) {
+            saveCache(scanRoots, discovered);
         }
     }
 
@@ -197,7 +221,103 @@ class RepoDiscovery {
         if (typePath == null || typePath.length == 0) return;
         if (discovered.indexOf(typePath) != -1) return;
         discovered.push(typePath);
-        try Context.getType(typePath) catch (_) {}
+        #if debug_repo_discovery
+        trace('[RepoDiscovery] discovered ' + typePath);
+        #end
+        #if (haxe_ver >= 5)
+        // Haxe 5 forbids `Context.getType` in initialization macros. We stage the
+        // discovered types and force typing once init macros complete.
+        pendingTypePaths.push(typePath);
+
+        if (!afterInitScheduled) {
+            afterInitScheduled = true;
+            Context.onAfterInitMacros(function() {
+                for (pendingTypePath in pendingTypePaths) {
+                    try {
+                        Context.getType(pendingTypePath);
+                    } catch (e) {
+                        #if debug_repo_discovery
+                        trace('[RepoDiscovery] failed to type ' + pendingTypePath + ': ' + Std.string(e));
+                        #end
+                    }
+                }
+            });
+        }
+        #else
+        try {
+            Context.getType(typePath);
+        } catch (e) {
+            #if debug_repo_discovery
+            trace('[RepoDiscovery] failed to type ' + typePath + ': ' + Std.string(e));
+            #end
+        }
+        #end
+    }
+
+    static function loadCache(scanRoots: Array<String>): Null<Array<String>> {
+        var cacheFile = cacheFilePath(scanRoots);
+        if (cacheFile == null) return null;
+        try {
+            if (!sys.FileSystem.exists(cacheFile)) return null;
+        } catch (_) {
+            return null;
+        }
+
+        try {
+            var parsed: Dynamic = Json.parse(sys.io.File.getContent(cacheFile));
+            if (parsed == null || parsed.types == null) return null;
+
+            var types: Array<String> = [];
+            for (entry in (cast parsed.types : Array<Dynamic>)) {
+                if (entry == null) continue;
+                types.push(Std.string(entry));
+            }
+
+            return types.length > 0 ? types : null;
+        } catch (_) {
+            return null;
+        }
+    }
+
+    static function saveCache(scanRoots: Array<String>, types: Array<String>): Void {
+        var cacheFile = cacheFilePath(scanRoots);
+        if (cacheFile == null) return;
+
+        try {
+            var payload = {
+                version: 1,
+                roots: scanRoots,
+                types: types
+            };
+            sys.io.File.saveContent(cacheFile, Json.stringify(payload));
+        } catch (_) {}
+    }
+
+    static function cacheFilePath(scanRoots: Array<String>): Null<String> {
+        var cacheDir = cacheDirPath();
+        if (cacheDir == null) return null;
+
+        try {
+            if (!sys.FileSystem.exists(cacheDir)) sys.FileSystem.createDirectory(cacheDir);
+        } catch (_) {
+            return null;
+        }
+
+        var normalizedRoots = scanRoots.map(normalizePath);
+        normalizedRoots.sort(Reflect.compare);
+        var keySource = normalizedRoots.join("|") + "##" + metaTokens.join(",");
+        var hash = Md5.encode(keySource);
+        return Path.join([cacheDir, 'repo_discovery_${hash}.json']);
+    }
+
+    static function cacheDirPath(): Null<String> {
+        var tmp = Sys.getEnv("TMPDIR");
+        if (tmp == null || tmp.length == 0) tmp = Sys.getEnv("TEMP");
+        if (tmp == null || tmp.length == 0) tmp = Sys.getEnv("TMP");
+        if (tmp == null || tmp.length == 0) tmp = "/tmp";
+
+        if (tmp == null || tmp.length == 0) return null;
+        return Path.join([tmp, "reflaxe_elixir_cache"]);
     }
 }
 
