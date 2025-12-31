@@ -480,10 +480,7 @@ class ElixirASTBuilder {
         // Attach typed HEEx AST to metadata when emitting ESigil("H", ...)
         switch (astDef) {
             case ESigil(type, content, _mods) if (type == "H"):
-                try {
-                    var typedFrags = reflaxe.elixir.ast.builders.HeexFragmentBuilder.build(content);
-                    metadata.heexAST = typedFrags;
-                } catch (_) {}
+                metadata.heexAST = reflaxe.elixir.ast.builders.HeexAnalysisASTBuilder.build(content);
             default:
         }
 

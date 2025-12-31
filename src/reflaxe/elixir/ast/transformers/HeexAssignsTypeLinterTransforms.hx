@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import phoenix.types.HXXComponentRegistry;
 
 using StringTools;
 
@@ -21,11 +22,15 @@ import haxe.macro.TypeTools;
  * - Reports errors for:
  *   1) Unknown assigns fields (e.g., `@sort_byy` when only `sort_by` exists)
  *   2) Obvious literal type mismatches in comparisons (e.g., `@sort_by == 1` when `sort_by: String`)
+ *   3) Unknown HTML attributes on registered elements (e.g., `<input hreff="...">`)
+ *   4) Obvious attribute value kind mismatches for boolean-ish attrs and `phx-hook`
  *
  * WHY
  * - HXX authoring must be fully type-checked like TSX. Since HEEx lives in strings until
  *   normalized to ~H, the core compiler can miss invalid usages. This linter bridges that
  *   gap by correlating template `@field` references with the Haxe-typed `assigns` typedef.
+ * - Attribute typing reduces "stringly-typed" template bugs (especially for `phx-*` / boolean attrs)
+ *   without requiring users to embed target HEEx/EEx syntax.
  *
  * HOW
  * - For each LiveView render(assigns) function:
@@ -36,6 +41,8 @@ import haxe.macro.TypeTools;
  *   4) Walk ~H sigil content within render and:
  *      - Collect `@field` usages and validate against the typedef fields.
  *      - Find literal comparisons with `@field` and check kind compatibility.
+ *      - Validate element attributes using `phoenix.types.HXXComponentRegistry` (kebab/camel/snake-case),
+ *        allowing `data-*`, `aria-*`, `phx-value-*`, and HEEx directive attrs like `:if`.
  *
  * EXAMPLES
  * Haxe (invalid):
@@ -45,9 +52,9 @@ import haxe.macro.TypeTools;
  *   HEEx assigns type error: @sort_by is String but compared to Int literal
  *
  * LIMITATIONS (Intentional for M1)
- * - Only checks literal comparisons (numbers, strings, true/false, nil) inside ~H content.
- * - Does not attempt full expression typing for complex cases yet; follow-up work will leverage
- *   structured attribute parsing (EFragment) and builder-time typing.
+ * - Attribute validation only applies to registered HTML elements (component tags like `<.button>` are skipped).
+ * - Only checks obvious attribute kind mismatches (bool-ish attrs + `phx-hook`) when the expression kind is clear.
+ * - Does not fully type component props or complex HEEx expressions yet.
  */
 class HeexAssignsTypeLinterTransforms {
     // Public entry: non-contextual (throws on error)
@@ -253,15 +260,170 @@ class HeexAssignsTypeLinterTransforms {
 
     static function validateNode(n: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
         switch (n.def) {
-            case EFragment(_tag, attributes, children):
+            case EFragment(tag, attributes, children):
                 // Attributes
-                for (a in attributes) {
-                    validateExprForAssigns(a.value, fields, typeName, ctx, pos);
+                for (attr in attributes) {
+                    validateAttribute(tag, attr, fields, typeName, ctx, pos);
                 }
                 // Children
                 for (c in children) validateNode(c, fields, typeName, ctx, pos);
             default:
         }
+    }
+
+    static function validateAttribute(tag: String, attr: EAttribute, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        // 1) Name validation (only for known HTML elements; allow HEEx directive attrs)
+        validateAttributeName(tag, attr.name, ctx, pos);
+
+        // 2) Obvious kind validation for select attributes (bool-ish attrs, phx-hook, etc.)
+        validateAttributeValueKind(attr.name, attr.value, fields, ctx, pos);
+
+        // 3) Assigns field usage within `{ ... }` attribute expressions
+        validateExprForAssigns(attr.value, fields, typeName, ctx, pos);
+    }
+
+    static var allowedHtmlAttributeCache: Map<String, Map<String, Bool>> = new Map();
+    static var globalHtmlAttributeCache: Null<Map<String, Bool>> = null;
+
+    static function validateAttributeName(tag: String, attributeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (attributeName == null || attributeName.length == 0) return;
+        // HEEx directive attrs like :if/:for/:let are valid on any tag.
+        if (attributeName.startsWith(":")) return;
+
+        // Only validate registered HTML elements to avoid false positives on Phoenix components/custom tags.
+        if (!isRegisteredHtmlElement(tag)) return;
+
+        var canonical = normalizeHeexAttributeName(attributeName);
+        var htmlName = HXXComponentRegistry.toHtmlAttribute(canonical);
+        // Allow wildcard-style attributes regardless of authoring style (kebab/camel/snake-case).
+        if (isWildcardHeexAttribute(canonical) || isWildcardHeexAttribute(htmlName)) return;
+
+        var allowed = getAllowedHtmlAttributesForTag(tag);
+        if (allowed.exists(attributeName) || allowed.exists(canonical) || (htmlName != null && allowed.exists(htmlName))) return;
+
+        error(ctx, 'HEEx attribute error: <' + tag + '> does not allow attribute "' + attributeName + '"', pos);
+    }
+
+    static function validateAttributeValueKind(attributeName: String, value: ElixirAST, fields: Map<String,String>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (attributeName == null || attributeName.length == 0) return;
+        if (attributeName.startsWith(":")) return; // directive attrs: do not validate here
+
+        var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(attributeName));
+        if (canonical == null) return;
+        var expected = expectedKindForAttribute(canonical);
+        if (expected == null) return;
+
+        var actual = inferHeexExprKind(value, fields);
+        if (!attributeKindsCompatible(expected, actual)) {
+            error(ctx, 'HEEx attribute type error: "' + canonical + '" expects ' + expected + ' but got ' + actual, pos);
+        }
+    }
+
+    static function isRegisteredHtmlElement(tag: String): Bool {
+        if (tag == null || tag.length == 0) return false;
+        // Skip Phoenix component tags (<.foo>) and slot tags (<:inner_block>)
+        var first = tag.charAt(0);
+        if (first == "." || first == ":") return false;
+        return HXXComponentRegistry.getElementType(tag) != null;
+    }
+
+    static function getAllowedHtmlAttributesForTag(tag: String): Map<String, Bool> {
+        var key = tag.toLowerCase();
+        if (allowedHtmlAttributeCache.exists(key)) return allowedHtmlAttributeCache.get(key);
+
+        var allowed: Map<String, Bool> = new Map();
+
+        var globals = getGlobalHtmlAttributes();
+        for (k in globals.keys()) allowed.set(k, true);
+
+        var attrs = HXXComponentRegistry.getAllowedAttributes(tag);
+        for (a in attrs) addAllowedAttributeForms(allowed, a);
+
+        allowedHtmlAttributeCache.set(key, allowed);
+        return allowed;
+    }
+
+    static function getGlobalHtmlAttributes(): Map<String, Bool> {
+        if (globalHtmlAttributeCache != null) return globalHtmlAttributeCache;
+        var allowed: Map<String, Bool> = new Map();
+        // div is registered with global attributes in HXXComponentRegistry; use it as the source of truth.
+        for (a in HXXComponentRegistry.getAllowedAttributes("div")) addAllowedAttributeForms(allowed, a);
+        globalHtmlAttributeCache = allowed;
+        return allowed;
+    }
+
+    static function addAllowedAttributeForms(allowed: Map<String, Bool>, name: String): Void {
+        if (name == null || name.length == 0) return;
+        // Wildcard attributes (data*) are handled separately.
+        if (name.indexOf("*") != -1) return;
+        allowed.set(name, true);
+        var html = HXXComponentRegistry.toHtmlAttribute(name);
+        if (html != null) allowed.set(html, true);
+    }
+
+    static function normalizeHeexAttributeName(name: String): String {
+        // Accept snake_case in templates but validate against canonical kebab-case where applicable.
+        return name.indexOf("_") != -1 ? name.split("_").join("-") : name;
+    }
+
+    static function isWildcardHeexAttribute(name: String): Bool {
+        if (name == null) return false;
+        var n = name.toLowerCase();
+        return n.startsWith("data-") || n.startsWith("aria-") || n.startsWith("phx-value-");
+    }
+
+    static function expectedKindForAttribute(canonicalAttr: String): Null<String> {
+        return switch (canonicalAttr) {
+            // HTML boolean-ish attributes (subset)
+            case "disabled", "required", "checked", "selected", "readonly", "multiple", "autofocus",
+                 "defer", "async", "nomodule",
+                 // Phoenix/ARIA common boolean-ish attributes
+                 "phx-track-static", "aria-hidden":
+                "bool";
+            // Phoenix hook name
+            case "phx-hook":
+                "string";
+            default:
+                null;
+        }
+    }
+
+    static function inferHeexExprKind(expr: ElixirAST, fields: Map<String,String>): String {
+        if (expr == null) return "unknown";
+        return switch (expr.def) {
+            case EString(v):
+                var t = v != null ? v.trim().toLowerCase() : "";
+                (t == "true" || t == "false") ? "bool" : "string";
+            case EInteger(_): "int";
+            case EFloat(_): "float";
+            case EBoolean(_): "bool";
+            case ENil: "nil";
+            case EAssign(name):
+                (fields != null && fields.exists(name)) ? fields.get(name) : "unknown";
+            case EBinary(op, _, _):
+                (isComparisonOp(op) || op == AndAlso || op == OrElse) ? "bool" : "unknown";
+            case EIf(_, thenB, elseB):
+                var thenKind = inferHeexExprKind(thenB, fields);
+                var elseKind = elseB != null ? inferHeexExprKind(elseB, fields) : "nil";
+                if (thenKind == elseKind) thenKind
+                else if (thenKind == "nil") elseKind
+                else if (elseKind == "nil") thenKind
+                else "unknown";
+            case EParen(inner):
+                inferHeexExprKind(inner, fields);
+            default:
+                "unknown";
+        }
+    }
+
+    static function attributeKindsCompatible(expected: String, actual: String): Bool {
+        if (expected == null || actual == null) return true;
+        // Allow nil for optional attribute omission.
+        if (actual == "nil") return true;
+        // If we can't confidently infer the kind, do not error.
+        if (actual == "unknown") return true;
+
+        return expected == actual;
     }
 
     static function validateExprForAssigns(expr: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
