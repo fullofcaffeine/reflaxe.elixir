@@ -1,7 +1,8 @@
 package server.schemas;
 
 import ecto.ChangesetBridge as CS;
-import elixir.DateTime.DateTime;
+import elixir.DateTime.NaiveDateTime;
+import elixir.DateTime.TimePrecision;
 import ecto.Changeset;
 import elixir.types.Term;
 
@@ -20,8 +21,8 @@ class User {
     @:field public var name: String;
     @:field public var email: String;
     @:field public var passwordHash: String;
-    @:field public var confirmedAt: Null<DateTime>;
-    @:field public var lastLoginAt: Null<DateTime>;
+    @:field public var confirmedAt: Null<NaiveDateTime>;
+    @:field public var lastLoginAt: Null<NaiveDateTime>;
     @:field public var active: Bool = true;
     
     // Virtual field for password input (not stored in database)
@@ -62,16 +63,16 @@ class User {
      * Email confirmation changeset
      */
     @:keep
-    public static function confirmChangeset(user: User): Changeset<User, {confirmed_at: DateTime}> {
-        return CS.change(user, {confirmed_at: DateTime.utcNow()});
+    public static function confirmChangeset(user: User): Changeset<User, {confirmed_at: NaiveDateTime}> {
+        return CS.change(user, {confirmed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), TimePrecision.Second)});
     }
 
     /**
      * Login tracking changeset
      */
     @:keep
-    public static function loginChangeset(user: User): Changeset<User, {last_login_at: DateTime}> {
-        return CS.change(user, {last_login_at: DateTime.utcNow()});
+    public static function loginChangeset(user: User): Changeset<User, {last_login_at: NaiveDateTime}> {
+        return CS.change(user, {last_login_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), TimePrecision.Second)});
     }
     
     /**
@@ -116,8 +117,8 @@ class User {
         user.name = "Demo User";
         user.email = "demo@example.com";
         user.passwordHash = "hashed_demopassword";
-        user.confirmedAt = DateTime.utcNow();
-        user.lastLoginAt = DateTime.utcNow();
+        user.confirmedAt = NaiveDateTime.truncate(NaiveDateTime.utc_now(), TimePrecision.Second);
+        user.lastLoginAt = NaiveDateTime.truncate(NaiveDateTime.utc_now(), TimePrecision.Second);
         user.active = true;
         return user;
     }

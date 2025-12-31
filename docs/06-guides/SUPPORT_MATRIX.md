@@ -29,10 +29,10 @@ Our GitHub Actions CI runs primarily on **Ubuntu**, plus macOS and Windows smoke
   - Haxe: `4.3.7`
   - Runs a bounded subset (`npm run test:quick` in an MSYS2 environment)
 
-- Haxe 5 preview smoke (Ubuntu, **non‑gating**):
+- Haxe 5 preview smoke (Ubuntu):
   - Uses Haxe `nightly` (preview)
   - Runs a bounded subset (`npm run test:quick` + `npm run test:mix-fast`)
-  - This job is **allowed to fail** while Haxe 5 support is still being evaluated.
+  - Snapshot diffs are disabled (`COMPARE_INTENDED=0`): compile + Elixir syntax only
 
 Phoenix coverage:
 

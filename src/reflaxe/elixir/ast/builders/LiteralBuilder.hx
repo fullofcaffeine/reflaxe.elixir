@@ -8,6 +8,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.CompilationContext;
+import reflaxe.elixir.ast.TypeUtils;
 import reflaxe.elixir.ast.builders.CoreExprBuilder;
 
 /**
@@ -63,42 +64,7 @@ class LiteralBuilder {
      * HOW: Inspects the expression type to detect Atom abstract
      */
     static function buildStringLiteral(s: String, expr: TypedExpr): ElixirASTDef {
-        // Check if this string has the Atom type
-        var isAtom = false;
-        
-        #if debug_atom_generation
-        #if debug_ast_builder
-        // DISABLED: trace('[Atom Debug TConst] String "${s}" with type: ${expr.t}');
-        #end
-        #end
-        
-        switch(expr.t) {
-            case TAbstract(ref, _):
-                var abstractType = ref.get();
-                #if debug_atom_generation
-                #if debug_ast_builder
-                // DISABLED: trace('[Atom Debug TConst] Abstract type: ${abstractType.pack.join(".")}.${abstractType.name}');
-                #end
-                #end
-                
-                // Check if this is the Atom abstract type
-                if (abstractType.pack.join(".") == "elixir.types" && abstractType.name == "Atom") {
-                    isAtom = true;
-                    #if debug_atom_generation
-                    #if debug_ast_builder
-                    // DISABLED: trace('[Atom Debug TConst] DETECTED: String is Atom type!');
-                    #end
-                    #end
-                }
-                
-            case _:
-                #if debug_atom_generation
-                #if debug_ast_builder
-                // DISABLED: trace('[Atom Debug TConst] Not an abstract type: ${expr.t}');
-                #end
-                #end
-                // Not an abstract type
-        }
+        var isAtom = TypeUtils.isElixirAtomType(expr.t);
         
         if (isAtom) {
             #if debug_atom_generation

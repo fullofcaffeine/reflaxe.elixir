@@ -36,9 +36,6 @@ defmodule Main do
   def module_state(value) do
     __haxe_static_put__(:module_state, value)
   end
-  def new() do
-    TestCase.new()
-  end
   defp safe_divide(_, a, b) do
     if (b == 0), do: {:error, "Division by zero"}, else: {:ok, a / b}
   end
@@ -121,8 +118,8 @@ end) do
   end
   describe "Domain Assertions" do
     test "result assertions" do
-      ok_result = "success"
-      error_result = "error message"
+      ok_result = {:ok, "success"}
+      error_result = {:error, "error message"}
       assert match?({:ok, _}, ok_result)
       assert match?({:error, _}, error_result)
       division_result = safe_divide(context, 10, 2)
@@ -131,7 +128,7 @@ end) do
       assert match?({:error, _}, invalid_division)
     end
     test "option assertions" do
-      some_value = 42
+      some_value = {:some, 42}
       none_value = {:none}
       assert match?({:some, _}, some_value)
       assert none_value == :none

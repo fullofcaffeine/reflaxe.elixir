@@ -1,8 +1,5 @@
 defmodule Main do
   use ExUnit.Case
-  def new() do
-    TestCase.new()
-  end
   test "email validation" do
     valid_email = Email_Impl_.parse("user@example.com")
     assert match?({:ok, _}, valid_email)

@@ -42,6 +42,7 @@ typedef TodoLiveAssigns = {
     var filter: TodoFilter; // All | Active | Completed
     var sort_by: TodoSort;  // Created | Priority | DueDate
     var current_user: User;
+    var signed_in: Bool;
     var editing_todo: Null<server.schemas.Todo>;
     var show_form: Bool;
     var search_query: String;
@@ -56,8 +57,14 @@ typedef TodoLiveAssigns = {
     var total_todos: Int;
     var completed_todos: Int;
     var pending_todos: Int;
+    // Presence: store the original "online at" timestamp we advertise in Presence metadata.
+    // This keeps the value stable when we update editing-related metadata.
+    var presence_online_at: Float;
     // Presence tracking (idiomatic Phoenix pattern: single flat map)
     var online_users: Map<String, phoenix.Presence.PresenceEntry<server.presence.TodoPresence.PresenceMeta>>;
+    // Presence UI helpers (zero-logic HXX)
+    var online_user_count: Int;
+    var online_user_views: Array<OnlineUserView>;
     // UI convenience fields for zero-logic HXX
     var visible_count: Int;
     var filter_btn_all_class: String;
@@ -104,6 +111,8 @@ typedef TodoView = {
     var has_tags: Bool;
     var has_description: Bool;
     var is_editing: Bool;
+    // If present, indicates another user is editing this todo right now.
+    var editing_badge: Null<String>;
     var tags: Array<TagView>;
 }
 
@@ -116,5 +125,15 @@ typedef TodoView = {
 typedef TagView = {
     var tag: String;
     var selected: Bool;
+    var chip_class: String;
+}
+
+/**
+ * Presence UI chip view model (zero-logic HXX rendering).
+ */
+typedef OnlineUserView = {
+    var key: String;
+    var display_name: String;
+    var sublabel: Null<String>;
     var chip_class: String;
 }
