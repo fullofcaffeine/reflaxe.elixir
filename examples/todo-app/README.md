@@ -11,6 +11,8 @@ End-to-end reference app showcasing Reflaxe.Elixir in a real Phoenix LiveView ap
 ### Backend (Haxe → Elixir)
 - Todo CRUD + typed LiveView assigns
 - Ecto schemas + migrations
+- Optional demo login + profile (session-based)
+- Users directory + status toggle (LiveView)
 - Tag filtering + search + sorting
 - PubSub broadcasts so multiple sessions update live
 - Bulk actions (complete all / delete completed)

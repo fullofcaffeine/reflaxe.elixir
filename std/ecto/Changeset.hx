@@ -3,6 +3,7 @@ package ecto;
 #if (elixir || reflaxe_runtime)
 
 import elixir.types.Term;
+import elixir.types.Atom;
 import haxe.functional.Result;
 
 /**
@@ -223,8 +224,7 @@ abstract Changeset<T, P>(Term) from Term to Term {
      * @return The updated changeset
      */
     extern inline public function validateInclusion(field: String, values: Array<Term>): Changeset<T, P> {
-        return untyped __elixir__('Ecto.Changeset.validate_inclusion({0}, :{1}, {2})', 
-            this, field, values);
+        return untyped __elixir__('Ecto.Changeset.validate_inclusion({0}, {1}, {2})', this, cast(field, Atom), values);
     }
     
     /**
@@ -235,8 +235,7 @@ abstract Changeset<T, P>(Term) from Term to Term {
      * @return The updated changeset
      */
     extern inline public function validateExclusion(field: String, values: Array<Term>): Changeset<T, P> {
-        return untyped __elixir__('Ecto.Changeset.validate_exclusion({0}, :{1}, {2})', 
-            this, field, values);
+        return untyped __elixir__('Ecto.Changeset.validate_exclusion({0}, {1}, {2})', this, cast(field, Atom), values);
     }
     
     /**
@@ -249,23 +248,23 @@ abstract Changeset<T, P>(Term) from Term to Term {
     extern inline public function validateNumber(field: String, opts: {?min: Float, ?max: Float, ?equal_to: Float, ?not_equal_to: Float}): Changeset<T, P> {
         // Build the options list directly - simplified version for common cases
         if (opts.min != null && opts.max != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_number({0}, :{1}, [greater_than_or_equal_to: {2}, less_than_or_equal_to: {3}])', 
-                this, field, opts.min, opts.max);
+            return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [greater_than_or_equal_to: {2}, less_than_or_equal_to: {3}])', 
+                this, cast(field, Atom), opts.min, opts.max);
         } else if (opts.min != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_number({0}, :{1}, [greater_than_or_equal_to: {2}])', 
-                this, field, opts.min);
+            return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [greater_than_or_equal_to: {2}])', 
+                this, cast(field, Atom), opts.min);
         } else if (opts.max != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_number({0}, :{1}, [less_than_or_equal_to: {2}])', 
-                this, field, opts.max);
+            return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [less_than_or_equal_to: {2}])', 
+                this, cast(field, Atom), opts.max);
         } else if (opts.equal_to != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_number({0}, :{1}, [equal_to: {2}])', 
-                this, field, opts.equal_to);
+            return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [equal_to: {2}])', 
+                this, cast(field, Atom), opts.equal_to);
         } else if (opts.not_equal_to != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_number({0}, :{1}, [not_equal_to: {2}])', 
-                this, field, opts.not_equal_to);
+            return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [not_equal_to: {2}])', 
+                this, cast(field, Atom), opts.not_equal_to);
         } else {
-            return untyped __elixir__('Ecto.Changeset.validate_number({0}, :{1}, [])', 
-                this, field);
+            return untyped __elixir__('Ecto.Changeset.validate_number({0}, {1}, [])', 
+                this, cast(field, Atom));
         }
     }
     
@@ -278,10 +277,10 @@ abstract Changeset<T, P>(Term) from Term to Term {
      */
     extern inline public function validateAcceptance(field: String, ?message: String): Changeset<T, P> {
         if (message != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_acceptance({0}, :{1}, message: {2})', 
-                this, field, message);
+            return untyped __elixir__('Ecto.Changeset.validate_acceptance({0}, {1}, message: {2})', 
+                this, cast(field, Atom), message);
         } else {
-            return untyped __elixir__('Ecto.Changeset.validate_acceptance({0}, :{1})', this, field);
+            return untyped __elixir__('Ecto.Changeset.validate_acceptance({0}, {1})', this, cast(field, Atom));
         }
     }
     
@@ -294,10 +293,10 @@ abstract Changeset<T, P>(Term) from Term to Term {
      */
     extern inline public function validateConfirmation(field: String, ?message: String): Changeset<T, P> {
         if (message != null) {
-            return untyped __elixir__('Ecto.Changeset.validate_confirmation({0}, :{1}, message: {2})', 
-                this, field, message);
+            return untyped __elixir__('Ecto.Changeset.validate_confirmation({0}, {1}, message: {2})', 
+                this, cast(field, Atom), message);
         } else {
-            return untyped __elixir__('Ecto.Changeset.validate_confirmation({0}, :{1})', this, field);
+            return untyped __elixir__('Ecto.Changeset.validate_confirmation({0}, {1})', this, cast(field, Atom));
         }
     }
     
@@ -311,19 +310,19 @@ abstract Changeset<T, P>(Term) from Term to Term {
     extern inline public function uniqueConstraint(field: String, ?opts: {?name: String, ?message: String}): Changeset<T, P> {
         if (opts != null) {
             if (opts.name != null && opts.message != null) {
-                return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, :{1}, [name: {2}, message: {3}])', 
-                    this, field, opts.name, opts.message);
+                return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, {1}, [name: {2}, message: {3}])', 
+                    this, cast(field, Atom), opts.name, opts.message);
             } else if (opts.name != null) {
-                return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, :{1}, [name: {2}])', 
-                    this, field, opts.name);
+                return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, {1}, [name: {2}])', 
+                    this, cast(field, Atom), opts.name);
             } else if (opts.message != null) {
-                return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, :{1}, [message: {2}])', 
-                    this, field, opts.message);
+                return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, {1}, [message: {2}])', 
+                    this, cast(field, Atom), opts.message);
             } else {
-                return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, :{1})', this, field);
+                return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, {1})', this, cast(field, Atom));
             }
         } else {
-            return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, :{1})', this, field);
+            return untyped __elixir__('Ecto.Changeset.unique_constraint({0}, {1})', this, cast(field, Atom));
         }
     }
     
@@ -337,19 +336,19 @@ abstract Changeset<T, P>(Term) from Term to Term {
     extern inline public function foreignKeyConstraint(field: String, ?opts: {?name: String, ?message: String}): Changeset<T, P> {
         if (opts != null) {
             if (opts.name != null && opts.message != null) {
-                return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, :{1}, [name: {2}, message: {3}])', 
-                    this, field, opts.name, opts.message);
+                return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, {1}, [name: {2}, message: {3}])', 
+                    this, cast(field, Atom), opts.name, opts.message);
             } else if (opts.name != null) {
-                return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, :{1}, [name: {2}])', 
-                    this, field, opts.name);
+                return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, {1}, [name: {2}])', 
+                    this, cast(field, Atom), opts.name);
             } else if (opts.message != null) {
-                return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, :{1}, [message: {2}])', 
-                    this, field, opts.message);
+                return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, {1}, [message: {2}])', 
+                    this, cast(field, Atom), opts.message);
             } else {
-                return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, :{1})', this, field);
+                return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, {1})', this, cast(field, Atom));
             }
         } else {
-            return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, :{1})', this, field);
+            return untyped __elixir__('Ecto.Changeset.foreign_key_constraint({0}, {1})', this, cast(field, Atom));
         }
     }
     
@@ -362,11 +361,11 @@ abstract Changeset<T, P>(Term) from Term to Term {
      */
     extern inline public function checkConstraint(field: String, opts: {name: String, ?message: String}): Changeset<T, P> {
         if (opts.message != null) {
-            return untyped __elixir__('Ecto.Changeset.check_constraint({0}, :{1}, [name: {2}, message: {3}])', 
-                this, field, opts.name, opts.message);
+            return untyped __elixir__('Ecto.Changeset.check_constraint({0}, {1}, [name: {2}, message: {3}])', 
+                this, cast(field, Atom), opts.name, opts.message);
         } else {
-            return untyped __elixir__('Ecto.Changeset.check_constraint({0}, :{1}, [name: {2}])', 
-                this, field, opts.name);
+            return untyped __elixir__('Ecto.Changeset.check_constraint({0}, {1}, [name: {2}])', 
+                this, cast(field, Atom), opts.name);
         }
     }
     
@@ -378,7 +377,7 @@ abstract Changeset<T, P>(Term) from Term to Term {
      * @return The updated changeset
      */
     extern inline public function putChange(field: String, value: Term): Changeset<T, P> {
-        return untyped __elixir__('Ecto.Changeset.put_change({0}, :{1}, {2})', this, field, value);
+        return untyped __elixir__('Ecto.Changeset.put_change({0}, {1}, {2})', this, cast(field, Atom), value);
     }
     
     /**
@@ -388,7 +387,7 @@ abstract Changeset<T, P>(Term) from Term to Term {
      * @return The change value or null
      */
     extern inline public function getChange(field: String): Term {
-        return untyped __elixir__('Ecto.Changeset.get_change({0}, :{1})', this, field);
+        return untyped __elixir__('Ecto.Changeset.get_change({0}, {1})', this, cast(field, Atom));
     }
     
     /**
@@ -398,7 +397,7 @@ abstract Changeset<T, P>(Term) from Term to Term {
      * @return The field value
      */
     extern inline public function getField(field: String): Term {
-        return untyped __elixir__('Ecto.Changeset.get_field({0}, :{1})', this, field);
+        return untyped __elixir__('Ecto.Changeset.get_field({0}, {1})', this, cast(field, Atom));
     }
     
     /**
@@ -435,11 +434,11 @@ abstract Changeset<T, P>(Term) from Term to Term {
      */
     extern inline public function addError(field: String, message: String, ?opts: Term): Changeset<T, P> {
         if (opts != null) {
-            return untyped __elixir__('Ecto.Changeset.add_error({0}, :{1}, {2}, {3})', 
-                this, field, message, opts);
+            return untyped __elixir__('Ecto.Changeset.add_error({0}, {1}, {2}, {3})', 
+                this, cast(field, Atom), message, opts);
         } else {
-            return untyped __elixir__('Ecto.Changeset.add_error({0}, :{1}, {2})', 
-                this, field, message);
+            return untyped __elixir__('Ecto.Changeset.add_error({0}, {1}, {2})', 
+                this, cast(field, Atom), message);
         }
     }
     

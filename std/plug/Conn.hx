@@ -159,6 +159,50 @@ abstract Conn<TParams>(Term) from Term to Term {
         var assigns = getAssigns();
         return Reflect.field(assigns, key);
     }
+
+    // ========================================================================
+    // SESSION (Plug.Session)
+    // ========================================================================
+
+    /**
+     * Read a session value from the Plug session.
+     *
+     * NOTE
+     * - Session keys should be atoms (e.g. `:user_id`), so we accept `Atom`.
+     * - Returns an opaque `Term` (or null for `nil`) at the framework boundary.
+     */
+    extern
+    public inline function getSession(key: String): Term {
+        return untyped __elixir__('Plug.Conn.get_session({0}, String.to_atom({1}))', this, key);
+    }
+
+    /**
+     * Put a session value into the Plug session.
+     */
+    extern
+    public inline function putSession(key: String, value: Term): Conn<TParams> {
+        return untyped __elixir__('Plug.Conn.put_session({0}, String.to_atom({1}), {2})', this, key, value);
+    }
+
+    /**
+     * Delete a session key from the Plug session.
+     */
+    extern
+    public inline function deleteSession(key: String): Conn<TParams> {
+        return untyped __elixir__('Plug.Conn.delete_session({0}, String.to_atom({1}))', this, key);
+    }
+
+    /**
+     * Configure session options for the current request.
+     *
+     * Examples (Elixir):
+     * - `Plug.Conn.configure_session(conn, renew: true)`
+     * - `Plug.Conn.configure_session(conn, drop: true)`
+     */
+    extern
+    public inline function configureSession(opts: Term): Conn<TParams> {
+        return untyped __elixir__('Plug.Conn.configure_session({0}, {1})', this, opts);
+    }
     
     /**
      * Check if connection is halted

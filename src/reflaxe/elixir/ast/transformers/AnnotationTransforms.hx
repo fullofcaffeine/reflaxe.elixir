@@ -573,7 +573,8 @@ class AnnotationTransforms {
         statements.push(makeAST(EMacroCall("pipeline", [makeAST(EAtom(ElixirAtom.raw("browser")))], makeAST(EBlock(browserPlugs)))));
 
         var routes = metadata != null ? metadata.routerRoutes : null;
-        var browserRouteCalls: Array<ElixirAST> = [];
+        var browserHttpRouteCalls: Array<ElixirAST> = [];
+        var browserLiveRouteCalls: Array<ElixirAST> = [];
         var apiRouteCalls: Array<ElixirAST> = [];
         var dashboardRoutes: Array<{scopePath: String, routePath: String}> = [];
 
@@ -593,7 +594,6 @@ class AnnotationTransforms {
                 }
 
                 var pipeline = route.pipeline != null ? route.pipeline : (StringTools.startsWith(path, "/api") ? "api" : "browser");
-                var targetCalls = (pipeline == "api") ? apiRouteCalls : browserRouteCalls;
 
                 var controllerName = route.controller != null ? NameUtils.getElixirModuleName(route.controller) : null;
                 var actionName = route.action;
@@ -619,11 +619,19 @@ class AnnotationTransforms {
                     : path;
                 if (routePathFinal == "") routePathFinal = "/";
 
-                targetCalls.push(makeAST(ECall(null, routeMacro, [
+                var routeCall = makeAST(ECall(null, routeMacro, [
                     makeAST(EString(routePathFinal)),
                     makeAST(EVar(controllerName)),
                     makeAST(EAtom(ElixirAtom.raw(actionName)))
-                ])));
+                ]));
+
+                if (pipeline == "api") {
+                    apiRouteCalls.push(routeCall);
+                } else if (routeMacro == "live") {
+                    browserLiveRouteCalls.push(routeCall);
+                } else {
+                    browserHttpRouteCalls.push(routeCall);
+                }
             }
         }
 
@@ -636,8 +644,26 @@ class AnnotationTransforms {
         }
 
         // scope "/", WebModule do ... end (browser)
-        if (browserRouteCalls.length > 0) {
-            var scopeBody = [makeAST(ECall(null, "pipe_through", [makeAST(EAtom(ElixirAtom.raw("browser")))]))].concat(browserRouteCalls);
+        if (browserHttpRouteCalls.length > 0 || browserLiveRouteCalls.length > 0) {
+            var scopeBody: Array<ElixirAST> = [
+                makeAST(ECall(null, "pipe_through", [makeAST(EAtom(ElixirAtom.raw("browser")))]))
+            ];
+            scopeBody = scopeBody.concat(browserHttpRouteCalls);
+
+            if (browserLiveRouteCalls.length > 0) {
+                var sessionMfa = makeAST(ETuple([
+                    makeAST(EVar(webModuleName)),
+                    makeAST(EAtom(ElixirAtom.raw("live_session"))),
+                    makeAST(EList([]))
+                ]));
+                var liveSessionOpts = makeAST(EKeywordList([{key: "session", value: sessionMfa}]));
+                scopeBody.push(makeAST(EMacroCall(
+                    "live_session",
+                    [makeAST(EAtom(ElixirAtom.raw("default"))), liveSessionOpts],
+                    makeAST(EBlock(browserLiveRouteCalls))
+                )));
+            }
+
             statements.push(makeAST(EMacroCall("scope", [makeAST(EString("/")), makeAST(EVar(webModuleName))], makeAST(EBlock(scopeBody)))));
         }
 
@@ -912,6 +938,7 @@ class AnnotationTransforms {
             case "Int": return makeAST(EAtom("integer"));
             case "Float": return makeAST(EAtom("float"));
             case "Bool": return makeAST(EAtom("boolean"));
+            case "DateTime": return makeAST(EAtom("utc_datetime"));
             case "Date" | "NaiveDateTime": return makeAST(EAtom("naive_datetime"));
             case _:
                 // Detect Array<...>
@@ -922,6 +949,7 @@ class AnnotationTransforms {
                         case "Int": "integer";
                         case "Float": "float";
                         case "Bool": "boolean";
+                        case "DateTime": "utc_datetime";
                         case "Date" | "NaiveDateTime": "naive_datetime";
                         case _: "string";
                     };
@@ -966,6 +994,8 @@ class AnnotationTransforms {
                         schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("integer"))) ])));
                     case "Bool":
                         schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("boolean"))) ])));
+                    case "DateTime":
+                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("utc_datetime"))) ])));
                     case "NaiveDateTime":
                         schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("naive_datetime"))) ])));
                     case "Float":
@@ -1645,6 +1675,17 @@ class AnnotationTransforms {
                 ]))
             )));
         }
+
+        // def live_session(_conn) do %{} end
+        // Used by router-generated `live_session` blocks to add extra LiveView session assigns.
+        if (!existingDefinitions.exists("live_session/1")) {
+            statements.push(makeAST(EDef(
+                "live_session",
+                [EPattern.PVar("_conn")],
+                null,
+                makeAST(EMap([]))
+            )));
+        }
         
         return makeAST(EBlock(statements));
     }
@@ -1816,9 +1857,29 @@ class AnnotationTransforms {
     /**
      * Build ExUnit.Case module body
      * 
-     * WHY: ExUnit modules need use ExUnit.Case and test macros
-     * WHAT: Transforms regular functions into test blocks with support for describe blocks, async, and tags
-     * HOW: Adds use statement, groups tests by describe blocks, and transforms @:test methods with proper attributes
+     * WHAT
+     * - Converts `@:exunit` classes into idiomatic `use ExUnit.Case` modules.
+     * - Rewrites `@:test` functions into `test "..."`
+     * - Drops Haxe constructors (`new`) from the output module.
+     *
+     * WHY
+     * - ExUnit test modules are not instantiated. Keeping Haxe constructors produces unused `def new/0`
+     *   functions that call `super.new()` and can trigger Elixir warnings (or errors) if the base class
+     *   isn't emitted/aliased the way a normal runtime class would be.
+     *
+     * HOW
+     * - Always inject `use ExUnit.Case` (and Phoenix test helpers when referenced).
+     * - Transform `@:test` functions into `test` macro calls.
+     * - Filter out `def new` / `defp new` when copying non-test helpers into the module body.
+     *
+     * EXAMPLES
+     * Haxe:
+     *   @:exunit class MyTest extends TestCase { @:test function works() {} }
+     * Elixir:
+     *   defmodule MyTest do
+     *     use ExUnit.Case
+     *     test "works" do ... end
+     *   end
      */
     static function buildExUnitBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
         var statements = [];
@@ -2009,6 +2070,8 @@ class AnnotationTransforms {
                 // First add setup/teardown blocks
                 for (expr in exprs) {
                     switch(expr.def) {
+                        case EDef(name, _, _, _) | EDefp(name, _, _, _) if (name == "new"):
+                            // Haxe constructor - ExUnit modules should not emit constructors.
                         case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isSetup == true || 
                                                                                                        expr.metadata?.isSetupAll == true ||
                                                                                                        expr.metadata?.isTeardown == true ||

@@ -332,22 +332,22 @@ class PresenceMacro {
         }
 
         // Generate internal methods (with self())
-		newFields.push(generateInternalTrack());
-		newFields.push(generateInternalUpdate());
-		newFields.push(generateInternalUntrack());
+		newFields.push(generateInternalTrack(fqModule));
+		newFields.push(generateInternalUpdate(fqModule));
+		newFields.push(generateInternalUntrack(fqModule));
 		
 		// Generate convenience methods if topic is configured
 		if (classTopic != null) {
 			newFields.push(generateSimpleTrack(classTopic));
 			newFields.push(generateSimpleUpdate(classTopic));
 			newFields.push(generateSimpleUntrack(classTopic));
-			newFields.push(generateSimpleList(classTopic));
-		}
-		
-        // Generate chainable socket methods
-        newFields.push(generateTrackWithSocket());
-        newFields.push(generateUpdateWithSocket());
-        newFields.push(generateUntrackWithSocket());
+				newFields.push(generateSimpleList(fqModule, classTopic));
+			}
+			
+	        // Generate chainable socket methods
+	        newFields.push(generateTrackWithSocket(fqModule));
+	        newFields.push(generateUpdateWithSocket(fqModule));
+	        newFields.push(generateUntrackWithSocket(fqModule));
 
         // Generate external topic-based wrappers:
         newFields.push(generateExternalList(fqModule));
@@ -364,11 +364,11 @@ class PresenceMacro {
 	 * Uses extern inline to allow compile-time resolution of socket type.
 	 * This avoids the need for overloading and eliminates raw-term usage in signatures.
 	 */
-	static function generateInternalTrack(): Field {
-		return {
-			name: "trackInternal",
-			pos: Context.currentPos(),
-			kind: FFun({
+		static function generateInternalTrack(fqModule:String): Field {
+			return {
+				name: "trackInternal",
+				pos: Context.currentPos(),
+				kind: FFun({
 				params: [
 					{name: "M"}   // Metadata type parameter
 				],
@@ -377,16 +377,20 @@ class PresenceMacro {
 					{name: "key", type: macro : String},
 					{name: "meta", type: macro : M}  // Generic metadata type
 				],
-				ret: macro : Void,  // Presence tracking doesn't return anything
-                expr: macro {
-                    // Delegate to presence module: __MODULE__.track(self(), topic, key, meta)
-                    untyped __elixir__('{0}.track({1}, {2}, {3}, {4})', 
-                        untyped __elixir__('__MODULE__'), 
-                        untyped __elixir__('self()'), topic, key, meta);
-                }
-            }),
-            access: [APublic, AStatic, AInline],  // inline for zero-cost abstraction
-			doc: "Track presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
+					ret: macro : Void,  // Presence tracking doesn't return anything
+	                expr: macro {
+	                    // Delegate to presence module: <PresenceModule>.track(self(), topic, key, meta)
+	                    untyped __elixir__(
+	                      '{0}.track(self(), {1}, {2}, {3})',
+	                      untyped __elixir__($v{fqModule}),
+	                      topic,
+	                      key,
+	                      meta
+	                    );
+	                }
+	            }),
+	            access: [APublic, AStatic, AInline],  // inline for zero-cost abstraction
+				doc: "Track presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
 			meta: [{name: ":doc", pos: Context.currentPos()}]
 		};
 	}
@@ -396,11 +400,11 @@ class PresenceMacro {
 	 * Generate internal update method that injects self().
 	 * Uses generic type parameters for type safety.
 	 */
-	static function generateInternalUpdate(): Field {
-		return {
-			name: "updateInternal",
-			pos: Context.currentPos(),
-			kind: FFun({
+		static function generateInternalUpdate(fqModule:String): Field {
+			return {
+				name: "updateInternal",
+				pos: Context.currentPos(),
+				kind: FFun({
 				params: [
 					{name: "M"}   // Metadata type parameter
 				],
@@ -409,16 +413,20 @@ class PresenceMacro {
 					{name: "key", type: macro : String},
 					{name: "meta", type: macro : M}
 				],
-				ret: macro : Void,
-                expr: macro {
-                    // Delegate to presence module: __MODULE__.update(self(), topic, key, meta)
-                    untyped __elixir__('{0}.update({1}, {2}, {3}, {4})', 
-                        untyped __elixir__('__MODULE__'), 
-                        untyped __elixir__('self()'), topic, key, meta);
-                }
-			}),
-            access: [APublic, AStatic, AInline],
-			doc: "Update presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
+					ret: macro : Void,
+	                expr: macro {
+	                    // Delegate to presence module: <PresenceModule>.update(self(), topic, key, meta)
+	                    untyped __elixir__(
+	                      '{0}.update(self(), {1}, {2}, {3})',
+	                      untyped __elixir__($v{fqModule}),
+	                      topic,
+	                      key,
+	                      meta
+	                    );
+	                }
+				}),
+	            access: [APublic, AStatic, AInline],
+				doc: "Update presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
 			meta: [{name: ":doc", pos: Context.currentPos()}]
 		};
 	}
@@ -427,25 +435,28 @@ class PresenceMacro {
 	 * Generate internal untrack method that injects self().
 	 * Uses generic type parameter for socket type safety.
 	 */
-	static function generateInternalUntrack(): Field {
-		return {
-			name: "untrackInternal",
-			pos: Context.currentPos(),
-			kind: FFun({
+		static function generateInternalUntrack(fqModule:String): Field {
+			return {
+				name: "untrackInternal",
+				pos: Context.currentPos(),
+				kind: FFun({
 				args: [
 					{name: "topic", type: macro : String},  // Topic string for LiveView
 					{name: "key", type: macro : String}
 				],
-				ret: macro : Void,
-                expr: macro {
-                    // Delegate to presence module: __MODULE__.untrack(self(), topic, key)
-                    untyped __elixir__('{0}.untrack({1}, {2}, {3})', 
-                        untyped __elixir__('__MODULE__'), 
-                        untyped __elixir__('self()'), topic, key);
-                }
-			}),
-            access: [APublic, AStatic, AInline],
-			doc: "Untrack presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
+					ret: macro : Void,
+	                expr: macro {
+	                    // Delegate to presence module: <PresenceModule>.untrack(self(), topic, key)
+	                    untyped __elixir__(
+	                      '{0}.untrack(self(), {1}, {2})',
+	                      untyped __elixir__($v{fqModule}),
+	                      topic,
+	                      key
+	                    );
+	                }
+				}),
+	            access: [APublic, AStatic, AInline],
+				doc: "Untrack presence internally for LiveView contexts. Uses topic string as required by Phoenix.Presence.",
 			meta: [{name: ":doc", pos: Context.currentPos()}]
 		};
 	}
@@ -636,20 +647,20 @@ class PresenceMacro {
 	 * Generate simple list method that uses class-level topic.
 	 * Returns all presences for the configured topic.
 	 */
-    static function generateSimpleList(topic: String): Field {
-		return {
-			name: "listSimple",
-			pos: Context.currentPos(),
-			kind: FFun({
+	    static function generateSimpleList(fqModule:String, topic: String): Field {
+			return {
+				name: "listSimple",
+				pos: Context.currentPos(),
+				kind: FFun({
 				args: [],  // No arguments needed
-				ret: macro : elixir.types.Term,  // Returns a map of presence entries
-				expr: macro {
-                    // Use presence module's list/1 with the class-level topic
-                    return untyped __elixir__('{0}.list({1})', untyped __elixir__('__MODULE__'), $v{topic});
-                }
-            }),
-            access: [APublic, AStatic, AInline],
-            doc: "List all presences for the class-level topic.",
+					ret: macro : elixir.types.Term,  // Returns a map of presence entries
+					expr: macro {
+	                    // Use presence module's list/1 with the class-level topic
+	                    return untyped __elixir__('{0}.list({1})', untyped __elixir__($v{fqModule}), $v{topic});
+	                }
+	            }),
+	            access: [APublic, AStatic, AInline],
+	            doc: "List all presences for the class-level topic.",
             meta: [{name: ":doc", pos: Context.currentPos()}]
         };
     }
@@ -783,7 +794,7 @@ class PresenceMacro {
      * Generate chainable track method that returns the socket.
      * Useful for LiveView's socket chaining pattern.
      */
-        static function generateTrackWithSocket(): Field {
+        static function generateTrackWithSocket(fqModule:String): Field {
             return {
                 name: "trackWithSocket",
                 pos: Context.currentPos(),
@@ -800,10 +811,16 @@ class PresenceMacro {
                     ],
                     ret: macro : T,
                     expr: macro {
-                        // Call internal implementation (injects self() and uses topic)
+                        // Direct call to the Presence module (safe even when inlined).
                         // This surfaces as a statement before the trailing socket and
                         // will be preserved by PresenceBareCallPreserveTransforms.
-                        trackInternal(topic, key, meta);
+                        untyped __elixir__(
+                          '{0}.track(self(), {1}, {2}, {3})',
+                          untyped __elixir__($v{fqModule}),
+                          topic,
+                          key,
+                          meta
+                        );
                         return socket;
                     }
                 }),
@@ -816,7 +833,7 @@ class PresenceMacro {
 	/**
 	 * Generate chainable update method that returns the socket.
 	 */
-        static function generateUpdateWithSocket(): Field {
+        static function generateUpdateWithSocket(fqModule:String): Field {
             return {
                 name: "updateWithSocket",
                 pos: Context.currentPos(),
@@ -833,8 +850,14 @@ class PresenceMacro {
                     ],
                     ret: macro : T,
                     expr: macro {
-                        // Call internal implementation to surface effect as statement
-                        updateInternal(topic, key, meta);
+                        // Direct call to the Presence module (safe even when inlined).
+                        untyped __elixir__(
+                          '{0}.update(self(), {1}, {2}, {3})',
+                          untyped __elixir__($v{fqModule}),
+                          topic,
+                          key,
+                          meta
+                        );
                         return socket;
                     }
                 }),
@@ -847,7 +870,7 @@ class PresenceMacro {
 	/**
 	 * Generate chainable untrack method that returns the socket.
 	 */
-        static function generateUntrackWithSocket(): Field {
+        static function generateUntrackWithSocket(fqModule:String): Field {
             return {
                 name: "untrackWithSocket",
                 pos: Context.currentPos(),
@@ -862,8 +885,13 @@ class PresenceMacro {
                     ],
                     ret: macro : T,
                     expr: macro {
-                        // Call internal implementation to surface effect as statement
-                        untrackInternal(topic, key);
+                        // Direct call to the Presence module (safe even when inlined).
+                        untyped __elixir__(
+                          '{0}.untrack(self(), {1}, {2})',
+                          untyped __elixir__($v{fqModule}),
+                          topic,
+                          key
+                        );
                         return socket;
                     }
                 }),

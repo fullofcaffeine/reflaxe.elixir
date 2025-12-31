@@ -130,18 +130,17 @@ class CompilerInit {
         // - The repoTransformPass (in AnnotationTransforms) then converts the extern into an
         //   idiomatic Elixir module that calls `use Ecto.Repo, otp_app: :<app>, adapter: ...` and
         //   writes it to `lib/<app_snake>/repo.ex`.
-        if (!fastBoot) {
-            try {
-                Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.RepoEnumerator.ensureRepoKept())");
-            } catch (e: haxe.Exception) {}
-        }
+        // NOTE: This is cheap and should run in all profiles (including fast_boot). Correctness must not
+        // depend on the profile; only late "cosmetic hygiene" should be skippable.
+        try {
+            Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.AnnotatedModuleEnumerator.ensureKept())");
+        } catch (e: haxe.Exception) {}
 
-        // Macro-phase discovery: force-type @:repo externs so they join normal compilation
-        if (!fastBoot) {
-            try {
-                reflaxe.elixir.macros.RepoDiscovery.run();
-            } catch (e: haxe.Exception) {}
-        }
+        // Macro-phase discovery: force-type framework-annotated modules so they join normal compilation.
+        // Under fast_boot, RepoDiscovery uses a temp-file cache to avoid repeated project-wide scans.
+        try {
+            reflaxe.elixir.macros.RepoDiscovery.run();
+        } catch (e: haxe.Exception) {}
 
         // Choose preprocessor profile
         var useFastPrepasses = !Context.defined("full_prepasses");

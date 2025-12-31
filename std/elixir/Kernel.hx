@@ -192,7 +192,8 @@ extern class Kernel {
     
     // Inspection and debugging
     @:native("inspect")
-    static function inspect(term: Term, ?options: Map<String, Term>): String;
+    @:overload(function(term: Term): String {})
+    static function inspect(term: Term, options: Term): String;
     
     @:native("dbg")
     static function dbg(value: Term): Term; // Debug helper (Elixir 1.14+)
@@ -253,10 +254,11 @@ extern class Kernel {
     static function updateIn(data: Term, keys: Array<Term>, func: Term -> Term): Term;
     
     @:native("struct")
-    static function struct(module: Term, ?fields: Map<String, Term>): Term;
+    @:overload(function(module: Term): Term {})
+    static function struct(module: Term, fields: Term): Term;
     
     @:native("struct!")
-    static function structBang(module: Term, fields: Map<String, Term>): Term;
+    static function structBang(module: Term, fields: Term): Term;
     
     // Range operations
     @:native("Range.new")
