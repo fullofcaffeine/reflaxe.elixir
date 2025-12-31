@@ -1312,6 +1312,15 @@ enum ActivityKind {
 									<div class="text-gray-600 dark:text-gray-400">
 										<div>Welcome, #{@current_user.name}!</div>
 										<div class="mt-2 flex items-center gap-3 text-sm">
+											<button data-testid="nav-theme-toggle"
+												id="nav-theme-toggle"
+												type="button"
+												phx-hook="ThemeToggle"
+												aria-label="Toggle theme"
+												class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+												<span aria-hidden="true">🌓</span>
+												<span data-theme-label class="text-xs font-medium">Theme</span>
+											</button>
 											<if {@signed_in}>
 													<a data-testid="nav-users" href="/users" class="text-blue-700 dark:text-blue-300 hover:underline">
 														Users
