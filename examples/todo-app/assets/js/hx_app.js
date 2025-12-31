@@ -16,19 +16,27 @@ Reflect.deleteField = function(o,field) {
 	return true;
 };
 var client_Boot = function() { };
-client_Boot.main = function() {
-	client_utils_Theme.applyStoredOrDefault();
-	var hooks = { AutoFocus : { mounted : function() {
+client_Boot.buildHooks = function() {
+	var hooks = { };
+	hooks["AutoFocus"] = { mounted : function() {
 		client_hooks_AutoFocusHook.mounted(this);
-	}}, Ping : { mounted : function() {
+	}};
+	hooks["Ping"] = { mounted : function() {
 		client_hooks_PingHook.mounted(this);
-	}}, CopyToClipboard : { mounted : function() {
+	}};
+	hooks["CopyToClipboard"] = { mounted : function() {
 		client_hooks_CopyToClipboardHook.mounted(this);
-	}}, ThemeToggle : { mounted : function() {
+	}};
+	hooks["ThemeToggle"] = { mounted : function() {
 		client_hooks_ThemeToggleHook.mounted(this);
 	}, destroyed : function() {
 		client_hooks_ThemeToggleHook.destroyed(this);
-	}}};
+	}};
+	return hooks;
+};
+client_Boot.main = function() {
+	client_utils_Theme.applyStoredOrDefault();
+	var hooks = client_Boot.buildHooks();
 	window.Hooks = Object.assign(window.Hooks || {}, hooks);
 };
 var client_hooks_AutoFocusHook = function() { };

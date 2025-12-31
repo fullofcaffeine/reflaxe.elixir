@@ -52,7 +52,8 @@ import haxe.macro.TypeTools;
  *   HEEx assigns type error: @sort_by is String but compared to Int literal
  *
  * LIMITATIONS (Intentional for M1)
- * - Attribute validation only applies to registered HTML elements (component tags like `<.button>` are skipped).
+ * - Component tag validation is currently implemented for a small set of Phoenix core tags
+ *   (e.g. `<.form>` and `<.link>`). Unknown components are skipped to avoid false positives.
  * - Only checks obvious attribute kind mismatches (bool-ish attrs + `phx-hook`) when the expression kind is clear.
  * - Does not fully type component props or complex HEEx expressions yet.
  */
@@ -72,82 +73,97 @@ class HeexAssignsTypeLinterTransforms {
     }
 
     static function lint(ast: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>): ElixirAST {
-        // Lint any render(assigns) function in project files; skip compiler/vendor/std paths
+        // Lint any template-producing function in project files; skip compiler/vendor/std paths.
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             switch (n.def) {
-                case EModule(_name, _attrs, body):
-                    for (child in body) lintRender(child, ctx);
-                case EDefmodule(_name, doBlock):
-                    lintRender(doBlock, ctx);
+                case EDef(_name, _args, _guards, _body) | EDefp(_name, _args, _guards, _body):
+                    lintFunction(n, ctx);
                 default:
             }
             return n;
         });
     }
 
-    static function lintRender(n: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>): Void {
+    static function lintFunction(n: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>): Void {
+        var functionName: String = null;
+        var body: ElixirAST = null;
         switch (n.def) {
-            case EDef(name, _args, _guards, body) if (name == "render"):
-                // Fail-fast: skip linter if this render body contains neither ~H sigils nor EFragment nodes
-                if (!containsHeexOrFragments(body)) {
-                    return;
-                }
-                // Resolve Haxe source path for this function
-                var hxPath = (n.metadata != null && n.metadata.sourceFile != null) ? n.metadata.sourceFile : null;
-                if (hxPath == null) {
-                    // Fallback: search within body for any node carrying sourceFile metadata
-                    hxPath = findAnySourceFile(body);
-                }
-#if debug_assigns_linter
-                // DISABLED: trace('[HeexAssignsTypeLinter] render/1 at hxPath=' + hxPath);
-#end
-                if (hxPath == null) return; // No source; skip
-                // Skip compiler/library/internal files to avoid scanning whole libs
-                var hxPathNorm = StringTools.replace(hxPath, "\\", "/");
-                if (hxPathNorm.indexOf("/reflaxe/elixir/") != -1 || hxPathNorm.indexOf("/vendor/") != -1 || hxPathNorm.indexOf("/std/") != -1) {
-                    return;
-                }
-                var fileContent: String = null;
-                try fileContent = sys.io.File.getContent(hxPath) catch (e) fileContent = null;
-                if (fileContent == null) return;
-
-                var nearLine: Null<Int> = findMinSourceLine(body);
-                var assignsType = (nearLine != null)
-                    ? extractAssignsTypeNameBefore(fileContent, nearLine)
-                    : extractAssignsTypeName(fileContent);
-#if debug_assigns_linter
-                // DISABLED: trace('[HeexAssignsTypeLinter] assigns type=' + assignsType);
-#end
-                if (assignsType == null) return; // cannot determine type name; skip
-
-                var fields = extractAssignsFields(assignsType, fileContent);
-#if debug_assigns_linter
-                var keys = [for (k in fields.keys()) k].join(',');
-                // DISABLED: trace('[HeexAssignsTypeLinter] typedef fields=' + keys);
-#end
-                if (fields == null) fields = new Map<String, String>();
-
-                // Prefer structured validation first
-                // 1) Validate ~H nodes via builder-attached typed HEEx AST (heexAST) or fragment metadata
-                validateHeexFragments(body, fields, assignsType, ctx);
-
-                // 2) Validate any native EFragment nodes already present in the render body
-                validateNativeEFragments(body, fields, assignsType, ctx);
-
-                // 3) Bridge path: string-based validation for ~H contents (kept until full EFragment emission)
-                var contents: Array<{content:String, pos:haxe.macro.Expr.Position}> = [];
-                collectHeexContents(body, contents);
-                for (item in contents) {
-                    var used = collectAtFields(item.content);
-#if debug_assigns_linter
-                    // DISABLED: trace('[HeexAssignsTypeLinter] ~H content @fields=' + used.join(','));
-#end
-                    for (f in used) if (!fields.exists(f)) {
-                        error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + assignsType + ')', item.pos);
-                    }
-                    checkLiteralComparisons(item.content, fields, assignsType, ctx, item.pos);
-                }
+            case EDef(name, _args, _guards, fnBody):
+                functionName = name;
+                body = fnBody;
+            case EDefp(name, _args, _guards, fnBody):
+                functionName = name;
+                body = fnBody;
             default:
+                return;
+        }
+
+        // Fail-fast: skip linter if this function body contains neither ~H sigils nor EFragment nodes
+        if (!containsHeexOrFragments(body)) {
+            return;
+        }
+
+        // Resolve Haxe source path for this function
+        var hxPath = (n.metadata != null && n.metadata.sourceFile != null) ? n.metadata.sourceFile : null;
+        if (hxPath == null) {
+            // Fallback: search within body for any node carrying sourceFile metadata
+            hxPath = findAnySourceFile(body);
+        }
+#if debug_assigns_linter
+        // DISABLED: trace('[HeexAssignsTypeLinter] ' + functionName + '/? at hxPath=' + hxPath);
+#end
+        if (hxPath == null) return; // No source; skip
+        // Skip compiler/library/internal files to avoid scanning whole libs
+        var hxPathNorm = StringTools.replace(hxPath, "\\", "/");
+        if (hxPathNorm.indexOf("/reflaxe/elixir/") != -1 || hxPathNorm.indexOf("/vendor/") != -1 || hxPathNorm.indexOf("/std/") != -1) {
+            return;
+        }
+        var fileContent: String = null;
+        try fileContent = sys.io.File.getContent(hxPath) catch (e) fileContent = null;
+        if (fileContent == null) return;
+
+        var nearLine: Null<Int> = findMinSourceLine(body);
+        var assignsTypeSpec = (nearLine != null)
+            ? extractAssignsTypeSpecForFunctionBefore(functionName, fileContent, nearLine)
+            : extractAssignsTypeSpecForFunction(functionName, fileContent);
+
+        var assignsTypeName = assignsTypeSpec != null ? unwrapAssignsType(assignsTypeSpec) : null;
+        var assignsTypeBase = assignsTypeName != null ? stripTypeParameters(assignsTypeName) : null;
+#if debug_assigns_linter
+        // DISABLED: trace('[HeexAssignsTypeLinter] assigns type spec=' + assignsTypeSpec + ' base=' + assignsTypeBase);
+#end
+        var fields: Null<Map<String, String>> = (assignsTypeBase != null) ? extractAssignsFields(assignsTypeBase, fileContent) : null;
+        var enableAssignsChecks = fields != null;
+        var fieldsForValidation = fields != null ? fields : new Map<String, String>();
+        var typeNameForErrors = assignsTypeBase != null ? assignsTypeBase : "(unknown assigns type)";
+#if debug_assigns_linter
+        if (fields != null) {
+            var keys = [for (k in fields.keys()) k].join(',');
+            // DISABLED: trace('[HeexAssignsTypeLinter] typedef fields=' + keys);
+        }
+#end
+
+        // Prefer structured validation first
+        // 1) Validate ~H nodes via builder-attached typed HEEx AST (heexAST) or fragment metadata
+        validateHeexFragments(body, fieldsForValidation, typeNameForErrors, ctx, enableAssignsChecks);
+
+        // 2) Validate any native EFragment nodes already present in the function body
+        validateNativeEFragments(body, fieldsForValidation, typeNameForErrors, ctx, enableAssignsChecks);
+
+        // 3) Bridge path: string-based validation for ~H contents (kept until full EFragment emission)
+        if (enableAssignsChecks) {
+            var contents: Array<{content:String, pos:haxe.macro.Expr.Position}> = [];
+            collectHeexContents(body, contents);
+            for (item in contents) {
+                var used = collectAtFields(item.content);
+#if debug_assigns_linter
+                // DISABLED: trace('[HeexAssignsTypeLinter] ~H content @fields=' + used.join(','));
+#end
+                for (f in used) if (!fieldsForValidation.exists(f)) {
+                    error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + typeNameForErrors + ')', item.pos);
+                }
+                checkLiteralComparisons(item.content, fieldsForValidation, typeNameForErrors, ctx, item.pos);
+            }
         }
     }
 
@@ -201,7 +217,7 @@ class HeexAssignsTypeLinterTransforms {
     }
 
     // Validate attributes from parsed fragment metadata (if annotator ran)
-    static function validateHeexFragments(node: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>): Void {
+    static function validateHeexFragments(node: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, enableAssignsChecks: Bool): Void {
         ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
             switch (x.def) {
                 case ESigil(type, _content, _mods) if (type == "H"):
@@ -210,7 +226,7 @@ class HeexAssignsTypeLinterTransforms {
                         // Prefer typed HEEx AST when available
                         var nodes = meta.heexAST;
                         if (nodes != null && nodes.length > 0) {
-                            validateHeexTypedAST(nodes, fields, typeName, ctx, x.pos);
+                            validateHeexTypedAST(nodes, fields, typeName, ctx, x.pos, enableAssignsChecks);
                         }
                         var frags = meta.heexFragments;
                         if (frags != null) {
@@ -220,14 +236,18 @@ class HeexAssignsTypeLinterTransforms {
                                 for (a in attrs) {
                                     var vexpr: String = a.valueExpr;
                                     // Unknown field checks: scan @field tokens
-                                    var used = collectAtFields(vexpr);
-                                    for (uf in used) {
-                                        if (!fields.exists(uf)) {
-                                            error(ctx, 'HEEx assigns error: Unknown field @' + uf + ' (not found in typedef ' + typeName + ')', x.pos);
+                                    if (enableAssignsChecks) {
+                                        var used = collectAtFields(vexpr);
+                                        for (uf in used) {
+                                            if (!fields.exists(uf)) {
+                                                error(ctx, 'HEEx assigns error: Unknown field @' + uf + ' (not found in typedef ' + typeName + ')', x.pos);
+                                            }
                                         }
                                     }
                                     // Literal kind mismatches within attribute expressions
-                                    checkLiteralComparisons(vexpr, fields, typeName, ctx, x.pos);
+                                    if (enableAssignsChecks) {
+                                        checkLiteralComparisons(vexpr, fields, typeName, ctx, x.pos);
+                                    }
                                 }
                             }
                         }
@@ -239,12 +259,12 @@ class HeexAssignsTypeLinterTransforms {
     }
 
     // Validate attributes using native EFragment nodes present in AST
-    static function validateNativeEFragments(node: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>): Void {
+    static function validateNativeEFragments(node: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, enableAssignsChecks: Bool): Void {
         ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
             switch (x.def) {
                 case EFragment(_tag, _attrs, _children):
                     // Validate this fragment and all nested children via structured walker
-                    validateNode(x, fields, typeName, ctx, x.pos);
+                    validateNode(x, fields, typeName, ctx, x.pos, enableAssignsChecks);
                 default:
             }
             return x;
@@ -254,24 +274,24 @@ class HeexAssignsTypeLinterTransforms {
     // ---------------------------------------------------------------------
     // Typed HEEx AST validation (preferred path)
     // ---------------------------------------------------------------------
-    static function validateHeexTypedAST(nodes: Array<ElixirAST>, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        for (n in nodes) validateNode(n, fields, typeName, ctx, pos);
+    static function validateHeexTypedAST(nodes: Array<ElixirAST>, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
+        for (n in nodes) validateNode(n, fields, typeName, ctx, pos, enableAssignsChecks);
     }
 
-    static function validateNode(n: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+    static function validateNode(n: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
         switch (n.def) {
             case EFragment(tag, attributes, children):
                 // Attributes
                 for (attr in attributes) {
-                    validateAttribute(tag, attr, fields, typeName, ctx, pos);
+                    validateAttribute(tag, attr, fields, typeName, ctx, pos, enableAssignsChecks);
                 }
                 // Children
-                for (c in children) validateNode(c, fields, typeName, ctx, pos);
+                for (c in children) validateNode(c, fields, typeName, ctx, pos, enableAssignsChecks);
             default:
         }
     }
 
-    static function validateAttribute(tag: String, attr: EAttribute, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+    static function validateAttribute(tag: String, attr: EAttribute, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
         // 1) Name validation (only for known HTML elements; allow HEEx directive attrs)
         validateAttributeName(tag, attr.name, ctx, pos);
 
@@ -279,7 +299,7 @@ class HeexAssignsTypeLinterTransforms {
         validateAttributeValueKind(attr.name, attr.value, fields, ctx, pos);
 
         // 3) Assigns field usage within `{ ... }` attribute expressions
-        validateExprForAssigns(attr.value, fields, typeName, ctx, pos);
+        validateExprForAssigns(attr.value, fields, typeName, ctx, pos, enableAssignsChecks);
     }
 
     static var allowedHtmlAttributeCache: Map<String, Map<String, Bool>> = new Map();
@@ -289,6 +309,16 @@ class HeexAssignsTypeLinterTransforms {
         if (attributeName == null || attributeName.length == 0) return;
         // HEEx directive attrs like :if/:for/:let are valid on any tag.
         if (attributeName.startsWith(":")) return;
+
+        if (tag != null && tag.length > 0) {
+            var first = tag.charAt(0);
+            if (first == ".") {
+                validatePhoenixCoreComponentAttributeName(tag, attributeName, ctx, pos);
+                return;
+            }
+            // Slot tags (<:inner_block>) don't validate attributes.
+            if (first == ":") return;
+        }
 
         // Only validate registered HTML elements to avoid false positives on Phoenix components/custom tags.
         if (!isRegisteredHtmlElement(tag)) return;
@@ -302,6 +332,43 @@ class HeexAssignsTypeLinterTransforms {
         if (allowed.exists(attributeName) || allowed.exists(canonical) || (htmlName != null && allowed.exists(htmlName))) return;
 
         error(ctx, 'HEEx attribute error: <' + tag + '> does not allow attribute "' + attributeName + '"', pos);
+    }
+
+    static function validatePhoenixCoreComponentAttributeName(componentTag: String, attributeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        // Only validate a small allowlist of Phoenix core component tags to avoid
+        // false positives on user-defined components.
+        var allowed = getAllowedPhoenixCoreComponentAttributes(componentTag);
+        if (allowed == null) return;
+
+        var canonical = normalizeHeexAttributeName(attributeName);
+        var htmlName = HXXComponentRegistry.toHtmlAttribute(canonical);
+        if (isWildcardHeexAttribute(canonical) || isWildcardHeexAttribute(htmlName)) return;
+
+        if (allowed.exists(attributeName) || allowed.exists(canonical) || (htmlName != null && allowed.exists(htmlName))) return;
+
+        error(ctx, 'HEEx component attribute error: <' + componentTag + '> does not allow attribute "' + attributeName + '"', pos);
+    }
+
+    static function getAllowedPhoenixCoreComponentAttributes(tag: String): Null<Map<String, Bool>> {
+        return switch (tag) {
+            case ".form":
+                buildAllowedComponentAttributesFromHtmlTag("form", ["for", "as", "multipart"]);
+            case ".link":
+                buildAllowedComponentAttributesFromHtmlTag("a", ["navigate", "patch", "method", "replace"]);
+            default:
+                null;
+        }
+    }
+
+    static function buildAllowedComponentAttributesFromHtmlTag(htmlTag: String, extra: Array<String>): Map<String, Bool> {
+        var allowed: Map<String, Bool> = new Map();
+
+        var html = getAllowedHtmlAttributesForTag(htmlTag);
+        for (k in html.keys()) allowed.set(k, true);
+
+        for (name in extra) addAllowedAttributeForms(allowed, name);
+
+        return allowed;
     }
 
     static function validateAttributeValueKind(attributeName: String, value: ElixirAST, fields: Map<String,String>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
@@ -426,7 +493,9 @@ class HeexAssignsTypeLinterTransforms {
         return expected == actual;
     }
 
-    static function validateExprForAssigns(expr: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+    static function validateExprForAssigns(expr: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
+        if (!enableAssignsChecks) return;
+
         // Collect used assigns fields and check comparisons on the fly
         var used = new Map<String,Bool>();
         analyzeExpr(expr, fields, typeName, ctx, pos, used);
@@ -580,30 +649,178 @@ class HeexAssignsTypeLinterTransforms {
         return fieldKind == litKind;
     }
 
-    static function extractAssignsTypeName(hx: String): Null<String> {
-        // Look for: function render(assigns: TypeName)
-        var re = ~/function\s+render\s*\(\s*assigns\s*:\s*([A-Za-z0-9_\.]+)/;
-        return re.match(hx) ? re.matched(1) : null;
+    static function extractAssignsTypeSpecForFunction(functionName: String, hx: String): Null<String> {
+        return extractAssignsTypeSpecForFunctionBefore(functionName, hx, null);
     }
 
-    static function extractAssignsTypeNameBefore(hx: String, nearLine: Int): Null<String> {
-        // Scan line-by-line and pick the nearest render(assigns: Type) defined at or before nearLine
-        var lines = hx.split("\n");
-        var bestName: Null<String> = null;
+    static function extractAssignsTypeSpecForFunctionBefore(functionName: String, hx: String, nearLine: Null<Int>): Null<String> {
+        if (functionName == null || functionName.length == 0) return null;
+
+        var escaped = escapeRegExp(functionName);
+        var re = new EReg('function\\s+' + escaped + '\\s*\\(', "g");
+        var searchStart = 0;
+
         var bestLine = -1;
-        var re = ~/function\s+render\s*\([^)]*assigns\s*:\s*([A-Za-z0-9_\.]+)/;
-        for (idx in 0...lines.length) {
-            var line = lines[idx];
-            if (re.match(line)) {
-                var name = re.matched(1);
-                var lineNo = idx + 1;
-                if (lineNo <= nearLine && lineNo > bestLine) { bestLine = lineNo; bestName = name; }
+        var bestType: Null<String> = null;
+
+        while (re.matchSub(hx, searchStart)) {
+            var matchPos = re.matchedPos();
+            var openParenIndex = matchPos.pos + matchPos.len - 1;
+
+            var lineNo = lineNumberAtIndex(hx, matchPos.pos);
+
+            if (nearLine == null || lineNo <= nearLine) {
+                var params = extractEnclosed(hx, openParenIndex, "(", ")");
+                if (params != null) {
+                    var assignsTypeSpec = extractTypeSpecForParam("assigns", params);
+                    if (assignsTypeSpec != null && lineNo > bestLine) {
+                        bestLine = lineNo;
+                        bestType = assignsTypeSpec;
+                    }
+                }
+            }
+
+            searchStart = matchPos.pos + matchPos.len;
+        }
+
+        return bestType;
+    }
+
+    static function unwrapAssignsType(typeSpec: String): Null<String> {
+        if (typeSpec == null) return null;
+        var trimmed = typeSpec.trim();
+        if (trimmed.length == 0) return null;
+
+        var lt = trimmed.indexOf("<");
+        if (lt == -1) return trimmed;
+        var outer = trimmed.substr(0, lt).trim();
+        if (!outer.endsWith("Assigns")) return trimmed;
+
+        var inner = extractEnclosed(trimmed, lt, "<", ">");
+        return inner != null ? inner.trim() : trimmed;
+    }
+
+    static function stripTypeParameters(typeSpec: String): Null<String> {
+        if (typeSpec == null) return null;
+        var trimmed = typeSpec.trim();
+        if (trimmed.length == 0) return null;
+
+        var lt = trimmed.indexOf("<");
+        return lt == -1 ? trimmed : trimmed.substr(0, lt).trim();
+    }
+
+    static function extractEnclosed(hx: String, openIndex: Int, openToken: String, closeToken: String): Null<String> {
+        if (hx == null || openIndex < 0 || openIndex >= hx.length) return null;
+        if (hx.substr(openIndex, openToken.length) != openToken) return null;
+
+        var i = openIndex;
+        var depth = 0;
+        var start = openIndex + openToken.length;
+
+        while (i < hx.length) {
+            var ch = hx.charAt(i);
+            if (ch == openToken) {
+                depth++;
+            } else if (ch == closeToken) {
+                depth--;
+                if (depth == 0) {
+                    var end = i;
+                    return hx.substr(start, end - start);
+                }
+            }
+            i++;
+        }
+
+        return null;
+    }
+
+    static function extractTypeSpecForParam(paramName: String, params: String): Null<String> {
+        if (paramName == null || paramName.length == 0) return null;
+        if (params == null || params.length == 0) return null;
+
+        var searchStart = 0;
+        while (searchStart < params.length) {
+            var idx = params.indexOf(paramName, searchStart);
+            if (idx == -1) return null;
+
+            var beforeOk = idx == 0 || !isIdentPart(params.charCodeAt(idx - 1));
+            var afterIdx = idx + paramName.length;
+            var afterOk = afterIdx >= params.length || !isIdentPart(params.charCodeAt(afterIdx));
+
+            if (beforeOk && afterOk) {
+                var i = afterIdx;
+                while (i < params.length && StringTools.isSpace(params, i)) i++;
+                if (i < params.length && params.charAt(i) == ":") {
+                    i++;
+                    while (i < params.length && StringTools.isSpace(params, i)) i++;
+                    var start = i;
+
+                    var angleDepth = 0;
+                    var parenDepth = 0;
+                    var bracketDepth = 0;
+
+                    while (i < params.length) {
+                        var ch = params.charAt(i);
+                        switch (ch) {
+                            case "<":
+                                angleDepth++;
+                            case ">":
+                                if (angleDepth > 0) angleDepth--;
+                            case "(":
+                                parenDepth++;
+                            case ")":
+                                if (parenDepth > 0) parenDepth--;
+                            case "[":
+                                bracketDepth++;
+                            case "]":
+                                if (bracketDepth > 0) bracketDepth--;
+                            case "," | "=":
+                                if (angleDepth == 0 && parenDepth == 0 && bracketDepth == 0) {
+                                    var spec = params.substr(start, i - start).trim();
+                                    return spec.length > 0 ? spec : null;
+                                }
+                            default:
+                        }
+                        i++;
+                    }
+
+                    var endSpec = params.substr(start).trim();
+                    return endSpec.length > 0 ? endSpec : null;
+                }
+            }
+
+            searchStart = idx + paramName.length;
+        }
+
+        return null;
+    }
+
+    static function lineNumberAtIndex(text: String, index: Int): Int {
+        var lineNo = 1;
+        var i = 0;
+        var max = index < text.length ? index : text.length;
+        while (i < max) {
+            if (text.charAt(i) == "\n") lineNo++;
+            i++;
+        }
+        return lineNo;
+    }
+
+    static function escapeRegExp(s: String): String {
+        var escaped = "";
+        for (i in 0...s.length) {
+            var ch = s.charAt(i);
+            escaped += switch (ch) {
+                case "\\" | "^" | "$" | "." | "|" | "?" | "*" | "+" | "(" | ")" | "[" | "]" | "{" | "}":
+                    "\\" + ch;
+                default:
+                    ch;
             }
         }
-        return bestName;
+        return escaped;
     }
 
-    static function extractAssignsFields(typeName: String, hx: String): Map<String, String> {
+    static function extractAssignsFields(typeName: String, hx: String): Null<Map<String, String>> {
         var parsed = extractAssignsFieldsFromTypedefBlock(typeName, hx);
         if (parsed.foundTypedef) {
             return parsed.fields;
@@ -616,7 +833,7 @@ class HeexAssignsTypeLinterTransforms {
         if (resolved != null) return resolved;
 #end
 
-        return parsed.fields;
+        return null;
     }
 
     private static function extractAssignsFieldsFromTypedefBlock(typeName: String, hx: String): { foundTypedef: Bool, fields: Map<String, String> } {
@@ -645,6 +862,13 @@ class HeexAssignsTypeLinterTransforms {
             var line = ln.trim();
             if (line.length == 0 || line.startsWith("//")) continue;
 
+            // Strip trailing inline comments (common in assigns typedefs).
+            var commentIndex = line.indexOf("//");
+            if (commentIndex != -1) {
+                line = line.substr(0, commentIndex).trim();
+                if (line.length == 0) continue;
+            }
+
             if (line.startsWith(">")) {
                 var rest = line.substr(1).trim();
                 if (rest.endsWith(",")) rest = rest.substr(0, rest.length - 1).trim();
@@ -654,19 +878,25 @@ class HeexAssignsTypeLinterTransforms {
 
             var name: String = null;
             var typeSpec: String = null;
-            var reVar = ~/^var\s+([A-Za-z0-9_]+)\s*:\s*([^,;]+)\s*[,;]?$/;
+            var reVar = ~/^var\s+\??([A-Za-z0-9_]+)\s*:\s*([^,;]+)\s*[,;]?$/;
             if (reVar.match(line)) {
                 name = reVar.matched(1);
                 typeSpec = reVar.matched(2).trim();
             } else {
-                var rePlain = ~/^([A-Za-z0-9_]+)\s*:\s*([^,;]+)\s*[,;]?$/;
+                var rePlain = ~/^\??([A-Za-z0-9_]+)\s*:\s*([^,;]+)\s*[,;]?$/;
                 if (rePlain.match(line)) {
                     name = rePlain.matched(1);
                     typeSpec = rePlain.matched(2).trim();
                 }
             }
             if (name != null && typeSpec != null) {
-                out.set(name, normalizeKind(typeSpec));
+                var kind = normalizeKind(typeSpec);
+                out.set(name, kind);
+                // HXX/HEEx assigns normalize camelCase to snake_case (e.g. className -> @class_name).
+                var snake = toSnakeCase(name);
+                if (snake != name && !out.exists(snake)) {
+                    out.set(snake, kind);
+                }
             }
         }
 
@@ -678,6 +908,21 @@ class HeexAssignsTypeLinterTransforms {
         }
 
         return { foundTypedef: true, fields: out };
+    }
+
+    static function toSnakeCase(name: String): String {
+        var out = "";
+        for (i in 0...name.length) {
+            var ch = name.charAt(i);
+            var isUpper = ch != ch.toLowerCase() && ch == ch.toUpperCase();
+            if (isUpper) {
+                if (i > 0 && out.length > 0 && out.charAt(out.length - 1) != "_") out += "_";
+                out += ch.toLowerCase();
+            } else {
+                out += ch.toLowerCase();
+            }
+        }
+        return out;
     }
 
 #if macro

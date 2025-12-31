@@ -77,19 +77,27 @@ var TodoApp = (() => {
         };
         var client_Boot = function() {
         };
-        client_Boot.main = function() {
-          client_utils_Theme.applyStoredOrDefault();
-          var hooks2 = { AutoFocus: { mounted: function() {
+        client_Boot.buildHooks = function() {
+          var hooks2 = {};
+          hooks2["AutoFocus"] = { mounted: function() {
             client_hooks_AutoFocusHook.mounted(this);
-          } }, Ping: { mounted: function() {
+          } };
+          hooks2["Ping"] = { mounted: function() {
             client_hooks_PingHook.mounted(this);
-          } }, CopyToClipboard: { mounted: function() {
+          } };
+          hooks2["CopyToClipboard"] = { mounted: function() {
             client_hooks_CopyToClipboardHook.mounted(this);
-          } }, ThemeToggle: { mounted: function() {
+          } };
+          hooks2["ThemeToggle"] = { mounted: function() {
             client_hooks_ThemeToggleHook.mounted(this);
           }, destroyed: function() {
             client_hooks_ThemeToggleHook.destroyed(this);
-          } } };
+          } };
+          return hooks2;
+        };
+        client_Boot.main = function() {
+          client_utils_Theme.applyStoredOrDefault();
+          var hooks2 = client_Boot.buildHooks();
           window.Hooks = Object.assign(window.Hooks || {}, hooks2);
         };
         var client_hooks_AutoFocusHook = function() {

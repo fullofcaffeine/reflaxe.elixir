@@ -17,6 +17,7 @@ import phoenix.types.Flash.FlashMap;
 import phoenix.types.Flash.FlashType;
 import plug.CSRFProtection;
 import shared.AvatarTools;
+import shared.liveview.HookName;
 import server.infrastructure.Repo;
 import server.types.Types.EventParams;
 import server.types.Types.MountParams;
@@ -170,7 +171,7 @@ class ProfileLive {
                                 <button data-testid="profile-theme-toggle"
                                     id="profile-theme-toggle"
                                     type="button"
-                                    phx-hook="ThemeToggle"
+                                    phx-hook=${HookName.ThemeToggle}
                                     aria-label="Toggle theme"
                                     class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
                                     <span aria-hidden="true">🌓</span>
@@ -218,7 +219,7 @@ class ProfileLive {
                                             <button data-testid="btn-copy-email"
                                                 id="btn-copy-email"
                                                 type="button"
-                                                phx-hook="CopyToClipboard"
+                                                phx-hook=${HookName.CopyToClipboard}
                                                 data-copy-text={@email}
                                                 data-copied-event="clipboard_copied"
                                                 data-copied-message="Email copied."

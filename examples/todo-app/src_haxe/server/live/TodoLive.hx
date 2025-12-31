@@ -51,6 +51,7 @@ import server.types.Types.PresenceTopics;
 	import server.types.Types.User;
 	import server.types.Types.AlertLevel;
 	import shared.AvatarTools;
+	import shared.liveview.HookName;
 		import StringTools;
 		using reflaxe.elixir.macros.TypedQueryLambda;
 
@@ -1289,7 +1290,7 @@ enum ActivityKind {
 
         return HXX.hxx('
 			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
-				<div id="root" class="container mx-auto px-4 py-8 max-w-6xl" phx-hook="Ping">
+				<div id="root" class="container mx-auto px-4 py-8 max-w-6xl" phx-hook=${HookName.Ping}>
 						<!-- Flash messages (info/error) -->
 							<if {@flash_info}>
 								<div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
@@ -1315,7 +1316,7 @@ enum ActivityKind {
 											<button data-testid="nav-theme-toggle"
 												id="nav-theme-toggle"
 												type="button"
-												phx-hook="ThemeToggle"
+												phx-hook=${HookName.ThemeToggle}
 												aria-label="Toggle theme"
 												class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
 												<span aria-hidden="true">🌓</span>
