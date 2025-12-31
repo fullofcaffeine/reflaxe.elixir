@@ -40,6 +40,8 @@ test('presence shows online users and editing badges', async ({ browser }) => {
   // Both sessions should see both users online
   await expect(pageA.getByTestId('online-count')).toContainText('2', { timeout: 20000 })
   await expect(pageB.getByTestId('online-count')).toContainText('2', { timeout: 20000 })
+  await expect(pageA.locator('[data-testid="online-avatar"]')).toHaveCount(2, { timeout: 20000 })
+  await expect(pageB.locator('[data-testid="online-avatar"]')).toHaveCount(2, { timeout: 20000 })
 
   const title = `E2E Presence Collab ${runId}`
 
