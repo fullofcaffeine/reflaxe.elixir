@@ -57,6 +57,24 @@ class ElixirASTPrinter {
         // Context will be used in future for context-aware printing
         return print(ast, 0);
     }
+
+    /**
+     * Public API for printing a single AST for __elixir__ substitution (outside string literals).
+     *
+     * WHY
+     * - __elixir__ templates splice printed expressions into larger call sites (e.g. function args).
+     * - Some expressions print with top-level commas/keyword args (like inline `if ... do:`), which
+     *   must be parenthesized to avoid Elixir parser ambiguity.
+     *
+     * WHAT
+     * - Prints an AST node as a single, unambiguous Elixir expression suitable for substitution.
+     *
+     * HOW
+     * - Reuses the same wrapping rules as function arguments (parens/IIFE as needed).
+     */
+    public static function printASTForInjectionSubstitution(ast: ElixirAST): String {
+        return sanitizeArgPrinted(printFunctionArg(ast, 0), 0);
+    }
     
     /**
      * Main entry point: Convert ElixirAST to formatted string
