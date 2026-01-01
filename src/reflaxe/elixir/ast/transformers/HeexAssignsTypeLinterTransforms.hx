@@ -66,7 +66,8 @@ import reflaxe.elixir.macros.RepoDiscovery;
  *   are treated as unknown.
  * - Module-qualified components (`<CoreComponents.button>`) are validated only when the module can be matched
  *   unambiguously to a discovered `@:component` class (by `@:native` or class name).
- * - Slot binding typing (`:let`) is not validated.
+ * - Slot typing is shallow: `:let` bindings are validated for shape (variable/pattern) but the bound
+ *   variable is not type-checked against yielded slot assigns.
  */
 private typedef ComponentDefinition = {
     var moduleTypePath: String;
@@ -321,22 +322,23 @@ class HeexAssignsTypeLinterTransforms {
             if (n == null || n.def == null) continue;
             switch (n.def) {
                 case EFragment(_, _, _):
-                    validateNode(n, fields, typeName, ctx, pos, enableAssignsChecks);
+                    validateNode(n, null, fields, typeName, ctx, pos, enableAssignsChecks);
                 default:
             }
         }
     }
 
-    static function validateNode(n: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
+    static function validateNode(n: ElixirAST, parentTag: Null<String>, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
         switch (n.def) {
             case EFragment(tag, attributes, children):
+                validateSlotTag(tag, parentTag, ctx, pos);
                 validateFragment(tag, attributes, children, fields, typeName, ctx, pos, enableAssignsChecks);
                 // Children: only recurse into nested fragments (skip whitespace/text nodes).
                 for (c in children) {
                     if (c == null || c.def == null) continue;
                     switch (c.def) {
                         case EFragment(_, _, _):
-                            validateNode(c, fields, typeName, ctx, pos, enableAssignsChecks);
+                            validateNode(c, tag, fields, typeName, ctx, pos, enableAssignsChecks);
                         default:
                     }
                 }
@@ -362,6 +364,12 @@ class HeexAssignsTypeLinterTransforms {
     }
 
     static function validateAttribute(tag: String, attr: EAttribute, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
+        if (attr != null && attr.name == ":let") {
+            validateLetDirective(tag, attr.value, ctx, pos);
+            // NOTE: :let is a binding pattern, not an expression; do not run assigns lints on it.
+            return;
+        }
+
         // 1) Name validation (only for known HTML elements; allow HEEx directive attrs)
         validateAttributeName(tag, attr.name, ctx, pos);
 
@@ -377,6 +385,139 @@ class HeexAssignsTypeLinterTransforms {
 
     static var allowedHtmlAttributeCache: Map<String, Map<String, Bool>> = new Map();
     static var globalHtmlAttributeCache: Null<Map<String, Bool>> = null;
+
+    static function validateSlotTag(tag: String, parentTag: Null<String>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (tag == null || tag.length == 0) return;
+        if (tag.charAt(0) != ":") return;
+
+        var slotName = tag.length > 1 ? tag.substr(1) : "";
+        if (!isValidHeexIdentifier(slotName)) {
+            error(ctx, 'HEEx slot tag error: <' + tag + '> is not a valid slot tag name (expected <:name>)', pos);
+        }
+
+        if (parentTag == null || !isHeexComponentTag(parentTag)) {
+            var parentDisplay = parentTag != null ? ('<' + parentTag + '>') : "the template root";
+            error(ctx, 'HEEx slot tag error: <' + tag + '> must be a direct child of a component tag (e.g. <.card>), not under ' + parentDisplay, pos);
+        }
+    }
+
+    static function validateLetDirective(tag: String, value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (tag == null || tag.length == 0) return;
+        if (!isHeexComponentTag(tag) && !(tag.charAt(0) == ":")) {
+            error(ctx, 'HEEx directive error: ":let" is only valid on component tags and slot tags, not on <' + tag + '>', pos);
+        }
+
+        if (value == null) {
+            error(ctx, 'HEEx :let error: expected :let={var}, but got null', pos);
+        }
+
+        switch (value.def) {
+            case EVar(name):
+                if (!isValidElixirVarName(name)) {
+                    error(ctx, 'HEEx :let error: expected an Elixir variable name, but got "' + name + '"', pos);
+                }
+            case ERaw(pattern):
+                validateLetPatternString(pattern, ctx, pos);
+            case EAssign(_):
+                error(ctx, 'HEEx :let error: cannot bind to @assigns; expected :let={var}', pos);
+            case EBoolean(_):
+                error(ctx, 'HEEx :let error: expected :let={var}, but got a boolean attribute', pos);
+            default:
+                error(ctx, 'HEEx :let error: expected :let={var}, but got an invalid value', pos);
+        }
+    }
+
+    static function validateLetPatternString(pattern: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        var s = pattern != null ? pattern.trim() : "";
+        if (s.length == 0) {
+            error(ctx, 'HEEx :let error: expected a binding pattern, but got an empty pattern', pos);
+        }
+        if (s.indexOf("@") != -1) {
+            error(ctx, 'HEEx :let error: binding patterns cannot reference @assigns', pos);
+        }
+
+        var bound = collectElixirPatternVars(s);
+        if (bound.length == 0) {
+            error(ctx, 'HEEx :let error: binding pattern does not bind any variables', pos);
+        }
+    }
+
+    static function collectElixirPatternVars(pattern: String): Array<String> {
+        var found = new Map<String, Bool>();
+        if (pattern == null) return [];
+
+        var i = 0;
+        var inSingle = false;
+        var inDouble = false;
+
+        while (i < pattern.length) {
+            var ch = pattern.charCodeAt(i);
+
+            if (!inDouble && ch == "'".code) { inSingle = !inSingle; i++; continue; }
+            if (!inSingle && ch == "\"".code) { inDouble = !inDouble; i++; continue; }
+            if (inSingle || inDouble) { i++; continue; }
+
+            // Skip atoms like :ok
+            if (ch == ":".code && i + 1 < pattern.length && isHeexIdentStart(pattern.charCodeAt(i + 1))) {
+                i += 2;
+                while (i < pattern.length && isHeexIdentChar(pattern.charCodeAt(i))) i++;
+                continue;
+            }
+
+            // Recognize pinned variables (^var) by skipping '^' and letting ident parse handle it.
+            if (ch == "^".code) { i++; continue; }
+
+            if (isElixirVarStart(ch)) {
+                var start = i;
+                i++;
+                while (i < pattern.length && isHeexIdentChar(pattern.charCodeAt(i))) i++;
+                var name = pattern.substr(start, i - start);
+
+                // If immediately followed by ':', it's likely a map key (id:) not a variable binder.
+                if (i < pattern.length && pattern.charCodeAt(i) == ":".code) continue;
+
+                if (isValidElixirVarName(name)) found.set(name, true);
+                continue;
+            }
+
+            i++;
+        }
+
+        return [for (k in found.keys()) k];
+    }
+
+    static function isHeexComponentTag(tag: String): Bool {
+        if (tag == null || tag.length == 0) return false;
+        return tag.charAt(0) == "." || isLikelyModuleComponentTag(tag);
+    }
+
+    static function isValidHeexIdentifier(name: String): Bool {
+        if (name == null || name.length == 0) return false;
+        if (!isHeexIdentStart(name.charCodeAt(0))) return false;
+        for (i in 1...name.length) if (!isHeexIdentChar(name.charCodeAt(i))) return false;
+        return true;
+    }
+
+    static inline function isHeexIdentStart(code: Int): Bool {
+        return (code >= "A".code && code <= "Z".code)
+            || (code >= "a".code && code <= "z".code)
+            || code == "_".code;
+    }
+
+    static inline function isHeexIdentChar(code: Int): Bool {
+        return isHeexIdentStart(code) || (code >= "0".code && code <= "9".code);
+    }
+
+    static inline function isElixirVarStart(code: Int): Bool {
+        return code == "_".code || (code >= "a".code && code <= "z".code);
+    }
+
+    static function isValidElixirVarName(name: String): Bool {
+        if (name == null || name.length == 0) return false;
+        if (!isElixirVarStart(name.charCodeAt(0))) return false;
+        for (i in 1...name.length) if (!isHeexIdentChar(name.charCodeAt(i))) return false;
+        return true;
+    }
 
     static function validateAttributeName(tag: String, attributeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
         if (attributeName == null || attributeName.length == 0) return;
