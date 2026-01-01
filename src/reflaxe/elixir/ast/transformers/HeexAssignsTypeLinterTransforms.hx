@@ -961,7 +961,6 @@ class HeexAssignsTypeLinterTransforms {
     ): Void {
         if (tag == null || tag.length == 0) return;
         if (tag.charAt(0) != ".") return;
-        if (getAllowedPhoenixCoreComponentAttributes(tag) == null) return;
 
         var present = new Map<String, Bool>();
         for (attr in attributes) {
@@ -972,11 +971,20 @@ class HeexAssignsTypeLinterTransforms {
         }
 
         switch (tag) {
+            case ".live_component":
+                if (!present.exists("module")) {
+                    error(ctx, 'HEEx component prop error: <.live_component> is missing required attribute \"module\"', pos);
+                }
+                if (!present.exists("id")) {
+                    error(ctx, 'HEEx component prop error: <.live_component> is missing required attribute \"id\"', pos);
+                }
             case ".form":
+                if (getAllowedPhoenixCoreComponentAttributes(tag) == null) return;
                 if (!present.exists("for")) {
                     error(ctx, 'HEEx component prop error: <.form> is missing required attribute \"for\"', pos);
                 }
             default:
+                if (getAllowedPhoenixCoreComponentAttributes(tag) == null) return;
         }
     }
 
