@@ -64,11 +64,13 @@ class Accounts {
 
         var data: User = cast Kernel.struct(User);
         var params: Term = {name: normalizedName, email: normalizedEmail};
+        var isFirstUser = Repo.all(TypedQuery.from(User)).length == 0;
         var now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), TimePrecision.Second);
         var changeset = User.changeset(data, params)
             .putChange("password_hash", generateDemoPasswordHash(normalizedEmail))
             .putChange("confirmed_at", now)
-            .putChange("last_login_at", now);
+            .putChange("last_login_at", now)
+            .putChange("role", isFirstUser ? "admin" : "user");
 
         return Repo.insert(changeset);
     }

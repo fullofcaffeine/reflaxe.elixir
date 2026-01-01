@@ -38,17 +38,25 @@ import reflaxe.elixir.macros.HttpMethod;
         action: "show"
     },
 
-    {
-        name: "users",
-        method: HttpMethod.LIVE,
-        path: "/users",
-        controller: "server.live.UsersLive",
-        action: "index"
-    },
+	    {
+	        name: "users",
+	        method: HttpMethod.LIVE,
+	        path: "/users",
+	        controller: "server.live.UsersLive",
+	        action: "index"
+	    },
 
-    // Session endpoints (set/clear Plug session)
-    {
-        name: "authLogin",
+	    {
+	        name: "admin",
+	        method: HttpMethod.LIVE,
+	        path: "/admin",
+	        controller: "server.live.AdminLive",
+	        action: "index"
+	    },
+
+	    // Session endpoints (set/clear Plug session)
+	    {
+	        name: "authLogin",
         method: HttpMethod.POST,
         path: "/auth/login",
         controller: "controllers.SessionController",
@@ -108,13 +116,13 @@ import reflaxe.elixir.macros.HttpMethod;
     // API endpoints temporarily removed until User context/schema stabilized
     
     // LiveDashboard with enum
-    {
-        name: "dashboard", 
-        method: HttpMethod.LIVE_DASHBOARD, 
-        path: "/dev/dashboard"
-    }
-])
-class TodoAppRouter {
+	    {
+	        name: "dashboard", 
+	        method: HttpMethod.LIVE_DASHBOARD, 
+	        path: "/dev/dashboard"
+	    }
+	])
+	class TodoAppRouter {
     // Functions auto-generated with type-safe route helpers!
     // 
     // Generated functions:
@@ -122,4 +130,4 @@ class TodoAppRouter {
     // public static function todosIndex(): String { return "/todos"; }
     // public static function apiTodos(): String { return "/api/todos"; }
     // etc.
-}
+	}
