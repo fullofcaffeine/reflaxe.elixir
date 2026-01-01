@@ -79,10 +79,10 @@ defmodule StringUtils do
       Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {acc_slug} ->
         try do
           cond_value = (if ((String.length(acc_slug) - 1) < 0) do
-  ""
-else
-  String.at(acc_slug, (String.length(acc_slug) - 1)) || ""
-end)
+            ""
+          else
+            String.at(acc_slug, (String.length(acc_slug) - 1)) || ""
+          end)
           if (cond_value == "-") do
             acc_slug = String.slice(acc_slug, 0, (String.length(acc_slug) - 1))
             {:cont, {acc_slug}}
@@ -111,11 +111,11 @@ end)
         text
       else
         truncated = String.slice(text, 0, (max_length - 3))
-        last_space = ((case String.split(String.slice(truncated, 0, String.length(truncated)), " ") do
-  parts when Kernel.length(parts) > 1 ->
-    String.length(Enum.join((fn -> Enum.slice(parts, 0..-2//1) end).(), " "))
-  _ -> -1
-end))
+        last_space = (case String.split(String.slice(truncated, 0, String.length(truncated)), " ") do
+          parts when Kernel.length(parts) > 1 ->
+            String.length(Enum.join((fn -> Enum.slice(parts, 0..-2//1) end).(), " "))
+          _ -> -1
+        end)
         truncated = if (last_space > trunc(max_length * 0.7)) do
           String.slice(truncated, 0, last_space)
         else
@@ -158,22 +158,22 @@ else
 end end).()) end).()}#{String.downcase(String.slice(text, 1..-1//1))}"
   end
   defp is_valid_email_format(email) do
-    at_index = ((case :binary.match(email, "@") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end))
-    dot_index = ((case String.split(String.slice(email, 0, String.length(email)), ".") do
-  parts when Kernel.length(parts) > 1 ->
-    String.length(Enum.join((fn -> Enum.slice(parts, 0..-2//1) end).(), "."))
-  _ -> -1
-end))
+    at_index = (case :binary.match(email, "@") do
+      {pos, _} -> pos
+      :nomatch -> -1
+    end)
+    dot_index = (case String.split(String.slice(email, 0, String.length(email)), ".") do
+      parts when Kernel.length(parts) > 1 ->
+        String.length(Enum.join((fn -> Enum.slice(parts, 0..-2//1) end).(), "."))
+      _ -> -1
+    end)
     at_index > 0 and dot_index > at_index and dot_index < (String.length(email) - 1)
   end
   defp extract_domain(email) do
-    at_index = ((case :binary.match(email, "@") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end))
+    at_index = (case :binary.match(email, "@") do
+      {pos, _} -> pos
+      :nomatch -> -1
+    end)
     if (at_index > 0) do
       String.slice(email, at_index + 1..-1//1)
     else
@@ -181,10 +181,10 @@ end))
     end
   end
   defp extract_username(email) do
-    at_index = ((case :binary.match(email, "@") do
-  {pos, _} -> pos
-  :nomatch -> -1
-end))
+    at_index = (case :binary.match(email, "@") do
+      {pos, _} -> pos
+      :nomatch -> -1
+    end)
     if (at_index > 0) do
       String.slice(email, 0, at_index)
     else

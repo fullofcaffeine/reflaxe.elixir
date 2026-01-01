@@ -26,14 +26,14 @@ defmodule Main do
     value = [1, 2, 3]
     if (Std.is(value, Array)), do: nil
     num = "123"
-    _int_value = ((case Integer.parse(num) do
-  {num, _} -> num
-  :error -> nil
-end))
-    _float_value = ((case Float.parse("3.14") do
-  {num, _} -> num
-  :error -> nil
-end))
+    _int_value = (case Integer.parse(num) do
+      {num, _} -> num
+      :error -> nil
+    end)
+    _float_value = (case Float.parse("3.14") do
+      {num, _} -> num
+      :error -> nil
+    end)
     nil
   end
   def dynamic_generics(value) do

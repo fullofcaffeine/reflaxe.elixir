@@ -17,46 +17,46 @@ defmodule Main do
     nil
   end
   defp test_parsing() do
-    _valid_int = ((case Integer.parse("42") do
-  {num, _} -> num
-  :error -> nil
-end))
-    _negative_int = ((case Integer.parse("-123") do
-  {num, _} -> num
-  :error -> nil
-end))
-    _invalid_int = ((case Integer.parse("abc") do
-  {num, _} -> num
-  :error -> nil
-end))
-    _partial_int = ((case Integer.parse("42abc") do
-  {num, _} -> num
-  :error -> nil
-end))
-    _empty_int = ((case Integer.parse("") do
-  {num, _} -> num
-  :error -> nil
-end))
-    _valid_float = ((case Float.parse("3.14") do
-  {num, _} -> num
-  :error -> nil
-end))
-    _negative_float = ((case Float.parse("-2.5") do
-  {num, _} -> num
-  :error -> nil
-end))
-    _int_as_float = ((case Float.parse("42") do
-  {num, _} -> num
-  :error -> nil
-end))
-    _invalid_float = ((case Float.parse("xyz") do
-  {num, _} -> num
-  :error -> nil
-end))
-    _partial_float = ((case Float.parse("3.14xyz") do
-  {num, _} -> num
-  :error -> nil
-end))
+    _valid_int = (case Integer.parse("42") do
+      {num, _} -> num
+      :error -> nil
+    end)
+    _negative_int = (case Integer.parse("-123") do
+      {num, _} -> num
+      :error -> nil
+    end)
+    _invalid_int = (case Integer.parse("abc") do
+      {num, _} -> num
+      :error -> nil
+    end)
+    _partial_int = (case Integer.parse("42abc") do
+      {num, _} -> num
+      :error -> nil
+    end)
+    _empty_int = (case Integer.parse("") do
+      {num, _} -> num
+      :error -> nil
+    end)
+    _valid_float = (case Float.parse("3.14") do
+      {num, _} -> num
+      :error -> nil
+    end)
+    _negative_float = (case Float.parse("-2.5") do
+      {num, _} -> num
+      :error -> nil
+    end)
+    _int_as_float = (case Float.parse("42") do
+      {num, _} -> num
+      :error -> nil
+    end)
+    _invalid_float = (case Float.parse("xyz") do
+      {num, _} -> num
+      :error -> nil
+    end)
+    _partial_float = (case Float.parse("3.14xyz") do
+      {num, _} -> num
+      :error -> nil
+    end)
     nil
   end
   defp test_type_checking() do
@@ -67,18 +67,18 @@ end))
     nil
   end
   defp test_random_and_int() do
-    _rand1 = ((case 100 do
-  std_random_max when std_random_max <= 0 -> 0
-  std_random_max -> (:rand.uniform(std_random_max) - 1)
-end))
-    _rand2 = ((case 100 do
-  std_random_max when std_random_max <= 0 -> 0
-  std_random_max -> (:rand.uniform(std_random_max) - 1)
-end))
-    _rand3 = ((case 100 do
-  std_random_max when std_random_max <= 0 -> 0
-  std_random_max -> (:rand.uniform(std_random_max) - 1)
-end))
+    _rand1 = (case 100 do
+      std_random_max when std_random_max <= 0 -> 0
+      std_random_max -> (:rand.uniform(std_random_max) - 1)
+    end)
+    _rand2 = (case 100 do
+      std_random_max when std_random_max <= 0 -> 0
+      std_random_max -> (:rand.uniform(std_random_max) - 1)
+    end)
+    _rand3 = (case 100 do
+      std_random_max when std_random_max <= 0 -> 0
+      std_random_max -> (:rand.uniform(std_random_max) - 1)
+    end)
     _ = 3
     _ = 3
     _ = -2

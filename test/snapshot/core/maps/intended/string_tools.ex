@@ -134,10 +134,10 @@ end).()
     end
   end
   def contains(s, value) do
-    ((case :binary.match(s, value) do
+    (case :binary.match(s, value) do
   {pos, _} -> pos
   :nomatch -> -1
-end)) != -1
+end) != -1
   end
   def is_eof(c) do
     c < 0

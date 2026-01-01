@@ -15,15 +15,16 @@ defmodule Main do
   end
   defp test_pattern_matching() do
     user = {:some, "Bob"}
-    _result = ((case user do
-  {:some, name} -> "Hello, #{name}"
-  {:none} -> "Hello, anonymous"
-end))
+    _result = (case user do
+      {:some, name} -> "Hello, #{name}"
+      {:none} -> "Hello, anonymous"
+    end)
     scores = {:some, [1, 2, 3]}
-    _total = ((case scores do
-  {:some, score_list} -> length(score_list)
-  {:none} -> 0
-end))
+    _total = (case scores do
+      {:some, score_list} ->
+        length(score_list)
+      {:none} -> 0
+    end)
     _ = process_user({:some, "Charlie"})
     _ = process_user({:none})
   end

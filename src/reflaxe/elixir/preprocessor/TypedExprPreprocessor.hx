@@ -158,8 +158,21 @@ class TypedExprPreprocessor {
      */
     public static function preprocess(expr: TypedExpr): TypedExpr {
         if (expr == null) {
+            // Ensure callers never observe stale substitutions from a prior preprocess() call.
+            lastSubstitutions = new Map();
             return null;
         }
+
+        // IMPORTANT: Always reset the "last substitutions" snapshot for this invocation.
+        //
+        // WHY
+        // - ElixirCompiler captures getLastSubstitutions() immediately after calling preprocess().
+        // - If we return early (no infra vars), leaving a previous snapshot in place can cause
+        //   unrelated substitutions to leak into the current compilation context.
+        //
+        // This is especially dangerous because TVar IDs are not guaranteed to be globally
+        // unique across independent TypedExpr trees.
+        lastSubstitutions = new Map();
 
         // Simplified debug output - just track what we're processing
         #if debug_preprocessor
@@ -315,47 +328,39 @@ class TypedExprPreprocessor {
      * @return True if the pattern is found
      */
     static function containsInfrastructurePattern(expr: TypedExpr): Bool {
-        #if debug_preprocessor
-        var exprType = reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr);
-        #end
+        if (expr == null) {
+            return false;
+        }
 
-        var result = switch(expr.expr) {
+        // NOTE:
+        // Infrastructure temps are commonly nested under wrappers like `TMeta(:ast, ...)`
+        // (added by upstream preprocessors) and `TParenthesis(...)`. If we fail to look
+        // through these wrappers, we can incorrectly early-return and (before the
+        // lastSubstitutions reset above) leak stale substitutions into other contexts.
+
+        return switch(expr.expr) {
+            case TMeta(_, e):
+                containsInfrastructurePattern(e);
+            case TParenthesis(e):
+                containsInfrastructurePattern(e);
+            case TCast(e, _):
+                containsInfrastructurePattern(e);
             case TVar(v, init):
-                var isInfra = init != null && isInfrastructureVar(v.name);
-                #if debug_preprocessor
-                // DISABLED: trace('[containsInfrastructurePattern] Found TVar: ${v.name} (ID: ${v.id}), init=${init != null}, isInfra=$isInfra');
-                #end
-                isInfra;
+                // This preprocessor is triggered by infra-temp declarations, but we still
+                // need to recurse into non-infra TVar initializers (they may contain blocks).
+                (init != null && isInfrastructureVar(v.name)) ||
+                (init != null && containsInfrastructurePattern(init));
             case TBlock(exprs):
-                #if debug_preprocessor
-                // DISABLED: trace('[containsInfrastructurePattern] Checking TBlock with ${exprs.length} exprs');
-                #end
                 Lambda.exists(exprs, e -> containsInfrastructurePattern(e));
             case TReturn(e) if (e != null):
-                #if debug_preprocessor
-                // DISABLED: trace('[containsInfrastructurePattern] Checking TReturn, inner expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
-                #end
-                var hasPattern = containsInfrastructurePattern(e);
-                #if debug_preprocessor
-                // DISABLED: trace('[containsInfrastructurePattern] TReturn inner has pattern: $hasPattern');
-                #end
-                hasPattern;
+                containsInfrastructurePattern(e);
             case TFunction(func):
-                #if debug_preprocessor
-                // DISABLED: trace('[containsInfrastructurePattern] Checking TFunction, has body: ${func.expr != null}');
-                #end
                 func.expr != null && containsInfrastructurePattern(func.expr);
             case TIf(cond, e1, e2):
-                #if debug_preprocessor
-                // DISABLED: trace('[containsInfrastructurePattern] Checking TIf');
-                #end
                 containsInfrastructurePattern(cond) ||
                 containsInfrastructurePattern(e1) ||
                 (e2 != null && containsInfrastructurePattern(e2));
             case TSwitch(e, cases, edef):
-                #if debug_preprocessor
-                // DISABLED: trace('[containsInfrastructurePattern] Checking TSwitch');
-                #end
                 containsInfrastructurePattern(e) ||
                 Lambda.exists(cases, c -> Lambda.exists(c.values, v -> containsInfrastructurePattern(v)) ||
                                           containsInfrastructurePattern(c.expr)) ||
@@ -365,33 +370,11 @@ class TypedExprPreprocessor {
                 Lambda.exists(catches, c -> containsInfrastructurePattern(c.expr));
             case TWhile(cond, e, _):
                 containsInfrastructurePattern(cond) || containsInfrastructurePattern(e);
-            case TFor(v, iter, e):
+            case TFor(_, iter, e):
                 containsInfrastructurePattern(iter) || containsInfrastructurePattern(e);
             default:
-                #if debug_preprocessor
-                var exprType = switch(expr.expr) {
-                    case TConst(_): "TConst";
-                    case TLocal(_): "TLocal";
-                    case TField(_): "TField";
-                    case TCall(_): "TCall";
-                    case TBinop(_): "TBinop";
-                    case TUnop(_): "TUnop";
-                    case TParenthesis(_): "TParenthesis";
-                    case TMeta(_): "TMeta";
-                    default: "Other";
-                };
-                // DISABLED: trace('[containsInfrastructurePattern] No pattern in ${exprType}');
-                #end
                 false;
         };
-
-        #if debug_preprocessor
-        if (result) {
-            // DISABLED: trace('[containsInfrastructurePattern] ✓ Pattern DETECTED');
-        }
-        #end
-
-        return result;
     }
 
     /**
