@@ -25,3 +25,4 @@
 server.migrations.CreateTodos
 server.migrations.CreateUsers
 server.migrations.AddUserBio
+server.migrations.AddUserRole
