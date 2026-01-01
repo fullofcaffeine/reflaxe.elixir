@@ -17,8 +17,8 @@ import reflaxe.elixir.macros.HttpMethod;
         name: "root", 
         method: HttpMethod.LIVE, 
         path: "/", 
-        controller: "server.live.TodoLive",  // this is not type safe, needs to be the actual controller type. This DSL should be as expressive as the Elixir one, but typesafe.
-        action: "index"
+        controller: server.live.TodoLive,
+        action: server.live.TodoLive.index
     },
 
     // Optional demo login + profile
@@ -26,32 +26,32 @@ import reflaxe.elixir.macros.HttpMethod;
         name: "login",
         method: HttpMethod.LIVE,
         path: "/login",
-        controller: "server.live.AuthLive",
-        action: "index"
+        controller: server.live.AuthLive,
+        action: server.live.AuthLive.index
     },
 
     {
         name: "profile",
         method: HttpMethod.LIVE,
         path: "/profile",
-        controller: "server.live.ProfileLive",
-        action: "show"
+        controller: server.live.ProfileLive,
+        action: server.live.ProfileLive.show
     },
 
 	    {
 	        name: "users",
 	        method: HttpMethod.LIVE,
 	        path: "/users",
-	        controller: "server.live.UsersLive",
-	        action: "index"
+	        controller: server.live.UsersLive,
+	        action: server.live.UsersLive.index
 	    },
 
 	    {
 	        name: "admin",
 	        method: HttpMethod.LIVE,
 	        path: "/admin",
-	        controller: "server.live.AdminLive",
-	        action: "index"
+	        controller: server.live.AdminLive,
+	        action: server.live.AdminLive.index
 	    },
 
 	    // Session endpoints (set/clear Plug session)
@@ -59,8 +59,8 @@ import reflaxe.elixir.macros.HttpMethod;
 	        name: "authLogin",
         method: HttpMethod.POST,
         path: "/auth/login",
-        controller: "controllers.SessionController",
-        action: "create"
+        controller: controllers.SessionController,
+        action: controllers.SessionController.create
     },
 
     // Optional GitHub OAuth login (requires env vars; demo login remains available)
@@ -68,24 +68,24 @@ import reflaxe.elixir.macros.HttpMethod;
         name: "authGithub",
         method: HttpMethod.GET,
         path: "/auth/github",
-        controller: "controllers.GithubOAuthController",
-        action: "github"
+        controller: controllers.GithubOAuthController,
+        action: controllers.GithubOAuthController.github
     },
 
     {
         name: "authGithubCallback",
         method: HttpMethod.GET,
         path: "/auth/github/callback",
-        controller: "controllers.GithubOAuthController",
-        action: "github_callback"
+        controller: controllers.GithubOAuthController,
+        action: controllers.GithubOAuthController.github_callback
     },
 
     {
         name: "authLogout",
         method: HttpMethod.POST,
         path: "/auth/logout",
-        controller: "controllers.SessionController",
-        action: "delete"
+        controller: controllers.SessionController,
+        action: controllers.SessionController.delete
     },
     
     // Standard HTTP methods with enum
@@ -93,24 +93,24 @@ import reflaxe.elixir.macros.HttpMethod;
         name: "todosIndex", 
         method: HttpMethod.LIVE, 
         path: "/todos", 
-        controller: "server.live.TodoLive", 
-        action: "index"
+        controller: server.live.TodoLive, 
+        action: server.live.TodoLive.index
     },
     
     {
         name: "todosShow", 
         method: HttpMethod.LIVE, 
         path: "/todos/:id", 
-        controller: "server.live.TodoLive", 
-        action: "show"
+        controller: server.live.TodoLive, 
+        action: server.live.TodoLive.show
     },
     
     {
         name: "todosEdit", 
         method: HttpMethod.LIVE, 
         path: "/todos/:id/edit", 
-        controller: "server.live.TodoLive", 
-        action: "edit"
+        controller: server.live.TodoLive, 
+        action: server.live.TodoLive.edit
     },
     
     // API endpoints temporarily removed until User context/schema stabilized
