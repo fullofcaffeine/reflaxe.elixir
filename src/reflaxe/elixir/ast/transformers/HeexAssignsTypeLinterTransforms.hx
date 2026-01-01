@@ -1151,19 +1151,54 @@ class HeexAssignsTypeLinterTransforms {
         }
     }
 
+    static function extractConstStringFromHeexExpr(expr: ElixirAST): Null<String> {
+        if (expr == null || expr.def == null) return null;
+        return switch (expr.def) {
+            case EString(s):
+                s;
+            case EParen(inner):
+                extractConstStringFromHeexExpr(inner);
+            case EBinary(StringConcat, left, right):
+                var leftValue = extractConstStringFromHeexExpr(left);
+                var rightValue = extractConstStringFromHeexExpr(right);
+                (leftValue != null && rightValue != null) ? (leftValue + rightValue) : null;
+            case ERaw(code):
+                extractConstDoubleQuotedStringFromRaw(code);
+            default:
+                null;
+        };
+    }
+
+    static function extractConstDoubleQuotedStringFromRaw(code: String): Null<String> {
+        if (code == null) return null;
+        var trimmed = unwrapRawParens(code);
+        if (trimmed.length < 2) return null;
+        if (trimmed.charAt(0) != '"' || trimmed.charAt(trimmed.length - 1) != '"') return null;
+        var inner = trimmed.substr(1, trimmed.length - 2);
+        // Only accept plain literals with no escapes or interpolation to avoid mis-parsing.
+        if (inner.indexOf("\\") != -1 || inner.indexOf("#{") != -1) return null;
+        return inner;
+    }
+
+    static function unwrapRawParens(code: String): String {
+        if (code == null) return "";
+        var current = code.trim();
+        while (current.length >= 2 && current.charAt(0) == "(" && current.charAt(current.length - 1) == ")") {
+            current = current.substr(1, current.length - 2).trim();
+        }
+        return current;
+    }
+
     static function validatePhxHookName(value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
         #if macro
         var allowed = getAllowedPhxHookNames();
         if (allowed == null) return;
 
         if (value == null) return;
-        var name: Null<String> = switch (value.def) {
-            case EString(s):
-                s != null ? s.trim() : null;
-            default:
-                null;
-        };
-        if (name == null || name.length == 0) return;
+        var name = extractConstStringFromHeexExpr(value);
+        if (name == null) return;
+        name = name.trim();
+        if (name.length == 0) return;
 
         if (!allowed.exists(name)) {
             error(ctx, 'HEEx phx-hook error: unknown hook "' + name + '" (not present in any @:phxHookNames registry)', pos);
