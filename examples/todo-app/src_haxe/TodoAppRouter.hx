@@ -55,6 +55,23 @@ import reflaxe.elixir.macros.HttpMethod;
         action: "create"
     },
 
+    // Optional GitHub OAuth login (requires env vars; demo login remains available)
+    {
+        name: "authGithub",
+        method: HttpMethod.GET,
+        path: "/auth/github",
+        controller: "controllers.GithubOAuthController",
+        action: "github"
+    },
+
+    {
+        name: "authGithubCallback",
+        method: HttpMethod.GET,
+        path: "/auth/github/callback",
+        controller: "controllers.GithubOAuthController",
+        action: "github_callback"
+    },
+
     {
         name: "authLogout",
         method: HttpMethod.POST,
