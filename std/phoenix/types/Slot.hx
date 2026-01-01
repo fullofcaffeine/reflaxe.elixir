@@ -3,7 +3,7 @@ package phoenix.types;
 import elixir.types.Term;
 
 /**
- * Slot<T>
+ * Slot<EntryProps, Let>
  *
  * WHAT
  * - Compile-time marker type for Phoenix function component slots.
@@ -18,6 +18,9 @@ import elixir.types.Term;
  * - In a `@:component` assigns type, declare slots like:
  *   `@:slot var header: Slot<HeaderSlotProps>;`
  * - `HeaderSlotProps` describes the slot entry attributes (the props allowed on `<:header ...>`).
+ * - To enable TSX-like typing for `:let` bindings inside the slot content, add a second type parameter:
+ *   `@:slot var header: Slot<HeaderSlotProps, HeaderLet>;`
+ *   and the compiler will lint `headerLetVar.some_field` accesses within `<:header :let={headerLetVar}>...</:header>`.
  *
  * EXAMPLES
  * Haxe:
@@ -32,4 +35,4 @@ import elixir.types.Term;
  *     </:header>
  *   </.card>
  */
-abstract Slot<T>(Term) from Term to Term {}
+abstract Slot<TEntryProps, TLet = Term>(Term) from Term to Term {}

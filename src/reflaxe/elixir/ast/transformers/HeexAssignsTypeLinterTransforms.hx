@@ -95,6 +95,18 @@ private typedef ComponentSlotDefinition = {
     var required: Bool; // required slot at callsite
     var props: Map<String, String>; // canonical prop key (snake_case) -> kind
     var requiredProps: Map<String, Bool>; // canonical prop key (snake_case) -> required?
+    var letBinding: Null<ComponentLetBindingDefinition>; // optional typing for :let binders inside slot content
+};
+
+private typedef ComponentLetBindingDefinition = {
+    var props: Map<String, String>; // canonical prop key (snake_case) -> kind
+    var required: Map<String, Bool>; // canonical prop key (snake_case) -> required?
+};
+
+private typedef HeexLetBindingScope = {
+    var varName: String; // bound variable name (e.g., `row`)
+    var props: Map<String, String>; // allowed fields on the bound value (snake_case)
+    var contextTag: String; // e.g., "<:col>"
 };
 
 class HeexAssignsTypeLinterTransforms {
@@ -331,7 +343,7 @@ class HeexAssignsTypeLinterTransforms {
             switch (x.def) {
                 case EFragment(tag, attributes, children):
                     // Validate each fragment exactly once; traversal is handled by the walker.
-                    validateFragment(tag, attributes, children, null, fields, typeName, ctx, x.pos, enableAssignsChecks);
+                    validateFragment(tag, attributes, children, null, fields, typeName, ctx, x.pos, enableAssignsChecks, []);
                 default:
             }
         });
@@ -343,28 +355,25 @@ class HeexAssignsTypeLinterTransforms {
     static function validateHeexTypedAST(nodes: Array<ElixirAST>, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
         for (n in nodes) {
             if (n == null || n.def == null) continue;
-            switch (n.def) {
-                case EFragment(_, _, _):
-                    validateNode(n, null, fields, typeName, ctx, pos, enableAssignsChecks);
-                default:
-            }
+            validateNode(n, null, fields, typeName, ctx, pos, enableAssignsChecks, []);
         }
     }
 
-    static function validateNode(n: ElixirAST, parentTag: Null<String>, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
+    static function validateNode(n: ElixirAST, parentTag: Null<String>, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool, letScopes: Array<HeexLetBindingScope>): Void {
         switch (n.def) {
             case EFragment(tag, attributes, children):
                 validateSlotTag(tag, parentTag, ctx, pos);
-                validateFragment(tag, attributes, children, parentTag, fields, typeName, ctx, pos, enableAssignsChecks);
-                // Children: only recurse into nested fragments (skip whitespace/text nodes).
+
+                var nextLetScopes = extendLetScopesForNode(tag, attributes, parentTag, letScopes);
+
+                validateFragment(tag, attributes, children, parentTag, fields, typeName, ctx, pos, enableAssignsChecks, nextLetScopes);
+
                 for (c in children) {
                     if (c == null || c.def == null) continue;
-                    switch (c.def) {
-                        case EFragment(_, _, _):
-                            validateNode(c, tag, fields, typeName, ctx, pos, enableAssignsChecks);
-                        default:
-                    }
+                    validateNode(c, tag, fields, typeName, ctx, pos, enableAssignsChecks, nextLetScopes);
                 }
+            case ERaw(code):
+                validateRawForLetScopes(code, letScopes, ctx, pos);
             default:
         }
     }
@@ -378,17 +387,18 @@ class HeexAssignsTypeLinterTransforms {
         typeName: String,
         ctx: Null<reflaxe.elixir.CompilationContext>,
         pos: haxe.macro.Expr.Position,
-        enableAssignsChecks: Bool
+        enableAssignsChecks: Bool,
+        letScopes: Array<HeexLetBindingScope>
     ): Void {
         for (attr in attributes) {
-            validateAttribute(tag, parentTag, attr, fields, typeName, ctx, pos, enableAssignsChecks);
+            validateAttribute(tag, parentTag, attr, fields, typeName, ctx, pos, enableAssignsChecks, letScopes);
         }
         validateSlotInvocation(tag, parentTag, attributes, children, fields, ctx, pos);
         // Component-level checks (requires full attribute set + children)
         validateComponentInvocation(tag, attributes, children, fields, ctx, pos);
     }
 
-    static function validateAttribute(tag: String, parentTag: Null<String>, attr: EAttribute, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
+    static function validateAttribute(tag: String, parentTag: Null<String>, attr: EAttribute, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool, letScopes: Array<HeexLetBindingScope>): Void {
         if (attr != null && attr.name == ":let") {
             validateLetDirective(tag, attr.value, ctx, pos);
             // NOTE: :let is a binding pattern, not an expression; do not run assigns lints on it.
@@ -411,6 +421,9 @@ class HeexAssignsTypeLinterTransforms {
 
         // 3) Assigns field usage within `{ ... }` attribute expressions
         validateExprForAssigns(attr.value, fields, typeName, ctx, pos, enableAssignsChecks);
+
+        // 4) Slot :let binder field usage within attribute expressions (when a typed let scope is present)
+        validateExprForLetScopes(attr.value, letScopes, ctx, pos);
     }
 
     static var allowedHtmlAttributeCache: Map<String, Map<String, Bool>> = new Map();
@@ -615,6 +628,151 @@ class HeexAssignsTypeLinterTransforms {
             }
 
             i++;
+        }
+
+        return [for (k in found.keys()) k];
+    }
+
+    static function extendLetScopesForNode(tag: String, attributes: Array<EAttribute>, parentTag: Null<String>, letScopes: Array<HeexLetBindingScope>): Array<HeexLetBindingScope> {
+        if (attributes == null || attributes.length == 0) return letScopes;
+        if (letScopes == null) letScopes = [];
+
+        // Slot tags only (e.g., <:header :let={x}>)
+        if (!isSlotTag(tag)) return letScopes;
+
+        var letAttr: Null<EAttribute> = null;
+        for (a in attributes) {
+            if (a != null && a.name == ":let") { letAttr = a; break; }
+        }
+        if (letAttr == null) return letScopes;
+
+        var letDef = resolveSlotLetBindingDefinition(tag, parentTag);
+        if (letDef == null || letDef.props == null || !letDef.props.keys().hasNext()) return letScopes;
+
+        var boundVars = extractLetBoundVariables(letAttr.value);
+        if (boundVars == null || boundVars.length != 1) return letScopes;
+        var varName = boundVars[0];
+        if (!isValidElixirVarName(varName)) return letScopes;
+
+        var next = letScopes.copy();
+        next.push({
+            varName: varName,
+            props: letDef.props,
+            contextTag: '<' + tag + '>'
+        });
+        return next;
+    }
+
+    static function resolveSlotLetBindingDefinition(slotTag: String, parentTag: Null<String>): Null<ComponentLetBindingDefinition> {
+        var slotDef = resolveSlotDefinition(slotTag, parentTag);
+        if (slotDef == null) return null;
+        return slotDef.letBinding;
+    }
+
+    static function extractLetBoundVariables(value: ElixirAST): Array<String> {
+        if (value == null || value.def == null) return [];
+        return switch (value.def) {
+            case EVar(name):
+                name != null && name.length > 0 ? [name] : [];
+            case ERaw(pattern):
+                collectElixirPatternVars(pattern);
+            default:
+                [];
+        };
+    }
+
+    static function validateExprForLetScopes(expr: ElixirAST, letScopes: Array<HeexLetBindingScope>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (expr == null || expr.def == null) return;
+        if (letScopes == null || letScopes.length == 0) return;
+
+        function walk(e: ElixirAST): Void {
+            if (e == null || e.def == null) return;
+            switch (e.def) {
+                case EField({def: EVar(varName)}, fieldName):
+                    validateLetFieldAccess(varName, fieldName, letScopes, ctx, pos);
+                case ERaw(code):
+                    validateRawForLetScopes(code, letScopes, ctx, pos);
+                default:
+                    ElixirASTTransformer.iterateAST(e, walk);
+            }
+        }
+
+        walk(expr);
+    }
+
+    static function validateRawForLetScopes(code: String, letScopes: Array<HeexLetBindingScope>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (code == null) return;
+        if (letScopes == null || letScopes.length == 0) return;
+
+        var s = code.trim();
+        if (s.startsWith("=")) s = s.substr(1);
+
+        for (scope in letScopes) {
+            if (scope == null || scope.varName == null || scope.varName.length == 0) continue;
+            if (scope.props == null) continue;
+
+            var fields = collectDotFieldAccesses(s, scope.varName);
+            for (fieldName in fields) {
+                validateLetFieldAccess(scope.varName, fieldName, letScopes, ctx, pos);
+            }
+        }
+    }
+
+    static function validateLetFieldAccess(varName: String, fieldName: String, letScopes: Array<HeexLetBindingScope>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (varName == null || fieldName == null) return;
+        var scope = findLetScope(varName, letScopes);
+        if (scope == null || scope.props == null) return;
+
+        var key = NameUtils.toSnakeCase(fieldName);
+        if (scope.props.exists(key)) return;
+
+        error(ctx, 'HEEx :let type error: ' + scope.contextTag + ' binding "' + scope.varName + '" does not define field "' + key + '"', pos);
+    }
+
+    static function findLetScope(varName: String, letScopes: Array<HeexLetBindingScope>): Null<HeexLetBindingScope> {
+        if (varName == null || letScopes == null) return null;
+        // Prefer innermost scope (last wins).
+        var i = letScopes.length - 1;
+        while (i >= 0) {
+            var scope = letScopes[i];
+            if (scope != null && scope.varName == varName) return scope;
+            i--;
+        }
+        return null;
+    }
+
+    static function collectDotFieldAccesses(code: String, varName: String): Array<String> {
+        if (code == null || varName == null || varName.length == 0) return [];
+        var found = new Map<String, Bool>();
+
+        var i = 0;
+        while (i < code.length) {
+            var idx = code.indexOf(varName, i);
+            if (idx == -1) break;
+
+            var prevIdx = idx - 1;
+            if (prevIdx >= 0 && isHeexIdentChar(code.charCodeAt(prevIdx))) {
+                i = idx + varName.length;
+                continue;
+            }
+
+            var dotIdx = idx + varName.length;
+            if (dotIdx >= code.length || code.charCodeAt(dotIdx) != ".".code) {
+                i = idx + varName.length;
+                continue;
+            }
+
+            var fieldStart = dotIdx + 1;
+            if (fieldStart >= code.length || !isHeexIdentStart(code.charCodeAt(fieldStart))) {
+                i = fieldStart;
+                continue;
+            }
+
+            var j = fieldStart + 1;
+            while (j < code.length && isHeexIdentChar(code.charCodeAt(j))) j++;
+            var fieldName = code.substr(fieldStart, j - fieldStart);
+            if (fieldName != null && fieldName.length > 0) found.set(fieldName, true);
+            i = j;
         }
 
         return [for (k in found.keys()) k];
@@ -1031,7 +1189,9 @@ class HeexAssignsTypeLinterTransforms {
 
                     if (isSlotField(f)) {
                         var slotName = NameUtils.toSnakeCase(f.name);
-                        var entryType = slotEntryTypeFromField(f);
+                        var slotInfo = slotFieldInfoFromField(f);
+                        var entryType = slotInfo != null ? slotInfo.entryType : null;
+                        var letType = slotInfo != null ? slotInfo.letType : null;
 
                         var slotProps = new Map<String, String>();
                         var slotRequiredProps = new Map<String, Bool>();
@@ -1043,10 +1203,19 @@ class HeexAssignsTypeLinterTransforms {
                             }
                         }
 
+                        var letBinding: Null<ComponentLetBindingDefinition> = null;
+                        if (letType != null && !isElixirTermType(letType)) {
+                            var letInfo = propsFromAssignsType(letType);
+                            if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
+                                letBinding = { props: letInfo.props, required: letInfo.required };
+                            }
+                        }
+
                         slots.set(slotName, {
                             required: !isOptional,
                             props: slotProps,
-                            requiredProps: slotRequiredProps
+                            requiredProps: slotRequiredProps,
+                            letBinding: letBinding
                         });
                         continue;
                     }
@@ -1069,37 +1238,50 @@ class HeexAssignsTypeLinterTransforms {
     static function isSlotField(f: haxe.macro.Type.ClassField): Bool {
         if (f == null) return false;
         if (f.meta != null && f.meta.has(":slot")) return true;
-        return unwrapSlotEntryType(f.type) != null;
+        return unwrapSlotTypeInfo(f.type) != null;
     }
 
-    static function slotEntryTypeFromField(f: haxe.macro.Type.ClassField): Null<haxe.macro.Type> {
+    static function slotFieldInfoFromField(f: haxe.macro.Type.ClassField): Null<{ entryType: haxe.macro.Type, letType: Null<haxe.macro.Type> }> {
         if (f == null) return null;
-        var unwrapped = unwrapSlotEntryType(f.type);
+        var unwrapped = unwrapSlotTypeInfo(f.type);
         if (unwrapped != null) return unwrapped;
         // Legacy/metadata-only syntax: @:slot on a concrete entry typedef.
-        if (f.meta != null && f.meta.has(":slot")) return f.type;
+        if (f.meta != null && f.meta.has(":slot")) return { entryType: f.type, letType: null };
         return null;
     }
 
-    static function unwrapSlotEntryType(t: haxe.macro.Type): Null<haxe.macro.Type> {
+    static function unwrapSlotTypeInfo(t: haxe.macro.Type): Null<{ entryType: haxe.macro.Type, letType: Null<haxe.macro.Type> }> {
         if (t == null) return null;
         return switch (t) {
             case TType(tdef, params):
-                unwrapSlotEntryType(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
+                unwrapSlotTypeInfo(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
             case TAbstract(aRef, params):
                 var abs = aRef.get();
                 if (abs == null) return null;
                 // Optional slot: Null<Slot<T>>
                 if (abs.name == "Null" && params != null && params.length == 1) {
-                    unwrapSlotEntryType(params[0]);
-                } else if (abs.name == "Slot" && abs.pack.join(".") == "phoenix.types" && params != null && params.length == 1) {
-                    params[0];
+                    unwrapSlotTypeInfo(params[0]);
+                } else if (abs.name == "Slot" && abs.pack.join(".") == "phoenix.types" && params != null && params.length >= 1) {
+                    var entryType = params[0];
+                    var letType = params.length >= 2 ? params[1] : null;
+                    { entryType: entryType, letType: letType };
                 } else {
                     null;
                 }
             default:
                 null;
         }
+    }
+
+    static function isElixirTermType(t: haxe.macro.Type): Bool {
+        if (t == null) return false;
+        return switch (TypeTools.follow(t)) {
+            case TAbstract(aRef, _):
+                var abs = aRef.get();
+                abs != null && abs.name == "Term" && abs.pack.join(".") == "elixir.types";
+            default:
+                false;
+        };
     }
 
     static function fieldIsOptionalByTypeString(typeStr: String): Bool {
