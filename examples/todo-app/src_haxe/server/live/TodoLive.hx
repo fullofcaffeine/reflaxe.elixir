@@ -1356,7 +1356,10 @@ enum ActivityKind {
 										<div class="text-gray-600 dark:text-gray-400">
 										<div>Welcome, #{@current_user.name}!</div>
 										<div class="text-xs text-gray-500 dark:text-gray-400">
-											Org: <span data-testid="org-slug">#{@organization_slug}</span>
+											Org:
+											<a data-testid="nav-org" href="/org" class="text-blue-700 dark:text-blue-300 hover:underline">
+												<span data-testid="org-slug">#{@organization_slug}</span>
+											</a>
 										</div>
 										<div class="mt-2 flex items-center gap-3 text-sm">
 											<button data-testid="nav-theme-toggle"
