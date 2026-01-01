@@ -536,6 +536,7 @@ enum ActivityKind {
 			                        name: profile.name,
 			                        email: profile.email,
 			                        bio: profile.bio,
+			                        role: currentUser.role,
 			                        passwordHash: currentUser.passwordHash,
 			                        confirmedAt: currentUser.confirmedAt,
 			                        lastLoginAt: currentUser.lastLoginAt,
@@ -812,6 +813,7 @@ enum ActivityKind {
 	                        name: dbUser.name,
 	                        email: dbUser.email,
 	                        bio: dbUser.bio,
+	                        role: dbUser.role,
 	                        passwordHash: dbUser.passwordHash,
 	                        confirmedAt: dbUser.confirmedAt,
 	                        lastLoginAt: dbUser.lastLoginAt,
@@ -828,6 +830,7 @@ enum ActivityKind {
 	                name: "Demo User",
 	                email: "demo@example.com",
 	                bio: null,
+	                role: "user",
 	                passwordHash: "demo_password_hash",
 	                confirmedAt: null,
 	                lastLoginAt: null,
@@ -1353,12 +1356,17 @@ enum ActivityKind {
 												<span aria-hidden="true">🌓</span>
 												<span data-theme-label class="text-xs font-medium">Theme</span>
 											</button>
-											<if {@signed_in}>
-													<a data-testid="nav-users" href="/users" class="text-blue-700 dark:text-blue-300 hover:underline">
-														Users
-													</a>
-													<a data-testid="nav-profile" href="/profile" class="inline-flex items-center gap-2 text-blue-700 dark:text-blue-300 hover:underline">
-														<div data-testid="nav-profile-avatar" class={@header_avatar_class} style={@header_avatar_style}>
+												<if {@signed_in}>
+													<if {@current_user.role == "admin"}>
+														<a data-testid="nav-admin" href="/admin" class="text-blue-700 dark:text-blue-300 hover:underline">
+															Admin
+														</a>
+													</if>
+														<a data-testid="nav-users" href="/users" class="text-blue-700 dark:text-blue-300 hover:underline">
+															Users
+														</a>
+														<a data-testid="nav-profile" href="/profile" class="inline-flex items-center gap-2 text-blue-700 dark:text-blue-300 hover:underline">
+															<div data-testid="nav-profile-avatar" class={@header_avatar_class} style={@header_avatar_style}>
 															#{@header_avatar_initials}
 														</div>
 														<span>Profile</span>
@@ -1370,18 +1378,18 @@ enum ActivityKind {
 														</button>
 												</form>
 											</if>
-											<if {!@signed_in}>
-												<span class="text-gray-500 dark:text-gray-400">Demo mode</span>
-												<a data-testid="nav-users" href="/users" class="text-blue-700 dark:text-blue-300 hover:underline">
-													Users
-												</a>
-												<a data-testid="nav-sign-in" href="/login" class="text-blue-700 dark:text-blue-300 hover:underline">
-													Sign in
-												</a>
-											</if>
+												<if {!@signed_in}>
+													<span class="text-gray-500 dark:text-gray-400">Demo mode</span>
+													<a data-testid="nav-users" href="/users" class="text-blue-700 dark:text-blue-300 hover:underline">
+														Users
+													</a>
+													<a data-testid="nav-sign-in" href="/login" class="text-blue-700 dark:text-blue-300 hover:underline">
+														Sign in
+													</a>
+												</if>
+											</div>
 										</div>
 									</div>
-								</div>
 							
 							<!-- Statistics -->
 							<div class="flex space-x-6">
