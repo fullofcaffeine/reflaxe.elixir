@@ -75,7 +75,8 @@ defmodule Main do
     failure_result = failure_operation.()
     _ = Assert.is_error(failure_result, "Failure operation should return Error")
     (case success_result do
-      {:ok, value} -> _ = Assert.equals(value, 42, "Success value should be 42")
+      {:ok, value} ->
+        Assert.equals(value, 42, "Success value should be 42")
       {:error, _error} ->
         Assert.fail("Should not be an error")
     end)

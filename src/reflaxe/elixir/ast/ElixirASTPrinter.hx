@@ -2121,7 +2121,23 @@ class ElixirASTPrinter {
                 }
                 
             case EParen(expr):
-                '(' + print(expr, 0) + ')';
+                // Collapse redundant nested parentheses for cleaner output.
+                var inner = expr;
+                while (true) {
+                    switch (inner.def) {
+                        case EParen(next):
+                            inner = next;
+                        default:
+                            break;
+                    }
+                }
+                // Avoid double-wrapping constructs that already print with outer parentheses.
+                switch (inner.def) {
+                    case ECase(_, _):
+                        print(inner, indent);
+                    default:
+                        '(' + print(inner, indent) + ')';
+                }
                 
             case EDo(body):
                 inline function isBareNumericSentinelInDo(e: ElixirAST): Bool {

@@ -8,7 +8,8 @@ defmodule OptionTools do
   end
   def then(option, transform) do
     (case option do
-      {:some, value} -> _ = transform.(value)
+      {:some, value} ->
+        transform.(value)
       {:none} -> {:none}
     end)
   end
@@ -23,7 +24,8 @@ defmodule OptionTools do
   end
   def filter(option, predicate) do
     (case option do
-      {:some, value} -> if (predicate.(value)), do: {:some, value}, else: {:none}
+      {:some, value} ->
+        if (predicate.(value)), do: {:some, value}, else: {:none}
       {:none} -> {:none}
     end)
   end
@@ -69,14 +71,14 @@ defmodule OptionTools do
     values = []
     _g = 0
     values = Enum.reduce(options, values, fn option, values_acc ->
-      ((case option do
-  {:some, value} ->
-    values_acc = Enum.concat(values_acc, [value])
-    values_acc
-  {:none} ->
-    {:none}
-    values_acc
-end))
+      (case option do
+        {:some, value} ->
+          values_acc = Enum.concat(values_acc, [value])
+          values_acc
+        {:none} ->
+          {:none}
+          values_acc
+      end)
     end)
     {:some, values}
   end
@@ -84,14 +86,14 @@ end))
     result = []
     _g = 0
     result = Enum.reduce(options, result, fn option, result_acc ->
-      ((case option do
-  {:some, value} ->
-    result_acc = Enum.concat(result_acc, [value])
-    result_acc
-  {:none} ->
-    nil
-    result_acc
-end))
+      (case option do
+        {:some, value} ->
+          result_acc = Enum.concat(result_acc, [value])
+          result_acc
+        {:none} ->
+          nil
+          result_acc
+      end)
     end)
     result
   end
@@ -136,7 +138,8 @@ end))
   end
   def apply(option, fn_param) do
     (case option do
-      {:some, value} -> _ = fn_param.(value)
+      {:some, value} ->
+        fn_param.(value)
       {:none} -> nil
     end)
     option

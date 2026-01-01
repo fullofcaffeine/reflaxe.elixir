@@ -7,7 +7,8 @@ defmodule ResultTools do
   end
   def flat_map(result, transform) do
     (case result do
-      {:ok, value} -> _ = transform.(value)
+      {:ok, value} ->
+        transform.(value)
       {:error, error} -> {:error, error}
     end)
   end
@@ -16,8 +17,10 @@ defmodule ResultTools do
   end
   def fold(result, on_success, on_error) do
     (case result do
-      {:ok, value} -> _ = on_success.(value)
-      {:error, error} -> _ = on_error.(error)
+      {:ok, value} ->
+        on_success.(value)
+      {:error, error} ->
+        on_error.(error)
     end)
   end
   def is_ok(result) do
@@ -47,12 +50,14 @@ defmodule ResultTools do
   def unwrap_or_else(result, error_handler) do
     (case result do
       {:ok, value} -> value
-      {:error, error} -> _ = error_handler.(error)
+      {:error, error} ->
+        error_handler.(error)
     end)
   end
   def filter(result, predicate, error_value) do
     (case result do
-      {:ok, value} -> if (predicate.(value)), do: {:ok, value}, else: {:error, error_value}
+      {:ok, value} ->
+        if (predicate.(value)), do: {:ok, value}, else: {:error, error_value}
       {:error, error} -> {:error, error}
     end)
   end
@@ -78,14 +83,14 @@ defmodule ResultTools do
     values = []
     _g = 0
     values = Enum.reduce(results, values, fn result, values_acc ->
-      ((case result do
-  {:ok, value} ->
-    values_acc = Enum.concat(values_acc, [value])
-    values_acc
-  {:error, error} ->
-    {:error, error}
-    error
-end))
+      (case result do
+        {:ok, value} ->
+          values_acc = Enum.concat(values_acc, [value])
+          values_acc
+        {:error, error} ->
+          {:error, error}
+          error
+      end)
     end)
     {:ok, values}
   end
