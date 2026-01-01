@@ -131,9 +131,9 @@ Then:
 - **Server (HXX/HEEx)**: `phx-hook=${HookName.ThemeToggle}`
 - **Client (Genes/JS)**: use `HookName.ThemeToggle` as the key in your hooks map
 
-When at least one `@:phxHookNames` registry exists in the project, the compiler lints literal hook usages
-like `phx-hook="..."` and reports unknown names. Dynamic hook expressions (e.g. `phx-hook={@hook}`) are
-intentionally not validated to keep false positives low.
+When at least one `@:phxHookNames` registry exists in the project, the compiler lints statically-known hook
+usages (string literals and simple const expressions) and reports unknown names. Dynamic hook expressions
+(e.g. `phx-hook={@hook}`) are intentionally not validated to keep false positives low.
 
 ## Anti-Pattern: `__elixir__()` in Application Code
 
