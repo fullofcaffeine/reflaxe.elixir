@@ -160,29 +160,30 @@ class RouterBuildMacro {
     /**
      * Parse individual route object from expression
      */
-    private static function parseRouteObject(routeExpr: Expr): RouteDefinition {
-        switch (routeExpr.expr) {
-            case EObjectDecl(fields):
-                var routeDef = new RouteDefinition();
-                
-                for (field in fields) {
-                    switch (field.field) {
-                        case "name":
-                            routeDef.name = extractStringValue(field.expr, "name");
-                        case "method":
-                            routeDef.method = extractStringValue(field.expr, "method");
-                        case "path":
-                            routeDef.path = extractStringValue(field.expr, "path");
-                        case "controller":
-                            routeDef.controller = extractStringValue(field.expr, "controller");
-                        case "action":
-                            routeDef.action = extractStringValue(field.expr, "action");
-                        case "pipeline":
-                            routeDef.pipeline = extractStringValue(field.expr, "pipeline");
-                        case _:
-                            Context.warning('Unknown route field: ${field.field}', field.expr.pos);
-                    }
-                }
+	    private static function parseRouteObject(routeExpr: Expr): RouteDefinition {
+	        switch (routeExpr.expr) {
+	            case EObjectDecl(fields):
+	                var routeDef = new RouteDefinition();
+	                
+	                for (field in fields) {
+	                    switch (field.field) {
+	                        case "name":
+	                            routeDef.name = extractStringValue(field.expr, "name");
+	                        case "method":
+	                            routeDef.method = extractMethodValue(field.expr);
+	                        case "path":
+	                            routeDef.path = extractStringValue(field.expr, "path");
+	                        case "controller":
+	                            routeDef.controllerIsTypeRef = !isStringLiteral(field.expr);
+	                            routeDef.controller = extractControllerValue(field.expr);
+	                        case "action":
+	                            routeDef.action = extractActionValue(field.expr);
+	                        case "pipeline":
+	                            routeDef.pipeline = extractStringValue(field.expr, "pipeline");
+	                        case _:
+	                            Context.warning('Unknown route field: ${field.field}', field.expr.pos);
+	                    }
+	                }
                 
                 return routeDef;
                 
@@ -192,72 +193,128 @@ class RouterBuildMacro {
         }
     }
     
-    /**
-     * Extract string value from expression (supports both strings and enums)
-     */
-    private static function extractStringValue(expr: Expr, fieldName: String): String {
-        switch (expr.expr) {
-            case EConst(CString(s, _)):
-                return s;
-            case EField(e, field):
-                // Handle enum values like HttpMethod.GET
-                switch (e.expr) {
-                    case EConst(CIdent("HttpMethod")):
-                        return field; // Return the enum field name as string
-                    case _:
-                        // Could be a class reference - extract class name
-                        return extractTypeReference(expr, fieldName);
-                }
-            case EConst(CIdent(ident)):
-                // Handle direct identifiers (class names)
-                return ident;
-            case _:
-                Context.error('${fieldName} must be a string literal, enum value, or class reference', expr.pos);
-                return null;
-        }
-    }
+	    /**
+	     * Extract string value from expression (supports strings and simple identifiers)
+	     */
+	    private static function extractStringValue(expr: Expr, fieldName: String): String {
+	        switch (expr.expr) {
+	            case EConst(CString(s, _)):
+	                return s;
+	            case EConst(CIdent(ident)):
+	                // Handle direct identifiers (class names)
+	                return ident;
+	            case _:
+	                Context.error('${fieldName} must be a string literal or identifier', expr.pos);
+	                return null;
+	        }
+	    }
+
+	    /**
+	     * Extract HttpMethod value from expression.
+	     *
+	     * Supports:
+	     * - "GET"
+	     * - GET
+	     * - HttpMethod.GET
+	     * - reflaxe.elixir.macros.HttpMethod.GET
+	     */
+	    private static function extractMethodValue(expr: Expr): String {
+	        return switch (expr.expr) {
+	            case EConst(CString(s, _)):
+	                s;
+	            case EConst(CIdent(ident)):
+	                ident;
+	            case EField(e, field):
+	                var base = extractClassName(e);
+	                if (base != null && (base == "HttpMethod" || base.endsWith(".HttpMethod"))) {
+	                    field;
+	                } else {
+	                    Context.error('method must be a string literal or HttpMethod value', expr.pos);
+	                    null;
+	                }
+	            default:
+	                Context.error('method must be a string literal or HttpMethod value', expr.pos);
+	                null;
+	        };
+	    }
+
+	    /**
+	     * Extract controller module reference from expression.
+	     *
+	     * Supports:
+	     * - "controllers.UserController"
+	     * - controllers.UserController
+	     * - server.live.TodoLive
+	     */
+	    private static function extractControllerValue(expr: Expr): String {
+	        return switch (expr.expr) {
+	            case EConst(CString(s, _)):
+	                s;
+	            default:
+	                var path = extractClassName(expr);
+	                if (path == null) {
+	                    Context.error('controller must be a string literal or type reference (e.g. controllers.UserController)', expr.pos);
+	                    null;
+	                } else {
+	                    path;
+	                }
+	        };
+	    }
+
+	    /**
+	     * Extract action reference from expression.
+	     *
+	     * Supports:
+	     * - "index"
+	     * - index
+	     * - TodoLive.index
+	     * - server.live.TodoLive.index
+	     */
+	    private static function extractActionValue(expr: Expr): String {
+	        return switch (expr.expr) {
+	            case EConst(CString(s, _)):
+	                s;
+	            case EConst(CIdent(ident)):
+	                ident;
+	            case EField(_, field):
+	                field;
+	            default:
+	                Context.error('action must be a string literal, identifier, or method reference (e.g. TodoLive.index)', expr.pos);
+	                null;
+	        };
+	    }
     
-    /**
-     * Extract type reference for controller/action validation
-     */
-    private static function extractTypeReference(expr: Expr, fieldName: String): String {
-        switch (expr.expr) {
-            case EField(e, field):
-                // Handle Class.method references
-                var className = extractClassName(e);
-                return className != null ? className : field;
-            case EConst(CIdent(ident)):
-                // Handle simple class names
-                return ident;
-            case _:
-                return null;
-        }
-    }
-    
-    /**
-     * Extract class name from expression
-     */
-    private static function extractClassName(expr: Expr): String {
-        switch (expr.expr) {
-            case EConst(CIdent(ident)):
-                return ident;
-            case EField(e, field):
-                var base = extractClassName(e);
-                return base != null ? '${base}.${field}' : field;
-            case _:
-                return null;
-        }
-    }
+	    /**
+	     * Extract class name from expression
+	     */
+	    private static function extractClassName(expr: Expr): String {
+	        return switch (expr.expr) {
+	            case EConst(CIdent(ident)):
+	                ident;
+	            case EField(e, field):
+	                var base = extractClassName(e);
+	                base != null ? (base + "." + field) : field;
+	            default:
+	                null;
+	        };
+	    }
+
+	    static inline function isStringLiteral(expr: Expr): Bool {
+	        return switch (expr.expr) {
+	            case EConst(CString(_, _)): true;
+	            default: false;
+	        };
+	    }
     
     /**
      * Validate route definitions for common errors
      */
-    private static function validateRouteDefinitions(routes: Array<RouteDefinition>, pos: Position): Void {
+	    private static function validateRouteDefinitions(routes: Array<RouteDefinition>, pos: Position): Void {
         var usedNames = new Map<String, Bool>();
         var usedPaths = new Map<String, String>();
         var fastBoot = isFastBoot();
 
-        for (route in routes) {
+	        for (route in routes) {
             // Validate required fields
             if (route.name == null || route.name == "") {
                 Context.error("Route missing required 'name' field", pos);
@@ -288,28 +345,28 @@ class RouterBuildMacro {
                 Context.warning('Unknown HTTP method: ${route.method}. Valid: ${validMethods.join(", ")}', pos);
             }
             
-            // Skip expensive type checks under fast_boot; keep warnings lightweight
-            if (!fastBoot) {
-                if (route.controller != null && route.controller != "") {
-                    pendingControllerChecks.push({
-                        controller: route.controller,
-                        route: route.name,
-                        path: route.path,
-                        pos: pos
-                    });
-                }
-                if (route.controller != null && route.action != null && route.controller != "" && route.action != "") {
-                    pendingActionChecks.push({
-                        controller: route.controller,
-                        action: route.action,
-                        route: route.name,
-                        pos: pos
-                    });
-                }
+	            // Skip expensive type checks under fast_boot; keep warnings lightweight
+	            if (!fastBoot) {
+	                if (route.controllerIsTypeRef && route.controller != null && route.controller != "") {
+	                    pendingControllerChecks.push({
+	                        controller: route.controller,
+	                        route: route.name,
+	                        path: route.path,
+	                        pos: pos
+	                    });
+	                }
+	                if (route.controllerIsTypeRef && route.controller != null && route.action != null && route.controller != "" && route.action != "") {
+	                    pendingActionChecks.push({
+	                        controller: route.controller,
+	                        action: route.action,
+	                        route: route.name,
+	                        pos: pos
+	                    });
+	                }
 
-                ensureAfterTypingHook();
-            }
-        }
+	                ensureAfterTypingHook();
+	            }
+	        }
     }
 
     /**
@@ -419,25 +476,61 @@ class RouterBuildMacro {
     /**
      * Validate that a controller class exists
      */
-    private static function validateControllerExists(controllerName: String, routeName: String, routePath: String, pos: Position): Void {
-        if (controllerName == null || controllerName == "") return;
-        if (ctrlCache.exists(controllerName)) return;
+	    private static function validateControllerExists(controllerName: String, routeName: String, routePath: String, pos: Position): Void {
+	        if (controllerName == null || controllerName == "") return;
+	        if (ctrlCache.exists(controllerName)) return;
 
-        // Soft validation only: avoid fatal errors when referencing modules still being typed.
-        // Presence of the controller will surface during normal compilation/mix if truly missing.
-        ctrlCache.set(controllerName, true);
-    }
+	        try {
+	            Context.getType(controllerName);
+	        } catch (e: Dynamic) {
+	            Context.error('Router DSL error: controller type not found "${controllerName}" for route "${routeName}" (${routePath})', pos);
+	        }
+
+	        ctrlCache.set(controllerName, true);
+	    }
     
     /**
      * Validate that an action method exists on the controller
      */
-    private static function validateActionExists(controllerName: String, actionName: String, routeName: String, pos: Position): Void {
-        if (controllerName == null || actionName == null || controllerName == "" || actionName == "") return;
-        var key = controllerName + "#" + actionName;
-        if (actionCache.exists(key)) return; // already validated
-        // Defer to compile-time errors if the controller/action truly don't exist.
-        actionCache.set(key, true);
-    }
+	    private static function validateActionExists(controllerName: String, actionName: String, routeName: String, pos: Position): Void {
+	        if (controllerName == null || actionName == null || controllerName == "" || actionName == "") return;
+	        var key = controllerName + "#" + actionName;
+	        if (actionCache.exists(key)) return; // already validated
+
+	        var action = actionName;
+	        if (action.startsWith(":")) action = action.substr(1);
+
+	        var t: Null<Type> = null;
+	        try {
+	            t = Context.getType(controllerName);
+	        } catch (e: Dynamic) {
+	            // Controller error is reported by validateControllerExists; don't cascade.
+	            actionCache.set(key, true);
+	            return;
+	        }
+
+	        var controllerClass: Null<ClassType> = switch (t) {
+	            case TInst(c, _): c.get();
+	            case TType(tdef, _): switch (tdef.get().type) { case TInst(c, _): c.get(); default: null; }
+	            default: null;
+	        };
+
+	        if (controllerClass != null) {
+	            var statics = controllerClass.statics.get();
+	            var found = false;
+	            for (f in statics) {
+	                if (f.name == action) {
+	                    found = true;
+	                    break;
+	                }
+	            }
+	            if (!found) {
+	                Context.error('Router DSL error: action "${action}" not found on controller "${controllerName}" (route "${routeName}")', pos);
+	            }
+	        }
+
+	        actionCache.set(key, true);
+	    }
 }
 
 /**
@@ -451,6 +544,7 @@ class RouteDefinition {
     public var controller: String;  // Target controller/LiveView (optional)
     public var action: String;      // Action method (optional)
     public var pipeline: String;    // Pipeline to use (optional)
+    public var controllerIsTypeRef: Bool; // true when controller is expressed as a type ref (not a string literal)
     
     public function new() {}
 }
