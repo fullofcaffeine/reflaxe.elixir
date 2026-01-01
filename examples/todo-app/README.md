@@ -12,6 +12,7 @@ End-to-end reference app showcasing Reflaxe.Elixir in a real Phoenix LiveView ap
 - Todo CRUD + typed LiveView assigns
 - Ecto schemas + migrations
 - Optional demo login + profile (session-based)
+- Optional GitHub OAuth login (env-configured)
 - Users directory + status toggle (LiveView)
 - Tag filtering + search + sorting
 - PubSub broadcasts so multiple sessions update live
@@ -51,6 +52,16 @@ mix dev
 ```
 
 Visit `http://localhost:4000` to see the app.
+
+### Optional: GitHub OAuth (Login)
+
+Set these env vars (and restart the server) to enable “Continue with GitHub” on `/login`:
+```bash
+export GITHUB_CLIENT_ID="..."
+export GITHUB_CLIENT_SECRET="..."
+# Optional (recommended if not on :4000)
+export GITHUB_REDIRECT_URI="http://localhost:4000/auth/github/callback"
+```
 
 ## Where to Look (Code Tour)
 

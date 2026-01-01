@@ -8,6 +8,11 @@ async function login(page: Page, base: string, name: string, email: string) {
   await page.goto(base + '/login')
   await expect(page.locator('h1')).toContainText('Sign in')
 
+  // GitHub OAuth is optional: either show a button (configured) or a disabled message (default).
+  const githubButtonVisible = await page.getByTestId('btn-github-oauth').isVisible()
+  const githubDisabledVisible = await page.getByTestId('github-oauth-disabled').isVisible()
+  expect(githubButtonVisible || githubDisabledVisible).toBeTruthy()
+
   const loginForm = page.locator('form[action="/auth/login"]').filter({
     has: page.locator('input[name="name"][type="text"]'),
   }).first()

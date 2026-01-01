@@ -396,6 +396,18 @@ abstract Conn<TParams>(Term) from Term to Term {
     public inline function redirect(to: String): Conn<TParams> {
         return untyped __elixir__('Phoenix.Controller.redirect({0}, to: {1})', this, to);
     }
+
+    /**
+     * Redirect to an external URL.
+     *
+     * NOTE
+     * - Use this for third-party auth redirects (OAuth) and other off-site navigation.
+     * - This maps to `Phoenix.Controller.redirect(conn, external: url)`.
+     */
+    extern
+    public inline function redirectExternal(url: String): Conn<TParams> {
+        return untyped __elixir__('Phoenix.Controller.redirect({0}, external: {1})', this, url);
+    }
     
     /**
      * Set HTTP status code - Control response status
