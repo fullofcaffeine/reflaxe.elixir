@@ -20,6 +20,7 @@ import shared.AvatarTools;
 import shared.liveview.HookName;
 import server.infrastructure.Repo;
 import server.pubsub.TodoPubSub;
+import server.support.OrganizationTools;
 import server.pubsub.TodoPubSub.TodoPubSubMessage;
 import server.pubsub.TodoPubSub.TodoPubSubTopic;
 import server.types.Types.EventParams;
@@ -33,6 +34,9 @@ typedef ProfileLiveAssigns = {
     var name: String;
     var email: String;
     var bio: String;
+    // Tenant/organization metadata (zero-logic HXX)
+    var organization_slug: String;
+    var organization_name: String;
 }
 
 typedef ProfileLiveRenderAssigns = {> ProfileLiveAssigns,
@@ -78,12 +82,15 @@ class ProfileLive {
         }
 
         var signedIn = user != null;
+        var orgInfo = signedIn ? OrganizationTools.infoForId(user.organizationId) : OrganizationTools.infoForId(OrganizationTools.DEMO_ORG_ID);
         sock = sock.merge({
             signed_in: signedIn,
             user: user,
             name: signedIn ? user.name : "",
             email: signedIn ? user.email : "",
-            bio: signedIn ? (user.bio != null ? user.bio : "") : ""
+            bio: signedIn ? (user.bio != null ? user.bio : "") : "",
+            organization_slug: orgInfo.slug,
+            organization_name: orgInfo.name
         });
         return Ok(sock);
     }
@@ -239,6 +246,9 @@ class ProfileLive {
                                                 class="px-2 py-1 rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
                                                 Copy
                                             </button>
+                                        </div>
+                                        <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                            Org: <span data-testid="profile-org-slug">#{@organization_slug}</span>
                                         </div>
                                     </div>
                                 </div>

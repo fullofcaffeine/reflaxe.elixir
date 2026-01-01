@@ -16,6 +16,7 @@ import phoenix.types.Flash.FlashType;
 import plug.CSRFProtection;
 import server.infrastructure.Repo;
 import server.schemas.User;
+import server.support.OrganizationTools;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
 import shared.liveview.HookName;
@@ -25,6 +26,9 @@ typedef AdminLiveAssigns = {
     var signed_in: Bool;
     var is_admin: Bool;
     var current_user: Null<User>;
+    // Tenant/organization metadata (zero-logic HXX)
+    var organization_slug: String;
+    var organization_name: String;
     var users: Array<User>;
     var total_users: Int;
     var admin_users: Int;
@@ -79,6 +83,7 @@ class AdminLive {
 
         var signedIn = currentUser != null;
         var isAdmin = signedIn && currentUser.role == "admin";
+        var orgInfo = signedIn ? OrganizationTools.infoForId(currentUser.organizationId) : OrganizationTools.infoForId(OrganizationTools.DEMO_ORG_ID);
 
         var users = isAdmin ? loadUsers(currentUser.organizationId) : [];
         var stats = deriveRoleStats(users);
@@ -87,6 +92,8 @@ class AdminLive {
             signed_in: signedIn,
             is_admin: isAdmin,
             current_user: currentUser,
+            organization_slug: orgInfo.slug,
+            organization_name: orgInfo.name,
             users: users,
             total_users: users.length,
             admin_users: stats.admin,
@@ -140,10 +147,13 @@ class AdminLive {
                 <div class="container mx-auto px-4 py-10 max-w-4xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
                         <div class="flex items-start justify-between gap-4 mb-6">
-                            <div>
-                                <h1 data-testid="admin-title" class="text-3xl font-bold text-gray-900 dark:text-white">Admin dashboard</h1>
-                                <p class="text-gray-600 dark:text-gray-300">Role-based access control showcase.</p>
-                            </div>
+	                            <div>
+	                                <h1 data-testid="admin-title" class="text-3xl font-bold text-gray-900 dark:text-white">Admin dashboard</h1>
+	                                <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+	                                    Org: <span data-testid="admin-org-slug">#{@organization_slug}</span>
+	                                </div>
+	                                <p class="text-gray-600 dark:text-gray-300">Role-based access control showcase.</p>
+	                            </div>
                             <div class="flex items-center gap-3">
                                 <button
                                     data-testid="admin-theme-toggle"
