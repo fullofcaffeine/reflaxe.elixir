@@ -14,6 +14,7 @@ using StringTools;
 #if macro
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.Type;
 import haxe.macro.TypeTools;
 import reflaxe.elixir.macros.RepoDiscovery;
 #end
@@ -36,6 +37,8 @@ import reflaxe.elixir.macros.RepoDiscovery;
  *   gap by correlating template `@field` references with the Haxe-typed `assigns` typedef.
  * - Attribute typing reduces "stringly-typed" template bugs (especially for `phx-*` / boolean attrs)
  *   without requiring users to embed target HEEx/EEx syntax.
+ * - When a project defines a hook registry (`@:phxHookNames`), `phx-hook="Name"` values are validated
+ *   against that registry when statically known.
  *
  * HOW
  * - For each LiveView render(assigns) function:
@@ -68,6 +71,8 @@ import reflaxe.elixir.macros.RepoDiscovery;
  *   unambiguously to a discovered `@:component` class (by `@:native` or class name).
  * - Slot typing is shallow: `:let` bindings are validated for shape (variable/pattern) but the bound
  *   variable is not type-checked against yielded slot assigns.
+ * - Hook name validation only runs when a hook registry is present. Dynamic hook expressions (e.g. `phx-hook={@hook}`)
+ *   are not validated to keep false positives low.
  */
 private typedef ComponentDefinition = {
     var moduleTypePath: String;
@@ -82,6 +87,9 @@ class HeexAssignsTypeLinterTransforms {
     static var componentDefinitionCache: Map<String, Null<ComponentDefinition>> = new Map();
     static var fileContentCache: Map<String, Null<String>> = new Map();
     static var assignsFieldsCache: Map<String, Null<Map<String, String>>> = new Map();
+    #if macro
+    static var phxHookNameCache: Null<Map<String, Bool>> = null;
+    #end
 
     // Public entry: non-contextual (throws on error)
     public static function transformPass(ast: ElixirAST): ElixirAST {
@@ -920,7 +928,107 @@ class HeexAssignsTypeLinterTransforms {
         if (!attributeKindsCompatible(expected, actual)) {
             error(ctx, 'HEEx attribute type error: "' + canonical + '" expects ' + expected + ' but got ' + actual, pos);
         }
+
+        // Additional validation: when a hook registry exists, validate known literal hook names.
+        if (canonical == "phx-hook") {
+            validatePhxHookName(value, ctx, pos);
+        }
     }
+
+    static function validatePhxHookName(value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        #if macro
+        var allowed = getAllowedPhxHookNames();
+        if (allowed == null) return;
+
+        if (value == null) return;
+        var name: Null<String> = switch (value.def) {
+            case EString(s):
+                s != null ? s.trim() : null;
+            default:
+                null;
+        };
+        if (name == null || name.length == 0) return;
+
+        if (!allowed.exists(name)) {
+            error(ctx, 'HEEx phx-hook error: unknown hook "' + name + '" (not present in any @:phxHookNames registry)', pos);
+        }
+        #end
+    }
+
+    #if macro
+    static function getAllowedPhxHookNames(): Null<Map<String, Bool>> {
+        if (phxHookNameCache != null) return phxHookNameCache;
+        phxHookNameCache = buildAllowedPhxHookNames();
+        return phxHookNameCache;
+    }
+
+    static function buildAllowedPhxHookNames(): Null<Map<String, Bool>> {
+        var allowed: Map<String, Bool> = new Map();
+
+        var discovered = RepoDiscovery.getDiscovered();
+        if (discovered == null || discovered.length == 0) {
+            RepoDiscovery.run();
+            discovered = RepoDiscovery.getDiscovered();
+        }
+
+        if (discovered == null || discovered.length == 0) return null;
+
+        for (typePath in discovered) {
+            var t: haxe.macro.Type = null;
+            try t = Context.getType(typePath) catch (_:Dynamic) t = null;
+            if (t == null) continue;
+
+            switch (TypeTools.follow(t)) {
+                case TAbstract(aRef, _):
+                    var abs = aRef.get();
+                    if (abs == null || abs.meta == null || !abs.meta.has(":phxHookNames")) continue;
+                    collectConstStringStaticsFromAbstract(abs, allowed);
+                case TInst(cRef, _):
+                    var cls = cRef.get();
+                    if (cls == null || cls.meta == null || !cls.meta.has(":phxHookNames")) continue;
+                    collectConstStringStaticsFromClass(cls, allowed);
+                default:
+            }
+        }
+
+        return allowed.keys().hasNext() ? allowed : null;
+    }
+
+    static function collectConstStringStaticsFromAbstract(abs: haxe.macro.Type.AbstractType, out: Map<String, Bool>): Void {
+        if (abs == null) return;
+        if (abs.impl == null) return;
+        var impl = abs.impl.get();
+        if (impl == null) return;
+        collectConstStringStaticsFromClass(impl, out);
+    }
+
+    static function collectConstStringStaticsFromClass(cls: haxe.macro.Type.ClassType, out: Map<String, Bool>): Void {
+        if (cls == null) return;
+        for (field in cls.statics.get()) {
+            if (field == null) continue;
+            var value = extractStringConst(field.expr());
+            if (value != null && value.length > 0) {
+                out.set(value, true);
+            }
+        }
+    }
+
+    static function extractStringConst(expr: Null<TypedExpr>): Null<String> {
+        if (expr == null) return null;
+        return switch (expr.expr) {
+            case TConst(TString(s)):
+                s;
+            case TMeta(_, inner):
+                extractStringConst(inner);
+            case TCast(inner, _):
+                extractStringConst(inner);
+            case TParenthesis(inner):
+                extractStringConst(inner);
+            default:
+                null;
+        };
+    }
+    #end
 
     static function isRegisteredHtmlElement(tag: String): Bool {
         if (tag == null || tag.length == 0) return false;

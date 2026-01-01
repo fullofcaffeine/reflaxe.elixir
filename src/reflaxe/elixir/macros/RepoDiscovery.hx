@@ -54,6 +54,7 @@ class RepoDiscovery {
         "@:phoenixWeb",
         "@:phoenixWebModule",
         "@:component",
+        "@:phxHookNames",
         "@:controller",
         "@:channel",
         "@:socket",
@@ -161,8 +162,11 @@ class RepoDiscovery {
             var inBlock = false;
             var hasRelevantMeta = false;
             var pkg = "";
-            var cls: Null<String> = null;
+            var typeName: Null<String> = null;
             var classRe = ~/^(?:extern\s+)?class\s+([A-Za-z0-9_]+)/;
+            var enumAbstractRe = ~/^enum\s+abstract\s+([A-Za-z0-9_]+)/;
+            var enumRe = ~/^enum\s+([A-Za-z0-9_]+)/;
+            var abstractRe = ~/^abstract\s+([A-Za-z0-9_]+)/;
 
             while (true) {
                 var line = file.readLine();
@@ -191,16 +195,24 @@ class RepoDiscovery {
                     hasRelevantMeta = true;
                 }
 
-                if (cls == null && classRe.match(t)) {
-                    cls = classRe.matched(1);
+                if (typeName == null) {
+                    if (classRe.match(t)) {
+                        typeName = classRe.matched(1);
+                    } else if (enumAbstractRe.match(t)) {
+                        typeName = enumAbstractRe.matched(1);
+                    } else if (enumRe.match(t)) {
+                        typeName = enumRe.matched(1);
+                    } else if (abstractRe.match(t)) {
+                        typeName = abstractRe.matched(1);
+                    }
                 }
 
-                if (hasRelevantMeta && cls != null) break;
+                if (hasRelevantMeta && typeName != null) break;
             }
 
-            if (!hasRelevantMeta || cls == null) return;
+            if (!hasRelevantMeta || typeName == null) return;
 
-            var mod = (pkg.length > 0) ? (pkg + "." + cls) : cls;
+            var mod = (pkg.length > 0) ? (pkg + "." + typeName) : typeName;
             forceType(mod);
         } catch (e: Eof) {
             // EOF

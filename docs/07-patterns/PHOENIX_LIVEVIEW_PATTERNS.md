@@ -114,6 +114,27 @@ Reference implementation:
 - `examples/todo-app/src_haxe/client/hooks/` (hook implementations)
 - `examples/todo-app/assets/js/app.js` (bootstrap that reads `window.Hooks`)
 
+## Pattern: Typed `phx-hook` Names (Shared With Genes)
+
+Hook names are stringly-typed in Phoenix by default (`phx-hook="MyHook"`). To make refactors safe and keep
+server templates in sync with the client hook registry, define a single source of truth:
+
+```haxe
+@:phxHookNames
+enum abstract HookName(String) from String to String {
+  var ThemeToggle = "ThemeToggle";
+  var CopyToClipboard = "CopyToClipboard";
+}
+```
+
+Then:
+- **Server (HXX/HEEx)**: `phx-hook=${HookName.ThemeToggle}`
+- **Client (Genes/JS)**: use `HookName.ThemeToggle` as the key in your hooks map
+
+When at least one `@:phxHookNames` registry exists in the project, the compiler lints literal hook usages
+like `phx-hook="..."` and reports unknown names. Dynamic hook expressions (e.g. `phx-hook={@hook}`) are
+intentionally not validated to keep false positives low.
+
 ## Anti-Pattern: `__elixir__()` in Application Code
 
 Avoid `untyped __elixir__(...)` in application modules. If you need a missing Phoenix helper:
