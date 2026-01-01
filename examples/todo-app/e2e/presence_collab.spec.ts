@@ -24,17 +24,18 @@ async function login(page: Page, base: string, name: string, email: string) {
 test('presence shows online users and editing badges', async ({ browser }) => {
   const base = process.env.BASE_URL || 'http://localhost:4001'
   const runId = Date.now()
+  const domain = `presence-${runId}.example.com`
 
   const ctxA = await browser.newContext()
   const pageA = await ctxA.newPage()
   const nameA = `PW A ${runId}`
-  const emailA = `pw-a-${runId}@example.com`
+  const emailA = `pw-a-${runId}@${domain}`
   await login(pageA, base, nameA, emailA)
 
   const ctxB = await browser.newContext()
   const pageB = await ctxB.newPage()
   const nameB = `PW B ${runId}`
-  const emailB = `pw-b-${runId}@example.com`
+  const emailB = `pw-b-${runId}@${domain}`
   await login(pageB, base, nameB, emailB)
 
   // Session A should see a live activity entry for B joining.
