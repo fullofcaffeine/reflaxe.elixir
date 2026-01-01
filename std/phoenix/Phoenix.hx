@@ -238,16 +238,46 @@ extern class LiveView {
      * 
      * @param TAssigns The type of socket assigns structure
      */
-    @:native("push_patch")
-    static function pushPatch<TAssigns>(socket: Socket<TAssigns>, options: PatchOptions): Socket<TAssigns>;
+    extern inline static function pushPatch<TAssigns>(socket: Socket<TAssigns>, options: PatchOptions): Socket<TAssigns> {
+        var replace: Null<Bool> = cast untyped __elixir__('Map.get({0}, :replace)', options);
+        return if (replace != null) {
+            untyped __elixir__(
+                'Phoenix.LiveView.push_patch({0}, to: {1}, replace: {2})',
+                socket,
+                options.to,
+                replace
+            );
+        } else {
+            untyped __elixir__(
+                'Phoenix.LiveView.push_patch({0}, to: {1})',
+                socket,
+                options.to
+            );
+        }
+    }
     
     /**
      * Push a redirect to the client
      * 
      * @param TAssigns The type of socket assigns structure
      */
-    @:native("push_redirect")
-    static function pushRedirect<TAssigns>(socket: Socket<TAssigns>, options: RedirectOptions): Socket<TAssigns>;
+    extern inline static function pushRedirect<TAssigns>(socket: Socket<TAssigns>, options: PatchOptions): Socket<TAssigns> {
+        var replace: Null<Bool> = cast untyped __elixir__('Map.get({0}, :replace)', options);
+        return if (replace != null) {
+            untyped __elixir__(
+                'Phoenix.LiveView.push_redirect({0}, to: {1}, replace: {2})',
+                socket,
+                options.to,
+                replace
+            );
+        } else {
+            untyped __elixir__(
+                'Phoenix.LiveView.push_redirect({0}, to: {1})',
+                socket,
+                options.to
+            );
+        }
+    }
 
     /**
      * Push a full LiveView navigation to the client.
@@ -256,8 +286,23 @@ extern class LiveView {
      * - `push_redirect/2` is deprecated in Phoenix LiveView 0.20 in favor of `push_navigate/2`.
      * - Use this for LiveView-to-LiveView navigation that mounts a new root LiveView.
      */
-    @:native("push_navigate")
-    static function pushNavigate<TAssigns>(socket: Socket<TAssigns>, options: PatchOptions): Socket<TAssigns>;
+    extern inline static function pushNavigate<TAssigns>(socket: Socket<TAssigns>, options: PatchOptions): Socket<TAssigns> {
+        var replace: Null<Bool> = cast untyped __elixir__('Map.get({0}, :replace)', options);
+        return if (replace != null) {
+            untyped __elixir__(
+                'Phoenix.LiveView.push_navigate({0}, to: {1}, replace: {2})',
+                socket,
+                options.to,
+                replace
+            );
+        } else {
+            untyped __elixir__(
+                'Phoenix.LiveView.push_navigate({0}, to: {1})',
+                socket,
+                options.to
+            );
+        }
+    }
     
     /**
      * Push an event to the client-side hooks
@@ -1005,7 +1050,7 @@ typedef RedirectOptions = {
  * Patch options for live navigation  
  */
 typedef PatchOptions = {
-    var ?to: String;
+    var to: String;
     var ?replace: Bool;
 }
 

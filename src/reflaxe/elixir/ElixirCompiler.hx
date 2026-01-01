@@ -1032,30 +1032,31 @@ class ElixirCompiler extends GenericCompiler<
                                     // DISABLED: trace('[ElixirCompiler] insideString AFTER: $insideString');
                                     #end
 
-                                case Right(ast):
-                                    // Compiled AST - convert to string
-                                    var astStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(ast);
+	                                case Right(ast):
+	                                    // Compiled AST - convert to string
+	                                    var astStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(ast);
+	                                    var astSubstitution = reflaxe.elixir.ast.ElixirASTPrinter.printASTForInjectionSubstitution(ast);
 
                                     #if debug_injection
                                     // DISABLED: trace('[ElixirCompiler] Entry $i - Right: AST → "$astStr"');
                                     // DISABLED: trace('[ElixirCompiler] insideString: $insideString');
                                     #end
 
-                                    if (insideString) {
-                                        // Inside string literal: ensure the interpolated expression is a single valid expression
-                                        // Wrap multi-statement or assignment-heavy outputs in an IIFE inside #{...}
-                                        var needsIife = (astStr.indexOf("\n") != -1) || (astStr.indexOf("=") != -1 && astStr.indexOf("==") == -1);
-                                        var wrapped = needsIife ? '(fn -> ' + astStr + ' end).()' : astStr;
-                                        finalCode += '#{' + wrapped + '}';
-                                    } else {
-                                        // Outside string: direct substitution
-                                        #if debug_injection
-                                        // DISABLED: trace('[ElixirCompiler] Direct substitution (not in string)');
-                                        #end
-                                        finalCode += astStr;
-                                    }
-                            }
-                        }
+	                                    if (insideString) {
+	                                        // Inside string literal: ensure the interpolated expression is a single valid expression
+	                                        // Wrap multi-statement or assignment-heavy outputs in an IIFE inside #{...}
+	                                        var needsIife = (astStr.indexOf("\n") != -1) || (astStr.indexOf("=") != -1 && astStr.indexOf("==") == -1);
+	                                        var wrapped = needsIife ? '(fn -> ' + astStr + ' end).()' : astStr;
+	                                        finalCode += '#{' + wrapped + '}';
+	                                    } else {
+	                                        // Outside string: direct substitution
+	                                        #if debug_injection
+	                                        // DISABLED: trace('[ElixirCompiler] Direct substitution (not in string)');
+	                                        #end
+	                                        finalCode += astSubstitution;
+	                                    }
+	                            }
+	                        }
 
                         #if debug_injection
                         // DISABLED: trace('[ElixirCompiler] Final injection code: "$finalCode"');
@@ -1163,22 +1164,23 @@ class ElixirCompiler extends GenericCompiler<
                                     if (numStr != "" && j < injectionString.length && injectionString.charAt(j) == '}') {
                                         final num = Std.parseInt(numStr);
                                         if (num != null && num + 1 < args.length) {
-                                            // Compile the argument
-                                            var argAst = compileExpression(args[num + 1]);
-                                            if (argAst != null) {
-                                                var argStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(argAst);
+	                                            // Compile the argument
+	                                            var argAst = compileExpression(args[num + 1]);
+	                                            if (argAst != null) {
+	                                                var argStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(argAst);
+	                                                var argSubstitution = reflaxe.elixir.ast.ElixirASTPrinter.printASTForInjectionSubstitution(argAst);
 
                                                 #if debug_injection
                                                 // DISABLED: trace('[ElixirCompiler] Substituting {$num} with "$argStr" (insideString: $insideString)');
                                                 #end
 
-                                                if (insideString) {
-                                                    // Inside string: wrap in #{...} for interpolation
-                                                    finalCode += '#{$argStr}';
-                                                } else {
-                                                    // Outside string: direct substitution
-                                                    finalCode += argStr;
-                                                }
+	                                                if (insideString) {
+	                                                    // Inside string: wrap in #{...} for interpolation
+	                                                    finalCode += '#{$argStr}';
+	                                                } else {
+	                                                    // Outside string: direct substitution
+	                                                    finalCode += argSubstitution;
+	                                                }
 
                                                 // Skip past the placeholder
                                                 i = j + 1;
