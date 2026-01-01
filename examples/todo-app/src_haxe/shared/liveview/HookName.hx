@@ -13,10 +13,10 @@ package shared.liveview;
  * - Server: use `phx-hook=${HookName.Ping}` (compiles to `phx-hook="Ping"`).
  * - Client: keep hook keys aligned with these values.
  */
+@:phxHookNames
 enum abstract HookName(String) from String to String {
     var AutoFocus = "AutoFocus";
     var Ping = "Ping";
     var CopyToClipboard = "CopyToClipboard";
     var ThemeToggle = "ThemeToggle";
 }
-

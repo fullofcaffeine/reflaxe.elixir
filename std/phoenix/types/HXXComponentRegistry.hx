@@ -398,6 +398,12 @@ class HXXComponentRegistry {
             case "srcSet": "srcset";
             case "useMap": "usemap";
             case "itemProp": "itemprop";
+
+            // Already has hyphens (already in kebab-case)
+            // NOTE: This must come before the phx*/aria*/data* camelCase cases to avoid
+            // turning valid kebab-case like "phx-hook" into "phx--hook".
+            case s if (s.indexOf("-") != -1):
+                s;
             
             // Phoenix LiveView with snake_case (phx_click -> phx-click)
             case s if (StringTools.startsWith(s, "phx_")):
@@ -422,10 +428,6 @@ class HXXComponentRegistry {
             // Data attributes with camelCase (dataTestId -> data-test-id)
             case s if (StringTools.startsWith(s, "data") && s.indexOf("_") == -1):
                 "data-" + camelToKebab(s.substring(4));
-                
-            // Already has hyphens (already in kebab-case)
-            case s if (s.indexOf("-") != -1):
-                s;
                 
             // Has underscores (snake_case -> kebab-case)
             case s if (s.indexOf("_") != -1):
