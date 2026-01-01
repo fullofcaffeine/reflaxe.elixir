@@ -20,8 +20,8 @@ class TodoPubSub {
     /**
      * Subscribe to a topic.
      */
-    public static function subscribe(topic: TodoPubSubTopic): haxe.functional.Result<Void, String> {
-        var topicStr = topicToString(topic);
+    public static function subscribe(topic: TodoPubSubTopic, ?organizationId: Int): haxe.functional.Result<Void, String> {
+        var topicStr = topicToString(topic, organizationId);
         var pubsub = pubsubModule();
         // Phoenix.PubSub.subscribe/2 accepts the PubSub server module and topic
         PubSubShim.subscribe(pubsub, topicStr);
@@ -31,8 +31,8 @@ class TodoPubSub {
     /**
      * Broadcast a message to a topic.
      */
-    public static function broadcast(topic: TodoPubSubTopic, msg: TodoPubSubMessage): haxe.functional.Result<Void, String> {
-        var topicStr = topicToString(topic);
+    public static function broadcast(topic: TodoPubSubTopic, msg: TodoPubSubMessage, ?organizationId: Int): haxe.functional.Result<Void, String> {
+        var topicStr = topicToString(topic, organizationId);
         var msgTuple = messageToElixir(msg);
         var pubsub = pubsubModule();
         PubSubShim.broadcast(pubsub, topicStr, msgTuple);
@@ -49,12 +49,13 @@ class TodoPubSub {
     /**
      * Convert topic enum to string for Phoenix.PubSub.
      */
-    public static function topicToString(topic: TodoPubSubTopic): String {
-        return switch (topic) {
+    public static function topicToString(topic: TodoPubSubTopic, ?organizationId: Int): String {
+        var base = switch (topic) {
             case TodoUpdates: "todo_updates";
             case UserActivity: "user_activity";
             case SystemNotifications: "system_notifications";
         };
+        return organizationId != null ? ("org:" + Std.string(organizationId) + ":" + base) : base;
     }
 
     /**

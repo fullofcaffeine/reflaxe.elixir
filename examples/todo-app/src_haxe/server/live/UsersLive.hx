@@ -23,6 +23,7 @@ import server.types.Types.MountParams;
 import server.types.Types.Session;
 import shared.AvatarTools;
 import StringTools;
+using reflaxe.elixir.macros.TypedQueryLambda;
 
 typedef UserRowView = {
     var id: Int;
@@ -92,7 +93,14 @@ class UsersLive {
         var currentUser: Null<User> = signedIn ? Repo.get(User, cast maybeUserId) : null;
         if (currentUser == null) signedIn = false;
 
-        var allUsers = loadUsers();
+        if (!signedIn || currentUser == null) {
+            sock = LiveView.putFlash(sock, FlashType.Error, "Sign in to view users.");
+            sock = LiveView.pushNavigate(sock, {to: "/login"});
+            currentUser = null;
+            signedIn = false;
+        }
+
+        var allUsers = (signedIn && currentUser != null) ? loadUsers(currentUser.organizationId) : [];
         var stats = deriveStats(allUsers);
         var searchQuery = "";
         var statusFilter = "all";
@@ -163,6 +171,9 @@ class UsersLive {
         if (!socket.assigns.signed_in) {
             return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage users.");
         }
+        if (socket.assigns.current_user == null) {
+            return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage users.");
+        }
 
         var idValue = parseId(ElixirMap.get(params, "id"));
         if (idValue == null) {
@@ -173,10 +184,13 @@ class UsersLive {
         if (user == null) {
             return LiveView.putFlash(socket, FlashType.Error, "User not found.");
         }
+        if (user.organizationId != socket.assigns.current_user.organizationId) {
+            return LiveView.putFlash(socket, FlashType.Error, "Not authorized.");
+        }
 
         return switch (Users.updateUser(user, {active: !user.active})) {
             case Ok(updated):
-                var allUsers = loadUsers();
+                var allUsers = loadUsers(socket.assigns.current_user.organizationId);
                 var stats = deriveStats(allUsers);
                 var visible = buildRows(filterUsers(allUsers, socket.assigns.search_query, socket.assigns.status_filter));
                 var updatedSocket = socket.merge({
@@ -202,8 +216,9 @@ class UsersLive {
         return null;
     }
 
-    static function loadUsers(): Array<User> {
-        var users = Users.listUsers(null);
+    static function loadUsers(organizationId: Int): Array<User> {
+        var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId);
+        var users: Array<User> = Repo.all(query);
         // Stable ordering improves UX and test determinism.
         users.sort(function(a, b) return a.id - b.id);
         return users;

@@ -23,6 +23,7 @@ typedef User = {
     var email: String;
     var bio: Null<String>;
     var role: String;
+    var organizationId: Int;
     var passwordHash: String;  // camelCase
     var confirmedAt: Null<NaiveDateTime>;  // camelCase
     var lastLoginAt: Null<NaiveDateTime>;  // camelCase

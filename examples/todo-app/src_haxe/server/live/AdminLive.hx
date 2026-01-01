@@ -19,6 +19,7 @@ import server.schemas.User;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
 import shared.liveview.HookName;
+using reflaxe.elixir.macros.TypedQueryLambda;
 
 typedef AdminLiveAssigns = {
     var signed_in: Bool;
@@ -79,7 +80,7 @@ class AdminLive {
         var signedIn = currentUser != null;
         var isAdmin = signedIn && currentUser.role == "admin";
 
-        var users = isAdmin ? loadUsers() : [];
+        var users = isAdmin ? loadUsers(currentUser.organizationId) : [];
         var stats = deriveRoleStats(users);
 
         sock = sock.merge({
@@ -111,8 +112,9 @@ class AdminLive {
         return "index";
     }
 
-    static function loadUsers(): Array<User> {
-        var users = Repo.all(ecto.TypedQuery.from(User));
+    static function loadUsers(organizationId: Int): Array<User> {
+        var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId);
+        var users: Array<User> = Repo.all(query);
         users.sort((a, b) -> a.id - b.id);
         return users;
     }
@@ -224,4 +226,3 @@ class AdminLive {
         ');
     }
 }
-

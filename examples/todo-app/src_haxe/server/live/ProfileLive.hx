@@ -150,7 +150,7 @@ class ProfileLive {
                     name: updated.name,
                     email: updated.email,
                     bio: updated.bio
-                }));
+                }), updated.organizationId);
                 LiveView.putFlash(updatedSocket, FlashType.Info, "Profile updated.");
             case Error(_changeset):
                 LiveView.putFlash(socket, FlashType.Error, "Could not update profile. Please try again.");

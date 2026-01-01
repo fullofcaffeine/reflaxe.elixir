@@ -26,8 +26,9 @@ async function login(page: Page, base: string, name: string, email: string) {
 test('users directory search + toggle active', async ({ page }) => {
   const base = process.env.BASE_URL || 'http://localhost:4001'
   const runId = Date.now()
+  const domain = `users-${runId}.example.com`
   const name = `PW Directory ${runId}`
-  const email = `pw-dir-${runId}@example.com`
+  const email = `pw-dir-${runId}@${domain}`
 
   await login(page, base, name, email)
 

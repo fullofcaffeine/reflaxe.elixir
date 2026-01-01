@@ -7,6 +7,7 @@ import elixir.Enum;
 import elixir.types.Term;
 import haxe.functional.Result;
 import server.infrastructure.Repo;
+import server.schemas.Organization;
 import server.schemas.User;
 import StringTools;
 import elixir.DateTime.NaiveDateTime;
@@ -30,12 +31,37 @@ using reflaxe.elixir.macros.TypedQueryLambda;
  */
 @:native("TodoApp.Accounts")
 class Accounts {
+    static inline var DEMO_ORG_SLUG = "demo";
+
     public static function normalizeEmail(email: String): String {
         return StringTools.trim(email).toLowerCase();
     }
 
     public static function normalizeName(name: String): String {
         return StringTools.trim(name);
+    }
+
+    static function organizationSlugFromEmail(normalizedEmail: String): String {
+        var atIndex = normalizedEmail.indexOf("@");
+        if (atIndex == -1) return DEMO_ORG_SLUG;
+        var slug = StringTools.trim(normalizedEmail.substr(atIndex + 1));
+        return slug != "" ? slug : DEMO_ORG_SLUG;
+    }
+
+    static function getOrganizationBySlug(slug: String): Null<Organization> {
+        var query = TypedQuery.from(Organization).where(o -> o.slug == slug);
+        var orgs = Repo.all(query);
+        return Enum.at(orgs, 0);
+    }
+
+    static function getOrCreateOrganization(slug: String): Result<Organization, Changeset<Organization, server.schemas.Organization.OrganizationParams>> {
+        var existing = getOrganizationBySlug(slug);
+        if (existing != null) return Ok(existing);
+
+        var data: Organization = cast Kernel.struct(Organization);
+        var params: server.schemas.Organization.OrganizationParams = {slug: slug, name: slug};
+        var changeset = Organization.changeset(data, params);
+        return Repo.insert(changeset);
     }
 
     public static function getUserByEmail(email: String): Null<User> {
@@ -62,15 +88,23 @@ class Accounts {
             };
         }
 
+        var orgSlug = organizationSlugFromEmail(normalizedEmail);
+        var organization: Organization = switch (getOrCreateOrganization(orgSlug)) {
+            case Ok(org): org;
+            case Error(changeset):
+                return Error(cast changeset);
+        };
+
         var data: User = cast Kernel.struct(User);
         var params: Term = {name: normalizedName, email: normalizedEmail};
-        var isFirstUser = Repo.all(TypedQuery.from(User)).length == 0;
+        var isFirstUserInOrg = Repo.all(TypedQuery.from(User).where(u -> u.organizationId == organization.id)).length == 0;
         var now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), TimePrecision.Second);
         var changeset = User.changeset(data, params)
             .putChange("password_hash", generateDemoPasswordHash(normalizedEmail))
             .putChange("confirmed_at", now)
             .putChange("last_login_at", now)
-            .putChange("role", isFirstUser ? "admin" : "user");
+            .putChange("organization_id", organization.id)
+            .putChange("role", isFirstUserInOrg ? "admin" : "user");
 
         return Repo.insert(changeset);
     }

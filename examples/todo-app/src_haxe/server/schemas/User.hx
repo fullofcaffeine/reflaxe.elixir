@@ -22,6 +22,7 @@ class User {
     @:field public var email: String;
     @:field public var bio: Null<String>;
     @:field public var role: String = "user";
+    @:field public var organizationId: Int;
     @:field public var passwordHash: String;
     @:field public var confirmedAt: Null<NaiveDateTime>;
     @:field public var lastLoginAt: Null<NaiveDateTime>;
@@ -120,6 +121,7 @@ class User {
         user.email = "demo@example.com";
         user.bio = null;
         user.role = "user";
+        user.organizationId = 0;
         user.passwordHash = "hashed_demopassword";
         user.confirmedAt = NaiveDateTime.truncate(NaiveDateTime.utc_now(), TimePrecision.Second);
         user.lastLoginAt = NaiveDateTime.truncate(NaiveDateTime.utc_now(), TimePrecision.Second);
