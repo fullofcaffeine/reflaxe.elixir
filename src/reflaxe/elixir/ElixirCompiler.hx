@@ -3482,13 +3482,67 @@ class ElixirCompiler extends GenericCompiler<
             return null;
         }
 
+        function extractDotPath(expr: Expr): Null<String> {
+            return switch (expr.expr) {
+                case EConst(CIdent(ident)):
+                    ident;
+                case EField(e, field):
+                    var base = extractDotPath(e);
+                    base != null ? (base + "." + field) : field;
+                default:
+                    null;
+            };
+        }
+
         function extractStringValue(expr: Expr, fieldName: String, pos: haxe.macro.Expr.Position): Null<String> {
             return switch (expr.expr) {
                 case EConst(CString(s, _)): s;
                 case EConst(CIdent(ident)): ident;
-                case EField(_, field): field; // Enum values / type references (e.g., HttpMethod.GET)
                 default:
-                    Context.error('${fieldName} must be a string literal or enum value', pos);
+                    Context.error('${fieldName} must be a string literal or identifier', pos);
+                    null;
+            };
+        }
+
+        function extractMethodValue(expr: Expr, fieldName: String, pos: haxe.macro.Expr.Position): Null<String> {
+            return switch (expr.expr) {
+                case EConst(CString(s, _)): s;
+                case EConst(CIdent(ident)): ident;
+                case EField(e, field):
+                    var base = extractDotPath(e);
+                    if (base != null && (base == "HttpMethod" || StringTools.endsWith(base, ".HttpMethod"))) {
+                        field;
+                    } else {
+                        Context.error('${fieldName} must be a string literal or HttpMethod value', pos);
+                        null;
+                    }
+                default:
+                    Context.error('${fieldName} must be a string literal or HttpMethod value', pos);
+                    null;
+            };
+        }
+
+        function extractControllerValue(expr: Expr, fieldName: String, pos: haxe.macro.Expr.Position): Null<String> {
+            return switch (expr.expr) {
+                case EConst(CString(s, _)): s;
+                default:
+                    var path = extractDotPath(expr);
+                    if (path == null) {
+                        Context.error('${fieldName} must be a string literal or type reference (e.g. controllers.UserController)', pos);
+                        null;
+                    } else {
+                        path;
+                    }
+            };
+        }
+
+        function extractActionValue(expr: Expr, fieldName: String, pos: haxe.macro.Expr.Position): Null<String> {
+            return switch (expr.expr) {
+                case EConst(CString(s, _)): s;
+                case EConst(CIdent(ident)): ident;
+                case EField(_, field): field; // Type.method references (e.g. TodoLive.index)
+                default:
+                    Context.error('${fieldName} must be a string literal, identifier, or method reference (e.g. TodoLive.index)', pos);
                     null;
             };
         }
@@ -3508,13 +3562,13 @@ class ElixirCompiler extends GenericCompiler<
                             case "name":
                                 name = extractStringValue(f.expr, "name", f.expr.pos);
                             case "method":
-                                method = extractStringValue(f.expr, "method", f.expr.pos);
+                                method = extractMethodValue(f.expr, "method", f.expr.pos);
                             case "path":
                                 path = extractStringValue(f.expr, "path", f.expr.pos);
                             case "controller":
-                                controller = extractStringValue(f.expr, "controller", f.expr.pos);
+                                controller = extractControllerValue(f.expr, "controller", f.expr.pos);
                             case "action":
-                                action = extractStringValue(f.expr, "action", f.expr.pos);
+                                action = extractActionValue(f.expr, "action", f.expr.pos);
                             case "pipeline":
                                 pipeline = extractStringValue(f.expr, "pipeline", f.expr.pos);
                             default:
