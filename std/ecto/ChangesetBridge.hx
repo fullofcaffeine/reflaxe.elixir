@@ -87,9 +87,10 @@ class ChangesetBridge {
     public static function update<TUser, P>(user: TUser, params: P): Changeset<TUser, P> {
         return cast untyped __elixir__('
             {0}
-            |> Ecto.Changeset.cast({1}, [:name, :email])
+            |> Ecto.Changeset.cast({1}, [:name, :email, :bio])
             |> Ecto.Changeset.validate_required([:name, :email])
             |> Ecto.Changeset.validate_length(:name, min: 2, max: 100)
+            |> Ecto.Changeset.validate_length(:bio, max: 280)
             |> Ecto.Changeset.validate_format(:email, ~r/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)
             |> Ecto.Changeset.unique_constraint(:email)
         ', user, params);

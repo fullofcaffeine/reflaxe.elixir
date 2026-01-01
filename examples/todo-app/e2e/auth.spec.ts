@@ -44,12 +44,13 @@ test('optional login + profile edit', async ({ page }) => {
 
   const profileForm = page.locator('form[phx-submit="save_profile"]').first()
 
-  await expect(profileForm.locator('input[name="name"][type="text"]')).toHaveValue(name)
-  await expect(profileForm.locator('input[name="email"][type="email"]')).toHaveValue(email)
+  await expect(page.getByTestId('profile-email-display')).toContainText(email)
+  await expect(page.getByTestId('input-profile-name')).toHaveValue(name)
 
   const updatedName = `PW User Updated ${runId}`
-  await profileForm.locator('input[name="name"][type="text"]').fill(updatedName)
-  await profileForm.getByRole('button', { name: /^save$/i }).click()
+  await page.getByTestId('input-profile-name').fill(updatedName)
+  await page.getByTestId('input-profile-bio').fill(`Bio ${runId}`)
+  await page.getByTestId('btn-save-profile').click()
   await expect(page.getByTestId('flash-info')).toContainText(/profile updated/i)
 
   await page.getByRole('link', { name: /back to todos/i }).click()

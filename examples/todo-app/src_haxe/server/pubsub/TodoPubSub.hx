@@ -75,6 +75,8 @@ class TodoPubSub {
                 Tuple.make2(userOnlineAtom(), cast params[0]);
             case "UserOffline":
                 Tuple.make2(userOfflineAtom(), cast params[0]);
+            case "UserProfileUpdated":
+                Tuple.make2(userProfileUpdatedAtom(), cast params[0]);
             case "SystemAlert":
                 systemAlertTuple(cast params[0], cast params[1]);
             case _: msg;
@@ -95,6 +97,7 @@ class TodoPubSub {
             case "bulk_update": Some(BulkUpdate(parseBulkAction(cast Tuple.elem(msg, 1))));
             case "user_online": Some(UserOnline(cast Tuple.elem(msg, 1)));
             case "user_offline": Some(UserOffline(cast Tuple.elem(msg, 1)));
+            case "user_profile_updated": Some(UserProfileUpdated(cast Tuple.elem(msg, 1)));
             case "system_alert":
                 Some(SystemAlert(cast Tuple.elem(msg, 1), parseAlertLevel(cast Tuple.elem(msg, 2))));
             default: None;
@@ -186,6 +189,7 @@ class TodoPubSub {
     static inline function bulkUpdateAtom(): Term return Atom.create("bulk_update");
     static inline function userOnlineAtom(): Term return Atom.create("user_online");
     static inline function userOfflineAtom(): Term return Atom.create("user_offline");
+    static inline function userProfileUpdatedAtom(): Term return Atom.create("user_profile_updated");
     static inline function systemAlertAtom(): Term return Atom.create("system_alert");
 }
 
@@ -202,5 +206,13 @@ enum TodoPubSubMessage {
     BulkUpdate(action: BulkOperationType);
     UserOnline(userId: Int);
     UserOffline(userId: Int);
+    UserProfileUpdated(payload: UserProfileUpdatedPayload);
     SystemAlert(message: String, level: AlertLevel);
+}
+
+typedef UserProfileUpdatedPayload = {
+    var user_id: Int;
+    var name: String;
+    var email: String;
+    var bio: Null<String>;
 }
