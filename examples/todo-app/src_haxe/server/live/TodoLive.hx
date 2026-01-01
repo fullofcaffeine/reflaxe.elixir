@@ -39,6 +39,7 @@ import server.presence.TodoPresence.PresenceMeta;
 import server.pubsub.TodoPubSub.TodoPubSubMessage;
 import server.pubsub.TodoPubSub.TodoPubSubTopic;
 import phoenix.PubSubShim;
+import server.support.OrganizationTools;
 import server.types.Types.PresenceTopic;
 import server.types.Types.PresenceTopics;
 	import server.pubsub.TodoPubSub;
@@ -275,6 +276,7 @@ enum ActivityKind {
 
 		        var auth = getUserFromSession(session);
 		        var currentUser = auth.user;
+		        var orgInfo = OrganizationTools.infoForId(currentUser.organizationId);
 			        var todos = loadTodos(currentUser.organizationId);
 
 		        var connected = socket.transport_pid != null;
@@ -296,6 +298,9 @@ enum ActivityKind {
 			            sort_by: shared.TodoTypes.TodoSort.Created,
 		            current_user: currentUser,
 		            signed_in: auth.signed_in,
+		            organization_id: orgInfo.id,
+		            organization_slug: orgInfo.slug,
+		            organization_name: orgInfo.name,
 		            editing_todo: null,
 		            show_form: false,
 		            search_query: "",
@@ -1348,8 +1353,11 @@ enum ActivityKind {
 								<h1 class="text-4xl font-bold text-gray-800 dark:text-white mb-2">
 									📝 Todo Manager
 									</h1>
-									<div class="text-gray-600 dark:text-gray-400">
+										<div class="text-gray-600 dark:text-gray-400">
 										<div>Welcome, #{@current_user.name}!</div>
+										<div class="text-xs text-gray-500 dark:text-gray-400">
+											Org: <span data-testid="org-slug">#{@organization_slug}</span>
+										</div>
 										<div class="mt-2 flex items-center gap-3 text-sm">
 											<button data-testid="nav-theme-toggle"
 												id="nav-theme-toggle"
