@@ -19,7 +19,8 @@ typedef TodoParams = {
     ?priority: String,
     ?dueDate: NaiveDateTime,
     ?tags: Array<String>,
-    ?userId: Int
+    ?userId: Int,
+    ?organizationId: Int
 }
 
 /**
@@ -48,13 +49,15 @@ typedef TodoChangesetParams = {
     // Can be provided as Array<String> or a comma-separated string.
     ?tags: Term,
     ?userId: Int,
-    ?user_id: Int
+    ?user_id: Int,
+    ?organizationId: Int,
+    ?organization_id: Int
 }
 
 @:native("TodoApp.Todo")
 @:schema("todos")
 @:timestamps
-@:changeset(["title", "description", "completed", "priority", "dueDate", "tags", "userId"], ["title"])
+@:changeset(["title", "description", "completed", "priority", "dueDate", "tags", "userId", "organizationId"], ["title"])
 class Todo {
     @:field @:primary_key public var id: Int;
     @:field public var title: String;
@@ -64,6 +67,7 @@ class Todo {
     @:field public var dueDate: Null<NaiveDateTime>;
     @:field public var tags: Null<Array<String>>;
     @:field public var userId: Int;
+    @:field public var organizationId: Int;
 
     public function new() {
         this.completed = false;
@@ -106,7 +110,8 @@ class Todo {
             priority: "medium",
             dueDate: null,
             tags: [],
-            userId: userId
+            userId: userId,
+            organizationId: null
         };
     }
 }

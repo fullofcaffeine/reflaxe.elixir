@@ -26,9 +26,10 @@ async function login(page: Page, base: string, name: string, email: string) {
 test('admin dashboard is restricted to admins', async ({ page }) => {
   const base = process.env.BASE_URL || 'http://localhost:4001'
   const runId = Date.now()
+  const domain = `admin-${runId}.example.com`
 
   const adminName = `PW Admin ${runId}`
-  const adminEmail = `pw-admin-${runId}@example.com`
+  const adminEmail = `pw-admin-${runId}@${domain}`
 
   await login(page, base, adminName, adminEmail)
 
@@ -44,7 +45,7 @@ test('admin dashboard is restricted to admins', async ({ page }) => {
   await page.waitForURL('**/', { timeout: 10000 })
 
   const userName = `PW User ${runId}`
-  const userEmail = `pw-user-${runId}@example.com`
+  const userEmail = `pw-user-${runId}@${domain}`
   await login(page, base, userName, userEmail)
 
   // Non-admins should be redirected away.
@@ -53,4 +54,3 @@ test('admin dashboard is restricted to admins', async ({ page }) => {
   await expect(page.getByTestId('flash-error')).toContainText(/admins only/i)
   await expect(page.getByTestId('nav-admin')).toHaveCount(0)
 })
-

@@ -26,3 +26,6 @@ server.migrations.CreateTodos
 server.migrations.CreateUsers
 server.migrations.AddUserBio
 server.migrations.AddUserRole
+server.migrations.CreateOrganizations
+server.migrations.AddUserOrganizationId
+server.migrations.AddTodoOrganizationId

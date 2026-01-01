@@ -28,8 +28,9 @@ async function login(page: Page, base: string, name: string, email: string) {
 test('optional login + profile edit', async ({ page }) => {
   const base = process.env.BASE_URL || 'http://localhost:4001'
   const runId = Date.now()
+  const domain = `auth-${runId}.example.com`
   const name = `PW User ${runId}`
-  const email = `pw-${runId}@example.com`
+  const email = `pw-${runId}@${domain}`
 
   await login(page, base, name, email)
   await expect(page.locator('body')).toContainText(`Welcome, ${name}!`)

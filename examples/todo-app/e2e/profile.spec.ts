@@ -3,7 +3,8 @@ import { test, expect } from '@playwright/test'
 test('profile updates broadcast to todos (name + bio)', async ({ page, context }) => {
   const base = process.env.BASE_URL || 'http://localhost:4001'
   const unique = Date.now()
-  const email = `alice_profile_${unique}@example.com`
+  const domain = `profile-${unique}.example.com`
+  const email = `alice_profile_${unique}@${domain}`
   const originalName = `Alice ${unique}`
   const updatedName = `Alice Updated ${unique}`
   const bio = `Hello from Haxe ${unique}`

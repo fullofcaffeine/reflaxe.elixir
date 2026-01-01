@@ -89,8 +89,8 @@ enum ActivityKind {
 	    ];
 		// All socket state is now defined in TodoLiveAssigns typedef for type safety
 
-	    static inline function presenceUsersTopic(): String {
-	        return PresenceTopics.toString(PresenceTopic.Users);
+	    static inline function presenceUsersTopic(organizationId: Int): String {
+	        return "org:" + Std.string(organizationId) + ":" + PresenceTopics.toString(PresenceTopic.Users);
 	    }
 
 	    static function buildPresenceMeta(
@@ -113,7 +113,7 @@ enum ActivityKind {
 	        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
 	        if (socket.transport_pid == null) return liveSocket;
 
-	        var topic = presenceUsersTopic();
+	        var topic = presenceUsersTopic(socket.assigns.current_user.organizationId);
 	        var key = Std.string(socket.assigns.current_user.id);
 	        var startedAt: Null<Float> = editingTodoId != null ? Date.now().getTime() : null;
 	        var meta = buildPresenceMeta(socket.assigns.current_user, socket.assigns.presence_online_at, editingTodoId, startedAt);
@@ -275,16 +275,16 @@ enum ActivityKind {
 
 		        var auth = getUserFromSession(session);
 		        var currentUser = auth.user;
-			        var todos = loadTodos(currentUser.id);
+			        var todos = loadTodos(currentUser.organizationId);
 
 		        var connected = socket.transport_pid != null;
-		        var presenceTopic = presenceUsersTopic();
+		        var presenceTopic = presenceUsersTopic(currentUser.organizationId);
 
 		        // Subscribe only on the connected mount (the initial static render is disconnected).
 		        // This enables cross-session real-time updates via Phoenix.PubSub + Phoenix.Presence.
 			        if (connected) {
-			            TodoPubSub.subscribe(TodoUpdates);
-			            TodoPubSub.subscribe(UserActivity);
+			            TodoPubSub.subscribe(TodoUpdates, currentUser.organizationId);
+			            TodoPubSub.subscribe(UserActivity, currentUser.organizationId);
 			            PubSubShim.subscribe(Atom.fromString("Elixir.TodoApp.PubSub"), presenceTopic);
 			        }
 
@@ -455,7 +455,7 @@ enum ActivityKind {
 			        // NOTE: Keep this function as a single expression to avoid Elixir codegen fallthrough.
 			        var result: HandleInfoResult<TodoLiveAssigns> = if (isPresenceDiffBroadcast(payload)) {
 			            // Phoenix.Presence broadcasts diffs as `%Phoenix.Socket.Broadcast{event: "presence_diff", ...}`.
-			            var topic = presenceUsersTopic();
+			            var topic = presenceUsersTopic(socket.assigns.current_user.organizationId);
 			            var updatedUsers: Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = cast TodoPresence.list(topic);
 			            if (!socket.assigns.presence_initialized) {
 			                NoReply(recomputeVisible(socket.merge({
@@ -515,7 +515,7 @@ enum ActivityKind {
 		                            case _:
 		                                socket;
 		                        };
-		                        var refreshed = loadTodos(socket.assigns.current_user.id);
+		                        var refreshed = loadTodos(socket.assigns.current_user.organizationId);
 		                        var merged = withActivity.merge({
 		                            todos: refreshed,
 		                            total_todos: refreshed.length,
@@ -537,6 +537,7 @@ enum ActivityKind {
 			                        email: profile.email,
 			                        bio: profile.bio,
 			                        role: currentUser.role,
+			                        organizationId: currentUser.organizationId,
 			                        passwordHash: currentUser.passwordHash,
 			                        confirmedAt: currentUser.confirmedAt,
 			                        lastLoginAt: currentUser.lastLoginAt,
@@ -547,7 +548,7 @@ enum ActivityKind {
 			                    if (withUser.transport_pid == null) {
 			                        NoReply(withUser);
 			                    } else {
-			                        var topic = presenceUsersTopic();
+			                        var topic = presenceUsersTopic(updatedUser.organizationId);
 			                        var key = Std.string(updatedUser.id);
 			                        var editingTodoId: Null<Int> = withUser.assigns.editing_todo != null ? withUser.assigns.editing_todo.id : null;
 			                        var startedAt: Null<Float> = editingTodoId != null ? Date.now().getTime() : null;
@@ -574,7 +575,8 @@ enum ActivityKind {
 			priority: params.priority != null ? params.priority : "medium",
 			dueDate: params.dueDate != null ? parseDueDate(params.dueDate) : null,
 			tags: params.tags != null ? parseTags(params.tags) : [],
-            userId: socket.assigns.current_user.id
+            userId: socket.assigns.current_user.id,
+            organizationId: socket.assigns.current_user.organizationId
 		};
 		
 		// Pass the properly typed TodoParams to changeset
@@ -584,7 +586,7 @@ enum ActivityKind {
 		switch (Repo.insert(changeset)) {
 			case Ok(todo):
 				// Best-effort broadcast; ignore result
-				TodoPubSub.broadcast(TodoUpdates, TodoCreated(todo));
+				TodoPubSub.broadcast(TodoUpdates, TodoCreated(todo), socket.assigns.current_user.organizationId);
 				
 				var todos = [todo].concat(socket.assigns.todos);
 				// Use LiveSocket for type-safe assigns manipulation
@@ -628,14 +630,15 @@ enum ActivityKind {
             priority: priority,
             dueDate: dueDate,
             tags: tagsArr,
-            userId: socket.assigns.current_user.id
+            userId: socket.assigns.current_user.id,
+            organizationId: socket.assigns.current_user.organizationId
         };
         // Use the schema-generated changeset to keep casting/validation idiomatic
         var cs = Todo.changeset(todoStruct, castParams);
         switch (Repo.insert(cs)) {
 	            case Ok(value):
 	                // broadcast best-effort; ignore returned term
-	                var _broadcastResult = TodoPubSub.broadcast(TodoUpdates, TodoCreated(value));
+	                var _broadcastResult = TodoPubSub.broadcast(TodoUpdates, TodoCreated(value), socket.assigns.current_user.organizationId);
 	                var todos = [value].concat(socket.assigns.todos);
 	                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
 	                var updatedSocket: LiveSocket<TodoLiveAssigns> = liveSocket.merge({
@@ -670,6 +673,9 @@ enum ActivityKind {
  */
 	    @:keep
 	    public static function toggle_todo_status(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+        var existingTodo = findTodo(id, socket.assigns.todos);
+        if (existingTodo == null) return socket;
+
 	        var s: LiveSocket<TodoLiveAssigns> = socket;
 	        var toggledTodos = s.assigns.todos.map(function(todo) {
 	            if (todo.id == id) {
@@ -685,20 +691,15 @@ enum ActivityKind {
             pending_todos: countPending(toggledTodos)
         }));
 
-        var db = Repo.get(server.schemas.Todo, id);
-        if (db == null) {
-            return sOptimistic;
-        }
-
-        switch (Repo.update(server.schemas.Todo.toggleCompleted(db))) {
+        switch (Repo.update(server.schemas.Todo.toggleCompleted(existingTodo))) {
             case Ok(_):
                 var refreshed = Repo.get(server.schemas.Todo, id);
-                var finalTodo = (refreshed != null) ? refreshed : db;
+                var finalTodo = (refreshed != null) ? refreshed : existingTodo;
                 var withTodo = updateTodoInList(finalTodo, sOptimistic);
-                var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(finalTodo));
+                var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(finalTodo), socket.assigns.current_user.organizationId);
                 return recomputeVisible(withTodo);
             case _:
-                var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(db));
+                var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(existingTodo), socket.assigns.current_user.organizationId);
                 return LiveView.putFlash(sOptimistic, FlashType.Error, "Failed to toggle todo");
         }
     }
@@ -720,7 +721,7 @@ enum ActivityKind {
         }
         // Reflect locally, then broadcast best-effort to others
         var updated = removeTodoFromList(id, socket);
-        var _ = TodoPubSub.broadcast(TodoUpdates, TodoDeleted(id));
+        var _ = TodoPubSub.broadcast(TodoUpdates, TodoDeleted(id), socket.assigns.current_user.organizationId);
         return recomputeVisible(updated);
     }
 	
@@ -736,7 +737,7 @@ enum ActivityKind {
         }
         var refreshed = Repo.get(server.schemas.Todo, id);
         if (refreshed != null) {
-            var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(refreshed));
+            var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(refreshed), socket.assigns.current_user.organizationId);
             return recomputeVisible(updateTodoInList(refreshed, socket));
         }
         return socket;
@@ -756,8 +757,8 @@ enum ActivityKind {
 	}
 	
 	
-    static function loadTodos(userId: Int): Array<server.schemas.Todo> {
-        var query = ecto.TypedQuery.from(server.schemas.Todo).where(t -> t.userId == userId);
+    static function loadTodos(organizationId: Int): Array<server.schemas.Todo> {
+        var query = ecto.TypedQuery.from(server.schemas.Todo).where(t -> t.organizationId == organizationId);
         return Repo.all(query);
     }
 
@@ -814,6 +815,7 @@ enum ActivityKind {
 	                        email: dbUser.email,
 	                        bio: dbUser.bio,
 	                        role: dbUser.role,
+	                        organizationId: dbUser.organizationId,
 	                        passwordHash: dbUser.passwordHash,
 	                        confirmedAt: dbUser.confirmedAt,
 	                        lastLoginAt: dbUser.lastLoginAt,
@@ -831,6 +833,7 @@ enum ActivityKind {
 	                email: "demo@example.com",
 	                bio: null,
 	                role: "user",
+	                organizationId: 0,
 	                passwordHash: "demo_password_hash",
 	                confirmedAt: null,
 	                lastLoginAt: null,
@@ -841,7 +844,7 @@ enum ActivityKind {
 	
 	// Missing helper functions
 	static function loadAndAssignTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-		var todos = loadTodos(socket.assigns.current_user.id);
+		var todos = loadTodos(socket.assigns.current_user.organizationId);
 		// Use LiveSocket's merge for type-safe bulk updates
 		var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
 		return liveSocket.merge({
@@ -1058,9 +1061,9 @@ enum ActivityKind {
             }
         });
         // Broadcast (best-effort)
-        var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll));
+        var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll), socket.assigns.current_user.organizationId);
         // Reload todos and update assigns
-        var refreshedTodos = loadTodos(socket.assigns.current_user.id);
+        var refreshedTodos = loadTodos(socket.assigns.current_user.organizationId);
         var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, refreshedTodos));
         updated = LiveView.clearFlash(updated);
         return LiveView.putFlash(
@@ -1076,9 +1079,9 @@ enum ActivityKind {
             if (item.completed) Repo.delete(item);
         });
         // Notify others (best-effort)
-        var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted));
+        var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted), socket.assigns.current_user.organizationId);
         // Reload fresh todos from DB and update assigns
-        var remaining = loadTodos(socket.assigns.current_user.id);
+        var remaining = loadTodos(socket.assigns.current_user.organizationId);
         var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, remaining));
         updated = LiveView.clearFlash(updated);
         return LiveView.putFlash(
@@ -1116,11 +1119,12 @@ enum ActivityKind {
             dueDate: (rawDue != null) ? parseDueDate(rawDue) : todo.dueDate,
             tags: (rawTags != null) ? (rawTags != "" ? parseTags(rawTags) : []) : (todo.tags != null ? todo.tags : []),
             completed: todo.completed,
-            userId: todo.userId
+            userId: todo.userId,
+            organizationId: todo.organizationId
         }))) {
 	            case Ok(value):
 	                // Best-effort broadcast
-	                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(value));
+	                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(value), socket.assigns.current_user.organizationId);
 	                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
 	                var ls: LiveSocket<TodoLiveAssigns> = updateTodoInList(value, liveSocket);
 	                ls = clearPresenceEditing(ls);
@@ -1222,7 +1226,7 @@ enum ActivityKind {
 		switch (Repo.update(changeset)) {
 			case Ok(updatedTodo):
 				// Best-effort broadcast
-				TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo));
+				TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo), socket.assigns.current_user.organizationId);
 				
 				var updatedSocket = updateTodoInList(updatedTodo, socket);
 				// Convert to LiveSocket to use assign for single field
@@ -1240,7 +1244,7 @@ enum ActivityKind {
 	            case CompleteAll:
 	                // Reload todos once and apply in a single merge
 	                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-	                var refreshed = loadTodos(socket.assigns.current_user.id);
+	                var refreshed = loadTodos(socket.assigns.current_user.organizationId);
 	                liveSocket.merge({
 	                    todos: refreshed,
 	                    total_todos: refreshed.length,
@@ -1250,7 +1254,7 @@ enum ActivityKind {
 	            
 	            case DeleteCompleted:
 	                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-	                var refreshed = loadTodos(socket.assigns.current_user.id);
+	                var refreshed = loadTodos(socket.assigns.current_user.organizationId);
 	                liveSocket.merge({
 	                    todos: refreshed,
 	                    total_todos: refreshed.length,
