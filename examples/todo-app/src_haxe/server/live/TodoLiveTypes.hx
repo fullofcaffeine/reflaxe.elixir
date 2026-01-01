@@ -43,6 +43,10 @@ typedef TodoLiveAssigns = {
     var sort_by: TodoSort;  // Created | Priority | DueDate
     var current_user: User;
     var signed_in: Bool;
+    // Tenant/organization metadata (zero-logic HXX)
+    var organization_id: Int;
+    var organization_slug: String;
+    var organization_name: String;
     var editing_todo: Null<server.schemas.Todo>;
     var show_form: Bool;
     var search_query: String;
