@@ -33,18 +33,20 @@ defmodule Main do
   defp test_fall_through() do
     state = {:loading, 50}
     description = ""
-    description = ((case state do
-  {:loading, _progress} -> description
-  {:processing, progress} ->
-    description = "Progress: #{Kernel.to_string(progress)}%"
-    description
-  {:complete, result} ->
-    description = "Done: #{result}"
-    description
-  {:error, msg} ->
-    description = "Error: #{msg}"
-    description
-end))
+    description = (case state do
+      {:loading, _progress} ->
+        nil
+        description
+      {:processing, progress} ->
+        description = "Progress: #{Kernel.to_string(progress)}%"
+        description
+      {:complete, result} ->
+        description = "Done: #{result}"
+        description
+      {:error, msg} ->
+        description = "Error: #{msg}"
+        description
+    end)
     nil
   end
   defp test_nested_enums() do

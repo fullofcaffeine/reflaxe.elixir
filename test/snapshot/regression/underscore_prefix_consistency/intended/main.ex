@@ -13,11 +13,9 @@ defmodule Main do
   end
   defp test_pattern_matching_unused() do
     _result = (case get_some_value() do
-      {:some, value} ->
-        g_metadata = value.metadata
-        g_value = g_value.value
-        _meta = g_metadata
-        v = g_value
+      {:some, g} ->
+        _meta = g.metadata
+        v = g.value
         v
       {:none} -> 0
     end)

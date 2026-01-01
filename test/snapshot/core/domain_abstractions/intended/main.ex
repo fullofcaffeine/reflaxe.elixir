@@ -51,10 +51,10 @@ end)
 end)
     invalid_ids = ["ab", "user@123", "user 123", "user-123", "", Enum.join((fn ->
   (fn ->
-  g = []
-  g = Enum.reduce(0..59//1, g, fn _, g_acc -> Enum.concat(g_acc, ["a"]) end)
-  g
-end).()
+    g = []
+    g = Enum.reduce(0..59//1, g, fn _, g_acc -> Enum.concat(g_acc, ["a"]) end)
+    g
+  end).()
 end).(), "")]
     _g = 0
     _ = Enum.each(invalid_ids, fn invalid_id ->
@@ -202,15 +202,15 @@ end)
     _g = 0
     valid_users = Enum.reduce(registration_data, valid_users, fn user_data, valid_users_acc ->
       user_result = create_user(user_data.user_id, user_data.email, user_data.preferred_name)
-      ((case user_result do
-  {:ok, user} ->
-    valid_users_acc = Enum.concat(valid_users_acc, [user])
-    nil
-    valid_users_acc
-  {:error, error} ->
-    nil
-    error
-end))
+      (case user_result do
+        {:ok, user} ->
+          valid_users_acc = Enum.concat(valid_users_acc, [user])
+          nil
+          valid_users_acc
+        {:error, error} ->
+          nil
+          error
+      end)
     end)
     config_data = [%{:timeout => "30", :retries => "3", :name => "production"}, %{:timeout => "0", :retries => "5", :name => ""}, %{:timeout => "60", :retries => "-1", :name => "test"}]
     _g = 0
@@ -225,10 +225,10 @@ end)
   defp build_user_profile(user_id_str, email_str, score_str) do
     ResultTools.flat_map(ResultTools.map_error(UserId_Impl_.parse(user_id_str), fn e -> "Invalid UserId: " <> e end), fn user_id ->
       ResultTools.flat_map(ResultTools.map_error(Email_Impl_.parse(StringTools.ltrim(StringTools.rtrim(email_str))), fn e -> "Invalid Email: " <> e end), fn email ->
-        score_int = ((case Integer.parse(score_str) do
-  {num, _} -> num
-  :error -> nil
-end))
+        score_int = (case Integer.parse(score_str) do
+          {num, _} -> num
+          :error -> nil
+        end)
         if (Kernel.is_nil(score_int)) do
           {:error, "Invalid score: " <> score_str}
         else
@@ -241,14 +241,14 @@ end))
     ResultTools.flat_map(ResultTools.map_error(UserId_Impl_.parse(user_id_str), fn e -> "Invalid UserId: " <> e end), fn user_id -> ResultTools.flat_map(ResultTools.map_error(Email_Impl_.parse(email_str), fn e -> "Invalid Email: " <> e end), fn email -> ResultTools.map(ResultTools.map_error(NonEmptyString_Impl_.parse_and_trim(name_str), fn e -> "Invalid Name: " <> e end), fn display_name -> %{:user_id => user_id, :email => email, :display_name => display_name} end) end) end)
   end
   defp validate_configuration(timeout_str, retries_str, name_str) do
-    timeout_int = ((case Integer.parse(timeout_str) do
-  {num, _} -> num
-  :error -> nil
-end))
-    retries_int = ((case Integer.parse(retries_str) do
-  {num, _} -> num
-  :error -> nil
-end))
+    timeout_int = (case Integer.parse(timeout_str) do
+      {num, _} -> num
+      :error -> nil
+    end)
+    retries_int = (case Integer.parse(retries_str) do
+      {num, _} -> num
+      :error -> nil
+    end)
     if (Kernel.is_nil(timeout_int)) do
       {:error, "Timeout must be a number: " <> timeout_str}
     else

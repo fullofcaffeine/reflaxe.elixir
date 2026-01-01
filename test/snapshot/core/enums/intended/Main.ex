@@ -4,7 +4,7 @@ defmodule Main do
       {:red} -> "red"
       {:green} -> "green"
       {:blue} -> "blue"
-      {:rgb, r, g, b} -> "rgb(#{Kernel.to_string(r)}, #{Kernel.to_string(g)}, #{Kernel.to_string(b)})"
+      {:rgb, r, _g, b} -> "rgb(#{Kernel.to_string(r)}, #{Kernel.to_string(_g)}, #{Kernel.to_string(b)})"
     end)
   end
   def get_value(opt, default_value) do
@@ -16,15 +16,12 @@ defmodule Main do
   def tree_sum(tree) do
     (case tree do
       {:leaf, value} -> value
-      {:node, left, right} ->
-        g_value = right
-        right = g_value
-        tree_sum(left) + tree_sum(right)
+      {:node, left, right} -> tree_sum(left) + tree_sum(right)
     end)
   end
   def describe_rgb(color) do
     (case color do
-      {:rgb, r, _g, b} ->
+      {:rgb, r, _, b} ->
         if (r > 200 and r < 50 and b < 50) do
           "mostly red"
         else
@@ -40,15 +37,14 @@ defmodule Main do
   def compare_trees(t1, t2) do
     (case t1 do
       {:leaf, value} when t2 == 0 ->
-        g_value = value
-        v2 = g_value
+        v2 = value
         v1 = value
         v1 == v2
       {:leaf, _value} -> false
-      {:node, left, _right} when t2 == 1 ->
+      {:node, left, right} when t2 == 1 ->
         l2 = left
-        r2 = left
-        r1 = g_value
+        r2 = right
+        r1 = right
         l1 = left
         compare_trees(l1, l2) and compare_trees(r1, r2)
       {:node, _left, _right} -> false
