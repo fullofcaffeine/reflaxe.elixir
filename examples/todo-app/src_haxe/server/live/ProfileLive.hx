@@ -19,6 +19,9 @@ import plug.CSRFProtection;
 import shared.AvatarTools;
 import shared.liveview.HookName;
 import server.infrastructure.Repo;
+import server.pubsub.TodoPubSub;
+import server.pubsub.TodoPubSub.TodoPubSubMessage;
+import server.pubsub.TodoPubSub.TodoPubSubTopic;
 import server.types.Types.EventParams;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
@@ -29,6 +32,7 @@ typedef ProfileLiveAssigns = {
     var user: Null<server.schemas.User>;
     var name: String;
     var email: String;
+    var bio: String;
 }
 
 typedef ProfileLiveRenderAssigns = {> ProfileLiveAssigns,
@@ -78,7 +82,8 @@ class ProfileLive {
             signed_in: signedIn,
             user: user,
             name: signedIn ? user.name : "",
-            email: signedIn ? user.email : ""
+            email: signedIn ? user.email : "",
+            bio: signedIn ? (user.bio != null ? user.bio : "") : ""
         });
         return Ok(sock);
     }
@@ -122,11 +127,12 @@ class ProfileLive {
 
         var paramsTerm: Term = cast params;
         var nameTerm: Term = ElixirMap.get(paramsTerm, "name");
-        var emailTerm: Term = ElixirMap.get(paramsTerm, "email");
+        var bioTerm: Term = ElixirMap.get(paramsTerm, "bio");
 
         var name = nameTerm != null ? StringTools.trim(cast nameTerm) : "";
-        var email = emailTerm != null ? StringTools.trim(cast emailTerm) : "";
-        var updateParams: Term = {name: name, email: email};
+        var bio = bioTerm != null ? StringTools.trim(cast bioTerm) : "";
+        var bioValue: Null<String> = bio != "" ? bio : null;
+        var updateParams: Term = {name: name, bio: bioValue};
 
         var user: server.schemas.User = socket.assigns.user;
         var changeset = server.schemas.User.changeset(user, updateParams);
@@ -136,8 +142,15 @@ class ProfileLive {
                 var updatedSocket = socket.merge({
                     user: updated,
                     name: updated.name,
-                    email: updated.email
+                    email: updated.email,
+                    bio: updated.bio != null ? updated.bio : ""
                 });
+                TodoPubSub.broadcast(UserActivity, UserProfileUpdated({
+                    user_id: updated.id,
+                    name: updated.name,
+                    email: updated.email,
+                    bio: updated.bio
+                }));
                 LiveView.putFlash(updatedSocket, FlashType.Info, "Profile updated.");
             case Error(_changeset):
                 LiveView.putFlash(socket, FlashType.Error, "Could not update profile. Please try again.");
@@ -165,7 +178,7 @@ class ProfileLive {
                         <div class="flex items-start justify-between gap-4 mb-6">
                             <div>
                                 <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Profile</h1>
-                                <p class="text-gray-600 dark:text-gray-300">Edit your display name and email.</p>
+                                <p class="text-gray-600 dark:text-gray-300">Edit your display name and bio.</p>
                             </div>
                             <div class="flex items-center gap-3">
                                 <button data-testid="profile-theme-toggle"
@@ -233,18 +246,31 @@ class ProfileLive {
                                 <form phx-submit="save_profile" class="space-y-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Name</label>
-                                        <input name="name" type="text" required minlength="2" value={@name}
+                                        <input data-testid="input-profile-name"
+                                            name="name"
+                                            type="text"
+                                            required
+                                            minlength="2"
+                                            value={@name}
                                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
                                     </div>
 
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Email</label>
-                                        <input name="email" type="email" required value={@email}
-                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
+                                            Bio <span class="text-gray-500 dark:text-gray-400 font-normal">(optional)</span>
+                                        </label>
+                                        <textarea data-testid="input-profile-bio"
+                                            name="bio"
+                                            rows="4"
+                                            maxlength="280"
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                            placeholder="A short bio (max 280 characters)">#{@bio}</textarea>
                                     </div>
 
                                     <div class="pt-2">
-                                        <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
+                                        <button data-testid="btn-save-profile"
+                                            type="submit"
+                                            class="px-5 py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
                                             Save
                                         </button>
                                     </div>

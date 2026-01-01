@@ -282,10 +282,11 @@ enum ActivityKind {
 
 		        // Subscribe only on the connected mount (the initial static render is disconnected).
 		        // This enables cross-session real-time updates via Phoenix.PubSub + Phoenix.Presence.
-		        if (connected) {
-		            TodoPubSub.subscribe(TodoUpdates);
-		            PubSubShim.subscribe(Atom.fromString("Elixir.TodoApp.PubSub"), presenceTopic);
-		        }
+			        if (connected) {
+			            TodoPubSub.subscribe(TodoUpdates);
+			            TodoPubSub.subscribe(UserActivity);
+			            PubSubShim.subscribe(Atom.fromString("Elixir.TodoApp.PubSub"), presenceTopic);
+			        }
 
 		        var presenceOnlineAt = Date.now().getTime();
 
@@ -480,8 +481,8 @@ enum ActivityKind {
 			        return result;
 		    }
 
-		    static function handleTodoMessage(payload: TodoPubSubMessage, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
-		        return switch (payload) {
+			    static function handleTodoMessage(payload: TodoPubSubMessage, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
+			        return switch (payload) {
 		            case TodoCreated(todo):
 		                var title = todo.title != null ? todo.title : "(untitled)";
 		                var withActivity = pushActivity(socket, TodoCreate, "Todo created: " + title);
@@ -503,8 +504,8 @@ enum ActivityKind {
 		                var title = existing != null ? existing.title : ("#" + Std.string(id));
 		                var withActivity = pushActivity(socket, TodoDelete, "Todo deleted: " + title);
 		                NoReply(recomputeVisible(removeTodoFromList(id, withActivity)));
-		            case BulkUpdate(action):
-		                switch (action) {
+			            case BulkUpdate(action):
+			                switch (action) {
 		                    case CompleteAll, DeleteCompleted:
 		                        var withActivity = switch (action) {
 		                            case CompleteAll:
@@ -524,10 +525,38 @@ enum ActivityKind {
 		                        NoReply(recomputeVisible(merged));
 		                    case _:
 		                        NoReply(socket);
-		                }
-		            case UserOnline(_):
-		                NoReply(socket);
-		            case UserOffline(_):
+			                }
+			            case UserProfileUpdated(profile):
+			                var currentUser = socket.assigns.current_user;
+			                if (profile.user_id != currentUser.id) {
+			                    NoReply(socket);
+			                } else {
+			                    var updatedUser: User = {
+			                        id: currentUser.id,
+			                        name: profile.name,
+			                        email: profile.email,
+			                        bio: profile.bio,
+			                        passwordHash: currentUser.passwordHash,
+			                        confirmedAt: currentUser.confirmedAt,
+			                        lastLoginAt: currentUser.lastLoginAt,
+			                        active: currentUser.active
+			                    };
+
+			                    var withUser = socket.assign(_.current_user, updatedUser);
+			                    if (withUser.transport_pid == null) {
+			                        NoReply(withUser);
+			                    } else {
+			                        var topic = presenceUsersTopic();
+			                        var key = Std.string(updatedUser.id);
+			                        var editingTodoId: Null<Int> = withUser.assigns.editing_todo != null ? withUser.assigns.editing_todo.id : null;
+			                        var startedAt: Null<Float> = editingTodoId != null ? Date.now().getTime() : null;
+			                        var meta = buildPresenceMeta(updatedUser, withUser.assigns.presence_online_at, editingTodoId, startedAt);
+			                        NoReply(TodoPresence.updateWithSocket(withUser, topic, key, meta));
+			                    }
+			                }
+			            case UserOnline(_):
+			                NoReply(socket);
+			            case UserOffline(_):
 		                NoReply(socket);
 		            case _:
 		                NoReply(socket);
@@ -763,7 +792,7 @@ enum ActivityKind {
         };
     }
 	
-    static function getUserFromSession(session: Session): {user: User, signed_in: Bool} {
+	    static function getUserFromSession(session: Session): {user: User, signed_in: Bool} {
         var userId: Null<Int> = switch (session) {
             case null: null;
             case _:
@@ -773,37 +802,39 @@ enum ActivityKind {
                 chosen != null ? cast chosen : null;
         };
 
-        if (userId != null) {
-            var dbUser = Repo.get(server.schemas.User, userId);
-            if (dbUser != null) {
-                return {
-                    signed_in: true,
-                    user: {
-                        id: dbUser.id,
-                        name: dbUser.name,
-                        email: dbUser.email,
-                        passwordHash: dbUser.passwordHash,
-                        confirmedAt: dbUser.confirmedAt,
-                        lastLoginAt: dbUser.lastLoginAt,
-                        active: dbUser.active
-                    }
-                };
-            }
-        }
+	        if (userId != null) {
+	            var dbUser = Repo.get(server.schemas.User, userId);
+	            if (dbUser != null) {
+	                return {
+	                    signed_in: true,
+	                    user: {
+	                        id: dbUser.id,
+	                        name: dbUser.name,
+	                        email: dbUser.email,
+	                        bio: dbUser.bio,
+	                        passwordHash: dbUser.passwordHash,
+	                        confirmedAt: dbUser.confirmedAt,
+	                        lastLoginAt: dbUser.lastLoginAt,
+	                        active: dbUser.active
+	                    }
+	                };
+	            }
+	        }
 
-        return {
-            signed_in: false,
-            user: {
-                id: 1,
-                name: "Demo User",
-                email: "demo@example.com",
-                passwordHash: "demo_password_hash",
-                confirmedAt: null,
-                lastLoginAt: null,
-                active: true
-            }
-        };
-    }
+	        return {
+	            signed_in: false,
+	            user: {
+	                id: 1,
+	                name: "Demo User",
+	                email: "demo@example.com",
+	                bio: null,
+	                passwordHash: "demo_password_hash",
+	                confirmedAt: null,
+	                lastLoginAt: null,
+	                active: true
+	            }
+	        };
+	    }
 	
 	// Missing helper functions
 	static function loadAndAssignTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
