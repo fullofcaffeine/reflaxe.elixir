@@ -187,14 +187,50 @@ class EctoMigrationExsTransforms {
 
     static function buildUpStatementsFromChain(chain: MigrationCallChain, pos: Position): Null<Array<ElixirAST>> {
         var first = chain.calls[0];
-        if (first.name != "create_table" || first.args.length < 1) {
-            compilerError("Unsupported migration up/0: expected create_table(\"table\").", pos);
+        return if (first.name == "create_table") {
+            buildCreateTableStatementsFromChain(chain, pos);
+        } else if (first.name == "alter_table") {
+            buildAlterTableStatementsFromChain(chain, pos);
+        } else {
+            compilerError("Unsupported migration up/0: expected create_table(\"table\") or alter_table(\"table\").", pos);
+            null;
+        };
+    }
+
+    static function buildDownStatementsFromChain(chain: MigrationCallChain, pos: Position): Null<Array<ElixirAST>> {
+        var first = chain.calls[0];
+        if (first.name == "drop_table" && first.args.length >= 1) {
+            var tableName = extractString(first.args[0]);
+            if (tableName == null || tableName == "") {
+                compilerError("Unsupported migration down/0: drop_table table name must be a string literal.", pos);
+                return null;
+            }
+            var tableExpr = makeAST(ECall(null, "table", [makeAtom(tableName)]));
+            return [makeAST(ECall(null, "drop", [tableExpr]))];
+        }
+
+        if (first.name == "alter_table") {
+            return buildAlterTableStatementsFromChain(chain, pos);
+        }
+
+        compilerError("Unsupported migration down/0: expected drop_table(\"table\") or alter_table(\"table\").", pos);
+        return null;
+    }
+
+    // ======================================================================
+    // Builders
+    // ======================================================================
+
+    static function buildCreateTableStatementsFromChain(chain: MigrationCallChain, pos: Position): Null<Array<ElixirAST>> {
+        var first = chain.calls[0];
+        if (first.args.length < 1) {
+            compilerError("Unsupported migration: create_table requires a string literal table name.", pos);
             return null;
         }
 
         var tableName = extractString(first.args[0]);
         if (tableName == null || tableName == "") {
-            compilerError("Unsupported migration up/0: create_table table name must be a string literal.", pos);
+            compilerError("Unsupported migration: create_table table name must be a string literal.", pos);
             return null;
         }
 
@@ -256,25 +292,46 @@ class EctoMigrationExsTransforms {
         return [createTable].concat(afterTable);
     }
 
-    static function buildDownStatementsFromChain(chain: MigrationCallChain, pos: Position): Null<Array<ElixirAST>> {
+    static function buildAlterTableStatementsFromChain(chain: MigrationCallChain, pos: Position): Null<Array<ElixirAST>> {
         var first = chain.calls[0];
-        if (first.name == "drop_table" && first.args.length >= 1) {
-            var tableName = extractString(first.args[0]);
-            if (tableName == null || tableName == "") {
-                compilerError("Unsupported migration down/0: drop_table table name must be a string literal.", pos);
-                return null;
-            }
-            var tableExpr = makeAST(ECall(null, "table", [makeAtom(tableName)]));
-            return [makeAST(ECall(null, "drop", [tableExpr]))];
+        if (first.args.length < 1) {
+            compilerError("Unsupported migration: alter_table requires a string literal table name.", pos);
+            return null;
         }
 
-        compilerError("Unsupported migration down/0: expected drop_table(\"table\").", pos);
-        return null;
-    }
+        var tableName = extractString(first.args[0]);
+        if (tableName == null || tableName == "") {
+            compilerError("Unsupported migration: alter_table table name must be a string literal.", pos);
+            return null;
+        }
 
-    // ======================================================================
-    // Builders
-    // ======================================================================
+        var tableAtom = makeAtom(tableName);
+        var tableExpr = makeAST(ECall(null, "table", [tableAtom]));
+
+        var tableBody: Array<ElixirAST> = [];
+        for (i in 1...chain.calls.length) {
+            var call = chain.calls[i];
+            switch (call.name) {
+                case "add_column":
+                    var addStmt = buildAddColumn(call.args, pos);
+                    if (addStmt != null) tableBody.push(addStmt);
+
+                case "remove_column":
+                    var removeStmt = buildRemoveColumn(call.args, pos);
+                    if (removeStmt != null) tableBody.push(removeStmt);
+
+                case "modify_column":
+                    var modifyStmt = buildModifyColumn(call.args, pos);
+                    if (modifyStmt != null) tableBody.push(modifyStmt);
+
+                default:
+                    compilerError('Unsupported alter_table operation: ${call.name}.', pos);
+                    return null;
+            }
+        }
+
+        return [makeAST(EMacroCall("alter", [tableExpr], makeAST(EBlock(tableBody))))];
+    }
 
     static function buildAddColumn(args: Array<ElixirAST>, pos: Position): Null<ElixirAST> {
         if (args.length < 2) {
@@ -298,6 +355,45 @@ class EctoMigrationExsTransforms {
         }
 
         return makeAST(ECall(null, "add", callArgs));
+    }
+
+    static function buildRemoveColumn(args: Array<ElixirAST>, pos: Position): Null<ElixirAST> {
+        if (args.length < 1) {
+            compilerError("removeColumn expects (name).", pos);
+            return null;
+        }
+
+        var columnName = extractString(args[0]);
+        if (columnName == null || columnName == "") {
+            compilerError("removeColumn column name must be a string literal.", pos);
+            return null;
+        }
+
+        return makeAST(ECall(null, "remove", [makeAtom(columnName)]));
+    }
+
+    static function buildModifyColumn(args: Array<ElixirAST>, pos: Position): Null<ElixirAST> {
+        if (args.length < 2) {
+            compilerError("modifyColumn expects at least (name, type).", pos);
+            return null;
+        }
+
+        var columnName = extractString(args[0]);
+        if (columnName == null || columnName == "") {
+            compilerError("modifyColumn column name must be a string literal.", pos);
+            return null;
+        }
+
+        var typeInfo = normalizeColumnType(args[1], pos);
+        var keywordPairs = (args.length >= 3) ? normalizeColumnOptions(args[2], pos) : [];
+        keywordPairs = keywordPairs.concat(typeInfo.extraOptions);
+
+        var callArgs: Array<ElixirAST> = [makeAtom(columnName), typeInfo.typeExpr];
+        if (keywordPairs.length > 0) {
+            callArgs.push(makeAST(EKeywordList(keywordPairs)));
+        }
+
+        return makeAST(ECall(null, "modify", callArgs));
     }
 
     static function buildAddReference(args: Array<ElixirAST>, pos: Position): Null<ElixirAST> {
@@ -446,9 +542,13 @@ class EctoMigrationExsTransforms {
         return switch (name) {
             case "createTable": "create_table";
             case "dropTable": "drop_table";
+            case "alterTable": "alter_table";
             case "addId": "add_id";
             case "addTimestamps": "add_timestamps";
             case "addColumn": "add_column";
+            case "removeColumn": "remove_column";
+            case "modifyColumn": "modify_column";
+            case "renameColumn": "rename_column";
             case "addReference": "add_reference";
             case "addForeignKey": "add_foreign_key";
             case "addIndex": "add_index";

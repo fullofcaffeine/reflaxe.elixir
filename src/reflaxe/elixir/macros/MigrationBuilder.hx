@@ -370,8 +370,8 @@ class MigrationBuilder {
         if (args.length > 0) {
             switch(args[0].expr) {
                 case EConst(CString(tableName)):
-                    // Validate table exists
-                    MigrationRegistry.validateTableExists(tableName, args[0].pos);
+                    // Validate table exists (allow cross-migration forward refs; typing order is not guaranteed).
+                    MigrationRegistry.validateTableExistsDeferred(tableName, args[0].pos);
                 default:
             }
         }

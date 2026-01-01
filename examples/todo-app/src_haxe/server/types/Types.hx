@@ -21,6 +21,7 @@ typedef User = {
     var id: Int;
     var name: String;
     var email: String;
+    var bio: Null<String>;
     var passwordHash: String;  // camelCase
     var confirmedAt: Null<NaiveDateTime>;  // camelCase
     var lastLoginAt: Null<NaiveDateTime>;  // camelCase
