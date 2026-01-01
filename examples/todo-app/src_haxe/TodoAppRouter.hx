@@ -38,6 +38,15 @@ import reflaxe.elixir.macros.HttpMethod;
         action: server.live.ProfileLive.show
     },
 
+    // Organization switcher (multi-tenant showcase UX)
+    {
+        name: "org",
+        method: HttpMethod.LIVE,
+        path: "/org",
+        controller: server.live.OrganizationLive,
+        action: server.live.OrganizationLive.index
+    },
+
 	    {
 	        name: "users",
 	        method: HttpMethod.LIVE,
