@@ -60,7 +60,10 @@ private class Parser {
         var out: Array<ElixirAST> = [];
         while (!eof()) {
             if (eof()) break;
-            if (peek() == '<') {
+            if (peek() == '<' && peek2() == '%') {
+                var eex = parseEexBlock();
+                if (eex != null) out.push(eex) else advance(1);
+            } else if (peek() == '<') {
                 var node = parseElement();
                 if (node != null) out.push(node);
                 else advance(1); // avoid infinite loop
@@ -103,6 +106,9 @@ private class Parser {
                     skipWs();
                     consume('>');
                     break;
+                } else if (peek() == '<' && peek2() == '%') {
+                    var eex = parseEexBlock();
+                    if (eex != null) children.push(eex) else advance(1);
                 } else if (peek() == '<') {
                     var child = parseElement();
                     if (child != null) children.push(child) else advance(1);
@@ -119,6 +125,26 @@ private class Parser {
             }
         }
         return makeAST(EFragment(tag, attrs, children));
+    }
+
+    // <%= ... %> / <% ... %> blocks (analysis-only)
+    function parseEexBlock(): Null<ElixirAST> {
+        var start = i;
+        if (!(peek() == '<' && peek2() == '%')) return null;
+        advance(2); // consume '<%'
+
+        var prefix = "";
+        if (!eof() && peek() == '=') {
+            prefix = "=";
+            advance(1);
+        }
+
+        var close = s.indexOf("%>", i);
+        if (close == -1) { i = start; return null; }
+
+        var code = prefix + s.substr(i, close - i);
+        i = close + 2; // consume '%>'
+        return makeAST(ERaw(code));
     }
 
     function parseTagName(): Null<String> {
