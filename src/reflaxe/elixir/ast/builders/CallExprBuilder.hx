@@ -332,17 +332,18 @@ class CallExprBuilder {
                             if (numStr != "" && j < injectionString.length && injectionString.charAt(j) == '}') {
                                 final num = Std.parseInt(numStr);
                                 if (num != null && num + 1 < args.length) {
-                                    // Compile the argument
-                                    var argAst = buildExpression(args[num + 1]);
-                                    var argStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(argAst);
+	                                    // Compile the argument
+	                                    var argAst = buildExpression(args[num + 1]);
+	                                    var argStr = reflaxe.elixir.ast.ElixirASTPrinter.printAST(argAst);
+	                                    var argSubstitution = reflaxe.elixir.ast.ElixirASTPrinter.printASTForInjectionSubstitution(argAst);
 
-                                    if (insideString) {
-                                        // Inside string: wrap in #{...} for interpolation
-                                        finalCode += '#{$argStr}';
-                                    } else {
-                                        // Outside string: direct substitution
-                                        finalCode += argStr;
-                                    }
+	                                    if (insideString) {
+	                                        // Inside string: wrap in #{...} for interpolation
+	                                        finalCode += '#{$argStr}';
+	                                    } else {
+	                                        // Outside string: direct substitution
+	                                        finalCode += argSubstitution;
+	                                    }
 
                                     // Skip past the placeholder
                                     i = j + 1;
