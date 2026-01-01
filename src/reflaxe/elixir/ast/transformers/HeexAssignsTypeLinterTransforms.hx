@@ -30,6 +30,8 @@ import reflaxe.elixir.macros.RepoDiscovery;
  *   3) Unknown HTML attributes on registered elements (e.g., `<input hreff="...">`)
  *   4) Obvious attribute value kind mismatches for boolean-ish attrs and `phx-hook`
  *   5) Unknown / missing required component props for resolvable dot components (e.g., `<.card title="...">`)
+ *   6) Unknown / missing required component slots and invalid slot entry attrs for resolvable dot components
+ *      (e.g., `<:header ...>` inside `<.card>`)
  *
  * WHY
  * - HXX authoring must be fully type-checked like TSX. Since HEEx lives in strings until
@@ -52,7 +54,10 @@ import reflaxe.elixir.macros.RepoDiscovery;
  *      - Validate element attributes using `phoenix.types.HXXComponentRegistry` (kebab/camel/snake-case),
  *        allowing `data-*`, `aria-*`, `phx-value-*`, and HEEx directive attrs like `:if`.
  *   5) When a dot component tag is encountered and its definition is discoverable via RepoDiscovery,
- *      validate prop names, required props (including inner content), and basic prop kinds.
+ *      validate:
+ *      - prop names, required props (including inner content), and basic prop kinds
+ *      - slot tags (`<:name>`) against declared slots on the component assigns type (`@:slot` / `Slot<T>`)
+ *      - slot entry attributes against the slot entry props type (`Slot<T>`, where `T` is a typedef/anon-struct)
  *
  * EXAMPLES
  * Haxe (invalid):
@@ -69,8 +74,11 @@ import reflaxe.elixir.macros.RepoDiscovery;
  *   are treated as unknown.
  * - Module-qualified components (`<CoreComponents.button>`) are validated only when the module can be matched
  *   unambiguously to a discovered `@:component` class (by `@:native` or class name).
- * - Slot typing is shallow: `:let` bindings are validated for shape (variable/pattern) but the bound
- *   variable is not type-checked against yielded slot assigns.
+ * - Slot typing validates:
+ *   - slot tags (`<:name>`) exist on the invoked component when the component definition is discoverable
+ *   - required slots are present at the call site
+ *   - slot tag attributes match the slot entry typedef (including required slot attributes)
+ *   - `:let` bindings are validated for binding shape (variable/pattern)
  * - Hook name validation only runs when a hook registry is present. Dynamic hook expressions (e.g. `phx-hook={@hook}`)
  *   are not validated to keep false positives low.
  */
@@ -80,6 +88,13 @@ private typedef ComponentDefinition = {
     var functionName: String; // snake_case
     var props: Map<String, String>; // canonical prop key (snake_case) -> kind
     var required: Map<String, Bool>; // canonical prop key (snake_case) -> required?
+    var slots: Map<String, ComponentSlotDefinition>; // slot name (snake_case) -> slot definition
+};
+
+private typedef ComponentSlotDefinition = {
+    var required: Bool; // required slot at callsite
+    var props: Map<String, String>; // canonical prop key (snake_case) -> kind
+    var requiredProps: Map<String, Bool>; // canonical prop key (snake_case) -> required?
 };
 
 class HeexAssignsTypeLinterTransforms {
@@ -316,7 +331,7 @@ class HeexAssignsTypeLinterTransforms {
             switch (x.def) {
                 case EFragment(tag, attributes, children):
                     // Validate each fragment exactly once; traversal is handled by the walker.
-                    validateFragment(tag, attributes, children, fields, typeName, ctx, x.pos, enableAssignsChecks);
+                    validateFragment(tag, attributes, children, null, fields, typeName, ctx, x.pos, enableAssignsChecks);
                 default:
             }
         });
@@ -340,7 +355,7 @@ class HeexAssignsTypeLinterTransforms {
         switch (n.def) {
             case EFragment(tag, attributes, children):
                 validateSlotTag(tag, parentTag, ctx, pos);
-                validateFragment(tag, attributes, children, fields, typeName, ctx, pos, enableAssignsChecks);
+                validateFragment(tag, attributes, children, parentTag, fields, typeName, ctx, pos, enableAssignsChecks);
                 // Children: only recurse into nested fragments (skip whitespace/text nodes).
                 for (c in children) {
                     if (c == null || c.def == null) continue;
@@ -358,6 +373,7 @@ class HeexAssignsTypeLinterTransforms {
         tag: String,
         attributes: Array<EAttribute>,
         children: Array<ElixirAST>,
+        parentTag: Null<String>,
         fields: Map<String,String>,
         typeName: String,
         ctx: Null<reflaxe.elixir.CompilationContext>,
@@ -365,27 +381,33 @@ class HeexAssignsTypeLinterTransforms {
         enableAssignsChecks: Bool
     ): Void {
         for (attr in attributes) {
-            validateAttribute(tag, attr, fields, typeName, ctx, pos, enableAssignsChecks);
+            validateAttribute(tag, parentTag, attr, fields, typeName, ctx, pos, enableAssignsChecks);
         }
+        validateSlotInvocation(tag, parentTag, attributes, children, fields, ctx, pos);
         // Component-level checks (requires full attribute set + children)
         validateComponentInvocation(tag, attributes, children, fields, ctx, pos);
     }
 
-    static function validateAttribute(tag: String, attr: EAttribute, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
+    static function validateAttribute(tag: String, parentTag: Null<String>, attr: EAttribute, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
         if (attr != null && attr.name == ":let") {
             validateLetDirective(tag, attr.value, ctx, pos);
             // NOTE: :let is a binding pattern, not an expression; do not run assigns lints on it.
             return;
         }
 
-        // 1) Name validation (only for known HTML elements; allow HEEx directive attrs)
-        validateAttributeName(tag, attr.name, ctx, pos);
+        if (isSlotTag(tag)) {
+            validateSlotAttributeName(tag, parentTag, attr.name, ctx, pos);
+            validateSlotPropValueKind(tag, parentTag, attr, fields, ctx, pos);
+        } else {
+            // 1) Name validation (only for known HTML elements; allow HEEx directive attrs)
+            validateAttributeName(tag, attr.name, ctx, pos);
 
-        // 2) Obvious kind validation for select attributes (bool-ish attrs, phx-hook, etc.)
-        validateAttributeValueKind(attr.name, attr.value, fields, ctx, pos);
+            // 2) Obvious kind validation for select attributes (bool-ish attrs, phx-hook, etc.)
+            validateAttributeValueKind(attr.name, attr.value, fields, ctx, pos);
 
-        // 2b) Component prop kind validation (when the component + prop is resolvable)
-        validateComponentPropValueKind(tag, attr, fields, ctx, pos);
+            // 2b) Component prop kind validation (when the component + prop is resolvable)
+            validateComponentPropValueKind(tag, attr, fields, ctx, pos);
+        }
 
         // 3) Assigns field usage within `{ ... }` attribute expressions
         validateExprForAssigns(attr.value, fields, typeName, ctx, pos, enableAssignsChecks);
@@ -406,7 +428,21 @@ class HeexAssignsTypeLinterTransforms {
         if (parentTag == null || !isHeexComponentTag(parentTag)) {
             var parentDisplay = parentTag != null ? ('<' + parentTag + '>') : "the template root";
             error(ctx, 'HEEx slot tag error: <' + tag + '> must be a direct child of a component tag (e.g. <.card>), not under ' + parentDisplay, pos);
+            return;
         }
+
+        // If the parent component definition is discoverable, validate the slot exists.
+        var def = resolveComponentDefinition(parentTag);
+        if (def != null) {
+            var slots = def.slots;
+            if (slots == null || !slots.exists(slotName)) {
+                error(ctx, 'HEEx slot tag error: <' + parentTag + '> does not define slot <:' + slotName + '>', pos);
+            }
+        }
+    }
+
+    static inline function isSlotTag(tag: String): Bool {
+        return tag != null && tag.length > 0 && tag.charAt(0) == ":";
     }
 
     static function validateLetDirective(tag: String, value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
@@ -432,6 +468,96 @@ class HeexAssignsTypeLinterTransforms {
                 error(ctx, 'HEEx :let error: expected :let={var}, but got a boolean attribute', pos);
             default:
                 error(ctx, 'HEEx :let error: expected :let={var}, but got an invalid value', pos);
+        }
+    }
+
+    static function resolveSlotDefinition(slotTag: String, parentTag: Null<String>): Null<ComponentSlotDefinition> {
+        if (!isSlotTag(slotTag)) return null;
+        if (parentTag == null) return null;
+
+        var def = resolveComponentDefinition(parentTag);
+        if (def == null || def.slots == null) return null;
+
+        var slotName = slotTag.length > 1 ? slotTag.substr(1) : "";
+        if (slotName.length == 0) return null;
+        return def.slots.get(slotName);
+    }
+
+    static function validateSlotInvocation(
+        slotTag: String,
+        parentTag: Null<String>,
+        attributes: Array<EAttribute>,
+        children: Array<ElixirAST>,
+        fields: Map<String,String>,
+        ctx: Null<reflaxe.elixir.CompilationContext>,
+        pos: haxe.macro.Expr.Position
+    ): Void {
+        if (!isSlotTag(slotTag)) return;
+        if (parentTag == null || !isHeexComponentTag(parentTag)) return;
+
+        var slotDef = resolveSlotDefinition(slotTag, parentTag);
+        if (slotDef == null) return;
+
+        var present = new Map<String, Bool>();
+        for (attr in attributes) {
+            if (attr == null || attr.name == null || attr.name.length == 0) continue;
+            if (attr.name.startsWith(":")) continue;
+            var key = componentAssignKeyFromAttributeName(attr.name);
+            present.set(key, true);
+        }
+
+        var hasInnerContent = present.exists("inner_content") || hasMeaningfulChildren(children);
+        for (k in slotDef.requiredProps.keys()) {
+            if (k == "inner_content") {
+                if (!hasInnerContent) {
+                    error(ctx, 'HEEx slot prop error: <' + slotTag + '> is missing required inner content', pos);
+                }
+                continue;
+            }
+            if (!present.exists(k)) {
+                error(ctx, 'HEEx slot prop error: <' + slotTag + '> is missing required attribute "' + k + '"', pos);
+            }
+        }
+    }
+
+    static function validateSlotAttributeName(slotTag: String, parentTag: Null<String>, attributeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (!isSlotTag(slotTag)) return;
+        if (attributeName == null || attributeName.length == 0) return;
+        if (attributeName.startsWith(":")) return;
+
+        var slotDef = resolveSlotDefinition(slotTag, parentTag);
+        if (slotDef == null) return;
+
+        var key = componentAssignKeyFromAttributeName(attributeName);
+        if (slotDef.props.exists(key)) return;
+
+        error(ctx, 'HEEx slot prop error: <' + slotTag + '> does not allow attribute "' + attributeName + '"', pos);
+    }
+
+    static function validateSlotPropValueKind(
+        slotTag: String,
+        parentTag: Null<String>,
+        attr: EAttribute,
+        fields: Map<String,String>,
+        ctx: Null<reflaxe.elixir.CompilationContext>,
+        pos: haxe.macro.Expr.Position
+    ): Void {
+        if (!isSlotTag(slotTag)) return;
+        if (attr == null || attr.name == null || attr.name.length == 0) return;
+        if (attr.name.startsWith(":")) return;
+
+        var slotDef = resolveSlotDefinition(slotTag, parentTag);
+        if (slotDef == null) return;
+
+        var key = componentAssignKeyFromAttributeName(attr.name);
+        if (!slotDef.props.exists(key)) return;
+
+        var expected = slotDef.props.get(key);
+        if (expected == null || expected == "unknown") return;
+
+        var actual = inferHeexExprKind(attr.value, fields);
+        if (!attributeKindsCompatible(expected, actual)) {
+            error(ctx, 'HEEx slot prop type error: <' + slotTag + '> "' + key + '" expects ' + expected + ' but got ' + actual, pos);
         }
     }
 
@@ -643,6 +769,29 @@ class HeexAssignsTypeLinterTransforms {
                 error(ctx, 'HEEx component prop error: <' + tag + '> is missing required attribute "' + k + '"', pos);
             }
         }
+
+        // Required slot presence checks (when slot definitions are discoverable).
+        if (def.slots != null) {
+            var slotIter = def.slots.keys();
+            if (slotIter.hasNext()) {
+                var presentSlots = new Map<String, Bool>();
+                for (c in children) {
+                    if (c == null || c.def == null) continue;
+                    switch (c.def) {
+                        case EFragment(childTag, _, _) if (isSlotTag(childTag)):
+                            presentSlots.set(childTag.substr(1), true);
+                        default:
+                    }
+                }
+
+                for (slotName in def.slots.keys()) {
+                    var slotDef = def.slots.get(slotName);
+                    if (slotDef != null && slotDef.required && !presentSlots.exists(slotName)) {
+                        error(ctx, 'HEEx slot error: <' + tag + '> is missing required slot <:' + slotName + '>', pos);
+                    }
+                }
+            }
+        }
     }
 
     static function validatePhoenixCoreComponentInvocation(
@@ -850,7 +999,8 @@ class HeexAssignsTypeLinterTransforms {
                     nativeModuleName: nativeModuleName,
                     functionName: fnName,
                     props: propInfo.props,
-                    required: propInfo.required
+                    required: propInfo.required,
+                    slots: propInfo.slots
                 };
 
                 var existing = componentFunctionIndex.get(fnName);
@@ -863,24 +1013,90 @@ class HeexAssignsTypeLinterTransforms {
         }
     }
 
-    static function propsFromAssignsType(t: haxe.macro.Type): Null<{ props: Map<String, String>, required: Map<String, Bool> }> {
+    static function propsFromAssignsType(t: haxe.macro.Type): Null<{
+        props: Map<String, String>,
+        required: Map<String, Bool>,
+        slots: Map<String, ComponentSlotDefinition>
+    }> {
         var followed = TypeTools.follow(t);
         return switch (followed) {
             case TAnonymous(a):
                 var props = new Map<String, String>();
                 var required = new Map<String, Bool>();
+                var slots = new Map<String, ComponentSlotDefinition>();
+
                 for (f in a.get().fields) {
                     var typeStr = TypeTools.toString(f.type);
+                    var isOptional = fieldIsOptionalByTypeString(typeStr) || (f.meta != null && f.meta.has(":optional"));
+
+                    if (isSlotField(f)) {
+                        var slotName = NameUtils.toSnakeCase(f.name);
+                        var entryType = slotEntryTypeFromField(f);
+
+                        var slotProps = new Map<String, String>();
+                        var slotRequiredProps = new Map<String, Bool>();
+                        if (entryType != null) {
+                            var entryInfo = propsFromAssignsType(entryType);
+                            if (entryInfo != null) {
+                                slotProps = entryInfo.props;
+                                slotRequiredProps = entryInfo.required;
+                            }
+                        }
+
+                        slots.set(slotName, {
+                            required: !isOptional,
+                            props: slotProps,
+                            requiredProps: slotRequiredProps
+                        });
+                        continue;
+                    }
+
                     var kind = normalizeKind(typeStr);
                     var key = componentAssignKeyFromAttributeName(f.name);
                     props.set(key, kind);
 
-                    var isOptional = fieldIsOptionalByTypeString(typeStr) || (f.meta != null && f.meta.has(":optional"));
                     if (!isOptional) required.set(key, true);
                 }
-                { props: props, required: required };
+
+                { props: props, required: required, slots: slots };
             case TType(tdef, params):
                 propsFromAssignsType(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
+            default:
+                null;
+        }
+    }
+
+    static function isSlotField(f: haxe.macro.Type.ClassField): Bool {
+        if (f == null) return false;
+        if (f.meta != null && f.meta.has(":slot")) return true;
+        return unwrapSlotEntryType(f.type) != null;
+    }
+
+    static function slotEntryTypeFromField(f: haxe.macro.Type.ClassField): Null<haxe.macro.Type> {
+        if (f == null) return null;
+        var unwrapped = unwrapSlotEntryType(f.type);
+        if (unwrapped != null) return unwrapped;
+        // Legacy/metadata-only syntax: @:slot on a concrete entry typedef.
+        if (f.meta != null && f.meta.has(":slot")) return f.type;
+        return null;
+    }
+
+    static function unwrapSlotEntryType(t: haxe.macro.Type): Null<haxe.macro.Type> {
+        if (t == null) return null;
+        return switch (t) {
+            case TType(tdef, params):
+                unwrapSlotEntryType(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
+            case TAbstract(aRef, params):
+                var abs = aRef.get();
+                if (abs == null) return null;
+                // Optional slot: Null<Slot<T>>
+                if (abs.name == "Null" && params != null && params.length == 1) {
+                    unwrapSlotEntryType(params[0]);
+                } else if (abs.name == "Slot" && abs.pack.join(".") == "phoenix.types" && params != null && params.length == 1) {
+                    params[0];
+                } else {
+                    null;
+                }
             default:
                 null;
         }

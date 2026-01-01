@@ -73,7 +73,11 @@ class ElixirASTPrinter {
      * - Reuses the same wrapping rules as function arguments (parens/IIFE as needed).
      */
     public static function printASTForInjectionSubstitution(ast: ElixirAST): String {
-        return sanitizeArgPrinted(printFunctionArg(ast, 0), 0);
+        // IMPORTANT: Do not apply sanitizeArgPrinted here.
+        // __elixir__ substitutions are spliced into already-delimited call sites (e.g. `foo({0})`),
+        // and multi-line control-flow expressions like `if ... do ... end` are valid arguments in Elixir.
+        // We still rely on printFunctionArg to add parens for inline `if` / case/cond/with, etc.
+        return printFunctionArg(ast, 0);
     }
     
     /**
