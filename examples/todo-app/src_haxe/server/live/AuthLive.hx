@@ -13,6 +13,7 @@ import phoenix.PhoenixFlash;
 import phoenix.types.Assigns;
 import phoenix.types.Flash.FlashMap;
 import plug.CSRFProtection;
+import shared.liveview.HookName;
 import server.infrastructure.Repo;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
@@ -156,7 +157,13 @@ class AuthLive {
 
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Name</label>
-                                        <input name="name" type="text" required minlength="2"
+                                        <input data-testid="login-name"
+                                            id="login-name"
+                                            name="name"
+                                            type="text"
+                                            required
+                                            minlength="2"
+                                            phx-hook=${HookName.AutoFocus}
                                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
                                     </div>
 
