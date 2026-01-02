@@ -77,26 +77,35 @@ server.live.TodoLive
 
 ### build-client.hxml (JavaScript Target)
 ```hxml
-# JavaScript compilation for browser client
--cp src_haxe
+# Haxe→JavaScript compilation for Phoenix LiveView client-side code
+# Generates ES6 modules via Genes (recommended)
+
+# Source directories (client only)
 -cp src_haxe/client
--cp src_haxe/shared
+-cp src_haxe
 
-# Standard Haxe JS output
--js priv/static/js/app.js
-
-# Exclude server code
---macro exclude('server')
+# Enable Genes ES6 module generator (uses haxe_libraries/genes.hxml)
+-lib genes
 
 # Modern JavaScript features
 -D js-es=6
+--macro genes.Generator.use()
+--macro addMetadata('@:genes.disableNativeAccessors', 'haxe.Exception')
+
+# JavaScript target output (kept separate from Phoenix bootstrap)
+-js assets/js/hx_app.js
 -D js-unflatten
+--dce=full
 
-# Source maps for debugging
--D source-map
+# Source maps for debugging (JS)
+-D real-position
+-D js-source-map
 
-# Main client class
--main client.TodoApp
+# Exclude server code from client compilation
+--macro exclude('server')
+
+# Main client entry point (hooks registry)
+-main client.Boot
 ```
 
 ## Modern Haxe Best Practices for HXML
@@ -124,7 +133,7 @@ server.live.TodoLive
 ```hxml
 # Development
 -D debug
-# -D source-map          # Reserved/experimental (source mapping not fully wired yet)
+# -D js-source-map       # JS source maps (use only in client builds)
 
 # Production
 -D no-debug
@@ -160,8 +169,8 @@ server.live.TodoLive
 # Elixir: Specify output directory
 -D elixir_output=lib
 
-# JavaScript: Direct file output
--js priv/static/js/app.js
+# JavaScript (Genes): Direct file output
+-js assets/js/hx_app.js
 
 # Multiple outputs for libraries
 --each              # Reset for each target
@@ -202,7 +211,7 @@ server.live.TodoLive
 - Server-side class compilation
 
 ### 4. **build-client.hxml** (JS Target)
-- Standard Haxe→JavaScript compilation
+- Haxe→JavaScript compilation via Genes (recommended)
 - Browser-specific optimizations
 - Client-side bundling configuration
 
@@ -266,7 +275,7 @@ See: docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md
 # dev.hxml
 build.hxml
 -D debug
--D source-map
+-D js-source-map
 
 # prod.hxml
 build.hxml
@@ -360,6 +369,13 @@ TodoApp
 -cp src_haxe/client
 -cp src_haxe
 -lib genes
+
+# NOTE: Our vendored `-lib genes` does not automatically apply genes/extraParams.hxml,
+# so we explicitly enable the generator here.
+-D js-es=6
+--macro genes.Generator.use()
+--macro addMetadata('@:genes.disableNativeAccessors', 'haxe.Exception')
+
 -js assets/js/hx_app.js
 -D js-unflatten
 --dce=full
