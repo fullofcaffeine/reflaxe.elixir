@@ -2,6 +2,9 @@ package server.live;
 
 import HXX;
 import contexts.Accounts;
+import contexts.AuditLogs;
+import contexts.AuditLogs.AuditAction;
+import contexts.AuditLogs.AuditEntity;
 import ecto.Changeset;
 import elixir.ElixirMap;
 import elixir.Kernel;
@@ -351,11 +354,31 @@ class OrganizationLive {
             return LiveView.putFlash(socket, FlashType.Info, "Role unchanged.");
         }
 
+        var previousRole = user.role;
         var changeset = Changeset.change(user, {});
         changeset = changeset.putChange("role", role);
 
         return switch (Repo.update(changeset)) {
             case Ok(updatedUser):
+                var auditMetadata: Term = {
+                    target_user_id: updatedUser.id,
+                    target_user_email: updatedUser.email,
+                    old_role: previousRole,
+                    new_role: updatedUser.role
+                };
+                switch (AuditLogs.record({
+                    organizationId: orgId,
+                    actorId: currentUser.id,
+                    action: AuditAction.UserRoleUpdated,
+                    entity: AuditEntity.User,
+                    entityId: updatedUser.id,
+                    metadata: auditMetadata
+                })) {
+                    case Ok(_entry):
+                    case Error(err):
+                        Std.string(err);
+                }
+
                 var updatedCurrentUser = updatedUser.id == currentUser.id ? updatedUser : currentUser;
                 var updatedIsAdmin = isAdminUser(updatedCurrentUser);
 
@@ -396,7 +419,24 @@ class OrganizationLive {
 
         var orgId = socket.assigns.current_org_id;
         return switch (Accounts.createOrganizationInvite(orgId, rawEmail, rawRole)) {
-            case Ok(_invite):
+            case Ok(invite):
+                var auditMetadata: Term = {
+                    invite_email: invite.email,
+                    invite_role: invite.role
+                };
+                switch (AuditLogs.record({
+                    organizationId: orgId,
+                    actorId: socket.assigns.current_user.id,
+                    action: AuditAction.OrganizationInviteCreated,
+                    entity: AuditEntity.OrganizationInvite,
+                    entityId: invite.id,
+                    metadata: auditMetadata
+                })) {
+                    case Ok(_entry):
+                    case Error(err):
+                        Std.string(err);
+                }
+
                 var refreshed = socket.assigns.is_admin ? loadInvites(orgId) : [];
                 var updated = socket.merge({
                     invite_email_input: "",
