@@ -10,6 +10,7 @@ import elixir.types.Term;
  * Keep options as raw terms to avoid over-constraining API surface.
  */
 @:native("Phoenix.LiveView.JS")
+@:elixirStruct
 extern class JS {
     public function new();
 

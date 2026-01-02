@@ -2588,15 +2588,60 @@ class HeexAssignsTypeLinterTransforms {
     }
 #end
 
+    static function mergeKindUnion(left: String, right: String): String {
+        if (left == null || right == null) return "unknown";
+        if (left == "unknown" || right == "unknown") return "unknown";
+
+        var seen: Map<String, Bool> = new Map();
+        var ordered: Array<String> = [];
+
+        function addParts(k: String): Void {
+            if (k == null || k.length == 0) return;
+            var parts = k.split("|");
+            for (part in parts) {
+                var trimmed = part != null ? part.trim() : "";
+                if (trimmed.length == 0) continue;
+                if (seen.exists(trimmed)) continue;
+                seen.set(trimmed, true);
+                ordered.push(trimmed);
+            }
+        }
+
+        addParts(left);
+        addParts(right);
+
+        return ordered.length == 1 ? ordered[0] : ordered.join("|");
+    }
+
     static function kindFromType(t: haxe.macro.Type): String {
         if (t == null) return "unknown";
 
         var followed = TypeTools.follow(t);
         switch (followed) {
-            case TAbstract(aRef, _):
+            case TAbstract(aRef, params):
                 var abs = aRef.get();
                 if (abs != null && abs.name == "Atom" && abs.pack.join(".") == "elixir.types") {
                     return "atom";
+                }
+                if (abs != null && abs.meta != null && abs.meta.has(":elixirStruct")) {
+                    return "map";
+                }
+                if (abs != null && abs.name == "EitherType" && abs.pack.join(".") == "haxe.extern" && params != null && params.length == 2) {
+                    var leftKind = kindFromType(params[0]);
+                    var rightKind = kindFromType(params[1]);
+                    return mergeKindUnion(leftKind, rightKind);
+                }
+            case TEnum(eRef, params):
+                var en = eRef.get();
+                if (en != null && en.name == "Either" && en.pack.join(".") == "haxe.ds" && params != null && params.length == 2) {
+                    var leftKind = kindFromType(params[0]);
+                    var rightKind = kindFromType(params[1]);
+                    return mergeKindUnion(leftKind, rightKind);
+                }
+            case TInst(cRef, _):
+                var cls = cRef.get();
+                if (cls != null && cls.meta != null && cls.meta.has(":elixirStruct")) {
+                    return "map";
                 }
             default:
         }
