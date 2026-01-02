@@ -17,7 +17,11 @@ async function login(page: Page, base: string, name: string, email: string) {
     has: page.locator('input[name="name"][type="text"]'),
   }).first()
 
-  await loginForm.locator('input[name="name"][type="text"]').fill(name)
+  // HookName.AutoFocus should focus the name input on mount.
+  await waitForLiveViewConnected(page)
+  await expect(page.getByTestId('login-name')).toBeFocused()
+
+  await loginForm.getByTestId('login-name').fill(name)
   await loginForm.locator('input[name="email"][type="email"]').fill(email)
   await loginForm.getByRole('button', { name: /continue/i }).click()
 
