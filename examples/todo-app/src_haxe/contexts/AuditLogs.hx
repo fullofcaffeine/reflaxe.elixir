@@ -2,6 +2,11 @@ package contexts;
 
 import ecto.Changeset;
 import ecto.TypedQuery;
+import ecto.TypedQuery.SortDirection;
+import contexts.AuditLogTypes.AuditAction;
+import contexts.AuditLogTypes.AuditEntity;
+import contexts.AuditLogTypes.AuditLogEntryParams;
+import contexts.AuditLogTypes.AuditLogFilter;
 import elixir.Kernel;
 import elixir.types.Term;
 import haxe.functional.Result;
@@ -24,31 +29,6 @@ using reflaxe.elixir.macros.TypedQueryLambda;
  * - `record(...)` inserts an immutable AuditLog row.
  * - `listRecent(...)` provides a small, admin-facing query surface with simple filters.
  */
-enum abstract AuditAction(String) from String to String {
-    var OrganizationInviteCreated = "org.invite_created";
-    var UserRoleUpdated = "user.role_updated";
-}
-
-enum abstract AuditEntity(String) from String to String {
-    var OrganizationInvite = "organization_invite";
-    var User = "user";
-}
-
-typedef AuditLogEntryParams = {
-    var organizationId: Int;
-    var actorId: Int;
-    var action: AuditAction;
-    var entity: AuditEntity;
-    @:optional var entityId: Int;
-    @:optional var metadata: Term;
-}
-
-typedef AuditLogFilter = {
-    @:optional var action: String;
-    @:optional var entity: String;
-    @:optional var actorId: Int;
-    @:optional var limit: Int;
-}
 
 @:native("TodoApp.AuditLogs")
 class AuditLogs {
@@ -87,8 +67,7 @@ class AuditLogs {
             }
         }
 
-        query = query.orderBy(a -> [desc: a.id]).limit(limit);
+        query = query.orderBy(a -> [{field: a.id, direction: SortDirection.Desc}]).limit(limit);
         return Repo.all(query);
     }
 }
-
