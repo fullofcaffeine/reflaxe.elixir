@@ -1282,6 +1282,8 @@ class HeexAssignsTypeLinterTransforms {
                 buildPhoenixCoreFormComponentDefinition();
             case ".inputs_for":
                 buildPhoenixCoreInputsForComponentDefinition();
+            case ".link":
+                buildPhoenixCoreLinkComponentDefinition();
             default:
                 null;
         };
@@ -1311,11 +1313,16 @@ class HeexAssignsTypeLinterTransforms {
         var required = new Map<String, Bool>();
         required.set("for", true);
 
+        var props = new Map<String, String>();
+        props.set("for", "map");
+        props.set("as", "string");
+        props.set("multipart", "bool");
+
         return {
             moduleTypePath: null,
             nativeModuleName: "Phoenix.Component",
             functionName: "form",
-            props: new Map(),
+            props: props,
             required: required,
             slots: slots
         };
@@ -1340,7 +1347,7 @@ class HeexAssignsTypeLinterTransforms {
         });
 
         var props = new Map<String, String>();
-        props.set("field", "unknown");
+        props.set("field", "map");
         props.set("id", "string");
         props.set("as", "string");
         props.set("default", "unknown");
@@ -1359,6 +1366,27 @@ class HeexAssignsTypeLinterTransforms {
             props: props,
             required: required,
             slots: slots
+        };
+    }
+
+    static function buildPhoenixCoreLinkComponentDefinition(): Null<ComponentDefinition> {
+        var props = new Map<String, String>();
+        props.set("navigate", "string");
+        props.set("patch", "string");
+        props.set("href", "string");
+        props.set("method", "string|atom");
+        props.set("replace", "bool");
+
+        var required = new Map<String, Bool>();
+        required.set("inner_content", true);
+
+        return {
+            moduleTypePath: null,
+            nativeModuleName: "Phoenix.Component",
+            functionName: "link",
+            props: props,
+            required: required,
+            slots: new Map()
         };
     }
 
