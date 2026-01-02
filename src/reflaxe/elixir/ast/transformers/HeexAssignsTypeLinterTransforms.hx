@@ -403,9 +403,39 @@ class HeexAssignsTypeLinterTransforms {
         for (attr in attributes) {
             validateAttribute(tag, parentTag, attr, fields, typeName, ctx, pos, enableAssignsChecks, letScopes);
         }
+        validatePhxHookRequiresId(tag, attributes, ctx, pos);
         validateSlotInvocation(tag, parentTag, attributes, children, fields, ctx, pos);
         // Component-level checks (requires full attribute set + children)
         validateComponentInvocation(tag, attributes, children, fields, ctx, pos);
+    }
+
+    static function validatePhxHookRequiresId(tag: String, attributes: Array<EAttribute>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (tag == null || tag.length == 0) return;
+        if (attributes == null || attributes.length == 0) return;
+        // Phoenix: phx-hook requires a stable DOM id. Skip component/slot tags to avoid false positives
+        // on prop-passing (the component can apply the hook + id internally).
+        if (isHeexComponentTag(tag) || isSlotTag(tag)) return;
+
+        var hasPhxHook = false;
+        var hasId = false;
+
+        for (attr in attributes) {
+            if (attr == null || attr.name == null || attr.name.length == 0) continue;
+            if (attr.name.startsWith(":")) continue;
+            var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(attr.name));
+            if (canonical == null) continue;
+            switch (canonical) {
+                case "phx-hook":
+                    hasPhxHook = true;
+                case "id":
+                    hasId = true;
+                default:
+            }
+        }
+
+        if (hasPhxHook && !hasId) {
+            error(ctx, 'HEEx phx-hook error: <' + tag + '> uses phx-hook but is missing required attribute \"id\"', pos);
+        }
     }
 
     static function validateAttribute(tag: String, parentTag: Null<String>, attr: EAttribute, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool, letScopes: Array<HeexLetBindingScope>): Void {
