@@ -35,9 +35,9 @@ This directory contains the Reflaxe.Elixir compiler test suite, validating that 
 3. Users care about generated Elixir, not how we build it internally
 4. Snapshot tests catch real bugs that affect actual usage
 
-### Test Statistics (as of 2026-01-01)
-- **287 positive snapshot tests** validating compiler output
-- **30 negative snapshot tests** validating expected failures
+### Test Statistics (as of 2026-01-02)
+- **288 positive snapshot tests** validating compiler output
+- **31 negative snapshot tests** validating expected failures
 - **~8,000 test files** (source + intended + outputs)
 - **6 test categories** organizing tests by feature area
 
