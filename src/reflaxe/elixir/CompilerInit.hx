@@ -22,6 +22,8 @@ import reflaxe.elixir.preprocessors.RemoveOrphanedEnumParametersImpl;
  * Initialization and registration of the Elixir compiler
  */
 class CompilerInit {
+    static var compilerRegistered: Bool = false;
+
     /**
      * Initialize the Elixir compiler
      * Use --macro reflaxe.elixir.CompilerInit.Start() in your hxml
@@ -38,6 +40,9 @@ class CompilerInit {
                 return;
         }
         #end
+
+        if (compilerRegistered) return;
+        compilerRegistered = true;
         
         var fastBoot = Context.defined("fast_boot");
 

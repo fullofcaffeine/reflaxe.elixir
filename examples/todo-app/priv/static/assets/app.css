@@ -1492,6 +1492,12 @@ body {
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
+.from-emerald-500 {
+  --tw-gradient-from: #10b981 var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(16 185 129 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
 .via-white {
   --tw-gradient-to: rgb(255 255 255 / 0)  var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), #fff var(--tw-gradient-via-position), var(--tw-gradient-to);
@@ -1507,6 +1513,10 @@ body {
 
 .to-indigo-600 {
   --tw-gradient-to: #4f46e5 var(--tw-gradient-to-position);
+}
+
+.to-teal-600 {
+  --tw-gradient-to: #0d9488 var(--tw-gradient-to-position);
 }
 
 .bg-cover {
@@ -1987,8 +1997,18 @@ body {
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
+.hover\:from-emerald-600:hover {
+  --tw-gradient-from: #059669 var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(5 150 105 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
 .hover\:to-indigo-700:hover {
   --tw-gradient-to: #4338ca var(--tw-gradient-to-position);
+}
+
+.hover\:to-teal-700:hover {
+  --tw-gradient-to: #0f766e var(--tw-gradient-to-position);
 }
 
 .hover\:underline:hover {
@@ -2128,6 +2148,10 @@ body {
   background-color: rgb(127 29 29 / 0.2);
 }
 
+:is(.dark .dark\:bg-red-900\/30) {
+  background-color: rgb(127 29 29 / 0.3);
+}
+
 :is(.dark .dark\:bg-slate-900\/20) {
   background-color: rgb(15 23 42 / 0.2);
 }
@@ -2202,6 +2226,11 @@ body {
   color: rgb(233 213 255 / var(--tw-text-opacity));
 }
 
+:is(.dark .dark\:text-red-200) {
+  --tw-text-opacity: 1;
+  color: rgb(254 202 202 / var(--tw-text-opacity));
+}
+
 :is(.dark .dark\:text-white) {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity));
@@ -2215,6 +2244,10 @@ body {
 :is(.dark .dark\:hover\:bg-gray-600:hover) {
   --tw-bg-opacity: 1;
   background-color: rgb(75 85 99 / var(--tw-bg-opacity));
+}
+
+:is(.dark .dark\:hover\:bg-red-900\/40:hover) {
+  background-color: rgb(127 29 29 / 0.4);
 }
 
 @media (min-width: 640px) {
