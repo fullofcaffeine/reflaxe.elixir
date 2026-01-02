@@ -1454,7 +1454,7 @@ class HeexAssignsTypeLinterTransforms {
                         continue;
                     }
 
-                    var kind = normalizeKind(typeStr);
+                    var kind = kindFromType(f.type);
                     var key = componentAssignKeyFromAttributeName(f.name);
                     props.set(key, kind);
 
@@ -1487,7 +1487,7 @@ class HeexAssignsTypeLinterTransforms {
                     // not HTML/HEEx attribute names. Avoid toHtmlAttribute() quirks like treating
                     // `data` as a `data-*` prefix.
                     var key = NameUtils.toSnakeCase(f.name);
-                    props.set(key, normalizeKind(typeStr));
+                    props.set(key, kindFromType(f.type));
 
                     if (!isOptional) required.set(key, true);
                 }
@@ -1820,6 +1820,15 @@ class HeexAssignsTypeLinterTransforms {
             case EFloat(_): "float";
             case EBoolean(_): "bool";
             case ENil: "nil";
+            case EAtom(_): "atom";
+            case ECharlist(_): "string";
+            case EBitstring(_): "string";
+            case EList(_): "array";
+            case EKeywordList(_): "array";
+            case ETuple(_): "tuple";
+            case EMap(_): "map";
+            case EStruct(_, _): "map";
+            case EStructUpdate(_, _): "map";
             case EAssign(name):
                 (fields != null && fields.exists(name)) ? fields.get(name) : "unknown";
             case EBinary(op, _, _):
@@ -1844,6 +1853,13 @@ class HeexAssignsTypeLinterTransforms {
         if (actual == "nil") return true;
         // If we can't confidently infer the kind, do not error.
         if (actual == "unknown") return true;
+
+        if (expected.indexOf("|") != -1) {
+            for (p in expected.split("|")) {
+                if (p.trim() == actual) return true;
+            }
+            return false;
+        }
 
         return expected == actual;
     }
@@ -2320,7 +2336,7 @@ class HeexAssignsTypeLinterTransforms {
         switch (followed) {
             case TAnonymous(a):
                 for (f in a.get().fields) {
-                    var kind = normalizeKind(TypeTools.toString(f.type));
+                    var kind = kindFromType(f.type);
                     out.set(f.name, kind);
                     // HXX/HEEx assigns normalize camelCase to snake_case (e.g. className -> @class_name).
                     var snake = toSnakeCase(f.name);
@@ -2378,19 +2394,43 @@ class HeexAssignsTypeLinterTransforms {
     }
 #end
 
+    static function kindFromType(t: haxe.macro.Type): String {
+        if (t == null) return "unknown";
+
+        var followed = TypeTools.follow(t);
+        switch (followed) {
+            case TAbstract(aRef, _):
+                var abs = aRef.get();
+                if (abs != null && abs.name == "Atom" && abs.pack.join(".") == "elixir.types") {
+                    return "atom";
+                }
+            default:
+        }
+
+        var kind = normalizeKind(TypeTools.toString(followed));
+        if (kind != "unknown") return kind;
+
+        var unwrapped = TypeTools.followWithAbstracts(followed);
+        kind = normalizeKind(TypeTools.toString(unwrapped));
+        return kind;
+    }
+
     static function normalizeKind(spec: String): String {
         var s = spec.trim();
         // Unwrap Null<T>
         if (s.startsWith("Null<") && s.endsWith(">")) {
             s = s.substr(5, s.length - 6).trim();
         }
+        // Anonymous structures compile to maps in Elixir.
+        if (s.startsWith("{") && s.endsWith("}")) return "map";
         // Basic kinds
         if (s == "String") return "string";
         if (s == "Int") return "int";
         if (s == "Float") return "float";
         if (s == "Bool") return "bool";
+        if (s == "elixir.types.Atom" || s.endsWith(".Atom")) return "atom";
         if (~/^Array<.*/.match(s)) return "array";
-        if (~/^Map<.*/.match(s)) return "map";
+        if (~/^Map<.*/.match(s) || ~/^haxe\\.ds\\..*Map<.*/.match(s)) return "map";
         // Unknown/custom → leave unknown to avoid false positives
         return "unknown";
     }
