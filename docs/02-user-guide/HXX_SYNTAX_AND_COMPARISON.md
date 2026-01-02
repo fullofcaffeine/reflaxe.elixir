@@ -69,6 +69,21 @@ end
 ### Components & Slots
 - Phoenix components `<.button ...>` are preserved; attributes can be validated via your registry and typedefs. Slots follow registered shapes.
 
+#### Opt-in: strict component resolution
+
+By default, the compiler **skips validation** for dot-components it cannot resolve unambiguously (to avoid false positives).
+If you want TSX-level strictness for component tags, enable:
+
+```bash
+-D hxx_strict_components
+```
+
+In strict mode:
+- Unknown dot-components (e.g. `<.typo>`) are compile errors.
+- Ambiguous components (multiple `@:component` functions with the same name) are compile errors.
+
+Phoenix core tags like `<.link>`, `<.form>`, `<.inputs_for>`, and `<.live_component>` remain allowed even without a Haxe definition.
+
 ### Control Flow
 - Block conditionals in content use HXX control tags (normalized to HEEx):
 - `<if cond> ... <else> ... </if>` → HEEx `if/else` block

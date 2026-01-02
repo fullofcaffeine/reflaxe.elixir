@@ -920,6 +920,7 @@ class HeexAssignsTypeLinterTransforms {
         var def = resolveComponentDefinition(tag);
         if (def == null) {
             validatePhoenixCoreComponentInvocation(tag, attributes, children, ctx, pos);
+            validateStrictComponentResolution(tag, ctx, pos);
             return;
         }
 
@@ -1009,6 +1010,73 @@ class HeexAssignsTypeLinterTransforms {
             default:
                 if (getAllowedPhoenixCoreComponentAttributes(tag) == null) return;
         }
+    }
+
+    static function validateStrictComponentResolution(tag: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (!strictComponentResolutionEnabled()) return;
+        if (tag == null || tag.length == 0) return;
+
+        // Phoenix core components are validated via the allowlist (and do not require RepoDiscovery).
+        if (isKnownPhoenixCoreComponentTag(tag)) return;
+
+        var reason = explainComponentResolutionFailure(tag);
+        error(ctx, 'HEEx component error: <' + tag + '> could not be resolved' + reason + ' (disable strict mode or add a discoverable @:component definition)', pos);
+    }
+
+    static function strictComponentResolutionEnabled(): Bool {
+        #if macro
+        return Context.defined("hxx_strict_components");
+        #else
+        return false;
+        #end
+    }
+
+    static function isKnownPhoenixCoreComponentTag(tag: String): Bool {
+        if (tag == ".live_component") return true;
+        return getAllowedPhoenixCoreComponentAttributes(tag) != null;
+    }
+
+    static function explainComponentResolutionFailure(componentTag: String): String {
+        #if macro
+        if (componentTag == null || componentTag.length == 0) return "";
+
+        if (componentFunctionIndex == null) {
+            buildComponentFunctionIndex();
+        }
+        if (componentFunctionIndex == null) return "";
+
+        if (componentTag.charAt(0) == ".") {
+            var fn = componentTag.substr(1);
+            var candidates = componentFunctionIndex.get(fn);
+            if (candidates == null || candidates.length == 0) return ' (no @:component function named "' + fn + '" was discovered)';
+            if (candidates.length > 1) return ' (ambiguous: ' + candidates.length + ' @:component functions named "' + fn + '" exist)';
+            return "";
+        }
+
+        if (isLikelyModuleComponentTag(componentTag)) {
+            var lastDot = componentTag.lastIndexOf(".");
+            if (lastDot > 0 && lastDot < componentTag.length - 1) {
+                var modulePart = componentTag.substr(0, lastDot);
+                var fnPart = componentTag.substr(lastDot + 1);
+                var fn = NameUtils.toSnakeCase(fnPart);
+
+                var candidates = componentFunctionIndex.get(fn);
+                if (candidates == null || candidates.length == 0) {
+                    return ' (no @:component function named "' + fn + '" was discovered)';
+                }
+
+                var matches = 0;
+                for (c in candidates) if (componentModuleMatches(c, modulePart)) matches++;
+
+                if (matches == 0) return ' (no @:component module matched "' + modulePart + '" for function "' + fn + '")';
+                if (matches > 1) return ' (ambiguous: ' + matches + ' @:component modules matched "' + modulePart + '" for function "' + fn + '")';
+            }
+        }
+
+        return "";
+        #else
+        return "";
+        #end
     }
 
     static function hasMeaningfulChildren(children: Array<ElixirAST>): Bool {
