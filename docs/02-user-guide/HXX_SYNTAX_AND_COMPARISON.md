@@ -109,6 +109,21 @@ In strict mode:
 - `phx-hook="Name"` (literal) is rejected.
 - Use an expression form instead (recommended: `phx-hook=${HookName.Name}` in HXX).
 
+Note:
+- Phoenix requires a stable DOM id for hooks; the compiler errors if a *non-component* tag uses `phx-hook` without an `id` attribute.
+
+#### Opt-in: strict `phx-*` event typing
+
+If you want to enforce typed LiveView event names (`phx-click`, `phx-submit`, `phx-change`, ...), enable:
+
+```bash
+-D hxx_strict_phx_events
+```
+
+In strict mode:
+- Literal event strings like `phx-click="save"` are rejected.
+- Use an expression form instead (recommended: `phx-click=${EventName.Save}` in HXX).
+
 ### Control Flow
 - Block conditionals in content use HXX control tags (normalized to HEEx):
 - `<if cond> ... <else> ... </if>` → HEEx `if/else` block

@@ -131,12 +131,40 @@ Then:
 - **Server (HXX/HEEx)**: `phx-hook=${HookName.ThemeToggle}`
 - **Client (Genes/JS)**: use `HookName.ThemeToggle` as the key in your hooks map
 
+Phoenix runtime rule (enforced by the compiler):
+- Any *non-component* tag using `phx-hook` must also set `id` (hooks require a stable DOM id).
+
 When at least one `@:phxHookNames` registry exists in the project, the compiler lints statically-known hook
 usages (string literals and simple const expressions) and reports unknown names. Dynamic hook expressions
 (e.g. `phx-hook={@hook}`) are intentionally not validated to keep false positives low.
 
 Opt-in strict mode:
 - `-D hxx_strict_phx_hook` rejects literal `phx-hook="Name"` and requires the expression form (recommended: `phx-hook=${HookName.Name}` in HXX).
+
+## Pattern: Typed LiveView Event Names (`phx-click`, `phx-submit`, ...)
+
+LiveView event names are stringly-typed by default (`phx-click="save"`). To make refactors safe and keep
+your templates aligned with a single source of truth, define a registry:
+
+```haxe
+@:phxEventNames
+enum abstract EventName(String) from String to String {
+  var Save = "save";
+  var Validate = "validate";
+}
+```
+
+Then:
+- `phx-click=${EventName.Save}`
+- `phx-submit=${EventName.Save}`
+- `phx-change=${EventName.Validate}`
+
+When at least one `@:phxEventNames` registry exists in the project, the compiler lints statically-known
+event usages (expression form). Dynamic event expressions (e.g. `phx-click={@event}`) are intentionally
+not validated to keep false positives low.
+
+Opt-in strict mode:
+- `-D hxx_strict_phx_events` rejects literal `phx-click="save"` (and other event attrs) and requires the expression form (recommended: `phx-click=${EventName.Save}` in HXX).
 
 ## Anti-Pattern: `__elixir__()` in Application Code
 
