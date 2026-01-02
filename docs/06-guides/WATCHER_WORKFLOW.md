@@ -11,6 +11,7 @@ This guide describes the common “edit → compile → reload” loop when usin
 2. **Client build/watch (Haxe → JS)**
    - Typically run via Phoenix endpoint watchers as `haxe build-client.hxml --wait <port>`.
    - This keeps an incremental JS compiler process alive during `mix phx.server`.
+   - Recommended generator: **Genes** (ES modules) via `-lib genes` in `build-client.hxml`.
 
 ## Recommended Workflow
 
@@ -39,4 +40,3 @@ This usually means a previous `haxe --wait` process is still running and holding
 
 When validating the example todo-app, use the repo’s QA sentinel scripts (non-blocking) instead of
 running long-lived foreground servers during agent work. See root `AGENTS.md`.
-
