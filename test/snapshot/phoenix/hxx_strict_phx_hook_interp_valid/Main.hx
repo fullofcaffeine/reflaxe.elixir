@@ -8,9 +8,8 @@ typedef Assigns = {
 
 class Main {
     public static function render(assigns: Assigns): String {
-        return HXX.hxx('<div phx-hook=${HookName.Known}></div>');
+        return HXX.hxx('<div id="hook" phx-hook=${HookName.Known}></div>');
     }
 
     public static function main() {}
 }
-

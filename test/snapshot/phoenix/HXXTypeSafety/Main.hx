@@ -69,7 +69,7 @@ class Main {
         ');
         
         // Test already kebab-case attributes (should be preserved)
-        var kebab = HXX.hxx('<div data-test-id="test" phx-hook="MyHook">Kebab</div>');
+        var kebab = HXX.hxx('<div id="kebab-hook" data-test-id="test" phx-hook="MyHook">Kebab</div>');
         
         // Test complex snake_case scenarios
         var complex = HXX.hxx('

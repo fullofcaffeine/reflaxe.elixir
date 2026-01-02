@@ -8,8 +8,10 @@ typedef Assigns = {
 
 class Main {
     public static function render(assigns: Assigns): String {
-        return HXX.hxx('<div id="hook" phx-hook=${HookName.Known}></div>');
+        // Should fail: Phoenix requires phx-hook elements to have an id.
+        return HXX.hxx('<div phx-hook="MyHook"></div>');
     }
 
     public static function main() {}
 }
+
