@@ -1,20 +1,14 @@
 package client;
 
 import client.extern.PhoenixHookContext;
+import client.extern.PhoenixHook;
 import client.hooks.AutoFocusHook;
 import client.hooks.CopyToClipboardHook;
 import client.hooks.PingHook;
 import client.hooks.ThemeToggleHook;
 import client.utils.Theme;
-import shared.liveview.HookName;
 
 import haxe.DynamicAccess;
-
-// Phoenix Hook type with only the callbacks we use
-typedef PhoenixHook = {
-  var mounted: Void->Void;
-  @:optional var destroyed: Void->Void;
-}
 
 /**
  * Minimal, typed Phoenix LiveView hook registry for bootstrapping interactivity.
@@ -27,36 +21,31 @@ class Boot {
   }
 
   static function buildHooks(): DynamicAccess<PhoenixHook> {
-    var hooks: DynamicAccess<PhoenixHook> = {};
-
-    hooks[HookName.AutoFocus] = {
-      mounted: function(): Void {
-        AutoFocusHook.mounted(hookContext());
-      }
-    };
-
-    hooks[HookName.Ping] = {
-      mounted: function(): Void {
-        PingHook.mounted(hookContext());
-      }
-    };
-
-    hooks[HookName.CopyToClipboard] = {
-      mounted: function(): Void {
-        CopyToClipboardHook.mounted(hookContext());
-      }
-    };
-
-    hooks[HookName.ThemeToggle] = {
-      mounted: function(): Void {
-        ThemeToggleHook.mounted(hookContext());
+    return HookRegistry.build({
+      AutoFocus: {
+        mounted: function(): Void {
+          AutoFocusHook.mounted(hookContext());
+        }
       },
-      destroyed: function(): Void {
-        ThemeToggleHook.destroyed(hookContext());
+      Ping: {
+        mounted: function(): Void {
+          PingHook.mounted(hookContext());
+        }
+      },
+      CopyToClipboard: {
+        mounted: function(): Void {
+          CopyToClipboardHook.mounted(hookContext());
+        }
+      },
+      ThemeToggle: {
+        mounted: function(): Void {
+          ThemeToggleHook.mounted(hookContext());
+        },
+        destroyed: function(): Void {
+          ThemeToggleHook.destroyed(hookContext());
+        }
       }
-    };
-
-    return hooks;
+    });
   }
 
   public static function main() {
