@@ -79,13 +79,17 @@
 
 # Main server classes to compile
 TodoApp
-TodoAppRouter
 server.live.TodoLive
 server.live.AuthLive
 server.live.ProfileLive
 server.live.UsersLive
+server.live.OrganizationLive
+server.live.AdminLive
+server.live.AuditLogLive
+TodoAppRouter
 server.schemas.Todo
 server.schemas.User
+server.schemas.AuditLog
 server.presence.TodoPresence
 server.layouts.Layouts
 server.infrastructure.Repo

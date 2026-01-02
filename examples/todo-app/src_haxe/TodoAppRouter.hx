@@ -63,6 +63,14 @@ import reflaxe.elixir.macros.HttpMethod;
 	        action: server.live.AdminLive.index
 	    },
 
+        {
+            name: "adminAudit",
+            method: HttpMethod.LIVE,
+            path: "/admin/audit",
+            controller: server.live.AuditLogLive,
+            action: server.live.AuditLogLive.index
+        },
+
 	    // Session endpoints (set/clear Plug session)
 	    {
 	        name: "authLogin",
