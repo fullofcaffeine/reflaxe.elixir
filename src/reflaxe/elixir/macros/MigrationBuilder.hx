@@ -2,6 +2,7 @@ package reflaxe.elixir.macros;
 
 #if macro
 import haxe.macro.Context;
+import haxe.macro.Compiler;
 import haxe.macro.Expr;
 import haxe.macro.ExprTools;
 import haxe.macro.Type;
@@ -52,8 +53,15 @@ class MigrationBuilder {
         // In that mode we mark the class (and its callbacks) as `@:keep` to prevent
         // `-dce full` builds from stripping everything and producing empty modules.
         if (Context.defined("ecto_migrations_exs")) {
+            // Ensure the migration module itself is reachable (Haxe DCE can drop whole modules
+            // even when individual fields are marked @:keep).
+            Compiler.keep(localClass.module);
+
             if (!localClass.meta.has(":keep")) {
                 localClass.meta.add(":keep", [], localClass.pos);
+            }
+            if (!localClass.meta.has(":used")) {
+                localClass.meta.add(":used", [], localClass.pos);
             }
             for (field in fields) {
                 if (field.name != "up" && field.name != "down") continue;
@@ -71,8 +79,14 @@ class MigrationBuilder {
             }
         }
         
-        // Extract migration metadata
+        // Extract migration metadata.
+        //
+        // IMPORTANT: Reflaxe.Elixir relies on `@:migration` being present later in the pipeline
+        // (e.g., to filter emission in `-D ecto_migrations_exs` builds and to place timestamped
+        // `.exs` files into `priv/repo/migrations/`). `MetaAccess.extract` removes entries, so we
+        // must re-add the metadata after reading it.
         var migrationMeta = localClass.meta.extract(":migration")[0];
+        localClass.meta.add(":migration", migrationMeta.params, localClass.pos);
         var migrationInfo = extractMigrationInfo(localClass, migrationMeta);
         var migrationName = migrationInfo.name;
         
