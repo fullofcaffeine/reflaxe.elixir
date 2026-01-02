@@ -424,7 +424,11 @@ extern class HTML {
     /**
      * Generate a form with changeset validation
      */
+    #if (elixir || reflaxe_runtime)
     static function formFor<T, P>(changeset: ecto.Changeset<T, P>, action: String, options: FormOptions, content: Form<T> -> String): String;
+    #else
+    static function formFor<T, P>(changeset: Term, action: String, options: FormOptions, content: Form<T> -> String): String;
+    #end
     
     /**
      * Generate form inputs with proper typing
@@ -854,7 +858,11 @@ typedef FormOptions = {
  * the form structure doesn't need to know about the changeset's param type.
  */
 typedef Form<T> = {
+    #if (elixir || reflaxe_runtime)
     var source: ecto.Changeset<T, {}>;
+    #else
+    var source: Term;
+    #end
     var impl: String;
     var id: String;
     var name: String;
