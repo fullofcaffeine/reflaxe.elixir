@@ -115,11 +115,11 @@ window.liveSocket = liveSocket
 ### Architecture Mapping
 
 ```
-Traditional JavaScript          →    Haxe→Elixir
+Traditional Phoenix LiveView JS →    Haxe (Genes) + minimal JS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-app.js (60 lines)              →    TodoApp.hx (~150 lines)
-Hooks = {} (object)            →    class Hooks (type-safe)
-LiveSocket setup               →    PhoenixLiveView.createSocket()
+phoenix_app.js bootstrap       →    keep as minimal JS (Phoenix conventions)
+Hooks = {} (object)            →    HookName + HookRegistry (compile-time checked)
+Hook implementations           →    Haxe client modules (Genes) → window.Hooks
 Manual DOM queries             →    Type-safe Element references
 Dynamic event handling        →    Strongly-typed event signatures
 No compilation                →    Haxe compile-time validation
@@ -127,109 +127,85 @@ No compilation                →    Haxe compile-time validation
 
 ### Key Adaptations for Haxe
 
-1. **Type-Safe Hook System**
+1. **Shared, type-safe hook names**
    ```haxe
-   // Instead of: Hooks.Form = { updated() { ... } }
-   class FormHook implements LiveViewHook {
-       public var el: Element;
-       public function updated(): Void { ... }
+   @:phxHookNames
+   enum abstract HookName(String) from String to String {
+     var AutoFocus = "AutoFocus";
+     var ThemeToggle = "ThemeToggle";
    }
+
+   // Server templates:
+   //   phx-hook=${HookName.AutoFocus}
    ```
 
-2. **Compile-Time Hook Registration**
+2. **Compile-time hook registry (Genes)**
    ```haxe
-   import reflaxe.js.Unknown;
-
-   class Hooks {
-       public static function getAll(): Unknown {
-           return {
-               Form: new FormHook(),
-               AutoFocus: new AutoFocusHook(),
-               ThemeToggle: new ThemeToggleHook()
-           };
-       }
-   }
+   // Client entrypoint (compiled via -lib genes)
+   var hooks = HookRegistry.build({
+     AutoFocus: { mounted: function(): Void { AutoFocusHook.mounted(hookContext()); } },
+     ThemeToggle: { mounted: function(): Void { ThemeToggleHook.mounted(hookContext()); } }
+   });
    ```
 
-3. **Type-Safe Phoenix Integration**
-   ```haxe
-   class PhoenixLiveView {
-       public static function createSocket(): LiveSocket {
-           var csrfToken = getCsrfToken();
-           return new LiveSocket("/live", Socket, {
-               params: {_csrf_token: csrfToken},
-               hooks: Hooks.getAll()
-           });
-       }
-   }
-   ```
+3. **Minimal JS bootstrap boundary**
+   - Keep `LiveSocket` setup in a small `assets/js/phoenix_app.js` that:
+     - imports Phoenix JS dependencies
+     - imports the Haxe-generated client bundle
+     - reads CSRF meta token and connects `LiveSocket` with `hooks: window.Hooks`
 
 ## 🎨 Idiomatic Patterns for Haxe→Elixir
 
 ### ✅ Recommended Patterns
 
-#### 1. Minimal Main Application
+#### 1. Minimal bootstrap boundary
+
+**phoenix_app.js (JS, kept small and idiomatic)**
+```javascript
+import "phoenix_html";
+import {Socket} from "phoenix";
+import {LiveSocket} from "phoenix_live_view";
+import "./app.js"; // imports Haxe-generated client bundle (hx_app.js)
+
+const csrfToken = document.querySelector("meta[name='csrf-token']")?.getAttribute("content");
+const hooks = window.Hooks || {};
+const liveSocket = new LiveSocket("/live", Socket, {params: {_csrf_token: csrfToken}, hooks});
+
+liveSocket.connect();
+window.liveSocket = liveSocket;
+```
+
+**client.Boot (Haxe, compiled to JS via Genes)**
 ```haxe
-class TodoApp {
-    @:expose
-    public static function main(): Void {
-        // 1. Setup LiveSocket (essential)
-        var liveSocket = PhoenixLiveView.createSocket();
-        
-        // 2. Progress bar (UX enhancement)
-        PhoenixLiveView.enableProgressBar();
-        
-        // 3. Connect to server
-        liveSocket.connect();
-        
-        // 4. UI preferences only (not data)
-        DarkMode.initialize();
-        
-        // 5. Keyboard shortcuts (UX enhancement)
-        setupKeyboardShortcuts();
-        
-        // Done! Server handles everything else
-        trace("LiveView client ready");
-    }
+class Boot {
+  public static function main() {
+    var hooks = HookRegistry.build({
+      AutoFocus: { mounted: function(): Void { AutoFocusHook.mounted(hookContext()); } }
+    });
+
+    js.Syntax.code("window.Hooks = Object.assign(window.Hooks || {}, {0})", hooks);
+  }
 }
 ```
 
 #### 2. DOM-Only Hooks
 ```haxe
-class AutoFocusHook implements LiveViewHook {
-    public var el: Element;
-    
-    public function mounted(): Void {
-        // Simple DOM enhancement
-        el.focus();
-        positionCursorAtEnd();
-    }
-    
-    public function updated(): Void {
-        // React to server updates
-        if (shouldRefocus()) el.focus();
-    }
-    
-    // No data operations!
+class AutoFocusHook {
+  public static function mounted(ctx: PhoenixHookContext): Void {
+    // Simple DOM enhancement
+    ctx.el.focus();
+  }
 }
 ```
 
 #### 3. Server Event Communication
 ```haxe
-class TodoFormHook implements LiveViewHook {
-    public var el: Element;
-    
-    public function updated(): Void {
-        // Server handles validation, we just clear on success
-        if (hasNoValidationErrors()) {
-            clearForm();
-        }
-    }
-    
-    private function clearForm(): Void {
-        var input = el.querySelector('input[type="text"]');
-        if (input != null) input.value = '';
-    }
+class TodoFormHook {
+  public static function updated(ctx: PhoenixHookContext): Void {
+    // Server handles validation; client can do small DOM-only UX updates.
+    var input = ctx.el.querySelector('input[type="text"]');
+    if (input != null) input.value = "";
+  }
 }
 ```
 
