@@ -870,6 +870,9 @@ typedef Form<T> = {
     var params: Map<String, String>; // Form parameters as string map
     var hidden: Array<FormField>;
     var options: FormOptions;
+    var ?action: Term;
+    var ?errors: Array<Term>;
+    var ?index: Null<Int>;
 }
 
 /**

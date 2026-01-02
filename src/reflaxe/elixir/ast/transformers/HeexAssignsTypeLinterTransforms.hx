@@ -1130,6 +1130,8 @@ class HeexAssignsTypeLinterTransforms {
         resolved = switch (componentTag) {
             case ".form":
                 buildPhoenixCoreFormComponentDefinition();
+            case ".inputs_for":
+                buildPhoenixCoreInputsForComponentDefinition();
             default:
                 null;
         };
@@ -1164,6 +1166,47 @@ class HeexAssignsTypeLinterTransforms {
             nativeModuleName: "Phoenix.Component",
             functionName: "form",
             props: new Map(),
+            required: required,
+            slots: slots
+        };
+    }
+
+    static function buildPhoenixCoreInputsForComponentDefinition(): Null<ComponentDefinition> {
+        var letBinding: Null<ComponentLetBindingDefinition> = null;
+        var formAssignsType = resolvePhoenixCoreFormLetType();
+        if (formAssignsType != null) {
+            var letInfo = letBindingPropsFromType(formAssignsType);
+            if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
+                letBinding = { props: letInfo.props, required: letInfo.required };
+            }
+        }
+
+        var slots = new Map<String, ComponentSlotDefinition>();
+        slots.set("inner_block", {
+            required: true,
+            props: new Map(),
+            requiredProps: new Map(),
+            letBinding: letBinding
+        });
+
+        var props = new Map<String, String>();
+        props.set("field", "unknown");
+        props.set("id", "string");
+        props.set("as", "string");
+        props.set("default", "unknown");
+        props.set("append", "unknown");
+        props.set("prepend", "unknown");
+        props.set("skip_hidden", "bool");
+        props.set("options", "unknown");
+
+        var required = new Map<String, Bool>();
+        required.set("field", true);
+
+        return {
+            moduleTypePath: null,
+            nativeModuleName: "Phoenix.Component",
+            functionName: "inputs_for",
+            props: props,
             required: required,
             slots: slots
         };
@@ -1451,9 +1494,22 @@ class HeexAssignsTypeLinterTransforms {
                 buildAllowedComponentAttributesFromHtmlTag("form", ["for", "as", "multipart"]);
             case ".link":
                 buildAllowedComponentAttributesFromHtmlTag("a", ["navigate", "patch", "method", "replace"]);
+            case ".inputs_for":
+                buildAllowedComponentAttributes(["field", "id", "as", "default", "append", "prepend", "skip_hidden", "options"]);
             default:
                 null;
         }
+    }
+
+    static function buildAllowedComponentAttributes(extra: Array<String>): Map<String, Bool> {
+        var allowed: Map<String, Bool> = new Map();
+
+        var globals = getGlobalHtmlAttributes();
+        for (k in globals.keys()) allowed.set(k, true);
+
+        for (name in extra) addAllowedAttributeForms(allowed, name);
+
+        return allowed;
     }
 
     static function buildAllowedComponentAttributesFromHtmlTag(htmlTag: String, extra: Array<String>): Map<String, Bool> {
