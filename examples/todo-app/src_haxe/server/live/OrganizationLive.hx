@@ -43,6 +43,14 @@ typedef InviteRowView = {
     var status_label: String;
 }
 
+typedef MemberRowView = {
+    var id: Int;
+    var name: String;
+    var email: String;
+    var role: String;
+    var is_self: Bool;
+}
+
 typedef OrganizationLiveAssigns = {
     var signed_in: Bool;
     var current_user: Null<User>;
@@ -58,6 +66,8 @@ typedef OrganizationLiveAssigns = {
     var invite_email_input: String;
     var invite_role_input: String;
     var invite_rows: Array<InviteRowView>;
+
+    var member_rows: Array<MemberRowView>;
 }
 
 typedef OrganizationLiveRenderAssigns = {> OrganizationLiveAssigns,
@@ -95,7 +105,11 @@ class OrganizationLive {
         revokeInvite,
         getOrganizationBySlug,
         getOrCreateOrganizationBySlug,
-        switchOrganization
+        switchOrganization,
+        loadMembers,
+        parseId,
+        countAdmins,
+        setUserRole
     ];
 
     public static function mount(_params: MountParams, session: Session, socket: Socket<OrganizationLiveAssigns>): MountResult<OrganizationLiveAssigns> {
@@ -118,6 +132,7 @@ class OrganizationLive {
         var orgInfo = signedIn ? OrganizationTools.infoForId(user.organizationId) : OrganizationTools.infoForId(OrganizationTools.DEMO_ORG_ID);
         var rows = signedIn ? loadOrganizations(orgInfo.id) : [];
         var invites = (signedIn && isAdmin) ? loadInvites(orgInfo.id) : [];
+        var members = signedIn ? loadMembers(orgInfo.id, user.id) : [];
 
         sock = sock.merge({
             signed_in: signedIn,
@@ -130,7 +145,8 @@ class OrganizationLive {
             org_rows: rows,
             invite_email_input: "",
             invite_role_input: "user",
-            invite_rows: invites
+            invite_rows: invites,
+            member_rows: members
         });
 
         return Ok(sock);
@@ -193,6 +209,8 @@ class OrganizationLive {
                 NoReply(createInvite(params, sock));
             case "revoke_invite":
                 NoReply(revokeInvite(params, sock));
+            case "set_user_role":
+                NoReply(setUserRole(params, sock));
             case _:
                 NoReply(sock);
         };
@@ -262,6 +280,101 @@ class OrganizationLive {
                 status_label: accepted ? "Accepted" : "Pending"
             };
         });
+    }
+
+    static function loadMembers(organizationId: Int, currentUserId: Int): Array<MemberRowView> {
+        var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId);
+        var users: Array<User> = Repo.all(query);
+        users.sort((a, b) -> a.id - b.id);
+
+        return users.map(u -> {
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            is_self: u.id == currentUserId
+        });
+    }
+
+    static function countAdmins(organizationId: Int): Int {
+        var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId && u.role == "admin");
+        return Repo.all(query).length;
+    }
+
+    @:keep
+    static function parseId(value: Term): Null<Int> {
+        if (value == null) return null;
+        if (Kernel.isInteger(value)) return cast value;
+        if (Kernel.isFloat(value)) return Kernel.trunc(value);
+        if (Kernel.isBinary(value)) return Std.parseInt(cast value);
+        return null;
+    }
+
+    static function setUserRole(params: Term, socket: LiveSocket<OrganizationLiveAssigns>): LiveSocket<OrganizationLiveAssigns> {
+        if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
+            return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage members.");
+        }
+        if (!socket.assigns.is_admin) {
+            return LiveView.putFlash(socket, FlashType.Error, "Only admins can change roles.");
+        }
+
+        var currentUser: User = socket.assigns.current_user;
+
+        var idValue = parseId(ElixirMap.get(params, "id"));
+        if (idValue == null || idValue <= 0) {
+            return LiveView.putFlash(socket, FlashType.Error, "Invalid user id.");
+        }
+
+        var roleTerm: Term = ElixirMap.get(params, "role");
+        var rawRole: String = roleTerm != null ? cast roleTerm : "";
+        var role = StringTools.trim(rawRole).toLowerCase();
+        if (role != "admin" && role != "user") {
+            return LiveView.putFlash(socket, FlashType.Error, "Invalid role.");
+        }
+
+        var orgId = socket.assigns.current_org_id;
+        var user: Null<User> = Repo.get(User, idValue);
+        if (user == null) {
+            return LiveView.putFlash(socket, FlashType.Error, "User not found.");
+        }
+        if (user.organizationId != orgId) {
+            return LiveView.putFlash(socket, FlashType.Error, "Not authorized.");
+        }
+
+        if (user.role == "admin" && role != "admin") {
+            if (countAdmins(orgId) <= 1) {
+                return LiveView.putFlash(socket, FlashType.Error, "Cannot remove the last admin.");
+            }
+        }
+
+        if (user.role == role) {
+            return LiveView.putFlash(socket, FlashType.Info, "Role unchanged.");
+        }
+
+        var changeset = Changeset.change(user, {});
+        changeset = changeset.putChange("role", role);
+
+        return switch (Repo.update(changeset)) {
+            case Ok(updatedUser):
+                var updatedCurrentUser = updatedUser.id == currentUser.id ? updatedUser : currentUser;
+                var updatedIsAdmin = isAdminUser(updatedCurrentUser);
+
+                var refreshedInvites = updatedIsAdmin ? loadInvites(orgId) : [];
+                var refreshedMembers = loadMembers(orgId, updatedCurrentUser.id);
+
+                var updatedSocket = socket.merge({
+                    current_user: updatedCurrentUser,
+                    is_admin: updatedIsAdmin,
+                    invite_rows: refreshedInvites,
+                    member_rows: refreshedMembers
+                });
+
+                updatedSocket = LiveView.clearFlash(updatedSocket);
+                LiveView.putFlash(updatedSocket, FlashType.Info, "Role updated.");
+            case Error(err):
+                Std.string(err);
+                LiveView.putFlash(socket, FlashType.Error, "Could not update role.");
+        };
     }
 
     static function createInvite(params: Term, socket: LiveSocket<OrganizationLiveAssigns>): LiveSocket<OrganizationLiveAssigns> {
@@ -442,10 +555,9 @@ class OrganizationLive {
                                             class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
                                         <select data-testid="invite-role"
                                             name="role"
-                                            value={@invite_role_input}
                                             class="px-4 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                            <option value="user">User</option>
-                                            <option value="admin">Admin</option>
+                                            <option value="user" selected={@invite_role_input == "user"}>User</option>
+                                            <option value="admin" selected={@invite_role_input == "admin"}>Admin</option>
                                         </select>
                                         <button data-testid="btn-invite"
                                             type="submit"
@@ -481,6 +593,52 @@ class OrganizationLive {
                                     </div>
                                 </div>
                             </if>
+
+                            <div class="mt-6 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                                <div class="flex items-start justify-between gap-4">
+                                    <div>
+                                        <div data-testid="members-title" class="text-lg font-semibold text-gray-900 dark:text-white">Members</div>
+                                        <div class="text-sm text-gray-600 dark:text-gray-300">Users in the current organization.</div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 space-y-2">
+                                    <for {m in @member_rows}>
+                                        <div data-testid="member-row" class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                                            <div class="min-w-0">
+                                                <div class="font-medium text-gray-900 dark:text-white truncate">
+                                                    #{m.name}
+                                                    <if {m.is_self}>
+                                                        <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">(you)</span>
+                                                    </if>
+                                                </div>
+                                                <div data-testid="member-email" class="text-sm text-gray-600 dark:text-gray-300 truncate">#{m.email}</div>
+                                            </div>
+
+                                            <div data-testid="member-role" class="shrink-0 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200">
+                                                #{m.role}
+                                            </div>
+
+                                            <if {@is_admin}>
+                                                <form phx-submit="set_user_role" class="shrink-0 flex items-center gap-2">
+                                                    <input type="hidden" name="id" value={m.id}/>
+                                                    <select data-testid="member-role-select"
+                                                        name="role"
+                                                        class="px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                                        <option value="user" selected={m.role == "user"}>User</option>
+                                                        <option value="admin" selected={m.role == "admin"}>Admin</option>
+                                                    </select>
+                                                    <button data-testid="btn-save-role"
+                                                        type="submit"
+                                                        class="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+                                                        Save
+                                                    </button>
+                                                </form>
+                                            </if>
+                                        </div>
+                                    </for>
+                                </div>
+                            </div>
                         </if>
                     </div>
                 </div>
