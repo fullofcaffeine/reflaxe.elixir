@@ -136,6 +136,8 @@ In strict mode:
 
 - Element/attribute typing: `HXXTypes` defines allowed attributes and kinds. The macro validates element names and attributes, producing helpful errors and suggestions.
 - Assigns typing: The linter cross‑checks `@field` references in `~H` against the Haxe `typedef` used for `assigns`.
+- Component prop kind typing: component assigns types are reduced to simple “kinds” (e.g. `string`, `bool`, `map`) and checked against attribute values when resolvable. `haxe.extern.EitherType<A, B>` (and `haxe.ds.Either<A, B>`) is treated as a union kind (`kindA|kindB`) when both sides are known.
+- Struct-like externs: if an extern type represents an Elixir struct and should behave like a map in HXX kind checks, annotate it with `@:elixirStruct` (e.g. `phoenix.JS`).
 - Attribute expressions (in progress): The compiler is moving to a structural AST (`EFragment`) so attribute values are typed expressions instead of text.
 
 ## Developer UX
