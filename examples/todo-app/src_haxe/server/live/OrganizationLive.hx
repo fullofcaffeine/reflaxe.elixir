@@ -320,7 +320,7 @@ class OrganizationLive {
 
         var currentUser: User = socket.assigns.current_user;
 
-        var idValue = parseId(ElixirMap.get(params, "id"));
+        var idValue = parseId(ElixirMap.get(params, "member_id"));
         if (idValue == null || idValue <= 0) {
             return LiveView.putFlash(socket, FlashType.Error, "Invalid user id.");
         }
@@ -621,7 +621,7 @@ class OrganizationLive {
 
                                             <if {@is_admin}>
                                                 <form phx-submit="set_user_role" class="shrink-0 flex items-center gap-2">
-                                                    <input type="hidden" name="id" value={m.id}/>
+                                                    <input type="hidden" name="member_id" value={m.id}/>
                                                     <select data-testid="member-role-select"
                                                         name="role"
                                                         class="px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
