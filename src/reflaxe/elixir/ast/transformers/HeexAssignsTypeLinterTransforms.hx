@@ -1127,11 +1127,37 @@ class HeexAssignsTypeLinterTransforms {
         }
         if (componentFunctionIndex == null) return "";
 
+        function displayModuleName(def: ComponentDefinition): String {
+            if (def == null) return "";
+            if (def.nativeModuleName != null && def.nativeModuleName.length > 0) return def.nativeModuleName;
+            return def.moduleTypePath;
+        }
+
+        function formatCandidateTags(fn: String, defs: Array<ComponentDefinition>, maxToShow: Int): String {
+            if (defs == null || defs.length == 0) return "";
+
+            var tags: Array<String> = [];
+            var limit = defs.length < maxToShow ? defs.length : maxToShow;
+            for (i in 0...limit) {
+                var moduleName = displayModuleName(defs[i]);
+                if (moduleName == null || moduleName.length == 0) continue;
+                tags.push("<" + moduleName + "." + fn + ">");
+            }
+
+            if (tags.length == 0) return "";
+            var suffix = defs.length > maxToShow ? ", …" : "";
+            return tags.join(", ") + suffix;
+        }
+
         if (componentTag.charAt(0) == ".") {
             var fn = componentTag.substr(1);
             var candidates = componentFunctionIndex.get(fn);
             if (candidates == null || candidates.length == 0) return ' (no @:component function named "' + fn + '" was discovered)';
-            if (candidates.length > 1) return ' (ambiguous: ' + candidates.length + ' @:component functions named "' + fn + '" exist)';
+            if (candidates.length > 1) {
+                var examples = formatCandidateTags(fn, candidates, 6);
+                var hint = examples != "" ? (' Candidates: ' + examples + '.') : "";
+                return ' (ambiguous: ' + candidates.length + ' @:component functions named "' + fn + '" exist.' + hint + ' Use a module-qualified component tag (e.g. <SomeModule.' + fn + '>).)';
+            }
             return "";
         }
 
@@ -1147,11 +1173,19 @@ class HeexAssignsTypeLinterTransforms {
                     return ' (no @:component function named "' + fn + '" was discovered)';
                 }
 
-                var matches = 0;
-                for (c in candidates) if (componentModuleMatches(c, modulePart)) matches++;
+                var matchingDefs: Array<ComponentDefinition> = [];
+                for (c in candidates) if (componentModuleMatches(c, modulePart)) matchingDefs.push(c);
 
-                if (matches == 0) return ' (no @:component module matched "' + modulePart + '" for function "' + fn + '")';
-                if (matches > 1) return ' (ambiguous: ' + matches + ' @:component modules matched "' + modulePart + '" for function "' + fn + '")';
+                if (matchingDefs.length == 0) {
+                    var examples = formatCandidateTags(fn, candidates, 6);
+                    var hint = examples != "" ? (' Known components: ' + examples + '.') : "";
+                    return ' (no @:component module matched "' + modulePart + '" for function "' + fn + '".' + hint + ')';
+                }
+                if (matchingDefs.length > 1) {
+                    var examples = formatCandidateTags(fn, matchingDefs, 6);
+                    var hint = examples != "" ? (' Matches: ' + examples + '.') : "";
+                    return ' (ambiguous: ' + matchingDefs.length + ' @:component modules matched "' + modulePart + '" for function "' + fn + '".' + hint + ' Use a more specific module name in the tag.)';
+                }
             }
         }
 
