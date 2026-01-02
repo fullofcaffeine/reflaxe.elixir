@@ -52,6 +52,7 @@ import server.types.Types.PresenceTopics;
 	import server.types.Types.User;
 	import server.types.Types.AlertLevel;
 	import shared.AvatarTools;
+	import shared.liveview.EventName;
 	import shared.liveview.HookName;
 		import StringTools;
 		using reflaxe.elixir.macros.TypedQueryLambda;
@@ -360,7 +361,7 @@ enum ActivityKind {
 	    @:native("handle_event")
 		    public static function handle_event(event: String, params: Term, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
 		        var nextSocket: Socket<TodoLiveAssigns> =
-		            if (event == "create_todo") {
+		            if (event == EventName.CreateTodo) {
 		                create_todo(params, socket);
 		            } else if (event == "toggle_todo") {
 		                toggle_todo_status(extract_id(params), socket);
@@ -401,7 +402,7 @@ enum ActivityKind {
 		            } else if (event == "set_priority") {
 	                var priority: Null<String> = cast Reflect.field(params, "priority");
 	                update_todo_priority(extract_id(params), priority != null ? priority : "medium", socket);
-	            } else if (event == "toggle_form") {
+	            } else if (event == EventName.ToggleForm) {
 	                recomputeVisible(SafeAssigns.setShowForm(socket, !socket.assigns.show_form));
 	            } else if (event == "bulk_complete") {
 	                complete_all_todos(socket);
@@ -1430,7 +1431,7 @@ enum ActivityKind {
 						</div>
 						
 						<!-- Add Todo Button -->
-							<button phx-click="toggle_form" data-testid="btn-new-todo" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
+							<button phx-click=${EventName.ToggleForm} data-testid="btn-new-todo" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
 								#{@toggle_form_label}
 							</button>
 						</div>
@@ -1438,7 +1439,7 @@ enum ActivityKind {
 						<!-- New Todo Form -->
 						<if {@show_form}>
 						<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
-							<form phx-submit="create_todo" class="space-y-4">
+							<form phx-submit=${EventName.CreateTodo} class="space-y-4">
 								<div>
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 										Title *
