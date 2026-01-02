@@ -1,7 +1,5 @@
 package phoenix.types;
 
-#if (elixir || reflaxe_runtime)
-
 import elixir.types.Atom;
 
 /**
@@ -321,8 +319,6 @@ class Flash {
         });
     }
 }
-
-#end
 
 /**
  * Flash message map type for Phoenix compatibility
