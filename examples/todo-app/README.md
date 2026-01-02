@@ -160,7 +160,7 @@ The todo-app is designed to demonstrate **end-to-end Haxe→Elixir** for applica
 ```mermaid
 graph LR
     A[Haxe Source] --> B[Reflaxe.Elixir]
-    A --> C[Haxe JS Target]
+    A --> C[Genes JS Generator]
     B --> D[Elixir/Phoenix Backend]
     C --> E[JavaScript Frontend]
     D --> F[LiveView + Ecto]
@@ -178,8 +178,8 @@ graph LR
   - Pick up LiveView Hooks from `window.Hooks` (populated by the Haxe bundle).
   - Create and connect `LiveSocket`, and expose `window.liveSocket`.
 - Haxe integration:
-  - The Haxe client compiles to `assets/js/app.js` (`build-client.hxml`).
-  - `phoenix_app.js` imports `./app.js`, so any Hooks you export via Haxe are available to LiveView.
+  - The Haxe client compiles via Genes to `assets/js/hx_app.js` (entry) plus supporting modules under `assets/js/client/**` and `assets/js/genes/**` (`build-client.hxml`).
+  - `assets/js/app.js` imports `./hx_app.js`, and `phoenix_app.js` imports `./app.js`, so Hooks exported by Haxe are available to LiveView.
 - Why JS here and not Haxe?
   - This file mirrors Phoenix’s canonical bootstrap and stays stable across Phoenix upgrades.
   - All meaningful client behavior (Hooks, utils, shared types) remains in Haxe for type safety.
