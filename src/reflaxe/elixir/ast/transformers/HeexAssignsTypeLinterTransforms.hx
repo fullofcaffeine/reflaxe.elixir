@@ -114,6 +114,9 @@ private typedef HeexLetBindingScope = {
 class HeexAssignsTypeLinterTransforms {
     static var componentFunctionIndex: Null<Map<String, Array<ComponentDefinition>>> = null;
     static var componentDefinitionCache: Map<String, Null<ComponentDefinition>> = new Map();
+    #if macro
+    static var phoenixCoreComponentDefinitionCache: Map<String, Null<ComponentDefinition>> = new Map();
+    #end
     static var fileContentCache: Map<String, Null<String>> = new Map();
     static var assignsFieldsCache: Map<String, Null<Map<String, String>>> = new Map();
     #if macro
@@ -1104,9 +1107,85 @@ class HeexAssignsTypeLinterTransforms {
             }
         }
 
+        #if macro
+        if (resolved == null) {
+            resolved = resolvePhoenixCoreComponentDefinition(componentTag);
+        }
+        #end
+
         componentDefinitionCache.set(componentTag, resolved);
         return resolved;
     }
+
+    #if macro
+    static function resolvePhoenixCoreComponentDefinition(componentTag: String): Null<ComponentDefinition> {
+        if (componentTag == null || componentTag.length == 0) return null;
+        if (componentTag.charAt(0) != ".") return null;
+
+        if (phoenixCoreComponentDefinitionCache.exists(componentTag)) {
+            return phoenixCoreComponentDefinitionCache.get(componentTag);
+        }
+
+        var resolved: Null<ComponentDefinition> = null;
+        resolved = switch (componentTag) {
+            case ".form":
+                buildPhoenixCoreFormComponentDefinition();
+            default:
+                null;
+        };
+
+        phoenixCoreComponentDefinitionCache.set(componentTag, resolved);
+        return resolved;
+    }
+
+    static function buildPhoenixCoreFormComponentDefinition(): Null<ComponentDefinition> {
+        var letBinding: Null<ComponentLetBindingDefinition> = null;
+        var formAssignsType = resolvePhoenixCoreFormLetType();
+        if (formAssignsType != null) {
+            var letInfo = letBindingPropsFromType(formAssignsType);
+            if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
+                letBinding = { props: letInfo.props, required: letInfo.required };
+            }
+        }
+
+        var slots = new Map<String, ComponentSlotDefinition>();
+        slots.set("inner_block", {
+            required: true,
+            props: new Map(),
+            requiredProps: new Map(),
+            letBinding: letBinding
+        });
+
+        var required = new Map<String, Bool>();
+        required.set("for", true);
+
+        return {
+            moduleTypePath: null,
+            nativeModuleName: "Phoenix.Component",
+            functionName: "form",
+            props: new Map(),
+            required: required,
+            slots: slots
+        };
+    }
+
+    static function resolvePhoenixCoreFormLetType(): Null<haxe.macro.Type> {
+        var formType: Null<haxe.macro.Type> = null;
+        try formType = Context.getType("phoenix.Phoenix.Form") catch (_:Dynamic) formType = null;
+        if (formType == null) return null;
+
+        var termType: Null<haxe.macro.Type> = null;
+        try termType = Context.getType("elixir.types.Term") catch (_:Dynamic) termType = null;
+
+        return switch (formType) {
+            case TType(tdef, params):
+                var typeArgs = (termType != null) ? [termType] : params;
+                TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, typeArgs);
+            default:
+                formType;
+        };
+    }
+    #end
 
     static function isLikelyModuleComponentTag(tag: String): Bool {
         if (tag == null || tag.length < 3) return false;
@@ -1249,7 +1328,7 @@ class HeexAssignsTypeLinterTransforms {
 
                         var letBinding: Null<ComponentLetBindingDefinition> = null;
                         if (letType != null && !isElixirTermType(letType)) {
-                            var letInfo = propsFromAssignsType(letType);
+                            var letInfo = letBindingPropsFromType(letType);
                             if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
                                 letBinding = { props: letInfo.props, required: letInfo.required };
                             }
@@ -1274,6 +1353,37 @@ class HeexAssignsTypeLinterTransforms {
                 { props: props, required: required, slots: slots };
             case TType(tdef, params):
                 propsFromAssignsType(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
+            default:
+                null;
+        }
+    }
+
+    static function letBindingPropsFromType(t: haxe.macro.Type): Null<{
+        props: Map<String, String>,
+        required: Map<String, Bool>
+    }> {
+        var followed = TypeTools.follow(t);
+        return switch (followed) {
+            case TAnonymous(a):
+                var props = new Map<String, String>();
+                var required = new Map<String, Bool>();
+
+                for (f in a.get().fields) {
+                    var typeStr = TypeTools.toString(f.type);
+                    var isOptional = fieldIsOptionalByTypeString(typeStr) || (f.meta != null && f.meta.has(":optional"));
+
+                    // Let bindings represent Elixir struct/map fields (accessed via `var.field`),
+                    // not HTML/HEEx attribute names. Avoid toHtmlAttribute() quirks like treating
+                    // `data` as a `data-*` prefix.
+                    var key = NameUtils.toSnakeCase(f.name);
+                    props.set(key, normalizeKind(typeStr));
+
+                    if (!isOptional) required.set(key, true);
+                }
+
+                { props: props, required: required };
+            case TType(tdef, params):
+                letBindingPropsFromType(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
             default:
                 null;
         }
