@@ -12,10 +12,10 @@ class TypedQueryLambda {
 #if macro
     public static function buildWhereExpr(ethis: Expr, predicate: Expr): Expr {
         // Extract function arg name and body (eg. "u -> ..." → argName = "u")
-        var argName = (function() return switch (predicate.expr) {
+        var argName = switch (predicate.expr) {
             case EFunction(_, f) if (f.args != null && f.args.length > 0): f.args[0].name;
             default: "t";
-        })();
+        };
         var body = extractLambdaBody(predicate);
 
         // Determine schema type from TypedQuery<T>
@@ -26,18 +26,32 @@ class TypedQueryLambda {
         var printer = new haxe.macro.Printer();
         Context.warning('TypedQuery.where predicate: ' + printer.printExpr(body), body.pos);
         #end
-        // Compose injection directly for simple binary comparisons
-        return switch (body.expr) {
-            case EBinop(op, left, right) if (isComparison(op)):
-                var fieldSnake = toField(left, argName, classType.name, body.pos);
-                var opStr = opToString(op);
-                var code = '(require Ecto.Query; Ecto.Query.where({0}, [t], ' + fieldSnake + ' ' + opStr + ' ^({1})))';
-                // Return a pure expression (no TBlock/TVar), to avoid broken assignments in generated code
-                macro cast untyped __elixir__($v{code}, $ethis, $right);
-            case _:
-                Context.error('Unsupported where() condition. Supported: ==, !=, <, <=, >, >=, &&, ||, !', body.pos);
-                macro $ethis;
+
+        var queryType = Context.typeof(ethis).toComplexType();
+        if (queryType == null) {
+            Context.error("Unable to infer TypedQuery type for where()", ethis.pos);
         }
+        var cond = buildCondition(body, argName, classType.name);
+        var template = renderPinnedPlaceholders(cond.template);
+        var code = '(require Ecto.Query; Ecto.Query.where({0}, [t], ' + template + '))';
+        var callArgs:Array<Expr> = [macro $v{code}].concat([ethis].concat(cond.values));
+
+        // Return a pure expression (no TBlock/TVar), to avoid broken assignments in generated code
+        return {
+            expr: ECast(
+                {
+                    expr: EUntyped(
+                        {
+                            expr: ECall({expr: EConst(CIdent("__elixir__")), pos: body.pos}, callArgs),
+                            pos: body.pos
+                        }
+                    ),
+                    pos: body.pos
+                },
+                queryType
+            ),
+            pos: body.pos
+        };
     }
     public static macro function where<T>(ethis: ExprOf<ecto.TypedQuery<T>>, predicate: ExprOf<T -> Bool>): Expr {
         #if hxx_instrument_sys
@@ -124,6 +138,12 @@ class TypedQueryLambda {
     private static function toField(e: Expr, param: String, schemaName: String, pos: Position): String {
         return switch (e.expr) {
             case EField(obj, field):
+                var objExpr = unwrapToExpr(obj);
+                switch (objExpr.expr) {
+                    case EConst(CIdent(name)) if (name == param):
+                    default:
+                        Context.error('Left side must be a field access (e.g., ' + param + '.field)', pos);
+                }
                 // Validate field exists on schema
                 if (!reflaxe.elixir.schema.SchemaIntrospection.hasField(schemaName, field)) {
                     Context.error('Field "' + field + '" does not exist in ' + schemaName, pos);
@@ -165,6 +185,36 @@ class TypedQueryLambda {
                 }
             }
             buf.add(ch); i++;
+        }
+        return buf.toString();
+    }
+
+    // Convert internal pinned markers ^{n} -> ^({n}) for final __elixir__ injection
+    private static function renderPinnedPlaceholders(template:String):String {
+        var buf = new StringBuf();
+        var i = 0;
+        while (i < template.length) {
+            var ch = template.charAt(i);
+            if (ch == '^' && i + 2 < template.length && template.charAt(i + 1) == '{') {
+                var j = i + 2;
+                var num = "";
+                while (j < template.length && template.charAt(j) >= '0' && template.charAt(j) <= '9') {
+                    num += template.charAt(j);
+                    j++;
+                }
+                if (j < template.length && template.charAt(j) == '}') {
+                    var n = Std.parseInt(num);
+                    if (n != null) {
+                        buf.add('^({');
+                        buf.add(Std.string(n));
+                        buf.add('})');
+                        i = j + 1;
+                        continue;
+                    }
+                }
+            }
+            buf.add(ch);
+            i++;
         }
         return buf.toString();
     }
