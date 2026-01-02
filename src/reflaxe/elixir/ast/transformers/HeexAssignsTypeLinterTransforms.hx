@@ -79,6 +79,8 @@ import reflaxe.elixir.macros.RepoDiscovery;
  *   - required slots are present at the call site
  *   - slot tag attributes match the slot entry typedef (including required slot attributes)
  *   - `:let` bindings are validated for binding shape (variable/pattern)
+ *   - `:let` bindings on component tags are type-checked when the component declares an
+ *     `inner_block: Slot<..., LetType>` slot; field accesses on the bound var are linted.
  * - Hook name validation only runs when a hook registry is present. Dynamic hook expressions (e.g. `phx-hook={@hook}`)
  *   are not validated to keep false positives low.
  */
@@ -637,16 +639,20 @@ class HeexAssignsTypeLinterTransforms {
         if (attributes == null || attributes.length == 0) return letScopes;
         if (letScopes == null) letScopes = [];
 
-        // Slot tags only (e.g., <:header :let={x}>)
-        if (!isSlotTag(tag)) return letScopes;
-
         var letAttr: Null<EAttribute> = null;
         for (a in attributes) {
             if (a != null && a.name == ":let") { letAttr = a; break; }
         }
         if (letAttr == null) return letScopes;
 
-        var letDef = resolveSlotLetBindingDefinition(tag, parentTag);
+        var letDef: Null<ComponentLetBindingDefinition> = null;
+        if (isSlotTag(tag)) {
+            letDef = resolveSlotLetBindingDefinition(tag, parentTag);
+        } else if (isHeexComponentTag(tag)) {
+            letDef = resolveComponentLetBindingDefinition(tag);
+        } else {
+            return letScopes;
+        }
         if (letDef == null || letDef.props == null || !letDef.props.keys().hasNext()) return letScopes;
 
         var boundVars = extractLetBoundVariables(letAttr.value);
@@ -661,6 +667,15 @@ class HeexAssignsTypeLinterTransforms {
             contextTag: '<' + tag + '>'
         });
         return next;
+    }
+
+    static function resolveComponentLetBindingDefinition(componentTag: String): Null<ComponentLetBindingDefinition> {
+        var def = resolveComponentDefinition(componentTag);
+        if (def == null || def.slots == null) return null;
+
+        var slotDef = def.slots.get("inner_block");
+        if (slotDef == null) return null;
+        return slotDef.letBinding;
     }
 
     static function resolveSlotLetBindingDefinition(slotTag: String, parentTag: Null<String>): Null<ComponentLetBindingDefinition> {
@@ -942,6 +957,11 @@ class HeexAssignsTypeLinterTransforms {
                     }
                 }
 
+                // Default slot: treat non-slot-tag children as satisfying <:inner_block>.
+                if (!presentSlots.exists("inner_block") && hasMeaningfulInnerBlockChildren(children)) {
+                    presentSlots.set("inner_block", true);
+                }
+
                 for (slotName in def.slots.keys()) {
                     var slotDef = def.slots.get(slotName);
                     if (slotDef != null && slotDef.required && !presentSlots.exists(slotName)) {
@@ -997,6 +1017,22 @@ class HeexAssignsTypeLinterTransforms {
                     if (s != null && s.trim() != "") return true;
                 case EFragment(_, _, _):
                     return true;
+                default:
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    static function hasMeaningfulInnerBlockChildren(children: Array<ElixirAST>): Bool {
+        if (children == null || children.length == 0) return false;
+        for (c in children) {
+            if (c == null || c.def == null) continue;
+            switch (c.def) {
+                case EString(s):
+                    if (s != null && s.trim() != "") return true;
+                case EFragment(tag, _, _) if (isSlotTag(tag)):
+                    // Slot entries do not count as default inner_block content.
                 default:
                     return true;
             }

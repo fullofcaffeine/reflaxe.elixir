@@ -1,6 +1,7 @@
 package server.live;
 
 import HXX;
+import contexts.Accounts;
 import ecto.Changeset;
 import elixir.ElixirMap;
 import elixir.Kernel;
@@ -19,6 +20,7 @@ import phoenix.types.Flash.FlashMap;
 import phoenix.types.Flash.FlashType;
 import server.infrastructure.Repo;
 import server.schemas.Organization;
+import server.schemas.OrganizationInvite;
 import server.schemas.User;
 import server.support.OrganizationTools;
 import server.types.Types.MountParams;
@@ -33,9 +35,18 @@ typedef OrgRowView = {
     var is_current: Bool;
 }
 
+typedef InviteRowView = {
+    var id: Int;
+    var email: String;
+    var role: String;
+    var is_accepted: Bool;
+    var status_label: String;
+}
+
 typedef OrganizationLiveAssigns = {
     var signed_in: Bool;
     var current_user: Null<User>;
+    var is_admin: Bool;
 
     var current_org_id: Int;
     var current_org_slug: String;
@@ -43,6 +54,10 @@ typedef OrganizationLiveAssigns = {
 
     var slug_input: String;
     var org_rows: Array<OrgRowView>;
+
+    var invite_email_input: String;
+    var invite_role_input: String;
+    var invite_rows: Array<InviteRowView>;
 }
 
 typedef OrganizationLiveRenderAssigns = {> OrganizationLiveAssigns,
@@ -74,6 +89,10 @@ class OrganizationLive {
         sessionUserId,
         normalizeSlug,
         loadOrganizations,
+        loadInvites,
+        isAdminUser,
+        createInvite,
+        revokeInvite,
         getOrganizationBySlug,
         getOrCreateOrganizationBySlug,
         switchOrganization
@@ -95,17 +114,23 @@ class OrganizationLive {
             sock = LiveView.pushNavigate(sock, {to: "/login"});
         }
 
+        var isAdmin = signedIn && isAdminUser(user);
         var orgInfo = signedIn ? OrganizationTools.infoForId(user.organizationId) : OrganizationTools.infoForId(OrganizationTools.DEMO_ORG_ID);
         var rows = signedIn ? loadOrganizations(orgInfo.id) : [];
+        var invites = (signedIn && isAdmin) ? loadInvites(orgInfo.id) : [];
 
         sock = sock.merge({
             signed_in: signedIn,
             current_user: user,
+            is_admin: isAdmin,
             current_org_id: orgInfo.id,
             current_org_slug: orgInfo.slug,
             current_org_name: orgInfo.name,
             slug_input: orgInfo.slug,
-            org_rows: rows
+            org_rows: rows,
+            invite_email_input: "",
+            invite_role_input: "user",
+            invite_rows: invites
         });
 
         return Ok(sock);
@@ -164,6 +189,10 @@ class OrganizationLive {
         return switch (event) {
             case "switch_org":
                 NoReply(switchOrganization(params, sock));
+            case "invite_org":
+                NoReply(createInvite(params, sock));
+            case "revoke_invite":
+                NoReply(revokeInvite(params, sock));
             case _:
                 NoReply(sock);
         };
@@ -212,6 +241,94 @@ class OrganizationLive {
                             }
                     }
                 }
+        };
+    }
+
+    static function isAdminUser(user: Null<User>): Bool {
+        if (user == null) return false;
+        return user.role == "admin";
+    }
+
+    static function loadInvites(organizationId: Int): Array<InviteRowView> {
+        var invites: Array<OrganizationInvite> = Accounts.listOrganizationInvites(organizationId);
+        invites.sort((a, b) -> b.id - a.id);
+        return invites.map(invite -> {
+            var accepted = invite.acceptedAt != null;
+            return {
+                id: invite.id,
+                email: invite.email,
+                role: invite.role,
+                is_accepted: accepted,
+                status_label: accepted ? "Accepted" : "Pending"
+            };
+        });
+    }
+
+    static function createInvite(params: Term, socket: LiveSocket<OrganizationLiveAssigns>): LiveSocket<OrganizationLiveAssigns> {
+        if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
+            return LiveView.putFlash(socket, FlashType.Error, "Sign in to invite users.");
+        }
+        if (!socket.assigns.is_admin) {
+            return LiveView.putFlash(socket, FlashType.Error, "Only admins can invite users.");
+        }
+
+        var emailTerm: Term = ElixirMap.get(params, "email");
+        var roleTerm: Term = ElixirMap.get(params, "role");
+        var rawEmail: String = emailTerm != null ? cast emailTerm : "";
+        var rawRole: String = roleTerm != null ? cast roleTerm : "user";
+
+        if (StringTools.trim(rawEmail) == "") {
+            return LiveView.putFlash(socket, FlashType.Error, "Invite email is required.");
+        }
+
+        var orgId = socket.assigns.current_org_id;
+        return switch (Accounts.createOrganizationInvite(orgId, rawEmail, rawRole)) {
+            case Ok(_invite):
+                var refreshed = socket.assigns.is_admin ? loadInvites(orgId) : [];
+                var updated = socket.merge({
+                    invite_email_input: "",
+                    invite_role_input: "user",
+                    invite_rows: refreshed
+                });
+                updated = LiveView.clearFlash(updated);
+                LiveView.putFlash(updated, FlashType.Info, "Invite created.");
+            case Error(err):
+                Std.string(err);
+                LiveView.putFlash(socket, FlashType.Error, "Could not create invite.");
+        };
+    }
+
+    static function revokeInvite(params: Term, socket: LiveSocket<OrganizationLiveAssigns>): LiveSocket<OrganizationLiveAssigns> {
+        if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
+            return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage invites.");
+        }
+        if (!socket.assigns.is_admin) {
+            return LiveView.putFlash(socket, FlashType.Error, "Only admins can manage invites.");
+        }
+
+        var idTerm: Term = ElixirMap.get(params, "id");
+        var id: Int = idTerm != null ? cast idTerm : 0;
+        if (id <= 0) {
+            return LiveView.putFlash(socket, FlashType.Error, "Invite id is required.");
+        }
+
+        var invite: Null<OrganizationInvite> = Repo.get(OrganizationInvite, id);
+        if (invite == null) {
+            return LiveView.putFlash(socket, FlashType.Error, "Invite not found.");
+        }
+        if (invite.organizationId != socket.assigns.current_org_id) {
+            return LiveView.putFlash(socket, FlashType.Error, "Invite does not belong to current organization.");
+        }
+
+        return switch (Repo.delete(invite)) {
+            case Ok(_deleted):
+                var refreshed = loadInvites(socket.assigns.current_org_id);
+                var updated = socket.merge({invite_rows: refreshed});
+                updated = LiveView.clearFlash(updated);
+                LiveView.putFlash(updated, FlashType.Info, "Invite revoked.");
+            case Error(err):
+                Std.string(err);
+                LiveView.putFlash(socket, FlashType.Error, "Could not revoke invite.");
         };
     }
 
@@ -306,6 +423,64 @@ class OrganizationLive {
                                     </div>
                                 </div>
                             </div>
+
+                            <if {@is_admin}>
+                                <div class="mt-6 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                                    <div class="flex items-start justify-between gap-4">
+                                        <div>
+                                            <div class="text-lg font-semibold text-gray-900 dark:text-white">Invites</div>
+                                            <div class="text-sm text-gray-600 dark:text-gray-300">Invite users by email into this organization.</div>
+                                        </div>
+                                    </div>
+
+                                    <form phx-submit="invite_org" class="mt-4 flex flex-col sm:flex-row gap-3">
+                                        <input data-testid="invite-email"
+                                            type="email"
+                                            name="email"
+                                            value={@invite_email_input}
+                                            placeholder="user@example.com"
+                                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
+                                        <select data-testid="invite-role"
+                                            name="role"
+                                            value={@invite_role_input}
+                                            class="px-4 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                            <option value="user">User</option>
+                                            <option value="admin">Admin</option>
+                                        </select>
+                                        <button data-testid="btn-invite"
+                                            type="submit"
+                                            class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-medium rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 shadow-md">
+                                            Invite
+                                        </button>
+                                    </form>
+
+                                    <div class="mt-6">
+                                        <div class="font-semibold text-gray-900 dark:text-white mb-2">Invitations</div>
+                                        <div class="space-y-2">
+                                            <for {i in @invite_rows}>
+                                                <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                                                    <div class="min-w-0">
+                                                        <div class="font-medium text-gray-900 dark:text-white truncate">#{i.email}</div>
+                                                        <div class="text-sm text-gray-600 dark:text-gray-300 truncate">Role: #{i.role}</div>
+                                                    </div>
+                                                    <span class="shrink-0 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200">
+                                                        #{i.status_label}
+                                                    </span>
+                                                    <if {!i.is_accepted}>
+                                                        <button data-testid="btn-revoke-invite"
+                                                            type="button"
+                                                            phx-click="revoke_invite"
+                                                            phx-value-id={i.id}
+                                                            class="shrink-0 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/40">
+                                                            Revoke
+                                                        </button>
+                                                    </if>
+                                                </div>
+                                            </for>
+                                        </div>
+                                    </div>
+                                </div>
+                            </if>
                         </if>
                     </div>
                 </div>
@@ -313,4 +488,3 @@ class OrganizationLive {
         ');
     }
 }
-

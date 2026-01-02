@@ -7,15 +7,19 @@
 #
 # See: `mix haxe.compile.migrations` (repo root Mix task).
 
--lib reflaxe.elixir
--cp src_haxe
+# NOTE: CompilerInit reads `ecto_migrations_exs` during initialization to switch
+# output extension to `.exs`. Put this define before `-lib reflaxe.elixir`.
+-D ecto_migrations_exs
 
 -D app_name=TodoApp
 -D elixir_output=priv/repo/migrations
 -D reflaxe_runtime
 -D reflaxe_elixir_strict_examples
--D ecto_migrations_exs
 -D no-utf16
+
+-lib reflaxe.elixir
+-cp src_haxe
+-cp src_haxe/server
 
 -dce full
 
@@ -29,3 +33,4 @@ server.migrations.AddUserRole
 server.migrations.CreateOrganizations
 server.migrations.AddUserOrganizationId
 server.migrations.AddTodoOrganizationId
+server.migrations.CreateOrganizationInvites

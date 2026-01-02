@@ -221,6 +221,12 @@ class RepoDiscovery {
     }
 
     static function hasRelevantMetadataToken(line: String): Bool {
+        // Migration-only `.exs` build: avoid force-typing non-migration Phoenix modules.
+        // This keeps `priv/repo/migrations/` clean (Ecto loads every `.exs` there).
+        if (Context.defined("ecto_migrations_exs")) {
+            return line.indexOf("@:migration") != -1;
+        }
+
         for (token in metaTokens) {
             if (line.indexOf(token) != -1) return true;
         }
