@@ -10,7 +10,11 @@ test('create todo appears in list and counters update', async ({ page }) => {
   const beforeCount = await headings.count()
 
   // Open form deterministically
-  await page.getByTestId('btn-new-todo').click()
+  const newTodoButton = page.getByTestId('btn-new-todo')
+  await expect(newTodoButton).toHaveAttribute('phx-click', 'toggle_form')
+  await newTodoButton.click()
+  const form = page.locator('form[phx-submit="create_todo"]').first()
+  await expect(form).toBeVisible({ timeout: 15000 })
   const titleInput = page.getByTestId('input-title')
   await expect(titleInput).toBeVisible({ timeout: 15000 })
 
