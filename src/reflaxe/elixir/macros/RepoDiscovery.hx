@@ -55,6 +55,7 @@ class RepoDiscovery {
         "@:phoenixWebModule",
         "@:component",
         "@:phxHookNames",
+        "@:phxEventNames",
         "@:controller",
         "@:channel",
         "@:socket",

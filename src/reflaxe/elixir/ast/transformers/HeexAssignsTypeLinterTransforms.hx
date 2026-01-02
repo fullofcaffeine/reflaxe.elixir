@@ -125,6 +125,7 @@ class HeexAssignsTypeLinterTransforms {
     static var assignsFieldsCache: Map<String, Null<Map<String, String>>> = new Map();
     #if macro
     static var phxHookNameCache: Null<Map<String, Bool>> = null;
+    static var phxEventNameCache: Null<Map<String, Bool>> = null;
     #end
 
     // Public entry: non-contextual (throws on error)
@@ -1074,6 +1075,14 @@ class HeexAssignsTypeLinterTransforms {
         #end
     }
 
+    static function strictPhxEventTypingEnabled(): Bool {
+        #if macro
+        return Context.defined("hxx_strict_phx_events");
+        #else
+        return false;
+        #end
+    }
+
     static function isKnownPhoenixCoreComponentTag(tag: String): Bool {
         if (tag == ".live_component") return true;
         return getAllowedPhoenixCoreComponentAttributes(tag) != null;
@@ -1640,18 +1649,24 @@ class HeexAssignsTypeLinterTransforms {
 
         var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(attributeName));
         if (canonical == null) return;
+
+        // Additional validation: when a hook registry exists, validate known literal hook names.
+        if (canonical == "phx-hook") {
+            validatePhxHookName(value, ctx, pos);
+            validateStrictPhxHookValue(value, ctx, pos);
+        }
+
+        if (isPhxEventAttribute(canonical)) {
+            validatePhxEventName(canonical, value, ctx, pos);
+            validateStrictPhxEventValue(canonical, value, ctx, pos);
+        }
+
         var expected = expectedKindForAttribute(canonical);
         if (expected == null) return;
 
         var actual = inferHeexExprKind(value, fields);
         if (!attributeKindsCompatible(expected, actual)) {
             error(ctx, 'HEEx attribute type error: "' + canonical + '" expects ' + expected + ' but got ' + actual, pos);
-        }
-
-        // Additional validation: when a hook registry exists, validate known literal hook names.
-        if (canonical == "phx-hook") {
-            validatePhxHookName(value, ctx, pos);
-            validateStrictPhxHookValue(value, ctx, pos);
         }
     }
 
@@ -1724,11 +1739,65 @@ class HeexAssignsTypeLinterTransforms {
         }
     }
 
+    static function isPhxEventAttribute(canonicalAttr: String): Bool {
+        if (canonicalAttr == null) return false;
+        return switch (canonicalAttr) {
+            case "phx-click", "phx-submit", "phx-change", "phx-blur", "phx-focus",
+                 "phx-keydown", "phx-keyup",
+                 "phx-window-keydown", "phx-window-keyup":
+                true;
+            default:
+                false;
+        };
+    }
+
+    static function validatePhxEventName(canonicalAttr: String, value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        #if macro
+        var allowed = getAllowedPhxEventNames();
+        if (allowed == null) return;
+
+        if (value == null) return;
+        // Adoption-friendly: do not validate raw string literals.
+        // We skip only when we know it's a literal (`heexAttrIsDynamic == false`); some HXX interpolation
+        // paths may not populate this metadata yet, and should still be validated.
+        if (value.metadata != null && value.metadata.heexAttrIsDynamic == false) return;
+
+        var name = extractConstStringFromHeexExpr(value);
+        if (name == null) return;
+        name = name.trim();
+        if (name.length == 0) return;
+
+        if (!allowed.exists(name)) {
+            error(ctx, 'HEEx ' + canonicalAttr + ' error: unknown event "' + name + '" (not present in any @:phxEventNames registry)', pos);
+        }
+        #end
+    }
+
+    static function validateStrictPhxEventValue(canonicalAttr: String, value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (!strictPhxEventTypingEnabled()) return;
+        if (value == null) return;
+        if (value.metadata == null || value.metadata.heexAttrIsDynamic == null) return;
+
+        if (!value.metadata.heexAttrIsDynamic) {
+            error(
+                ctx,
+                'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, ' + canonicalAttr + ' must be an expression (use ' + canonicalAttr + '={EventName.Name} / HXX ' + canonicalAttr + '=$${EventName.Name})',
+                pos
+            );
+        }
+    }
+
     #if macro
     static function getAllowedPhxHookNames(): Null<Map<String, Bool>> {
         if (phxHookNameCache != null) return phxHookNameCache;
         phxHookNameCache = buildAllowedPhxHookNames();
         return phxHookNameCache;
+    }
+
+    static function getAllowedPhxEventNames(): Null<Map<String, Bool>> {
+        if (phxEventNameCache != null) return phxEventNameCache;
+        phxEventNameCache = buildAllowedPhxEventNames();
+        return phxEventNameCache;
     }
 
     static function buildAllowedPhxHookNames(): Null<Map<String, Bool>> {
@@ -1755,6 +1824,38 @@ class HeexAssignsTypeLinterTransforms {
                 case TInst(cRef, _):
                     var cls = cRef.get();
                     if (cls == null || cls.meta == null || !cls.meta.has(":phxHookNames")) continue;
+                    collectConstStringStaticsFromClass(cls, allowed);
+                default:
+            }
+        }
+
+        return allowed.keys().hasNext() ? allowed : null;
+    }
+
+    static function buildAllowedPhxEventNames(): Null<Map<String, Bool>> {
+        var allowed: Map<String, Bool> = new Map();
+
+        var discovered = RepoDiscovery.getDiscovered();
+        if (discovered == null || discovered.length == 0) {
+            RepoDiscovery.run();
+            discovered = RepoDiscovery.getDiscovered();
+        }
+
+        if (discovered == null || discovered.length == 0) return null;
+
+        for (typePath in discovered) {
+            var t: haxe.macro.Type = null;
+            try t = Context.getType(typePath) catch (_:Dynamic) t = null;
+            if (t == null) continue;
+
+            switch (TypeTools.follow(t)) {
+                case TAbstract(aRef, _):
+                    var abs = aRef.get();
+                    if (abs == null || abs.meta == null || !abs.meta.has(":phxEventNames")) continue;
+                    collectConstStringStaticsFromAbstract(abs, allowed);
+                case TInst(cRef, _):
+                    var cls = cRef.get();
+                    if (cls == null || cls.meta == null || !cls.meta.has(":phxEventNames")) continue;
                     collectConstStringStaticsFromClass(cls, allowed);
                 default:
             }
@@ -1862,6 +1963,11 @@ class HeexAssignsTypeLinterTransforms {
                 "bool";
             // Phoenix hook name
             case "phx-hook":
+                "string";
+            // Phoenix LiveView events (string name or JS expression)
+            case "phx-click", "phx-submit", "phx-change", "phx-blur", "phx-focus",
+                 "phx-keydown", "phx-keyup",
+                 "phx-window-keydown", "phx-window-keyup":
                 "string";
             default:
                 null;
