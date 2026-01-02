@@ -32,6 +32,8 @@ import reflaxe.elixir.macros.RepoDiscovery;
  *   5) Unknown / missing required component props for resolvable dot components (e.g., `<.card title="...">`)
  *   6) Unknown / missing required component slots and invalid slot entry attrs for resolvable dot components
  *      (e.g., `<:header ...>` inside `<.card>`)
+ *   7) In strict slot mode (`-D hxx_strict_slots`), enforces that `:let` is only used when the invoked
+ *      component/slot declares a typed let binding (`Slot<..., LetType>`) and the binder is a simple var.
  *
  * WHY
  * - HXX authoring must be fully type-checked like TSX. Since HEEx lives in strings until
@@ -81,6 +83,8 @@ import reflaxe.elixir.macros.RepoDiscovery;
  *   - `:let` bindings are validated for binding shape (variable/pattern)
  *   - `:let` bindings on component tags are type-checked when the component declares an
  *     `inner_block: Slot<..., LetType>` slot; field accesses on the bound var are linted.
+ *   - Under `-D hxx_strict_slots`, `:let` requires a typed let binding and patterns are rejected to keep
+ *     the type-check deterministic.
  * - Hook name validation only runs when a hook registry is present. Dynamic hook expressions (e.g. `phx-hook={@hook}`)
  *   are not validated to keep false positives low.
  */
@@ -405,7 +409,7 @@ class HeexAssignsTypeLinterTransforms {
 
     static function validateAttribute(tag: String, parentTag: Null<String>, attr: EAttribute, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool, letScopes: Array<HeexLetBindingScope>): Void {
         if (attr != null && attr.name == ":let") {
-            validateLetDirective(tag, attr.value, ctx, pos);
+            validateLetDirective(tag, parentTag, attr.value, ctx, pos);
             // NOTE: :let is a binding pattern, not an expression; do not run assigns lints on it.
             return;
         }
@@ -463,7 +467,7 @@ class HeexAssignsTypeLinterTransforms {
         return tag != null && tag.length > 0 && tag.charAt(0) == ":";
     }
 
-    static function validateLetDirective(tag: String, value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+    static function validateLetDirective(tag: String, parentTag: Null<String>, value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
         if (tag == null || tag.length == 0) return;
         if (!isHeexComponentTag(tag) && !(tag.charAt(0) == ":")) {
             error(ctx, 'HEEx directive error: ":let" is only valid on component tags and slot tags, not on <' + tag + '>', pos);
@@ -486,6 +490,29 @@ class HeexAssignsTypeLinterTransforms {
                 error(ctx, 'HEEx :let error: expected :let={var}, but got a boolean attribute', pos);
             default:
                 error(ctx, 'HEEx :let error: expected :let={var}, but got an invalid value', pos);
+        }
+
+        // Strict slot typing: if a template uses :let, require the component/slot to declare
+        // a typed let binding so the linter can validate field access on the bound variable.
+        if (strictSlotTypingEnabled()) {
+            var letDef: Null<ComponentLetBindingDefinition> = null;
+            if (isSlotTag(tag)) {
+                letDef = resolveSlotLetBindingDefinition(tag, parentTag);
+            } else if (isHeexComponentTag(tag)) {
+                letDef = resolveComponentLetBindingDefinition(tag);
+            }
+
+            if (letDef == null || letDef.props == null || !letDef.props.keys().hasNext()) {
+                error(ctx, 'HEEx :let error: <' + tag + '> does not declare a typed :let binding (add a Slot<..., LetType> or disable -D hxx_strict_slots)', pos);
+            } else {
+                var isSimpleVar = switch (value.def) {
+                    case EVar(_): true;
+                    default: false;
+                };
+                if (!isSimpleVar) {
+                    error(ctx, 'HEEx :let error: <' + tag + '> requires :let={var} under -D hxx_strict_slots (binding patterns are not supported)', pos);
+                }
+            }
         }
     }
 
@@ -1026,6 +1053,14 @@ class HeexAssignsTypeLinterTransforms {
     static function strictComponentResolutionEnabled(): Bool {
         #if macro
         return Context.defined("hxx_strict_components");
+        #else
+        return false;
+        #end
+    }
+
+    static function strictSlotTypingEnabled(): Bool {
+        #if macro
+        return Context.defined("hxx_strict_slots");
         #else
         return false;
         #end

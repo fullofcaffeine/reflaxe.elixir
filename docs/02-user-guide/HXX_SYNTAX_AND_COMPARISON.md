@@ -84,6 +84,19 @@ In strict mode:
 
 Phoenix core tags like `<.link>`, `<.form>`, `<.inputs_for>`, and `<.live_component>` remain allowed even without a Haxe definition.
 
+#### Opt-in: strict slot typing for `:let`
+
+By default, `:let` is allowed even if the component/slot does not declare what type is being bound (in that case the linter cannot type-check field access on the bound variable).
+If you want TSX-level strictness for `:let`, enable:
+
+```bash
+-D hxx_strict_slots
+```
+
+In strict mode:
+- Using `:let` requires a typed let binding (e.g. `Slot<EntryType, LetType>` or component `inner_block: Slot<..., LetType>`).
+- `:let` must be a simple variable binding (`:let={row}`); binding patterns like `:let={{row, idx}}` are rejected.
+
 ### Control Flow
 - Block conditionals in content use HXX control tags (normalized to HEEx):
 - `<if cond> ... <else> ... </if>` → HEEx `if/else` block
