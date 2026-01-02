@@ -3,8 +3,8 @@ package server.live;
 import HXX;
 import contexts.Accounts;
 import contexts.AuditLogs;
-import contexts.AuditLogs.AuditAction;
-import contexts.AuditLogs.AuditEntity;
+import contexts.AuditLogTypes.AuditAction;
+import contexts.AuditLogTypes.AuditEntity;
 import ecto.Changeset;
 import elixir.ElixirMap;
 import elixir.Kernel;
@@ -370,7 +370,7 @@ class OrganizationLive {
                     organizationId: orgId,
                     actorId: currentUser.id,
                     action: AuditAction.UserRoleUpdated,
-                    entity: AuditEntity.User,
+                    entity: AuditEntity.UserEntity,
                     entityId: updatedUser.id,
                     metadata: auditMetadata
                 })) {
@@ -428,7 +428,7 @@ class OrganizationLive {
                     organizationId: orgId,
                     actorId: socket.assigns.current_user.id,
                     action: AuditAction.OrganizationInviteCreated,
-                    entity: AuditEntity.OrganizationInvite,
+                    entity: AuditEntity.OrganizationInviteEntity,
                     entityId: invite.id,
                     metadata: auditMetadata
                 })) {

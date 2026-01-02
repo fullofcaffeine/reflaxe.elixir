@@ -165,6 +165,7 @@ class AdminLive {
                                     <span aria-hidden="true">🌓</span>
                                     <span data-theme-label class="text-xs font-medium">Theme</span>
                                 </button>
+                                <a data-testid="admin-audit-link" href="/admin/audit" class="text-blue-700 hover:underline">Audit log</a>
                                 <a href="/todos" class="text-blue-700 hover:underline">Back to todos</a>
                                 <if {@signed_in}>
                                     <form action="/auth/logout" method="post" class="inline">
