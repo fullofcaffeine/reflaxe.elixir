@@ -135,6 +135,9 @@ When at least one `@:phxHookNames` registry exists in the project, the compiler 
 usages (string literals and simple const expressions) and reports unknown names. Dynamic hook expressions
 (e.g. `phx-hook={@hook}`) are intentionally not validated to keep false positives low.
 
+Opt-in strict mode:
+- `-D hxx_strict_phx_hook` rejects literal `phx-hook="Name"` and requires the expression form (recommended: `phx-hook=${HookName.Name}` in HXX).
+
 ## Anti-Pattern: `__elixir__()` in Application Code
 
 Avoid `untyped __elixir__(...)` in application modules. If you need a missing Phoenix helper:

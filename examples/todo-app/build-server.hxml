@@ -69,6 +69,9 @@
 # Enable deterministic render string → ~H conversion
 -D hxx_string_to_sigil
 
+# Opt-in: enforce typed phx-hook usage in templates (reject literal phx-hook="Name")
+-D hxx_strict_phx_hook
+
 # Silence compiler debug traces for QA speed and signal clarity
 # Provide both hyphenated and underscored defines for preprocessor gating compatibility
 -D no-traces
