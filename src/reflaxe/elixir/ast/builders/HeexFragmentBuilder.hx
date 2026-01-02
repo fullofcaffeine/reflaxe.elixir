@@ -180,6 +180,7 @@ private class Parser {
                 var q = peek();
                 if (q == '"' || q == '\'') {
                     valueAst = makeAST(EString(parseQuotedString()));
+                    valueAst.metadata.heexAttrIsDynamic = false;
                 } else if (q == '{') {
                     advance(1); // consume {
                     var exprStart = i;
@@ -190,15 +191,18 @@ private class Parser {
                     }
                     var expr = s.substr(exprStart, (i - 1) - exprStart);
                     valueAst = parseAttrExpr(expr);
+                    valueAst.metadata.heexAttrIsDynamic = true;
                 } else {
                     // Bareword value until ws or tag end
                     var vs = i;
                     while (!eof()) { var ch2 = peek(); if (isWs(ch2) || ch2 == '>' || ch2 == '/') break; advance(1); }
                     valueAst = makeAST(EString(s.substr(vs, i - vs)));
+                    valueAst.metadata.heexAttrIsDynamic = false;
                 }
             } else {
                 // Boolean attribute
                 valueAst = makeAST(EBoolean(true));
+                valueAst.metadata.heexAttrIsDynamic = false;
             }
             attrs.push({name: name, value: valueAst});
         }
