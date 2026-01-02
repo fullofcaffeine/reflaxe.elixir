@@ -1,19 +1,41 @@
 import {Register} from "../genes/Register.js"
+import {Theme} from "./utils/Theme.js"
+import {ThemeToggleHook} from "./hooks/ThemeToggleHook.js"
+import {PingHook} from "./hooks/PingHook.js"
+import {CopyToClipboardHook} from "./hooks/CopyToClipboardHook.js"
+import {AutoFocusHook} from "./hooks/AutoFocusHook.js"
+
+const $global = Register.$global
 
 /**
 * Minimal, typed Phoenix LiveView hook registry for bootstrapping interactivity.
-* Avoids Dynamic on public surfaces per No‑Dynamic policy; uses inline JS only
-* at the boundary to call into the LiveView hook context (this.*).
+* Avoids raw JS strings; uses typed Haxe that compiles via Genes.
+* Only uses dynamic interop at the Phoenix Hook boundary (`this` context).
 */
 export const Boot = Register.global("$hxClasses")["client.Boot"] = 
 class Boot {
+	static buildHooks() {
+		let hooks = {};
+		hooks["AutoFocus"] = {"mounted": function () {
+			AutoFocusHook.mounted(this);
+		}};
+		hooks["Ping"] = {"mounted": function () {
+			PingHook.mounted(this);
+		}};
+		hooks["CopyToClipboard"] = {"mounted": function () {
+			CopyToClipboardHook.mounted(this);
+		}};
+		hooks["ThemeToggle"] = {"mounted": function () {
+			ThemeToggleHook.mounted(this);
+		}, "destroyed": function () {
+			ThemeToggleHook.destroyed(this);
+		}};
+		return hooks;
+	}
 	static main() {
-		let hooks = {"AutoFocus": {"mounted": function () {
-			this.el && this.el.focus && this.el.focus();
-		}}, "Ping": {"mounted": function () {
-			try { this.pushEvent && this.pushEvent('ping', {}) } catch (_) {} ;
-		}}};
-		window.Hooks = window.Hooks || hooks;
+		Theme.applyStoredOrDefault();
+		let hooks = Boot.buildHooks();
+		window.Hooks = Object.assign(window.Hooks || {}, hooks);
 	}
 	static get __name__() {
 		return "client.Boot"

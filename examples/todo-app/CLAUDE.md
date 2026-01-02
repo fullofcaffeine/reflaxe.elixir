@@ -257,7 +257,7 @@ If you find `${@field}` patterns in the codebase:
 
 ## 🧰 Build & Run (Mix Integration)
 
-We compile the server (Haxe→Elixir) via a Mix compiler and the client (Haxe→JS) via the Phoenix assets pipeline and watchers.
+We compile the server (Haxe→Elixir) via a Mix compiler and the client (Haxe→JS via Genes) via the Phoenix assets pipeline and watchers.
 
 - Server compiler: `Mix.Tasks.Compile.Haxe` (lib/mix/tasks/compile.haxe.ex)
   - Enabled in mix.exs: `compilers: [:haxe] ++ Mix.compilers()`
@@ -288,8 +288,8 @@ We intentionally keep the LiveView bootstrap as a tiny, hand‑written JS entry 
   - Pull Hooks from `window.Hooks` (populated by the Haxe bundle) and connect.
   - Expose `window.liveSocket` for debugging.
 - Haxe integration:
-  - Haxe client compiles to `assets/js/app.js` and publishes `window.Hooks`.
-  - `phoenix_app.js` imports `./app.js` to register Hooks.
+  - Haxe client compiles via Genes to `assets/js/hx_app.js` (entry) plus modules under `assets/js/client/**` and `assets/js/genes/**`, and publishes `window.Hooks`.
+  - `assets/js/app.js` imports `./hx_app.js`; `phoenix_app.js` imports `./app.js` to register Hooks.
 - Rationale (1.0 scope):
   - Matches Phoenix’s idiomatic setup and minimizes friction on upgrades.
   - Keeps the bootstrap minimal while concentrating typed logic in Haxe.

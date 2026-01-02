@@ -1,5 +1,7 @@
 import {Register} from "./genes/Register.js"
 
+const $global = Register.$global
+
 /**
 The Std class provides standard methods for manipulating basic types.
 */

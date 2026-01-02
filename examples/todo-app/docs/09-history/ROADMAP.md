@@ -1,71 +1,23 @@
 # Todo App Development Roadmap
 
-## Current: Standard Haxe JS Compilation
+## Current: Genes ES6 Module Compilation
 
-We're starting with Haxe's standard JavaScript target for solid foundation and compatibility.
+As of **2026-01-02**, the todo-app client build uses **Genes** to generate split ES6 modules from Haxe.
 
-**Current Benefits:**
-- ✅ Stable and mature compilation target
-- ✅ Good TypeScript/ES6 output with `-D js-es=6`
-- ✅ Dead code elimination with `-D dce=full`
-- ✅ Source map support for debugging
-- ✅ Compatible with esbuild and Phoenix asset pipeline
+**Why this is the canonical setup**
+- ✅ Split, readable ES module output (better than a single generated blob)
+- ✅ Compatible with esbuild and Phoenix’s asset pipeline
+- ✅ Keeps LiveView Hooks 100% Haxe-authored while preserving Phoenix’s JS bootstrap
 
-## Future: Genes Compiler Integration
+**How it’s wired**
+- `build-client.hxml` enables Genes via `--macro genes.Generator.use()`.
+- Output entry module: `assets/js/hx_app.js` (imports `client.Boot` and calls `Boot.main()`).
+- Supporting modules are emitted under `assets/js/client/**` and `assets/js/genes/**`.
 
-**Why Genes would be beneficial:**
+## Historical: Standard Haxe JS Compilation
 
-### 1. **Modern JavaScript Output**
-- **Cleaner ES6+ syntax**: More readable generated code
-- **Better async/await support**: Native Promise handling vs Haxe's callback approach
-- **Modern module system**: Better ES6 module integration
+Before Genes, the todo-app used Haxe’s standard JavaScript target (`-js`) to generate a single output file. This was simple and stable, but produced less idiomatic JS and made client-side output harder to navigate.
 
-### 2. **Performance Benefits**
-- **Smaller bundle sizes**: More efficient code generation
-- **Better tree-shaking**: Improved dead code elimination
-- **Optimized runtime**: Reduced overhead from Haxe runtime
+## Notes / Options
 
-### 3. **Developer Experience**
-- **Better source maps**: More accurate debugging experience
-- **Faster compilation**: Potential compilation speed improvements
-- **Modern tooling integration**: Better compatibility with modern JS tools
-
-### 4. **Phoenix/LiveView Integration**
-- **Cleaner hook exports**: More native JavaScript hook patterns
-- **Better esbuild compatibility**: Modern module loading
-- **Reduced runtime dependencies**: Lighter Phoenix app bundles
-
-### 5. **Type Safety Maintained**
-- **Same Haxe type system**: Full type safety preserved
-- **Shared types**: Client/server type sharing still works
-- **Better error messages**: Potentially improved error reporting
-
-## Implementation Plan for Genes
-
-### Phase 1: Evaluation (Future)
-- [ ] Set up Genes compiler in parallel build
-- [ ] Compare bundle sizes (Haxe vs Genes output)
-- [ ] Benchmark performance differences
-- [ ] Test LiveView hook compatibility
-
-### Phase 2: Migration (Future)
-- [ ] Migrate client code to Genes compilation
-- [ ] Update build scripts and esbuild configuration
-- [ ] Verify all tests pass with Genes output
-- [ ] Update documentation with new patterns
-
-### Phase 3: Optimization (Future)
-- [ ] Leverage Genes-specific optimizations
-- [ ] Optimize bundle splitting and lazy loading
-- [ ] Enhance development workflow
-
-## Current Focus
-
-For now, we're focusing on:
-1. ✅ Establishing solid Haxe→JS compilation pipeline
-2. ✅ Creating type-safe LiveView hooks
-3. ✅ Demonstrating pure-Haxe architecture benefits
-4. ⏳ Comprehensive testing infrastructure
-5. ⏳ Beautiful UI with Tailwind integration
-
-The Genes compiler upgrade will be pursued once we have a solid foundation demonstrating the pure-Haxe approach for Phoenix LiveView development.
+- To compare against the standard Haxe JS generator, you can compile with `-D genes.disable` (see the Genes docs).
