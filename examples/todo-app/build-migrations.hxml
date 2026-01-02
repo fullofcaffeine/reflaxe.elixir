@@ -34,3 +34,4 @@ server.migrations.CreateOrganizations
 server.migrations.AddUserOrganizationId
 server.migrations.AddTodoOrganizationId
 server.migrations.CreateOrganizationInvites
+server.migrations.CreateAuditLogs
