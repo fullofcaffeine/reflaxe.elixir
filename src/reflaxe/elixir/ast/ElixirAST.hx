@@ -886,7 +886,13 @@ typedef ElixirMetadata = {
     // HOW: ElixirASTBuilder parses ESigil("H", ...) content using HeexFragmentBuilder and
     //      attaches the resulting top-level nodes here. Printer ignores this; transformers/linters
     //      may prefer it over heexFragments when present.
-    ?heexAST: Array<ElixirAST>
+    ?heexAST: Array<ElixirAST>,
+
+    // HEEx attribute value form (analysis only)
+    // WHAT: Marks whether an attribute value originated from `{expr}` (dynamic) vs `"literal"` (static).
+    // WHY: Enables opt-in strict validation (e.g., requiring typed registries for `phx-hook` values).
+    // HOW: Set by HeexFragmentBuilder while parsing ~H content; ignored by printer/emitter.
+    ?heexAttrIsDynamic: Bool
 }
 
 /** Minimal HEEx fragment metadata for analysis (not used for emission) */

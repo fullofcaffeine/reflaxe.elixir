@@ -97,6 +97,18 @@ In strict mode:
 - Using `:let` requires a typed let binding (e.g. `Slot<EntryType, LetType>` or component `inner_block: Slot<..., LetType>`).
 - `:let` must be a simple variable binding (`:let={row}`); binding patterns like `:let={{row, idx}}` are rejected.
 
+#### Opt-in: strict `phx-hook` typing
+
+If you want to enforce typed `phx-hook` usage (to prevent drift with your hook registry), enable:
+
+```bash
+-D hxx_strict_phx_hook
+```
+
+In strict mode:
+- `phx-hook="Name"` (literal) is rejected.
+- Use an expression form instead (recommended: `phx-hook=${HookName.Name}` in HXX).
+
 ### Control Flow
 - Block conditionals in content use HXX control tags (normalized to HEEx):
 - `<if cond> ... <else> ... </if>` → HEEx `if/else` block

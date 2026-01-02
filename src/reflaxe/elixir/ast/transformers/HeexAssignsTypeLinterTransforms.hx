@@ -1066,6 +1066,14 @@ class HeexAssignsTypeLinterTransforms {
         #end
     }
 
+    static function strictPhxHookTypingEnabled(): Bool {
+        #if macro
+        return Context.defined("hxx_strict_phx_hook");
+        #else
+        return false;
+        #end
+    }
+
     static function isKnownPhoenixCoreComponentTag(tag: String): Bool {
         if (tag == ".live_component") return true;
         return getAllowedPhoenixCoreComponentAttributes(tag) != null;
@@ -1643,6 +1651,7 @@ class HeexAssignsTypeLinterTransforms {
         // Additional validation: when a hook registry exists, validate known literal hook names.
         if (canonical == "phx-hook") {
             validatePhxHookName(value, ctx, pos);
+            validateStrictPhxHookValue(value, ctx, pos);
         }
     }
 
@@ -1699,6 +1708,20 @@ class HeexAssignsTypeLinterTransforms {
             error(ctx, 'HEEx phx-hook error: unknown hook "' + name + '" (not present in any @:phxHookNames registry)', pos);
         }
         #end
+    }
+
+    static function validateStrictPhxHookValue(value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (!strictPhxHookTypingEnabled()) return;
+        if (value == null) return;
+        if (value.metadata == null || value.metadata.heexAttrIsDynamic == null) return;
+
+        if (!value.metadata.heexAttrIsDynamic) {
+            error(
+                ctx,
+                'HEEx phx-hook error: under -D hxx_strict_phx_hook, phx-hook must be an expression (use phx-hook={HookName.Name} / HXX phx-hook=$${HookName.Name})',
+                pos
+            );
+        }
     }
 
     #if macro
