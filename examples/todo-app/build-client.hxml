@@ -4,8 +4,14 @@
 # Source directories (client only)
 -cp src_haxe/client
 -cp src_haxe
-# Enable Genes ES6 generator (uses haxe_libraries/genes.hxml)
+# Enable Genes ES6 module generator (uses haxe_libraries/genes.hxml)
 -lib genes
+
+# NOTE: Our vendored `-lib genes` does not automatically apply genes/extraParams.hxml,
+# so we explicitly enable the generator here.
+-D js-es=6
+--macro genes.Generator.use()
+--macro addMetadata('@:genes.disableNativeAccessors', 'haxe.Exception')
 
 # JavaScript target output (separate from Phoenix bootstrap to avoid overwriting LiveView init)
 -js assets/js/hx_app.js

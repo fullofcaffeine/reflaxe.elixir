@@ -1,12 +1,8 @@
 var TodoApp = (() => {
-  var __create = Object.create;
   var __defProp = Object.defineProperty;
   var __defProps = Object.defineProperties;
-  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
   var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
-  var __getOwnPropNames = Object.getOwnPropertyNames;
   var __getOwnPropSymbols = Object.getOwnPropertySymbols;
-  var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __propIsEnum = Object.prototype.propertyIsEnumerable;
   var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
@@ -34,325 +30,6 @@ var TodoApp = (() => {
       }
     return target;
   };
-  var __commonJS = (cb, mod) => function __require() {
-    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
-  };
-  var __copyProps = (to, from, except, desc) => {
-    if (from && typeof from === "object" || typeof from === "function") {
-      for (let key of __getOwnPropNames(from))
-        if (!__hasOwnProp.call(to, key) && key !== except)
-          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-    }
-    return to;
-  };
-  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-    // If the importer is in node compatibility mode or this is not an ESM
-    // file that has been converted to a CommonJS file using a Babel-
-    // compatible transform (i.e. "__esModule" has not been set), then set
-    // "default" to the CommonJS "module.exports" for node compatibility.
-    isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-    mod
-  ));
-
-  // js/hx_app.js
-  var require_hx_app = __commonJS({
-    "js/hx_app.js"(exports) {
-      (function($global) {
-        "use strict";
-        var Reflect2 = function() {
-        };
-        Reflect2.field = function(o, field) {
-          try {
-            return o[field];
-          } catch (_g) {
-            return null;
-          }
-        };
-        Reflect2.deleteField = function(o, field) {
-          if (!Object.prototype.hasOwnProperty.call(o, field)) {
-            return false;
-          }
-          delete o[field];
-          return true;
-        };
-        var client_Boot = function() {
-        };
-        client_Boot.buildHooks = function() {
-          var hooks2 = {};
-          hooks2["AutoFocus"] = { mounted: function() {
-            client_hooks_AutoFocusHook.mounted(this);
-          } };
-          hooks2["Ping"] = { mounted: function() {
-            client_hooks_PingHook.mounted(this);
-          } };
-          hooks2["CopyToClipboard"] = { mounted: function() {
-            client_hooks_CopyToClipboardHook.mounted(this);
-          } };
-          hooks2["ThemeToggle"] = { mounted: function() {
-            client_hooks_ThemeToggleHook.mounted(this);
-          }, destroyed: function() {
-            client_hooks_ThemeToggleHook.destroyed(this);
-          } };
-          return hooks2;
-        };
-        client_Boot.main = function() {
-          client_utils_Theme.applyStoredOrDefault();
-          var hooks2 = client_Boot.buildHooks();
-          window.Hooks = Object.assign(window.Hooks || {}, hooks2);
-        };
-        var client_hooks_AutoFocusHook = function() {
-        };
-        client_hooks_AutoFocusHook.mounted = function(hook) {
-          try {
-            hook.el.focus();
-          } catch (_g) {
-          }
-        };
-        var client_hooks_CopyToClipboardHook = function() {
-        };
-        client_hooks_CopyToClipboardHook.mounted = function(hook) {
-          var el = hook.el;
-          el.addEventListener("click", function(_) {
-            var text = el.getAttribute("data-copy-text");
-            if (text == null || text == "") {
-              return;
-            }
-            client_hooks_CopyToClipboardHook.copyText(text, function(_success) {
-              var eventName = el.getAttribute("data-copied-event");
-              if (eventName == null || eventName == "") {
-                eventName = "clipboard_copied";
-              }
-              var message = el.getAttribute("data-copied-message");
-              if (message == null || message == "") {
-                message = "Copied.";
-              }
-              try {
-                if (hook.pushEvent != null) {
-                  hook.pushEvent(eventName, { message });
-                }
-              } catch (_g) {
-              }
-              el.classList.add("copied");
-              window.setTimeout(function() {
-                el.classList.remove("copied");
-              }, 800);
-            });
-          });
-        };
-        client_hooks_CopyToClipboardHook.copyText = function(text, done) {
-          var clipboard = $global.navigator.clipboard;
-          if (clipboard != null && Object.prototype.hasOwnProperty.call(clipboard, "writeText")) {
-            try {
-              var promise = clipboard.writeText(text);
-              promise.then(function(_) {
-                done(true);
-                return null;
-              }).catch(function(_) {
-                client_hooks_CopyToClipboardHook.fallbackCopy(text, done);
-                return null;
-              });
-              return;
-            } catch (_g) {
-            }
-          }
-          client_hooks_CopyToClipboardHook.fallbackCopy(text, done);
-        };
-        client_hooks_CopyToClipboardHook.fallbackCopy = function(text, done) {
-          var tmp = window.document.createElement("textarea");
-          tmp.value = text;
-          tmp.setAttribute("readonly", "");
-          tmp.style.position = "absolute";
-          tmp.style.left = "-9999px";
-          window.document.body.appendChild(tmp);
-          tmp.select();
-          var ok = false;
-          try {
-            ok = window.document.execCommand("copy");
-          } catch (_g) {
-          }
-          try {
-            tmp.remove();
-          } catch (_g) {
-            if (tmp.parentNode != null) {
-              tmp.parentNode.removeChild(tmp);
-            }
-          }
-          done(ok);
-        };
-        var client_hooks_PingHook = function() {
-        };
-        client_hooks_PingHook.mounted = function(hook) {
-          try {
-            if (hook.pushEvent != null) {
-              hook.pushEvent("ping", {});
-            }
-          } catch (_g) {
-          }
-        };
-        var client_hooks_ThemeToggleHook = function() {
-        };
-        client_hooks_ThemeToggleHook.labelFor = function(preference) {
-          switch (preference) {
-            case "dark":
-              return "Dark";
-            case "light":
-              return "Light";
-            case "system":
-              return "System";
-          }
-        };
-        client_hooks_ThemeToggleHook.updateLabel = function(root, preference) {
-          root.setAttribute("data-theme-mode", preference);
-          var label = root.querySelector("[data-theme-label]");
-          if (label != null) {
-            label.textContent = client_hooks_ThemeToggleHook.labelFor(preference);
-          }
-        };
-        client_hooks_ThemeToggleHook.mounted = function(ctx) {
-          client_hooks_ThemeToggleHook.unbindClick(ctx);
-          var preference = client_utils_Theme.applyStoredOrDefault();
-          client_hooks_ThemeToggleHook.updateLabel(ctx.el, preference);
-          var handler = function(_event) {
-            var nextPreference = client_utils_Theme.cycle(client_utils_Theme.getStoredOrDefault());
-            client_utils_Theme.store(nextPreference);
-            client_utils_Theme.apply(nextPreference);
-            client_hooks_ThemeToggleHook.updateLabel(ctx.el, nextPreference);
-          };
-          ctx.el["__todoappThemeToggleOnClick"] = handler;
-          ctx.el.addEventListener("click", handler);
-        };
-        client_hooks_ThemeToggleHook.destroyed = function(ctx) {
-          client_hooks_ThemeToggleHook.unbindClick(ctx);
-        };
-        client_hooks_ThemeToggleHook.unbindClick = function(ctx) {
-          var elementDynamic = ctx.el;
-          if (!Object.prototype.hasOwnProperty.call(elementDynamic, "__todoappThemeToggleOnClick")) {
-            return;
-          }
-          var existingHandler = Reflect2.field(elementDynamic, "__todoappThemeToggleOnClick");
-          if (existingHandler != null) {
-            ctx.el.removeEventListener("click", existingHandler);
-          }
-          Reflect2.deleteField(elementDynamic, "__todoappThemeToggleOnClick");
-        };
-        var client_utils_Theme = function() {
-        };
-        client_utils_Theme.getMediaQuery = function() {
-          if (window != null) {
-            return window.matchMedia("(prefers-color-scheme: dark)");
-          } else {
-            return null;
-          }
-        };
-        client_utils_Theme.prefersDark = function() {
-          var media = client_utils_Theme.getMediaQuery();
-          if (media != null) {
-            return media.matches;
-          } else {
-            return false;
-          }
-        };
-        client_utils_Theme.getStored = function() {
-          try {
-            var storage = window != null ? window.localStorage : null;
-            if (storage == null) {
-              return null;
-            }
-            return client_utils_ThemePreference.parse(storage.getItem("todo_app_theme"));
-          } catch (_g) {
-            return null;
-          }
-        };
-        client_utils_Theme.getStoredOrDefault = function() {
-          var tmp = client_utils_Theme.getStored();
-          if (tmp != null) {
-            return tmp;
-          } else {
-            return "system";
-          }
-        };
-        client_utils_Theme.store = function(preference) {
-          try {
-            var storage = window != null ? window.localStorage : null;
-            if (storage == null) {
-              return;
-            }
-            storage.setItem("todo_app_theme", preference);
-          } catch (_g) {
-          }
-        };
-        client_utils_Theme.apply = function(preference) {
-          var root = window.document != null ? window.document.documentElement : null;
-          if (root == null) {
-            return;
-          }
-          var dark;
-          switch (preference) {
-            case "dark":
-              dark = true;
-              break;
-            case "light":
-              dark = false;
-              break;
-            case "system":
-              dark = client_utils_Theme.prefersDark();
-              break;
-          }
-          if (dark) {
-            root.classList.add("dark");
-          } else {
-            root.classList.remove("dark");
-          }
-          root.setAttribute("data-theme", preference);
-        };
-        client_utils_Theme.applyStoredOrDefault = function() {
-          var preference = client_utils_Theme.getStoredOrDefault();
-          client_utils_Theme.apply(preference);
-          return preference;
-        };
-        client_utils_Theme.cycle = function(preference) {
-          switch (preference) {
-            case "dark":
-              return "system";
-            case "light":
-              return "dark";
-            case "system":
-              return "light";
-          }
-        };
-        var client_utils_ThemePreference = {};
-        client_utils_ThemePreference.parse = function(value) {
-          if (value == null) {
-            return null;
-          } else {
-            switch (value) {
-              case "dark":
-                return "dark";
-              case "light":
-                return "light";
-              case "system":
-                return "system";
-              default:
-                return null;
-            }
-          }
-        };
-        var haxe_iterators_ArrayIterator = function(array) {
-          this.current = 0;
-          this.array = array;
-        };
-        haxe_iterators_ArrayIterator.prototype = {
-          hasNext: function() {
-            return this.current < this.array.length;
-          },
-          next: function() {
-            return this.array[this.current++];
-          }
-        };
-        client_Boot.main();
-      })(typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : exports);
-    }
-  });
 
   // node_modules/phoenix_html/priv/static/phoenix_html.js
   (function() {
@@ -6695,8 +6372,573 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     }
   };
 
-  // js/app.js
-  var import_hx_app = __toESM(require_hx_app());
+  // js/genes/Register.js
+  var Register = class _Register {
+    static global(name) {
+      let existing = _Register.globals[name];
+      if (existing != null) {
+        return existing;
+      }
+      ;
+      let created = new Object();
+      _Register.globals[name] = created;
+      return created;
+    }
+    static createStatic(obj, name, get) {
+      let value = null;
+      Object.defineProperty(obj, name, { "enumerable": true, "get": function() {
+        if (get != null) {
+          value = get();
+          get = null;
+        }
+        ;
+        return value;
+      }, "set": function(v) {
+        if (get != null) {
+          value = get();
+          get = null;
+        }
+        ;
+        value = v;
+      } });
+    }
+    static iterator(a) {
+      let isArray = Array.isArray(a);
+      if (!isArray) {
+        return typeof a.iterator === "function" ? a.iterator.bind(a) : a.iterator;
+      } else {
+        let a1 = a;
+        return function() {
+          return _Register.mkIter(a1);
+        };
+      }
+      ;
+    }
+    static getIterator(a) {
+      let isArray = Array.isArray(a);
+      if (!isArray) {
+        return a.iterator();
+      } else {
+        return _Register.mkIter(a);
+      }
+      ;
+    }
+    static mkIter(a) {
+      return new ArrayIterator(a);
+    }
+    static extend(superClass) {
+      function res() {
+        this[_Register.new].apply(this, arguments);
+      }
+      Object.setPrototypeOf(res.prototype, superClass.prototype);
+      return res;
+    }
+    static inherits(resolve, defer) {
+      if (defer == null) {
+        defer = false;
+      }
+      ;
+      function res() {
+        if (defer && resolve && res[_Register.init])
+          res[_Register.init]();
+        this[_Register.new].apply(this, arguments);
+      }
+      if (!defer) {
+        if (resolve && resolve[_Register.init]) {
+          defer = true;
+          res[_Register.init] = () => {
+            if (resolve[_Register.init])
+              resolve[_Register.init]();
+            Object.setPrototypeOf(res.prototype, resolve.prototype);
+            res[_Register.init] = void 0;
+          };
+        } else if (resolve) {
+          Object.setPrototypeOf(res.prototype, resolve.prototype);
+        }
+      } else {
+        res[_Register.init] = () => {
+          const superClass = resolve();
+          if (superClass[_Register.init])
+            superClass[_Register.init]();
+          Object.setPrototypeOf(res.prototype, superClass.prototype);
+          res[_Register.init] = void 0;
+        };
+      }
+      return res;
+    }
+    static bind(o, m) {
+      if (m == null) {
+        return null;
+      }
+      ;
+      let id = m.__id__;
+      if (id == null) {
+        id = _Register.fid++;
+        m.__id__ = id;
+      }
+      ;
+      let closures = o.hx__closures__;
+      if (closures == null) {
+        closures = {};
+        o.hx__closures__ = closures;
+      }
+      ;
+      let key = id == null ? "null" : "" + id;
+      let existing = closures[key];
+      if (existing != null) {
+        return existing;
+      }
+      ;
+      let bound = m.bind(o);
+      closures[key] = bound;
+      return bound;
+    }
+    static get __name__() {
+      return "genes.Register";
+    }
+    get __class__() {
+      return _Register;
+    }
+  };
+  Register.$global = typeof window != "undefined" ? window : typeof global != "undefined" ? global : typeof self != "undefined" ? self : void 0;
+  Register.globals = {};
+  Register["new"] = Symbol();
+  Register.init = Symbol();
+  Register.fid = 0;
+  var ArrayIterator = Register.global("$hxClasses")["genes._Register.ArrayIterator"] = class ArrayIterator2 extends Register.inherits() {
+    [Register.new](array) {
+      this.current = 0;
+      this.array = array;
+    }
+    hasNext() {
+      return this.current < this.array.length;
+    }
+    next() {
+      return this.array[this.current++];
+    }
+    static get __name__() {
+      return "genes._Register.ArrayIterator";
+    }
+    get __class__() {
+      return ArrayIterator2;
+    }
+  };
+  ArrayIterator.prototype.array = null;
+  ArrayIterator.prototype.current = null;
+
+  // js/client/utils/ThemePreference.js
+  var $global = Register.$global;
+  var ThemePreference = Register.global("$hxClasses")["client.utils._ThemePreference.ThemePreference"] = class ThemePreference2 {
+    static parse(value) {
+      if (value == null) {
+        return null;
+      } else {
+        switch (value) {
+          case "dark":
+            return "dark";
+            break;
+          case "light":
+            return "light";
+            break;
+          case "system":
+            return "system";
+            break;
+          default:
+            return null;
+        }
+        ;
+      }
+      ;
+    }
+    static get __name__() {
+      return "client.utils._ThemePreference.ThemePreference_Impl_";
+    }
+    get __class__() {
+      return ThemePreference2;
+    }
+  };
+
+  // js/client/utils/Theme.js
+  var $global2 = Register.$global;
+  var Theme = Register.global("$hxClasses")["client.utils.Theme"] = class Theme2 {
+    static getMediaQuery() {
+      if (window != null) {
+        return window.matchMedia("(prefers-color-scheme: dark)");
+      } else {
+        return null;
+      }
+      ;
+    }
+    static prefersDark() {
+      let media = Theme2.getMediaQuery();
+      if (media != null) {
+        return media.matches;
+      } else {
+        return false;
+      }
+      ;
+    }
+    static getStored() {
+      try {
+        let storage = window != null ? window.localStorage : null;
+        if (storage == null) {
+          return null;
+        }
+        ;
+        return ThemePreference.parse(storage.getItem("todo_app_theme"));
+      } catch (_g) {
+        return null;
+      }
+      ;
+    }
+    static getStoredOrDefault() {
+      let tmp = Theme2.getStored();
+      if (tmp != null) {
+        return tmp;
+      } else {
+        return "system";
+      }
+      ;
+    }
+    static store(preference) {
+      try {
+        let storage = window != null ? window.localStorage : null;
+        if (storage == null) {
+          return;
+        }
+        ;
+        storage.setItem("todo_app_theme", preference);
+      } catch (_g) {
+      }
+      ;
+    }
+    static apply(preference) {
+      let root = window.document != null ? window.document.documentElement : null;
+      if (root == null) {
+        return;
+      }
+      ;
+      let dark;
+      switch (preference) {
+        case "dark":
+          dark = true;
+          break;
+        case "light":
+          dark = false;
+          break;
+        case "system":
+          dark = Theme2.prefersDark();
+          break;
+      }
+      ;
+      if (dark) {
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+      }
+      ;
+      root.setAttribute("data-theme", preference);
+    }
+    static applyStoredOrDefault() {
+      let preference = Theme2.getStoredOrDefault();
+      Theme2.apply(preference);
+      return preference;
+    }
+    static cycle(preference) {
+      switch (preference) {
+        case "dark":
+          return "system";
+          break;
+        case "light":
+          return "dark";
+          break;
+        case "system":
+          return "light";
+          break;
+      }
+      ;
+    }
+    static get __name__() {
+      return "client.utils.Theme";
+    }
+    get __class__() {
+      return Theme2;
+    }
+  };
+
+  // js/Reflect.js
+  var $global3 = Register.$global;
+  var Reflect2 = Register.global("$hxClasses")["Reflect"] = class Reflect3 {
+    /**
+    Returns the value of the field named `field` on object `o`.
+    
+    If `o` is not an object or has no field named `field`, the result is
+    null.
+    
+    If the field is defined as a property, its accessors are ignored. Refer
+    to `Reflect.getProperty` for a function supporting property accessors.
+    
+    If `field` is null, the result is unspecified.
+    */
+    static field(o, field) {
+      try {
+        return o[field];
+      } catch (_g) {
+        return null;
+      }
+      ;
+    }
+    /**
+    Removes the field named `field` from structure `o`.
+    
+    This method is only guaranteed to work on anonymous structures.
+    
+    If `o` or `field` are null, the result is unspecified.
+    */
+    static deleteField(o, field) {
+      if (!Object.prototype.hasOwnProperty.call(o, field)) {
+        return false;
+      }
+      ;
+      delete o[field];
+      return true;
+    }
+    static get __name__() {
+      return "Reflect";
+    }
+    get __class__() {
+      return Reflect3;
+    }
+  };
+
+  // js/client/hooks/ThemeToggleHook.js
+  var $global4 = Register.$global;
+  var ThemeToggleHook = Register.global("$hxClasses")["client.hooks.ThemeToggleHook"] = class ThemeToggleHook2 {
+    static labelFor(preference) {
+      switch (preference) {
+        case "dark":
+          return "Dark";
+          break;
+        case "light":
+          return "Light";
+          break;
+        case "system":
+          return "System";
+          break;
+      }
+      ;
+    }
+    static updateLabel(root, preference) {
+      root.setAttribute("data-theme-mode", preference);
+      let label = root.querySelector("[data-theme-label]");
+      if (label != null) {
+        label.textContent = ThemeToggleHook2.labelFor(preference);
+      }
+      ;
+    }
+    static mounted(ctx) {
+      ThemeToggleHook2.unbindClick(ctx);
+      let preference = Theme.applyStoredOrDefault();
+      ThemeToggleHook2.updateLabel(ctx.el, preference);
+      let handler = function(_event) {
+        let nextPreference = Theme.cycle(Theme.getStoredOrDefault());
+        Theme.store(nextPreference);
+        Theme.apply(nextPreference);
+        ThemeToggleHook2.updateLabel(ctx.el, nextPreference);
+      };
+      ctx.el["__todoappThemeToggleOnClick"] = handler;
+      ctx.el.addEventListener("click", handler);
+    }
+    static destroyed(ctx) {
+      ThemeToggleHook2.unbindClick(ctx);
+    }
+    static unbindClick(ctx) {
+      let elementDynamic = ctx.el;
+      if (!Object.prototype.hasOwnProperty.call(elementDynamic, "__todoappThemeToggleOnClick")) {
+        return;
+      }
+      ;
+      let existingHandler = Reflect2.field(elementDynamic, "__todoappThemeToggleOnClick");
+      if (existingHandler != null) {
+        ctx.el.removeEventListener("click", existingHandler);
+      }
+      ;
+      Reflect2.deleteField(elementDynamic, "__todoappThemeToggleOnClick");
+    }
+    static get __name__() {
+      return "client.hooks.ThemeToggleHook";
+    }
+    get __class__() {
+      return ThemeToggleHook2;
+    }
+  };
+
+  // js/client/hooks/PingHook.js
+  var $global5 = Register.$global;
+  var PingHook = Register.global("$hxClasses")["client.hooks.PingHook"] = class PingHook2 {
+    static mounted(hook) {
+      try {
+        if (hook.pushEvent != null) {
+          hook.pushEvent("ping", {});
+        }
+        ;
+      } catch (_g) {
+      }
+      ;
+    }
+    static get __name__() {
+      return "client.hooks.PingHook";
+    }
+    get __class__() {
+      return PingHook2;
+    }
+  };
+
+  // js/client/hooks/CopyToClipboardHook.js
+  var $global6 = Register.$global;
+  var CopyToClipboardHook = Register.global("$hxClasses")["client.hooks.CopyToClipboardHook"] = class CopyToClipboardHook2 {
+    static mounted(hook) {
+      let el = hook.el;
+      el.addEventListener("click", function(_) {
+        let text = el.getAttribute("data-copy-text");
+        if (text == null || text == "") {
+          return;
+        }
+        ;
+        CopyToClipboardHook2.copyText(text, function(_success) {
+          let eventName = el.getAttribute("data-copied-event");
+          if (eventName == null || eventName == "") {
+            eventName = "clipboard_copied";
+          }
+          ;
+          let message = el.getAttribute("data-copied-message");
+          if (message == null || message == "") {
+            message = "Copied.";
+          }
+          ;
+          try {
+            if (hook.pushEvent != null) {
+              hook.pushEvent(eventName, { "message": message });
+            }
+            ;
+          } catch (_g) {
+          }
+          ;
+          el.classList.add("copied");
+          window.setTimeout(function() {
+            el.classList.remove("copied");
+          }, 800);
+        });
+      });
+    }
+    static copyText(text, done) {
+      let clipboard = Register.$global.navigator.clipboard;
+      if (clipboard != null && Object.prototype.hasOwnProperty.call(clipboard, "writeText")) {
+        try {
+          let promise = clipboard.writeText(text);
+          promise.then(function(_) {
+            done(true);
+            return null;
+          })["catch"](function(_) {
+            CopyToClipboardHook2.fallbackCopy(text, done);
+            return null;
+          });
+          return;
+        } catch (_g) {
+        }
+        ;
+      }
+      ;
+      CopyToClipboardHook2.fallbackCopy(text, done);
+    }
+    static fallbackCopy(text, done) {
+      let tmp = window.document.createElement("textarea");
+      tmp.value = text;
+      tmp.setAttribute("readonly", "");
+      tmp.style.position = "absolute";
+      tmp.style.left = "-9999px";
+      window.document.body.appendChild(tmp);
+      tmp.select();
+      let ok = false;
+      try {
+        ok = window.document.execCommand("copy");
+      } catch (_g) {
+      }
+      ;
+      try {
+        tmp.remove();
+      } catch (_g) {
+        if (tmp.parentNode != null) {
+          tmp.parentNode.removeChild(tmp);
+        }
+        ;
+      }
+      ;
+      done(ok);
+    }
+    static get __name__() {
+      return "client.hooks.CopyToClipboardHook";
+    }
+    get __class__() {
+      return CopyToClipboardHook2;
+    }
+  };
+
+  // js/client/hooks/AutoFocusHook.js
+  var $global7 = Register.$global;
+  var AutoFocusHook = Register.global("$hxClasses")["client.hooks.AutoFocusHook"] = class AutoFocusHook2 {
+    static mounted(hook) {
+      try {
+        hook.el.focus();
+      } catch (_g) {
+      }
+      ;
+    }
+    static get __name__() {
+      return "client.hooks.AutoFocusHook";
+    }
+    get __class__() {
+      return AutoFocusHook2;
+    }
+  };
+
+  // js/client/Boot.js
+  var $global8 = Register.$global;
+  var Boot = Register.global("$hxClasses")["client.Boot"] = class Boot2 {
+    static buildHooks() {
+      let hooks2 = {};
+      hooks2["AutoFocus"] = { "mounted": function() {
+        AutoFocusHook.mounted(this);
+      } };
+      hooks2["Ping"] = { "mounted": function() {
+        PingHook.mounted(this);
+      } };
+      hooks2["CopyToClipboard"] = { "mounted": function() {
+        CopyToClipboardHook.mounted(this);
+      } };
+      hooks2["ThemeToggle"] = { "mounted": function() {
+        ThemeToggleHook.mounted(this);
+      }, "destroyed": function() {
+        ThemeToggleHook.destroyed(this);
+      } };
+      return hooks2;
+    }
+    static main() {
+      Theme.applyStoredOrDefault();
+      let hooks2 = Boot2.buildHooks();
+      window.Hooks = Object.assign(window.Hooks || {}, hooks2);
+    }
+    static get __name__() {
+      return "client.Boot";
+    }
+    get __class__() {
+      return Boot2;
+    }
+  };
+
+  // js/hx_app.js
+  var $global9 = Register.$global;
+  Boot.main();
 
   // js/phoenix_app.js
   var _a;

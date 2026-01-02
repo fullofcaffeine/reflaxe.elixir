@@ -64,7 +64,7 @@ graph LR
     B --> C[Generated Elixir Code]
     C --> D[Phoenix Application]
     
-    A --> E[Haxe JS Compiler]
+    A --> E[Genes JS Generator]
     E --> F[Client JavaScript]
     F --> D
 ```

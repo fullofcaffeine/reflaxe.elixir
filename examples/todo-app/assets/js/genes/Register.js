@@ -1,11 +1,13 @@
 
 export class Register {
 	static global(name) {
-		if (Register.globals[name]) {
-			return Register.globals[name];
-		} else {
-			return Register.globals[name] = {};
+		let existing = Register.globals[name];
+		if (existing != null) {
+			return existing;
 		};
+		let created = new Object();
+		Register.globals[name] = created;
+		return created;
 	}
 	static createStatic(obj, name, get) {
 		let value = null;
@@ -24,7 +26,8 @@ export class Register {
 		}});
 	}
 	static iterator(a) {
-		if (!Array.isArray(a)) {
+		let isArray = Array.isArray(a);
+		if (!isArray) {
 			return typeof a.iterator === "function" ? a.iterator.bind(a) : a.iterator;
 		} else {
 			let a1 = a;
@@ -34,7 +37,8 @@ export class Register {
 		};
 	}
 	static getIterator(a) {
-		if (!Array.isArray(a)) {
+		let isArray = Array.isArray(a);
+		if (!isArray) {
 			return a.iterator();
 		} else {
 			return Register.mkIter(a);
@@ -87,20 +91,24 @@ export class Register {
 		if (m == null) {
 			return null;
 		};
-		if (m.__id__ == null) {
-			m.__id__ = Register.fid++;
+		let id = m.__id__;
+		if (id == null) {
+			id = Register.fid++;
+			m.__id__ = id;
 		};
-		let f = null;
-		if (o.hx__closures__ == null) {
-			o.hx__closures__ = {};
-		} else {
-			f = o.hx__closures__[m.__id__];
+		let closures = o.hx__closures__;
+		if (closures == null) {
+			closures = {};
+			o.hx__closures__ = closures;
 		};
-		if (f == null) {
-			f = m.bind(o);
-			o.hx__closures__[m.__id__] = f;
+		let key = (id == null) ? "null" : "" + id;
+		let existing = closures[key];
+		if (existing != null) {
+			return existing;
 		};
-		return f;
+		let bound = m.bind(o);
+		closures[key] = bound;
+		return bound;
 	}
 	static get __name__() {
 		return "genes.Register"
