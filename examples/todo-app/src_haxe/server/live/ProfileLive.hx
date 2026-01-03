@@ -17,6 +17,7 @@ import phoenix.types.Flash.FlashMap;
 import phoenix.types.Flash.FlashType;
 import plug.CSRFProtection;
 import shared.AvatarTools;
+import shared.liveview.EventName;
 import shared.liveview.HookName;
 import server.infrastructure.Repo;
 import server.pubsub.TodoPubSub;
@@ -114,7 +115,7 @@ class ProfileLive {
     public static function handle_event(event: String, params: EventParams, socket: Socket<ProfileLiveAssigns>): HandleEventResult<ProfileLiveAssigns> {
         var sock: LiveSocket<ProfileLiveAssigns> = socket;
         return switch (event) {
-            case "save_profile":
+            case EventName.SaveProfile:
                 NoReply(saveProfile(params, sock));
             case "clipboard_copied":
                 var paramsTerm: Term = cast params;
@@ -253,7 +254,7 @@ class ProfileLive {
                                     </div>
                                 </div>
 
-                                <form phx-submit="save_profile" class="space-y-4">
+                                <form phx-submit=${EventName.SaveProfile} class="space-y-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Name</label>
                                         <input data-testid="input-profile-name"

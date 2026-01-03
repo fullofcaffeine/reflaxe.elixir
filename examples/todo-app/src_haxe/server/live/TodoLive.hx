@@ -368,29 +368,29 @@ enum ActivityKind {
 		        var nextSocket: Socket<TodoLiveAssigns> =
 		            if (event == EventName.CreateTodo) {
 		                create_todo(params, socket);
-		            } else if (event == "toggle_todo") {
+		            } else if (event == EventName.ToggleTodo) {
 		                toggle_todo_status(extract_id(params), socket);
-		            } else if (event == "delete_todo") {
+		            } else if (event == EventName.DeleteTodo) {
 		                delete_todo(extract_id(params), socket);
-		            } else if (event == "edit_todo") {
+		            } else if (event == EventName.EditTodo) {
 	                start_editing(extract_id(params), socket);
-		            } else if (event == "save_todo") {
+		            } else if (event == EventName.SaveTodo) {
 		                save_edited_todo_typed(params, socket);
-		            } else if (event == "cancel_edit") {
+		            } else if (event == EventName.CancelEdit) {
 		                var clearedPresence = clearPresenceEditing(socket);
 		                recomputeVisible(SafeAssigns.setEditingTodo(clearedPresence, null));
-		            } else if (event == "filter_todos") {
+		            } else if (event == EventName.FilterTodos) {
 		                var filterValue: Null<String> = cast Reflect.field(params, "filter");
 		                recomputeVisible(SafeAssigns.setFilter(socket, filterValue != null ? filterValue : "all"));
-		            } else if (event == "sort_todos") {
+		            } else if (event == EventName.SortTodos) {
 	                var sortBy: Null<String> = cast Reflect.field(params, "sort_by");
 	                recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy != null ? sortBy : "created"));
-			            } else if (event == "search_todos") {
+			            } else if (event == EventName.SearchTodos) {
 			                var query: Null<String> = cast Reflect.field(params, "query");
 			                var withQuery = SafeAssigns.setSearchQuery(socket, query != null ? query : "");
 			                // Ensure tag-selection state composes with search changes.
 			                recomputeVisible(SafeAssigns.setSelectedTags(withQuery, socket.assigns.selected_tags));
-		            } else if (event == "toggle_tag") {
+		            } else if (event == EventName.ToggleTag) {
 		                var tagValue: Null<String> = Reflect.field(params, "tag");
 		                if (tagValue == null) {
 		                    socket;
@@ -404,16 +404,16 @@ enum ActivityKind {
 			                    };
 			                    recomputeVisible(SafeAssigns.setSelectedTags(socket, updated));
 			                }
-		            } else if (event == "set_priority") {
+		            } else if (event == EventName.SetPriority) {
 	                var priority: Null<String> = cast Reflect.field(params, "priority");
 	                update_todo_priority(extract_id(params), priority != null ? priority : "medium", socket);
 	            } else if (event == EventName.ToggleForm) {
 	                recomputeVisible(SafeAssigns.setShowForm(socket, !socket.assigns.show_form));
-		            } else if (event == "bulk_complete") {
+		            } else if (event == EventName.BulkComplete) {
 		                complete_all_todos(socket);
-		            } else if (event == "bulk_delete_completed") {
+		            } else if (event == EventName.BulkDeleteCompleted) {
 		                delete_completed_todos(socket);
-		            } else if (event == "bulk_set_priority") {
+		            } else if (event == EventName.BulkSetPriority) {
 		                var priorityValue: Null<String> = cast Reflect.field(params, "priority");
 		                bulk_set_priority(priorityValue != null ? priorityValue : "", socket);
 		            } else {
@@ -1551,7 +1551,7 @@ enum ActivityKind {
 						<div class="flex flex-wrap gap-4">
 							<!-- Search -->
 							<div class="flex-1 min-w-[300px]">
-	                            <form phx-change="search_todos" class="relative">
+	                            <form phx-change=${EventName.SearchTodos} class="relative">
 										<input type="search" name="query" value={@search_query} phx-debounce="300"
 											class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 											placeholder="Search todos..." />
@@ -1561,16 +1561,16 @@ enum ActivityKind {
 							
 	                        <!-- Filter Buttons -->
 		                        <div class="flex space-x-2">
-		                            <button type="button" phx-click="filter_todos" phx-value-filter="all" data-testid="btn-filter-all"
+		                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="all" data-testid="btn-filter-all"
 		                                class={@filter_btn_all_class}>All</button>
-		                            <button type="button" phx-click="filter_todos" phx-value-filter="active" data-testid="btn-filter-active"
+		                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="active" data-testid="btn-filter-active"
 		                                class={@filter_btn_active_class}>Active</button>
-		                            <button type="button" phx-click="filter_todos" phx-value-filter="completed" data-testid="btn-filter-completed"
+		                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="completed" data-testid="btn-filter-completed"
 		                                class={@filter_btn_completed_class}>Completed</button>
 		                        </div>
 		                        <div class="flex flex-wrap gap-2" data-testid="available-tags">
 		                            <for {tagView in @available_tags}>
-		                                <button type="button" phx-click="toggle_tag" phx-value-tag={tagView.tag} data-testid="tag-chip" data-tag={tagView.tag}
+		                                <button type="button" phx-click=${EventName.ToggleTag} phx-value-tag={tagView.tag} data-testid="tag-chip" data-tag={tagView.tag}
 		                                    class={tagView.chip_class}>
 		                                    #{tagView.tag}
 		                                </button>
@@ -1579,7 +1579,7 @@ enum ActivityKind {
 							
 							<!-- Sort Dropdown -->
 							<div>
-                            <form phx-change="sort_todos">
+                            <form phx-change=${EventName.SortTodos}>
 	                                <select name="sort_by"
 	                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
 	                                    <option value="created" selected={@sort_selected_created}>Sort by Date</option>
@@ -1658,29 +1658,29 @@ enum ActivityKind {
 	                            Showing #{@visible_count} of #{@total_todos} todos
 	                        </div>
 	                        <div class="flex flex-wrap items-center gap-2">
-	                            <button type="button" phx-click="bulk_complete"
+	                            <button type="button" phx-click=${EventName.BulkComplete}
 	                                class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm">✅ Complete All</button>
-	                            <button type="button" phx-click="bulk_delete_completed" data-confirm="Are you sure you want to delete all completed todos?"
+	                            <button type="button" phx-click=${EventName.BulkDeleteCompleted} data-confirm="Are you sure you want to delete all completed todos?"
 	                                class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm">🗑️ Delete Completed</button>
 	                            <div class="flex items-center gap-2 ml-2">
 	                                <div class="text-xs text-gray-600 dark:text-gray-400">Set priority:</div>
 	                                <button data-testid="btn-bulk-priority-low"
 	                                    type="button"
-	                                    phx-click="bulk_set_priority"
+	                                    phx-click=${EventName.BulkSetPriority}
 	                                    phx-value-priority="low"
 	                                    class="px-3 py-2 rounded-lg text-xs font-semibold bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:hover:bg-blue-900/40">
 	                                    Low
 	                                </button>
 	                                <button data-testid="btn-bulk-priority-medium"
 	                                    type="button"
-	                                    phx-click="bulk_set_priority"
+	                                    phx-click=${EventName.BulkSetPriority}
 	                                    phx-value-priority="medium"
 	                                    class="px-3 py-2 rounded-lg text-xs font-semibold bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:hover:bg-amber-900/40">
 	                                    Medium
 	                                </button>
 	                                <button data-testid="btn-bulk-priority-high"
 	                                    type="button"
-	                                    phx-click="bulk_set_priority"
+	                                    phx-click=${EventName.BulkSetPriority}
 	                                    phx-value-priority="high"
 	                                    class="px-3 py-2 rounded-lg text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/40">
 	                                    High
@@ -1695,14 +1695,14 @@ enum ActivityKind {
 	                            <if {v.is_editing}>
 	                                <div id={v.dom_id} data-testid="todo-card" data-completed={v.completed_str}
 	                                    class={v.container_class}>
-	                                    <form phx-submit="save_todo" class="space-y-4">
+	                                    <form phx-submit=${EventName.SaveTodo} class="space-y-4">
 	                                        <input type="text" name="title" value={v.title} required data-testid="input-title"
 	                                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
                                         <textarea name="description" rows="2"
                                             class="w-full px-4 py-2 border border-gray-300 dark-border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">#{v.description}</textarea>
                                         <div class="flex space-x-2">
                                             <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Save</button>
-                                            <button type="button" phx-click="cancel_edit" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
+                                            <button type="button" phx-click=${EventName.CancelEdit} class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
                                         </div>
                                     </form>
 	                                </div>
@@ -1711,7 +1711,7 @@ enum ActivityKind {
 	                                    class={v.container_class}>
 	                                    <div class="flex items-start space-x-4">
 	                                        <!-- Checkbox -->
-	                                        <button type="button" phx-click="toggle_todo" phx-value-id={v.id} data-testid="btn-toggle-todo"
+	                                        <button type="button" phx-click=${EventName.ToggleTodo} phx-value-id={v.id} data-testid="btn-toggle-todo"
 	                                            class="mt-1 w-6 h-6 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center hover:border-blue-500 transition-colors">
                                             <if {v.completed_for_view}>
                                                 <span class="text-green-500">✓</span>
@@ -1746,7 +1746,7 @@ enum ActivityKind {
 	                                                </if>
 		                                                <if {v.has_tags}>
 		                                                    <for {tagView in v.tags}>
-		                                                        <button type="button" phx-click="toggle_tag" phx-value-tag={tagView.tag} data-testid="todo-tag" data-tag={tagView.tag}
+		                                                        <button type="button" phx-click=${EventName.ToggleTag} phx-value-tag={tagView.tag} data-testid="todo-tag" data-tag={tagView.tag}
 		                                                            class={tagView.chip_class}>
 		                                                            #{tagView.tag}
 		                                                        </button>
@@ -1757,9 +1757,9 @@ enum ActivityKind {
 
 	                                        <!-- Actions -->
 	                                        <div class="flex space-x-2">
-	                                            <button type="button" phx-click="edit_todo" phx-value-id={v.id} data-testid="btn-edit-todo"
+	                                            <button type="button" phx-click=${EventName.EditTodo} phx-value-id={v.id} data-testid="btn-edit-todo"
 	                                                class="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors">✏️</button>
-	                                            <button type="button" phx-click="delete_todo" phx-value-id={v.id} data-testid="btn-delete-todo"
+	                                            <button type="button" phx-click=${EventName.DeleteTodo} phx-value-id={v.id} data-testid="btn-delete-todo"
 	                                                class="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors">🗑️</button>
 	                                        </div>
                                     </div>
@@ -1784,11 +1784,11 @@ enum ActivityKind {
 					Showing ${filteredCount} of ${assigns.total_todos} todos
 				</div>
 				<div class="flex space-x-2">
-					<button phx-click="bulk_complete"
+					<button phx-click=${EventName.BulkComplete}
 						class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm">
 						✅ Complete All
 					</button>
-					<button phx-click="bulk_delete_completed" 
+					<button phx-click=${EventName.BulkDeleteCompleted} 
 						data-confirm="Are you sure you want to delete all completed todos?"
 						class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm">
 						🗑️ Delete Completed

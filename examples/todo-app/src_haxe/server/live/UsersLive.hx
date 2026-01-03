@@ -22,6 +22,7 @@ import server.schemas.User;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
 import shared.AvatarTools;
+import shared.liveview.EventName;
 import StringTools;
 using reflaxe.elixir.macros.TypedQueryLambda;
 
@@ -140,9 +141,9 @@ class UsersLive {
         var sock: LiveSocket<UsersLiveAssigns> = socket;
 
         return switch (event) {
-            case "filter_users":
+            case EventName.FilterUsers:
                 NoReply(applyFilters(params, sock));
-            case "toggle_active":
+            case EventName.ToggleActive:
                 NoReply(toggleActive(params, sock));
             case _:
                 NoReply(sock);
@@ -338,7 +339,7 @@ class UsersLive {
                             </div>
                         </div>
 
-                        <form phx-change="filter_users" class="flex flex-col md:flex-row gap-3 mb-6">
+                        <form phx-change=${EventName.FilterUsers} class="flex flex-col md:flex-row gap-3 mb-6">
                             <input data-testid="users-search" name="query" type="text" value={@search_query} placeholder="Search name or email…"
                                 phx-debounce="250"
                                 class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
@@ -391,7 +392,7 @@ class UsersLive {
                                             </td>
                                             <td class="px-4 py-3 text-gray-700 dark:text-gray-200">#{u.last_login_label}</td>
                                             <td class="px-4 py-3 text-right">
-                                                <button type="button" phx-click="toggle_active" phx-value-id={u.id} data-testid="users-toggle-active"
+                                                <button type="button" phx-click=${EventName.ToggleActive} phx-value-id={u.id} data-testid="users-toggle-active"
                                                     class={u.toggle_class}>
                                                     #{u.toggle_label}
                                                 </button>
