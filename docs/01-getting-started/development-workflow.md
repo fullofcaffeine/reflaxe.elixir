@@ -386,9 +386,10 @@ incremental builds during `mix compile` and `mix phx.server`.
 
 Behavior (no configuration required):
 
-- Auto‑manage: Mix starts and owns a `haxe --wait` server instance for this project.
-- Reuse (owned): If the managed server is already running, it is reused automatically.
-- No external reuse: If the configured port is already bound by an unknown process, Mix relocates to a free port instead of attaching to it.
+- Auto‑manage: Mix ensures a `haxe --wait` server is available for incremental compilation.
+- Reuse (owned): If Mix started the server in this VM, it is reused automatically.
+- Attach (compatible): If the configured port is already bound by a compatible Haxe server, Mix attaches and uses it (no extra server, no port churn).
+- Relocate (incompatible): If the configured port is bound by a non-Haxe process (or an incompatible server), Mix relocates to a free port and starts its own.
 - Auto‑start: If none is running, Mix starts one in the background.
 - Auto‑relocate: If the port is busy, Mix transparently retries on a free port.
 - Fallback: If the server cannot be reached, Mix compiles directly (no server) and
@@ -405,3 +406,16 @@ Notes:
 - The behavior is fully transparent; no flags are needed for normal use.
 - The QA sentinel also uses a compile server and falls back to direct compilation
   under strict timeouts. Keeping the same default port (`6116`) avoids collisions.
+
+### Cleanup (if ports keep relocating)
+
+If you repeatedly see messages like:
+
+- `Haxe server port 6116 is in use; relocating to ...`
+
+it usually means a previous Mix VM crashed and left behind stale `haxe --wait` processes.
+Clean them up (bounded, repo-local) and retry:
+
+```bash
+scripts/haxe-server-cleanup.sh
+```

@@ -79,7 +79,7 @@ defmodule HaxeServer do
   def running?() do
     try do
       case GenServer.call(__MODULE__, :status, 5000) do
-        {:ok, :running} -> true
+        {{:ok, :running}, _stats} -> true
         _ -> false
       end
     catch
@@ -149,6 +149,8 @@ defmodule HaxeServer do
       haxe_cmd: cmd,
       haxe_args: args,
       server_pid: nil,
+      server_os_pid: nil,
+      owns_server: false,
       status: :stopped,
       compile_count: 0,
       last_compile: nil
@@ -173,37 +175,51 @@ defmodule HaxeServer do
 
   @impl GenServer
   def handle_info(:start_server, state) do
-    state =
-      if port_available?(state.port) do
-        state
+    if port_available?(state.port) do
+      case start_haxe_server(state) do
+        {:ok, pid, os_pid} ->
+          Logger.debug("Haxe server started on port #{state.port}")
+          {:noreply, %{state | server_pid: pid, server_os_pid: os_pid, owns_server: true, status: :running}}
+
+        {:error, reason} ->
+          # Try an immediate relocation to a free port (transparent to the user)
+          Logger.debug("Haxe server failed on #{state.port} (#{inspect(reason)}); attempting relocation")
+          new_port = find_available_port()
+          relocated = %{state | port: new_port}
+
+          case start_haxe_server(relocated) do
+            {:ok, pid2, os_pid2} ->
+              Logger.debug("Haxe server relocated and started on port #{new_port}")
+              {:noreply, %{relocated | server_pid: pid2, server_os_pid: os_pid2, owns_server: true, status: :running}}
+
+            {:error, reason2} ->
+              Logger.warning("Failed to start Haxe server after relocation: #{inspect(reason2)}; will retry")
+              Process.send_after(self(), :start_server, 2000)
+              {:noreply, %{relocated | server_pid: nil, server_os_pid: nil, owns_server: false, status: :error}}
+          end
+      end
+    else
+      # The configured port is already bound. Prefer attaching to an existing server when it
+      # is compatible with the current toolchain; otherwise, relocate and start our own server.
+      if external_server_compatible?(state) do
+        Logger.debug("Haxe server port #{state.port} is in use; attaching to existing server")
+        {:noreply, %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
       else
-        # The configured port is already bound. Do not attempt to "reuse" an external server
-        # (toolchain mismatch + lifecycle ownership). Instead, relocate before starting to avoid
-        # noisy EADDRINUSE crashes from the underlying node haxeshim wrapper.
         new_port = find_available_port()
         Logger.debug("Haxe server port #{state.port} is in use; relocating to #{new_port}")
-        %{state | port: new_port}
-      end
-
-    case start_haxe_server(state) do
-      {:ok, pid} -> 
-        Logger.debug("Haxe server started on port #{state.port}")
-        {:noreply, %{state | server_pid: pid, status: :running}}
-      
-      {:error, reason} ->
-        # Try an immediate relocation to a free port (transparent to the user)
-        Logger.debug("Haxe server failed on #{state.port} (#{inspect(reason)}); attempting relocation")
-        new_port = find_available_port()
         relocated = %{state | port: new_port}
+
         case start_haxe_server(relocated) do
-          {:ok, pid2} ->
+          {:ok, pid2, os_pid2} ->
             Logger.debug("Haxe server relocated and started on port #{new_port}")
-            {:noreply, %{relocated | server_pid: pid2, status: :running}}
+            {:noreply, %{relocated | server_pid: pid2, server_os_pid: os_pid2, owns_server: true, status: :running}}
+
           {:error, reason2} ->
             Logger.warning("Failed to start Haxe server after relocation: #{inspect(reason2)}; will retry")
             Process.send_after(self(), :start_server, 2000)
-            {:noreply, %{relocated | status: :error}}
+            {:noreply, %{relocated | server_pid: nil, server_os_pid: nil, owns_server: false, status: :error}}
         end
+      end
     end
   end
 
@@ -233,7 +249,7 @@ defmodule HaxeServer do
     Logger.debug("Haxe server exited with status: #{status}; restarting")
     # Restart the server
     send(self(), :start_server)
-    {:noreply, %{state | server_pid: nil, status: :restarting}}
+    {:noreply, %{state | server_pid: nil, server_os_pid: nil, status: :restarting}}
   end
 
   @impl GenServer
@@ -286,14 +302,18 @@ defmodule HaxeServer do
     cmd = state.haxe_cmd
     args = state.haxe_args ++ ["--wait", to_string(state.port)]
     
-    # Generate a unique port for haxeshim's internal server to avoid conflicts
-    # when running tests in parallel
-    haxeshim_port = if Mix.env() == :test do
-      # Use a different range than the wait port to avoid conflicts
-      9000 + rem(System.unique_integer([:positive]), 1000)
-    else
-      8000
-    end
+    # Generate a unique port for haxeshim's internal server to avoid collisions in dev/test
+    # when multiple Mix VMs (or multiple HaxeServer instances) are running concurrently.
+    #
+    # Keep it distinct from the Haxe `--wait` port we're binding to.
+    haxeshim_port =
+      case System.get_env("HAXESHIM_SERVER_PORT") do
+        nil ->
+          find_available_port(MapSet.new([state.port]))
+
+        value ->
+          String.to_integer(value)
+      end
     
     # Set environment variable for haxeshim (if it supports it)
     # Also set HAXE_SERVER_PORT for compatibility
@@ -309,12 +329,22 @@ defmodule HaxeServer do
         [:binary, :exit_status, :stderr_to_stdout, {:args, args}, {:env, env}]
       )
       
-      # Give the server a moment to start
+      # Give the server a moment to start.
+      #
+      # NOTE: `haxe --wait` is a long-lived process. On some platforms/wrappers, closing the
+      # Erlang port does not reliably terminate the underlying OS process. We capture the
+      # OS PID to ensure we can clean up on stop/restart.
       Process.sleep(500)
       
       # Check if port is still alive
       if Port.info(port) do
-        {:ok, port}
+        os_pid =
+          case Port.info(port, :os_pid) do
+            {:os_pid, pid} when is_integer(pid) -> pid
+            _ -> nil
+          end
+
+        {:ok, port, os_pid}
       else
         {:error, "Haxe server process exited immediately"}
       end
@@ -325,14 +355,36 @@ defmodule HaxeServer do
   end
 
   defp stop_haxe_server(%{server_pid: nil}), do: :ok
-  defp stop_haxe_server(%{server_pid: port}) when is_port(port) do
-    # Close the port to stop the Haxe server
-    Port.close(port)
+
+  defp stop_haxe_server(%{server_pid: port, server_os_pid: os_pid, owns_server: true}) when is_port(port) do
+    # Best-effort shutdown order:
+    # 1) Close the Erlang port.
+    # 2) Explicitly terminate the OS process tree (node wrapper + underlying haxe) if still alive.
+    #
+    # Rationale: On some setups the haxe shim runs as a Node process and spawns a real `haxe`
+    # server process. Closing the port does not always kill the child, which leads to leaked
+    # `haxe --wait` processes and port churn on subsequent compiles.
+    try do
+      Port.close(port)
+    rescue
+      _ -> :ok
+    end
+
+    kill_process_tree(os_pid)
     :ok
   end
-  defp stop_haxe_server(_state) do
-    # No server to stop
-    :ok
+
+  defp stop_haxe_server(_state), do: :ok
+
+  defp external_server_compatible?(state) do
+    connect_args = state.haxe_args ++ ["--connect", to_string(state.port), "-version"]
+
+    case System.cmd(state.haxe_cmd, connect_args, stderr_to_stdout: true) do
+      {_out, 0} -> true
+      {_out, _} -> false
+    end
+  rescue
+    _ -> false
   end
 
   defp compile_with_server(args, state) do
@@ -380,15 +432,92 @@ defmodule HaxeServer do
     end
   end
 
-  defp find_available_port() do
+  defp kill_process_tree(os_pid) when not is_integer(os_pid), do: :ok
+
+  defp kill_process_tree(os_pid) when is_integer(os_pid) do
+    kill_exe = System.find_executable("kill")
+    pgrep_exe = System.find_executable("pgrep")
+
+    if kill_exe != nil and pgrep_exe != nil do
+      all = collect_descendant_pids(os_pid, pgrep_exe)
+      # Kill children first to reduce re-parenting races.
+      ordered = all |> Enum.uniq() |> Enum.reverse()
+
+      _ = kill_pids(ordered, "-TERM", kill_exe)
+      Process.sleep(100)
+
+      remaining = Enum.filter(ordered, fn pid -> process_alive?(pid, kill_exe) end)
+      _ = kill_pids(remaining, "-KILL", kill_exe)
+    end
+
+    :ok
+  end
+
+  defp collect_descendant_pids(root_pid, pgrep_exe) do
+    do_collect_descendant_pids([root_pid], MapSet.new(), pgrep_exe)
+    |> MapSet.to_list()
+  end
+
+  defp do_collect_descendant_pids([], acc, _pgrep_exe), do: acc
+
+  defp do_collect_descendant_pids([pid | rest], acc, pgrep_exe) do
+    if MapSet.member?(acc, pid) do
+      do_collect_descendant_pids(rest, acc, pgrep_exe)
+    else
+      {out, status} = System.cmd(pgrep_exe, ["-P", Integer.to_string(pid)], stderr_to_stdout: true)
+
+      children =
+        if status == 0 do
+          out
+          |> String.split(~r/\s+/, trim: true)
+          |> Enum.flat_map(fn s ->
+            case Integer.parse(s) do
+              {n, ""} -> [n]
+              _ -> []
+            end
+          end)
+        else
+          []
+        end
+
+      do_collect_descendant_pids(rest ++ children, MapSet.put(acc, pid), pgrep_exe)
+    end
+  end
+
+  defp process_alive?(pid, kill_exe) when is_integer(pid) do
+    case System.cmd(kill_exe, ["-0", Integer.to_string(pid)], stderr_to_stdout: true) do
+      {_out, 0} -> true
+      {_out, _} -> false
+    end
+  end
+
+  defp kill_pids([], _signal, _kill_exe), do: :ok
+
+  defp kill_pids(pids, signal, kill_exe) do
+    args = [signal | Enum.map(pids, &Integer.to_string/1)]
+    _ = System.cmd(kill_exe, args, stderr_to_stdout: true)
+    :ok
+  end
+
+  defp find_available_port(exclude_ports \\ MapSet.new()) do
     # Pick from a mid-range that avoids common dev ports (<10k) and OS ephemeral ports (often 49k+).
     # This reduces collisions with both local services and active outbound connections.
     base_port = 15_000 + rem(System.unique_integer([:positive]), 20_000)
     
     Enum.reduce_while(0..50, nil, fn offset, _acc ->
       port = base_port + offset
-      if port_available?(port), do: {:halt, port}, else: {:cont, nil}
-    end) || 35_000 + :rand.uniform(5_000)  # Better fallback with randomization
+      if (not MapSet.member?(exclude_ports, port)) and port_available?(port) do
+        {:halt, port}
+      else
+        {:cont, nil}
+      end
+    end) || pick_fallback_port(exclude_ports)
+  end
+
+  defp pick_fallback_port(exclude_ports) do
+    # Better fallback with randomization.
+    port = 35_000 + :rand.uniform(5_000)
+    if MapSet.member?(exclude_ports, port), do: port + 1, else: port
   end
   
   defp find_project_root() do
