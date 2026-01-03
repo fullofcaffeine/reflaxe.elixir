@@ -47,7 +47,14 @@ defmodule HaxeCompiler do
         {:error, "Source directory not found: #{source_dir}"}
       
       true ->
-        execute_haxe_compilation(hxml_file, source_dir, target_dir, verbose)
+        case execute_haxe_compilation(hxml_file, source_dir, target_dir, verbose) do
+          {:ok, compiled_files} ->
+            persist_manifest(opts, compiled_files)
+            {:ok, compiled_files}
+
+          other ->
+            other
+        end
     end
   end
 
@@ -69,8 +76,14 @@ defmodule HaxeCompiler do
       force ->
         true
 
+      not File.exists?(source_dir) ->
+        true
+
       not File.exists?(target_dir) ->
         true
+
+      Enum.empty?(find_haxe_files(source_dir)) ->
+        false
 
       not File.exists?(manifest_path()) ->
         true
@@ -157,6 +170,21 @@ defmodule HaxeCompiler do
   defp normalize_config_for_hash(opts) do
     opts
     |> Keyword.take([:hxml_file, :source_dir, :target_dir])
+  end
+
+  defp persist_manifest(opts, compiled_files) when is_list(compiled_files) do
+    manifest =
+      %{
+        timestamp: System.system_time(:second),
+        config_hash: config_hash(opts),
+        files: compiled_files
+      }
+
+    File.mkdir_p!(Mix.Project.manifest_path())
+    File.write!(manifest_path(), :erlang.term_to_binary(manifest))
+    :ok
+  rescue
+    _ -> :ok
   end
 
   defp execute_haxe_compilation(hxml_file, source_dir, target_dir, verbose) do
@@ -632,6 +660,8 @@ defmodule HaxeCompiler do
   end
   
   defp build_haxe_env() do
+    _ = HaxeServer.ensure_haxeshim_server_port_env()
+
     # Start with current environment
     base_env = System.get_env() |> Enum.into([])
 

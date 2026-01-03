@@ -349,8 +349,14 @@ defmodule HaxeWatcher do
         {exit_code, output} = parse_compilation_failure(error)
         report_compilation_failure(build_file_path, exit_code, output)
 
+      {:error, error} when is_list(error) ->
+        error = to_string(error)
+        {exit_code, output} = parse_compilation_failure(error)
+        report_compilation_failure(build_file_path, exit_code, output)
+
       {:error, error} ->
-        Logger.error("❌ Haxe compilation failed: #{inspect(error)}")
+        {exit_code, output} = parse_compilation_failure(inspect(error))
+        report_compilation_failure(build_file_path, exit_code, output)
     end
     
     new_state = %{state | 
@@ -438,6 +444,8 @@ defmodule HaxeWatcher do
   end
 
   defp build_haxe_env() do
+    _ = HaxeServer.ensure_haxeshim_server_port_env()
+
     # Include HAXELIB_PATH if set (important for tests and some CI setups)
     case System.get_env("HAXELIB_PATH") do
       nil -> System.get_env() |> Enum.into([])

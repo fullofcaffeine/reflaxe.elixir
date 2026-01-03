@@ -83,6 +83,9 @@ class RepoDiscovery {
                 for (typePath in cached) {
                     forceType(typePath);
                 }
+                #if (haxe_ver < 5)
+                flushPendingTypes();
+                #end
                 return;
             }
         }
@@ -94,6 +97,10 @@ class RepoDiscovery {
         if (fastBoot) {
             saveCache(scanRoots, discovered);
         }
+
+        #if (haxe_ver < 5)
+        flushPendingTypes();
+        #end
     }
 
     public static function getDiscovered(): Array<String> {
@@ -263,14 +270,28 @@ class RepoDiscovery {
             });
         }
         #else
-        try {
-            Context.getType(typePath);
-        } catch (e) {
-            #if debug_repo_discovery
-            trace('[RepoDiscovery] failed to type ' + typePath + ': ' + Std.string(e));
-            #end
-        }
+        // Defer Context.getType until after the directory scan completes. Calling getType while
+        // scanning can re-enter typing for other discovered modules and cause "Type is not ready"
+        // failures for modules that are already being typed as dependencies.
+        pendingTypePaths.push(typePath);
         #end
+    }
+
+    static function flushPendingTypes(): Void {
+        if (pendingTypePaths.length == 0) return;
+
+        var queued = pendingTypePaths;
+        pendingTypePaths = [];
+
+        for (typePath in queued) {
+            try {
+                Context.getType(typePath);
+            } catch (e) {
+                #if debug_repo_discovery
+                trace('[RepoDiscovery] failed to type ' + typePath + ': ' + Std.string(e));
+                #end
+            }
+        }
     }
 
     static function loadCache(scanRoots: Array<String>): Null<Array<String>> {
