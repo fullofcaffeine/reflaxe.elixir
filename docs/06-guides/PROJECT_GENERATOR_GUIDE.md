@@ -6,7 +6,3 @@ For now, prefer the Phoenix onboarding docs (validated against the current examp
 
 - `docs/06-guides/PHOENIX_NEW_APP.md`
 - `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`
-
-The previous version of this file is archived at:
-- `docs/09-history/archive/docs/06-guides/PROJECT_GENERATOR_GUIDE.md`
-
