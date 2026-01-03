@@ -162,66 +162,30 @@ defmodule HaxeServer do
     if System.get_env("HAXE_NO_SERVER") == "1" do
       {:ok, state}
     else
-      # Start and manage our own `haxe --wait` server instance.
+      # Start or attach immediately so callers can use the incremental server cache right away.
       #
-      # We intentionally do NOT "reuse" an already-running server on the same port:
-      # - It might be a different Haxe toolchain/version than this project expects (lix vs global).
-      # - We can't reliably stop/monitor an external process, which leads to stale state and port
-      #   collisions in tests/dev.
-      #
-      # If the configured port is already bound (EADDRINUSE), we transparently relocate to a free port.
-      send(self(), :start_server)
-      {:ok, state}
+      # If the configured port is already bound (EADDRINUSE), attempt to attach to an existing
+      # compatible server; otherwise relocate to a free port.
+      case start_or_attach_server(state) do
+        {:ok, started} ->
+          {:ok, started}
+
+        {:error, failed} ->
+          Process.send_after(self(), :start_server, 2000)
+          {:ok, failed}
+      end
     end
   end
 
   @impl GenServer
   def handle_info(:start_server, state) do
-    if port_available?(state.port) do
-      case start_haxe_server(state) do
-        {:ok, pid, os_pid} ->
-          Logger.debug("Haxe server started on port #{state.port}")
-          {:noreply, %{state | server_pid: pid, server_os_pid: os_pid, owns_server: true, status: :running}}
+    case start_or_attach_server(state) do
+      {:ok, started} ->
+        {:noreply, started}
 
-        {:error, reason} ->
-          # Try an immediate relocation to a free port (transparent to the user)
-          Logger.debug("Haxe server failed on #{state.port} (#{inspect(reason)}); attempting relocation")
-          new_port = find_available_port()
-          relocated = %{state | port: new_port}
-
-          case start_haxe_server(relocated) do
-            {:ok, pid2, os_pid2} ->
-              Logger.debug("Haxe server relocated and started on port #{new_port}")
-              {:noreply, %{relocated | server_pid: pid2, server_os_pid: os_pid2, owns_server: true, status: :running}}
-
-            {:error, reason2} ->
-              Logger.warning("Failed to start Haxe server after relocation: #{inspect(reason2)}; will retry")
-              Process.send_after(self(), :start_server, 2000)
-              {:noreply, %{relocated | server_pid: nil, server_os_pid: nil, owns_server: false, status: :error}}
-          end
-      end
-    else
-      # The configured port is already bound. Prefer attaching to an existing server when it
-      # is compatible with the current toolchain; otherwise, relocate and start our own server.
-      if external_server_compatible?(state) do
-        Logger.debug("Haxe server port #{state.port} is in use; attaching to existing server")
-        {:noreply, %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
-      else
-        new_port = find_available_port()
-        Logger.debug("Haxe server port #{state.port} is in use; relocating to #{new_port}")
-        relocated = %{state | port: new_port}
-
-        case start_haxe_server(relocated) do
-          {:ok, pid2, os_pid2} ->
-            Logger.debug("Haxe server relocated and started on port #{new_port}")
-            {:noreply, %{relocated | server_pid: pid2, server_os_pid: os_pid2, owns_server: true, status: :running}}
-
-          {:error, reason2} ->
-            Logger.warning("Failed to start Haxe server after relocation: #{inspect(reason2)}; will retry")
-            Process.send_after(self(), :start_server, 2000)
-            {:noreply, %{relocated | server_pid: nil, server_os_pid: nil, owns_server: false, status: :error}}
-        end
-      end
+      {:error, failed} ->
+        Process.send_after(self(), :start_server, 2000)
+        {:noreply, failed}
     end
   end
 
@@ -374,27 +338,87 @@ defmodule HaxeServer do
   defp external_server_compatible?(state) do
     connect_args = state.haxe_args ++ ["--connect", to_string(state.port), "-version"]
 
+    # This check runs when the preferred port is already bound. In common dev flows,
+    # that can be a concurrently-starting (but not yet ready) Haxe server. Give it a
+    # small bounded grace window to become responsive before relocating.
+    timeouts_ms = [200, 500, 1_000]
+
+    Enum.reduce_while(timeouts_ms, false, fn timeout_ms, _acc ->
+      result = connect_for_version(connect_args, state, timeout_ms)
+
+      case result do
+        {_out, 0} ->
+          {:halt, true}
+
+        {:timeout, _} ->
+          {:cont, false}
+
+        {_out, _exit_code} ->
+          {:halt, false}
+      end
+    end)
+  rescue
+    _ -> false
+  end
+
+  defp connect_for_version(connect_args, state, timeout_ms) do
     task =
       Task.async(fn ->
         System.cmd(state.haxe_cmd, connect_args, stderr_to_stdout: true)
       end)
 
-    result =
-      case Task.yield(task, 1_000) do
-        {:ok, value} ->
-          value
+    case Task.yield(task, timeout_ms) do
+      {:ok, value} ->
+        value
 
-        nil ->
-          _ = Task.shutdown(task, :brutal_kill)
-          {:timeout, 1}
-      end
-
-    case result do
-      {_out, 0} -> true
-      _ -> false
+      nil ->
+        _ = Task.shutdown(task, :brutal_kill)
+        {:timeout, 1}
     end
-  rescue
-    _ -> false
+  end
+
+  defp start_or_attach_server(state) do
+    if port_available?(state.port) do
+      case start_haxe_server(state) do
+        {:ok, pid, os_pid} ->
+          Logger.debug("Haxe server started on port #{state.port}")
+          {:ok, %{state | server_pid: pid, server_os_pid: os_pid, owns_server: true, status: :running}}
+
+        {:error, reason} ->
+          Logger.debug("Haxe server failed on #{state.port} (#{inspect(reason)}); attempting relocation")
+          new_port = find_available_port()
+          relocated = %{state | port: new_port}
+
+          case start_haxe_server(relocated) do
+            {:ok, pid2, os_pid2} ->
+              Logger.debug("Haxe server relocated and started on port #{new_port}")
+              {:ok, %{relocated | server_pid: pid2, server_os_pid: os_pid2, owns_server: true, status: :running}}
+
+            {:error, reason2} ->
+              Logger.warning("Failed to start Haxe server after relocation: #{inspect(reason2)}; will retry")
+              {:error, %{relocated | server_pid: nil, server_os_pid: nil, owns_server: false, status: :error}}
+          end
+      end
+    else
+      if external_server_compatible?(state) do
+        Logger.debug("Haxe server port #{state.port} is in use; attaching to existing server")
+        {:ok, %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
+      else
+        new_port = find_available_port()
+        Logger.debug("Haxe server port #{state.port} is in use; relocating to #{new_port}")
+        relocated = %{state | port: new_port}
+
+        case start_haxe_server(relocated) do
+          {:ok, pid2, os_pid2} ->
+            Logger.debug("Haxe server relocated and started on port #{new_port}")
+            {:ok, %{relocated | server_pid: pid2, server_os_pid: os_pid2, owns_server: true, status: :running}}
+
+          {:error, reason2} ->
+            Logger.warning("Failed to start Haxe server after relocation: #{inspect(reason2)}; will retry")
+            {:error, %{relocated | server_pid: nil, server_os_pid: nil, owns_server: false, status: :error}}
+        end
+      end
+    end
   end
 
   defp compile_with_server(args, state) do

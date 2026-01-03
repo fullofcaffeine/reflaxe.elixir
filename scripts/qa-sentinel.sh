@@ -470,6 +470,17 @@ else
   HAXE_CMD="npx -y haxe"
 fi
 
+# Avoid haxeshim's default internal port churn (commonly 6001) when using the
+# lix-managed Node shim (`node_modules/.bin/haxe`). A stable per-run port reduces
+# startup latency and avoids confusing "port is in use" noise.
+if [[ -z "${HAXESHIM_SERVER_PORT:-}" ]]; then
+  base=$((25000 + (RANDOM % 15000)))
+  HAXESHIM_SERVER_PORT="$(pick_available_port "$base" || true)"
+  if [[ -n "${HAXESHIM_SERVER_PORT:-}" ]]; then
+    export HAXESHIM_SERVER_PORT
+  fi
+fi
+
 # Optional: Haxe compilation server for faster repeated builds (warm cache)
 REQUESTED_HAXE_SERVER_PORT=${HAXE_SERVER_PORT:-6116}
 # If the requested port is busy (common when stale `haxe --wait` servers exist),
