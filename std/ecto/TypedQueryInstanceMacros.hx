@@ -12,5 +12,8 @@ class TypedQueryInstanceMacros {
     public static macro function where(ethis:Expr, predicate:Expr):Expr {
         return reflaxe.elixir.macros.TypedQueryLambda.buildWhereExpr(ethis, predicate);
     }
-}
 
+    public static macro function orderBy(ethis:Expr, ordering:Expr):Expr {
+        return reflaxe.elixir.macros.TypedQueryLambda.buildOrderByExpr(ethis, ordering);
+    }
+}
