@@ -1,0 +1,14 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "string_buf.ex",
+  "std.ex",
+  "haxe/iterators/array_iterator.ex",
+  "app_b_web/core_components.ex",
+  "app_a_web/some_live.ex",
+  "app_a_web/core_components.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}
