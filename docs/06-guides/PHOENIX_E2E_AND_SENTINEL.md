@@ -9,6 +9,7 @@ Reflaxe.Elixir has three practical QA layers:
 The **QA sentinel** is the recommended way to validate layers (2) and (3) locally and in CI, because it:
 - Builds Haxe → Elixir
 - Runs `mix deps.get` + `mix compile`
+- Ensures the database exists + is migrated (`mix ecto.create` + `mix ecto.migrate`)
 - Boots `mix phx.server` **in the background**
 - Probes readiness with bounded timeouts
 - Optionally runs Playwright
