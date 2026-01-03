@@ -53,6 +53,31 @@ mix dev
 
 Visit `http://localhost:4000` to see the app.
 
+### Troubleshooting
+
+#### `ERROR 42703 (undefined_column) column t0.organization_id does not exist`
+
+Your local dev database is missing the latest migrations (org/tenancy adds `organization_id`).
+
+```bash
+mix ecto.migrate
+# or, if you want a clean slate:
+mix ecto.reset
+```
+
+Tip: prefer `mix dev` over `mix phx.server` because `mix dev` runs `ecto.create` + `ecto.migrate` first.
+
+#### Haxe port conflicts / slow first compile
+
+- **Client watcher port** (Phoenix watchers, `haxe build-client.hxml --wait <port>`):
+  - If you see `[todo-app] Haxe watcher port 6001 is in use; using ...`, stop the stale process or pick a stable port:
+    - `HAXE_CLIENT_WAIT_PORT=6002 mix dev`
+- **Server compilation server** (Mix compiler, `haxe --wait <port>`):
+  - If you see `Haxe server port 6116 is in use; relocating ...` and builds feel slow, clean up stale servers:
+    - `../../scripts/haxe-server-cleanup.sh`
+  - Inspect status:
+    - `mix haxe.status`
+
 ### Optional: GitHub OAuth (Login)
 
 Set these env vars (and restart the server) to enable “Continue with GitHub” on `/login`:
