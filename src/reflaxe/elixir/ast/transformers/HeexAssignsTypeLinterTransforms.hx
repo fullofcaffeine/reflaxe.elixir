@@ -120,6 +120,7 @@ class HeexAssignsTypeLinterTransforms {
     static var componentDefinitionCache: Map<String, Null<ComponentDefinition>> = new Map();
     #if macro
     static var phoenixCoreComponentDefinitionCache: Map<String, Null<ComponentDefinition>> = new Map();
+    static var activeAppWebRoot: Null<String> = null;
     #end
     static var fileContentCache: Map<String, Null<String>> = new Map();
     static var assignsFieldsCache: Map<String, Null<Map<String, String>>> = new Map();
@@ -213,6 +214,14 @@ class HeexAssignsTypeLinterTransforms {
         var fileContent = getFileContentCached(hxPath);
         if (fileContent == null) return;
 
+        #if macro
+        // Provide module context for component resolution within this Haxe source file.
+        // This enables deterministic disambiguation when multiple apps (or multiple component modules)
+        // define the same dot-component function name (e.g., `.card`).
+        var previousAppWebRoot = activeAppWebRoot;
+        activeAppWebRoot = inferAppWebRootFromFileContent(fileContent);
+        #end
+
         var nearLine: Null<Int> = findMinSourceLine(body);
         var assignsTypeSpec = (nearLine != null)
             ? extractAssignsTypeSpecForFunctionBefore(functionName, fileContent, nearLine)
@@ -256,6 +265,10 @@ class HeexAssignsTypeLinterTransforms {
                 checkLiteralComparisons(item.content, fieldsForValidation, typeNameForErrors, ctx, item.pos);
             }
         }
+
+        #if macro
+        activeAppWebRoot = previousAppWebRoot;
+        #end
     }
 
     static function findAnySourceFile(node: ElixirAST): Null<String> {
@@ -1256,7 +1269,8 @@ class HeexAssignsTypeLinterTransforms {
 
     static function resolveComponentDefinition(componentTag: String): Null<ComponentDefinition> {
         if (componentTag == null || componentTag.length == 0) return null;
-        if (componentDefinitionCache.exists(componentTag)) return componentDefinitionCache.get(componentTag);
+        var cacheKey = componentDefinitionCacheKey(componentTag);
+        if (componentDefinitionCache.exists(cacheKey)) return componentDefinitionCache.get(cacheKey);
 
         if (componentFunctionIndex == null) {
             #if macro
@@ -1271,8 +1285,14 @@ class HeexAssignsTypeLinterTransforms {
         if (componentTag.charAt(0) == ".") {
             var fn = componentTag.substr(1);
             var candidates = componentFunctionIndex.get(fn);
-            if (candidates != null && candidates.length == 1) {
-                resolved = candidates[0];
+            if (candidates != null) {
+                if (candidates.length == 1) {
+                    resolved = candidates[0];
+                } else if (candidates.length > 1) {
+                    #if macro
+                    resolved = chooseComponentCandidateForCurrentApp(candidates);
+                    #end
+                }
             }
         } else if (isLikelyModuleComponentTag(componentTag)) {
             var lastDot = componentTag.lastIndexOf(".");
@@ -1286,6 +1306,10 @@ class HeexAssignsTypeLinterTransforms {
                     for (c in candidates) if (componentModuleMatches(c, modulePart)) matches.push(c);
                     if (matches.length == 1) {
                         resolved = matches[0];
+                    } else if (matches.length > 1) {
+                        #if macro
+                        resolved = chooseComponentCandidateForCurrentApp(matches);
+                        #end
                     }
                 }
             }
@@ -1297,9 +1321,53 @@ class HeexAssignsTypeLinterTransforms {
         }
         #end
 
-        componentDefinitionCache.set(componentTag, resolved);
+        componentDefinitionCache.set(cacheKey, resolved);
         return resolved;
     }
+
+    static function componentDefinitionCacheKey(componentTag: String): String {
+        #if macro
+        if (activeAppWebRoot != null && activeAppWebRoot.length > 0) {
+            return componentTag + "@" + activeAppWebRoot;
+        }
+        #end
+        return componentTag;
+    }
+
+    #if macro
+    static function chooseComponentCandidateForCurrentApp(candidates: Array<ComponentDefinition>): Null<ComponentDefinition> {
+        if (candidates == null || candidates.length == 0) return null;
+        if (activeAppWebRoot == null || activeAppWebRoot.length == 0) return null;
+
+        var preferredModule = activeAppWebRoot + ".CoreComponents";
+        var preferred: Array<ComponentDefinition> = [];
+        for (c in candidates) {
+            if (c == null) continue;
+            if (c.nativeModuleName == preferredModule) preferred.push(c);
+        }
+        return preferred.length == 1 ? preferred[0] : null;
+    }
+
+    static function inferAppWebRootFromFileContent(fileContent: String): Null<String> {
+        if (fileContent == null || fileContent.length == 0) return null;
+
+        var re = ~/@:native\("([^"]+)"/g;
+        var idx = 0;
+        while (re.matchSub(fileContent, idx)) {
+            var nativeName = re.matched(1);
+            var matchPos = re.matchedPos();
+            idx = (matchPos != null) ? (matchPos.pos + matchPos.len) : (idx + 1);
+
+            if (nativeName == null || nativeName.length == 0) continue;
+            var dot = nativeName.indexOf(".");
+            if (dot <= 0) continue;
+
+            return nativeName.substr(0, dot);
+        }
+
+        return null;
+    }
+    #end
 
     #if macro
     static function resolvePhoenixCoreComponentDefinition(componentTag: String): Null<ComponentDefinition> {
@@ -1483,67 +1551,90 @@ class HeexAssignsTypeLinterTransforms {
 
         if (discovered == null) return;
 
+        // RepoDiscovery enumerates type paths, but component modules can be multi-type
+        // (typedefs + classes). Use Context.getModule to avoid re-entering typing for a
+        // type that may still be in-progress and to access all types in the module.
+        var processedModules = new Map<String, Bool>();
+
+        #if debug_assigns_linter
+        trace('[HeexAssignsTypeLinter] building component index: discovered=' + discovered.length);
+        #end
+
         for (typePath in discovered) {
-            var t: haxe.macro.Type = null;
-            try t = Context.getType(typePath) catch (_:Dynamic) t = null;
-            if (t == null) continue;
+            if (typePath == null || typePath.length == 0) continue;
+            if (processedModules.exists(typePath)) continue;
+            processedModules.set(typePath, true);
 
-            var cls: Null<haxe.macro.Type.ClassType> = null;
-            switch (TypeTools.follow(t)) {
-                case TInst(c, _):
-                    cls = c.get();
-                default:
+            var moduleTypes: Array<haxe.macro.Type> = null;
+            try moduleTypes = Context.getModule(typePath) catch (e:Dynamic) {
+                #if debug_assigns_linter
+                trace('[HeexAssignsTypeLinter] component index: failed to load module ' + typePath + ': ' + Std.string(e));
+                #end
+                continue;
             }
-            if (cls == null || cls.meta == null) continue;
+            if (moduleTypes == null) continue;
 
-            if (!(cls.meta.has(":component") || cls.meta.has(":phoenix.components"))) continue;
+            for (moduleType in moduleTypes) {
+                var cls: Null<haxe.macro.Type.ClassType> = null;
+                switch (TypeTools.follow(moduleType)) {
+                    case TInst(c, _):
+                        cls = c.get();
+                    default:
+                }
+                if (cls == null || cls.meta == null) continue;
+                if (!(cls.meta.has(":component") || cls.meta.has(":phoenix.components"))) continue;
 
-            var moduleTypePath = (cls.pack != null && cls.pack.length > 0)
-                ? (cls.pack.concat([cls.name]).join("."))
-                : cls.name;
+                var moduleTypePath = (cls.pack != null && cls.pack.length > 0)
+                    ? (cls.pack.concat([cls.name]).join("."))
+                    : cls.name;
 
-            var nativeModuleName: Null<String> = null;
-            if (cls.meta.has(":native")) {
-                var nativeMeta = cls.meta.extract(":native");
-                if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
-                    switch (nativeMeta[0].params[0].expr) {
-                        case EConst(CString(s, _)):
-                            nativeModuleName = s;
-                        default:
+                var nativeModuleName: Null<String> = null;
+                if (cls.meta.has(":native")) {
+                    var nativeMeta = cls.meta.extract(":native");
+                    if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+                        switch (nativeMeta[0].params[0].expr) {
+                            case EConst(CString(s, _)):
+                                nativeModuleName = s;
+                            default:
+                        }
                     }
                 }
-            }
 
-            for (field in cls.statics.get()) {
-                if (field == null || field.meta == null || !field.meta.has(":component")) continue;
+                for (field in cls.statics.get()) {
+                    if (field == null || field.meta == null || !field.meta.has(":component")) continue;
 
-                var fnName = NameUtils.toSnakeCase(field.name);
-                var fun = switch (field.type) {
-                    case TFun(args, _):
-                        args;
-                    default:
-                        null;
-                };
-                if (fun == null || fun.length == 0) continue;
+                    var fnName = NameUtils.toSnakeCase(field.name);
+                    var funArgs = switch (field.type) {
+                        case TFun(args, _):
+                            args;
+                        default:
+                            null;
+                    };
+                    if (funArgs == null || funArgs.length == 0) continue;
 
-                var assignsType = fun[0].t;
-                var propInfo = propsFromAssignsType(assignsType);
-                if (propInfo == null) continue;
+                    var assignsType = funArgs[0].t;
+                    var propInfo = propsFromAssignsType(assignsType);
+                    if (propInfo == null) continue;
 
-                var def: ComponentDefinition = {
-                    moduleTypePath: moduleTypePath,
-                    nativeModuleName: nativeModuleName,
-                    functionName: fnName,
-                    props: propInfo.props,
-                    required: propInfo.required,
-                    slots: propInfo.slots
-                };
+                    var def: ComponentDefinition = {
+                        moduleTypePath: moduleTypePath,
+                        nativeModuleName: nativeModuleName,
+                        functionName: fnName,
+                        props: propInfo.props,
+                        required: propInfo.required,
+                        slots: propInfo.slots
+                    };
 
-                var existing = componentFunctionIndex.get(fnName);
-                if (existing == null) {
-                    componentFunctionIndex.set(fnName, [def]);
-                } else {
-                    existing.push(def);
+                    var existing = componentFunctionIndex.get(fnName);
+                    if (existing == null) {
+                        componentFunctionIndex.set(fnName, [def]);
+                    } else {
+                        existing.push(def);
+                    }
+
+                    #if debug_assigns_linter
+                    trace('[HeexAssignsTypeLinter] component index: ' + fnName + ' from ' + (nativeModuleName != null ? nativeModuleName : moduleTypePath));
+                    #end
                 }
             }
         }
