@@ -27,4 +27,7 @@ enum HttpMethod {
     
     /** Phoenix LiveDashboard route (special handling) */
     LIVE_DASHBOARD;
+
+    /** Swoosh mailbox preview route (special handling; dev-only) */
+    MAILBOX;
 }

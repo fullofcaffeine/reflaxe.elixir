@@ -2463,15 +2463,15 @@ class HeexAssignsTypeLinterTransforms {
         return null;
     }
 
-    private static function extractAssignsFieldsFromTypedefBlock(typeName: String, hx: String): { foundTypedef: Bool, fields: Map<String, String> } {
-        var out = new Map<String, String>();
-        // Find typedef <typeName> = { ... }
-        var idx = hx.indexOf('typedef ' + typeName + '');
-        if (idx == -1) return { foundTypedef: false, fields: out };
-        var braceStart = hx.indexOf('{', idx);
-        if (braceStart == -1) return { foundTypedef: false, fields: out };
-        var i = braceStart + 1;
-        var depth = 1;
+	    private static function extractAssignsFieldsFromTypedefBlock(typeName: String, hx: String): { foundTypedef: Bool, fields: Map<String, String> } {
+	        var out = new Map<String, String>();
+	        // Find typedef <typeName> = { ... }
+	        var idx = hx.indexOf('typedef ' + typeName + '');
+	        if (idx == -1) return { foundTypedef: false, fields: out };
+	        var braceStart = hx.indexOf('{', idx);
+	        if (braceStart == -1) return { foundTypedef: false, fields: out };
+	        var i = braceStart + 1;
+	        var depth = 1;
         while (i < hx.length && depth > 0) {
             var ch = hx.charAt(i);
             if (ch == '{') depth++; else if (ch == '}') depth--; i++;
@@ -2484,44 +2484,61 @@ class HeexAssignsTypeLinterTransforms {
         var baseTypes: Array<String> = [];
 
         // Parse lines: supports both `var name: Type` and `name: Type`, with optional comma/semicolon terminators
-        var lines = block.split("\n");
-        for (ln in lines) {
-            var line = ln.trim();
-            if (line.length == 0 || line.startsWith("//")) continue;
+	        var lines = block.split("\n");
+	        for (ln in lines) {
+	            var line = ln.trim();
+	            if (line.length == 0 || line.startsWith("//")) continue;
 
-            // Strip trailing inline comments (common in assigns typedefs).
-            var commentIndex = line.indexOf("//");
-            if (commentIndex != -1) {
-                line = line.substr(0, commentIndex).trim();
-                if (line.length == 0) continue;
-            }
+	            // Strip trailing inline comments (common in assigns typedefs).
+	            var commentIndex = line.indexOf("//");
+	            if (commentIndex != -1) {
+	                line = line.substr(0, commentIndex).trim();
+	                if (line.length == 0) continue;
+	            }
 
-            if (line.startsWith(">")) {
-                var rest = line.substr(1).trim();
-                if (rest.endsWith(",")) rest = rest.substr(0, rest.length - 1).trim();
-                if (rest.length > 0) baseTypes.push(rest);
-                continue;
-            }
+	            // Strip leading metadata tags so we can parse assigns fields like:
+	            //   @:optional var className: String;
+	            //   @:slot @:optional var action: Slot<CardActionAssigns>;
+	            // NOTE: This keeps the linter tolerant of HXX/LiveView metadata while still
+	            // extracting the underlying field name/type.
+	            while (true) {
+	                var meta = ~/^@:[A-Za-z0-9_]+(?:\([^)]*\))?\s+/;
+	                if (!meta.match(line)) break;
+	                var pos = meta.matchedPos();
+	                line = line.substr(pos.pos + pos.len).trim();
+	            }
 
-            var name: String = null;
-            var typeSpec: String = null;
-            var reVar = ~/^var\s+\??([A-Za-z0-9_]+)\s*:\s*([^,;]+)\s*[,;]?$/;
-            if (reVar.match(line)) {
-                name = reVar.matched(1);
-                typeSpec = reVar.matched(2).trim();
-            } else {
-                var rePlain = ~/^\??([A-Za-z0-9_]+)\s*:\s*([^,;]+)\s*[,;]?$/;
-                if (rePlain.match(line)) {
-                    name = rePlain.matched(1);
-                    typeSpec = rePlain.matched(2).trim();
-                }
-            }
-            if (name != null && typeSpec != null) {
-                var kind = normalizeKind(typeSpec);
-                out.set(name, kind);
-                // HXX/HEEx assigns normalize camelCase to snake_case (e.g. className -> @class_name).
-                var snake = toSnakeCase(name);
-                if (snake != name && !out.exists(snake)) {
+	            if (line.startsWith(">")) {
+	                var rest = line.substr(1).trim();
+	                if (rest.endsWith(",")) rest = rest.substr(0, rest.length - 1).trim();
+	                if (rest.length > 0) baseTypes.push(rest);
+	                continue;
+	            }
+
+	            var name: String = null;
+	            var typeSpec: String = null;
+	            // Keep parsing tolerant of commas inside generic types (e.g. Slot<Term, CardLet>).
+	            var reVar = ~/^var\s+\??([A-Za-z0-9_]+)\s*:\s*(.+)$/;
+	            if (reVar.match(line)) {
+	                name = reVar.matched(1);
+	                typeSpec = reVar.matched(2).trim();
+	            } else {
+	                var rePlain = ~/^\??([A-Za-z0-9_]+)\s*:\s*(.+)$/;
+	                if (rePlain.match(line)) {
+	                    name = rePlain.matched(1);
+	                    typeSpec = rePlain.matched(2).trim();
+	                }
+	            }
+	            if (name != null && typeSpec != null) {
+	                // Strip common trailing terminators.
+	                while (typeSpec.endsWith(",") || typeSpec.endsWith(";")) {
+	                    typeSpec = typeSpec.substr(0, typeSpec.length - 1).trim();
+	                }
+	                var kind = normalizeKind(typeSpec);
+	                out.set(name, kind);
+	                // HXX/HEEx assigns normalize camelCase to snake_case (e.g. className -> @class_name).
+	                var snake = toSnakeCase(name);
+	                if (snake != name && !out.exists(snake)) {
                     out.set(snake, kind);
                 }
                 // Phoenix component assigns may use HXX attribute naming (e.g. className -> @class).
