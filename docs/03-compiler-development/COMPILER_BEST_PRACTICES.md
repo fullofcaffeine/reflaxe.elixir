@@ -232,11 +232,11 @@ class Date {
 - **Why**: Ensures consistency, prevents regression, and leverages recent learning and discoveries
 
 ### 12. JavaScript Generation Philosophy: Separation of Concerns
-- **Rule**: Focus exclusively on Haxe→Elixir compilation; use standard Haxe JS compiler for JavaScript output
-- **Custom JS Only When**: Features don't exist in standard Haxe (e.g., async/await) or require specific Phoenix integration
-- **Benefits**: Reduced maintenance burden, clear project scope, better compatibility with JS tooling
-- **Implementation**: Delegate to Haxe's mature JS compiler unless absolutely necessary for custom features
-- **Future**: Consider Genes compiler migration while maintaining separation principle
+- **Rule**: Keep the core compiler focused on Haxe→Elixir; generate JavaScript via Haxe’s standard JS target.
+- **Recommended**: For Phoenix apps, use **Genes** on top of the Haxe JS target to emit readable ES modules (used in the todo-app).
+- **Custom JS Only When**: Features don’t exist in standard Haxe (e.g., async/await ergonomics) or require specific Phoenix integration points.
+- **Benefits**: Reduced maintenance burden, clear project scope, and better compatibility with existing JS tooling.
+- **Implementation**: Client builds live in app-local `build-client.hxml` and use `-lib genes`; the Elixir compiler remains framework-agnostic and server-focused.
 - **See**: [`JS_GENERATION_PHILOSOPHY.md`](../09-history/archive/docs/02-user-guide/JS_GENERATION_PHILOSOPHY.md) - Complete philosophical guide (archived)
 
 ## Development Workflow Guidelines
