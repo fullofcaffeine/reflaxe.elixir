@@ -167,6 +167,59 @@ ts() { date "+%Y-%m-%d %H:%M:%S"; }
 log() { if [[ "${QUIET:-0}" -eq 0 ]]; then echo "[$(ts)] $*"; fi }
 run() { if [[ "$VERBOSE" -eq 1 ]]; then set -x; fi; "$@"; local rc=$?; if [[ "$VERBOSE" -eq 1 ]]; then set +x; fi; return $rc; }
 
+# Check whether a TCP port is available for listening.
+# We prefer an Elixir-based probe since Elixir is required for Phoenix anyway.
+port_available() {
+  local port="$1"
+  [[ -n "$port" ]] || return 1
+  if ! command -v elixir >/dev/null 2>&1; then
+    return 1
+  fi
+  elixir -e '
+    port = System.argv() |> List.first() |> String.to_integer()
+    ipv6_opts = [:binary, active: false, ip: {0,0,0,0,0,0,0,0}, ipv6_v6only: false]
+    case :gen_tcp.listen(port, ipv6_opts) do
+      {:ok, sock} -> :gen_tcp.close(sock); System.halt(0)
+      {:error, _} ->
+        case :gen_tcp.listen(port, [:binary, active: false]) do
+          {:ok, sock} -> :gen_tcp.close(sock); System.halt(0)
+          {:error, _} -> System.halt(1)
+        end
+    end
+  ' -- "$port" >/dev/null 2>&1
+}
+
+pick_available_port() {
+  local base="$1"
+  local offset port
+  for offset in $(seq 0 50); do
+    port=$(( base + offset ))
+    if port_available "$port"; then
+      echo "$port"
+      return 0
+    fi
+  done
+  return 1
+}
+
+kill_tree() {
+  local pid="$1"
+  [[ -n "$pid" ]] || return 0
+
+  if command -v pgrep >/dev/null 2>&1; then
+    local children
+    children="$(pgrep -P "$pid" 2>/dev/null || true)"
+    if [[ -n "$children" ]]; then
+      local child
+      for child in $children; do
+        kill_tree "$child"
+      done
+    fi
+  fi
+
+  kill -TERM "$pid" 2>/dev/null || true
+}
+
 # Wrapper to run a command with optional timeout and logging to a file.
 # Usage: run_step_with_log "Desc" timeout_spec logfile "cmd …"
 run_step_with_log() {
@@ -327,6 +380,17 @@ fi
 
 on_exit() {
   local rc=$?
+  # Tear down the QA-started Haxe server if present (avoid leaking `haxe --wait` between runs).
+  if [[ -f /tmp/qa-haxe-server.pid ]]; then
+    local haxe_pid
+    haxe_pid="$(cat /tmp/qa-haxe-server.pid 2>/dev/null || true)"
+    if [[ -n "$haxe_pid" ]] && kill -0 "$haxe_pid" 2>/dev/null; then
+      kill_tree "$haxe_pid"
+      sleep 0.2
+      kill -KILL "$haxe_pid" 2>/dev/null || true
+    fi
+  fi
+
   # If Phoenix was started and KEEP_ALIVE isn't requested, tear it down.
   # `cleanup` is defined only after Phoenix is launched, so guard its presence
   # to keep early-failure paths safe.
@@ -390,26 +454,50 @@ mkdir -p "$QA_BUILD_ROOT" >/dev/null 2>&1 || true
 export QA_BUILD_ROOT
 export ENV_NAME
 
-# Prefer explicit override, else system haxe, else npx
+# Prefer explicit override, else project-local haxe, else system haxe, else npx
+HAXE_EXE=""
+if [[ -x "node_modules/.bin/haxe" ]]; then
+  HAXE_EXE="node_modules/.bin/haxe"
+elif command -v haxe >/dev/null 2>&1; then
+  HAXE_EXE="haxe"
+fi
+
 if [[ -n "${HAXE_CMD:-}" ]]; then
   HAXE_CMD="$HAXE_CMD"
-elif command -v haxe >/dev/null 2>&1; then
-  HAXE_CMD="haxe"
+elif [[ -n "$HAXE_EXE" ]]; then
+  HAXE_CMD="$HAXE_EXE"
 else
   HAXE_CMD="npx -y haxe"
 fi
 
 # Optional: Haxe compilation server for faster repeated builds (warm cache)
-HAXE_SERVER_PORT=${HAXE_SERVER_PORT:-6116}
+REQUESTED_HAXE_SERVER_PORT=${HAXE_SERVER_PORT:-6116}
+# If the requested port is busy (common when stale `haxe --wait` servers exist),
+# pick a nearby free port instead of connecting to a random existing listener.
+if port_available "$REQUESTED_HAXE_SERVER_PORT"; then
+  HAXE_SERVER_PORT="$REQUESTED_HAXE_SERVER_PORT"
+else
+  # Prefer a randomized base port unless the user explicitly requested one.
+  if [[ -z "${HAXE_SERVER_PORT:-}" ]]; then
+    base=$((15000 + (RANDOM % 20000)))
+  else
+    base="$REQUESTED_HAXE_SERVER_PORT"
+  fi
+  HAXE_SERVER_PORT="$(pick_available_port "$base" || true)"
+  if [[ -z "$HAXE_SERVER_PORT" ]]; then
+    HAXE_SERVER_PORT="$REQUESTED_HAXE_SERVER_PORT"
+  fi
+  log "[QA] Haxe server port ${REQUESTED_HAXE_SERVER_PORT} is in use; using ${HAXE_SERVER_PORT}"
+fi
 # Default off to avoid hangs on systems without a running server
 # Default ON to leverage incremental cache between passes; falls back to direct
 # haxe if the server fails to start or connect.
 HAXE_USE_SERVER=${HAXE_USE_SERVER:-1}
-if [[ "$HAXE_USE_SERVER" -eq 1 ]] && command -v haxe >/dev/null 2>&1; then
+if [[ "$HAXE_USE_SERVER" -eq 1 ]] && [[ -n "$HAXE_EXE" ]]; then
   # Best-effort start of the Haxe compilation server; do not rely on nc
-  ( nohup haxe --wait "$HAXE_SERVER_PORT" >/tmp/qa-haxe-server.log 2>&1 & echo $! > /tmp/qa-haxe-server.pid ) >/dev/null 2>&1 || true
+  ( nohup "$HAXE_EXE" --wait "$HAXE_SERVER_PORT" >/tmp/qa-haxe-server.log 2>&1 & echo $! > /tmp/qa-haxe-server.pid ) >/dev/null 2>&1 || true
   # Keep using plain HAXE_CMD unless caller explicitly set HAXE_USE_SERVER=1
-  HAXE_CMD="$HAXE_CMD --connect $HAXE_SERVER_PORT"
+  HAXE_CMD="$HAXE_EXE --connect $HAXE_SERVER_PORT"
   # Quick readiness probe (bounded). If the server is not reachable quickly,
   # fall back to direct haxe to avoid spending the entire BUILD_TIMEOUT on a failed handshake.
   # Try for up to ~5s, short polls, then fall back to direct haxe
@@ -417,7 +505,7 @@ if [[ "$HAXE_USE_SERVER" -eq 1 ]] && command -v haxe >/dev/null 2>&1; then
     if bash -lc "$HAXE_CMD -version" >/dev/null 2>&1; then READY=1; break; fi
     sleep 0.2
   done
-  if [[ "$READY" -ne 1 ]]; then HAXE_CMD="haxe"; fi
+  if [[ "$READY" -ne 1 ]]; then HAXE_CMD="$HAXE_EXE"; fi
 fi
 
 # Optional: dependency prewarm to avoid first-time rebar/make latency for

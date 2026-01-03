@@ -69,14 +69,11 @@ Tip: prefer `mix dev` over `mix phx.server` because `mix dev` runs `ecto.create`
 
 #### Haxe port conflicts / slow first compile
 
-- **Client watcher port** (Phoenix watchers, `haxe build-client.hxml --wait <port>`):
-  - If you see `[todo-app] Haxe watcher port 6001 is in use; using ...`, stop the stale process or pick a stable port:
-    - `HAXE_CLIENT_WAIT_PORT=6002 mix dev`
-- **Server compilation server** (Mix compiler, `haxe --wait <port>`):
-  - If you see `Haxe server port 6116 is in use; relocating ...` and builds feel slow, clean up stale servers:
-    - `../../scripts/haxe-server-cleanup.sh`
-  - Inspect status:
-    - `mix haxe.status`
+- Dev uses `mix haxe.watch` watchers for **both** server (Haxe→Elixir) and client (Haxe→JS) code.
+- If you see `Haxe server port 6116 is in use; relocating ...` and builds feel slow, clean up stale servers:
+  - `../../scripts/haxe-server-cleanup.sh`
+- Inspect status:
+  - `mix haxe.status`
 
 ### Optional: GitHub OAuth (Login)
 

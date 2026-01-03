@@ -1,57 +1,24 @@
 import Config
 
-# Dynamically enable optional watchers only when the executables are available
-haxe_bin = System.find_executable("haxe")
+todo_app_root = Path.expand("../", __DIR__)
 
-# Phoenix watchers run the Haxe client compiler with `--wait <port>` to keep an incremental
-# compiler server alive in dev. If the BEAM VM is terminated abruptly, that OS process can be
-# orphaned and keep the port bound (EADDRINUSE). Prefer a stable default, but auto-pick the next
-# free port to avoid bringing down `mix phx.server`.
-requested_haxe_wait_port =
-  case System.get_env("HAXE_CLIENT_WAIT_PORT") do
-    nil -> 6001
-    val ->
-      case Integer.parse(val) do
-        {int, _} when int > 0 -> int
-        _ -> 6001
-      end
-  end
+find_local_haxe = fn find_local_haxe, dir ->
+  candidate = Path.join([dir, "node_modules", ".bin", "haxe"])
 
-is_port_available? = fn port ->
-  # The Haxe watcher (lix/haxeshim) binds on the IPv6 wildcard (::) as a dual-stack
-  # socket by default (v6only=false). Probe IPv6 dual-stack first, fall back to IPv4.
-  ipv6_opts = [:binary, active: false, ip: {0, 0, 0, 0, 0, 0, 0, 0}, ipv6_v6only: false]
-
-  case :gen_tcp.listen(port, ipv6_opts) do
-    {:ok, socket} ->
-      :gen_tcp.close(socket)
-      true
-
-    {:error, _} ->
-      case :gen_tcp.listen(port, [:binary, active: false]) do
-        {:ok, socket} ->
-          :gen_tcp.close(socket)
-          true
-
-        {:error, _} ->
-          false
-      end
-  end
-end
-
-haxe_wait_port =
   cond do
-    is_port_available?.(requested_haxe_wait_port) ->
-      requested_haxe_wait_port
-    true ->
-      Enum.find_value((requested_haxe_wait_port + 1)..(requested_haxe_wait_port + 50), requested_haxe_wait_port, fn port ->
-        if is_port_available?.(port), do: port, else: nil
-      end)
-  end
+    File.exists?(candidate) ->
+      candidate
 
-if haxe_bin != nil and haxe_wait_port != requested_haxe_wait_port do
-  IO.puts("[todo-app] Haxe watcher port #{requested_haxe_wait_port} is in use; using #{haxe_wait_port}")
+    dir == "/" or dir == Path.dirname(dir) ->
+      nil
+
+    true ->
+      find_local_haxe.(find_local_haxe, Path.dirname(dir))
+  end
 end
+
+# Dynamically enable optional watchers only when the toolchain is available.
+haxe_bin = System.find_executable("haxe") || find_local_haxe.(find_local_haxe, todo_app_root)
 
 # Base watchers (always on)
 base_watchers = [
@@ -62,14 +29,16 @@ base_watchers = [
 ]
 
 # Optional watchers (enabled only if binaries are present)
-optional_watchers = []
 optional_watchers =
-  if haxe_bin do
-    # Run the client-side Haxe compiler in watch mode (compile JS + source maps).
-    # Optional so the server can boot even when Haxe isn't installed.
-    Keyword.put(optional_watchers, :haxe, ["build-client.hxml", "--wait", Integer.to_string(haxe_wait_port), cd: Path.expand("../", __DIR__)])
+  if haxe_bin != nil do
+    [
+      # Server Haxe watcher: regenerates Elixir into lib/ so Phoenix code reloader picks it up.
+      mix: ["haxe.watch", "--hxml", "build-server.hxml", "--dirs", "src_haxe/server,src_haxe/shared,src_haxe/contexts", "--debounce", "150", cd: todo_app_root],
+      # Client Haxe watcher: regenerates assets/js/hx_app.js; esbuild --watch rebundles into priv/static.
+      mix: ["haxe.watch", "--hxml", "build-client.hxml", "--dirs", "src_haxe/client,src_haxe/shared,src_haxe/contexts", "--debounce", "150", cd: todo_app_root]
+    ]
   else
-    optional_watchers
+    []
   end
 
 all_watchers = base_watchers ++ optional_watchers
@@ -117,8 +86,6 @@ config :todo_app, TodoAppWeb.Endpoint,
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
       ~r"lib/todo_app_web/(controllers|live|components)/.*(ex|heex)$",
-      # Watch Haxe source files for recompilation
-      ~r"src_haxe/.*(hx)$",
       # Watch generated Elixir files
       ~r"lib/.*(ex)$"
     ]

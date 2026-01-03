@@ -58,8 +58,8 @@ defmodule Mix.Tasks.Haxe.Watch do
     # Get configuration from mix.exs
     config = get_watch_config(opts)
     
-    # Ensure Mix doesn't stop the VM
-    Mix.Task.run("app.start")
+    # Ensure code is compiled and loaded, but don't start the full application tree.
+    Mix.Task.run("app.start", ["--no-start"])
     
     if opts[:once] do
       # Just compile once and exit
@@ -73,9 +73,14 @@ defmodule Mix.Tasks.Haxe.Watch do
   defp get_watch_config(opts) do
     # Start with project config
     project_config = Mix.Project.config()[:haxe] || []
-    
+
     # Parse directories from command line
     source_dir = Keyword.get(project_config, :source_dir, "src_haxe")
+
+    # HaxeCompiler expects :hxml_file, while HaxeWatcher expects :build_file.
+    # Keep them in sync so the initial compile and subsequent watch recompiles
+    # use the same build configuration.
+    hxml_file = opts[:hxml] || Keyword.get(project_config, :hxml_file, "build.hxml")
 
     dirs =
       case opts[:dirs] do
@@ -86,13 +91,14 @@ defmodule Mix.Tasks.Haxe.Watch do
         dirs_string ->
           String.split(dirs_string, ",") |> Enum.map(&String.trim/1)
       end
-    
+
     # Build final configuration
     [
       dirs: dirs,
       debounce_ms: opts[:debounce] || Keyword.get(project_config, :debounce_ms, 100),
-      # HaxeWatcher expects :build_file (not :hxml_file)
-      build_file: opts[:hxml] || Keyword.get(project_config, :hxml_file, "build.hxml"),
+      # HaxeWatcher expects :build_file; HaxeCompiler expects :hxml_file
+      build_file: hxml_file,
+      hxml_file: hxml_file,
       verbose: opts[:verbose] || false,
       auto_compile: true,
       source_dir: source_dir,
