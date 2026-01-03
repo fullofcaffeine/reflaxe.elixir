@@ -285,7 +285,8 @@ We intentionally keep the LiveView bootstrap as a tiny, hand‑written JS entry 
 - Responsibilities:
   - Import `phoenix_html`, `phoenix`, `phoenix_live_view`.
   - Read CSRF meta token and pass it to `LiveSocket`.
-  - Pull Hooks from `window.Hooks` (populated by the Haxe bundle) and connect.
+  - Pull Hooks from `window.Hooks` (populated by the Haxe bundle).
+  - Create/connect `LiveSocket` unless already bootstrapped by Haxe.
   - Expose `window.liveSocket` for debugging.
 - Haxe integration:
   - Haxe client compiles via Genes to `assets/js/hx_app.js` (entry) plus modules under `assets/js/client/**` and `assets/js/genes/**`, and publishes `window.Hooks`.
@@ -293,7 +294,7 @@ We intentionally keep the LiveView bootstrap as a tiny, hand‑written JS entry 
 - Rationale (1.0 scope):
   - Matches Phoenix’s idiomatic setup and minimizes friction on upgrades.
   - Keeps the bootstrap minimal while concentrating typed logic in Haxe.
-  - Avoids re‑implementing client library externs for a file that has no meaningful state.
+  - Optional: compile the client with `-D todoapp_hx_live_socket_bootstrap` to connect LiveSocket from typed Haxe (Genes); `phoenix_app.js` has a guard to prevent double-connect.
 
 Watchers
 - Dev watcher runs the Haxe client watcher when available:
@@ -307,7 +308,7 @@ CSRF meta
 Constraints (project-wide)
 - No `-D analyzer-optimize` in any HXML; it destroys functional patterns for Elixir and JS
 - No Dynamic on public surfaces; JS hooks are typed (`typedef Hooks`) and use js interop only at the boundary
-- Phoenix idioms: LiveSocket bootstrap in `assets/js/phoenix_app.js` with `hooks` param and CSRF meta
+- Phoenix idioms: LiveSocket bootstrap in `assets/js/phoenix_app.js` with `hooks` + CSRF meta, plus an optional typed Haxe bootstrap (`-D todoapp_hx_live_socket_bootstrap`) guarded by `window.liveSocket`
 
 #### Before (Broken):
 ```haxe
