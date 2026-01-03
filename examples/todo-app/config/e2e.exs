@@ -36,3 +36,6 @@ config :logger, level: :warning
 
 # Initialize plugs at runtime for faster compiles
 config :phoenix, :plug_init_mode, :runtime
+
+# Deterministic local OAuth-style flow for Playwright (no external secrets/providers).
+config :todo_app, :mock_oauth_enabled, true

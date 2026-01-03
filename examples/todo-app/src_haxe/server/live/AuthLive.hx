@@ -14,6 +14,7 @@ import phoenix.types.Assigns;
 import phoenix.types.Flash.FlashMap;
 import plug.CSRFProtection;
 import shared.liveview.HookName;
+import server.services.MockOAuth;
 import server.infrastructure.Repo;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
@@ -23,6 +24,8 @@ typedef AuthLiveAssigns = {
     var current_user: Null<server.schemas.User>;
     var users: Array<server.schemas.User>;
     var github_oauth_enabled: Bool;
+    var mock_oauth_enabled: Bool;
+    var oauth_enabled: Bool;
 }
 
 typedef AuthLiveRenderAssigns = {> AuthLiveAssigns,
@@ -63,11 +66,15 @@ class AuthLive {
         if (currentUser == null) signedIn = false;
 
         var users = Users.listUsers(null);
+        var githubOAuthEnabled = Sys.getEnv("GITHUB_CLIENT_ID") != null && Sys.getEnv("GITHUB_CLIENT_SECRET") != null;
+        var mockOAuthEnabled = MockOAuth.isEnabled();
         sock = sock.merge({
             signed_in: signedIn,
             current_user: currentUser,
             users: users,
-            github_oauth_enabled: Sys.getEnv("GITHUB_CLIENT_ID") != null && Sys.getEnv("GITHUB_CLIENT_SECRET") != null
+            github_oauth_enabled: githubOAuthEnabled,
+            mock_oauth_enabled: mockOAuthEnabled,
+            oauth_enabled: githubOAuthEnabled || mockOAuthEnabled
         });
         return Ok(sock);
     }
@@ -131,28 +138,37 @@ class AuthLive {
                             </div>
                         </if>
 
-	                        <div class="grid grid-cols-1 gap-6">
-	                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
-	                                <div class="font-semibold text-gray-800 dark:text-white mb-3">Sign in / create user</div>
-	                                <if {@github_oauth_enabled}>
-	                                    <a data-testid="btn-github-oauth"
-	                                        href="/auth/github"
-	                                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200 shadow-md mb-4">
-	                                        <span aria-hidden="true">🐙</span>
-	                                        Continue with GitHub
-	                                    </a>
-	                                    <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-4">
-	                                        <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
-	                                        <div>or</div>
-	                                        <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
-	                                    </div>
-	                                </if>
-	                                <if {!@github_oauth_enabled}>
-	                                    <div data-testid="github-oauth-disabled" class="text-xs text-gray-500 dark:text-gray-400 mb-4">
-	                                        GitHub OAuth is disabled (set <code>GITHUB_CLIENT_ID</code> and <code>GITHUB_CLIENT_SECRET</code> to enable).
-	                                    </div>
-	                                </if>
-	                                <form action="/auth/login" method="post" class="space-y-4">
+		                        <div class="grid grid-cols-1 gap-6">
+		                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
+		                                <div class="font-semibold text-gray-800 dark:text-white mb-3">Sign in / create user</div>
+		                                <if {@mock_oauth_enabled}>
+		                                    <a data-testid="btn-mock-oauth"
+		                                        href="/auth/mock"
+		                                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-200 shadow-md mb-4">
+		                                        Continue with Mock OAuth (E2E)
+		                                    </a>
+		                                </if>
+		                                <if {@github_oauth_enabled}>
+		                                    <a data-testid="btn-github-oauth"
+		                                        href="/auth/github"
+		                                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200 shadow-md mb-4">
+		                                        <span aria-hidden="true">🐙</span>
+		                                        Continue with GitHub
+		                                    </a>
+		                                </if>
+		                                <if {@oauth_enabled}>
+		                                    <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-4">
+		                                        <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
+		                                        <div>or</div>
+		                                        <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
+		                                    </div>
+		                                </if>
+		                                <if {!@oauth_enabled}>
+		                                    <div data-testid="github-oauth-disabled" class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+		                                        GitHub OAuth is disabled (set <code>GITHUB_CLIENT_ID</code> and <code>GITHUB_CLIENT_SECRET</code> to enable).
+		                                    </div>
+		                                </if>
+		                                <form action="/auth/login" method="post" class="space-y-4">
 	                                    <input type="hidden" name="_csrf_token" value=${CSRFProtection.get_csrf_token()}/>
 
                                     <div>
