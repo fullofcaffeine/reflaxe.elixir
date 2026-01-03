@@ -93,6 +93,11 @@ defmodule Mix.Tasks.Compile.Haxe do
     
     # Clear compilation error cache
     HaxeCompiler.clear_compilation_errors()
+
+    # Remove manifest so next compile is guaranteed to rebuild
+    if File.exists?(manifest_path()) do
+      File.rm!(manifest_path())
+    end
   end
   
   @impl Mix.Task.Compiler
@@ -171,11 +176,11 @@ defmodule Mix.Tasks.Compile.Haxe do
       start_file_watcher(config)
     end
     
-    # Perform compilation
-    case HaxeCompiler.compile(config) do
+      # Perform compilation
+      case HaxeCompiler.compile(config) do
       {:ok, compiled_files} ->
         # Store manifest for incremental compilation
-        write_manifest(compiled_files)
+        write_manifest(compiled_files, config)
         
         # Report success
         if config[:verbose] || !Enum.empty?(compiled_files) do
@@ -227,12 +232,12 @@ defmodule Mix.Tasks.Compile.Haxe do
     |> Path.join("compile.haxe")
   end
   
-  defp write_manifest(compiled_files) do
+  defp write_manifest(compiled_files, config) do
     manifest = %{
       version: 1,
       timestamp: System.system_time(:second),
       files: compiled_files,
-      config_hash: :erlang.phash2(get_haxe_config())
+      config_hash: HaxeCompiler.config_hash(config)
     }
     
     manifest_path()

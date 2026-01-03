@@ -61,20 +61,59 @@ defmodule HaxeCompiler do
   """
   @spec needs_recompilation?(keyword()) :: boolean()
   def needs_recompilation?(opts \\ []) do
+    force = Keyword.get(opts, :force, false)
     source_dir = Keyword.get(opts, :source_dir, "src_haxe")
     target_dir = Keyword.get(opts, :target_dir, "lib")
-    force = Keyword.get(opts, :force, false)
-    
+
     cond do
-      force -> 
+      force ->
         true
-      
+
       not File.exists?(target_dir) ->
         true
-      
+
+      not File.exists?(manifest_path()) ->
+        true
+
       true ->
-        check_file_timestamps(source_dir, target_dir)
+        case read_manifest() do
+          {:ok, manifest} ->
+            current_hash = config_hash(opts)
+            stored_hash = Map.get(manifest, :config_hash)
+            stored_files = Map.get(manifest, :files, [])
+
+            cond do
+              stored_hash == nil ->
+                true
+
+              stored_hash != current_hash ->
+                true
+
+              is_list(stored_files) and stored_files != [] and Enum.any?(stored_files, fn path -> not File.exists?(path) end) ->
+                true
+
+              true ->
+                manifest_ts = Map.get(manifest, :timestamp, 0)
+                newest_source_mtime = newest_source_mtime_posix(source_dir)
+                newest_source_mtime > manifest_ts
+            end
+
+          {:error, _} ->
+            true
+        end
     end
+  end
+
+  @doc """
+  Computes a stable hash for a compilation configuration.
+
+  The hash intentionally ignores settings that do not affect emitted output
+  (e.g. watch mode and verbosity), so incremental builds don't recompile
+  unnecessarily.
+  """
+  @spec config_hash(keyword()) :: integer()
+  def config_hash(opts) do
+    :erlang.phash2(normalize_config_for_hash(opts))
   end
 
   @doc """
@@ -92,7 +131,34 @@ defmodule HaxeCompiler do
   end
   
   # Private helper functions
-  
+
+  defp manifest_path do
+    Mix.Project.manifest_path()
+    |> Path.join("compile.haxe")
+  end
+
+  defp read_manifest do
+    try do
+      manifest =
+        manifest_path()
+        |> File.read!()
+        |> :erlang.binary_to_term()
+
+      if is_map(manifest) do
+        {:ok, manifest}
+      else
+        {:error, :invalid_manifest}
+      end
+    rescue
+      _ -> {:error, :invalid_manifest}
+    end
+  end
+
+  defp normalize_config_for_hash(opts) do
+    opts
+    |> Keyword.take([:hxml_file, :source_dir, :target_dir])
+  end
+
   defp execute_haxe_compilation(hxml_file, source_dir, target_dir, verbose) do
     if verbose do
       Mix.shell().info("Compiling Haxe files from #{source_dir} to #{target_dir}")
@@ -119,23 +185,18 @@ defmodule HaxeCompiler do
     end
   end
   
-  defp check_file_timestamps(source_dir, target_dir) do
-    source_files = find_haxe_files(source_dir)
-    
-    Enum.any?(source_files, fn source_file ->
-      source_mtime = File.stat!(source_file).mtime
-      
-      # Convert .hx to .ex for target file check
-      relative_path = Path.relative_to(source_file, source_dir)
-      target_file = Path.join(target_dir, String.replace(relative_path, ".hx", ".ex"))
-      
-      if File.exists?(target_file) do
-        target_mtime = File.stat!(target_file).mtime
-        source_mtime > target_mtime
-      else
-        true  # Target file doesn't exist, needs compilation
-      end
-    end)
+  defp newest_source_mtime_posix(source_dir) do
+    if File.exists?(source_dir) do
+      source_dir
+      |> Path.join("**/*.hx")
+      |> Path.wildcard()
+      |> Enum.reduce(0, fn file, acc ->
+        mtime = File.stat!(file, time: :posix).mtime
+        if mtime > acc, do: mtime, else: acc
+      end)
+    else
+      0
+    end
   end
   
   defp find_haxe_files(dir) do
