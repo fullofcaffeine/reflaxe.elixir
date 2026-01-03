@@ -7,6 +7,7 @@ import phoenix.types.Flash;
 import phoenix.types.Flash.FlashType;
 import phoenix.types.Flash.FlashMap;
 import phoenix.Phoenix.Socket;
+import phoenix.types.Slot;
 
 /**
  * Phoenix.Component extern definitions for template helpers
@@ -129,7 +130,16 @@ extern class Component {
      */
     @:templateHelper
     static function raw(html: String): String;
-    
+
+    /**
+     * Render a component slot.
+     *
+     * Compiles to Phoenix.Component.render_slot/1 and Phoenix.Component.render_slot/2.
+     */
+    @:templateHelper
+    @:overload(function<TEntryProps, TLet>(slot: Slot<TEntryProps, TLet>, argument: TLet): Term {})
+    static function render_slot<TEntryProps, TLet>(slot: Slot<TEntryProps, TLet>): Term;
+	    
     /**
      * Live title helper for dynamic page titles
      * Updates the page title during LiveView navigation
