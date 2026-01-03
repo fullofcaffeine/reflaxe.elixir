@@ -1479,15 +1479,27 @@ enum ActivityKind {
 						</div>
 						
 						<!-- Add Todo Button -->
-							<button phx-click=${EventName.ToggleForm} data-testid="btn-new-todo" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
-								#{@toggle_form_label}
-							</button>
-						</div>
-						
-						<!-- New Todo Form -->
-						<if {@show_form}>
-						<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
-							<form phx-submit=${EventName.CreateTodo} class="space-y-4">
+								<button phx-click=${EventName.ToggleForm} data-testid="btn-new-todo" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
+									#{@toggle_form_label}
+								</button>
+							</div>
+
+							<!-- Typed slots demo: <.card> :let + <:action ...> -->
+							<.card :let={card} title={@organization_slug} className="mb-8">
+								<:action label="Organization" navigate="/org" />
+								<:action label="Users" navigate="/users" />
+								<div data-testid="demo-card" data-org={card.title} class="text-sm text-gray-700 dark:text-gray-200">
+									<div class="font-medium">Typed slot yield</div>
+									<div class="text-xs text-gray-500 dark:text-gray-400">
+										org slug: #{card.title}
+									</div>
+								</div>
+							</.card>
+							
+							<!-- New Todo Form -->
+							<if {@show_form}>
+							<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
+								<form phx-submit=${EventName.CreateTodo} class="space-y-4">
 								<div>
 									<label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 										Title *
