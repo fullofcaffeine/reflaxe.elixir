@@ -483,30 +483,45 @@ fi
 
 # Optional: Haxe compilation server for faster repeated builds (warm cache)
 REQUESTED_HAXE_SERVER_PORT=${HAXE_SERVER_PORT:-6116}
+HAXE_REUSE_SERVER=0
 # If the requested port is busy (common when stale `haxe --wait` servers exist),
-# pick a nearby free port instead of connecting to a random existing listener.
+# try to reuse a compatible existing server; otherwise pick a nearby free port
+# instead of connecting to a random existing listener.
 if port_available "$REQUESTED_HAXE_SERVER_PORT"; then
   HAXE_SERVER_PORT="$REQUESTED_HAXE_SERVER_PORT"
 else
-  # Prefer a randomized base port unless the user explicitly requested one.
-  if [[ -z "${HAXE_SERVER_PORT:-}" ]]; then
-    base=$((15000 + (RANDOM % 20000)))
-  else
-    base="$REQUESTED_HAXE_SERVER_PORT"
-  fi
-  HAXE_SERVER_PORT="$(pick_available_port "$base" || true)"
-  if [[ -z "$HAXE_SERVER_PORT" ]]; then
+  # If this is an actual Haxe server that responds to our toolchain quickly,
+  # reuse it to keep the incremental cache warm across runs.
+  if [[ -n "$HAXE_EXE" ]] && "$SCRIPT_DIR/with-timeout.sh" --secs 2 -- "$HAXE_EXE" --connect "$REQUESTED_HAXE_SERVER_PORT" -version >/dev/null 2>&1; then
     HAXE_SERVER_PORT="$REQUESTED_HAXE_SERVER_PORT"
+    HAXE_REUSE_SERVER=1
+    log "[QA] Haxe server port ${REQUESTED_HAXE_SERVER_PORT} is in use; reusing existing server"
+  else
+    # Prefer a randomized base port unless the user explicitly requested one.
+    if [[ -z "${HAXE_SERVER_PORT:-}" ]]; then
+      base=$((15000 + (RANDOM % 20000)))
+    else
+      base="$REQUESTED_HAXE_SERVER_PORT"
+    fi
+    HAXE_SERVER_PORT="$(pick_available_port "$base" || true)"
+    if [[ -z "$HAXE_SERVER_PORT" ]]; then
+      HAXE_SERVER_PORT="$REQUESTED_HAXE_SERVER_PORT"
+    fi
+    log "[QA] Haxe server port ${REQUESTED_HAXE_SERVER_PORT} is in use; using ${HAXE_SERVER_PORT}"
   fi
-  log "[QA] Haxe server port ${REQUESTED_HAXE_SERVER_PORT} is in use; using ${HAXE_SERVER_PORT}"
 fi
 # Default off to avoid hangs on systems without a running server
 # Default ON to leverage incremental cache between passes; falls back to direct
 # haxe if the server fails to start or connect.
 HAXE_USE_SERVER=${HAXE_USE_SERVER:-1}
 if [[ "$HAXE_USE_SERVER" -eq 1 ]] && [[ -n "$HAXE_EXE" ]]; then
-  # Best-effort start of the Haxe compilation server; do not rely on nc
-  ( nohup "$HAXE_EXE" --wait "$HAXE_SERVER_PORT" >/tmp/qa-haxe-server.log 2>&1 & echo $! > /tmp/qa-haxe-server.pid ) >/dev/null 2>&1 || true
+  # Best-effort start of the Haxe compilation server; do not rely on nc.
+  #
+  # If we successfully detected a compatible server already running on the port,
+  # skip starting a new one.
+  if [[ "$HAXE_REUSE_SERVER" -eq 0 ]]; then
+    ( nohup "$HAXE_EXE" --wait "$HAXE_SERVER_PORT" >/tmp/qa-haxe-server.log 2>&1 & echo $! > /tmp/qa-haxe-server.pid ) >/dev/null 2>&1 || true
+  fi
   # Keep using plain HAXE_CMD unless caller explicitly set HAXE_USE_SERVER=1
   HAXE_CMD="$HAXE_EXE --connect $HAXE_SERVER_PORT"
   # Quick readiness probe (bounded). If the server is not reachable quickly,
