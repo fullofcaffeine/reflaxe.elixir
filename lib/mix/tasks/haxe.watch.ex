@@ -207,10 +207,11 @@ defmodule Mix.Tasks.Haxe.Watch do
   end
   
   defp display_formatted_errors(reason, config) when is_binary(reason) do
-    errors = HaxeCompiler.parse_haxe_errors(reason)
+    {exit_code, output} = extract_exit_code_and_output(reason)
+    errors = HaxeCompiler.parse_haxe_errors(output)
     
     if Enum.empty?(errors) do
-      Mix.shell().error(reason)
+      Mix.shell().error(output)
     else
       Enum.each(errors, fn error ->
         display_error(error, config)
@@ -218,10 +219,76 @@ defmodule Mix.Tasks.Haxe.Watch do
       
       Mix.shell().info("\nHint: Run 'mix haxe.errors --json' for detailed error information")
     end
+
+    print_raw_output_on_failure(exit_code, output)
   end
   
   defp display_formatted_errors(reason, _config) do
     Mix.shell().error(inspect(reason))
+  end
+
+  defp extract_exit_code_and_output(reason) when is_binary(reason) do
+    matchers = [
+      ~r/\ACompilation failed \(exit (\d+)\):\s*(.*)\z/s,
+      ~r/\AHaxe compilation failed \(exit (\d+)\):\s*(.*)\z/s
+    ]
+
+    Enum.reduce_while(matchers, {nil, reason}, fn matcher, _acc ->
+      case Regex.run(matcher, reason) do
+        [_, exit_code, output] ->
+          {:halt, {String.to_integer(exit_code), output}}
+
+        _ ->
+          {:cont, {nil, reason}}
+      end
+    end)
+  end
+
+  defp extract_exit_code_and_output(reason) do
+    {nil, inspect(reason)}
+  end
+
+  defp print_raw_output_on_failure(exit_code, output) do
+    path = write_last_failure_log(output)
+
+    Mix.shell().error("")
+    Mix.shell().error("== Haxe compiler output ==")
+
+    if is_integer(exit_code) do
+      Mix.shell().error("Exit code: #{exit_code}")
+    end
+
+    if is_binary(path) do
+      Mix.shell().info("Saved full output to #{path}")
+    end
+
+    print_compiler_output(output)
+  end
+
+  defp write_last_failure_log(output) do
+    path = Path.join(System.tmp_dir!(), "haxe_watch.last_failure.log")
+    case File.write(path, output) do
+      :ok -> path
+      _ -> nil
+    end
+  rescue
+    _ -> nil
+  end
+
+  defp print_compiler_output(output) do
+    lines = String.split(output || "", "\n", trim: false)
+    max_lines = 200
+
+    shown_lines =
+      if length(lines) > max_lines do
+        Mix.shell().error("Haxe output (last #{max_lines} lines):")
+        Enum.take(lines, -max_lines)
+      else
+        Mix.shell().error("Haxe output:")
+        lines
+      end
+
+    IO.puts(Enum.join(shown_lines, "\n"))
   end
   
   defp display_error(error, config) do

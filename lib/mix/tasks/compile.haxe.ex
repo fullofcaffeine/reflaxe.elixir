@@ -196,44 +196,58 @@ defmodule Mix.Tasks.Compile.Haxe do
         end
       
       {:error, reason} ->
+        {exit_code, output} = extract_exit_code_and_output(reason)
+
         # Parse and enhance error message
-        errors = parse_compilation_errors(reason)
+        errors = parse_compilation_errors(output)
         
         # Display formatted errors
         display_compilation_errors(errors, config)
 
-        # Always persist raw output; print it when verbose or when we couldn't parse location-based errors.
-        maybe_print_raw_output(reason, errors, config)
+        # Always persist and print raw output so humans/LLMs can diagnose type/syntax issues.
+        print_raw_output_on_failure(exit_code, output)
         
         # Return error diagnostics for Mix
         {:error, build_diagnostics(errors)}
     end
   end
 
-  defp maybe_print_raw_output(reason, errors, config) do
-    path = write_last_failure_log(reason)
+  defp extract_exit_code_and_output(reason) when is_binary(reason) do
+    matchers = [
+      ~r/\ACompilation failed \(exit (\d+)\):\s*(.*)\z/s,
+      ~r/\AHaxe compilation failed \(exit (\d+)\):\s*(.*)\z/s
+    ]
 
-    parsed_locations? =
-      Enum.any?(errors, fn error ->
-        not is_nil(error[:file]) and not is_nil(error[:line])
-      end)
+    Enum.reduce_while(matchers, {nil, reason}, fn matcher, _acc ->
+      case Regex.run(matcher, reason) do
+        [_, exit_code, output] ->
+          {:halt, {String.to_integer(exit_code), output}}
 
-    should_print? = config[:verbose] || not parsed_locations?
-
-    if should_print? do
-      Mix.shell().error("")
-      Mix.shell().error("== Haxe compiler output ==")
-
-      if is_binary(path) do
-        Mix.shell().info("Saved full output to #{path}")
+        _ ->
+          {:cont, {nil, reason}}
       end
+    end)
+  end
 
-      print_compiler_output(reason)
-    else
-      if is_binary(path) do
-        Mix.shell().info("Haxe output saved to #{path} (run with --verbose to print)")
-      end
+  defp extract_exit_code_and_output(reason) do
+    {nil, inspect(reason)}
+  end
+
+  defp print_raw_output_on_failure(exit_code, output) do
+    path = write_last_failure_log(output)
+
+    Mix.shell().error("")
+    Mix.shell().error("== Haxe compiler output ==")
+
+    if is_integer(exit_code) do
+      Mix.shell().error("Exit code: #{exit_code}")
     end
+
+    if is_binary(path) do
+      Mix.shell().info("Saved full output to #{path}")
+    end
+
+    print_compiler_output(output)
   end
 
   defp write_last_failure_log(output) do
