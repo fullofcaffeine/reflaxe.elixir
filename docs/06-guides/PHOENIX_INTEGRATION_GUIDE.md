@@ -4,7 +4,3 @@ This document is retained for link stability. Its detailed content has been repl
 
 - New Phoenix project: `docs/06-guides/PHOENIX_NEW_APP.md`
 - Gradual adoption in an existing Phoenix project: `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`
-
-The previous version of this file is archived at:
-- `docs/09-history/archive/docs/06-guides/PHOENIX_INTEGRATION_GUIDE.md`
-

@@ -1,6 +1,0 @@
-# Ultra-fast prewarm (JS target) to prime Haxe std in the compile-server cache
--cp src_haxe/shared
--main PrewarmDummy
--js /tmp/qa-prewarm.js
---dce std
-

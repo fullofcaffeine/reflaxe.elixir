@@ -281,20 +281,21 @@ result = ~/\), else: nil\n/g.replace(result, ")\n");
 
 ### Core Compiler Files (Post-Migration Structure)
 ```
-src/reflaxe/elixir/
-├── ElixirCompiler.hx        # Main compiler (~2,000 lines, down from 10,000+)
-├── ElixirTyper.hx           # Type system mapping
-├── ast/
-│   ├── ElixirAST.hx         # AST node definitions
-│   ├── ElixirASTBuilder.hx  # TypedExpr → AST (build only)
-│   ├── ElixirASTTransformer.hx # AST → AST (transform only)
-│   └── ElixirASTPrinter.hx  # AST → String (print only)
-└── helpers/                  # EMPTY - All 75 files removed
+	src/reflaxe/elixir/
+	├── ElixirCompiler.hx        # Main compiler (~2,000 lines, down from 10,000+)
+	├── ElixirTyper.hx           # Type system mapping
+	├── ast/
+	│   ├── ElixirAST.hx         # AST node definitions
+	│   ├── ElixirASTBuilder.hx  # TypedExpr → AST (build only)
+	│   ├── ElixirASTTransformer.hx # AST → AST (transform only)
+	│   └── ElixirASTPrinter.hx  # AST → String (print only)
+	└── helpers/                  # EMPTY - All 75 files removed
+	```
 
-### Test Infrastructure
-- **test/Test.hxml**: Main test runner
-- **test/tests/**: Snapshot test cases
-- **examples/todo-app/**: Primary integration test application
+	### Test Infrastructure
+	- **test/Test.hxml**: Main test runner
+	- **test/tests/**: Snapshot test cases
+	- **examples/todo-app/**: Primary integration test application
 
 ## ⚠️ Critical Development Rules
 
@@ -417,14 +418,13 @@ git bisect reset
 - [Architecture Overview](COMPILATION_PIPELINE_ARCHITECTURE.md) - Complete system design
 - [Macro Principles](MACRO_PRINCIPLES.md) - Macro-time rules and invariants
 - [AST Pipeline](../05-architecture/UNIFIED_AST_PIPELINE.md) - TypedExpr → ElixirAST → transforms → print
-- [Testing Infrastructure](TESTING_INFRASTRUCTURE.md) - Snapshot testing system
-- [Debugging Guide](DEBUG_XRAY_SYSTEM.md) - XRay methodology details
-- [HXX Template Architecture](../05-architecture/HXX_ARCHITECTURE.md) - HXX→HEEx compilation overview
-- [Function Parameter Underscore Fix](../09-history/archive/docs/03-compiler-development/FUNCTION_PARAMETER_UNDERSCORE_FIX.md) - Historical fix write-up (archived)
+	- [Testing Infrastructure](TESTING_INFRASTRUCTURE.md) - Snapshot testing system
+	- [Debugging Guide](DEBUG_XRAY_SYSTEM.md) - XRay methodology details
+	- [HXX Template Architecture](../05-architecture/HXX_ARCHITECTURE.md) - HXX→HEEx compilation overview
 
-### Reference Materials
-- [Best Practices](COMPILER_BEST_PRACTICES.md) - Development patterns and standards
-- [/docs/05-architecture/](../05-architecture/) - Implementation details
+	### Reference Materials
+	- [Best Practices](COMPILER_BEST_PRACTICES.md) - Development patterns and standards
+	- [/docs/05-architecture/](../05-architecture/) - Implementation details
 - [/docs/07-patterns/](../07-patterns/) - Common code patterns
 
 ## 🎯 Current Focus Areas

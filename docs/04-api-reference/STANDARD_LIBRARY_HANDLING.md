@@ -66,7 +66,6 @@ The compiler could automatically include runtime files in output, but this coupl
 - StringTools defined as extern in `/std/StringTools.hx`
 - Implementation in `/std/elixir/StringTools.ex`
 - Compiler maps method names at compile-time
-- See [STRINGTOOLS_STRATEGY.md](../09-history/archive/docs/04-api-reference/STRINGTOOLS_STRATEGY.md) for detailed architectural decisions (archived)
 
 ### Target Architecture
 ```
@@ -118,13 +117,9 @@ After comparing with other Reflaxe implementations (GDScript, CPP, Go), we chose
 - **Idiomatic code** - Following Elixir naming conventions
 - **Clear debugging** - Regular Elixir code in stacktraces
 
-See [STRINGTOOLS_STRATEGY.md](../09-history/archive/docs/04-api-reference/STRINGTOOLS_STRATEGY.md) for the complete analysis and comparison with other approaches (archived).
-
 ## Result<T,E> Type: Pure Haxe Implementation
 
 The `Result<T,E>` type in `std/haxe/functional/Result.hx` represents a different approach from extern-based standard library components.
-
-**See Also**: [Paradigm Bridge](../09-history/archive/docs/07-patterns/PARADIGM_BRIDGE.md) - Complete guide to Result types in cross-platform development with functional error handling patterns (archived).
 
 ### Why Pure Haxe Implementation?
 
@@ -382,9 +377,6 @@ When adding new standard library components, use this decision tree:
 
 - **[Haxe→Elixir Mappings](../02-user-guide/HAXE_ELIXIR_MAPPINGS.md)** - How Option<T> and Result<T,E> compile to Elixir patterns
 - **[Functional Patterns](../07-patterns/FUNCTIONAL_PATTERNS.md)** - Comprehensive usage examples and patterns
-- **[Developer Patterns](../09-history/archive/docs/06-guides/DEVELOPER_PATTERNS.md)** - Migration strategies and best practices (archived)
-- **[BEAM Type Abstractions](../09-history/archive/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md)** - Deep dive into Option<T> and Result<T,E> design (archived)
-- **[Paradigm Bridge](../09-history/archive/docs/07-patterns/PARADIGM_BRIDGE.md)** - Cross-platform development philosophy (archived)
 - **[ExUnit Testing](../02-user-guide/exunit-testing.md)** - Testing patterns for type-safe code
 
 **Implementation Files**:

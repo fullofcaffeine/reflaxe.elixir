@@ -14,9 +14,8 @@ defmodule TodoApp.MixProject do
       deps: deps(),
       haxe: [
         # Use the full server build to ensure all modules are generated together.
-        # Legacy "multipass" / micro-pass build configs were archived under
-        # `docs/09-history/archive/records/todo-app-hxml-legacy/` and are not part
-        # of the normal development flow.
+        # Legacy "multipass" / micro-pass build configs were removed during cleanup.
+        # If you need to reference them, use git history.
         hxml_file: "build-server.hxml",
         source_dir: "src_haxe",
         target_dir: "lib",
@@ -63,7 +62,7 @@ defmodule TodoApp.MixProject do
       {:jason, "~> 1.2"},
       {:swoosh, "~> 1.20"},
       {:hackney, "~> 1.25"},
-      # Webserver stack pinned for OTP 27 compatibility (see docs/09-history/archive/records/TODOAPP_COWBOY_TOOLCHAIN_ISSUE_REPORT.md)
+      # Webserver stack pinned for OTP/toolchain compatibility (see docs/06-guides/TODOAPP_COWBOY_TOOLCHAIN.md)
       {:plug_cowboy, "~> 2.7.5", override: true},
       {:cowboy, "~> 2.14.2", override: true},
       {:cowlib, "~> 2.16.0", override: true},

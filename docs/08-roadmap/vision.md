@@ -173,4 +173,4 @@ This isn't just about Elixir or JavaScript or mobile. It's about fundamentally c
 
 ---
 
-**Ready to build the future?** See the archived [`ACTIVE_PRD.md`](../09-history/archive/docs/08-roadmap/ACTIVE_PRD.md) for detailed requirements and implementation roadmap.
+**Ready to build the future?** See [`ROADMAP.md`](../../ROADMAP.md) and [`PRODUCTION_READINESS.md`](../06-guides/PRODUCTION_READINESS.md).
