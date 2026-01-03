@@ -52,6 +52,7 @@ typedef MemberRowView = {
     var email: String;
     var role: String;
     var is_self: Bool;
+    var is_last_admin: Bool;
 }
 
 typedef OrganizationLiveAssigns = {
@@ -135,7 +136,8 @@ class OrganizationLive {
         var orgInfo = signedIn ? OrganizationTools.infoForId(user.organizationId) : OrganizationTools.infoForId(OrganizationTools.DEMO_ORG_ID);
         var rows = signedIn ? loadOrganizations(orgInfo.id) : [];
         var invites = (signedIn && isAdmin) ? loadInvites(orgInfo.id) : [];
-        var members = signedIn ? loadMembers(orgInfo.id, user.id) : [];
+        var adminCount = signedIn ? countAdmins(orgInfo.id) : 0;
+        var members = signedIn ? loadMembers(orgInfo.id, user.id, adminCount) : [];
 
         sock = sock.merge({
             signed_in: signedIn,
@@ -285,7 +287,7 @@ class OrganizationLive {
         });
     }
 
-    static function loadMembers(organizationId: Int, currentUserId: Int): Array<MemberRowView> {
+    static function loadMembers(organizationId: Int, currentUserId: Int, adminCount: Int): Array<MemberRowView> {
         var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId);
         var users: Array<User> = Repo.all(query);
         users.sort((a, b) -> a.id - b.id);
@@ -295,7 +297,8 @@ class OrganizationLive {
             name: u.name,
             email: u.email,
             role: u.role,
-            is_self: u.id == currentUserId
+            is_self: u.id == currentUserId,
+            is_last_admin: (u.role == "admin" && adminCount <= 1)
         });
     }
 
@@ -383,7 +386,8 @@ class OrganizationLive {
                 var updatedIsAdmin = isAdminUser(updatedCurrentUser);
 
                 var refreshedInvites = updatedIsAdmin ? loadInvites(orgId) : [];
-                var refreshedMembers = loadMembers(orgId, updatedCurrentUser.id);
+                var refreshedAdminCount = countAdmins(orgId);
+                var refreshedMembers = loadMembers(orgId, updatedCurrentUser.id, refreshedAdminCount);
 
                 var updatedSocket = socket.merge({
                     current_user: updatedCurrentUser,
@@ -656,26 +660,33 @@ class OrganizationLive {
                                                 <div data-testid="member-email" class="text-sm text-gray-600 dark:text-gray-300 truncate">#{m.email}</div>
                                             </div>
 
-                                            <div data-testid="member-role" class="shrink-0 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200">
-                                                #{m.role}
-                                            </div>
+	                                            <div data-testid="member-role" class="shrink-0 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200">
+	                                                #{m.role}
+	                                            </div>
+	                                            <if {m.is_last_admin}>
+	                                                <span data-testid="last-admin-badge" class="shrink-0 inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-900/30 px-3 py-1 text-xs font-semibold text-amber-800 dark:text-amber-200">
+	                                                    Last admin
+	                                                </span>
+	                                            </if>
 
-                                            <if {@is_admin}>
-                                                <form phx-submit="set_user_role" class="shrink-0 flex items-center gap-2">
-                                                    <input type="hidden" name="member_id" value={m.id}/>
-                                                    <select data-testid="member-role-select"
-                                                        name="role"
-                                                        class="px-3 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                                        <option value="user" selected={m.role == "user"}>User</option>
-                                                        <option value="admin" selected={m.role == "admin"}>Admin</option>
-                                                    </select>
-                                                    <button data-testid="btn-save-role"
-                                                        type="submit"
-                                                        class="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
-                                                        Save
-                                                    </button>
-                                                </form>
-                                            </if>
+	                                            <if {@is_admin}>
+	                                                <form phx-submit="set_user_role" class="shrink-0 flex items-center gap-2">
+	                                                    <input type="hidden" name="member_id" value={m.id}/>
+	                                                    <select data-testid="member-role-select"
+	                                                        name="role"
+	                                                        disabled={m.is_last_admin}
+	                                                        class="px-3 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+	                                                        <option value="user" selected={m.role == "user"}>User</option>
+	                                                        <option value="admin" selected={m.role == "admin"}>Admin</option>
+	                                                    </select>
+	                                                    <button data-testid="btn-save-role"
+	                                                        type="submit"
+	                                                        disabled={m.is_last_admin}
+	                                                        class="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+	                                                        Save
+	                                                    </button>
+	                                                </form>
+	                                            </if>
                                         </div>
                                     </for>
                                 </div>

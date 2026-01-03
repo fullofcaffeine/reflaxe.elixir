@@ -1290,6 +1290,11 @@ body {
   border-color: rgb(234 179 8 / var(--tw-border-opacity));
 }
 
+.bg-amber-100 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(254 243 199 / var(--tw-bg-opacity));
+}
+
 .bg-amber-50 {
   --tw-bg-opacity: 1;
   background-color: rgb(255 251 235 / var(--tw-bg-opacity));
@@ -1663,6 +1668,11 @@ body {
   color: rgb(217 119 6 / var(--tw-text-opacity));
 }
 
+.text-amber-800 {
+  --tw-text-opacity: 1;
+  color: rgb(146 64 14 / var(--tw-text-opacity));
+}
+
 .text-blue-600 {
   --tw-text-opacity: 1;
   color: rgb(37 99 235 / var(--tw-text-opacity));
@@ -1966,6 +1976,14 @@ body {
   --tw-ring-color: rgb(59 130 246 / var(--tw-ring-opacity));
 }
 
+.disabled\:cursor-not-allowed:disabled {
+  cursor: not-allowed;
+}
+
+.disabled\:opacity-50:disabled {
+  opacity: 0.5;
+}
+
 :is(.dark .dark\:divide-gray-700) > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-opacity: 1;
   border-color: rgb(55 65 81 / var(--tw-divide-opacity));
@@ -2018,6 +2036,10 @@ body {
 
 :is(.dark .dark\:bg-amber-900\/20) {
   background-color: rgb(120 53 15 / 0.2);
+}
+
+:is(.dark .dark\:bg-amber-900\/30) {
+  background-color: rgb(120 53 15 / 0.3);
 }
 
 :is(.dark .dark\:bg-blue-900) {
@@ -2097,6 +2119,11 @@ body {
 
 :is(.dark .dark\:to-blue-900) {
   --tw-gradient-to: #1e3a8a var(--tw-gradient-to-position);
+}
+
+:is(.dark .dark\:text-amber-200) {
+  --tw-text-opacity: 1;
+  color: rgb(253 230 138 / var(--tw-text-opacity));
 }
 
 :is(.dark .dark\:text-amber-400) {
