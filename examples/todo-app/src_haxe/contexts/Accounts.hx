@@ -6,6 +6,9 @@ import elixir.Kernel;
 import elixir.Enum;
 import elixir.types.Term;
 import haxe.functional.Result;
+import contexts.AuditLogs;
+import contexts.AuditLogTypes.AuditAction;
+import contexts.AuditLogTypes.AuditEntity;
 import server.infrastructure.Repo;
 import server.schemas.Organization;
 import server.schemas.OrganizationInvite;
@@ -114,9 +117,25 @@ class Accounts {
         changeset = changeset.putChange("accepted_at", now);
         changeset = changeset.putChange("accepted_by_user_id", userId);
         switch (Repo.update(changeset)) {
-            case Ok(_updated):
-            case Error(err):
-                Std.string(err);
+            case Error(_):
+                null;
+            default:
+                var auditMetadata: Term = {
+                    invite_email: invite.email,
+                    invite_role: invite.role
+                };
+                switch (AuditLogs.record({
+                    organizationId: invite.organizationId,
+                    actorId: userId,
+                    action: AuditAction.OrganizationInviteAccepted,
+                    entity: AuditEntity.OrganizationInviteEntity,
+                    entityId: invite.id,
+                    metadata: auditMetadata
+                })) {
+                    case Ok(_entry):
+                    case Error(err):
+                        Std.string(err);
+                }
         }
     }
 

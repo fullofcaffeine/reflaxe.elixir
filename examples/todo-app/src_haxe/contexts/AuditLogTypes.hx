@@ -18,6 +18,8 @@ import elixir.types.Term;
  */
 enum abstract AuditAction(String) from String to String {
     var OrganizationInviteCreated = "org.invite_created";
+    var OrganizationInviteAccepted = "org.invite_accepted";
+    var OrganizationInviteRevoked = "org.invite_revoked";
     var UserRoleUpdated = "user.role_updated";
 }
 

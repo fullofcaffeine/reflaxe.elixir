@@ -149,13 +149,18 @@ import reflaxe.elixir.macros.HttpMethod;
     
     // API endpoints temporarily removed until User context/schema stabilized
     
-    // LiveDashboard with enum
+	    // LiveDashboard + mailbox preview (dev-only)
 	    {
-	        name: "dashboard", 
-	        method: HttpMethod.LIVE_DASHBOARD, 
+	        name: "dashboard",
+	        method: HttpMethod.LIVE_DASHBOARD,
 	        path: "/dev/dashboard"
+	    },
+	    {
+	        name: "mailbox",
+	        method: HttpMethod.MAILBOX,
+	        path: "/dev/mailbox"
 	    }
-	])
+		])
 	class TodoAppRouter {
     // Functions auto-generated with type-safe route helpers!
     // 

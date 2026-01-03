@@ -309,12 +309,14 @@ class AuditLogLive {
                             </div>
 
                             <form phx-change=${EventName.FilterAudit} class="flex flex-col md:flex-row gap-3 mb-6">
-                                <select data-testid="audit-filter-action" name="action"
-                                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                    <option value="all" selected={@action_filter == "all"}>All actions</option>
-                                    <option value="org.invite_created" selected={@action_filter == "org.invite_created"}>Invite created</option>
-                                    <option value="user.role_updated" selected={@action_filter == "user.role_updated"}>User role updated</option>
-                                </select>
+	                                <select data-testid="audit-filter-action" name="action"
+	                                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+	                                    <option value="all" selected={@action_filter == "all"}>All actions</option>
+	                                    <option value="org.invite_created" selected={@action_filter == "org.invite_created"}>Invite created</option>
+	                                    <option value="org.invite_accepted" selected={@action_filter == "org.invite_accepted"}>Invite accepted</option>
+	                                    <option value="org.invite_revoked" selected={@action_filter == "org.invite_revoked"}>Invite revoked</option>
+	                                    <option value="user.role_updated" selected={@action_filter == "user.role_updated"}>User role updated</option>
+	                                </select>
 
                                 <select data-testid="audit-filter-entity" name="entity"
                                     class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">

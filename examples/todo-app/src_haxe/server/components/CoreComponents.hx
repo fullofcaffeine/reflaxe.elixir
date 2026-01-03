@@ -245,30 +245,28 @@ class CoreComponents {
      * - `:let` on <.card> binds to the value passed from `render_slot(@inner_block, value)`
      * - `<:action .../>` slot tags are type-checked against CardActionAssigns
      */
-    @:component
-    public static function card(assigns: CardAssigns): String {
-        return HXX.hxx('
-            <section class=${assigns.className != null
-                ? "bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden " + assigns.className
-                : "bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden"}>
-                <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">#{@title}</h2>
-                    <if {assigns.action != null && assigns.action.length > 0}>
-                        <div class="flex items-center gap-2">
-                            <for {a in assigns.action}>
+	    @:component
+	    public static function card(assigns: CardAssigns): String {
+	        return HXX.hxx('
+	            <section class={["bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden", @className]}>
+	                <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+	                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">#{@title}</h2>
+	                    <if {assigns.action != null && assigns.action.length > 0}>
+	                        <div class="flex items-center gap-2">
+	                            <for {a in assigns.action}>
                                 <.link navigate={a.navigate} class="text-sm text-blue-700 dark:text-blue-300 hover:underline">
                                     #{a.label}
                                 </.link>
                             </for>
                         </div>
                     </if>
-                </div>
-                <div class="px-6 py-4">
-                    ${Component.render_slot(assigns.inner_block, { title: assigns.title })}
-                </div>
-            </section>
-        ');
-    }
+	                </div>
+	                <div class="px-6 py-4">
+	                    #{render_slot(@inner_block, %{title: @title})}
+	                </div>
+	            </section>
+	        ');
+	    }
     
     /**
      * Renders a data table
