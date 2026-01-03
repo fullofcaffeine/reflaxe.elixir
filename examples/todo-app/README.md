@@ -143,7 +143,8 @@ The todo-app is designed to demonstrate **end-to-end Haxe→Elixir** for applica
 - Ecto seeds: `priv/repo/seeds.exs`
   - Why: Ecto executes seeds as Elixir scripts; keeping them Elixir-first is fine for an example app.
 - Phoenix JS bootstrap: `assets/js/phoenix_app.js`
-  - Why: this mirrors Phoenix’s canonical LiveView bootstrap and stays stable across Phoenix upgrades (see section above).
+  - Why: this mirrors Phoenix’s canonical LiveView bootstrap and stays stable across Phoenix upgrades.
+  - Optional: the Haxe client can also bootstrap LiveSocket when compiled with `-D todoapp_hx_live_socket_bootstrap` (the JS file keeps a guard to avoid double connections).
 
 **Haxe-authored migrations (compiled to `.exs`)**
 - Haxe sources: `examples/todo-app/src_haxe/server/migrations/*.hx`
@@ -176,13 +177,14 @@ graph LR
   - Import `phoenix_html`, `phoenix`, and `phoenix_live_view`.
   - Read CSRF meta from the HTML `<meta name="csrf-token" ...>`.
   - Pick up LiveView Hooks from `window.Hooks` (populated by the Haxe bundle).
-  - Create and connect `LiveSocket`, and expose `window.liveSocket`.
+  - Create and connect `LiveSocket` (unless already bootstrapped by Haxe), and expose `window.liveSocket`.
 - Haxe integration:
   - The Haxe client compiles via Genes to `assets/js/hx_app.js` (entry) plus supporting modules under `assets/js/client/**` and `assets/js/genes/**` (`build-client.hxml`).
   - `assets/js/app.js` imports `./hx_app.js`, and `phoenix_app.js` imports `./app.js`, so Hooks exported by Haxe are available to LiveView.
 - Why JS here and not Haxe?
   - This file mirrors Phoenix’s canonical bootstrap and stays stable across Phoenix upgrades.
   - All meaningful client behavior (Hooks, utils, shared types) remains in Haxe for type safety.
+  - Optional: compile the client with `-D todoapp_hx_live_socket_bootstrap` to connect LiveSocket from typed Haxe (Genes); `phoenix_app.js` will detect `window.liveSocket` and skip.
 
 ### Watch Mode
 ```bash
@@ -204,7 +206,7 @@ Note
 - The layout emits a standard Phoenix CSRF meta tag using Plug:
   - `examples/todo-app/lib/todo_app_web/layouts.ex` includes
     `<meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()}/>`
-- LiveSocket reads this token in `phoenix_app.js` and passes it as `_csrf_token`.
+- LiveSocket reads this token in `phoenix_app.js` (or in `client.Boot` when `-D todoapp_hx_live_socket_bootstrap` is enabled) and passes it as `_csrf_token`.
 ```
 
 ### Testing
