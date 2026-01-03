@@ -73,7 +73,19 @@ defmodule TodoApp.MixProject do
   # Aliases are shortcuts or tasks specific to the current project.
   defp aliases do
     [
-      setup: ["deps.get", "ecto.setup", "assets.setup", "assets.build"],
+      setup: [
+        "deps.get",
+        # Install toolchain deps for this example app:
+        # - root: lix (Haxe toolchain manager) + Playwright
+        # - assets: Phoenix JS deps for esbuild bundling
+        "cmd npm install --no-audit --no-fund",
+        "cmd --cd assets npm install --no-audit --no-fund",
+        "ecto.setup",
+        "assets.setup",
+        "assets.build"
+      ],
+      # One-liner for local dev: ensure DB exists + migrated, then start Phoenix with watchers.
+      dev: ["ecto.create", "ecto.migrate", "phx.server"],
       "ecto.setup": ["ecto.create", "ecto.migrate", "run priv/repo/seeds.exs"],
       "ecto.reset": ["ecto.drop", "ecto.setup"],
       # Tests rely on compiled Haxe app; compile Haxe-authored ExUnit modules before `mix test`.

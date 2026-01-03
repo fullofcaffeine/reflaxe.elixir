@@ -4,6 +4,10 @@
 
 This todo-app is a **100% Haxe-powered Phoenix LiveView application** that compiles to both Elixir (backend) and JavaScript (frontend). Every `.ex` file in `lib/` is generated from Haxe source - we write type-safe Haxe and get idiomatic Elixir.
 
+**Client build (JS)**
+- The client uses **Genes** to generate split ES modules from Haxe (`build-client.hxml`).
+- Output entry module: `assets/js/hx_app.js` (imported by `assets/js/app.js`, then bundled by esbuild).
+
 ## 🎯 Core Philosophy
 
 **Write Once in Haxe, Deploy Everywhere**
@@ -75,10 +79,11 @@ graph LR
 # One-time compilation
 haxe build.hxml          # Compile everything
 haxe build-server.hxml   # Compile server only (Haxe→Elixir)
-haxe build-client.hxml   # Compile client only (Haxe→JS)
+haxe build-client.hxml   # Compile client only (Haxe→JS via Genes)
 
-# Development with file watching
-mix haxe.watch     # Watch src_haxe/ and auto-compile
+# Client output locations (Genes)
+# - Entry: assets/js/hx_app.js
+# - Modules: assets/js/client/** and assets/js/genes/**
 
 # Clean and rebuild
 rm -rf lib/*.ex lib/**/*.ex  # Remove all generated files
@@ -123,14 +128,11 @@ Visit http://localhost:4000 to see the app!
 ### Development Workflow
 
 ```bash
-# Terminal 1: File watcher for Haxe→Elixir compilation
+# Recommended: one terminal (DB ensure + Phoenix with watchers)
+mix dev
+
+# Optional: keep server-side Haxe compilation hot in a second terminal
 mix haxe.watch
-
-# Terminal 2: Phoenix server with live reload
-mix phx.server
-
-# Terminal 3: JavaScript compilation watcher (if needed)
-npm run watch
 ```
 
 ## ⚠️ Critical Rules
