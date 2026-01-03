@@ -26,6 +26,13 @@ config :logger, :console,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# Email delivery (Swoosh)
+#
+# The todo-app uses a lightweight "invite by email" flow. In dev/e2e we use the
+# Local adapter so you can preview emails in the browser (via /dev/mailbox).
+config :todo_app, TodoApp.Mailer,
+  adapter: Swoosh.Adapters.Local
+
 # Configure esbuild for Haxe→JavaScript + Phoenix integration
 config :esbuild,
   version: "0.19.8",

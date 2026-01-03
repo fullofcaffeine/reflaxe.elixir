@@ -25,6 +25,7 @@ import server.infrastructure.Repo;
 import server.schemas.Organization;
 import server.schemas.OrganizationInvite;
 import server.schemas.User;
+import server.services.InviteEmail;
 import server.support.OrganizationTools;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
@@ -406,10 +407,10 @@ class OrganizationLive {
         };
     }
 
-    static function createInvite(params: Term, socket: LiveSocket<OrganizationLiveAssigns>): LiveSocket<OrganizationLiveAssigns> {
-        if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
-            return LiveView.putFlash(socket, FlashType.Error, "Sign in to invite users.");
-        }
+	    static function createInvite(params: Term, socket: LiveSocket<OrganizationLiveAssigns>): LiveSocket<OrganizationLiveAssigns> {
+	        if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
+	            return LiveView.putFlash(socket, FlashType.Error, "Sign in to invite users.");
+	        }
         if (!socket.assigns.is_admin) {
             return LiveView.putFlash(socket, FlashType.Error, "Only admins can invite users.");
         }
@@ -423,39 +424,51 @@ class OrganizationLive {
             return LiveView.putFlash(socket, FlashType.Error, "Invite email is required.");
         }
 
-        var orgId = socket.assigns.current_org_id;
-        return switch (Accounts.createOrganizationInvite(orgId, rawEmail, rawRole)) {
-            case Ok(invite):
-                var auditMetadata: Term = {
-                    invite_email: invite.email,
-                    invite_role: invite.role
-                };
-                switch (AuditLogs.record({
-                    organizationId: orgId,
-                    actorId: socket.assigns.current_user.id,
-                    action: AuditAction.OrganizationInviteCreated,
-                    entity: AuditEntity.OrganizationInviteEntity,
-                    entityId: invite.id,
-                    metadata: auditMetadata
-                })) {
-                    case Ok(_entry):
-                    case Error(err):
-                        Std.string(err);
-                }
+	        var orgId = socket.assigns.current_org_id;
+	        return switch (Accounts.createOrganizationInvite(orgId, rawEmail, rawRole)) {
+	            case Ok(invite):
+	                var auditMetadata: Term = {
+	                    invite_email: invite.email,
+	                    invite_role: invite.role
+	                };
+	                switch (AuditLogs.record({
+	                    organizationId: orgId,
+	                    actorId: socket.assigns.current_user.id,
+	                    action: AuditAction.OrganizationInviteCreated,
+	                    entity: AuditEntity.OrganizationInviteEntity,
+	                    entityId: invite.id,
+	                    metadata: auditMetadata
+	                })) {
+	                    case Ok(_entry):
+	                    case Error(err):
+	                        Std.string(err);
+	                }
 
-                var refreshed = socket.assigns.is_admin ? loadInvites(orgId) : [];
-                var updated = socket.merge({
-                    invite_email_input: "",
-                    invite_role_input: "user",
-                    invite_rows: refreshed
-                });
-                updated = LiveView.clearFlash(updated);
-                LiveView.putFlash(updated, FlashType.Info, "Invite created.");
-            case Error(err):
-                Std.string(err);
-                LiveView.putFlash(socket, FlashType.Error, "Could not create invite.");
-        };
-    }
+	                var emailSent = InviteEmail.deliverInvite(
+	                    invite.email,
+	                    socket.assigns.current_org_slug,
+	                    socket.assigns.current_org_name,
+	                    invite.role,
+	                    socket.assigns.current_user.name
+	                );
+
+	                var refreshed = socket.assigns.is_admin ? loadInvites(orgId) : [];
+	                var updated = socket.merge({
+	                    invite_email_input: "",
+	                    invite_role_input: "user",
+	                    invite_rows: refreshed
+	                });
+	                updated = LiveView.clearFlash(updated);
+	                LiveView.putFlash(
+	                    updated,
+	                    emailSent ? FlashType.Info : FlashType.Error,
+	                    emailSent ? "Invite created. Email sent (preview at /dev/mailbox)." : "Invite created, but email failed to send."
+	                );
+	            case Error(err):
+	                Std.string(err);
+	                LiveView.putFlash(socket, FlashType.Error, "Could not create invite.");
+	        };
+	    }
 
     static function revokeInvite(params: Term, socket: LiveSocket<OrganizationLiveAssigns>): LiveSocket<OrganizationLiveAssigns> {
         if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
@@ -479,17 +492,33 @@ class OrganizationLive {
             return LiveView.putFlash(socket, FlashType.Error, "Invite does not belong to current organization.");
         }
 
-        return switch (Repo.delete(invite)) {
-            case Ok(_deleted):
-                var refreshed = loadInvites(socket.assigns.current_org_id);
-                var updated = socket.merge({invite_rows: refreshed});
-                updated = LiveView.clearFlash(updated);
-                LiveView.putFlash(updated, FlashType.Info, "Invite revoked.");
-            case Error(err):
-                Std.string(err);
-                LiveView.putFlash(socket, FlashType.Error, "Could not revoke invite.");
-        };
-    }
+	        return switch (Repo.delete(invite)) {
+	            case Error(_):
+	                LiveView.putFlash(socket, FlashType.Error, "Could not revoke invite.");
+	            default:
+	                var auditMetadata: Term = {
+	                    invite_email: invite.email,
+	                    invite_role: invite.role
+	                };
+	                switch (AuditLogs.record({
+	                    organizationId: socket.assigns.current_org_id,
+	                    actorId: socket.assigns.current_user.id,
+	                    action: AuditAction.OrganizationInviteRevoked,
+	                    entity: AuditEntity.OrganizationInviteEntity,
+	                    entityId: invite.id,
+	                    metadata: auditMetadata
+	                })) {
+	                    case Ok(_entry):
+	                    case Error(err):
+	                        Std.string(err);
+	                }
+
+	                var refreshed = loadInvites(socket.assigns.current_org_id);
+	                var updated = socket.merge({invite_rows: refreshed});
+	                updated = LiveView.clearFlash(updated);
+	                LiveView.putFlash(updated, FlashType.Info, "Invite revoked.");
+	        };
+	    }
 
     @:keep
     public static function render(assigns: OrganizationLiveRenderAssigns): String {

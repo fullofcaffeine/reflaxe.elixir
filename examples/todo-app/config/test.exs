@@ -24,3 +24,7 @@ config :todo_app, TodoApp.Repo,
   pool_size: 10,
   # Use precompiled Postgrex types in tests to avoid races in concurrent DB usage
   types: TodoApp.PostgrexTypes
+
+# Use the Swoosh test adapter in ExUnit runs (no external delivery).
+config :todo_app, TodoApp.Mailer,
+  adapter: Swoosh.Adapters.Test
