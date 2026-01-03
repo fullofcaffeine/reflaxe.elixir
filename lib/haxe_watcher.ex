@@ -328,63 +328,29 @@ defmodule HaxeWatcher do
     # Find the build file in the watched directories
     build_file_path = find_build_file(state)
     
-    # Attempt compilation through HaxeServer if available
-    result = case HaxeServer.running?() do
-      true ->
-        # Use incremental compilation through server
-        HaxeServer.compile([build_file_path])
-        
-      false ->
-        # Fall back to direct compilation
-        # Change to the directory containing the build file so relative paths work correctly
-        build_dir = Path.dirname(build_file_path)
-        build_file_name = Path.basename(build_file_path)
-        
-        # Build environment for Haxe command
-        # Include HAXELIB_PATH if set (important for tests)
-        env = case System.get_env("HAXELIB_PATH") do
-          nil -> System.get_env() |> Enum.into([])
-          path -> System.get_env() |> Map.put("HAXELIB_PATH", path) |> Enum.into([])
-        end
-        
-        compile_opts = case build_dir do
-          "." -> [stderr_to_stdout: true, env: env]
-          dir -> [cd: dir, stderr_to_stdout: true, env: env]
-        end
-        
-        # Use just the filename if we're changing directory
-        final_build_file = if Keyword.has_key?(compile_opts, :cd) do
-          build_file_name
-        else
-          build_file_path
-        end
-        
-        # Use the project's lix-managed haxe if available
-        {haxe_cmd, haxe_args} = get_haxe_command()
-        final_args = haxe_args ++ [final_build_file]
-        
-        case System.cmd(haxe_cmd, final_args, compile_opts) do
-          {output, 0} ->
-            {:ok, output}
-          {output, exit_code} ->
-            {:error, "Compilation failed (exit #{exit_code}): #{output}"}
-        end
-    end
+    result =
+      case HaxeServer.running?() do
+        true ->
+          compile_with_server_or_fallback(build_file_path)
+
+        false ->
+          compile_direct(build_file_path)
+      end
     
     # Log compilation result
     case result do
       {:ok, _output} ->
         Logger.info("✅ Haxe compilation successful")
         
+      {:error, {exit_code, output}} ->
+        report_compilation_failure(build_file_path, exit_code, output)
+
+      {:error, error} when is_binary(error) ->
+        {exit_code, output} = parse_compilation_failure(error)
+        report_compilation_failure(build_file_path, exit_code, output)
+
       {:error, error} ->
-        # Check if this is an expected error in test environment
-        if Mix.env() == :test and String.contains?(error, "Library reflaxe.elixir is not installed") do
-          # Use warning level without emoji for expected test errors
-          Logger.warning("Haxe compilation failed (expected in test): #{error}")
-        else
-          # Use error level with emoji for real errors
-          Logger.error("❌ Haxe compilation failed: #{error}")
-        end
+        Logger.error("❌ Haxe compilation failed: #{inspect(error)}")
     end
     
     new_state = %{state | 
@@ -394,6 +360,148 @@ defmodule HaxeWatcher do
     }
     
     {:noreply, new_state}
+  end
+
+  defp compile_with_server_or_fallback(build_file_path) do
+    case HaxeServer.compile([build_file_path]) do
+      {:ok, _} = ok ->
+        ok
+
+      {:error, error} when is_binary(error) ->
+        {exit_code, _output} = parse_compilation_failure(error)
+        # The compilation server can get into a bad state (or a stale external server may be
+        # bound to the port). Try a direct compile so the developer sees the actual Haxe error,
+        # then restart the server in the background for the next incremental build.
+        if is_integer(exit_code) do
+          Logger.warning("Haxe server compilation failed (exit #{exit_code}); retrying without the server...")
+        else
+          Logger.warning("Haxe server compilation failed; retrying without the server...")
+        end
+
+        Task.start(fn ->
+          try do
+            HaxeServer.stop()
+          rescue
+            _ -> :ok
+          end
+
+          try do
+            HaxeServer.start_link([])
+          rescue
+            _ -> :ok
+          end
+        end)
+
+        compile_direct(build_file_path)
+
+      {:error, error} ->
+        Logger.error("❌ Haxe server compilation failed: #{inspect(error)}; retrying without the server...")
+        compile_direct(build_file_path)
+    end
+  end
+
+  defp compile_direct(build_file_path) do
+    # Change to the directory containing the build file so relative paths work correctly
+    build_dir = Path.dirname(build_file_path)
+    build_file_name = Path.basename(build_file_path)
+
+    compile_opts =
+      case build_dir do
+        "." -> [stderr_to_stdout: true, env: build_haxe_env()]
+        dir -> [cd: dir, stderr_to_stdout: true, env: build_haxe_env()]
+      end
+
+    # Use just the filename if we're changing directory
+    final_build_file =
+      if Keyword.has_key?(compile_opts, :cd) do
+        build_file_name
+      else
+        build_file_path
+      end
+
+    # Use the project's lix-managed haxe if available
+    {haxe_cmd, haxe_args} = get_haxe_command()
+    final_args = haxe_args ++ [final_build_file]
+
+    case System.cmd(haxe_cmd, final_args, compile_opts) do
+      {output, 0} ->
+        {:ok, output}
+
+      {output, exit_code} ->
+        # Store structured error information for `mix haxe.errors`
+        _ = HaxeCompiler.parse_haxe_errors(output)
+        {:error, {exit_code, output}}
+    end
+  rescue
+    error ->
+      {:error, "Failed to execute Haxe: #{Exception.message(error)}"}
+  end
+
+  defp build_haxe_env() do
+    # Include HAXELIB_PATH if set (important for tests and some CI setups)
+    case System.get_env("HAXELIB_PATH") do
+      nil -> System.get_env() |> Enum.into([])
+      path -> System.get_env() |> Map.put("HAXELIB_PATH", path) |> Enum.into([])
+    end
+  end
+
+  defp parse_compilation_failure(error) do
+    case Regex.run(~r/\ACompilation failed \(exit (\d+)\):\s*(.*)\z/s, error) do
+      [_, exit_code, output] ->
+        {String.to_integer(exit_code), output}
+
+      _ ->
+        {nil, error}
+    end
+  end
+
+  defp report_compilation_failure(build_file_path, exit_code, output) do
+    build_label = Path.basename(build_file_path)
+
+    # Check if this is an expected error in test environment
+    if Mix.env() == :test and String.contains?(output, "Library reflaxe.elixir is not installed") do
+      Logger.warning("Haxe compilation failed (expected in test): #{build_label}")
+    else
+      Logger.error("❌ Haxe compilation failed: #{build_label}")
+    end
+
+    if is_integer(exit_code) do
+      Logger.error("Exit code: #{exit_code}")
+    end
+
+    output = (output || "") |> String.trim_trailing()
+    if output == "" do
+      Logger.error("Haxe produced no output.")
+      :ok
+    else
+      write_last_failure_log(output)
+      print_compiler_output(output)
+    end
+  end
+
+  defp write_last_failure_log(output) do
+    path = Path.join(System.tmp_dir!(), "haxe_watcher.last_failure.log")
+    File.write(path, output)
+    Logger.error("Haxe output saved to #{path}")
+  rescue
+    _ -> :ok
+  end
+
+  defp print_compiler_output(output) do
+    lines = String.split(output, "\n", trim: false)
+    max_lines = 200
+
+    shown_lines =
+      if length(lines) > max_lines do
+        Logger.error("Haxe output (last #{max_lines} lines):")
+        Enum.take(lines, -max_lines)
+      else
+        Logger.error("Haxe output:")
+        lines
+      end
+
+    # Use IO.puts to avoid Logger truncation when the compiler output is large.
+    IO.puts(Enum.join(shown_lines, "\n"))
   end
 
   defp haxe_file?(path, patterns) do
