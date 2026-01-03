@@ -45,6 +45,7 @@ import server.types.Types.PresenceTopics;
 	import server.pubsub.TodoPubSub;
 	import server.schemas.Todo;
 	import server.types.Types.BulkOperationType;
+	import server.types.Types.TodoPriority;
 	import server.types.Types.EventParams;
 	import server.types.Types.MountParams;
 	import server.types.Types.PubSubMessage;
@@ -67,6 +68,7 @@ enum ActivityKind {
     TodoDelete;
     BulkCompleteAll;
     BulkDeleteCompleted;
+    BulkSetPriority;
 }
 
 	/**
@@ -147,6 +149,7 @@ enum ActivityKind {
 		            case TodoDelete: "🗑️";
 		            case BulkCompleteAll: "✅";
 		            case BulkDeleteCompleted: "🧹";
+		            case BulkSetPriority: "🎚️";
 		        };
 		    }
 
@@ -171,6 +174,8 @@ enum ActivityKind {
 		                "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800";
 		            case BulkDeleteCompleted:
 		                "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800";
+		            case BulkSetPriority:
+		                "bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800";
 		        };
 		        return base + " " + style;
 		    }
@@ -404,13 +409,16 @@ enum ActivityKind {
 	                update_todo_priority(extract_id(params), priority != null ? priority : "medium", socket);
 	            } else if (event == EventName.ToggleForm) {
 	                recomputeVisible(SafeAssigns.setShowForm(socket, !socket.assigns.show_form));
-	            } else if (event == "bulk_complete") {
-	                complete_all_todos(socket);
-	            } else if (event == "bulk_delete_completed") {
-	                delete_completed_todos(socket);
-	            } else {
-	                socket;
-	            };
+		            } else if (event == "bulk_complete") {
+		                complete_all_todos(socket);
+		            } else if (event == "bulk_delete_completed") {
+		                delete_completed_todos(socket);
+		            } else if (event == "bulk_set_priority") {
+		                var priorityValue: Null<String> = cast Reflect.field(params, "priority");
+		                bulk_set_priority(priorityValue != null ? priorityValue : "", socket);
+		            } else {
+		                socket;
+		            };
 	
 	        return NoReply(nextSocket);
 	    }
@@ -529,6 +537,15 @@ enum ActivityKind {
 		                            pending_todos: countPending(refreshed)
 		                        });
 		                        NoReply(recomputeVisible(merged));
+		                    case SetPriority(priorityValue):
+		                        var priorityLabel = switch (priorityValue) {
+		                            case Low: "low";
+		                            case Medium: "medium";
+		                            case High: "high";
+		                        };
+		                        var withActivity = pushActivity(socket, BulkSetPriority, "Bulk action: priority → " + priorityLabel);
+		                        var refreshed = loadTodos(socket.assigns.current_user.organizationId);
+		                        NoReply(recomputeVisible(SafeAssigns.updateTodosAndStats(withActivity, refreshed)));
 		                    case _:
 		                        NoReply(socket);
 			                }
@@ -1058,14 +1075,14 @@ enum ActivityKind {
     }
 	
 	// Bulk operations with type-safe socket handling
-    @:keep
-    public static function complete_all_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        elixir.Enum.each(socket.assigns.todos, function(item) {
-            if (!item.completed) {
-                var cs = server.schemas.Todo.toggleCompleted(item);
-                Repo.update(cs);
-            }
-        });
+	    @:keep
+	    public static function complete_all_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	        elixir.Enum.each(socket.assigns.todos, function(item) {
+	            if (!item.completed) {
+	                var cs = server.schemas.Todo.toggleCompleted(item);
+	                Repo.update(cs);
+	            }
+	        });
         // Broadcast (best-effort)
         var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll), socket.assigns.current_user.organizationId);
         // Reload todos and update assigns
@@ -1075,15 +1092,46 @@ enum ActivityKind {
         return LiveView.putFlash(
             updated,
             FlashType.Info,
-            "All todos marked as completed!"
-        );
-    }
+	            "All todos marked as completed!"
+	        );
+	    }
 
-    @:keep
-    public static function delete_completed_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        elixir.Enum.each(socket.assigns.todos, function(item) {
-            if (item.completed) Repo.delete(item);
-        });
+	    @:keep
+	    public static function bulk_set_priority(priorityLabel: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	        var normalized = StringTools.trim(priorityLabel).toLowerCase();
+	        if (normalized != "low" && normalized != "medium" && normalized != "high") {
+	            return LiveView.putFlash(socket, FlashType.Error, "Invalid priority.");
+	        }
+
+	        var visible = filterAndSortTodos(socket.assigns.todos, socket.assigns.filter, socket.assigns.sort_by, socket.assigns.search_query, socket.assigns.selected_tags);
+	        var toUpdate = visible.filter(function(item) return item.priority != normalized);
+	        elixir.Enum.each(toUpdate, function(item) {
+	            var cs = server.schemas.Todo.updatePriority(item, normalized);
+	            Repo.update(cs);
+	        });
+
+	        var priorityEnum: TodoPriority = switch (normalized) {
+	            case "low": Low;
+	            case "medium": Medium;
+	            case "high": High;
+	            case _: Medium;
+	        };
+
+	        var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(SetPriority(priorityEnum)), socket.assigns.current_user.organizationId);
+
+	        var refreshedTodos = loadTodos(socket.assigns.current_user.organizationId);
+	        var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, refreshedTodos));
+	        updated = pushActivity(updated, BulkSetPriority, "Bulk action: priority → " + normalized + " (" + Std.string(toUpdate.length) + ")");
+	        updated = recomputeVisible(updated);
+	        updated = LiveView.clearFlash(updated);
+	        return LiveView.putFlash(updated, FlashType.Info, 'Updated priority for ${toUpdate.length} todo(s).');
+	    }
+
+	    @:keep
+	    public static function delete_completed_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	        elixir.Enum.each(socket.assigns.todos, function(item) {
+	            if (item.completed) Repo.delete(item);
+	        });
         // Notify others (best-effort)
         var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted), socket.assigns.current_user.organizationId);
         // Reload fresh todos from DB and update assigns
@@ -1605,17 +1653,41 @@ enum ActivityKind {
 							
 							<!-- Bulk Actions -->
 		                    <!-- Bulk Actions (typed HXX) -->
-	                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center">
-                        <div class="text-sm text-gray-600 dark:text-gray-400">
-                            Showing #{@visible_count} of #{@total_todos} todos
-                        </div>
-                        <div class="flex space-x-2">
-                            <button type="button" phx-click="bulk_complete"
-                                class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm">✅ Complete All</button>
-                            <button type="button" phx-click="bulk_delete_completed" data-confirm="Are you sure you want to delete all completed todos?"
-                                class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm">🗑️ Delete Completed</button>
-                        </div>
-                    </div>
+		                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center">
+	                        <div class="text-sm text-gray-600 dark:text-gray-400">
+	                            Showing #{@visible_count} of #{@total_todos} todos
+	                        </div>
+	                        <div class="flex flex-wrap items-center gap-2">
+	                            <button type="button" phx-click="bulk_complete"
+	                                class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm">✅ Complete All</button>
+	                            <button type="button" phx-click="bulk_delete_completed" data-confirm="Are you sure you want to delete all completed todos?"
+	                                class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-sm">🗑️ Delete Completed</button>
+	                            <div class="flex items-center gap-2 ml-2">
+	                                <div class="text-xs text-gray-600 dark:text-gray-400">Set priority:</div>
+	                                <button data-testid="btn-bulk-priority-low"
+	                                    type="button"
+	                                    phx-click="bulk_set_priority"
+	                                    phx-value-priority="low"
+	                                    class="px-3 py-2 rounded-lg text-xs font-semibold bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:hover:bg-blue-900/40">
+	                                    Low
+	                                </button>
+	                                <button data-testid="btn-bulk-priority-medium"
+	                                    type="button"
+	                                    phx-click="bulk_set_priority"
+	                                    phx-value-priority="medium"
+	                                    class="px-3 py-2 rounded-lg text-xs font-semibold bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-200 dark:hover:bg-amber-900/40">
+	                                    Medium
+	                                </button>
+	                                <button data-testid="btn-bulk-priority-high"
+	                                    type="button"
+	                                    phx-click="bulk_set_priority"
+	                                    phx-value-priority="high"
+	                                    class="px-3 py-2 rounded-lg text-xs font-semibold bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/40">
+	                                    High
+	                                </button>
+	                            </div>
+	                        </div>
+	                    </div>
 					
 					<!-- Todo List -->
 	                    <div id="todo-list" class="space-y-4">
