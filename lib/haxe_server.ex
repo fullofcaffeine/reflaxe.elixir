@@ -121,6 +121,8 @@ defmodule HaxeServer do
 
   @impl GenServer
   def init(opts) do
+    _ = ensure_haxeshim_server_port_env()
+
     # Determine port preference order:
     # 1) explicit opts
     # 2) HAXE_SERVER_PORT env
@@ -306,14 +308,7 @@ defmodule HaxeServer do
     # when multiple Mix VMs (or multiple HaxeServer instances) are running concurrently.
     #
     # Keep it distinct from the Haxe `--wait` port we're binding to.
-    haxeshim_port =
-      case System.get_env("HAXESHIM_SERVER_PORT") do
-        nil ->
-          find_available_port(MapSet.new([state.port]))
-
-        value ->
-          String.to_integer(value)
-      end
+    haxeshim_port = ensure_haxeshim_server_port_env()
     
     # Set environment variable for haxeshim (if it supports it)
     # Also set HAXE_SERVER_PORT for compatibility
@@ -379,9 +374,24 @@ defmodule HaxeServer do
   defp external_server_compatible?(state) do
     connect_args = state.haxe_args ++ ["--connect", to_string(state.port), "-version"]
 
-    case System.cmd(state.haxe_cmd, connect_args, stderr_to_stdout: true) do
+    task =
+      Task.async(fn ->
+        System.cmd(state.haxe_cmd, connect_args, stderr_to_stdout: true)
+      end)
+
+    result =
+      case Task.yield(task, 1_000) do
+        {:ok, value} ->
+          value
+
+        nil ->
+          _ = Task.shutdown(task, :brutal_kill)
+          {:timeout, 1}
+      end
+
+    case result do
       {_out, 0} -> true
-      {_out, _} -> false
+      _ -> false
     end
   rescue
     _ -> false
@@ -541,6 +551,27 @@ defmodule HaxeServer do
       # Keep searching up
       true ->
         find_project_root_from(Path.dirname(dir))
+    end
+  end
+
+  @doc false
+  def ensure_haxeshim_server_port_env() do
+    case System.get_env("HAXESHIM_SERVER_PORT") do
+      nil ->
+        port = find_available_port()
+        System.put_env("HAXESHIM_SERVER_PORT", Integer.to_string(port))
+        port
+
+      value ->
+        case Integer.parse(value) do
+          {port, _} ->
+            port
+
+          :error ->
+            port = find_available_port()
+            System.put_env("HAXESHIM_SERVER_PORT", Integer.to_string(port))
+            port
+        end
     end
   end
 end

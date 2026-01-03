@@ -23,8 +23,9 @@ defmodule FileWatchingIntegrationTest do
     # Create a basic build.hxml file
     build_hxml = Path.join(test_dir, "build.hxml")
     File.write!(build_hxml, """
+    -lib reflaxe.elixir
     -cp #{source_dir}
-    --elixir #{target_dir}
+    -D elixir_output=#{target_dir}
     -D reflaxe_runtime
     """)
     

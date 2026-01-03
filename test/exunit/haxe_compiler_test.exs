@@ -283,8 +283,9 @@ defmodule HaxeCompilerTest do
       
       build_hxml = Path.join(Path.dirname(source_dir), "build.hxml")
       File.write!(build_hxml, """
+      -lib reflaxe.elixir
       -cp #{source_dir}
-      --elixir #{target_dir}
+      -D elixir_output=#{target_dir}
       """)
       
       File.write!(Path.join(source_dir, "ServerTest.hx"), "class ServerTest {}")

@@ -60,6 +60,8 @@ defmodule Mix.Tasks.Haxe.Watch do
     
     # Ensure code is compiled and loaded, but don't start the full application tree.
     Mix.Task.run("app.start", ["--no-start"])
+
+    ensure_haxe_server()
     
     if opts[:once] do
       # Just compile once and exit
@@ -67,6 +69,18 @@ defmodule Mix.Tasks.Haxe.Watch do
     else
       # Start watching
       start_watching(config)
+    end
+  end
+
+  defp ensure_haxe_server() do
+    if System.get_env("HAXE_NO_SERVER") != "1" do
+      try do
+        unless HaxeServer.running?() do
+          {:ok, _} = HaxeServer.start_link([])
+        end
+      rescue
+        _ -> :ok
+      end
     end
   end
   

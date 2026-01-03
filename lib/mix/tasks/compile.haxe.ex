@@ -201,10 +201,65 @@ defmodule Mix.Tasks.Compile.Haxe do
         
         # Display formatted errors
         display_compilation_errors(errors, config)
+
+        # Always persist raw output; print it when verbose or when we couldn't parse location-based errors.
+        maybe_print_raw_output(reason, errors, config)
         
         # Return error diagnostics for Mix
         {:error, build_diagnostics(errors)}
     end
+  end
+
+  defp maybe_print_raw_output(reason, errors, config) do
+    path = write_last_failure_log(reason)
+
+    parsed_locations? =
+      Enum.any?(errors, fn error ->
+        not is_nil(error[:file]) and not is_nil(error[:line])
+      end)
+
+    should_print? = config[:verbose] || not parsed_locations?
+
+    if should_print? do
+      Mix.shell().error("")
+      Mix.shell().error("== Haxe compiler output ==")
+
+      if is_binary(path) do
+        Mix.shell().info("Saved full output to #{path}")
+      end
+
+      print_compiler_output(reason)
+    else
+      if is_binary(path) do
+        Mix.shell().info("Haxe output saved to #{path} (run with --verbose to print)")
+      end
+    end
+  end
+
+  defp write_last_failure_log(output) do
+    path = Path.join(System.tmp_dir!(), "haxe_compiler.last_failure.log")
+    case File.write(path, output) do
+      :ok -> path
+      _ -> nil
+    end
+  rescue
+    _ -> nil
+  end
+
+  defp print_compiler_output(output) do
+    lines = String.split(output || "", "\n", trim: false)
+    max_lines = 200
+
+    shown_lines =
+      if length(lines) > max_lines do
+        Mix.shell().error("Haxe output (last #{max_lines} lines):")
+        Enum.take(lines, -max_lines)
+      else
+        Mix.shell().error("Haxe output:")
+        lines
+      end
+
+    IO.puts(Enum.join(shown_lines, "\n"))
   end
   
   defp start_file_watcher(config) do
