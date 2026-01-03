@@ -3582,9 +3582,9 @@ class ElixirCompiler extends GenericCompiler<
                     }
 
                     // Validate required fields for method kinds we support.
-                    // LIVE_DASHBOARD is special: controller/action are optional.
+                    // LIVE_DASHBOARD and MAILBOX are special: controller/action are optional.
                     var methodUpper = method.toUpperCase();
-                    if (methodUpper != "LIVE_DASHBOARD") {
+                    if (methodUpper != "LIVE_DASHBOARD" && methodUpper != "MAILBOX") {
                         if (controller == null) Context.error('Route "${name}" is missing controller', routeExpr.pos);
                         if (action == null) Context.error('Route "${name}" is missing action', routeExpr.pos);
                     }

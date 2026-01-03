@@ -293,26 +293,40 @@ class AnnotationTransforms {
                     ast.metadata,
                     ast.pos
                 );
-            case EModule(name, attrs, body) if (ast.metadata?.isLiveView == true):
-                // Shape-matched LiveView module using direct Phoenix.LiveView use
-                var webIndex = name.indexOf("Web");
-                var appWebModule = if (webIndex > 0) name.substring(0, webIndex + "Web".length) else name;
-                var liveViewOptions = makeAST(EKeywordList([
-                    {
-                        key: "layout",
-                        value: makeAST(ETuple([
-                            makeAST(EVar(appWebModule + ".Layouts")),
-                            makeAST(EAtom(ElixirAtom.raw("app")))
-                        ]))
-                    }
-                ]));
-                var newBody: Array<ElixirAST> = [];
-                newBody.push(makeAST(EUse("Phoenix.LiveView", [liveViewOptions])));
-                for (stmt in body) newBody.push(stmt);
-                return makeASTWithMeta(EModule(name, attrs, newBody), ast.metadata, ast.pos);
-            default:
-                // Not a LiveView module, just pass through
-                return ast;
+	            case EModule(name, attrs, body) if (ast.metadata?.isLiveView == true):
+	                // Shape-matched LiveView module using direct Phoenix.LiveView use
+	                var webIndex = name.indexOf("Web");
+	                var appWebModule = if (webIndex > 0) name.substring(0, webIndex + "Web".length) else name;
+	                var usesDotComponents = false;
+	                for (stmt in body) if (!usesDotComponents) {
+	                    ASTUtils.walk(stmt, function(n: ElixirAST): Void {
+	                        if (usesDotComponents || n == null || n.def == null) return;
+	                        switch (n.def) {
+	                            case ESigil(type, content, _mods) if (type == "H"):
+	                                if (content != null && content.indexOf("<.") != -1) usesDotComponents = true;
+	                            default:
+	                        }
+	                    });
+	                }
+	                var liveViewOptions = makeAST(EKeywordList([
+	                    {
+	                        key: "layout",
+	                        value: makeAST(ETuple([
+	                            makeAST(EVar(appWebModule + ".Layouts")),
+	                            makeAST(EAtom(ElixirAtom.raw("app")))
+	                        ]))
+	                    }
+	                ]));
+	                var newBody: Array<ElixirAST> = [];
+	                newBody.push(makeAST(EUse("Phoenix.LiveView", [liveViewOptions])));
+	                if (usesDotComponents && appWebModule != name) {
+	                    newBody.push(makeAST(EImport(appWebModule + ".CoreComponents", null, null)));
+	                }
+	                for (stmt in body) newBody.push(stmt);
+	                return makeASTWithMeta(EModule(name, attrs, newBody), ast.metadata, ast.pos);
+	            default:
+	                // Not a LiveView module, just pass through
+	                return ast;
         }
     }
 
@@ -409,23 +423,38 @@ class AnnotationTransforms {
         // Extract AppWeb module name from module name (e.g., TodoAppWeb.TodoLive -> TodoAppWeb)
         var webIndex = moduleName.indexOf("Web");
         var appWebModule = if (webIndex > 0) moduleName.substring(0, webIndex + "Web".length) else moduleName;
-
-        // use Phoenix.LiveView, layout: {AppWeb.Layouts, :app}
-        var liveViewOptions = makeAST(EKeywordList([
-            {
-                key: "layout",
-                value: makeAST(ETuple([
-                    makeAST(EVar(appWebModule + ".Layouts")),
-                    makeAST(EAtom(ElixirAtom.raw("app")))
-                ]))
+        var usesDotComponents = false;
+        ASTUtils.walk(existingBody, function(n: ElixirAST): Void {
+            if (usesDotComponents || n == null || n.def == null) return;
+            switch (n.def) {
+                case ESigil(type, content, _mods) if (type == "H"):
+                    if (content != null && content.indexOf("<.") != -1) usesDotComponents = true;
+                default:
             }
-        ]));
-        statements.push(makeAST(EUse("Phoenix.LiveView", [liveViewOptions])));
-        
-        // Add existing functions from the body
-        switch(existingBody.def) {
-            case EBlock(stmts):
-                for (stmt in stmts) {
+        });
+
+	        // use Phoenix.LiveView, layout: {AppWeb.Layouts, :app}
+	        var liveViewOptions = makeAST(EKeywordList([
+	            {
+	                key: "layout",
+	                value: makeAST(ETuple([
+	                    makeAST(EVar(appWebModule + ".Layouts")),
+	                    makeAST(EAtom(ElixirAtom.raw("app")))
+	                ]))
+	            }
+	        ]));
+	        statements.push(makeAST(EUse("Phoenix.LiveView", [liveViewOptions])));
+	
+	        // Phoenix dot-components (e.g. <.card>) resolve via importing the app's CoreComponents.
+	        // We derive the `<App>Web` prefix from the LiveView module name to keep this generic.
+	        if (usesDotComponents && appWebModule != moduleName) {
+	            statements.push(makeAST(EImport(appWebModule + ".CoreComponents", null, null)));
+	        }
+	        
+	        // Add existing functions from the body
+	        switch(existingBody.def) {
+	            case EBlock(stmts):
+	                for (stmt in stmts) {
                     // Skip empty statements
                     switch(stmt.def) {
                         case ENil:
@@ -577,6 +606,7 @@ class AnnotationTransforms {
         var browserLiveRouteCalls: Array<ElixirAST> = [];
         var apiRouteCalls: Array<ElixirAST> = [];
         var dashboardRoutes: Array<{scopePath: String, routePath: String}> = [];
+        var mailboxRoutes: Array<{scopePath: String, routePath: String}> = [];
 
         if (routes != null) {
             for (route in routes) {
@@ -590,6 +620,14 @@ class AnnotationTransforms {
                     var scopePath = (lastSlash > 0) ? path.substr(0, lastSlash) : "/";
                     var routePath = (lastSlash > 0) ? path.substr(lastSlash) : path;
                     dashboardRoutes.push({scopePath: scopePath, routePath: routePath});
+                    continue;
+                }
+                if (method == "MAILBOX") {
+                    // Split "/dev/mailbox" -> scope "/dev", route "/mailbox"
+                    var lastSlash = path.lastIndexOf("/");
+                    var scopePath = (lastSlash > 0) ? path.substr(0, lastSlash) : "/";
+                    var routePath = (lastSlash > 0) ? path.substr(lastSlash) : path;
+                    mailboxRoutes.push({scopePath: scopePath, routePath: routePath});
                     continue;
                 }
 
@@ -673,30 +711,49 @@ class AnnotationTransforms {
             statements.push(makeAST(EMacroCall("scope", [makeAST(EString("/api")), makeAST(EVar(webModuleName))], makeAST(EBlock(scopeBodyApi)))));
         }
 
-        // LiveDashboard in dev/test
-        if (dashboardRoutes.length > 0) {
-            var thenStmts: Array<ElixirAST> = [makeAST(EImport("Phoenix.LiveDashboard.Router", null, null))];
-            // Group by scope path
-            var scopeMap: Map<String, Array<String>> = new Map();
-            for (d in dashboardRoutes) {
-                var arr = scopeMap.exists(d.scopePath) ? scopeMap.get(d.scopePath) : [];
-                arr.push(d.routePath);
-                scopeMap.set(d.scopePath, arr);
+        // Dev-only routes (LiveDashboard, Swoosh mailbox preview)
+        if (dashboardRoutes.length > 0 || mailboxRoutes.length > 0) {
+            var thenStmts: Array<ElixirAST> = [];
+            if (dashboardRoutes.length > 0) {
+                thenStmts.push(makeAST(EImport("Phoenix.LiveDashboard.Router", null, null)));
             }
 
-            for (scopePath => routePaths in scopeMap) {
+            // Group all dev routes by scope path
+            var scopeCalls: Map<String, Array<ElixirAST>> = new Map();
+
+            function getOrInitCalls(scopePath: String): Array<ElixirAST> {
+                if (scopeCalls.exists(scopePath)) return scopeCalls.get(scopePath);
                 var calls: Array<ElixirAST> = [makeAST(ECall(null, "pipe_through", [makeAST(EAtom(ElixirAtom.raw("browser")))]))];
-                for (rp in routePaths) {
-                    calls.push(makeAST(ECall(null, "live_dashboard", [
-                        makeAST(EString(rp)),
-                        makeAST(EKeywordList([{key: "metrics", value: makeAST(EVar(webModuleName + ".Telemetry"))}]))
-                    ])));
-                }
+                scopeCalls.set(scopePath, calls);
+                return calls;
+            }
+
+            for (d in dashboardRoutes) {
+                var calls = getOrInitCalls(d.scopePath);
+                calls.push(makeAST(ECall(null, "live_dashboard", [
+                    makeAST(EString(d.routePath)),
+                    makeAST(EKeywordList([{key: "metrics", value: makeAST(EVar(webModuleName + ".Telemetry"))}]))
+                ])));
+            }
+
+            for (m in mailboxRoutes) {
+                var calls = getOrInitCalls(m.scopePath);
+                calls.push(makeAST(ECall(null, "forward", [
+                    makeAST(EString(m.routePath)),
+                    makeAST(EVar("Plug.Swoosh.MailboxPreview"))
+                ])));
+            }
+
+            for (scopePath => calls in scopeCalls) {
                 thenStmts.push(makeAST(EMacroCall("scope", [makeAST(EString(scopePath))], makeAST(EBlock(calls)))));
             }
 
             var envCall = makeAST(ERemoteCall(makeAST(EVar("Mix")), "env", []));
-            var condition = makeAST(EBinary(In, envCall, makeAST(EList([makeAST(EAtom(ElixirAtom.raw("dev"))), makeAST(EAtom(ElixirAtom.raw("test")))]))));
+            var condition = makeAST(EBinary(In, envCall, makeAST(EList([
+                makeAST(EAtom(ElixirAtom.raw("dev"))),
+                makeAST(EAtom(ElixirAtom.raw("test"))),
+                makeAST(EAtom(ElixirAtom.raw("e2e")))
+            ]))));
             statements.push(makeAST(EIf(condition, makeAST(EBlock(thenStmts)), null)));
         }
 
@@ -1635,12 +1692,18 @@ class AnnotationTransforms {
             )));
         }
         
-        // defp html_helpers do
-        var htmlHelpersBody = makeAST(EQuote([], makeAST(EBlock([
-            makeAST(EImport("Phoenix.HTML", null, null)),
-            makeAST(EImport("Phoenix.HTML.Form", null, null)),
-            makeAST(EAlias("Phoenix.HTML.Form", "Form"))
-        ]))));
+	        // defp html_helpers do
+	        var htmlHelpersBody = makeAST(EQuote([], makeAST(EBlock([
+	            makeAST(EImport("Phoenix.HTML", null, null)),
+	            makeAST(EImport("Phoenix.HTML.Form", null, null)),
+	            makeAST(EAlias("Phoenix.HTML.Form", "Form")),
+	            // Bring CoreComponents + Gettext into LiveViews/components so dot-components
+	            // like <.card> resolve via `use AppWeb, :live_view`.
+	            makeAST(EImport(moduleName + ".CoreComponents", null, null)),
+	            makeAST(EImport(moduleName + ".Gettext", null, null)),
+	            makeAST(EAlias("Phoenix.LiveView.JS", "JS")),
+	            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
+	        ]))));
         
         if (!existingDefinitions.exists("html_helpers/0")) {
             statements.push(makeAST(EDefp(
