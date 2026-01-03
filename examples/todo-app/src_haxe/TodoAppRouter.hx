@@ -97,6 +97,23 @@ import reflaxe.elixir.macros.HttpMethod;
         action: controllers.GithubOAuthController.github_callback
     },
 
+    // Deterministic local OAuth (enabled in e2e only; used by Playwright)
+    {
+        name: "authMock",
+        method: HttpMethod.GET,
+        path: "/auth/mock",
+        controller: controllers.MockOAuthController,
+        action: controllers.MockOAuthController.mock
+    },
+
+    {
+        name: "authMockCallback",
+        method: HttpMethod.GET,
+        path: "/auth/mock/callback",
+        controller: controllers.MockOAuthController,
+        action: controllers.MockOAuthController.mock_callback
+    },
+
     {
         name: "authLogout",
         method: HttpMethod.POST,
