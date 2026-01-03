@@ -75,6 +75,13 @@
 # Opt-in: enforce typed phx-* event usage in templates (reject literal phx-click="save")
 -D hxx_strict_phx_events
 
+# Opt-in: require dot-components to resolve to discoverable @:component definitions.
+# Phoenix core components (<.form>, <.link>, <.inputs_for>, <.live_component>) are always allowed.
+-D hxx_strict_components
+
+# Opt-in: require typed :let bindings for components/slots when :let is used.
+-D hxx_strict_slots
+
 # Silence compiler debug traces for QA speed and signal clarity
 # Provide both hyphenated and underscored defines for preprocessor gating compatibility
 -D no-traces
