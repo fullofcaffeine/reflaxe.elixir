@@ -11,7 +11,9 @@
 - ✅ **Custom JS Generator** - AsyncJSGenerator extends ExampleJSGenerator for proper code generation
 - ✅ **Zero runtime overhead** - Pure compile-time transformation via build macros
 
-**See**: [`async-await-specification.md`](../09-history/archive/docs/04-api-reference/async-await-specification.md) - Async/await specification and examples (archived)
+See also:
+- `examples/todo-app/build-client.hxml` (Genes-based client build)
+- Haxe manual: https://haxe.org/manual/
 
 ## Modern Haxe JavaScript Patterns ⚡ **REQUIRED READING**
 

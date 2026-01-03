@@ -28,9 +28,3 @@ See:
 
 - **Ecto migration emission**: opt‑in `.exs` output via `-D ecto_migrations_exs` (see the migrations docs/examples).
 - **Compile‑time‑only helpers**: structurally empty modules can be suppressed from emission to avoid generating useless `.ex` stubs.
-
-## Historical Notes
-
-Older file-generation docs and experiments live under:
-- `docs/09-history/archive/docs/02-user-guide/FILE_GENERATION.md`
-

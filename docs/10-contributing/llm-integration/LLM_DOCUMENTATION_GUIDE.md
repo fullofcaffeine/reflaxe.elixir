@@ -337,25 +337,16 @@ When adding `NEW_FEATURE.md`, review and update:
 - [ ] **FEATURES.md** - Update feature status
 - [ ] **EXAMPLES.md** - Add usage examples
 
-### Example: Adding BEAM_TYPE_ABSTRACTIONS.md
+### Example: Adding TODOAPP_COWBOY_TOOLCHAIN.md
 
 When this doc was added, these files needed updates:
 ```markdown
-# In FUNCTIONAL_PATTERNS.md:
-## See Also
-- [BEAM Type Abstractions](../../09-history/archive/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md) - Option and Result types
+# In docs/README.md (docs index):
+### How-To Guides
+- [Todo-app Cowboy toolchain](06-guides/TODOAPP_COWBOY_TOOLCHAIN.md) - Why the todo-app pins Cowboy deps
 
-# In PARADIGM_BRIDGE.md:
-## Related Documentation
-- [BEAM Type Abstractions](../../09-history/archive/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md) - Type-safe null handling
-
-# In STANDARD_LIBRARY_HANDLING.md:
-## Option Type Compilation
-See [BEAM Type Abstractions](../../09-history/archive/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md) for Option patterns
-
-# In README.md:
-### Core Documentation
-- [BEAM Type Abstractions](../../09-history/archive/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md) - Option/Result types
+# In examples/todo-app/mix.exs (source comment):
+# Webserver stack pinned for OTP/toolchain compatibility (see docs/06-guides/TODOAPP_COWBOY_TOOLCHAIN.md)
 ```
 
 ### Internal Links

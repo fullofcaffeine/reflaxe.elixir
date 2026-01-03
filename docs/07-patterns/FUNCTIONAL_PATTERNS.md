@@ -1,8 +1,9 @@
 # Functional Programming Patterns in Reflaxe.Elixir
 
 This document describes how Reflaxe.Elixir transforms Haxe's imperative programming constructs into Elixir's functional paradigm.
-
-**See Also**: [Paradigm Bridge](../09-history/archive/docs/07-patterns/PARADIGM_BRIDGE.md) - Comprehensive guide to the imperative→functional paradigm bridge, including cross-platform development patterns and Result types (archived).
+See also:
+- [Haxe→Elixir Mappings](../02-user-guide/HAXE_ELIXIR_MAPPINGS.md)
+- [Standard Library Handling](../04-api-reference/STANDARD_LIBRARY_HANDLING.md)
 
 ## Overview
 
@@ -817,12 +818,9 @@ function complexValidation(data: UserData): Result<User, ValidationError> {
 
 ## See Also
 
-- [BEAM Type Abstractions](../09-history/archive/docs/05-architecture/BEAM_TYPE_ABSTRACTIONS.md) - Comprehensive guide to Option<T> and Result<T,E> types (archived)
 - [ExUnit Testing](../02-user-guide/exunit-testing.md) - Testing Option and Result types with type-safe assertions
-- [Paradigm Bridge](../09-history/archive/docs/07-patterns/PARADIGM_BRIDGE.md) - Cross-platform development patterns and functional transformations (archived)
-- [Developer Patterns](../09-history/archive/docs/06-guides/DEVELOPER_PATTERNS.md) - Best practices including Option/Result migration patterns (archived)
 - [Standard Library Handling](../04-api-reference/STANDARD_LIBRARY_HANDLING.md) - How standard library types compile to Elixir
-- [Cookbook](../09-history/archive/docs/06-guides/COOKBOOK.md) - Practical recipes for common Option and Result patterns (archived)
+- [Compiler Best Practices](../03-compiler-development/COMPILER_BEST_PRACTICES.md) - Transform conventions and maintenance rules
 
 ## References
 

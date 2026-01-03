@@ -2,7 +2,7 @@
 
 This document focuses on **patterns that match the current compiler + stdlib APIs**.
 
-If you see older content using `@:event(...)`, `jsx(...)`, or custom return types (e.g. `LiveViewResult`), those were legacy experiments and are now archived under `docs/09-history/archive/`.
+If you see older content using `@:event(...)`, `jsx(...)`, or custom return types (e.g. `LiveViewResult`), those were legacy experiments and are kept in git history.
 
 ## Core Idea: Keep Phoenix Idioms, Add Haxe Types
 

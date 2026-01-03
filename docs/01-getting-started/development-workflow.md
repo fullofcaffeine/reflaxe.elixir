@@ -172,7 +172,7 @@ Reflaxe.Elixir uses two compilation profiles that affect **macros** and **AST tr
 HAXE_FAST_BOOT=1 mix compile
 ```
 
-See `lib/haxe_compiler.ex` for the injection point. Historical todo-app perf/debug HXML experiments were archived under `docs/09-history/archive/records/todo-app-hxml-legacy/` and are not required for normal development.
+See `lib/haxe_compiler.ex` for the injection point. Legacy todo-app perf/debug HXML experiments are kept in git history and are not required for normal development.
 
 ## Haxe Compilation Server Policy
 

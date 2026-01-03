@@ -38,8 +38,6 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Testing Infrastructure](03-compiler-development/TESTING_INFRASTRUCTURE.md) - Snapshot + integration testing system
 - [XRay Debugging](03-compiler-development/DEBUG_XRAY_SYSTEM.md) - Debugging methodology
 - [Best Practices](03-compiler-development/COMPILER_BEST_PRACTICES.md) - Development patterns
-  
-Most internal research notes were archived to **[09-history/archive/docs/03-compiler-development/](09-history/archive/docs/03-compiler-development/)** during post‑1.0 cleanup. The links above are the curated, up‑to‑date entry points.
 
 ### 📋 API Reference
 **[04-api-reference/](04-api-reference/)** - Technical reference documentation
@@ -58,8 +56,6 @@ Most internal research notes were archived to **[09-history/archive/docs/03-comp
 - [File Naming](05-architecture/FILE_NAMING_ARCHITECTURE.md) - snake_case conversion rules
 - [HXX Templates](05-architecture/HXX_ARCHITECTURE.md) - Template compilation system
 - [Elixir Injection](04-api-reference/ELIXIR_INJECTION_GUIDE.md) - `__elixir__()` / Syntax.code() patterns
-  
-Additional (uncurated) architecture notes were archived to **[09-history/archive/docs/05-architecture/](09-history/archive/docs/05-architecture/)**.
 
 ### 📋 How-To Guides
 **[06-guides/](06-guides/)** - Practical guides for specific tasks
@@ -67,6 +63,7 @@ Additional (uncurated) architecture notes were archived to **[09-history/archive
 - [Phoenix (New App)](06-guides/PHOENIX_NEW_APP.md) - Greenfield Phoenix setup
 - [Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md) - Gradual adoption in an existing app
 - [Dogfooding](06-guides/DOGFOODING.md) - External Phoenix app upgrade validation
+- [Todo-app Cowboy Toolchain](06-guides/TODOAPP_COWBOY_TOOLCHAIN.md) - Why the todo-app pins Cowboy deps
 - [Production Hardening](06-guides/PRODUCTION_READINESS.md) - Non‑alpha criteria + checklist
 - [Strict Mode](06-guides/STRICT_MODE.md) - Opt-in Gleam-like safety profile
 - [Versioning & Stability](06-guides/VERSIONING_AND_STABILITY.md) - SemVer + stability tiers + deprecation policy
@@ -78,7 +75,7 @@ Additional (uncurated) architecture notes were archived to **[09-history/archive
 - [Support Matrix](06-guides/SUPPORT_MATRIX.md) - CI-tested toolchain versions
 - [Licensing & Distribution](06-guides/LICENSING_AND_DISTRIBUTION.md) - GPL notes (not legal advice)
 
-Legacy guides (kept for link stability, but archived):
+Legacy guides (kept for link stability):
 - [Getting Started (Legacy)](06-guides/GETTING_STARTED.md)
 - [Phoenix Integration Guide (Legacy)](06-guides/PHOENIX_INTEGRATION_GUIDE.md)
 - [Project Generator Guide (Legacy)](06-guides/PROJECT_GENERATOR_GUIDE.md)
@@ -94,17 +91,10 @@ Legacy guides (kept for link stability, but archived):
 ### 🗺️ Roadmap & Planning
 **[08-roadmap/](08-roadmap/)** - Project direction and future plans
 - [Vision](08-roadmap/vision.md) - Long-term project vision
-  
-Most 1.0 planning docs and historical PRDs were archived under **[09-history/archive/docs/08-roadmap/](09-history/archive/docs/08-roadmap/)** during post‑1.0 cleanup.
 
-### 📜 History & Records
-**[09-history/](09-history/)** - Historical documentation and decisions
-- [Task History](09-history/archive/records/task-history.md) - Complete implementation log (3200+ entries)
-- [Legacy Development Guide](09-history/archive/records/legacy-development-guide.md) - Previous development workflow
-- [Legacy Installation Guide](09-history/archive/records/legacy-installation-guide.md) - Previous setup instructions
-- [Legacy Documentation Index](09-history/archive/records/legacy-documentation-index.md) - Previous documentation structure
-- [Archive](09-history/archive/) - Historical development plans and PRDs
-- [Session Records](09-history/archive/sessions/) - Development session archives
+### 📜 History
+Historical notes and experiments are kept in git history to keep the working tree focused and current.
+Prefer [`CHANGELOG.md`](../CHANGELOG.md) and [`ROADMAP.md`](../ROADMAP.md) for curated history.
 
 ### 🤝 Contributing
 **[10-contributing/](10-contributing/)** - Contribution guidelines and processes

@@ -2,7 +2,7 @@
 
 This document consolidates proven compiler development patterns and best practices for Reflaxe.Elixir, distilled from real implementation experience.
 
-**See also**: [`COMPILER_PATTERNS.md`](../09-history/archive/docs/05-architecture/COMPILER_PATTERNS.md) for detailed implementation patterns and lessons learned (archived deep dive).
+**See also**: [Architecture Overview](../05-architecture/ARCHITECTURE.md) and [Testing Infrastructure](TESTING_INFRASTRUCTURE.md).
 
 ## Core Development Principles
 
@@ -237,7 +237,7 @@ class Date {
 - **Custom JS Only When**: Features don’t exist in standard Haxe (e.g., async/await ergonomics) or require specific Phoenix integration points.
 - **Benefits**: Reduced maintenance burden, clear project scope, and better compatibility with existing JS tooling.
 - **Implementation**: Client builds live in app-local `build-client.hxml` and use `-lib genes`; the Elixir compiler remains framework-agnostic and server-focused.
-- **See**: [`JS_GENERATION_PHILOSOPHY.md`](../09-history/archive/docs/02-user-guide/JS_GENERATION_PHILOSOPHY.md) - Complete philosophical guide (archived)
+- **See**: [JavaScript Patterns](../07-patterns/JAVASCRIPT_PATTERNS.md) - Current JS patterns and client build guidance
 
 ## Development Workflow Guidelines
 
@@ -496,20 +496,19 @@ grep "undefined variable" test/tests/orphaned_enum_params/out/*.ex
 4. **Upstream Contribution**: Share patterns with other Reflaxe compilers
 
 **See Also**:
-- [`AST_CLEANUP_PATTERNS.md`](../09-history/archive/docs/03-compiler-development/AST_CLEANUP_PATTERNS.md) - Comprehensive pattern documentation (archived)
-- [`ADR-001-handling-unoptimized-ast.md`](../09-history/archive/docs/05-architecture/ADR-001-handling-unoptimized-ast.md) - Architectural decision record (archived)
 - [`COMPILATION_PIPELINE_ARCHITECTURE.md`](COMPILATION_PIPELINE_ARCHITECTURE.md) - Pipeline understanding
+- [`TRANSFORM_PASS_REGISTRY_ORDER.md`](../05-architecture/TRANSFORM_PASS_REGISTRY_ORDER.md) - Pass ordering reference
+- [`COMPILATION_FLOW.md`](../05-architecture/COMPILATION_FLOW.md) - End-to-end compilation flow
 
 **⚠️ CRITICAL RULE**: Never remove test code to fix failures - fix the underlying compiler issue instead.
 
 ## Reference Resources
 
 ### Documentation System
-- [`COMPILER_PATTERNS.md`](../09-history/archive/docs/05-architecture/COMPILER_PATTERNS.md) - Detailed implementation patterns and lessons learned (archived)
-- [`TESTING_PRINCIPLES.md`](../09-history/archive/docs/03-compiler-development/TESTING_PRINCIPLES.md) - Critical testing rules and methodologies (archived)
-- [`TESTING.md`](../09-history/archive/docs/05-architecture/TESTING.md) - Technical testing infrastructure (archived)
-- [`PARADIGM_BRIDGE.md`](../09-history/archive/docs/07-patterns/PARADIGM_BRIDGE.md) - Understanding imperative→functional transformations (archived)
-- [`DEVELOPER_PATTERNS.md`](../09-history/archive/docs/06-guides/DEVELOPER_PATTERNS.md) - Best practices and patterns (archived)
+- [`ARCHITECTURE.md`](../05-architecture/ARCHITECTURE.md) - Current compiler architecture overview
+- [`COMPILATION_FLOW.md`](../05-architecture/COMPILATION_FLOW.md) - TypedExpr → AST → transforms → printer
+- [`TESTING_INFRASTRUCTURE.md`](TESTING_INFRASTRUCTURE.md) - Snapshot suite + validation workflow
+- [`FUNCTIONAL_PATTERNS.md`](../07-patterns/FUNCTIONAL_PATTERNS.md) - Idiomatic Elixir patterns and transformations
 
 ### External Resources
 - **Haxe API Documentation**: https://api.haxe.org/ - For type system, standard library, and language features

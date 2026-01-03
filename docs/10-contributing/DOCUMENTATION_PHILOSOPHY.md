@@ -65,11 +65,11 @@ This document explains the documentation architecture, the purpose of each docum
   - `EXTERN_CREATION_GUIDE.md` - Creating extern definitions
 
 ### 6. Historical Documentation
-**Location**: `docs/09-history/`
-- **Purpose**: Preserve record of completed tasks and learnings
-- **Key Files**:
-  - `TASK_HISTORY.md` - Completed tasks and architectural decisions
-  - `LEARNINGS.md` - Consolidated implementation learnings and patterns
+**Location**: Git history (tags/commits)
+- **Purpose**: Preserve a record of completed tasks and learnings without keeping outdated snapshots in the working tree
+- **Guidance**:
+  - Prefer `CHANGELOG.md` for user-facing history
+  - Use `git log` / tags for deep historical context
 
 ### 7. LLM-Specific Guides
 **Location**: `docs/10-contributing/llm-integration/`

@@ -2,7 +2,7 @@
 
 Reflaxe.Elixir is a Haxe → Elixir compiler built on Reflaxe. As of **August 2025**, the compiler is **pure AST-based**: it builds an `ElixirAST` IR, runs deterministic transformation passes, then prints idiomatic Elixir.
 
-This document is the canonical “how the compiler is structured today” overview. The previous pre-AST architecture writeup has been archived to `docs/09-history/archive/docs/05-architecture/ARCHITECTURE.md`.
+This document is the canonical “how the compiler is structured today” overview. The previous pre-AST architecture writeup is kept in git history.
 
 ## Compilation Pipeline
 

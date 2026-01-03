@@ -145,7 +145,7 @@ docs/
 
 **Complete Reference Index**:
 ```  
-@09-history/archive/docs/10-contributing/llm-integration/LLM_DOCUMENTATION_INDEX.md  # Complete (archived) 232-file index
+@10-contributing/llm-integration/INDEX.md      # Canonical LLM documentation index
 ```
 
 ## 📋 Documentation Maintenance Guidelines
