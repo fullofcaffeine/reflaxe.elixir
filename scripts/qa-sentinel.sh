@@ -123,7 +123,7 @@ COMPILE_MIGRATIONS=0
 MIGRATIONS_HXML="build-migrations.hxml"
 # Default to fast, stable smoke specs; override with --e2e-spec as needed
 # Keep this list small but regression-focused; add high-value paths only.
-E2E_SPEC="e2e/basic.spec.ts e2e/oauth_mock.spec.ts e2e/org_last_admin.spec.ts e2e/search.spec.ts e2e/tags_sort.spec.ts e2e/live_updates.spec.ts e2e/create_todo.spec.ts e2e/edit_todo.spec.ts"
+E2E_SPEC="e2e/basic.spec.ts e2e/oauth_mock.spec.ts e2e/org_last_admin.spec.ts e2e/search.spec.ts e2e/tags_sort.spec.ts e2e/live_updates.spec.ts e2e/create_todo.spec.ts e2e/edit_todo.spec.ts e2e/bulk_set_priority.spec.ts"
 # Timeouts and probe counts (sane defaults; configurable via env)
 BUILD_TIMEOUT=${BUILD_TIMEOUT:-300s}
 # Optional prewarm to reduce first-build times using the Haxe compilation server
