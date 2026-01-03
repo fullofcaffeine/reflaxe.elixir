@@ -49,7 +49,10 @@ class HeexRenderHelperCallWrapTransforms {
             var trimmed = StringTools.trim(expr);
             var alreadyRaw = StringTools.startsWith(trimmed, "Phoenix.HTML.raw(");
             var isRenderHelper = ~/^render_[a-z0-9_]+\s*\(/.match(trimmed);
-            if (!alreadyRaw && isRenderHelper) {
+            // `render_slot/2` returns a Phoenix.LiveView.Rendered struct and must not be wrapped
+            // in Phoenix.HTML.raw/1 (it will crash at runtime).
+            var isRenderSlot = ~/^render_slot\s*\(/.match(trimmed);
+            if (!alreadyRaw && isRenderHelper && !isRenderSlot) {
                 parts.push("<%= Phoenix.HTML.raw(" + expr + ") %>");
             } else {
                 // Copy original segment unchanged

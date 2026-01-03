@@ -340,7 +340,7 @@ class RouterBuildMacro {
             usedPaths.set(pathMethodKey, route.name);
             
             // Validate HTTP method
-            var validMethods = ["GET", "POST", "PUT", "DELETE", "PATCH", "LIVE", "LIVE_DASHBOARD"];
+            var validMethods = ["GET", "POST", "PUT", "DELETE", "PATCH", "LIVE", "LIVE_DASHBOARD", "MAILBOX"];
             if (!validMethods.contains(route.method)) {
                 Context.warning('Unknown HTTP method: ${route.method}. Valid: ${validMethods.join(", ")}', pos);
             }
