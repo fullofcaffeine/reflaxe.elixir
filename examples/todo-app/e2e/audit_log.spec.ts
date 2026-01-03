@@ -74,3 +74,50 @@ test('role updates are recorded and visible in the audit log', async ({ browser 
   await adminContext.close()
 })
 
+test('invite create + accept are recorded in the audit log', async ({ browser }) => {
+  const base = process.env.BASE_URL || 'http://localhost:4001'
+  const runId = Date.now()
+
+  const orgSlug = `audit-invite-${runId}.example.com`
+  const adminEmail = `pw-audit-invite-admin-${runId}@${orgSlug}`
+
+  const inviteeDomain = `audit-invitee-${runId}.example.com`
+  const inviteeEmail = `pw-audit-invitee-${runId}@${inviteeDomain}`
+
+  const adminContext = await browser.newContext()
+  const adminPage = await adminContext.newPage()
+  await login(adminPage, base, `PW Audit Invite Admin ${runId}`, adminEmail)
+
+  await adminPage.goto(base + '/org')
+  await expect(adminPage.getByTestId('org-title')).toBeVisible({ timeout: 20000 })
+
+  await adminPage.getByTestId('invite-email').fill(inviteeEmail)
+  await adminPage.getByTestId('invite-role').selectOption('user')
+  await adminPage.getByTestId('btn-invite').click()
+
+  const inviteeContext = await browser.newContext()
+  const inviteePage = await inviteeContext.newPage()
+  await login(inviteePage, base, `PW Audit Invitee ${runId}`, inviteeEmail)
+
+  await adminPage.goto(base + '/admin/audit')
+  await waitForLiveViewConnected(adminPage)
+  await expect(adminPage.getByTestId('audit-title')).toBeVisible({ timeout: 20000 })
+
+  const createdRow = adminPage
+    .getByTestId('audit-row')
+    .filter({ hasText: 'org.invite_created' })
+    .filter({ hasText: inviteeEmail })
+    .first()
+
+  const acceptedRow = adminPage
+    .getByTestId('audit-row')
+    .filter({ hasText: 'org.invite_accepted' })
+    .filter({ hasText: inviteeEmail })
+    .first()
+
+  await expect(createdRow).toBeVisible({ timeout: 20000 })
+  await expect(acceptedRow).toBeVisible({ timeout: 20000 })
+
+  await inviteeContext.close()
+  await adminContext.close()
+})
