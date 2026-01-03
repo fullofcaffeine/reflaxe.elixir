@@ -104,16 +104,19 @@ private typedef ComponentSlotDefinition = {
     var letBinding: Null<ComponentLetBindingDefinition>; // optional typing for :let binders inside slot content
 };
 
-private typedef ComponentLetBindingDefinition = {
-    var props: Map<String, String>; // canonical prop key (snake_case) -> kind
-    var required: Map<String, Bool>; // canonical prop key (snake_case) -> required?
-};
+	private typedef ComponentLetBindingDefinition = {
+	    var props: Map<String, String>; // canonical prop key (snake_case) -> kind
+	    var required: Map<String, Bool>; // canonical prop key (snake_case) -> required?
+	    var typeName: Null<String>; // informational: original Haxe type of the bound value
+	};
 
-private typedef HeexLetBindingScope = {
-    var varName: String; // bound variable name (e.g., `row`)
-    var props: Map<String, String>; // allowed fields on the bound value (snake_case)
-    var contextTag: String; // e.g., "<:col>"
-};
+	private typedef HeexLetBindingScope = {
+	    var varName: String; // bound variable name (e.g., `row`)
+	    var props: Map<String, String>; // allowed fields on the bound value (snake_case)
+	    var contextTag: String; // e.g., "<:col>"
+	    var ownerTag: Null<String>; // e.g., "<.table>" when the binding is declared by a slot
+	    var typeName: Null<String>; // informational: original Haxe type of the bound value
+	};
 
 class HeexAssignsTypeLinterTransforms {
     static var componentFunctionIndex: Null<Map<String, Array<ComponentDefinition>>> = null;
@@ -546,12 +549,13 @@ class HeexAssignsTypeLinterTransforms {
                 letDef = resolveComponentLetBindingDefinition(tag);
             }
 
-            if (letDef == null || letDef.props == null || !letDef.props.keys().hasNext()) {
-                error(ctx, 'HEEx :let error: <' + tag + '> does not declare a typed :let binding (add a Slot<..., LetType> or disable -D hxx_strict_slots)', pos);
-            } else {
-                var isSimpleVar = switch (value.def) {
-                    case EVar(_): true;
-                    default: false;
+	            if (letDef == null || letDef.props == null || !letDef.props.keys().hasNext()) {
+	                var ownerPart = (isSlotTag(tag) && parentTag != null && parentTag.length > 0) ? (' (slot of <' + parentTag + '>)') : "";
+	                error(ctx, 'HEEx :let error: <' + tag + '>' + ownerPart + ' does not declare a typed :let binding (add a Slot<..., LetType> or disable -D hxx_strict_slots)', pos);
+	            } else {
+	                var isSimpleVar = switch (value.def) {
+	                    case EVar(_): true;
+	                    default: false;
                 };
                 if (!isSimpleVar) {
                     error(ctx, 'HEEx :let error: <' + tag + '> requires :let={var} under -D hxx_strict_slots (binding patterns are not supported)', pos);
@@ -734,14 +738,16 @@ class HeexAssignsTypeLinterTransforms {
         var varName = boundVars[0];
         if (!isValidElixirVarName(varName)) return letScopes;
 
-        var next = letScopes.copy();
-        next.push({
-            varName: varName,
-            props: letDef.props,
-            contextTag: '<' + tag + '>'
-        });
-        return next;
-    }
+	        var next = letScopes.copy();
+	        next.push({
+	            varName: varName,
+	            props: letDef.props,
+	            contextTag: '<' + tag + '>',
+	            ownerTag: parentTag != null ? '<' + parentTag + '>' : null,
+	            typeName: letDef.typeName
+	        });
+	        return next;
+	    }
 
     static function resolveComponentLetBindingDefinition(componentTag: String): Null<ComponentLetBindingDefinition> {
         var def = resolveComponentDefinition(componentTag);
@@ -807,16 +813,18 @@ class HeexAssignsTypeLinterTransforms {
         }
     }
 
-    static function validateLetFieldAccess(varName: String, fieldName: String, letScopes: Array<HeexLetBindingScope>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (varName == null || fieldName == null) return;
-        var scope = findLetScope(varName, letScopes);
-        if (scope == null || scope.props == null) return;
+	    static function validateLetFieldAccess(varName: String, fieldName: String, letScopes: Array<HeexLetBindingScope>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+	        if (varName == null || fieldName == null) return;
+	        var scope = findLetScope(varName, letScopes);
+	        if (scope == null || scope.props == null) return;
 
         var key = NameUtils.toSnakeCase(fieldName);
-        if (scope.props.exists(key)) return;
+	        if (scope.props.exists(key)) return;
 
-        error(ctx, 'HEEx :let type error: ' + scope.contextTag + ' binding "' + scope.varName + '" does not define field "' + key + '"', pos);
-    }
+	        var ownerPart = (scope.ownerTag != null && scope.ownerTag.length > 0) ? (' (slot of ' + scope.ownerTag + ')') : "";
+	        var typePart = (scope.typeName != null && scope.typeName.length > 0) ? (' (type: ' + scope.typeName + ')') : "";
+	        error(ctx, 'HEEx :let type error: ' + scope.contextTag + ownerPart + ' binding "' + scope.varName + '" does not define field "' + key + '"' + typePart, pos);
+	    }
 
     static function findLetScope(varName: String, letScopes: Array<HeexLetBindingScope>): Null<HeexLetBindingScope> {
         if (varName == null || letScopes == null) return null;
@@ -1397,12 +1405,16 @@ class HeexAssignsTypeLinterTransforms {
     static function buildPhoenixCoreFormComponentDefinition(): Null<ComponentDefinition> {
         var letBinding: Null<ComponentLetBindingDefinition> = null;
         var formAssignsType = resolvePhoenixCoreFormLetType();
-        if (formAssignsType != null) {
-            var letInfo = letBindingPropsFromType(formAssignsType);
-            if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
-                letBinding = { props: letInfo.props, required: letInfo.required };
-            }
-        }
+	        if (formAssignsType != null) {
+	            var letInfo = letBindingPropsFromType(formAssignsType);
+	            if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
+	                letBinding = {
+	                    props: letInfo.props,
+	                    required: letInfo.required,
+	                    typeName: TypeTools.toString(formAssignsType)
+	                };
+	            }
+	        }
 
         var slots = new Map<String, ComponentSlotDefinition>();
         slots.set("inner_block", {
@@ -1433,12 +1445,16 @@ class HeexAssignsTypeLinterTransforms {
     static function buildPhoenixCoreInputsForComponentDefinition(): Null<ComponentDefinition> {
         var letBinding: Null<ComponentLetBindingDefinition> = null;
         var formAssignsType = resolvePhoenixCoreFormLetType();
-        if (formAssignsType != null) {
-            var letInfo = letBindingPropsFromType(formAssignsType);
-            if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
-                letBinding = { props: letInfo.props, required: letInfo.required };
-            }
-        }
+	        if (formAssignsType != null) {
+	            var letInfo = letBindingPropsFromType(formAssignsType);
+	            if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
+	                letBinding = {
+	                    props: letInfo.props,
+	                    required: letInfo.required,
+	                    typeName: TypeTools.toString(formAssignsType)
+	                };
+	            }
+	        }
 
         var slots = new Map<String, ComponentSlotDefinition>();
         slots.set("inner_block", {
@@ -1672,13 +1688,17 @@ class HeexAssignsTypeLinterTransforms {
                             }
                         }
 
-                        var letBinding: Null<ComponentLetBindingDefinition> = null;
-                        if (letType != null && !isElixirTermType(letType)) {
-                            var letInfo = letBindingPropsFromType(letType);
-                            if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
-                                letBinding = { props: letInfo.props, required: letInfo.required };
-                            }
-                        }
+	                        var letBinding: Null<ComponentLetBindingDefinition> = null;
+	                        if (letType != null && !isElixirTermType(letType)) {
+	                            var letInfo = letBindingPropsFromType(letType);
+	                            if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
+	                                letBinding = {
+	                                    props: letInfo.props,
+	                                    required: letInfo.required,
+	                                    typeName: TypeTools.toString(letType)
+	                                };
+	                            }
+	                        }
 
                         slots.set(slotName, {
                             required: !isOptional,
