@@ -8,6 +8,7 @@ import elixir.otp.Supervisor.SupervisorOptions;
 import elixir.otp.TypeSafeChildSpec;
 import elixir.otp.Supervisor.ChildSpecFormat;
 import elixir.types.Term;
+import server.support.DevAutoMigrate;
 
 /**
  * Main TodoApp application module
@@ -24,6 +25,9 @@ class TodoApp {
         // Explicitly acknowledge OTP callback args to keep Elixir warnings clean
         var _ = _type;
         var _ = _args;
+
+        DevAutoMigrate.runIfEnabled();
+
         // Define children for the supervision tree using type-safe child specs
         var children: Array<ChildSpecFormat> = [
             // Database repository - Ecto.Repo handles Postgrex.TypeManager internally
