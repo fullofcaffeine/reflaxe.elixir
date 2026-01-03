@@ -393,7 +393,8 @@ class OrganizationLive {
                 });
 
                 updatedSocket = LiveView.clearFlash(updatedSocket);
-                LiveView.putFlash(updatedSocket, FlashType.Info, "Role updated.");
+                updatedSocket = LiveView.putFlash(updatedSocket, FlashType.Info, "Role updated.");
+                updatedSocket;
             case Error(err):
                 Std.string(err);
                 LiveView.putFlash(socket, FlashType.Error, "Could not update role.");

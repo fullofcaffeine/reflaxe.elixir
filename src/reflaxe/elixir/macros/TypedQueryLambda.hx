@@ -68,6 +68,102 @@ class TypedQueryLambda {
         return __expr;
     }
 
+    public static function buildOrderByExpr(ethis: Expr, ordering: Expr): Expr {
+        var argName = switch (ordering.expr) {
+            case EFunction(_, f) if (f.args != null && f.args.length > 0): f.args[0].name;
+            default: "t";
+        };
+        var body = extractLambdaBody(ordering);
+
+        var queryType = Context.typeof(ethis).toComplexType();
+        if (queryType == null) {
+            Context.error("Unable to infer TypedQuery type for orderBy()", ethis.pos);
+        }
+
+        var classType = getQueryType(ethis);
+
+        var specs:Array<Expr> = switch (unwrapToExpr(body).expr) {
+            case EArrayDecl(values): values;
+            default:
+                Context.error(
+                    'orderBy() must return an array literal like `[{field: t.id, direction: SortDirection.Desc}]`',
+                    body.pos
+                );
+                [];
+        };
+
+        if (specs.length == 0) {
+            Context.error("orderBy() requires at least one order specification", body.pos);
+        }
+
+        var parts:Array<String> = [];
+        for (spec in specs) {
+            switch (unwrapToExpr(spec).expr) {
+                case EObjectDecl(fields):
+                    var fieldExpr:Null<Expr> = null;
+                    var directionExpr:Null<Expr> = null;
+                    for (f in fields) {
+                        switch (f.field) {
+                            case "field": fieldExpr = f.expr;
+                            case "direction": directionExpr = f.expr;
+                            default:
+                        }
+                    }
+
+                    if (fieldExpr == null) {
+                        Context.error('orderBy() spec is missing `field`', spec.pos);
+                    }
+                    if (directionExpr == null) {
+                        Context.error('orderBy() spec is missing `direction`', spec.pos);
+                    }
+
+                    var direction = parseSortDirection(directionExpr);
+                    var fieldStr = toField(fieldExpr, argName, classType.name, spec.pos);
+                    parts.push(direction + ": " + fieldStr);
+
+                default:
+                    Context.error(
+                        'orderBy() specs must be objects like `{field: t.id, direction: SortDirection.Desc}`',
+                        spec.pos
+                    );
+            }
+        }
+
+        var code = '(require Ecto.Query; Ecto.Query.order_by({0}, [t], [' + parts.join(", ") + ']))';
+        var callArgs:Array<Expr> = [macro $v{code}, ethis];
+
+        return {
+            expr: ECast(
+                {
+                    expr: EUntyped(
+                        {
+                            expr: ECall({expr: EConst(CIdent("__elixir__")), pos: body.pos}, callArgs),
+                            pos: body.pos
+                        }
+                    ),
+                    pos: body.pos
+                },
+                queryType
+            ),
+            pos: body.pos
+        };
+    }
+
+    public static macro function orderBy<T>(ethis: ExprOf<ecto.TypedQuery<T>>, ordering: Expr): Expr {
+        #if hxx_instrument_sys
+        var __t0 = haxe.Timer.stamp();
+        #end
+        var __expr = buildOrderByExpr(ethis, ordering);
+        #if hxx_instrument_sys
+        var __elapsed = (haxe.Timer.stamp() - __t0) * 1000.0;
+        haxe.macro.Context.warning(
+            '[MacroTiming] name=TypedQueryLambda.orderBy elapsed_ms=' + Std.int(__elapsed),
+            ordering.pos
+        );
+        #end
+        return __expr;
+    }
+
     // Represents a condition template and the pinned value expressions it references
     private static inline function makeCond(template:String, values:Array<Expr>):{template:String, values:Array<Expr>} {
         return { template: template, values: values };
@@ -243,6 +339,36 @@ class TypedQueryLambda {
             case EParenthesis(inner): unwrapToExpr(inner);
             case EMeta(_, inner): unwrapToExpr(inner);
             default: expr;
+        }
+    }
+
+    private static function parseSortDirection(expr:Null<Expr>):String {
+        if (expr == null) return "asc";
+        var normalizedExpr = unwrapToExpr(expr);
+        return switch (normalizedExpr.expr) {
+            case EConst(CString(value)):
+                parseSortDirectionValue(value, normalizedExpr.pos);
+            case EConst(CIdent(name)):
+                parseSortDirectionValue(name, normalizedExpr.pos);
+            case EField(_, name):
+                parseSortDirectionValue(name, normalizedExpr.pos);
+            default:
+                Context.error(
+                    'orderBy() direction must be SortDirection.Asc/Desc (or "asc"/"desc")',
+                    normalizedExpr.pos
+                );
+                "asc";
+        }
+    }
+
+    private static function parseSortDirectionValue(value:String, pos:Position):String {
+        var lower = value.toLowerCase();
+        return switch (lower) {
+            case "asc": "asc";
+            case "desc": "desc";
+            default:
+                Context.error('Invalid sort direction "' + value + '". Expected Asc/Desc or "asc"/"desc".', pos);
+                "asc";
         }
     }
 

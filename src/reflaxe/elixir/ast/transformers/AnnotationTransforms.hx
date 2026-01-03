@@ -927,13 +927,57 @@ class AnnotationTransforms {
     }
     
     /**
-     * Map Haxe types to Ecto field types
-     * Returns an ElixirAST node for the field type (atom or tuple for complex types)
+     * mapHaxeTypeToEctoFieldType
+     *
+     * WHAT
+     * - Maps a Haxe field type string (captured in schema metadata) to an Ecto schema `field/2` type.
+     *
+     * WHY
+     * - The schema transformer emits Ecto `schema "table"` field definitions from Haxe types.
+     * - Without correct mapping, runtime inserts/loads can crash due to schema/DB type mismatch
+     *   (e.g. inserting `%{}` into a field generated as `:string`).
+     *
+     * HOW
+     * - Normalize wrapper types like `Null<T>` and then map:
+     *   - primitives to atoms (`:string`, `:integer`, `:boolean`, ...)
+     *   - arrays to tuples (`{:array, :string}`)
+     *   - JSON-ish/raw Elixir terms (`Term`) to `:map` (jsonb)
+     *
+     * EXAMPLES
+     * Haxe:
+     *   @:field public var tags: Null<Array<String>>;
+     * Elixir:
+     *   field :tags, {:array, :string}
+     *
+     * Haxe:
+     *   @:field public var metadata: Null<Term>;
+     * Elixir:
+     *   field :metadata, :map
      */
     static function mapHaxeTypeToEctoFieldType(haxeType: String): ElixirAST {
-        // Handle generic-like strings (e.g., "Array<String>") and aliases (e.g., "NaiveDateTime")
-        if (haxeType == null) return makeAST(EAtom("string"));
-        switch(haxeType) {
+        var normalized = haxeType;
+        if (normalized == null) return makeAST(EAtom("string"));
+
+        // Normalize `Null<T>` wrappers used for nullable schema fields.
+        // NOTE: nullability is handled by the DB column's `null:` option; the Ecto field type
+        // is based on the inner type.
+        while (StringTools.startsWith(normalized, "Null<") && StringTools.endsWith(normalized, ">")) {
+            normalized = normalized.substr(5, normalized.length - 6);
+        }
+
+        // Treat raw Elixir terms as JSON-ish maps by default in schema fields.
+        // WHY: `Term` is an opaque Elixir term at the type level; for Ecto storage the
+        // most practical default is `:map` (jsonb) rather than `:string`.
+        if (normalized == "Term" || StringTools.endsWith(normalized, ".Term")) {
+            return makeAST(EAtom("map"));
+        }
+
+        // Map-like Haxe types should become Ecto `:map` (jsonb).
+        if (StringTools.startsWith(normalized, "Map<") || StringTools.endsWith(normalized, "Map")) {
+            return makeAST(EAtom("map"));
+        }
+
+        switch(normalized) {
             case "String": return makeAST(EAtom("string"));
             case "Int": return makeAST(EAtom("integer"));
             case "Float": return makeAST(EAtom("float"));
@@ -942,8 +986,8 @@ class AnnotationTransforms {
             case "Date" | "NaiveDateTime": return makeAST(EAtom("naive_datetime"));
             case _:
                 // Detect Array<...>
-                if (StringTools.startsWith(haxeType, "Array<") && StringTools.endsWith(haxeType, ">")) {
-                    var inner = haxeType.substr(6, haxeType.length - 7);
+                if (StringTools.startsWith(normalized, "Array<") && StringTools.endsWith(normalized, ">")) {
+                    var inner = normalized.substr(6, normalized.length - 7);
                     var innerAtom = switch (inner) {
                         case "String": "string";
                         case "Int": "integer";
@@ -989,23 +1033,10 @@ class AnnotationTransforms {
             for (f in meta.schemaFields) {
                 // Skip primary key id (Ecto adds by default)
                 if (f.name == "id") continue;
-                switch (f.type) {
-                    case "Int":
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("integer"))) ])));
-                    case "Bool":
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("boolean"))) ])));
-                    case "DateTime":
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("utc_datetime"))) ])));
-                    case "NaiveDateTime":
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("naive_datetime"))) ])));
-                    case "Float":
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("float"))) ])));
-                    case "Array<String>":
-                        // Use {:array, :string}
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("array"))), makeAST(EAtom(ElixirAtom.raw("string")))])) ])));
-                    case _:
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [ makeAST(EAtom(f.name)), makeAST(EAtom(ElixirAtom.raw("string"))) ])));
-                }
+                schemaFieldStatements.push(makeAST(ECall(null, "field", [
+                    makeAST(EAtom(f.name)),
+                    mapHaxeTypeToEctoFieldType(f.type)
+                ])));
             }
         }
         

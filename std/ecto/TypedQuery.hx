@@ -321,31 +321,9 @@ abstract TypedQuery<T>(EctoQueryStruct) {
      */
     // where(predicate) provided via macro delegation for robust resolution
     // instance macro provided by @:using(ecto.TypedQueryInstanceMacros)
-    
-    /**
-     * Add order_by clause for sorting results
-     * 
-     * Sorts query results by one or more fields. Supports both ascending and
-     * descending order. Field names are validated at compile time.
-     * 
-     * @param ordering Lambda returning array of order specifications
-     * @return Updated query with order_by clause added
-     * 
-     * @example
-     * ```haxe
-     * query.orderBy(t -> [desc: t.insertedAt, asc: t.title]);
-     * // Generates: order_by: [desc: t.inserted_at, asc: t.title]
-     * ```
-     */
-    extern inline public function orderBy(ordering: T -> Array<{field: Term, direction: SortDirection}>): TypedQuery<T> {
-        // Simplified orderBy without compile-time validation
-        var newQuery = untyped __elixir__(
-            '(require Ecto.Query; Ecto.Query.order_by({0}, [t], {1}))',
-            this.query,
-            ordering
-        );
-        return cast newQuery;
-    }
+
+    // orderBy(ordering) provided via macro delegation for robust Ecto DSL generation
+    // macro provided by @:using(reflaxe.elixir.macros.TypedQueryLambda)
     
     /**
      * Select specific fields for projection
@@ -370,12 +348,11 @@ abstract TypedQuery<T>(EctoQueryStruct) {
     extern inline public function select<R>(projection: T -> R): TypedQuery<R> {
         // Note: Without macros, we lose compile-time field validation
         // The projection function will be compiled to Elixir pattern matching
-        var newQuery = untyped __elixir__(
+        return cast untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.select({0}, [t], {1}))',
             this.query,
             projection
         );
-        return cast newQuery;
     }
     
     /**
@@ -409,7 +386,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
             case FullOuter: ':full';
         });
         
-        var newQuery = if (alias != null) {
+        return cast (if (alias != null) {
             untyped __elixir__(
                 '(require Ecto.Query; Ecto.Query.join({0}, {1}, [t], assoc(t, {2}), as: {3}))',
                 this.query,
@@ -424,8 +401,7 @@ abstract TypedQuery<T>(EctoQueryStruct) {
                 joinType,
                 ':' + association
             );
-        }
-        return cast newQuery;
+        });
     }
     
     /**
@@ -450,12 +426,11 @@ abstract TypedQuery<T>(EctoQueryStruct) {
             'Enum.map({0}, &String.to_atom/1)',
             associations
         );
-        var newQuery = untyped __elixir__(
+        return cast untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.preload({0}, {1}))',
             this.query,
             atomList
         );
-        return cast newQuery;
     }
     
     /**
@@ -474,11 +449,10 @@ abstract TypedQuery<T>(EctoQueryStruct) {
      * ```
      */
     extern inline public function limit(count: Int): TypedQuery<T> {
-        var newQuery = untyped __elixir__(
+        return cast untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.limit({0}, ^{1}))',
             this, count
         );
-        return cast newQuery;
     }
     
     /**
@@ -497,11 +471,10 @@ abstract TypedQuery<T>(EctoQueryStruct) {
      * ```
      */
     extern inline public function offset(count: Int): TypedQuery<T> {
-        var newQuery = untyped __elixir__(
+        return cast untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.offset({0}, ^{1}))',
             this, count
         );
-        return cast newQuery;
     }
     
     /**
@@ -641,38 +614,34 @@ abstract TypedQuery<T>(EctoQueryStruct) {
     // Overloaded implementations using the overload keyword (Haxe 4.2+)
     // Base case - no parameters
     overload extern inline public function whereRaw(sql: String): TypedQuery<T> {
-        var newQuery = untyped __elixir__(
+        return cast untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.where({0}, fragment({1})))',
             this, sql
         );
-        return cast newQuery;
     }
     
     // 1 parameter overload
     overload extern inline public function whereRaw<A>(sql: String, p1: A): TypedQuery<T> {
-        var newQuery = untyped __elixir__(
+        return cast untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.where({0}, fragment({1}, ^{2})))',
             this, sql, p1
         );
-        return cast newQuery;
     }
     
     // 2 parameters overload
     overload extern inline public function whereRaw<A,B>(sql: String, p1: A, p2: B): TypedQuery<T> {
-        var newQuery = untyped __elixir__(
+        return cast untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.where({0}, fragment({1}, ^{2}, ^{3})))',
             this, sql, p1, p2
         );
-        return cast newQuery;
     }
     
     // 3 parameters overload
     overload extern inline public function whereRaw<A,B,C>(sql: String, p1: A, p2: B, p3: C): TypedQuery<T> {
-        var newQuery = untyped __elixir__(
+        return cast untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.where({0}, fragment({1}, ^{2}, ^{3}, ^{4})))',
             this, sql, p1, p2, p3
         );
-        return cast newQuery;
     }
     
     /**
@@ -691,11 +660,10 @@ abstract TypedQuery<T>(EctoQueryStruct) {
      * ```
      */
     extern inline public function orderByRaw(sql: String): TypedQuery<T> {
-        var newQuery = untyped __elixir__(
+        return cast untyped __elixir__(
             '(require Ecto.Query; Ecto.Query.order_by({0}, fragment({1})))',
             this, sql
         );
-        return cast newQuery;
     }
     
     /**

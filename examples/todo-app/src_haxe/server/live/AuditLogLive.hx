@@ -182,25 +182,25 @@ class AuditLogLive {
         actorId: Null<Int>,
         limit: Int
     ): Array<AuditLogRowView> {
-        var query = TypedQuery.from(AuditLog).where(a -> a.organizationId == organizationId);
+        var baseQuery = TypedQuery.from(AuditLog).where(a -> a.organizationId == organizationId);
 
-        if (actorId != null && actorId > 0) {
-            query = query.where(a -> a.actorId == actorId);
-        }
+        var actorFilteredQuery = (actorId != null && actorId > 0)
+            ? baseQuery.where(a -> a.actorId == actorId)
+            : baseQuery;
 
         var normalizedAction = StringTools.trim(actionFilter);
-        if (normalizedAction != "" && normalizedAction != "all") {
-            query = query.where(a -> a.action == normalizedAction);
-        }
+        var actionFilteredQuery = (normalizedAction != "" && normalizedAction != "all")
+            ? actorFilteredQuery.where(a -> a.action == normalizedAction)
+            : actorFilteredQuery;
 
         var normalizedEntity = StringTools.trim(entityFilter);
-        if (normalizedEntity != "" && normalizedEntity != "all") {
-            query = query.where(a -> a.entity == normalizedEntity);
-        }
+        var entityFilteredQuery = (normalizedEntity != "" && normalizedEntity != "all")
+            ? actionFilteredQuery.where(a -> a.entity == normalizedEntity)
+            : actionFilteredQuery;
 
-        query = query.orderBy(a -> [{field: a.id, direction: SortDirection.Desc}]).limit(limit);
+        var finalQuery = entityFilteredQuery.orderBy(a -> [{field: a.id, direction: SortDirection.Desc}]).limit(limit);
 
-        var entries = Repo.all(query);
+        var entries = Repo.all(finalQuery);
         return entries.map(toRowView);
     }
 
