@@ -548,7 +548,19 @@ if [[ -n "${QA_SKIP_HAXE:-}" ]]; then
   log "[QA] Step 1: Skipping Haxe build (QA_SKIP_HAXE set)"
   : > /tmp/qa-haxe.log
 else
-  run_step_with_log "Step 1: Haxe build ($HAXE_CMD $HXML_FILE)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD $HXML_FILE" || exit 1
+  if ! run_step_with_log "Step 1: Haxe build ($HAXE_CMD $HXML_FILE)" "$BUILD_TIMEOUT" /tmp/qa-haxe.log "$HAXE_CMD $HXML_FILE"; then
+    # The incremental server cache can occasionally get into a bad state (or we might be
+    # attached to a stale external server). Retry once without the server so the run remains
+    # reliable and developers still see the real compiler output.
+    if [[ "$HAXE_CMD" == *"--connect"* ]] && [[ -n "${HAXE_EXE:-}" ]]; then
+      log "[QA] Haxe server build failed; retrying without server cache..."
+      HAXE_CMD="$HAXE_EXE"
+      HAXE_USE_SERVER=0
+      run_step_with_log "Step 1 (retry): Haxe build ($HAXE_CMD $HXML_FILE)" "$BUILD_TIMEOUT" /tmp/qa-haxe.retry.log "$HAXE_CMD $HXML_FILE" || exit 1
+    else
+      exit 1
+    fi
+  fi
 fi
 
 # Remove unused std artifacts that are not needed for the app and may generate invalid code
