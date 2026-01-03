@@ -72,6 +72,9 @@
 # Opt-in: enforce typed phx-hook usage in templates (reject literal phx-hook="Name")
 -D hxx_strict_phx_hook
 
+# Opt-in: enforce typed phx-* event usage in templates (reject literal phx-click="save")
+-D hxx_strict_phx_events
+
 # Silence compiler debug traces for QA speed and signal clarity
 # Provide both hyphenated and underscored defines for preprocessor gating compatibility
 -D no-traces

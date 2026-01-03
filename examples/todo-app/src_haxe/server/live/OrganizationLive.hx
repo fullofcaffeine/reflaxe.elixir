@@ -28,6 +28,7 @@ import server.schemas.User;
 import server.support.OrganizationTools;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
+import shared.liveview.EventName;
 import StringTools;
 using reflaxe.elixir.macros.TypedQueryLambda;
 
@@ -208,13 +209,13 @@ class OrganizationLive {
     public static function handle_event(event: String, params: Term, socket: Socket<OrganizationLiveAssigns>): HandleEventResult<OrganizationLiveAssigns> {
         var sock: LiveSocket<OrganizationLiveAssigns> = socket;
         return switch (event) {
-            case "switch_org":
+            case EventName.SwitchOrg:
                 NoReply(switchOrganization(params, sock));
-            case "invite_org":
+            case EventName.InviteOrg:
                 NoReply(createInvite(params, sock));
-            case "revoke_invite":
+            case EventName.RevokeInvite:
                 NoReply(revokeInvite(params, sock));
-            case "set_user_role":
+            case EventName.SetUserRole:
                 NoReply(setUserRole(params, sock));
             case _:
                 NoReply(sock);
@@ -539,7 +540,7 @@ class OrganizationLive {
                                     <span data-testid="org-current-slug" class="font-semibold text-gray-900 dark:text-white">#{@current_org_slug}</span>
                                 </div>
 
-                                <form phx-submit="switch_org" class="mt-4 flex flex-col sm:flex-row gap-3">
+                                <form phx-submit=${EventName.SwitchOrg} class="mt-4 flex flex-col sm:flex-row gap-3">
                                     <input data-testid="org-input-slug"
                                         type="text"
                                         name="slug"
@@ -570,7 +571,7 @@ class OrganizationLive {
                                                 <if {!o.is_current}>
                                                     <button data-testid="btn-org-row-switch"
                                                         type="button"
-                                                        phx-click="switch_org"
+                                                        phx-click=${EventName.SwitchOrg}
                                                         phx-value-slug={o.slug}
                                                         class="shrink-0 px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
                                                         Switch
@@ -591,7 +592,7 @@ class OrganizationLive {
                                         </div>
                                     </div>
 
-                                    <form phx-submit="invite_org" class="mt-4 flex flex-col sm:flex-row gap-3">
+                                    <form phx-submit=${EventName.InviteOrg} class="mt-4 flex flex-col sm:flex-row gap-3">
                                         <input data-testid="invite-email"
                                             type="email"
                                             name="email"
@@ -626,7 +627,7 @@ class OrganizationLive {
                                                     <if {!i.is_accepted}>
                                                         <button data-testid="btn-revoke-invite"
                                                             type="button"
-                                                            phx-click="revoke_invite"
+                                                            phx-click=${EventName.RevokeInvite}
                                                             phx-value-id={i.id}
                                                             class="shrink-0 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 dark:bg-red-900/30 dark:text-red-200 dark:hover:bg-red-900/40">
                                                             Revoke
@@ -670,7 +671,7 @@ class OrganizationLive {
 	                                            </if>
 
 	                                            <if {@is_admin}>
-	                                                <form phx-submit="set_user_role" class="shrink-0 flex items-center gap-2">
+	                                                <form phx-submit=${EventName.SetUserRole} class="shrink-0 flex items-center gap-2">
 	                                                    <input type="hidden" name="member_id" value={m.id}/>
 	                                                    <select data-testid="member-role-select"
 	                                                        name="role"
