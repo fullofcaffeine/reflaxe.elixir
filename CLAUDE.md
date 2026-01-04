@@ -267,7 +267,7 @@ Examples
 → **[`__elixir__()` Usage](#standard-library-philosophy--pragmatic-native-implementation)** - Native Elixir code injection for stdlib
 
 #### **Troubleshooting Problems?**
-→ **[docs/06-guides/troubleshooting.md](docs/06-guides/troubleshooting.md)** - Comprehensive problem solving
+→ **[docs/06-guides/TROUBLESHOOTING.md](docs/06-guides/TROUBLESHOOTING.md)** - Comprehensive problem solving
 
 ## 🔗 Shared AI Context (Import System)
 
@@ -1937,7 +1937,7 @@ socket = assign(socket, :total, calculate_total(items))
 → **[docs/01-getting-started/development-workflow.md](docs/01-getting-started/development-workflow.md)** - Complete workflow guide
 
 ### When Dealing with Framework Integration Issues
-→ **[docs/06-guides/troubleshooting.md](docs/06-guides/troubleshooting.md)** - Comprehensive troubleshooting
+→ **[docs/06-guides/TROUBLESHOOTING.md](docs/06-guides/TROUBLESHOOTING.md)** - Comprehensive troubleshooting
 → **Framework Integration**: Generated code MUST follow target framework conventions exactly
 
 ## Haxe-First Philosophy ⚠️ FUNDAMENTAL RULE
@@ -3116,7 +3116,7 @@ scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 60
 - **Installation**: [docs/01-getting-started/installation.md](docs/01-getting-started/installation.md)
 - **Development Workflow**: [docs/01-getting-started/development-workflow.md](docs/01-getting-started/development-workflow.md)
 - **Quick Patterns**: [docs/07-patterns/quick-start-patterns.md](docs/07-patterns/quick-start-patterns.md)
-- **Troubleshooting**: [docs/06-guides/troubleshooting.md](docs/06-guides/troubleshooting.md)
+- **Troubleshooting**: [docs/06-guides/TROUBLESHOOTING.md](docs/06-guides/TROUBLESHOOTING.md)
 - **Compiler Development**: [docs/03-compiler-development/AGENTS.md](docs/03-compiler-development/AGENTS.md)
 
 **⚡ Critical Standard Library Implementation Guides**:
@@ -3177,7 +3177,7 @@ This section synthesizes the current mission and adds concrete debugging guidanc
   - Keep the printer free of semantic rewrites; transforms should prepare AST so the printer only renders.
   - No app‑name heuristics; match shapes and real APIs only.
 
-See also: docs/03-compiler-development/transformers-overview.md (updated with the two filter passes and ordering notes), docs/05-architecture/AST_PIPELINE_MIGRATION.md for the AST‑only architecture, and docs/06-guides/troubleshooting.md for broader guidance.
+See also: docs/03-compiler-development/transformers-overview.md (updated with the two filter passes and ordering notes), docs/05-architecture/AST_PIPELINE_MIGRATION.md for the AST‑only architecture, and docs/06-guides/TROUBLESHOOTING.md for broader guidance.
 
 ## Critical Directive: No Unblockers Over Proper Solutions
 
