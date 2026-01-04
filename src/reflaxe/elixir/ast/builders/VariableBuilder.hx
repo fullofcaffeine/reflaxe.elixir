@@ -34,14 +34,110 @@ using StringTools;
  */
 @:nullSafety(Off)
 class VariableBuilder {
-    
+
+    static function ensureStableNameForAnonymousLocal(tvar: TVar, context: CompilationContext): Void {
+        if (tvar == null || context == null) return;
+        if (context.tempVarRenameMap == null) context.tempVarRenameMap = new Map();
+
+        // Only apply when the Haxe local name is effectively unusable (e.g. Haxe 5 preview temps
+        // that preserve backticks and become empty after sanitization).
+        var rawName = tvar.name;
+        if (rawName == null) return;
+        if (rawName.indexOf("`") == -1) return;
+
+        var stripped = rawName.split("`").join("");
+        if (stripped.trim().length != 0) return;
+
+        var idKey = Std.string(tvar.id);
+        if (context.tempVarRenameMap.exists(idKey)) return;
+
+        function isAlreadyUsedValue(candidate: String): Bool {
+            for (key in context.tempVarRenameMap.keys()) {
+                if (context.tempVarRenameMap.get(key) == candidate) return true;
+            }
+            return false;
+        }
+
+        // Allocate deterministic temp names per function. We intentionally avoid storing a
+        // NAME-based mapping for these locals because many share the same rawName; using the
+        // name key would collapse distinct variables into one (breaking loops/control flow).
+        var candidate =
+            (context.anonymousTempVarCounter == 0) ? "_g" : "_g" + context.anonymousTempVarCounter;
+        context.anonymousTempVarCounter++;
+        while (isAlreadyUsedValue(candidate)) {
+            candidate = "_g" + context.anonymousTempVarCounter;
+            context.anonymousTempVarCounter++;
+        }
+
+        context.tempVarRenameMap.set(idKey, candidate);
+    }
+
+    static function deriveStableNameForAnonymousLocalFromInit(
+        tvar: TVar,
+        init: Null<TypedExpr>,
+        context: CompilationContext
+    ): Void {
+        if (tvar == null || init == null || context == null) return;
+        if (context.tempVarRenameMap == null) context.tempVarRenameMap = new Map();
+
+        var rawName = tvar.name;
+        if (rawName == null) return;
+        if (rawName.indexOf("`") == -1) return;
+
+        var stripped = rawName.split("`").join("");
+        if (stripped.trim().length != 0) return;
+
+        var idKey = Std.string(tvar.id);
+        var existing = context.tempVarRenameMap.exists(idKey) ? context.tempVarRenameMap.get(idKey) : null;
+
+        // Avoid overriding already-meaningful mappings (e.g., extracted binders, user names).
+        function isGeneratedPlaceholder(name: Null<String>): Bool {
+            if (name == null || name.length == 0) return true;
+            if (name == "g_value") return true;
+            if (name == "_g") return true;
+            if (name.startsWith("_g")) {
+                var rest = name.substr(2);
+                if (rest.length == 0) return true;
+                for (i in 0...rest.length) {
+                    var c = rest.charCodeAt(i);
+                    if (c < '0'.code || c > '9'.code) return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        if (!isGeneratedPlaceholder(existing)) return;
+
+        // Try to derive a meaningful name from field access patterns, mirroring infrastructure var extraction:
+        //   var `<id> = input.length;`  =>  input_length = String.length(input)
+        switch (init.expr) {
+            case TField(obj, fa):
+                switch (obj.expr) {
+                    case TLocal(localVar):
+                        var fieldName = extractFieldName(fa);
+                        var base = reflaxe.elixir.ast.analyzers.VariableAnalyzer.toElixirVarName(localVar.name);
+                        var derived = base + "_" + reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
+
+                        // Avoid collisions; if already used, keep the placeholder mapping.
+                        for (key in context.tempVarRenameMap.keys()) {
+                            if (context.tempVarRenameMap.get(key) == derived) return;
+                        }
+
+                        context.tempVarRenameMap.set(idKey, derived);
+                    default:
+                }
+            default:
+        }
+    }
+
     /**
      * Build variable declaration with optional initialization
-     * 
+     *
      * WHY: TVar with init represents variable declarations in Haxe
      * WHAT: Generates ElixirAST for variable assignment or skips infrastructure vars
      * HOW: Analyzes variable patterns and handles special cases
-     * 
+     *
      * @param v The variable being declared
      * @param init Optional initialization expression
      * @param context Build context with compilation state
@@ -56,7 +152,10 @@ class VariableBuilder {
             // DISABLED: trace('[VarBuilder] Init type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
         }
         #end
-        
+
+        ensureStableNameForAnonymousLocal(v, context);
+        deriveStableNameForAnonymousLocalFromInit(v, init, context);
+
         // Check if this is an infrastructure variable that should be skipped
         if (isInfrastructureVariableToSkip(v.name)) {
             return handleInfrastructureDeclaration(v, init, context);
@@ -378,6 +477,8 @@ class VariableBuilder {
     public static function resolveVariableName(tvar: TVar, context: CompilationContext): String {
         var tvarId = tvar.id;
         var defaultName = tvar.name;
+
+        ensureStableNameForAnonymousLocal(tvar, context);
 
         // Priority 0: In constructor contexts, check tempVarRenameMap for parameter name mapping
         // WHY: Prevents "replacer2/space2" bug where shadowed parameters are passed to constructors

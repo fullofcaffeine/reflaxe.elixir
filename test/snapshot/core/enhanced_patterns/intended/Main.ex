@@ -7,7 +7,7 @@ defmodule Main do
   _g = []
   g_value = 1
   arr_length = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+  _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
     _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
@@ -20,7 +20,7 @@ end).(), ",") end).()}"
   _g = []
   g_value = 1
   arr_length = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+  _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
     _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
@@ -35,7 +35,7 @@ end).(), ",") end).()}"
   _g = []
   g_value = 1
   arr_length = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+  _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
     _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
@@ -62,7 +62,7 @@ end).(), ",") end).()}"
   _g = []
   g_value = 1
   arr_length = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+  _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
     _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
@@ -92,7 +92,7 @@ end).(), ",") end).()}"
   _g = []
   g_value = 1
   arr_length = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+  _g = Enum.reduce(1..(arr_length - 1)//1, _g, fn i, _g_acc ->
     _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
@@ -124,7 +124,7 @@ end).(), ",") end).()}"
   (fn ->
     g = []
     arr_length = length(arr)
-    g = Enum.reduce(0..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [inspect(arr[i])]) end)
+    g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [inspect(arr[i])]) end)
     g
   end).()
 end).(), ",")
@@ -145,7 +145,7 @@ end).(), ",")
   _g = []
   g_value = 3
   arr_length = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+  _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
     _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
@@ -161,7 +161,7 @@ end).(), ",") end).()}"
   _g = []
   g_value = 3
   arr_length = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+  _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
     _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
@@ -181,7 +181,7 @@ end).(), ",") end).()}"
   _g = []
   g_value = 3
   arr_length = length(arr)
-  _g = Enum.reduce(0..(arr_length - 1)//1, _g, fn i, _g_acc ->
+  _g = Enum.reduce(3..(arr_length - 1)//1, _g, fn i, _g_acc ->
     _g_acc = _g_acc ++ [inspect(arr[i])]
     _g_acc
   end)
