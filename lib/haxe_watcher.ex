@@ -466,18 +466,29 @@ defmodule HaxeWatcher do
   defp report_compilation_failure(build_file_path, exit_code, output) do
     build_label = Path.basename(build_file_path)
 
+    output = (output || "") |> String.trim_trailing()
+    summary =
+      output
+      |> String.split("\n", trim: false)
+      |> Enum.find("", fn line -> String.trim(line) != "" end)
+      |> String.trim()
+      |> String.slice(0, 200)
+
     # Check if this is an expected error in test environment
     if Mix.env() == :test and String.contains?(output, "Library reflaxe.elixir is not installed") do
       Logger.warning("Haxe compilation failed (expected in test): #{build_label}")
     else
-      Logger.error("❌ Haxe compilation failed: #{build_label}")
+      if summary == "" do
+        Logger.error("❌ Haxe compilation failed: #{build_label}")
+      else
+        Logger.error("❌ Haxe compilation failed: #{build_label} — #{summary}")
+      end
     end
 
     if is_integer(exit_code) do
       Logger.error("Exit code: #{exit_code}")
     end
 
-    output = (output || "") |> String.trim_trailing()
     if output == "" do
       Logger.error("Haxe produced no output.")
       :ok
