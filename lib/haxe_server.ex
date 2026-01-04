@@ -34,7 +34,13 @@ defmodule HaxeServer do
   # Align the default with QA sentinel and avoid clashes with common editor defaults
   @default_port 6116
   @default_timeout 30_000
-  
+
+  # By default we do NOT attach to an externally-started Haxe --wait server even if it
+  # responds to `--connect -version`. Sharing a server across unrelated build contexts can
+  # corrupt the incremental cache and trigger internal compiler crashes (e.g. OCaml
+  # `globals.ml: Assertion failed`). Opt in explicitly if you know the server is safe to share.
+  @allow_external_attach_env "HAXE_SERVER_ALLOW_ATTACH"
+
   # Don't set a default here, will determine at runtime
   defp default_haxe_cmd() do
     project_root = find_project_root()
@@ -154,6 +160,7 @@ defmodule HaxeServer do
       server_os_pid: nil,
       owns_server: false,
       status: :stopped,
+      allow_external_attach: allow_external_attach?(),
       compile_count: 0,
       last_compile: nil
     }
@@ -423,7 +430,7 @@ defmodule HaxeServer do
           end
       end
     else
-      if external_server_compatible?(state) do
+      if state.allow_external_attach and external_server_compatible?(state) do
         Logger.debug("Haxe server port #{state.port} is in use; attaching to existing server")
         {:ok, %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
       else
@@ -441,6 +448,15 @@ defmodule HaxeServer do
             {:error, %{relocated | server_pid: nil, server_os_pid: nil, owns_server: false, status: :error}}
         end
       end
+    end
+  end
+
+  defp allow_external_attach?() do
+    case System.get_env(@allow_external_attach_env) do
+      value when is_binary(value) and value != "" ->
+        String.trim(value) in ["1", "true", "TRUE", "yes", "YES"]
+      _ ->
+        false
     end
   end
 
