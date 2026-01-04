@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+## [1.1.5](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.4...v1.1.5) (2026-01-04)
+
+### 🐞 Bug Fixes
+
+- Onboarding: Bootstrap the target stdlib earlier for consumer installs so typechecking works reliably in fresh apps.
+- QA sentinel: Avoid confusing failures by compiling the correct Phoenix HTTP adapter dependency (Cowboy vs Bandit).
+
+### 🔧 CI / Release
+
+- Release workflow: Publish GitHub Releases from semver tags and support manual backfill via workflow_dispatch.
+
 ## [1.1.4](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.3...v1.1.4) (2026-01-04)
 
 ### 🐞 Bug Fixes

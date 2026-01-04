@@ -1,8 +1,8 @@
 # Reflaxe.Elixir
 
-[![Version](https://img.shields.io/badge/version-1.1.4-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
+[![Version](https://img.shields.io/badge/version-1.1.5-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![CI](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml)
+[![CI](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml)
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
@@ -104,7 +104,7 @@ npx lix scope create
 npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # Or install a specific version/tag
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.4
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
 
 # Download pinned Haxe libraries for the project
 npx lix download
@@ -256,7 +256,7 @@ defp deps do
   [
     # ... other deps
     # Mix tasks only (build-time): pin to a tag or use a commit SHA
-    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.1.4", only: [:dev, :test], runtime: false}
+    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.1.5", only: [:dev, :test], runtime: false}
   ]
 end
 
@@ -618,6 +618,7 @@ All compilation targets exceed performance requirements:
 ## Contributing
 
 See [docs/10-contributing/contributing.md](docs/10-contributing/contributing.md) for detailed development guide.
+Releases are published from SemVer tags; see [docs/10-contributing/RELEASING.md](docs/10-contributing/RELEASING.md).
 
 ### Adding Features
 1. Extend the AST pipeline (`src/reflaxe/elixir/ast/`) in builder/transformer/printer layers
