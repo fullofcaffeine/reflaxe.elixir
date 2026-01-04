@@ -1,4 +1,8 @@
-# Reflaxe.Elixir
+<p align="center">
+  <img src="assets/haxir-logo.png" alt="Haxir logo" width="280" />
+</p>
+
+# Reflaxe.Elixir (aka Haxir)
 
 [![Version](https://img.shields.io/badge/version-1.1.5-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
