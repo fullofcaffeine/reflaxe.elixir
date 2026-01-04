@@ -20,4 +20,7 @@ defmodule Reflaxe.Elixir.Macros.HttpMethod do
   def live_dashboard() do
     {6}
   end
+  def mailbox() do
+    {7}
+  end
 end
