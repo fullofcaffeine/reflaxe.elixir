@@ -145,11 +145,11 @@ class Run {
 		if (skipInstall) {
 			Sys.println('  npm install          # Install Haxe dependencies');
 			Sys.println('  mix deps.get         # Install Elixir dependencies');
-			Sys.println('  npx lix download     # Install Haxe libraries (per .haxerc)');
+			Sys.println('  npm run setup:haxe   # Install Haxe libraries (per .haxerc)');
 		}
 		
-		Sys.println('  haxe build.hxml                 # Compile Haxe to Elixir');
-		Sys.println('  # or: npx lix run haxe build.hxml  (lix-managed toolchain)');
+		Sys.println('  npm run compile       # Compile Haxe to Elixir');
+		Sys.println('  # or: npx haxe build.hxml');
 		
 		if (projectType == "phoenix" || projectType == "liveview") {
 			Sys.println('  mix ecto.create      # Create database');

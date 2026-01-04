@@ -28,8 +28,8 @@ npx lix download
 ```
 
 Notes:
-- Prefer `haxe ...` (your local Haxe toolchain) or `npx lix run haxe ...` if `haxe` is not on your PATH.
-- Avoid `npx haxe ...` (the npm package) — it may not work on macOS arm64.
+- Prefer `haxe ...` (your local Haxe toolchain).
+- If `haxe` is not on your PATH, use `npx haxe ...` (lix-managed wrapper).
 
 ## 2) Add `src_haxe/` and a `build.hxml`
 
