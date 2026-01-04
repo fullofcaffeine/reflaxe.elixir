@@ -171,12 +171,17 @@ function lineNumberAt(text, index) {
 }
 
 function main() {
-  if (!fs.existsSync(docsRoot) || !fs.statSync(docsRoot).isDirectory()) {
+ if (!fs.existsSync(docsRoot) || !fs.statSync(docsRoot).isDirectory()) {
     console.error("Docs directory not found:", docsRoot);
     process.exit(2);
   }
 
   const files = walkDir(docsRoot);
+  // README.md is public-facing and should obey the same link hygiene as docs/.
+  const rootReadme = path.join(repoRoot, "README.md");
+  if (fs.existsSync(rootReadme) && fs.statSync(rootReadme).isFile()) {
+    files.push(rootReadme);
+  }
   const missing = [];
 
   for (const file of files) {
