@@ -382,6 +382,23 @@ class ElixirASTBuilder {
             }
         }
 
+        // Preserve ID-keyed init tracking and anonymous-temp counters across nested contexts.
+        //
+        // WHY
+        // - Some helpers invoke nested buildFromTypedExpr calls with a fresh CompilationContext.
+        // - Those contexts must inherit loop seed tracking (`localVarInitValuesById`) and the
+        //   anonymous-temp allocator (`anonymousTempVarCounter`) so loop lowering remains valid,
+        //   especially under Haxe 5 preview where temps can share non-stable names.
+        if (previousContext != null && context.localVarInitValuesById != null && previousContext.localVarInitValuesById != null &&
+            Lambda.count(context.localVarInitValuesById) == 0 && Lambda.count(previousContext.localVarInitValuesById) > 0) {
+            for (id in previousContext.localVarInitValuesById.keys()) {
+                context.localVarInitValuesById.set(id, previousContext.localVarInitValuesById.get(id));
+            }
+        }
+        if (previousContext != null && context.anonymousTempVarCounter == 0 && previousContext.anonymousTempVarCounter > 0) {
+            context.anonymousTempVarCounter = previousContext.anonymousTempVarCounter;
+        }
+
         // Preserve module/class identity across nested compilation contexts.
         // Some helpers invoke nested buildFromTypedExpr calls with a fresh CompilationContext;
         // those contexts must inherit the current module/class so same-module optimizations
@@ -2598,21 +2615,23 @@ class ElixirASTBuilder {
                             }
 
                             if (canonicalInit) {
-                                var varName = VariableAnalyzer.toElixirVarName(declVar.name);
-                                var initAST = buildFromTypedExpr(declInit, currentContext);
-                                var stmts: Array<ElixirAST> = [];
-                                if (initAST != null) stmts.push({def: EMatch(PVar(varName), initAST), metadata: {}, pos: null});
-                                // Emit every statement except the original declaration and the last return
-                                for (i in 0...el.length - 1) if (i != declIdx) {
-                                    var midNode = buildFromTypedExpr(el[i], currentContext);
-                                    if (midNode != null) stmts.push(midNode);
-                                }
-                                // Return variable
-                                stmts.push({def: EVar(varName), metadata: {}, pos: null});
-                                return EBlock(stmts);
-                            }
-                        }
-                    }
+	                                return BlockBuilder.withScopedInitTracking(el, currentContext, function() {
+	                                    var varName = VariableAnalyzer.toElixirVarName(declVar.name);
+	                                    var initAST = buildFromTypedExpr(declInit, currentContext);
+	                                    var stmts: Array<ElixirAST> = [];
+	                                    if (initAST != null) stmts.push({def: EMatch(PVar(varName), initAST), metadata: {}, pos: null});
+	                                    // Emit every statement except the original declaration and the last return
+	                                    for (i in 0...el.length - 1) if (i != declIdx) {
+	                                        var midNode = buildFromTypedExpr(el[i], currentContext);
+	                                        if (midNode != null) stmts.push(midNode);
+	                                    }
+	                                    // Return variable
+	                                    stmts.push({def: EVar(varName), metadata: {}, pos: null});
+	                                    return EBlock(stmts);
+	                                });
+	                            }
+	                        }
+	                    }
 
                     // Fallback A: First statement is a user variable initialized from a canonical
                     // list‑building block or single‑element array block. Hoist assignment first,
@@ -2632,24 +2651,26 @@ class ElixirASTBuilder {
                                     case TBlock(sts) if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(sts)):
                                         canonicalInit = true;
                                     default:
-                                }
-                                if (canonicalInit) {
-                                    var varName3 = VariableAnalyzer.toElixirVarName(nm0);
-                                    var initAST3 = buildFromTypedExpr(init0, currentContext);
-                                    var seq: Array<ElixirAST> = [];
-                                    if (initAST3 != null) seq.push({def: EMatch(PVar(varName3), initAST3), metadata: {}, pos: null});
-                                    // Emit all remaining statements except the original declaration
-                                    for (i in 1...el.length) {
-                                        var mid3 = buildFromTypedExpr(el[i], currentContext);
-                                        if (mid3 != null) seq.push(mid3);
-                                    }
-                                    // If the last expression is not a return of the same variable, append it
-                                    var lastIsSame = switch (el[el.length - 1].expr) { case TLocal(vx) if (vx.id == v0.id || vx.name == v0.name): true; default: false; };
-                                    if (!lastIsSame) seq.push({def: EVar(varName3), metadata: {}, pos: null});
-                                    return EBlock(seq);
-                                }
-                            }
-                        default:
+	                                }
+	                                if (canonicalInit) {
+	                                    return BlockBuilder.withScopedInitTracking(el, currentContext, function() {
+	                                        var varName3 = VariableAnalyzer.toElixirVarName(nm0);
+	                                        var initAST3 = buildFromTypedExpr(init0, currentContext);
+	                                        var seq: Array<ElixirAST> = [];
+	                                        if (initAST3 != null) seq.push({def: EMatch(PVar(varName3), initAST3), metadata: {}, pos: null});
+	                                        // Emit all remaining statements except the original declaration
+	                                        for (i in 1...el.length) {
+	                                            var mid3 = buildFromTypedExpr(el[i], currentContext);
+	                                            if (mid3 != null) seq.push(mid3);
+	                                        }
+	                                        // If the last expression is not a return of the same variable, append it
+	                                        var lastIsSame = switch (el[el.length - 1].expr) { case TLocal(vx) if (vx.id == v0.id || vx.name == v0.name): true; default: false; };
+	                                        if (!lastIsSame) seq.push({def: EVar(varName3), metadata: {}, pos: null});
+	                                        return EBlock(seq);
+	                                    });
+	                                }
+	                            }
+	                        default:
                     }
 
                     // Fallback B: Find any later user TVar with canonical initializer and hoist
@@ -2676,21 +2697,23 @@ class ElixirASTBuilder {
                                 }
                             default:
                         }
-                    }
-                    if (declAt > 0 && declV != null && declI != null) {
-                        var vname = VariableAnalyzer.toElixirVarName(declV.name);
-                        var initASTx = buildFromTypedExpr(declI, currentContext);
-                        var seqx: Array<ElixirAST> = [];
-                        if (initASTx != null) seqx.push({def: EMatch(PVar(vname), initASTx), metadata: {}, pos: null});
-                        for (i in 0...el.length) if (i != declAt) {
-                            var midx = buildFromTypedExpr(el[i], currentContext);
-                            if (midx != null) seqx.push(midx);
-                        }
-                        var lastIsVar = switch (el[el.length - 1].expr) { case TLocal(vx) if (vx.id == declV.id || vx.name == declV.name): true; default: false; };
-                        if (!lastIsVar) seqx.push({def: EVar(vname), metadata: {}, pos: null});
-                        return EBlock(seqx);
-                    }
-                }
+	                    }
+	                    if (declAt > 0 && declV != null && declI != null) {
+	                        return BlockBuilder.withScopedInitTracking(el, currentContext, function() {
+	                            var vname = VariableAnalyzer.toElixirVarName(declV.name);
+	                            var initASTx = buildFromTypedExpr(declI, currentContext);
+	                            var seqx: Array<ElixirAST> = [];
+	                            if (initASTx != null) seqx.push({def: EMatch(PVar(vname), initASTx), metadata: {}, pos: null});
+	                            for (i in 0...el.length) if (i != declAt) {
+	                                var midx = buildFromTypedExpr(el[i], currentContext);
+	                                if (midx != null) seqx.push(midx);
+	                            }
+	                            var lastIsVar = switch (el[el.length - 1].expr) { case TLocal(vx) if (vx.id == declV.id || vx.name == declV.name): true; default: false; };
+	                            if (!lastIsVar) seqx.push({def: EVar(vname), metadata: {}, pos: null});
+	                            return EBlock(seqx);
+	                        });
+	                    }
+	                }
 
                 // Delegate to BlockBuilder for modular handling
                 var result = BlockBuilder.build(el, currentContext);

@@ -155,6 +155,40 @@ class CompilationContext implements BuildContext {
     public var infrastructureVarInitValues: Map<String, ElixirAST>;
 
     /**
+     * Local variable initialization values by TVar.id
+     *
+     * WHY
+     * - Haxe 5 can emit compiler temps with non-stable/escaped names (e.g. backtick-escaped),
+     *   so name-keyed initialization tracking (`infrastructureVarInitValues`) is insufficient.
+     * - Loop lowering sometimes needs to seed state (counter/limit) from the original initializer
+     *   to generate valid Elixir and to recover idiomatic Enum-based loops.
+     *
+     * WHAT
+     * - Maps TVar.id → compiled initializer ElixirAST for locals declared in the current block scope.
+     *
+     * HOW
+     * - Populated by BlockBuilder while compiling a block and restored on block exit.
+     * - Function-scoped (reset per function in ElixirCompiler).
+     */
+    public var localVarInitValuesById: Map<Int, ElixirAST>;
+
+    /**
+     * Counter for generating stable names for anonymous/invalid locals.
+     *
+     * WHY
+     * - Under Haxe 5 preview, some compiler temps can appear with backtick-only or otherwise
+     *   invalid names. If we fall back to a single placeholder (e.g. "item"), distinct locals
+     *   collapse and can corrupt control-flow (loops) or produce unbound variables.
+     *
+     * WHAT
+     * - Monotonic counter used to allocate deterministic temp names per function.
+     *
+     * HOW
+     * - Reset per function in ElixirCompiler when tempVarRenameMap is reset.
+     */
+    public var anonymousTempVarCounter: Int;
+
+    /**
      * Loop control state stack (break/continue)
      *
      * WHY
@@ -295,7 +329,9 @@ class CompilationContext implements BuildContext {
         loopCounter = 0;
         whileLoopCounter = 0;
         infrastructureVarInitValues = new Map();
+        localVarInitValuesById = new Map();
         loopControlStateStack = [];
+        anonymousTempVarCounter = 0;
 
         // Initialize infrastructure variable substitutions
         // Preserve infrastructure-variable substitutions produced by the TypedExpr preprocessor.

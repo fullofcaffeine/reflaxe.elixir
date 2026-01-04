@@ -1967,6 +1967,10 @@ class ElixirCompiler extends GenericCompiler<
 		            // function-scoped to avoid cross-function leakage when Haxe reuses temp names.
 		            var previousInfraVarInitValues = context.infrastructureVarInitValues;
 		            context.infrastructureVarInitValues = new Map();
+		            // Local-var init tracking must also be function-scoped (TVar.id is not guaranteed
+		            // globally unique across independent TypedExpr trees).
+		            var previousLocalVarInitValuesById = context.localVarInitValuesById;
+		            context.localVarInitValuesById = new Map();
 		            // Preprocessor substitutions are TVar.id-keyed but IDs are not guaranteed globally
 		            // unique across independent TypedExpr trees. Keep substitutions scoped per function.
 		            var previousInfraVarSubstitutions = context.infraVarSubstitutions;
@@ -1974,6 +1978,9 @@ class ElixirCompiler extends GenericCompiler<
 		            // Loop control state must not leak across functions (break/continue context).
 		            var previousLoopControlStateStack = context.loopControlStateStack;
 		            context.loopControlStateStack = [];
+		            // Reset anonymous temp naming per function for deterministic output.
+		            var previousAnonymousTempVarCounter = context.anonymousTempVarCounter;
+		            context.anonymousTempVarCounter = 0;
 
 		            try {
 		            
@@ -2478,16 +2485,20 @@ class ElixirCompiler extends GenericCompiler<
 			                // Restore the class-level context map for the next function.
 			                context.tempVarRenameMap = previousTempVarRenameMap;
 			                context.infrastructureVarInitValues = previousInfraVarInitValues;
+			                context.localVarInitValuesById = previousLocalVarInitValuesById;
 			                context.infraVarSubstitutions = previousInfraVarSubstitutions;
 			                context.loopControlStateStack = previousLoopControlStateStack;
+			                context.anonymousTempVarCounter = previousAnonymousTempVarCounter;
 			                throw e;
 			            }
 
 			            // Restore the class-level context map for the next function.
 			            context.tempVarRenameMap = previousTempVarRenameMap;
 			            context.infrastructureVarInitValues = previousInfraVarInitValues;
+			            context.localVarInitValuesById = previousLocalVarInitValuesById;
 			            context.infraVarSubstitutions = previousInfraVarSubstitutions;
 			            context.loopControlStateStack = previousLoopControlStateStack;
+			            context.anonymousTempVarCounter = previousAnonymousTempVarCounter;
 			        }
 
         // Prepare metadata for special module types BEFORE building the module

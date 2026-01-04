@@ -23,6 +23,7 @@ import reflaxe.elixir.ast.analyzers.RangeIterationAnalyzer;
 import reflaxe.elixir.helpers.MutabilityDetector;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.ast.builders.ComprehensionBuilder; // for unwrap helpers
+import reflaxe.elixir.ast.builders.VariableBuilder;
 using StringTools;
 
 /**
@@ -868,6 +869,28 @@ class LoopBuilder {
         userCode: TypedExpr,
         hasSideEffectsOnly: Bool
     }> {
+        // Legacy entry point that identifies the counter variable by name.
+        // Prefer ID-based analysis (Haxe 5 can emit non-stable/escaped names for temps).
+        var counterTVar: Null<TVar> = null;
+        function scan(e: TypedExpr): Void {
+            if (e == null || counterTVar != null) return;
+            switch (e.expr) {
+                case TLocal(v) if (v.name == counterVar):
+                    counterTVar = v;
+                default:
+                    TypedExprTools.iter(e, scan);
+            }
+        }
+        scan(body);
+        if (counterTVar == null) return null;
+        return analyzeForLoopBodyWithCounterVar(body, counterTVar);
+    }
+
+    static function analyzeForLoopBodyWithCounterVar(body: TypedExpr, counterVar: TVar): Null<{
+        userVar: String,
+        userCode: TypedExpr,
+        hasSideEffectsOnly: Bool
+    }> {
         switch (body.expr) {
             case TBlock(exprs) if (exprs.length >= 1):
                 // Haxe emits several equivalent desugarings for `for` loops:
@@ -890,23 +913,32 @@ class LoopBuilder {
                     }
                 }
 
+                function isCounterLocalReference(e: TypedExpr): Bool {
+                    return switch (unwrap(e).expr) {
+                        case TLocal(localVar): localVar.id == counterVar.id;
+                        default: false;
+                    }
+                }
+
                 // Detect header assignment (`var i = g` or `var i = g++`)
                 var first = unwrap(exprs[0]);
                 switch (first.expr) {
                     case TVar(v, init) if (init != null):
                         var initUnwrapped = unwrap(init);
                         switch (initUnwrapped.expr) {
-                            case TLocal(localVar) if (localVar.name == counterVar):
+                            case TLocal(localVar) if (localVar.id == counterVar.id):
                                 userVar = v.name;
                                 removedIndices.set(0, true);
                                 headerBindingHandled = true;
                             case TUnop(OpIncrement | OpDecrement, postFix, inner) if (postFix):
                                 // Header post-inc: `var i = g++`
-                                if (extractInfrastructureVarName(unwrap(inner)) == counterVar) {
-                                    userVar = v.name;
-                                    removedIndices.set(0, true);
-                                    counterIncrementHandled = true;
-                                    headerBindingHandled = true;
+                                switch (unwrap(inner).expr) {
+                                    case TLocal(localVar) if (localVar.id == counterVar.id):
+                                        userVar = v.name;
+                                        removedIndices.set(0, true);
+                                        counterIncrementHandled = true;
+                                        headerBindingHandled = true;
+                                    default:
                                 }
                             default:
                         }
@@ -920,9 +952,9 @@ class LoopBuilder {
                         var stmt = unwrap(exprs[idx]);
                         var isIncrement = switch (stmt.expr) {
                             case TUnop(OpIncrement | OpDecrement, _, target):
-                                extractInfrastructureVarName(unwrap(target)) == counterVar;
+                                isCounterLocalReference(target);
                             case TBinop(OpAssign | OpAssignOp(_), left, _):
-                                extractInfrastructureVarName(unwrap(left)) == counterVar;
+                                isCounterLocalReference(left);
                             default:
                                 false;
                         };
@@ -2738,38 +2770,66 @@ class LoopBuilder {
         }
 
         var actualCond = unwrap(econd);
-        var bounds: Null<{ counterName: String, op: haxe.macro.Expr.Binop, limitExpr: TypedExpr }> = switch (actualCond.expr) {
+        var bounds: Null<{ counterVar: TVar, op: haxe.macro.Expr.Binop, limitExpr: TypedExpr }> = switch (actualCond.expr) {
             case TBinop(op, e1, e2) if (op == OpLt || op == OpLte):
-                var counterName = extractInfrastructureVarName(unwrap(e1));
-                counterName == null ? null : { counterName: counterName, op: op, limitExpr: e2 };
+                switch (unwrap(e1).expr) {
+                    case TLocal(counter):
+                        { counterVar: counter, op: op, limitExpr: e2 };
+                    default:
+                        null;
+                }
             default:
                 null;
         };
         if (bounds == null) return null;
 
         // Ensure the body matches Haxe's for-loop desugaring shape (user var header + counter increment).
-        var bodyInfo = analyzeForLoopBody(body, bounds.counterName);
+        var bodyInfo = analyzeForLoopBodyWithCounterVar(body, bounds.counterVar);
         if (bodyInfo == null) return null;
 
-        var buildExpression = context.getExpressionBuilder();
-        var compilationContext: Null<CompilationContext> = Std.isOfType(context, CompilationContext) ? cast context : null;
+	        var buildExpression = context.getExpressionBuilder();
+	        var compilationContext: Null<CompilationContext> = Std.isOfType(context, CompilationContext) ? cast context : null;
 
-        // Prefer a tracked initializer for the counter var (supports non-zero starts, e.g. (i + 1)...len).
-        var startAst: ElixirAST = makeAST(EInteger(0));
-        if (compilationContext != null && compilationContext.infrastructureVarInitValues != null &&
-            compilationContext.infrastructureVarInitValues.exists(bounds.counterName)) {
-            var init = compilationContext.infrastructureVarInitValues.get(bounds.counterName);
-            if (init != null) startAst = init;
-        }
+	        #if debug_haxe5_loop_seeds
+	        if (compilationContext != null && bounds != null && bounds.counterVar != null && bounds.counterVar.name != null
+	            && bounds.counterVar.name.indexOf("`") != -1) {
+	            var counterId = bounds.counterVar.id;
+	            var idKey = Std.string(counterId);
+	            trace('[haxe5-loop-seeds] range candidate: counter name="${bounds.counterVar.name}" id=$counterId'
+	                + ' localInitCount=' + (compilationContext.localVarInitValuesById != null ? Lambda.count(compilationContext.localVarInitValuesById) : -1)
+	                + ' hasLocalInit=' + (compilationContext.localVarInitValuesById != null && compilationContext.localVarInitValuesById.exists(counterId))
+	                + ' infraInitCount=' + (compilationContext.infrastructureVarInitValues != null ? Lambda.count(compilationContext.infrastructureVarInitValues) : -1)
+	                + ' hasInfraInitByName=' + (compilationContext.infrastructureVarInitValues != null && compilationContext.infrastructureVarInitValues.exists(bounds.counterVar.name))
+	                + ' tempMapHasId=' + (compilationContext.tempVarRenameMap != null && compilationContext.tempVarRenameMap.exists(idKey))
+	                + ' tempMapIdVal=' + (compilationContext.tempVarRenameMap != null && compilationContext.tempVarRenameMap.exists(idKey) ? compilationContext.tempVarRenameMap.get(idKey) : '<none>'));
+	        }
+	        #end
 
-        // Prefer a tracked initializer for the limit var when the condition uses an infrastructure temp.
-        var limitName = extractInfrastructureVarName(unwrap(bounds.limitExpr));
-        var limitAst: Null<ElixirAST> = null;
-        if (limitName != null && compilationContext != null && compilationContext.infrastructureVarInitValues != null &&
-            compilationContext.infrastructureVarInitValues.exists(limitName)) {
-            limitAst = compilationContext.infrastructureVarInitValues.get(limitName);
+	        // Prefer a tracked initializer for the counter var (supports non-zero starts, e.g. (i + 1)...len).
+	        // Haxe 5 preview can emit temps with non-stable/escaped names, so always try ID-keyed init tracking first.
+	        var startAst: ElixirAST = makeAST(EInteger(0));
+	        var hasStartSeed = false;
+        if (compilationContext != null) {
+            if (compilationContext.localVarInitValuesById != null && compilationContext.localVarInitValuesById.exists(bounds.counterVar.id)) {
+                var init = compilationContext.localVarInitValuesById.get(bounds.counterVar.id);
+                if (init != null) {
+                    startAst = init;
+                    hasStartSeed = true;
+                }
+            } else if (compilationContext.infrastructureVarInitValues != null && compilationContext.infrastructureVarInitValues.exists(bounds.counterVar.name)) {
+                var init = compilationContext.infrastructureVarInitValues.get(bounds.counterVar.name);
+                if (init != null) {
+                    startAst = init;
+                    hasStartSeed = true;
+                }
+            }
         }
-        if (limitAst == null) limitAst = buildExpression(bounds.limitExpr);
+        if (!hasStartSeed) return null;
+
+        // Use the condition's limit expression directly (evaluated once when building the range).
+        // Prefer not to inline tracked initializers here so we keep bindings aligned and readable.
+        var limitAst = buildExpression(bounds.limitExpr);
+        if (limitAst == null) return null;
 
         var endAst: ElixirAST = if (bounds.op == OpLt) {
             makeAST(EBinary(EBinaryOp.Subtract, limitAst, makeAST(EInteger(1))));
@@ -2926,10 +2986,17 @@ class LoopBuilder {
         var counterVar: Null<TVar> = null;
         var arrayExpr: Null<TypedExpr> = null;
         switch (actualCond.expr) {
-            case TBinop(OpLt | OpLte, {expr: TLocal(counter)}, {expr: TField(arr, FInstance(_, _, cf))})
-                if (extractInfrastructureVarName({expr: TLocal(counter), pos: actualCond.pos, t: actualCond.t}) != null && cf.get().name == "length"):
-                counterVar = counter;
-                arrayExpr = arr;
+            case TBinop(OpLt | OpLte, {expr: TLocal(counter)}, {expr: TField(arr, fieldAccess)}):
+                var isLength = switch (fieldAccess) {
+                    case FInstance(_, _, cf): cf.get().name == "length";
+                    case FAnon(cf): cf.get().name == "length";
+                    case FDynamic(name): name == "length";
+                    default: false;
+                };
+                if (isLength) {
+                    counterVar = counter;
+                    arrayExpr = arr;
+                }
             default:
         }
         if (counterVar == null || arrayExpr == null) return null;
@@ -2941,6 +3008,15 @@ class LoopBuilder {
         };
         if (exprs == null || exprs.length < 2) return null;
 
+        function isCounterReference(expr: TypedExpr): Bool {
+            if (expr == null) return false;
+            return switch (expr.expr) {
+                case TLocal(localVar): localVar.id == counterVar.id;
+                case TParenthesis(inner) | TMeta(_, inner): isCounterReference(inner);
+                default: false;
+            };
+        }
+
         var elementVarName: Null<String> = null;
         var userStmtsStart = 0;
 
@@ -2950,8 +3026,8 @@ class LoopBuilder {
             case TVar(v, init) if (init != null):
                 switch (init.expr) {
                     case TArray(arr2, idx):
-                        var idxName = extractInfrastructureVarName(idx);
-                        if (idxName != null && idxName == counterVar.name) {
+                        var isCounterIndex = isCounterReference(idx);
+                        if (isCounterIndex) {
                             // Ensure we're indexing the same array as in the condition (common case: both are TLocal)
                             var sameArray = switch ([arrayExpr.expr, arr2.expr]) {
                                 case [TLocal(a), TLocal(b)] if (a.id == b.id): true;
@@ -2971,15 +3047,9 @@ class LoopBuilder {
         var second = exprs[1];
         var isCounterIncrement = switch (second.expr) {
             case TUnop(OpIncrement | OpDecrement, _, target):
-                switch (target.expr) {
-                    case TLocal(v2): v2.id == counterVar.id;
-                    default: false;
-                }
+                isCounterReference(target);
             case TBinop(OpAssign | OpAssignOp(_), left, _):
-                switch (left.expr) {
-                    case TLocal(v3): v3.id == counterVar.id;
-                    default: false;
-                }
+                isCounterReference(left);
             default:
                 false;
         };
@@ -3119,7 +3189,7 @@ class LoopBuilder {
         if (compilationContext != null) {
             if (Lambda.count(mutatedVars) > 0) {
                 var accVarList: Array<{ name: String, tvar: TVar }> = [];
-                for (id => v in mutatedVars) accVarList.push({ name: toElixirVarName(v.name), tvar: v });
+                for (id => v in mutatedVars) accVarList.push({ name: VariableBuilder.resolveVariableName(v, compilationContext), tvar: v });
                 accVarList.sort((a, b) -> Reflect.compare(a.tvar.id, b.tvar.id));
                 compilationContext.loopControlStateStack.push([for (it in accVarList) it.name]);
             } else {
@@ -3240,10 +3310,12 @@ class LoopBuilder {
         }
         #end
 
+        var concreteContext: Null<CompilationContext> = Std.isOfType(context, CompilationContext) ? cast context : null;
+
         // Build the initial accumulator tuple
         var accVarList: Array<{name: String, tvar: TVar}> = [];
         for (id => v in mutatedVars) {
-            accVarList.push({name: toElixirVarName(v.name), tvar: v});
+            accVarList.push({name: concreteContext != null ? VariableBuilder.resolveVariableName(v, concreteContext) : toElixirVarName(v.name), tvar: v});
         }
         accVarList.sort((a, b) -> Reflect.compare(a.tvar.id, b.tvar.id));
         
@@ -3258,9 +3330,17 @@ class LoopBuilder {
         // This is especially important for desugared for/while loops where Haxe introduces
         // compiler temps (_g, _g1, ...) and accumulator locals (sum/result/items) that must
         // be initialized for the reducer to be valid Elixir.
-        var concreteContext: Null<CompilationContext> = Std.isOfType(context, CompilationContext) ? cast context : null;
-        function inferAccumulatorSeed(elixirName: String, originalName: String): Null<ElixirAST> {
+        function inferAccumulatorSeed(elixirName: String, tvar: Null<TVar>): Null<ElixirAST> {
             if (elixirName == null || elixirName.length == 0) return null;
+            if (tvar == null) return null;
+            var originalName = tvar.name;
+
+            // Prefer ID-keyed tracked initializers (Haxe 5 temp names can be non-stable/escaped).
+            if (concreteContext != null && concreteContext.localVarInitValuesById != null &&
+                concreteContext.localVarInitValuesById.exists(tvar.id)) {
+                var init = concreteContext.localVarInitValuesById.get(tvar.id);
+                if (init != null) return init;
+            }
 
             // Prefer any tracked initializer (e.g. _g = 5) captured at block level.
             if (concreteContext != null && concreteContext.infrastructureVarInitValues != null &&
@@ -3289,7 +3369,7 @@ class LoopBuilder {
             var reducerName = 'acc_${outerName}';
             outerToReducerVar.set(outerName, reducerName);
 
-            var seed = inferAccumulatorSeed(item.name, item.tvar != null ? item.tvar.name : null);
+            var seed = inferAccumulatorSeed(item.name, item.tvar);
             accInitializers.push(seed != null ? seed : makeAST(EVar(outerName)));
             finalAccPatterns.push(PVar(outerName));
             reducerAccPatterns.push(PVar(reducerName));
