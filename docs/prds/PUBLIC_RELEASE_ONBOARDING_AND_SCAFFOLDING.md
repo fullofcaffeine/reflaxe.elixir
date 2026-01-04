@@ -21,7 +21,7 @@ This PRD intentionally focuses on **developer UX** and **public-repo readiness**
 
 3. **Generator correctness**
    - Fix stale/default generator output so it matches current reality:
-     - no `npx haxe ...` usage
+     - no `npx lix run haxe ...` usage
      - correct output flags (`-D elixir_output=...`)
      - correct `-lib reflaxe.elixir`
      - correct “what to run” and version printing
@@ -44,8 +44,7 @@ This PRD intentionally focuses on **developer UX** and **public-repo readiness**
 
 ## Known Issues / Inputs (from recent cleanup)
 
-- `src/Run.hx` prints a stale `VERSION` and recommends `npx haxe ...` in generated instructions.
-- `lib/mix/tasks/haxe.gen.project.ex` produces outdated `build.hxml` (e.g. `-D reflaxe.output=...`) and `package.json` scripts using `npx haxe ...`.
+- `src/Run.hx` and `lib/mix/tasks/haxe.gen.project.ex` historically recommended toolchain commands that don’t work in fresh scopes (see “Tooling conventions” below).
 - Example apps/scripts still have mixed expectations about “global `haxe`” vs “lix-managed `haxe`”.
 - The todo-app contains multiple `build-server-pass*.hxml` files that confuse new users; needs consolidation or a clear explanation.
 
@@ -61,8 +60,8 @@ This PRD intentionally focuses on **developer UX** and **public-repo readiness**
 
 - Prefer:
   - `haxe ...` (when a proper Haxe install is present), or
-  - `npx lix run haxe ...` (when relying on lix-managed toolchain)
-- Avoid recommending `npx haxe ...` (npm package) anywhere public-facing.
+  - `npx haxe ...` (lix-managed wrapper pinned via `.haxerc`).
+- Do not recommend `npx lix run haxe ...` for new users: it requires additional (non-default) toolchain wiring and fails in fresh scopes.
 - Elixir output must use `-D elixir_output=...` consistently.
 - Keep Haxe “Phoenix helpers” in `std/phoenix/**` (no `__elixir__()` in app code).
 
@@ -80,7 +79,7 @@ Alternative: keep the existing `mix haxe.gen.project` but fix its output and ext
    - Update `src/Run.hx` output strings and version plumbing.
    - Update `lib/mix/tasks/haxe.gen.project.ex` to emit:
      - correct `build.hxml` (`-lib reflaxe.elixir`, `-D elixir_output=...`, `-D reflaxe_runtime`, `--macro reflaxe.elixir.CompilerInit.Start()`)
-     - correct scripts (no `npx haxe ...`)
+     - correct scripts (no `npx lix run haxe ...`)
      - correct “next steps” instructions
 
 2. Add Phoenix scaffolds
@@ -112,7 +111,6 @@ Alternative: keep the existing `mix haxe.gen.project` but fix its output and ext
   - create a new Phoenix project scaffold and run it successfully, or
   - add Haxe to an existing Phoenix project and run it successfully,
   following the README/docs without needing to “guess” flags or fix generator output.
-- No public-facing doc recommends `npx haxe ...`.
+- No public-facing doc recommends `npx lix run haxe ...`.
 - Generated `build.hxml` uses `-D elixir_output=...` and `-lib reflaxe.elixir`.
 - CI verifies “templates/scaffolds compile” and fails on drift.
-

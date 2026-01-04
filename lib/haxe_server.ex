@@ -1,13 +1,13 @@
 defmodule HaxeServer do
   @moduledoc """
   GenServer for managing the Haxe compilation server (--wait mode).
-  
+
   This module handles starting, stopping, and communicating with the Haxe compiler
   server for incremental compilation. The server uses Haxe's `--wait` mode to
   provide fast incremental builds by caching parsed files and typed modules.
-  
+
   ## Usage
-  
+
       # Start the server
       {:ok, pid} = HaxeServer.start_link([])
       
@@ -19,21 +19,24 @@ defmodule HaxeServer do
       
       # Stop the server  
       HaxeServer.stop()
-  
+
   ## Configuration
-  
+
   The server can be configured with:
   - `:port` - Port for Haxe server (default: 6116; tests pick a free port)
   - `:timeout` - Compilation timeout in ms (default: 30000)
   - `:haxe_cmd` - Haxe command to use (default: auto-detected)
   """
-  
+
   use GenServer
   require Logger
 
   # Align the default with QA sentinel and avoid clashes with common editor defaults
   @default_port 6116
   @default_timeout 30_000
+  @cookie_dir ".reflaxe_elixir"
+  @cookie_file "haxe_server.json"
+  @cookie_version 1
 
   # By default we do NOT attach to an externally-started Haxe --wait server even if it
   # responds to `--connect -version`. Sharing a server across unrelated build contexts can
@@ -95,11 +98,11 @@ defmodule HaxeServer do
 
   @doc """
   Compiles Haxe code using the server.
-  
+
   ## Parameters
   - `args` - List of arguments to pass to Haxe compiler
   - `opts` - Compilation options (timeout, etc.)
-  
+
   ## Returns
   - `{:ok, output}` - Compilation successful
   - `{:error, reason}` - Compilation failed
@@ -129,33 +132,60 @@ defmodule HaxeServer do
   def init(opts) do
     _ = ensure_haxeshim_server_port_env()
 
+    project_root = find_project_root()
+    cookie_path = cookie_path(project_root)
+
     # Determine port preference order:
     # 1) explicit opts
     # 2) HAXE_SERVER_PORT env
     # 3) test env: find a free port to avoid conflicts
     # 4) default (@default_port)
     env_port = System.get_env("HAXE_SERVER_PORT")
+    haxe_cmd = Keyword.get(opts, :haxe_cmd, default_haxe_cmd())
+
+    # Parse the haxe command if it's a string
+    {cmd, args} =
+      case haxe_cmd do
+        {cmd, args} when is_binary(cmd) and is_list(args) ->
+          {cmd, args}
+
+        cmd when is_binary(cmd) ->
+          parts = String.split(cmd, " ")
+          {hd(parts), tl(parts)}
+      end
+
+    cache_key = cache_key(project_root, cmd, args)
+
     port =
       cond do
-        Keyword.has_key?(opts, :port) -> Keyword.fetch!(opts, :port)
-        env_port != nil -> String.to_integer(env_port)
-        Mix.env() == :test -> find_available_port()
-        true -> @default_port
+        Keyword.has_key?(opts, :port) ->
+          Keyword.fetch!(opts, :port)
+
+        env_port != nil ->
+          String.to_integer(env_port)
+
+        Mix.env() == :test ->
+          find_available_port()
+
+        true ->
+          case read_cookie(cookie_path) do
+            {:ok,
+             %{"version" => @cookie_version, "port" => cookie_port, "cache_key" => ^cache_key}}
+            when is_integer(cookie_port) and cookie_port > 0 ->
+              cookie_port
+
+            _ ->
+              @default_port
+          end
       end
-    haxe_cmd = Keyword.get(opts, :haxe_cmd, default_haxe_cmd())
-    
-    # Parse the haxe command if it's a string
-    {cmd, args} = case haxe_cmd do
-      {cmd, args} when is_binary(cmd) and is_list(args) -> {cmd, args}
-      cmd when is_binary(cmd) -> 
-        parts = String.split(cmd, " ")
-        {hd(parts), tl(parts)}
-    end
-    
+
     state = %{
       port: port,
       haxe_cmd: cmd,
       haxe_args: args,
+      project_root: project_root,
+      cookie_path: cookie_path,
+      cache_key: cache_key,
       server_pid: nil,
       server_os_pid: nil,
       owns_server: false,
@@ -164,7 +194,7 @@ defmodule HaxeServer do
       compile_count: 0,
       last_compile: nil
     }
-    
+
     # If HAXE_NO_SERVER=1, do not attempt to start a server; callers will fall back to direct haxe.
     if System.get_env("HAXE_NO_SERVER") == "1" do
       {:ok, state}
@@ -227,32 +257,34 @@ defmodule HaxeServer do
 
   @impl GenServer
   def handle_call(:status, _from, state) do
-    response = case state.status do
-      :running -> {:ok, :running}
-      :stopped -> {:error, :stopped}
-      :restarting -> {:error, :restarting}
-      :error -> {:error, :failed_to_start}
-    end
-    
+    response =
+      case state.status do
+        :running -> {:ok, :running}
+        :stopped -> {:error, :stopped}
+        :restarting -> {:error, :restarting}
+        :error -> {:error, :failed_to_start}
+      end
+
     stats = %{
       status: state.status,
       port: state.port,
       compile_count: state.compile_count,
       last_compile: state.last_compile
     }
-    
+
     {:reply, {response, stats}, state}
   end
 
   @impl GenServer
   def handle_call({:compile, args}, _from, %{status: :running} = state) do
     result = compile_with_server(args, state)
-    
-    new_state = %{state | 
-      compile_count: state.compile_count + 1,
-      last_compile: DateTime.utc_now()
+
+    new_state = %{
+      state
+      | compile_count: state.compile_count + 1,
+        last_compile: DateTime.utc_now()
     }
-    
+
     {:reply, result, new_state}
   end
 
@@ -265,6 +297,7 @@ defmodule HaxeServer do
   def terminate(reason, state) do
     Logger.info("HaxeServer terminating: #{inspect(reason)}")
     stop_haxe_server(state)
+    maybe_remove_cookie(state)
     :ok
   end
 
@@ -274,13 +307,13 @@ defmodule HaxeServer do
     # Use Port.open to properly manage the Haxe server process
     cmd = state.haxe_cmd
     args = state.haxe_args ++ ["--wait", to_string(state.port)]
-    
+
     # Generate a unique port for haxeshim's internal server to avoid collisions in dev/test
     # when multiple Mix VMs (or multiple HaxeServer instances) are running concurrently.
     #
     # Keep it distinct from the Haxe `--wait` port we're binding to.
     haxeshim_port = ensure_haxeshim_server_port_env()
-    
+
     # Set environment variable for haxeshim (if it supports it)
     # Also set HAXE_SERVER_PORT for compatibility
     # Port.open requires charlists (Erlang strings) for env variables
@@ -288,20 +321,21 @@ defmodule HaxeServer do
       {~c"HAXESHIM_SERVER_PORT", to_charlist(haxeshim_port)},
       {~c"HAXE_SERVER_PORT", to_charlist(state.port)}
     ]
-    
+
     try do
-      port = Port.open(
-        {:spawn_executable, System.find_executable(cmd) || cmd},
-        [:binary, :exit_status, :stderr_to_stdout, {:args, args}, {:env, env}]
-      )
-      
+      port =
+        Port.open(
+          {:spawn_executable, System.find_executable(cmd) || cmd},
+          [:binary, :exit_status, :stderr_to_stdout, {:args, args}, {:env, env}]
+        )
+
       # Give the server a moment to start.
       #
       # NOTE: `haxe --wait` is a long-lived process. On some platforms/wrappers, closing the
       # Erlang port does not reliably terminate the underlying OS process. We capture the
       # OS PID to ensure we can clean up on stop/restart.
       Process.sleep(500)
-      
+
       # Check if port is still alive
       if Port.info(port) do
         os_pid =
@@ -322,7 +356,8 @@ defmodule HaxeServer do
 
   defp stop_haxe_server(%{server_pid: nil}), do: :ok
 
-  defp stop_haxe_server(%{server_pid: port, server_os_pid: os_pid, owns_server: true}) when is_port(port) do
+  defp stop_haxe_server(%{server_pid: port, server_os_pid: os_pid, owns_server: true})
+       when is_port(port) do
     # Best-effort shutdown order:
     # 1) Close the Erlang port.
     # 2) Explicitly terminate the OS process tree (node wrapper + underlying haxe) if still alive.
@@ -369,7 +404,9 @@ defmodule HaxeServer do
     if not compatible do
       case last_result do
         {:timeout, _} ->
-          Logger.debug("Haxe server port #{state.port} is in use but did not respond to --connect -version; relocating")
+          Logger.debug(
+            "Haxe server port #{state.port} is in use but did not respond to --connect -version; relocating"
+          )
 
         {out, exit_code} when is_binary(out) and is_integer(exit_code) ->
           summary =
@@ -379,10 +416,14 @@ defmodule HaxeServer do
             |> String.trim()
             |> String.slice(0, 200)
 
-          Logger.debug("Haxe server port #{state.port} is in use but is not compatible (exit #{exit_code}): #{summary}")
+          Logger.debug(
+            "Haxe server port #{state.port} is in use but is not compatible (exit #{exit_code}): #{summary}"
+          )
 
         _ ->
-          Logger.debug("Haxe server port #{state.port} is in use but could not be verified as compatible; relocating")
+          Logger.debug(
+            "Haxe server port #{state.port} is in use but could not be verified as compatible; relocating"
+          )
       end
     end
 
@@ -412,41 +453,108 @@ defmodule HaxeServer do
       case start_haxe_server(state) do
         {:ok, pid, os_pid} ->
           Logger.debug("Haxe server started on port #{state.port}")
-          {:ok, %{state | server_pid: pid, server_os_pid: os_pid, owns_server: true, status: :running}}
+
+          started = %{
+            state
+            | server_pid: pid,
+              server_os_pid: os_pid,
+              owns_server: true,
+              status: :running
+          }
+
+          _ = write_cookie(started)
+          {:ok, started}
 
         {:error, reason} ->
-          Logger.debug("Haxe server failed on #{state.port} (#{inspect(reason)}); attempting relocation")
+          Logger.debug(
+            "Haxe server failed on #{state.port} (#{inspect(reason)}); attempting relocation"
+          )
+
           new_port = find_available_port()
           relocated = %{state | port: new_port}
 
           case start_haxe_server(relocated) do
             {:ok, pid2, os_pid2} ->
               Logger.debug("Haxe server relocated and started on port #{new_port}")
-              {:ok, %{relocated | server_pid: pid2, server_os_pid: os_pid2, owns_server: true, status: :running}}
+
+              started = %{
+                relocated
+                | server_pid: pid2,
+                  server_os_pid: os_pid2,
+                  owns_server: true,
+                  status: :running
+              }
+
+              _ = write_cookie(started)
+              {:ok, started}
 
             {:error, reason2} ->
-              Logger.warning("Failed to start Haxe server after relocation: #{inspect(reason2)}; will retry")
-              {:error, %{relocated | server_pid: nil, server_os_pid: nil, owns_server: false, status: :error}}
+              Logger.warning(
+                "Failed to start Haxe server after relocation: #{inspect(reason2)}; will retry"
+              )
+
+              {:error,
+               %{
+                 relocated
+                 | server_pid: nil,
+                   server_os_pid: nil,
+                   owns_server: false,
+                   status: :error
+               }}
           end
       end
     else
-      if state.allow_external_attach and external_server_compatible?(state) do
-        Logger.debug("Haxe server port #{state.port} is in use; attaching to existing server")
-        {:ok, %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
-      else
-        new_port = find_available_port()
-        Logger.debug("Haxe server port #{state.port} is in use; relocating to #{new_port}")
-        relocated = %{state | port: new_port}
+      cond do
+        attach_to_cookie_server?(state) and external_server_compatible?(state) ->
+          Logger.debug(
+            "Haxe server port #{state.port} is in use; attaching to prior server (cookie match)"
+          )
 
-        case start_haxe_server(relocated) do
-          {:ok, pid2, os_pid2} ->
-            Logger.debug("Haxe server relocated and started on port #{new_port}")
-            {:ok, %{relocated | server_pid: pid2, server_os_pid: os_pid2, owns_server: true, status: :running}}
+          _ = write_cookie(%{state | owns_server: false, status: :running})
 
-          {:error, reason2} ->
-            Logger.warning("Failed to start Haxe server after relocation: #{inspect(reason2)}; will retry")
-            {:error, %{relocated | server_pid: nil, server_os_pid: nil, owns_server: false, status: :error}}
-        end
+          {:ok,
+           %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
+
+        state.allow_external_attach and external_server_compatible?(state) ->
+          Logger.debug("Haxe server port #{state.port} is in use; attaching to existing server")
+
+          {:ok,
+           %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
+
+        true ->
+          new_port = find_available_port()
+          Logger.debug("Haxe server port #{state.port} is in use; relocating to #{new_port}")
+          relocated = %{state | port: new_port}
+
+          case start_haxe_server(relocated) do
+            {:ok, pid2, os_pid2} ->
+              Logger.debug("Haxe server relocated and started on port #{new_port}")
+
+              started = %{
+                relocated
+                | server_pid: pid2,
+                  server_os_pid: os_pid2,
+                  owns_server: true,
+                  status: :running
+              }
+
+              _ = write_cookie(started)
+              {:ok, started}
+
+            {:error, reason2} ->
+              Logger.warning(
+                "Failed to start Haxe server after relocation: #{inspect(reason2)}; will retry"
+              )
+
+              {:error,
+               %{
+                 relocated
+                 | server_pid: nil,
+                   server_os_pid: nil,
+                   owns_server: false,
+                   status: :error
+               }}
+          end
       end
     end
   end
@@ -455,6 +563,7 @@ defmodule HaxeServer do
     case System.get_env(@allow_external_attach_env) do
       value when is_binary(value) and value != "" ->
         String.trim(value) in ["1", "true", "TRUE", "yes", "YES"]
+
       _ ->
         false
     end
@@ -463,22 +572,88 @@ defmodule HaxeServer do
   defp compile_with_server(args, state) do
     # Connect to the running Haxe server and send compilation request
     connect_args = state.haxe_args ++ ["--connect", to_string(state.port)] ++ args
-    
+
     case System.cmd(state.haxe_cmd, connect_args, stderr_to_stdout: true) do
       {output, 0} ->
         {:ok, output}
-      
+
       {output, exit_code} ->
         # Parse and store structured error information from server compilation
         structured_errors = HaxeCompiler.parse_haxe_errors(output)
         HaxeCompiler.store_compilation_errors(structured_errors)
-        
+
         {:error, "Compilation failed (exit #{exit_code}): #{output}"}
     end
   rescue
     error ->
       {:error, "Failed to connect to Haxe server: #{Exception.message(error)}"}
   end
+
+  defp cookie_path(project_root) do
+    Path.join([project_root, @cookie_dir, @cookie_file])
+  end
+
+  defp cache_key(project_root, cmd, args) do
+    material = %{
+      project_root: project_root,
+      haxe_cmd: cmd,
+      haxe_args: args
+    }
+
+    :crypto.hash(:sha256, :erlang.term_to_binary(material))
+    |> Base.encode16(case: :lower)
+  end
+
+  defp attach_to_cookie_server?(state) do
+    case read_cookie(state.cookie_path) do
+      {:ok, %{"version" => @cookie_version, "port" => cookie_port, "cache_key" => cookie_key}}
+      when is_integer(cookie_port) and cookie_port == state.port and cookie_key == state.cache_key ->
+        true
+
+      _ ->
+        false
+    end
+  rescue
+    _ -> false
+  end
+
+  defp read_cookie(path) do
+    with true <- File.exists?(path),
+         {:ok, body} <- File.read(path),
+         {:ok, decoded} <- Jason.decode(body) do
+      {:ok, decoded}
+    else
+      false -> {:error, :missing}
+      {:error, _} = err -> err
+      _ -> {:error, :invalid}
+    end
+  end
+
+  defp write_cookie(state) do
+    data = %{
+      "version" => @cookie_version,
+      "port" => state.port,
+      "cache_key" => state.cache_key,
+      "owns_server" => state.owns_server,
+      "server_os_pid" => state.server_os_pid,
+      "written_at" => DateTime.utc_now() |> DateTime.to_iso8601()
+    }
+
+    dir = Path.dirname(state.cookie_path)
+    _ = File.mkdir_p(dir)
+    File.write(state.cookie_path, Jason.encode!(data) <> "\n")
+  rescue
+    _ -> :ok
+  end
+
+  defp maybe_remove_cookie(%{owns_server: true, cookie_path: path}) when is_binary(path) do
+    _ = File.rm(path)
+    :ok
+  rescue
+    _ -> :ok
+  end
+
+  defp maybe_remove_cookie(_state), do: :ok
 
   defp port_available?(port) do
     # Haxe (via lix/haxeshim) typically binds to the IPv6 wildcard (::) as a dual-stack
@@ -537,7 +712,8 @@ defmodule HaxeServer do
     if MapSet.member?(acc, pid) do
       do_collect_descendant_pids(rest, acc, pgrep_exe)
     else
-      {out, status} = System.cmd(pgrep_exe, ["-P", Integer.to_string(pid)], stderr_to_stdout: true)
+      {out, status} =
+        System.cmd(pgrep_exe, ["-P", Integer.to_string(pid)], stderr_to_stdout: true)
 
       children =
         if status == 0 do
@@ -576,10 +752,11 @@ defmodule HaxeServer do
     # Pick from a mid-range that avoids common dev ports (<10k) and OS ephemeral ports (often 49k+).
     # This reduces collisions with both local services and active outbound connections.
     base_port = 15_000 + rem(System.unique_integer([:positive]), 20_000)
-    
+
     Enum.reduce_while(0..50, nil, fn offset, _acc ->
       port = base_port + offset
-      if (not MapSet.member?(exclude_ports, port)) and port_available?(port) do
+
+      if not MapSet.member?(exclude_ports, port) and port_available?(port) do
         {:halt, port}
       else
         {:cont, nil}
@@ -592,25 +769,25 @@ defmodule HaxeServer do
     port = 35_000 + :rand.uniform(5_000)
     if MapSet.member?(exclude_ports, port), do: port + 1, else: port
   end
-  
+
   defp find_project_root() do
     # Try to find the project root by looking for mix.exs or package.json
     # Start from current directory and walk up
     find_project_root_from(File.cwd!())
   end
-  
+
   defp find_project_root_from(dir) do
     cond do
       # Found project markers
-      File.exists?(Path.join(dir, "mix.exs")) or 
-      File.exists?(Path.join(dir, "package.json")) ->
+      File.exists?(Path.join(dir, "mix.exs")) or
+          File.exists?(Path.join(dir, "package.json")) ->
         dir
-      
+
       # Reached root directory
       dir == "/" or dir == Path.dirname(dir) ->
         # Default to current directory if we can't find project root
         File.cwd!()
-      
+
       # Keep searching up
       true ->
         find_project_root_from(Path.dirname(dir))

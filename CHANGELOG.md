@@ -136,7 +136,7 @@
 
 ### 📚 Documentation
 
-- Docs: Prefer the lix-managed `haxe` toolchain in public instructions (avoid `npx haxe` pitfalls).
+- Docs: Prefer the lix-managed `npx haxe` wrapper (pinned via `.haxerc`); avoid `npx lix run haxe` in fresh scopes.
 - Examples: Rebuild `examples/03-phoenix-app` as a minimal Phoenix application authored in Haxe (OTP + endpoint + router + controller).
 
 ### 🎉 Major Features

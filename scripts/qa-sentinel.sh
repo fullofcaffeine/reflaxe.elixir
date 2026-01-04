@@ -584,7 +584,22 @@ else
 
   # Precompile critical Erlang deps to avoid include path races during main compile.
   # Use the default _build root to ensure rebar include_lib resolution works; best-effort so main compile can proceed.
-  run_step_best_effort "Step 2.1: deps precompile (cowboy)" 180s /tmp/qa-deps-precompile.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile cowboy --force'"
+  # Best-effort precompile of the HTTP adapter to reduce first-run latency.
+  #
+  # Phoenix generators may use either Cowboy (plug_cowboy) or Bandit, so pick what exists.
+  HTTP_ADAPTER=""
+  if [[ -f mix.lock ]]; then
+    if grep -q '"cowboy"' mix.lock 2>/dev/null; then
+      HTTP_ADAPTER="cowboy"
+    elif grep -q '"bandit"' mix.lock 2>/dev/null; then
+      HTTP_ADAPTER="bandit"
+    fi
+  fi
+  if [[ -n "$HTTP_ADAPTER" ]]; then
+    run_step_best_effort "Step 2.1: deps precompile (${HTTP_ADAPTER})" 180s /tmp/qa-deps-precompile.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile ${HTTP_ADAPTER} --force'"
+  else
+    log "[QA] Step 2.1: deps precompile skipped (no known HTTP adapter dep detected)"
+  fi
 
   # Prepare database and runtime after compile. Robust deps compile to avoid
   # rebar include_lib issues under per-run MIX_BUILD_ROOT.

@@ -434,17 +434,34 @@ class ProjectGenerator {
 ${phoenixFlags}--main ${haxeNamespace}.Main
 ';
 	}
+
+	function getLibraryVersionTag(): String {
+		try {
+			var libPath = getLibraryPath();
+			var haxelibPath = Path.join([libPath, "haxelib.json"]);
+			if (FileSystem.exists(haxelibPath)) {
+				var parsed: {version: String} = cast haxe.Json.parse(File.getContent(haxelibPath));
+				var version = parsed.version;
+				if (version != null && version != "") {
+					return "v" + version;
+				}
+			}
+		} catch (e: haxe.Exception) {}
+
+		return "latest";
+	}
 	
 	function generatePackageJson(projectName: String): String {
 		var name = projectName.toLowerCase().split(" ").join("-");
+		var tag = getLibraryVersionTag();
 		return '{
   "name": "$name",
   "version": "0.1.0",
   "description": "A Reflaxe.Elixir project",
   "scripts": {
-    "setup:haxe": "npx lix download",
-    "compile": "npx lix run haxe build.hxml",
-    "watch": "npx nodemon --watch src_haxe --ext hx --exec \\"npx lix run haxe build.hxml\\"",
+    "setup:haxe": "npx lix scope create && npx lix install github:fullofcaffeine/reflaxe.elixir#$tag && npx lix download",
+    "compile": "npx haxe build.hxml",
+    "watch": "npx nodemon --watch src_haxe --ext hx --exec \\"npx haxe build.hxml\\"",
     "test": "mix test"
   },
   "devDependencies": {
@@ -734,15 +751,15 @@ class HelloWorld {
 
 ```bash
 npm install
-npx lix download
+npm run setup:haxe
 mix deps.get
 mix compile
 ```
 
 ### Compile Haxe → Elixir
 ```bash
-haxe build.hxml
-# or: npx lix run haxe build.hxml
+npm run compile
+# or: npx haxe build.hxml
 ```
 
 ## Phoenix
@@ -762,7 +779,7 @@ This project uses Reflaxe.Elixir (Haxe → Elixir) for gradual adoption and type
 
 ```bash
 # Compile once
-haxe build.hxml
+npm run compile
 
 # Run Elixir tests
 mix test

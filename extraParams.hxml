@@ -9,6 +9,7 @@
 #
 # Bootstraps the target by registering the compiler and injecting any
 # target-conditional classpaths (e.g. std overrides) in a macro-safe way.
+--macro reflaxe.elixir.CompilerBootstrap.Start()
 --macro reflaxe.elixir.CompilerInit.Start()
 
 # Preserve functional shapes for Elixir output
