@@ -337,6 +337,7 @@ jobs:
       # Haxe 5 TypedExpr shapes differ enough that snapshot diffs are not comparable yet.
       # Gate on compilation + Elixir syntax only.
       COMPARE_INTENDED: '0'
+      HAXE5_VERSION: '4f39bb0'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -352,12 +353,14 @@ jobs:
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
-      - name: Setup Haxe (nightly)
-        uses: krdlab/setup-haxe@v1
-        with:
-          haxe-version: 'nightly'
       - name: Install npm dependencies
         run: npm ci
+      - name: Install Haxe 5 (pinned via lix)
+        run: |
+          set -euo pipefail
+          npx lix download haxe "${HAXE5_VERSION}"
+          npx lix use haxe "${HAXE5_VERSION}"
+          haxe -version
       - name: Download Haxe libraries (lix)
         run: npx lix download
       - name: Run quick snapshot suite
