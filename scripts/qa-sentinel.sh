@@ -484,6 +484,10 @@ fi
 # Optional: Haxe compilation server for faster repeated builds (warm cache)
 REQUESTED_HAXE_SERVER_PORT=${HAXE_SERVER_PORT:-6116}
 HAXE_REUSE_SERVER=0
+HAXE_ALLOW_ATTACH=0
+case "${HAXE_SERVER_ALLOW_ATTACH:-}" in
+  1|true|TRUE|yes|YES|y|Y) HAXE_ALLOW_ATTACH=1 ;;
+esac
 # If the requested port is busy (common when stale `haxe --wait` servers exist),
 # try to reuse a compatible existing server; otherwise pick a nearby free port
 # instead of connecting to a random existing listener.
@@ -492,7 +496,7 @@ if port_available "$REQUESTED_HAXE_SERVER_PORT"; then
 else
   # If this is an actual Haxe server that responds to our toolchain quickly,
   # reuse it to keep the incremental cache warm across runs.
-  if [[ -n "$HAXE_EXE" ]] && "$SCRIPT_DIR/with-timeout.sh" --secs 2 -- "$HAXE_EXE" --connect "$REQUESTED_HAXE_SERVER_PORT" -version >/dev/null 2>&1; then
+  if [[ "$HAXE_ALLOW_ATTACH" -eq 1 ]] && [[ -n "$HAXE_EXE" ]] && "$SCRIPT_DIR/with-timeout.sh" --secs 2 -- "$HAXE_EXE" --connect "$REQUESTED_HAXE_SERVER_PORT" -version >/dev/null 2>&1; then
     HAXE_SERVER_PORT="$REQUESTED_HAXE_SERVER_PORT"
     HAXE_REUSE_SERVER=1
     log "[QA] Haxe server port ${REQUESTED_HAXE_SERVER_PORT} is in use; reusing existing server"
