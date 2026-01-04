@@ -341,22 +341,45 @@ defmodule HaxeServer do
     # This check runs when the preferred port is already bound. In common dev flows,
     # that can be a concurrently-starting (but not yet ready) Haxe server. Give it a
     # small bounded grace window to become responsive before relocating.
-    timeouts_ms = [200, 500, 1_000]
+    timeouts_ms = [200, 500, 1_000, 2_000, 5_000]
 
-    Enum.reduce_while(timeouts_ms, false, fn timeout_ms, _acc ->
-      result = connect_for_version(connect_args, state, timeout_ms)
+    {compatible, last_result} =
+      Enum.reduce_while(timeouts_ms, {false, nil}, fn timeout_ms, _acc ->
+        result = connect_for_version(connect_args, state, timeout_ms)
 
-      case result do
-        {_out, 0} ->
-          {:halt, true}
+        case result do
+          {_out, 0} ->
+            {:halt, {true, result}}
 
+          {:timeout, _} ->
+            {:cont, {false, result}}
+
+          {_out, _exit_code} ->
+            {:halt, {false, result}}
+        end
+      end)
+
+    if not compatible do
+      case last_result do
         {:timeout, _} ->
-          {:cont, false}
+          Logger.debug("Haxe server port #{state.port} is in use but did not respond to --connect -version; relocating")
 
-        {_out, _exit_code} ->
-          {:halt, false}
+        {out, exit_code} when is_binary(out) and is_integer(exit_code) ->
+          summary =
+            out
+            |> String.split("\n", trim: false)
+            |> Enum.find("", fn line -> String.trim(line) != "" end)
+            |> String.trim()
+            |> String.slice(0, 200)
+
+          Logger.debug("Haxe server port #{state.port} is in use but is not compatible (exit #{exit_code}): #{summary}")
+
+        _ ->
+          Logger.debug("Haxe server port #{state.port} is in use but could not be verified as compatible; relocating")
       end
-    end)
+    end
+
+    compatible
   rescue
     _ -> false
   end
