@@ -71,6 +71,7 @@ class BlockBuilder {
      * @return ElixirASTDef for the block or transformed pattern
      */
     public static function build(el: Array<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
+        return withScopedInitTracking(el, context, function() {
         #if debug_ast_builder
         // DISABLED: trace('[BlockBuilder] Building block with ${el.length} expressions');
         for (i in 0...Math.ceil(Math.min(5, el.length))) {
@@ -234,6 +235,7 @@ class BlockBuilder {
         }
 
         return buildRegularBlock(el, context);
+        });
     }
     
     /**
@@ -686,6 +688,69 @@ class BlockBuilder {
         return snapshots;
     }
 
+    static function shouldTrackLocalInitValueById(varName: String): Bool {
+        if (varName == null) return false;
+
+        // Always track classic infra vars (_g/_g1/...) because loop lowering needs their seeds.
+        if (isInfrastructureVar(varName)) return true;
+
+        // Haxe 5 preview can emit temps with backticks preserved in the typed AST.
+        // If stripping backticks yields an empty identifier, name-keyed tracking is useless and
+        // we must rely on TVar.id-keyed init tracking to recover loop bounds safely.
+        if (varName.indexOf("`") != -1) {
+            var stripped = varName.split("`").join("");
+            return StringTools.trim(stripped).length == 0;
+        }
+
+        return false;
+    }
+
+    static function trackLocalInitValuesById(
+        el: Array<TypedExpr>,
+        context: CompilationContext
+    ): Array<{id: Int, had: Bool, value: Null<ElixirAST>}> {
+        if (el == null) return [];
+        if (context.localVarInitValuesById == null) context.localVarInitValuesById = new Map();
+
+        var snapshots: Array<{id: Int, had: Bool, value: Null<ElixirAST>}> = [];
+        var captured = new Map<Int, Bool>();
+
+        for (expr in el) {
+            switch (expr.expr) {
+                case TVar(v, init) if (init != null && shouldTrackLocalInitValueById(v.name)):
+                    #if debug_haxe5_loop_seeds
+                    if (v.name != null && v.name.indexOf("`") != -1) {
+                        trace('[haxe5-loop-seeds] trackLocalInitValuesById: name="${v.name}" id=${v.id} init='
+                            + reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr));
+                    }
+                    #end
+                    if (!captured.exists(v.id)) {
+                        var had = context.localVarInitValuesById.exists(v.id);
+                        var value = had ? context.localVarInitValuesById.get(v.id) : null;
+                        snapshots.push({id: v.id, had: had, value: value});
+                        captured.set(v.id, true);
+                    }
+
+                    var initAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(init, context);
+                    context.localVarInitValuesById.set(v.id, initAST);
+                default:
+            }
+        }
+
+        return snapshots;
+    }
+
+    static function restoreLocalInitValuesById(snapshots: Array<{id: Int, had: Bool, value: Null<ElixirAST>}>, context: CompilationContext): Void {
+        if (snapshots == null || context == null || context.localVarInitValuesById == null) return;
+        for (snapshot in snapshots) {
+            if (snapshot.had) {
+                context.localVarInitValuesById.set(snapshot.id, snapshot.value);
+            } else {
+                context.localVarInitValuesById.remove(snapshot.id);
+            }
+        }
+    }
+
     static function restoreInfrastructureVars(snapshots: Array<{name: String, had: Bool, value: Null<ElixirAST>}>, context: CompilationContext): Void {
         if (snapshots == null) return;
         for (snapshot in snapshots) {
@@ -694,6 +759,43 @@ class BlockBuilder {
             } else {
                 context.infrastructureVarInitValues.remove(snapshot.name);
             }
+        }
+    }
+
+    /**
+     * Execute a compilation callback with block-scoped init tracking enabled.
+     *
+     * WHY
+     * - Some block compilation paths (e.g., special-case hoists in ElixirASTBuilder) build
+     *   statements manually and bypass BlockBuilder.buildRegularBlock.
+     * - Loop lowering relies on initializer tracking (`infrastructureVarInitValues` and
+     *   `localVarInitValuesById`) to recover desugared `for` loop bounds safely.
+     *
+     * WHAT
+     * - Temporarily populates init maps for the duration of `fn`, then restores prior values.
+     *
+     * HOW
+     * - Mirrors buildRegularBlock's tracking + restoration behavior without forcing callers
+     *   to route through BlockBuilder's full block compilation logic.
+     */
+    public static function withScopedInitTracking<T>(
+        el: Array<TypedExpr>,
+        context: CompilationContext,
+        fn: () -> T
+    ): T {
+        if (context == null || fn == null) return fn();
+
+        var infraSnapshots = trackInfrastructureVars(el, context);
+        var localInitSnapshots = trackLocalInitValuesById(el, context);
+        try {
+            var result = fn();
+            restoreInfrastructureVars(infraSnapshots, context);
+            restoreLocalInitValuesById(localInitSnapshots, context);
+            return result;
+        } catch (e: Any) {
+            restoreInfrastructureVars(infraSnapshots, context);
+            restoreLocalInitValuesById(localInitSnapshots, context);
+            throw e;
         }
     }
     
@@ -705,56 +807,47 @@ class BlockBuilder {
             return ENil;
         }
 
-        // Track infrastructure variables first (scoped to this block).
-        var infraSnapshots = trackInfrastructureVars(el, context);
-
         var result: ElixirASTDef = ENil;
         var didSetResult = false;
-        try {
-            // Check for inline expansion patterns
-            var inlineResult = checkForInlineExpansion(el, context);
-            if (inlineResult != null) {
-                result = inlineResult;
-                didSetResult = true;
-            } else {
-                var expressions: Array<ElixirAST> = [];
+        // Check for inline expansion patterns
+        var inlineResult = checkForInlineExpansion(el, context);
+        if (inlineResult != null) {
+            result = inlineResult;
+            didSetResult = true;
+        } else {
+            var expressions: Array<ElixirAST> = [];
 
-                for (expr in el) {
-                    // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
-                    // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
-                    var compiled = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
-                    if (compiled != null) {
-                        expressions.push(compiled);
-                    }
-                }
-
-                // Check for combining TVar and TBinop patterns
-                if (expressions.length >= 2) {
-                    var combined = attemptStatementCombining(expressions);
-                    if (combined != null) {
-                        result = combined;
-                        didSetResult = true;
-                    }
-                }
-
-                if (!didSetResult) {
-                    // Handle empty blocks
-                    if (expressions.length == 0) {
-                        result = ENil;
-                    } else if (expressions.length == 1) {
-                        // Single expression blocks can be unwrapped
-                        result = expressions[0].def;
-                    } else {
-                        result = EBlock(expressions);
-                    }
+            for (expr in el) {
+                // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
+                // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
+                var compiled = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(expr, context);
+                if (compiled != null) {
+                    expressions.push(compiled);
                 }
             }
-        } catch (e: Any) {
-            restoreInfrastructureVars(infraSnapshots, context);
-            throw e;
+
+            // Check for combining TVar and TBinop patterns
+            if (expressions.length >= 2) {
+                var combined = attemptStatementCombining(expressions);
+                if (combined != null) {
+                    result = combined;
+                    didSetResult = true;
+                }
+            }
+
+            if (!didSetResult) {
+                // Handle empty blocks
+                if (expressions.length == 0) {
+                    result = ENil;
+                } else if (expressions.length == 1) {
+                    // Single expression blocks can be unwrapped
+                    result = expressions[0].def;
+                } else {
+                    result = EBlock(expressions);
+                }
+            }
         }
 
-        restoreInfrastructureVars(infraSnapshots, context);
         return result;
     }
     

@@ -45,7 +45,7 @@ defmodule Main do
     sum = 0
     _g = start
     g_value = end_param
-    sum = Enum.reduce(0..(g_value - 1)//1, sum, fn i, sum_acc -> sum_acc + i end)
+    sum = Enum.reduce(start..(g_value - 1)//1, sum, fn i, sum_acc -> sum_acc + i end)
     sum
   end
   def factorial(_, n) do
