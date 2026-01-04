@@ -107,6 +107,11 @@ From repo root:
 scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --async --deadline 900 --verbose
 ```
 
+One-shot local smoke check (uses :4000, disables watchers, ensures DB is migrated):
+```bash
+scripts/qa-sentinel-local.sh
+```
+
 Alternative: stable background run without code reloader
 ```bash
 # Some debugging sessions are more stable with the application tree under :run --no-halt
