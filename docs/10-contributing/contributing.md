@@ -9,6 +9,7 @@ Thank you for your interest in contributing to Reflaxe.Elixir! This document pro
 - [Making Changes](#making-changes)
 - [Commit Guidelines](#commit-guidelines)
 - [Testing](#testing)
+- [Releasing](#releasing)
 - [Pull Request Process](#pull-request-process)
 - [Project Structure](#project-structure)
 
@@ -58,6 +59,10 @@ npm run test:mix  # Run Elixir runtime tests
 - `refactor/` - Code refactoring
 - `test/` - Test additions or changes
 - `chore/` - Maintenance tasks
+
+## Releasing
+
+See: [RELEASING.md](RELEASING.md).
 
 Example: `feat/add-supervisor-support`
 
