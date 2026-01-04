@@ -40,6 +40,7 @@ mix compile.haxe --force
 **Environment Variables:**
 - `MIX_QUIET=1` - Suppress all output except errors
 - `HAXE_SERVER_PORT=6116` - Custom port for Haxe compilation server (default: 6116)
+- `HAXE_SERVER_ALLOW_ATTACH=1` - Allow attaching to an externally-started compatible `haxe --wait` server on the configured port (default: off)
 - `HAXE_NO_SERVER=1` - Disable the Haxe `--wait` server and compile directly
 - `HAXE_NO_COMPILE=1` - Skip Haxe compilation entirely (useful for CI/sentinels)
 

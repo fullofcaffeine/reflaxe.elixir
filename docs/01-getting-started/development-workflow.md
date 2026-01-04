@@ -388,8 +388,8 @@ Behavior (no configuration required):
 
 - Auto‑manage: Mix ensures a `haxe --wait` server is available for incremental compilation.
 - Reuse (owned): If Mix started the server in this VM, it is reused automatically.
-- Attach (compatible): If the configured port is already bound by a compatible Haxe server, Mix attaches and uses it (no extra server, no port churn).
-- Relocate (incompatible): If the configured port is bound by a non-Haxe process (or an incompatible server), Mix relocates to a free port and starts its own.
+- Relocate (default): If the configured port is already bound, Mix relocates to a free port and starts its own server.
+- Attach (opt‑in): If `HAXE_SERVER_ALLOW_ATTACH=1` and the configured port is already bound by a compatible Haxe server, Mix attaches and uses it (no extra server, no port churn).
 - Auto‑start: If none is running, Mix starts one in the background.
 - Auto‑relocate: If the port is busy, Mix transparently retries on a free port.
 - Fallback: If the server cannot be reached, Mix compiles directly (no server) and
@@ -400,12 +400,13 @@ Defaults and environment variables:
 - Default server port: `6116` (aligned with the QA sentinel).
 - `HAXE_NO_SERVER=1` — disable the server for the current run (use direct Haxe).
 - `HAXE_SERVER_PORT=<port>` — force a specific port (e.g., `6116`).
+- `HAXE_SERVER_ALLOW_ATTACH=1` — allow attaching to an externally-started compatible server on the configured port.
 
 Notes:
 
 - The behavior is fully transparent; no flags are needed for normal use.
 - The QA sentinel also uses a compile server and falls back to direct compilation
-  under strict timeouts. Keeping the same default port (`6116`) avoids collisions.
+  under strict timeouts. It uses the same default port (`6116`) and relocates when busy.
 
 ### Cleanup (if ports keep relocating)
 

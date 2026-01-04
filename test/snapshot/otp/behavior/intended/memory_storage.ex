@@ -23,7 +23,7 @@ defmodule MemoryStorage do
   def list(struct) do
     this1 = struct.data
     k = _ = Map.keys(this1)
-    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {0}, fn _, {acc__g} ->
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {[]}, fn _, {acc__g} ->
       try do
         if (k.has_next.()) do
           k = k.next.()
