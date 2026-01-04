@@ -1,8 +1,8 @@
 # Reflaxe.Elixir
 
-[![Version](https://img.shields.io/badge/version-1.1.3-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
+[![Version](https://img.shields.io/badge/version-1.1.4-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![CI](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml)
+[![CI](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml)
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
@@ -104,7 +104,7 @@ npx lix scope create
 npx lix install github:fullofcaffeine/reflaxe.elixir
 
 # Or install a specific version/tag
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.3
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.4
 
 # Download pinned Haxe libraries for the project
 npx lix download
@@ -187,6 +187,15 @@ Follow: `docs/01-getting-started/START_HERE.md`
 - Learn the Haxe→Elixir→Phoenix mental model
 - Generate a fresh Phoenix+Haxe project via the generator
 
+### Quick Demo (Todo App)
+
+Run a full build + boot + Playwright smoke **without blocking your terminal**:
+
+```bash
+scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --async --deadline 900 --verbose
+scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 900
+```
+
 ### Phoenix (Recommended Next Step)
 
 - New Phoenix project: `docs/06-guides/PHOENIX_NEW_APP.md`
@@ -205,6 +214,13 @@ haxe build.hxml
 # Watch for changes (long-running)
 mix haxe.watch
 ```
+
+### Client Builds (JavaScript)
+
+For Phoenix apps with client-side hooks, the recommended path is:
+
+- **Genes (recommended)**: ES modules + clean output via `-lib genes` (see `docs/05-architecture/HXML_ARCHITECTURE.md` and `examples/todo-app/build-client.hxml`).
+- **Plain Haxe JS target**: still works, but you’ll write more interop glue and typically won’t get ES module output.
 
 ### Running Tests
 
@@ -240,7 +256,7 @@ defp deps do
   [
     # ... other deps
     # Mix tasks only (build-time): pin to a tag or use a commit SHA
-    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.1.3", only: [:dev, :test], runtime: false}
+    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.1.4", only: [:dev, :test], runtime: false}
   ]
 end
 

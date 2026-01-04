@@ -1,5 +1,20 @@
 ## [Unreleased]
 
+## [1.1.4](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.3...v1.1.4) (2026-01-04)
+
+### 🐞 Bug Fixes
+
+- Compiler: Fix `for (i in start...end)` lowering so generated Elixir preserves the `start` offset (`start..(end - 1)`).
+- Compiler: Stabilize loop init tracking + temp naming to avoid unbound vars and improve determinism.
+
+### 🔧 Tooling / DevX
+
+- Haxe compile server: Do not attach to external `haxe --wait` servers by default (opt‑in via `HAXE_SERVER_ALLOW_ATTACH=1`) to avoid cross-project cache corruption.
+
+### 🧹 Repo Hygiene
+
+- Scripts: Add an unused-scripts audit helper and remove obsolete one-off maintenance scripts.
+
 ## [1.1.3](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.2...v1.1.3) (2025-12-30)
 
 ### 🐞 Bug Fixes
