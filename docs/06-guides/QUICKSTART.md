@@ -45,6 +45,5 @@ Open `http://localhost:4000` (default dev port).
 
 ## Important Notes
 
-- Prefer `haxe ...` (or `npx lix run haxe ...` if `haxe` isn’t on your PATH).
-- Avoid `npx haxe ...` (the npm package) — it can pull a separate platform-specific Haxe binary and breaks on some systems (notably macOS arm64).
+- Prefer `haxe ...` (your local Haxe toolchain); if it’s not on your PATH, use `npx haxe ...` (lix-managed wrapper).
 - Do not use `-D analyzer-optimize` for the Elixir target; it produces non-idiomatic output and can break functional shapes. See `docs/01-getting-started/compiler-flags-guide.md`.

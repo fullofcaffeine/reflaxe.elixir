@@ -224,7 +224,7 @@ if [[ "$MODE" == "github" ]]; then
   run_step "lix install reflaxe.elixir (${FROM_TAG})" 600 "$work_dir" "npx lix install github:fullofcaffeine/reflaxe.elixir#${FROM_TAG}"
   run_step "generate phoenix project (${FROM_TAG})" 600 "$work_dir" "npx lix run reflaxe.elixir create ${APP_NAME} --type phoenix --no-interactive --skip-install --verbose"
 else
-  run_step "lix install generator deps (reflaxe)" 300 "$work_dir" "npx lix install haxelib:reflaxe"
+  run_step "lix dev generator deps (reflaxe, vendored)" 60 "$work_dir" "npx lix dev reflaxe '${to_src}/vendor/reflaxe'"
   run_step "lix install generator deps (tink_macro)" 300 "$work_dir" "npx lix install haxelib:tink_macro"
   run_step "lix install generator deps (tink_parse)" 300 "$work_dir" "npx lix install haxelib:tink_parse"
   run_step "lix download (workspace, generator deps)" 600 "$work_dir" "npx lix download"

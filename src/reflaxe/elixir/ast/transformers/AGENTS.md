@@ -18,7 +18,7 @@ When working on AST transformers, you're operating at a specific stage in a mult
    - String interpolation: `$variable` only works for variables that exist NOW (at this stage)
 
 2. **Stage 2: Running the Compiler** (macro-time within Reflaxe framework)
-   - When: User runs `npx haxe build-server.hxml` to compile their Haxe code
+   - When: User runs `haxe build-server.hxml` to compile their Haxe code
    - Where: Inside the Reflaxe macro context (this is where transformers run!)
    - What exists: Full Haxe runtime, TypedExpr AST, all normal Haxe features
    - String interpolation: `$variable` works normally for any runtime variables
@@ -149,7 +149,7 @@ Passes are applied in sequence. Earlier passes can enable later optimizations:
 
 Always test with debug flags to see transformations:
 ```bash
-npx haxe compile.hxml -D debug_ast_transformer -D debug_loop_transforms
+haxe compile.hxml -D debug_ast_transformer -D debug_loop_transforms
 ```
 
 ---

@@ -202,10 +202,10 @@ Use these two flags to accelerate pass ordering and shape verification:
 
 ```bash
 # Per‑pass delta printing (zero cost when disabled)
-npx haxe build.hxml -D debug_pass_metrics
+haxe build.hxml -D debug_pass_metrics
 
 # Focused AST snapshots (opt‑in)
-npx haxe build.hxml -D debug_ast_snapshots
+haxe build.hxml -D debug_ast_snapshots
 ```
 
 - `debug_pass_metrics`: Emits a concise marker when a pass changes the AST: `#[PassMetrics] Changed by: <passName>`.
@@ -237,10 +237,10 @@ DebugHelper.debugIfExpression(expr, condition, elseExpr, "context description");
 ### Debug Compilation Flags
 ```bash
 # Enable detailed compilation debugging
-npx haxe build.hxml -D debug_compiler
+haxe build.hxml -D debug_compiler
 
 # Enable source mapping for error tracking
-npx haxe build.hxml -D source-map
+haxe build.hxml -D source-map
 ```
 
 ### Common Debugging Patterns

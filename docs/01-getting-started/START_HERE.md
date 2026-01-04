@@ -118,10 +118,10 @@ In a typical project you’ll see a server build (Elixir output) and often a cli
 
 ### `haxe: command not found`
 
-This repo uses `lix` to manage the Haxe toolchain. If `haxe` isn’t on your PATH:
+Install Haxe 4.3.7+ (or add it to your PATH). If you’re using the lix-managed wrapper:
 
 ```bash
-npx lix run haxe --version
+npx haxe --version
 ```
 
 ### Database connection failures

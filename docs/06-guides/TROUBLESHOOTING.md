@@ -872,8 +872,8 @@ Error: Out of memory
 
 **Solution:**
 ```bash
-# If you're running Haxe through a Node wrapper (e.g. lix) and hit a Node OOM:
-NODE_OPTIONS="--max-old-space-size=4096" npx lix run haxe build.hxml
+# If you hit a Haxe OOM, increase available memory (shell-specific):
+NODE_OPTIONS="--max-old-space-size=4096" npx haxe build.hxml
 ```
 
 ## IDE and Tooling Issues
@@ -888,7 +888,7 @@ code --install-extension vshaxe.haxe-extension-pack
 # Create .vscode/settings.json
 {
     "haxe.executable": "npx",
-    "haxe.arguments": ["lix", "run", "haxe"],
+    "haxe.arguments": ["haxe"],
     "haxe.displayConfigurations": [
         ["build.hxml"]
     ]

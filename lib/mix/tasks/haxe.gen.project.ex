@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.Haxe.Gen.Project do
   @moduledoc """
   Mix task for adding Reflaxe.Elixir support to existing Elixir projects.
-  
+
   This task sets up the necessary directory structure, configuration files,
   and build pipeline to enable Haxe compilation within an existing Elixir project.
   It's the Mix complement to the Haxe-based project generator.
@@ -33,17 +33,18 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   Entry point for the Mix task
   """
   def run(args) do
-    {opts, [], _} = OptionParser.parse(args, 
-      switches: [
-        basic_modules: :boolean,
-        phoenix: :boolean,
-        skip_examples: :boolean,
-        skip_npm: :boolean,
-        haxe_dir: :string,
-        output_dir: :string,
-        force: :boolean
-      ]
-    )
+    {opts, [], _} =
+      OptionParser.parse(args,
+        switches: [
+          basic_modules: :boolean,
+          phoenix: :boolean,
+          skip_examples: :boolean,
+          skip_npm: :boolean,
+          haxe_dir: :string,
+          output_dir: :string,
+          force: :boolean
+        ]
+      )
 
     Mix.shell().info("Adding Reflaxe.Elixir support to existing project...")
 
@@ -74,35 +75,35 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   defp setup_project(config) do
     # 1. Create directory structure
     create_directories(config)
-    
+
     # 2. Create Haxe build configuration
     create_build_config(config)
 
     # 2b. Create .haxerc for lix-managed toolchain (if missing)
     create_haxerc(config)
-    
+
     # 3. Create package.json for npm dependencies (if not skipped)
     unless config.skip_npm do
       create_package_json(config)
     end
-    
+
     # 4. Update mix.exs with Haxe compiler
     update_mix_exs(config)
-    
+
     # 5. Create example modules (if not skipped)
     unless config.skip_examples do
       create_example_modules(config)
     end
-    
+
     # 6. Create VS Code configuration
     create_vscode_config(config)
-    
+
     # 7. Update .gitignore
     update_gitignore(config)
-    
+
     # 8. Display next steps
     display_next_steps(config)
-    
+
     Mix.shell().info("✅ Successfully added Reflaxe.Elixir support!")
     :ok
   end
@@ -120,14 +121,16 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       ".vscode"
     ]
 
-    all_directories = if config.phoenix do
-      base_directories ++ [
-        Path.join([haxe_base, "live"]),
-        Path.join([haxe_base, "controllers"])
-      ]
-    else
-      base_directories
-    end
+    all_directories =
+      if config.phoenix do
+        base_directories ++
+          [
+            Path.join([haxe_base, "live"]),
+            Path.join([haxe_base, "controllers"])
+          ]
+      else
+        base_directories
+      end
 
     Enum.each(all_directories, fn dir ->
       File.mkdir_p!(dir)
@@ -138,7 +141,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   # Create build.hxml configuration file
   defp create_build_config(config) do
     build_content = build_hxml_content(config)
-    
+
     write_file_with_confirmation("build.hxml", build_content, config.force)
     Mix.shell().info("Created Haxe build configuration: build.hxml")
   end
@@ -215,41 +218,44 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   # Create package.json for npm dependencies
   defp create_package_json(config) do
     package_content = package_json_content(config)
-    
+
     write_file_with_confirmation("package.json", package_content, config.force)
     Mix.shell().info("Created package.json with npm dependencies")
   end
 
   # Generate package.json content
   defp package_json_content(config) do
-    Jason.encode!(%{
-      name: to_string(config.app_name),
-      version: "0.1.0",
-      description: "Elixir project with Reflaxe.Elixir support",
-      scripts: %{
-        "setup:haxe": "npx lix download",
-        compile: "npx lix run haxe build.hxml",
-        watch: "npx nodemon --watch #{config.haxe_dir} --ext hx --exec \"npx lix run haxe build.hxml\"",
-        test: "mix test"
+    Jason.encode!(
+      %{
+        name: to_string(config.app_name),
+        version: "0.1.0",
+        description: "Elixir project with Reflaxe.Elixir support",
+        scripts: %{
+          "setup:haxe": "npx lix download",
+          compile: "npx haxe build.hxml",
+          watch: "npx nodemon --watch #{config.haxe_dir} --ext hx --exec \"npx haxe build.hxml\"",
+          test: "mix test"
+        },
+        devDependencies: %{
+          lix: "^15.12.4",
+          nodemon: "^3.0.0"
+        }
       },
-      devDependencies: %{
-        lix: "^15.12.4",
-        nodemon: "^3.0.0"
-      }
-    }, pretty: true)
+      pretty: true
+    )
   end
 
   # Update mix.exs to include Haxe compiler
   defp update_mix_exs(config) do
     mix_exs_path = "mix.exs"
-    
+
     unless File.exists?(mix_exs_path) do
       Mix.shell().error("mix.exs not found - this doesn't appear to be an Elixir project")
       System.halt(1)
     end
 
     current_content = File.read!(mix_exs_path)
-    
+
     has_haxe_compiler? = Regex.match?(~r/compilers:\s*\[([^\]]*):haxe/m, current_content)
     has_haxe_config? = Regex.match?(~r/\bhaxe:\s*\[/m, current_content)
 
@@ -261,7 +267,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
         current_content
         |> maybe_add_haxe_compiler_to_mix_exs(has_haxe_compiler?)
         |> maybe_add_haxe_config_to_mix_exs(config, has_haxe_config?)
-      
+
       if config.force || confirm_overwrite("mix.exs") do
         File.write!(mix_exs_path, updated_content)
         Mix.shell().info("✅ Updated mix.exs with Haxe compiler configuration")
@@ -318,17 +324,32 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     if config.basic_modules do
       # StringUtils utility
       string_utils_content = string_utils_content(config)
-      write_file_with_confirmation(Path.join([haxe_base, "utils", "StringUtils.hx"]), string_utils_content, config.force)
-      
+
+      write_file_with_confirmation(
+        Path.join([haxe_base, "utils", "StringUtils.hx"]),
+        string_utils_content,
+        config.force
+      )
+
       # MathHelper utility
       math_helper_content = math_helper_content(config)
-      write_file_with_confirmation(Path.join([haxe_base, "utils", "MathHelper.hx"]), math_helper_content, config.force)
+
+      write_file_with_confirmation(
+        Path.join([haxe_base, "utils", "MathHelper.hx"]),
+        math_helper_content,
+        config.force
+      )
     end
 
     if config.phoenix do
       # Phoenix LiveView example
       live_example_content = live_example_content(config)
-      write_file_with_confirmation(Path.join([haxe_base, "live", "AppLive.hx"]), live_example_content, config.force)
+
+      write_file_with_confirmation(
+        Path.join([haxe_base, "live", "AppLive.hx"]),
+        live_example_content,
+        config.force
+      )
     end
 
     Mix.shell().info("Created example Haxe modules")
@@ -499,42 +520,48 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     # settings.json
     settings_content = vscode_settings_content()
     write_file_with_confirmation(".vscode/settings.json", settings_content, config.force)
-    
+
     # extensions.json
     extensions_content = vscode_extensions_content()
     write_file_with_confirmation(".vscode/extensions.json", extensions_content, config.force)
-    
+
     Mix.shell().info("Created VS Code configuration")
   end
 
   # Generate VS Code settings.json
   defp vscode_settings_content() do
-    Jason.encode!(%{
-      "editor.formatOnSave" => true,
-      "files.exclude" => %{
-        "**/_build" => true,
-        "**/deps" => true,
-        "**/node_modules" => true
+    Jason.encode!(
+      %{
+        "editor.formatOnSave" => true,
+        "files.exclude" => %{
+          "**/_build" => true,
+          "**/deps" => true,
+          "**/node_modules" => true
+        },
+        "[haxe]" => %{
+          "editor.insertSpaces" => false
+        },
+        "[elixir]" => %{
+          "editor.insertSpaces" => true,
+          "editor.tabSize" => 2
+        }
       },
-      "[haxe]" => %{
-        "editor.insertSpaces" => false
-      },
-      "[elixir]" => %{
-        "editor.insertSpaces" => true,
-        "editor.tabSize" => 2
-      }
-    }, pretty: true)
+      pretty: true
+    )
   end
 
   # Generate VS Code extensions.json
   defp vscode_extensions_content() do
-    Jason.encode!(%{
-      recommendations: [
-        "vshaxe.haxe-extension-pack",
-        "jakebecker.elixir-ls",
-        "phoenixframework.phoenix"
-      ]
-    }, pretty: true)
+    Jason.encode!(
+      %{
+        recommendations: [
+          "vshaxe.haxe-extension-pack",
+          "jakebecker.elixir-ls",
+          "phoenixframework.phoenix"
+        ]
+      },
+      pretty: true
+    )
   end
 
   # Update .gitignore to exclude generated files
@@ -552,7 +579,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
     if File.exists?(".gitignore") do
       current_content = File.read!(".gitignore")
-      
+
       # Check if already contains our additions
       unless String.contains?(current_content, "Reflaxe.Elixir generated files") do
         updated_content = current_content <> Enum.join(gitignore_additions, "\n")
@@ -572,19 +599,20 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     Mix.shell().info("")
     Mix.shell().info("Next steps:")
     Mix.shell().info("  1. Install Reflaxe.Elixir (Haxe library):")
+    Mix.shell().info("     npx lix scope create   # if you don't already have a lix scope")
     Mix.shell().info("     npx lix install github:fullofcaffeine/reflaxe.elixir")
-    Mix.shell().info("     npx lix download")
+    Mix.shell().info("     npm run setup:haxe")
     Mix.shell().info("")
-    
+
     unless config.skip_npm do
       Mix.shell().info("  2. Install npm dependencies:")
       Mix.shell().info("     npm install")
       Mix.shell().info("")
     end
-    
+
     Mix.shell().info("  3. Compile your first Haxe code:")
-    Mix.shell().info("     haxe build.hxml")
-    Mix.shell().info("     # or: npx lix run haxe build.hxml")
+    Mix.shell().info("     npm run compile")
+    Mix.shell().info("     # or: npx haxe build.hxml")
     Mix.shell().info("")
     Mix.shell().info("  4. Start development with file watching:")
     Mix.shell().info("     npm run watch")

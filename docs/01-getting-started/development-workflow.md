@@ -46,15 +46,16 @@ Reflaxe.Elixir coordinates two development ecosystems for complete validation:
 ```bash
 npm install             # Installs lix package manager locally
 npx lix download        # Downloads Haxe dependencies (project-specific versions)
-haxe TestMain.hxml      # Uses the project-local Haxe toolchain (via lix)
-# If `haxe` is not on your PATH, use: npx lix run haxe TestMain.hxml
+haxe TestMain.hxml      # Compile using your Haxe toolchain
+# If `haxe` is not on your PATH, use the project-local wrapper:
+#   npx haxe TestMain.hxml
 ```
 
 **Why lix?**
-- ✅ **Project-specific Haxe versions** (avoids "works on my machine")
+- ✅ **Locked Haxe library versions** (avoids "works on my machine")
 - ✅ **GitHub + haxelib sources** (always latest libraries)  
 - ✅ **Locked dependency versions** (zero software erosion)
-- ✅ **Local toolchain management** (`haxe` is provided by lix / `.haxerc`)
+- ✅ **Scoped installs** (keeps Haxe libs out of global state)
 
 ### ⚡ Elixir Runtime Side (mix)  
 **Purpose**: Test and run the generated Elixir code
@@ -285,11 +286,11 @@ class TestNewFeature {
 
 ### Haxe Version Issues
 ```bash
-# Check project Haxe version  
+# Check the version this repo expects
 cat .haxerc
 
-# Use project-specific Haxe (via lix)
-npx lix run haxe --version
+# Check your installed Haxe
+haxe --version
 
 # Reset lix scope
 npx lix scope create
@@ -325,15 +326,14 @@ haxe test/Test.hxml update-intended
 ```bash
 # Clean and rebuild everything
 rm -rf lib/*.ex lib/**/*.ex  # Remove generated files
-npx lix run haxe build.hxml  # Regenerate from Haxe
+haxe build.hxml              # Regenerate from Haxe
 mix compile --force          # Verify Elixir compilation
 ```
 
 ## Best Practices
 
 ### Development Workflow
-- Prefer `haxe` (from a proper Haxe install) or `npx lix run haxe` (lix-managed toolchain).
-- Avoid `npx haxe ...` (the npm package): it may download a platform-specific binary and can break on macOS arm64.
+- Prefer `haxe` from a proper Haxe install; if it’s not on your PATH, use `npx haxe ...` (lix-managed wrapper).
 - **Run full test suite** before committing changes
 - **Use source maps** for debugging (`-D source-map`)
 - **Test todo-app integration** after compiler changes

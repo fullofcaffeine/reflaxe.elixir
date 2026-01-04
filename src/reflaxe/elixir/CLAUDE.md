@@ -598,13 +598,13 @@ The feature flag system has three layers:
 
 ```bash
 # Enable specific features
-npx haxe build.hxml -D elixir.feature.new_module_builder=true
+haxe build.hxml -D elixir.feature.new_module_builder=true
 
 # Enable all experimental features
-npx haxe build.hxml -D elixir.feature.experimental=true
+haxe build.hxml -D elixir.feature.experimental=true
 
 # Debug feature flag state
-npx haxe build.hxml -D debug_feature_flags
+haxe build.hxml -D debug_feature_flags
 ```
 
 ### Using in Compiler Code

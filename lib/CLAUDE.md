@@ -148,7 +148,7 @@ mix haxe.stacktrace trace.txt
 
 ### Generated Files (Can be regenerated)
 - Located in application directories (e.g., `examples/todo-app/lib/`)
-- Created by running `npx haxe build.hxml`
+- Created by running `haxe build.hxml`
 - Have corresponding `.hx` source files
 - Can be deleted and regenerated from Haxe source
 

@@ -44,11 +44,11 @@ This automatically installs:
 # Check lix is available
 npx lix --version
 
-# Check project-specific Haxe version (managed by lix / .haxerc)
+# Check Haxe is available
 haxe --version
 
-# If `haxe` is not on your PATH, use:
-# npx lix run haxe --version
+# If `haxe` is not on your PATH, use the project-local wrapper (provided by `lix` + `.haxerc`):
+npx haxe --version
 ```
 
 **Expected Output:**
@@ -139,18 +139,20 @@ Contains library paths and installation instructions.
 
 ## Using Haxe After Installation
 
-### Use the Project-Local `haxe` (via lix)
+### Use `haxe` (system or project-local)
 
-This repo uses lix to manage the Haxe toolchain. After `npm install`, prefer running `haxe ...`
-(or `npx lix run haxe ...` if `haxe` isn’t on your PATH).
-
-Avoid `npx haxe ...` (the npm package): it can try to download a separate, platform-specific Haxe
-binary which may not match your system/architecture.
+This repo uses lix to manage Haxe **libraries** (via `haxe_libraries/*.hxml`). For the compiler toolchain,
+use either a normal `haxe` install on your PATH (CI uses `krdlab/setup-haxe`) or the lix-managed wrapper:
+`npx haxe ...` (pinned via `.haxerc`).
 
 ```bash
-# ✅ Correct - Uses project-specific version (via lix)
+# ✅ Correct
 haxe build.hxml
 haxe --version
+
+# ✅ Also correct (lix-managed wrapper)
+npx haxe build.hxml
+npx haxe --version
 ```
 
 ### Compilation Examples
@@ -222,13 +224,13 @@ reflaxe.elixir/
 ### Common Issues
 
 #### Issue: `haxe: command not found`
-**Solution:** Install Haxe and/or use lix to run the project-local toolchain
+**Solution:** Install Haxe and/or add it to your PATH.
 ```bash
-# Preferred (Haxe on PATH)
+# Preferred
 haxe --version
 
-# Fallback (run via lix if haxe isn’t on PATH)
-npx lix run haxe --version
+# Project-local wrapper (provided by `lix` + `.haxerc`)
+npx haxe --version
 ```
 
 #### Issue: `Unknown identifier: reflaxe`
