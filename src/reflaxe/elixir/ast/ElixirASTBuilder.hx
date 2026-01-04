@@ -2638,14 +2638,14 @@ class ElixirASTBuilder {
                     // then emit all remaining statements, and finally return the variable to
                     // preserve intended shape (var = comprehension; trace(var); var).
                     switch (el[0].expr) {
-                        case TVar(v0, init0) if (init0 != null):
-                            var nm0 = v0.name;
-                            var isInfra0 = (nm0 == "g" || nm0 == "_g"
-                                || (nm0.length > 1 && nm0.charAt(0) == 'g' && isAllDigitsStr(nm0.substr(1)))
-                                || (nm0.length > 2 && nm0.substr(0,2) == "_g" && isAllDigitsStr(nm0.substr(2))));
-                            if (!isInfra0) {
+                        case TVar(declaredVar, declaredInit) if (declaredInit != null):
+                            var declaredName = declaredVar.name;
+                            var isInfrastructureVar = (declaredName == "g" || declaredName == "_g"
+                                || (declaredName.length > 1 && declaredName.charAt(0) == 'g' && isAllDigitsStr(declaredName.substr(1)))
+                                || (declaredName.length > 2 && declaredName.substr(0,2) == "_g" && isAllDigitsStr(declaredName.substr(2))));
+                            if (!isInfrastructureVar) {
                                 var canonicalInit = false;
-                                switch (init0.expr) {
+                                switch (declaredInit.expr) {
                                     case TArrayDecl([inner]) if (switch(inner.expr) { case TBlock(_): true; default: false; }):
                                         canonicalInit = true;
                                     case TBlock(sts) if (reflaxe.elixir.ast.builders.ComprehensionBuilder.looksLikeListBuildingBlock(sts)):
@@ -2654,23 +2654,23 @@ class ElixirASTBuilder {
 	                                }
 	                                if (canonicalInit) {
 	                                    return BlockBuilder.withScopedInitTracking(el, currentContext, function() {
-	                                        var varName3 = VariableAnalyzer.toElixirVarName(nm0);
-	                                        var initAST3 = buildFromTypedExpr(init0, currentContext);
+	                                        var declaredVarName = VariableAnalyzer.toElixirVarName(declaredName);
+	                                        var declaredInitAST = buildFromTypedExpr(declaredInit, currentContext);
 	                                        var seq: Array<ElixirAST> = [];
-	                                        if (initAST3 != null) seq.push({def: EMatch(PVar(varName3), initAST3), metadata: {}, pos: null});
+	                                        if (declaredInitAST != null) seq.push({def: EMatch(PVar(declaredVarName), declaredInitAST), metadata: {}, pos: null});
 	                                        // Emit all remaining statements except the original declaration
 	                                        for (i in 1...el.length) {
-	                                            var mid3 = buildFromTypedExpr(el[i], currentContext);
-	                                            if (mid3 != null) seq.push(mid3);
+	                                            var statementNode = buildFromTypedExpr(el[i], currentContext);
+	                                            if (statementNode != null) seq.push(statementNode);
 	                                        }
 	                                        // If the last expression is not a return of the same variable, append it
-	                                        var lastIsSame = switch (el[el.length - 1].expr) { case TLocal(vx) if (vx.id == v0.id || vx.name == v0.name): true; default: false; };
-	                                        if (!lastIsSame) seq.push({def: EVar(varName3), metadata: {}, pos: null});
+	                                        var lastIsSame = switch (el[el.length - 1].expr) { case TLocal(vx) if (vx.id == declaredVar.id || vx.name == declaredVar.name): true; default: false; };
+	                                        if (!lastIsSame) seq.push({def: EVar(declaredVarName), metadata: {}, pos: null});
 	                                        return EBlock(seq);
 	                                    });
 	                                }
-	                            }
-	                        default:
+                            }
+                        default:
                     }
 
                     // Fallback B: Find any later user TVar with canonical initializer and hoist
