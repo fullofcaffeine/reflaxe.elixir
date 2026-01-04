@@ -3,7 +3,19 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      # Semver tags: vMAJOR.MINOR.PATCH (optionally with pre-release suffix like -rc.1)
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to publish (e.g. v1.1.4). Leave empty to use the ref that triggered the workflow."
+        required: false
+        default: ""
+      skip_verify:
+        description: "Skip verification steps (useful for backfilling releases for historical tags)."
+        required: false
+        type: boolean
+        default: true
 
 concurrency:
   group: release-${{ github.ref }}
@@ -38,10 +50,32 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
+      - name: Resolve tag metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.tag }}" ]]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="${GITHUB_REF_NAME}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          if [[ "$TAG" == *"-"* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "skip_verify=${{ inputs.skip_verify }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip_verify=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ steps.meta.outputs.tag }}
 
       - name: Install ripgrep (rg)
         run: |
@@ -67,24 +101,31 @@ jobs:
           haxe-version: ${{ env.HAXE_VERSION }}
 
       - name: Install npm dependencies
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
         run: npm ci
 
       - name: Download Haxe libraries (lix)
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
         run: npx lix download
 
       - name: Run guardrails
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
         run: npm run ci:guards
 
       - name: Run tests
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
         run: npm test
 
       - name: Validate examples Elixir (warnings as errors)
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
         run: npm run test:examples-elixir
 
       - name: Run budgets (perf + determinism)
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
         run: npm run ci:budgets
 
       - name: Verify repo hygiene (no build artifacts tracked)
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
         run: |
           set -euo pipefail
           if git ls-files node_modules deps _build | grep -q .; then
@@ -94,6 +135,7 @@ jobs:
           fi
 
       - name: Dogfood generated Phoenix app (upgrade path)
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
         env:
           PGHOST: localhost
           PGUSER: postgres
@@ -101,8 +143,8 @@ jobs:
           PGPORT: "5432"
         run: |
           set -euo pipefail
-          current="${GITHUB_REF_NAME}"
-          prev="$(git tag --list 'v*' --sort=-version:refname | sed -n '2p' || true)"
+          current="${{ steps.meta.outputs.tag }}"
+          prev="$(git tag --list 'v*.*.*' --sort=-version:refname | grep -E '^v[0-9]+\\.[0-9]+\\.[0-9]+(-.*)?$' | sed -n '2p' || true)"
           if [[ -z "$prev" ]]; then
             prev="$current"
           fi
@@ -112,4 +154,6 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          prerelease: ${{ steps.meta.outputs.prerelease == 'true' }}
           generate_release_notes: true
