@@ -90,12 +90,75 @@ function resolveTargetPath(docPath, target) {
   return path.resolve(path.dirname(docPath), targetNoAnchor);
 }
 
-function existsAsFileOrDir(resolvedPath) {
-  if (fs.existsSync(resolvedPath)) return true;
-  // Common convenience: allow linking to a directory's README implicitly
-  if (fs.existsSync(resolvedPath + ".md")) return true;
-  if (fs.existsSync(path.join(resolvedPath, "README.md"))) return true;
-  return false;
+function checkPathCase(absolutePath) {
+  const resolved = path.resolve(absolutePath);
+  if (!fs.existsSync(resolved)) return { exists: false, exact: false, corrected: resolved };
+
+  const parsed = path.parse(resolved);
+  const rest = resolved.slice(parsed.root.length);
+  const parts = rest.split(path.sep).filter(Boolean);
+
+  let current = parsed.root;
+  const correctedParts = [];
+  let exact = true;
+
+  for (const part of parts) {
+    let entries = [];
+    try {
+      entries = fs.readdirSync(current);
+    } catch {
+      // If we can't list entries (unexpected within a repo), fall back to trusting existsSync.
+      correctedParts.push(part);
+      current = path.join(current, part);
+      continue;
+    }
+
+    if (entries.includes(part)) {
+      correctedParts.push(part);
+      current = path.join(current, part);
+      continue;
+    }
+
+    const match = entries.find((entry) => entry.toLowerCase() === part.toLowerCase());
+    if (match) {
+      exact = false;
+      correctedParts.push(match);
+      current = path.join(current, match);
+      continue;
+    }
+
+    // If existsSync said the path exists but we can't find a matching entry, keep going.
+    correctedParts.push(part);
+    current = path.join(current, part);
+  }
+
+  return {
+    exists: true,
+    exact,
+    corrected: path.join(parsed.root, ...correctedParts),
+  };
+}
+
+function checkTargetExists(resolvedPath) {
+  const candidates = [
+    resolvedPath,
+    // Common convenience: allow linking to a directory's README implicitly
+    resolvedPath + ".md",
+    path.join(resolvedPath, "README.md"),
+  ];
+
+  for (const candidate of candidates) {
+    const caseCheck = checkPathCase(candidate);
+    if (!caseCheck.exists) continue;
+
+    if (!caseCheck.exact) {
+      return { exists: false, caseMismatch: true, corrected: caseCheck.corrected };
+    }
+
+    return { exists: true, caseMismatch: false, corrected: caseCheck.corrected };
+  }
+
+  return { exists: false, caseMismatch: false, corrected: resolvedPath };
 }
 
 function lineNumberAt(text, index) {
@@ -130,12 +193,15 @@ function main() {
       const resolved = resolveTargetPath(file, target);
       if (!resolved) continue;
 
-      if (!existsAsFileOrDir(resolved)) {
+      const check = checkTargetExists(resolved);
+      if (!check.exists) {
         missing.push({
           file: path.relative(repoRoot, file),
           line: lineNumberAt(text, t.index),
           target,
           resolved: path.relative(repoRoot, resolved),
+          caseMismatch: check.caseMismatch,
+          corrected: check.caseMismatch ? path.relative(repoRoot, check.corrected) : null,
         });
       }
     }
@@ -144,7 +210,8 @@ function main() {
   if (missing.length > 0) {
     console.error(`Markdown link guard failed (${missing.length} broken link(s)):\n`);
     for (const m of missing) {
-      console.error(`- ${m.file}:${m.line} -> ${m.target} (resolved: ${m.resolved})`);
+      const extra = m.caseMismatch && m.corrected ? ` (case mismatch; expected: ${m.corrected})` : "";
+      console.error(`- ${m.file}:${m.line} -> ${m.target} (resolved: ${m.resolved})${extra}`);
     }
     process.exit(1);
   }

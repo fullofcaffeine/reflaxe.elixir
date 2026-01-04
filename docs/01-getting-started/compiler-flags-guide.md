@@ -149,7 +149,7 @@ Dead code elimination (`-dce`) is GOOD because it:
 ## 📚 Further Reading
 
 - [Development Workflow Guide](development-workflow.md) - Day-to-day development practices
-- [Troubleshooting Guide](../06-guides/troubleshooting.md) - Common issues and solutions
+- [Troubleshooting Guide](../06-guides/TROUBLESHOOTING.md) - Common issues and solutions
 - [Architecture Overview](../05-architecture/COMPILATION_FLOW.md) - How the compiler works
 
 ## 🎓 Key Takeaway

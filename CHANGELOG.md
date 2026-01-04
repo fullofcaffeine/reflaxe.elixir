@@ -10,10 +10,15 @@
 ### 🔧 Tooling / DevX
 
 - Haxe compile server: Do not attach to external `haxe --wait` servers by default (opt‑in via `HAXE_SERVER_ALLOW_ATTACH=1`) to avoid cross-project cache corruption.
+- Docs link guard: Enforce exact-case filesystem matches so case-only link bugs are caught locally (and don’t fail only on Linux CI).
 
 ### 🧹 Repo Hygiene
 
 - Scripts: Add an unused-scripts audit helper and remove obsolete one-off maintenance scripts.
+
+### 📚 Documentation
+
+- Docs: Fix troubleshooting guide link casing to match `TROUBLESHOOTING.md` (case-sensitive CI).
 
 ## [1.1.3](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.2...v1.1.3) (2025-12-30)
 
