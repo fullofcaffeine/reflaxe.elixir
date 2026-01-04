@@ -248,7 +248,7 @@ npm test
 ```
 
 #### Issue: "Library reflaxe.elixir is not installed"
-**Solution:** This is a self-referential library issue. See [Troubleshooting Guide](../06-guides/troubleshooting.md) for detailed solutions.
+**Solution:** This is a self-referential library issue. See [Troubleshooting Guide](../06-guides/TROUBLESHOOTING.md) for detailed solutions.
 
 #### Issue: "classpath src/ is not a directory"
 **Solution:** Path resolution issue with test setup. This occurs when test configurations reference incorrect paths. Verify you're in the correct directory and all paths in `.hxml` files are accurate.
