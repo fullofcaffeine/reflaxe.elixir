@@ -259,7 +259,7 @@ end
 
 - [Mix Integration](/docs/04-api-reference/mix-integration.md) - How Mix uses source maps
 - [Compiler Architecture](/docs/03-compiler-development/architecture.md) - Where source mapping fits
-- [Error Handling](/docs/06-guides/troubleshooting.md#source-mapping) - Using source maps for debugging
+- [Error Handling](/docs/06-guides/TROUBLESHOOTING.md#source-mapping) - Using source maps for debugging
 
 ## Future Enhancements
 
