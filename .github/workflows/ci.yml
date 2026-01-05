@@ -387,6 +387,11 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$(pwd)/node_modules/.bin:$PATH"
+          echo "PATH=$PATH"
+          echo "haxe=$(command -v haxe || echo missing)"
+          haxe -version
+          echo "elixir=$(command -v elixir || echo missing)"
+          elixir --version
           # Avoid `npm run` indirection on Windows (npm may spawn cmd.exe for scripts).
           bash scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 --categories core,stdlib,regression
           bash test/validate_elixir.sh test/snapshot/core test/snapshot/stdlib test/snapshot/regression

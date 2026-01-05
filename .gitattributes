@@ -1,3 +1,33 @@
 
 # Use bd merge for beads JSONL files
-.beads/issues.jsonl merge=beads
+.beads/issues.jsonl merge=beads text eol=lf
+
+# Enforce LF line endings for cross-platform CI (Windows snapshot diffs).
+*.sh text eol=lf
+*.hx text eol=lf
+*.hxml text eol=lf
+*.ex text eol=lf
+*.exs text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+*.toml text eol=lf
+*.lock text eol=lf
+*.js text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.css text eol=lf
+*.html text eol=lf
+*.heex text eol=lf
+*.eex text eol=lf
+Makefile text eol=lf
+
+# Binary assets (never normalize)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.pdf binary
+*.zip binary
