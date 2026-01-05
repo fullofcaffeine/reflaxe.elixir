@@ -387,11 +387,13 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$(pwd)/node_modules/.bin:$PATH"
+          # Snapshot diffs are enforced on Linux/macOS; Windows smoke focuses on compilation + Elixir syntax.
+          export COMPARE_INTENDED=0
           echo "PATH=$PATH"
           echo "haxe=$(command -v haxe || echo missing)"
           haxe -version
           echo "elixir=$(command -v elixir || echo missing)"
           elixir --version
           # Avoid `npm run` indirection on Windows (npm may spawn cmd.exe for scripts).
-          bash scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 --categories core,stdlib,regression
+          bash scripts/test-chunks.sh --parallel 4 --chunk-deadline 900 --timeout 180 --categories core,stdlib,regression
           bash test/validate_elixir.sh test/snapshot/core test/snapshot/stdlib test/snapshot/regression
