@@ -62,7 +62,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - name: Install npm dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run guardrails
         run: npm run ci:guards
 
@@ -98,7 +98,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-
       - name: Install npm dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
@@ -128,7 +128,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - name: Install npm dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
@@ -169,7 +169,7 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
       - name: Install npm dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
@@ -199,7 +199,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       - name: Install npm dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
@@ -245,7 +245,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-min-
       - name: Install npm dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
@@ -293,7 +293,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-macos-
       - name: Install npm dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
@@ -347,7 +347,7 @@ jobs:
 
       - name: Install npm dependencies
         shell: msys2 {0}
-        run: npm ci
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Install Haxe (pinned via lix)
         shell: msys2 {0}
