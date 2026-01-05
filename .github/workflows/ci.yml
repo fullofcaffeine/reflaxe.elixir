@@ -279,6 +279,7 @@ jobs:
           set -euo pipefail
           npx lix download haxe "${{ env.HAXE_VERSION }}"
           npx lix use haxe "${{ env.HAXE_VERSION }}"
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
           haxe -version
       - name: Download Haxe libraries (lix)
         run: npx lix download
@@ -303,12 +304,6 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-
-      - name: Setup Erlang/Elixir
-        uses: erlef/setup-beam@v1
-        with:
-          otp-version: ${{ env.OTP_VERSION }}
-          elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Setup Haxe
         uses: krdlab/setup-haxe@v1
