@@ -1,0 +1,10 @@
+# helder.set — small Set<T> abstraction used by genes
+#
+# We rely on lix to fetch the canonical haxelib package into the shared
+# HAXE_LIBCACHE, mirroring the pattern used by other third‑party libraries
+# in this repo (tink_core, ansi, etc).
+
+# @install: lix --silent download "haxelib:/helder.set#0.3.1" into helder.set/0.3.1/haxelib
+-cp ${HAXE_LIBCACHE}/helder.set/0.3.1/haxelib/src
+-D helder.set=0.3.1
+

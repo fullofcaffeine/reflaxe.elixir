@@ -1,0 +1,19 @@
+# genes — ES6 JavaScript generator (vendored)
+#
+# This project vendors a slightly customized copy of the genes library under
+# vendor/genes/ to keep the client‑side toolchain hermetic and under version
+# control. Client builds (e.g. examples/todo-app/build-client.hxml) should
+# use `-lib genes`, which resolves through this file.
+#
+# Paths are rooted at the workspace via SCOPE_DIR so the library can be used
+# from tests, examples and tools without depending on global haxelib state.
+
+# genes core sources (vendored)
+-cp ${SCOPE_DIR}/vendor/genes/src
+
+# genes depends on helder.set for its Set<T> abstraction
+-lib helder.set
+
+# Library define for conditional compilation flags
+-D genes=0.4.14
+
