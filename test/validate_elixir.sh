@@ -12,7 +12,27 @@ YELLOW='\033[1;33m'
 RESET='\033[0m'
 
 # Configuration
-TEST_DIR="${1:-snapshot}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+WITH_TIMEOUT="${ROOT_DIR}/scripts/util/with-timeout.sh"
+
+# Accept one or more roots to search for `compile.hxml` tests.
+# Examples:
+#   ./validate_elixir.sh snapshot
+#   ./validate_elixir.sh snapshot/core snapshot/stdlib
+TEST_DIRS=("$@")
+if [ ${#TEST_DIRS[@]} -eq 0 ]; then
+    TEST_DIRS=("snapshot")
+fi
+
+if [ -n "${ELIXIR_PARSE_TIMEOUT_SECS:-}" ]; then
+    PARSE_TIMEOUT_SECS="${ELIXIR_PARSE_TIMEOUT_SECS}"
+elif [ -n "${CI:-}" ]; then
+    PARSE_TIMEOUT_SECS=60
+else
+    PARSE_TIMEOUT_SECS=20
+fi
+
 VALIDATION_LOG="elixir_validation.log"
 FAILED_TESTS=""
 TOTAL_TESTS=0
@@ -20,7 +40,11 @@ PASSED_TESTS=0
 FAILED_COUNT=0
 
 echo "=== Elixir Syntax Validation ===" | tee "$VALIDATION_LOG"
-echo "Validating generated Elixir code in $TEST_DIR" | tee -a "$VALIDATION_LOG"
+echo "Validating generated Elixir code in:" | tee -a "$VALIDATION_LOG"
+for dir in "${TEST_DIRS[@]}"; do
+    echo "  - $dir" | tee -a "$VALIDATION_LOG"
+done
+echo "Per-test parse timeout: ${PARSE_TIMEOUT_SECS}s" | tee -a "$VALIDATION_LOG"
 echo "" | tee -a "$VALIDATION_LOG"
 
 # Validate all .ex files in a test directory by parsing (no execution)
@@ -53,7 +77,7 @@ validate_test_directory() {
     local parse_cmd='files = System.argv(); ok = Enum.all?(files, fn f -> case File.read(f) do {:ok, s} -> case Code.string_to_quoted(s, file: f) do {:ok, _} -> true; {:error, reason} -> IO.puts("Syntax error in #{f}: #{inspect(reason)}"); false end; {:error, r} -> IO.puts("Read error in #{f}: #{inspect(r)}"); false end end); if ok, do: :ok, else: System.halt(1)'
     local test_passed=true
     if [ -n "$ex_files" ]; then
-        if ! timeout 20s elixir -e "$parse_cmd" $ex_files > /dev/null 2>>"$VALIDATION_LOG"; then
+        if ! "$WITH_TIMEOUT" "$PARSE_TIMEOUT_SECS" elixir -e "$parse_cmd" $ex_files > /dev/null 2>>"$VALIDATION_LOG"; then
             test_passed=false
         fi
     fi
@@ -67,8 +91,10 @@ validate_test_directory() {
 }
 
 # Find all test directories with compile.hxml
-for test_dir in $(find "$TEST_DIR" -name compile.hxml -exec dirname {} \; | sort); do
-    validate_test_directory "$test_dir"
+for root in "${TEST_DIRS[@]}"; do
+    for test_dir in $(find "$root" -name compile.hxml -exec dirname {} \; | sort); do
+        validate_test_directory "$test_dir"
+    done
 done
 
 # Summary

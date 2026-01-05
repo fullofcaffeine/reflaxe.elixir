@@ -380,4 +380,4 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$(pwd)/node_modules/.bin:$PATH"
-          bash scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 --categories core,stdlib,regression
+          npm run test:quick
