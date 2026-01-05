@@ -1,0 +1,133 @@
+name: Release (Backfill Existing Tag)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to publish (e.g. v1.1.5)."
+        required: true
+      skip_verify:
+        description: "Skip verification steps (useful for backfilling historical tags)."
+        required: false
+        type: boolean
+        default: true
+
+concurrency:
+  group: release-backfill-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: "20"
+  HAXE_VERSION: "4.3.7"
+  ELIXIR_VERSION: "1.18.3"
+  OTP_VERSION: "27.2"
+
+jobs:
+  verify-and-release:
+    name: Verify + Publish Release (Backfill)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Resolve tag metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.tag }}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          if [[ "$TAG" == *"-"* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "skip_verify=${{ inputs.skip_verify }}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.meta.outputs.tag }}
+
+      - name: Install ripgrep (rg)
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y ripgrep
+
+      - name: Setup Node.js
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Setup Erlang/Elixir
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Setup Haxe
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Install npm dependencies
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
+        run: npm ci
+
+      - name: Download Haxe libraries (lix)
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
+        run: npx lix download
+
+      - name: Run guardrails
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
+        run: npm run ci:guards
+
+      - name: Run tests
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
+        run: npm test
+
+      - name: Validate examples Elixir (warnings as errors)
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
+        run: npm run test:examples-elixir
+
+      - name: Run budgets (perf + determinism)
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
+        run: npm run ci:budgets
+
+      - name: Verify repo hygiene (no build artifacts tracked)
+        if: ${{ steps.meta.outputs.skip_verify != 'true' }}
+        run: |
+          set -euo pipefail
+          if git ls-files node_modules deps _build | grep -q .; then
+            echo "ERROR: Tracked build artifacts detected (expected these to be gitignored):"
+            git ls-files node_modules deps _build
+            exit 1
+          fi
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.meta.outputs.tag }}
+          prerelease: ${{ steps.meta.outputs.prerelease == 'true' }}
+          generate_release_notes: true
