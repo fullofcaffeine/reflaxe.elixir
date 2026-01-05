@@ -17,7 +17,6 @@
     "fullofcaffeine"
   ],
   "dependencies": {
-    "reflaxe": "4.0.0-beta",
     "tink_macro": "",
     "tink_parse": ""
   },

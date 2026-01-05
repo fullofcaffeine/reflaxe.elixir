@@ -1,6 +1,5 @@
 -cp ${SCOPE_DIR}/vendor/reflaxe/src/
 -D reflaxe=4.0.0-beta
---macro reflaxe.ReflectCompiler.Start()
 
 # Note: Dev-only macros (nullSafety checks, diagnostic prints) removed to
 # reduce cold-build macro overhead for app builds under strict QA caps.
