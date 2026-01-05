@@ -17,7 +17,14 @@
   "author": "fullofcaffeine",
   "license": "GPL-3.0",
   "devDependencies": {
-    "lix": "^15.12.4"
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/commit-analyzer": "^13.0.1",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.3",
+    "@semantic-release/release-notes-generator": "^14.0.3",
+    "lix": "^15.12.4",
+    "semantic-release": "^24.2.5"
   },
   "scripts": {
     "postinstall": "lix download",
@@ -70,6 +77,37 @@
     "qa:sentinel": "bash scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose",
     "demo:todo": "bash scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --keep-alive -v --deadline 900",
     "docs:order:haxe": "haxe -lib reflaxe -cp src -cp . -D reflaxe_runtime -main tools.RegistryOrderDoc --interp"
+  },
+  "release": {
+    "branches": [
+      "main"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/changelog",
+      [
+        "@semantic-release/exec",
+        {
+          "prepareCmd": "node scripts/release/sync-versions.js ${nextRelease.version}"
+        }
+      ],
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "package.json",
+            "package-lock.json",
+            "haxelib.json",
+            "mix.exs",
+            "README.md",
+            "CHANGELOG.md"
+          ],
+          "message": "chore(release): ${nextRelease.version} [skip ci]\\n\\n${nextRelease.notes}"
+        }
+      ],
+      "@semantic-release/github"
+    ]
   },
   "engines": {
     "node": ">=14.0.0"
