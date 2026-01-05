@@ -18,7 +18,12 @@ NEGATIVE_DIR := $(TEST_DIR)/negative
 TIMEOUT := 120s
 # Timeout for per-test Elixir syntax parsing (`elixir -e Code.string_to_quoted`).
 # This runs during `make test-*` and can spuriously fail under high parallelism if too low.
+# Prefer a higher default under CI to avoid flakiness.
+ifdef CI
+PARSE_TIMEOUT ?= 60s
+else
 PARSE_TIMEOUT ?= 20s
+endif
 # Timeout for snapshot updates (reuses TIMEOUT by default)
 UPDATE_TIMEOUT ?= $(TIMEOUT)
 UPDATE_JOBS ?= 4

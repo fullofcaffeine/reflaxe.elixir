@@ -113,6 +113,12 @@ validate_haxe_only_example() {
 main() {
   [ -d "$EXAMPLES_DIR" ] || fail "examples/ directory not found at $EXAMPLES_DIR"
 
+  # Ensure Hex/Rebar are present in non-interactive CI environments.
+  # Some Mix versions prompt to install these, which can hang CI until timeout.
+  msg "Bootstrapping Hex/Rebar"
+  run_step 60 "$ROOT_DIR" mix local.hex --force
+  run_step 60 "$ROOT_DIR" mix local.rebar --force
+
   local dir name
   for dir in "$EXAMPLES_DIR"/*; do
     [ -d "$dir" ] || continue
