@@ -238,6 +238,7 @@ test-%:
 				--exclude="*.ex.map" \
 				--exclude="*.exs.map" \
 				--exclude="std.ex" \
+				--exclude="reflect.ex" \
 				--exclude="string_buf.ex" \
 				--exclude="type.ex" \
 				--exclude="int_iterator.ex" \
