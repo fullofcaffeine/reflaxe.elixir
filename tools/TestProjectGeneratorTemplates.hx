@@ -14,6 +14,8 @@ import reflaxe.elixir.generator.ProjectGenerator;
  */
 class TestProjectGeneratorTemplates {
     public static function main(): Void {
+        ensureHexRebarInstalled();
+
         var root = Path.normalize(Path.join([Sys.getCwd(), "tmp", "generator-tests"]));
         mkdirp(root);
 
@@ -93,6 +95,20 @@ class TestProjectGeneratorTemplates {
         assertContains(buildHxml, "demo_hx.live.AppLive", "mix task build.hxml compiles demo_hx.live.AppLive");
 
         rmrf(runDir);
+    }
+
+    private static function ensureHexRebarInstalled(): Void {
+        var exitHex = Sys.command("mix", ["local.hex", "--force"]);
+        if (exitHex != 0) {
+            Sys.println("FAIL: mix local.hex --force failed (exit: " + exitHex + ")");
+            Sys.exit(1);
+        }
+
+        var exitRebar = Sys.command("mix", ["local.rebar", "--force"]);
+        if (exitRebar != 0) {
+            Sys.println("FAIL: mix local.rebar --force failed (exit: " + exitRebar + ")");
+            Sys.exit(1);
+        }
     }
 
     private static function minimalMixExs(): String {
