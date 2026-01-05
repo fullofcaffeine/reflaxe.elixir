@@ -59,3 +59,9 @@ If tags already exist but the GitHub **Releases** list is empty (or older tags p
 run the workflow **Release (Backfill Existing Tag)** and provide the tag (for example `v1.1.5`).
 
 If you want to backfill *all* semver tags in one run, use the same workflow with `all_tags=true`.
+
+Notes:
+
+- Backfill prefers using the matching section in `CHANGELOG.md` as the GitHub Release body.
+- If a tag has no changelog section, it falls back to GitHub auto-generated release notes.
+- To update existing releases with the changelog body, run backfill with `overwrite_existing=true`.

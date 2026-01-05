@@ -8,6 +8,11 @@ on:
         required: false
         type: boolean
         default: false
+      overwrite_existing:
+        description: "Overwrite release bodies for existing releases (use CHANGELOG.md when present)."
+        required: false
+        type: boolean
+        default: false
       tag:
         description: "Existing tag to publish (e.g. v1.1.5). Ignored when all_tags=true."
         required: false
@@ -94,14 +99,10 @@ jobs:
         run: |
           set -euo pipefail
           repo="${{ github.repository }}"
+          overwrite="${{ inputs.overwrite_existing }}"
 
           echo "[backfill] Fetch tags"
           git fetch --tags --force --prune --quiet
-
-          echo "[backfill] Read existing releases"
-          existing="$(curl -sL -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${repo}/releases?per_page=100" | \
-            python3 -c "import json,sys; j=json.load(sys.stdin); print('\\n'.join([r.get('tag_name','') for r in j]))")"
 
           echo "[backfill] Find semver tags"
           tags="$(git tag --list 'v*.*.*' --sort=version:refname)"
@@ -111,14 +112,10 @@ jobs:
           fi
 
           created=0
+          updated=0
           skipped=0
           while IFS= read -r tag; do
             if [[ -z "$tag" ]]; then
-              continue
-            fi
-            if echo "$existing" | grep -qx "$tag"; then
-              echo "[backfill] Skip existing release: $tag"
-              skipped=$((skipped+1))
               continue
             fi
 
@@ -127,17 +124,53 @@ jobs:
               prerelease=true
             fi
 
-            echo "[backfill] Create release: $tag (prerelease=$prerelease)"
-            payload="$(python3 -c "import json,sys; tag=sys.argv[1]; pr=sys.argv[2]=='true'; print(json.dumps({'tag_name':tag,'name':tag,'generate_release_notes':True,'prerelease':pr}))" "$tag" "$prerelease")"
+            release_json="$(curl -fsSL -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${repo}/releases/tags/${tag}" 2>/dev/null || true)"
+
+            release_id=""
+            if [[ -n "$release_json" ]]; then
+              release_id="$(echo "$release_json" | python3 -c "import json,sys; j=json.load(sys.stdin); print(j.get('id',''))")"
+            fi
+
+            notes_file="$(mktemp)"
+            if node scripts/release/extract-changelog-section.js "$tag" >"$notes_file" 2>/dev/null; then
+              notes_source="changelog"
+            else
+              echo "[backfill] WARN: No CHANGELOG.md section found for $tag; falling back to GitHub auto notes"
+              notes_source="github"
+              : >"$notes_file"
+            fi
+
+            if [[ -n "$release_id" ]]; then
+              if [[ "$overwrite" == "true" ]]; then
+                echo "[backfill] Update existing release: $tag (id=$release_id, notes=$notes_source)"
+                payload="$(python3 -c "import json,sys; tag=sys.argv[1]; pr=sys.argv[2]=='true'; notes_path=sys.argv[3]; notes=open(notes_path,'r',encoding='utf8').read(); d={'tag_name':tag,'name':tag,'prerelease':pr};\nif notes.strip():\n  d['body']=notes\nelse:\n  d['generate_release_notes']=True\nprint(json.dumps(d))" "$tag" "$prerelease" "$notes_file")"
+                curl -fsSL -X PATCH \
+                  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+                  -H "Accept: application/vnd.github+json" \
+                  "https://api.github.com/repos/${repo}/releases/${release_id}" \
+                  -d "$payload" >/dev/null
+                updated=$((updated+1))
+              else
+                echo "[backfill] Skip existing release: $tag"
+                skipped=$((skipped+1))
+              fi
+              rm -f "$notes_file"
+              continue
+            fi
+
+            echo "[backfill] Create release: $tag (prerelease=$prerelease, notes=$notes_source)"
+            payload="$(python3 -c "import json,sys; tag=sys.argv[1]; pr=sys.argv[2]=='true'; notes_path=sys.argv[3]; notes=open(notes_path,'r',encoding='utf8').read(); d={'tag_name':tag,'name':tag,'prerelease':pr};\nif notes.strip():\n  d['body']=notes\nelse:\n  d['generate_release_notes']=True\nprint(json.dumps(d))" "$tag" "$prerelease" "$notes_file")"
             curl -fsSL -X POST \
               -H "Authorization: Bearer ${GITHUB_TOKEN}" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${repo}/releases" \
               -d "$payload" >/dev/null
             created=$((created+1))
+            rm -f "$notes_file"
           done <<<"$tags"
 
-          echo "[backfill] Done: created=$created skipped=$skipped"
+          echo "[backfill] Done: created=$created updated=$updated skipped=$skipped"
 
       - name: Resolve single-tag metadata
         if: ${{ inputs.all_tags != true }}
@@ -215,8 +248,52 @@ jobs:
 
       - name: Publish GitHub Release
         if: ${{ inputs.all_tags != true }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.tagmeta.outputs.tag }}
-          prerelease: ${{ steps.tagmeta.outputs.prerelease == 'true' }}
-          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          repo="${{ github.repository }}"
+          tag="${{ steps.tagmeta.outputs.tag }}"
+          prerelease="${{ steps.tagmeta.outputs.prerelease }}"
+          overwrite="${{ inputs.overwrite_existing }}"
+
+          notes_file="$(mktemp)"
+          if node scripts/release/extract-changelog-section.js "$tag" >"$notes_file" 2>/dev/null; then
+            notes_source="changelog"
+          else
+            echo "[backfill] WARN: No CHANGELOG.md section found for $tag; falling back to GitHub auto notes"
+            notes_source="github"
+            : >"$notes_file"
+          fi
+
+          release_json="$(curl -fsSL -H \"Authorization: Bearer ${GITHUB_TOKEN}\" -H \"Accept: application/vnd.github+json\" \
+            \"https://api.github.com/repos/${repo}/releases/tags/${tag}\" 2>/dev/null || true)"
+          release_id=\"\"
+          if [[ -n \"$release_json\" ]]; then
+            release_id=\"$(echo \"$release_json\" | python3 -c \"import json,sys; j=json.load(sys.stdin); print(j.get('id',''))\")\"
+          fi
+
+          payload=\"$(python3 -c \"import json,sys; tag=sys.argv[1]; pr=sys.argv[2]=='true'; notes_path=sys.argv[3]; notes=open(notes_path,'r',encoding='utf8').read(); d={'tag_name':tag,'name':tag,'prerelease':pr};\nif notes.strip():\n  d['body']=notes\nelse:\n  d['generate_release_notes']=True\nprint(json.dumps(d))\" \"$tag\" \"$prerelease\" \"$notes_file\")\"
+
+          if [[ -n \"$release_id\" ]]; then
+            if [[ \"$overwrite\" == \"true\" ]]; then
+              echo \"[backfill] Update existing release: $tag (id=$release_id, notes=$notes_source)\"
+              curl -fsSL -X PATCH \
+                -H \"Authorization: Bearer ${GITHUB_TOKEN}\" \
+                -H \"Accept: application/vnd.github+json\" \
+                \"https://api.github.com/repos/${repo}/releases/${release_id}\" \
+                -d \"$payload\" >/dev/null
+            else
+              echo \"[backfill] Release already exists for $tag; set overwrite_existing=true to update its body\"
+            fi
+            rm -f \"$notes_file\"
+            exit 0
+          fi
+
+          echo \"[backfill] Create release: $tag (prerelease=$prerelease, notes=$notes_source)\"
+          curl -fsSL -X POST \
+            -H \"Authorization: Bearer ${GITHUB_TOKEN}\" \
+            -H \"Accept: application/vnd.github+json\" \
+            \"https://api.github.com/repos/${repo}/releases\" \
+            -d \"$payload\" >/dev/null
+          rm -f \"$notes_file\"
