@@ -29,7 +29,7 @@ defmodule ReflaxeElixir.MixProject do
       {:ex_doc, "~> 0.32", only: :dev, runtime: false},
       # FileSystem is optional - only needed for dev file watching functionality
       # HaxeWatcher checks at runtime if available and provides helpful messages if not
-      {:file_system, "~> 1.1", only: [:dev, :test]}
+      {:file_system, "~> 1.1", only: :dev}
     ]
   end
 
