@@ -31,7 +31,7 @@
     "test:single": "make -C test single",
     "test:generator": "haxe tools/TestProjectGeneratorTemplates.hxml",
     "test:mix": "MIX_ENV=test mix deps.compile && MIX_ENV=test mix test --max-cases 1 --timeout 120000",
-    "test:mix-fast": "MIX_ENV=test mix test --stale --max-cases 1 --timeout 60000",
+    "test:mix-fast": "MIX_ENV=test mix deps.compile && MIX_ENV=test mix test --stale --max-cases 1 --timeout 60000",
     "test:haxe5": "bash scripts/test-haxe5-smoke.sh",
     "test:core": "scripts/test-runner.sh --category core",
     "test:stdlib": "scripts/test-runner.sh --category stdlib",
