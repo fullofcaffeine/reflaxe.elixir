@@ -21,8 +21,11 @@ _build/
 *.o
 *.so
 .haxerc
-haxe_libraries/
-!haxe_libraries/reflaxe.elixir.hxml
+/haxe_libraries/*
+!/haxe_libraries/reflaxe.elixir.hxml
+!/haxe_libraries/genes.hxml
+!/haxe_libraries/helder.set.hxml
+examples/**/haxe_libraries/
 
 # Test outputs
 test/*/out/
