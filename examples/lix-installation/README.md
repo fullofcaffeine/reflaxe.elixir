@@ -5,20 +5,21 @@ This example demonstrates how to install and use Reflaxe.Elixir via Lix in a new
 ## Setup
 
 ```bash
-# 1. Initialize a new Haxe project with Lix
+# 1. Initialize a new project with lix
 mkdir my-elixir-project
 cd my-elixir-project
 npm init -y
-npm install lix
+npm install --save-dev lix
+npx lix scope create
 
-# 2. Install Reflaxe.Elixir from GitHub
-npx lix install github:fullofcaffeine/reflaxe.elixir
+# 2. Install Reflaxe.Elixir from a GitHub release tag (recommended)
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
 
-# 3. (Optional) Install a specific version
-# npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.0
+# 3. Download pinned Haxe libraries for the project
+npx lix download
 
-# 4. Use the scope (makes dependencies available)
-npx lix use
+# 4. Verify the Haxe toolchain
+npx haxe --version
 ```
 
 ## Project Structure
@@ -26,6 +27,8 @@ npx lix use
 ```
 my-elixir-project/
 ├── package.json
+├── .haxerc             # Haxe toolchain pin (written by lix)
+├── haxe_libraries/      # lix-managed Haxe libraries
 ├── build.hxml          # Haxe build configuration
 ├── src_haxe/          # Your Haxe source files
 │   └── Main.hx
@@ -59,7 +62,8 @@ Main
 3. Compile:
 
 ```bash
-haxe build.hxml
+# Use the lix-managed Haxe wrapper (recommended)
+npx haxe build.hxml
 ```
 
 This will generate Elixir files in the `lib/` directory that you can use in your Elixir/Phoenix projects.
@@ -89,7 +93,13 @@ mix compile.haxe
 
 ### "Library reflaxe.elixir is not installed"
 
-Make sure you've run `npx lix use` in your project directory after installing.
+Make sure you installed the library and downloaded dependencies:
+
+```bash
+npx lix scope create
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+npx lix download
+```
 
 ### "Module not found"
 
@@ -98,9 +108,9 @@ Ensure your `-lib reflaxe.elixir` directive is present in your .hxml file.
 ### Updating to a new version
 
 ```bash
-# Update to latest version
-npx lix install github:fullofcaffeine/reflaxe.elixir --force
+# Update to a newer tag (recommended)
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5 --force
 
-# Or update to a specific version
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.0 --force
+# Or install from main (bleeding edge; not necessarily a release)
+# npx lix install github:fullofcaffeine/reflaxe.elixir --force
 ```
