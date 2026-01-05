@@ -96,7 +96,6 @@ class InlineExpansionTransforms {
      */
     public static function inlineMethodCallCombinerPass(ast: ElixirAST): ElixirAST {
         #if debug_inline_combiner
-        // DISABLED: trace('[XRay InlineCombiner] Starting inline method call combiner pass');
         #end
         
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
@@ -104,11 +103,8 @@ class InlineExpansionTransforms {
             // Log every node type we visit
             switch(node.def) {
                 case EBlock(exprs): 
-                    // DISABLED: trace('[XRay InlineCombiner] Visiting EBlock with ${exprs.length} expressions');
                 case EIf(_, _, _):
-                    // DISABLED: trace('[XRay InlineCombiner] Visiting EIf');
                 case ELambda(_, body):
-                    // DISABLED: trace('[XRay InlineCombiner] Visiting ELambda with body: ${body.def}');
                 default:
             }
             #end
@@ -116,15 +112,11 @@ class InlineExpansionTransforms {
             switch(node.def) {
                 case EBlock([first, second]):
                     #if debug_inline_combiner
-                    // DISABLED: trace('[XRay InlineCombiner] Found 2-expression block');
-                    // DISABLED: trace('[XRay InlineCombiner]   First: ${first.def}');
-                    // DISABLED: trace('[XRay InlineCombiner]   Second: ${second.def}');
                     #end
                     
                     // Check if this matches the inline expansion split pattern
                     if (isInlineExpansionSplit(first, second)) {
                         #if debug_inline_combiner
-                        // DISABLED: trace('[XRay InlineCombiner] ✓ Pattern detected - combining expressions');
                         #end
                         return combineInlineExpansion(first, second);
                     }
@@ -133,7 +125,6 @@ class InlineExpansionTransforms {
                 // consecutive expressions might need combining
                 case EBlock(exprs) if (exprs.length > 2):
                     #if debug_inline_combiner
-                    // DISABLED: trace('[XRay InlineCombiner] Checking block with ${exprs.length} expressions for inline patterns');
                     #end
                     
                     var modified = false;
@@ -145,14 +136,10 @@ class InlineExpansionTransforms {
                             var second = exprs[i + 1];
                             
                             #if debug_inline_combiner
-                            // DISABLED: trace('[XRay InlineCombiner] Checking pair at index $i:');
-                            // DISABLED: trace('[XRay InlineCombiner]   First: ${first.def}');  
-                            // DISABLED: trace('[XRay InlineCombiner]   Second: ${second.def}');
                             #end
                             
                             if (isInlineExpansionSplit(first, second)) {
                                 #if debug_inline_combiner
-                                // DISABLED: trace('[XRay InlineCombiner] ✓ Found inline pattern in larger block at index $i');
                                 #end
                                 var combined = combineInlineExpansion(first, second);
                                 newExprs.push(combined);
@@ -170,7 +157,6 @@ class InlineExpansionTransforms {
                     
                     if (modified) {
                         #if debug_inline_combiner
-                        // DISABLED: trace('[XRay InlineCombiner] Modified block from ${exprs.length} to ${newExprs.length} expressions');
                         #end
                         return ElixirASTHelpers.make(EBlock(newExprs));
                     }
@@ -305,7 +291,6 @@ class InlineExpansionTransforms {
         // or involves arithmetic operations that need special handling
         if (!isComplexAssignmentChain(first)) {
             #if debug_inline_combiner
-            // DISABLED: trace('[XRay InlineCombiner] Not a complex assignment chain - skipping');
             #end
             return false;
         }
@@ -314,7 +299,6 @@ class InlineExpansionTransforms {
         
         #if debug_inline_combiner
         if (assignedVars.length > 0) {
-            // DISABLED: trace('[XRay InlineCombiner] Assignment chain variables: ${assignedVars.join(", ")}');
         }
         #end
         
@@ -330,26 +314,22 @@ class InlineExpansionTransforms {
                     if (usesVariable(args, varName)) {
                         uses = true;
                         #if debug_inline_combiner
-                        // DISABLED: trace('[XRay InlineCombiner] Method call ${methodName} uses ${varName}: true');
                         #end
                         break;
                     }
                 }
                 #if debug_inline_combiner
                 if (!uses && methodName != null) {
-                    // DISABLED: trace('[XRay InlineCombiner] Method call ${methodName} uses none of [${assignedVars.join(", ")}]');
                 }
                 #end
                 uses;
             case EField(target, fieldName):
                 // Handle field access that might be a method call (e.g., s.cca)
                 #if debug_inline_combiner
-                // DISABLED: trace('[XRay InlineCombiner] Found field access: ${fieldName} - not a direct call');
                 #end
                 false;
             default:
                 #if debug_inline_combiner
-                // DISABLED: trace('[XRay InlineCombiner] Second expression is not a call: ${second.def}');
                 #end
                 false;
         };
@@ -582,7 +562,6 @@ class InlineExpansionTransforms {
         var firstVar = extractFirstVar(first);
         
         #if debug_inline_combiner
-        // DISABLED: trace('[XRay InlineCombiner] First variable in chain: $firstVar');
         #end
         
         if (firstVar == null) {
@@ -601,7 +580,6 @@ class InlineExpansionTransforms {
         var result = ElixirASTHelpers.make(EMatch(PVar(firstVar), modifiedCall));
         
         #if debug_inline_combiner
-        // DISABLED: trace('[XRay InlineCombiner] Combined result: ${result.def}');
         #end
         
         return result;
@@ -682,7 +660,6 @@ class InlineExpansionTransforms {
         return switch(call.def) {
             case ECall(target, methodName, args):
                 #if debug_inline_combiner
-                // DISABLED: trace('[XRay InlineCombiner] Looking to replace $firstVar with: ${assignmentChain.def}');
                 #end
                 
                 // Replace the firstVar argument with the assignment chain
@@ -693,7 +670,6 @@ class InlineExpansionTransforms {
                             // Replace if this is the first variable from the original chain
                             if (name == firstVar) {
                                 #if debug_inline_combiner
-                                // DISABLED: trace('[XRay InlineCombiner] Replacing argument $name with assignment chain');
                                 #end
                                 modified = true;
                                 assignmentChain;
@@ -784,14 +760,12 @@ class InlineExpansionTransforms {
      */
     public static function extractTupleInlineAssignmentsPass(ast: ElixirAST): ElixirAST {
         #if debug_inline_tuple_extraction
-        // DISABLED: trace('[XRay InlineTupleExtraction] Starting tuple inline assignment extraction pass');
         #end
         
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
                 case ETuple(elements):
                     #if debug_inline_tuple_extraction
-                    // DISABLED: trace('[XRay InlineTupleExtraction] Found tuple with ${elements.length} elements');
                     #end
                     
                     // Check if any element contains inline assignments that need extraction
@@ -803,7 +777,6 @@ class InlineExpansionTransforms {
                         var element = elements[i];
                         
                         #if debug_inline_tuple_extraction_verbose
-                        // DISABLED: trace('[XRay InlineTupleExtraction] Element $i: ${element.def}');
                         #end
                         
                         // Special check for EBlock patterns that come from inline expansion
@@ -811,10 +784,7 @@ class InlineExpansionTransforms {
                         var isProblematicBlock = switch(element.def) {
                             case EBlock(exprs) if (exprs.length >= 2):
                                 #if debug_inline_tuple_extraction
-                                // DISABLED: trace('[XRay InlineTupleExtraction] Checking EBlock with ${exprs.length} exprs');
-                                // DISABLED: trace('[XRay InlineTupleExtraction]   First expr: ${exprs[0].def}');
                                 if (exprs.length > 1) {
-                                    // DISABLED: trace('[XRay InlineTupleExtraction]   Second expr: ${exprs[1].def}');
                                 }
                                 #end
                                 
@@ -822,7 +792,6 @@ class InlineExpansionTransforms {
                                 var hasNilAssignment = switch(exprs[0].def) {
                                     case EMatch(PVar(name), {def: ENil}): 
                                         #if debug_inline_tuple_extraction
-                                        // DISABLED: trace('[XRay InlineTupleExtraction]   Found nil assignment to: $name');
                                         #end
                                         true;
                                     default: false;
@@ -831,7 +800,6 @@ class InlineExpansionTransforms {
                                 var hasIfStatement = exprs.length > 1 && switch(exprs[1].def) {
                                     case EIf(_, _, _): 
                                         #if debug_inline_tuple_extraction
-                                        // DISABLED: trace('[XRay InlineTupleExtraction]   Found if statement');
                                         #end
                                         true;
                                     default: false;
@@ -840,7 +808,6 @@ class InlineExpansionTransforms {
                                 var result = hasNilAssignment && hasIfStatement;
                                 #if debug_inline_tuple_extraction
                                 if (result) {
-                                    // DISABLED: trace('[XRay InlineTupleExtraction]   ✓ DETECTED problematic block pattern!');
                                 }
                                 #end
                                 result;
@@ -851,7 +818,6 @@ class InlineExpansionTransforms {
                         // Check for problematic inline patterns
                         if (isProblematicBlock || containsInlineAssignment(element)) {
                             #if debug_inline_tuple_extraction
-                            // DISABLED: trace('[XRay InlineTupleExtraction] Element $i contains inline assignment: ${element.def}');
                             #end
                             
                             // Extract the inline assignment to a temporary variable
@@ -875,7 +841,6 @@ class InlineExpansionTransforms {
                     
                     if (needsExtraction) {
                         #if debug_inline_tuple_extraction
-                        // DISABLED: trace('[XRay InlineTupleExtraction] ✓ Extracting ${extractedAssignments.length} assignments from tuple');
                         #end
                         
                         // Create a block with assignments followed by the tuple

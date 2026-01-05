@@ -63,7 +63,6 @@ class CasePatternUnusedUnderscoreTransforms {
       case PVar(n):
         var isUsed = OptimizedVarUseAnalyzer.usedLater(usage, 0, n);
         #if debug_case_pattern_underscore
-        // DISABLED: trace('[CasePatternUnusedUnderscore] Checking var "$n" in body, isUsed=$isUsed');
         #end
         if (n != null && n.length > 0 && n.charAt(0) != '_' && !isUsed) PVar('_' + n) else p;
       case PTuple(es): PTuple([for (e in es) underscoreUnusedInPattern(e, usage)]);

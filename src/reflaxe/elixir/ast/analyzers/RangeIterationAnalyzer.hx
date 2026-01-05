@@ -91,7 +91,6 @@ class RangeIterationAnalyzer extends BaseLoopAnalyzer {
                     type: v.t
                 };
 
-                // DISABLED: trace('Detected range iteration: ${v.name} in ${printExpr(startExpr)}...${printExpr(endExpr)}');
 
             case _:
                 // Not a simple range
@@ -131,7 +130,6 @@ class RangeIterationAnalyzer extends BaseLoopAnalyzer {
             type: condPattern.type
         };
 
-        // DISABLED: trace('Detected while-based range: ${condPattern.indexVar} from 0 to ${printExpr(condPattern.limit)}');
     }
 
     function extractWhileCondition(cond: TypedExpr): Null<{indexVar: String, limit: TypedExpr, isInclusive: Bool, type: Type}> {

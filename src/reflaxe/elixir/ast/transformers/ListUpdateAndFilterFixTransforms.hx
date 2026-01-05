@@ -108,7 +108,6 @@ class ListUpdateAndFilterFixTransforms {
                                     }
                                     if (vName != null && aName != null && bName != null && (aName == vName || bName == vName)) {
                                         #if debug_list_fix
-                                        // DISABLED: trace('[ListFix] Detected map-if replace pattern: v=' + vName + ', other=' + ((aName == vName) ? bName : aName));
                                         #end
                                         // both branches currently return v? If so, replace then-branch with the non-v variable
                                         if (isVarNamed(thenB, vName) && isVarNamed(elseB, vName)) {
@@ -178,7 +177,6 @@ class ListUpdateAndFilterFixTransforms {
                                         #if debug_list_fix
                                         try {
                                             var predStr = reflaxe.elixir.ast.ElixirASTPrinter.print(cl.body, 0);
-                                            // DISABLED: trace('[ListFix] (EDef ' + fname + ') filter predicate: ' + predStr);
                                         } catch (e) {}
                                         #end
                                         // match body: v.id != v
@@ -201,7 +199,6 @@ class ListUpdateAndFilterFixTransforms {
                                         };
                                         if (fixedBody != cl.body) {
                                             #if debug_list_fix
-                                            // DISABLED: trace('[ListFix] Detected filter compare self; replacing RHS with ' + idParam);
                                             #end
                                             var rebuiltFn = makeAST(EFn([{ args: cl.args, guard: cl.guard, body: fixedBody }]));
                                             makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [args[0], rebuiltFn]));
@@ -283,7 +280,6 @@ class ListUpdateAndFilterFixTransforms {
                                         #if debug_list_fix
                                         try {
                                             var printed = reflaxe.elixir.ast.ElixirASTPrinter.print(cl.body, 0);
-                                            // DISABLED: trace('[ListFix] (EDefp ' + fnamep + ') filter predicate: ' + printed);
                                         } catch (e) {}
                                         #end
                                         var fixedBody = switch (cl.body.def) {
@@ -305,7 +301,6 @@ class ListUpdateAndFilterFixTransforms {
                                         };
                                         if (fixedBody != cl.body) {
                                             #if debug_list_fix
-                                            // DISABLED: trace('[ListFix] (EDefp) Rewriting Enum.filter predicate to compare with ' + idParamP);
                                             #end
                                             var rebuiltFn = makeAST(EFn([{ args: cl.args, guard: cl.guard, body: fixedBody }]));
                                             makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [args[0], rebuiltFn]));

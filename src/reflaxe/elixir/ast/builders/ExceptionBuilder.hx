@@ -64,8 +64,6 @@ class ExceptionBuilder {
      */
     public static function buildTry(e: TypedExpr, catches: Array<{v:TVar, expr:TypedExpr}>, context: CompilationContext): Null<ElixirASTDef> {
         #if debug_ast_builder
-        // DISABLED: trace('[ExceptionBuilder] Building try/catch block');
-        // DISABLED: trace('[ExceptionBuilder]   ${catches.length} catch clauses');
         #end
         
         // Build the try body
@@ -79,7 +77,6 @@ class ExceptionBuilder {
         
         if (body == null) {
             #if debug_ast_builder
-            // DISABLED: trace('[ExceptionBuilder] Failed to build try body');
             #end
             return null;
         }
@@ -110,7 +107,6 @@ class ExceptionBuilder {
             });
             
             #if debug_ast_builder
-            // DISABLED: trace('[ExceptionBuilder] Added rescue clause for: ${c.v.name}');
             #end
         }
         
@@ -132,7 +128,6 @@ class ExceptionBuilder {
      */
     public static function buildThrow(e: TypedExpr, context: CompilationContext): Null<ElixirASTDef> {
         #if debug_ast_builder
-        // DISABLED: trace('[ExceptionBuilder] Building throw expression');
         #end
         
         var throwExpr = if (context.compiler != null) {
@@ -145,7 +140,6 @@ class ExceptionBuilder {
         
         if (throwExpr == null) {
             #if debug_ast_builder
-            // DISABLED: trace('[ExceptionBuilder] Failed to build throw expression');
             #end
             return null;
         }
@@ -167,7 +161,6 @@ class ExceptionBuilder {
      */
     public static function buildBreak(context: CompilationContext): ElixirASTDef {
         #if debug_ast_builder
-        // DISABLED: trace('[ExceptionBuilder] Building break exception');
         #end
         
         if (context == null || context.loopControlStateStack == null || context.loopControlStateStack.length == 0) {
@@ -200,7 +193,6 @@ class ExceptionBuilder {
      */
     public static function buildContinue(context: CompilationContext): ElixirASTDef {
         #if debug_ast_builder
-        // DISABLED: trace('[ExceptionBuilder] Building continue exception');
         #end
         
         if (context == null || context.loopControlStateStack == null || context.loopControlStateStack.length == 0) {

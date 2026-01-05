@@ -65,7 +65,6 @@ class ComprehensionBuilder {
         
         #if debug_array_comprehension
         #if debug_ast_builder
-        // DISABLED: trace('[Array Comprehension] tryBuildArrayComprehensionFromBlock called with ${statements.length} statements');
         #end
         #end
         
@@ -73,7 +72,6 @@ class ComprehensionBuilder {
         if (isComprehensionPattern(statements)) {
             #if debug_array_comprehension
             #if debug_ast_builder
-            // DISABLED: trace('[Array Comprehension] Detected loop-with-push comprehension pattern');
             #end
             #end
             
@@ -81,7 +79,6 @@ class ComprehensionBuilder {
             if (data != null) {
                 #if debug_array_comprehension
                 #if debug_ast_builder
-                // DISABLED: trace('[Array Comprehension] Extracted data - tempVar: ${data.tempVar}, loopVar: ${data.loopVar}');
                 #end
                 #end
                 
@@ -152,7 +149,6 @@ class ComprehensionBuilder {
                 
                 #if debug_array_comprehension
                 #if debug_ast_builder
-                // DISABLED: trace('[Array Comprehension] Building EFor comprehension');
                 #end
                 #end
                 
@@ -175,7 +171,6 @@ class ComprehensionBuilder {
         if (isUnrolledComprehension(statements)) {
             #if debug_array_comprehension
             #if debug_ast_builder
-            // DISABLED: trace('[Array Comprehension] Detected unrolled comprehension pattern');
             #end
             #end
             
@@ -183,7 +178,6 @@ class ComprehensionBuilder {
             if (elements != null && elements.length > 0) {
                 #if debug_array_comprehension
                 #if debug_ast_builder
-                // DISABLED: trace('[Array Comprehension] Successfully extracted ${elements.length} unrolled elements');
                 #end
                 #end
                 
@@ -212,7 +206,6 @@ class ComprehensionBuilder {
                             if (result != null) {
                                 #if debug_array_comprehension
                                 #if debug_ast_builder
-                                // DISABLED: trace('[Array Comprehension] Successfully reconstructed conditional comprehension');
                                 #end
                                 #end
                                 return result;
@@ -227,7 +220,6 @@ class ComprehensionBuilder {
                                                 if (push != null) {
                                                     #if debug_array_comprehension
                                                     #if debug_ast_builder
-                                                    // DISABLED: trace('[Array Comprehension] Fallback: building EFor from scanned middle TBlock with loopVar=' + loopVar.name);
                                                     #end
                                                     #end
                                                     var filters = push.condition != null ? [context.getExpressionBuilder()(push.condition)] : [];
@@ -276,7 +268,6 @@ class ComprehensionBuilder {
         
         #if debug_array_comprehension
         #if debug_ast_builder
-        // DISABLED: trace('[Array Comprehension Detection] Checking ${statements.length} statements for comprehension pattern');
         #end
         #end
         
@@ -290,7 +281,6 @@ class ComprehensionBuilder {
                 tempVarName = v.name;
                 #if debug_array_comprehension
                 #if debug_ast_builder
-                // DISABLED: trace('[Array Comprehension Detection] Found array initialization: var ${tempVarName} = []');
                 #end
                 #end
             default:
@@ -302,7 +292,6 @@ class ComprehensionBuilder {
             case TLocal(v) if (v.name == tempVarName):
                 #if debug_array_comprehension
                 #if debug_ast_builder
-                // DISABLED: trace('[Array Comprehension Detection] Last statement returns temp var: ${tempVarName}');
                 #end
                 #end
                 // Continue checking middle statements
@@ -317,7 +306,6 @@ class ComprehensionBuilder {
                 case TFor(_, _, _) | TWhile(_, _, _):
                     #if debug_array_comprehension
                     #if debug_ast_builder
-                    // DISABLED: trace('[Array Comprehension Detection] Found loop statement');
                     #end
                     #end
                     return true; // Found a loop, likely a comprehension pattern
@@ -346,7 +334,6 @@ class ComprehensionBuilder {
 
         #if debug_array_comprehension
         #if debug_ast_builder
-        // DISABLED: trace('[Array Comprehension Detection] Checking for unrolled comprehension (${statements.length} statements)');
         #end
         #end
 
@@ -354,7 +341,6 @@ class ComprehensionBuilder {
         if (isLegacyUnrolledComprehension(statements)) {
             #if debug_array_comprehension
             #if debug_ast_builder
-            // DISABLED: trace('[Array Comprehension Detection] ✓ Matched legacy pattern');
             #end
             #end
             return true;
@@ -364,7 +350,6 @@ class ComprehensionBuilder {
         if (isChainedAssignmentComprehension(statements)) {
             #if debug_array_comprehension
             #if debug_ast_builder
-            // DISABLED: trace('[Array Comprehension Detection] ✓ Matched chained assignment pattern');
             #end
             #end
             return true;
@@ -372,7 +357,6 @@ class ComprehensionBuilder {
 
         #if debug_array_comprehension
         #if debug_ast_builder
-        // DISABLED: trace('[Array Comprehension Detection] ✗ No pattern matched');
         #end
         #end
         return false;
@@ -483,7 +467,6 @@ class ComprehensionBuilder {
     public static function looksLikeListBuildingBlock(stmts: Array<TypedExpr>): Bool {
         #if debug_array_comprehension
         #if debug_ast_builder
-        // DISABLED: trace('[Array Comprehension Detection] Checking block with ${stmts.length} statements');
         #end
         #end
         
@@ -499,14 +482,12 @@ class ComprehensionBuilder {
                 tempVar = v.name;
                 #if debug_array_comprehension
                 #if debug_ast_builder
-                // DISABLED: trace('[Array Comprehension Detection] Found list init: var ${tempVar} = []');
                 #end
                 #end
             case TBinop(OpAssign, {expr: TLocal(v)}, {expr: TArrayDecl([])}):
                 tempVar = v.name;
                 #if debug_array_comprehension
                 #if debug_ast_builder
-                // DISABLED: trace('[Array Comprehension Detection] Found list init: ${tempVar} = []');
                 #end
                 #end
             default:
@@ -518,7 +499,6 @@ class ComprehensionBuilder {
             case TLocal(v) if (v.name == tempVar):
                 #if debug_array_comprehension
                 #if debug_ast_builder
-                // DISABLED: trace('[Array Comprehension Detection] Block returns temp var ${tempVar}');
                 #end
                 #end
                 // Check middle statements for concatenations
@@ -528,14 +508,12 @@ class ComprehensionBuilder {
                         case TBinop(OpAdd, {expr: TLocal(v)}, _) if (v.name == tempVar):
                             #if debug_array_comprehension
                             #if debug_ast_builder
-                            // DISABLED: trace('[Array Comprehension Detection] Found concatenation');
                             #end
                             #end
                             return true;
                         case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, _) if (v.name == tempVar):
                             #if debug_array_comprehension
                             #if debug_ast_builder
-                            // DISABLED: trace('[Array Comprehension Detection] Found += concatenation');
                             #end
                             #end
                             return true;
@@ -698,7 +676,6 @@ class ComprehensionBuilder {
                         case TBinop(OpAdd, l, r):
                             #if debug_array_comprehension
                             #if debug_ast_builder
-                            // DISABLED: trace('[Array Comprehension] value is OpAdd inside unrolled element');
                             #end
                             #end
                             context.getExpressionBuilder()(value);
@@ -741,7 +718,6 @@ class ComprehensionBuilder {
     public static function tryReconstructConditionalComprehension(statements: Array<TypedExpr>, tempVarName: String, context: BuildContext): Null<ElixirAST> {
         #if debug_array_comprehension
         #if debug_ast_builder
-        // DISABLED: trace('[Array Comprehension] tryReconstructConditionalComprehension called with ${statements.length} statements');
         #end
         #end
         
@@ -765,7 +741,6 @@ class ComprehensionBuilder {
                     if (filterAndValue != null) {
                         #if debug_array_comprehension
                         #if debug_ast_builder
-                        // DISABLED: trace('[Array Comprehension] Found conditional comprehension in for loop');
                         #end
                         #end
                         
@@ -850,7 +825,6 @@ class ComprehensionBuilder {
         
         #if debug_array_comprehension
         #if debug_ast_builder
-        // DISABLED: trace('[Array Comprehension] extractListElements: processing ${stmts.length} statements');
         #end
         #end
         
@@ -889,7 +863,6 @@ class ComprehensionBuilder {
                     // Extract the VALUE being concatenated, not the concatenation itself!
                     #if debug_array_comprehension
                     #if debug_ast_builder
-                    // DISABLED: trace('[Array Comprehension] Found bare concatenation: ${v.name} ++ [value], extracting value');
                     #end
                     #end
                     // Check if the value itself is a block that builds a list

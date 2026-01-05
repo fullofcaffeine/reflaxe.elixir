@@ -475,7 +475,6 @@ class LoopOptimizer {
 	 */
 	public static function processLoopIntent(intent: LoopIntent, metadata: LoopIntentMetadata, context: BuildContext): ElixirAST {
 		#if debug_loop_optimizer
-		// DISABLED: trace('[processLoopIntent] Processing loop intent: ${intent}');
 		#end
 		
 		switch(intent) {
@@ -528,7 +527,6 @@ class LoopOptimizer {
 				
 			default:
 				#if debug_loop_optimizer
-				// DISABLED: trace('[processLoopIntent] Unhandled loop intent type: ${intent}');
 				#end
 				// Fallback to basic block
 				return {def: EBlock([]), metadata: {}, pos: null};

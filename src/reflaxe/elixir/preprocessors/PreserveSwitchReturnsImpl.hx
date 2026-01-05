@@ -156,17 +156,14 @@ class PreserveSwitchReturnsImpl extends BasePreprocessor {
      */
     public function process(data: ClassFuncData, compiler: BaseCompiler): Void {
         #if debug_preprocessors
-        // DISABLED: trace('[PreserveSwitchReturns] Processing function');
         #end
         // Transform the function body if it exists
         if (data.expr != null) {
             #if debug_preprocessors
-            // DISABLED: trace('[PreserveSwitchReturns] Function body exists, transforming...');
             #end
             var transformed = transformExpression(data.expr);
             if (transformed != data.expr) {
                 #if debug_preprocessors
-                // DISABLED: trace('[PreserveSwitchReturns] Function was transformed!');
                 #end
                 data.setExpr(transformed);
             }
@@ -186,7 +183,6 @@ class PreserveSwitchReturnsImpl extends BasePreprocessor {
             // FOUND IT! Direct return of switch expression
             case TReturn(e) if (e != null):
                 #if debug_preprocessors
-                // DISABLED: trace('[PreserveSwitchReturns] Found TReturn with expr type: ' + e.expr);
                 #end
                 // Check if the return expression is a switch (may be wrapped in metadata)
                 var innerExpr = e;
@@ -195,7 +191,6 @@ class PreserveSwitchReturnsImpl extends BasePreprocessor {
                 switch(e.expr) {
                     case TMeta(_, actualExpr):
                         #if debug_preprocessors
-                        // DISABLED: trace('[PreserveSwitchReturns] Unwrapping TMeta to find actual switch');
                         #end
                         innerExpr = actualExpr;
                     case _:
@@ -204,8 +199,6 @@ class PreserveSwitchReturnsImpl extends BasePreprocessor {
                 switch(innerExpr.expr) {
                     case TSwitch(scrutinee, cases, defaultCase):
                         #if debug_preprocessors
-                        // DISABLED: trace('[PreserveSwitchReturns] Found switch in return position!');
-                        // DISABLED: trace('[PreserveSwitchReturns] Creating preservation wrapper...');
                         #end
 
                         // Create a unique variable name
@@ -251,7 +244,6 @@ class PreserveSwitchReturnsImpl extends BasePreprocessor {
                         };
 
                         #if debug_preprocessors
-                        // DISABLED: trace('[PreserveSwitchReturns] Transformed to: var $varName = switch(...); return $varName;');
                         #end
 
                         return block;

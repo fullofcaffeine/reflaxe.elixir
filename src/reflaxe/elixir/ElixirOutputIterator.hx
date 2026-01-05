@@ -158,7 +158,6 @@ class ElixirOutputIterator {
             index++;
 
             #if debug_output_iterator
-            // DISABLED: trace('[ElixirOutputIterator] Processing item ${index}/${maxIndex}');
             // Debug the DataAndFileInfo overrides for this item
             var moduleName = switch(astData.data.def) {
                 case EModule(name, _, _): name;
@@ -177,9 +176,6 @@ class ElixirOutputIterator {
                     "unknown";
             };
             trace('[ElixirOutputIterator] Input module: ${moduleName} (size=${originalSize})');
-            // DISABLED: trace('[ElixirOutputIterator] Module: ${moduleName}');
-            // DISABLED: trace('[ElixirOutputIterator] overrideFileName: ${astData.overrideFileName}');
-            // DISABLED: trace('[ElixirOutputIterator] overrideDirectory: ${astData.overrideDirectory}');
             #end
 
             // Apply transformation passes to the AST

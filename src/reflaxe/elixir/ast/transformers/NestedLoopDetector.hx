@@ -333,7 +333,6 @@ class NestedLoopDetector {
         // The challenge is that the same value might appear multiple times (e.g., #{0} twice).
         // We need to replace based on position in the string, not value.
         
-        // DISABLED: trace('[reconstructExpressions] Input: "$s", varNames: $varNames');
         var result = s;
         
         // Build a list of all interpolation patterns and their positions
@@ -348,7 +347,6 @@ class NestedLoopDetector {
             var matchPos = offset + regex.matchedPos().pos;
             var val = Std.parseInt(regex.matched(1));
             if (val != null) {
-                // DISABLED: trace('[reconstructExpressions] Found interpolation at pos $matchPos: ${regex.matched(0)}');
                 interpolations.push({
                     pos: matchPos,
                     value: val,
@@ -359,7 +357,6 @@ class NestedLoopDetector {
             searchStr = regex.matchedRight();
         }
         
-        // DISABLED: trace('[reconstructExpressions] Found ${interpolations.length} interpolations');
         
         // Sort by position to process in order
         interpolations.sort(function(a, b) return a.pos - b.pos);
@@ -504,7 +501,6 @@ class NestedLoopDetector {
                         if (reconstructed != s) {
                             result = reconstructed;
                         } else {
-                            // DISABLED: trace('[NestedLoopDetector] Reconstruction unchanged, trying fallback replacement');
                             // Final fallback: simple replacement
                             for (i in 0...varNames.length) {
                                 // Handle both parentheses notation: (#{0}, #{1})

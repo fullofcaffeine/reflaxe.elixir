@@ -44,7 +44,6 @@ class FunctionArgBlockToIIFETransforms {
                     var newArgs = [];
                     for (a in args) if (shouldWrap(a)) {
                         #if debug_iife
-                        // DISABLED: trace('[FunctionArgBlockToIIFE] wrapping arg for ' + (name == null ? '<anon>' : name));
                         #end
                         newArgs.push(makeIIFE(unwrapParens(a)));
                     } else newArgs.push(a);
@@ -53,7 +52,6 @@ class FunctionArgBlockToIIFETransforms {
                     var rewrittenArgs = [];
                     for (argNode in argsList) if (shouldWrap(argNode)) {
                         #if debug_iife
-                        // DISABLED: trace('[FunctionArgBlockToIIFE] wrapping arg for remote ' + fnName);
                         #end
                         rewrittenArgs.push(makeIIFE(unwrapParens(argNode)));
                     } else rewrittenArgs.push(argNode);
@@ -66,7 +64,6 @@ class FunctionArgBlockToIIFETransforms {
                     for (el in elements) {
                         if (shouldWrap(el)) {
                             #if debug_iife
-                            // DISABLED: trace('[FunctionArgBlockToIIFE] wrapping list element');
                             #end
                             newElements.push(makeIIFE(unwrapParens(el)));
                             changed = true;
@@ -83,7 +80,6 @@ class FunctionArgBlockToIIFETransforms {
                     for (p in pairs) {
                         if (shouldWrap(p.value)) {
                             #if debug_iife
-                            // DISABLED: trace('[FunctionArgBlockToIIFE] wrapping map value');
                             #end
                             newPairs.push({key: p.key, value: makeIIFE(unwrapParens(p.value))});
                             changed = true;
@@ -100,7 +96,6 @@ class FunctionArgBlockToIIFETransforms {
                     for (f in fields) {
                         if (shouldWrap(f.value)) {
                             #if debug_iife
-                            // DISABLED: trace('[FunctionArgBlockToIIFE] wrapping struct field value');
                             #end
                             newFields.push({key: f.key, value: makeIIFE(unwrapParens(f.value))});
                             changed = true;
@@ -117,7 +112,6 @@ class FunctionArgBlockToIIFETransforms {
                     for (f in fields) {
                         if (shouldWrap(f.value)) {
                             #if debug_iife
-                            // DISABLED: trace('[FunctionArgBlockToIIFE] wrapping struct update field value');
                             #end
                             newFields.push({key: f.key, value: makeIIFE(unwrapParens(f.value))});
                             changed = true;
@@ -134,7 +128,6 @@ class FunctionArgBlockToIIFETransforms {
                     for (p in pairs) {
                         if (shouldWrap(p.value)) {
                             #if debug_iife
-                            // DISABLED: trace('[FunctionArgBlockToIIFE] wrapping keyword list value');
                             #end
                             newPairs.push({key: p.key, value: makeIIFE(unwrapParens(p.value))});
                             changed = true;

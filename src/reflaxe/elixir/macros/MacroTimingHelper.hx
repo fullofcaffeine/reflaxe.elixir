@@ -20,7 +20,6 @@ class MacroTimingHelper {
         var elapsedMs = Std.int((haxe.Timer.stamp() - startSeconds) * 1000.0);
         var parts = ["[MacroTiming] name=", label, " elapsed_ms=", Std.string(elapsedMs)];
         #if sys
-        // DISABLED: Sys.println(parts.join(""));
         #else
         haxe.macro.Context.info(parts.join(""), haxe.macro.Context.currentPos());
         #end

@@ -81,8 +81,6 @@ class ReentrancyGuard {
         var key = getExpressionKey(expr);
 
         #if debug_reentrancy
-        // DISABLED: trace('[ReentrancyGuard] Processing expression with key: $key');
-        // DISABLED: trace('[ReentrancyGuard] Current state: ${cache.get(key)}');
         #end
 
         switch(cache.get(key)) {
@@ -91,14 +89,12 @@ class ReentrancyGuard {
                 cache.set(key, InProgress);
 
                 #if debug_reentrancy
-                // DISABLED: trace('[ReentrancyGuard] Starting processing of $key');
                 #end
 
                 var result = builder();
                 cache.set(key, Completed(result));
 
                 #if debug_reentrancy
-                // DISABLED: trace('[ReentrancyGuard] Completed processing of $key');
                 #end
 
                 return result;
@@ -106,7 +102,6 @@ class ReentrancyGuard {
             case InProgress:
                 // Recursion detected! Return placeholder to break cycle
                 #if debug_reentrancy
-                // DISABLED: trace('[ReentrancyGuard] ⚠️ RECURSION DETECTED for $key - returning placeholder');
                 #end
 
                 // Return a nil placeholder to break the cycle
@@ -116,7 +111,6 @@ class ReentrancyGuard {
             case Completed(result):
                 // Already processed, return cached result
                 #if debug_reentrancy
-                // DISABLED: trace('[ReentrancyGuard] Using cached result for $key');
                 #end
 
                 return result;
@@ -150,7 +144,6 @@ class ReentrancyGuard {
         uniqueIdCounter = 0;
 
         #if debug_reentrancy
-        // DISABLED: trace('[ReentrancyGuard] Cache cleared');
         #end
     }
 
@@ -178,7 +171,6 @@ class ReentrancyGuard {
         var id = uniqueIdCounter++;
 
         #if debug_reentrancy
-        // DISABLED: trace('[ReentrancyGuard] Warning: Expression without position, using generated ID: $id');
         #end
 
         return 'expr_generated_$id';

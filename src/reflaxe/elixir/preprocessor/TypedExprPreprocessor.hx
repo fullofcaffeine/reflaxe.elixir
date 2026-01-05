@@ -229,15 +229,11 @@ class TypedExprPreprocessor {
         #if debug_preprocessor trace('[TypedExprPreprocessor] Preprocessing complete'); #end
         #if debug_preprocessor trace('[TypedExprPreprocessor] Substitutions created: ${Lambda.count(substitutions)} entries'); #end
         if (Lambda.count(substitutions) > 0) {
-            // DISABLED: trace('[TypedExprPreprocessor] ===== SUBSTITUTION MAP CONTENTS =====');
             for (id in substitutions.keys()) {
                 var subExpr = substitutions.get(id);
                 var exprType = reflaxe.elixir.util.EnumReflection.enumConstructor(subExpr.expr);
-                // DISABLED: trace('[TypedExprPreprocessor]   ID ${id} => ${exprType}');
             }
-            // DISABLED: trace('[TypedExprPreprocessor] ====================================');
         } else {
-            // DISABLED: trace('[TypedExprPreprocessor] WARNING: No substitutions were created!');
         }
         #end
 
@@ -399,12 +395,10 @@ class TypedExprPreprocessor {
             case TLocal(v):
                 if (subs.exists(v.id)) {
                     #if debug_preprocessor
-                    // DISABLED: trace('[applySubstitutionsRecursively] ✓ Substituting ${v.name} (ID: ${v.id})');
                     #end
                     subs.get(v.id);
                 } else {
                     #if debug_preprocessor
-                    // DISABLED: trace('[applySubstitutionsRecursively] TLocal ${v.name} (ID: ${v.id}) - NO substitution');
                     #end
                     expr;
                 }
@@ -412,7 +406,6 @@ class TypedExprPreprocessor {
             // Handle TVar explicitly to ensure init expression is processed
             case TVar(v, init):
                 #if debug_preprocessor
-                // DISABLED: trace('[applySubstitutionsRecursively] Processing TVar: ${v.name}, hasInit: ${init != null}');
                 #end
 
                 if (init != null) {
@@ -427,7 +420,6 @@ class TypedExprPreprocessor {
             // Handle blocks explicitly for better control
             case TBlock(exprs):
                 #if debug_preprocessor
-                // DISABLED: trace('[applySubstitutionsRecursively] Processing TBlock with ${exprs.length} expressions');
                 #end
 
                 // CRITICAL FIX: Check if block contains infrastructure variables
@@ -439,15 +431,11 @@ class TypedExprPreprocessor {
 
                 if (hasInfraVars) {
                     #if debug_preprocessor
-                    // DISABLED: trace('[applySubstitutionsRecursively] Block contains infrastructure variables - using processBlock');
-                    // DISABLED: trace('[applySubstitutionsRecursively] Before processBlock - substitutions map size: ${Lambda.count(subs)}');
                     #end
                     // Use processBlock which properly registers variables before substituting
                     // CRITICAL: Return the result from processBlock!
                     var result = processBlock(exprs, expr.pos, expr.t, subs);
                     #if debug_preprocessor
-                    // DISABLED: trace('[applySubstitutionsRecursively] After processBlock - substitutions map size: ${Lambda.count(subs)}');
-                    // DISABLED: trace('[applySubstitutionsRecursively] Result AST type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(result.expr)}');
                     #end
                     return result;
                 } else {
@@ -551,7 +539,6 @@ class TypedExprPreprocessor {
             // Skip TVar assignments for infrastructure variables that aren't used elsewhere
             case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
                 #if debug_infrastructure_vars
-                // DISABLED: trace('[processExpr] Eliminating infrastructure variable: ${v.name} (ID: ${v.id})');
                 #end
 
                 // Infrastructure variable assignment - track for substitution by ID
@@ -559,8 +546,6 @@ class TypedExprPreprocessor {
                 substitutions.set(v.id, init);
 
                 #if debug_infrastructure_vars
-                // DISABLED: trace('[processExpr] Registered substitution for ID ${v.id} (name: ${v.name})');
-                // DISABLED: trace('[processExpr] Substitutions now has ${Lambda.count(substitutions)} entries');
                 #end
 
                 // Return empty block to skip generating the assignment
@@ -672,8 +657,6 @@ class TypedExprPreprocessor {
         }
 
         #if debug_infrastructure_vars
-        // DISABLED: trace('[processBlock] ===== BLOCK ANALYSIS =====');
-        // DISABLED: trace('[processBlock] Block has ${exprs.length} expressions');
         for (idx in 0...exprs.length) {
             var exprType = switch(exprs[idx].expr) {
                 case TVar(v, init):
@@ -729,9 +712,7 @@ class TypedExprPreprocessor {
                     'TCall($callTarget, ${args.length} args)';
                 default: 'Other(${Std.string(exprs[idx].expr).substr(0, 50)})';
             }
-            // DISABLED: trace('[processBlock]   [$idx]: $exprType');
         }
-        // DISABLED: trace('[processBlock] =============================');
         #end
 
         // NEW APPROACH: Register infrastructure variables, then apply recursive substitution
@@ -751,14 +732,12 @@ class TypedExprPreprocessor {
                 case TBlock(_): 'TBlock';
                 default: 'Other';
             }
-            // DISABLED: trace('[processBlock] Processing expression $i: $currentType');
             #end
 
             // Check if this is an infrastructure variable declaration
             switch(current.expr) {
                 case TVar(v, init):
                     #if debug_preprocessor
-                    // DISABLED: trace('[processBlock] Found TVar: ${v.name} (ID: ${v.id}), init=${init != null}, isInfra=${isInfrastructureVar(v.name)}');
                     #end
 
                     if (init != null
@@ -766,23 +745,18 @@ class TypedExprPreprocessor {
                         && !protectedLoopInfraVarIds.exists(v.id)
                         && !protectedMutationInfraVarIds.exists(v.id)) {
                         #if debug_preprocessor
-                        // DISABLED: trace('[processBlock] ✓ INFRASTRUCTURE VARIABLE DETECTED: "${v.name}" (ID: ${v.id})');
-                        // DISABLED: trace('[processBlock] Init expression type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
-                        // DISABLED: trace('[processBlock] Registering substitution...');
                         #end
 
                         // Register the substitution (ID-based)
                         substitutions.set(v.id, init);
 
                         #if debug_preprocessor
-                        // DISABLED: trace('[processBlock] ✓ REGISTERED: "${v.name}" (ID ${v.id}) => ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                         var allKeys = [for (k in substitutions.keys()) k];
                         var allNames = [];
                         for (k in allKeys) {
                             // We can't get the name from the ID directly, but we can show the ID list
                             allNames.push('ID:${k}');
                         }
-                        // DISABLED: trace('[processBlock] Substitutions map now has ${allKeys.length} entries: ${allNames.join(", ")}');
                         #end
 
                         // Skip this TVar in output (infrastructure variables are eliminated)
@@ -790,7 +764,6 @@ class TypedExprPreprocessor {
                         continue;
                     } else {
                         #if debug_preprocessor
-                        // DISABLED: trace('[processBlock] Not infrastructure variable, processing normally');
                         #end
 
                         // CRITICAL: Process non-infrastructure TVars too!
@@ -802,7 +775,6 @@ class TypedExprPreprocessor {
                 default:
                     // For all other expressions, apply recursive substitution
                     #if debug_preprocessor
-                    // DISABLED: trace('[processBlock] Applying recursive substitution to expression $i');
                     #end
 
                     var transformed = applySubstitutionsRecursively(current, substitutions);
@@ -905,29 +877,19 @@ class TypedExprPreprocessor {
                                       pos: haxe.macro.Expr.Position, t: Type,
                                       substitutions: Map<Int, TypedExpr>): TypedExpr {
         #if debug_infrastructure_vars
-        // DISABLED: trace('[processSwitchExpr] ===== PROCESSING SWITCH TARGET =====');
-        // DISABLED: trace('[processSwitchExpr] Switch target expression type: ${e.expr}');
 
         // Check if switch uses an infrastructure variable
         switch(e.expr) {
             case TLocal(v):
-                // DISABLED: trace('[processSwitchExpr] Switch uses TLocal variable: ${v.name} (ID: ${v.id})');
-                // DISABLED: trace('[processSwitchExpr] Is infrastructure var: ${isInfrastructureVar(v.name)}');
-                // DISABLED: trace('[processSwitchExpr] Checking substitution map...');
-                // DISABLED: trace('[processSwitchExpr] - Substitution exists for ID ${v.id}: ${substitutions.exists(v.id)}');
 
                 // Show all keys in substitutions map
                 var allKeys = [for (k in substitutions.keys()) k];
-                // DISABLED: trace('[processSwitchExpr] - All IDs in substitutions map: ${allKeys.join(", ")}');
 
                 if (substitutions.exists(v.id)) {
                     var substExpr = substitutions.get(v.id);
-                    // DISABLED: trace('[processSwitchExpr] ✓ FOUND substitution for ID ${v.id} (name: ${v.name}): ${substExpr.expr}');
                 } else {
-                    // DISABLED: trace('[processSwitchExpr] ✗ NO SUBSTITUTION FOUND for ID ${v.id} (name: ${v.name})');
                 }
             default:
-                // DISABLED: trace('[processSwitchExpr] Switch target is not a TLocal variable');
         }
         #end
 
@@ -949,13 +911,11 @@ class TypedExprPreprocessor {
                                 switch(init.expr) {
                                     case TEnumParameter(_, _, _):
                                         #if debug_preprocessor
-                                        // DISABLED: trace('[TypedExprPreprocessor] Filtering redundant enum parameter assignment in case body: ${v.name}');
                                         #end
                                         // Skip this assignment - pattern already extracted the value
                                         continue;
                                     case TLocal(tempVar) if (isInfrastructureVar(tempVar.name)):
                                         #if debug_preprocessor
-                                        // DISABLED: trace('[TypedExprPreprocessor] Filtering temp→binder assignment in case body: ${v.name} = ${tempVar.name}');
                                         #end
                                         // Skip temp-to-binder alias inside case bodies
                                         continue;
@@ -965,7 +925,6 @@ class TypedExprPreprocessor {
                                 }
                             case TBinop(OpAssign, {expr: TLocal(lhs)}, {expr: TLocal(rhs)}) if (isInfrastructureVar(rhs.name)):
                                 #if debug_preprocessor
-                                // DISABLED: trace('[TypedExprPreprocessor] Filtering OpAssign temp→binder in case body: ${lhs.name} = ${rhs.name}');
                                 #end
                                 continue;
                             default:
@@ -1070,7 +1029,6 @@ class TypedExprPreprocessor {
             case TVar(v, init) if (init != null && isInfrastructureVar(v.name)):
                 // Found an infrastructure variable declaration (store by ID)
                 #if debug_preprocessor
-                // DISABLED: trace('[TypedExprPreprocessor] scanForInfrastructureVars: Found ${v.name} (ID: ${v.id}) = [expression]');
                 #end
                 substitutions.set(v.id, init);
                 
@@ -1199,7 +1157,6 @@ class TypedExprPreprocessor {
         switch(expr.expr) {
             case TFor(v, iter, body):
                 #if debug_preprocessor
-                // DISABLED: trace('[TypedExprPreprocessor] Transforming Map iteration for variable: ${v.name}');
                 #end
                 
                 // We can't modify TVar metadata directly, so we'll need to 
@@ -1209,7 +1166,6 @@ class TypedExprPreprocessor {
                 // For now, return unchanged - LoopBuilder will need to detect
                 // Map iteration by checking the iterator type
                 #if debug_preprocessor
-                // DISABLED: trace('[TypedExprPreprocessor] Map iteration detected but cannot add metadata to TVar');
                 #end
                 
                 // Return the TFor with metadata attached

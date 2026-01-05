@@ -57,7 +57,6 @@ class ControlFlowBuilder {
         var buildExpression = context.getExpressionBuilder();
         
         #if debug_ast_builder
-        // DISABLED: trace('[ControlFlow] Processing TIf with condition: ${reflaxe.elixir.util.EnumReflection.enumConstructor(econd.expr)}');
         #end
         
         // Check if this is an optimized enum switch
@@ -128,7 +127,6 @@ class ControlFlowBuilder {
                         enumIndex = index;
                         enumTypeRef = eRef;
                         #if debug_ast_builder
-                        // DISABLED: trace('[ControlFlow] Detected optimized enum switch: index $index');
                         #end
                     default:
                 }
@@ -161,7 +159,6 @@ class ControlFlowBuilder {
             
             if (matchingConstructor != null) {
                 #if debug_ast_builder
-                // DISABLED: trace('[ControlFlow] Transforming to case with constructor: $matchingConstructor');
                 #end
                 
                 // Build case expression

@@ -57,9 +57,7 @@ class CallExprBuilder {
         var buildExpression = context.getExpressionBuilder();
 
         #if debug_ast_builder
-        // DISABLED: trace('[CallExpr] Processing TCall with ${args.length} args');
         if (e != null) {
-            // DISABLED: trace('[CallExpr] Call target: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
         }
         #end
 
@@ -107,7 +105,6 @@ class CallExprBuilder {
 
                 if (injectionString != "") {
                     #if debug_ast_builder
-                    // DISABLED: trace('[CallExpr] ✓ Detected __elixir__() injection: ${injectionString.substr(0, 50)}...');
                     #end
 
                     // SPECIAL-CASE: Ecto.Query.where injection → build full AST (no ERaw)
@@ -358,7 +355,6 @@ class CallExprBuilder {
                     }
 
                     #if debug_ast_builder
-                    // DISABLED: trace('[CallExpr] Generated injection code: $finalCode');
                     #end
 
                     // Return raw Elixir code directly
@@ -933,7 +929,6 @@ class CallExprBuilder {
             tag = reflaxe.elixir.ast.NameUtils.toSnakeCase(tag);
             
             #if debug_ast_builder
-            // DISABLED: trace('[CallExpr] Building idiomatic enum tuple: ${tag} with ${args.length} args');
             #end
         }
         
@@ -1002,7 +997,6 @@ class CallExprBuilder {
         var buildExpression = context.getExpressionBuilder();
         
         #if debug_ast_builder
-        // DISABLED: trace('[CallExpr] Checking special call: ${className}.${methodName}');
         #end
         
         switch(className) {
@@ -1171,7 +1165,6 @@ class CallExprBuilder {
     static function handlePhoenixCall(className: String, methodName: String, argASTs: Array<ElixirAST>, context: CompilationContext): Null<ElixirASTDef> {
         
         #if debug_ast_builder
-        // DISABLED: trace('[CallExpr] Checking Phoenix call: ${className}.${methodName}');
         #end
         
         // Check for PubSub patterns

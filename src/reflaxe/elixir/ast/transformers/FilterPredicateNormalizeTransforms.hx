@@ -94,7 +94,6 @@ class FilterPredicateNormalizeTransforms {
                 var call = makeAST(ECall(pred, "", [binder]));
                 var fnNode = makeAST(EFn([{ args: [PVar("elem")], guard: null, body: call }]));
                 #if debug_filter_predicate
-                // DISABLED: trace('[FilterPredNorm] Wrapped ECapture into EFn predicate');
                 #end
                 { list: listExpr, predicate: fnNode };
 
@@ -104,7 +103,6 @@ class FilterPredicateNormalizeTransforms {
 	                var call = makeAST(ECall(pred, "", [binder]));
 	                var fnNode = makeAST(EFn([{ args: [PVar("elem")], guard: null, body: call }]));
 	                #if debug_filter_predicate
-	                // DISABLED: trace('[FilterPredNorm] Wrapped function variable into EFn predicate');
 	                #end
 	                { list: listExpr, predicate: fnNode };
 
@@ -113,7 +111,6 @@ class FilterPredicateNormalizeTransforms {
 	                // Downstream passes may further rewrite body and binder usage.
 	                var fnNode = makeAST(EFn([{ args: [PVar("elem")], guard: null, body: pred }]));
 	                #if debug_filter_predicate
-	                // DISABLED: trace('[FilterPredNorm] Normalized non-EFn predicate of type ' + reflaxe.elixir.util.EnumReflection.enumConstructor(pred.def));
 	                #end
 	                { list: listExpr, predicate: fnNode };
 	        }
