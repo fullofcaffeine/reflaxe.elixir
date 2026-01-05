@@ -32,7 +32,7 @@ export TIMEOUT="$TIMEOUT_PER_TEST" # picked up by test/Makefile
 
 for cat in "${CATEGORIES[@]}"; do
   echo "[test-chunks] Running category: $cat (deadline ${CHUNK_DEADLINE}s)"
-  if ! "$ROOT_DIR/scripts/with-timeout.sh" --secs "$CHUNK_DEADLINE" --cwd "$ROOT_DIR" -- \
+  if ! "$ROOT_DIR/scripts/util/with-timeout.sh" "$CHUNK_DEADLINE" \
        "$ROOT_DIR/scripts/test-runner.sh" --category "$cat" --parallel "$PARALLEL" --timeout "$TIMEOUT_PER_TEST" --deadline "$CHUNK_DEADLINE"; then
     echo "[test-chunks] Category failed or timed out: $cat" >&2
     exit 1
