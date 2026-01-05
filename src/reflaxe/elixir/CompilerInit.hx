@@ -43,6 +43,10 @@ class CompilerInit {
 
         if (compilerRegistered) return;
         compilerRegistered = true;
+
+        // `reflaxe` is vendored under `vendor/reflaxe` and injected onto the classpath
+        // by `CompilerBootstrap.Start()`. We still need to initialize Reflaxe's compiler hooks.
+        ReflectCompiler.Start();
         
         var fastBoot = Context.defined("fast_boot");
 

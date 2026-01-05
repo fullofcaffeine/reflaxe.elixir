@@ -27,14 +27,11 @@ Error: Library reflaxe.elixir is not installed
 
 **Solution:**
 ```bash
-# Install via lix (recommended)
-lix install github:fullofcaffeine/reflaxe.elixir
-
-# Or install via haxelib
-haxelib install reflaxe.elixir
-
-# Verify installation
-haxelib list | grep reflaxe
+# Install via lix from a GitHub release tag (recommended)
+npm install --save-dev lix
+npx lix scope create
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+npx lix download
 ```
 
 ### Problem: "lix: command not found"
@@ -54,7 +51,9 @@ npm install -g lix
 npm install --save-dev lix
 
 # If using local installation, use npx
-npx lix install reflaxe.elixir
+npx lix scope create
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+npx lix download
 ```
 
 ### Problem: Haxe version incompatibility
@@ -70,7 +69,7 @@ Error: Reflaxe.Elixir requires Haxe 4.3.0 or later
 haxe --version
 
 # Update Haxe via lix
-lix install haxe 4.3.6
+npx lix install haxe 4.3.7
 
 # Or download from haxe.org
 # https://haxe.org/download/
@@ -558,7 +557,7 @@ This was fixed in the latest compiler version. If you still encounter this:
 1. **Update to latest version:**
 ```bash
 npx lix scope create
-npx lix install github:fullofcaffeine/reflaxe.elixir#latest
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5 --force
 npx lix download
 ```
 
@@ -1015,8 +1014,10 @@ end
 
 **Fix:**
 ```bash
-lix install github:fullofcaffeine/reflaxe.elixir
-lix download
+npm install --save-dev lix
+npx lix scope create
+npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+npx lix download
 ```
 
 ### "Abstract 'Socket' has no field assign"
