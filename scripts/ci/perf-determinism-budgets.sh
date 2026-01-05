@@ -21,6 +21,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 TIMEOUT="$ROOT_DIR/scripts/with-timeout.sh"
+HAXE_BIN="${HAXE_BIN:-haxe}"
 
 TODO_APP_DIR="$ROOT_DIR/examples/todo-app"
 
@@ -103,7 +104,7 @@ run_haxe() {
   log "$desc (timeout=${secs}s)"
   local start end
   start="$(date +%s)"
-  "$TIMEOUT" --secs "$secs" --cwd "$cwd" -- bash -lc "haxe \"$hxml\""
+  "$TIMEOUT" --secs "$secs" --cwd "$cwd" -- "$HAXE_BIN" "$hxml"
   end="$(date +%s)"
   log "✅ $desc done in $((end-start))s"
 }
@@ -169,4 +170,3 @@ run_haxe "todo-app client build (run 2)" "$CLIENT_TIMEOUT_SECS" "$TODO_APP_DIR" 
 diff_dirs "$client_snap" "$client_out" "todo_client"
 
 log "✅ budgets OK"
-
