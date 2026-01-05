@@ -57,3 +57,5 @@ Version strings are updated automatically via `scripts/release/sync-versions.js`
 
 If tags already exist but the GitHub **Releases** list is empty (or older tags predate the workflow),
 run the workflow **Release (Backfill Existing Tag)** and provide the tag (for example `v1.1.5`).
+
+If you want to backfill *all* semver tags in one run, use the same workflow with `all_tags=true`.
