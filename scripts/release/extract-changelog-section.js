@@ -38,6 +38,13 @@ function findSection(lines, version) {
     }
   }
 
+  // Some changelogs include an informational footer section (e.g. "# Changelog" boilerplate)
+  // between the earliest version entry and older historical notes. Stop before that footer.
+  const footerIndex = lines.findIndex((line, index) => index > startIndex && /^#\s+Changelog\b/i.test(line))
+  if (footerIndex !== -1 && footerIndex < endIndex) {
+    endIndex = footerIndex
+  }
+
   return {
     startIndex,
     endIndex,
@@ -80,4 +87,3 @@ function main() {
 }
 
 main()
-
