@@ -357,6 +357,13 @@ jobs:
           path-type: inherit
           install: >-
             make
+            coreutils
+            diffutils
+            findutils
+            gawk
+            grep
+            procps-ng
+            sed
 
       - name: Install npm dependencies
         shell: msys2 {0}
@@ -380,4 +387,6 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$(pwd)/node_modules/.bin:$PATH"
-          npm run test:quick
+          # Avoid `npm run` indirection on Windows (npm may spawn cmd.exe for scripts).
+          bash scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 --categories core,stdlib,regression
+          bash test/validate_elixir.sh test/snapshot/core test/snapshot/stdlib test/snapshot/regression
