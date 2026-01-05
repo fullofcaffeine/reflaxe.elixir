@@ -53,6 +53,7 @@ Thumbs.db
 
 # Agent/automation artifacts
 .code/
+.reflaxe_elixir/
 
 # Elixir
 deps/
