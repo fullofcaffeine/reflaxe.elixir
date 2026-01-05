@@ -149,7 +149,6 @@ class ElixirASTPatterns {
         }
         
         #if debug_inline_expansion
-        // DISABLED: trace('[XRay InlineExpansion] Transforming inline expansion with var ${pattern.tmpVar.name}');
         #end
         
         // Build the transformed AST
@@ -236,9 +235,7 @@ class ElixirASTPatterns {
                                                    buildFromTypedExpr: TypedExpr -> ElixirAST,
                                                    toElixirVarName: String -> String): ElixirASTDef {
         #if debug_inline_expansion
-        // DISABLED: trace('[XRay InlineExpansion] Transforming complex inline expansion block with ${block.length} expressions');
         for (i in 0...block.length) {
-            // DISABLED: trace('[XRay InlineExpansion]   Block[$i]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(block[i].expr)}');
         }
         #end
         

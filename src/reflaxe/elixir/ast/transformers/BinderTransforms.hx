@@ -443,7 +443,6 @@ class BinderTransforms {
                             if (!changed) return node;
                             var newPred = makeAST(EFn(newClauses));
                             #if debug_filter_predicate
-                            // DISABLED: trace('[FilterNorm] Rewriting Enum.filter predicate to pure boolean');
                             #end
                             makeASTWithMeta(ERemoteCall(mod, func, [args[0], newPred]), node.metadata, node.pos);
                         default:
@@ -659,7 +658,6 @@ class BinderTransforms {
                     switch(mod.def) {
                         case EVar(name) if (name != null && name.length > 0 && isLower(name)):
                             #if debug_list_push
-                            // DISABLED: trace('[ListPushRewrite] Rewriting ' + name + '.push/1 (remote call)');
                             #end
                             var listVar = makeAST(EVar(name));
                             var newRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [listVar, makeAST(EList([args[0]]))]));
@@ -671,7 +669,6 @@ class BinderTransforms {
                     switch(target.def) {
                         case EVar(name) if (name != null && name.length > 0 && isLower(name)):
                             #if debug_list_push
-                            // DISABLED: trace('[ListPushRewrite] Rewriting ' + name + '.push/1 (call)');
                             #end
                             var listVar = makeAST(EVar(name));
                             var newRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [listVar, makeAST(EList([args[0]]))]));
@@ -736,13 +733,11 @@ class BinderTransforms {
                         switch (mod.def) {
                             case EVar(m) if (m == "Repo"):
                                 #if debug_repo_qualification
-                                // DISABLED: trace('[RepoQualification] Rewriting Repo.${func} to ${repoName}.${func}');
                                 #end
                                 makeASTWithMeta(ERemoteCall(makeAST(EVar(repoName)), func, args), n.metadata, n.pos);
                             case EVar(m) if (m != null && m.indexOf(".Repo") != -1):
                                 // Already qualified Repo usage; log for visibility
                                 #if debug_repo_qualification
-                                // DISABLED: trace('[RepoQualification] Found already-qualified ${m}.${func}');
                                 #end
                                 n;
                             default: n;
@@ -752,7 +747,6 @@ class BinderTransforms {
                         switch (target.def) {
                             case EVar(m) if (m == "Repo"):
                                 #if debug_repo_qualification
-                                // DISABLED: trace('[RepoQualification] Rewriting (call) Repo.${func} to ${repoName}.${func}');
                                 #end
                                 makeASTWithMeta(ERemoteCall(makeAST(EVar(repoName)), func, args), n.metadata, n.pos);
                             default:
@@ -1814,7 +1808,6 @@ class BinderTransforms {
                         var qualified = qualifyRepoToken(code, repoName);
                         if (qualified != code) {
                             #if debug_repo_qualification
-                            // DISABLED: trace('[RepoQualification ERaw] Qualified Repo.* in raw code');
                             #end
                             makeASTWithMeta(ERaw(qualified), x.metadata, x.pos);
                         } else x;

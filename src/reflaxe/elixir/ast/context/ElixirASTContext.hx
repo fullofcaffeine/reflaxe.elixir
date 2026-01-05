@@ -332,9 +332,7 @@ class ElixirASTContext {
             }
         }
         if (enabledFlags.length > 0) {
-            // DISABLED: trace('[ElixirASTContext] Feature flags enabled: ${enabledFlags.join(", ")}');
         } else {
-            // DISABLED: trace('[ElixirASTContext] All feature flags disabled (default safe mode)');
         }
         #end
     }
@@ -404,7 +402,6 @@ class ElixirASTContext {
         globalVariableMap.set(tvarId, renamedName);
 
         #if debug_variable_renaming
-        // DISABLED: trace('[ElixirASTContext] Registered renamed variable: $originalName -> $renamedName (ID: $tvarId)');
         #end
     }
 
@@ -483,9 +480,6 @@ class ElixirASTContext {
         // Check for collision - same ID being reused
         if (enumBindingPlans.exists(id)) {
             var existingPlan = enumBindingPlans.get(id);
-            // DISABLED: trace('[COLLISION WARNING] Enum binding plan ID already exists: $id');
-            // DISABLED: trace('[COLLISION WARNING] Existing plan has ${Lambda.count(existingPlan)} entries');
-            // DISABLED: trace('[COLLISION WARNING] New plan has ${Lambda.count(plan)} entries');
 
             // Check if plans are different
             var isDifferent = false;
@@ -497,21 +491,15 @@ class ElixirASTContext {
                 }
             }
             if (isDifferent) {
-                // DISABLED: trace('[COLLISION ERROR] Plans are DIFFERENT - this will cause issues!');
             }
         }
 
         // Log plan creation details
-        // DISABLED: trace('[ElixirASTContext] Storing enum binding plan:');
-        // DISABLED: trace('  ID: $id');
-        // DISABLED: trace('  Plan size: ${Lambda.count(plan)}');
-        // DISABLED: trace('  Container size after: ${Lambda.count(enumBindingPlans) + 1}');
         #end
 
         enumBindingPlans.set(id, plan);
 
         #if debug_enum_extraction
-        // DISABLED: trace('[ElixirASTContext] Stored enum binding plan with ID: $id');
         #end
     }
 
@@ -535,10 +523,8 @@ class ElixirASTContext {
 
         // Warn about excessive lookups (possible loop)
         if (frequency > 100) {
-            // DISABLED: trace('[LOOKUP WARNING] Plan ID "$id" has been looked up $frequency times - possible loop!');
         }
         if (frequency % 50 == 0 && frequency > 0) {
-            // DISABLED: trace('[LOOKUP INFO] Plan ID "$id" lookup count: $frequency');
         }
         #end
 
@@ -546,9 +532,7 @@ class ElixirASTContext {
 
         #if debug_enum_extraction
         if (plan != null) {
-            // DISABLED: trace('[ElixirASTContext] Retrieved enum binding plan with ID: $id');
         } else {
-            // DISABLED: trace('[ElixirASTContext] No enum binding plan found for ID: $id');
         }
         #end
 
@@ -604,7 +588,6 @@ class ElixirASTContext {
         featureFlags.set(flag, enabled);
 
         #if debug_ast_builder
-        // DISABLED: trace('[ElixirASTContext] Feature flag ${flag} = ${enabled}');
         #end
     }
 
@@ -639,7 +622,6 @@ class ElixirASTContext {
         currentPhase = CompilationPhase.Building;
 
         #if debug_ast_builder
-        // DISABLED: trace('[ElixirASTContext] Compilation started - state cleared');
         #end
     }
 
@@ -655,10 +637,6 @@ class ElixirASTContext {
         currentPhase = CompilationPhase.Transforming;
 
         #if debug_ast_builder
-        // DISABLED: trace('[ElixirASTContext] Entered transformation phase');
-        // DISABLED: trace('  - Variable mappings: ${Lambda.count(globalVariableMap)}');
-        // DISABLED: trace('  - Pattern variables: ${Lambda.count(patternVariableRegistry)}');
-        // DISABLED: trace('  - Node metadata: (stored on nodes)');
         #end
     }
 
@@ -674,7 +652,6 @@ class ElixirASTContext {
         currentPhase = CompilationPhase.Printing;
 
         #if debug_ast_builder
-        // DISABLED: trace('[ElixirASTContext] Entered printing phase');
         #end
     }
 
@@ -686,7 +663,6 @@ class ElixirASTContext {
         currentPhase = CompilationPhase.Completed;
 
         #if debug_ast_builder
-        // DISABLED: trace('[ElixirASTContext] Compilation completed');
         if (Lambda.count(testResults) > 0) {
             var successful = 0;
             var failed = 0;
@@ -697,7 +673,6 @@ class ElixirASTContext {
                     case InProgress: // Shouldn't happen
                 }
             }
-            // DISABLED: trace('  Test results: ${successful} passed, ${failed} failed');
         }
         #end
     }
@@ -738,7 +713,6 @@ class ElixirASTContext {
         initializeFeatureFlags();
 
         #if debug_ast_builder
-        // DISABLED: trace('[ElixirASTContext] FULL RESET - All state cleared');
         #end
     }
 }

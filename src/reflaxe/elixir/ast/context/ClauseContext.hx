@@ -130,7 +130,6 @@ class ClauseContext {
         for (binding in bindings) {
             patternBindings.set(binding.varId, binding.binderName);
             #if debug_clause_context
-            // DISABLED: trace('[ClauseContext] Registered pattern binding: var ${binding.varId} -> "${binding.binderName}"');
             #end
         }
     }
@@ -152,7 +151,6 @@ class ClauseContext {
         for (index => varId in varIds) {
             patternSatisfiedVarIds.set(varId, true);
             #if debug_clause_context
-            // DISABLED: trace('[ClauseContext] Marked TVar ${varId} as satisfied by pattern extraction at index ${index}');
             #end
         }
     }
@@ -166,7 +164,6 @@ class ClauseContext {
     public function isVarIdSatisfiedByPattern(varId: Int): Bool {
         if (patternSatisfiedVarIds.exists(varId)) {
             #if debug_clause_context
-            // DISABLED: trace('[ClauseContext] TVar ${varId} is satisfied by pattern extraction');
             #end
             return true;
         }
@@ -244,7 +241,6 @@ class ClauseContext {
             var isSelfAssignment = false;
 
             #if debug_clause_context
-            // DISABLED: trace('[ClauseContext.wrapBody] Checking binding: ${binding.name} = (init type: ${binding.init.def})');
             #end
 
             switch(binding.init.def) {
@@ -252,16 +248,13 @@ class ClauseContext {
                     if (initVarName == binding.name) {
                         isSelfAssignment = true;
                         #if debug_clause_context
-                        // DISABLED: trace('[ClauseContext.wrapBody] ✓ Detected self-assignment: ${binding.name} = ${initVarName} - SKIPPING');
                         #end
                     } else {
                         #if debug_clause_context
-                        // DISABLED: trace('[ClauseContext.wrapBody] Normal assignment: ${binding.name} = ${initVarName}');
                         #end
                     }
                 default:
                     #if debug_clause_context
-                    // DISABLED: trace('[ClauseContext.wrapBody] Not a simple var assignment');
                     #end
             }
 

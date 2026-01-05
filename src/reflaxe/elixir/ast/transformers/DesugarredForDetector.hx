@@ -115,7 +115,6 @@ class DesugarredForDetector {
                         counterInit = init;
                         foundCounter = true;
                         #if debug_loop_detection
-                        // DISABLED: trace('[DesugarredForDetector] Found counter var: $counterVar');
                         #end
                     } else if (!foundLimit) {
                         // Second infrastructure var is the limit
@@ -123,7 +122,6 @@ class DesugarredForDetector {
                         limitInit = init;
                         foundLimit = true;
                         #if debug_loop_detection
-                        // DISABLED: trace('[DesugarredForDetector] Found limit var: $limitVar');
                         #end
                     }
                     
@@ -133,7 +131,6 @@ class DesugarredForDetector {
                         whileIndex = i;
                         whileExpr = exprs[i];
                         #if debug_loop_detection
-                        // DISABLED: trace('[DesugarredForDetector] Found matching while loop at index $i');
                         #end
                         break; // Found complete pattern
                     }
@@ -280,7 +277,6 @@ class DesugarredForDetector {
         if (basic == null) return null;
         
         #if debug_loop_detection
-        // DISABLED: trace('[DesugarredForDetector] Basic detection succeeded, enhancing with elimination data');
         #end
         
         // Extract user variable from while body
@@ -290,7 +286,6 @@ class DesugarredForDetector {
                 userVar = extractUserVariable(body, basic.counterVar);
                 #if debug_loop_detection
                 if (userVar != null) {
-                    // DISABLED: trace('[DesugarredForDetector] Found user variable: $userVar maps to ${basic.counterVar}');
                 }
                 #end
             default:
@@ -334,7 +329,6 @@ class DesugarredForDetector {
                     isArrayIteration = true;
                     arrayVar = extractArrayVariable(body);
                     #if debug_loop_detection
-                    // DISABLED: trace('[DesugarredForDetector] Detected array iteration pattern, array: $arrayVar');
                     #end
                 }
             default:
@@ -468,9 +462,7 @@ class DesugarredForDetector {
         }
         
         #if debug_loop_detection
-        // DISABLED: trace('[DesugarredForDetector] Substitution map created:');
         for (key in map.keys()) {
-            // DISABLED: trace('  $key → ${map.get(key)}');
         }
         #end
         

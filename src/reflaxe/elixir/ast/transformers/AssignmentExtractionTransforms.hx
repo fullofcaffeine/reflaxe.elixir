@@ -62,7 +62,6 @@ class AssignmentExtractionTransforms {
      */
     public static function assignmentExtractionPass(ast: ElixirAST): ElixirAST {
         #if debug_assignment_extraction
-        // DISABLED: trace("[XRay AssignmentExtraction] Starting assignment extraction pass");
         #end
         
         return transformAssignments(ast);
@@ -72,7 +71,6 @@ class AssignmentExtractionTransforms {
         #if debug_assignment_extraction
         var nodeType = reflaxe.elixir.util.EnumReflection.enumConstructor(node.def);
         if (nodeType == "EMatch" || nodeType == "EBinary" || nodeType == "ECase") {
-            // DISABLED: trace('[XRay AssignmentExtraction] ⚡ Visiting ${nodeType} node');
         }
         #end
         
@@ -80,7 +78,6 @@ class AssignmentExtractionTransforms {
         switch(node.def) {
             case ECase(expr, clauses):
                 #if debug_assignment_extraction
-                // DISABLED: trace("[XRay AssignmentExtraction] Special ECase handling - preserving clause body statements");
                 #end
                 
                 // Transform the expression being matched
@@ -157,18 +154,11 @@ class AssignmentExtractionTransforms {
             // Look for assignments that are direct statements
             case EMatch(pattern, value):
                 #if debug_assignment_extraction
-                // DISABLED: trace("[XRay AssignmentExtraction] Found top-level EMatch");
-                // DISABLED: trace('[XRay AssignmentExtraction] Pattern: $pattern');
-                // DISABLED: trace('[XRay AssignmentExtraction] Value type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(value.def)}');
                 if (value.metadata?.sourceFile != null) {
-                    // DISABLED: trace('[XRay AssignmentExtraction] Source: ${value.metadata.sourceFile}:${value.metadata.sourceLine}');
                 }
                 // Special check for chained assignments like c = index = s.cca(...)
                 switch(value.def) {
                     case EMatch(innerPattern, innerValue):
-                        // DISABLED: trace('[XRay AssignmentExtraction] Found chained assignment!');
-                        // DISABLED: trace('[XRay AssignmentExtraction] Inner pattern: $innerPattern');
-                        // DISABLED: trace('[XRay AssignmentExtraction] Inner value type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(innerValue.def)}');
                     default:
                 }
                 #end
@@ -176,8 +166,6 @@ class AssignmentExtractionTransforms {
                 var result = extractAndTransformExpression(value);
                 if (result.hasExtracted) {
                     #if debug_assignment_extraction
-                    // DISABLED: trace("[XRay AssignmentExtraction] Transforming top-level assignment");
-                    // DISABLED: trace('[XRay AssignmentExtraction] Extracted ${result.extracted.length} assignments');
                     #end
                     // Create a block with extracted assignments followed by the main assignment
                     var statements = result.extracted.copy();
@@ -215,7 +203,6 @@ class AssignmentExtractionTransforms {
             // Handle remote calls (like Enum.reduce_while) that might contain functions with assignments
             case ERemoteCall(_, _, _):
                 #if debug_assignment_extraction
-                // DISABLED: trace("[XRay AssignmentExtraction] Processing ERemoteCall at top level");
                 #end
                 var result = extractAndTransformExpression(transformedNode);
                 if (result.hasExtracted) {
@@ -229,8 +216,6 @@ class AssignmentExtractionTransforms {
             // Handle case expressions - need special handling for clause bodies
             case ECase(expr, clauses):
                 #if debug_assignment_extraction
-                // DISABLED: trace("[XRay AssignmentExtraction] Processing top-level ECase");
-                // DISABLED: trace('[XRay AssignmentExtraction] Number of clauses: ${clauses.length}');
                 #end
                 
                 // Process the matched expression for any embedded assignments
@@ -264,8 +249,6 @@ class AssignmentExtractionTransforms {
             // Handle if expressions that might contain assignments in conditions
             case EIf(condition, thenBranch, elseBranch):
                 #if debug_assignment_extraction
-                // DISABLED: trace("[XRay AssignmentExtraction] Processing top-level EIf");
-                // DISABLED: trace('[XRay AssignmentExtraction] Condition type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(condition.def)}');
                 #end
                 
                 // First check if the condition is a parenthesized expression
@@ -275,7 +258,6 @@ class AssignmentExtractionTransforms {
                 };
                 
                 #if debug_assignment_extraction
-                // DISABLED: trace('[XRay AssignmentExtraction] Actual condition type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(actualCondition.def)}');
                 #end
                 
                 // Extract assignments from the condition
@@ -283,7 +265,6 @@ class AssignmentExtractionTransforms {
                 
                 if (condResult.hasExtracted) {
                     #if debug_assignment_extraction
-                    // DISABLED: trace('[XRay AssignmentExtraction] Extracted ${condResult.extracted.length} assignments from if condition');
                     #end
                     // Create a block with extracted assignments followed by the if expression
                     var statements = condResult.extracted.copy();
@@ -322,14 +303,12 @@ class AssignmentExtractionTransforms {
         }
 
         #if debug_assignment_extraction
-        // DISABLED: trace('[XRay AssignmentExtraction] Transforming clause body type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(body.def)}');
         #end
 
         // Simply recurse through the AST structure without extraction
         switch(body.def) {
             case EBlock(statements):
                 #if debug_assignment_extraction
-                // DISABLED: trace('[XRay AssignmentExtraction] Clause body is EBlock with ${statements.length} statements - preserving all');
                 #end
                 // Transform each statement recursively but keep them all
                 var transformedStatements = [];
@@ -337,7 +316,6 @@ class AssignmentExtractionTransforms {
                     var transformedStmt = transformClauseBody(stmt);
                     if (shouldDropTempAssignment(transformedStmt)) {
                         #if debug_assignment_extraction
-                        // DISABLED: trace('[XRay AssignmentExtraction] Dropping temp assignment statement');
                         #end
                         continue;
                     }
@@ -516,10 +494,6 @@ class AssignmentExtractionTransforms {
             switch(e.def) {
                 case EMatch(pattern, value):
                     #if debug_assignment_extraction
-                    // DISABLED: trace("[XRay AssignmentExtraction] 🔍 Found embedded assignment");
-                    // DISABLED: trace('[XRay AssignmentExtraction] Pattern: $pattern');
-                    // DISABLED: trace('[XRay AssignmentExtraction] Pattern type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(pattern)}');
-                    // DISABLED: trace('[XRay AssignmentExtraction] Value type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(value.def)}');
                     #end
                     
                     // First extract any assignments from the value expression itself
@@ -529,14 +503,12 @@ class AssignmentExtractionTransforms {
                     switch pattern {
                         case PVar(name) if (ElixirASTBuilder.isTempPatternVarName(name)):
                             #if debug_assignment_extraction
-                            // DISABLED: trace('[XRay AssignmentExtraction] ⚠️ Skipping temp pattern assignment for $name');
                             #end
                             return cleanValue;
                         case PVar(name):
                             switch(cleanValue.def) {
                                 case EVar(varName) if (varName == name):
                                     #if debug_assignment_extraction
-                                    // DISABLED: trace('[XRay AssignmentExtraction] ⚠️ Skipping redundant self-assignment: $name = $varName');
                                     #end
                                     return cleanValue;
                                 default:
@@ -555,7 +527,6 @@ class AssignmentExtractionTransforms {
                     switch(pattern) {
                         case PVar(name):
                             #if debug_assignment_extraction
-                            // DISABLED: trace('[XRay AssignmentExtraction] 🔄 Replacing assignment with variable: $name');
                             #end
                             return makeAST(EVar(name));
                         default:
@@ -597,15 +568,12 @@ class AssignmentExtractionTransforms {
                     
                 case EUnary(op, operand):
                     #if debug_assignment_extraction
-                    // DISABLED: trace('[XRay AssignmentExtraction] Processing EUnary operator: $op');
-                    // DISABLED: trace('[XRay AssignmentExtraction] Operand type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(operand.def)}');
                     #end
                     
                     // Special handling for EBlock inside unary operators
                     switch(operand.def) {
                         case EBlock(_):
                             #if debug_assignment_extraction
-                            // DISABLED: trace('[XRay AssignmentExtraction] Found EBlock in unary - delegating to extractFromExpr');
                             #end
                             
                             // Let extractFromExpr handle the block properly
@@ -613,8 +581,6 @@ class AssignmentExtractionTransforms {
                             var cleanOperand = extractFromExpr(operand);
                             
                             #if debug_assignment_extraction
-                            // DISABLED: trace('[XRay AssignmentExtraction] After extraction, applying unary to: ${reflaxe.elixir.util.EnumReflection.enumConstructor(cleanOperand.def)}');
-                            // DISABLED: trace('[XRay AssignmentExtraction] Total extracted so far: ${extracted.length}');
                             #end
                             
                             return makeASTWithMeta(
@@ -636,9 +602,6 @@ class AssignmentExtractionTransforms {
                     
                 case EBinary(op, left, right):
                     #if debug_assignment_extraction
-                    // DISABLED: trace("[XRay AssignmentExtraction] Processing binary in expression: " + reflaxe.elixir.util.EnumReflection.enumConstructor(op));
-                    // DISABLED: trace('[XRay AssignmentExtraction] Left: ${left.def}');
-                    // DISABLED: trace('[XRay AssignmentExtraction] Right: ${right.def}');
                     
                     // Check if left or right contains assignments
                     var hasLeftAssignment = switch(left.def) {
@@ -649,8 +612,6 @@ class AssignmentExtractionTransforms {
                         case EMatch(_, _): true;
                         default: false;
                     };
-                    // DISABLED: trace('[XRay AssignmentExtraction] Has left assignment: $hasLeftAssignment');
-                    // DISABLED: trace('[XRay AssignmentExtraction] Has right assignment: $hasRightAssignment');
                     #end
                     var cleanLeft = extractFromExpr(left);
                     var cleanRight = extractFromExpr(right);
@@ -664,17 +625,11 @@ class AssignmentExtractionTransforms {
                 case ECall(target, funcName, args):
                     #if debug_assignment_extraction
                     if (funcName == "reduce_while") {
-                        // DISABLED: trace('[XRay AssignmentExtraction] 🎯 Processing Enum.reduce_while call!');
-                        // DISABLED: trace('[XRay AssignmentExtraction] Args count: ${args.length}');
                         for (i in 0...args.length) {
-                            // DISABLED: trace('[XRay AssignmentExtraction] Arg $i type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(args[i].def)}');
                             switch(args[i].def) {
                                 case EMatch(_, _):
-                                    // DISABLED: trace('[XRay AssignmentExtraction] Found assignment in arg $i');
                                 case EFn(clauses):
-                                    // DISABLED: trace('[XRay AssignmentExtraction] 🔥 Found anonymous function in arg $i with ${clauses.length} clauses');
                                     if (clauses.length > 0) {
-                                        // DISABLED: trace('[XRay AssignmentExtraction] First clause body type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(clauses[0].body.def)}');
                                     }
                                 default:
                             }
@@ -692,11 +647,8 @@ class AssignmentExtractionTransforms {
                     
                 case ERemoteCall(module, funcName, args):
                     #if debug_assignment_extraction
-                    // DISABLED: trace('[XRay AssignmentExtraction] Processing remote call: ${funcName}');
                     if (funcName == "reduce_while") {
-                        // DISABLED: trace('[XRay AssignmentExtraction] 🎯 Found Enum.reduce_while!');
                         for (i in 0...args.length) {
-                            // DISABLED: trace('[XRay AssignmentExtraction] Arg $i type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(args[i].def)}');
                         }
                     }
                     #end
@@ -711,8 +663,6 @@ class AssignmentExtractionTransforms {
                     
                 case EIf(condition, thenBranch, elseBranch):
                     #if debug_assignment_extraction
-                    // DISABLED: trace('[XRay AssignmentExtraction] Processing if condition');
-                    // DISABLED: trace('[XRay AssignmentExtraction] Condition type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(condition.def)}');
                     #end
                     
                     // Extract assignments from the condition
@@ -744,14 +694,12 @@ class AssignmentExtractionTransforms {
                     
                 case EFn(clauses):
                     #if debug_assignment_extraction
-                    // DISABLED: trace('[XRay AssignmentExtraction] Processing anonymous function with ${clauses.length} clauses');
                     #end
                     
                     // Process each clause body for assignments
                     var cleanClauses = [];
                     for (clause in clauses) {
                         #if debug_assignment_extraction
-                        // DISABLED: trace('[XRay AssignmentExtraction] Processing clause body type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(clause.body.def)}');
                         #end
                         
                         // Extract assignments from the clause body
@@ -759,7 +707,6 @@ class AssignmentExtractionTransforms {
                         
                         if (result.hasExtracted) {
                             #if debug_assignment_extraction
-                            // DISABLED: trace('[XRay AssignmentExtraction] Extracted ${result.extracted.length} assignments from fn clause');
                             #end
                             
                             // Create a block with extracted assignments followed by the cleaned expression
@@ -790,12 +737,9 @@ class AssignmentExtractionTransforms {
                     
                 case EBlock(statements):
                     #if debug_assignment_extraction
-                    // DISABLED: trace('[XRay AssignmentExtraction] Processing EBlock in expression context with ${statements.length} statements');
                     for (i in 0...statements.length) {
-                        // DISABLED: trace('[XRay AssignmentExtraction] Statement $i: ${reflaxe.elixir.util.EnumReflection.enumConstructor(statements[i].def)}');
                     }
                     var inStatementContext = isInStatementContext(e);
-                    // DISABLED: trace('[XRay AssignmentExtraction] Block is in statement context: $inStatementContext');
                     #end
                     
                     // Only extract assignments if we're NOT in a statement context
@@ -807,7 +751,6 @@ class AssignmentExtractionTransforms {
                             switch(statements[0].def) {
                                 case EMatch(pattern, value):
                                     #if debug_assignment_extraction
-                                    // DISABLED: trace('[XRay AssignmentExtraction] Found assignment in expression context block - extracting');
                                     #end
                                     // Extract the assignment
                                     extracted.push(statements[0]);
@@ -818,7 +761,6 @@ class AssignmentExtractionTransforms {
                         }
                     } else {
                         #if debug_assignment_extraction
-                        // DISABLED: trace('[XRay AssignmentExtraction] Block is in statement context - preserving all statements');
                         #end
                     }
                     
@@ -871,11 +813,8 @@ class AssignmentExtractionTransforms {
         
         #if debug_assignment_extraction
         if (extracted.length > 0) {
-            // DISABLED: trace('[XRay AssignmentExtraction] ✅ Extracted ${extracted.length} assignments from expression');
             for (i in 0...extracted.length) {
-                // DISABLED: trace('[XRay AssignmentExtraction] Extracted[$i]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(extracted[i].def)}');
             }
-            // DISABLED: trace('[XRay AssignmentExtraction] Cleaned expression: ${reflaxe.elixir.util.EnumReflection.enumConstructor(cleanExpr.def)}');
         }
         #end
         

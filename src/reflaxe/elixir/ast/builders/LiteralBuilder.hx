@@ -69,7 +69,6 @@ class LiteralBuilder {
         if (isAtom) {
             #if debug_atom_generation
             #if debug_ast_builder
-            // DISABLED: trace('[Atom Debug TConst] Generating atom :${s}');
             #end
             #end
             // Generate atom for Atom-typed strings
@@ -77,7 +76,6 @@ class LiteralBuilder {
         } else {
             #if debug_atom_generation
             #if debug_ast_builder
-            // DISABLED: trace('[Atom Debug TConst] Generating string "${s}"');
             #end
             #end
             // Regular string
@@ -96,7 +94,6 @@ class LiteralBuilder {
         // Handle 'this' references - use the receiver parameter name from context
         // In instance methods, this refers to the first parameter (struct)
         #if debug_exunit
-        // DISABLED: trace('[AST Builder] TThis: isInClassMethodContext=${context?.isInClassMethodContext}, isInExUnitTest=${context?.isInExUnitTest}, receiverParam=${context?.currentReceiverParamName}, context exists=${context != null}');
         #end
 
         if (context.isInClassMethodContext && context.currentReceiverParamName != null) {
@@ -105,7 +102,6 @@ class LiteralBuilder {
             // In ExUnit tests, 'this' should refer to the test context
             // This will be used for instance field access patterns
             #if debug_exunit
-            // DISABLED: trace('[AST Builder] Using "context" for ExUnit test');
             #end
             return EVar("context");
         } else if (context.currentReceiverParamName != null) {
@@ -113,14 +109,12 @@ class LiteralBuilder {
             // if we have a receiver parameter name, use it!
             // This handles cases where context flags are lost due to inlining or nested contexts
             #if debug_exunit
-            // DISABLED: trace('[AST Builder] Using receiver param without flag: ${context.currentReceiverParamName}');
             #end
             return EVar(context.currentReceiverParamName);
         } else {
             // DEFAULT FOR INSTANCE CLASSES: In Elixir, instance methods ALWAYS get "struct" as first parameter
             // This is a safe fallback - if TConst(TThis) appears and we're not in a static context, use "struct"
             #if debug_exunit
-            // DISABLED: trace('[AST Builder] Defaulting to "struct" for TConst(TThis) - likely instance method');
             #end
             return EVar("struct");
         }

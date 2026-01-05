@@ -60,10 +60,7 @@ class ReturnBuilder {
      */
     public static function build(e: Null<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
         #if debug_ast_builder
-        // DISABLED: trace('[ReturnBuilder] Building return expression');
-        // DISABLED: trace('[ReturnBuilder]   Has expression: ${e != null}');
         if (e != null) {
-            // DISABLED: trace('[ReturnBuilder]   Expression type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
         }
         #end
         
@@ -73,7 +70,6 @@ class ReturnBuilder {
             // Check if it's a switch, potentially wrapped in metadata
             if (isSwitchExpression(e)) {
                 #if debug_ast_builder
-                // DISABLED: trace('[ReturnBuilder] Return contains switch expression, handling specially');
                 #end
                 // Process the switch with special handling
                 return processReturnSwitch(e, context);
@@ -90,7 +86,6 @@ class ReturnBuilder {
             
             if (result == null) {
                 #if debug_ast_builder
-                // DISABLED: trace('[ReturnBuilder] Failed to compile return expression, using nil');
                 #end
                 return makeAST(ENil).def;
             }
@@ -99,7 +94,6 @@ class ReturnBuilder {
         } else {
             // Empty return - explicit nil
             #if debug_ast_builder
-            // DISABLED: trace('[ReturnBuilder] Empty return, generating explicit nil');
             #end
             return ENil;
         }
@@ -169,7 +163,6 @@ class ReturnBuilder {
                                 case TVar(tvar, init) if (init != null && tvar.id == v.id):
                                     // Found infrastructure variable pattern!
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[ReturnBuilder] Detected infrastructure variable pattern: ${tvar.name}');
                                     #end
                                     return true;
                                 default:
@@ -227,8 +220,6 @@ class ReturnBuilder {
                                     switch(exprs[i].expr) {
                                         case TVar(tvar, init) if (init != null && tvar.id == v.id):
                                             #if debug_ast_builder
-                                            // DISABLED: trace('[ReturnBuilder] Found infrastructure variable ${tvar.name}, replacing with original expression');
-                                            // DISABLED: trace('[ReturnBuilder]   Original expression type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                                             #end
                                             originalExpr = init;
                                             break;
@@ -244,7 +235,6 @@ class ReturnBuilder {
                                         t: lastExpr.t
                                     };
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[ReturnBuilder] Replaced infrastructure variable with original expression');
                                     #end
                                     newSwitch;
                                 } else {
@@ -296,7 +286,6 @@ class ReturnBuilder {
                 }
                 // Could transfer specific metadata if needed
                 #if debug_ast_builder
-                // DISABLED: trace('[ReturnBuilder] Preserved metadata from wrapped switch');
                 #end
             default:
         }

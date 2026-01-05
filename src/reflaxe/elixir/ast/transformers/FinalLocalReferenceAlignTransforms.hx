@@ -162,7 +162,6 @@ class FinalLocalReferenceAlignTransforms {
           }
           if (target != null) {
             #if debug_ast_transformer
-            // DISABLED: trace('[FinalLocalReferenceAlign] ' + v + ' -> ' + target);
             #end
             makeASTWithMeta(EVar(target), x.metadata, x.pos);
           } else {

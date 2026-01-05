@@ -51,7 +51,6 @@ class ReduceWhileAccumulatorTransform {
      */
     public static function reduceWhileAccumulatorPass(ast: ElixirAST): ElixirAST {
         #if debug_reduce_while_transform
-        // DISABLED: trace("[XRay ReduceWhile] Starting reduce_while accumulator transformation");
         #end
         
         return transformReduceWhile(ast);
@@ -70,7 +69,6 @@ class ReduceWhileAccumulatorTransform {
         switch(transformedNode.def) {
             case ERemoteCall(module, "reduce_while", args) if (isEnumModule(module)):
                 #if debug_reduce_while_transform
-                // DISABLED: trace("[XRay ReduceWhile] Found Enum.reduce_while call");
                 #end
                 
                 if (args.length >= 3) {
@@ -121,7 +119,6 @@ class ReduceWhileAccumulatorTransform {
         }
         
         #if debug_reduce_while_transform
-        // DISABLED: trace('[XRay ReduceWhile] Accumulator variables: $accVarNames');
         #end
         
         // Transform the body to handle variable mutations properly
@@ -237,7 +234,6 @@ class ReduceWhileAccumulatorTransform {
                         accUpdates.set(resultVarName, transformedIf);
 
                         #if debug_reduce_while_transform
-                        // DISABLED: trace('[XRay ReduceWhile] Found accumulator update in if: $resultVarName');
                         #end
 
                         // Return empty block (the assignment is captured in accUpdates)
@@ -316,7 +312,6 @@ class ReduceWhileAccumulatorTransform {
                     accUpdates.set(accVarName, transformedCase);
 
                     #if debug_reduce_while_transform
-                    // DISABLED: trace('[XRay ReduceWhile] Found accumulator update in case: $accVarName');
                     #end
 
                     return makeAST(EBlock([]));
@@ -348,13 +343,11 @@ class ReduceWhileAccumulatorTransform {
                             localUpdates.set(varName, value);
 
                             #if debug_reduce_while_transform
-                            // DISABLED: trace('[XRay ReduceWhile] Found accumulator update: $varName, preserveAssignments: $preserveAssignments');
                             #end
 
                             // ⚠️ FIX: If we're preserving assignments (inside main control flow), keep them
                             if (preserveAssignments) {
                                 #if debug_reduce_while_transform
-                                // DISABLED: trace('[XRay ReduceWhile] Preserving assignment: $varName = ...');
                                 #end
                                 transformedExprs.push(makeAST(EMatch(PVar(varName), value)));
                             }

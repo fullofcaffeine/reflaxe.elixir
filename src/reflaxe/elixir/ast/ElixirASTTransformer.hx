@@ -185,24 +185,17 @@ class ElixirASTTransformer {
     public static function transform(ast: ElixirAST, ?context: reflaxe.elixir.CompilationContext): ElixirAST {
         #if debug_ast_transformer
         #if sys
-        // DISABLED: Sys.println('[XRay AST Transformer] Starting transformation pipeline');
         #else
-        // DISABLED: trace('[XRay AST Transformer] Starting transformation pipeline');
         #end
-        // DISABLED: trace('[XRay AST Transformer] AST type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def)}');
-        // DISABLED: trace('[XRay AST Transformer] AST metadata: ${ast.metadata}');
         #end
         #if debug_unrolled_comprehension
-        // DISABLED: trace('[DEBUG Transform] ElixirASTTransformer.transform() called');
         #end
         
         #if debug_ast_structure
         // Print AST structure for debugging
         switch(ast.def) {
             case EModule(name, _, _):
-                // DISABLED: trace('[XRay AST Structure] Module: $name');
             default:
-                // DISABLED: trace('[XRay AST Structure] Root: ${ast.def}');
         }
         #end
 
@@ -226,9 +219,7 @@ class ElixirASTTransformer {
         transformInvocationCounter++;
 
         #if sys
-        // DISABLED: Sys.println('[ASTProgress] #' + transformInvocationCounter + ' ' + rootName);
         #else
-        // DISABLED: trace('[ASTProgress] #' + transformInvocationCounter + ' ' + rootName);
         #end
         #end
 
@@ -255,7 +246,6 @@ class ElixirASTTransformer {
             // Skip disabled passes - the enabled flag MUST be respected
             if (!passConfig.enabled) {
                 #if debug_ast_transformer
-                // DISABLED: trace('[XRay AST Transformer] Skipping disabled pass: ${passConfig.name}');
                 #end
                 continue;
             }
@@ -271,18 +261,14 @@ class ElixirASTTransformer {
 
             #if debug_ast_transformer
             #if sys
-            // DISABLED: Sys.println('[XRay AST Transformer] Applying pass: ${passConfig.name}');
             #else
-            // DISABLED: trace('[XRay AST Transformer] Applying pass: ${passConfig.name}');
             #end
             #end
 
             #if hxx_pass_trace
             if (passTraceEnabled) {
                 #if sys
-                // DISABLED: Sys.println('[PassTrace] module=' + rootName + ' pass=' + passConfig.name + ' start');
                 #else
-                // DISABLED: trace('[PassTrace] module=' + rootName + ' pass=' + passConfig.name + ' start');
                 #end
             }
             #end
@@ -338,17 +324,11 @@ class ElixirASTTransformer {
             #end
             if (passConfig.contextualPass != null && context != null) {
                 #if debug_contextual_passes
-                // DISABLED: trace('[XRay Contextual Pass] Using contextual variant for: ${passConfig.name}');
-                // DISABLED: trace('[XRay Contextual Pass] Context available: ${context != null}');
-                // DISABLED: trace('[XRay Contextual Pass] Variable mappings: ${context.tempVarRenameMap.keys()}');
                 #end
 
                 result = passConfig.contextualPass(result, context);
             } else {
                 #if debug_contextual_passes
-                // DISABLED: trace('[XRay Contextual Pass] Using stateless variant for: ${passConfig.name}');
-                // DISABLED: trace('[XRay Contextual Pass] Contextual variant available: ${passConfig.contextualPass != null}');
-                // DISABLED: trace('[XRay Contextual Pass] Context provided: ${context != null}');
                 #end
 
                 result = passConfig.pass(result);
@@ -372,10 +352,8 @@ class ElixirASTTransformer {
                     __log.close();
                 } catch (e) {
                     // Fallback to stdout if append fails.
-                    // DISABLED: Sys.println('[PassTiming] name=' + passConfig.name + ' ms=' + Std.int(__elapsedPass));
                 }
                 #else
-                // DISABLED: trace('[PassTiming] name=' + passConfig.name + ' ms=' + Std.int(__elapsedPass));
                 #end
             }
             #end
@@ -406,9 +384,7 @@ class ElixirASTTransformer {
             #if hxx_pass_trace
             if (passTraceEnabled) {
                 #if sys
-                // DISABLED: Sys.println('[PassTrace] module=' + rootName + ' pass=' + passConfig.name + ' end');
                 #else
-                // DISABLED: trace('[PassTrace] module=' + rootName + ' pass=' + passConfig.name + ' end');
                 #end
             }
             #end
@@ -423,15 +399,12 @@ class ElixirASTTransformer {
             __totalLog.writeString("[PassTiming] module=" + rootName + " name=ElixirASTTransformer.total ms=" + Std.string(__ms) + "\n");
             __totalLog.close();
         } catch (e) {
-            // DISABLED: Sys.println('[PassTiming] name=ElixirASTTransformer.total ms=' + Std.int(__pipelineElapsed));
         }
         #else
-        // DISABLED: trace('[PassTiming] name=ElixirASTTransformer.total ms=' + Std.int(__pipelineElapsed));
         #end
         #end
 
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay AST Transformer] Transformation complete');
         #end
 
         // ------------------------------------------------------------------
@@ -481,7 +454,6 @@ class ElixirASTTransformer {
         #end
 
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay AST Transformer] Transformation complete');
         #end
         return result;
     }
@@ -504,9 +476,7 @@ class ElixirASTTransformer {
 
             if (disabled.length > 0) {
                 #if sys
-                // DISABLED: Sys.println('[AST PassFilter] hxx_disable_passes=' + disabled.join(","));
                 #else
-                // DISABLED: trace('[AST PassFilter] hxx_disable_passes=' + disabled.join(","));
                 #end
 
                 passes = [
@@ -579,9 +549,7 @@ class ElixirASTTransformer {
      */
     public static function guardGroupingPass(ast: ElixirAST): ElixirAST {
         #if debug_guard_grouping
-        // DISABLED: trace('[XRay GuardGrouping] Starting guard grouping pass with three-phase flattener');
         if (ast != null && ast.def != null) {
-            // DISABLED: trace('[XRay GuardGrouping] Processing node type: ' + ast.def);
         }
         #end
         
@@ -592,13 +560,11 @@ class ElixirASTTransformer {
             case EParen(inner):
                 // Check if the parentheses wrap a case expression
                 #if debug_guard_grouping
-                // DISABLED: trace("[XRay GuardGrouping] Found EParen, checking inner content");
                 #end
                 
                 switch(inner?.def) {
                     case ECase(target, clauses):
                         #if debug_guard_grouping
-                        // DISABLED: trace("[XRay GuardGrouping] Found ECase inside EParen, transforming");
                         #end
                         
                         // Transform the case expression
@@ -627,7 +593,6 @@ class ElixirASTTransformer {
                 
             case ECase(target, clauses):
                 #if debug_guard_grouping
-                // DISABLED: trace("[XRay GuardGrouping] Found direct ECase with " + clauses.length + " clauses");
                 #end
                 
                 // Transform each clause individually
@@ -657,12 +622,9 @@ class ElixirASTTransformer {
      */
     static function transformClauseWithGuards(clause: ECaseClause): ECaseClause {
         #if debug_guard_grouping
-        // DISABLED: trace("[XRay GuardGrouping] Examining clause with three-phase flattener");
         if (clause.pattern != null) {
-            // DISABLED: trace("[XRay GuardGrouping] Pattern type: " + Type.typeof(clause.pattern));
         }
         if (clause.body != null) {
-            // DISABLED: trace("[XRay GuardGrouping] Body def: " + clause.body.def);
         }
         #end
         
@@ -670,7 +632,6 @@ class ElixirASTTransformer {
         var guardBranches = GuardConditionCollector.collectAllGuardConditions(clause.body);
         
         #if debug_guard_grouping
-        // DISABLED: trace('[XRay GuardGrouping] Phase 1 - Collected ${guardBranches.length} guard branches');
         #end
         
         // If no guard conditions found, just transform recursively
@@ -688,13 +649,11 @@ class ElixirASTTransformer {
         var validationResult = GuardGroupValidator.validateGuardGroup(guardBranches, boundVars);
         
         #if debug_guard_grouping
-        // DISABLED: trace('[XRay GuardGrouping] Phase 2 - Validation result: canGroup=${validationResult.canGroup}, reason="${validationResult.reason}"');
         #end
         
         // If validation fails, fall back to recursive transformation
         if (!validationResult.canGroup) {
             #if debug_guard_grouping
-            // DISABLED: trace('[XRay GuardGrouping] Validation failed: ${validationResult.reason}');
             #end
             return {
                 pattern: clause.pattern,
@@ -707,7 +666,6 @@ class ElixirASTTransformer {
         var flatCond = GuardConditionReconstructor.buildFlatCond(guardBranches, boundVars, clause.pattern);
         
         #if debug_guard_grouping
-        // DISABLED: trace('[XRay GuardGrouping] Phase 3 - Built flat cond expression');
         #end
         
         return {
@@ -764,7 +722,6 @@ class ElixirASTTransformer {
         return switch(ast.def) {
             case EBlock(exprs):
                 #if debug_guard_grouping
-                // DISABLED: trace('[XRay RemoveNil] Processing EBlock with ${exprs.length} expressions');
                 #end
                 // Filter out nil assignments for generated variables
                 var filtered = [];
@@ -772,20 +729,16 @@ class ElixirASTTransformer {
                     var isGeneratedNilAssignment = switch(expr.def) {
                         case EMatch(PVar(varName), rhs) if (rhs != null):
                             #if debug_guard_grouping
-                            // DISABLED: trace('[XRay RemoveNil] Checking match for variable: $varName');
-                            // DISABLED: trace('[XRay RemoveNil] RHS type: ' + reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.def));
                             #end
                             switch(rhs.def) {
                                 case EAtom(a):
                                     var atomStr = (a:String);
                                     #if debug_guard_grouping
-                                    // DISABLED: trace('[XRay RemoveNil] Atom value: "$atomStr"');
                                     #end
                                     if (atomStr == "nil") {
                                         // Check if variable name ends with digit (r2, b3, etc.)
                                         var isGenerated = ~/^[a-z]+\d+$/.match(varName);
                                         #if debug_guard_grouping
-                                        // DISABLED: trace('[XRay RemoveNil] Is generated variable: $isGenerated for $varName');
                                         #end
                                         isGenerated;
                                     } else {
@@ -854,7 +807,6 @@ class ElixirASTTransformer {
                 
                 if (fixedName != name) {
                     #if debug_guard_grouping
-                    // DISABLED: trace('[XRay GuardGrouping] Fixing variable: $name -> $fixedName');
                     #end
                     makeASTWithMeta(EVar(fixedName), ast.metadata, ast.pos);
                 } else {
@@ -901,7 +853,6 @@ class ElixirASTTransformer {
             if (node == null) return;
             
             #if debug_guard_grouping
-            // DISABLED: trace("[XRay ExtractBranches] Depth " + depth + ", node type: " + (node.def != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(node.def) : "null"));
             #end
             
             // Clean up nil assignments first
@@ -934,7 +885,6 @@ class ElixirASTTransformer {
                     });
                     
                     #if debug_guard_grouping
-                    // DISABLED: trace("[XRay ExtractBranches] Added branch at depth " + depth);
                     #end
                     
                     // Recursively process else branch
@@ -951,7 +901,6 @@ class ElixirASTTransformer {
                     });
                     
                     #if debug_guard_grouping
-                    // DISABLED: trace("[XRay ExtractBranches] Added final branch at depth " + depth);
                     #end
             }
         }
@@ -1128,7 +1077,6 @@ class ElixirASTTransformer {
      */
     static function removeRedundantEnumExtractionPass(ast: ElixirAST): ElixirAST {
         #if debug_redundant_extraction
-        // DISABLED: trace('[RemoveRedundantEnumExtraction] Debug mode enabled');
         #end
 
         // Track the case target variable name for nested detection
@@ -1149,13 +1097,11 @@ class ElixirASTTransformer {
                         default: 'complex expression';
                     };
                     #if debug_redundant_extraction
-                    // DISABLED: trace('[RemoveRedundantEnumExtraction] Processing ECase with ${clauses.length} clauses, target: $targetDebug');
                     #end
                     // Check if this case has an enum binding plan
                     currentCaseHasBindingPlan = node.metadata != null && node.metadata.hasEnumBindingPlan == true;
                     #if debug_enum_extraction
                     if (currentCaseHasBindingPlan) {
-                        // DISABLED: trace('[RemoveRedundantEnumExtraction] Found ECase with hasEnumBindingPlan flag');
                     }
                     #end
 
@@ -1196,7 +1142,6 @@ class ElixirASTTransformer {
                                 '{${elemStrs.join(", ")}}';
                             default: 'other pattern';
                         };
-                        // DISABLED: trace('[RemoveRedundantEnumExtraction] Clause $i pattern: $patternDebug');
                         #end
 
                         // Propagate the binding plan flag to the clause body
@@ -1227,7 +1172,6 @@ class ElixirASTTransformer {
                                     if (expr.metadata != null && expr.metadata.redundantEnumExtraction == true) {
                                         isRedundant = true;
                                         #if debug_redundant_extraction
-                                        // DISABLED: trace('[RemoveRedundantEnumExtraction] Found node marked as redundant via metadata');
                                         #end
                                     }
 
@@ -1242,11 +1186,9 @@ class ElixirASTTransformer {
                                                     default: reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.def);
                                                 };
                                                 #if debug_redundant_extraction
-                                                // DISABLED: trace('[RemoveRedundantEnumExtraction] Found assignment: $varName = ... (RHS: $rhsDebug, caseTarget: $caseTargetVar)');
                                                 #end
                                             } else {
                                                 #if debug_redundant_extraction
-                                                // DISABLED: trace('[RemoveRedundantEnumExtraction] Found assignment: $varName = null (skipped assignment)');
                                                 #end
                                                 // Mark this as redundant since it has no RHS
                                                 isRedundant = true;
@@ -1259,14 +1201,12 @@ class ElixirASTTransformer {
                                         }) {
                                             isRedundant = true;
                                             #if debug_redundant_extraction
-                                            // DISABLED: trace('[RemoveRedundantEnumExtraction] Removing self-assignment: $varName = $varName');
                                             #end
                                         }
                                         // Check if the target variable itself is a temp pattern var
                                         else if (reflaxe.elixir.ast.ElixirASTBuilder.isTempPatternVarName(varName)) {
                                             isRedundant = true;
                                             #if debug_redundant_extraction
-                                            // DISABLED: trace('[RemoveRedundantEnumExtraction] Removing temp-var assignment: $varName = ...');
                                             #end
                                         }
                                         // Check if RHS is a reference to a temp variable (g, g1, g2, _g, etc.)
@@ -1288,7 +1228,6 @@ class ElixirASTTransformer {
                                                     if (v == "g" || v == "_g") {
                                                         isRedundant = true;
                                                         #if debug_redundant_extraction
-                                                        // DISABLED: trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent temp var)');
                                                         #end
                                                     }
                                                     // Check for numbered temp vars in RHS: g1, g2, etc.
@@ -1296,7 +1235,6 @@ class ElixirASTTransformer {
                                                              v.length == 2 && v.charAt(1) >= '0' && v.charAt(1) <= '9') {
                                                         isRedundant = true;
                                                         #if debug_redundant_extraction
-                                                        // DISABLED: trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent numbered temp var)');
                                                         #end
                                                     }
                                                     // Check for underscore-prefixed numbered temp vars: _g1, _g2, etc.
@@ -1304,7 +1242,6 @@ class ElixirASTTransformer {
                                                              v.charAt(2) >= '0' && v.charAt(2) <= '9') {
                                                         isRedundant = true;
                                                         #if debug_redundant_extraction
-                                                        // DISABLED: trace('[RemoveRedundantEnumExtraction] Removing assignment: $varName = $v (non-existent underscore temp var)');
                                                         #end
                                                     }
                                                     // Also check for "g = result" pattern where result is case target
@@ -1321,26 +1258,22 @@ class ElixirASTTransformer {
                                                              varName.charAt(2) <= '9')) {
                                                             isRedundant = true;
                                                             #if debug_redundant_extraction
-                                                            // DISABLED: trace('[RemoveRedundantEnumExtraction] Removing incorrect assignment: $varName = $v (pattern already extracted value)');
                                                             #end
                                                         }
                                                     }
 
                                                 case ECall(targetExpr, funcName, args) if (funcName == "elem" && args.length == 1):
                                                     #if debug_redundant_extraction
-                                                    // DISABLED: trace('[RemoveRedundantEnumExtraction]   - Found elem() call');
                                                     #end
                                                     // Check if elem is extracting from the case target
                                                     var isTargetMatch = switch(targetExpr.def) {
                                                         case EVar(v):
                                                             #if debug_redundant_extraction
-                                                            // DISABLED: trace('[RemoveRedundantEnumExtraction]   - elem() target: $v, case target: $caseTargetVar');
                                                             #end
                                                             // Check if this matches the case target variable
                                                             v == caseTargetVar;
                                                         default:
                                                             #if debug_redundant_extraction
-                                                            // DISABLED: trace('[RemoveRedundantEnumExtraction]   - elem() target is not a simple variable');
                                                             #end
                                                             false;
                                                     };
@@ -1356,12 +1289,10 @@ class ElixirASTTransformer {
                                                             #end
                                                         } else {
                                                             #if debug_redundant_extraction
-                                                            // DISABLED: trace('[RemoveRedundantEnumExtraction] Not redundant - varName: $varName does not match g pattern');
                                                             #end
                                                         }
                                                     } else {
                                                         #if debug_redundant_extraction
-                                                        // DISABLED: trace('[RemoveRedundantEnumExtraction] elem() not extracting from case target');
                                                         #end
                                                     }
                                                 default:
@@ -1428,7 +1359,6 @@ class ElixirASTTransformer {
                     // Check if this has the function reference marker
                     if (field.indexOf("__FUNC_REF__") != -1) {
                         #if debug_function_reference
-                        // DISABLED: trace('[FunctionRef] Found marked field: $field');
                         #end
                         
                         // Extract the actual field name and arity
@@ -1438,7 +1368,6 @@ class ElixirASTTransformer {
                         if (arity == null) arity = 0;
                         
                         #if debug_function_reference
-                        // DISABLED: trace('[FunctionRef] Transforming to capture: &Module.$actualField/$arity');
                         #end
                         
                         // Create the clean field access without the marker
@@ -1467,13 +1396,10 @@ class ElixirASTTransformer {
             #if debug_null_coalescing
             switch(node.def) {
                 case EMatch(PVar(name), value):
-                    // DISABLED: trace('[NullCoalescing] Found EMatch with name: $name');
                     if (value != null) {
                         switch(value.def) {
                             case EBlock(exprs):
-                                // DISABLED: trace('[NullCoalescing] Found block with ${exprs.length} expressions');
                             default:
-                                // DISABLED: trace('[NullCoalescing] Value is not a block: ${value.def}');
                         }
                     }
                 default:
@@ -1546,7 +1472,6 @@ class ElixirASTTransformer {
                     if (node.metadata != null) {
                         moduleMetadata = node.metadata;
                         #if debug_super_handling
-                        // DISABLED: trace("[SuperTransform] Collected module metadata: parentModule=" + 
                               (moduleMetadata.parentModule != null ? moduleMetadata.parentModule : "null"));
                         #end
                     }
@@ -1568,10 +1493,6 @@ class ElixirASTTransformer {
                 // ECall(target=EField(EVar("super"), "to_string"), methodName="call", args)
                 case ECall(target, methodName, args):
                     #if debug_super_handling
-                    // DISABLED: trace("[SuperTransform] Processing ECall:");
-                    // DISABLED: trace("  target = " + target);
-                    // DISABLED: trace("  methodName = " + methodName);
-                    // DISABLED: trace("  args = " + args);
                     #end
                     // Handle synthetic super calls marker, if any
                     if (methodName == "__super__") {
@@ -1584,11 +1505,9 @@ class ElixirASTTransformer {
                             case EField(superVar, fieldName):
                                 if (superVar.def.match(EVar("super"))) {
                                     #if debug_super_handling
-                                    // DISABLED: trace("[SuperTransform] Found super." + fieldName + " as first argument");
                                     #end
                                     if (fieldName == "to_string" || fieldName == "toString") {
                                         #if debug_super_handling
-                                        // DISABLED: trace("[SuperTransform] Transforming super.toString() call to empty string");
                                         #end
                                         return makeAST(EString(""));
                                     }
@@ -1603,9 +1522,6 @@ class ElixirASTTransformer {
                             case EVar("super"):
                                 // Direct super.method() call where super is the target
                                 #if debug_super_handling
-                                // DISABLED: trace("[SuperTransform] Direct super as target detected!");
-                                // DISABLED: trace("  methodName = " + methodName);
-                                // DISABLED: trace("  node.metadata = " + node.metadata);
                                 #end
                                 
                                 // Look for parent module in metadata
@@ -1640,7 +1556,6 @@ class ElixirASTTransformer {
                                     // Special handling for Exception parent (it's a behaviour, not a module with methods)
                                     if (parentModule == "Exception" && (methodName == "toString" || methodName == "to_string")) {
                                         #if debug_super_handling
-                                        // DISABLED: trace("[SuperTransform] Special handling for Exception.toString()");
                                         #end
                                         // For Exception base class, use Kernel.to_string on the message
                                         return makeAST(ERemoteCall(
@@ -1652,8 +1567,6 @@ class ElixirASTTransformer {
                                     
                                     // Transform super.method() to ParentModule.method(struct, args...)
                                     #if debug_super_handling
-                                    // DISABLED: trace("[SuperTransform] Delegating to parent module: " + parentModule);
-                                    // DISABLED: trace("[SuperTransform] Parent module type: " + Type.typeof(parentModule));
                                     #end
                                     
                                     // Convert method name to snake_case for Elixir
@@ -1673,7 +1586,6 @@ class ElixirASTTransformer {
                                 } else if (methodName == "to_string" || methodName == "toString") {
                                     // Fallback for toString when parent is unknown
                                     #if debug_super_handling
-                                    // DISABLED: trace("[SuperTransform] No parent module found, handling toString for exception");
                                     #end
                                     
                                     // Check if this is an exception class
@@ -1694,27 +1606,21 @@ class ElixirASTTransformer {
                                 } else {
                                     // Keep as is if we can't resolve parent
                                     #if debug_super_handling
-                                    // DISABLED: trace("[SuperTransform] No parent module found, keeping super call as is");
                                     #end
                                     node;
                                 }
                                 
                             case EField(superVar, fieldName):
                                 #if debug_super_handling
-                                // DISABLED: trace("[SuperTransform] EField target detected:");
-                                // DISABLED: trace("  superVar.def = " + superVar.def);
-                                // DISABLED: trace("  fieldName = " + fieldName);
                                 #end
                                 
                                 if (superVar.def.match(EVar("super"))) {
                                     #if debug_super_handling
-                                    // DISABLED: trace("[SuperTransform] Super method call detected!");
                                     #end
                                     
                                     // This is super.method() call
                                     if (fieldName == "to_string" || fieldName == "toString") {
                                         #if debug_super_handling
-                                        // DISABLED: trace("[SuperTransform] Transforming super.toString() for exception class");
                                         #end
                                         
                                         // Check if this is an exception class
@@ -1740,7 +1646,6 @@ class ElixirASTTransformer {
                                 }
                             default:
                                 #if debug_super_handling
-                                // DISABLED: trace("[SuperTransform] Target is not super or field access, keeping node");
                                 #end
                                 node;
                         }
@@ -1792,7 +1697,6 @@ class ElixirASTTransformer {
         var needsPhoenixComponent = false;
         
         #if debug_phoenix_component_import
-        // DISABLED: trace('[XRay PhoenixComponentImport] Starting scan for ~H sigils');
         #end
         
         // Recursive function to deeply traverse the AST
@@ -1805,7 +1709,6 @@ class ElixirASTTransformer {
             switch(node.def) {
                 case ESigil(type, _, _):
                     #if debug_phoenix_component_import
-                    // DISABLED: trace('[XRay PhoenixComponentImport] Found sigil type: $type');
                     #end
                     if (type == "H") {
                         needsPhoenixComponent = true;
@@ -1827,7 +1730,6 @@ class ElixirASTTransformer {
         checkForHSigil(ast);
         
         #if debug_phoenix_component_import
-        // DISABLED: trace('[XRay PhoenixComponentImport] Needs Phoenix.Component: $needsPhoenixComponent');
         #end
         
         // Phase 2: Add import if needed
@@ -1853,14 +1755,12 @@ class ElixirASTTransformer {
                     return node;
                 case EDefmodule(name, doBlock):
                     #if debug_phoenix_component_import
-                    // DISABLED: trace('[XRay PhoenixComponentImport] Processing defmodule: $name');
                     #end
                     
                     // For defmodule, we need to inject the import into the do block
                     switch(doBlock.def) {
                         case EBlock(statements):
                             #if debug_phoenix_component_import
-                            // DISABLED: trace('[XRay PhoenixComponentImport] Defmodule has ${statements.length} statements');
                             #end
                             
                             // Check if Phoenix.Component is already imported or if LiveView is used
@@ -1877,7 +1777,6 @@ class ElixirASTTransformer {
                                     case EUse(module, opts):
                                         // module is a string in EUse
                                         #if debug_phoenix_component_import
-                                        // DISABLED: trace('[XRay PhoenixComponentImport] Found EUse: module=$module, opts=$opts');
                                         #end
                                         if (module == "Phoenix.Component") {
                                             hasImport = true;
@@ -1888,13 +1787,11 @@ class ElixirASTTransformer {
                                             // Check if it has :live_view option
                                             for (opt in opts) {
                                                 #if debug_phoenix_component_import
-                                                // DISABLED: trace('[XRay PhoenixComponentImport] Checking option: $opt');
                                                 #end
                                                 switch(opt.def) {
                                                     // Pattern matching with abstract types requires guard clause
                                                 case EAtom(atom) if (atom == "live_view"):
                                                         #if debug_phoenix_component_import
-                                                        // DISABLED: trace('[XRay PhoenixComponentImport] Found :live_view option - will skip Phoenix.Component');
                                                         #end
                                                         hasLiveViewUse = true;
                                                         hasImport = true; // LiveView includes Phoenix.Component
@@ -1942,7 +1839,6 @@ class ElixirASTTransformer {
                             // Don't add Phoenix.Component or additional uses if LiveView is already used
                             if (hasLiveViewUse) {
                                 #if debug_phoenix_component_import
-                                // DISABLED: trace('[XRay PhoenixComponentImport] Module already has LiveView use statement, skipping Phoenix.Component');
                                 #end
                                 return node;
                             }
@@ -1965,7 +1861,6 @@ class ElixirASTTransformer {
                                     }
                                     if (!hasHtmlUse) {
                                         #if debug_phoenix_component_import
-                                        // DISABLED: trace('[XRay PhoenixComponentImport] Adding use ' + webModule + ', :html for Layouts module');
                                         #end
                                         var htmlUse = makeAST(EUse(webModule, [ makeAST(EAtom("html")) ]));
                                         var newStatements = [htmlUse].concat(statements);
@@ -1975,7 +1870,6 @@ class ElixirASTTransformer {
                                 }
                             } else if (!hasImport) {
                                 #if debug_phoenix_component_import
-                                // DISABLED: trace('[XRay PhoenixComponentImport] Adding Phoenix.Component import');
                                 #end
                                 // Create the import statement using EUse which takes a string
                                 var importStmt = makeAST(EUse("Phoenix.Component", []));
@@ -2055,7 +1949,6 @@ class ElixirASTTransformer {
                             for (s in statements) scanForEctoCalls(s, found);
                             if (found.needs && !found.has) {
                                 #if debug_ecto_query_require
-                                // DISABLED: trace('[EctoQueryRequire] Injecting require into defmodule ' + name);
                                 #end
                                 var requireStmt = makeAST(ERequire("Ecto.Query", null));
                                 var newStatements = [requireStmt].concat(statements);
@@ -2079,7 +1972,6 @@ class ElixirASTTransformer {
                     for (b in body) scanForEctoCalls(b, found2);
                     if (found2.needs && !found2.has) {
                         #if debug_ecto_query_require
-                        // DISABLED: trace('[EctoQueryRequire] Injecting require into module ' + name);
                         #end
                         var requireStmt2 = makeAST(ERequire("Ecto.Query", null));
                         var newBody = [requireStmt2].concat(body);
@@ -2302,7 +2194,6 @@ class ElixirASTTransformer {
                 // Transform assign_multiple(socket, map) to assign(socket, map)
                 case ECall(null, "assign_multiple", args):
                     #if debug_ast_transformer
-                    // DISABLED: trace('[PhoenixFunctionMapping] Transforming assign_multiple to assign');
                     #end
                     return makeASTWithMeta(ECall(null, "assign", args), n.metadata, n.pos);
                     
@@ -2328,7 +2219,6 @@ class ElixirASTTransformer {
         var moduleName = "";
         
         #if debug_liveview_components
-        // DISABLED: trace('[XRay LiveViewComponents] Starting scan for component usage');
         #end
         
         // First, find the module name to determine the app name
@@ -2362,7 +2252,6 @@ class ElixirASTTransformer {
                         // Check if content contains component calls like <.button, <.input, etc.
                         if (content.indexOf("<.") != -1) {
                             #if debug_liveview_components
-                            // DISABLED: trace('[XRay LiveViewComponents] Found component usage in ~H sigil');
                             #end
                             needsCoreComponents = true;
                         }
@@ -2375,7 +2264,6 @@ class ElixirASTTransformer {
         checkForComponents(ast);
         
         #if debug_liveview_components
-        // DISABLED: trace('[XRay LiveViewComponents] Needs CoreComponents: $needsCoreComponents');
         #end
         
         // Phase 2: Add import if needed
@@ -2398,7 +2286,6 @@ class ElixirASTTransformer {
             switch(node.def) {
                 case EDefmodule(name, doBlock):
                     #if debug_liveview_components
-                    // DISABLED: trace('[XRay LiveViewComponents] Processing defmodule: $name');
                     #end
                     
                     // For defmodule, we need to inject the import into the do block
@@ -2419,7 +2306,6 @@ class ElixirASTTransformer {
                             
                             if (!hasImport) {
                                 #if debug_liveview_components
-                                // DISABLED: trace('[XRay LiveViewComponents] Adding CoreComponents import: $coreComponentsModule');
                                 #end
                                 
                                 // Create the import statement with specific functions to avoid conflicts
@@ -2489,12 +2375,8 @@ class ElixirASTTransformer {
             #if debug_instance_methods
             switch(node.def) {
                 case ECall(target, methodName, args):
-                    // DISABLED: trace('[InstanceMethodTransform] DEBUG - ECall detected:');
-                    // DISABLED: trace('  methodName: ${methodName}');
                     if (target != null) {
-                        // DISABLED: trace('  target.def: ${target.def}');
                     }
-                    // DISABLED: trace('  args.length: ${args.length}');
                 default:
             }
             #end
@@ -2509,7 +2391,6 @@ class ElixirASTTransformer {
                     // Detect StringBuf methods
                     if (methodName == "add" || methodName == "toString" || methodName == "to_string") {
                         #if debug_instance_methods
-                        // DISABLED: trace('[InstanceMethodTransform] Detected potential StringBuf method: ${methodName}');
                         #end
                         
                         // For now, assume it's a StringBuf if it has these methods
@@ -2550,7 +2431,6 @@ class ElixirASTTransformer {
                             // Direct variable method call: buffer.add() or struct.write_value()
                             if (methodName == "add" || methodName == "toString" || methodName == "to_string") {
                                 #if debug_instance_methods
-                                // DISABLED: trace('[InstanceMethodTransform] Direct method call on var: ${varName}.${methodName}');
                                 #end
                                 
                                 // Transform to module function call
@@ -2568,7 +2448,6 @@ class ElixirASTTransformer {
                                 );
                             } else if (methodName == "write_value" || methodName == "writeValue") {
                                 #if debug_instance_methods
-                                // DISABLED: trace('[InstanceMethodTransform] Struct method call on var: ${varName}.${methodName}');
                                 #end
                                 
                                 // Transform struct.write_value(args) to write_value(struct, args)  
@@ -2589,7 +2468,6 @@ class ElixirASTTransformer {
                             // These should become local function calls: write_value(struct, ...)
                             if (methodName == "write_value" || methodName == "writeValue") {
                                 #if debug_instance_methods
-                                // DISABLED: trace('[InstanceMethodTransform] Struct method call: ${field}.${methodName}');
                                 #end
                                 
                                 // Transform struct.method(args) to method(struct, args)
@@ -2643,11 +2521,8 @@ class ElixirASTTransformer {
                     if (stringMethod != null) {
                         // Transform to String module call
                         #if debug_string_methods
-                        // DISABLED: trace('[StringMethodTransform] Converting ${methodName} to String.${stringMethod}');
                         if (target != null) {
-                            // DISABLED: trace('[StringMethodTransform] Target exists');
                         }
-                        // DISABLED: trace('[StringMethodTransform] Args count: ${args.length}');
                         #end
                         
                         // Special handling for different methods
@@ -2795,9 +2670,6 @@ class ElixirASTTransformer {
                 case EBinary(StringConcat, l, r):
                     #if debug_string_interpolation
                     var fullNodeStr = ElixirASTPrinter.printAST(node);
-                    // DISABLED: trace('[StringInterpolation] Found concatenation pattern: ${fullNodeStr.substring(0, 200)}');
-                    // DISABLED: trace('[StringInterpolation] Left type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(l.def)}');
-                    // DISABLED: trace('[StringInterpolation] Right type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(r.def)}');
                     #end
                     // Collect all parts of the concatenation chain
                     var parts = [];
@@ -2925,7 +2797,6 @@ class ElixirASTTransformer {
                         result += '"';
                         
                         #if debug_string_interpolation
-                        // DISABLED: trace('[StringInterpolation] Transformed to: $result');
                         #end
                         
                         // Return raw interpolated string
@@ -3036,7 +2907,6 @@ class ElixirASTTransformer {
                 // Transform case expressions - recurse into clauses
                 case ECase(expr, clauses):
                     #if debug_string_interpolation
-                    // DISABLED: trace('[StringInterpolation] Found ECase, transforming ${clauses.length} clauses');
                     #end
                     makeASTWithMeta(
                         ECase(
@@ -3045,15 +2915,12 @@ class ElixirASTTransformer {
                                 #if debug_string_interpolation
                                 var bodyStr = ElixirASTPrinter.printAST(clause.body);
                                 if (bodyStr.indexOf("rgb(") > -1 || bodyStr.indexOf("<>") > -1) {
-                                    // DISABLED: trace('[StringInterpolation] Clause body BEFORE transformation: ${bodyStr.substring(0, 200)}');
-                                    // DISABLED: trace('[StringInterpolation] Clause body type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(clause.body.def)}');
                                 }
                                 #end
                                 var transformedBody = transform(clause.body);
                                 #if debug_string_interpolation
                                 var transformedStr = ElixirASTPrinter.printAST(transformedBody);
                                 if (bodyStr.indexOf("<>") > -1) {
-                                    // DISABLED: trace('[StringInterpolation] Clause body AFTER transformation: ${transformedStr.substring(0, 200)}');
                                 }
                                 #end
                                 {
@@ -3114,7 +2981,6 @@ class ElixirASTTransformer {
      */
     static function loopTransformationPass(ast: ElixirAST): ElixirAST {
         #if debug_loop_transformation
-        // DISABLED: trace("[LoopTransform] Starting loop transformation pass");
         #end
         
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
@@ -3125,10 +2991,7 @@ class ElixirASTTransformer {
                         case EVar("Enum"):
                             if (funcName == "reduce_while" && args != null && args.length >= 3) {
                                 #if debug_loop_transformation
-                                // DISABLED: trace("[LoopTransform] Found Enum.reduce_while call");
-                                // DISABLED: trace("[LoopTransform]   Args length: " + args.length);
                                 if (args.length >= 3) {
-                                    // DISABLED: trace("[LoopTransform]   Third arg (reducer fn) type: " + reflaxe.elixir.util.EnumReflection.enumConstructor(args[2].def));
                                 }
                                 #end
 
@@ -3140,7 +3003,6 @@ class ElixirASTTransformer {
                                             case EVar("Stream"):
                                                 if (streamFunc == "iterate" && streamArgs != null && streamArgs.length >= 2) {
                                                     #if debug_loop_transformation
-                                                    // DISABLED: trace("[LoopTransform] Found Stream.iterate pattern - WILL ATTEMPT TRANSFORMATION");
                                                     #end
                                                     
                                                     // Extract the initial value and increment function
@@ -3184,7 +3046,6 @@ class ElixirASTTransformer {
                                                     
                                                     if (isSimpleCounter) {
                                                         #if debug_loop_transformation
-                                                        // DISABLED: trace("[LoopTransform] Detected simple counter loop");
                                                         #end
                                                         
                                                         // Analyze the loop function to extract the body and condition
@@ -3196,9 +3057,6 @@ class ElixirASTTransformer {
                                                                 var loopInfo = analyzeLoopBody(clause.body);
                                                                 if (loopInfo != null) {
                                                                     #if debug_loop_transformation
-                                                                    // DISABLED: trace("[LoopTransform] Successfully analyzed loop body");
-                                                                    // DISABLED: trace("[LoopTransform] Upper bound: " + ElixirASTPrinter.print(loopInfo.upperBound, 0));
-                                                                    // DISABLED: trace("[LoopTransform] Has side effects only: " + loopInfo.hasSideEffectsOnly);
                                                                     #end
                                                                     
                                                                     // Transform to idiomatic Elixir
@@ -3218,7 +3076,6 @@ class ElixirASTTransformer {
                                                                         }]), node.pos);
                                                                         
                                                                         #if debug_loop_transformation
-                                                                        // DISABLED: trace("[LoopTransform] Transforming to Enum.each");
                                                                         #end
                                                                         
                                                                         return makeAST(ERemoteCall(
@@ -3437,7 +3294,6 @@ class ElixirASTTransformer {
      */
     static function abstractMethodThisPass(ast: ElixirAST): ElixirAST {
         #if debug_abstract_this
-        // DISABLED: trace('[XRay AbstractThis] Starting pass');
         #end
         
         // Add debug to see what nodes we're actually getting
@@ -3446,13 +3302,10 @@ class ElixirASTTransformer {
             var indent = [for (i in 0...depth) "  "].join("");
             switch(node.def) {
                 case EModule(name, _, body):
-                    // DISABLED: trace('$indent[XRay AbstractThis] Module: $name with ${body.length} definitions');
                     for (def in body) debugNode(def, depth + 1);
                 case EDef(name, _, _, body):
-                    // DISABLED: trace('$indent[XRay AbstractThis] Def: $name');
                     debugNode(body, depth + 1);
                 case EFn(clauses):
-                    // DISABLED: trace('$indent[XRay AbstractThis] !! Found EFn with ${clauses.length} clauses !!');
                 default:
                     // Don't trace every node type, just the ones we care about
             }
@@ -3464,7 +3317,6 @@ class ElixirASTTransformer {
             switch(node.def) {
                 case EFn(clauses):
                     #if debug_abstract_this
-                    // DISABLED: trace('[XRay AbstractThis] Processing EFn with ${clauses.length} clauses');
                     #end
                     // Check if this is an abstract method with "this" parameter
                     var fixedClauses = [];
@@ -3475,8 +3327,6 @@ class ElixirASTTransformer {
                             switch(clause.args[0]) {
                                 case PVar(paramName) if (paramName.indexOf("this") == 0 || paramName == "_struct" || paramName == "struct"):
                                     #if debug_abstract_this
-                                    // DISABLED: trace('[XRay AbstractThis] Found function with this/struct parameter: $paramName');
-                                    // DISABLED: trace('[XRay AbstractThis] Body before fix: ${ElixirASTPrinter.print(clause.body, 0)}');
                                     #end
                                     
                                     // Found a "this", "this_1", "struct", or "_struct" parameter
@@ -3484,7 +3334,6 @@ class ElixirASTTransformer {
                                     var fixedBody = replaceStructWithParam(clause.body, paramName);
                                     
                                     #if debug_abstract_this
-                                    // DISABLED: trace('[XRay AbstractThis] Body after fix: ${ElixirASTPrinter.print(fixedBody, 0)}');
                                     #end
                                     
                                     hasChanges = true;
@@ -3503,7 +3352,6 @@ class ElixirASTTransformer {
                     
                     if (hasChanges) {
                         #if debug_abstract_this
-                        // DISABLED: trace('[XRay AbstractThis] Applied fix to function');
                         #end
                         return makeASTWithMeta(EFn(fixedClauses), node.metadata, node.pos);
                     }
@@ -3570,14 +3418,12 @@ class ElixirASTTransformer {
      */
     static function listEffectLiftingPass(ast: ElixirAST): ElixirAST {
         #if debug_effect_lifting
-        // DISABLED: trace('[XRay ListEffectLifting] Starting pass');
         #end
         
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
             switch(node.def) {
                 case EList(elements):
                     #if debug_effect_lifting
-                    // DISABLED: trace('[XRay ListEffectLifting] Processing list with ${elements.length} elements');
                     #end
                     
                     // Check if any element has side effects
@@ -3588,14 +3434,12 @@ class ElixirASTTransformer {
                     for (i in 0...elements.length) {
                         var elem = elements[i];
                         #if debug_effect_lifting
-                        // DISABLED: trace('[XRay ListEffectLifting] Checking element $i: ${ElixirASTPrinter.print(elem, 0).substring(0, 50)}');
                         #end
                         
                         switch(elem.def) {
                             case EMatch(left, right):
                                 // Assignment inside list - needs lifting
                                 #if debug_effect_lifting
-                                // DISABLED: trace('[XRay ListEffectLifting] Found assignment in element $i');
                                 #end
                                 hasEffects = true;
                                 liftedStatements.push(elem);
@@ -3611,7 +3455,6 @@ class ElixirASTTransformer {
                             case EBlock(exprs) if (exprs.length > 0):
                                 // Block inside list - extract statements, keep last expression
                                 #if debug_effect_lifting
-                                // DISABLED: trace('[XRay ListEffectLifting] Found block in element $i with ${exprs.length} expressions');
                                 #end
                                 hasEffects = true;
                                 for (j in 0...exprs.length - 1) {
@@ -3635,7 +3478,6 @@ class ElixirASTTransformer {
                                         }
                                         if (innerHasEffects) {
                                             #if debug_effect_lifting
-                                            // DISABLED: trace('[XRay ListEffectLifting] Found nested list with effects');
                                             #end
                                             // Process the inner list recursively
                                             var processedInner = listEffectLiftingPass(makeAST(right.def));
@@ -3666,7 +3508,6 @@ class ElixirASTTransformer {
                     
                     if (hasEffects) {
                         #if debug_effect_lifting
-                        // DISABLED: trace('[XRay ListEffectLifting] Lifting ${liftedStatements.length} statements');
                         #end
                         
                         // Return a block with lifted statements followed by pure list
@@ -3739,8 +3580,6 @@ class ElixirASTTransformer {
                                                 // This looks like a struct field assignment pattern
                                                 // Transform: fieldName = value → spec = Map.put(spec, :fieldName, value)
                                                 #if debug_ast_transformer
-                                                // DISABLED: trace('[XRay StructFieldAssignment] Found field assignment pattern: $fieldName = ...');
-                                                // DISABLED: trace('[XRay StructFieldAssignment] Transforming to Map.put($varName, :$fieldName, ...)');
                                                 #end
                                                 
                                                 // Add the original struct assignment
@@ -3809,7 +3648,6 @@ class ElixirASTTransformer {
             }
 
             #if debug_ast_transformer
-            // DISABLED: trace('[XRay StatementContext] Processing node: ${node.def}, context: ${isStatementContext ? "statement" : "expression"}');
             #end
 
             // First, recursively transform children with appropriate context
@@ -3817,7 +3655,6 @@ class ElixirASTTransformer {
                 case EDefmodule(name, doBlock):
                     // Process the module's do block in statement context
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay StatementContext] Processing EDefmodule: $name');
                     #end
                     makeASTWithMeta(
                         EDefmodule(name, transformWithContext(doBlock, true)),
@@ -3827,7 +3664,6 @@ class ElixirASTTransformer {
                 case EBlock(expressions):
                     // In a block, all but the last expression are in statement context
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay StatementContext] Processing EBlock with ${expressions.length} expressions');
                     #end
                     var newExpressions = [];
                     for (i in 0...expressions.length) {
@@ -3836,7 +3672,6 @@ class ElixirASTTransformer {
                         #if debug_ast_transformer
                         if (expressions[i] != null && expressions[i].def != null) {
                             var exprType = reflaxe.elixir.util.EnumReflection.enumConstructor(expressions[i].def);
-                            // DISABLED: trace('[XRay StatementContext] Block expr $i/${expressions.length}: $exprType, context: ${childContext ? "statement" : "expression"}');
                         }
                         #end
                         newExpressions.push(transformWithContext(expressions[i], childContext));
@@ -3857,7 +3692,6 @@ class ElixirASTTransformer {
                     // Function body is a block - let it handle its own statement/expression context
                     // The block will mark all but the last expression as statement context
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay StatementContext] Processing EDef: $name, body type: ${body.def}');
                     #end
                     makeASTWithMeta(
                         EDef(name, args, guards, transformWithContext(body, false)),
@@ -3868,7 +3702,6 @@ class ElixirASTTransformer {
                     // Function body is a block - let it handle its own statement/expression context  
                     // The block will mark all but the last expression as statement context
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay StatementContext] Processing EDefp: $name, body type: ${body.def}');
                     #end
                     makeASTWithMeta(
                         EDefp(name, args, guards, transformWithContext(body, false)),
@@ -4028,7 +3861,6 @@ class ElixirASTTransformer {
                 switch(transformed.def) {
                     case ERemoteCall(module, funcName, args):
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay StatementContext] Checking ERemoteCall: module=${module.def}, func=$funcName, args=${args.length}');
                         #end
                         if (remoteCallNeedsRebind(module, funcName) && args.length >= 1) {
                             // First arg should be the variable being modified
@@ -4109,7 +3941,6 @@ class ElixirASTTransformer {
                         switch(left.def) {
                             case EVar(varName):
                                 #if debug_ast_transformer
-                                // DISABLED: trace('[XRay StatementContext] Wrapping ++ with reassignment to: $varName');
                                 #end
                                 // Transform to: varName = varName ++ right
                                 return makeASTWithMeta(
@@ -4144,12 +3975,10 @@ class ElixirASTTransformer {
                                                         switch(args[0]) { case PVar("struct"): true; default: false; }):
                     // This is a struct method that might mutate fields
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay ImmutabilityTransform] Found method $name with struct parameter');
                     #end
                     var updatedBody = transformStructFieldAssignments(body, args);
                     if (updatedBody != body) {
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay ImmutabilityTransform] Transformed body for method $name');
                         #end
                         makeASTWithMeta(
                             EDef(name, args, guards, updatedBody),
@@ -4158,7 +3987,6 @@ class ElixirASTTransformer {
                         );
                     } else {
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay ImmutabilityTransform] No transformation needed for method $name');
                         #end
                         node;
                     }
@@ -4216,14 +4044,12 @@ class ElixirASTTransformer {
                                     // GUARD: Check if fieldName is an array infrastructure variable
                                     if (StructUpdateTransform.isArrayVariable(fieldName)) {
                                         #if debug_ast_transformer
-                                        // DISABLED: trace('[XRay ImmutabilityTransform] Skipping array variable field: struct.$fieldName');
                                         #end
                                         // Regular array concatenation
                                         makeAST(EBinary(Concat, target, makeAST(EList([item]))));
                                     } else {
                                         // Transform to struct update: %{struct | field: struct.field ++ [item]}
                                         #if debug_ast_transformer
-                                        // DISABLED: trace('[XRay ImmutabilityTransform] Transforming struct.$fieldName.push(item) to struct update');
                                         #end
                                         makeAST(EStructUpdate(
                                             structVar,
@@ -4248,14 +4074,12 @@ class ElixirASTTransformer {
                             // Pattern: g, g2, _g, _g2, etc. - these are NOT struct fields
                             if (StructUpdateTransform.isArrayVariable(fieldName)) {
                                 #if debug_ast_transformer
-                                // DISABLED: trace('[XRay ImmutabilityTransform] Skipping array variable: $fieldName');
                                 #end
                                 // Regular array concatenation, not struct update
                                 makeAST(EBinary(Concat, target, makeAST(EList([item]))));
                             } else {
                                 // We need to transform this to a struct update
                                 #if debug_ast_transformer
-                                // DISABLED: trace('[XRay ImmutabilityTransform] Transforming $fieldName.push(item) to struct update');
                                 #end
                                 // Create the struct variable (assuming "struct" is the instance parameter)
                                 var structVar = makeAST(EVar("struct"));
@@ -4308,7 +4132,6 @@ class ElixirASTTransformer {
         if (!hasStructParam) return body;
         
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay transformStructFieldAssignments] Analyzing body for field assignments');
         #end
         
         // Look for field assignments in the body
@@ -4321,7 +4144,6 @@ class ElixirASTTransformer {
                 case EMatch(PVar("root"), value):
                     // Found field assignment: root = ...
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay transformStructFieldAssignments] Found root assignment');
                     #end
                     hasFieldAssignment = true;
                     fieldUpdates.set("root", value);
@@ -4337,7 +4159,6 @@ class ElixirASTTransformer {
         analyzeNode(body);
         
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay transformStructFieldAssignments] hasFieldAssignment: $hasFieldAssignment, has root: ${fieldUpdates.exists("root")}');
         #end
         
         if (hasFieldAssignment && fieldUpdates.exists("root")) {
@@ -4383,7 +4204,6 @@ class ElixirASTTransformer {
      */
     static function fluentApiOptimizationPass(ast: ElixirAST): ElixirAST {
         #if debug_fluent_api
-        // DISABLED: trace("[FluentApiOptimization] Starting optimization pass");
         #end
 
         return transformNode(ast, function(node) {
@@ -4392,7 +4212,6 @@ class ElixirASTTransformer {
                     var optimizedBody = optimizeFluentBody(body);
                     if (optimizedBody != body) {
                         #if debug_fluent_api
-                        // DISABLED: trace('[FluentApiOptimization] Optimized function: $name');
                         #end
                         return makeASTWithMeta(EDef(name, args, guards, optimizedBody), node.metadata, node.pos);
                     }
@@ -4400,7 +4219,6 @@ class ElixirASTTransformer {
                     var optimizedBody = optimizeFluentBody(body);
                     if (optimizedBody != body) {
                         #if debug_fluent_api
-                        // DISABLED: trace('[FluentApiOptimization] Optimized private function: $name');
                         #end
                         return makeASTWithMeta(EDefp(name, args, guards, optimizedBody), node.metadata, node.pos);
                     }
@@ -4430,7 +4248,6 @@ class ElixirASTTransformer {
                             case EVar("struct"):
                                 // Found the pattern! Return the update expression directly
                                 #if debug_fluent_api
-                                // DISABLED: trace('[FluentApiOptimization] Found fluent pattern - optimizing');
                                 #end
                                 return updateExpr;
                             default:
@@ -4461,7 +4278,6 @@ class ElixirASTTransformer {
      */
     static function arrayLengthFieldToFunctionPass(ast: ElixirAST): ElixirAST {
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay ArrayLengthField] Starting array length field to function transformation');
         #end
         
         // Handle null nodes
@@ -4474,7 +4290,6 @@ class ElixirASTTransformer {
                 // This is an array.length field access that needs to become length(array)
                 #if debug_ast_transformer
                 var targetStr = ElixirASTPrinter.printAST(target);
-                // DISABLED: trace('[XRay ArrayLengthField] Transforming ${targetStr}.length to length($targetStr)');
                 #end
                 {
                     def: ECall(null, "length", [
@@ -4638,23 +4453,17 @@ class ElixirASTTransformer {
 
         // Log breadcrumbs
         if (nodeVisitCounter % 1000 == 0) {
-            // DISABLED: trace('[TRANSFORMER BREADCRUMB] Node ${nodeVisitCounter}: ${reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def)}');
         }
 
         // Detect excessive visits to same node (cycle)
         if (visits > 1000) {
-            // DISABLED: trace('[CYCLE DETECTED] Node ${nodeId} visited ${visits} times!');
-            // DISABLED: trace('[CYCLE DETECTED] AST def: ${ast.def}');
             #if debug_transformer_hang
-            // DISABLED: trace('[CYCLE DETECTED] Current pass: ' + currentPassName);
             #end
             throw 'Infinite recursion detected in transformer: ${nodeId}';
         }
 
         // Overall safety limit
         if (nodeVisitCounter > maxNodeVisits) {
-            // DISABLED: trace('[TRANSFORMER HANG] Exceeded ${maxNodeVisits} node visits');
-            // DISABLED: trace('[TRANSFORMER HANG] Last node: ${reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def)}');
             throw 'Transformer exceeded maximum node visit limit';
         }
         #end
@@ -5369,7 +5178,6 @@ class ElixirASTTransformer {
             switch(node.def) {
                 case EDef(name, args, guards, body) if (name == "_new"):
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay RemoveRedundantNilInit] Processing _new function');
                     #end
                     // Special handling for abstract constructor _new functions
                     var transformedBody = switch(body.def) {
@@ -5394,7 +5202,6 @@ class ElixirASTTransformer {
                                                         } else {
                                                             // Skip the nil assignment
                                                                     #if debug_ast_transformer
-                                                                    // DISABLED: trace('[XRay RemoveRedundantNilInit] Removing this1 = nil in _new function');
                                                                     #end
                                                                     shouldSkip = true;
                                                     }
@@ -5424,7 +5231,6 @@ class ElixirASTTransformer {
                     
                 case EBlock(expressions):
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay RemoveRedundantNilInit] Processing EBlock with ${expressions.length} expressions');
                     #end
                     var filtered = [];
                     var nilAssignments = new Map<String, Int>(); // Track nil assignments by variable name
@@ -5442,7 +5248,6 @@ class ElixirASTTransformer {
                             case EMatch(PVar(varName), nilValue):
                                 if (isNilValue(nilValue)) {
                                     #if debug_ast_transformer
-                                    // DISABLED: trace('[XRay RemoveRedundantNilInit] Found nil assignment for var: $varName at index $i');
                                     #end
                                     nilAssignments.set(varName, i);
                                 }
@@ -5467,7 +5272,6 @@ class ElixirASTTransformer {
                             case EVar(v) if (varsToClean.exists(v)):
                                 // This is a standalone variable reference after an assignment, skip it
                                 #if debug_ast_transformer
-                                // DISABLED: trace('[XRay RemoveRedundantNilInit] Removing standalone variable reference: $v');
                                 #end
                                 varsToClean.remove(v);
                                 i++;
@@ -5485,26 +5289,22 @@ class ElixirASTTransformer {
                                     // These are ALWAYS immediately reassigned in abstract constructors
 	                                    if (varName == "this1" || varName == "this" || varName.startsWith("this")) {
                                         #if debug_ast_transformer
-                                        // DISABLED: trace('[XRay RemoveRedundantNilInit] Found "this1" nil assignment at index $i');
                                         #end
                                         // Check immediate next expression for reassignment
                                         if (i + 1 < expressions.length) {
                                             var nextExpr = expressions[i + 1];
                                             if (nextExpr != null && nextExpr.def != null) {
                                                 #if debug_ast_transformer
-                                                // DISABLED: trace('[XRay RemoveRedundantNilInit] Next expr at ${i+1}: ${nextExpr.def}');
                                                 #end
                                                 switch(nextExpr.def) {
                                                 case EMatch(PVar(nextVarName), value) if (nextVarName == varName):
                                                     if (isNilValue(value)) {
                                                         // Don't skip if it's another nil
                                                         #if debug_ast_transformer
-                                                        // DISABLED: trace('[XRay RemoveRedundantNilInit] Next assignment is also nil, not skipping');
                                                         #end
                                                     } else {
                                                         // Non-nil reassignment - skip the initial nil AND check if there's a useless variable reference after
                                                         #if debug_ast_transformer
-                                                        // DISABLED: trace('[XRay RemoveRedundantNilInit] REMOVING redundant nil init for abstract constructor var: $varName');
                                                         #end
                                                         shouldSkip = true;
                                                         
@@ -5517,7 +5317,6 @@ class ElixirASTTransformer {
                                                                     case EVar(v) if (v == varName):
                                                                         // This is the standalone variable reference that causes the warning
                                                                         #if debug_ast_transformer
-                                                                        // DISABLED: trace('[XRay RemoveRedundantNilInit] Found standalone variable reference after assignment, marking for removal');
                                                                         #end
                                                                         // Mark this variable for cleanup
                                                                         varsToClean.set(varName, true);
@@ -5528,7 +5327,6 @@ class ElixirASTTransformer {
                                                     }
                                                     default:
                                                         #if debug_ast_transformer
-                                                        // DISABLED: trace('[XRay RemoveRedundantNilInit] Next expr is not a match for $varName');
                                                         #end
                                                 }
                                             }
@@ -5551,7 +5349,6 @@ class ElixirASTTransformer {
                                                         } else {
                                                             // Non-nil reassignment found - skip the initial nil
                                                                 #if debug_ast_transformer
-                                                                // DISABLED: trace('[XRay RemoveRedundantNilInit] Removing redundant nil init for: $varName (reassigned at index $j)');
                                                                 #end
                                                                 shouldSkip = true;
                                                                 break;
@@ -5623,7 +5420,6 @@ class ElixirASTTransformer {
                             filtered.push(expr);
                         } else {
                             #if debug_ast_transformer
-                            // DISABLED: trace('[XRay RemoveRedundantNilInit] Skipping redundant nil init at index $i');
                             #end
                         }
                         i++;
@@ -5632,7 +5428,6 @@ class ElixirASTTransformer {
                     // Only create new block if we removed something
                     if (filtered.length != expressions.length) {
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay RemoveRedundantNilInit] Removed ${expressions.length - filtered.length} redundant nil assignments from block');
                         #end
                         return makeASTWithMeta(EBlock(filtered), node.metadata, node.pos);
                     } else {
@@ -5666,7 +5461,6 @@ class ElixirASTTransformer {
      */
     static function prefixUnusedParametersPass(ast: ElixirAST): ElixirAST {
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay PrefixUnusedParams] PASS START');
         #end
         
         return transformNode(ast, function(node: ElixirAST): ElixirAST {
@@ -5674,12 +5468,10 @@ class ElixirASTTransformer {
                 // Handle regular function definitions
                 case EDef(name, args, guards, body):
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay PrefixUnusedParams] Found EDef: $name with ${args.length} args');
                     #end
                     var result = handleFunctionParameters(args, guards, body);
                     if (result.hasChanges) {
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay PrefixUnusedParams] Updated EDef: $name');
                         #end
                         return makeASTWithMeta(EDef(name, result.args, guards, result.body), node.metadata, node.pos);
                     }
@@ -5689,7 +5481,6 @@ class ElixirASTTransformer {
                     var result = handleFunctionParameters(args, guards, body);
                     if (result.hasChanges) {
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay PrefixUnusedParams] Updated EDefp: $name');
                         #end
                         return makeASTWithMeta(EDefp(name, result.args, guards, result.body), node.metadata, node.pos);
                     }
@@ -5699,7 +5490,6 @@ class ElixirASTTransformer {
                     var result = handleFunctionParameters(args, guards, body);
                     if (result.hasChanges) {
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay PrefixUnusedParams] Updated EDefmacro: $name');
                         #end
                         return makeASTWithMeta(EDefmacro(name, result.args, guards, result.body), node.metadata, node.pos);
                     }
@@ -5709,7 +5499,6 @@ class ElixirASTTransformer {
                     var result = handleFunctionParameters(args, guards, body);
                     if (result.hasChanges) {
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay PrefixUnusedParams] Updated EDefmacrop: $name');
                         #end
                         return makeASTWithMeta(EDefmacrop(name, result.args, guards, result.body), node.metadata, node.pos);
                     }
@@ -5736,7 +5525,6 @@ class ElixirASTTransformer {
                     
                     if (hasAnyChange) {
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay PrefixUnusedParams] Updated EFn with ${clauses.length} clauses');
                         #end
                         return makeASTWithMeta(EFn(newClauses), node.metadata, node.pos);
                     }
@@ -5890,7 +5678,6 @@ class ElixirASTTransformer {
         }
         
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay PrefixUnusedParams] Found parameters: ' + [for (name => _ in paramNames) name].join(", "));
         #end
         
         // If no parameters to check, return early
@@ -5907,7 +5694,6 @@ class ElixirASTTransformer {
 	                    if (paramNames.exists(name)) {
 	                        paramNames.set(name, true); // Mark as used
 	                        #if debug_ast_transformer
-	                        // DISABLED: trace('[XRay PrefixUnusedParams] Found usage of param: $name');
                         #end
                     }
                 case EField(target, _):
@@ -5917,7 +5703,6 @@ class ElixirASTTransformer {
                             if (paramNames.exists(name)) {
                                 paramNames.set(name, true); // Mark as used
                                 #if debug_ast_transformer
-                                // DISABLED: trace('[XRay PrefixUnusedParams] Found field access on param: $name');
                                 #end
                             }
                         default:
@@ -5930,7 +5715,6 @@ class ElixirASTTransformer {
                             if (paramNames.exists(name)) {
                                 paramNames.set(name, true); // Mark as used
                                 #if debug_ast_transformer
-                                // DISABLED: trace('[XRay PrefixUnusedParams] Found bracket access on param: $name');
                                 #end
                             }
                         default:
@@ -5944,7 +5728,6 @@ class ElixirASTTransformer {
                             if (paramNames.exists(name)) {
                                 paramNames.set(name, true); // Mark as used
                                 #if debug_ast_transformer
-                                // DISABLED: trace('[XRay PrefixUnusedParams] Found struct update on param: $name');
                                 #end
                             }
                         default:
@@ -5964,7 +5747,6 @@ class ElixirASTTransformer {
                         if (new EReg(pattern, "").match(code)) {
                             paramNames.set(name, true); // Mark as used
                             #if debug_ast_transformer
-                            // DISABLED: trace('[XRay PrefixUnusedParams] Found param usage in ERaw: $name in code: ${code.substring(0, 100)}...');
                             #end
                         }
                     }
@@ -5973,7 +5755,6 @@ class ElixirASTTransformer {
                     for (pair in pairs) {
                         markUsedVars(pair.value);
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay PrefixUnusedParams] Checking keyword list value for parameter usage');
                         #end
                     }
 	                case ESigil(type, _content, _modifiers) if (type == "H" || type == "h"):
@@ -6308,11 +6089,9 @@ class ElixirASTTransformer {
             case EList(elements):
                 #if (debug_otp_child_spec && debug_otp_child_spec_verbose)
                 if (elements.length > 0) {
-                    // DISABLED: trace('[XRay OTPChildSpec] Processing EList with ${elements.length} elements');
                     for (i in 0...elements.length) {
                         var elem = elements[i];
                         if (elem.metadata != null && elem.metadata.requiresIdiomaticTransform == true) {
-                            // DISABLED: trace('[XRay OTPChildSpec] Element $i has requiresIdiomaticTransform flag!');
                         }
                     }
                 }
@@ -6443,7 +6222,6 @@ class ElixirASTTransformer {
      */
     static function otpChildSpecTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_ast_transformer
-        // DISABLED: trace("[XRay OTPChildSpec] Starting idiomatic enum transformation pass");
         #end
         
         var transformCount = 0;
@@ -6451,7 +6229,6 @@ class ElixirASTTransformer {
         function transformIdiomaticNode(node: ElixirAST): ElixirAST {
             #if (debug_otp_child_spec && debug_otp_child_spec_verbose)
             // Very verbose - show every node being checked
-            // DISABLED: trace('[XRay OTPChildSpec] Checking node type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(node.def)}');
             #end
             
             // First, recursively transform children
@@ -6465,13 +6242,10 @@ class ElixirASTTransformer {
             // Then check if this node itself needs transformation
             if (nodeWithTransformedChildren.metadata != null && nodeWithTransformedChildren.metadata.requiresIdiomaticTransform == true) {
                 #if debug_otp_child_spec
-                // DISABLED: trace('[XRay OTPChildSpec] Found node #${++transformCount} with requiresIdiomaticTransform flag');
-                // DISABLED: trace('[XRay OTPChildSpec] Node def: ${nodeWithTransformedChildren.def}');
                 #end
                 // Apply transformation using shared utility
                 var transformed = reflaxe.elixir.ast.ElixirAST.applyIdiomaticEnumTransformation(nodeWithTransformedChildren);
                 #if debug_otp_child_spec
-                // DISABLED: trace('[XRay OTPChildSpec] Transformed to: ${transformed.def}');
                 #end
                 return transformed;
             }
@@ -6482,7 +6256,6 @@ class ElixirASTTransformer {
         var result = transformIdiomaticNode(ast);
         
         #if debug_otp_child_spec
-        // DISABLED: trace('[XRay OTPChildSpec] Pass complete. Transformed ${transformCount} nodes');
         #end
         
         return result;
@@ -6543,7 +6316,6 @@ class ElixirASTTransformer {
      */
     static function tupleElemFieldToFunctionPass(ast: ElixirAST): ElixirAST {
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay TupleElemField] Starting tuple elem field to function transformation');
         #end
         
         // Handle null nodes
@@ -6558,7 +6330,6 @@ class ElixirASTTransformer {
                 // So we need to look for the pattern in context
                 #if debug_ast_transformer
                 var targetStr = ElixirASTPrinter.printAST(target);
-                // DISABLED: trace('[XRay TupleElemField] Found .elem field access on: $targetStr');
                 #end
                 
                 // For now, we'll mark it for transformation but can't fully convert
@@ -6575,7 +6346,6 @@ class ElixirASTTransformer {
                     // Transform to elem(target, N) for proper Elixir syntax
                     #if debug_ast_transformer
                     var targetStr = ElixirASTPrinter.printAST(expr);
-                    // DISABLED: trace('[XRay TupleElemField] Transforming ${targetStr}.elem(${args.length} args) to elem($targetStr, ...)');
                     #end
                     {
                         def: ECall(null, "elem", [
@@ -6626,7 +6396,6 @@ class ElixirASTTransformer {
      */
     static function idiomaticEnumPatternMatchingPass(ast: ElixirAST): ElixirAST {
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay EnumPatternMatching] Starting idiomatic enum pattern matching pass');
         #end
         
         // Handle null nodes
@@ -6645,7 +6414,6 @@ class ElixirASTTransformer {
                         switch(arg.def) {
                             case EInteger(0):
                                 #if debug_ast_transformer
-                                // DISABLED: trace('[XRay EnumPatternMatching] Found enum tag check pattern on elem(0) as ECall');
                                 #end
                                 isEnumTagCheck = true;
                                 baseExpr = tupleExpr;
@@ -6656,7 +6424,6 @@ class ElixirASTTransformer {
                         // We detect it here but can't check for index 0 directly
                         // The transformer will need to analyze the clauses to determine this
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay EnumPatternMatching] Found potential enum tag check pattern with .elem field access');
                         #end
                         isEnumTagCheck = true;
                         baseExpr = tupleExpr;
@@ -6666,7 +6433,6 @@ class ElixirASTTransformer {
                 if (isEnumTagCheck) {
                     
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay EnumPatternMatching] Transforming enum case to idiomatic pattern matching');
                     #end
                     
                     // Transform each clause
@@ -6702,7 +6468,6 @@ class ElixirASTTransformer {
      */
     static function transformEnumClause(clause: ECaseClause, baseExpr: ElixirAST): ECaseClause {
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay EnumPatternMatching] Transforming clause with pattern: ${clause.pattern}');
         #end
         
         // Extract the tag value from the pattern
@@ -6712,13 +6477,11 @@ class ElixirASTTransformer {
                     case EInteger(tag): tag;
                     default:
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay EnumPatternMatching] Non-integer pattern, keeping as-is');
                         #end
                         return clause; // Can't transform non-integer patterns
                 }
             default: 
                 #if debug_ast_transformer
-                // DISABLED: trace('[XRay EnumPatternMatching] Non-literal pattern, keeping as-is');
                 #end
                 return clause; // Can't transform non-literal patterns
         };
@@ -6727,7 +6490,6 @@ class ElixirASTTransformer {
         var extractedParams = analyzeEnumParameterExtraction(clause.body, baseExpr);
         
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay EnumPatternMatching] Found ${extractedParams.length} extracted parameters');
         #end
         
         // Create tuple pattern based on extracted parameters
@@ -6747,7 +6509,6 @@ class ElixirASTTransformer {
         var cleanedBody = removeEnumParameterExtractions(clause.body, extractedParams);
         
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay EnumPatternMatching] Created tuple pattern with ${extractedParams.length + 1} elements');
         #end
         
         return {
@@ -6977,7 +6738,6 @@ class ElixirASTTransformer {
     
     static function underscoreVariableCleanupPass(ast: ElixirAST): ElixirAST {
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay UnderscoreCleanup] Starting underscore variable cleanup pass');
         #end
         
         // Phase 1: Collect underscore variables and track usage
@@ -7033,13 +6793,11 @@ class ElixirASTTransformer {
                         underscoreVars.set(name, true);
                         allUnderscoreVars.set(name, true);
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay UnderscoreCleanup] Found used underscore variable: $name at ${node.pos}');
                         #end
                     }
                     
                 case ERemoteCall(module, funcName, args):
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay UnderscoreCleanup] Found ERemoteCall: $funcName with ${args.length} args');
                     #end
                     // Recursively collect from module and all arguments
                     if (module != null) collectVariables(module);
@@ -7049,7 +6807,6 @@ class ElixirASTTransformer {
                     
                 case EFn(clauses):
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay UnderscoreCleanup] Found EFn with ${clauses.length} clauses');
                     #end
                     // Recursively collect from lambda/function bodies
                     for (clause in clauses) {
@@ -7082,7 +6839,6 @@ class ElixirASTTransformer {
                 // If we rename `_g` to `g` in the switch but not in the declaration, we get undefined variable errors
                 if (~/^_g(_?\d*)?$/.match(varName)) {
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay UnderscoreCleanup] PRESERVING infrastructure variable: $varName (used in switch desugaring)');
                     #end
                     // DO NOT rename - keep the underscore prefix
                     continue;
@@ -7094,14 +6850,12 @@ class ElixirASTTransformer {
                     var newName = "temp" + varName.substr(1);
                     renameMap.set(varName, newName);
                     #if debug_ast_transformer
-                    // DISABLED: trace('[XRay UnderscoreCleanup] Renaming used numeric: $varName -> $newName');
                     #end
                 }
                 // Other underscore variables are left as-is (might be intentional)
             } else {
                 #if debug_ast_transformer
                 if (varName.charAt(0) == "_" && varName.length > 1) {
-                    // DISABLED: trace('[XRay UnderscoreCleanup] Keeping unused underscore variable: $varName');
                 }
                 #end
             }
@@ -7110,13 +6864,11 @@ class ElixirASTTransformer {
         // Phase 3: Apply renaming throughout the AST
         if (renameMap.keys().hasNext()) {
             #if debug_ast_transformer
-            // DISABLED: trace('[XRay UnderscoreCleanup] Applying ${Lambda.count(renameMap)} variable renamings');
             #end
             return applyVariableRenaming(ast, renameMap);
         }
         
         #if debug_ast_transformer
-        // DISABLED: trace('[XRay UnderscoreCleanup] No underscore variables need renaming');
         #end
         return ast;
     }
@@ -7149,7 +6901,6 @@ class ElixirASTTransformer {
                 case EVar(name):
                     if (renameMap.exists(name)) {
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay UnderscoreCleanup] Renaming EVar: $name -> ${renameMap.get(name)}');
                         #end
                         makeASTWithMeta(EVar(renameMap.get(name)), node.metadata, node.pos);
                     } else {
@@ -7306,30 +7057,24 @@ class ElixirASTTransformer {
      */
     static function unrolledComprehensionReconstructionPass(ast: ElixirAST): ElixirAST {
         #if debug_array_comprehension
-        // DISABLED: trace('[Array Comprehension Transform] Starting reconstruction pass');
         #end
         #if debug_unrolled_comprehension
-        // DISABLED: trace('[DEBUG Transform] unrolledComprehensionReconstructionPass called');
         #end
         
         function reconstructComprehension(ast: ElixirAST): ElixirAST {
             return switch(ast.def) {
                 case EBlock(stmts) if (ast.metadata != null && ast.metadata.isUnrolledComprehension == true):
                     #if debug_array_comprehension
-                    // DISABLED: trace('[Array Comprehension Transform] ✓ Found marked block with ${stmts.length} statements');
-                    // DISABLED: trace('[Array Comprehension Transform]   Metadata: ${ast.metadata}');
                     #end
                     
                     // Analyze the block to reconstruct comprehension
                     var comprehension = analyzeAndReconstructComprehension(stmts);
                     if (comprehension != null) {
                         #if debug_array_comprehension
-                        // DISABLED: trace('[Array Comprehension Transform] ✓ Successfully reconstructed as for comprehension');
                         #end
                         comprehension;
                     } else {
                         #if debug_array_comprehension
-                        // DISABLED: trace('[Array Comprehension Transform] ✗ Could not reconstruct, keeping as block');
                         #end
                         ast;
                     }
@@ -7357,7 +7102,6 @@ class ElixirASTTransformer {
         if (stmts.length < 3) return null;
         
         #if debug_array_comprehension
-        // DISABLED: trace('[Array Comprehension Transform] Analyzing block for reconstruction');
         #end
         
         // Check first statement: should be g = []
@@ -7369,7 +7113,6 @@ class ElixirASTTransformer {
         };
         
         #if debug_array_comprehension
-        // DISABLED: trace('[Array Comprehension Transform]   Found initialization: $iterVar = []');
         #end
         
         // Extract elements from accumulation statements
@@ -7385,13 +7128,11 @@ class ElixirASTTransformer {
                 case _:
                     // Unknown pattern
                     #if debug_array_comprehension
-                    // DISABLED: trace('[Array Comprehension Transform]   Unknown statement pattern: ${stmts[i].def}');
                     #end
             }
         }
         
         #if debug_array_comprehension
-        // DISABLED: trace('[Array Comprehension Transform]   Extracted ${elements.length} elements');
         #end
         
         // Check last statement: should return the variable
@@ -7426,7 +7167,6 @@ class ElixirASTTransformer {
         }
         
         #if debug_array_comprehension
-        // DISABLED: trace('[Array Comprehension Transform]   Simple range: $isSimpleRange, Nested: $hasNestedComprehensions');
         #end
         
         // Generate appropriate comprehension
@@ -7467,7 +7207,6 @@ class ElixirASTTransformer {
         } else {
             // Complex pattern - keep as-is for now
             #if debug_array_comprehension
-            // DISABLED: trace('[Array Comprehension Transform]   Complex pattern, not reconstructing');
             #end
             return null;
         }
@@ -7529,12 +7268,9 @@ class SupervisorOptionsTransformPass {
      */
     public static function transform(ast: ElixirAST, ?context: reflaxe.elixir.CompilationContext): ElixirAST {
         #if debug_ast_transformer
-        // DISABLED: trace("[XRay SupervisorOptions] Starting supervisor options transformation");
         switch(ast.def) {
             case EDefmodule(name, _):
-                // DISABLED: trace('[XRay SupervisorOptions] Processing module: $name');
             case _:
-                // DISABLED: trace('[XRay SupervisorOptions] Processing non-module AST');
         }
         #end
         
@@ -7549,9 +7285,7 @@ class SupervisorOptionsTransformPass {
             #if debug_ast_transformer
             switch(node.def) {
                 case EMatch(PVar(name), _):
-                    // DISABLED: trace('[XRay SupervisorOptions] Found variable assignment in transformSupervisorCalls: $name');
                 case EMap(_):
-                    // DISABLED: trace('[XRay SupervisorOptions] Found map in transformSupervisorCalls');
                 case _:
             }
             #end
@@ -7566,7 +7300,6 @@ class SupervisorOptionsTransformPass {
                     
                     if (isSupervisor) {
                         #if debug_ast_transformer
-                        // DISABLED: trace("[XRay SupervisorOptions] Found Supervisor.start_link call");
                         #end
                         
                         // Transform the second argument (options) if it's a map
@@ -7589,20 +7322,17 @@ class SupervisorOptionsTransformPass {
                     
                     #if debug_ast_transformer
                     if (varName != null) {
-                        // DISABLED: trace('[XRay SupervisorOptions] Found variable assignment: $varName');
                     }
                     #end
                     
                     if (varName != null && (varName == "opts" || varName.indexOf("option") != -1 || varName.indexOf("config") != -1)) {
                         // This might be supervisor options
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay SupervisorOptions] Variable $varName looks like options, checking if it\'s a map...');
                         #end
                         
                         var transformedExpr = transformSupervisorOptions(expr);
                         if (transformedExpr != expr) {
                             #if debug_ast_transformer
-                            // DISABLED: trace('[XRay SupervisorOptions] ✓ Transformed options assignment for variable: $varName');
                             #end
                             return makeASTWithMeta(
                                 EMatch(pattern, transformedExpr),
@@ -7627,7 +7357,6 @@ class SupervisorOptionsTransformPass {
         return switch(expr.def) {
             case EMap(pairs):
                 #if debug_ast_transformer
-                // DISABLED: trace('[XRay SupervisorOptions] Analyzing map with ${pairs.length} pairs');
                 #end
                 
                 // Check if this looks like supervisor options
@@ -7653,7 +7382,6 @@ class SupervisorOptionsTransformPass {
                         }
                         
                         #if debug_ast_transformer
-                        // DISABLED: trace('[XRay SupervisorOptions] Checking key: $keyName (hasStrategy=$hasStrategy, hasMaxRestarts=$hasMaxRestarts)');
                         #end
                     }
                 }
@@ -7661,7 +7389,6 @@ class SupervisorOptionsTransformPass {
                 // If it has at least strategy (required) and one other supervisor field, convert it
                 if (hasStrategy && (hasMaxRestarts || hasMaxSeconds || hasName)) {
                     #if debug_ast_transformer
-                    // DISABLED: trace("[XRay SupervisorOptions] Converting map to keyword list for supervisor options");
                     #end
                     
                     // Convert EMapPair to EKeywordPair with normalization for strategy atom
