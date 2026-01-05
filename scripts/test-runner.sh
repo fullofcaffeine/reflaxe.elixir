@@ -285,7 +285,7 @@ run_tests() {
     else
         if [ "$aggregate_mode" = true ]; then
             # Aggregated targets (all/categories) return proper exit codes
-            if "$PROJECT_ROOT/scripts/util/with-timeout.sh" "$DEADLINE" make -f Makefile $make_args $make_target; then
+            if "$PROJECT_ROOT/scripts/with-timeout.sh" --secs "$DEADLINE" -- make -f Makefile $make_args $make_target; then
                 echo -e "${GREEN}All tests passed! ✅${RESET}"
                 exit 0
             else
@@ -297,7 +297,7 @@ run_tests() {
         else
             # Non-aggregated targets (pattern/changed/failed): decide based on result files and make status
             set +e
-            "$PROJECT_ROOT/scripts/util/with-timeout.sh" "$DEADLINE" make -f Makefile $make_args $make_target
+            "$PROJECT_ROOT/scripts/with-timeout.sh" --secs "$DEADLINE" -- make -f Makefile $make_args $make_target
             make_status=$?
             set -e
 

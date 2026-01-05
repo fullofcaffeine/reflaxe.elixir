@@ -28,6 +28,10 @@ done
 [[ $# -ge 1 ]] || usage
 
 CMD=("$@")
+MARKER_FILE="${TMPDIR:-/tmp}/.with-timeout.${$}.marker"
+rm -f "$MARKER_FILE" 2>/dev/null || true
+cleanup() { rm -f "$MARKER_FILE" 2>/dev/null || true; }
+trap cleanup EXIT
 if [[ "$ECHO" -eq 1 ]]; then
   echo "[timeout] secs=${SECS} grace=${GRACE} cwd=${CWD:-$(pwd)} cmd=${CMD[*]}" >&2
 fi
@@ -45,10 +49,18 @@ if [[ -n "$CWD" ]]; then cd "$CWD"; fi
 start_cmd() {
   if command -v setsid >/dev/null 2>&1; then
     # Start in a new session so we can later reap all descendants reliably
-    setsid "${CMD[@]}" &
+    if [[ "$QUIET" -eq 1 ]]; then
+      setsid "${CMD[@]}" >/dev/null 2>&1 &
+    else
+      setsid "${CMD[@]}" &
+    fi
   else
     # Fallback: background in current group
-    "${CMD[@]}" &
+    if [[ "$QUIET" -eq 1 ]]; then
+      "${CMD[@]}" >/dev/null 2>&1 &
+    else
+      "${CMD[@]}" &
+    fi
   fi
 }
 
@@ -136,20 +148,17 @@ list_descendants() {
         for d in $DESC2; do kill -KILL "$d" 2>/dev/null || true; done
       fi
       echo "[timeout] command force-killed after ${SECS}s+${GRACE}s" >&2
+      echo 137 >"$MARKER_FILE" 2>/dev/null || true
       exit 137
     else
       echo "[timeout] command timed out after ${SECS}s (terminated)" >&2
+      echo 124 >"$MARKER_FILE" 2>/dev/null || true
       exit 124
     fi
   fi
   exit 0
 ) &
 WATCH_PID=$!
-
-# Optionally silence output by redirecting child's stdout/err to null
-if [[ "$QUIET" -eq 1 ]]; then
-  disown "$CMD_PID" 2>/dev/null || true
-fi
 
 # Wait for the command and propagate exit code; kill watchdog if still running
 # Do not mask non-zero exits from `wait` — we want to surface timeout/kill statuses.
@@ -161,5 +170,10 @@ set -e
 # Stop watchdog if still running
 kill "$WATCH_PID" 2>/dev/null || true
 wait "$WATCH_PID" 2>/dev/null || true
+
+# If the watchdog fired, override RC with the conventional timeout exit codes (124/137).
+if [[ -f "$MARKER_FILE" ]]; then
+  RC="$(cat "$MARKER_FILE" 2>/dev/null || echo "$RC")"
+fi
 
 exit "$RC"
