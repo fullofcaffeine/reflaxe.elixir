@@ -1,57 +1,59 @@
-# Releasing (SemVer + GitHub Releases)
+# Releasing (Semantic Versioning + GitHub Releases)
 
-This repo uses **SemVer tags** (`vMAJOR.MINOR.PATCH`) and a GitHub Actions workflow to publish **GitHub Releases**.
+This repo uses **semantic-release** to publish GitHub Releases using **semantic versioning**.
 
-## Quick release checklist
+High level:
 
-1) **Verify main is green locally**
+- Merge changes to `main` using **Conventional Commits** (`feat:`, `fix:`, etc.)
+- When `CI` completes successfully on `main`, the `Release` workflow runs `semantic-release`
+- `semantic-release` determines the next version, creates a `vX.Y.Z` tag, publishes a GitHub Release,
+  and updates repo version strings + `CHANGELOG.md`
+
+## What triggers a release?
+
+Semantic-release looks at commit messages since the last release:
+
+- `fix:` → patch release (`1.1.5` → `1.1.6`)
+- `feat:` → minor release (`1.1.5` → `1.2.0`)
+- `feat!:` or `BREAKING CHANGE:` → major release (`1.x` → `2.0.0`)
+
+If there are no release-worthy commits, the workflow runs but produces no new release.
+
+## Maintainer checklist
+
+1) **Keep main green**
+
+CI is the source of truth; locally you can sanity-check with:
 
 ```bash
 npm ci
 npm run ci:guards
 npm test
+npm run test:examples
+npm run test:examples-elixir
+npm run ci:budgets
 scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --async --deadline 900 -v
 ```
 
-2) **Bump versions + docs pins**
+2) **Merge Conventional Commits**
 
-- `package.json` → `"version": "X.Y.Z"`
-- `package-lock.json` → `"version": "X.Y.Z"` (top-level + packages[""])
-- `haxelib.json` → `"version": "X.Y.Z"` (+ update `releasenote`)
-- `CHANGELOG.md` → add an entry for `X.Y.Z`
-- Docs that pin tags (search `#v` / `tag: "v`) → update to the new tag
+Use clear, scoped messages (examples):
 
-3) **Commit**
+- `feat(hxx): typecheck slot :let`
+- `fix(mix): show full Haxe compiler output on failure`
+- `chore(ci): ...`
 
-```bash
-git add -A
-git commit -m "chore(release): vX.Y.Z"
-git push origin main
-```
+3) **Let semantic-release do the rest**
 
-4) **Tag + push**
+Version strings are updated automatically via `scripts/release/sync-versions.js`, including:
 
-```bash
-git tag vX.Y.Z
-git push origin vX.Y.Z
-```
-
-Pushing the tag triggers `.github/workflows/release.yml`, which creates the GitHub Release and auto-generates release notes.
-
-## Pre-releases (rc/beta)
-
-Use a SemVer pre-release suffix (GitHub will mark these as prereleases automatically):
-
-```bash
-git tag v1.2.0-rc.1
-git push origin v1.2.0-rc.1
-```
+- `package.json` / `package-lock.json`
+- `haxelib.json`
+- `mix.exs`
+- `README.md` version badge
+- `CHANGELOG.md` (generated)
 
 ## Backfilling releases for existing tags
 
-If tags already exist but the GitHub **Releases** list is empty (or older tags predate the workflow), use the workflow’s manual mode:
-
-1) GitHub → Actions → **Release** → **Run workflow**
-2) Provide `tag` (e.g. `v1.1.4`)
-3) Keep `skip_verify=true` for historical backfill (or set to false to re-run full verification)
-
+If tags already exist but the GitHub **Releases** list is empty (or older tags predate the workflow),
+run the workflow **Release (Backfill Existing Tag)** and provide the tag (for example `v1.1.5`).

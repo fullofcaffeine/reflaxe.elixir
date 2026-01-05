@@ -601,28 +601,21 @@ All compilation targets exceed performance requirements:
 - **OTP GenServer**: 0.07ms average (214x faster) ⚡
 - **Phoenix LiveView**: <1ms average (15x faster) ⚡
 
-## Test Results
+## Verification
 
-**All snapshot tests + Mix tests passing**:
+CI is the source of truth (see the CI badge above). Locally:
 
-### Haxe Snapshot Tests (48/48 ✅)
-- Source mapping tests (source_map_basic, source_map_validation)
-- LiveView, OTP, Ecto compilation tests
-- HXX template processing tests
-- Example compilation tests
-- Legacy extern definitions (FinalExternTest, CompilationOnlyTest, TestWorkingExterns)
-- Modern tink_unittest (async tests, performance validation, rich assertions)
-
-### Elixir/Mix Tests (13/13 ✅)  
-- Mix task integration
-- Ecto migration generation
-- Phoenix LiveView workflows
-- OTP GenServer supervision
+- `npm run ci:guards`
+- `npm test`
+- `npm run test:examples`
+- `npm run test:examples-elixir`
+- `npm run ci:budgets`
+- `npm run qa:sentinel` (todo-app boot + Playwright smoke; non-blocking)
 
 ## Contributing
 
 See [docs/10-contributing/contributing.md](docs/10-contributing/contributing.md) for detailed development guide.
-Releases are published from SemVer tags; see [docs/10-contributing/RELEASING.md](docs/10-contributing/RELEASING.md).
+Releases are published automatically via semantic versioning; see [docs/10-contributing/RELEASING.md](docs/10-contributing/RELEASING.md).
 
 ### Adding Features
 1. Extend the AST pipeline (`src/reflaxe/elixir/ast/`) in builder/transformer/printer layers
@@ -632,7 +625,9 @@ Releases are published from SemVer tags; see [docs/10-contributing/RELEASING.md]
 
 ## Roadmap
 
-Check out our [ROADMAP.md](ROADMAP.md) to see what's coming next!
+- Near-term priorities: [ROADMAP.md](ROADMAP.md)
+- Long-term direction: [docs/08-roadmap/vision.md](docs/08-roadmap/vision.md)
+- 1.0 readiness checklist: [docs/06-guides/PRODUCTION_READINESS.md](docs/06-guides/PRODUCTION_READINESS.md)
 
 ## License
 

@@ -99,7 +99,7 @@ Prefer [`CHANGELOG.md`](../CHANGELOG.md) and [`ROADMAP.md`](../ROADMAP.md) for c
 ### 🤝 Contributing
 **[10-contributing/](10-contributing/)** - Contribution guidelines and processes
 - [Contributing Guide](10-contributing/contributing.md) - How to contribute
-- [Releasing](10-contributing/RELEASING.md) - SemVer tags + GitHub Releases workflow
+- [Releasing](10-contributing/RELEASING.md) - semantic-release + GitHub Releases
 - [Updating AGENTS.md](10-contributing/updating-agents-md.md) - AI context and unified documentation strategy
 - [LLM Documentation Guide](10-contributing/llm-integration/LLM_DOCUMENTATION_GUIDE.md) - How to write LLM-friendly documentation
 - [Documentation Philosophy](10-contributing/DOCUMENTATION_PHILOSOPHY.md) - How docs are organized and maintained
