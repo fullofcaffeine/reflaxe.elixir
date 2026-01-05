@@ -13,6 +13,8 @@
 SHELL := /bin/bash
 # Get the directory where this Makefile is located
 MAKEFILE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+ROOT_DIR := $(abspath $(MAKEFILE_DIR)..)
+WITH_TIMEOUT := $(ROOT_DIR)/scripts/util/with-timeout.sh
 TEST_DIR := $(MAKEFILE_DIR)snapshot
 NEGATIVE_DIR := $(TEST_DIR)/negative
 TIMEOUT := 120s
@@ -31,6 +33,11 @@ OUTPUT_DIR := out
 # When disabled, tests validate compilation + Elixir syntax only (no intended/out diff).
 # Useful for Haxe preview toolchains where TypedExpr shapes differ and snapshots are not comparable.
 COMPARE_INTENDED ?= 1
+
+# Convenience: strip optional trailing 's' for timeout wrappers.
+TIMEOUT_SECS := $(patsubst %s,%,$(TIMEOUT))
+PARSE_TIMEOUT_SECS := $(patsubst %s,%,$(PARSE_TIMEOUT))
+UPDATE_TIMEOUT_SECS := $(patsubst %s,%,$(UPDATE_TIMEOUT))
 
 # Pipeline Selection
 # By default uses AST pipeline. Set USE_LEGACY=1 to use old string pipeline for comparison
@@ -145,7 +152,7 @@ summary-negative-safe:
 		fi; \
 		echo "Running negative negative/$$name (expected failure)..."; \
 		start=$$(date +%s); \
-		if timeout $(TIMEOUT) bash -c "cd $$td && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
+		if $(WITH_TIMEOUT) $(TIMEOUT_SECS) bash -c "cd $$td && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
 			end=$$(date +%s); duration=$$((end - start)); \
 			echo "NEG-UNEXPECTED-SUCCESS $$name ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 			neg_unexpected=$$((neg_unexpected + 1)); \
@@ -179,7 +186,7 @@ neg-%:
 	fi; \
 	echo "Running negative negative/$$name (expected failure)..."; \
 	start=$$(date +%s); \
-	if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
+	if $(WITH_TIMEOUT) $(TIMEOUT_SECS) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
 		end=$$(date +%s); duration=$$((end - start)); \
     echo "NEG-UNEXPECTED-SUCCESS $$name ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 		exit 1; \
@@ -208,7 +215,7 @@ test-%:
 	start=$$(date +%s); \
 	if [ "$$testname" = "example_04_ecto" ]; then \
 		echo "⚠️ example_04_ecto - Special handling due to output redirection issue"; \
-		if timeout $(TIMEOUT) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" 2>&1 | tail -n 1 > /dev/null; then \
+		if $(WITH_TIMEOUT) $(TIMEOUT_SECS) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" 2>&1 | tail -n 1 > /dev/null; then \
 			end=$$(date +%s); \
 			duration=$$((end - start)); \
 			echo "✅ $$testname (special handling) ($${duration}s)" | tee -a test-results-$$$$.tmp; \
@@ -217,7 +224,7 @@ test-%:
 			duration=$$((end - start)); \
 			echo "❌ $$testname - Compilation failed (special handling) ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 		fi; \
-	elif timeout $(TIMEOUT) bash -c "cd $$testdir && haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
+	elif $(WITH_TIMEOUT) $(TIMEOUT_SECS) bash -c "cd $$testdir && haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
 		end=$$(date +%s); \
 		duration=$$((end - start)); \
 		if [ -d $$testdir/intended ] && [ -d $$testdir/$(OUTPUT_DIR) ]; then \
@@ -231,7 +238,7 @@ test-%:
 				syntax_valid=true; \
 				if [ -n "$$parse_files" ]; then \
 					parse_cmd='files = System.argv(); ok = Enum.all?(files, fn f -> case File.read(f) do {:ok, s} -> case Code.string_to_quoted(s, file: f) do {:ok, _} -> true; {:error, reason} -> IO.puts("Syntax error in #{f}: #{inspect(reason)}"); false end; {:error, r} -> IO.puts("Read error in #{f}: #{inspect(r)}"); false end end); if ok, do: :ok, else: System.halt(1)'; \
-					timeout $(PARSE_TIMEOUT) elixir -e "$$parse_cmd" $$parse_files; \
+					$(WITH_TIMEOUT) $(PARSE_TIMEOUT_SECS) elixir -e "$$parse_cmd" $$parse_files; \
 					parse_rc=$$?; \
 					if [ $$parse_rc -ne 0 ]; then \
 						if [ $$parse_rc -eq 124 ]; then echo "Elixir parse timed out after $(PARSE_TIMEOUT)"; fi; \
@@ -299,7 +306,7 @@ update-intended:
 		fi; \
 		echo "Compiling $(TEST) to generate new output via test target (timeout $(UPDATE_TIMEOUT))..."; \
 		test_name=$$(echo "$(TEST)" | sed 's|/|__|g'); \
-		if timeout $(UPDATE_TIMEOUT) $(MAKE) -f $(MAKEFILE_LIST) -j1 test-$$test_name >/dev/null 2>&1 || true; then \
+		if $(WITH_TIMEOUT) $(UPDATE_TIMEOUT_SECS) $(MAKE) -f $(MAKEFILE_LIST) -j1 test-$$test_name >/dev/null 2>&1 || true; then \
 		if [ -d $$testdir/$(OUTPUT_DIR) ]; then \
 			rm -rf $$testdir/intended && \
 			cp -r $$testdir/$(OUTPUT_DIR) $$testdir/intended && \
@@ -328,7 +335,7 @@ $(UPDATE_TARGETS): update-%:
 	@testname=$$(echo $* | sed 's|__|/|g'); \
 	testdir=$(TEST_DIR)/$$testname; \
 	if [ -f $$testdir/compile.hxml ]; then \
-		if (cd $$testdir && timeout $(UPDATE_TIMEOUT) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
+		if (cd $$testdir && $(WITH_TIMEOUT) $(UPDATE_TIMEOUT_SECS) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
 		if [ -d $$testdir/$(OUTPUT_DIR) ]; then \
 			rm -rf $$testdir/intended && \
 			cp -r $$testdir/$(OUTPUT_DIR) $$testdir/intended && \
@@ -348,7 +355,7 @@ update-%:
 	@testname=$$(echo $* | sed 's|__|/|g'); \
 	testdir=$(TEST_DIR)/$$testname; \
 	if [ -f $$testdir/compile.hxml ]; then \
-		if (cd $$testdir && timeout $(UPDATE_TIMEOUT) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
+		if (cd $$testdir && $(WITH_TIMEOUT) $(UPDATE_TIMEOUT_SECS) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
 		if [ -d $$testdir/$(OUTPUT_DIR) ]; then \
 			rm -rf $$testdir/intended && \
 			cp -r $$testdir/$(OUTPUT_DIR) $$testdir/intended && \
@@ -461,6 +468,7 @@ list:
 # Runtime smoke: compile all tests, then execute any generated *.exs (or main.ex if no .exs)
 .PHONY: runtime
 RUNTIME_TIMEOUT ?= 5s
+RUNTIME_TIMEOUT_SECS := $(patsubst %s,%,$(RUNTIME_TIMEOUT))
 
 runtime: all
 	@echo "Running runtime smoke tests..."
@@ -474,7 +482,7 @@ runtime: all
 		fi; \
 		if [ -n "$$entry" ]; then \
 			echo "→ $$td: $$(basename $$entry)"; \
-			if (cd "$$outdir" && timeout $(RUNTIME_TIMEOUT) elixir "$$(basename $$entry)" >/dev/null 2>&1); then \
+			if (cd "$$outdir" && $(WITH_TIMEOUT) $(RUNTIME_TIMEOUT_SECS) elixir "$$(basename $$entry)" >/dev/null 2>&1); then \
 				echo "  ✓ ran"; \
 			else \
 				echo "  ✗ runtime error"; \
@@ -523,7 +531,7 @@ test-with-runtime:
 			continue; \
 		fi; \
 		echo -n "Testing $$testname runtime... "; \
-		error_output=$$(cd "$$outdir" && timeout $(RUNTIME_TIMEOUT) elixir -e "Code.compile_file(\"$$(basename $$entry)\"); if function_exported?(Main, :main, 0), do: Main.main()" 2>&1); \
+		error_output=$$(cd "$$outdir" && $(WITH_TIMEOUT) $(RUNTIME_TIMEOUT_SECS) elixir -e "Code.compile_file(\"$$(basename $$entry)\"); if function_exported?(Main, :main, 0), do: Main.main()" 2>&1); \
 		exit_code=$$?; \
 		if [ $$exit_code -eq 0 ]; then \
 			echo "✅"; \
