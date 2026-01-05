@@ -136,11 +136,11 @@ examples/*/tmp/
 /templates/test/test-results.tmp
 
 # Generated files in project root
-*.ex
-*.ex.map
-*.exs.map
+/*.ex
+/*.ex.map
+/*.exs.map
 !lib/**/*.ex
-_GeneratedFiles.json
-_any/
-_enum_value/
-haxe/
+/_GeneratedFiles.json
+/_any/
+/_enum_value/
+/haxe/

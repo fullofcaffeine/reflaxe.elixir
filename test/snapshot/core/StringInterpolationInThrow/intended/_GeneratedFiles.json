@@ -1,0 +1,13 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "string_buf.ex",
+  "std.ex",
+  "main.ex",
+  "haxe/iterators/array_iterator.ex",
+  "custom_error.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}
