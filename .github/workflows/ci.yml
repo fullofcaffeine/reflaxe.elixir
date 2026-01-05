@@ -313,6 +313,10 @@ jobs:
     runs-on: windows-latest
     needs: [guards]
     timeout-minutes: 45
+    env:
+      # erlef/setup-beam uses ImageOS to choose the correct download assets.
+      # GitHub-hosted Windows runners currently report ImageOS=win25; map to the closest supported value.
+      ImageOS: win22
     steps:
       - name: Checkout
         uses: actions/checkout@v4
