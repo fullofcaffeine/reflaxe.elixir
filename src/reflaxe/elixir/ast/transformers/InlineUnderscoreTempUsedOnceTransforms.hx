@@ -38,20 +38,16 @@ import Type;
 class InlineUnderscoreTempUsedOnceTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
     #if debug_inline_underscore
-    // DISABLED: trace('[InlineUnderscore] === PASS INVOKED ===');
     #end
     return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
       return switch (n.def) {
         case EBlock(stmts) if (stmts.length >= 2):
           #if debug_inline_underscore
-          // DISABLED: trace('[InlineUnderscore] Found EBlock with ${stmts.length} statements');
           for (si in 0...stmts.length) {
             var st = stmts[si];
             if (st != null && st.def != null) {
-              // DISABLED: trace('[InlineUnderscore]   stmt[$si]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(st.def)}');
               switch (st.def) {
                 case EMatch(pattern, _):
-                  // DISABLED: trace('[InlineUnderscore]     pattern: ${reflaxe.elixir.util.EnumReflection.enumConstructor(pattern)}');
                   switch (pattern) {
                     case PVar(vn): trace('[InlineUnderscore]       PVar name: "$vn", isUnderscore: ${isUnderscore(vn)}');
                     default:
@@ -68,12 +64,10 @@ class InlineUnderscoreTempUsedOnceTransforms {
             switch (s.def) {
               case EMatch(PVar(tmp), rhs) if (isUnderscore(tmp) && i + 1 < stmts.length):
                 #if debug_inline_underscore
-                // DISABLED: trace('[InlineUnderscore] Found underscore EMatch: $tmp');
                 #end
                 var next = stmts[i+1];
                 if (usedExactlyOnceAsVar(next, tmp)) {
                   #if debug_inline_underscore
-                  // DISABLED: trace('[InlineUnderscore] ✅ INLINING $tmp - used exactly once');
                   #end
                   var inlined = substituteVar(next, tmp, rhs);
                   out.push(inlined);
@@ -81,7 +75,6 @@ class InlineUnderscoreTempUsedOnceTransforms {
                   continue;
                 } else {
                   #if debug_inline_underscore
-                  // DISABLED: trace('[InlineUnderscore] ❌ NOT inlining $tmp - NOT used exactly once');
                   #end
                   out.push(s); i++;
                 }
@@ -187,7 +180,6 @@ class InlineUnderscoreTempUsedOnceTransforms {
     var replacementStr:Null<String> = simpleASTToString(replacement);
 
     #if debug_inline_underscore
-    // DISABLED: trace('[InlineUnderscore] substituteVar: from="$from", replacementStr=$replacementStr');
     #end
 
     return ElixirASTTransformer.transformNode(node, function(n:ElixirAST):ElixirAST {
@@ -196,11 +188,9 @@ class InlineUnderscoreTempUsedOnceTransforms {
         case ERaw(code) if (replacementStr != null):
           // Substitute variable name in raw code string
           #if debug_inline_underscore
-          // DISABLED: trace('[InlineUnderscore] Found ERaw: "$code"');
           #end
           var newCode = substituteInRawCode(code, from, replacementStr);
           #if debug_inline_underscore
-          // DISABLED: trace('[InlineUnderscore] After substitution: "$newCode"');
           #end
           if (newCode != code) {
             makeAST(ERaw(newCode));

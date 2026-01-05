@@ -1371,7 +1371,6 @@ class MapAndCollectionTransforms {
                                         // If binder itself is underscored, also rewrite binder refs to trimmed
                                         if (name != trimmed) newBody = replaceVarInExpr(newBody, name, trimmed);
                                         #if debug_hygiene
-                                        // DISABLED: trace('[CountBinderNormalize] binder=' + name + ' trimmed=' + trimmed + ' rewrote body in Enum.count');
                                         #end
                                         var newFn = makeAST(EFn([{ args: [PVar(trimmed)], guard: cl.guard, body: newBody }]));
                                         makeASTWithMeta(ERemoteCall(makeAST(EVar("Enum")), "count", [list, newFn]), n.metadata, n.pos);
@@ -1590,7 +1589,6 @@ class MapAndCollectionTransforms {
                     case PVar(name):
                         tempName = name;
 #if debug_map_literal
-                        // DISABLED: trace('[MapCollapse] temp var=' + tempName);
 #end
                     default:
                         return null;
@@ -1600,7 +1598,6 @@ class MapAndCollectionTransforms {
                     case EMap(initialPairs):
                         pairs = initialPairs.copy();
 #if debug_map_literal
-                        // DISABLED: trace('[MapCollapse] initial pairs count=' + pairs.length);
 #end
                     default:
                         return null;
@@ -1620,7 +1617,6 @@ class MapAndCollectionTransforms {
                     switch(leftExpr.def) {
                         case EVar(varName) if (varName == tempName):
 #if debug_map_literal
-                            // DISABLED: trace('[MapCollapse] assignment to ' + varName);
 #end
                         default:
                             return null;
@@ -1629,7 +1625,6 @@ class MapAndCollectionTransforms {
                     switch(rightExpr.def) {
                         case ERemoteCall(moduleExpr, funcName, args) if (funcName == "put" && args.length == 3):
 #if debug_map_literal
-                            // DISABLED: trace('[MapCollapse] Map.put detected');
 #end
                             switch(moduleExpr.def) {
                                 case EVar(moduleName) if (moduleName == "Map"):
@@ -1645,7 +1640,6 @@ class MapAndCollectionTransforms {
 
                             pairs.push({key: args[1], value: args[2]});
 #if debug_map_literal
-                            // DISABLED: trace('[MapCollapse] appended pair #' + pairs.length);
 #end
                         default:
                             return null;
@@ -1658,7 +1652,6 @@ class MapAndCollectionTransforms {
         switch(statements[statements.length - 1].def) {
             case EVar(varName) if (varName == tempName):
 #if debug_map_literal
-                // DISABLED: trace('[MapCollapse] success - collapsing to literal');
 #end
                 return makeASTWithMeta(EMap(pairs), metadata, pos);
             default:
@@ -1744,12 +1737,9 @@ class MapAndCollectionTransforms {
         if (ast == null) return null;
 
         #if debug_map_iterator
-        // DISABLED: trace("[MapIteratorTransform] ===== MAP ITERATOR TRANSFORM PASS STARTING =====");
         switch(ast.def) {
             case EModule(name, _):
-                // DISABLED: trace('[MapIteratorTransform] Processing module: ' + name);
             default:
-                // DISABLED: trace('[MapIteratorTransform] Processing non-module AST node');
         }
         #end
 
@@ -1759,7 +1749,6 @@ class MapAndCollectionTransforms {
                     switch(module.def) {
                         case EVar(modName) if (modName == "Enum" && funcName == "reduce_while" && args != null && args.length >= 3):
                             #if debug_map_iterator
-                            // DISABLED: trace('[MapIteratorTransform] Found Enum.reduce_while - checking for Map iterator patterns');
                             #end
                             var loopFunc = args[2];
 
@@ -1774,34 +1763,28 @@ class MapAndCollectionTransforms {
                                     #if debug_map_iterator
                                     if (depth <= 4) {
                                         var nodeType = n.def != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(n.def) : "null";
-                                        // DISABLED: trace('[MapIteratorTransform] Depth ' + depth + ' - Node type: ' + nodeType);
                                     }
                                     #end
                                     switch(n.def) {
                                         case EField(obj, field):
                                             #if debug_map_iterator
-                                            // DISABLED: trace('[MapIteratorTransform] Field access found: ' + field);
                                             #end
                                             if (field == "key_value_iterator" || field == "has_next" || field == "next" || field == "key" || field == "value") {
                                                 #if debug_map_iterator
-                                                // DISABLED: trace('[MapIteratorTransform] *** FOUND MAP ITERATOR FIELD: ' + field + ' ***');
                                                 #end
                                                 found = true;
                                             }
                                             scan(obj);
                                         case ECall(target, funcName, args):
                                             #if debug_map_iterator
-                                            // DISABLED: trace('[MapIteratorTransform] Scanning: Found call to ' + funcName);
                                             #end
                                             if (target != null) {
                                                 switch(target.def) {
                                                     case EField(_, field):
                                                         #if debug_map_iterator
-                                                        // DISABLED: trace('[MapIteratorTransform] Call is on field: ' + field);
                                                         #end
                                                         if (field == "key_value_iterator" || field == "has_next" || field == "next" || field == "key" || field == "value") {
                                                             #if debug_map_iterator
-                                                            // DISABLED: trace('[MapIteratorTransform] *** FOUND MAP ITERATOR CALL: ' + field + '() ***');
                                                             #end
                                                             found = true;
                                                         }
@@ -1812,17 +1795,14 @@ class MapAndCollectionTransforms {
                                             if (args != null) for (arg in args) scan(arg);
                                         case EFn(clauses):
                                             #if debug_map_iterator
-                                            // DISABLED: trace('[MapIteratorTransform] Scanning function with ' + clauses.length + ' clauses');
                                             #end
                                             for (c in clauses) if (c.body != null) scan(c.body);
                                         case EBlock(exprs):
                                             #if debug_map_iterator
-                                            // DISABLED: trace('[MapIteratorTransform] Scanning block with ' + exprs.length + ' expressions');
                                             #end
                                             for (e in exprs) scan(e);
                                         case EIf(cond, t, e):
                                             #if debug_map_iterator
-                                            // DISABLED: trace('[MapIteratorTransform] Scanning if statement');
                                             #end
                                             scan(cond);
                                             scan(t);
@@ -1835,7 +1815,6 @@ class MapAndCollectionTransforms {
                                             #if debug_map_iterator
                                             if (depth <= 4) {
                                                 var nodeType = reflaxe.elixir.util.EnumReflection.enumConstructor(n.def);
-                                                // DISABLED: trace('[MapIteratorTransform] Other node type: ' + nodeType);
                                             }
                                             #end
                                     }
@@ -1843,18 +1822,15 @@ class MapAndCollectionTransforms {
                                 }
                                 scan(ast);
                                 #if debug_map_iterator
-                                // DISABLED: trace('[MapIteratorTransform] Scan complete for AST, found iterator patterns: ' + found);
                                 #end
                                 return found;
                             }
 
                             #if debug_map_iterator
-                            // DISABLED: trace('[MapIteratorTransform] Checking loopFunc for Map iterator calls...');
                             #end
 
                             if (hasMapIteratorCalls(loopFunc)) {
                                 #if debug_map_iterator
-                                // DISABLED: trace('[MapIteratorTransform] Found Map iteration pattern in reduce_while - transforming to Enum.each');
                                 #end
 
                                 // Extract the map variable from the initial value (second argument).
@@ -1875,7 +1851,6 @@ class MapAndCollectionTransforms {
                                 if (mapVar == null) return node;
 
                                 #if debug_map_iterator
-                                // DISABLED: trace('[MapIteratorTransform] Map variable identified: ' + mapVar);
                                 #end
 
                                 var keyVarName: Null<String> = null;
@@ -1888,14 +1863,12 @@ class MapAndCollectionTransforms {
                                         switch(body.def) {
                                             case EIf(_, thenBranch, _):
                                                 #if debug_map_iterator
-                                                // DISABLED: trace('[MapIteratorTransform] Processing if branch for body extraction');
                                                 #if debug_ast_structure
                                                 ASTUtils.debugAST(thenBranch, 0, 3);
                                                 #end
                                                 #end
                                                 var allExprs = ASTUtils.flattenBlocks(thenBranch);
                                                 #if debug_map_iterator
-                                                // DISABLED: trace('[MapIteratorTransform] Flattened ' + allExprs.length + ' expressions from then branch');
                                                 #end
                                                 // Extract variable names from iterator assignments
                                                 for (expr in allExprs) {
@@ -1906,12 +1879,10 @@ class MapAndCollectionTransforms {
                                                                     case EField(_, "key"):
                                                                         keyVarName = varName;
                                                                         #if debug_map_iterator
-                                                                        // DISABLED: trace('[MapIteratorTransform] Found key variable: ' + keyVarName);
                                                                         #end
                                                                     case EField(_, "value"):
                                                                         valueVarName = varName;
                                                                         #if debug_map_iterator
-                                                                        // DISABLED: trace('[MapIteratorTransform] Found value variable: ' + valueVarName);
                                                                         #end
                                                                     default:
                                                                         var fieldChain = [];
@@ -1931,12 +1902,10 @@ class MapAndCollectionTransforms {
                                                                             if (fieldChain[0] == "key") {
                                                                                 keyVarName = varName;
                                                                                 #if debug_map_iterator
-                                                                                // DISABLED: trace('[MapIteratorTransform] Found key variable via chain: ' + keyVarName);
                                                                                 #end
                                                                             } else if (fieldChain[0] == "value") {
                                                                                 valueVarName = varName;
                                                                                 #if debug_map_iterator
-                                                                                // DISABLED: trace('[MapIteratorTransform] Found value variable via chain: ' + valueVarName);
                                                                                 #end
                                                                             }
                                                                         }
@@ -1947,7 +1916,6 @@ class MapAndCollectionTransforms {
                                                 }
                                                 var cleanExprs = ASTUtils.filterIteratorAssignments(allExprs);
                                                 #if debug_map_iterator
-                                                // DISABLED: trace('[MapIteratorTransform] After filtering: ' + cleanExprs.length + ' expressions remain');
                                                 #end
                                                 var bodyExprs = [];
                                                 for (expr in cleanExprs) {
@@ -1973,9 +1941,6 @@ class MapAndCollectionTransforms {
                                     if (keyVarName == null || keyVarName == "") return node;
                                     if (valueVarName == null || valueVarName == "") valueVarName = "_value";
                                     #if debug_map_iterator
-                                    // DISABLED: trace('[MapIteratorTransform] Creating Enum.each with {' + keyVarName + ', ' + valueVarName + '} destructuring');
-                                    // DISABLED: trace('[MapIteratorTransform] Map variable: ' + mapVar);
-                                    // DISABLED: trace('[MapIteratorTransform] Body extracted, creating transformation');
                                     #end
                                     var transformedAST = makeAST(ERemoteCall(
                                         makeAST(EVar("Enum")),
@@ -1990,7 +1955,6 @@ class MapAndCollectionTransforms {
                                         ]
                                     ));
                                     #if debug_map_iterator
-                                    // DISABLED: trace('[MapIteratorTransform] *** TRANSFORMATION COMPLETE - RETURNING NEW AST ***');
                                     #end
                                     return transformedAST;
                                 }
@@ -2016,17 +1980,14 @@ class MapAndCollectionTransforms {
                     if (field == "key_value_iterator") {
                         hasKeyValueIterator = true;
                         #if debug_map_iterator
-                        // DISABLED: trace('[MapIteratorTransform/scan] Found key_value_iterator field');
                         #end
                     } else if (field == "has_next") {
                         hasHasNext = true;
                         #if debug_map_iterator
-                        // DISABLED: trace('[MapIteratorTransform/scan] Found has_next field');
                         #end
                     } else if (field == "next") {
                         hasNext = true;
                         #if debug_map_iterator
-                        // DISABLED: trace('[MapIteratorTransform/scan] Found next field');
                         #end
                     }
                     scan(obj);
@@ -2038,7 +1999,6 @@ class MapAndCollectionTransforms {
                                 if (field == "has_next") hasHasNext = true;
                                 if (field == "next") hasNext = true;
                                 #if debug_map_iterator
-                                // DISABLED: trace('[MapIteratorTransform/scan] Found iterator method call: ' + field + '()');
                                 #end
                             }
                             scan(obj);
@@ -2063,7 +2023,6 @@ class MapAndCollectionTransforms {
                 default:
                     #if debug_map_iterator
                     var nodeType = reflaxe.elixir.util.EnumReflection.enumConstructor(node.def);
-                    // DISABLED: trace('[MapIteratorTransform/scan] Unhandled node type: ' + nodeType);
                     #end
             }
         }

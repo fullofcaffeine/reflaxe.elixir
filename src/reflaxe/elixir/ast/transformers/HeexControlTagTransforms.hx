@@ -103,7 +103,6 @@ class HeexControlTagTransforms {
         var out = rewriteControlTags(lowered);
         #if hxx_instrument
         var dt = Std.int((haxe.Timer.stamp() - t0) * 1000);
-        // DISABLED: trace('[HXX-INSTR] controlTags: ms=' + dt + ' len=' + (content != null ? content.length : 0));
         #end
         return out;
     }
@@ -232,7 +231,6 @@ class HeexControlTagTransforms {
             i = (afterClose == -1) ? s.length : afterClose + 1;
         }
         #if hxx_instrument
-        // DISABLED: trace('[HXX-INSTR] controlTags.loopIters=' + iters + ' len=' + (s != null ? s.length : 0));
         #end
         return parts.join("");
     }

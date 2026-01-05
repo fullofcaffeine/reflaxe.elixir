@@ -55,7 +55,6 @@ class PatternMatchingTransforms {
      */
     public static function patternMatchingPass(ast: ElixirAST): ElixirAST {
         #if debug_pattern_matching
-        // DISABLED: trace("[PatternMatchingTransforms] Starting pattern matching pass");
         #end
         
         if (ast == null || ast.def == null) return ast;
@@ -105,7 +104,6 @@ class PatternMatchingTransforms {
      */
     static function optimizeCaseExpression(ast: ElixirAST, target: ElixirAST, clauses: Array<ECaseClause>): ElixirAST {
         #if debug_pattern_matching
-        // DISABLED: trace("[PatternMatchingTransforms] Optimizing case with ${clauses.length} clauses");
         #end
         
         // Optimize each clause
@@ -125,7 +123,6 @@ class PatternMatchingTransforms {
             });
             
             #if debug_pattern_matching
-            // DISABLED: trace("[PatternMatchingTransforms] Optimized clause: pattern=${optimizedPattern}");
             #end
         }
         
@@ -138,7 +135,6 @@ class PatternMatchingTransforms {
             });
             
             #if debug_pattern_matching
-            // DISABLED: trace("[PatternMatchingTransforms] Added default wildcard case for exhaustiveness");
             #end
         }
         
@@ -146,7 +142,6 @@ class PatternMatchingTransforms {
         var optimizedCase = makeASTWithMeta(ECase(target, optimizedClauses), safeMeta(ast), ast.pos);
         
         #if debug_pattern_matching
-        // DISABLED: trace("[PatternMatchingTransforms] Generated optimized case expression with ${optimizedClauses.length} clauses");
         #end
         
         return optimizedCase;
@@ -222,7 +217,6 @@ class PatternMatchingTransforms {
      */
     public static function guardOptimizationPass(ast: ElixirAST): ElixirAST {
         #if debug_pattern_matching
-        // DISABLED: trace("[PatternMatchingTransforms] Starting guard optimization pass");
         #end
         
         return switch(ast.def) {
@@ -285,7 +279,6 @@ class PatternMatchingTransforms {
      */
     public static function patternVariableBindingPass(ast: ElixirAST): ElixirAST {
         #if debug_pattern_matching
-        // DISABLED: trace("[PatternMatchingTransforms] Starting pattern variable binding pass");
         #end
         
         return switch(ast.def) {
@@ -319,7 +312,6 @@ class PatternMatchingTransforms {
      */
     public static function exhaustivenessCheckPass(ast: ElixirAST): ElixirAST {
         #if debug_pattern_matching
-        // DISABLED: trace("[PatternMatchingTransforms] Starting exhaustiveness check pass");
         #end
         
         return switch(ast.def) {
@@ -327,7 +319,6 @@ class PatternMatchingTransforms {
                 if (!isExhaustive(clauses)) {
                     // In a real implementation, we'd add a compile-time warning or error
                     #if debug_pattern_matching
-                    // DISABLED: trace("[PatternMatchingTransforms] WARNING: Non-exhaustive patterns in case expression");
                     #end
                 }
                 ast;

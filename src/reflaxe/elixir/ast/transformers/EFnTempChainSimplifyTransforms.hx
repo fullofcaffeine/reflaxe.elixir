@@ -33,28 +33,23 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
 class EFnTempChainSimplifyTransforms {
     public static function pass(ast: ElixirAST): ElixirAST {
         #if debug_efn_temp_chain
-        // DISABLED: trace("[EFnTempChainSimplify] PASS START");
         #end
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case EFn(clauses) if (clauses.length == 1):
                     #if debug_efn_temp_chain
-                    // DISABLED: trace("[EFnTempChainSimplify] Found EFn with 1 clause");
                     #end
                     var cl = clauses[0];
                     var b = cl.body;
                     var nb = switch (b.def) {
                         case EBlock(stmts):
                             #if debug_efn_temp_chain
-                            // DISABLED: trace('[EFnTempChainSimplify] Body is EBlock with ${stmts.length} stmts');
                             for (i in 0...stmts.length) {
-                                // DISABLED: trace('[EFnTempChainSimplify]   stmt[$i]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(stmts[i].def)}');
                             }
                             #end
                             makeASTWithMeta(EBlock(simplify(stmts)), b.metadata, b.pos);
                         default:
                             #if debug_efn_temp_chain
-                            // DISABLED: trace('[EFnTempChainSimplify] Body is NOT EBlock: ${reflaxe.elixir.util.EnumReflection.enumConstructor(b.def)}');
                             #end
                             b;
                     };
@@ -77,17 +72,14 @@ class EFnTempChainSimplifyTransforms {
      */
     static function simplify(stmts:Array<ElixirAST>): Array<ElixirAST> {
         #if debug_efn_temp_chain
-        // DISABLED: trace('[EFnTempChainSimplify.simplify] Called with ${stmts.length} stmts');
         #end
         if (stmts.length >= 2) {
             var last = stmts[stmts.length - 1];
             #if debug_efn_temp_chain
-            // DISABLED: trace('[EFnTempChainSimplify.simplify] Last stmt: ${reflaxe.elixir.util.EnumReflection.enumConstructor(last.def)}');
             #end
             switch (last.def) {
                 case EVar(name):
                     #if debug_efn_temp_chain
-                    // DISABLED: trace('[EFnTempChainSimplify.simplify] Last is EVar("$name") - looking for assignment');
                     #end
                     // Find last assignment to name
                     var assignIdx = -1;
@@ -104,7 +96,6 @@ class EFnTempChainSimplifyTransforms {
                         if (assignIdx != -1) break;
                     }
                     #if debug_efn_temp_chain
-                    // DISABLED: trace('[EFnTempChainSimplify.simplify] assignIdx=$assignIdx, hasRhs=${rhs != null}');
                     #end
                     if (assignIdx != -1 && rhs != null) {
                         // Only simplify when all intervening statements (between the assignment and the
@@ -137,13 +128,11 @@ class EFnTempChainSimplifyTransforms {
                         // Drop intervening `name = nil` sentinels (guaranteed by `onlyNilSentinels` above).
                         out.push(rhs);
                         #if debug_efn_temp_chain
-                        // DISABLED: trace('[EFnTempChainSimplify.simplify] SIMPLIFIED: ${stmts.length} -> ${out.length} stmts');
                         #end
                         return out;
                     }
                 default:
                     #if debug_efn_temp_chain
-                    // DISABLED: trace('[EFnTempChainSimplify.simplify] Last is NOT EVar, no simplification');
                     #end
             }
         }

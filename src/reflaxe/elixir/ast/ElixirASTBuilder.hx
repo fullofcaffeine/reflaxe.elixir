@@ -113,7 +113,6 @@ class ElixirASTBuilder {
     private static function logCompilationProgress(message: String) {
         var now = haxe.Timer.stamp() * 1000;
         var elapsed = now - compilationStartTime;
-        // DISABLED: Sys.println('[HANG DEBUG ${elapsed}ms] Depth:${recursionDepth}/${maxRecursionDepth} Nodes:${totalNodesProcessed} - ${message}');
         lastProgressTime = now;
     }
 
@@ -128,14 +127,8 @@ class ElixirASTBuilder {
 
         // Check for compilation hang
         if (totalNodesProcessed > MAX_TOTAL_NODES) {
-            // DISABLED: Sys.println('[HANG DETECTED] Compilation exceeded ${MAX_TOTAL_NODES} nodes');
-            // DISABLED: Sys.println('[HANG DETECTED] Last node type: ${nodeType}');
-            // DISABLED: Sys.println('[HANG DETECTED] Expression details: ${exprDetails}');
-            // DISABLED: Sys.println('[HANG DETECTED] Stack depth: ${recursionDepth}');
-            // DISABLED: Sys.println('[HANG DETECTED] Current stack:');
             for (i in 0...Math.floor(Math.min(10, currentNodeStack.length))) {
                 var idx = currentNodeStack.length - 1 - i;
-                // DISABLED: Sys.println('  [${idx}] ${currentNodeStack[idx]}');
             }
             throw 'Compilation hang detected after processing ${totalNodesProcessed} nodes. Possible infinite loop in AST processing.';
         }
@@ -156,10 +149,7 @@ class ElixirASTBuilder {
 
         // Detect potential infinite loops
         if (visitCount > MAX_SAME_NODE_VISITS) {
-            // DISABLED: Sys.println('[HANG DEBUG] ⚠️ POTENTIAL INFINITE LOOP: ${nodeType} visited ${visitCount} times!');
-            // DISABLED: Sys.println('[HANG DEBUG] Current stack: ${currentNodeStack.join(" -> ")}');
             if (exprDetails != "") {
-                // DISABLED: Sys.println('[HANG DEBUG] Expression details: ${exprDetails}');
             }
         }
 
@@ -171,7 +161,6 @@ class ElixirASTBuilder {
 
         // Log entry for significant nodes
         if (recursionDepth <= 3 || nodeType.indexOf("Module") >= 0 || nodeType.indexOf("Class") >= 0) {
-            // DISABLED: Sys.println('[HANG DEBUG] → Entering ${nodeType} at depth ${recursionDepth} ${exprDetails}');
         }
     }
 
@@ -183,7 +172,6 @@ class ElixirASTBuilder {
 
         // Log exit for significant nodes
         if (recursionDepth <= 2 || nodeType.indexOf("Module") >= 0 || nodeType.indexOf("Class") >= 0) {
-            // DISABLED: Sys.println('[HANG DEBUG] ← Exiting ${nodeType} at depth ${recursionDepth}');
         }
     }
 
@@ -194,7 +182,6 @@ class ElixirASTBuilder {
         cycleDetectionMap.set(nodeId, count);
 
         if (count > 10) { // Same exact node processed too many times
-            // DISABLED: Sys.println('[HANG DEBUG] 🔄 CYCLE DETECTED: Node ${nodeId} processed ${count} times!');
             return true;
         }
         return false;
@@ -263,7 +250,6 @@ class ElixirASTBuilder {
                 
                 #if debug_dependencies
                 #if debug_ast_builder
-                // DISABLED: trace('[ElixirASTBuilder] Module ${compiler.currentCompiledModule} depends on ${moduleName}');
                 #end
                 #end
             }
@@ -324,7 +310,6 @@ class ElixirASTBuilder {
         #if debug_compilation_hang
         if (compilationStartTime == 0) {
             compilationStartTime = haxe.Timer.stamp() * 1000;
-            // DISABLED: Sys.println('[HANG DEBUG] === COMPILATION STARTED ===');
         }
         #end
 
@@ -338,14 +323,10 @@ class ElixirASTBuilder {
 
         // Debug circular reference issue
         if (exprType == "TParenthesis" || exprType == "TVar" || exprType == "TBinop") {
-            // DISABLED: Sys.println('[HANG DEBUG] Processing ${exprType} at ${expr.pos}');
             switch(expr.expr) {
                 case TVar(v, _):
-                    // DISABLED: Sys.println('[HANG DEBUG]   TVar: ${v.name} (id: ${v.id})');
                 case TParenthesis(e):
-                    // DISABLED: Sys.println('[HANG DEBUG]   TParenthesis wrapping: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
                 case TBinop(op, _, _):
-                    // DISABLED: Sys.println('[HANG DEBUG]   TBinop operator: ${op}');
                 default:
             }
         }
@@ -366,7 +347,6 @@ class ElixirASTBuilder {
         #if debug_variable_renaming
         var entriesBeforeSet = Lambda.count(context.tempVarRenameMap);
         var prevEntries = if (previousContext != null) Lambda.count(previousContext.tempVarRenameMap) else 0;
-        // DISABLED: trace('[ElixirASTBuilder.buildFromTypedExprWithContext] About to set currentContext - incoming: $entriesBeforeSet entries, previous had: $prevEntries');
         #end
 
         // FIXED: Preserve tempVarRenameMap from previous context when nested calls occur
@@ -374,7 +354,6 @@ class ElixirASTBuilder {
         // This was losing the parameter registrations from buildClassAST
         if (previousContext != null && Lambda.count(context.tempVarRenameMap) == 0 && Lambda.count(previousContext.tempVarRenameMap) > 0) {
             #if debug_variable_renaming
-            // DISABLED: trace('[ElixirASTBuilder.buildFromTypedExprWithContext] PRESERVING ${Lambda.count(previousContext.tempVarRenameMap)} map entries from previous context');
             #end
             // Copy entries from previous context to preserve registrations
             for (key in previousContext.tempVarRenameMap.keys()) {
@@ -413,7 +392,6 @@ class ElixirASTBuilder {
 
         #if debug_variable_renaming
         var entriesAfterSet = Lambda.count(currentContext.tempVarRenameMap);
-        // DISABLED: trace('[ElixirASTBuilder.buildFromTypedExprWithContext] Set currentContext - now has $entriesAfterSet map entries');
         #end
 
         // Store the compilation context's usage map for context-aware variable naming
@@ -435,7 +413,6 @@ class ElixirASTBuilder {
         // No need to set currentClauseContext here - it's already part of the context
 
         #if debug_ast_builder
-        // DISABLED: trace('[XRay AST Builder] Converting TypedExpr: ${expr.expr}');
         #end
 
         // Check context-local builder cache to avoid re-converting identical subtrees
@@ -476,7 +453,6 @@ class ElixirASTBuilder {
                     default: "";
                 };
                 #if debug_ast_builder
-                // DISABLED: trace('[AST Builder] Marked direct enum constructor for transformer: ${metadata.idiomaticEnumType}');
                 #end
             case TCall(_, _):
                 // Function call - check if it returns an idiomatic enum
@@ -487,7 +463,6 @@ class ElixirASTBuilder {
                             metadata.requiresIdiomaticTransform = true;
                             metadata.idiomaticEnumType = enumType.name;
                             #if debug_ast_builder
-                            // DISABLED: trace('[AST Builder] Marked function return value as idiomatic enum: ${enumType.name}');
                             #end
                         }
                     default:
@@ -534,7 +509,6 @@ class ElixirASTBuilder {
 	        }
 
         #if debug_ast_builder
-        // DISABLED: trace('[XRay AST Builder] Generated AST: ${astDef}');
         #end
 
         // Restore previous context
@@ -586,7 +560,6 @@ class ElixirASTBuilder {
         #if debug_compilation_hang
         var nodeType = reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr);
         if (nodeType == "TSwitch" || nodeType == "TEnumIndex" || nodeType == "TWhile" || nodeType == "TFor") {
-            // DISABLED: Sys.println('[HANG DEBUG] 🎯 Processing critical node: ${nodeType} at pos ${expr.pos}');
         }
         #end
 
@@ -596,8 +569,6 @@ class ElixirASTBuilder {
         if (exprType == "TVar") {
             switch(expr.expr) {
                 case TVar(tvar, init):
-                    // DISABLED: trace('[convertExpression ENTRY] 🔍 TVar detected: ${tvar.name}');
-                    // DISABLED: trace('[convertExpression ENTRY]   TVar init: ${init != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr) : "null"}');
                 default:
             }
         }
@@ -645,7 +616,6 @@ class ElixirASTBuilder {
                     clauseMapping = currentContext.currentClauseContext.lookupVariable(v.id);
                     if (clauseMapping != null) {
                         #if debug_clause_context
-                        // DISABLED: trace('[TLocal ClauseContext] Found mapping for ${v.name} (id=${v.id}) -> $clauseMapping');
                         #end
                     }
                 }
@@ -657,14 +627,12 @@ class ElixirASTBuilder {
                     // ID-based lookup succeeds (builder phase registered this variable)
                     var renamed = currentContext.tempVarRenameMap.get(idKey);
                     #if debug_hygiene
-                    // DISABLED: trace('[TLocal] Variable ${v.name} (id=${v.id}) found in context via ID: $renamed');
                     #end
                     renamed;
                 } else if (currentContext.tempVarRenameMap.exists(nameKey)) {
                     // Name-based lookup succeeds (transformer phase or builder phase)
                     var renamed = currentContext.tempVarRenameMap.get(nameKey);
                     #if debug_hygiene
-                    // DISABLED: trace('[TLocal] Variable ${v.name} (id=${v.id}) found in context via NAME: $renamed');
                     #end
                     renamed;
                 } else if (currentContext.isInConstructorArgContext) {
@@ -675,7 +643,6 @@ class ElixirASTBuilder {
                         var base = pattern.matched(1);
                         var suffix = pattern.matched(2);
                         #if debug_constructor_args
-                        // DISABLED: trace('[TLocal Constructor] Stripping shadow suffix: ${v.name} -> $base (removed: $suffix)');
                         #end
                         base;
                     } else {
@@ -687,7 +654,6 @@ class ElixirASTBuilder {
                     // Not in context - use standard snake_case conversion
                     var converted = VariableAnalyzer.toElixirVarName(v.name);
                     #if debug_hygiene
-                    // DISABLED: trace('[TLocal] Variable ${v.name} (id=${v.id}) NOT in context, using converted: $converted');
                     #end
                     converted;
                 };
@@ -697,11 +663,7 @@ class ElixirASTBuilder {
             case TVar(v, init):
                 #if debug_ast_builder
                 // DEBUG: Track what TVar compilation returns for infrastructure variables
-                // DISABLED: trace('[DEBUG TVar] Compiling TVar: ${v.name}');
                 if (v.name.indexOf("g") >= 0 || v.name.indexOf("_") >= 0) {
-                    // DISABLED: trace('[DEBUG TVar]   Name contains g or underscore: ${v.name}');
-                    // DISABLED: trace('[DEBUG TVar]   Init type: ${init != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr) : "null"}');
-                    // DISABLED: trace('[DEBUG TVar]   Is simple init: ${init == null || isSimpleInit(init)}');
                 }
                 #end
 
@@ -709,10 +671,7 @@ class ElixirASTBuilder {
                 // When a variable is already bound by the pattern (e.g., {:ok, value}),
                 // generating "value = nil" is incorrect - the pattern already provides the value
                 #if debug_ast_builder
-                // DISABLED: trace('[TVar CHECK] var=${v.name} id=${v.id} hasClauseContext=${currentContext.currentClauseContext != null}');
                 if (currentContext.currentClauseContext != null) {
-                    // DISABLED: trace('[TVar CHECK]   localToName has ${v.id}? ${currentContext.currentClauseContext.localToName.exists(v.id)}');
-                    // DISABLED: trace('[TVar CHECK]   localToName size: ${Lambda.count(currentContext.currentClauseContext.localToName)}');
                 }
                 #end
 
@@ -740,7 +699,6 @@ class ElixirASTBuilder {
 
                     #if debug_ast_builder
                     if (v.name == "_g" || v.name == "g") {
-                        // DISABLED: trace('[DEBUG TVar]   VariableBuilder result: ${result != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(result) : "null"}');
                     }
                     #end
 
@@ -756,14 +714,10 @@ class ElixirASTBuilder {
                 // Debug: trace all infrastructure variable assignments to understand their structure
                 #if debug_infrastructure_vars
                 if (isInfrastructureVar && init != null) {
-                    // DISABLED: trace('[Infrastructure Variable Debug] TVar ${v.name} (id: ${v.id}) init type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                     switch(init.expr) {
                         case TField(obj, fa):
-                            // DISABLED: trace('[Infrastructure Variable Debug]   TField detected');
                         case TLocal(lv):
-                            // DISABLED: trace('[Infrastructure Variable Debug]   TLocal: ${lv.name}');
                         case _:
-                            // DISABLED: trace('[Infrastructure Variable Debug]   Other init type');
                     }
                 }
                 #end
@@ -797,8 +751,6 @@ class ElixirASTBuilder {
                                     currentContext.tempVarRenameMap.set(Std.string(v.id), extractedVarName);
                                     
                                     #if debug_infrastructure_vars
-                                    // DISABLED: trace('[Infrastructure Variable Mapping] ${v.name} (id: ${v.id}) = ${localVar.name}.${fieldName} -> will use ${extractedVarName}');
-                                    // DISABLED: trace('[Infrastructure Variable Mapping] Storing in tempVarRenameMap: key="${v.name}" (name, not ID) value="${extractedVarName}"');
                                     #end
 
                                     // FIXED: Don't skip the assignment! We need to generate the variable binding
@@ -813,7 +765,6 @@ class ElixirASTBuilder {
                             // In most cases, we skip it because the pattern already extracts these values
                             // BUT: We need to keep it if the variable is actually referenced later
                             #if debug_ast_builder
-                            // DISABLED: trace('[Infrastructure Variable Fix] TEnumParameter assignment for: ${v.name}');
                             #end
                             // Don't skip - let it be processed normally
                             // The assignment might be needed for later references
@@ -826,7 +777,6 @@ class ElixirASTBuilder {
                                 (sourceVar.length > 2 && sourceVar.substr(0, 2) == "_g")) {
                                 // Skip infrastructure variable chains like: g1 = g
                                 #if debug_ast_builder
-                                // DISABLED: trace('[Infrastructure Variable Fix] Skipping chain assignment: ${v.name} = ${sourceVar}');
                                 #end
                                 return null;
                             }
@@ -839,7 +789,6 @@ class ElixirASTBuilder {
                 #if debug_variable_usage
                 if (v.name == "value" || v.name == "msg" || v.name == "err") {
                     #if debug_ast_builder
-                    // DISABLED: trace('[AST Builder] Processing TVar: ${v.name} (id: ${v.id})');
                     #end
                 }
                 #end
@@ -850,7 +799,6 @@ class ElixirASTBuilder {
                 var renamedPattern = ~/^(.+?)(\d+)$/;
                 if (renamedPattern.match(v.name)) {
                     #if debug_ast_builder
-                    // DISABLED: trace('[RENAME DEBUG] TVar: Found variable with numeric suffix "${v.name}" (id: ${v.id}) - will be handled at emission point');
                     #end
                 }
                 #end
@@ -859,11 +807,9 @@ class ElixirASTBuilder {
                 // Debug TVar declarations that might be lost in loop bodies
                 if (v.name == "meta" || v.name == "entry" || v.name == "userId") {
                     #if debug_ast_builder
-                    // DISABLED: trace('[XRay LoopBody] TVar declaration: ${v.name} = ${init != null ? "..." : "null"}');
                     #end
                     if (init != null) {
                         #if debug_ast_builder
-                        // DISABLED: trace('[XRay LoopBody] Init type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                         #end
                     }
                 }
@@ -871,22 +817,18 @@ class ElixirASTBuilder {
                 
                 #if debug_null_coalescing
                 #if debug_ast_builder
-                // DISABLED: trace('[AST Builder] TVar: ${v.name}, init type: ${init != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr) : "null"}');
                 #end
                 #end
                 
                 #if debug_assignment_context
                 #if debug_ast_builder
-                // DISABLED: trace('[XRay AssignmentContext] TVar: ${v.name}');
                 #end
                 if (init != null) {
                     #if debug_ast_builder
-                    // DISABLED: trace('[XRay AssignmentContext] Init expr: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                     #end
                     switch(init.expr) {
                         case TField(e, _):
                             #if debug_ast_builder
-                            // DISABLED: trace('[XRay AssignmentContext] TField access detected - likely in expression context');
                             #end
                         case _:
                     }
@@ -896,7 +838,6 @@ class ElixirASTBuilder {
                 #if debug_ast_pipeline
                 if (v.name == "p1" || v.name == "p2" || v.name == "p" || v.name == "p_1" || v.name == "p_2") {
                     #if debug_ast_builder
-                    // DISABLED: trace('[AST Builder] TVar declaration: name="${v.name}", id=${v.id}');
                     #end
                 }
                 #end
@@ -904,13 +845,11 @@ class ElixirASTBuilder {
                 #if debug_array_patterns
                 if (init != null) {
                     #if debug_ast_builder
-                    // DISABLED: trace('[XRay ArrayPattern] TVar ${v.name} init: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                     #end
                     // Check if this is an array map/filter initialization
                     switch(init.expr) {
                         case TBlock(exprs):
                             #if debug_ast_builder
-                            // DISABLED: trace('[XRay ArrayPattern] TVar contains TBlock with ${exprs.length} expressions');
                             #end
                         case _:
                     }
@@ -924,29 +863,23 @@ class ElixirASTBuilder {
                         case TBlock(blockStmts) if (blockStmts.length >= 3):
 #if debug_map_literal
                             #if debug_ast_builder
-                            // DISABLED: trace('[MapLiteral Debug] TVar name=${v.name} id=${v.id} with block init (length=${blockStmts.length})');
                             #end
                             for (i in 0...blockStmts.length) {
                                 #if debug_ast_builder
-                                // DISABLED: trace('  stmt[' + i + '] = ' + reflaxe.elixir.util.EnumReflection.enumConstructor(blockStmts[i].expr));
                                 #end
                                 switch(blockStmts[i].expr) {
                                     case TVar(tempVar, tempInit):
                                         var initKind = tempInit != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(tempInit.expr) : "null";
                                         #if debug_ast_builder
-                                        // DISABLED: trace('    TVar ' + tempVar.name + ' init=' + initKind);
                                         #end
                                     case TBinop(op, lhs, rhs):
                                         #if debug_ast_builder
-                                        // DISABLED: trace('    TBinop op=' + Std.string(op) + ' lhs=' + reflaxe.elixir.util.EnumReflection.enumConstructor(lhs.expr) + ' rhs=' + reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.expr));
                                         #end
                                     case TCall(func, args):
                                         #if debug_ast_builder
-                                        // DISABLED: trace('    TCall func=' + reflaxe.elixir.util.EnumReflection.enumConstructor(func.expr) + ' args=' + [for (a in args) reflaxe.elixir.util.EnumReflection.enumConstructor(a.expr)].join(","));
                                         #end
                                     case TLocal(localVar):
                                         #if debug_ast_builder
-                                        // DISABLED: trace('    TLocal name=' + localVar.name);
                                         #end
                                     case _:
                                 }
@@ -960,16 +893,11 @@ class ElixirASTBuilder {
                             // NEW: Check for unrolled array comprehension pattern FIRST
                             // Pattern: var doubled = { doubled = n = 1; [] ++ [expr]; n = 2; ...; [] }
                             #if debug_ast_builder
-                            // DISABLED: trace('[TVar COMPREHENSION CHECK] Checking if TBlock is unrolled comprehension');
-                            // DISABLED: trace('[TVar COMPREHENSION CHECK] Block has ${blockStmts.length} statements');
                             #end
 
                             var comprehensionAST = reflaxe.elixir.ast.builders.ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(blockStmts, currentContext);
                             if (comprehensionAST != null) {
                                 #if debug_ast_builder
-                                // DISABLED: trace('[TVar COMPREHENSION] ✅ Detected unrolled comprehension in TVar initialization!');
-                                // DISABLED: trace('[TVar COMPREHENSION] Variable: ${v.name}');
-                                // DISABLED: trace('[TVar COMPREHENSION] Converting to idiomatic Elixir comprehension');
                                 #end
                                 // Return assignment: doubled = for n <- [1,2,3], do: n * 2
                                 var varName = VariableAnalyzer.toElixirVarName(v.name);
@@ -1076,19 +1004,14 @@ class ElixirASTBuilder {
 
                             #if debug_variable_origin
                             #if debug_ast_builder
-                            // DISABLED: trace('[Variable Origin] TEnumParameter extraction:');
                             #end
                             #if debug_ast_builder
-                            // DISABLED: trace('  - Variable: ${v.name} (id=${v.id})');
                             #end
                             #if debug_ast_builder
-                            // DISABLED: trace('  - Temp name: $tempVarName');
                             #end
                             #if debug_ast_builder
-                            // DISABLED: trace('  - Origin: ExtractionTemp');
                             #end
                             #if debug_ast_builder
-                            // DISABLED: trace('  - Index: $index');
                             #end
                             #end
 
@@ -1101,10 +1024,8 @@ class ElixirASTBuilder {
 
                                 #if debug_clause_context
                                 #if debug_ast_builder
-                                // DISABLED: trace('[ClauseContext Integration] Registered pattern binding for TEnumParameter:');
                                 #end
                                 #if debug_ast_builder
-                                // DISABLED: trace('  - TVar ID ${v.id} maps to pattern var "$tempVarName"');
                                 #end
                                 #end
                             }
@@ -1118,7 +1039,6 @@ class ElixirASTBuilder {
                                     shouldSkipRedundantExtraction = true;
                                     #if debug_enum_extraction
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[TVar] Skipping redundant TEnumParameter extraction - binding plan provides variable at index $index');
                                     #end
                                     #end
                                     return null; // Skip this assignment entirely
@@ -1132,7 +1052,6 @@ class ElixirASTBuilder {
                                 shouldSkipRedundantExtraction = true;
                                 #if debug_redundant_extraction
                                 #if debug_ast_builder
-                                // DISABLED: trace('[TVar] Detected redundant extraction for $tempVarName (will be filtered at TBlock level)');
                                 #end
                                 #end
                             }
@@ -1154,10 +1073,8 @@ class ElixirASTBuilder {
 
                                     #if debug_clause_context
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[ClauseContext Integration] Updated pattern binding after assignment:');
                                     #end
                                     #if debug_ast_builder
-                                    // DISABLED: trace('  - TVar ID ${v.id} now maps to user var "$userVarName" (was temp "${tempVar.name}")');
                                     #end
                                     #end
                                 }
@@ -1167,7 +1084,6 @@ class ElixirASTBuilder {
                                 if (currentContext.currentClauseContext != null && currentContext.currentClauseContext.enumBindingPlan != null) {
                                     #if debug_enum_extraction
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[TVar] Skipping redundant temp assignment ${v.name} = ${tempVar.name} - binding plan handles it');
                                     #end
                                     #end
                                     return null; // Skip this assignment entirely
@@ -1181,19 +1097,14 @@ class ElixirASTBuilder {
 
                                 #if debug_variable_origin
                                 #if debug_ast_builder
-                                // DISABLED: trace('[Variable Origin] Pattern assignment from temp:');
                                 #end
                                 #if debug_ast_builder
-                                // DISABLED: trace('  - Pattern var: ${v.name} (id=${v.id})');
                                 #end
                                 #if debug_ast_builder
-                                // DISABLED: trace('  - Temp var: ${tempVar.name} (id=${tempVar.id})');
                                 #end
                                 #if debug_ast_builder
-                                // DISABLED: trace('  - Origin: PatternBinder');
                                 #end
                                 #if debug_ast_builder
-                                // DISABLED: trace('  - Mapping: ${tempVar.id} -> ${v.id}');
                                 #end
                                 #end
 
@@ -1201,7 +1112,6 @@ class ElixirASTBuilder {
                                 // Skip emitting temp→binder assignment to avoid `lhs = _g*` in case arms.
                                 if (currentContext.currentClauseContext != null) {
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[TVar] Skipping temp→binder assignment inside case clause: ' + v.name + ' = ' + tempVar.name);
                                     #end
                                     return null;
                                 }
@@ -1213,25 +1123,18 @@ class ElixirASTBuilder {
 
                                 #if debug_variable_origin
                                 #if debug_ast_builder
-                                // DISABLED: trace('[Variable Origin] Regular local assignment:');
                                 #end
                                 #if debug_ast_builder
-                                // DISABLED: trace('  - Variable: ${v.name} (id=${v.id})');
                                 #end
                                 #if debug_ast_builder
-                                // DISABLED: trace('  - From: ${tempVar.name}');
                                 #end
                                 #if debug_ast_builder
-                                // DISABLED: trace('  - Origin: UserDefined');
                                 #end
                                 #end
                             }
 
                         case TSwitch(switchExpr, cases, edef):
                             #if debug_ast_builder
-                            // DISABLED: trace('[TSwitch] Switch expression detected in TVar init - delegating to SwitchBuilder');
-                            // DISABLED: trace('[TSwitch]   Switch has ${cases.length} cases');
-                            // DISABLED: trace('[TSwitch]   Has default: ${edef != null}');
                             #end
                             
                             // EverythingIsExprSanitizer lifts switch expressions to temp vars
@@ -1239,9 +1142,6 @@ class ElixirASTBuilder {
                             varOrigin = UserDefined;
 
                             #if debug_everythingisexpr
-                            // DISABLED: trace('[TVar] Switch expression lifted by EverythingIsExprSanitizer detected');
-                            // DISABLED: trace('[TVar] Variable: ${v.name} will hold switch result');
-                            // DISABLED: trace('[TVar] Building proper case expression using SwitchBuilder');
                             #end
 
                             // CRITICAL FIX: Delegate to SwitchBuilder for proper handling
@@ -1309,45 +1209,37 @@ class ElixirASTBuilder {
                 var finalVarName = baseName;  // Just use the snake_case converted name
 
                 #if debug_hygiene
-                // DISABLED: trace('[Hygiene] TVar built faithfully: id=${v.id} name=${v.name} -> $finalVarName (no premature underscore)');
                 #end
 
                 // Handle variable initialization
                 var matchNode = if (init != null) {
                     #if debug_everythingisexpr
                     #if debug_ast_builder
-                    // DISABLED: trace('[TVar init] Processing init for ${v.name}, type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                     #end
 
                     // Check if this looks like a lifted switch (static methods returning switches often get this pattern)
                     if (v.name.startsWith("_g") || v.name == "temp_result" || v.name.contains("result")) {
                         #if debug_ast_builder
-                        // DISABLED: trace('[TVar init] Possible lifted switch variable: ${v.name}');
                         #end
 
                         // Log what we actually have
                         switch(init.expr) {
                             case TLocal(localVar):
                                 #if debug_ast_builder
-                                // DISABLED: trace('[TVar init]   Init is TLocal: ${localVar.name}');
                                 #end
                                 // This is the problem - EverythingIsExprSanitizer replaced the switch with just a local reference
                             case TBlock(exprs):
                                 #if debug_ast_builder
-                                // DISABLED: trace('[TVar init]   Init is TBlock with ${exprs.length} expressions');
                                 #end
                                 for (i in 0...exprs.length) {
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[TVar init]     Expr[$i]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(exprs[i].expr)}');
                                     #end
                                 }
                             case TSwitch(e, cases, edef):
                                 #if debug_ast_builder
-                                // DISABLED: trace('[TVar init]   TSwitch detected with ${cases.length} cases, default: ${edef != null}');
                                 #end
                             default:
                                 #if debug_ast_builder
-                                // DISABLED: trace('[TVar init]   Other type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                                 #end
                         }
                     }
@@ -1390,22 +1282,18 @@ class ElixirASTBuilder {
                                 case TBlock(stmts) if (stmts.length > 2):
                                     #if debug_array_patterns
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[XRay ArrayPattern] Checking TBlock with ${stmts.length} statements for unrolled comprehension');
                                     #end
                                     for (i in 0...stmts.length) {
                                         #if debug_ast_builder
-                                        // DISABLED: trace('[XRay ArrayPattern]   stmt[$i]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(stmts[i].expr)}');
                                         #end
                                         // Check if stmt[1] is a nested TBlock
                                         if (i == 1) {
                                             switch(stmts[i].expr) {
                                                 case TBlock(innerStmts):
                                                     #if debug_ast_builder
-                                                    // DISABLED: trace('[XRay ArrayPattern]     stmt[1] is a TBlock with ${innerStmts.length} inner statements');
                                                     #end
                                                     for (j in 0...Std.int(Math.min(3, innerStmts.length))) {
                                                         #if debug_ast_builder
-                                                        // DISABLED: trace('[XRay ArrayPattern]       inner[$j]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(innerStmts[j].expr)}');
                                                         #end
                                                     }
                                                 default:
@@ -1428,7 +1316,6 @@ class ElixirASTBuilder {
                                             case TVar(v, initExpr) if (initExpr != null && (v.name.startsWith("g") || v.name.startsWith("_g"))):
                                                 #if debug_array_patterns
                                                 #if debug_ast_builder
-                                                // DISABLED: trace('[XRay ArrayPattern] Found TVar for ${v.name}, checking init type: ${initExpr != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(initExpr.expr) : "null"}');
                                                 #end
                                                 #end
                                                 switch(initExpr.expr) {
@@ -1437,20 +1324,17 @@ class ElixirASTBuilder {
                                                         tempVarName = v.name;
                                                         #if debug_array_patterns
                                                         #if debug_ast_builder
-                                                        // DISABLED: trace('[XRay ArrayPattern] First statement matches: var ${v.name} = []');
                                                         #end
                                                         #end
                                                     default:
                                                         #if debug_array_patterns
                                                         #if debug_ast_builder
-                                                        // DISABLED: trace('[XRay ArrayPattern] First statement init is not empty array');
                                                         #end
                                                         #end
                                                 }
                                             default:
                                                 #if debug_array_patterns
                                                 #if debug_ast_builder
-                                                // DISABLED: trace('[XRay ArrayPattern] First statement is not a TVar with g-prefix');
                                                 #end
                                                 #end
                                         }
@@ -1510,7 +1394,6 @@ class ElixirASTBuilder {
                                     if (isUnrolled && values.length > 0) {
                                         #if debug_array_patterns
                                         #if debug_ast_builder
-                                        // DISABLED: trace('[XRay ArrayPattern] TVar init detected as unrolled comprehension with ${values.length} values');
                                         #end
                                         #end
                                         
@@ -1527,7 +1410,6 @@ class ElixirASTBuilder {
                                     // These need to be built as complete case expressions
                                     #if debug_everythingisexpr
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[TVar init] Building TSwitch expression for ${v.name}');
                                     #end
                                     #end
 
@@ -1537,11 +1419,9 @@ class ElixirASTBuilder {
                                     #if debug_everythingisexpr
                                     if (switchAST != null) {
                                         #if debug_ast_builder
-                                        // DISABLED: trace('[TVar init] Switch AST generated successfully');
                                         #end
                                     } else {
                                         #if debug_ast_builder
-                                        // DISABLED: trace('[TVar init] WARNING: Switch AST is null!');
                                         #end
                                     }
                                     #end
@@ -1569,7 +1449,6 @@ class ElixirASTBuilder {
 
                         #if debug_redundant_extraction
                         #if debug_ast_builder
-                        // DISABLED: trace('[TVar] ID-based detection: Skipping assignment for TVar ${v.id} (${v.name}) - already satisfied by pattern');
                         #end
                         #end
                     } else if (init != null) {
@@ -1610,7 +1489,6 @@ class ElixirASTBuilder {
                                                 shouldSkipAssignment = true;
                                                 #if debug_enum_extraction
                                                 #if debug_ast_builder
-                                                // DISABLED: trace('[TVar] Skipping self-assignment from TEnumParameter: $finalVarName = $varName');
                                                 #end
                                                 #end
                                             }
@@ -1618,7 +1496,6 @@ class ElixirASTBuilder {
                                             // Normal extraction, keep it
                                             #if debug_enum_extraction
                                             #if debug_ast_builder
-                                            // DISABLED: trace('[TVar] Keeping TEnumParameter extraction: $finalVarName');
                                             #end
                                             #end
                                     }
@@ -1627,7 +1504,6 @@ class ElixirASTBuilder {
                                     shouldSkipAssignment = true;
                                     #if debug_enum_extraction
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[TVar] Skipping TEnumParameter assignment - initValue is null');
                                     #end
                                     #end
                                     return null;  // ✅ FIX: Immediate return prevents fallthrough to error code
@@ -1642,17 +1518,13 @@ class ElixirASTBuilder {
                                 var tempVarName = tempVar.name;
 
                                 #if debug_ast_builder
-                                // DISABLED: trace('[DEBUG EMBEDDED] Checking assignment: $finalVarName = $tempVarName');
                                 #end
                                 #if debug_ast_builder
-                                // DISABLED: trace('[DEBUG EMBEDDED] Is in case clause: ${currentContext.currentClauseContext != null}');
                                 #end
                                 #if debug_enum_extraction
                                 #if debug_ast_builder
-                                // DISABLED: trace('[TVar TLocal] Checking assignment: $finalVarName = $tempVarName');
                                 #end
                                 #if debug_ast_builder
-                                // DISABLED: trace('[TVar TLocal] Is in case clause: ${currentContext.currentClauseContext != null}');
                                 #end
                                 #end
 
@@ -1674,12 +1546,10 @@ class ElixirASTBuilder {
                                 }
 
                                 #if debug_ast_builder
-                                // DISABLED: trace('[DEBUG EMBEDDED] Temp analysis -> tempVar? $isTempVar, lhsTemp? ${PatternDetector.isTempPatternVarName(finalVarName)}');
                                 #end
 
                                 #if debug_enum_extraction
                                 #if debug_ast_builder
-                                // DISABLED: trace('[TVar TLocal] Is temp var: $isTempVar');
                                 #end
                                 #end
 
@@ -1695,11 +1565,9 @@ class ElixirASTBuilder {
                                          elixirTempName.charAt(1) >= '0' && elixirTempName.charAt(1) <= '9')) {
                                         shouldSkipAssignment = true;
                                         #if debug_ast_builder
-                                        // DISABLED: trace('[DEBUG EMBEDDED] WILL SKIP: $finalVarName = $elixirTempName');
                                         #end
                                         #if debug_enum_extraction
                                         #if debug_ast_builder
-                                        // DISABLED: trace('[TVar TLocal] EMBEDDED SWITCH FIX: Skipping invalid temp var assignment: $finalVarName = $elixirTempName');
                                         #end
                                         #end
                                     }
@@ -1709,7 +1577,6 @@ class ElixirASTBuilder {
                                         shouldSkipAssignment = true;
                                         #if debug_enum_extraction
                                         #if debug_ast_builder
-                                        // DISABLED: trace('[TVar] Skipping redundant self-assignment: $finalVarName = $tempVarName');
                                         #end
                                         #end
                                     }
@@ -1721,7 +1588,6 @@ class ElixirASTBuilder {
                                         shouldSkipAssignment = true;
                                         #if debug_enum_extraction
                                         #if debug_ast_builder
-                                        // DISABLED: trace('[TVar] Skipping redundant self-assignment: $finalVarName = $tempVarName');
                                         #end
                                         #end
                                     }
@@ -1735,7 +1601,6 @@ class ElixirASTBuilder {
                     // Note: Redundant enum extraction is now handled at TBlock level
                     // We generate the assignment here, but TBlock will filter it out if redundant
                     #if debug_ast_builder
-                    // DISABLED: trace('[DEBUG TVar] Final decision for ${finalVarName}: shouldSkipAssignment=${shouldSkipAssignment}');
                     #end
                     var result = if (shouldSkipAssignment) {
                         // Skip the assignment, return null to be filtered out by TBlock
@@ -1744,8 +1609,6 @@ class ElixirASTBuilder {
                     } else if (initValue == null) {
                         // If initValue is null (e.g., from skipped TEnumParameter or failed TCall), handle carefully
                         #if debug_ast_builder
-                        // DISABLED: trace('[DEBUG EMBEDDED TVar] WARNING: initValue is null for: $finalVarName (extractedFromTemp: $extractedFromTemp)');
-                        // DISABLED: trace('[TVar] This will cause undefined variable errors in generated code!');
                         #end
                         
                         // CRITICAL FIX: When initialization expression fails to build (returns null),
@@ -1758,7 +1621,6 @@ class ElixirASTBuilder {
                         var fallbackValue = makeAST(ERaw('{:error, "[Compiler Error] Failed to build initialization for ' + finalVarName + '"}'));
                         
                         #if debug_ast_builder
-                        // DISABLED: trace('[TVar] Using fallback error tuple for null initValue to prevent undefined variable');
                         #end
                         
                         // Create the assignment with the fallback value
@@ -1777,7 +1639,6 @@ class ElixirASTBuilder {
                         // But if this was supposed to be an assignment from a temp var, we have a problem!
                         if (extractedFromTemp != null) {
                             #if debug_ast_builder
-                            // DISABLED: trace('[DEBUG g=g] ERROR: initValue is null but we need assignment from temp var $extractedFromTemp to $finalVarName');
                             #end
                         }
                         
@@ -1786,23 +1647,19 @@ class ElixirASTBuilder {
                         // Check for self-assignment right before creating the match node
                         var shouldSkipSelfAssignment = false;
                         #if debug_ast_builder
-                        // DISABLED: trace('[DEBUG TVar Assignment] Checking assignment: $finalVarName = ${initValue.def}');
                         #end
                         switch(initValue.def) {
                             case EVar(varName):
                                 #if debug_ast_builder
-                                // DISABLED: trace('[DEBUG TVar Assignment] Comparing: finalVarName="$finalVarName" vs varName="$varName"');
                                 #end
                                 if (varName == finalVarName) {
                                     // This is a self-assignment like "g = g" or "content = content"
                                     shouldSkipSelfAssignment = true;
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[DEBUG TVar Assignment] SKIPPING self-assignment: $finalVarName = $varName');
                                     #end
                                 }
                             case _:
                                 #if debug_ast_builder
-                                // DISABLED: trace('[DEBUG TVar Assignment] Not a var assignment: ${initValue.def}');
                                 #end
                                 // Normal assignment
                         }
@@ -1825,20 +1682,15 @@ class ElixirASTBuilder {
 
                         #if debug_variable_origin
                         #if debug_ast_builder
-                        // DISABLED: trace('[Variable Origin] Added metadata to match node:');
                         #end
                         #if debug_ast_builder
-                        // DISABLED: trace('  - Variable: $finalVarName');
                         #end
                         #if debug_ast_builder
-                        // DISABLED: trace('  - Origin: $varOrigin');
                         #end
                         #if debug_ast_builder
-                        // DISABLED: trace('  - ID: ${v.id}');
                         #end
                         if (tempToBinderMap != null) {
                             #if debug_ast_builder
-                            // DISABLED: trace('  - Mappings: $tempToBinderMap');
                             #end
                         }
                         #end
@@ -2210,15 +2062,12 @@ class ElixirASTBuilder {
 	                        var fieldName = extractFieldName(fa);
                         
                         #if debug_ast_builder
-                        // DISABLED: trace('[AST TField] FStatic - className: $className, fieldName: $fieldName');
                         #if debug_ast_builder
-                        // DISABLED: trace('[AST TField] cf.get().name: ${cf.get().name}');
                         #end
                         #end
                         
                         #if debug_atom_generation
                         #if debug_ast_builder
-                        // DISABLED: trace('[Atom Debug TField] FStatic access: ${className}.${fieldName}');
                         #end
                         #end
                         
@@ -2258,7 +2107,6 @@ class ElixirASTBuilder {
                             var classType = classRef.get();
                             #if debug_atom_generation
                             #if debug_ast_builder
-                            // DISABLED: trace('[Atom Debug TField] Checking class ${classType.name} kind: ${classType.kind}');
                             #end
                             #end
                             switch (classType.kind) {
@@ -2267,10 +2115,8 @@ class ElixirASTBuilder {
                                     var abstractType = abstractRef.get();
                                     #if debug_atom_generation
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[Atom Debug TField] Found abstract impl: ${abstractType.name}');
                                     #end
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[Atom Debug TField] Abstract type: ${abstractType.type}');
                                     #end
                                     #end
                                     // Check the underlying type of the abstract
@@ -2279,14 +2125,12 @@ class ElixirASTBuilder {
                                             var underlyingType = underlyingRef.get();
                                             #if debug_atom_generation
                                             #if debug_ast_builder
-                                            // DISABLED: trace('[Atom Debug TField] Underlying type: ${underlyingType.pack.join(".")}.${underlyingType.name}');
                                             #end
                                             #end
                                             if (underlyingType.pack.join(".") == "elixir.types" && underlyingType.name == "Atom") {
                                                 isAtomField = true;
                                                 #if debug_atom_generation
                                                 #if debug_ast_builder
-                                                // DISABLED: trace('[Atom Debug TField] DETECTED: Field is Atom type!');
                                                 #end
                                                 #end
                                             }
@@ -2300,7 +2144,6 @@ class ElixirASTBuilder {
                         if (isAtomField && field.expr() != null) {
                             #if debug_atom_generation
                             #if debug_ast_builder
-                            // DISABLED: trace('[Atom Debug TField] Field has expr, extracting value...');
                             #end
                             #end
                             // Get the field's expression value
@@ -2310,14 +2153,12 @@ class ElixirASTBuilder {
                                     // Generate an atom directly
                                     #if debug_atom_generation
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[Atom Debug TField] Extracted string value: "${s}" -> generating atom :${s}');
                                     #end
                                     #end
                                     EAtom(s);
                                 case _:
                                     #if debug_atom_generation
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[Atom Debug TField] Field expr is not TConst(TString), falling through');
                                     #end
                                     #end
                                     // Not a string constant, fall back to normal field access
@@ -2328,7 +2169,6 @@ class ElixirASTBuilder {
                         } else {
                             #if debug_atom_generation
                             #if debug_ast_builder
-                            // DISABLED: trace('[Atom Debug TField] Not an atom field or no expr, using normal field access');
                             #end
                             #end
 	                        // Normal static field access
@@ -2365,7 +2205,6 @@ class ElixirASTBuilder {
 	                                // If target is null, we can't generate a proper field access
 	                                if (target == null) {
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[ERROR TField] Failed to build target for static field ${className}.${fieldName}');
                                     #end
 	                                    // Return a placeholder that will be caught by TCall
 	                                    EVar("UnknownModule." + fieldName);
@@ -2436,7 +2275,6 @@ class ElixirASTBuilder {
 	                        #if debug_field_names
 	                        if (originalFieldName != fieldName) {
 	                            #if debug_ast_builder
-                            // DISABLED: trace('[AST Builder] Converting field name: $originalFieldName -> $fieldName');
                             #end
                         }
                         #end
@@ -2446,7 +2284,6 @@ class ElixirASTBuilder {
                         switch(e.expr) {
                             case TLocal(v) if (v.name == "p1" || v.name == "p2"):
                                 #if debug_ast_builder
-                                // DISABLED: trace('[AST Builder] Field access: ${v.name}.${fieldName} (id=${v.id})');
                                 #end
                             default:
                         }
@@ -2457,7 +2294,6 @@ class ElixirASTBuilder {
                         // Transform: this.test_data -> context[:test_data]
                         if (currentContext.isInExUnitTest) {
                             #if debug_exunit
-                            // DISABLED: trace('[AST Builder] TField in ExUnit test - field: ${fieldName}, e.expr: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.expr)}');
                             switch(e.expr) {
                                 case TLocal(v): trace('[AST Builder]   TLocal var: ${v.name}');
                                 default:
@@ -2468,7 +2304,6 @@ class ElixirASTBuilder {
                                     // This is an instance variable access in an ExUnit test
                                     // Generate context[:field_name] pattern
                                     #if debug_exunit
-                                    // DISABLED: trace('[AST Builder] ExUnit instance field access via this: context[:${fieldName}]');
                                     #end
                                     // Convert field name to snake_case for Elixir
                                     var snakeFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
@@ -2478,7 +2313,6 @@ class ElixirASTBuilder {
                                     // Sometimes the compiler generates a local variable named "struct"
                                     // In ExUnit tests, this should also map to context
                                     #if debug_exunit
-                                    // DISABLED: trace('[AST Builder] ExUnit field access via struct var: context[:${fieldName}]');
                                     #end
                                     var snakeFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(fieldName);
                                     EAccess(makeAST(EVar("context")), makeAST(EAtom(snakeFieldName)));
@@ -2536,16 +2370,12 @@ class ElixirASTBuilder {
                     var hasVar = switch(el[0].expr) { case TVar(_,_): true; default: false; };
                     var hasSwitch = switch(el[1].expr) { case TSwitch(_,_,_): true; default: false; };
                     if (hasVar && hasSwitch) {
-                        // DISABLED: trace('[ElixirASTBuilder] TBlock with TVar + TSwitch detected!');
                         switch(el[0].expr) {
                             case TVar(tvar, init):
-                                // DISABLED: trace('[ElixirASTBuilder]   TVar name: ${tvar.name}');
-                                // DISABLED: trace('[ElixirASTBuilder]   TVar init: ${init != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr) : "null"}');
                             default:
                         }
                         switch(el[1].expr) {
                             case TSwitch(target, _, _):
-                                // DISABLED: trace('[ElixirASTBuilder]   TSwitch target: ${reflaxe.elixir.util.EnumReflection.enumConstructor(target.expr)}');
                             default:
                         }
                     }
@@ -2779,7 +2609,6 @@ class ElixirASTBuilder {
                 #if debug_ast_pipeline
                 for (arg in f.args) {
                     #if debug_ast_builder
-                    // DISABLED: trace('[AST Builder] TFunction arg: ${arg.v.name} (id=${arg.v.id})');
                     #end
                 }
                 #end
@@ -2788,40 +2617,33 @@ class ElixirASTBuilder {
                 // Special debug for ChangesetUtils methods that are failing
                 if (currentContext != null && currentModule != null && currentModule.contains("ChangesetUtils")) {
                     #if debug_ast_builder
-                    // DISABLED: trace('[TFunction] Processing function in module: ${currentModule}');
                     #end
                     if (f.expr != null) {
                         #if debug_ast_builder
-                        // DISABLED: trace('[TFunction] Function body type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(f.expr.expr)}');
                         #end
 
                         // Check what the function body looks like
                         switch(f.expr.expr) {
                             case TBlock(exprs):
                                 #if debug_ast_builder
-                                // DISABLED: trace('[TFunction] Function body is TBlock with ${exprs.length} expressions');
                                 #end
                                 for (i in 0...exprs.length) {
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[TFunction]   Expr[$i]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(exprs[i].expr)}');
                                     #end
 
                                     // Check if it's a TVar with problematic init
                                     switch(exprs[i].expr) {
                                         case TVar(v, init):
                                             #if debug_ast_builder
-                                            // DISABLED: trace('[TFunction]     TVar ${v.name}');
                                             #end
                                             if (init != null) {
                                                 #if debug_ast_builder
-                                                // DISABLED: trace('[TFunction]       Init type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(init.expr)}');
                                                 #end
 
                                                 // Check if it's TLocal(value)
                                                 switch(init.expr) {
                                                     case TLocal(localVar):
                                                         #if debug_ast_builder
-                                                        // DISABLED: trace('[TFunction]       Init is TLocal: ${localVar.name}');
                                                         #end
                                                     default:
                                                 }
@@ -2832,12 +2654,10 @@ class ElixirASTBuilder {
                             case TReturn(expr):
                                 if (expr != null) {
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[TFunction] Direct return, expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expr.expr)}');
                                     #end
                                 }
                             default:
                                 #if debug_ast_builder
-                                // DISABLED: trace('[TFunction] Other body type');
                                 #end
                         }
                     }
@@ -2862,7 +2682,6 @@ class ElixirASTBuilder {
                 } else {
                     'with no args';
                 };
-                // DISABLED: trace('[ElixirASTBuilder TFunction] Processing function $funcInfo - map has $existingEntries entries');
                 #end
 
                 // Keep existing map with buildClassAST registrations instead of creating new one
@@ -2877,7 +2696,6 @@ class ElixirASTBuilder {
 
                     #if debug_variable_renaming
                     #if debug_ast_builder
-                    // DISABLED: trace('[RENAME DEBUG] TFunction: Processing parameter "$originalName" (ID: ${arg.v.id})');
                     #end
                     #end
                     
@@ -2902,7 +2720,6 @@ class ElixirASTBuilder {
 
                             #if debug_variable_renaming
                             #if debug_ast_builder
-                            // DISABLED: trace('[RENAME DEBUG] TFunction: Detected renamed parameter "$originalName" -> "$strippedName" (suffix: "$suffix", ID: ${arg.v.id})');
                             #end
                             #end
                         }
@@ -2915,7 +2732,6 @@ class ElixirASTBuilder {
                     #if debug_reserved_keywords
                     if (isElixirReservedKeyword(baseName)) {
                         #if debug_ast_builder
-                        // DISABLED: trace('[AST Builder] Reserved keyword detected in parameter: $baseName -> ${baseName}_param');
                         #end
                     }
                     #end
@@ -2929,12 +2745,10 @@ class ElixirASTBuilder {
                         currentContext.tempVarRenameMap.set(originalName, finalName);    // NAME-based (EVar renaming)
 
                         #if debug_hygiene
-                        // DISABLED: trace('[Hygiene] Dual-key registered (TFunction param): id=$idKey name=$originalName -> $finalName');
                         #end
 
                         #if debug_variable_renaming
                         #if debug_ast_builder
-                        // DISABLED: trace('[RENAME DEBUG] TFunction: Registered in tempVarRenameMap - ID: $idKey -> "$finalName" (original: "$originalName", stripped: "$strippedName")');
                         #end
                         #end
                     }
@@ -2944,7 +2758,6 @@ class ElixirASTBuilder {
                         paramRenaming.set(originalName, finalName);
                         #if debug_ast_pipeline
                         #if debug_ast_builder
-                        // DISABLED: trace('[AST Builder] Function parameter will be renamed: $originalName -> $finalName');
                         #end
                         #end
                     }
@@ -2957,7 +2770,6 @@ class ElixirASTBuilder {
 
                         #if debug_variable_renaming
                         #if debug_ast_builder
-                        // DISABLED: trace('[RENAME DEBUG] TFunction: Registered renamed mapping for id ${arg.v.id}: "$originalName" -> "$strippedName"');
                         #end
                         #end
                     }
@@ -2969,7 +2781,6 @@ class ElixirASTBuilder {
                         paramRenaming.set("this", finalName); // Map "this" to final name as well
                         #if debug_ast_pipeline
                         #if debug_ast_builder
-                        // DISABLED: trace('[AST Builder] Abstract this parameter detected, mapping both this1 and this to: $finalName');
                         #end
                         #end
                     }
@@ -2987,22 +2798,18 @@ class ElixirASTBuilder {
                     currentContext.functionParameterIds.set(idKey, true); // Mark as function parameter
                     #if debug_ast_pipeline
                     #if debug_ast_builder
-                    // DISABLED: trace('[AST Builder] Registering parameter in rename map: id=$idKey');
                     #end
                     #end
                 }
                 
                 #if (debug_ast_builder && !no_traces)
                 #if !no_traces
-                // DISABLED: trace('[TFunction DEBUG] BEFORE body compilation: tempVarRenameMap has ${Lambda.count(currentContext.tempVarRenameMap)} entries');
                 #end
                 if (currentContext.tempVarRenameMap.keys().hasNext()) {
                     #if !no_traces
-                    // DISABLED: trace('[TFunction DEBUG] Map contents:');
                     #end
                     for (k in currentContext.tempVarRenameMap.keys()) {
                         #if !no_traces
-                        // DISABLED: trace('[TFunction DEBUG]   "$k" -> "${currentContext.tempVarRenameMap.get(k)}"');
                         #end
                     }
                 }
@@ -3012,7 +2819,6 @@ class ElixirASTBuilder {
 
                 #if (debug_ast_builder && !no_traces)
                 #if !no_traces
-                // DISABLED: trace('[TFunction DEBUG] AFTER body compilation: tempVarRenameMap has ${Lambda.count(currentContext.tempVarRenameMap)} entries');
                 #end
                 #end
                 
@@ -3026,7 +2832,6 @@ class ElixirASTBuilder {
                 if (paramRenaming.keys().hasNext()) {
                     #if debug_ast_pipeline
                     #if debug_ast_builder
-                    // DISABLED: trace('[AST Builder] Applying parameter renaming to function body');
                     #end
                     #end
                     body = applyParameterRenaming(body, paramRenaming);
@@ -3120,18 +2925,12 @@ class ElixirASTBuilder {
                 
             case TFor(v, e1, e2):
                 #if debug_ast_builder
-                // DISABLED: trace('[TFor] Processing for loop, var: ${v.name}');
-                // DISABLED: trace('[TFor] Body expression type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e2.expr)}');
                 switch(e2.expr) {
                     case TBlock(exprs):
-                        // DISABLED: trace('[TFor] Body is TBlock with ${exprs.length} expressions');
                         for (i in 0...exprs.length) {
-                            // DISABLED: trace('[TFor]   [$i]: ${reflaxe.elixir.util.EnumReflection.enumConstructor(exprs[i].expr)}');
                         }
                     case TSwitch(switchExpr, _, _):
-                        // DISABLED: trace('[TFor] Body is direct TSwitch on: ${reflaxe.elixir.util.EnumReflection.enumConstructor(switchExpr.expr)}');
                     default:
-                        // DISABLED: trace('[TFor] Body is: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e2.expr)}');
                 }
                 #end
                 
@@ -3170,28 +2969,21 @@ class ElixirASTBuilder {
                 // Debug trace to understand the extraction context
                 #if debug_enum_extraction
                 #if debug_ast_builder
-                // DISABLED: trace('[TEnumParameter] Attempting extraction:');
                 #end
                 #if debug_ast_builder
-                // DISABLED: trace('  - Expression type: ${e.expr}');
                 #end
                 #if debug_ast_builder
-                // DISABLED: trace('  - Enum field: ${ef.name}');
                 #end
                 #if debug_ast_builder
-                // DISABLED: trace('  - Index: $index');
                 #end
                 #if debug_ast_builder
-                // DISABLED: trace('  - Has ClauseContext: ${currentContext.currentClauseContext != null}');
                 #end
                 if (currentContext.currentClauseContext != null) {
                     #if debug_ast_builder
-                    // DISABLED: trace('  - Has EnumBindingPlan: ${currentContext.currentClauseContext.enumBindingPlan != null && currentContext.currentClauseContext.enumBindingPlan.keys().hasNext()}');
                     #end
                     if (currentContext.currentClauseContext.enumBindingPlan.exists(index)) {
                         var info = currentContext.currentClauseContext.enumBindingPlan.get(index);
                         #if debug_ast_builder
-                        // DISABLED: trace('  - Binding plan for index $index: ${info.finalName} (used: ${info.isUsed})');
                         #end
                     }
                 }
@@ -3209,11 +3001,6 @@ class ElixirASTBuilder {
                         var info = currentContext.currentClauseContext.enumBindingPlan.get(index);
 
                         #if debug_enum_parameter
-                        // DISABLED: trace('[TEnumParameter]   *** BINDING PLAN DATA ***');
-                        // DISABLED: trace('[TEnumParameter]     finalName: "${info.finalName}"');
-                        // DISABLED: trace('[TEnumParameter]     isUsed: ${info.isUsed}');
-                        // DISABLED: trace('[TEnumParameter]     charAt(0): "${info.finalName.charAt(0)}"');
-                        // DISABLED: trace('[TEnumParameter]     charAt(0) == "_": ${info.finalName.charAt(0) == "_"}');
                         #end
 
                         // CRITICAL FIX: If parameter is unused (has underscore prefix), return null to skip TVar
@@ -3231,7 +3018,6 @@ class ElixirASTBuilder {
                         var varName = VariableAnalyzer.toElixirVarName(ef.name);
 
                         #if debug_enum_extraction
-                        // DISABLED: trace('[TEnumParameter]   No binding plan, using enum field name: $varName');
                         #end
 
                         return EVar(varName);
@@ -3250,7 +3036,6 @@ class ElixirASTBuilder {
                         sourceVarName = VariableAnalyzer.toElixirVarName(v.name);
                         #if debug_enum_extraction
                         #if debug_ast_builder
-                        // DISABLED: trace('[TEnumParameter] Extracting from variable: $sourceVarName');
                         #end
                         #end
                     default:
@@ -3263,12 +3048,10 @@ class ElixirASTBuilder {
                     var info = currentContext.currentClauseContext.enumBindingPlan.get(index);
 
                     #if debug_ast_builder
-                    // DISABLED: trace('[DEBUG EMBEDDED TEnumParameter] Binding plan says to use: ${info.finalName}, sourceVarName: $sourceVarName');
                     #end
 
                     #if debug_enum_extraction
                     #if debug_ast_builder
-                    // DISABLED: trace('  - Binding plan says to use: ${info.finalName}');
                     #end
                     #end
 
@@ -3279,14 +3062,11 @@ class ElixirASTBuilder {
                         // But if the binding plan uses a different name, the pattern already extracted it
                         if (info.finalName != sourceVarName) {
                             #if debug_ast_builder
-                            // DISABLED: trace('[DEBUG EMBEDDED TEnumParameter] RETURNING DIRECT VAR: ${info.finalName}');
                             #end
                             #if debug_enum_extraction
                             #if debug_ast_builder
-                            // DISABLED: trace('[TEnumParameter] Pattern used ${info.finalName}, not temp var $sourceVarName');
                             #end
                             #if debug_ast_builder
-                            // DISABLED: trace('[TEnumParameter] Returning ${info.finalName} directly (already extracted by pattern)');
                             #end
                             #end
                             // The pattern already extracted to the correct variable
@@ -3298,7 +3078,6 @@ class ElixirASTBuilder {
                     // If the binding plan says to use the same name as the source, it would create g = g
                     if (info.finalName == sourceVarName && sourceVarName != null) {
                         #if debug_ast_builder
-                        // DISABLED: trace('[DEBUG g=g FOUND] Self-assignment detected: ${sourceVarName} = ${sourceVarName}, skipping');
                         #end
                         // This would create g = g, skip the assignment by returning null
                         return null;
@@ -3327,15 +3106,12 @@ class ElixirASTBuilder {
                     // the pattern already extracted it - no assignment needed
                     #if debug_ast_builder
                     if (finalNameIsTemp) {
-                        // DISABLED: trace('[TEnumParameter] Temp/infrastructure var ${info.finalName}, returning null to skip TVar assignment');
                     } else {
-                        // DISABLED: trace('[TEnumParameter] Real variable ${info.finalName}, returning null - pattern already extracted');
                     }
                     #end
                     return null;
                 } else {
                     #if debug_ast_builder
-                    // DISABLED: trace('[DEBUG EMBEDDED TEnumParameter] NO BINDING PLAN! ClauseContext: ${currentContext.currentClauseContext != null}, index: $index, sourceVarName: $sourceVarName');
                     #end
 
                     // CRITICAL FIX: When there's no binding plan and we're trying to extract from
@@ -3343,7 +3119,6 @@ class ElixirASTBuilder {
                     // This happens in embedded switches where the pattern uses the actual variable name
                     if (sourceVarName != null && TypedExprPreprocessor.isInfrastructureVar(sourceVarName)) {
                         #if debug_ast_builder
-                        // DISABLED: trace('[DEBUG EMBEDDED TEnumParameter] Skipping extraction from non-existent infrastructure var: $sourceVarName');
                         #end
                         // Return null to skip the assignment - the pattern already extracted the value
                         return null;
@@ -3366,15 +3141,12 @@ class ElixirASTBuilder {
 
                                 #if debug_enum_extraction
                                 #if debug_ast_builder
-                                // DISABLED: trace('  - TLocal variable: ${v.name} -> $varName');
                                 #end
                                 if (currentContext.currentClauseContext != null) {
                                     #if debug_ast_builder
-                                    // DISABLED: trace('  - ClauseContext has mapping: ${currentContext.currentClauseContext.localToName.exists(v.id)}');
                                     #end
                                     if (currentContext.currentClauseContext.localToName.exists(v.id)) {
                                         #if debug_ast_builder
-                                        // DISABLED: trace('  - Mapped to: ${currentContext.currentClauseContext.localToName.get(v.id)}');
                                         #end
                                     }
                                 }
@@ -3390,7 +3162,6 @@ class ElixirASTBuilder {
 
                                     #if debug_enum_extraction
                                     #if debug_ast_builder
-                                    // DISABLED: trace('  - SKIPPING extraction, already extracted to: $extractedVarName');
                                     #end
                                     #end
                                 } else {
@@ -3416,7 +3187,6 @@ class ElixirASTBuilder {
 
                                         #if debug_enum_extraction
                                         #if debug_ast_builder
-                                        // DISABLED: trace('  - SKIPPING extraction, detected as pattern temp var: $varName');
                                         #end
                                         #end
                                     }
@@ -3425,7 +3195,6 @@ class ElixirASTBuilder {
                                 // Not a local variable, normal extraction needed
                                 #if debug_enum_extraction
                                 #if debug_ast_builder
-                                // DISABLED: trace('  - Not a TLocal, proceeding with extraction');
                                 #end
                                 #end
                         }
@@ -3440,7 +3209,6 @@ class ElixirASTBuilder {
 
                         #if debug_enum_extraction
                         #if debug_ast_builder
-                        // DISABLED: trace('  - Generating elem() extraction');
                         #end
                         #end
 
@@ -3552,8 +3320,6 @@ class ElixirASTBuilder {
                                            edef: Null<TypedExpr>, pos: Position, 
                                            context: reflaxe.elixir.CompilationContext): ElixirASTDef {
         #if debug_ast_builder
-        // DISABLED: trace('[buildFieldPatternSwitch] Building field pattern switch on ${fieldName}');
-        // DISABLED: trace('[buildFieldPatternSwitch] Root object type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(rootObj.expr)}');
         #end
         
         // Build the switch target (the root object)
@@ -3563,7 +3329,6 @@ class ElixirASTBuilder {
         // This can happen with infrastructure variables where the object is not available
         if (targetAST.def == ENil) {
             #if debug_ast_builder
-            // DISABLED: trace('[buildFieldPatternSwitch] WARNING: targetAST is nil, falling back to direct switch');
             #end
             // Fallback: generate a simple switch on nil which won't work but at least compiles
             // This should be fixed properly by ensuring rootObj is correctly passed
@@ -3577,13 +3342,11 @@ class ElixirASTBuilder {
                 for (field in anon.fields) {
                     objectFields.push(field.name);
                     #if debug_ast_builder
-                    // DISABLED: trace('[buildFieldPatternSwitch] Found field: ${field.name}');
                     #end
                 }
             default:
                 // Not an anonymous object - can't extract fields
                 #if debug_ast_builder
-                // DISABLED: trace('[buildFieldPatternSwitch] Root object is not anonymous, cannot extract fields');
                 #end
         }
         
@@ -3630,7 +3393,6 @@ class ElixirASTBuilder {
                         
                         var varName = VariableAnalyzer.toElixirVarName(rootName + "_" + otherField);
                         #if debug_ast_builder
-                        // DISABLED: trace('[buildFieldPatternSwitch] Extracting field ${otherField} as ${varName}');
                         #end
                         
                         patternPairs.push({
@@ -3668,7 +3430,6 @@ class ElixirASTBuilder {
         }
         
         #if debug_ast_builder
-        // DISABLED: trace('[buildFieldPatternSwitch] Generated ${clauses.length} clauses');
         #end
         
         // Return the case expression
@@ -3690,7 +3451,6 @@ class ElixirASTBuilder {
         // Debug: Print the condition to understand its structure
         #if debug_array_patterns
         #if debug_ast_builder
-        // DISABLED: trace("[Array Pattern] Checking condition: " + haxe.macro.ExprTools.toString(Context.getTypedExpr(econd)));
         #end
         #end
         
@@ -3715,7 +3475,6 @@ class ElixirASTBuilder {
                                         arrayVarName = arrayVar.name;
                                         #if debug_array_patterns
                                         #if debug_ast_builder
-                                        // DISABLED: trace("[Array Pattern] DETECTED: " + indexVarName + " < " + arrayVarName + ".length");
                                         #end
                                         #end
                                     case _:
@@ -3733,7 +3492,6 @@ class ElixirASTBuilder {
         if (!isArrayPattern) {
             #if debug_array_patterns
             #if debug_ast_builder
-            // DISABLED: trace("[Array Pattern] No array pattern detected");
             #end
             #end
             return null;
@@ -3835,14 +3593,12 @@ class ElixirASTBuilder {
                 var enumType = enumRef.get();
                 var hasIt = enumType.meta.has(":elixirIdiomatic");
                 #if debug_ast_builder
-                // DISABLED: trace('[AST Builder] Checking @:elixirIdiomatic for ${enumType.name}: $hasIt');
                 #end
                 return hasIt;
             case TTypeExpr(TEnumDecl(enumRef)):
                 var enumType = enumRef.get();
                 var hasIt = enumType.meta.has(":elixirIdiomatic");
                 #if debug_ast_builder
-                // DISABLED: trace('[AST Builder] Checking @:elixirIdiomatic for enum type expr: $hasIt');
                 #end
                 return hasIt;
             default:
@@ -3856,7 +3612,6 @@ class ElixirASTBuilder {
                         var enumType = enumRef.get();
                         var hasIt = enumType.meta.has(":elixirIdiomatic");
                         #if debug_ast_builder
-                        // DISABLED: trace('[AST Builder] Checking @:elixirIdiomatic via return type: $hasIt');
                         #end
                         return hasIt;
                     default:
@@ -3865,7 +3620,6 @@ class ElixirASTBuilder {
                 var enumType = enumRef.get();
                 var hasIt = enumType.meta.has(":elixirIdiomatic");
                 #if debug_ast_builder
-                // DISABLED: trace('[AST Builder] Checking @:elixirIdiomatic via direct enum type: $hasIt');
                 #end
                 return hasIt;
             default:
@@ -3965,7 +3719,6 @@ class ElixirASTBuilder {
      */
     static function tryExpandElixirInjection(methodExpr: TypedExpr, thisExpr: TypedExpr, args: Array<TypedExpr>, context: reflaxe.elixir.CompilationContext): Null<ElixirAST> {
         #if debug_ast_builder
-        // DISABLED: trace('[AST Builder] tryExpandElixirInjection examining: ${reflaxe.elixir.util.EnumReflection.enumConstructor(methodExpr.expr)}');
         #end
         
         // First check if this is a function, and if so, extract its body
@@ -4041,7 +3794,6 @@ class ElixirASTBuilder {
             static function tryExpandElixirCall(expr: TypedExpr, thisExpr: TypedExpr, methodArgs: Array<TypedExpr>, context: reflaxe.elixir.CompilationContext): Null<ElixirAST> {
         #if debug_elixir_injection
         #if debug_ast_builder
-        // DISABLED: trace("[XRay] tryExpandElixirCall checking expr type: " + expr.expr);
         #end
         #end
         
@@ -4050,7 +3802,6 @@ class ElixirASTBuilder {
             case TReturn(retExpr) if (retExpr != null):
                 #if debug_elixir_injection
                 #if debug_ast_builder
-                // DISABLED: trace("[XRay] Found TReturn wrapper, checking inner: " + retExpr.expr);
                 #end
                 #end
                 return tryExpandElixirCall(retExpr, thisExpr, methodArgs, context);
@@ -4059,7 +3810,6 @@ class ElixirASTBuilder {
             case TMeta({name: metaName}, untypedExpr) if (metaName == ":untyped" || metaName == "untyped"):
                 #if debug_elixir_injection
                 #if debug_ast_builder
-                // DISABLED: trace("[XRay] Found untyped metadata, checking inner: " + untypedExpr.expr);
                 #end
                 #end
                 return tryExpandElixirCall(untypedExpr, thisExpr, methodArgs, context);
@@ -4068,7 +3818,6 @@ class ElixirASTBuilder {
             case TIf(cond, ifExpr, elseExpr):
                 #if debug_elixir_injection
                 #if debug_ast_builder
-                // DISABLED: trace("[XRay] Found TIf in tryExpandElixirCall");
                 #end
                 #end
                 var ifResult = tryExpandElixirCall(ifExpr, thisExpr, methodArgs, context);
@@ -4086,14 +3835,12 @@ class ElixirASTBuilder {
             case TCall(e, callArgs):
                 #if debug_elixir_injection
                 #if debug_ast_builder
-                // DISABLED: trace("[XRay] TCall with target: " + e.expr);
                 #end
                 #end
                 switch(e.expr) {
                     case TIdent("__elixir__"):
                         #if debug_elixir_injection
                         #if debug_ast_builder
-                        // DISABLED: trace("[XRay] Found __elixir__() call!");
                         #end
                         #end
                         // Found __elixir__() call!
@@ -4146,7 +3893,6 @@ class ElixirASTBuilder {
                                     }
                                     #if debug_elixir_injection
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[XRay] Expanding __elixir__ with code: $code');
                                     #end
                                     #end
                                     // Process the injection with proper string interpolation handling
@@ -4217,7 +3963,6 @@ class ElixirASTBuilder {
                                     
                                     #if debug_elixir_injection
                                     #if debug_ast_builder
-                                    // DISABLED: trace('[XRay] Processed code: $processedCode');
                                     #end
                                     #end
                                     
@@ -4257,7 +4002,6 @@ class ElixirASTBuilder {
                                 default:
                                     #if debug_elixir_injection
                                     #if debug_ast_builder
-                                    // DISABLED: trace("[XRay] First arg is not TString: " + callArgs[0].expr);
                                     #end
                                     #end
                             }
@@ -4265,14 +4009,12 @@ class ElixirASTBuilder {
                     default:
                         #if debug_elixir_injection
                         #if debug_ast_builder
-                        // DISABLED: trace("[XRay] Not __elixir__, it's: " + e.expr);
                         #end
                         #end
                 }
             default:
                 #if debug_elixir_injection
                 #if debug_ast_builder
-                // DISABLED: trace("[XRay] Not a call, it's: " + expr.expr);
                 #end
                 #end
         }
@@ -4523,7 +4265,6 @@ class ElixirASTBuilder {
         
         #if debug_ast_pipeline
         #if debug_ast_builder
-        // DISABLED: trace('[createVariableMappingsForCase] Called with extractedParams: $extractedParams, enumType: ${enumType != null ? enumType.name : "null"}');
         #end
         #end
         
@@ -4546,7 +4287,6 @@ class ElixirASTBuilder {
                                 // Just let the natural variable names flow through
                                 #if debug_ast_pipeline
                                 #if debug_ast_builder
-                                // DISABLED: trace('[Alpha-renaming] Skipping mapping for non-enum TLocal: ${v.name} = ${sourceVar.name}');
                                 #end
                                 #end
                                 
@@ -4612,7 +4352,6 @@ class ElixirASTBuilder {
 
                                                 #if debug_ast_pipeline
                                                 #if debug_ast_builder
-                                                // DISABLED: trace('[M0.2] Using EnumBindingPlan name for param ${paramIndex}: ${finalName}');
                                                 #end
                                                 #end
                                             } else {
@@ -4625,7 +4364,6 @@ class ElixirASTBuilder {
 
                                                 #if debug_ast_pipeline
                                                 #if debug_ast_builder
-                                                // DISABLED: trace('[M0.2 WARNING] No EnumBindingPlan for param ${paramIndex}, using fallback: ${finalName}');
                                                 #end
                                                 #end
                                             }
@@ -4638,7 +4376,6 @@ class ElixirASTBuilder {
 
                                             #if debug_ast_pipeline
                                             #if debug_ast_builder
-                                            // DISABLED: trace('[M0.2] Mapping TEnumParameter temp var ${v.name} (id=${v.id}) to binding plan name: ${finalName}');
                                             #end
                                             #end
                                             
@@ -4656,7 +4393,6 @@ class ElixirASTBuilder {
                                                 
                                                 #if debug_ast_pipeline
                                                 #if debug_ast_builder
-                                                // DISABLED: trace('[Alpha-renaming] Enum pattern var assignment: ${patternVarName} = ${tempVarName}, mapping ${v.id} -> ${patternVarName}');
                                                 #end
                                                 #end
                                             } else if (mapping.exists(tempVar.id)) {
@@ -4669,14 +4405,12 @@ class ElixirASTBuilder {
                                                     currentContext.patternVariableRegistry.set(v.id, canonicalName);
                                                     #if debug_ast_pipeline
                                                     #if debug_ast_builder
-                                                    // DISABLED: trace('[Pattern Registry] Propagating pattern name to ${v.name} (id=${v.id}) -> ${canonicalName}');
                                                     #end
                                                     #end
                                                 }
                                                 
                                                 #if debug_ast_pipeline
                                                 #if debug_ast_builder
-                                                // DISABLED: trace('[Alpha-renaming] Mapping TVar ${v.name} (id=${v.id}) from temp ${tempVar.name} to: ${canonicalName}');
                                                 #end
                                                 #end
                                             } else {
@@ -4685,7 +4419,6 @@ class ElixirASTBuilder {
                                                 // We don't need to map x to anything - it should use its own name
                                                 #if debug_ast_pipeline
                                                 #if debug_ast_builder
-                                                // DISABLED: trace('[Alpha-renaming] No mapping needed for TVar ${v.name} from ${tempVar.name}');
                                                 #end
                                                 #end
                                             }

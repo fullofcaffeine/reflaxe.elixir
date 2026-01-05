@@ -52,13 +52,11 @@ class WebParamFinalFixTransforms {
             return switch (n.def) {
                 case EModule(name, attrs, body) if (isWebOrLive(name)):
                     #if debug_web_binder
-                    // DISABLED: trace('[WebParamFinalFix] Module ' + name);
                     #end
                     var newBody = [for (b in body) fixNode(b)];
                     makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
                 case EDefmodule(name2, doBlock) if (isWebOrLive(name2)):
                     #if debug_web_binder
-                    // DISABLED: trace('[WebParamFinalFix] Defmodule ' + name2);
                     #end
                     makeASTWithMeta(EDefmodule(name2, fixNode(doBlock)), n.metadata, n.pos);
                 default:
@@ -82,10 +80,8 @@ class WebParamFinalFixTransforms {
                     #if debug_web_binder
                     if (Lambda.count(rename) > 0) {
                         inline function patList(cs:Array<EPattern>):String return [for (p in cs) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                        // DISABLED: trace('[WebParamFinalFix] def ' + fname + '(' + patList(args) + ') -> (' + patList(newArgs) + ')');
                     } else {
                         inline function patList(cs2:Array<EPattern>):String return [for (p in cs2) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                        // DISABLED: trace('[WebParamFinalFix] def ' + fname + ' (no rename) args=(' + patList(args) + ')');
                     }
                     #end
                     makeASTWithMeta(EDef(fname, newArgs, guards, newBody), x.metadata, x.pos);
@@ -94,7 +90,6 @@ class WebParamFinalFixTransforms {
                     inline function patListDbg(cs:Array<EPattern>):String return [for (p in cs) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
                     var usesEditing = VariableUsageCollector.usedInFunctionScope(body2, "editing_todo");
                     var usesUserId = VariableUsageCollector.usedInFunctionScope(body2, "user_id") || pinUsesName(body2, "user_id") || erawUsesName(body2, "user_id");
-                    // DISABLED: trace('[WebParamFinalFix][dbg] defp ' + fname2 + ' args=(' + patListDbg(args2) + ') uses(editing_todo)=' + usesEditing + ' uses(user_id)=' + usesUserId);
                     #end
                     var rename2 = computeParamPromotions(args2, body2);
                     var newArgs2 = renameParams(args2, rename2);
@@ -102,10 +97,8 @@ class WebParamFinalFixTransforms {
                     #if debug_web_binder
                     if (Lambda.count(rename2) > 0) {
                         inline function patListArgs(cs:Array<EPattern>):String return [for (p in cs) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                        // DISABLED: trace('[WebParamFinalFix] defp ' + fname2 + '(' + patListArgs(args2) + ') -> (' + patListArgs(newArgs2) + ')');
                     } else {
                         inline function patListArgsDbg(cs3:Array<EPattern>):String return [for (p in cs3) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                        // DISABLED: trace('[WebParamFinalFix] defp ' + fname2 + ' (no rename) args=(' + patListArgsDbg(args2) + ')');
                     }
                     #end
                     makeASTWithMeta(EDefp(fname2, newArgs2, guards2, newBody2), x.metadata, x.pos);
@@ -120,7 +113,6 @@ class WebParamFinalFixTransforms {
                         var usedList = [];
                         for (k in used.keys()) usedList.push(k);
                         inline function patListDbg(cs:Array<EPattern>):String return [for (p in cs) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                        // DISABLED: trace('[WebParamFinalFix][EFn] args=(' + patListDbg(cl.args) + ') used={' + usedList.join(',') + '}');
                         #end
                         var outArgs:Array<EPattern> = [];
                         for (a in cl.args) switch (a) {

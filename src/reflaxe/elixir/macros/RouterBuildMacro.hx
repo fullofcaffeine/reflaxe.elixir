@@ -57,7 +57,7 @@ class RouterBuildMacro {
         var __t0 = haxe.Timer.stamp();
         #end
         #if debug_compilation_hang
-        // DISABLED: Sys.println('[HANG DEBUG] 🎯 RouterBuildMacro.generateRoutes START');
+        Sys.println('[HANG DEBUG] RouterBuildMacro.generateRoutes START');
         var routerStartTime = haxe.Timer.stamp() * 1000;
         #end
 
@@ -65,7 +65,7 @@ class RouterBuildMacro {
         var classType = Context.getLocalClass().get();
 
         #if debug_compilation_hang
-        // DISABLED: Sys.println('[HANG DEBUG] Router class: ${classType.name}');
+        Sys.println('[HANG DEBUG] Router class: ${classType.name}');
         #end
 
         // Extract route definitions from @:routes annotation
@@ -84,7 +84,7 @@ class RouterBuildMacro {
         // Generate functions for each route definition
         for (routeDef in routeDefinitions) {
             #if debug_compilation_hang
-            // DISABLED: Sys.println('[HANG DEBUG] Generating route: ${routeDef.name} - ${routeDef.method} ${routeDef.path}');
+            Sys.println('[HANG DEBUG] Generating route: ${routeDef.name} - ${routeDef.method} ${routeDef.path}');
             #end
 
             var generatedFunction = createRouteFunction(routeDef, classType.pos);
@@ -96,16 +96,12 @@ class RouterBuildMacro {
 
         #if debug_compilation_hang
         var elapsed = (haxe.Timer.stamp() * 1000) - routerStartTime;
-        // DISABLED: Sys.println('[HANG DEBUG] ✅ RouterBuildMacro.generateRoutes END - Took ${elapsed}ms, Generated ${routeDefinitions.length} routes');
+        Sys.println('[HANG DEBUG] RouterBuildMacro.generateRoutes END - Took ${elapsed}ms, Generated ${routeDefinitions.length} routes');
         #end
 
         #if hxx_instrument_sys
         var __elapsedMacro = (haxe.Timer.stamp() - __t0) * 1000.0;
-        // DISABLED: Sys.println(
-            '[MacroTiming] name=RouterBuildMacro.generateRoutes routes='
-            + routeDefinitions.length
-            + ' elapsed_ms=' + Std.int(__elapsedMacro)
-        );
+        Sys.println('[MacroTiming] name=RouterBuildMacro.generateRoutes routes=' + routeDefinitions.length + ' elapsed_ms=' + Std.int(__elapsedMacro));
         #end
 
         #if debug_perf reflaxe.elixir.debug.Perf.add('RouterBuildMacro.generateRoutes', __p); #end

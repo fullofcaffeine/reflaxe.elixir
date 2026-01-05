@@ -224,8 +224,6 @@ class TempVariableTransforms {
 
                             // Debug output to see what we're processing
                             #if debug_temp_binding
-                            // DISABLED: trace('[InlineTempBindingInExpr] Processing block with temp var: ' + tmp);
-                            // DISABLED: trace('[InlineTempBindingInExpr] bindExpr type: ' + reflaxe.elixir.util.EnumReflection.enumConstructor(bindExpr.def));
                             #end
 
                             // Check if tmp is actually used in the second expression
@@ -244,9 +242,6 @@ class TempVariableTransforms {
 
                                 if (shouldPreserve) {
                                     #if debug_temp_binding
-                                    // DISABLED: trace('[InlineTempBindingInExpr] Preserving case expression - not collapsing');
-                                    // DISABLED: trace('[InlineTempBindingInExpr]   tmp      = ' + tmp);
-                                    // DISABLED: trace('[InlineTempBindingInExpr]   bindExpr = case expression');
                                     #end
                                     // Return the block unchanged to preserve the case structure
                                     return node; // Return unchanged to preserve pattern matching
@@ -254,11 +249,6 @@ class TempVariableTransforms {
 
                                 var collapsed = replaceVar(second, tmp, bindExpr);
                                 #if debug_temp_binding
-                                // DISABLED: trace('[InlineTempBindingInExpr] Collapsing temp binding in expression context');
-                                // DISABLED: trace('[InlineTempBindingInExpr]   tmp      = ' + tmp);
-                                // DISABLED: trace('[InlineTempBindingInExpr]   bindExpr = ' + ElixirASTPrinter.print(bindExpr, 0));
-                                // DISABLED: trace('[InlineTempBindingInExpr]   second   = ' + ElixirASTPrinter.print(second, 0));
-                                // DISABLED: trace('[InlineTempBindingInExpr]   result   = ' + ElixirASTPrinter.print(collapsed, 0));
                                 #end
                                 return collapsed;
                             }
@@ -366,7 +356,6 @@ class TempVariableTransforms {
      */
     public static function resolveClauseLocalsPass(ast: ElixirAST): ElixirAST {
         #if debug_clause_locals
-        // DISABLED: trace('[XRay ResolveClauseLocals] Starting pass');
         #end
         
         return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
@@ -375,9 +364,7 @@ class TempVariableTransforms {
                 var varIdToName = node.metadata.varIdToName;
                 
                 #if debug_clause_locals
-                // DISABLED: trace('[XRay ResolveClauseLocals] Found varIdToName metadata with ${Lambda.count(varIdToName)} mappings');
                 for (id => name in varIdToName) {
-                    // DISABLED: trace('  $id -> $name');
                 }
                 #end
                 
@@ -392,7 +379,6 @@ class TempVariableTransforms {
                                     var newName = varIdToName.get(sourceId);
                                     
                                     #if debug_clause_locals
-                                    // DISABLED: trace('[XRay ResolveClauseLocals] Remapping variable: $currentName (id:$sourceId) -> $newName');
                                     #end
                                     
                                     // Create new EVar with the mapped name
@@ -442,11 +428,6 @@ class TempVariableTransforms {
                                         // Replace temp var with value in condition
                                         var newCondition = replaceTempVar(condition, tempVar, value);
                                         #if debug_temp_variable_transforms
-                                        // DISABLED: trace('[InlineIfTempAssignment] Transforming block with temp assignment');
-                                        // DISABLED: trace('  Temp var: $tempVar');
-                                        // DISABLED: trace('  Value: ${ElixirASTPrinter.print(value, 0)}');
-                                        // DISABLED: trace('  Old condition: ${ElixirASTPrinter.print(condition, 0)}');
-                                        // DISABLED: trace('  New condition: ${ElixirASTPrinter.print(newCondition, 0)}');
                                         #end
                                         return makeAST(EIf(newCondition, thenBranch, elseBranch), node.pos);
                                     }
@@ -465,9 +446,6 @@ class TempVariableTransforms {
                                     switch(inner.def) {
                                         case EMatch(PVar(tempVar), value) if (isTempVar(tempVar)):
                                             #if debug_temp_variable_transforms
-                                            // DISABLED: trace('[InlineIfTempAssignment] Found parenthesized temp assignment in if condition');
-                                            // DISABLED: trace('  Temp var: $tempVar');
-                                            // DISABLED: trace('  Value: ${ElixirASTPrinter.print(value, 0)}');
                                             #end
                                             value; // Use the value directly
                                         default:
@@ -475,9 +453,6 @@ class TempVariableTransforms {
                                     }
                                 case EMatch(PVar(tempVar), value) if (isTempVar(tempVar)):
                                     #if debug_temp_variable_transforms
-                                    // DISABLED: trace('[InlineIfTempAssignment] Found temp assignment in if condition');
-                                    // DISABLED: trace('  Temp var: $tempVar');
-                                    // DISABLED: trace('  Value: ${ElixirASTPrinter.print(value, 0)}');
                                     #end
                                     value; // Use the value directly
                                 default:
@@ -487,7 +462,6 @@ class TempVariableTransforms {
                             if (transformedLeft != left) {
                                 var newCondition = makeAST(EBinary(op, transformedLeft, right), condition.pos);
                                 #if debug_temp_variable_transforms
-                                // DISABLED: trace('  New condition: ${ElixirASTPrinter.print(newCondition, 0)}');
                                 #end
                                 return makeAST(EIf(newCondition, thenBranch, elseBranch), node.pos);
                             }

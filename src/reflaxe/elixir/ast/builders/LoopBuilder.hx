@@ -141,9 +141,7 @@ class LoopBuilder {
         
         #if debug_loop_builder
         if (accumulation != null) {
-            // DISABLED: trace('[LoopBuilder] analyzeFor detected accumulation for variable: ${accumulation.varName}');
         }
-        // DISABLED: trace('[LoopBuilder] hasSideEffects: $hasSideEffects');
         #end
 
         // Check for range pattern: 0...n or start...end
@@ -303,10 +301,8 @@ class LoopBuilder {
                 
                 #if debug_loop_builder
                 if (Lambda.count(analysis.freeVariables) > 0) {
-                    // DISABLED: trace('[LoopBuilder] Free variables detected: ${[for (k in analysis.freeVariables.keys()) k]}');
                 }
                 if (Lambda.count(analysis.loopLocalVariables) > 0) {
-                    // DISABLED: trace('[LoopBuilder] Loop-local variables: ${[for (k in analysis.loopLocalVariables.keys()) k]}');
                 }
                 #end
                 
@@ -337,8 +333,6 @@ class LoopBuilder {
                         ));
                     }
                     #if debug_loop_builder
-                    // DISABLED: trace('[LoopBuilder] Detected accumulation pattern for variable: ${accumulation.varName}');
-                    // DISABLED: trace('[LoopBuilder] Converting EnumEachRange to Enum.reduce');
                     #end
                     return buildAccumulationLoop(
                         varName,
@@ -363,9 +357,7 @@ class LoopBuilder {
 
                 var snakeVar = toSnakeCase(varName);
                 #if debug_loop_builder
-                // DISABLED: trace('[LoopBuilder] EnumEachRange - Original varName: $varName, snakeVar: $snakeVar');
                 if (Lambda.count(initializations) > 0) {
-                    // DISABLED: trace('[LoopBuilder] Variables needing initialization: ${[for (k in initializations.keys()) k]}');
                 }
                 #end
                 var bodyAst = buildExpr(body);
@@ -398,7 +390,6 @@ class LoopBuilder {
                 bodyAst.metadata.isWithinLoop = true;
 
                 #if debug_loop_builder
-                // DISABLED: trace('[LoopBuilder] Creating EFn with PVar($snakeVar) for Enum.each');
                 #end
                 var loopAst = makeAST(ERemoteCall(
                     makeAST(EVar("Enum")),
@@ -423,7 +414,6 @@ class LoopBuilder {
                 var accumulation = detectAccumulationPattern(body);
                 if (accumulation != null) {
                     #if debug_loop_builder
-                    // DISABLED: trace('[LoopBuilder] Detected accumulation in collection iteration for: ${accumulation.varName}');
                     #end
                     return buildAccumulationLoop(
                         varName,
@@ -445,7 +435,6 @@ class LoopBuilder {
                 
                 #if debug_loop_builder
                 if (Lambda.count(initializations) > 0) {
-                    // DISABLED: trace('[LoopBuilder] EnumEachCollection - Variables needing initialization: ${[for (k in initializations.keys()) k]}');
                 }
                 #end
                 
@@ -565,7 +554,6 @@ class LoopBuilder {
         }
 
         #if debug_loop_builder
-        // DISABLED: trace('[LoopBuilder] detectAccumulationPattern checking: ${body.expr}');
         #end
         switch(body.expr) {
             case TBlock(exprs):
@@ -579,7 +567,6 @@ class LoopBuilder {
                 // Pattern: var += value
                 // Distinguish list append vs string concat vs numeric add by type.
                 #if debug_loop_builder
-                // DISABLED: trace('[LoopBuilder] Found accumulation pattern: ${v.name} += ...');
                 #end
                 var isList = isArrayType(v.t) || switch (rhs.expr) { case TArrayDecl(_): true; default: false; };
                 var isString = !isList && isStringType(v.t);
@@ -715,10 +702,6 @@ class LoopBuilder {
                                      toSnakeCase: String -> String = null): ElixirAST {
 
         #if debug_loop_builder
-        // DISABLED: trace('[XRay LoopBuilder] ========== WHILE/DO-WHILE COMPILATION START ==========');
-        // DISABLED: trace('[XRay LoopBuilder] normalWhile: $normalWhile (${normalWhile ? "while" : "do-while"})');
-        // DISABLED: trace('[XRay LoopBuilder] Condition expr: ${econd.expr}');
-        // DISABLED: trace('[XRay LoopBuilder] Body expr type: ${e.expr}');
         #end
 
         // Default snake case converter if not provided
@@ -730,7 +713,6 @@ class LoopBuilder {
         var forPattern = detectDesugarForLoopPattern(econd, e);
         if (forPattern != null) {
             #if debug_loop_detection
-            // DISABLED: trace("[LoopBuilder] Detected desugared for loop pattern");
             #end
             return buildFromForPattern(forPattern, buildExpr, toSnakeCase);
         }
@@ -744,27 +726,19 @@ class LoopBuilder {
 
         // Build and analyze IR
         #if debug_loop_builder
-        // DISABLED: trace('[XRay LoopBuilder] Analyzing loop IR...');
         #end
         var ir = analyzeLoop(whileExpr, buildExpr);
 
         #if debug_loop_builder
-        // DISABLED: trace('[XRay LoopBuilder] IR Analysis Complete:');
-        // DISABLED: trace('[XRay LoopBuilder]   IR kind: ${ir.kind}');
-        // DISABLED: trace('[XRay LoopBuilder]   IR confidence: ${ir.confidence}');
-        // DISABLED: trace('[XRay LoopBuilder]   IR accumulators: ${ir.accumulators.length}');
-        // DISABLED: trace('[XRay LoopBuilder]   IR yield: ${ir.yield != null ? "present" : "null"}');
         #end
 
         // Check confidence and decide emission strategy
         if (ir.confidence >= CONFIDENCE_THRESHOLD) {
             #if debug_loop_builder
-            // DISABLED: trace('[XRay LoopBuilder] High confidence (${ir.confidence}) - using IR emission');
             #end
             return emitFromIR(ir, buildExpr, null, toSnakeCase);
         } else {
             #if debug_loop_builder
-            // DISABLED: trace('[XRay LoopBuilder] Low confidence (${ir.confidence}) - falling back to legacy');
             #end
             // Fall back to legacy - would delegate to original TWhile handling
             // For now, use simple reduce_while
@@ -787,7 +761,6 @@ class LoopBuilder {
         hasSideEffectsOnly: Bool
     }> {
         #if debug_loop_detection
-        // DISABLED: trace('[LoopBuilder] detectDesugarForLoopPattern called with cond: ${cond.expr}');
         #end
         
         // Check for `_g < _g1` pattern in condition (may be wrapped in parenthesis/meta)
@@ -805,7 +778,6 @@ class LoopBuilder {
                 var counter = extractInfrastructureVarName(unwrap(e1));
                 var limit = extractInfrastructureVarName(unwrap(e2));
                 #if debug_loop_detection
-                // DISABLED: trace('[LoopBuilder] Extracted counter: $counter, limit: $limit from e1: ${e1.expr}, e2: ${e2.expr}');
                 #end
                 if (counter != null && limit != null) {
                     {counter: counter, limit: limit, op: op, counterExpr: e1, limitExpr: e2};
@@ -1089,10 +1061,7 @@ class LoopBuilder {
         var accumulation = detectAccumulationPattern(whileBody);
         
         #if debug_loop_builder
-        // DISABLED: trace('[LoopBuilder] buildWithFullContext - counterVar: $counterVar');
         if (accumulation != null) {
-            // DISABLED: trace('[LoopBuilder] Found accumulation for variable: ${accumulation.varName}');
-            // DISABLED: trace('[LoopBuilder] Will generate Enum.reduce instead of Enum.each');
         }
         #end
         
@@ -1101,9 +1070,7 @@ class LoopBuilder {
         
         #if debug_loop_builder
         if (analysis != null) {
-            // DISABLED: trace('[LoopBuilder] Analysis found userVar: ${analysis.userVar}');
         } else {
-            // DISABLED: trace('[LoopBuilder] Analysis returned null - using fallback with default variable');
         }
         #end
         
@@ -1120,8 +1087,6 @@ class LoopBuilder {
             ));
             
             #if debug_loop_builder
-            // DISABLED: trace('[LoopBuilder] WARNING: Analysis failed, using default variable name: $defaultVar');
-            // DISABLED: trace('[LoopBuilder] Original whileBody type: ${whileBody.expr}');
             #end
             
             // Filter out infrastructure variable assignments (like i = g = g + 1)
@@ -1129,7 +1094,6 @@ class LoopBuilder {
             var cleanedBody = cleanLoopBodyFromInfrastructure(whileBody, counterVar, defaultVar);
             
             #if debug_loop_builder
-            // DISABLED: trace('[LoopBuilder] Cleaned body: ${cleanedBody}');
             #end
             
             // Check if accumulation was detected - use reduce if so
@@ -1503,15 +1467,8 @@ class LoopBuilder {
                                     buildExpr: TypedExpr -> ElixirAST): ElixirAST {
 
         #if debug_loop_builder
-        // DISABLED: trace('[XRay LoopBuilder] buildLegacyWhile called');
-        // DISABLED: trace('[XRay LoopBuilder]   normalWhile: $normalWhile');
-        // DISABLED: trace('[XRay LoopBuilder]   condition AST type: ${cond != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(cond.def) : "null"}');
-        // DISABLED: trace('[XRay LoopBuilder]   body AST type: ${body != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(body.def) : "null"}');
         if (body != null) {
-            // DISABLED: trace('[XRay LoopBuilder]   body is null: false');
-            // DISABLED: trace('[XRay LoopBuilder]   body toString: ${ElixirASTPrinter.print(body, 0).substring(0, 100)}');
         } else {
-            // DISABLED: trace('[XRay LoopBuilder]   body is null: true');
         }
         #end
 
@@ -1531,8 +1488,6 @@ class LoopBuilder {
         var initAcc = makeAST(EAtom("ok"));
 
         #if debug_loop_builder
-        // DISABLED: trace('[XRay LoopBuilder] Creating reducer body...');
-        // DISABLED: trace('[XRay LoopBuilder]   body before wrapping: ${body != null ? ElixirASTPrinter.print(body, 0).substring(0, 200) : "null"}');
         #end
 
         var reducerBody = makeAST(EIf(
@@ -1548,8 +1503,6 @@ class LoopBuilder {
         ));
 
         #if debug_loop_builder
-        // DISABLED: trace('[XRay LoopBuilder] Reducer body created');
-        // DISABLED: trace('[XRay LoopBuilder]   reducerBody toString: ${ElixirASTPrinter.print(reducerBody, 0).substring(0, 300)}');
         #end
 
         var reducerFn = makeAST(EFn([{
@@ -1970,10 +1923,7 @@ class LoopBuilder {
         var transformedBody = transformBodyForReduce(body, accumulation, buildExpr, toSnakeCase, snakeAccumInReducer);
         
         #if debug_loop_builder
-        // DISABLED: trace('[LoopBuilder] Building Enum.reduce for accumulation');
-        // DISABLED: trace('[LoopBuilder] Iterator: $snakeIterator, Accumulator: $snakeAccum');
         if (Lambda.count(initializations) > 0) {
-            // DISABLED: trace('[LoopBuilder] Additional initializations needed: ${[for (k in initializations.keys()) k]}');
         }
         #end
         
@@ -2136,7 +2086,6 @@ class LoopBuilder {
                             astString.indexOf("g + 1") >= 0) {
                             shouldSkip = true;
                             #if debug_loop_builder
-                            // DISABLED: trace('[LoopBuilder] Skipping infrastructure assignment: $astString');
                             #end
                         }
                         
@@ -2362,8 +2311,6 @@ class LoopBuilder {
         var buildExpression = context.getExpressionBuilder();
         
         #if debug_map_iteration
-        // DISABLED: trace('[LoopBuilder] Building idiomatic Map iteration');
-        // DISABLED: trace('[LoopBuilder] Iterator variable: ${v.name}');
         #end
         
         // Extract the map expression (what we're iterating over)
@@ -2379,8 +2326,6 @@ class LoopBuilder {
         var vars = extractMapIterationVariables(body, v.name);
         
         #if debug_map_iteration
-        // DISABLED: trace('[LoopBuilder] Extracted variables - Key: ${vars.key}, Value: ${vars.value}');
-        // DISABLED: trace('[LoopBuilder] Key used: ${vars.keyUsed}, Value used: ${vars.valueUsed}');
         #end
         
         // Remove the extraction statements from the body
@@ -2417,15 +2362,10 @@ class LoopBuilder {
         var enumFunc = isCollecting ? "map" : "each";
         
         #if debug_map_iteration
-        // DISABLED: trace('[LoopBuilder] Building Map iteration with Enum.$enumFunc');
         if (vars.keyUsed && vars.valueUsed) {
-            // DISABLED: trace('[LoopBuilder] Pattern: {${toElixirVarName(vars.key)}, ${toElixirVarName(vars.value)}}');
         } else if (vars.keyUsed) {
-            // DISABLED: trace('[LoopBuilder] Pattern: {${toElixirVarName(vars.key)}, _}');
         } else if (vars.valueUsed) {
-            // DISABLED: trace('[LoopBuilder] Pattern: {_, ${toElixirVarName(vars.value)}}');
         } else {
-            // DISABLED: trace('[LoopBuilder] Pattern: {_, _}');
         }
         #end
         
@@ -2455,67 +2395,46 @@ class LoopBuilder {
         
         // ALWAYS trace to understand what's being compiled
         #if debug_map_iteration
-        // DISABLED: trace('[LoopBuilder] TFor iterator expression type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(e1.expr)}');
-        // DISABLED: trace('[LoopBuilder] TFor variable name: ${v.name}');
-        // DISABLED: trace('[LoopBuilder] TFor iterator type: ${e1.t}');
         
         // Check what method is being called in the iterator
         switch(e1.expr) {
             case TCall({expr: TField(_, FInstance(_, _, cf))}, args):
-                // DISABLED: trace('[LoopBuilder] Iterator method name: ${cf.get().name}');
-                // DISABLED: trace('[LoopBuilder] Number of args: ${args.length}');
             case TCall({expr: TField(_, FStatic(_, cf))}, args):
-                // DISABLED: trace('[LoopBuilder] Static method name: ${cf.get().name}');
             case TCall(e, args):
-                // DISABLED: trace('[LoopBuilder] Other call type: ${e.expr}');
             default:
-                // DISABLED: trace('[LoopBuilder] Not a TCall: ${e1.expr}');
         }
         #end
         
         // Debug: Check what the iterator expression actually is
         #if debug_map_iteration
-        // DISABLED: trace('[LoopBuilder] TFor iterator expression: ${e1.expr}');
-        // DISABLED: trace('[LoopBuilder] Variable name: ${v.name}');
         switch(e1.expr) {
             case TCall({expr: TField(map, field)}, args):
-                // DISABLED: trace('[LoopBuilder] Iterator is a call to field: $field');
                 switch(field) {
                     case FInstance(_, _, cf):
-                        // DISABLED: trace('[LoopBuilder] Field name: ${cf.get().name}');
-                        // DISABLED: trace('[LoopBuilder] Map expression type: ${map.t}');
                     default:
                 }
             default:
-                // DISABLED: trace('[LoopBuilder] Not a TCall, expr is: ${e1.expr}');
         }
         #end
         
         // Check for Map iteration by examining the iterator expression
         var isMapIter = switch(e1.expr) {
             case TCall({expr: TField(_, FInstance(_, _, cf))}, []) if (cf.get().name == "keyValueIterator"):
-                // DISABLED: trace('[LoopBuilder] Detected Map iterator via keyValueIterator() method');
                 true;
             default:
                 var result = isMapIterator(e1);
-                // DISABLED: trace('[LoopBuilder] isMapIterator result: $result for expr type: ${e1.t}');
                 result;
         };
         
         if (isMapIter) {
             #if debug_map_iteration
-            // DISABLED: trace('[LoopBuilder] Detected Map iterator type, generating idiomatic Map iteration');
-            // DISABLED: trace('[LoopBuilder] Loop body expr: ${e2.expr}');
             // Analyze the body to find the actual key/value variables
             switch(e2.expr) {
                 case TBlock(exprs) if (exprs.length > 0):
-                    // DISABLED: trace('[LoopBuilder] Body is TBlock with ${exprs.length} expressions');
                     // Look for the pattern: var name = g.key; var hex = g.value;
                     for (i in 0...exprs.length) {
-                        // DISABLED: trace('[LoopBuilder] Block expr[$i]: ${exprs[i].expr}');
                     }
                 default:
-                    // DISABLED: trace('[LoopBuilder] Body is not a block: ${e2.expr}');
             }
             #end
             return buildIdiomaticMapIteration(v, e1, e2, context, toElixirVarName);
@@ -3169,10 +3088,6 @@ class LoopBuilder {
                                    toElixirVarName: String -> String): ElixirASTDef {
 
         #if debug_loop_builder
-        // DISABLED: trace('[XRay LoopBuilder] buildWhileLoop called');
-        // DISABLED: trace('[XRay LoopBuilder]   normalWhile: $normalWhile (${normalWhile ? "while" : "do-while"})');
-        // DISABLED: trace('[XRay LoopBuilder]   condition TypedExpr: ${e.expr}');
-        // DISABLED: trace('[XRay LoopBuilder]   body TypedExpr: ${e.expr}');
         #end
 
         var buildExpression = context.getExpressionBuilder();
@@ -3206,12 +3121,8 @@ class LoopBuilder {
         }
 
         #if debug_loop_builder
-        // DISABLED: trace('[XRay LoopBuilder] After compiling from TypedExpr:');
-        // DISABLED: trace('[XRay LoopBuilder]   condition AST: ${reflaxe.elixir.util.EnumReflection.enumConstructor(condition.def)}');
-        // DISABLED: trace('[XRay LoopBuilder]   body AST: ${reflaxe.elixir.util.EnumReflection.enumConstructor(body.def)}');
         if (body != null) {
             var bodyStr = ElixirASTPrinter.print(body, 0);
-            // DISABLED: trace('[XRay LoopBuilder]   body printed (first 300 chars): ${bodyStr.substring(0, bodyStr.length > 300 ? 300 : bodyStr.length)}');
         }
         #end
         
@@ -3292,21 +3203,13 @@ class LoopBuilder {
     ): ElixirASTDef {
 
         #if debug_loop_builder
-        // DISABLED: trace('[XRay LoopBuilder] buildReduceWhileWithState called');
-        // DISABLED: trace('[XRay LoopBuilder]   mutatedVars count: ${Lambda.count(mutatedVars)}');
-        // DISABLED: trace('[XRay LoopBuilder]   condition AST: ${reflaxe.elixir.util.EnumReflection.enumConstructor(condition.def)}');
-        // DISABLED: trace('[XRay LoopBuilder]   body AST type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(body.def)}');
         if (body != null) {
             var bodyStr = ElixirASTPrinter.print(body, 0);
-            // DISABLED: trace('[XRay LoopBuilder]   body content (first 300 chars): ${bodyStr.substring(0, bodyStr.length > 300 ? 300 : bodyStr.length)}');
             switch(body.def) {
                 case EBlock(exprs):
-                    // DISABLED: trace('[XRay LoopBuilder]   body is EBlock with ${exprs.length} expressions');
                 default:
-                    // DISABLED: trace('[XRay LoopBuilder]   body is not an EBlock');
             }
         } else {
-            // DISABLED: trace('[XRay LoopBuilder]   body is null!');
         }
         #end
 
@@ -3394,8 +3297,6 @@ class LoopBuilder {
         );
 
         #if debug_loop_builder
-        // DISABLED: trace('[XRay LoopBuilder] Building reduce_while structure...');
-        // DISABLED: trace('[XRay LoopBuilder]   transformedBody will be in EBlock with cont tuple');
         #end
 
         function buildThenBlock(bodyExpr: ElixirAST): ElixirAST {
@@ -3422,9 +3323,7 @@ class LoopBuilder {
         ));
 
         #if debug_loop_builder
-        // DISABLED: trace('[XRay LoopBuilder] Lambda EIf body created');
         var ifBodyStr = ElixirASTPrinter.print(lambdaIfBody, 0);
-        // DISABLED: trace('[XRay LoopBuilder]   Lambda if-body (first 500 chars): ${ifBodyStr.substring(0, ifBodyStr.length > 500 ? 500 : ifBodyStr.length)}');
         #end
 
         // Build the complete reducer function
@@ -3437,9 +3336,7 @@ class LoopBuilder {
         ]));
 
         #if debug_loop_builder
-        // DISABLED: trace('[XRay LoopBuilder] Reducer function created');
         var reducerStr = ElixirASTPrinter.print(reducerFn, 0);
-        // DISABLED: trace('[XRay LoopBuilder]   Reducer fn (first 600 chars): ${reducerStr.substring(0, reducerStr.length > 600 ? 600 : reducerStr.length)}');
         #end
 
         var result = ERemoteCall(
@@ -3464,8 +3361,6 @@ class LoopBuilder {
         );
 
         #if debug_loop_builder
-        // DISABLED: trace('[XRay LoopBuilder] Complete reduce_while structure built');
-        // DISABLED: trace('[XRay LoopBuilder] Returning from buildReduceWhileWithState');
         #end
 
         // Critical: bind the final accumulator back to the local variables so mutations

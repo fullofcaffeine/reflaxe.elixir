@@ -309,7 +309,6 @@ class LoopTransforms {
         }
         #else
         // Non-sys platforms use trace
-        // DISABLED: trace('[dumpAST not available on non-sys platforms]');
         #end
     }
     
@@ -359,7 +358,6 @@ class LoopTransforms {
                     case EMatch(_, rhs): switch(rhs.def) { case EBlock(_): true; default: false; };
                     default: false;
                 };
-                // DISABLED: trace('[XRay LoopTransforms] ✓ Entering switch with EMatch node, RHS is block: $rhsIsBlock');
             }
             #end
 
@@ -395,7 +393,6 @@ class LoopTransforms {
                         return makeASTWithMeta(EMatch(pattern, detectAndTransformUnrolledLoops(rhsBlock)), node.metadata, node.pos);
                     }
                     #if debug_loop_transforms
-                    // DISABLED: trace('[XRay LoopTransforms] ✅ MATCHED EMatch case with EBlock RHS!');
                     #end
 
                     // Extract the pattern variable name
@@ -408,7 +405,6 @@ class LoopTransforms {
                     var blockStmts = switch(rhsBlock.def) { case EBlock(s): s; default: []; };
 
                     #if debug_loop_transforms
-                    // DISABLED: trace('[XRay LoopTransforms] EMatch pattern: $resultVar, block has ${blockStmts.length} statements');
                     #end
 
                     // Check if the block looks like a comprehension:
@@ -502,7 +498,6 @@ class LoopTransforms {
                                                 case EBlock(_): 'EBlock';
                                                 default: 'Other: ${thenBranch.def}';
                                             };
-                                            // DISABLED: trace('[XRay LoopTransforms]     Then branch: $thenDesc');
                                             #end
 
                                             // Extract value from then branch
@@ -702,7 +697,6 @@ class LoopTransforms {
             
             if (!isEnumEach) {
                 #if debug_loop_unrolling
-                // DISABLED: trace('[XRay LoopTransforms] No alternating pattern at index $i - next statement is not Enum.each');
                 #end
                 return null;
             }
@@ -710,13 +704,11 @@ class LoopTransforms {
             // Verify the outer statement has the expected index
             if (!containsIndex(stmt, expectedIndex)) {
                 #if debug_loop_unrolling
-                // DISABLED: trace('[XRay LoopTransforms] Outer statement at index $i does not contain expected index $expectedIndex');
                 #end
                 return null;
             }
             
             #if debug_loop_unrolling
-            // DISABLED: trace('[XRay LoopTransforms] ✓ Found pair at index $i: outer with index $expectedIndex + inner Enum.each');
             #end
             
             outerStatements.push(stmt);
@@ -729,13 +721,11 @@ class LoopTransforms {
         // Need at least 2 complete pairs for a nested loop pattern
         if (outerStatements.length < 2) {
             #if debug_loop_unrolling
-            // DISABLED: trace('[XRay LoopTransforms] Only ${outerStatements.length} pairs found, need at least 2');
             #end
             return null;
         }
         
         #if debug_loop_unrolling
-        // DISABLED: trace('[XRay LoopTransforms] ✅ DETECTED NESTED UNROLLED LOOP: ${outerStatements.length} outer iterations with inner loops');
         #end
         
         // Reconstruct as nested Enum.each
@@ -953,14 +943,12 @@ class LoopTransforms {
      */
     static function detectComprehensionInReduceWhile(stmt: ElixirAST): Null<ElixirAST> {
         #if debug_loop_transforms
-        // DISABLED: trace('[XRay LoopTransforms] detectComprehensionInReduceWhile: Checking statement');
         #end
 
         // Match: Enum.reduce_while(Stream.iterate(...), init, reducer_fn)
         switch(stmt.def) {
             case ERemoteCall({def: EVar("Enum")}, "reduce_while", args) if (args.length == 3):
                 #if debug_loop_transforms
-                // DISABLED: trace('[XRay LoopTransforms]   Found Enum.reduce_while call');
                 #end
 
                 // Check if first arg is Stream.iterate (indicator of array building loop)
@@ -971,13 +959,11 @@ class LoopTransforms {
 
                 if (!isStreamIterate) {
                     #if debug_loop_transforms
-                    // DISABLED: trace('[XRay LoopTransforms]   Not Stream.iterate, skipping');
                     #end
                     return null;
                 }
 
                 #if debug_loop_transforms
-                // DISABLED: trace('[XRay LoopTransforms]   ✓ Has Stream.iterate pattern');
                 #end
 
                 // Extract the reducer function (third argument)
@@ -988,16 +974,11 @@ class LoopTransforms {
 
                 if (comprehensionInfo == null) {
                     #if debug_loop_transforms
-                    // DISABLED: trace('[XRay LoopTransforms]   No comprehension pattern in reducer');
                     #end
                     return null;
                 }
 
                 #if debug_loop_transforms
-                // DISABLED: trace('[XRay LoopTransforms]   ✓ Extracted comprehension info');
-                // DISABLED: trace('[XRay LoopTransforms]   Result var: ${comprehensionInfo.resultVar}');
-                // DISABLED: trace('[XRay LoopTransforms]   Loop var: ${comprehensionInfo.loopVar}');
-                // DISABLED: trace('[XRay LoopTransforms]   Values count: ${comprehensionInfo.values.length}');
                 #end
 
                 // Build the comprehension
@@ -1053,7 +1034,6 @@ class LoopTransforms {
                 switch(ifExpr.def) {
                     case EIf(condition, thenBranch, elseBranch):
                         #if debug_loop_transforms
-                        // DISABLED: trace('[XRay LoopTransforms]   Found if expression in reducer');
                         #end
 
                         // Extract from the then branch (continuation case)
@@ -1076,7 +1056,6 @@ class LoopTransforms {
                                     if (varName == leftVar) {
                                         bodyExpr = expr;
                                         #if debug_loop_transforms
-                                        // DISABLED: trace('[XRay LoopTransforms]   Found accumulator pattern: $varName = $varName ++ [expr]');
                                         #end
                                     }
 
@@ -1140,31 +1119,24 @@ class LoopTransforms {
         if (startIdx + 2 >= stmts.length) return null;  // Need at least 3 statements
 
         #if debug_loop_transforms
-        // DISABLED: trace('[XRay LoopTransforms] detectComprehensionPattern: Checking from index $startIdx');
         #end
 
         var firstStmt = stmts[startIdx];
 
         #if debug_loop_transforms
-        // DISABLED: trace('[XRay LoopTransforms]   First statement type: ${firstStmt.def}');
         switch(firstStmt.def) {
             case EMatch(pattern, rhs):
-                // DISABLED: trace('[XRay LoopTransforms]   EMatch pattern: $pattern');
-                // DISABLED: trace('[XRay LoopTransforms]   EMatch RHS type: ${rhs.def}');
             default:
-                // DISABLED: trace('[XRay LoopTransforms]   Not EMatch, is: ${reflaxe.elixir.util.EnumReflection.enumConstructor(firstStmt.def)}');
         }
         #end
 
         // TRY PRIORITY 0: Unrolled filtered comprehension (most specific)
         // Pattern: result = g = []; if (cond) %{struct | _g: ...}; ...; _g
         #if debug_loop_transforms
-        // DISABLED: trace('[XRay detectComprehensionPattern] Trying PRIORITY 0: Unrolled filtered comprehension...');
         #end
         var unrolledFiltered = detectUnrolledFilteredComprehension(stmts, startIdx);
         if (unrolledFiltered != null) {
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectComprehensionPattern]   ✓ MATCHED Priority 0 - Unrolled filtered comprehension');
             #end
             return unrolledFiltered;
         }
@@ -1172,33 +1144,28 @@ class LoopTransforms {
         // TRY VARIANT 1: Sequential filtered comprehension (more specific, check first)
         // Pattern: evens = n = 1; if (cond) [] ++ [n]; n = 2; if (cond) [] ++ [n]; ...; []
         #if debug_loop_transforms
-        // DISABLED: trace('[XRay detectComprehensionPattern] Trying VARIANT 1: Sequential filtered comprehension...');
         #end
         var comprehensionInfo = detectSequentialComprehension(stmts, startIdx);
         var stmtCount = 0;  // Track how many statements were consumed
 
         if (comprehensionInfo != null) {
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectComprehensionPattern]   ✓ MATCHED Variant 1 - Sequential filtered comprehension');
             #end
             // Calculate statement count: 1 (init) + 1 (first conditional) + 2 * remaining pairs + 1 (terminator)
             // Pattern: evens = n = 1; if (cond) [] ++ [n]; n = 2; if (cond) [] ++ [n]; ...; []
             stmtCount = 1 + 1 + (comprehensionInfo.values.length - 1) * 2 + 1;
         } else {
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectComprehensionPattern]   ✗ Variant 1 failed, trying VARIANT 2: Block comprehension...');
             #end
             // TRY VARIANT 2: Block comprehension (wrapped, less specific)
             // Pattern: doubled = { n = 1; [] ++ [n*2]; ...; [] }
             comprehensionInfo = switch(firstStmt.def) {
                 case EMatch(PVar(resultVar), rhs):
                     #if debug_loop_transforms
-                    // DISABLED: trace('[XRay detectComprehensionPattern]   VARIANT 2: Found EMatch, RHS type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.def)}');
                     #end
                     switch(rhs.def) {
                         case EBlock(blockStmts):
                             #if debug_loop_transforms
-                            // DISABLED: trace('[XRay detectComprehensionPattern]   VARIANT 2: RHS is EBlock with ${blockStmts.length} statements, calling detectBlockComprehension');
                             #end
                             detectBlockComprehension(resultVar, blockStmts);
                         default:
@@ -1211,22 +1178,18 @@ class LoopTransforms {
 
             #if debug_loop_transforms
             if (comprehensionInfo != null) {
-                // DISABLED: trace('[XRay detectComprehensionPattern]   ✓ MATCHED Variant 2 - Block comprehension');
             }
             #end
         }
 
         if (comprehensionInfo == null) {
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectComprehensionPattern]   ✗ NO MATCH - Not a comprehension pattern');
             #end
             return null;
         }
 
         #if debug_loop_transforms
-        // DISABLED: trace('[XRay LoopTransforms]   ✓ Found comprehension: ${comprehensionInfo.resultVar} = for ${comprehensionInfo.loopVar} <- [${comprehensionInfo.values.length} values]');
         if (comprehensionInfo.filterCondition != null) {
-            // DISABLED: trace('[XRay LoopTransforms]   With filter condition (guard clause)');
         }
         #end
 
@@ -1257,7 +1220,6 @@ class LoopTransforms {
         var transformed = makeAST(EMatch(PVar(comprehensionInfo.resultVar), comprehension));
 
         #if debug_loop_transforms
-        // DISABLED: trace('[XRay LoopTransforms] ✅ Generated comprehension: ${comprehensionInfo.resultVar} = for ${comprehensionInfo.loopVar} <- [${comprehensionInfo.values.length} values], ${filters.length} guards, do: ...');
         #end
 
         return {transformed: transformed, count: stmtCount};  // Return actual statement count consumed
@@ -1272,12 +1234,10 @@ class LoopTransforms {
      */
     static function detectBlockComprehension(resultVar: String, stmts: Array<ElixirAST>): Null<ComprehensionInfo> {
         #if debug_loop_transforms
-        // DISABLED: trace('[XRay detectBlockComprehension] Checking $resultVar with ${stmts.length} statements');
         #end
 
         if (stmts.length < 3) {
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectBlockComprehension]   Too few statements: ${stmts.length}');
             #end
             return null;  // Need at least 2 iterations + empty list
         }
@@ -1288,14 +1248,12 @@ class LoopTransforms {
         var filterCondition: ElixirAST = null;  // For filtered comprehensions
 
         #if debug_loop_transforms
-        // DISABLED: trace('[XRay detectBlockComprehension] Analyzing ${stmts.length} statements');
         for (idx in 0...Math.floor(Math.min(stmts.length, 3))) {
             var desc = switch(stmts[idx].def) {
                 case EMatch(p, e): 'EMatch(${reflaxe.elixir.util.EnumReflection.enumConstructor(p)}, ${reflaxe.elixir.util.EnumReflection.enumConstructor(e.def)})';
                 case EIf(cond, t, e): 'EIf(...)';
                 default: reflaxe.elixir.util.EnumReflection.enumConstructor(stmts[idx].def);
             };
-            // DISABLED: trace('[XRay detectBlockComprehension]   Statement $idx: $desc');
         }
         #end
 
@@ -1304,20 +1262,17 @@ class LoopTransforms {
         if (stmts.length >= 3) {
             var firstStmt = stmts[0];
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectBlockComprehension] Checking first stmt: ${reflaxe.elixir.util.EnumReflection.enumConstructor(firstStmt.def)}');
             #end
 
             switch(firstStmt.def) {
                 case EMatch(PVar(accumVar), rhs):
                     #if debug_loop_transforms
-                    // DISABLED: trace('[XRay detectBlockComprehension]   EMatch found, RHS: ${reflaxe.elixir.util.EnumReflection.enumConstructor(rhs.def)}');
                     #end
 
                     // Check if RHS is empty list
                     switch(rhs.def) {
                         case EList(items) if (items.length == 0):
                             #if debug_loop_transforms
-                            // DISABLED: trace('[XRay detectBlockComprehension] Found accumulator init: $accumVar = []');
                             #end
 
                             // Check if remaining statements are EIf (filtered pattern)
@@ -1331,7 +1286,6 @@ class LoopTransforms {
 
                             if (allEIf) {
                                 #if debug_loop_transforms
-                                // DISABLED: trace('[XRay detectBlockComprehension] Detected FILTERED pattern - all middle statements are EIf');
                                 #end
 
                                 // Extract pattern from first EIf to understand structure
@@ -1352,15 +1306,10 @@ class LoopTransforms {
 
                                             // Extract literal value and body expression from then branch
                                             #if debug_loop_transforms
-                                            // DISABLED: trace('[XRay detectBlockComprehension]     Then branch type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(thenBranch.def)}');
                                             // Detailed inspection of ECall structure
                                             switch(thenBranch.def) {
                                                 case ECall(target, funcName, args):
-                                                    // DISABLED: trace('[XRay detectBlockComprehension]       ECall target: ${target != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(target.def) : "null"}');
-                                                    // DISABLED: trace('[XRay detectBlockComprehension]       ECall funcName: "$funcName"');
-                                                    // DISABLED: trace('[XRay detectBlockComprehension]       ECall args count: ${args.length}');
                                                     for (idx in 0...args.length) {
-                                                        // DISABLED: trace('[XRay detectBlockComprehension]         Arg $idx: ${reflaxe.elixir.util.EnumReflection.enumConstructor(args[idx].def)}');
                                                     }
                                                 default:
                                             }
@@ -1370,7 +1319,6 @@ class LoopTransforms {
                                                 // Pattern 1: variable.push(expr) - the actual pattern!
                                                 case ECall({def: EVar(_)}, "push", [expr]):
                                                     #if debug_loop_transforms
-                                                    // DISABLED: trace('[XRay detectBlockComprehension]       Found variable.push with expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expr.def)}');
                                                     #end
 
                                                     if (bodyExpr == null) {
@@ -1381,14 +1329,12 @@ class LoopTransforms {
                                                     if (literalValue != null) {
                                                         values.push(literalValue);
                                                         #if debug_loop_transforms
-                                                        // DISABLED: trace('[XRay detectBlockComprehension]       ✓ Collected literal value');
                                                         #end
                                                     }
 
                                                 // Pattern 2: [] ++ [expr]
                                                 case EBinary(Concat, {def: EList([])}, {def: EList([expr])}):
                                                     #if debug_loop_transforms
-                                                    // DISABLED: trace('[XRay detectBlockComprehension]       Found concat with expr type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(expr.def)}');
                                                     #end
 
                                                     if (bodyExpr == null) {
@@ -1403,7 +1349,6 @@ class LoopTransforms {
                                                 // Pattern 3: Struct update %{struct | field: struct.field ++ [expr]}
                                                 case EStructUpdate(struct, fields):
                                                     #if debug_loop_transforms
-                                                    // DISABLED: trace('[XRay detectBlockComprehension]       Found EStructUpdate with ${fields.length} fields');
                                                     #end
 
                                                     // Look for field update pattern: _g: struct._g ++ [literal]
@@ -1411,7 +1356,6 @@ class LoopTransforms {
                                                         switch(field.value.def) {
                                                             case EBinary(Concat, _, {def: EList([expr])}):
                                                                 #if debug_loop_transforms
-                                                                // DISABLED: trace('[XRay detectBlockComprehension]       Found concatenation in struct field update');
                                                                 #end
 
                                                                 if (bodyExpr == null) {
@@ -1422,7 +1366,6 @@ class LoopTransforms {
                                                                 if (literalValue != null) {
                                                                     values.push(literalValue);
                                                                     #if debug_loop_transforms
-                                                                    // DISABLED: trace('[XRay detectBlockComprehension]       ✓ Collected literal value from struct update');
                                                                     #end
                                                                 }
                                                             default:
@@ -1432,7 +1375,6 @@ class LoopTransforms {
                                                 // Pattern 4: Old struct update detection (ECall pattern - keeping for backwards compat)
                                                 case ECall(target, "update", args):
                                                     #if debug_loop_transforms
-                                                    // DISABLED: trace('[XRay detectBlockComprehension]       Found old-style struct update with ${args.length} args');
                                                     #end
 
                                                     // The last argument should be a map with the concatenation
@@ -1451,7 +1393,6 @@ class LoopTransforms {
                                                                             if (literalValue != null) {
                                                                                 values.push(literalValue);
                                                                                 #if debug_loop_transforms
-                                                                                // DISABLED: trace('[XRay detectBlockComprehension]       Extracted literal from struct update');
                                                                                 #end
                                                                             }
                                                                         default:
@@ -1463,7 +1404,6 @@ class LoopTransforms {
 
                                                 default:
                                                     #if debug_loop_transforms
-                                                    // DISABLED: trace('[XRay detectBlockComprehension]       Then branch didn\'t match expected patterns (${reflaxe.elixir.util.EnumReflection.enumConstructor(thenBranch.def)})');
                                                     #end
                                             }
                                         default:
@@ -1471,20 +1411,13 @@ class LoopTransforms {
                                 }
 
                                 #if debug_loop_transforms
-                                // DISABLED: trace('[XRay detectBlockComprehension] Extracted literal values:');
-                                // DISABLED: trace('[XRay detectBlockComprehension]   Values count: ${values.length}');
                                 if (values.length > 0) {
-                                    // DISABLED: trace('[XRay detectBlockComprehension]   First value: ${reflaxe.elixir.util.EnumReflection.enumConstructor(values[0].def)}');
-                                    // DISABLED: trace('[XRay detectBlockComprehension]   Last value: ${reflaxe.elixir.util.EnumReflection.enumConstructor(values[values.length-1].def)}');
                                 }
-                                // DISABLED: trace('[XRay detectBlockComprehension]   Filter condition: ${filterCondition != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(filterCondition.def) : "null"}');
-                                // DISABLED: trace('[XRay detectBlockComprehension]   Body expr: ${bodyExpr != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(bodyExpr.def) : "null"}');
                                 #end
 
                                 // Check if we have a valid sequential range
                                 if (values.length == 0 || filterCondition == null || bodyExpr == null) {
                                     #if debug_loop_transforms
-                                    // DISABLED: trace('[XRay detectBlockComprehension] Incomplete extraction - missing components');
                                     #end
                                     return null;
                                 }
@@ -1493,7 +1426,6 @@ class LoopTransforms {
                                 loopVar = inferLoopVariableName(filterCondition, bodyExpr);
 
                                 #if debug_loop_transforms
-                                // DISABLED: trace('[XRay detectBlockComprehension]   Inferred loop variable: $loopVar');
                                 #end
 
                                 // Build ComprehensionInfo with inferred loop variable
@@ -1516,20 +1448,17 @@ class LoopTransforms {
             var stmt = stmts[i];
 
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectBlockComprehension]   Checking statement $i: ${reflaxe.elixir.util.EnumReflection.enumConstructor(stmt.def)}');
             #end
 
             switch(stmt.def) {
                 case EBlock(innerStmts):
                     #if debug_loop_transforms
-                    // DISABLED: trace('[XRay detectBlockComprehension]     EBlock with ${innerStmts.length} statements');
                     for (j in 0...innerStmts.length) {
                         var desc = switch(innerStmts[j].def) {
                             case ECall(target, name, args): 'ECall(target=${target != null ? reflaxe.elixir.util.EnumReflection.enumConstructor(target.def) : "null"}, name=$name, ${args.length} args)';
                             case EBinary(op, left, right): 'EBinary($op, ${reflaxe.elixir.util.EnumReflection.enumConstructor(left.def)}, ${reflaxe.elixir.util.EnumReflection.enumConstructor(right.def)})';
                             default: reflaxe.elixir.util.EnumReflection.enumConstructor(innerStmts[j].def);
                         };
-                        // DISABLED: trace('[XRay detectBlockComprehension]       Inner statement $j: $desc');
                     }
                     #end
 
@@ -1572,13 +1501,11 @@ class LoopTransforms {
                                         }
                                     default:
                                         #if debug_loop_transforms
-                                        // DISABLED: trace('[XRay detectBlockComprehension]       Filtered comprehension then-branch is not [].push()');
                                         #end
                                         return null;
                                 }
                             default:
                                 #if debug_loop_transforms
-                                // DISABLED: trace('[XRay detectBlockComprehension]       Second statement is neither [].push() nor if-push, returning null');
                                 #end
                                 return null;
                         }
@@ -1632,7 +1559,6 @@ class LoopTransforms {
         if (startIdx + 2 >= stmts.length) return null;  // Need at least: init + if + terminator
 
         #if debug_loop_transforms
-        // DISABLED: trace('[XRay UnrolledFiltered] Checking pattern from statement $startIdx');
         #end
 
         // STEP 1: Match outer structure: evens = { ... }
@@ -1645,11 +1571,9 @@ class LoopTransforms {
                 resultVar = rv;
                 blockStmts = innerStmts;
                 #if debug_loop_transforms
-                // DISABLED: trace('[XRay UnrolledFiltered]   ✓ Found EMatch(PVar($resultVar), EBlock with ${innerStmts.length} statements)');
                 #end
             default:
                 #if debug_loop_transforms
-                // DISABLED: trace('[XRay UnrolledFiltered]   ✗ Not EMatch(PVar, EBlock)');
                 #end
                 return null;
         }
@@ -1662,11 +1586,9 @@ class LoopTransforms {
             case EMatch(PVar(av), {def: EList([])}):
                 accumVar = av;
                 #if debug_loop_transforms
-                // DISABLED: trace('[XRay UnrolledFiltered]   ✓ Found init in block: $accumVar = []');
                 #end
             default:
                 #if debug_loop_transforms
-                // DISABLED: trace('[XRay UnrolledFiltered]   ✗ First statement in block not "g = []"');
                 #end
                 return null;
         }
@@ -1680,14 +1602,12 @@ class LoopTransforms {
             var stmt = blockStmts[idx];
 
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay UnrolledFiltered]   Checking statement $idx: ${reflaxe.elixir.util.EnumReflection.enumConstructor(stmt.def)}');
             #end
 
             switch(stmt.def) {
                 case EIf({def: EBoolean(condValue)}, thenBranch, _):
                     // Compile-time evaluated condition (true/false literal)
                     #if debug_loop_transforms
-                    // DISABLED: trace('[XRay UnrolledFiltered]     Found if with literal condition: $condValue');
                     #end
 
                     // Extract literal value from then branch
@@ -1696,13 +1616,11 @@ class LoopTransforms {
                         case ECall({def: EVar(_)}, "push", [expr]):
                             // Pattern: g.push(literal)
                             #if debug_loop_transforms
-                            // DISABLED: trace('[XRay UnrolledFiltered]       Found variable.push([expr])');
                             #end
                             expr;
                         case EStructUpdate(struct, fields):
                             // Pattern: %{struct | _g: struct._g ++ [literal]}
                             #if debug_loop_transforms
-                            // DISABLED: trace('[XRay UnrolledFiltered]       Found struct update');
                             #end
                             var extracted: Null<ElixirAST> = null;
                             for (field in fields) {
@@ -1716,20 +1634,17 @@ class LoopTransforms {
                             extracted;
                         default:
                             #if debug_loop_transforms
-                            // DISABLED: trace('[XRay UnrolledFiltered]       Then branch is: ${reflaxe.elixir.util.EnumReflection.enumConstructor(thenBranch.def)}');
                             #end
                             null;
                     };
 
                     if (literalValue != null) {
                         #if debug_loop_transforms
-                        // DISABLED: trace('[XRay UnrolledFiltered]       ✓ Extracted literal: ${reflaxe.elixir.util.EnumReflection.enumConstructor(literalValue.def)}');
                         #end
                         values.push(literalValue);
                         conditions.push(condValue);
                     } else {
                         #if debug_loop_transforms
-                        // DISABLED: trace('[XRay UnrolledFiltered]       ✗ Could not extract literal value');
                         #end
                         break;  // Stop at first non-matching pattern
                     }
@@ -1737,13 +1652,11 @@ class LoopTransforms {
                 case EVar(name) if (name == accumVar):
                     // Final reference to accumulator - pattern terminator
                     #if debug_loop_transforms
-                    // DISABLED: trace('[XRay UnrolledFiltered]     ✓ Found terminator: $name');
                     #end
                     break;
 
                 default:
                     #if debug_loop_transforms
-                    // DISABLED: trace('[XRay UnrolledFiltered]     ✗ Unexpected statement, stopping');
                     #end
                     break;
             }
@@ -1754,13 +1667,11 @@ class LoopTransforms {
         // STEP 3: Validate we found enough pattern elements
         if (values.length < 2) {
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay UnrolledFiltered]   ✗ Not enough values (${ values.length }), need at least 2');
             #end
             return null;
         }
 
         #if debug_loop_transforms
-        // DISABLED: trace('[XRay UnrolledFiltered]   ✓ Found ${values.length} values with conditions: ${conditions}');
         #end
 
         // STEP 4: Build the result list by applying the evaluated predicates.
@@ -2017,12 +1928,10 @@ class LoopTransforms {
      */
     static function detectSequentialComprehension(stmts: Array<ElixirAST>, startIdx: Int): Null<ComprehensionInfo> {
         #if debug_loop_transforms
-        // DISABLED: trace('[XRay detectSequentialComprehension] CALLED - Checking from index $startIdx of ${stmts.length} statements');
         #end
 
         if (startIdx + 4 >= stmts.length) {
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectSequentialComprehension]   SKIP - Not enough statements (need at least 5)');
             #end
             return null;
         }
@@ -2036,14 +1945,12 @@ class LoopTransforms {
         switch(firstStmt.def) {
             case EMatch(PVar(resVar), {def: EMatch(PVar(lVar), value)}):
                 #if debug_loop_transforms
-                // DISABLED: trace('[XRay detectSequentialComprehension]   ✓ Found chained assignment: $resVar = $lVar = ...');
                 #end
                 resultVar = resVar;
                 loopVar = lVar;
                 firstValue = value;
             default:
                 #if debug_loop_transforms
-                // DISABLED: trace('[XRay detectSequentialComprehension]   ✗ First statement not chained assignment');
                 #end
                 return null;
         }
@@ -2056,7 +1963,6 @@ class LoopTransforms {
         var i = startIdx + 1;
         if (i < stmts.length && isConditionalAppend(stmts[i])) {
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectSequentialComprehension]   ✓ Found conditional for first value');
             #end
             // Extract filter condition and body from first conditional
             filterCondition = extractCondition(stmts[i]);
@@ -2064,7 +1970,6 @@ class LoopTransforms {
             i++;  // Move past first conditional
         } else {
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectSequentialComprehension]   ✗ No conditional after first value, not a filtered comprehension');
             #end
             return null;  // Filtered comprehensions MUST have conditional
         }
@@ -2076,7 +1981,6 @@ class LoopTransforms {
             // Check for loop variable assignment
             if (!isLoopVarAssignment(stmts[i], loopVar)) {
                 #if debug_loop_transforms
-                // DISABLED: trace('[XRay detectSequentialComprehension]   Statement $i not loop var assignment, stopping at $pairCount pairs');
                 #end
                 break;
             }
@@ -2088,7 +1992,6 @@ class LoopTransforms {
             // Next statement must be conditional append
             if (i + 1 >= stmts.length || !isConditionalAppend(stmts[i + 1])) {
                 #if debug_loop_transforms
-                // DISABLED: trace('[XRay detectSequentialComprehension]   Statement ${i+1} not conditional append, stopping');
                 #end
                 break;
             }
@@ -2100,7 +2003,6 @@ class LoopTransforms {
         // Must have at least 1 additional pair after first (2 total values minimum)
         if (values.length < 2) {
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectSequentialComprehension]   Only ${values.length} values found, need at least 2');
             #end
             return null;
         }
@@ -2111,13 +2013,11 @@ class LoopTransforms {
             default: false;
         }) {
             #if debug_loop_transforms
-            // DISABLED: trace('[XRay detectSequentialComprehension]   No empty list terminator at index $i');
             #end
             return null;
         }
 
         #if debug_loop_transforms
-        // DISABLED: trace('[XRay detectSequentialComprehension]   ✓ Found sequential filtered comprehension: ${values.length} values, $pairCount pairs');
         #end
 
         return {
@@ -2343,10 +2243,8 @@ class LoopTransforms {
             case EInteger(n):
                 // Direct integer comparison - exact match only
                 if (n == expectedIndex) {
-                    // DISABLED: trace('[XRay LoopTransforms]   ✓ Found exact index as integer: ' + n);
                     return true;
                 }
-                // DISABLED: trace('[XRay LoopTransforms]   ✗ Integer ' + n + ' does not match expected ' + expectedIndex);
                 return false;
                 
             case EVar(name):
@@ -2354,10 +2252,8 @@ class LoopTransforms {
                 // This might happen if the index is in a variable
                 var indexStr = Std.string(expectedIndex);
                 if (name == indexStr || name == 'i' + indexStr) {
-                    // DISABLED: trace('[XRay LoopTransforms]   ✓ Found index in variable name: ' + name);
                     return true;
                 }
-                // DISABLED: trace('[XRay LoopTransforms]   ✗ Variable ' + name + ' does not match index');
                 return false;
                 
             case ERaw(rawString):
@@ -2378,7 +2274,6 @@ class LoopTransforms {
                 
                 for (pattern in patterns) {
                     if (rawString.indexOf(pattern) != -1) {
-                        // DISABLED: trace('[XRay LoopTransforms]   ✓ Found index in ERaw string: "' + rawString + '" (matched: "' + pattern + '")');
                         return true;
                     }
                 }
@@ -2386,16 +2281,13 @@ class LoopTransforms {
                 // Also check if the index appears anywhere in the string
                 var interpolationPattern = '#{' + indexStr + '}';
                 if (rawString.indexOf(interpolationPattern) != -1) {
-                    // DISABLED: trace('[XRay LoopTransforms]   ✓ Found index interpolation in ERaw: "' + rawString + '"');
                     return true;
                 }
                 
-                // DISABLED: trace('[XRay LoopTransforms]   ✗ No index ' + expectedIndex + ' found in ERaw: "' + rawString + '"');
                 return false;
                 
             default:
                 // For other AST types, log for debugging but return false
-                // DISABLED: trace('[XRay LoopTransforms]   ⚠ Unhandled AST type in checkForIndex: ' + reflaxe.elixir.util.EnumReflection.enumConstructor(ast.def));
                 return false;
         }
     }
@@ -2411,7 +2303,6 @@ class LoopTransforms {
                 // These are invalid in Elixir (can't add integer to string)
                 var invalidPattern = ~/#{\\s*\\d+\\s*\\+\\s*"/;
                 if (invalidPattern.match(s)) {
-                    // DISABLED: trace('[XRay LoopTransforms] Found invalid interpolation: ' + s);
                     return true;
                 }
             case EBlock(stmts):
@@ -2459,7 +2350,6 @@ class LoopTransforms {
         // that would cause Elixir compilation errors
         for (arg in callInfo.args) {
             if (containsInvalidInterpolation(arg)) {
-                // DISABLED: trace('[XRay LoopTransforms] ⚠️ SKIPPING TRANSFORMATION: Detected invalid interpolation pattern');
                 // Return null to indicate we can't safely transform this
                 // The caller should keep the original unrolled statements
                 return null;
@@ -2484,7 +2374,6 @@ class LoopTransforms {
             // We need to create proper Elixir string interpolation
             var firstArg = callInfo.args[0];
             
-            // DISABLED: trace('[XRay LoopTransforms] transformToEnumEach: Processing first arg: ' + firstArg.def);
             
             // Check what pattern was in the original
             var transformedArg = switch(firstArg.def) {
@@ -2505,7 +2394,6 @@ class LoopTransforms {
                                                   pattern == 'Index: $idx' ? 'Index: #{$loopVar}' :
                                                   loopVar;
                                 result = StringTools.replace(result, pattern, replacement);
-                                // DISABLED: trace('[XRay LoopTransforms]   Replaced "$pattern" with "$replacement"');
                             }
                         }
                     }
@@ -2586,7 +2474,6 @@ class LoopTransforms {
      */
     public static function whileLoopTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_while_loops
-        // DISABLED: trace('[WhileLoopTransform] Starting pass');
         #end
         
         function transformWhileLoops(node: ElixirAST): ElixirAST {
@@ -2605,7 +2492,6 @@ class LoopTransforms {
                     
                     if (hasEmptyBody) {
                         #if debug_while_loops
-                        // DISABLED: trace('[WhileLoopTransform] Found empty reduce_while, replacing with initial accumulator');
                         #end
                         // Proper fix: an empty reducer does not alter the accumulator; replace the call
                         // with the initial accumulator expression to preserve semantics.

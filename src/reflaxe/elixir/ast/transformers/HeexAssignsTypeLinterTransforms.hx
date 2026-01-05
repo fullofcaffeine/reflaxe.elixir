@@ -198,7 +198,6 @@ class HeexAssignsTypeLinterTransforms {
             hxPath = body.metadata.sourceFile;
         }
 #if debug_assigns_linter
-        // DISABLED: trace('[HeexAssignsTypeLinter] ' + functionName + '/? at hxPath=' + hxPath);
 #end
         if (hxPath == null) return; // No source; skip
         // Skip compiler/library/internal files to avoid scanning whole libs
@@ -233,7 +232,6 @@ class HeexAssignsTypeLinterTransforms {
         var assignsTypeName = assignsTypeSpec != null ? unwrapAssignsType(assignsTypeSpec) : null;
         var assignsTypeBase = assignsTypeName != null ? stripTypeParameters(assignsTypeName) : null;
 #if debug_assigns_linter
-        // DISABLED: trace('[HeexAssignsTypeLinter] assigns type spec=' + assignsTypeSpec + ' base=' + assignsTypeBase);
 #end
         var fields: Null<Map<String, String>> = (assignsTypeBase != null) ? getAssignsFieldsCached(assignsTypeBase, fileContent, hxPath) : null;
         var enableAssignsChecks = fields != null;
@@ -242,7 +240,6 @@ class HeexAssignsTypeLinterTransforms {
 #if debug_assigns_linter
         if (fields != null) {
             var keys = [for (k in fields.keys()) k].join(',');
-            // DISABLED: trace('[HeexAssignsTypeLinter] typedef fields=' + keys);
         }
 #end
 
@@ -260,7 +257,6 @@ class HeexAssignsTypeLinterTransforms {
             for (item in contents) {
                 var used = collectAtFields(item.content);
 #if debug_assigns_linter
-                // DISABLED: trace('[HeexAssignsTypeLinter] ~H content @fields=' + used.join(','));
 #end
                 for (f in used) if (!fieldsForValidation.exists(f)) {
                     error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + typeNameForErrors + ')', item.pos);

@@ -39,18 +39,14 @@ class ArrayBuilder {
         var buildExpression = context.getExpressionBuilder();
 
         #if debug_ast_builder
-        // DISABLED: trace('[DEBUG ArrayBuilder] buildArrayDecl called with ${elements.length} elements');
         #end
         if (elements.length > 0) {
             #if debug_ast_builder
-            // DISABLED: trace('[DEBUG ArrayBuilder] First element type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(elements[0].expr)}');
             #end
         }
 
         #if debug_ast_builder
-        // DISABLED: trace('[AST Builder] TArrayDecl with ${elements.length} elements');
         if (elements.length > 0) {
-            // DISABLED: trace('[AST Builder] First element type: ${reflaxe.elixir.util.EnumReflection.enumConstructor(elements[0].expr)}');
         }
         #end
         
@@ -59,7 +55,6 @@ class ArrayBuilder {
             // This is a comprehension like [for (i in 0...3) expr]
             // Return the TFor directly as EFor, not wrapped in EList
             #if debug_ast_builder
-            // DISABLED: trace('[AST Builder] Detected array comprehension, treating as EFor instead of EList');
             #end
             return buildExpression(elements[0]).def;
         }
@@ -69,18 +64,15 @@ class ArrayBuilder {
             switch(elements[0].expr) {
                 case TBlock(stmts):
                     #if debug_ast_builder
-                    // DISABLED: trace('[DEBUG ArrayBuilder] Found single-element array with TBlock containing ${stmts.length} statements');
                     #end
                     // Try to reconstruct comprehension from desugared block
                     var comprehension = ComprehensionBuilder.tryBuildArrayComprehensionFromBlock(stmts, context);
                     #if debug_ast_builder
-                    // DISABLED: trace('[DEBUG ArrayBuilder] Comprehension result: ${comprehension != null ? "SUCCESS" : "NULL"}');
                     #end
                     if (comprehension != null) {
                         switch(comprehension.def) {
                             case EFor(_, _, _, _, _):
                                 #if debug_ast_builder
-                                // DISABLED: trace('[AST Builder] Detected desugared comprehension in single-element array, treating as EFor');
                                 #end
                                 return comprehension.def;
                             default:
@@ -92,7 +84,6 @@ class ArrayBuilder {
                         var loose = ComprehensionBuilder.extractListElementsLoose(stmts, context);
                         if (loose != null && loose.length > 0) {
                             #if debug_ast_builder
-                            // DISABLED: trace('[AST Builder] Loose extraction produced ' + loose.length + ' element(s) for nested block');
                             #end
                             return EList(loose);
                         }
