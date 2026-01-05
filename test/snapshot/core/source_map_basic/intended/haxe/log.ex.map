@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "AAUC,AAAA;AAII,EAAA;AAAA;AAEI,IAAA;AAAA;AAcJ,EAAA;AAEY,IAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA",
+  "version": 3,
+  "file": "log.ex",
+  "sources": [
+  "std/haxe/Log.cross.hx"
+]
+}

@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "AAoDC,AAAA;AAAA;AAAA;AAAA;AAAA",
+  "version": 3,
+  "file": "array_iterator.ex",
+  "sources": [
+  "std/haxe/iterators/ArrayIterator.hx"
+]
+}
