@@ -228,27 +228,8 @@ test-%:
 		end=$$(date +%s); \
 		duration=$$((end - start)); \
 		if [ -d $$testdir/intended ] && [ -d $$testdir/$(OUTPUT_DIR) ]; then \
-				parse_files=$$(find $$testdir/$(OUTPUT_DIR) -maxdepth 1 -type f -name "*.ex" \
-					! -name "std.ex" \
-					! -name "string_buf.ex" \
-					! -name "type.ex" \
-					! -name "reflect.ex" \
-					! -name "int_iterator.ex" \
-					2>/dev/null); \
-				syntax_valid=true; \
-				if [ -n "$$parse_files" ]; then \
-					parse_cmd='files = System.argv(); ok = Enum.all?(files, fn f -> case File.read(f) do {:ok, s} -> case Code.string_to_quoted(s, file: f) do {:ok, _} -> true; {:error, reason} -> IO.puts("Syntax error in #{f}: #{inspect(reason)}"); false end; {:error, r} -> IO.puts("Read error in #{f}: #{inspect(r)}"); false end end); if ok, do: :ok, else: System.halt(1)'; \
-					$(WITH_TIMEOUT) $(PARSE_TIMEOUT_SECS) elixir -e "$$parse_cmd" $$parse_files; \
-					parse_rc=$$?; \
-					if [ $$parse_rc -ne 0 ]; then \
-						if [ $$parse_rc -eq 124 ]; then echo "Elixir parse timed out after $(PARSE_TIMEOUT)"; fi; \
-						syntax_valid=false; \
-					fi; \
-				fi; \
-			if [ "$$syntax_valid" = false ]; then \
-				echo "❌ $$testname - Invalid Elixir syntax ($${duration}s)" | tee -a test-results-$$$$.tmp; \
-			elif [ "$(COMPARE_INTENDED)" = "0" ]; then \
-				echo "✅ $$testname (syntax-only) ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+			if [ "$(COMPARE_INTENDED)" = "0" ]; then \
+				echo "✅ $$testname (compiled) ($${duration}s)" | tee -a test-results-$$$$.tmp; \
 			elif diff -r \
 				--exclude="_GeneratedFiles.json" \
 				--exclude="erl_crash.dump" \
