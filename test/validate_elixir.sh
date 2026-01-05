@@ -39,6 +39,13 @@ TOTAL_TESTS=0
 PASSED_TESTS=0
 FAILED_COUNT=0
 
+is_windows_shell() {
+    # MSYS2/Git-Bash environments report MINGW/MSYS/CYGWIN here.
+    # We only need to detect this to convert POSIX paths to Windows paths
+    # for Windows-native `elixir`/`erl` binaries.
+    uname -s 2>/dev/null | grep -qiE 'mingw|msys|cygwin'
+}
+
 echo "=== Elixir Syntax Validation ===" | tee "$VALIDATION_LOG"
 echo "Validating generated Elixir code in:" | tee -a "$VALIDATION_LOG"
 for dir in "${TEST_DIRS[@]}"; do
@@ -77,7 +84,24 @@ validate_test_directory() {
     local parse_cmd='files = System.argv(); ok = Enum.all?(files, fn f -> case File.read(f) do {:ok, s} -> case Code.string_to_quoted(s, file: f) do {:ok, _} -> true; {:error, reason} -> IO.puts("Syntax error in #{f}: #{inspect(reason)}"); false end; {:error, r} -> IO.puts("Read error in #{f}: #{inspect(r)}"); false end end); if ok, do: :ok, else: System.halt(1)'
     local test_passed=true
     if [ -n "$ex_files" ]; then
-        if ! "$WITH_TIMEOUT" "$PARSE_TIMEOUT_SECS" elixir -e "$parse_cmd" $ex_files > /dev/null 2>>"$VALIDATION_LOG"; then
+        # On Windows runners, `elixir` is a Windows-native executable.
+        # Convert MSYS2/Git-Bash POSIX paths to Windows paths explicitly to avoid
+        # sporadic "file not found" failures under CI.
+        local files=()
+        while IFS= read -r f; do
+            [ -n "$f" ] || continue
+            if is_windows_shell && command -v cygpath >/dev/null 2>&1; then
+                if [[ "$f" == /* ]]; then
+                    files+=("$(cygpath -w "$f")")
+                else
+                    files+=("$(cygpath -w "${ROOT_DIR}/${f}")")
+                fi
+            else
+                files+=("$f")
+            fi
+        done <<< "$ex_files"
+
+        if ! "$WITH_TIMEOUT" "$PARSE_TIMEOUT_SECS" elixir -e "$parse_cmd" "${files[@]}" > /dev/null 2>>"$VALIDATION_LOG"; then
             test_passed=false
         fi
     fi
