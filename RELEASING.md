@@ -24,12 +24,27 @@ scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 600
 
 ## Tagging
 
-After commits are merged to `main`:
+### Automated (Preferred)
+
+This repo uses **semantic-release** to publish GitHub Releases using semver:
+
+- Merge commits to `main` using **Conventional Commits** (`feat:`, `fix:`, etc.)
+- After CI passes, the `Release` workflow runs `semantic-release` which:
+  - determines the next semver version
+  - updates version strings across the repo
+  - creates a `vX.Y.Z` tag
+  - publishes a GitHub Release
+
+### Backfill / Manual Tags
+
+If you already have a tag but no GitHub Release entry exists (historical tags), run the
+workflow **Release (Backfill Existing Tag)** and provide the tag (for example `v1.1.5`).
+
+If you must tag manually (rare), after commits are merged to `main`:
 
 ```bash
 git tag -a vX.Y.Z -m "vX.Y.Z"
 git push --tags
 ```
 
-Update `CHANGELOG.md`, `package.json`, and `haxelib.json` as appropriate for the release.
-Also update `mix.exs` so Mix task users see the correct version.
+Then run **Release (Backfill Existing Tag)** for that tag.
