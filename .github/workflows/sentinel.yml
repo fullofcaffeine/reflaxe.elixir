@@ -70,13 +70,22 @@ jobs:
           WORKSPACE: ${{ github.workspace }}
         run: |
           set -euo pipefail
-          haxe -v examples/todo-app/build-client.hxml 2>&1 | tee classpath.log
+          cd examples/todo-app
+          haxe -v build-client.hxml 2>&1 | tee classpath.log
           echo '--- Classpath line ---'
           grep '^Classpath:' classpath.log || true
-          echo '--- Guard: ensure no repo std/src/vendor paths present ---'
+          echo '--- Guard: ensure no repo std/src paths present ---'
           if grep -F "$WORKSPACE/std/" classpath.log; then echo "ERROR: repo std/ found in client classpath"; exit 1; fi
           if grep -F "$WORKSPACE/src/" classpath.log; then echo "ERROR: repo src/ found in client classpath"; exit 1; fi
-          if grep -F "$WORKSPACE/vendor/genes/src/" classpath.log; then echo "ERROR: repo vendor/genes/src found in client classpath"; exit 1; fi
+          echo '--- Guard: ensure build-client.hxml does not add repo classpaths ---'
+          if grep -E '^-cp\\s+\\.\\./\\.\\./(std|src)(/|\\s*$)' build-client.hxml; then
+            echo "ERROR: build-client.hxml adds repo std/src via -cp ../../.."
+            exit 1
+          fi
+          if grep -E '^-cp\\s+.*vendor/genes/src(/|\\s*$)' build-client.hxml; then
+            echo "ERROR: build-client.hxml adds vendor/genes/src directly; use -lib genes"
+            exit 1
+          fi
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
