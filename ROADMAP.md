@@ -1,34 +1,43 @@
-# Reflaxe.Elixir Roadmap (v1.1+)
+# Reflaxe.Elixir Roadmap (v1.1.x)
 
-Reflaxe.Elixir is currently **alpha** overall. This roadmap tracks what’s next as we expand coverage,
-harden experimental features, and improve ergonomics on the path to “exit alpha”.
+Reflaxe.Elixir `v1.1.x` is considered **non‑alpha for the documented subset**. This roadmap tracks
+near‑term work to harden that subset toward a **1.0 public release**, while continuing to iterate on
+explicitly **experimental/opt‑in** surfaces.
 
-See `docs/06-guides/PRODUCTION_READINESS.md` for the exit criteria and checklist.
+Source of truth for “what is production‑ready” is the checklist in `docs/06-guides/PRODUCTION_READINESS.md`.
 
 - **Long‑term vision**: `docs/08-roadmap/vision.md`
 - **Curated docs index**: `docs/README.md`
 - **Work tracking**: GitHub Issues/Milestones (and `.beads/` for local `bd` workflows)
 
-## Near‑Term Priorities (post‑1.0)
+## Near‑Term Priorities (toward 1.0)
 
-### 1) Performance + Pass Simplification
-- Reduce reliance on `fast_boot` by making expensive hygiene passes algorithmically bounded.
+### 1) HXX typing (TSX‑level ergonomics)
+- Tighten component prop typing, especially dot‑components and common HEEx helpers.
+- Typed slot/`:let` patterns so template usage is typechecked (opt‑in strict mode).
+- Typed `phx-hook` names via a shared registry/enum (server + Genes client hooks).
+
+### 2) Tooling & DevX hardening
+- Keep Mix tasks, generators, and watchers aligned with the current toolchain (lix‑pinned Haxe, bounded QA sentinel runs).
+- Improve failure surfacing (e.g. always show the full compiler output when Haxe compilation fails).
+- Ensure docs remain “copy‑paste runnable” for first‑time users.
+
+### 3) CI & release reliability
+- CI is Linux + macOS (no Windows lane for now).
+- QA Sentinel Smoke stays green (todo‑app boot + Playwright smoke).
+- Dogfood stays green (generate a fresh Phoenix app + validate upgrade path).
+- Releases are published automatically via semantic versioning (see `docs/10-contributing/RELEASING.md`).
+
+### 4) Performance & transformer simplification
+- Reduce reliance on expensive hygiene passes by making key transforms algorithmically bounded.
 - Consolidate/merge redundant transformer passes and document ordering guarantees.
 
-### 2) Tooling + Scaffolding
-- Keep Mix tasks and generators aligned with current flags/toolchain (`lix`, `-D elixir_output`, etc.).
-- Provide a minimal greenfield Phoenix scaffold and a gradual adoption path for existing apps.
+## Deferred
 
-### 3) Stability + Guardrails
-- Expand example coverage and E2E tests (todo‑app QA sentinel + Playwright).
-- Tighten policy guardrails (no `Dynamic`/`Any` leaks; no `__elixir__()` in application code).
+- **Haxe 5 support** is intentionally deferred until Haxe 5 stabilizes and provides a consistent TypedExpr.
+  A manual smoke script may exist, but Haxe 5 is not part of the current CI contract.
 
-### 4) Toolchain Compatibility
-- **Haxe 4.3.x** remains the baseline for snapshot comparisons and release CI.
-- **Haxe 5 preview/nightly** runs as a smoke job: compile + Elixir syntax validation only
-  (`COMPARE_INTENDED=0`) until Haxe 5 TypedExpr deltas stabilize enough for meaningful diffs.
-
-## Status Legend
+## Status legend
 
 - **Stable**: exercised by CI/tests/examples and covered by the documented subset.
 - **Experimental (opt‑in)**: may compile, but expect rough edges and possible breaking changes.
