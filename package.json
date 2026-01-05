@@ -25,7 +25,7 @@
     "test": "scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 && npm run test:generator && npm run test:elixir-validate && npm run test:mix",
     "test:bounded": "scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120",
     "test:sequential": "make -C test -j1 && npm run test:elixir-validate && npm run test:generator && npm run test:mix",
-    "test:quick": "scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 --categories core,stdlib,regression && bash test/validate_elixir.sh test/snapshot/core test/snapshot/stdlib test/snapshot/regression",
+    "test:quick": "bash scripts/test-chunks.sh --parallel 8 --chunk-deadline 900 --timeout 120 --categories core,stdlib,regression && bash test/validate_elixir.sh test/snapshot/core test/snapshot/stdlib test/snapshot/regression",
     "test:elixir-validate": "make -C test validate-elixir",
     "test:with-validation": "make -C test -j8 test-with-validation && npm run test:mix",
     "test:single": "make -C test single",
