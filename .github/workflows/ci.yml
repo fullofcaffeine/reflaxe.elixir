@@ -29,15 +29,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-	      - name: Install gitleaks
-	        run: |
-	          set -euo pipefail
-	          version="8.21.2"
-	          curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 -o gitleaks.tar.gz \
-	            "https://github.com/gitleaks/gitleaks/releases/download/v${version}/gitleaks_${version}_linux_x64.tar.gz"
-	          tar -xzf gitleaks.tar.gz gitleaks
-	          chmod +x gitleaks
-	          echo "$PWD" >> "$GITHUB_PATH"
+      - name: Install gitleaks
+        run: |
+          set -euo pipefail
+          version="8.21.2"
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 -o gitleaks.tar.gz \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${version}/gitleaks_${version}_linux_x64.tar.gz"
+          tar -xzf gitleaks.tar.gz gitleaks
+          chmod +x gitleaks
+          echo "$PWD" >> "$GITHUB_PATH"
       - name: Run gitleaks (all history)
         run: |
           set -euo pipefail
