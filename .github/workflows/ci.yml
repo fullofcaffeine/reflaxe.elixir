@@ -86,10 +86,6 @@ jobs:
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@v1
-        with:
-          haxe-version: ${{ env.HAXE_VERSION }}
       - name: Cache Mix deps
         uses: actions/cache@v4
         with:
@@ -103,6 +99,14 @@ jobs:
             ${{ runner.os }}-mix-
       - name: Install npm dependencies
         run: npm ci
+      - name: Install Haxe (pinned via lix)
+        run: |
+          set -euo pipefail
+          npx lix download haxe "${{ env.HAXE_VERSION }}"
+          npx lix use haxe "${{ env.HAXE_VERSION }}"
+          echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
+          haxe -version
       - name: Download Haxe libraries (lix)
         run: npx lix download
       - name: Run full test suite
@@ -123,12 +127,16 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@v1
-        with:
-          haxe-version: ${{ env.HAXE_VERSION }}
       - name: Install npm dependencies
         run: npm ci
+      - name: Install Haxe (pinned via lix)
+        run: |
+          set -euo pipefail
+          npx lix download haxe "${{ env.HAXE_VERSION }}"
+          npx lix use haxe "${{ env.HAXE_VERSION }}"
+          echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
+          haxe -version
       - name: Download Haxe libraries (lix)
         run: npx lix download
       - name: Compile-check examples
@@ -160,12 +168,16 @@ jobs:
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@v1
-        with:
-          haxe-version: ${{ env.HAXE_VERSION }}
       - name: Install npm dependencies
         run: npm ci
+      - name: Install Haxe (pinned via lix)
+        run: |
+          set -euo pipefail
+          npx lix download haxe "${{ env.HAXE_VERSION }}"
+          npx lix use haxe "${{ env.HAXE_VERSION }}"
+          echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
+          haxe -version
       - name: Download Haxe libraries (lix)
         run: npx lix download
       - name: Validate examples Elixir (warnings as errors)
@@ -186,12 +198,16 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@v1
-        with:
-          haxe-version: ${{ env.HAXE_VERSION }}
       - name: Install npm dependencies
         run: npm ci
+      - name: Install Haxe (pinned via lix)
+        run: |
+          set -euo pipefail
+          npx lix download haxe "${{ env.HAXE_VERSION }}"
+          npx lix use haxe "${{ env.HAXE_VERSION }}"
+          echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
+          haxe -version
       - name: Download Haxe libraries (lix)
         run: npx lix download
       - name: Run budgets (determinism + bounded)
@@ -217,10 +233,6 @@ jobs:
         with:
           otp-version: '25'
           elixir-version: '1.14'
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@v1
-        with:
-          haxe-version: ${{ env.HAXE_VERSION }}
       - name: Cache Mix deps
         uses: actions/cache@v4
         with:
@@ -234,6 +246,14 @@ jobs:
             ${{ runner.os }}-mix-min-
       - name: Install npm dependencies
         run: npm ci
+      - name: Install Haxe (pinned via lix)
+        run: |
+          set -euo pipefail
+          npx lix download haxe "${{ env.HAXE_VERSION }}"
+          npx lix use haxe "${{ env.HAXE_VERSION }}"
+          echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
+          haxe -version
       - name: Download Haxe libraries (lix)
         run: npx lix download
       - name: Run quick snapshot suite
@@ -305,10 +325,12 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@v1
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@v1
         with:
-          haxe-version: ${{ env.HAXE_VERSION }}
+          # Run the snapshot suite with a stable BEAM toolchain that is known to work on Windows runners.
+          otp-version: '25'
+          elixir-version: '1.14'
 
       - name: Setup MSYS2 (bash + make)
         uses: msys2/setup-msys2@v2
@@ -322,6 +344,13 @@ jobs:
       - name: Install npm dependencies
         shell: msys2 {0}
         run: npm ci
+
+      - name: Install Haxe (pinned via lix)
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          npx lix download haxe "${{ env.HAXE_VERSION }}"
+          npx lix use haxe "${{ env.HAXE_VERSION }}"
 
       - name: Download Haxe libraries (lix)
         shell: msys2 {0}
