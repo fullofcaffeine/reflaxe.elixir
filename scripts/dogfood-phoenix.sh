@@ -145,6 +145,12 @@ ensure_phx_new() {
   run_step "mix archive.install hex phx_new --force" 300 "$ROOT_DIR" "mix archive.install hex phx_new --force"
 }
 
+ensure_mix_tooling() {
+  # Avoid interactive Mix prompts in fresh CI environments.
+  run_step "mix local.hex --force" 120 "$ROOT_DIR" "mix local.hex --force"
+  run_step "mix local.rebar --force" 120 "$ROOT_DIR" "mix local.rebar --force"
+}
+
 sentinel_run() {
   local app_dir="$1"; shift
   local hxml_file="$1"; shift
@@ -202,6 +208,7 @@ echo "[dogfood] Workspace: $tmp_base"
 echo "[dogfood] Mode: ${MODE}"
 echo "[dogfood] Upgrade: ${FROM_TAG} -> ${TO_TAG}"
 
+ensure_mix_tooling
 ensure_phx_new
 
 # Local mode: extract the FROM_TAG library sources so Mix/Lix can use a path dep without GitHub access.
