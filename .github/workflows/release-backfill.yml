@@ -3,9 +3,15 @@ name: Release (Backfill Existing Tag)
 on:
   workflow_dispatch:
     inputs:
+      all_tags:
+        description: "Backfill releases for all semver tags (vX.Y.Z). When true, 'tag' is ignored."
+        required: false
+        type: boolean
+        default: false
       tag:
-        description: "Existing tag to publish (e.g. v1.1.5)."
-        required: true
+        description: "Existing tag to publish (e.g. v1.1.5). Ignored when all_tags=true."
+        required: false
+        default: ""
       skip_verify:
         description: "Skip verification steps (useful for backfilling historical tags)."
         required: false
@@ -49,6 +55,95 @@ jobs:
         id: meta
         run: |
           set -euo pipefail
+          echo "skip_verify=${{ inputs.skip_verify }}" >> "$GITHUB_OUTPUT"
+          echo "all_tags=${{ inputs.all_tags }}" >> "$GITHUB_OUTPUT"
+          echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+
+      - name: Validate inputs
+        run: |
+          set -euo pipefail
+          if [[ "${{ inputs.all_tags }}" == "true" && "${{ inputs.skip_verify }}" != "true" ]]; then
+            echo "ERROR: all_tags=true requires skip_verify=true (backfill should be fast + non-blocking)."
+            exit 2
+          fi
+          if [[ "${{ inputs.all_tags }}" != "true" ]]; then
+            if [[ -z "${{ inputs.tag }}" ]]; then
+              echo "ERROR: tag is required when all_tags=false"
+              exit 2
+            fi
+          fi
+
+      - name: Checkout (main)
+        if: ${{ inputs.all_tags == true }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Checkout (tag)
+        if: ${{ inputs.all_tags != true }}
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.meta.outputs.tag }}
+
+      - name: Backfill releases for all tags
+        if: ${{ inputs.all_tags == true }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          repo="${{ github.repository }}"
+
+          echo "[backfill] Fetch tags"
+          git fetch --tags --force --prune --quiet
+
+          echo "[backfill] Read existing releases"
+          existing="$(curl -sL -H "Authorization: Bearer ${GITHUB_TOKEN}" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${repo}/releases?per_page=100" | \
+            python3 -c "import json,sys; j=json.load(sys.stdin); print('\\n'.join([r.get('tag_name','') for r in j]))")"
+
+          echo "[backfill] Find semver tags"
+          tags="$(git tag --list 'v*.*.*' --sort=version:refname)"
+          if [[ -z "$tags" ]]; then
+            echo "[backfill] No semver tags found"
+            exit 0
+          fi
+
+          created=0
+          skipped=0
+          while IFS= read -r tag; do
+            if [[ -z "$tag" ]]; then
+              continue
+            fi
+            if echo "$existing" | grep -qx "$tag"; then
+              echo "[backfill] Skip existing release: $tag"
+              skipped=$((skipped+1))
+              continue
+            fi
+
+            prerelease=false
+            if [[ "$tag" == *"-"* ]]; then
+              prerelease=true
+            fi
+
+            echo "[backfill] Create release: $tag (prerelease=$prerelease)"
+            payload="$(python3 -c "import json,sys; tag=sys.argv[1]; pr=sys.argv[2]=='true'; print(json.dumps({'tag_name':tag,'name':tag,'generate_release_notes':True,'prerelease':pr}))" "$tag" "$prerelease")"
+            curl -fsSL -X POST \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${repo}/releases" \
+              -d "$payload" >/dev/null
+            created=$((created+1))
+          done <<<"$tags"
+
+          echo "[backfill] Done: created=$created skipped=$skipped"
+
+      - name: Resolve single-tag metadata
+        if: ${{ inputs.all_tags != true }}
+        id: tagmeta
+        run: |
+          set -euo pipefail
           TAG="${{ inputs.tag }}"
           echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
           if [[ "$TAG" == *"-"* ]]; then
@@ -56,13 +151,6 @@ jobs:
           else
             echo "prerelease=false" >> "$GITHUB_OUTPUT"
           fi
-          echo "skip_verify=${{ inputs.skip_verify }}" >> "$GITHUB_OUTPUT"
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ steps.meta.outputs.tag }}
 
       - name: Install ripgrep (rg)
         if: ${{ steps.meta.outputs.skip_verify != 'true' }}
@@ -126,8 +214,9 @@ jobs:
           fi
 
       - name: Publish GitHub Release
+        if: ${{ inputs.all_tags != true }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.meta.outputs.tag }}
-          prerelease: ${{ steps.meta.outputs.prerelease == 'true' }}
+          tag_name: ${{ steps.tagmeta.outputs.tag }}
+          prerelease: ${{ steps.tagmeta.outputs.prerelease == 'true' }}
           generate_release_notes: true

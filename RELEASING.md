@@ -39,6 +39,7 @@ This repo uses **semantic-release** to publish GitHub Releases using semver:
 
 If you already have a tag but no GitHub Release entry exists (historical tags), run the
 workflow **Release (Backfill Existing Tag)** and provide the tag (for example `v1.1.5`).
+To backfill all tags in one run, set `all_tags=true`.
 
 If you must tag manually (rare), after commits are merged to `main`:
 
