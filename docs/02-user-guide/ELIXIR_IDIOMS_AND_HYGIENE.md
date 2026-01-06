@@ -34,6 +34,16 @@ def parse_number(input) do
 end
 ```
 
+### Reserved keywords (and backtick escapes)
+
+Elixir has reserved keywords like `when`, `end`, `do`, `fn`, `case`, etc.
+If a generated identifier would collide with a reserved keyword, Reflaxe.Elixir appends a trailing underscore:
+
+- `when` → `when_`
+- `` `end` `` (Haxe escaped identifier) → `end_`
+
+This keeps the output valid Elixir without requiring awkward names in Haxe.
+
 ### Modules
 
 Haxe packages and class names become Elixir module namespaces:
@@ -70,6 +80,11 @@ Generated (shape):
 ```elixir
 _upper_result = ResultTools.map(result, fn s -> String.upcase(s) end)
 ```
+
+### Wildcards vs “unused named” binders
+
+- `_` is treated as the Elixir wildcard and is preserved as-is.
+- `_name` is treated as an intentionally-unused named variable and is preserved (or generated) as `_name`.
 
 ### Special case: Phoenix `assigns`
 
@@ -176,4 +191,3 @@ When you need exact Elixir code, use the supported injection surfaces (documente
 - `docs/04-api-reference/ELIXIR_INJECTION_GUIDE.md`
 
 These are powerful but should be used sparingly; prefer typed externs and stdlib helpers when possible.
-
