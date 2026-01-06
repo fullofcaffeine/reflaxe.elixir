@@ -164,6 +164,27 @@ Field reads and updates use idiomatic Elixir map syntax:
 - `user.name` (read)
 - `%{user | name: "Bob"}` (update)
 
+### Atom keys vs string keys
+
+- Haxe anonymous structures compile to maps with **atom keys** (e.g. `%{:name => "Alice"}`).
+- If you need string keys (common for JSON-ish payloads), use an explicit `Map<String, T>` / dynamic map and the
+  generated code will use string keys where appropriate.
+
+## Interop naming: `?`/`!` functions via `@:native`
+
+Many Elixir APIs use `?` / `!` suffixes (`member?`, `fetch!`, `get_in`, etc.). Those aren’t valid Haxe identifiers.
+
+Use `@:native` on externs to call them precisely:
+
+```haxe
+extern class Enum {
+  @:native("member?")
+  static function member<T>(list:Array<T>, value:T):Bool;
+}
+```
+
+This keeps your Haxe code typed and avoids raw Elixir injection.
+
 ## Control flow: expressions + preservation helpers
 
 ### `switch` → `case` (expression-preserving)
@@ -183,6 +204,14 @@ These are intentional and exist to keep Haxe semantics correct in Elixir’s imm
 
 When Haxe uses `break` / `continue`, compilation may introduce `throw`/`catch` inside
 `Enum.reduce_while` to emulate structured loop control flow without mutable state.
+
+## Static fields: process-local state (avoid for application data)
+
+Haxe `static var` is mutable. To preserve semantics, static storage is implemented using process-local storage
+(you may see `Process.get/put` in generated code).
+
+This is correct for “compiler/runtime needs”, but for application state prefer BEAM-native patterns (GenServer state,
+LiveView assigns, ETS, etc.).
 
 ## Interop escape hatches
 
