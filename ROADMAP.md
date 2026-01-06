@@ -8,34 +8,36 @@ Source of truth for “what is production‑ready” is the checklist in `docs/0
 
 - **Long‑term vision**: `docs/08-roadmap/vision.md`
 - **Curated docs index**: `docs/README.md`
-- **Work tracking**: GitHub Issues/Milestones (and `.beads/` for local `bd` workflows)
+- **Work tracking**: `.beads/` (`bd list`) + GitHub Issues/PRs
 
-## Near‑Term Priorities (v1.1 hardening)
+## Recently shipped (v1.1)
 
-### 1) HXX typing (TSX‑level ergonomics)
-- Tighten component prop typing, especially dot‑components and common HEEx helpers.
-- Typed slot/`:let` patterns so template usage is typechecked (opt‑in strict mode).
-- Typed `phx-hook` names via a shared registry/enum (server + Genes client hooks).
+- **TSX-level HXX typing**: strict components + strict slots, typed `:let`, typed `phx-*` events/hooks (opt-in, exercised in todo-app).
+- **DevX hardening**: faster incremental builds, clearer watcher errors (full raw Haxe output), fewer “port already in use” footguns.
+- **CI reliability**: Linux + macOS lanes, docs smoke + dogfood, deterministic budgets.
+- **Semver releases**: GitHub releases are published automatically via semantic-release (see `docs/10-contributing/RELEASING.md`).
 
-### 2) Tooling & DevX hardening
-- Keep Mix tasks, generators, and watchers aligned with the current toolchain (lix‑pinned Haxe, bounded QA sentinel runs).
-- Improve failure surfacing (e.g. always show the full compiler output when Haxe compilation fails).
-- Ensure docs remain “copy‑paste runnable” for first‑time users.
+## Near‑term priorities (v1.1.x maintenance)
+
+### 1) Production polish
+- Keep docs “copy/paste runnable” for first-time users (install, test, QA sentinel, dogfood).
+- Keep the todo-app as a reliable end-to-end showcase (Phoenix boot + Playwright smoke stays green).
+- Improve error reporting further where it saves time (compiler diagnostics, Mix integration).
+
+### 2) Compiler maintainability
+- Continue consolidating transformer passes where safe, documenting ordering guarantees and invariants.
+- Prefer “shape-derived” transforms over name heuristics, and keep new transforms fully documented (hxdoc WHAT/WHY/HOW/EXAMPLES).
 
 ### 3) CI & release reliability
-- CI is Linux + macOS (no Windows lane for now).
-- QA Sentinel Smoke stays green (todo‑app boot + Playwright smoke).
-- Dogfood stays green (generate a fresh Phoenix app + validate upgrade path).
-- Releases are published automatically via semantic versioning (see `docs/10-contributing/RELEASING.md`).
+- Keep CI green on Linux + macOS (Windows is intentionally out of scope for now).
+- Ensure QA Sentinel Smoke + dogfood lanes remain representative and bounded (no hangs).
+- Keep release automation “boring”: tags + GitHub releases + CHANGELOG always in sync.
 
-### 4) Performance & transformer simplification
-- Reduce reliance on expensive hygiene passes by making key transforms algorithmically bounded.
-- Consolidate/merge redundant transformer passes and document ordering guarantees.
+## Future (not 1.1.x)
 
-## Deferred
-
-- **Haxe 5 support** is intentionally deferred until Haxe 5 stabilizes and provides a consistent TypedExpr.
-  A manual smoke script may exist, but Haxe 5 is not part of the current CI contract.
+### Haxe 5 support (deferred)
+- Haxe 5 is intentionally deferred until it stabilizes and provides a consistent TypedExpr.
+- A smoke script may exist, but Haxe 5 is not part of the current CI contract.
 
 ## Status legend
 
