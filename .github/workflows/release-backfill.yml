@@ -210,7 +210,7 @@ jobs:
 
       - name: Setup Haxe
         if: ${{ steps.meta.outputs.skip_verify != 'true' }}
-        uses: krdlab/setup-haxe@v1
+        uses: krdlab/setup-haxe@v2
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
 
