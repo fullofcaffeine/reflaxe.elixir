@@ -53,6 +53,12 @@ Version strings are updated automatically via `scripts/release/sync-versions.js`
 - `README.md` version badge
 - `CHANGELOG.md` (generated)
 
+## Token / permissions notes
+
+The `Release` workflow uses the GitHub Actions token by default. If your repo has hardened workflow-run permissions
+and semantic-release fails to push tags or publish releases, add a `RELEASE_TOKEN` secret (PAT or fine‑grained token)
+with `contents: write` access and the workflow will use it automatically.
+
 ## Backfilling releases for existing tags
 
 If tags already exist but the GitHub **Releases** list is empty (or older tags predate the workflow),
