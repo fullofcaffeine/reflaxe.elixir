@@ -134,16 +134,7 @@ jobs:
 
             notes_file="$(mktemp)"
             if node scripts/release/extract-changelog-section.js "$tag" >"$notes_file" 2>/dev/null; then
-              # Prefer changelog sections only when they contain semantic-release style commit links.
-              if grep -q "/commit/" "$notes_file"; then
-                notes_source="changelog"
-              elif node scripts/release/generate-release-notes-from-git.js "$tag" >"$notes_file" 2>/dev/null; then
-                notes_source="git"
-              else
-                echo "[backfill] WARN: Failed to generate release notes for $tag; falling back to GitHub auto notes"
-                notes_source="github"
-                : >"$notes_file"
-              fi
+              notes_source="changelog"
             elif node scripts/release/generate-release-notes-from-git.js "$tag" >"$notes_file" 2>/dev/null; then
               notes_source="git"
             else
@@ -270,15 +261,7 @@ jobs:
 
           notes_file="$(mktemp)"
           if node scripts/release/extract-changelog-section.js "$tag" >"$notes_file" 2>/dev/null; then
-            if grep -q "/commit/" "$notes_file"; then
-              notes_source="changelog"
-            elif node scripts/release/generate-release-notes-from-git.js "$tag" >"$notes_file" 2>/dev/null; then
-              notes_source="git"
-            else
-              echo "[backfill] WARN: Failed to generate release notes for $tag; falling back to GitHub auto notes"
-              notes_source="github"
-              : >"$notes_file"
-            fi
+            notes_source="changelog"
           elif node scripts/release/generate-release-notes-from-git.js "$tag" >"$notes_file" 2>/dev/null; then
             notes_source="git"
           else
