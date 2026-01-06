@@ -62,6 +62,6 @@ If you want to backfill *all* semver tags in one run, use the same workflow with
 
 Notes:
 
-- Backfill prefers using the matching section in `CHANGELOG.md` as the GitHub Release body.
-- If a tag has no changelog section, it falls back to GitHub auto-generated release notes.
-- To update existing releases with the changelog body, run backfill with `overwrite_existing=true`.
+- Backfill generates “semantic-release style” notes from git history (Conventional Commits) for each tag.
+- If notes generation fails for a tag, it falls back to GitHub auto-generated release notes.
+- To update existing releases, run backfill with `overwrite_existing=true`.
