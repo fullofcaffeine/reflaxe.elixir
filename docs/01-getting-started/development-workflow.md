@@ -302,8 +302,10 @@ npx lix download
 # Reset npm dependencies
 rm -rf node_modules && npm install
 
-# Reset Haxe dependencies  
-rm -rf haxe_libraries && npx lix download
+# Re-download the toolchain + libraries (lix cache)
+npx lix download
+# If your lix cache is corrupted, remove it and retry:
+# rm -rf ~/haxe && npx lix download
 
 # Reset Elixir dependencies
 mix deps.clean --all && mix deps.get
@@ -312,14 +314,15 @@ mix deps.clean --all && mix deps.get
 ### Test Failures
 ```bash
 # Run individual test components
-npm run test:haxe     # Snapshot tests only
+npm run test:quick    # Snapshot suite + Elixir validation (fast)
 npm run test:mix      # Elixir/Mix tests only
 
-# Test specific functionality
-haxe test/Test.hxml test=feature_name
+# Narrow scope
+npm run test:failed
+npm run test:changed
 
 # Update test snapshots when output improves
-haxe test/Test.hxml update-intended
+npm run test:update
 ```
 
 ### Compilation Issues
