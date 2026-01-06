@@ -71,9 +71,13 @@ end
 - Public visibility → Public functions
 - Private visibility → `defp` functions
 
-### Enums → Tagged Tuples/Atoms
+### Enums → Tagged Tuples
 
-**Simple Enums** (no data) → **Atoms**:
+Reflaxe.Elixir represents Haxe enums as **tagged tuples** in Elixir, even for constructors with no
+arguments. This keeps pattern matching uniform and avoids ambiguity between enum values and “plain”
+atoms used elsewhere.
+
+**Zero-argument constructors** → **1-tuples**:
 
 **Haxe Input**:
 ```haxe
@@ -86,10 +90,10 @@ enum Color {
 
 **Generated Elixir**:
 ```elixir
-# Usage generates atoms: :red, :green, :blue
+# Usage generates 1-tuples: {:red}, {:green}, {:blue}
 ```
 
-**Enums with Data** → **Tagged Tuples**:
+**Enums with Data** → **Tagged Tuples (2+ elements)**:
 
 **Haxe Input**:
 ```haxe
@@ -199,7 +203,7 @@ typedef User = {
 | `Dynamic` | `term()` | Any Elixir term |
 | `Void` | `:ok` or `nil` | Context dependent |
 | `Null<T>` | `T \| nil` | Nullable types |
-| `Option<T>` | `{:some, T} \| :none` | Type-safe null handling |
+| `Option<T>` | `{:some, T} \| {:none}` | Type-safe null handling |
 | `Result<T,E>` | `{:ok, T} \| {:error, E}` | Explicit error handling |
 
 ### Special Type Compilations
@@ -219,9 +223,12 @@ switch (user) {
 user = find_user(123)
 case user do
   {:some, u} -> process_user(u)
-  :none -> handle_not_found()
+  {:none} -> handle_not_found()
 end
 ```
+
+For naming conventions (snake_case), unused variable underscore-prefixing, and other “Elixir hygiene”
+rules applied automatically by the compiler, see `docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md`.
 
 **Result<T,E> Pattern**:
 ```haxe
@@ -577,7 +584,7 @@ def find_user(id) do
   if user != nil do
     {:some, user}
   else
-    :none
+    {:none}
   end
 end
 
@@ -640,26 +647,26 @@ end
 
 The compiler can detect common patterns and optimize accordingly:
 
-**Method Chaining → Pipe Operators**:
+**Reassignment Pipelines → Pipe Operators**:
 ```haxe
 // Haxe input
-var result = data
-    .filter(x -> x > 0)
-    .map(x -> x * 2)
-    .reduce((a, b) -> a + b);
+var result = items;
+result = result.filter(x -> x > 2);
+result = result.map(x -> x * 2);
 ```
 
 ```elixir
-# Generated Elixir (optimized)
-result = data
-|> Enum.filter(&(&1 > 0))
-|> Enum.map(&(&1 * 2))
-|> Enum.reduce(&+/2)
+# Generated Elixir (optimized shape)
+result = items
+result = result |> Enum.filter(fn x -> x > 2 end) |> Enum.map(fn x -> x * 2 end)
 ```
 
-**Data-Only Classes → Structs**:
+This optimization targets contiguous assignments where the variable is passed as the first argument
+(`x = f(x, ...)`), and collapses them into a single `|>` pipeline.
+
+**Classes → Module + map-backed instances**:
 ```haxe
-// Haxe input (detected as data-only)
+// Haxe input
 class Point {
     public var x: Float;
     public var y: Float;
@@ -672,15 +679,19 @@ class Point {
 ```
 
 ```elixir
-# Generated Elixir
+# Generated Elixir (current shape)
 defmodule Point do
-  defstruct [:x, :y]
-  
-  def new(x, y) do
-    %Point{x: x, y: y}
+  def new(x_param, y_param) do
+    struct = %{:x => nil, :y => nil}
+    struct = %{struct | x: x_param}
+    struct = %{struct | y: y_param}
+    struct
   end
 end
 ```
+
+Instance methods become module functions that take the instance as an explicit first parameter (often
+named `struct` in the generated Elixir).
 
 ### Smart Array/List Operations
 

@@ -23,6 +23,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 **[02-user-guide/](02-user-guide/)** - Complete user documentation for application developers
 - [Haxe Language Fundamentals](02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md) - Core concepts
 - [Haxe→Elixir Mappings](02-user-guide/HAXE_ELIXIR_MAPPINGS.md) - Language conversion guide
+- [Elixir Idioms & Hygiene](02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md) - Naming, unused vars, enum shapes, loop semantics
 - [Phoenix Integration](02-user-guide/PHOENIX_INTEGRATION.md) - Building Phoenix applications
 - [Type-Safe Phoenix Abstractions](02-user-guide/TYPE_SAFE_PHOENIX_ABSTRACTIONS.md) - Assigns/Socket/Flash typed surfaces
 - [Phoenix LiveView Architecture](02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md) - Real-time UI patterns
