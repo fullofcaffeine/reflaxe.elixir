@@ -1,3 +1,13 @@
+## [1.1.6](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.5...v1.1.6) (2026-01-06)
+
+
+### Bug Fixes
+
+* **generator:** make Phoenix mix.exs injection robust ([52d43ce](https://github.com/fullofcaffeine/reflaxe.elixir/commit/52d43ce54ec8d21ed4decec2f07130141f8b38df))
+* **lix:** make GitHub installs self-contained ([e7dcffb](https://github.com/fullofcaffeine/reflaxe.elixir/commit/e7dcffb99a71f4ae3de923d76d73aa316c6db18e))
+* **release:** repair sync-versions regexes ([8909e46](https://github.com/fullofcaffeine/reflaxe.elixir/commit/8909e46b366922d022936c7a7f4a0323d95554ed))
+* **release:** trim changelog footer in backfill notes ([5d45e44](https://github.com/fullofcaffeine/reflaxe.elixir/commit/5d45e44664888336ab7997804acfb9abab7cb70f))
+
 ## [Unreleased]
 
 ## [1.1.5](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.4...v1.1.5) (2026-01-04)
