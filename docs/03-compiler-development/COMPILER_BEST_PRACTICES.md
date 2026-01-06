@@ -224,7 +224,7 @@ class Date {
 
 ### 11. Always Review Recent Work Before Major Changes
 - **Rule**: Before implementing new features or significant refactors, check what's been done recently
-- **Process**: Read TASK_HISTORY.md, recent commit messages, and documentation updates
+- **Process**: Review recent commit messages, `.beads/` task notes (`bd`), and documentation updates
 - **Purpose**: Understand the current direction, avoid duplicating work, and build on recent insights
 - **Key Questions**: What patterns were just established? What approaches were tried and rejected?
 - **Example**: Before adding new atom key detection, review recent atom key work to avoid repeating mistakes
@@ -245,7 +245,7 @@ class Date {
 - **todo-app**: Tests dual-target compilation, LiveView, Ecto integration
 - **Test suite**: Validates basic language features and edge cases  
 - **Real-world patterns**: Drive compiler to handle complex scenarios
-- **Production readiness**: Examples must compile cleanly for v1.0 quality
+- **Production readiness**: Examples must compile cleanly for the current non‑alpha subset (`v1.1.x`)
 
 ### Compiler-Example Development Feedback Loop Rules
 ✅ **Example fails to compile**: This is compiler feedback, not user error

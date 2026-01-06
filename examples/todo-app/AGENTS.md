@@ -55,7 +55,7 @@ This file contains todo-app specific instructions for AI assistants working on t
 - ✅ Fix issues in the compiler source at `/src/reflaxe/elixir/`
 - ✅ Edit Haxe source files in `src_haxe/`
 - ✅ Write migrations in Haxe using @:migration annotation
-- ✅ Regenerate with `npx haxe build.hxml` after fixing the compiler
+- ✅ Regenerate with `haxe build.hxml` after fixing the compiler
 
 ### Why This Matters:
 Generated files are overwritten every time you compile. Any manual edits will be lost. All fixes must be made at the source - either in the Haxe code (`src_haxe/`) or in the compiler itself (`/src/reflaxe/elixir/`).
@@ -165,7 +165,7 @@ Example (dev, custom port):
 ```bash
 cd examples/todo-app
 # Build Haxe → Elixir output
-npx haxe build-server.hxml
+haxe build-server.hxml
 
 # Ensure deps and database
 mix deps.get
@@ -621,10 +621,10 @@ This project includes comprehensive documentation specifically designed for AI a
 ### Generating Enhanced Documentation
 ```bash
 # Generate full API documentation
-npx haxe build.hxml -D generate-llm-docs
+haxe build.hxml -D generate-llm-docs
 
 # Extract patterns from your code
-npx haxe build.hxml -D extract-patterns
+haxe build.hxml -D extract-patterns
 ```
 
 ## 🏗️ Architecture Philosophy: Haxe First, Type Safety Everywhere
@@ -996,7 +996,7 @@ After ANY modification to `/src/reflaxe/elixir/`:
 
 2. **Regenerate Everything**:
    ```bash
-   npx haxe build-server.hxml
+   haxe build-server.hxml
    ```
 
 3. **Test Compilation**:
@@ -1016,7 +1016,7 @@ After ANY modification to `/src/reflaxe/elixir/`:
 ```bash
 # Regenerate templates
 rm -rf lib/server_layouts_*.ex lib/todo_app_web/live/*.ex
-npx haxe build-server.hxml
+haxe build-server.hxml
 mix compile
 ```
 
@@ -1024,7 +1024,7 @@ mix compile
 ```bash
 # Regenerate router
 rm lib/todo_app_web/router.ex
-npx haxe build-server.hxml
+haxe build-server.hxml
 mix phx.routes
 ```
 
@@ -1032,7 +1032,7 @@ mix phx.routes
 ```bash
 # Regenerate schemas
 rm -rf lib/todo_app/schemas/*.ex
-npx haxe build-server.hxml
+haxe build-server.hxml
 mix ecto.compile
 ```
 

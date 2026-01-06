@@ -23,13 +23,15 @@ npx lix scope create
 Install Reflaxe.Elixir as a Haxe library:
 
 ```bash
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+# If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 npx lix download
 ```
 
 Notes:
 - Prefer `haxe ...` (your local Haxe toolchain).
-- If `haxe` is not on your PATH, use `npx haxe ...` (lix-managed wrapper).
+- If `haxe` is not on your PATH, use the repo shim: `./node_modules/.bin/haxe ...` (provided by `lix` + `.haxerc`).
 
 ## 2) Add `src_haxe/` and a `build.hxml`
 
@@ -134,7 +136,8 @@ Add Reflaxe.Elixir as a dev/test dependency so your project has the Mix tasks:
 defp deps do
   [
     # Compiler + Mix tasks (build-time only)
-    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.1.5", runtime: false}
+    # Replace <RELEASE_TAG> with the tag you installed via lix (see Step 1)
+    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "<RELEASE_TAG>", runtime: false}
   ]
 end
 ```

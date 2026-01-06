@@ -1,7 +1,7 @@
 # Reflaxe.Elixir Roadmap (v1.1.x)
 
 Reflaxe.Elixir `v1.1.x` is considered **non‑alpha for the documented subset**. This roadmap tracks
-near‑term work to harden that subset toward a **1.0 public release**, while continuing to iterate on
+near‑term work to harden that subset toward **production readiness**, while continuing to iterate on
 explicitly **experimental/opt‑in** surfaces.
 
 Source of truth for “what is production‑ready” is the checklist in `docs/06-guides/PRODUCTION_READINESS.md`.
@@ -10,7 +10,7 @@ Source of truth for “what is production‑ready” is the checklist in `docs/0
 - **Curated docs index**: `docs/README.md`
 - **Work tracking**: GitHub Issues/Milestones (and `.beads/` for local `bd` workflows)
 
-## Near‑Term Priorities (toward 1.0)
+## Near‑Term Priorities (v1.1 hardening)
 
 ### 1) HXX typing (TSX‑level ergonomics)
 - Tighten component prop typing, especially dot‑components and common HEEx helpers.

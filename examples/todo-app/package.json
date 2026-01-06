@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "description": "A Reflaxe.Elixir project",
   "scripts": {
-    "compile": "npx haxe build.hxml",
-    "watch": "npx nodemon --watch src_haxe --ext hx --exec \"npx haxe build.hxml\"",
+    "compile": "haxe build.hxml",
+    "watch": "nodemon --watch src_haxe --ext hx --exec \"haxe build.hxml\"",
     "test": "mix test"
   },
   "devDependencies": {

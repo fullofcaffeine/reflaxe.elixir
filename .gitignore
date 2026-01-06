@@ -79,6 +79,7 @@ compile.protocols
 *.temp
 .temp/
 .tmp/
+/tmp/
 
 # Debug/macro dumps (never commit)
 **/dump/
@@ -131,6 +132,26 @@ examples/*/build_debug*.out
 examples/*/build_debug_snapshots*.out
 examples/*/mix_*.out
 examples/*/tmp/
+
+# Generated Elixir output in examples (do not commit; source-of-truth is Haxe)
+examples/0[1,3-9]-*/lib/
+examples/1[0-9]-*/lib/
+examples/lix-installation/lib/
+examples/test-integration/lib/
+examples/todo-app/lib/
+examples/todo-app/assets/js/haxe/
+examples/todo-app/priv/repo/migrations/_GeneratedFiles.json
+examples/**/lib/_GeneratedFiles.json
+
+# Generated runtime shims emitted into example app lib trees
+examples/**/lib/haxe/
+examples/**/lib/std.ex*
+examples/**/lib/string_buf.ex*
+examples/**/lib/string_tools.ex*
+examples/**/lib/sys.ex*
+examples/**/lib/type.ex*
+examples/**/lib/reflect.ex*
+examples/**/lib/e_reg.ex
 
 # Deprecated templates (no longer used)
 /templates/test/test-results.tmp

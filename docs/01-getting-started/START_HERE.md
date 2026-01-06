@@ -88,14 +88,16 @@ npm init -y
 npm install --save-dev lix
 npx lix scope create
 
-# Install the generator (pin a tag for reproducibility)
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+# Install the generator (latest GitHub release tag)
+# If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 
 # Generate a Phoenix app
 npx lix run reflaxe.elixir create my_app --type phoenix --no-interactive
 
 cd my_app
-mix deps.get
+mix setup
 mix phx.server
 ```
 
@@ -118,10 +120,10 @@ In a typical project you’ll see a server build (Elixir output) and often a cli
 
 ### `haxe: command not found`
 
-Install Haxe 4.3.7+ (or add it to your PATH). If you’re using the lix-managed wrapper:
+Install Haxe 4.3.7+ (or add it to your PATH). If you’re using lix in this repo, the project-local shim is:
 
 ```bash
-npx haxe --version
+./node_modules/.bin/haxe --version
 ```
 
 ### Database connection failures

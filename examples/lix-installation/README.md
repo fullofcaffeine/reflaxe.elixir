@@ -13,13 +13,14 @@ npm install --save-dev lix
 npx lix scope create
 
 # 2. Install Reflaxe.Elixir from a GitHub release tag (recommended)
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 
 # 3. Download pinned Haxe libraries for the project
 npx lix download
 
 # 4. Verify the Haxe toolchain
-npx haxe --version
+./node_modules/.bin/haxe --version
 ```
 
 ## Project Structure
@@ -62,8 +63,8 @@ Main
 3. Compile:
 
 ```bash
-# Use the lix-managed Haxe wrapper (recommended)
-npx haxe build.hxml
+# Use the lix-managed Haxe shim (recommended)
+./node_modules/.bin/haxe build.hxml
 ```
 
 This will generate Elixir files in the `lib/` directory that you can use in your Elixir/Phoenix projects.
@@ -97,7 +98,8 @@ Make sure you installed the library and downloaded dependencies:
 
 ```bash
 npx lix scope create
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 npx lix download
 ```
 
@@ -109,7 +111,8 @@ Ensure your `-lib reflaxe.elixir` directive is present in your .hxml file.
 
 ```bash
 # Update to a newer tag (recommended)
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5 --force
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}" --force
 
 # Or install from main (bleeding edge; not necessarily a release)
 # npx lix install github:fullofcaffeine/reflaxe.elixir --force

@@ -47,8 +47,8 @@ npx lix --version
 # Check Haxe is available
 haxe --version
 
-# If `haxe` is not on your PATH, use the project-local wrapper (provided by `lix` + `.haxerc`):
-npx haxe --version
+# If `haxe` is not on your PATH, use the project-local shim (provided by `lix` + `.haxerc`):
+./node_modules/.bin/haxe --version
 ```
 
 **Expected Output:**
@@ -141,18 +141,17 @@ Contains library paths and installation instructions.
 
 ### Use `haxe` (system or project-local)
 
-This repo uses lix to manage Haxe **libraries** (via `haxe_libraries/*.hxml`). For the compiler toolchain,
-use either a normal `haxe` install on your PATH (CI uses `krdlab/setup-haxe`) or the lix-managed wrapper:
-`npx haxe ...` (pinned via `.haxerc`).
+This repo uses lix to manage the Haxe toolchain (via `.haxerc`) and Haxe **libraries** (via `haxe_libraries/*.hxml`).
+Use either a normal `haxe` install on your PATH or the lix-provided shim at `./node_modules/.bin/haxe`.
 
 ```bash
 # ✅ Correct
 haxe build.hxml
 haxe --version
 
-# ✅ Also correct (lix-managed wrapper)
-npx haxe build.hxml
-npx haxe --version
+# ✅ Also correct (lix shim)
+./node_modules/.bin/haxe build.hxml
+./node_modules/.bin/haxe --version
 ```
 
 ### Compilation Examples
@@ -229,8 +228,8 @@ reflaxe.elixir/
 # Preferred
 haxe --version
 
-# Project-local wrapper (provided by `lix` + `.haxerc`)
-npx haxe --version
+# Project-local shim (provided by `lix` + `.haxerc`)
+./node_modules/.bin/haxe --version
 ```
 
 #### Issue: `Unknown identifier: reflaxe`

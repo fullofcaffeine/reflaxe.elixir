@@ -96,7 +96,7 @@ For the complete roadmap including AI tooling, universal deployment, and multi-p
 ## Installation
 
 ### Prerequisites
-- Haxe 4.3.7+ (installed globally, or via the lix-managed wrapper `npx haxe ...`)
+- Haxe 4.3.7+ (installed globally, or via the project-local shim from `lix`: `./node_modules/.bin/haxe`)
 - Node.js 16+ (for lix package management; Node 20 recommended)
 - Elixir 1.14+ (for Phoenix/Ecto ecosystem)
 
@@ -106,8 +106,10 @@ For the complete roadmap including AI tooling, universal deployment, and multi-p
 # Create a lix scope in your project directory
 npx lix scope create
 
-# Install a specific release tag (recommended for reproducibility)
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+# Install the latest GitHub release tag (recommended)
+# If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 
 # Download pinned Haxe libraries for the project (reflaxe + tink_* + deps)
 npx lix download
@@ -260,8 +262,9 @@ haxe build.hxml   # or compile-all.hxml when present
 defp deps do
   [
     # ... other deps
-    # Mix tasks only (build-time): pin to a tag or use a commit SHA
-    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "v1.1.5", only: [:dev, :test], runtime: false}
+    # Mix tasks only (build-time): pin to a GitHub release tag or use a commit SHA
+    # Replace <RELEASE_TAG> with the tag you installed via lix (e.g. v1.2.3)
+    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "<RELEASE_TAG>", only: [:dev, :test], runtime: false}
   ]
 end
 

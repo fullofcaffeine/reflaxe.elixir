@@ -56,6 +56,18 @@ function updateReadmeBadge(version) {
   writeUtf8(path, next)
 }
 
+function updateHxmlLibraryVersion(path, version) {
+  const original = readUtf8(path)
+  const next = original.replace(
+    /^-D\\s+reflaxe\\.elixir=[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?\\s*$/gm,
+    `-D reflaxe.elixir=${version}`
+  )
+  if (next === original) {
+    throw new Error(`No reflaxe.elixir version define found to update in ${path}`)
+  }
+  writeUtf8(path, next)
+}
+
 function ensureSemver(version) {
   if (!/^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$/.test(version)) {
     throw new Error(`Invalid semver: ${version}`)
@@ -88,7 +100,8 @@ function main() {
 
   updateMixExsVersion(version)
   updateReadmeBadge(version)
+  updateHxmlLibraryVersion('haxe_libraries/reflaxe.elixir.hxml', version)
+  updateHxmlLibraryVersion('test/support/test_reflaxe_elixir.hxml', version)
 }
 
 main()
-
