@@ -6,7 +6,7 @@ set -euo pipefail
 #
 # WHAT
 # - Generates a Phoenix project via `reflaxe.elixir create --type phoenix`,
-#   installs deps, runs DB setup, and compiles (including the Haxe compiler step).
+#   installs deps and compiles (including the Haxe compiler step).
 #
 # WHY
 # - Ensures README/docs "new user" commands stay runnable and don't drift.
@@ -107,10 +107,8 @@ run_step "lix download (project)" 600 "$app_dir" "npx lix download"
 run_step "rewrite mix.exs reflaxe_elixir dep to path" 60 "$app_dir" \
   "python3 -c 'import re,sys; p=\"mix.exs\"; repo=sys.argv[1]; t=open(p,\"r\",encoding=\"utf-8\").read(); pat=r\"\\{:reflaxe_elixir,[^}]*runtime:\\s*false[^}]*\\}\"; rep=\"{:reflaxe_elixir, path: \\\"%s\\\", runtime: false}\" % repo; n=re.sub(pat, rep, t, count=1, flags=re.S);  (n!=t) or sys.exit(\"No reflaxe_elixir dependency found to rewrite in mix.exs\"); open(p,\"w\",encoding=\"utf-8\").write(n)' '${ROOT_DIR}'"
 
-# Minimal DB setup + compilation (no servers).
+# Compile-only smoke (no servers). DB boot/runtime is covered by the QA sentinel / dogfood lanes.
 run_step "mix deps.get" 600 "$app_dir" "mix deps.get"
-run_step "mix ecto.create" 300 "$app_dir" "mix ecto.create"
-run_step "mix ecto.migrate" 300 "$app_dir" "mix ecto.migrate"
 run_step "mix compile" 900 "$app_dir" "mix compile"
 
 echo ""
