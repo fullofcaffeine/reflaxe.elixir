@@ -29,7 +29,7 @@ scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 600
 This repo uses **semantic-release** to publish GitHub Releases using semver:
 
 - Merge commits to `main` using **Conventional Commits** (`feat:`, `fix:`, etc.)
-- After CI passes, the `Release` workflow runs `semantic-release` which:
+- After CI passes on `main`, the CI workflow runs `semantic-release` (Release job) which:
   - determines the next semver version
   - updates version strings across the repo
   - creates a `vX.Y.Z` tag
