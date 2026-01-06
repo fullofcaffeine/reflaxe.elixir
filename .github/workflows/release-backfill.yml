@@ -196,7 +196,7 @@ jobs:
 
       - name: Setup Node.js
         if: ${{ steps.meta.outputs.skip_verify != 'true' }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
