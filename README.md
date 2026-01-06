@@ -175,7 +175,7 @@ Once installed, add to your `build.hxml`:
 ```hxml
 # Good optimizations
 -dce full                    # Dead code elimination (recommended)
--D loop_unroll_max_cost=10   # Reasonable loop unrolling limit
+-D loop_unroll_max_cost=0    # Disable loop unrolling (preserve functional shapes)
 
 # AVOID these
 # -D analyzer-optimize       # Destroys functional patterns

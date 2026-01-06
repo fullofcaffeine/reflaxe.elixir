@@ -189,7 +189,7 @@ Remove `-D analyzer-optimize` from your build configuration:
 
 # Keep these optimizations (they're safe):
 -dce full                    # Dead code elimination
--D loop_unroll_max_cost=10   # Reasonable loop unrolling limit
+-D loop_unroll_max_cost=0    # Disable loop unrolling (preserve functional shapes)
 ```
 
 The compiler will then generate idiomatic Elixir:

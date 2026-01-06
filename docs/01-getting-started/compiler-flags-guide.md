@@ -72,7 +72,7 @@ end)
 
 # Good optimizations
 -dce full                    # Dead code elimination (removes unused code)
--D loop_unroll_max_cost=10   # Reasonable loop unrolling limit
+-D loop_unroll_max_cost=0    # Disable loop unrolling (preserve functional shapes)
 
 # AVOID these
 # -D analyzer-optimize       # NO! Destroys idiomatic patterns
@@ -104,7 +104,7 @@ Dead code elimination (`-dce`) is GOOD because it:
 |------|------------------------|----------------|
 | `-D analyzer-optimize` | Destroys functional patterns, unrolls loops | ❌ **Never use** |
 | `-dce full` | Removes unused code cleanly | ✅ **Always use** |
-| `-D loop_unroll_max_cost=N` | Controls unrolling threshold | ✅ **Use with low values (10-20)** |
+| `-D loop_unroll_max_cost=N` | Controls unrolling threshold | ✅ **Prefer `0` (disable)** |
 | `-D source-map` | Reserved/experimental | ⚠️ **Not yet end-to-end** |
 | `-D debug_ast_pipeline` | Verbose AST transformation output | 🔧 **Development only** |
 
@@ -113,20 +113,20 @@ Dead code elimination (`-dce`) is GOOD because it:
 ### For Development
 ```hxml
 -dce full
--D loop_unroll_max_cost=10
+-D loop_unroll_max_cost=0
 # Optional: -D debug_ast_pipeline
 ```
 
 ### For Production
 ```hxml
 -dce full
--D loop_unroll_max_cost=10
+-D loop_unroll_max_cost=0
 ```
 
 ### For Testing
 ```hxml
 -dce full
--D loop_unroll_max_cost=10
+-D loop_unroll_max_cost=0
 # No analyzer-optimize to ensure predictable output
 ```
 
