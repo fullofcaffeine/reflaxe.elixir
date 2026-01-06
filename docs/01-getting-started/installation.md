@@ -58,14 +58,11 @@ Haxe Compiler 4.3.7
 
 ### 3. Install Haxe Dependencies
 ```bash
-# Download all Haxe libraries (equivalent to npm install)
+# Download the pinned toolchain + libraries (per `.haxerc` + `haxe_libraries/*.hxml`)
 npx lix download
 ```
 
-This reads `haxe_libraries/*.hxml` files and installs:
-- **reflaxe** - Core compilation framework
-- **tink_unittest** - Modern testing framework
-- **tink_testrunner** - Test execution with rich output
+This ensures the compiler/test/example dependencies are available (for example `tink_macro`, `tink_parse`, and other `tink_*` libs).
 
 ### 4. Install Elixir Dependencies
 ```bash
@@ -79,13 +76,7 @@ mix deps.get
 npm test
 ```
 
-**Expected Output:**
-```
-✓ Snapshot Tests: 57/57 passing
-✓ Mix Tests: 133/133 passing  
-✓ Todo-App Integration: ✓ Phoenix server starts
-All tests complete ✅
-```
+This should complete without failures.
 
 ### 6. Source Mapping (Experimental)
 
@@ -113,18 +104,16 @@ See `docs/04-api-reference/SOURCE_MAPPING.md` for the current status and next st
 ### Key Files Created by Setup
 
 #### `.haxerc`
+```json
+{
+  "version": "4.3.7",
+  "resolveLibs": "scoped"
+}
 ```
-4.3.7
-```
-Specifies exact Haxe version for this project.
+Pins the Haxe compiler version and enables scoped library resolution for `lix`.
 
-#### `haxe_libraries/reflaxe.hxml`
-```haxe
--cp /path/to/reflaxe/src
--lib hxcpp
-# Installation metadata for lix
-```
-Contains library paths and installation instructions.
+#### `haxe_libraries/*.hxml`
+Pins Haxe library versions and classpaths for reproducible builds (managed by `lix`).
 
 #### `package.json` Scripts
 ```json
@@ -192,7 +181,7 @@ mix haxe.errors --format json
 vim src/reflaxe/elixir/ElixirCompiler.hx
 
 # 2. Test Haxe compiler changes
-npm run test:haxe
+npm run test:quick
 
 # 3. Test generated Elixir code integration
 npm run test:mix
@@ -283,9 +272,10 @@ mix --version       # Elixir/Mix
 
 #### Reinstall Dependencies
 ```bash
-# Clean reinstall Haxe dependencies
-rm -rf haxe_libraries/
+# Re-download the toolchain + libraries (lix cache)
 npx lix download
+# If your lix cache is corrupted, remove it and retry:
+# rm -rf ~/haxe
 
 # Clean reinstall Elixir dependencies  
 mix deps.clean --all
@@ -302,10 +292,7 @@ reflaxe.elixir/
 ├── .haxerc                     # Haxe version specification
 ├── package.json                # npm dependencies and scripts
 ├── mix.exs                     # Elixir dependencies and config
-├── haxe_libraries/             # lix-managed Haxe dependencies
-│   ├── reflaxe.hxml
-│   ├── tink_unittest.hxml
-│   └── tink_testrunner.hxml
+├── haxe_libraries/             # lix-managed Haxe deps (pinned via *.hxml)
 ├── src/reflaxe/elixir/         # Haxe→Elixir compiler source
 ├── std/                        # Elixir extern definitions
 ├── test/                       # Haxe compiler tests
@@ -319,8 +306,8 @@ Reflaxe.Elixir uses a **dual-ecosystem architecture**:
 
 ### 🔧 Haxe Side (npm + lix)
 - **Purpose:** Develop and test the compiler itself
-- **Tools:** lix, tink_unittest, tink_testrunner  
-- **Command:** `npm run test:haxe`
+- **Tools:** lix (Haxe toolchain) + snapshot test runner under `test/`
+- **Command:** `npm run test:quick`
 
 ### ⚡ Elixir Side (mix)
 - **Purpose:** Test and run generated code
