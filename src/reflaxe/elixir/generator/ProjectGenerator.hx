@@ -1211,7 +1211,8 @@ class Main {
 
 		// Add `haxe:` config block if missing.
 		if (mixContent.indexOf("\n      haxe: [") == -1 && mixContent.indexOf("\n    haxe: [") == -1 && mixContent.indexOf("haxe: [") == -1) {
-			var compilersLinePattern = ~/compilers:\s*([^\n,]+),/m;
+			// Match the full `compilers:` entry including any commas inside list literals.
+			var compilersLinePattern = ~/compilers:\s*([^\n]+),/m;
 			if (compilersLinePattern.match(mixContent)) {
 				var matched = compilersLinePattern.matched(0);
 				mixContent = compilersLinePattern.replace(

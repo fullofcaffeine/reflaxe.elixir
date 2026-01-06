@@ -82,6 +82,10 @@ run_step "mix local.hex --force" 120 "$ROOT_DIR" "mix local.hex --force"
 run_step "mix local.rebar --force" 120 "$ROOT_DIR" "mix local.rebar --force"
 run_step "mix archive.install hex phx_new --force" 300 "$ROOT_DIR" "mix archive.install hex phx_new --force"
 
+# Ensure the Haxe toolchain + generator deps are present in clean environments.
+# (CI runs this already, but keep it self-contained for local runs.)
+run_step "lix download (repo scope)" 600 "$ROOT_DIR" "npx lix download"
+
 # Generate a Phoenix project (skip installs so we can control + bound the steps).
 generator_flags="--type phoenix --no-interactive --skip-install"
 if [[ "${VERBOSE:-0}" -eq 1 ]]; then
@@ -101,6 +105,8 @@ fi
 run_step "npm install (project)" 600 "$app_dir" "npm install --no-audit --no-fund"
 run_step "lix scope create (project)" 60 "$app_dir" "npx lix scope create"
 run_step "lix dev reflaxe.elixir (project)" 60 "$app_dir" "npx lix dev reflaxe.elixir '${ROOT_DIR}'"
+run_step "lix install haxe deps (tink_macro)" 300 "$app_dir" "npx lix install haxelib:tink_macro"
+run_step "lix install haxe deps (tink_parse)" 300 "$app_dir" "npx lix install haxelib:tink_parse"
 run_step "lix download (project)" 600 "$app_dir" "npx lix download"
 
 # Use the local repo as the Mix dependency too (avoids needing a published tag during CI).
