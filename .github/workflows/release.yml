@@ -35,7 +35,7 @@ jobs:
         with:
           fetch-depth: 0
           ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -53,6 +53,6 @@ jobs:
 
       - name: Release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
         run: npx semantic-release
