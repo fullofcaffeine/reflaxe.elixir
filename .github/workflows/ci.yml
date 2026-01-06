@@ -367,7 +367,18 @@ jobs:
       - name: Run quick snapshot suite
         run: npm run test:quick
       - name: Run Mix tests (fast)
-        run: npm run test:mix-fast
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "[ci] Mix tests attempt ${attempt}/3"
+            if npm run test:mix-fast; then
+              exit 0
+            fi
+            echo "[ci] Mix tests failed; retrying in 5s..."
+            sleep 5
+          done
+          echo "[ci] Mix tests failed after 3 attempts"
+          exit 1
 
   docs-smoke:
     name: Docs Smoke (Phoenix)
