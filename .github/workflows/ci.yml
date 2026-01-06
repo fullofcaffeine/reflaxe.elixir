@@ -435,7 +435,7 @@ jobs:
       - examples
       - examples-elixir
       - budgets
-      - smoke-minimum
+      - smoke-min-toolchain
       - smoke-macos
       - docs-smoke
     if: >-
