@@ -25,6 +25,7 @@ _build/
 !/haxe_libraries/reflaxe.elixir.hxml
 !/haxe_libraries/genes.hxml
 !/haxe_libraries/helder.set.hxml
+!/haxe_libraries/tink_parse.hxml
 examples/**/haxe_libraries/
 
 # Test outputs
