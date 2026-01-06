@@ -34,7 +34,7 @@ function updateMixExsVersion(version) {
   const path = 'mix.exs'
   const original = readUtf8(path)
   const next = original.replace(
-    /version:\\s*\"[0-9]+\\.[0-9]+\\.[0-9]+(-[^\"\\s]+)?\"/g,
+    /version:\s*"[0-9]+\.[0-9]+\.[0-9]+(-[^"\s]+)?"/g,
     `version: \"${version}\"`
   )
   if (next === original) {
@@ -47,7 +47,7 @@ function updateReadmeBadge(version) {
   const path = 'README.md'
   const original = readUtf8(path)
   const next = original.replace(
-    /\\[!\\[Version\\]\\(https:\\/\\/img\\.shields\\.io\\/badge\\/version-[^-\\)]+-blue\\)\\]/,
+    /\[!\[Version\]\(https:\/\/img\.shields\.io\/badge\/version-[0-9A-Za-z.-]+-blue\)\]/,
     `[![Version](https://img.shields.io/badge/version-${version}-blue)]`
   )
   if (next === original) {
@@ -59,7 +59,7 @@ function updateReadmeBadge(version) {
 function updateHxmlLibraryVersion(path, version) {
   const original = readUtf8(path)
   const next = original.replace(
-    /^-D\\s+reflaxe\\.elixir=[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?\\s*$/gm,
+    /^-D\s+reflaxe\.elixir=[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?\s*$/gm,
     `-D reflaxe.elixir=${version}`
   )
   if (next === original) {
@@ -69,7 +69,7 @@ function updateHxmlLibraryVersion(path, version) {
 }
 
 function ensureSemver(version) {
-  if (!/^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$/.test(version)) {
+  if (!/^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$/.test(version)) {
     throw new Error(`Invalid semver: ${version}`)
   }
 }
