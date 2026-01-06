@@ -22,6 +22,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 ### 📖 User Guide
 **[02-user-guide/](02-user-guide/)** - Complete user documentation for application developers
 - [Haxe Language Fundamentals](02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md) - Core concepts
+- [Writing Idiomatic Haxe](02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md) - Guidelines for clean, idiomatic Elixir output
 - [Haxe→Elixir Mappings](02-user-guide/HAXE_ELIXIR_MAPPINGS.md) - Language conversion guide
 - [Elixir Idioms & Hygiene](02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md) - Naming, unused vars, enum shapes, loop semantics
 - [Phoenix Integration](02-user-guide/PHOENIX_INTEGRATION.md) - Building Phoenix applications
