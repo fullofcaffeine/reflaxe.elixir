@@ -460,8 +460,8 @@ ${phoenixFlags}--main ${haxeNamespace}.Main
   "description": "A Reflaxe.Elixir project",
   "scripts": {
     "setup:haxe": "npx lix scope create && npx lix install github:fullofcaffeine/reflaxe.elixir#$tag && npx lix download",
-    "compile": "npx haxe build.hxml",
-    "watch": "npx nodemon --watch src_haxe --ext hx --exec \\"npx haxe build.hxml\\"",
+    "compile": "haxe build.hxml",
+    "watch": "nodemon --watch src_haxe --ext hx --exec \\"haxe build.hxml\\"",
     "test": "mix test"
   },
   "devDependencies": {
@@ -758,7 +758,7 @@ mix compile
 ### Compile Haxe → Elixir
 ```bash
 npm run compile
-# or: npx haxe build.hxml
+# or: ./node_modules/.bin/haxe build.hxml
 ```
 
 ## Phoenix

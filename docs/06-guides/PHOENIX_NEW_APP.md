@@ -20,13 +20,16 @@ npm init -y
 npm install --save-dev lix
 npx lix scope create
 
-# Install the generator (pinned tag recommended)
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+# Install the generator (latest GitHub release tag)
+# If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 
 # Generate a Phoenix app (add --skip-install if you want to run installs manually)
 npx lix run reflaxe.elixir create my_app --type phoenix --no-interactive
 
 cd my_app
+mix setup
 mix phx.server
 ```
 
@@ -36,9 +39,11 @@ If you pass `--skip-install` (or installs fail), run the installs manually:
 cd my_app
 npm install
 npx lix scope create
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+# If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 npx lix download
-mix deps.get
+mix setup
 mix phx.server
 ```
 
@@ -49,12 +54,12 @@ Use Phoenix as you normally would:
 ```bash
 mix phx.new my_app
 cd my_app
-mix deps.get
 ```
 
 Confirm the baseline app runs:
 
 ```bash
+mix setup
 mix phx.server
 ```
 

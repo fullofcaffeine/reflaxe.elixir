@@ -177,19 +177,36 @@ defmodule HaxeTestHelper do
   end
   
   @doc """
-  Ensures that npx and haxe are available in the test environment.
+  Ensures that a usable Haxe binary is available in the test environment.
   """
   def ensure_haxe_available do
+    env_haxe = System.get_env("HAXE_PATH")
+    project_haxe = find_haxe_in_ancestors(File.cwd!())
+
     cond do
-      System.find_executable("npx") != nil ->
-        # Try npx haxe
-        case System.cmd("npx", ["haxe", "--version"], stderr_to_stdout: true) do
-          {_output, 0} -> {:ok, :npx}
-          _ -> check_direct_haxe()
-        end
-      
+      is_binary(env_haxe) and File.exists?(env_haxe) ->
+        {:ok, :env}
+
+      is_binary(project_haxe) ->
+        {:ok, :shim}
+
       true ->
         check_direct_haxe()
+    end
+  end
+
+  defp find_haxe_in_ancestors(start_dir) do
+    candidate = Path.join([start_dir, "node_modules", ".bin", "haxe"])
+
+    cond do
+      File.exists?(candidate) ->
+        candidate
+
+      start_dir == "/" or start_dir == Path.dirname(start_dir) ->
+        nil
+
+      true ->
+        find_haxe_in_ancestors(Path.dirname(start_dir))
     end
   end
   

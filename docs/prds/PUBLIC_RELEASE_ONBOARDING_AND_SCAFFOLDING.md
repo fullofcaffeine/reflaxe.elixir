@@ -60,7 +60,7 @@ This PRD intentionally focuses on **developer UX** and **public-repo readiness**
 
 - Prefer:
   - `haxe ...` (when a proper Haxe install is present), or
-  - `npx haxe ...` (lix-managed wrapper pinned via `.haxerc`).
+  - `./node_modules/.bin/haxe ...` (lix-managed shim pinned via `.haxerc`).
 - Do not recommend `npx lix run haxe ...` for new users: it requires additional (non-default) toolchain wiring and fails in fresh scopes.
 - Elixir output must use `-D elixir_output=...` consistently.
 - Keep Haxe “Phoenix helpers” in `std/phoenix/**` (no `__elixir__()` in app code).

@@ -7,16 +7,16 @@
 
 # Get the project root from environment variable set by test helper
 # Include the compiler source code using absolute path
--cp $REFLAXE_ELIXIR_PROJECT_ROOT/src/
+-cp ${REFLAXE_ELIXIR_PROJECT_ROOT}/src/
 
 # Include the Elixir standard library definitions using absolute path  
--cp $REFLAXE_ELIXIR_PROJECT_ROOT/std/
+-cp ${REFLAXE_ELIXIR_PROJECT_ROOT}/std/
 
 # Depend on the base Reflaxe framework
 -lib reflaxe
 
 # Define the library version
--D reflaxe.elixir=1.0.2
+-D reflaxe.elixir=1.1.5
 
 # Initialize the Elixir compiler
 --macro reflaxe.elixir.CompilerInit.Start()

@@ -30,7 +30,8 @@ Error: Library reflaxe.elixir is not installed
 # Install via lix from a GitHub release tag (recommended)
 npm install --save-dev lix
 npx lix scope create
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 npx lix download
 ```
 
@@ -52,7 +53,8 @@ npm install --save-dev lix
 
 # If using local installation, use npx
 npx lix scope create
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 npx lix download
 ```
 
@@ -557,7 +559,8 @@ This was fixed in the latest compiler version. If you still encounter this:
 1. **Update to latest version:**
 ```bash
 npx lix scope create
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5 --force
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}" --force
 npx lix download
 ```
 
@@ -872,7 +875,7 @@ Error: Out of memory
 **Solution:**
 ```bash
 # If you hit a Haxe OOM, increase available memory (shell-specific):
-NODE_OPTIONS="--max-old-space-size=4096" npx haxe build.hxml
+NODE_OPTIONS="--max-old-space-size=4096" ./node_modules/.bin/haxe build.hxml
 ```
 
 ## IDE and Tooling Issues
@@ -1016,7 +1019,8 @@ end
 ```bash
 npm install --save-dev lix
 npx lix scope create
-npx lix install github:fullofcaffeine/reflaxe.elixir#v1.1.5
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 npx lix download
 ```
 
