@@ -48,7 +48,7 @@ npm install             # Installs lix package manager locally
 npx lix download        # Downloads Haxe dependencies (project-specific versions)
 haxe TestMain.hxml      # Compile using your Haxe toolchain
 # If `haxe` is not on your PATH, use the project-local wrapper:
-#   npx haxe TestMain.hxml
+#   ./node_modules/.bin/haxe TestMain.hxml
 ```
 
 **Why lix?**
@@ -333,7 +333,7 @@ mix compile --force          # Verify Elixir compilation
 ## Best Practices
 
 ### Development Workflow
-- Prefer `haxe` from a proper Haxe install; if it’s not on your PATH, use `npx haxe ...` (lix-managed wrapper).
+- Prefer `haxe` from a proper Haxe install; if it’s not on your PATH, use the repo shim: `./node_modules/.bin/haxe ...` (provided by `lix` + `.haxerc`).
 - **Run full test suite** before committing changes
 - **Use source maps** for debugging (`-D source-map`)
 - **Test todo-app integration** after compiler changes

@@ -433,7 +433,7 @@ CMD ["_build/prod/rel/todo_app/bin/todo_app", "start"]
 
 ## 🤝 Contributing
 
-This example is part of Reflaxe.Elixir v1.0. Contributions welcome!
+This example is part of Reflaxe.Elixir v1.1.x. Contributions welcome!
 
 1. Fork the repository
 2. Create your feature branch
@@ -446,4 +446,4 @@ GPL-3.0 - See LICENSE file in project root
 
 ---
 
-**Built with Reflaxe.Elixir v1.0** - Write once in Haxe, run everywhere! 🚀
+**Built with Reflaxe.Elixir v1.1.x** - Write once in Haxe, run everywhere! 🚀

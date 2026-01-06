@@ -149,7 +149,7 @@ class Run {
 		}
 		
 		Sys.println('  npm run compile       # Compile Haxe to Elixir');
-		Sys.println('  # or: npx haxe build.hxml');
+		Sys.println('  # or: ./node_modules/.bin/haxe build.hxml');
 		
 		if (projectType == "phoenix" || projectType == "liveview") {
 			Sys.println('  mix ecto.create      # Create database');

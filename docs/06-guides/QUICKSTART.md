@@ -17,10 +17,13 @@ If you’re new to Haxe and/or new to Phoenix, start here first:
 - Elixir 1.14+
 - Node.js 16+ (for `lix` and JS toolchain)
 - Haxe 4.3.7+ on your PATH
+- Postgres (required for `examples/todo-app` and any Phoenix app using Ecto)
 
 If you don’t have Haxe installed yet, start here: `docs/01-getting-started/installation.md`.
 
 ## One-Minute Smoke Test (using the repo’s todo-app)
+
+This requires a working Postgres connection (defaults are `postgres/postgres` in the example config).
 
 ```bash
 cd examples/todo-app
@@ -45,5 +48,5 @@ Open `http://localhost:4000` (default dev port).
 
 ## Important Notes
 
-- Prefer `haxe ...` (your local Haxe toolchain); if it’s not on your PATH, use `npx haxe ...` (lix-managed wrapper).
+- Prefer `haxe ...` (your local Haxe toolchain); if it’s not on your PATH, use the repo shim: `./node_modules/.bin/haxe ...` (provided by `lix` + `.haxerc`).
 - Do not use `-D analyzer-optimize` for the Elixir target; it produces non-idiomatic output and can break functional shapes. See `docs/01-getting-started/compiler-flags-guide.md`.

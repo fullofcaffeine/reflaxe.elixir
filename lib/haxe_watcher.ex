@@ -591,10 +591,6 @@ defmodule HaxeWatcher do
       File.exists?(project_haxe) ->
         {project_haxe, []}
       
-      # Fallback to npx haxe
-      System.find_executable("npx") != nil ->
-        {"npx", ["haxe"]}
-      
       # Check if haxe is directly available
       System.find_executable("haxe") != nil ->
         {"haxe", []}

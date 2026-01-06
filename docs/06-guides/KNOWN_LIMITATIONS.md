@@ -7,7 +7,7 @@ If you hit something not covered here, please open an issue and include your **H
 
 ## Stability expectations
 
-- **API surface (std/phoenix + std/ecto)**: intended to be stable within `v1.0.x`, but still subject to changes where Phoenix/Elixir idioms require it.
+- **API surface (std/phoenix + std/ecto)**: intended to be stable within `v1.x` for the documented subset, but may still evolve where Phoenix/Elixir idioms (or correctness fixes) require it.
 - **Compiler output**: intended to be idiomatic and readable, but edge‑case semantics may change as the transformer passes mature.
 - **Examples**: treated as “living docs”; they may evolve as patterns improve.
 

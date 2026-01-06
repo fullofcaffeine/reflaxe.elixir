@@ -232,8 +232,8 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
         description: "Elixir project with Reflaxe.Elixir support",
         scripts: %{
           "setup:haxe": "npx lix download",
-          compile: "npx haxe build.hxml",
-          watch: "npx nodemon --watch #{config.haxe_dir} --ext hx --exec \"npx haxe build.hxml\"",
+          compile: "haxe build.hxml",
+          watch: "nodemon --watch #{config.haxe_dir} --ext hx --exec \"haxe build.hxml\"",
           test: "mix test"
         },
         devDependencies: %{
@@ -612,7 +612,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
     Mix.shell().info("  3. Compile your first Haxe code:")
     Mix.shell().info("     npm run compile")
-    Mix.shell().info("     # or: npx haxe build.hxml")
+    Mix.shell().info("     # or: ./node_modules/.bin/haxe build.hxml")
     Mix.shell().info("")
     Mix.shell().info("  4. Start development with file watching:")
     Mix.shell().info("     npm run watch")
