@@ -111,7 +111,8 @@ jobs:
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
-          # `npm ci --ignore-scripts` skips postinstall; fetch the toolchain explicitly.
+          # `npm ci --ignore-scripts` skips postinstall; fetch the toolchain explicitly (incl. neko).
+          npx lix download
           npx lix download haxe "${{ env.HAXE_VERSION }}"
           npx lix use haxe "${{ env.HAXE_VERSION }}"
           echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
@@ -150,7 +151,8 @@ jobs:
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
-          # `npm ci --ignore-scripts` skips postinstall; fetch the toolchain explicitly.
+          # `npm ci --ignore-scripts` skips postinstall; fetch the toolchain explicitly (incl. neko).
+          npx lix download
           npx lix download haxe "${{ env.HAXE_VERSION }}"
           npx lix use haxe "${{ env.HAXE_VERSION }}"
           echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
@@ -200,7 +202,8 @@ jobs:
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
-          # `npm ci --ignore-scripts` skips postinstall; fetch the toolchain explicitly.
+          # `npm ci --ignore-scripts` skips postinstall; fetch the toolchain explicitly (incl. neko).
+          npx lix download
           npx lix download haxe "${{ env.HAXE_VERSION }}"
           npx lix use haxe "${{ env.HAXE_VERSION }}"
           echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
@@ -239,7 +242,8 @@ jobs:
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
-          # `npm ci --ignore-scripts` skips postinstall; fetch the toolchain explicitly.
+          # `npm ci --ignore-scripts` skips postinstall; fetch the toolchain explicitly (incl. neko).
+          npx lix download
           npx lix download haxe "${{ env.HAXE_VERSION }}"
           npx lix use haxe "${{ env.HAXE_VERSION }}"
           echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
@@ -294,7 +298,8 @@ jobs:
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
-          # `npm ci --ignore-scripts` skips postinstall; fetch the toolchain explicitly.
+          # `npm ci --ignore-scripts` skips postinstall; fetch the toolchain explicitly (incl. neko).
+          npx lix download
           npx lix download haxe "${{ env.HAXE_VERSION }}"
           npx lix use haxe "${{ env.HAXE_VERSION }}"
           echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
@@ -351,7 +356,8 @@ jobs:
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
-          # `npm ci --ignore-scripts` skips postinstall; fetch the toolchain explicitly.
+          # `npm ci --ignore-scripts` skips postinstall; fetch the toolchain explicitly (incl. neko).
+          npx lix download
           npx lix download haxe "${{ env.HAXE_VERSION }}"
           npx lix use haxe "${{ env.HAXE_VERSION }}"
           export PATH="$(pwd)/node_modules/.bin:$PATH"
@@ -410,6 +416,7 @@ jobs:
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
+          npx lix download
           npx lix download haxe "${{ env.HAXE_VERSION }}"
           npx lix use haxe "${{ env.HAXE_VERSION }}"
           echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
