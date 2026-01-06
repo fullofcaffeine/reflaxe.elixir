@@ -69,6 +69,7 @@ env:
       - name: Install Haxe (pinned via lix)
         run: |
           set -euo pipefail
+          npx lix download
           npx lix download haxe "4.3.7"
           npx lix use haxe "4.3.7"
           echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
