@@ -5,7 +5,7 @@ This repo uses **semantic-release** to publish GitHub Releases using **semantic 
 High level:
 
 - Merge changes to `main` using **Conventional Commits** (`feat:`, `fix:`, etc.)
-- When `CI` completes successfully on `main`, the `Release` workflow runs `semantic-release`
+- When `CI` completes successfully on `main`, the CI workflow runs a final `Release (semantic-release)` job
 - `semantic-release` determines the next version, creates a `vX.Y.Z` tag, publishes a GitHub Release,
   and updates repo version strings + `CHANGELOG.md`
 
@@ -55,7 +55,7 @@ Version strings are updated automatically via `scripts/release/sync-versions.js`
 
 ## Token / permissions notes
 
-The `Release` workflow uses the GitHub Actions token by default. If your repo has hardened workflow-run permissions
+The release job uses the GitHub Actions token by default. If your repo has hardened permissions
 and semantic-release fails to push tags or publish releases, add a `RELEASE_TOKEN` secret (PAT or fine‑grained token)
 with `contents: write` access and the workflow will use it automatically.
 
