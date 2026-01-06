@@ -49,3 +49,6 @@ git push --tags
 ```
 
 Then run **Release (Backfill Existing Tag)** for that tag.
+
+Backfill prefers the corresponding `CHANGELOG.md` section for a tag when present; otherwise it falls back to
+git-derived notes or GitHub auto notes.
