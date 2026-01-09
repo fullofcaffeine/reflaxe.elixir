@@ -44,6 +44,14 @@ If a generated identifier would collide with a reserved keyword, Reflaxe.Elixir 
 
 This keeps the output valid Elixir without requiring awkward names in Haxe.
 
+### Name collisions after snake_case
+
+Sometimes two different Haxe names normalize to the same `snake_case` identifier (for example `userID` and `user_id`,
+or `HTTPServer` and `HttpServer`).
+
+When that would produce invalid Elixir (shadowing/collision in the same scope), the compiler will disambiguate names
+in a predictable way. You may see suffixes or other small adjustments in generated code to keep every binding unique.
+
 ### Modules
 
 Haxe packages and class names become Elixir module namespaces:
@@ -164,6 +172,31 @@ Field reads and updates use idiomatic Elixir map syntax:
 - `user.name` (read)
 - `%{user | name: "Bob"}` (update)
 
+### Class instances are map-backed (no mutation)
+
+Reflaxe.Elixir models “instances” as immutable map-backed values. Instance methods become module functions that take
+the instance as an explicit first parameter (often named `struct` in generated code).
+
+Shape:
+
+```elixir
+defmodule Point do
+  def new(x_param, y_param) do
+    struct = %{:x => nil, :y => nil}
+    struct = %{struct | x: x_param}
+    struct = %{struct | y: y_param}
+    struct
+  end
+
+  def distance(struct, other) do
+    ...
+  end
+end
+```
+
+If your Haxe code relies heavily on mutating fields, consider refactoring toward returning updated values (functional
+style), which maps naturally onto Elixir.
+
 ### Atom keys vs string keys
 
 - Haxe anonymous structures compile to maps with **atom keys** (e.g. `%{:name => "Alice"}`).
@@ -187,6 +220,16 @@ This keeps your Haxe code typed and avoids raw Elixir injection.
 
 ## Control flow: expressions + preservation helpers
 
+### Reassignment pipelines → `|>`
+
+When the compiler sees a contiguous sequence like `x = f(x, ...)` then `x = g(x, ...)`, it may collapse it into a pipe:
+
+```elixir
+x = x |> f(...) |> g(...)
+```
+
+This is a readability optimization only; it doesn’t change semantics.
+
 ### `switch` → `case` (expression-preserving)
 
 Haxe `switch` is an expression; Elixir `case` is also an expression, but compilation sometimes needs
@@ -204,6 +247,12 @@ These are intentional and exist to keep Haxe semantics correct in Elixir’s imm
 
 When Haxe uses `break` / `continue`, compilation may introduce `throw`/`catch` inside
 `Enum.reduce_while` to emulate structured loop control flow without mutable state.
+
+In those cases you’ll often see patterns like:
+
+- `Enum.reduce_while(..., acc, fn _, acc -> ... end)`
+- `throw({:break, acc})` / `throw({:continue, acc})`
+- `catch :throw, {:break, break_state} -> ...`
 
 ## Static fields: process-local state (avoid for application data)
 
