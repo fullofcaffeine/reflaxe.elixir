@@ -8,8 +8,6 @@
 * **release:** repair sync-versions regexes ([8909e46](https://github.com/fullofcaffeine/reflaxe.elixir/commit/8909e46b366922d022936c7a7f4a0323d95554ed))
 * **release:** trim changelog footer in backfill notes ([5d45e44](https://github.com/fullofcaffeine/reflaxe.elixir/commit/5d45e44664888336ab7997804acfb9abab7cb70f))
 
-## [Unreleased]
-
 ## [1.1.5](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.4...v1.1.5) (2026-01-04)
 
 ### 🐞 Bug Fixes
