@@ -654,6 +654,31 @@ All compilation targets exceed performance requirements:
 
 CI is the source of truth (see the CI badge above). Locally:
 
+### New-user quickcheck (install from GitHub release tag)
+
+This validates that a brand-new project can install Reflaxe.Elixir from a `vX.Y.Z` release and compile a generated Phoenix app.
+
+```bash
+mkdir -p /tmp/reflaxe_elixir_verify && cd /tmp/reflaxe_elixir_verify
+npm init -y
+npm install --save-dev lix
+npx lix scope create
+
+# Install the latest GitHub release tag (recommended).
+# If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
+npx lix download
+
+# Generate + compile a Phoenix app (compile-only smoke)
+npx lix run reflaxe.elixir create my_app --type phoenix --no-interactive
+cd my_app
+mix deps.get
+mix compile
+```
+
+### Repo verification (contributors / maintainers)
+
 - `npm run ci:guards`
 - `npm test`
 - `npm run test:examples`

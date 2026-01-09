@@ -194,6 +194,31 @@ Your PR should:
 - ✅ May show expected warnings (that's normal)
 - ❌ Should not introduce new real errors (❌ symbols)
 
+## Docs drift guards (maintainers)
+
+We keep “new user” docs honest with two CI checks:
+
+1) **Markdown link guard**: ensures intra-repo links resolve (and catch case-only bugs that fail on Linux).
+
+```bash
+npm run guard:docs-links
+```
+
+2) **Docs Smoke (Phoenix)**: generates a fresh Phoenix app via the generator and runs a compile-only smoke (no servers).
+
+This is the same command CI runs:
+
+```bash
+bash scripts/ci/docs-smoke.sh --verbose
+```
+
+What it does (high level):
+- installs the Phoenix generator (`phx_new`) and ensures the repo’s lix toolchain is downloaded
+- runs `reflaxe.elixir create --type phoenix` into a temp workspace
+- inside the generated project: `npm install`, `lix scope create`, `lix dev reflaxe.elixir <repo>`, `mix deps.get`, `mix compile`
+
+Runtime boot + browser E2E are intentionally **not** part of docs smoke; that’s covered by the todo-app QA sentinel.
+
 ### Writing Tests
 
 1. **Unit Tests**: Test individual compiler components
