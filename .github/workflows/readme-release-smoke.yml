@@ -1,0 +1,65 @@
+name: README Release Smoke (scheduled)
+
+on:
+  schedule:
+    # Weekly on Monday 10:15 UTC (keeps release-tag onboarding honest without making PR CI flaky)
+    - cron: "15 10 * * 1"
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: "GitHub repo to test (owner/name)"
+        required: false
+        default: "fullofcaffeine/reflaxe.elixir"
+      haxe_version:
+        description: "Haxe version to pin via lix"
+        required: false
+        default: "4.3.7"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: readme-release-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  ELIXIR_VERSION: "1.18.3"
+  OTP_VERSION: "27.2"
+
+jobs:
+  release-tag-smoke:
+    name: Release-tag install + generate + compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{ env.OTP_VERSION }}
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+
+      - name: Install npm dependencies (repo)
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Run README release-tag smoke
+        env:
+          # Used to avoid rate limits when querying the GitHub Releases API.
+          GITHUB_TOKEN: ${{ github.token }}
+          REPO: ${{ inputs.repo || 'fullofcaffeine/reflaxe.elixir' }}
+          HAXE_VERSION: ${{ inputs.haxe_version || '4.3.7' }}
+        run: |
+          set -euo pipefail
+          bash scripts/ci/readme-release-tag-smoke.sh --repo "${REPO}" --haxe "${HAXE_VERSION}" --verbose
+

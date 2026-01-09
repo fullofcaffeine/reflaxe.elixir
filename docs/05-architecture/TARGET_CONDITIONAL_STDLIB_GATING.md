@@ -45,8 +45,8 @@ if (targetName == "elixir" || Context.defined("elixir_output")) {
 
 3) Library configuration update:
 
-- Removed the unconditional `-cp ${SCOPE_DIR}/std/_std/` from `haxe_libraries/reflaxe.elixir.hxml`.
-- Kept `-cp ${SCOPE_DIR}/std/` (generic externs).
+- Removed the unconditional `-cp std/_std/` from `haxe_libraries/reflaxe.elixir.hxml`.
+- Kept `-cp std/` (generic externs).
 - Rationale: classpath gating is now handled centrally by the bootstrap macro.
 
 ## Activation Scenarios

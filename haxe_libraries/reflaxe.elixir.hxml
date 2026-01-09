@@ -15,14 +15,15 @@
 # Note: Paths are relative to the project root (where haxe commands are run)
 
 # Include the compiler source code
-# Paths relative to the project root using SCOPE_DIR
--cp ${SCOPE_DIR}/src/
+# Keep these relative so `haxelib run-dir` works correctly when the library is
+# executed from its installed directory (release-tag installs).
+-cp src/
 
 # Staged .cross.hx files are injected conditionally by the bootstrap macro
 # to avoid leaking __elixir__() into macro/other targets.
 
 # Include the Elixir standard library definitions (generic externs)
--cp ${SCOPE_DIR}/std/
+-cp std/
 # Target-specific overrides in std/_std are injected conditionally by CompilerInit
 # (target-conditional stdlib gating) to avoid leaking __elixir__() into macro/other targets.
 
@@ -30,7 +31,7 @@
 -lib reflaxe
 
 # Define the library version
--D reflaxe.elixir=1.1.5
+-D reflaxe.elixir=1.1.6
 
 # Initialize the Elixir compiler
 --macro reflaxe.elixir.CompilerInit.Start()
