@@ -19,8 +19,9 @@ There are two configurations:
 File: `haxe_libraries/reflaxe.elixir.hxml`
 
 - Used whenever you compile Haxe (in this repo) with `-lib reflaxe.elixir`.
-- Points `-cp` to the repo’s `src/` and `std/`.
-- Uses `${SCOPE_DIR}` because the preferred Haxe entrypoint for development is the lix-managed shim at `node_modules/.bin/haxe`, which sets `SCOPE_DIR`.
+- Points `-cp` to the repo’s `src/` and `std/` (repo-relative).
+- This file intentionally avoids `${SCOPE_DIR}` so **release-tag installs** can run
+  `haxelib run-dir reflaxe.elixir ...` from the installed library directory (where `${SCOPE_DIR}` would refer to the *consumer* scope, not the library).
 
 ### 2) Test/temp-project config (for Mix + ExUnit)
 

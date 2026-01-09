@@ -219,6 +219,9 @@ What it does (high level):
 
 Runtime boot + browser E2E are intentionally **not** part of docs smoke; that’s covered by the todo-app QA sentinel.
 
+Separately, a scheduled CI workflow (**README Release Smoke (scheduled)**) validates the
+“install from GitHub Release tag” path stays working without making PR CI flaky.
+
 ### Writing Tests
 
 1. **Unit Tests**: Test individual compiler components
