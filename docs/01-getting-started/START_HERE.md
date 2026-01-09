@@ -94,7 +94,8 @@ REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/ref
 npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 
 # Generate a Phoenix app
-npx lix run reflaxe.elixir create my_app --type phoenix --no-interactive
+REFLAXE_ELIXIR_SRC="$(./node_modules/.bin/haxelib path reflaxe.elixir | tr -d '\r' | grep -E 'reflaxe\.elixir/.*/src/?$' | head -n 1)"
+./node_modules/.bin/haxe -cp "$REFLAXE_ELIXIR_SRC" --run Run create my_app --type phoenix --no-interactive
 
 cd my_app
 mix setup

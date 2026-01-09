@@ -138,12 +138,17 @@ run_step "lix install reflaxe.elixir @ ${tag}" 300 "$work_dir" "npx lix install 
 run_step "lix download (workspace libs)" 600 "$work_dir" "npx lix download"
 
 # Step 3: Generate a Phoenix app (skip installs so we can keep bounded steps).
+# We intentionally invoke the generator via `haxe --run Run` rather than `lix run`
+# because some lix/haxelib shim versions rely on an internal `run-dir` command
+# which is not reliable across environments.
 generator_flags="--type phoenix --no-interactive --skip-install"
 if [[ "${VERBOSE:-0}" -eq 1 ]]; then
   generator_flags="${generator_flags} --verbose"
 fi
+export APP_NAME
+export generator_flags
 run_step "generate phoenix app" 900 "$work_dir" \
-  "npx lix run reflaxe.elixir create '${APP_NAME}' ${generator_flags}"
+  'REFLAXE_ELIXIR_SRC="$(./node_modules/.bin/haxelib path reflaxe.elixir | tr -d "\r" | grep -E "reflaxe\\.elixir/.*/src/?$" | head -n 1)"; if [[ -z "$REFLAXE_ELIXIR_SRC" ]]; then echo "[readme-release-smoke] ERROR: failed to locate reflaxe.elixir src via haxelib path" >&2; exit 1; fi; ./node_modules/.bin/haxe -cp "$REFLAXE_ELIXIR_SRC" --run Run create "$APP_NAME" $generator_flags'
 
 app_dir="$work_dir/$APP_NAME"
 if [[ ! -f "$app_dir/mix.exs" || ! -f "$app_dir/build.hxml" ]]; then
