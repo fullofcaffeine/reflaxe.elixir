@@ -23,6 +23,15 @@ File: `haxe_libraries/reflaxe.elixir.hxml`
 - This file intentionally avoids `${SCOPE_DIR}` so **release-tag installs** can run
   `haxelib run-dir reflaxe.elixir ...` from the installed library directory (where `${SCOPE_DIR}` would refer to the *consumer* scope, not the library).
 
+Additionally, the repo includes a few **root-level symlinks**:
+
+- `Run.hx` → `src/Run.hx`
+- `reflaxe/` → `src/reflaxe/` (and similarly `genes/`, `helder/`)
+
+These exist because some lix/haxelib shim execution paths treat the library root (`CWD`) as the classpath when running
+`lix run reflaxe.elixir ...`. The symlinks make the runnable entrypoint and packages discoverable without requiring
+an explicit `-cp src` in that code path.
+
 ### 2) Test/temp-project config (for Mix + ExUnit)
 
 Files:
