@@ -61,7 +61,7 @@ jobs:
           elixir-version: ${{ env.ELIXIR_VERSION }}
 
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/haxe
