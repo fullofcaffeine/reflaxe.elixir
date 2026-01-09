@@ -58,7 +58,7 @@ defmodule TodoApp.MixProject do
       {:telemetry_metrics, "~> 0.6"},
       {:telemetry_poller, "~> 1.0"},
       {:telemetry_metrics_prometheus_core, "~> 1.0"},
-      {:gettext, "~> 0.20"},
+      {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:swoosh, "~> 1.20"},
       {:hackney, "~> 1.25"},
