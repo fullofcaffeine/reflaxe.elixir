@@ -664,6 +664,10 @@ npm init -y
 npm install --save-dev lix
 npx lix scope create
 
+# Pin a known-good Haxe toolchain (avoids relying on a global install).
+npx lix download haxe 4.3.7
+npx lix use haxe 4.3.7
+
 # Install the latest GitHub release tag (recommended).
 # If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
@@ -671,11 +675,18 @@ npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 npx lix download
 
 # Generate + compile a Phoenix app (compile-only smoke)
-npx lix run reflaxe.elixir create my_app --type phoenix --no-interactive
+npx lix run reflaxe.elixir create my_app --type phoenix --no-interactive --skip-install
 cd my_app
+npm install --no-audit --no-fund
+npx lix scope create
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
+npx lix download
 mix deps.get
 mix compile
 ```
+
+> Maintainers: this flow is also verified weekly in CI by the scheduled workflow
+> **README Release Smoke (scheduled)**.
 
 ### Repo verification (contributors / maintainers)
 
