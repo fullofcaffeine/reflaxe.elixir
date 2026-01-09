@@ -6,6 +6,21 @@ It complements:
 - `docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md` (construct-by-construct mappings)
 - `docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md` (codegen conventions and hygiene rules)
 
+## Quick Do / Don’t
+
+Do:
+
+- Prefer **enums + `switch`** for control flow (great Elixir `case` output).
+- Prefer **`Option<T>` / `Result<T, E>`** for absence/failure (great tuple/pattern output).
+- Treat “instances” as **immutable values** (return updated values rather than mutating).
+- Prefer **typed externs + `@:native`** over raw injection for interop.
+
+Don’t (unless you’re intentionally taking on more complex lowering):
+
+- Don’t lean on heavy `break`/`continue` loop control for core logic (it compiles, but gets more elaborate).
+- Don’t rely on large amounts of **static mutable state** for application data (prefer GenServer/ETS/assigns).
+- Don’t pre-emptively write snake_case or `_unused` names in Haxe “for Elixir” (the compiler handles hygiene).
+
 ## 1) Prefer explicit data + pattern matching
 
 Elixir code shines when the “shape” of data is obvious and matchable.
@@ -118,4 +133,3 @@ See:
 - `docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md` (what the compiler auto-normalizes)
 - `docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md` (full mapping reference)
 - `docs/07-patterns/FUNCTIONAL_PATTERNS.md` (Option/Result patterns in practice)
-

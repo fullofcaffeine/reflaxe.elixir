@@ -44,6 +44,20 @@ If a generated identifier would collide with a reserved keyword, Reflaxe.Elixir 
 
 This keeps the output valid Elixir without requiring awkward names in Haxe.
 
+Example (Haxe):
+
+```haxe
+var when = 1;
+var `end` = 2;
+```
+
+Generated (shape):
+
+```elixir
+when_ = 1
+end_ = 2
+```
+
 ### Name collisions after snake_case
 
 Sometimes two different Haxe names normalize to the same `snake_case` identifier (for example `userID` and `user_id`,
@@ -51,6 +65,9 @@ or `HTTPServer` and `HttpServer`).
 
 When that would produce invalid Elixir (shadowing/collision in the same scope), the compiler will disambiguate names
 in a predictable way. You may see suffixes or other small adjustments in generated code to keep every binding unique.
+
+Tip: if you care about “perfectly clean” output, avoid defining two identifiers that normalize to the same
+`snake_case` name in the same scope.
 
 ### Modules
 
@@ -197,6 +214,16 @@ end
 If your Haxe code relies heavily on mutating fields, consider refactoring toward returning updated values (functional
 style), which maps naturally onto Elixir.
 
+#### Field assignment lowers to map updates
+
+Haxe-style field assignment compiles to immutable map update syntax.
+
+Example (shape):
+
+```elixir
+struct = %{struct | x: new_x}
+```
+
 ### Atom keys vs string keys
 
 - Haxe anonymous structures compile to maps with **atom keys** (e.g. `%{:name => "Alice"}`).
@@ -217,6 +244,15 @@ extern class Enum {
 ```
 
 This keeps your Haxe code typed and avoids raw Elixir injection.
+
+Example (`!` function):
+
+```haxe
+import elixir.ElixirMap;
+
+// Calls `Map.fetch!/2` under the hood.
+var value = ElixirMap.fetchBang(myMap, key);
+```
 
 ## Control flow: expressions + preservation helpers
 
