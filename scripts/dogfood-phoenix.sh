@@ -229,7 +229,12 @@ run_step "lix scope create (workspace)" 30 "$work_dir" "npx lix scope create"
 # - local mode: compile + run the CLI entrypoint from the extracted tag source (no GitHub access required).
 if [[ "$MODE" == "github" ]]; then
   run_step "lix install reflaxe.elixir (${FROM_TAG})" 600 "$work_dir" "npx lix install github:fullofcaffeine/reflaxe.elixir#${FROM_TAG}"
-  run_step "generate phoenix project (${FROM_TAG})" 600 "$work_dir" "npx lix run reflaxe.elixir create ${APP_NAME} --type phoenix --no-interactive --skip-install --verbose"
+  # Prefer invoking the generator directly via `haxe --run Run` from the installed library's
+  # resolved `src/` path. Some lix/haxelib shim versions rely on an internal `run-dir` command
+  # which is not reliable across environments.
+  export APP_NAME
+  run_step "generate phoenix project (${FROM_TAG})" 600 "$work_dir" \
+    'REFLAXE_ELIXIR_SRC="$(./node_modules/.bin/haxelib path reflaxe.elixir | tr -d "\r" | grep -E "reflaxe\\.elixir/.*/src/?$" | head -n 1)"; if [[ -z "$REFLAXE_ELIXIR_SRC" ]]; then echo "[dogfood] ERROR: failed to locate reflaxe.elixir src via haxelib path" >&2; exit 1; fi; ./node_modules/.bin/haxe -cp "$REFLAXE_ELIXIR_SRC" --run Run create "$APP_NAME" --type phoenix --no-interactive --skip-install --verbose'
 else
   run_step "lix dev generator deps (reflaxe, vendored)" 60 "$work_dir" "npx lix dev reflaxe '${to_src}/vendor/reflaxe'"
   run_step "lix install generator deps (tink_macro)" 300 "$work_dir" "npx lix install haxelib:tink_macro"
