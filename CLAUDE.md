@@ -367,7 +367,7 @@ end)
 ```hxml
 # ✅ GOOD optimizations
 -dce full                    # Dead code elimination (removes unused code)
--D loop_unroll_max_cost=10   # Reasonable loop unrolling limit
+-D loop_unroll_max_cost=0    # Disable loop unrolling (preserve functional shapes)
 
 # ❌ NEVER use these
 # -D analyzer-optimize       # Destroys functional patterns

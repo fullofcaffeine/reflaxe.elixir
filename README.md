@@ -17,6 +17,22 @@
 > Some features remain **experimental/opt‑in** (e.g. source mapping, migrations `.exs` emission, `fast_boot`).
 > See: [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
 
+### Stability tiers (tl;dr)
+
+- **Stable (documented subset)**: exercised by CI + todo-app; intended to be reliable within `v1.x`.
+- **Experimental (opt-in)**: available, but expect rough edges and possible breaking changes (e.g. source maps, migrations `.exs`, `fast_boot`).
+- **Dev/internal tooling**: debug flags and contributor-only workflows; not part of the end-user stability contract.
+
+See: [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
+
+### Known sharp edges (top 3)
+
+- `fast_boot` is for faster local iteration; don’t rely on its output shape for CI/production builds.
+- Watcher port conflicts can happen (Phoenix watchers + Haxe server ports); the repo examples auto-probe, but custom setups may need tweaks.
+- Typed boundaries matter: prefer `Term` at external boundaries and decode into typed structures instead of using `Dynamic`.
+
+See: [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md).
+
 > **Future Vision**: See [docs/08-roadmap/vision.md](docs/08-roadmap/vision.md) for long-term plans including AI tooling and universal platform support  
 > **Current Status**: Stable subset (v1.1) — non‑alpha for the documented subset; experimental features are clearly labeled.
 
@@ -193,6 +209,31 @@ Follow: `docs/01-getting-started/START_HERE.md`
 - Run the repo todo-app (end-to-end) with a single command
 - Learn the Haxe→Elixir→Phoenix mental model
 - Generate a fresh Phoenix+Haxe project via the generator
+
+### Hello Phoenix in ~5 minutes (no repo clone)
+
+This creates a new Phoenix+Haxe project using the **latest GitHub release tag**:
+
+```bash
+mkdir haxir-demo && cd haxir-demo
+npm init -y
+npm install --save-dev lix
+npx lix scope create
+
+# Install the generator (latest GitHub release tag)
+# If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
+
+# Generate a Phoenix app (installs deps unless you pass --skip-install)
+npx lix run reflaxe.elixir create hello_haxir --type phoenix --no-interactive
+
+cd hello_haxir
+mix setup
+mix phx.server
+```
+
+See also: `docs/06-guides/PHOENIX_NEW_APP.md`.
 
 ### Quick Demo (Todo App)
 
