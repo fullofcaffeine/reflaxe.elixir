@@ -227,8 +227,10 @@ case user do
 end
 ```
 
-For naming conventions (snake_case), unused variable underscore-prefixing, and other “Elixir hygiene”
-rules applied automatically by the compiler, see `docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md`.
+For practical guidance on writing Haxe that compiles into clean Elixir, see:
+
+- `docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md`
+- `docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md`
 
 **Result<T,E> Pattern**:
 ```haxe

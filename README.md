@@ -307,10 +307,12 @@ Start at **[docs/README.md](docs/README.md)** for the curated documentation inde
 - **[Support Matrix](docs/06-guides/SUPPORT_MATRIX.md)** - CI-tested toolchain versions
 - **[Licensing & Distribution](docs/06-guides/LICENSING_AND_DISTRIBUTION.md)** - GPL notes (not legal advice)
 
-### Reference
-- **[Haxe→Elixir Mappings](docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md)** ✨ - Complete reference for how Haxe constructs map to Elixir code
+### Codegen Conventions
 - **[Writing Idiomatic Haxe](docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md)** - Practical guidance for clean, idiomatic Elixir output
 - **[Elixir Idioms & Hygiene](docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md)** - Naming, unused vars, enum shapes, and codegen conventions
+- **[Haxe→Elixir Mappings](docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md)** ✨ - Full mapping reference
+
+### Reference
 - **[Source Mapping Guide](docs/04-api-reference/SOURCE_MAPPING.md)** 🎯 - Complete guide to our pioneering source mapping feature
 - **[Annotations](docs/04-api-reference/ANNOTATIONS.md)** - Complete annotation reference
 - **[Troubleshooting](docs/06-guides/TROUBLESHOOTING.md)** - Common issues and solutions
