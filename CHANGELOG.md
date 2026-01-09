@@ -1,3 +1,13 @@
+## [1.1.7](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.6...v1.1.7) (2026-01-09)
+
+
+### Bug Fixes
+
+* **ci:** stabilize generator commands ([afb2805](https://github.com/fullofcaffeine/reflaxe.elixir/commit/afb28054df5dff56ec20f70f82ed8e01503be27d))
+* **lix:** add root symlinks for lix run ([6e02fcb](https://github.com/fullofcaffeine/reflaxe.elixir/commit/6e02fcbdf93cd43abc62723dd8bb01e519a063e8))
+* **lix:** make haxelib run entrypoint stable ([930df3f](https://github.com/fullofcaffeine/reflaxe.elixir/commit/930df3fd9f261d8a9d458db952bde91964333327))
+* **lix:** make lix run work from github installs ([ff9b3cf](https://github.com/fullofcaffeine/reflaxe.elixir/commit/ff9b3cfc161178db34fd5ec63d43b1148e9580a2))
+
 ## [1.1.6](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.5...v1.1.6) (2026-01-06)
 
 

@@ -4,7 +4,7 @@
 
 # Reflaxe.Elixir (aka Haxir)
 
-[![Version](https://img.shields.io/badge/version-1.1.6-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
+[![Version](https://img.shields.io/badge/version-1.1.7-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![CI](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml)
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org)
