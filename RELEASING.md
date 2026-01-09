@@ -33,7 +33,9 @@ This repo uses **semantic-release** to publish GitHub Releases using semver:
   - determines the next semver version
   - updates version strings across the repo
   - creates a `vX.Y.Z` tag
-  - publishes a GitHub Release
+  - publishes a GitHub Release (with generated release notes)
+
+Release notes are generated from Conventional Commits and grouped by type (e.g. Features, Bug Fixes, Docs, CI).
 
 ### Backfill / Manual Tags
 

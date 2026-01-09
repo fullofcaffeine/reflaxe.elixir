@@ -84,7 +84,51 @@
     ],
     "plugins": [
       "@semantic-release/commit-analyzer",
-      "@semantic-release/release-notes-generator",
+      [
+        "@semantic-release/release-notes-generator",
+        {
+          "presetConfig": {
+            "types": [
+              {
+                "type": "feat",
+                "section": "✨ Features"
+              },
+              {
+                "type": "fix",
+                "section": "🐞 Bug Fixes"
+              },
+              {
+                "type": "perf",
+                "section": "⚡ Performance"
+              },
+              {
+                "type": "refactor",
+                "section": "🧹 Refactors"
+              },
+              {
+                "type": "docs",
+                "section": "📚 Documentation"
+              },
+              {
+                "type": "test",
+                "section": "🧪 Tests"
+              },
+              {
+                "type": "build",
+                "section": "🏗️ Build"
+              },
+              {
+                "type": "ci",
+                "section": "🔧 CI"
+              },
+              {
+                "type": "chore",
+                "section": "🧰 Chores"
+              }
+            ]
+          }
+        }
+      ],
       "@semantic-release/changelog",
       [
         "@semantic-release/exec",
