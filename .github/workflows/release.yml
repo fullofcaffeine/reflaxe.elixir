@@ -1,7 +1,15 @@
 name: Release
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish a real GitHub release (default false runs a dry-run)"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -48,4 +56,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
-        run: npx semantic-release
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "push" || "${{ inputs.publish }}" != "true" ]]; then
+            echo "[release] Dry-run (no tags/releases will be created)"
+            npx semantic-release --dry-run
+          else
+            echo "[release] Publishing release"
+            npx semantic-release
+          fi
