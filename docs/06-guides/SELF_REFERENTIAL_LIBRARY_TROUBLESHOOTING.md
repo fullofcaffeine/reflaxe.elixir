@@ -20,17 +20,16 @@ File: `haxe_libraries/reflaxe.elixir.hxml`
 
 - Used whenever you compile Haxe (in this repo) with `-lib reflaxe.elixir`.
 - Points `-cp` to the repo’s `src/` and `std/` (repo-relative).
-- This file intentionally avoids `${SCOPE_DIR}` so **release-tag installs** can run
-  `haxelib run-dir reflaxe.elixir ...` from the installed library directory (where `${SCOPE_DIR}` would refer to the *consumer* scope, not the library).
+- Intended for contributor builds where the Haxe CWD is the repo root.
 
-Additionally, the repo includes a few **root-level symlinks**:
+If you need to run the generator in a clean consumer environment and `npx lix run reflaxe.elixir ...` is unreliable
+(some lix/haxelib shim versions depend on an internal `run-dir` command), you can always invoke the CLI directly via
+the installed library’s resolved `src/` path:
 
-- `Run.hx` → `src/Run.hx`
-- `reflaxe/` → `src/reflaxe/` (and similarly `genes/`, `helder/`)
-
-These exist because some lix/haxelib shim execution paths treat the library root (`CWD`) as the classpath when running
-`lix run reflaxe.elixir ...`. The symlinks make the runnable entrypoint and packages discoverable without requiring
-an explicit `-cp src` in that code path.
+```bash
+REFLAXE_ELIXIR_SRC="$(./node_modules/.bin/haxelib path reflaxe.elixir | tr -d '\r' | grep -E 'reflaxe\.elixir/.*/src/?$' | head -n 1)"
+./node_modules/.bin/haxe -cp "$REFLAXE_ELIXIR_SRC" --run Run create my_app --type phoenix --no-interactive
+```
 
 ### 2) Test/temp-project config (for Mix + ExUnit)
 

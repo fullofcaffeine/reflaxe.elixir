@@ -12,18 +12,17 @@
 # During development: Uses the local source code
 # After publication: Users would get a similar file pointing to installed version
 #
-# Note: Paths are relative to the project root (where haxe commands are run)
+# Note: Paths are resolved relative to the current working directory (CWD).
+# Use `${SCOPE_DIR}` so `-lib reflaxe.elixir` works from any subdirectory.
 
 # Include the compiler source code
-# Keep these relative so `haxelib run-dir` works correctly when the library is
-# executed from its installed directory (release-tag installs).
--cp src/
+-cp ${SCOPE_DIR}/src/
 
 # Staged .cross.hx files are injected conditionally by the bootstrap macro
 # to avoid leaking __elixir__() into macro/other targets.
 
 # Include the Elixir standard library definitions (generic externs)
--cp std/
+-cp ${SCOPE_DIR}/std/
 # Target-specific overrides in std/_std are injected conditionally by CompilerInit
 # (target-conditional stdlib gating) to avoid leaking __elixir__() into macro/other targets.
 

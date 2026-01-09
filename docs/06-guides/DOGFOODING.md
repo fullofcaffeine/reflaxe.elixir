@@ -23,7 +23,8 @@ What it does:
 1) Creates a temporary workspace under `$TMPDIR`
 2) Installs `lix`
 3) Generates a Phoenix project
-   - `--mode github`: installs `reflaxe.elixir` at `--from-tag` and runs `npx lix run reflaxe.elixir create ...`
+   - `--mode github`: installs `reflaxe.elixir` at `--from-tag` and runs the generator via `haxe --run Run`
+     (resolved via `haxelib path` for reliability across environments)
    - `--mode local`: uses the current repo generator (to-tag) to scaffold, then validates the app across tags via Mix + lix path/dev deps
 4) Installs app deps + Haxe libs (`npm install`, `npx lix download`, `mix deps.get`)
 5) Ensures the dev database exists (`mix ecto.create`, `mix ecto.migrate`)

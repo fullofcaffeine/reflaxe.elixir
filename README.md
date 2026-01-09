@@ -225,8 +225,11 @@ npx lix scope create
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
 npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 
-# Generate a Phoenix app (installs deps unless you pass --skip-install)
-npx lix run reflaxe.elixir create hello_haxir --type phoenix --no-interactive
+# Generate a Phoenix app
+# (Use `haxe --run Run` here because some lix/haxelib shim versions rely on an internal
+# `run-dir` command which is not reliable across environments.)
+REFLAXE_ELIXIR_SRC="$(./node_modules/.bin/haxelib path reflaxe.elixir | tr -d '\r' | grep -E 'reflaxe\.elixir/.*/src/?$' | head -n 1)"
+./node_modules/.bin/haxe -cp "$REFLAXE_ELIXIR_SRC" --run Run create hello_haxir --type phoenix --no-interactive
 
 cd hello_haxir
 mix setup
@@ -675,7 +678,8 @@ npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 npx lix download
 
 # Generate + compile a Phoenix app (compile-only smoke)
-npx lix run reflaxe.elixir create my_app --type phoenix --no-interactive --skip-install
+REFLAXE_ELIXIR_SRC="$(./node_modules/.bin/haxelib path reflaxe.elixir | tr -d '\r' | grep -E 'reflaxe\.elixir/.*/src/?$' | head -n 1)"
+./node_modules/.bin/haxe -cp "$REFLAXE_ELIXIR_SRC" --run Run create my_app --type phoenix --no-interactive --skip-install
 cd my_app
 npm install --no-audit --no-fund
 npx lix scope create
