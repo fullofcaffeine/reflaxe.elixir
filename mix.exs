@@ -4,7 +4,7 @@ defmodule ReflaxeElixir.MixProject do
   def project do
     [
       app: :reflaxe_elixir,
-      version: "1.1.6",
+      version: "1.1.7",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       test_paths: ["test/exunit"],
