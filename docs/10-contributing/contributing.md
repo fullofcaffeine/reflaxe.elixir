@@ -222,6 +222,14 @@ Runtime boot + browser E2E are intentionally **not** part of docs smoke; that’
 Separately, a scheduled CI workflow (**README Release Smoke (scheduled)**) validates the
 “install from GitHub Release tag” path stays working without making PR CI flaky.
 
+## Repo hygiene helpers (contributors)
+
+These are **heuristic** audits intended to keep the repo tidy. They do not prove that something is unused.
+
+- Dead-ish Haxe types + stale commented debug: `scripts/repo-dead-code-audit.sh --scope src/reflaxe/elixir --limit 50`
+- Candidate unused scripts: `scripts/repo-unused-scripts-audit.sh`
+- Hygiene sweep (includes a bounded `--apply` mode for safe removals): `scripts/repo-hygiene-audit.sh`
+
 ### Writing Tests
 
 1. **Unit Tests**: Test individual compiler components
