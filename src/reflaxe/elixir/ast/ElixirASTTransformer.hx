@@ -1116,7 +1116,6 @@ class ElixirASTTransformer {
                         default:
                     }
 
-                    // trace('[RemoveRedundantEnumExtraction] Processing case with target: $caseTargetVar');
                     // Process each case clause
                     var newClauses = [];
                     for (i in 0...clauses.length) {
