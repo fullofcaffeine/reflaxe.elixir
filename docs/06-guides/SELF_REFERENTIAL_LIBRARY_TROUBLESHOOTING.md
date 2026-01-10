@@ -2,6 +2,10 @@
 
 This document explains how Reflaxe.Elixir’s tests and examples compile Haxe code using `-lib reflaxe.elixir` **while developing `reflaxe.elixir` itself**.
 
+> [!NOTE]
+> This is a **contributor/advanced** guide. Command blocks are not part of the “new user” docs smoke; they’re intended for repo development.
+> See `bash scripts/ci/docs-smoke.sh --verbose` (generator compile-only) and the todo-app QA sentinel for runtime coverage.
+
 Most end-users installing from GitHub release tags will never need this. It primarily matters for:
 - contributors working inside this repository
 - CI runs that compile “toy projects” against the in-repo compiler

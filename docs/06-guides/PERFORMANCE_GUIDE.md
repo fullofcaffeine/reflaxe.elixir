@@ -3,6 +3,9 @@
 This guide focuses on **practical** performance work for Reflaxe.Elixir’s AST pipeline:
 fast feedback in development, predictable output in CI, and a clear strategy for diagnosing slow builds.
 
+> [!NOTE]
+> This is an **advanced** guide. Command blocks are for local investigation and are not CI-smoked unless explicitly stated.
+
 ## Measure Before Optimizing
 
 Start with Haxe’s built‑in timings:
