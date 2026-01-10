@@ -77,7 +77,7 @@ Minimal `build.hxml` (server-side Haxe→Elixir):
 -D app_name=MyAppHx
 -dce full
 
-# Define a stable entrypoint:
+# Entrypoint Haxe class (package.ClassName). Adjust to your app:
 --main my_app_hx.Main
 ```
 
