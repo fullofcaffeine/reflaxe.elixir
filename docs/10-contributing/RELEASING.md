@@ -5,8 +5,8 @@ This repo uses **semantic-release** to publish GitHub Releases using **semantic 
 High level:
 
 - Merge changes to `main` using **Conventional Commits** (`feat:`, `fix:`, etc.)
-- When `CI` completes successfully on `main`, the CI workflow runs a final `Release (semantic-release)` job
-- `semantic-release` determines the next version, creates a `vX.Y.Z` tag, publishes a GitHub Release,
+- When `CI` completes successfully on `main`, the separate **Release** workflow runs automatically
+- `semantic-release` determines the next version (if any), creates a `vX.Y.Z` tag, publishes a GitHub Release,
   and updates repo version strings + `CHANGELOG.md`
 
 ## What triggers a release?
