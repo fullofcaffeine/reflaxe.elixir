@@ -112,7 +112,7 @@ For the complete roadmap including AI tooling, universal deployment, and multi-p
 ## Installation
 
 ### Prerequisites
-- Haxe 4.3.7+ (installed globally, or via the project-local shim from `lix`: `./node_modules/.bin/haxe`)
+- Haxe 4.3.7+ (installed globally, or pinned per-project via `lix` and used via `./node_modules/.bin/haxe`)
 - Node.js 16+ (for lix package management; Node 20 recommended)
 - Elixir 1.14+ (for Phoenix/Ecto ecosystem)
 
@@ -180,6 +180,7 @@ Once installed, add to your `build.hxml`:
 -dce full
 
 # Define a stable entrypoint
+# Entrypoint Haxe class (package.ClassName). Adjust to your app.
 --main my_app_hx.Main
 ```
 
@@ -224,6 +225,10 @@ npx lix scope create
 # If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
 REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
 npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
+
+# Optional but recommended: pin a known-good Haxe toolchain (avoids relying on a global install).
+npx lix download haxe 4.3.7
+npx lix use haxe 4.3.7
 
 # Generate a Phoenix app
 # (Use `haxe --run Run` here because some lix/haxelib shim versions rely on an internal
