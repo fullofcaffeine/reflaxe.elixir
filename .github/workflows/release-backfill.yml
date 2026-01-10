@@ -80,14 +80,14 @@ jobs:
 
       - name: Checkout (main)
         if: ${{ inputs.all_tags == true }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: main
 
       - name: Checkout (tag)
         if: ${{ inputs.all_tags != true }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ steps.meta.outputs.tag }}
