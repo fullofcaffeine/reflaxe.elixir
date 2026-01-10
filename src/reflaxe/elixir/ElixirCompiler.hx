@@ -2615,19 +2615,10 @@ class ElixirCompiler extends GenericCompiler<
             #end
         }
 
-        #if debug_module_builder
-        if (classType.name == "Main") {
-            // trace('[ElixirCompiler] Main module metadata: ${moduleAST.metadata}');
-            // if (moduleAST != null && moduleAST.metadata != null) {
-            //     trace('[ElixirCompiler] Main module metadata.isExunit: ${moduleAST.metadata.isExunit}');
-            // }
-        }
-        #end
-
-        // PASS 3: Generate companion modules if needed (e.g., PostgrexTypes for Repo)
-        if (moduleAST != null && moduleAST.metadata != null) {
-            generateCompanionModules(classType, moduleAST.metadata);
-        }
+	        // PASS 3: Generate companion modules if needed (e.g., PostgrexTypes for Repo)
+	        if (moduleAST != null && moduleAST.metadata != null) {
+	            generateCompanionModules(classType, moduleAST.metadata);
+	        }
         
         // Restore previous behavior transformer state
         if (reflaxe.elixir.ast.ElixirASTBuilder.behaviorTransformer != null) {
@@ -3231,22 +3222,14 @@ class ElixirCompiler extends GenericCompiler<
      * ARCHITECTURE: This replaces manual metadata extraction with Reflaxe's standardized
      * infrastructure, ensuring consistent handling of @:native across all field access types.
      */
-    public function getFieldName(fa: FieldAccess): String {
-        #if debug_method_name_resolution
-        // trace('[XRay getFieldName] Processing FieldAccess: ${fa}');
-        #end
-        
-        // Use Reflaxe's standardized helper instead of manual extraction
-        var nameMeta = NameMetaHelper.getFieldAccessNameMeta(fa);
-        var name = nameMeta.getNameOrNative();
-        
-        #if debug_method_name_resolution
-        // trace('[XRay getFieldName] Field name: ${nameMeta.name}, has @:native: ${nameMeta.hasMeta(":native")}, resolved: ${name}');
-        #end
-        
-        // Convert to snake_case for Elixir if not already specified by @:native
-        return if (nameMeta.hasMeta(":native")) {
-            name; // Use exact name from @:native annotation
+	    public function getFieldName(fa: FieldAccess): String {
+	        // Use Reflaxe's standardized helper instead of manual extraction
+	        var nameMeta = NameMetaHelper.getFieldAccessNameMeta(fa);
+	        var name = nameMeta.getNameOrNative();
+	        
+	        // Convert to snake_case for Elixir if not already specified by @:native
+	        return if (nameMeta.hasMeta(":native")) {
+	            name; // Use exact name from @:native annotation
         } else {
             reflaxe.elixir.ast.NameUtils.toSnakeCase(name); // Convert to snake_case for idiomatic Elixir
         }
