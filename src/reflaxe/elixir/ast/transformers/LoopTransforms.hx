@@ -337,14 +337,12 @@ class LoopTransforms {
         #end
         #end
         
-        function detectAndTransformUnrolledLoops(node: ElixirAST): ElixirAST {
-            if (node == null || node.def == null) return node;
-            // Don't trace every node as it's too verbose
-            // trace('[XRay LoopTransforms] Checking node type: ${node.def}');
-            
-            #if debug_loop_transforms
-            // DEBUG: Log what node type we're processing
-            var nodeType = switch(node.def) {
+	        function detectAndTransformUnrolledLoops(node: ElixirAST): ElixirAST {
+	            if (node == null || node.def == null) return node;
+	            
+	            #if debug_loop_transforms
+	            // DEBUG: Log what node type we're processing
+	            var nodeType = switch(node.def) {
                 case EMatch(_, _): "EMatch";
                 case EBlock(_): "EBlock";
                 case EVar(_): "EVar";

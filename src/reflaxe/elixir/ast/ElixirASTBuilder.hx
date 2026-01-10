@@ -947,14 +947,12 @@ class ElixirASTBuilder {
                                 default:
                             }
                             
-                            if (isConditionalComp) {
-                                // trace('[DEBUG] Found conditional comprehension for var ${v.name}');
-                                var reconstructed = ComprehensionBuilder.tryReconstructConditionalComprehension(blockStmts, tempVarName, currentContext);
-                                if (reconstructed != null) {
-                                    // trace('[DEBUG] Successfully reconstructed as for comprehension');
-                                    return EMatch(PVar(VariableAnalyzer.toElixirVarName(v.name)), reconstructed);
-                                }
-                            }
+	                            if (isConditionalComp) {
+	                                var reconstructed = ComprehensionBuilder.tryReconstructConditionalComprehension(blockStmts, tempVarName, currentContext);
+	                                if (reconstructed != null) {
+	                                    return EMatch(PVar(VariableAnalyzer.toElixirVarName(v.name)), reconstructed);
+	                                }
+	                            }
 
                             // FINAL FALLBACK: if the initializer block is a canonical list-building
                             // shape (var g = []; g = g ++ [..]; ...; g), synthesize a list literal
