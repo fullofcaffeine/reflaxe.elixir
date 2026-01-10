@@ -19,6 +19,9 @@ Semantic-release looks at commit messages since the last release:
 
 If there are no release-worthy commits, the workflow runs but produces no new release.
 
+By default, commits like `docs:`, `chore:`, `test:`, `refactor:`, `ci:` do **not** trigger a new version unless they
+also include a breaking-change marker.
+
 ## Maintainer checklist
 
 1) **Keep main green**
