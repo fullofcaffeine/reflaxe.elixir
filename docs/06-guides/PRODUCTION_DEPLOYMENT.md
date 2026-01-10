@@ -2,6 +2,10 @@
 
 This guide covers deploying a Phoenix application that uses Reflaxe.Elixir.
 
+> [!NOTE]
+> This is an **advanced** guide. Command blocks are illustrative and may require project-specific adjustments; they are not CI-smoked.
+> For copy/paste verified “getting started” flows, follow `docs/06-guides/QUICKSTART.md` and the README.
+
 ## High-Level Model
 
 - **Haxe is build-time tooling**: your runtime is normal Elixir/Phoenix code on BEAM.

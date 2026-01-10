@@ -2,6 +2,10 @@
 
 Production readiness requires validating the **real user workflow**:
 
+> [!NOTE]
+> This is an **advanced** maintainer workflow. It is not part of docs smoke; it’s a bounded, higher-cost end-to-end check.
+> Prefer the todo-app QA sentinel for day-to-day runtime validation.
+
 - install a tagged compiler release
 - generate a Phoenix app
 - compile Haxe → Elixir

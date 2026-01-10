@@ -1,5 +1,9 @@
 # HXML File Architecture & Best Practices
 
+> [!NOTE]
+> This is an **advanced** guide. Command blocks here are examples and are **not** exercised by CI docs smoke unless the text explicitly says so.
+> For copy/paste verified onboarding flows, use `docs/06-guides/QUICKSTART.md` and the README, and see `bash scripts/ci/docs-smoke.sh --verbose`.
+
 ## What Are HXML Files?
 
 HXML files are Haxe build configuration files that contain compiler arguments. They're essentially saved command-line arguments that can be reused, composed, and version-controlled. Think of them as Makefiles specifically for Haxe compilation.
