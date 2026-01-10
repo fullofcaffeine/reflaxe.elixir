@@ -47,7 +47,7 @@ jobs:
           elixir-version: '1.18.3'
 
       - name: Cache mix deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.mix
@@ -57,7 +57,7 @@ jobs:
           key: ${{ runner.os }}-mix-${{ hashFiles('examples/todo-app/mix.lock') }}
 
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/haxe
@@ -104,7 +104,7 @@ jobs:
           fi
 
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/ms-playwright

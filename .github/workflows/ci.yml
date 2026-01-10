@@ -88,7 +88,7 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
       - name: Cache Mix deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.mix
@@ -99,7 +99,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/haxe
@@ -141,7 +141,7 @@ jobs:
       - name: Install npm dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/haxe
@@ -192,7 +192,7 @@ jobs:
       - name: Install npm dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/haxe
@@ -232,7 +232,7 @@ jobs:
       - name: Install npm dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/haxe
@@ -275,7 +275,7 @@ jobs:
           otp-version: '25'
           elixir-version: '1.14'
       - name: Cache Mix deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.mix
@@ -286,7 +286,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-min-
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/haxe
@@ -333,7 +333,7 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
       - name: Cache Mix deps
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.mix
@@ -344,7 +344,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-mix-macos-
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/haxe
@@ -401,7 +401,7 @@ jobs:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/haxe

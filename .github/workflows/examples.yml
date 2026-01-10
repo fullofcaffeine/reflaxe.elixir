@@ -30,7 +30,7 @@ jobs:
           cache: 'npm'
 
       - name: Cache Haxe toolchain (lix)
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/haxe
