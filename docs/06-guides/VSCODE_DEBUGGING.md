@@ -2,6 +2,10 @@
 
 Reflaxe.Elixir can emit Source Map v3 files (`.ex.map`) alongside generated Elixir (`.ex`) so you can jump from a runtime Elixir location back to the original Haxe code.
 
+> [!NOTE]
+> This is an **advanced** workflow. The commands below are not CI-smoked; they assume a local Phoenix app and an editor environment.
+> For coverage, see `docs/04-api-reference/SOURCE_MAPPING.md` and the repo CI lanes.
+
 This guide documents the current workflow for VS Code. (ElixirLS and VS Code do not automatically consume `.ex.map` files yet; you use the provided Mix task as the bridge.)
 
 ## Prerequisites
@@ -97,4 +101,3 @@ Then run it via the Command Palette: “Tasks: Run Task” → “Reflaxe.Elixir
   - Source Map v3 columns are 0-based; editors often display 1-based columns. Use `--format goto` for editor jumps.
 - **Shipping `.map` files**
   - Source maps can reveal source file names/paths. Treat them as debug artifacts unless you explicitly want them in a production build.
-
