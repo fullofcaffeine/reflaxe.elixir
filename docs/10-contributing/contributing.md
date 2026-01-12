@@ -227,6 +227,7 @@ Separately, a scheduled CI workflow (**README Release Smoke (scheduled)**) valid
 These are **heuristic** audits intended to keep the repo tidy. They do not prove that something is unused.
 
 - Dead-ish Haxe types + stale commented debug: `scripts/repo-dead-code-audit.sh --scope src/reflaxe/elixir --limit 50`
+- JSON report (CI/bd-friendly): `scripts/repo-dead-code-audit.sh --scope src/reflaxe/elixir --limit 200 --json > tmp/dead-code-audit.json`
 - Candidate unused scripts: `scripts/repo-unused-scripts-audit.sh`
 - Hygiene sweep (includes a bounded `--apply` mode for safe removals): `scripts/repo-hygiene-audit.sh`
 

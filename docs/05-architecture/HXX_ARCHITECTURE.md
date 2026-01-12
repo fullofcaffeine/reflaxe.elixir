@@ -2,6 +2,9 @@
 
 HXX is Reflaxe.Elixir’s **compile‑time** template system for generating Phoenix **HEEx** (`~H` sigils).
 
+> [!NOTE]
+> This is an **advanced** architecture doc. Examples here illustrate internal lowering shapes and are not CI-smoked as “copy/paste commands”.
+
 There is **no runtime HXX engine**: the generated Elixir contains standard Phoenix code only.
 
 ## The Entry Point: `HXX.hxx/1` and `HXX.block/1`
@@ -79,4 +82,3 @@ def render(assigns) do
   """
 end
 ```
-
