@@ -78,11 +78,13 @@ github_latest_tag() {
   local payload
   if [[ -n "${GITHUB_TOKEN:-}" ]]; then
     payload="$(curl -fsSL \
+      --retry 3 --retry-all-errors --retry-delay 2 \
       -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+      -H "Accept: application/vnd.github+json" \
       -H "X-GitHub-Api-Version: 2022-11-28" \
       "$api")"
   else
-    payload="$(curl -fsSL "$api")"
+    payload="$(curl -fsSL --retry 3 --retry-all-errors --retry-delay 2 "$api")"
   fi
 
   local tag
@@ -90,6 +92,7 @@ github_latest_tag() {
   if [[ -z "$tag" ]]; then
     echo "[readme-release-smoke] ERROR: failed to discover latest release tag for ${repo}" >&2
     echo "[readme-release-smoke] Hint: set REPO=owner/name or ensure GITHUB_TOKEN is available." >&2
+    echo "[readme-release-smoke] Raw payload (first 200 chars): $(printf '%s' "$payload" | head -c 200 | tr '\n' ' ')" >&2
     return 1
   fi
   echo "$tag"

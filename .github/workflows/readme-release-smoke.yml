@@ -56,10 +56,9 @@ jobs:
       - name: Run README release-tag smoke
         env:
           # Used to avoid rate limits when querying the GitHub Releases API.
-          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ inputs.repo || 'fullofcaffeine/reflaxe.elixir' }}
           HAXE_VERSION: ${{ inputs.haxe_version || '4.3.7' }}
         run: |
           set -euo pipefail
           bash scripts/ci/readme-release-tag-smoke.sh --repo "${REPO}" --haxe "${HAXE_VERSION}" --verbose
-
