@@ -2,6 +2,11 @@
 
 Complete reference for all Mix tasks provided by Reflaxe.Elixir for compilation, debugging, and development workflows.
 
+> [!NOTE]
+> This is a **reference/advanced** doc. Many commands are safe to copy/paste, but not every snippet is CI-smoked.
+> The core compile path is exercised by the repo’s Mix integration tests and the todo-app QA sentinel; long-running commands
+> (like `mix haxe.watch`) are intentionally **not** run in CI.
+
 ## Table of Contents
 1. [Compilation Tasks](#compilation-tasks)
 2. [Source Mapping Tasks](#source-mapping-tasks)
