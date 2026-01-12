@@ -87,23 +87,28 @@ jobs:
           set -euo pipefail
           scripts/repo-dead-code-audit.sh --scope src --limit 200 --json > dead-code-audit.json
           python3 - <<'PY'
-          import json
-          report=json.load(open("dead-code-audit.json","r",encoding="utf-8"))
-          counts=report.get("counts",{})
-          debug_only=int(counts.get("debug_only_markers",0))
-          commented=int(counts.get("commented_out_trace",0))
-          unused=int(counts.get("unused_haxe_types",0))
-          print(f"[repo-hygiene] counts: debug_only={debug_only} commented_out_trace={commented} unused_haxe_types={unused}")
-          summary_lines=[
-            "### Repo Hygiene (dead-code audit)",
-            f"- `DEBUG ONLY` markers: **{debug_only}**",
-            f"- Commented-out trace/log lines: {commented}",
-            f"- Unused Haxe type candidates: {unused}",
-          ]
-          open("hygiene-summary.md","w",encoding="utf-8").write("\\n".join(summary_lines)+\"\\n\")
-          if debug_only>0:
-            raise SystemExit(\"Found DEBUG ONLY markers; please remove before merging.\")
-          PY
+import json
+
+report = json.load(open("dead-code-audit.json", "r", encoding="utf-8"))
+counts = report.get("counts", {})
+
+debug_only = int(counts.get("debug_only_markers", 0))
+commented = int(counts.get("commented_out_trace", 0))
+unused = int(counts.get("unused_haxe_types", 0))
+
+print(f"[repo-hygiene] counts: debug_only={debug_only} commented_out_trace={commented} unused_haxe_types={unused}")
+
+summary_lines = [
+  "### Repo Hygiene (dead-code audit)",
+  f"- `DEBUG ONLY` markers: **{debug_only}**",
+  f"- Commented-out trace/log lines: {commented}",
+  f"- Unused Haxe type candidates: {unused}",
+]
+open("hygiene-summary.md", "w", encoding="utf-8").write("\n".join(summary_lines) + "\n")
+
+if debug_only > 0:
+  raise SystemExit("Found DEBUG ONLY markers; please remove before merging.")
+PY
       - name: Upload dead-code audit report
         uses: actions/upload-artifact@v4
         with:
