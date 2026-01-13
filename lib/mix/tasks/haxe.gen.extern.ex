@@ -80,7 +80,6 @@ defmodule Mix.Tasks.Haxe.Gen.Extern do
     File.write!(file_path, render_haxe(pkg, class_name, native_module, functions))
 
     Mix.shell().info("Generated extern: #{file_path}")
-    Mix.shell().info("Next: tighten types + decode boundaries with elixir.types.TermDecoder")
   end
 
   defp parse_module(":" <> _ = erl) do
