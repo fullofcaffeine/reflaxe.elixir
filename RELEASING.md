@@ -43,6 +43,9 @@ If you already have a tag but no GitHub Release entry exists (historical tags), 
 workflow **Release (Backfill Existing Tag)** and provide the tag (for example `v1.1.5`).
 To backfill all tags in one run, set `all_tags=true`.
 
+If a GitHub Release already exists but the body is low-quality (e.g. only “Full Changelog”), re-run the
+backfill workflow with `overwrite_existing=true` to replace release bodies using `CHANGELOG.md` sections when available.
+
 If you must tag manually (rare), after commits are merged to `main`:
 
 ```bash
