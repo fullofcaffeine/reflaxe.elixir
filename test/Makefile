@@ -680,6 +680,44 @@ test-bootstrap:
 		rm -f test-results*.tmp; \
 	fi
 
+.PHONY: test-liveview
+test-liveview:
+	@echo "Running LiveView-focused tests..."
+	@rm -f test-results*.tmp
+	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/liveview -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+	@passed=$$(cat test-results*.tmp 2>/dev/null | grep -c "✅") || passed=0; \
+	failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "❌") || failed=0; \
+	total=$$((passed + failed)); \
+	echo "LiveView Results $(PIPELINE_MODE): $$passed/$$total passed"; \
+	if [ $$failed -gt 0 ]; then \
+		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
+		cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'; \
+		rm -f test-results*.tmp; \
+		exit 1; \
+	else \
+		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
+		rm -f test-results*.tmp; \
+	fi
+
+.PHONY: test-exunit
+test-exunit:
+	@echo "Running ExUnit codegen tests..."
+	@rm -f test-results*.tmp
+	@$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR)/exunit -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+	@passed=$$(cat test-results*.tmp 2>/dev/null | grep -c "✅") || passed=0; \
+	failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "❌") || failed=0; \
+	total=$$((passed + failed)); \
+	echo "ExUnit Results $(PIPELINE_MODE): $$passed/$$total passed"; \
+	if [ $$failed -gt 0 ]; then \
+		echo "$(RED)FAILED: $$failed test(s)$(RESET)"; \
+		cat test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /'; \
+		rm -f test-results*.tmp; \
+		exit 1; \
+	else \
+		echo "$(GREEN)SUCCESS: All tests passed! ✅$(RESET)"; \
+		rm -f test-results*.tmp; \
+	fi
+
 # Pattern-based test selection
 .PHONY: test-pattern
 test-pattern:
@@ -689,7 +727,17 @@ test-pattern:
 		exit 1; \
 	fi; \
 	echo "Running tests matching pattern: $(PATTERN)"; \
-	$(MAKE) -f $(MAKEFILE_LIST) $(shell find $(TEST_DIR) -type d -name "$(PATTERN)" | xargs -I {} find {} -name compile.hxml -exec dirname {} \; | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')
+	first_dir="$$(find $(TEST_DIR) -type d -name "$(PATTERN)" -print -quit)"; \
+	if [ -z "$$first_dir" ]; then \
+		echo "No test directories match: $(PATTERN)"; \
+		exit 1; \
+	fi; \
+		targets="$$(find $(TEST_DIR) -type d -name "$(PATTERN)" -print0 | while IFS= read -r -d '' d; do find "$$d" -name compile.hxml -exec dirname {} \; ; done | sed 's|$(TEST_DIR)/||' | sed 's|/|__|g' | sed 's|^|test-|' | tr '\n' ' ')"; \
+	if [ -z "$$targets" ]; then \
+		echo "No tests found under directories matching: $(PATTERN)"; \
+		exit 1; \
+	fi; \
+	$(MAKE) -f $(MAKEFILE_LIST) $$targets
 
 # Run only failed tests from last run
 .PHONY: test-failed
@@ -729,9 +777,11 @@ help:
 	@echo "  make test-stdlib              # Run standard library tests"
 	@echo "  make test-regression          # Run regression tests"
 	@echo "  make test-phoenix             # Run Phoenix framework tests"
+	@echo "  make test-liveview            # Run LiveView-focused tests"
 	@echo "  make test-ecto                # Run Ecto ORM tests"
 	@echo "  make test-otp                 # Run OTP pattern tests"
 	@echo "  make test-bootstrap           # Run bootstrap tests"
+	@echo "  make test-exunit              # Run ExUnit codegen tests"
 	@echo "  make test-pattern PATTERN=*array* # Run tests matching pattern"
 	@echo "  make test-failed              # Re-run failed tests from last run"
 	@echo ""
