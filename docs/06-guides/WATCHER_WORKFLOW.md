@@ -23,7 +23,7 @@ This guide describes the common “edit → compile → reload” loop when usin
 ## Common Environment Variables
 
 - `HAXE_NO_SERVER=1` — disables the background Haxe server (forces direct compilation)
-- `HAXE_SERVER_PORT=6116` — sets the server port
+- `HAXE_SERVER_PORT=6116` — preferred server port. If that port is busy, Mix may attach to the prior compatible server recorded in `.reflaxe_elixir/haxe_server.json` (same project/toolchain), or relocate to a free port.
 - `HAXE_SERVER_ALLOW_ATTACH=1` — allow attaching to an externally-started compatible server on the configured port (default: off)
 - `HAXE_FAST_BOOT=1` — opt-in faster compilation profile (see `docs/06-guides/PERFORMANCE_GUIDE.md`)
 - `HAXE_CLIENT_WAIT_PORT=6001` — overrides the Phoenix watcher wait port (client build)
