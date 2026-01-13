@@ -2,6 +2,10 @@
 
 This guide helps you resolve common issues when working with Reflaxe.Elixir. If you can't find your issue here, please [open an issue](https://github.com/fullofcaffeine/reflaxe.elixir/issues) on GitHub.
 
+> [!NOTE]
+> Most “new user” install/generate/compile command blocks are kept runnable via CI smokes (`bash scripts/ci/docs-smoke.sh` and `bash scripts/ci/readme-release-tag-smoke.sh`).
+> Other blocks (editor setup, OS-specific tooling, deployment) are illustrative and may require local adjustments; treat them as optional/advanced.
+
 ## Table of Contents
 - [Installation Issues](#installation-issues)
 - [Compilation Errors](#compilation-errors)
