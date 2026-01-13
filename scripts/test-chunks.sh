@@ -12,7 +12,7 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 PARALLEL=${PARALLEL:-8}
 CHUNK_DEADLINE=${CHUNK_DEADLINE:-600}
 TIMEOUT_PER_TEST=${TIMEOUT_PER_TEST:-120}
-CATEGORIES=(core stdlib regression phoenix ecto otp)
+CATEGORIES=(core stdlib regression phoenix liveview ecto otp exunit bootstrap)
 
 while [[ $# -gt 0 ]]; do
   case $1 in
