@@ -1,3 +1,16 @@
+## [1.1.8](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.7...v1.1.8) (2026-01-13)
+
+
+### Bug Fixes
+
+* **dce:** keep annotation-only @:native modules ([285ea90](https://github.com/fullofcaffeine/reflaxe.elixir/commit/285ea90fad409b31b02ef9bc072a491f7ae4503b))
+* **watcher:** print/store compiler output on failure ([fc053d2](https://github.com/fullofcaffeine/reflaxe.elixir/commit/fc053d2dea983e465d94cdaa78512463bf14c8b2))
+
+
+### Performance Improvements
+
+* **haxe-server:** reuse cookie port when preferred busy ([3d44c5c](https://github.com/fullofcaffeine/reflaxe.elixir/commit/3d44c5c6c6ea56b61a85ac2d35b0b9ceef2dcf43))
+
 ## [1.1.7](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.6...v1.1.7) (2026-01-09)
 
 
