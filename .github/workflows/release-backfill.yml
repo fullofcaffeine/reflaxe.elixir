@@ -92,14 +92,30 @@ jobs:
           fetch-depth: 0
           ref: ${{ steps.meta.outputs.tag }}
 
+      - name: Setup Node.js (backfill)
+        if: ${{ inputs.all_tags == true }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
       - name: Backfill releases for all tags
         if: ${{ inputs.all_tags == true }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           repo="${{ github.repository }}"
           overwrite="${{ inputs.overwrite_existing }}"
+
+          if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+            echo "[backfill] ERROR: missing GITHUB_TOKEN (required to create/update releases)"
+            exit 2
+          fi
+
+          echo "[backfill] Toolchain:"
+          node -v || true
+          python3 --version || true
+          git --version || true
 
           echo "[backfill] Fetch tags"
           git fetch --tags --force --prune --quiet
@@ -147,11 +163,17 @@ jobs:
               if [[ "$overwrite" == "true" ]]; then
                 echo "[backfill] Update existing release: $tag (id=$release_id, notes=$notes_source)"
                 payload="$(python3 -c "import json,sys; tag=sys.argv[1]; pr=sys.argv[2]=='true'; notes_path=sys.argv[3]; notes=open(notes_path,'r',encoding='utf8').read(); d={'tag_name':tag,'name':tag,'prerelease':pr};\nif notes.strip():\n  d['body']=notes\nelse:\n  d['generate_release_notes']=True\nprint(json.dumps(d))" "$tag" "$prerelease" "$notes_file")"
-                curl -fsSL -X PATCH \
+                resp="$(mktemp)"
+                http_code="$(curl -sS -o "$resp" -w "%{http_code}" -X PATCH \
                   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
                   -H "Accept: application/vnd.github+json" \
                   "https://api.github.com/repos/${repo}/releases/${release_id}" \
-                  -d "$payload" >/dev/null
+                  -d "$payload" || true)"
+                if [[ "$http_code" != 2* ]]; then
+                  echo "[backfill] ERROR: update failed for $tag (HTTP $http_code)"
+                  python3 -c "import sys; print(open(sys.argv[1],'r',encoding='utf8',errors='replace').read()[:2000])" "$resp" || true
+                  exit 1
+                fi
                 updated=$((updated+1))
               else
                 echo "[backfill] Skip existing release: $tag"
@@ -163,11 +185,17 @@ jobs:
 
             echo "[backfill] Create release: $tag (prerelease=$prerelease, notes=$notes_source)"
             payload="$(python3 -c "import json,sys; tag=sys.argv[1]; pr=sys.argv[2]=='true'; notes_path=sys.argv[3]; notes=open(notes_path,'r',encoding='utf8').read(); d={'tag_name':tag,'name':tag,'prerelease':pr};\nif notes.strip():\n  d['body']=notes\nelse:\n  d['generate_release_notes']=True\nprint(json.dumps(d))" "$tag" "$prerelease" "$notes_file")"
-            curl -fsSL -X POST \
+            resp="$(mktemp)"
+            http_code="$(curl -sS -o "$resp" -w "%{http_code}" -X POST \
               -H "Authorization: Bearer ${GITHUB_TOKEN}" \
               -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${repo}/releases" \
-              -d "$payload" >/dev/null
+              -d "$payload" || true)"
+            if [[ "$http_code" != 2* ]]; then
+              echo "[backfill] ERROR: create failed for $tag (HTTP $http_code)"
+              python3 -c "import sys; print(open(sys.argv[1],'r',encoding='utf8',errors='replace').read()[:2000])" "$resp" || true
+              exit 1
+            fi
             created=$((created+1))
             rm -f "$notes_file"
           done <<<"$tags"
