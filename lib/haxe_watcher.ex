@@ -435,7 +435,8 @@ defmodule HaxeWatcher do
 
       {output, exit_code} ->
         # Store structured error information for `mix haxe.errors`
-        _ = HaxeCompiler.parse_haxe_errors(output)
+        structured_errors = HaxeCompiler.parse_haxe_errors(output)
+        HaxeCompiler.store_compilation_errors(structured_errors)
         {:error, {exit_code, output}}
     end
   rescue
@@ -454,19 +455,29 @@ defmodule HaxeWatcher do
   end
 
   defp parse_compilation_failure(error) do
-    case Regex.run(~r/\ACompilation failed \(exit (\d+)\):\s*(.*)\z/s, error) do
-      [_, exit_code, output] ->
-        {String.to_integer(exit_code), output}
+    matchers = [
+      ~r/\ACompilation failed \(exit (\d+)\):\s*(.*)\z/s,
+      ~r/\AHaxe compilation failed \(exit (\d+)\):\s*(.*)\z/s
+    ]
 
-      _ ->
-        {nil, error}
-    end
+    Enum.reduce_while(matchers, {nil, error}, fn matcher, _acc ->
+      case Regex.run(matcher, error) do
+        [_, exit_code, output] ->
+          {:halt, {String.to_integer(exit_code), output}}
+
+        _ ->
+          {:cont, {nil, error}}
+      end
+    end)
   end
 
   defp report_compilation_failure(build_file_path, exit_code, output) do
     build_label = Path.basename(build_file_path)
 
     output = (output || "") |> String.trim_trailing()
+    structured_errors = HaxeCompiler.parse_haxe_errors(output)
+    HaxeCompiler.store_compilation_errors(structured_errors)
+
     summary =
       output
       |> String.split("\n", trim: false)
