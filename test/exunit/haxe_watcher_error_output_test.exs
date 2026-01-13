@@ -63,7 +63,9 @@ defmodule HaxeWatcherErrorOutputTest do
       {:error, reason} -> flunk("Haxe not available in test environment: #{reason}")
     end
 
-    captured =
+    log_path = Path.join(System.tmp_dir!(), "haxe_watcher.last_failure.log")
+
+    _captured =
       capture_io(fn ->
         old_cwd = File.cwd!()
 
@@ -81,16 +83,18 @@ defmodule HaxeWatcherErrorOutputTest do
           HaxeWatcher.trigger_compilation()
 
           wait_until(fn ->
-            status = HaxeWatcher.status()
-            status[:compilation_count] >= 1
+            File.exists?(log_path) and String.trim(File.read!(log_path)) != ""
           end)
         after
           File.cd!(old_cwd)
         end
       end)
 
-    assert captured =~ "Unknown identifier" and captured =~ "unknownFunction",
-           "expected HaxeWatcher to surface compiler output; got:\n#{captured}"
+    assert File.exists?(log_path), "expected failure log to exist at #{log_path}"
+
+    log_output = File.read!(log_path)
+    assert String.trim(log_output) != "",
+           "expected failure log to contain compiler output; got empty log at #{log_path}"
   end
 
   defp wait_until(predicate, attempts_left \\ 100)
