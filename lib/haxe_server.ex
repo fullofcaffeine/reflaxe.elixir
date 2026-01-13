@@ -504,7 +504,20 @@ defmodule HaxeServer do
           end
       end
     else
+      cookie_port = cookie_port_for_cache_key(state)
+
       cond do
+        is_integer(cookie_port) and cookie_port > 0 and cookie_port != state.port and
+            attach_to_cookie_server?(%{state | port: cookie_port}) and
+            external_server_compatible?(%{state | port: cookie_port}) ->
+          Logger.debug(
+            "Haxe server port #{state.port} is in use; attaching to prior server on cookie port #{cookie_port}"
+          )
+
+          attached = %{state | port: cookie_port, server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}
+          _ = write_cookie(attached)
+          {:ok, attached}
+
         attach_to_cookie_server?(state) and external_server_compatible?(state) ->
           Logger.debug(
             "Haxe server port #{state.port} is in use; attaching to prior server (cookie match)"
@@ -591,6 +604,20 @@ defmodule HaxeServer do
 
   defp cookie_path(project_root) do
     Path.join([project_root, @cookie_dir, @cookie_file])
+  end
+
+  defp cookie_port_for_cache_key(state) do
+    cache_key = state.cache_key
+    case read_cookie(state.cookie_path) do
+      {:ok, %{"version" => @cookie_version, "port" => cookie_port, "cache_key" => ^cache_key}}
+      when is_integer(cookie_port) and cookie_port > 0 ->
+        cookie_port
+
+      _ ->
+        nil
+    end
+  rescue
+    _ -> nil
   end
 
   defp cache_key(project_root, cmd, args) do

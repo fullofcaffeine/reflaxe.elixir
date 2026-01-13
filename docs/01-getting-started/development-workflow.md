@@ -391,10 +391,10 @@ Behavior (no configuration required):
 
 - Auto‑manage: Mix ensures a `haxe --wait` server is available for incremental compilation.
 - Reuse (owned): If Mix started the server in this VM, it is reused automatically.
-- Relocate (default): If the configured port is already bound, Mix relocates to a free port and starts its own server.
+- Attach / relocate (default): If the configured port is already bound, Mix first tries attaching to the prior compatible server recorded in the cookie (same project/toolchain). If that fails, it relocates to a free port and starts its own server.
 - Attach (opt‑in): If `HAXE_SERVER_ALLOW_ATTACH=1` and the configured port is already bound by a compatible Haxe server, Mix attaches and uses it (no extra server, no port churn).
 - Auto‑start: If none is running, Mix starts one in the background.
-- Auto‑relocate: If the port is busy, Mix transparently retries on a free port.
+- Cookie: Mix records the last working server port per project/toolchain in `.reflaxe_elixir/haxe_server.json` to reduce port churn across restarts.
 - Fallback: If the server cannot be reached, Mix compiles directly (no server) and
   refreshes the server in the background for the next compile.
 

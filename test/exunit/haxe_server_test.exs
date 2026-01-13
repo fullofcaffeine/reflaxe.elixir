@@ -54,6 +54,102 @@ defmodule HaxeServerTest do
       :gen_tcp.close(socket)
     end
 
+    test "attaches to cookie port when env port is occupied" do
+      project_root = Path.expand("../..", __DIR__)
+      cookie_dir = Path.join(project_root, ".reflaxe_elixir")
+      cookie_path = Path.join(cookie_dir, "haxe_server.json")
+
+      previous_cookie =
+        case File.read(cookie_path) do
+          {:ok, contents} -> contents
+          _ -> nil
+        end
+
+      previous_env_port = System.get_env("HAXE_SERVER_PORT")
+
+      haxe_exe =
+        System.find_executable("haxe") ||
+          Path.join([project_root, "node_modules", ".bin", "haxe"])
+
+      unless is_binary(haxe_exe) and File.exists?(haxe_exe) do
+        flunk("Haxe executable not found for test")
+      end
+
+      # Start an external haxe --wait server on a cookie port.
+      cookie_port = find_free_port()
+      port =
+        Port.open(
+          {:spawn_executable, haxe_exe},
+          [:binary, :exit_status, :stderr_to_stdout, {:args, ["--wait", Integer.to_string(cookie_port)]}]
+        )
+
+      Process.sleep(500)
+
+      # Occupy the env-requested port so the server can't bind it.
+      ipv6_opts = [:binary, active: false, ip: {0, 0, 0, 0, 0, 0, 0, 0}, ipv6_v6only: false]
+
+      socket =
+        case :gen_tcp.listen(0, ipv6_opts) do
+          {:ok, s} -> s
+          {:error, _} -> {:ok, s} = :gen_tcp.listen(0, [:binary, active: false]); s
+        end
+
+      {:ok, {_addr, env_port}} = :inet.sockname(socket)
+      System.put_env("HAXE_SERVER_PORT", Integer.to_string(env_port))
+
+      # Write a cookie pointing at the running external server, using the same cache key logic.
+      File.mkdir_p!(cookie_dir)
+
+      cache_key =
+        :crypto.hash(
+          :sha256,
+          :erlang.term_to_binary(%{project_root: project_root, haxe_cmd: haxe_exe, haxe_args: []})
+        )
+        |> Base.encode16(case: :lower)
+
+      File.write!(
+        cookie_path,
+        Jason.encode!(%{
+          "version" => 1,
+          "port" => cookie_port,
+          "cache_key" => cache_key,
+          "owns_server" => false,
+          "server_os_pid" => nil,
+          "written_at" => DateTime.utc_now() |> DateTime.to_iso8601()
+        }) <> "\n"
+      )
+
+      old_cwd = File.cwd!()
+
+      try do
+        File.cd!(project_root)
+        assert {:ok, _pid} = HaxeServer.start_link([haxe_cmd: {haxe_exe, []}])
+        Process.sleep(100)
+        {_response, stats} = HaxeServer.status()
+        assert stats.port == cookie_port
+      after
+        File.cd!(old_cwd)
+        _ = HaxeServer.stop()
+        :gen_tcp.close(socket)
+
+        try do
+          Port.close(port)
+        rescue
+          _ -> :ok
+        end
+
+        case previous_env_port do
+          nil -> System.delete_env("HAXE_SERVER_PORT")
+          value -> System.put_env("HAXE_SERVER_PORT", value)
+        end
+
+        case previous_cookie do
+          nil -> File.rm(cookie_path)
+          contents -> File.write!(cookie_path, contents)
+        end
+      end
+    end
+
     test "starts with custom port option" do
       custom_port = find_free_port()
       assert {:ok, _pid} = HaxeServer.start_link([port: custom_port])
