@@ -108,14 +108,17 @@ defmodule HaxeTestHelper do
     source_dir = Keyword.get(opts, :source_dir, "src_haxe")
     output_dir = Keyword.get(opts, :output_dir, "lib")
     
-    hxml_content = """
-    # Test project build configuration
-    -cp #{source_dir}
-    -lib reflaxe.elixir
-    -D reflaxe_runtime
-    -D elixir_output=#{output_dir}
-    #{main_class}
-    """
+    hxml_content =
+      [
+        "# Test project build configuration",
+        "-cp #{source_dir}",
+        "-lib reflaxe.elixir",
+        "-D reflaxe_runtime",
+        "-D elixir_output=#{output_dir}",
+        "--main #{main_class}"
+      ]
+      |> Enum.join("\n")
+      |> Kernel.<>("\n")
     
     hxml_path = Path.join(project_dir, "build.hxml")
     File.write!(hxml_path, hxml_content)
