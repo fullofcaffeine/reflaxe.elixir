@@ -2,6 +2,10 @@
 
 This guide describes the common “edit → compile → reload” loop when using Reflaxe.Elixir with Phoenix.
 
+> [!NOTE]
+> This is a dev-workflow guide. It is not fully CI-smoked because port/watcher behavior depends on your local environment.
+> For “new user” verified flows, see `bash scripts/ci/docs-smoke.sh` and `bash scripts/ci/readme-release-tag-smoke.sh`.
+
 ## Two Watch Loops You’ll See
 
 1. **Server compilation (Haxe → Elixir)**

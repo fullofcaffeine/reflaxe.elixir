@@ -15,6 +15,10 @@ The **QA sentinel** is the recommended way to validate layers (2) and (3) locall
 - Optionally runs Playwright
 - Tears everything down cleanly (unless `--keep-alive`)
 
+> [!NOTE]
+> The command blocks in this guide are designed to be **bounded** and non-blocking, but they are not part of the lightweight docs smoke.
+> They are validated via the todo-app QA sentinel workflow (boot + probe, and optionally Playwright).
+
 ## Quick Start
 
 From the repo root:
