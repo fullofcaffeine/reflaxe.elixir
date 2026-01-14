@@ -5,12 +5,12 @@ defmodule Main do
   end
   def dynamic_field_access() do
     obj = %{:name => "Alice", :age => 25, :greet => fn -> "Hello!" end}
-    obj = Map.put(obj, "city", "New York")
+    _ = Map.put(obj, "city", "New York")
     nil
   end
   def dynamic_functions() do
     _fn_ = fn a, b -> a + b end
-    fn_ = fn s -> String.upcase(s) end
+    _ = fn s -> String.upcase(s) end
     _var_args = fn args ->
       sum = 0
       _g = 0
@@ -44,7 +44,7 @@ defmodule Main do
     _g = 0
     _ = Enum.each(dyn_array, fn _ -> nil end)
     dyn_obj = %{}
-    dyn_obj = dyn_obj |> Map.put("field1", "value1") |> Map.put("field2", 42) |> Map.put("field3", [1, 2, 3])
+    _ = dyn_obj |> Map.put("field1", "value1") |> Map.put("field2", 42) |> Map.put("field3", [1, 2, 3])
     nil
   end
   def process_dynamic(value) do

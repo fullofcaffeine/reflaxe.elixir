@@ -10,11 +10,11 @@ defmodule EctoIntegrationSimple do
     _account_users = Accounts.list_users()
     _live_view = %UserLive{}
     org = %Organization{}
-    org = %{org | name: "Test Org"}
+    _ = %{org | name: "Test Org"}
     post = %Post{}
-    post = %{post | title: "Test Post"}
+    _ = %{post | title: "Test Post"}
     comment = %Comment{}
-    comment = %{comment | body: "Test Comment"}
+    _ = %{comment | body: "Test Comment"}
     nil
   end
 end

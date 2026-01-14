@@ -43,7 +43,7 @@ defmodule Main do
   defp test_sort_function() do
     numbers = [5, 2, 8, 1, 9, 3]
     copy = numbers
-    copy = Enum.sort(copy, fn a, b -> (fn a, b -> (a - b) end).(a, b) < 0 end)
+    _ = Enum.sort(copy, fn a, b -> (fn a, b -> (a - b) end).(a, b) < 0 end)
     nil
   end
   defp test_contains_function() do

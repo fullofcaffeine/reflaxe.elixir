@@ -200,7 +200,7 @@ end)
     registration_data = [%{:user_id => "alice123", :email => "alice@example.com", :preferred_name => "Alice Smith"}, %{:user_id => "bob456", :email => "bob.jones@company.org", :preferred_name => "Bob"}, %{:user_id => "charlie", :email => "charlie@test.dev", :preferred_name => "Charlie Brown"}]
     valid_users = []
     _g = 0
-    valid_users = Enum.reduce(registration_data, valid_users, fn user_data, valid_users_acc ->
+    _ = Enum.reduce(registration_data, valid_users, fn user_data, valid_users_acc ->
       user_result = create_user(user_data.user_id, user_data.email, user_data.preferred_name)
       (case user_result do
         {:ok, user} ->

@@ -10,7 +10,7 @@ defmodule Main do
     results = []
     _g = 0
     items_length = length(items)
-    results = Enum.reduce(0..(items_length - 1)//1, results, fn i, results_acc ->
+    _ = Enum.reduce(0..(items_length - 1)//1, results, fn i, results_acc ->
       item = items[i]
       Enum.concat(results_acc, ["" <> Kernel.to_string(i) <> ": " <> item])
     end)

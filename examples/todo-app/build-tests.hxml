@@ -28,4 +28,5 @@ web.HealthTest
 web.AuthFlowTest
 web.TodoLiveCrudTest
 web.UsersLiveTest
+web.UsersApiTest
 live.TodoLiveDueDateTest

@@ -286,7 +286,7 @@ end).()]
     g = []
     g = Enum.reduce(source, g, fn x, g_acc ->
       Enum.concat(g_acc, (fn -> [(fn ->
-  g = Enum.reduce(source, g, fn y, g_acc -> Enum.concat(g_acc, [x * y]) end)
+  _ = Enum.reduce(source, g, fn y, g_acc -> Enum.concat(g_acc, [x * y]) end)
   []
 end).()] end).())
     end)

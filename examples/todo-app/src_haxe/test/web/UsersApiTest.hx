@@ -50,9 +50,6 @@ class UsersApiTest extends TestCase {
         userConn = acceptJson(userConn);
         userConn = ConnTest.get(userConn, "/api/users");
         assertEqual(403, userConn.status);
-
-        // Keep adminConn "used" so generated Elixir compiles under --warnings-as-errors.
-        assertTrue(adminConn.status > 0);
     }
 
     @:test
@@ -97,4 +94,3 @@ class UsersApiTest extends TestCase {
         assertTrue(!StringTools.contains(conn.resp_body, "password_hash"));
     }
 }
-

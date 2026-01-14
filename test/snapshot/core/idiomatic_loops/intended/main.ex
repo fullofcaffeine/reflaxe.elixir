@@ -247,7 +247,7 @@ end)
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     processed = []
     _g = 0
-    processed = Enum.reduce(numbers, processed, fn n, processed_acc ->
+    _ = Enum.reduce(numbers, processed, fn n, processed_acc ->
       if (rem(n, 3) == 0) do
         throw(:continue)
       end
@@ -273,7 +273,7 @@ end) do
     pairs = pairs ++ [%{:x => 2, :y => 1}]
     pairs = pairs ++ [%{:x => 2, :y => 3}]
     pairs = pairs ++ [%{:x => 3, :y => 1}]
-    pairs = pairs ++ [%{:x => 3, :y => 2}]
+    _ = pairs ++ [%{:x => 3, :y => 2}]
     data = [1, 2, 3, 4, 5]
     acc_sum = 0
     acc_count = 0
@@ -292,7 +292,7 @@ end) do
     current_state = 0
     events = ["begin", "work", "work", "finish"]
     _g = 0
-    current_state = Enum.reduce(events, current_state, fn event, current_state_acc ->
+    _ = Enum.reduce(events, current_state, fn event, current_state_acc ->
       current_state_acc = (case event do
   "begin" when current_state_acc == 0 ->
     current_state_acc = 1

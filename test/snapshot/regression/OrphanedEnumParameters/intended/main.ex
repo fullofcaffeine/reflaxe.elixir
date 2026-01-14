@@ -33,7 +33,7 @@ defmodule Main do
   defp test_fall_through() do
     state = {:loading, 50}
     description = ""
-    description = (case state do
+    _ = (case state do
       {:loading, _progress} ->
         nil
         description

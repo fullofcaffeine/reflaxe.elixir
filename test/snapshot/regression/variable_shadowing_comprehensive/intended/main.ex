@@ -30,7 +30,7 @@ defmodule Main do
       else
         query
       end
-      query = if (filter.is_active == true) do
+      _ = if (filter.is_active == true) do
         _value = filter.is_active
         this4
       else
@@ -46,7 +46,7 @@ defmodule Main do
     base_query = temp1
     transformed2 = apply_filter(base_query, "age", "25")
     temp2 = transformed2
-    base_query = temp2
+    _ = temp2
     nil
   end
   defp build_base_query() do

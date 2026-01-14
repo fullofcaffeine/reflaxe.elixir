@@ -51,7 +51,7 @@ defmodule Main do
     reversed = numbers
     _ = Array.reverse(reversed)
     unsorted = [3, 1, 4, 1, 5, 9, 2, 6]
-    unsorted = Enum.sort(unsorted, fn a, b -> (fn a, b -> (a - b) end).(a, b) < 0 end)
+    _ = Enum.sort(unsorted, fn a, b -> (fn a, b -> (a - b) end).(a, b) < 0 end)
     nil
   end
   def array_comprehensions() do
