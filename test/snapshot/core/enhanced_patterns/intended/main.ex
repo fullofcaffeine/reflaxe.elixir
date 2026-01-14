@@ -211,7 +211,7 @@ end).(), ",") end).()}"
       if (v == expected_value) do
         "Value matches, name different"
       else
-        v = test_value
+        _ = test_value
         n = test_name
         if (n == expected_name), do: "Name matches, value different", else: "Neither matches"
       end
@@ -374,15 +374,15 @@ end).(), ",") end).()}"
         if (age >= 65 and active) do
           "Senior user"
         else
-          age = data_user_age
+          _ = data_user_age
           perms = 2
           active = data_user_active
           if (not active) do
             "Inactive user"
           else
-            age = data_user_age
+            _ = data_user_age
             perms = 2
-            active = data_user_active
+            _ = data_user_active
             if (perms == 0), do: "User without permissions", else: "Other user type"
           end
         end

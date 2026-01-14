@@ -34,14 +34,14 @@ defmodule Main do
     count = 0
     _old_count = count
     count = count + 1
-    old_count = count
+    _ = count
     count = count + 1
-    old_count = count
+    _ = count
     count = count + 1
-    old_count = count
+    _ = count
     count = count + 1
-    old_count = count
-    count = count + 1
+    _ = count
+    _ = count + 1
     nil
   end
 end

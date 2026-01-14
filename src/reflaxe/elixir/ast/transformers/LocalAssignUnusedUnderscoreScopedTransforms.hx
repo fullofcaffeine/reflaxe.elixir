@@ -145,8 +145,14 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
             idx--;
             continue;
           }
-          if (!isRebind(b, rebindAt, idx) && shouldRewriteBinder(b, usedLater)) {
-            rewritten = makeASTWithMeta(EMatch(PVar('_' + b), rhs), s.metadata, s.pos);
+          if (shouldRewriteBinder(b, usedLater)) {
+            if (isRebind(b, rebindAt, idx)) {
+              // For rebindings that are unused after this statement, prefer a wildcard match:
+              // `_ = expr` preserves side effects without changing the meaning of prior `b`.
+              rewritten = makeASTWithMeta(EMatch(PWildcard, rhs), s.metadata, s.pos);
+            } else {
+              rewritten = makeASTWithMeta(EMatch(PVar('_' + b), rhs), s.metadata, s.pos);
+            }
           }
         case EMatch(PTuple(items), rhs):
           // Tuple rebinding (common for while→reduce_while): underscore any binder element
@@ -167,8 +173,12 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
             idx--;
             continue;
           }
-          if (!isRebind(b2, rebindAt, idx) && shouldRewriteBinder(b2, usedLater)) {
-            rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b2)), rhs2), s.metadata, s.pos);
+          if (shouldRewriteBinder(b2, usedLater)) {
+            if (isRebind(b2, rebindAt, idx)) {
+              rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs2), s.metadata, s.pos);
+            } else {
+              rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b2)), rhs2), s.metadata, s.pos);
+            }
           } else {
             // also allow aligning Map.get(params, "key") → key when key used later
             switch (rhs2.def) {

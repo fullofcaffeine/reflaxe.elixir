@@ -9,24 +9,24 @@ defmodule Main do
     x = x + 5
     x = (x - 3)
     x = x * 2
-    x = rem(x, 3)
+    _ = rem(x, 3)
     str = "Hello"
-    str = "#{str} World"
+    _ = "#{str} World"
     arr = [1, 2, 3]
-    arr = arr ++ [4, 5]
+    _ = arr ++ [4, 5]
     nil
   end
   defp test_variable_reassignment() do
     count = 0
     count = count + 1
     count = count + 1
-    count = count + 1
+    _ = count + 1
     value = 5
-    value = if (value > 0), do: value * 2, else: value * -1
+    _ = if (value > 0), do: value * 2, else: value * -1
     result = 1
     result = result * 2
     result = result + 10
-    result = (result - 5)
+    _ = (result - 5)
     nil
   end
   defp test_loop_counters() do

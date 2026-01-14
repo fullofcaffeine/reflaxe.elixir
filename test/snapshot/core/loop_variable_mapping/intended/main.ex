@@ -27,7 +27,7 @@ defmodule Main do
     end)
     filtered = []
     _g = 0
-    filtered = Enum.reduce(array, filtered, fn x, filtered_acc ->
+    _ = Enum.reduce(array, filtered, fn x, filtered_acc ->
       if (rem(x, 2) == 0) do
         filtered_acc = Enum.concat(filtered_acc, [x])
         filtered_acc
@@ -38,17 +38,17 @@ defmodule Main do
     functions = []
     functions = functions ++ [fn -> nil end]
     functions = functions ++ [fn -> nil end]
-    functions = functions ++ [fn -> 2 end]
+    _ = functions ++ [fn -> 2 end]
     i = 100
     result = result ++ [0]
     result = result ++ [1]
     result = result ++ [2]
-    result = result ++ [i]
+    _ = result ++ [i]
     sum = 0
     _g = 0
     sum = Enum.reduce(array, sum, fn n, sum_acc -> sum_acc + n end)
     _g = 0
-    sum = Enum.reduce(array, sum, fn n, sum_acc -> (sum_acc - n) end)
+    _ = Enum.reduce(array, sum, fn n, sum_acc -> (sum_acc - n) end)
     nil
   end
 end

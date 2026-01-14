@@ -73,10 +73,10 @@ defmodule Main do
     end)
     sum = 0
     g = 0
-    sum = Enum.reduce(numbers, sum, fn n, sum_acc -> sum_acc + n end)
+    _ = Enum.reduce(numbers, sum, fn n, sum_acc -> sum_acc + n end)
     output = []
     g = 0
-    output = Enum.reduce(numbers, output, fn n, output_acc ->
+    _ = Enum.reduce(numbers, output, fn n, output_acc ->
       if (n > 2) do
         output_acc = Enum.concat(output_acc, [n])
         output_acc
