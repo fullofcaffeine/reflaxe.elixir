@@ -1,3 +1,19 @@
+# [1.2.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.11...v1.2.0) (2026-01-14)
+
+
+### Bug Fixes
+
+* **haxe-server:** prefer real haxe binary for --wait/--connect ([2032939](https://github.com/fullofcaffeine/reflaxe.elixir/commit/2032939eed778ca70be0b2695c903cf81b1f300b))
+* **heex:** count assigns as used in ~H var analysis ([6e399a9](https://github.com/fullofcaffeine/reflaxe.elixir/commit/6e399a901cb777adb145aed34f2b6dca55bbf78c))
+* **hygiene:** avoid unused rebind warnings in test blocks ([98c2f01](https://github.com/fullofcaffeine/reflaxe.elixir/commit/98c2f01d55c97e62733bbae7afc62ee6432addde))
+
+
+### Features
+
+* **heex:** auto-underscore unused :let binders ([353a2bb](https://github.com/fullofcaffeine/reflaxe.elixir/commit/353a2bb8cd795e770da7af6e10a84345e2bb6c3c))
+* **hxx:** require registry constants for strict phx-hook/events ([19dfad2](https://github.com/fullofcaffeine/reflaxe.elixir/commit/19dfad29365de3adddf4091d7982fe3e01adf573))
+* **hxx:** type-check :let bracket access on form fields ([5d86271](https://github.com/fullofcaffeine/reflaxe.elixir/commit/5d86271af23171c4a4c32d4515896200e15c6997))
+
 ## [1.1.11](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.10...v1.1.11) (2026-01-14)
 
 
