@@ -213,9 +213,8 @@ class CoreComponents {
      */
     @:component  
     public static function simple_form(assigns: FormAssigns): String {
-        // Use `_f` to avoid unused variable warnings when slot variable is not referenced
         return HXX.hxx('
-            <.form :let={_f} for=${assigns.formFor} action=${assigns.action} method=${assigns.method != null ? assigns.method : "post"}>
+            <.form :let={f} for=${assigns.formFor} action=${assigns.action} method=${assigns.method != null ? assigns.method : "post"}>
                 ${assigns.inner_content}
             </.form>
         ');
