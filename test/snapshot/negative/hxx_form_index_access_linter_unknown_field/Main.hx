@@ -10,7 +10,7 @@ class Main {
     public static function render(assigns: Assigns): String {
         return HXX.hxx('
             <.form for={@form} :let={f}>
-                <span><%= f.id %> (<%= f.name %>) <%= f[:email].errors %></span>
+                <span><%= f[:email].not_a_field %></span>
             </.form>
         ');
     }

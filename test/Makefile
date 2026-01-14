@@ -128,6 +128,7 @@ summary-negative: $(NEGATIVE_TEST_TARGETS)
 	echo "Negative Tests: $$neg_failed/$$neg_total correctly failed"; \
 	if [ "$$neg_total" != "0" ] && [ $$neg_unexpected -eq 0 ] && [ $$neg_failed -eq $$neg_total ]; then \
 		echo "$(GREEN)SUCCESS: All negative tests failed as expected ✅$(RESET)"; \
+		rm -f test-results*.tmp; \
 		true; \
 	else \
 		if [ $$neg_total -eq 0 ]; then echo "No negative tests found"; fi; \

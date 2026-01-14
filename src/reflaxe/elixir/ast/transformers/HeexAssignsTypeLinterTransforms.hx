@@ -116,6 +116,8 @@ private typedef ComponentSlotDefinition = {
 	    var contextTag: String; // e.g., "<:col>"
 	    var ownerTag: Null<String>; // e.g., "<.table>" when the binding is declared by a slot
 	    var typeName: Null<String>; // informational: original Haxe type of the bound value
+	    @:optional var indexedProps: Map<String, String>; // allowed fields on values returned by `varName[...]` (e.g. Phoenix forms)
+	    @:optional var indexedTypeName: String; // informational: type of indexed access value (e.g. phoenix.Phoenix.FormField)
 	};
 
 class HeexAssignsTypeLinterTransforms {
@@ -734,16 +736,49 @@ class HeexAssignsTypeLinterTransforms {
         var varName = boundVars[0];
         if (!isValidElixirVarName(varName)) return letScopes;
 
+        var indexedProps: Null<Map<String, String>> = null;
+        var indexedTypeName: Null<String> = null;
+
+        #if macro
+        if (looksLikePhoenixFormLetBinding(letDef.props, letDef.typeName)) {
+            var formFieldType: Null<haxe.macro.Type> = null;
+            try formFieldType = Context.getType("phoenix.Phoenix.FormField") catch (_:Dynamic) formFieldType = null;
+            if (formFieldType != null) {
+                var letInfo = letBindingPropsFromType(formFieldType);
+                if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
+                    indexedProps = letInfo.props;
+                    indexedTypeName = TypeTools.toString(formFieldType);
+                }
+            }
+        }
+        #end
+
 	        var next = letScopes.copy();
-	        next.push({
+        next.push({
 	            varName: varName,
 	            props: letDef.props,
 	            contextTag: '<' + tag + '>',
 	            ownerTag: parentTag != null ? '<' + parentTag + '>' : null,
-	            typeName: letDef.typeName
-	        });
-	        return next;
-	    }
+	            typeName: letDef.typeName,
+	            indexedProps: indexedProps,
+            indexedTypeName: indexedTypeName
+        });
+        return next;
+    }
+
+    static function looksLikePhoenixFormLetBinding(props: Map<String, String>, typeName: Null<String>): Bool {
+        if (typeName != null && typeName.indexOf("phoenix.Phoenix.Form") != -1) return true;
+        if (props == null) return false;
+
+        return props.exists("source")
+            && props.exists("params")
+            && props.exists("options")
+            && props.exists("hidden")
+            && props.exists("impl")
+            && props.exists("id")
+            && props.exists("name")
+            && props.exists("data");
+    }
 
     static function resolveComponentLetBindingDefinition(componentTag: String): Null<ComponentLetBindingDefinition> {
         var def = resolveComponentDefinition(componentTag);
@@ -781,6 +816,8 @@ class HeexAssignsTypeLinterTransforms {
             switch (e.def) {
                 case EField({def: EVar(varName)}, fieldName):
                     validateLetFieldAccess(varName, fieldName, letScopes, ctx, pos);
+                case EField({def: EAccess({def: EVar(varName)}, _key)}, fieldName):
+                    validateIndexedLetFieldAccess(varName, fieldName, letScopes, ctx, pos);
                 case ERaw(code):
                     validateRawForLetScopes(code, letScopes, ctx, pos);
                 default:
@@ -806,6 +843,13 @@ class HeexAssignsTypeLinterTransforms {
             for (fieldName in fields) {
                 validateLetFieldAccess(scope.varName, fieldName, letScopes, ctx, pos);
             }
+
+            if (scope.indexedProps != null) {
+                var indexedFields = collectIndexedDotFieldAccesses(s, scope.varName);
+                for (fieldName in indexedFields) {
+                    validateIndexedLetFieldAccess(scope.varName, fieldName, letScopes, ctx, pos);
+                }
+            }
         }
     }
 
@@ -821,6 +865,19 @@ class HeexAssignsTypeLinterTransforms {
 	        var typePart = (scope.typeName != null && scope.typeName.length > 0) ? (' (type: ' + scope.typeName + ')') : "";
 	        error(ctx, 'HEEx :let type error: ' + scope.contextTag + ownerPart + ' binding "' + scope.varName + '" does not define field "' + key + '"' + typePart, pos);
 	    }
+
+    static function validateIndexedLetFieldAccess(varName: String, fieldName: String, letScopes: Array<HeexLetBindingScope>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (varName == null || fieldName == null) return;
+        var scope = findLetScope(varName, letScopes);
+        if (scope == null || scope.indexedProps == null) return;
+
+        var key = NameUtils.toSnakeCase(fieldName);
+        if (scope.indexedProps.exists(key)) return;
+
+        var ownerPart = (scope.ownerTag != null && scope.ownerTag.length > 0) ? (' (slot of ' + scope.ownerTag + ')') : "";
+        var typeName = (scope.indexedTypeName != null && scope.indexedTypeName.length > 0) ? scope.indexedTypeName : "indexed value";
+        error(ctx, 'HEEx :let type error: ' + scope.contextTag + ownerPart + ' binding "' + scope.varName + '" indexed value does not define field "' + key + '" (type: ' + typeName + ')', pos);
+    }
 
     static function findLetScope(varName: String, letScopes: Array<HeexLetBindingScope>): Null<HeexLetBindingScope> {
         if (varName == null || letScopes == null) return null;
@@ -866,6 +923,70 @@ class HeexAssignsTypeLinterTransforms {
             var fieldName = code.substr(fieldStart, j - fieldStart);
             if (fieldName != null && fieldName.length > 0) found.set(fieldName, true);
             i = j;
+        }
+
+        return [for (k in found.keys()) k];
+    }
+
+    static function collectIndexedDotFieldAccesses(code: String, varName: String): Array<String> {
+        if (code == null || varName == null || varName.length == 0) return [];
+        var found = new Map<String, Bool>();
+
+        var i = 0;
+        while (i < code.length) {
+            var idx = code.indexOf(varName, i);
+            if (idx == -1) break;
+
+            var prevIdx = idx - 1;
+            if (prevIdx >= 0 && isHeexIdentChar(code.charCodeAt(prevIdx))) {
+                i = idx + varName.length;
+                continue;
+            }
+
+            var j = idx + varName.length;
+            while (j < code.length && code.charCodeAt(j) <= 32) j++;
+            if (j >= code.length || code.charCodeAt(j) != "[".code) {
+                i = idx + varName.length;
+                continue;
+            }
+
+            var k = j + 1;
+            var depth = 1;
+            var quote: Null<Int> = null;
+            while (k < code.length && depth > 0) {
+                var ch = code.charCodeAt(k);
+                if (quote != null) {
+                    if (ch == "\\".code && k + 1 < code.length) { k += 2; continue; }
+                    if (ch == quote) quote = null;
+                    k++;
+                    continue;
+                }
+                if (ch == "\"".code || ch == "'".code) { quote = ch; k++; continue; }
+                if (ch == "[".code) { depth++; k++; continue; }
+                if (ch == "]".code) { depth--; k++; continue; }
+                k++;
+            }
+
+            if (depth != 0) break;
+
+            var after = k;
+            while (after < code.length && code.charCodeAt(after) <= 32) after++;
+            if (after >= code.length || code.charCodeAt(after) != ".".code) {
+                i = k;
+                continue;
+            }
+
+            var fieldStart = after + 1;
+            if (fieldStart >= code.length || !isHeexIdentStart(code.charCodeAt(fieldStart))) {
+                i = fieldStart;
+                continue;
+            }
+
+            var end = fieldStart + 1;
+            while (end < code.length && isHeexIdentChar(code.charCodeAt(end))) end++;
+            var fieldName = code.substr(fieldStart, end - fieldStart);
+            if (fieldName != null && fieldName.length > 0) found.set(fieldName, true);
+            i = end;
         }
 
         return [for (k in found.keys()) k];

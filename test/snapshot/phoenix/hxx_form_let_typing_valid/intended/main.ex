@@ -3,7 +3,7 @@ defmodule Main do
   def render(assigns) do
     ~H"""
 <.form for={@form} :let={f}>
-    <span><%= f.id %> (<%= f.name %>) <%= f.data %></span>
+    <span><%= f.id %> (<%= f.name %>) <%= f[:email].errors %></span>
 </.form>
 """
   end
