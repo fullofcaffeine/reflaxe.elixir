@@ -22,7 +22,6 @@ import elixir.types.Term;
 @:native("TodoApp.AuditLog")
 @:schema("audit_logs")
 @:timestamps
-@:keep
 class AuditLog {
     @:field @:primary_key public var id: Int;
     @:field public var organizationId: Int;
@@ -34,10 +33,8 @@ class AuditLog {
 
     public function new() {}
 
-    @:keep
     public static function changeset(entry: AuditLog, params: Term): Changeset<AuditLog, Term> {
         // Audit logs are immutable; this is used only for inserts.
         return ecto.Changeset.change(entry, params);
     }
 }
-

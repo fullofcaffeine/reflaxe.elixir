@@ -30,7 +30,6 @@ typedef OrganizationInviteParams = {
 @:schema("organization_invites")
 @:timestamps
 @:changeset(["organizationId", "email", "role", "acceptedAt", "acceptedByUserId"], ["organizationId", "email", "role"])
-@:keep
 class OrganizationInvite {
     @:field @:primary_key public var id: Int;
     @:field public var organizationId: Int;
@@ -43,4 +42,3 @@ class OrganizationInvite {
 
     extern public static function changeset(invite: OrganizationInvite, params: OrganizationInviteParams): Changeset<OrganizationInvite, OrganizationInviteParams>;
 }
-

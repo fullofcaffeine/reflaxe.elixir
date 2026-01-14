@@ -15,7 +15,6 @@ import elixir.types.Term;
 @:native("TodoApp.User")
 @:schema("users")
 @:timestamps
-@:keep
 class User {
     @:field public var id: Int;
     @:field public var name: String;
@@ -40,7 +39,6 @@ class User {
      * Registration changeset for new user creation
      * Includes password validation and hashing
      */
-    @:keep
     public static function registrationChangeset(user: User, params: Term): Changeset<User, Term> {
         return CS.registration(user, params);
     }
@@ -49,7 +47,6 @@ class User {
      * Update changeset for existing user modifications
      * Allows updating name and email without password changes
      */
-    @:keep
     public static function changeset(user: User, params: Term): Changeset<User, Term> {
         return CS.update(user, params);
     }
@@ -57,7 +54,6 @@ class User {
     /**
      * Password change changeset for updating user passwords
      */
-    @:keep
     public static function passwordChangeset(user: User, params: Term): Changeset<User, Term> {
         return CS.password(user, params);
     }
@@ -65,7 +61,6 @@ class User {
     /**
      * Email confirmation changeset
      */
-    @:keep
     public static function confirmChangeset(user: User): Changeset<User, {confirmed_at: NaiveDateTime}> {
         return CS.change(user, {confirmed_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), TimePrecision.Second)});
     }
@@ -73,7 +68,6 @@ class User {
     /**
      * Login tracking changeset
      */
-    @:keep
     public static function loginChangeset(user: User): Changeset<User, {last_login_at: NaiveDateTime}> {
         return CS.change(user, {last_login_at: NaiveDateTime.truncate(NaiveDateTime.utc_now(), TimePrecision.Second)});
     }
