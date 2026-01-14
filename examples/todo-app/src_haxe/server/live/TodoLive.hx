@@ -698,10 +698,10 @@ enum ActivityKind {
                 var refreshed = Repo.get(server.schemas.Todo, id);
                 var finalTodo = (refreshed != null) ? refreshed : existingTodo;
                 var withTodo = updateTodoInList(finalTodo, sOptimistic);
-                var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(finalTodo), socket.assigns.current_user.organizationId);
+                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(finalTodo), socket.assigns.current_user.organizationId);
                 return recomputeVisible(withTodo);
             case _:
-                var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(existingTodo), socket.assigns.current_user.organizationId);
+                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(existingTodo), socket.assigns.current_user.organizationId);
                 return LiveView.putFlash(sOptimistic, FlashType.Error, "Failed to toggle todo");
         }
     }
@@ -722,7 +722,7 @@ enum ActivityKind {
         }
         // Reflect locally, then broadcast best-effort to others
         var updated = removeTodoFromList(id, socket);
-        var _ = TodoPubSub.broadcast(TodoUpdates, TodoDeleted(id), socket.assigns.current_user.organizationId);
+        TodoPubSub.broadcast(TodoUpdates, TodoDeleted(id), socket.assigns.current_user.organizationId);
         return recomputeVisible(updated);
     }
 	
@@ -737,7 +737,7 @@ enum ActivityKind {
         }
         var refreshed = Repo.get(server.schemas.Todo, id);
         if (refreshed != null) {
-            var _ = TodoPubSub.broadcast(TodoUpdates, TodoUpdated(refreshed), socket.assigns.current_user.organizationId);
+            TodoPubSub.broadcast(TodoUpdates, TodoUpdated(refreshed), socket.assigns.current_user.organizationId);
             return recomputeVisible(updateTodoInList(refreshed, socket));
         }
         return socket;
@@ -1058,7 +1058,7 @@ enum ActivityKind {
 	            }
 	        });
         // Broadcast (best-effort)
-        var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll), socket.assigns.current_user.organizationId);
+        TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll), socket.assigns.current_user.organizationId);
         // Reload todos and update assigns
         var refreshedTodos = loadTodos(socket.assigns.current_user.organizationId);
         var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, refreshedTodos));
@@ -1090,7 +1090,7 @@ enum ActivityKind {
 	            case _: Medium;
 	        };
 
-	        var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(SetPriority(priorityEnum)), socket.assigns.current_user.organizationId);
+	        TodoPubSub.broadcast(TodoUpdates, BulkUpdate(SetPriority(priorityEnum)), socket.assigns.current_user.organizationId);
 
 	        var refreshedTodos = loadTodos(socket.assigns.current_user.organizationId);
 	        var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, refreshedTodos));
@@ -1105,7 +1105,7 @@ enum ActivityKind {
 	            if (item.completed) Repo.delete(item);
 	        });
         // Notify others (best-effort)
-        var _ = TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted), socket.assigns.current_user.organizationId);
+        TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted), socket.assigns.current_user.organizationId);
         // Reload fresh todos from DB and update assigns
         var remaining = loadTodos(socket.assigns.current_user.organizationId);
         var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, remaining));
