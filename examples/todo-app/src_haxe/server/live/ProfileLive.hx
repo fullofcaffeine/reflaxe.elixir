@@ -66,12 +66,6 @@ typedef ProfileLiveRenderAssigns = {> ProfileLiveAssigns,
 @:native("TodoAppWeb.ProfileLive")
 @:liveview
 class ProfileLive {
-    @:keep private static var __keep_fns:Array<Function> = [
-        show,
-        sessionUserId,
-        saveProfile
-    ];
-
     public static function mount(_params: MountParams, session: Session, socket: Socket<ProfileLiveAssigns>): MountResult<ProfileLiveAssigns> {
         var sock: LiveSocket<ProfileLiveAssigns> = socket;
 
@@ -96,7 +90,6 @@ class ProfileLive {
         return Ok(sock);
     }
 
-    @:keep
     static function sessionUserId(session: Session): Null<Int> {
         if (session == null) return null;
         var sessionTerm: Term = cast session;
@@ -127,7 +120,6 @@ class ProfileLive {
         };
     }
 
-    @:keep
     static function saveProfile(params: EventParams, socket: LiveSocket<ProfileLiveAssigns>): LiveSocket<ProfileLiveAssigns> {
         if (!socket.assigns.signed_in || socket.assigns.user == null) {
             return LiveView.putFlash(socket, FlashType.Error, "You must sign in to update your profile.");
@@ -165,7 +157,6 @@ class ProfileLive {
         };
     }
 
-    @:keep
     public static function render(assigns: ProfileLiveRenderAssigns): String {
         var renderAssigns: Assigns<ProfileLiveRenderAssigns> = assigns;
         renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));

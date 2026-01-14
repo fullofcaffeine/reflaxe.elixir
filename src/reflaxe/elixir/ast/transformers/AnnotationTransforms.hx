@@ -669,13 +669,15 @@ class AnnotationTransforms {
             }
         }
 
-        // pipeline :api do ... end (only if needed)
-        if (apiRouteCalls.length > 0) {
-            var apiPlugs = [
-                makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("accepts"))), makeAST(EList([makeAST(EString("json"))]))]))
-            ];
-            statements.push(makeAST(EMacroCall("pipeline", [makeAST(EAtom(ElixirAtom.raw("api")))], makeAST(EBlock(apiPlugs)))));
-        }
+	        // pipeline :api do ... end (only if needed)
+	        if (apiRouteCalls.length > 0) {
+	            var apiPlugs = [
+	                makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("accepts"))), makeAST(EList([makeAST(EString("json"))]))])),
+	                // Enable cookie/session-backed API auth in controllers (used by the todo-app showcase).
+	                makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("fetch_session")))]))
+	            ];
+	            statements.push(makeAST(EMacroCall("pipeline", [makeAST(EAtom(ElixirAtom.raw("api")))], makeAST(EBlock(apiPlugs)))));
+	        }
 
         // scope "/", WebModule do ... end (browser)
         if (browserHttpRouteCalls.length > 0 || browserLiveRouteCalls.length > 0) {

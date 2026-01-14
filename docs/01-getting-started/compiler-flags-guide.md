@@ -90,6 +90,15 @@ Dead code elimination (`-dce`) is GOOD because it:
 - Reduces output size without affecting code quality
 - Works at the module level, not expression level
 
+#### Why `-dce full` is effectively required in this repo
+
+This repository’s workflow (snapshots + CI guardrails + example apps) assumes `-dce full`:
+- **Snapshots stay focused**: without DCE, output contains lots of unused generated helpers, making diffs noisy and harder to review.
+- **CI stays predictable**: file-size guards and performance budgets rely on output staying small and deterministic.
+- **DCE regressions are caught early**: Phoenix/OTP callbacks and modules are often invoked indirectly at runtime; running with DCE surfaces “was removed by DCE” failures during tests instead of in production.
+
+You *can* temporarily disable DCE when debugging, but it’s not the recommended mode for this repo.
+
 ### Debug Flags (Development Only)
 ```hxml
 # Helpful during development

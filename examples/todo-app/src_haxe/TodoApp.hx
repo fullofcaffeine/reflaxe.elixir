@@ -17,16 +17,14 @@ import server.support.DevAutoMigrate;
 @:application
 @:appName("TodoApp")  
 class TodoApp {
-    /**
-     * Start the application
-     */
-    @:keep
-    public static function start(_type: ApplicationStartType, _args: ApplicationArgs): ApplicationResult {
-        // Explicitly acknowledge OTP callback args to keep Elixir warnings clean
-        var _ = _type;
-        var _ = _args;
+	    /**
+	     * Start the application
+	     */
+	    public static function start(type: ApplicationStartType, args: ApplicationArgs): ApplicationResult {
+	        // `start/2` callback args are intentionally unused in this app; the compiler
+	        // should emit underscored Elixir parameters to keep warnings clean.
 
-        DevAutoMigrate.runIfEnabled();
+	        DevAutoMigrate.runIfEnabled();
 
         // Define children for the supervision tree using type-safe child specs
         var children: Array<ChildSpecFormat> = [
@@ -60,7 +58,6 @@ class TodoApp {
      * Called when application is preparing to shut down
      * State is whatever was returned from start/2
      */
-    @:keep
     public static function prep_stop(state: Term): Term {
         return state;
     }

@@ -139,19 +139,54 @@ import reflaxe.elixir.macros.HttpMethod;
         action: server.live.TodoLive.show
     },
     
-    {
-        name: "todosEdit", 
-        method: HttpMethod.LIVE, 
-        path: "/todos/:id/edit", 
-        controller: server.live.TodoLive, 
-        action: server.live.TodoLive.edit
-    },
-    
-    // API endpoints temporarily removed until User context/schema stabilized
-    
-	    // LiveDashboard + mailbox preview (dev-only)
 	    {
-	        name: "dashboard",
+	        name: "todosEdit", 
+	        method: HttpMethod.LIVE, 
+	        path: "/todos/:id/edit", 
+	        controller: server.live.TodoLive, 
+	        action: server.live.TodoLive.edit
+	    },
+
+	    // JSON API endpoints (admin-only; scoped by session org)
+	    {
+	        name: "apiUsersIndex",
+	        method: HttpMethod.GET,
+	        path: "/api/users",
+	        controller: controllers.UserController,
+	        action: controllers.UserController.index
+	    },
+	    {
+	        name: "apiUsersShow",
+	        method: HttpMethod.GET,
+	        path: "/api/users/:id",
+	        controller: controllers.UserController,
+	        action: controllers.UserController.show
+	    },
+	    {
+	        name: "apiUsersCreate",
+	        method: HttpMethod.POST,
+	        path: "/api/users",
+	        controller: controllers.UserController,
+	        action: controllers.UserController.create
+	    },
+	    {
+	        name: "apiUsersUpdate",
+	        method: HttpMethod.PUT,
+	        path: "/api/users/:id",
+	        controller: controllers.UserController,
+	        action: controllers.UserController.update
+	    },
+	    {
+	        name: "apiUsersDelete",
+	        method: HttpMethod.DELETE,
+	        path: "/api/users/:id",
+	        controller: controllers.UserController,
+	        action: controllers.UserController.delete
+	    },
+	    
+		    // LiveDashboard + mailbox preview (dev-only)
+		    {
+		        name: "dashboard",
 	        method: HttpMethod.LIVE_DASHBOARD,
 	        path: "/dev/dashboard"
 	    },

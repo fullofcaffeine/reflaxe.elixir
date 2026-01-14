@@ -178,6 +178,11 @@ Once installed, add to your `build.hxml`:
 
 # Enable dead code elimination to reduce output noise
 -dce full
+#
+# Why this repo recommends `-dce full`:
+# - Keeps generated `.ex` output small and readable (less stdlib/helpers noise).
+# - Makes snapshot diffs meaningful and keeps CI/budgets predictable.
+# - Catches “indirect runtime reference” regressions early (OTP/Phoenix callbacks/modules can be DCE’d otherwise).
 
 # Define a stable entrypoint
 # Entrypoint Haxe class (package.ClassName). Adjust to your app.

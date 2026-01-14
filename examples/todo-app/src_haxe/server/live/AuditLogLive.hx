@@ -81,15 +81,6 @@ typedef AuditLogLiveRenderAssigns = {> AuditLogLiveAssigns,
 class AuditLogLive {
     static inline var DEFAULT_LIMIT = 50;
 
-    @:keep private static var __keep_fns:Array<Function> = [
-        index,
-        sessionUserId,
-        parseOptionalInt,
-        parseLimit,
-        loadRowsForOrg,
-        applyFilters
-    ];
-
     public static function mount(_params: MountParams, session: Session, socket: Socket<AuditLogLiveAssigns>): MountResult<AuditLogLiveAssigns> {
         var sock: LiveSocket<AuditLogLiveAssigns> = socket;
 
@@ -143,7 +134,6 @@ class AuditLogLive {
         return "index";
     }
 
-    @:keep
     static function sessionUserId(session: Session): Null<Int> {
         if (session == null) return null;
         var sessionTerm: Term = cast session;
@@ -223,7 +213,6 @@ class AuditLogLive {
         };
     }
 
-    @:keep
     static function applyFilters(params: Term, socket: LiveSocket<AuditLogLiveAssigns>): LiveSocket<AuditLogLiveAssigns> {
         if (!socket.assigns.is_admin) return socket;
         if (socket.assigns.current_user == null) return socket;
@@ -256,7 +245,6 @@ class AuditLogLive {
         });
     }
 
-    @:keep
     public static function render(assigns: AuditLogLiveRenderAssigns): String {
         var renderAssigns: Assigns<AuditLogLiveRenderAssigns> = assigns;
         renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));

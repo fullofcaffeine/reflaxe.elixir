@@ -134,7 +134,6 @@ typedef LabelAssigns = {
  */
 @:native("TodoAppWeb.CoreComponents")
 @:component
-@:keep
 class CoreComponents {
     static function iconClass(name: String, className: Null<String>): String {
         return className != null ? "icon icon-" + name + " " + className : "icon icon-" + name;

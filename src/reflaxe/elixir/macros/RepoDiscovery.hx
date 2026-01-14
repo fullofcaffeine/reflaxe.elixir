@@ -60,7 +60,9 @@ class RepoDiscovery {
         "@:channel",
         "@:socket",
         "@:liveview",
-        "@:application"
+        "@:application",
+        "@:supervisor",
+        "@:genserver"
     ];
 
     public static function run(): Void {

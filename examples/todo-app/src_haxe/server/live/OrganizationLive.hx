@@ -100,24 +100,6 @@ typedef OrganizationLiveRenderAssigns = {> OrganizationLiveAssigns,
 @:native("TodoAppWeb.OrganizationLive")
 @:liveview
 class OrganizationLive {
-    @:keep private static var __keep_fns:Array<Function> = [
-        index,
-        sessionUserId,
-        normalizeSlug,
-        loadOrganizations,
-        loadInvites,
-        isAdminUser,
-        createInvite,
-        revokeInvite,
-        getOrganizationBySlug,
-        getOrCreateOrganizationBySlug,
-        switchOrganization,
-        loadMembers,
-        parseId,
-        countAdmins,
-        setUserRole
-    ];
-
     public static function mount(_params: MountParams, session: Session, socket: Socket<OrganizationLiveAssigns>): MountResult<OrganizationLiveAssigns> {
         var sock: LiveSocket<OrganizationLiveAssigns> = socket;
 
@@ -166,7 +148,6 @@ class OrganizationLive {
         return "index";
     }
 
-    @:keep
     static function sessionUserId(session: Session): Null<Int> {
         if (session == null) return null;
         var sessionTerm: Term = cast session;
@@ -223,7 +204,6 @@ class OrganizationLive {
         };
     }
 
-    @:keep
     static function switchOrganization(params: Term, socket: LiveSocket<OrganizationLiveAssigns>): LiveSocket<OrganizationLiveAssigns> {
         if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
             return LiveView.putFlash(socket, FlashType.Error, "Sign in to switch organizations.");
@@ -309,7 +289,6 @@ class OrganizationLive {
         return Repo.all(query).length;
     }
 
-    @:keep
     static function parseId(value: Term): Null<Int> {
         if (value == null) return null;
         if (Kernel.isInteger(value)) return cast value;
@@ -520,7 +499,6 @@ class OrganizationLive {
 	        };
 	    }
 
-    @:keep
     public static function render(assigns: OrganizationLiveRenderAssigns): String {
         var renderAssigns: Assigns<OrganizationLiveRenderAssigns> = assigns;
         renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));

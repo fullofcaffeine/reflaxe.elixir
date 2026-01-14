@@ -57,11 +57,6 @@ typedef AdminLiveRenderAssigns = {> AdminLiveAssigns,
 @:native("TodoAppWeb.AdminLive")
 @:liveview
 class AdminLive {
-    @:keep private static var __keep_fns:Array<Function> = [
-        index,
-        sessionUserId
-    ];
-
     public static function mount(_params: MountParams, session: Session, socket: Socket<AdminLiveAssigns>): MountResult<AdminLiveAssigns> {
         var sock: LiveSocket<AdminLiveAssigns> = socket;
 
@@ -103,7 +98,6 @@ class AdminLive {
         return Ok(sock);
     }
 
-    @:keep
     static function sessionUserId(session: Session): Null<Int> {
         if (session == null) return null;
         var sessionTerm: Term = cast session;
@@ -135,7 +129,6 @@ class AdminLive {
         return {admin: adminCount, regular: regularCount};
     }
 
-    @:keep
     public static function render(assigns: AdminLiveRenderAssigns): String {
         var renderAssigns: Assigns<AdminLiveRenderAssigns> = assigns;
         renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));

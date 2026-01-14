@@ -211,7 +211,7 @@ class Accounts {
         };
     }
 
-    static function generateDemoPasswordHash(email: String): String {
+    public static function generateDemoPasswordHash(email: String): String {
         // Demo-only (not used for auth); must be non-null to satisfy DB constraints.
         var timestamp = Date.now().getTime();
         var random = Math.floor(Math.random() * 1000000);
