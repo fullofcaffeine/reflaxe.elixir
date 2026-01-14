@@ -11,6 +11,7 @@ defmodule MyAppRouter do
   end
   pipeline :api do
     _ = plug(:accepts, ["json"])
+    _ = plug(:fetch_session)
   end
   scope "/", MyAppRouter do
     _ = pipe_through(:browser)

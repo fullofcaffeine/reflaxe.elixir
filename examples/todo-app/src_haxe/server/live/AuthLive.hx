@@ -52,11 +52,6 @@ typedef AuthLiveRenderAssigns = {> AuthLiveAssigns,
 @:native("TodoAppWeb.AuthLive")
 @:liveview
 class AuthLive {
-    @:keep private static var __keep_fns:Array<haxe.Constraints.Function> = [
-        index,
-        sessionUserId
-    ];
-
     public static function mount(_params: MountParams, session: Session, socket: Socket<AuthLiveAssigns>): MountResult<AuthLiveAssigns> {
         var sock: LiveSocket<AuthLiveAssigns> = socket;
 
@@ -79,7 +74,6 @@ class AuthLive {
         return Ok(sock);
     }
 
-    @:keep
     static function sessionUserId(session: Session): Null<Int> {
         if (session == null) return null;
         var sessionTerm: Term = cast session;
@@ -95,7 +89,6 @@ class AuthLive {
         return "index";
     }
 
-    @:keep
     public static function render(assigns: AuthLiveRenderAssigns): String {
         var renderAssigns: Assigns<AuthLiveRenderAssigns> = assigns;
         renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));

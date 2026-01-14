@@ -40,7 +40,6 @@ class TodoAppWeb {
      * HOW
      * - Read `:user_id` from the Plug session and return `%{"user_id" => user_id}` when present.
      */
-    @:keep
     public static function live_session(conn: Conn<{}>): Term {
         var userId: Term = conn.getSession("user_id");
         var sessionMap: Term = {};

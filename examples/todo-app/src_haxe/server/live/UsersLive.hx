@@ -78,14 +78,6 @@ typedef UsersLiveRenderAssigns = {> UsersLiveAssigns,
 @:native("TodoAppWeb.UsersLive")
 @:liveview
 class UsersLive {
-    @:keep private static var __keep_fns:Array<Function> = [
-        index,
-        sessionUserId,
-        applyFilters,
-        parseId,
-        toggleActive
-    ];
-
     public static function mount(_params: MountParams, session: Session, socket: Socket<UsersLiveAssigns>): MountResult<UsersLiveAssigns> {
         var sock: LiveSocket<UsersLiveAssigns> = socket;
 
@@ -121,7 +113,6 @@ class UsersLive {
         return Ok(sock);
     }
 
-    @:keep
     static function sessionUserId(session: Session): Null<Int> {
         if (session == null) return null;
         var sessionTerm: Term = cast session;
@@ -150,7 +141,6 @@ class UsersLive {
         };
     }
 
-    @:keep
     static function applyFilters(params: Term, socket: LiveSocket<UsersLiveAssigns>): LiveSocket<UsersLiveAssigns> {
         var queryTerm: Term = ElixirMap.get(params, "query");
         var statusTerm: Term = ElixirMap.get(params, "status");
@@ -167,7 +157,6 @@ class UsersLive {
         });
     }
 
-    @:keep
     static function toggleActive(params: Term, socket: LiveSocket<UsersLiveAssigns>): LiveSocket<UsersLiveAssigns> {
         if (!socket.assigns.signed_in) {
             return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage users.");
@@ -208,7 +197,6 @@ class UsersLive {
         };
     }
 
-    @:keep
     static function parseId(value: Term): Null<Int> {
         if (value == null) return null;
         if (Kernel.isInteger(value)) return cast value;
@@ -292,7 +280,6 @@ class UsersLive {
         };
     }
 
-    @:keep
     public static function render(assigns: UsersLiveRenderAssigns): String {
         var renderAssigns: Assigns<UsersLiveRenderAssigns> = assigns;
         renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));

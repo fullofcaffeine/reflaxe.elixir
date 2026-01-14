@@ -1,0 +1,19 @@
+{
+  "filesGenerated": [
+  "string_buf.ex",
+  "my_app_web/telemetry.ex",
+  "my_app/application.ex",
+  "haxe/iterators/array_iterator.ex",
+  "elixir/otp/supervisor_strategy.ex",
+  "elixir/otp/shutdown_type.ex",
+  "elixir/otp/restart_type.ex",
+  "elixir/otp/child_type.ex",
+  "elixir/otp/child_spec_format.ex",
+  "elixir/otp/application_start_type.ex",
+  "elixir/otp/application_result_tools.ex",
+  "elixir/otp/application_result.ex"
+],
+  "id": 1,
+  "wasCached": false,
+  "version": 1
+}

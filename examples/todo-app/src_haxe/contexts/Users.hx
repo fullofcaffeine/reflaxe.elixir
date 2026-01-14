@@ -1,6 +1,7 @@
 package contexts;
 
 import elixir.Kernel;
+import elixir.Enum;
 import ecto.Changeset;
 import ecto.TypedQuery;
 import haxe.functional.Result;
@@ -28,7 +29,8 @@ typedef UserFilter = {
 typedef UserParams = {
     ?name: String,
     ?email: String,
-    ?age: Int,
+    ?bio: String,
+    ?role: String,
     ?active: Bool
 }
 
@@ -49,6 +51,39 @@ class UserChangeset {
 
 @:native("TodoApp.Users")
 class Users {
+    /**
+     * List users scoped to a single organization.
+     */
+    public static function listUsersForOrganization(organizationId: Int, ?filter: UserFilter): Array<User> {
+        var base = TypedQuery.from(User).where(u -> u.organizationId == organizationId);
+        if (filter == null) return Repo.all(base);
+
+        var filtered = base;
+
+        if (filter.name != null && StringTools.trim(filter.name) != "") {
+            filtered = filtered.where(u -> u.name == filter.name);
+        }
+
+        if (filter.email != null && StringTools.trim(filter.email) != "") {
+            filtered = filtered.where(u -> u.email == filter.email);
+        }
+
+        if (filter.isActive != null) {
+            filtered = filtered.where(u -> u.active == filter.isActive);
+        }
+
+        return Repo.all(filtered);
+    }
+
+    /**
+     * Fetch a single user by id, scoped to an organization.
+     */
+    public static function getUserInOrganization(id: Int, organizationId: Int): Null<User> {
+        var query = TypedQuery.from(User).where(u -> u.id == id && u.organizationId == organizationId);
+        var users = Repo.all(query);
+        return Enum.at(users, 0);
+    }
+
     /**
      * Get all users with optional filtering.
      */

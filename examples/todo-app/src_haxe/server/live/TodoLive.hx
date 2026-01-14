@@ -75,23 +75,9 @@ enum ActivityKind {
 	 * LiveView component for todo management with real-time updates
 	 */
 		@:native("TodoAppWeb.TodoLive")
-	@:liveview
-	class TodoLive {
-	    // Prevent DCE from stripping private helpers used by LiveView callbacks.
-	    @:keep private static var __keep_fns:Array<Function> = [
-	        create_todo,
-	        toggle_todo_status,
-	        delete_todo,
-	        update_todo_priority,
-	        start_editing,
-        save_edited_todo_typed,
-        complete_all_todos,
-        delete_completed_todos,
-        extract_id,
-        findTodo,
-	        parseTags
-	    ];
-		// All socket state is now defined in TodoLiveAssigns typedef for type safety
+		@:liveview
+		class TodoLive {
+			// All socket state is now defined in TodoLiveAssigns typedef for type safety
 
 	    static inline function presenceUsersTopic(organizationId: Int): String {
 	        return "org:" + Std.string(organizationId) + ":" + PresenceTopics.toString(PresenceTopic.Users);
@@ -362,9 +348,8 @@ enum ActivityKind {
 	 * No more string matching or raw params!
 	 * Each event carries its own typed parameters.
 	 */
-	    @:keep
-	    @:native("handle_event")
-		    public static function handle_event(event: String, params: Term, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
+		    @:native("handle_event")
+			    public static function handle_event(event: String, params: Term, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
 		        var nextSocket: Socket<TodoLiveAssigns> =
 		            if (event == EventName.CreateTodo) {
 		                create_todo(params, socket);
@@ -423,8 +408,7 @@ enum ActivityKind {
 	        return NoReply(nextSocket);
 	    }
 
-    @:keep
-    public static function extract_id(params: Term): Int {
+	    public static function extract_id(params: Term): Int {
         var direct: Term = Reflect.field(params, "id");
         var todoObj: Term = Reflect.field(params, "todo");
         var todoId: Term = (todoObj != null) ? Reflect.field(todoObj, "id") : null;
@@ -446,14 +430,12 @@ enum ActivityKind {
 	     * 
 	     * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	     */
-		    @:keep
-		    public static function handleInfo(msg: Term, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
+			    public static function handleInfo(msg: Term, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
 		        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
 		        return handlePubSub(msg, liveSocket);
 		    }
 
-		    @:keep
-		    static function isPresenceDiffBroadcast(msg: Term): Bool {
+			    static function isPresenceDiffBroadcast(msg: Term): Bool {
 		        if (!elixir.Kernel.isMap(msg)) return false;
 		        var msgTerm: Term = msg;
 		        var structTerm: Term = ElixirMap.get(msgTerm, Atom.create("__struct__"));
@@ -464,8 +446,7 @@ enum ActivityKind {
 	        return eventTerm != null && cast eventTerm == "presence_diff";
 	    }
 
-		    @:keep
-			    static function handlePubSub(payload: Term, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
+				    static function handlePubSub(payload: Term, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
 			        // NOTE: Keep this function as a single expression to avoid Elixir codegen fallthrough.
 			        var result: HandleInfoResult<TodoLiveAssigns> = if (isPresenceDiffBroadcast(payload)) {
 			            // Phoenix.Presence broadcasts diffs as `%Phoenix.Socket.Broadcast{event: "presence_diff", ...}`.
@@ -628,8 +609,7 @@ enum ActivityKind {
 	    /**
 	     * Create a new todo using typed TodoParams.
 	     */
-	    @:keep
-	    public static function create_todo(params: Term, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		    public static function create_todo(params: Term, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 	        // LiveView form params arrive as a map with string keys; extract safely.
 	        var rawTitle: Null<String> = Reflect.field(params, "title");
 	        var rawDesc: Null<String> = Reflect.field(params, "description");
@@ -694,8 +674,7 @@ enum ActivityKind {
  *   handle_info updates the list with the authoritative record; on error we broadcast the
  *   current DB row to revert.
  */
-	    @:keep
-	    public static function toggle_todo_status(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		    public static function toggle_todo_status(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         var existingTodo = findTodo(id, socket.assigns.todos);
         if (existingTodo == null) return socket;
 
@@ -730,8 +709,7 @@ enum ActivityKind {
 // Background reconcile for optimistic toggle
 // Handle in-process persistence request in handleInfo
 	
-    @:keep
-    public static function delete_todo(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	    public static function delete_todo(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         var todo = findTodo(id, socket.assigns.todos);
         if (todo == null) return socket;
         
@@ -748,8 +726,7 @@ enum ActivityKind {
         return recomputeVisible(updated);
     }
 	
-    @:keep
-    public static function update_todo_priority(id: Int, priority: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	    public static function update_todo_priority(id: Int, priority: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         var todo = findTodo(id, socket.assigns.todos);
         if (todo == null) return socket;
         switch (Repo.update(server.schemas.Todo.updatePriority(todo, priority))) {
@@ -785,8 +762,7 @@ enum ActivityKind {
         return Repo.all(query);
     }
 
-    @:keep
-    static function findTodo(id: Int, todos: Array<server.schemas.Todo>): Null<server.schemas.Todo> {
+	    static function findTodo(id: Int, todos: Array<server.schemas.Todo>): Null<server.schemas.Todo> {
 		for (todo in todos) {
 			if (todo.id == id) return todo;
 		}
@@ -803,8 +779,8 @@ enum ActivityKind {
         return todos.filter(function(t) return !t.completed).length;
     }
 	
-    @:keep @:native("parse_tags")
-    static function parseTags(tagsString: String): Array<String> {
+	    @:native("parse_tags")
+	    static function parseTags(tagsString: String): Array<String> {
         return server.support.TagTools.parseTags(tagsString);
     }
 
@@ -1063,8 +1039,7 @@ enum ActivityKind {
         });
     }
 	
-    @:keep
-    public static function start_editing(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	    public static function start_editing(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         // Update presence to show user is editing (idiomatic Phoenix pattern).
         // Must call recomputeVisible to update visible_todos with is_editing flag.
         var todo = findTodo(id, socket.assigns.todos);
@@ -1075,8 +1050,7 @@ enum ActivityKind {
     }
 	
 	// Bulk operations with type-safe socket handling
-	    @:keep
-	    public static function complete_all_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		    public static function complete_all_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 	        elixir.Enum.each(socket.assigns.todos, function(item) {
 	            if (!item.completed) {
 	                var cs = server.schemas.Todo.toggleCompleted(item);
@@ -1096,8 +1070,7 @@ enum ActivityKind {
 	        );
 	    }
 
-	    @:keep
-	    public static function bulk_set_priority(priorityLabel: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		    public static function bulk_set_priority(priorityLabel: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 	        var normalized = StringTools.trim(priorityLabel).toLowerCase();
 	        if (normalized != "low" && normalized != "medium" && normalized != "high") {
 	            return LiveView.putFlash(socket, FlashType.Error, "Invalid priority.");
@@ -1127,8 +1100,7 @@ enum ActivityKind {
 	        return LiveView.putFlash(updated, FlashType.Info, 'Updated priority for ${toUpdate.length} todo(s).');
 	    }
 
-	    @:keep
-	    public static function delete_completed_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+		    public static function delete_completed_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
 	        elixir.Enum.each(socket.assigns.todos, function(item) {
 	            if (item.completed) Repo.delete(item);
 	        });
@@ -1154,8 +1126,7 @@ enum ActivityKind {
     /**
      * Save edited todo with typed parameters.
      */
-    @:keep
-    public static function save_edited_todo_typed(params: Term, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	    public static function save_edited_todo_typed(params: Term, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
         if (socket.assigns.editing_todo == null) return socket;
         var todo = socket.assigns.editing_todo;
         // LiveView form params arrive as a map with string keys; extract safely.
@@ -1364,7 +1335,7 @@ enum ActivityKind {
 	 * Render function for the LiveView component
 	 * This generates the HTML template that gets sent to the browser
 	 */
-    @:keep public static function render(assigns: TodoLiveRenderAssigns): String {
+	    public static function render(assigns: TodoLiveRenderAssigns): String {
         // Phoenix warns when templates access locals defined outside ~H (it disables change tracking).
         // Compute derived flash strings into tracked assigns, then reference @flash_info/@flash_error in HEEx.
 		        var renderAssigns: Assigns<TodoLiveRenderAssigns> = assigns;

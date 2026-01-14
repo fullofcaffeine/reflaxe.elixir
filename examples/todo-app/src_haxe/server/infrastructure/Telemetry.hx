@@ -58,11 +58,7 @@ class Telemetry {
      * Child specification for OTP supervisor
      * 
      * Returns a proper child spec map for Supervisor.start_link
-     * 
-     * NOTE: @:keep is still required until we implement macro-time preservation
-     * for supervisor functions. The AST transformation happens too late to prevent DCE.
      */
-    @:keep
     public static function child_spec(opts: TelemetryOptions): ChildSpec {
         // Return a properly typed child spec structure
         return {
@@ -89,29 +85,22 @@ class Telemetry {
      * 
      * @param args Telemetry configuration options
      * @return Application result with supervisor PID
-     * 
-     * NOTE: @:keep is still required until we implement macro-time preservation
     */
-    @:keep
-    public static function start_link(args: TelemetryOptions): ApplicationResult {
-        // Ack args (OTP callback) to keep compiler warnings clean
-        var _ = args;
-        // Start a telemetry supervisor with no children; reporters are added dynamically.
-        var options: SupervisorOptions = {
-            strategy: SupervisorStrategy.OneForOne,
-            max_restarts: 3,
+	    public static function start_link(args: TelemetryOptions): ApplicationResult {
+	        // Start a telemetry supervisor with no children; reporters are added dynamically.
+	        var options: SupervisorOptions = {
+	            strategy: SupervisorStrategy.OneForOne,
+	            max_restarts: 3,
             max_seconds: 5
         };
         return SupervisorExtern.startLink([], options);
     }
 
 
-    @:keep
-    public static function init(args: TelemetryOptions): Term {
-        var _ = args;
-        var options: SupervisorOptions = {
-            strategy: SupervisorStrategy.OneForOne,
-            max_restarts: 3,
+	    public static function init(args: TelemetryOptions): Term {
+	        var options: SupervisorOptions = {
+	            strategy: SupervisorStrategy.OneForOne,
+	            max_restarts: 3,
             max_seconds: 5
         };
         return SupervisorExtern.init([], options);
