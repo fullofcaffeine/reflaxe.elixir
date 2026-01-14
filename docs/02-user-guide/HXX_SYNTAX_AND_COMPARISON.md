@@ -64,7 +64,20 @@ end
 ### Attributes and Directives (Typed)
 - Attribute names in Haxe may be camelCase or snake_case; they map to HEEx/HTML:
   - `className` → `class`, `phxClick` → `phx-click`, `dataTestId` → `data-test-id`
-- Each element’s allowed attributes and value types come from `phoenix.types.HXXTypes` (e.g., `InputAttributes`, `DivAttributes`).
+- Each *registered* HTML element’s allowed attributes and basic value kinds come from:
+  - `phoenix.types.HXXTypes` (e.g., `InputAttributes`, `DivAttributes`)
+  - `phoenix.types.HXXComponentRegistry` (which tags are registered + which attributes are allowed)
+
+What is checked (TSX-like behavior)
+- If the tag is a **registered HTML element** (e.g., `div`, `input`, `button`, `a`), the linter validates:
+  - attribute names (including camelCase/snake_case/kebab-case normalization)
+  - wildcard-safe attributes (`data-*`, `aria-*`, `phx-value-*`) and HEEx directives (`:if`, `:for`, `:let`)
+  - a small set of obvious attribute value kinds (e.g., bool-ish attrs, `phx-hook`, `phx-click`), when statically known
+- If the tag is **not registered** (e.g., a custom Web Component like `<my-widget>`), attribute validation is intentionally skipped by default to avoid false positives.
+
+This means:
+- `<div hreff="...">` is a compile-time error (typo on a registered element).
+- `<my-widget hreff="...">` is not an error by default (unknown/custom tags are treated as “user-defined”).
 
 ### Components & Slots
 - Phoenix components `<.button ...>` are preserved; attributes can be validated via your registry and typedefs. Slots follow registered shapes.
@@ -107,7 +120,8 @@ If you want to enforce typed `phx-hook` usage (to prevent drift with your hook r
 
 In strict mode:
 - `phx-hook="Name"` (literal) is rejected.
-- Use an expression form instead (recommended: `phx-hook=${HookName.Name}` in HXX).
+- `phx-hook={@hook}` (dynamic) is rejected.
+- Use a compile-time constant from a `@:phxHookNames` registry (recommended: `phx-hook=${HookName.Name}` in HXX).
 
 Note:
 - Phoenix requires a stable DOM id for hooks; the compiler errors if a *non-component* tag uses `phx-hook` without an `id` attribute.
@@ -122,7 +136,8 @@ If you want to enforce typed LiveView event names (`phx-click`, `phx-submit`, `p
 
 In strict mode:
 - Literal event strings like `phx-click="save"` are rejected.
-- Use an expression form instead (recommended: `phx-click=${EventName.Save}` in HXX).
+- `phx-click={@event}` (dynamic) is rejected.
+- Use a compile-time constant from a `@:phxEventNames` registry (recommended: `phx-click=${EventName.Save}` in HXX).
 
 ### Control Flow
 - Block conditionals in content use HXX control tags (normalized to HEEx):
@@ -134,11 +149,35 @@ In strict mode:
 
 ## Typing & Validation
 
-- Element/attribute typing: `HXXTypes` defines allowed attributes and kinds. The macro validates element names and attributes, producing helpful errors and suggestions.
+- Element/attribute typing: `HXXTypes` defines allowed attributes and kinds. The linter validates attributes for registered HTML tags, producing helpful errors and suggestions (unknown/custom tags are skipped by default).
 - Assigns typing: The linter cross‑checks `@field` references in `~H` against the Haxe `typedef` used for `assigns`.
 - Component prop kind typing: component assigns types are reduced to simple “kinds” (e.g. `string`, `bool`, `map`) and checked against attribute values when resolvable. `haxe.extern.EitherType<A, B>` (and `haxe.ds.Either<A, B>`) is treated as a union kind (`kindA|kindB`) when both sides are known.
 - Struct-like externs: if an extern type represents an Elixir struct and should behave like a map in HXX kind checks, annotate it with `@:elixirStruct` (e.g. `phoenix.JS`).
 - Attribute expressions (in progress): The compiler is moving to a structural AST (`EFragment`) so attribute values are typed expressions instead of text.
+
+## Extending the HXX type vocabulary
+
+You have two “vocabularies” you can extend:
+
+1) HTML element typing
+- Source of truth:
+  - `std/phoenix/types/HXXTypes.hx` (attribute typedefs like `InputAttributes`, `DivAttributes`, etc.)
+  - `std/phoenix/types/HXXComponentRegistry.hx` (which tags are registered + which attributes are allowed)
+- Add a new element or attribute:
+  - Add/extend the attribute typedef in `HXXTypes.hx`
+  - Register the element (or extend its allowed attribute set) in `HXXComponentRegistry.hx`
+  - Add a negative snapshot (typo attribute should fail) under `test/snapshot/negative/` and run `npm test`
+
+2) Phoenix component typing (`<.my_component ...>`, slots, `:let`)
+- For user components, define a discoverable `@:component` function and typed assigns/slots.
+- The linter uses RepoDiscovery to resolve components and then enforces:
+  - allowed props / required props
+  - allowed slots / required slots
+  - typed `:let` when the component/slot declares a `Slot<EntryProps, LetType>`
+
+### Will the compiler complain about unknown tags?
+- Unknown dot-components (`<.typo ...>`) are only errors under `-D hxx_strict_components` (recommended when you want TSX-level strictness).
+- Unknown HTML/custom tags (`<my-widget ...>`) are not errors by default; they are treated as user-defined to support custom elements. Registered HTML tags still get strict attribute checking.
 
 ## Developer UX
 
