@@ -1,3 +1,10 @@
+## [1.1.11](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.10...v1.1.11) (2026-01-14)
+
+
+### Bug Fixes
+
+* **ecto:** preserve @:schema fields under -dce full ([9c8b616](https://github.com/fullofcaffeine/reflaxe.elixir/commit/9c8b616a39e997cf029e85318407b289d68aa518))
+
 ## [1.1.10](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.9...v1.1.10) (2026-01-14)
 
 
