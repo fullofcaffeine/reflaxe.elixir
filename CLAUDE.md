@@ -7,7 +7,7 @@
 Agents must never block the terminal when validating the todo-app. Use the provided QA sentinels which build, start Phoenix in the background, probe readiness, and tear down cleanly.
 
 - Quick (repo root):
-  - `npm run qa:sentinel`  → runs `scripts/qa-sentinel.sh --app examples/todo-app --port 4001`
+  - `npm run qa:sentinel`  → runs `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose`
 - Async, non-blocking (returns immediately):
   - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --verbose --deadline 300`
   - Prints `QA_SENTINEL_PID` and log path.
@@ -32,6 +32,7 @@ Always use these sentinels for runtime checks. Do not run `mix phx.server` in th
 - Agents must never invoke `scripts/qa-sentinel.sh` in synchronous mode while working in the terminal.
 - Required invocation for agents: `--async` AND `--deadline <secs>` on every sentinel run.
   - Example: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --env e2e --async --deadline 600 -v`
+  - Note: `npm run qa:sentinel` already uses `--async --deadline ...`, so it is safe for agent use.
 - Log viewing must be bounded or finish‑aware only:
   - One‑shot: `scripts/qa-logpeek.sh --run-id <RUN_ID> --last 200`
   - Bounded follow: `scripts/qa-logpeek.sh --run-id <RUN_ID> --follow 60`
@@ -115,7 +116,7 @@ This repo exercises quality at three distinct layers. Keep them separate and use
 - Entrypoint: `scripts/qa-sentinel.sh`
 - Steps: Haxe build → mix deps.get → mix compile → boot Phoenix (background) → readiness probe → `GET /` → log scan
 - Runs (examples):
-  - Quick: `npm run qa:sentinel`
+  - Quick (agent-safe, async + bounded): `npm run qa:sentinel`
   - Async: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 300`
   - Keep alive: `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --keep-alive -v`
 - Purpose: Prove compiler output integrates with Phoenix correctly and runs without runtime errors.
