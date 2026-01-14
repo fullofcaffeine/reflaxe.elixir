@@ -259,6 +259,9 @@ class OptimizedVarUseAnalyzer {
             case EUse(_module, options):
                 for (o in options) collectVars(o, out);
             case ESigil(type, content, _modifiers) if (type == "H" || type == "h"):
+                // Phoenix HEEx (~H) requires an `assigns` variable in scope, even when the
+                // template only references assigns implicitly via `@foo`.
+                addName(out, "assigns");
                 // HEEx templates embed Elixir expressions inside <%= ... %> and attribute { ... } blocks.
                 // Attribute expressions are parsed into a typed HEEx AST and attached as metadata.heexAST.
                 if (n.metadata != null) {
@@ -482,6 +485,10 @@ class OptimizedVarUseAnalyzer {
             case EUse(_module, options):
                 for (o in options) collectVarsExact(o, out);
             case ESigil(type, content, _modifiers) if (type == "H" || type == "h"):
+                // Phoenix HEEx (~H) requires an `assigns` variable in scope, even when the
+                // template only references assigns implicitly via `@foo`.
+                addExact(out, "assigns");
+                addExact(out, "_assigns");
                 if (n.metadata != null) {
                     var heexAst: Array<ElixirAST> = cast Reflect.field(n.metadata, "heexAST");
                     if (heexAst != null) for (frag in heexAst) collectVarsExact(frag, out);
