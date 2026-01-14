@@ -2056,7 +2056,23 @@ class HeexAssignsTypeLinterTransforms {
                 'HEEx phx-hook error: under -D hxx_strict_phx_hook, phx-hook must be an expression (use phx-hook={HookName.Name} / HXX phx-hook=$${HookName.Name})',
                 pos
             );
+            return;
         }
+
+        // TSX-level mode: require a compile-time known hook name from a registry.
+        #if macro
+        var allowed = getAllowedPhxHookNames();
+        if (allowed == null) {
+            error(ctx, 'HEEx phx-hook error: under -D hxx_strict_phx_hook, you must define a hook registry (add @:phxHookNames to an enum abstract of String)', pos);
+            return;
+        }
+
+        var name = extractConstStringFromHeexExpr(value);
+        if (name == null) {
+            error(ctx, 'HEEx phx-hook error: under -D hxx_strict_phx_hook, phx-hook must be a compile-time constant from your hook registry (e.g., HookName.Ping)', pos);
+            return;
+        }
+        #end
     }
 
     static function isPhxEventAttribute(canonicalAttr: String): Bool {
@@ -2104,7 +2120,23 @@ class HeexAssignsTypeLinterTransforms {
                 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, ' + canonicalAttr + ' must be an expression (use ' + canonicalAttr + '={EventName.Name} / HXX ' + canonicalAttr + '=$${EventName.Name})',
                 pos
             );
+            return;
         }
+
+        // TSX-level mode: require a compile-time known event name from a registry.
+        #if macro
+        var allowed = getAllowedPhxEventNames();
+        if (allowed == null) {
+            error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, you must define an event registry (add @:phxEventNames to an enum abstract of String)', pos);
+            return;
+        }
+
+        var name = extractConstStringFromHeexExpr(value);
+        if (name == null) {
+            error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, ' + canonicalAttr + ' must be a compile-time constant from your event registry (e.g., EventName.Save)', pos);
+            return;
+        }
+        #end
     }
 
     #if macro
