@@ -17,7 +17,6 @@ import elixir.types.Term;
  * - Delegate `render/2` to the shared implementation.
  */
 @:native("TodoAppWeb.ErrorJSON")
-@:keep
 class ErrorJSON {
     public static function render(template: String, assigns: Term): phoenix.errors.DefaultErrorJSON.ErrorPayload {
         return phoenix.errors.DefaultErrorJSON.render(template, assigns);

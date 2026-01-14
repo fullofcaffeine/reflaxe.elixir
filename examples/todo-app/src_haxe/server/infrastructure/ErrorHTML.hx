@@ -17,7 +17,6 @@ import elixir.types.Term;
  * - Delegate `render/2` to the shared implementation.
  */
 @:native("TodoAppWeb.ErrorHTML")
-@:keep
 class ErrorHTML {
     public static function render(template: String, assigns: Term): String {
         return phoenix.errors.DefaultErrorHTML.render(template, assigns);
