@@ -13,9 +13,7 @@ class PageController {
     /**
      * GET /
      */
-    public static function home(conn: Conn<EmptyParams>, _params: EmptyParams): Conn<EmptyParams> {
-        var _ = _params;
+    public static function home(conn: Conn<EmptyParams>, params: EmptyParams): Conn<EmptyParams> {
         return conn.json({message: "Hello from Haxe → Elixir!"});
     }
 }
-

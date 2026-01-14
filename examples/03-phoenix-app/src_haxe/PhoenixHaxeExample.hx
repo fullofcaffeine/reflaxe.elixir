@@ -19,11 +19,7 @@ class PhoenixHaxeExample {
      * Start the application supervision tree.
      */
     @:keep
-    public static function start(_type: ApplicationStartType, _args: ApplicationArgs): ApplicationResult {
-        // Ack OTP callback args to keep Elixir warnings clean.
-        var _ = _type;
-        var _ = _args;
-
+    public static function start(type: ApplicationStartType, args: ApplicationArgs): ApplicationResult {
         var children: Array<ChildSpecFormat> = [
             TypeSafeChildSpec.pubSub("PhoenixHaxeExample.PubSub"),
             TypeSafeChildSpec.endpoint("PhoenixHaxeExampleWeb.Endpoint")
@@ -38,4 +34,3 @@ class PhoenixHaxeExample {
         return SupervisorExtern.startLink(children, options);
     }
 }
-
