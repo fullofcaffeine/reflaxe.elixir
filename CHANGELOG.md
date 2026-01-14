@@ -1,3 +1,10 @@
+## [1.1.10](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.9...v1.1.10) (2026-01-14)
+
+
+### Bug Fixes
+
+* **dce:** retain small native modules without @:keep ([15c8a2c](https://github.com/fullofcaffeine/reflaxe.elixir/commit/15c8a2c3d42471c1db349f5109f9b23ca29bdb47))
+
 ## [1.1.9](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.8...v1.1.9) (2026-01-14)
 
 
