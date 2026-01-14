@@ -75,12 +75,19 @@ defmodule HaxeServerTest do
         flunk("Haxe executable not found for test")
       end
 
+      {resolved_haxe_exe, resolved_haxe_args} = HaxeServer.resolve_haxe_cmd(haxe_exe, [], project_root)
+
       # Start an external haxe --wait server on a cookie port.
       cookie_port = find_free_port()
       port =
         Port.open(
-          {:spawn_executable, haxe_exe},
-          [:binary, :exit_status, :stderr_to_stdout, {:args, ["--wait", Integer.to_string(cookie_port)]}]
+          {:spawn_executable, resolved_haxe_exe},
+          [
+            :binary,
+            :exit_status,
+            :stderr_to_stdout,
+            {:args, resolved_haxe_args ++ ["--wait", Integer.to_string(cookie_port)]}
+          ]
         )
 
       Process.sleep(500)
@@ -103,7 +110,11 @@ defmodule HaxeServerTest do
       cache_key =
         :crypto.hash(
           :sha256,
-          :erlang.term_to_binary(%{project_root: project_root, haxe_cmd: haxe_exe, haxe_args: []})
+          :erlang.term_to_binary(%{
+            project_root: project_root,
+            haxe_cmd: resolved_haxe_exe,
+            haxe_args: resolved_haxe_args
+          })
         )
         |> Base.encode16(case: :lower)
 
@@ -123,7 +134,7 @@ defmodule HaxeServerTest do
 
       try do
         File.cd!(project_root)
-        assert {:ok, _pid} = HaxeServer.start_link([haxe_cmd: {haxe_exe, []}])
+        assert {:ok, _pid} = HaxeServer.start_link([haxe_cmd: {resolved_haxe_exe, resolved_haxe_args}])
         Process.sleep(100)
         {_response, stats} = HaxeServer.status()
         assert stats.port == cookie_port
