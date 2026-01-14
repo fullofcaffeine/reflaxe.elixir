@@ -1,3 +1,10 @@
+## [1.1.9](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.8...v1.1.9) (2026-01-14)
+
+
+### Bug Fixes
+
+* **dce:** preserve framework callbacks at macro-time ([99e1079](https://github.com/fullofcaffeine/reflaxe.elixir/commit/99e10796d7b07d60fc0707ac71cfdc1147dd6397))
+
 ## [1.1.8](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.7...v1.1.8) (2026-01-13)
 
 
