@@ -62,21 +62,31 @@ class AnnotatedModuleEnumerator {
         final meta = cls.meta;
         if (meta == null) return null;
 
-        var shouldKeep = false;
+        final fields = Context.getBuildFields();
+        final isSchema = meta.has(":schema");
+
+        if (isSchema) {
+            for (field in fields) {
+                if (isSchemaField(field)) ensureSchemaFieldKept(field);
+            }
+        }
+
+        var shouldKeepModule = false;
         for (metaName in keepMetas) {
             if (meta.has(metaName)) {
-                shouldKeep = true;
+                shouldKeepModule = true;
                 break;
             }
         }
 
-        if (!shouldKeep) return null;
+        if (!isSchema && !shouldKeepModule) return null;
 
         #if debug_annotated_module_enumerator
         trace('[AnnotatedModuleEnumerator] keep ' + ((cls.pack.length > 0) ? (cls.pack.join(".") + "." + cls.name) : cls.name));
         #end
 
-        final fields = Context.getBuildFields();
+        if (!shouldKeepModule) return fields;
+
         final keepAllPublicStatic = meta.has(":controller")
             || meta.has(":channel")
             || meta.has(":socket")
@@ -112,6 +122,31 @@ class AnnotatedModuleEnumerator {
         if (field.meta == null) field.meta = [];
         if (!fieldMetaHas(field.meta, ":keep")) {
             field.meta.push({ name: ":keep", params: [], pos: field.pos });
+        }
+    }
+
+    static function ensureSchemaFieldKept(field: Field): Void {
+        if (field.access != null) {
+            for (a in field.access) {
+                if (a == APrivate) return;
+            }
+        }
+        if (field.meta == null) field.meta = [];
+        if (!fieldMetaHas(field.meta, ":keep")) {
+            field.meta.push({ name: ":keep", params: [], pos: field.pos });
+        }
+    }
+
+    static function isSchemaField(field: Field): Bool {
+        return switch (field.kind) {
+            case FVar(_, _) | FProp(_, _, _, _):
+                fieldMetaHas(field.meta, ":field")
+                    || fieldMetaHas(field.meta, ":virtual")
+                    || fieldMetaHas(field.meta, ":belongs_to")
+                    || fieldMetaHas(field.meta, ":has_many")
+                    || fieldMetaHas(field.meta, ":has_one");
+            default:
+                false;
         }
     }
 

@@ -25,7 +25,6 @@ typedef OrganizationParams = {
 @:schema("organizations")
 @:timestamps
 @:changeset(["slug", "name"], ["slug", "name"])
-@:keep
 class Organization {
     @:field @:primary_key public var id: Int;
     @:field public var slug: String;
