@@ -54,6 +54,13 @@ class HeexMain {
     });
 
     passes.push({
+      name: "HeexLetUnusedBinderUnderscore",
+      description: "Prefix unused :let binders in ~H with `_` to prevent Elixir warnings",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.HeexLetUnusedBinderUnderscoreTransforms.transformPass
+    });
+
+    passes.push({
       name: "WebRemoteCallModuleQualification",
       description: "Rewrite Foo.bar(...) → AppWeb.Foo.bar(...) inside Web modules",
       enabled: true,

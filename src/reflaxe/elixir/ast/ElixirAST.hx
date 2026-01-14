@@ -892,7 +892,16 @@ typedef ElixirMetadata = {
     // WHAT: Marks whether an attribute value originated from `{expr}` (dynamic) vs `"literal"` (static).
     // WHY: Enables opt-in strict validation (e.g., requiring typed registries for `phx-hook` values).
     // HOW: Set by HeexFragmentBuilder while parsing ~H content; ignored by printer/emitter.
-    ?heexAttrIsDynamic: Bool
+    ?heexAttrIsDynamic: Bool,
+
+    // HEEx attribute value span (analysis only)
+    // WHAT: Absolute character offsets for the attribute value *inside* quotes/braces.
+    // WHY: Enables precise, scoped rewrites of attribute values (e.g., unused `:let` binder hygiene)
+    //      without brittle regexes over the entire `~H` string.
+    // HOW: Set by HeexFragmentBuilder while parsing ~H content; ignored by printer/emitter.
+    // NOTE: `heexAttrValueSpanEnd` is exclusive (like String.substr end).
+    ?heexAttrValueSpanStart: Int,
+    ?heexAttrValueSpanEnd: Int
 }
 
 /** Minimal HEEx fragment metadata for analysis (not used for emission) */

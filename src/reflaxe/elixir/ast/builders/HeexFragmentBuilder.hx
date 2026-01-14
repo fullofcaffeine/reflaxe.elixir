@@ -179,8 +179,11 @@ private class Parser {
                 skipWs();
                 var q = peek();
                 if (q == '"' || q == '\'') {
+                    var valueStart = i + 1; // after opening quote
                     valueAst = makeAST(EString(parseQuotedString()));
                     valueAst.metadata.heexAttrIsDynamic = false;
+                    valueAst.metadata.heexAttrValueSpanStart = valueStart;
+                    valueAst.metadata.heexAttrValueSpanEnd = valueStart + (switch (valueAst.def) { case EString(s): s != null ? s.length : 0; default: 0; });
                 } else if (q == '{') {
                     advance(1); // consume {
                     var exprStart = i;
@@ -192,12 +195,18 @@ private class Parser {
                     var expr = s.substr(exprStart, (i - 1) - exprStart);
                     valueAst = parseAttrExpr(expr);
                     valueAst.metadata.heexAttrIsDynamic = true;
+                    // Track the absolute span of the expression *inside* the surrounding braces.
+                    // End is exclusive (the index of the closing `}`).
+                    valueAst.metadata.heexAttrValueSpanStart = exprStart;
+                    valueAst.metadata.heexAttrValueSpanEnd = i - 1;
                 } else {
                     // Bareword value until ws or tag end
                     var vs = i;
                     while (!eof()) { var ch2 = peek(); if (isWs(ch2) || ch2 == '>' || ch2 == '/') break; advance(1); }
                     valueAst = makeAST(EString(s.substr(vs, i - vs)));
                     valueAst.metadata.heexAttrIsDynamic = false;
+                    valueAst.metadata.heexAttrValueSpanStart = vs;
+                    valueAst.metadata.heexAttrValueSpanEnd = i;
                 }
             } else {
                 // Boolean attribute
