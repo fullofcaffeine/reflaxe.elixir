@@ -154,6 +154,8 @@ defmodule HaxeServer do
           {hd(parts), tl(parts)}
       end
 
+    {cmd, args} = resolve_haxe_cmd(cmd, args, project_root)
+
     cache_key = cache_key(project_root, cmd, args)
 
     port =
@@ -840,5 +842,82 @@ defmodule HaxeServer do
             port
         end
     end
+  end
+
+  @doc false
+  def resolve_haxe_cmd(cmd, args, project_root \\ nil) when is_binary(cmd) and is_list(args) do
+    project_root = project_root || find_project_root()
+
+    if haxeshim?(cmd) do
+      case lix_haxe_binary_from_project(project_root) do
+        {:ok, haxe_exe} ->
+          {haxe_exe, []}
+
+        {:error, _reason} ->
+          {cmd, args}
+      end
+    else
+      {cmd, args}
+    end
+  end
+
+  defp haxeshim?(cmd) when is_binary(cmd) do
+    # Lix's haxeshim is a Node wrapper around the real Haxe binary. It can be used for direct
+    # compilation, but it is not compatible with Haxe's native compilation server protocol
+    # (`--wait`/`--connect`) because it injects `--haxe-version` into server requests.
+    #
+    # For server mode we prefer the real Haxe binary when available.
+    case Path.basename(cmd) do
+      "haxeshim.js" -> true
+      "haxe" -> haxeshim_file?(cmd)
+      _ -> haxeshim_file?(cmd)
+    end
+  rescue
+    _ -> false
+  end
+
+  defp haxeshim_file?(cmd) do
+    if File.exists?(cmd) do
+      case File.open(cmd, [:read], fn file ->
+             IO.read(file, 4096) || ""
+           end) do
+        {:ok, chunk} when is_binary(chunk) ->
+          String.contains?(chunk, "haxeshim")
+
+        _ ->
+          false
+      end
+    else
+      false
+    end
+  rescue
+    _ -> false
+  end
+
+  defp lix_haxe_binary_from_project(project_root) do
+    haxerc_path = Path.join(project_root, ".haxerc")
+
+    with true <- File.exists?(haxerc_path),
+         {:ok, body} <- File.read(haxerc_path),
+         {:ok, %{"version" => version}} <- Jason.decode(body),
+         true <- is_binary(version) and version != "" do
+      home = System.user_home!()
+
+      candidates = [
+        Path.join([home, "haxe", "versions", version, "haxe"]),
+        Path.join([home, "haxe", "versions", version, "haxe.exe"]),
+        Path.join([home, ".haxe", "versions", version, "haxe"]),
+        Path.join([home, ".haxe", "versions", version, "haxe.exe"])
+      ]
+
+      case Enum.find(candidates, &File.exists?/1) do
+        nil -> {:error, :not_found}
+        path -> {:ok, path}
+      end
+    else
+      _ -> {:error, :missing_haxerc}
+    end
+  rescue
+    _ -> {:error, :failed_to_resolve}
   end
 end
