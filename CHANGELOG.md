@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.2.0...v1.3.0) (2026-01-15)
+
+
+### Features
+
+* **hxx:** strict html + custom tag registry ([0db64d4](https://github.com/fullofcaffeine/reflaxe.elixir/commit/0db64d41fe5fb5a62e6a27653a1f564ec1226d2b))
+
 # [1.2.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.1.11...v1.2.0) (2026-01-14)
 
 
