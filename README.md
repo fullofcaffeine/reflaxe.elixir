@@ -61,7 +61,7 @@ Write your Phoenix app in Haxe and get:
 The foundation for multi-target development:
 - **Business logic in Haxe** - validation, algorithms, data transformations
 - **Backend on BEAM** - Phoenix/LiveView/Ecto with full type safety ✅
-- **Frontend on JavaScript** - Async/await support + Genes ES module output (see todo-app) ✅
+- **Frontend on JavaScript** - Async/await support + [Genes](https://github.com/benmerckx/genes) ES module output (see todo-app) ✅
 - **TypeScript ecosystem access** - dts2hx planned (optional future)
 
 #### Leverage BEAM's Unique Strengths
