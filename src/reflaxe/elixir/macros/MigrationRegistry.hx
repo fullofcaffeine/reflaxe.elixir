@@ -224,6 +224,14 @@ class MigrationRegistry {
             return;
         }
 
+        // If no migrations registered any tables, schema validation cannot run.
+        // WHY: Some builds compile only schemas (no migrations). In that case we intentionally
+        // skip validation to avoid false failures.
+        if (tables.keys().hasNext() == false) {
+            pendingTableValidations = new Map();
+            return;
+        }
+
         var pending = pendingTableValidations;
         pendingTableValidations = new Map();
 
