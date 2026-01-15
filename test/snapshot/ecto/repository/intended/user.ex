@@ -5,6 +5,7 @@ defmodule User do
     _ = field(:email, :string)
     _ = field(:age, :integer)
     _ = field(:active, :boolean)
+    _ = timestamps()
   end
   
   def changeset(user, attrs) do

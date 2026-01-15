@@ -18,7 +18,7 @@ import elixir.types.Term;
  * - **Automatic schema generation**: Generates proper Ecto schema blocks
  * - **Type-safe fields**: Full compile-time validation of field types
  * - **Changeset preservation**: Functions marked with @:changeset are preserved through DCE
- * - **Association support**: belongs_to, has_many, has_one relationships
+ * - **Association support**: belongs_to, has_many, has_one, many_to_many relationships
  * - **Timestamp support**: Automatic inserted_at/updated_at with @:timestamps
  * 
  * ## Usage Example
@@ -35,6 +35,9 @@ import elixir.types.Term;
  *     
  *     @:belongs_to("user")
  *     public var user: User;
+ *     
+ *     @:many_to_many("tags", {through: "todos_tags"})
+ *     public var tags: Array<Tag>;
  *     
  *     @:changeset
  *     public static function changeset(todo: Todo, params: Term): Changeset<Todo, Term> {
@@ -57,6 +60,7 @@ import elixir.types.Term;
  *     field :completed, :boolean, default: false
  *     field :user_id, :integer
  *     belongs_to :user, User
+ *     many_to_many :tags, Tag, join_through: "todos_tags"
  *     timestamps()
  *   end
  *   
@@ -126,6 +130,20 @@ class Schema {
      * ```
      */
     static public var has_one: Term;
+
+    /**
+     * Define a many_to_many association
+     *
+     * Supports optional join-through configuration via an object literal:
+     * - `{through: "join_table"}` or `{join_through: "join_table"}`
+     *
+     * @example
+     * ```haxe
+     * @:many_to_many("tags", {through: "posts_tags"})
+     * public var tags: Array<Tag>;
+     * ```
+     */
+    static public var many_to_many: Term;
     
     /**
      * Mark a function as a changeset generator

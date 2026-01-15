@@ -26,6 +26,8 @@ import reflaxe.elixir.SourceMapWriter;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
+import reflaxe.elixir.ast.ElixirAST.SchemaAssociationKind;
+import reflaxe.elixir.ast.ElixirAST.SchemaAssociationMeta;
 import reflaxe.elixir.ast.ElixirAST.RouterRouteMeta;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.CompilationContext;
@@ -2465,7 +2467,9 @@ class ElixirCompiler extends GenericCompiler<
                 }
             }
 
-            // Check for @:timestamps annotation
+            // Check for @:timestamps annotation (class-level), plus legacy field-level placement.
+            // WHY: Some early examples placed @:timestamps on a field (e.g. inserted_at) while
+            //      the intended ergonomic form is class-level @:timestamps.
             if (classType.meta.has(":timestamps")) {
                 metadata.hasTimestamps = true;
             }
@@ -2513,11 +2517,18 @@ class ElixirCompiler extends GenericCompiler<
                             #if debug_annotation_transforms
                             #end
                         }
+                        // Legacy: allow @:timestamps on a field to enable timestamps() emission.
+                        if (field.meta.has(":timestamps")) {
+                            metadata.hasTimestamps = true;
+                        }
                     default:
                         // Skip functions and other field kinds
                 }
             }
             metadata.schemaFields = schemaFields;
+
+            // Collect schema associations (belongs_to/has_many/has_one/many_to_many)
+            metadata.schemaAssociations = extractSchemaAssociationsFromTypeFields(typeFields);
 
             // Store the fully qualified class name for lookups
             metadata.haxeFqcn = classType.pack.length > 0
@@ -2677,6 +2688,108 @@ class ElixirCompiler extends GenericCompiler<
                 // Treat anonymous objects as Dynamic
                 "Dynamic";
             case _: "String"; // Reasonable default
+        }
+    }
+
+    static function extractSchemaAssociationsFromTypeFields(typeFields: Array<ClassField>): Array<SchemaAssociationMeta> {
+        var associations: Array<SchemaAssociationMeta> = [];
+
+        for (field in typeFields) {
+            var kind: Null<SchemaAssociationKind> = null;
+
+            if (field.meta.has(":belongs_to")) kind = SchemaAssociationKind.BelongsTo;
+            else if (field.meta.has(":has_many")) kind = SchemaAssociationKind.HasMany;
+            else if (field.meta.has(":has_one")) kind = SchemaAssociationKind.HasOne;
+            else if (field.meta.has(":many_to_many")) kind = SchemaAssociationKind.ManyToMany;
+
+            if (kind == null) continue;
+
+            var metaName = ":" + Std.string(kind);
+            var metaEntries = field.meta.extract(metaName);
+            if (metaEntries == null || metaEntries.length == 0) continue;
+
+            var params = metaEntries[0].params;
+            var assocName = field.name;
+            var assocModule: Null<String> = null;
+            var joinThrough: Null<String> = null;
+
+            if (params != null) {
+                // First arg is almost always the association name.
+                if (params.length >= 1) {
+                    switch (params[0].expr) {
+                        case EConst(CString(name, _)):
+                            assocName = name;
+                        default:
+                    }
+                }
+
+                // Remaining args: module name (string) and/or options object.
+                for (i in 1...params.length) {
+                    switch (params[i].expr) {
+                        case EConst(CString(moduleName, _)):
+                            if (assocModule == null) assocModule = moduleName;
+                        case EObjectDecl(fields):
+                            if (kind == SchemaAssociationKind.ManyToMany) {
+                                for (f in fields) {
+                                    var key = f.field;
+                                    switch (f.expr.expr) {
+                                        case EConst(CString(v, _)):
+                                            if (key == "join_through" || key == "through") joinThrough = v;
+                                        default:
+                                    }
+                                }
+                            }
+                        default:
+                    }
+                }
+            }
+
+            if (assocModule == null) {
+                assocModule = inferAssociationModuleFromType(field.type);
+            }
+
+            if (assocModule == null) continue;
+
+            associations.push({
+                kind: kind,
+                name: assocName,
+                module: assocModule,
+                joinThrough: joinThrough
+            });
+        }
+
+        return associations;
+    }
+
+    static function inferAssociationModuleFromType(t: Type): Null<String> {
+        return switch (t) {
+            case TType(td, params):
+                var underlying = td.get();
+                if (underlying.name == "Null" && params != null && params.length == 1) {
+                    inferAssociationModuleFromType(params[0]);
+                } else {
+                    null;
+                }
+            case TAbstract(ad, params):
+                var n = ad.get().name;
+                if (n == "Null" && params != null && params.length == 1) {
+                    inferAssociationModuleFromType(params[0]);
+                } else {
+                    null;
+                }
+            case TInst(td, params):
+                var cls = td.get();
+                if (cls.name == "Array" && params != null && params.length == 1) {
+                    inferAssociationModuleFromType(params[0]);
+                } else if (cls.name == "Dynamic") {
+                    null;
+                } else {
+                    cls.name;
+                }
+            case TAnonymous(_):
+                null;
+            case _:
+                null;
         }
     }
 

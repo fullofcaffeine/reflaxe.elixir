@@ -144,7 +144,8 @@ class AnnotatedModuleEnumerator {
                     || fieldMetaHas(field.meta, ":virtual")
                     || fieldMetaHas(field.meta, ":belongs_to")
                     || fieldMetaHas(field.meta, ":has_many")
-                    || fieldMetaHas(field.meta, ":has_one");
+                    || fieldMetaHas(field.meta, ":has_one")
+                    || fieldMetaHas(field.meta, ":many_to_many");
             default:
                 false;
         }

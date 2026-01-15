@@ -5,6 +5,8 @@ defmodule User do
     _ = field(:email, :string)
     _ = field(:age, :integer)
     _ = field(:active, :boolean)
+    _ = has_many(:posts, Post)
+    _ = timestamps()
   end
   
   def changeset(user, attrs) do
