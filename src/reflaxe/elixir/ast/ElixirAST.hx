@@ -803,6 +803,10 @@ typedef ElixirMetadata = {
     // Each entry contains the original Haxe field name and a normalized type hint (String, Int, Bool, Date, etc.).
     // Transformers apply name conversion (snake_case) and map types to Ecto atoms (e.g., Int -> :integer).
     ?schemaFields: Array<{ name: String, type: String }>,
+    // schemaAssociations: pre-extracted association list from the Haxe class, used by transformers to emit Ecto associations.
+    // Each entry contains the association kind (belongs_to/has_many/has_one/many_to_many), association name, target module,
+    // and optional association-specific options (e.g., join_through for many_to_many).
+    ?schemaAssociations: Array<SchemaAssociationMeta>,
     // Whether the original Haxe class had @:timestamps annotation
     ?hasTimestamps: Bool,
     // Whether the user defined their own changeset function (prevents auto-generation)
@@ -902,6 +906,30 @@ typedef ElixirMetadata = {
     // NOTE: `heexAttrValueSpanEnd` is exclusive (like String.substr end).
     ?heexAttrValueSpanStart: Int,
     ?heexAttrValueSpanEnd: Int
+}
+
+/**
+ * Schema association kinds supported by @:schema emission.
+ *
+ * These map directly to Ecto.Schema macros.
+ */
+enum abstract SchemaAssociationKind(String) from String to String {
+    var BelongsTo = "belongs_to";
+    var HasMany = "has_many";
+    var HasOne = "has_one";
+    var ManyToMany = "many_to_many";
+}
+
+/**
+ * Pre-extracted schema association metadata.
+ *
+ * Kept minimal and strongly typed because this travels outside macro-only phases.
+ */
+typedef SchemaAssociationMeta = {
+    kind: SchemaAssociationKind,
+    name: String,
+    module: String,
+    ?joinThrough: String,
 }
 
 /** Minimal HEEx fragment metadata for analysis (not used for emission) */

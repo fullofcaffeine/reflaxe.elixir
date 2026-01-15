@@ -11,6 +11,7 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirAST.EKeywordPair;
 import reflaxe.elixir.ast.ElixirAST.EMapPair;
+import reflaxe.elixir.ast.ElixirAST.SchemaAssociationKind;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.NameUtils;
@@ -891,6 +892,23 @@ class AnnotationTransforms {
                         ])));
                     }
                 }
+
+                // Add associations if specified (belongs_to/has_many/has_one/many_to_many)
+                if (ast.metadata != null && ast.metadata.schemaAssociations != null) {
+                    for (a in ast.metadata.schemaAssociations) {
+                        var assocName = reflaxe.elixir.ast.NameUtils.toSnakeCase(a.name);
+                        var assocAtom = makeAST(EAtom(assocName));
+                        var assocModule = makeAST(EVar(a.module));
+                        var args: Array<ElixirAST> = [assocAtom, assocModule];
+                        if (a.kind == SchemaAssociationKind.ManyToMany && a.joinThrough != null) {
+                            args.push(makeAST(EKeywordList([{
+                                key: "join_through",
+                                value: makeAST(EString(a.joinThrough))
+                            }])));
+                        }
+                        schemaFieldStatements.push(makeAST(ECall(null, Std.string(a.kind), args)));
+                    }
+                }
                 
                 // Add timestamps if specified
                 if (ast.metadata?.hasTimestamps == true) {
@@ -1085,10 +1103,28 @@ class AnnotationTransforms {
             for (f in meta.schemaFields) {
                 // Skip primary key id (Ecto adds by default)
                 if (f.name == "id") continue;
+                var elixirFieldName = NameUtils.toSnakeCase(f.name);
                 schemaFieldStatements.push(makeAST(ECall(null, "field", [
-                    makeAST(EAtom(f.name)),
+                    makeAST(EAtom(elixirFieldName)),
                     mapHaxeTypeToEctoFieldType(f.type)
                 ])));
+            }
+        }
+
+        // Associations (belongs_to/has_many/has_one/many_to_many)
+        if (meta != null && meta.schemaAssociations != null) {
+            for (a in meta.schemaAssociations) {
+                var assocName = NameUtils.toSnakeCase(a.name);
+                var assocAtom = makeAST(EAtom(assocName));
+                var assocModule = makeAST(EVar(a.module));
+                var args: Array<ElixirAST> = [assocAtom, assocModule];
+                if (a.kind == SchemaAssociationKind.ManyToMany && a.joinThrough != null) {
+                    args.push(makeAST(EKeywordList([{
+                        key: "join_through",
+                        value: makeAST(EString(a.joinThrough))
+                    }])));
+                }
+                schemaFieldStatements.push(makeAST(ECall(null, Std.string(a.kind), args)));
             }
         }
         
