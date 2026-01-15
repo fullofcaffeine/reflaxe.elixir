@@ -176,6 +176,13 @@ class AnnotatedModuleEnumerator {
                 switch (p.expr) {
                     case EObjectDecl(pairs):
                         optionsExpr = p;
+                        // Normalize option values like `{through: DbTable.PostsTags}` to string literals when possible.
+                        for (pair in pairs) {
+                            final s = tryEvalConstString(pair.expr);
+                            if (s != null) {
+                                pair.expr = { expr: EConst(CString(s)), pos: pair.expr.pos };
+                            }
+                        }
                         for (pair in pairs) {
                             if (pair.field == "join_through" || pair.field == "through") {
                                 hasJoinThrough = true;
