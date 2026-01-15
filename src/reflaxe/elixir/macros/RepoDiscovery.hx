@@ -54,6 +54,7 @@ class RepoDiscovery {
         "@:phoenixWeb",
         "@:phoenixWebModule",
         "@:component",
+        "@:hxxHtmlTags",
         "@:phxHookNames",
         "@:phxEventNames",
         "@:controller",
@@ -222,7 +223,13 @@ class RepoDiscovery {
 
             if (!hasRelevantMeta || typeName == null) return;
 
-            var mod = (pkg.length > 0) ? (pkg + "." + typeName) : typeName;
+            // Haxe modules are named after the file. If a file contains multiple top-level types,
+            // additional types are addressed as Module.Type (e.g., Main.CustomTags).
+            var moduleName = Path.withoutExtension(Path.withoutDirectory(filePath));
+            if (moduleName == null || moduleName.length == 0) moduleName = typeName;
+
+            var modBase = (pkg.length > 0) ? (pkg + "." + moduleName) : moduleName;
+            var mod = (typeName != moduleName) ? (modBase + "." + typeName) : modBase;
             forceType(mod);
         } catch (e: Eof) {
             // EOF
@@ -238,11 +245,38 @@ class RepoDiscovery {
         }
 
         for (token in metaTokens) {
-            if (line.indexOf(token) != -1) return true;
+            if (containsExactMetaToken(line, token)) return true;
         }
         // Phoenix generator convention: Telemetry module is often referenced only via strings.
         if (line.indexOf("@:native(") != -1 && line.indexOf("Web.Telemetry") != -1) return true;
         return false;
+    }
+
+    static function containsExactMetaToken(line: String, token: String): Bool {
+        if (line == null || token == null) return false;
+
+        var start = 0;
+        while (true) {
+            var idx = line.indexOf(token, start);
+            if (idx == -1) return false;
+
+            var after = idx + token.length;
+            if (after >= line.length) return true;
+
+            var next = line.charCodeAt(after);
+            // Match only when the token ends at an identifier boundary.
+            // This prevents accidental matches like "@:repo" matching "@:repository".
+            if (!isIdentChar(next)) return true;
+
+            start = after;
+        }
+    }
+
+    static inline function isIdentChar(code: Int): Bool {
+        return (code >= "A".code && code <= "Z".code)
+            || (code >= "a".code && code <= "z".code)
+            || (code >= "0".code && code <= "9".code)
+            || code == "_".code;
     }
 
     static function forceType(typePath: String): Void {
