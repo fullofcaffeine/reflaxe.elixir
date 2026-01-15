@@ -4,6 +4,7 @@ package reflaxe.elixir.macros;
 
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.Type;
 
 /**
  * AnnotatedModuleEnumerator
@@ -35,6 +36,7 @@ import haxe.macro.Expr;
  */
 class AnnotatedModuleEnumerator {
     static final keepMetas: Array<String> = [
+        ":schema",
         ":repo",
         ":presence",
         ":endpoint",
@@ -66,6 +68,8 @@ class AnnotatedModuleEnumerator {
         final isSchema = meta.has(":schema");
 
         if (isSchema) {
+            normalizeSchemaMetadata(cls);
+            maybeInjectManyToManyJoinThrough(cls, fields);
             for (field in fields) {
                 if (isSchemaField(field)) ensureSchemaFieldKept(field);
             }
@@ -115,6 +119,183 @@ class AnnotatedModuleEnumerator {
         return fields;
         #end
         return null;
+    }
+
+    static function normalizeSchemaMetadata(cls: haxe.macro.Type.ClassType): Void {
+        // Normalize @:schema(<const>) to @:schema("...") when possible so downstream phases
+        // can rely on a single representation.
+        //
+        // This enables typed, constant-based usage such as:
+        //   enum abstract DbTable(String) { var Posts = "posts"; }
+        //   @:schema(DbTable.Posts)
+        //
+        // NOTE: We intentionally restrict normalization to *compile-time* string constants.
+        final schemaMetas = cls.meta.extract(":schema");
+        if (schemaMetas == null || schemaMetas.length == 0) return;
+
+        final params = schemaMetas[0].params;
+        if (params == null || params.length == 0) return;
+
+        final first = params[0];
+        switch (first.expr) {
+            case EConst(CString(_, _)):
+                return;
+            default:
+        }
+
+        final constString = tryEvalConstString(first);
+        if (constString == null) return;
+
+        schemaMetas[0].params[0] = { expr: EConst(CString(constString)), pos: first.pos };
+    }
+
+    static function maybeInjectManyToManyJoinThrough(cls: haxe.macro.Type.ClassType, fields: Array<Field>): Void {
+        final tableName = extractSchemaTableName(cls);
+        if (tableName == null) return;
+
+        for (field in fields) {
+            final manyToMany = findMeta(field.meta, ":many_to_many");
+            if (manyToMany == null) continue;
+
+            final params = manyToMany.params;
+            if (params == null) continue;
+
+            // Normalize string-constant expressions inside params when possible.
+            for (i in 0...params.length) {
+                final s = tryEvalConstString(params[i]);
+                if (s != null) {
+                    params[i] = { expr: EConst(CString(s)), pos: params[i].pos };
+                }
+            }
+
+            // Detect existing options object and whether it contains join_through/through.
+            var optionsExpr: Null<Expr> = null;
+            var hasJoinThrough = false;
+
+            for (p in params) {
+                switch (p.expr) {
+                    case EObjectDecl(pairs):
+                        optionsExpr = p;
+                        for (pair in pairs) {
+                            if (pair.field == "join_through" || pair.field == "through") {
+                                hasJoinThrough = true;
+                            }
+                        }
+                    default:
+                }
+            }
+
+            if (hasJoinThrough) continue;
+
+            final targetTypeName = extractAssociationTargetTypeName(field);
+            if (targetTypeName == null) continue;
+
+            final targetTableName = extractSchemaTableNameByTypeName(targetTypeName);
+            if (targetTableName == null) continue;
+
+            final expectedJoinTable = tableName + "_" + targetTableName;
+            final joinThroughValue: Expr = { expr: EConst(CString(expectedJoinTable)), pos: field.pos };
+
+            if (optionsExpr == null) {
+                // Append a new options object.
+                params.push({
+                    expr: EObjectDecl([{
+                        field: "through",
+                        expr: joinThroughValue
+                    }]),
+                    pos: field.pos
+                });
+                continue;
+            }
+
+            // Mutate existing options object to add through: "...".
+            switch (optionsExpr.expr) {
+                case EObjectDecl(pairs):
+                    pairs.push({
+                        field: "through",
+                        expr: joinThroughValue
+                    });
+                default:
+            }
+        }
+    }
+
+    static function extractSchemaTableName(cls: haxe.macro.Type.ClassType): Null<String> {
+        final schemaMetas = cls.meta.extract(":schema");
+        if (schemaMetas == null || schemaMetas.length == 0) return null;
+
+        final params = schemaMetas[0].params;
+        if (params == null || params.length == 0) return null;
+
+        switch (params[0].expr) {
+            case EConst(CString(table, _)):
+                return table;
+            default:
+                return tryEvalConstString(params[0]);
+        }
+    }
+
+    static function extractSchemaTableNameByTypeName(typeName: String): Null<String> {
+        try {
+            final t = Context.getType(typeName);
+            return switch (t) {
+                case TInst(ct, _):
+                    extractSchemaTableName(ct.get());
+                case _:
+                    null;
+            }
+        } catch (_: Dynamic) {
+            return null;
+        }
+    }
+
+    static function extractAssociationTargetTypeName(field: Field): Null<String> {
+        final t = switch (field.kind) {
+            case FVar(ct, _) | FProp(_, _, ct, _):
+                ct;
+            default:
+                null;
+        }
+        if (t == null) return null;
+
+        // Handle Array<T> (has_many / many_to_many) and direct types (belongs_to / has_one).
+        return switch (t) {
+            case TPath(p):
+                if (p.name == "Array" && p.params != null && p.params.length == 1) {
+                    switch (p.params[0]) {
+                        case TPType(TPath(inner)):
+                            inner.pack != null && inner.pack.length > 0
+                                ? inner.pack.join(".") + "." + inner.name
+                                : inner.name;
+                        default:
+                            null;
+                    }
+                } else {
+                    p.pack != null && p.pack.length > 0 ? p.pack.join(".") + "." + p.name : p.name;
+                }
+            default:
+                null;
+        }
+    }
+
+    static function findMeta(meta: Null<Array<MetadataEntry>>, name: String): Null<MetadataEntry> {
+        if (meta == null) return null;
+        for (m in meta) {
+            if (m.name == name) return m;
+        }
+        return null;
+    }
+
+    static function tryEvalConstString(expr: Expr): Null<String> {
+        try {
+            final typed = Context.typeExpr(expr);
+            return switch (typed.expr) {
+                case TConst(TString(s)): s;
+                default: null;
+            }
+        } catch (_: Dynamic) {
+            return null;
+        }
     }
 
     static function ensureFieldKept(field: Field): Void {
