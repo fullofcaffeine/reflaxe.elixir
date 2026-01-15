@@ -5,6 +5,7 @@ package reflaxe.elixir.macros;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
+import reflaxe.elixir.macros.MigrationRegistry;
 
 /**
  * AnnotatedModuleEnumerator
@@ -69,6 +70,7 @@ class AnnotatedModuleEnumerator {
 
         if (isSchema) {
             normalizeSchemaMetadata(cls);
+            validateSchemaTableNameIfKnown(cls);
             maybeInjectManyToManyJoinThrough(cls, fields);
             for (field in fields) {
                 if (isSchemaField(field)) ensureSchemaFieldKept(field);
@@ -149,6 +151,12 @@ class AnnotatedModuleEnumerator {
         schemaMetas[0].params[0] = { expr: EConst(CString(constString)), pos: first.pos };
     }
 
+    static function validateSchemaTableNameIfKnown(cls: haxe.macro.Type.ClassType): Void {
+        final tableName = extractSchemaTableName(cls);
+        if (tableName == null) return;
+        MigrationRegistry.validateTableExistsDeferred(tableName, cls.pos);
+    }
+
     static function maybeInjectManyToManyJoinThrough(cls: haxe.macro.Type.ClassType, fields: Array<Field>): Void {
         final tableName = extractSchemaTableName(cls);
         if (tableName == null) return;
@@ -171,6 +179,7 @@ class AnnotatedModuleEnumerator {
             // Detect existing options object and whether it contains join_through/through.
             var optionsExpr: Null<Expr> = null;
             var hasJoinThrough = false;
+            var joinThroughValue: Null<String> = null;
 
             for (p in params) {
                 switch (p.expr) {
@@ -186,13 +195,23 @@ class AnnotatedModuleEnumerator {
                         for (pair in pairs) {
                             if (pair.field == "join_through" || pair.field == "through") {
                                 hasJoinThrough = true;
+                                switch (pair.expr.expr) {
+                                    case EConst(CString(v, _)):
+                                        joinThroughValue = v;
+                                    default:
+                                }
                             }
                         }
                     default:
                 }
             }
 
-            if (hasJoinThrough) continue;
+            if (hasJoinThrough) {
+                if (joinThroughValue != null) {
+                    MigrationRegistry.validateTableExistsDeferred(joinThroughValue, field.pos);
+                }
+                continue;
+            }
 
             final targetTypeName = extractAssociationTargetTypeName(field);
             if (targetTypeName == null) continue;
@@ -201,14 +220,15 @@ class AnnotatedModuleEnumerator {
             if (targetTableName == null) continue;
 
             final expectedJoinTable = tableName + "_" + targetTableName;
-            final joinThroughValue: Expr = { expr: EConst(CString(expectedJoinTable)), pos: field.pos };
+            final joinThroughExpr: Expr = { expr: EConst(CString(expectedJoinTable)), pos: field.pos };
+            MigrationRegistry.validateTableExistsDeferred(expectedJoinTable, field.pos);
 
             if (optionsExpr == null) {
                 // Append a new options object.
                 params.push({
                     expr: EObjectDecl([{
                         field: "through",
-                        expr: joinThroughValue
+                        expr: joinThroughExpr
                     }]),
                     pos: field.pos
                 });
@@ -220,7 +240,7 @@ class AnnotatedModuleEnumerator {
                 case EObjectDecl(pairs):
                     pairs.push({
                         field: "through",
-                        expr: joinThroughValue
+                        expr: joinThroughExpr
                     });
                 default:
             }
