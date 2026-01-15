@@ -175,9 +175,28 @@ You have two “vocabularies” you can extend:
   - allowed slots / required slots
   - typed `:let` when the component/slot declares a `Slot<EntryProps, LetType>`
 
+3) Custom HTML tags (Web Components)
+- By default, unknown/custom tags skip attribute validation to avoid false positives.
+- If you want to *opt in* to typing for a custom tag, register it in your app using metadata:
+
+```haxe
+@:hxxHtmlTags
+class CustomTags {
+  // Register the tag name (used by -D hxx_strict_html)
+  @:hxxTagAttrs(["enabled", "variant"])
+  public static final MyWidget = "my-widget";
+}
+```
+
+Notes:
+- Registered custom tags are recognized by `-D hxx_strict_html` (so they don’t error as “unknown tags”).
+- Attribute validation for custom tags is only enabled when you provide an explicit `@:hxxTagAttrs(...)` allowlist.
+
 ### Will the compiler complain about unknown tags?
 - Unknown dot-components (`<.typo ...>`) are only errors under `-D hxx_strict_components` (recommended when you want TSX-level strictness).
 - Unknown HTML/custom tags (`<my-widget ...>`) are not errors by default; they are treated as user-defined to support custom elements. Registered HTML tags still get strict attribute checking.
+- If you want TSX-like strictness for custom elements too, enable `-D hxx_strict_html`:
+  - Unknown HTML/custom tags become errors unless registered or explicitly allowed via `-D hxx_strict_html_allow_tags=my-widget,another-tag`.
 
 ## Developer UX
 

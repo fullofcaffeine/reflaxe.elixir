@@ -1,5 +1,20 @@
 defmodule MyAppWeb.Presence do
   use Phoenix.Presence, otp_app: :my_app, pubsub_server: MyApp.PubSub
+  def internal_helper() do
+    "helper"
+  end
+  def public_method() do
+    internal_helper()
+  end
+  def track_with_helper(socket, key, meta) do
+    _helper = internal_helper()
+    MyAppWeb.Presence.track(self(), socket, key, meta)
+  end
+end
+
+
+defmodule MyAppWeb.Presence do
+  use Phoenix.Presence, otp_app: :my_app, pubsub_server: MyApp.PubSub
   def track_user(socket, _user_id, _meta) do
     socket
   end

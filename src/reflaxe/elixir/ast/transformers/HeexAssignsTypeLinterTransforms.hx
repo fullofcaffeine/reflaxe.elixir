@@ -249,23 +249,26 @@ class HeexAssignsTypeLinterTransforms {
         // 1) Validate ~H nodes via builder-attached typed HEEx AST (heexAST) or fragment metadata
         validateHeexFragments(body, fieldsForValidation, typeNameForErrors, ctx, enableAssignsChecks);
 
-        // 2) Validate any native EFragment nodes already present in the function body
-        validateNativeEFragments(body, fieldsForValidation, typeNameForErrors, ctx, enableAssignsChecks);
+	        // 2) Validate any native EFragment nodes already present in the function body
+	        validateNativeEFragments(body, fieldsForValidation, typeNameForErrors, ctx, enableAssignsChecks);
 
-        // 3) Bridge path: string-based validation for ~H contents (kept until full EFragment emission)
-        if (enableAssignsChecks) {
-            var contents: Array<{content:String, pos:haxe.macro.Expr.Position}> = [];
-            collectHeexContents(body, contents);
-            for (item in contents) {
-                var used = collectAtFields(item.content);
-#if debug_assigns_linter
-#end
-                for (f in used) if (!fieldsForValidation.exists(f)) {
-                    error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + typeNameForErrors + ')', item.pos);
-                }
-                checkLiteralComparisons(item.content, fieldsForValidation, typeNameForErrors, ctx, item.pos);
-            }
-        }
+	        // 3) Bridge path: string-based validation for raw ~H contents.
+	        //
+	        // Default behavior is AST-first. We only fall back to string scanning when we do not have a typed
+	        // HEEx AST available (older pipeline / incomplete metadata), or when explicitly enabled for
+	        // debugging via `-D hxx_allow_string_fallback`.
+	        var hasTypedHeexAst = containsTypedHeexAST(body);
+	        if (enableAssignsChecks && (!hasTypedHeexAst || allowHeexStringFallbackEnabled())) {
+	            var contents: Array<{content:String, pos:haxe.macro.Expr.Position}> = [];
+	            collectHeexContents(body, contents);
+	            for (item in contents) {
+	                var used = collectAtFields(item.content);
+	                for (f in used) if (!fieldsForValidation.exists(f)) {
+	                    error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + typeNameForErrors + ')', item.pos);
+	                }
+	                checkLiteralComparisons(item.content, fieldsForValidation, typeNameForErrors, ctx, item.pos);
+	            }
+	        }
 
         #if macro
         activeAppWebRoot = previousAppWebRoot;
@@ -300,9 +303,9 @@ class HeexAssignsTypeLinterTransforms {
         return minLine;
     }
 
-    static function containsHeexOrFragments(node: ElixirAST): Bool {
-        if (node == null || node.def == null) return false;
-        var found = false;
+	    static function containsHeexOrFragments(node: ElixirAST): Bool {
+	        if (node == null || node.def == null) return false;
+	        var found = false;
 
         function scan(x: ElixirAST): Void {
             if (found || x == null || x.def == null) return;
@@ -316,13 +319,33 @@ class HeexAssignsTypeLinterTransforms {
             }
         }
 
-        scan(node);
-        return found;
-    }
+	        scan(node);
+	        return found;
+	    }
 
-    // Validate attributes from parsed fragment metadata (if annotator ran)
-    static function validateHeexFragments(node: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, enableAssignsChecks: Bool): Void {
-        ASTUtils.walk(node, function(x: ElixirAST): Void {
+	    static function containsTypedHeexAST(node: ElixirAST): Bool {
+	        if (node == null || node.def == null) return false;
+	        var found = false;
+
+	        ASTUtils.walk(node, function(x: ElixirAST): Void {
+	            if (found) return;
+	            switch (x.def) {
+	                case ESigil(type, _content, _mods) if (type == "H"):
+	                    var meta = x.metadata;
+	                    if (meta != null) {
+	                        var nodes = meta.heexAST;
+	                        if (nodes != null && nodes.length > 0) found = true;
+	                    }
+	                default:
+	            }
+	        });
+
+	        return found;
+	    }
+
+	    // Validate attributes from parsed fragment metadata (if annotator ran)
+	    static function validateHeexFragments(node: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, enableAssignsChecks: Bool): Void {
+	        ASTUtils.walk(node, function(x: ElixirAST): Void {
             switch (x.def) {
                 case ESigil(type, _content, _mods) if (type == "H"):
                     var meta = x.metadata;
@@ -361,17 +384,21 @@ class HeexAssignsTypeLinterTransforms {
         });
     }
 
-    // Validate attributes using native EFragment nodes present in AST
-    static function validateNativeEFragments(node: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, enableAssignsChecks: Bool): Void {
-        ASTUtils.walk(node, function(x: ElixirAST): Void {
-            switch (x.def) {
-                case EFragment(tag, attributes, children):
-                    // Validate each fragment exactly once; traversal is handled by the walker.
-                    validateFragment(tag, attributes, children, null, fields, typeName, ctx, x.pos, enableAssignsChecks, []);
-                default:
-            }
-        });
-    }
+	    // Validate attributes using native EFragment nodes present in AST
+	    static function validateNativeEFragments(node: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, enableAssignsChecks: Bool): Void {
+	        function traverse(x: ElixirAST): Void {
+	            if (x == null || x.def == null) return;
+	            switch (x.def) {
+	                case EFragment(_tag, _attributes, _children):
+	                    // Validate this subtree exactly once.
+	                    validateNode(x, null, fields, typeName, ctx, x.pos, enableAssignsChecks, []);
+	                default:
+	                    ElixirASTTransformer.iterateAST(x, traverse);
+	            }
+	        }
+
+	        traverse(node);
+	    }
 
     // ---------------------------------------------------------------------
     // Typed HEEx AST validation (preferred path)
@@ -383,12 +410,13 @@ class HeexAssignsTypeLinterTransforms {
         }
     }
 
-    static function validateNode(n: ElixirAST, parentTag: Null<String>, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool, letScopes: Array<HeexLetBindingScope>): Void {
-        switch (n.def) {
-            case EFragment(tag, attributes, children):
-                validateSlotTag(tag, parentTag, ctx, pos);
-
-                var nextLetScopes = extendLetScopesForNode(tag, attributes, parentTag, letScopes);
+	    static function validateNode(n: ElixirAST, parentTag: Null<String>, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool, letScopes: Array<HeexLetBindingScope>): Void {
+	        switch (n.def) {
+	            case EFragment(tag, attributes, children):
+	                validateHtmlTagName(tag, ctx, pos);
+	                validateSlotTag(tag, parentTag, ctx, pos);
+	
+	                var nextLetScopes = extendLetScopesForNode(tag, attributes, parentTag, letScopes);
 
                 validateFragment(tag, attributes, children, parentTag, fields, typeName, ctx, pos, enableAssignsChecks, nextLetScopes);
 
@@ -396,11 +424,23 @@ class HeexAssignsTypeLinterTransforms {
                     if (c == null || c.def == null) continue;
                     validateNode(c, tag, fields, typeName, ctx, pos, enableAssignsChecks, nextLetScopes);
                 }
-            case ERaw(code):
-                validateRawForLetScopes(code, letScopes, ctx, pos);
-            default:
-        }
-    }
+	            case ERaw(code):
+	                validateRawForLetScopes(code, letScopes, ctx, pos);
+	                if (enableAssignsChecks) {
+	                    validateRawForAssigns(code, fields, typeName, ctx, pos);
+	                }
+	            default:
+	        }
+	    }
+
+	    static function validateRawForAssigns(code: String, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+	        if (code == null || code.length == 0) return;
+	        var used = collectAtFields(code);
+	        for (f in used) if (!fields.exists(f)) {
+	            error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + typeName + ')', pos);
+	        }
+	        checkLiteralComparisons(code, fields, typeName, ctx, pos);
+	    }
 
     static function validateFragment(
         tag: String,
@@ -1227,34 +1267,50 @@ class HeexAssignsTypeLinterTransforms {
         #end
     }
 
-    static function strictSlotTypingEnabled(): Bool {
-        #if macro
-        return Context.defined("hxx_strict_slots");
+	    static function strictSlotTypingEnabled(): Bool {
+	        #if macro
+	        return Context.defined("hxx_strict_slots");
+	        #else
+	        return false;
+	        #end
+	    }
+
+	    static function strictHtmlTagTypingEnabled(): Bool {
+	        #if macro
+	        return Context.defined("hxx_strict_html");
+	        #else
+	        return false;
+	        #end
+	    }
+
+	    static function strictPhxHookTypingEnabled(): Bool {
+	        #if macro
+	        return Context.defined("hxx_strict_phx_hook");
         #else
         return false;
         #end
     }
 
-    static function strictPhxHookTypingEnabled(): Bool {
-        #if macro
-        return Context.defined("hxx_strict_phx_hook");
-        #else
-        return false;
-        #end
-    }
+	    static function strictPhxEventTypingEnabled(): Bool {
+	        #if macro
+	        return Context.defined("hxx_strict_phx_events");
+	        #else
+	        return false;
+	        #end
+	    }
 
-    static function strictPhxEventTypingEnabled(): Bool {
-        #if macro
-        return Context.defined("hxx_strict_phx_events");
-        #else
-        return false;
-        #end
-    }
+	    static function allowHeexStringFallbackEnabled(): Bool {
+	        #if macro
+	        return Context.defined("hxx_allow_string_fallback");
+	        #else
+	        return false;
+	        #end
+	    }
 
-    static function isKnownPhoenixCoreComponentTag(tag: String): Bool {
-        if (tag == ".live_component") return true;
-        return getAllowedPhoenixCoreComponentAttributes(tag) != null;
-    }
+	    static function isKnownPhoenixCoreComponentTag(tag: String): Bool {
+	        if (tag == ".live_component") return true;
+	        return getAllowedPhoenixCoreComponentAttributes(tag) != null;
+	    }
 
     static function explainComponentResolutionFailure(componentTag: String): String {
         #if macro
@@ -2252,29 +2308,213 @@ class HeexAssignsTypeLinterTransforms {
     }
     #end
 
-    static function isRegisteredHtmlElement(tag: String): Bool {
-        if (tag == null || tag.length == 0) return false;
-        // Skip Phoenix component tags (<.foo>) and slot tags (<:inner_block>)
-        var first = tag.charAt(0);
-        if (first == "." || first == ":") return false;
-        return HXXComponentRegistry.getElementType(tag) != null;
-    }
+	    static function isRegisteredHtmlElement(tag: String): Bool {
+	        if (tag == null || tag.length == 0) return false;
+	        // Skip Phoenix component tags (<.foo>) and slot tags (<:inner_block>)
+	        var first = tag.charAt(0);
+	        if (first == "." || first == ":") return false;
+	        // Treat built-in HTML tags as registered; treat custom tags as registered only when they
+	        // provide an explicit attribute allowlist to avoid false positives.
+	        if (HXXComponentRegistry.getElementType(tag) != null) return true;
+	        var customAttrs = getCustomHtmlTagAttributes(tag);
+	        return customAttrs != null && customAttrs.length > 0;
+	    }
 
-    static function getAllowedHtmlAttributesForTag(tag: String): Map<String, Bool> {
-        var key = tag.toLowerCase();
-        if (allowedHtmlAttributeCache.exists(key)) return allowedHtmlAttributeCache.get(key);
+	    static var customHtmlTagRegistryCache: Null<Map<String, Array<String>>> = null;
+
+	    static function isCustomHtmlTagRegistered(tag: String): Bool {
+	        if (tag == null || tag.length == 0) return false;
+	        if (tag.charAt(0) == "." || tag.charAt(0) == ":") return false;
+	        return getCustomHtmlTagRegistry().exists(tag.toLowerCase());
+	    }
+
+	    static function getCustomHtmlTagAttributes(tag: String): Null<Array<String>> {
+	        if (tag == null || tag.length == 0) return null;
+	        var key = tag.toLowerCase();
+	        var reg = getCustomHtmlTagRegistry();
+	        return reg.exists(key) ? reg.get(key) : null;
+	    }
+
+	    static function getCustomHtmlTagRegistry(): Map<String, Array<String>> {
+	        if (customHtmlTagRegistryCache != null) return customHtmlTagRegistryCache;
+	        #if macro
+	        customHtmlTagRegistryCache = buildCustomHtmlTagRegistry();
+	        #else
+	        customHtmlTagRegistryCache = new Map();
+	        #end
+	        return customHtmlTagRegistryCache;
+	    }
+
+	    #if macro
+	    static function buildCustomHtmlTagRegistry(): Map<String, Array<String>> {
+	        var out: Map<String, Array<String>> = new Map();
+
+	        var discovered = RepoDiscovery.getDiscovered();
+	        if (discovered == null || discovered.length == 0) {
+	            RepoDiscovery.run();
+	            discovered = RepoDiscovery.getDiscovered();
+	        }
+	        if (discovered == null || discovered.length == 0) return out;
+
+	        for (typePath in discovered) {
+	            var t: haxe.macro.Type = null;
+	            try t = Context.getType(typePath) catch (_:Dynamic) t = null;
+	            if (t == null) continue;
+
+	            switch (TypeTools.follow(t)) {
+	                case TInst(cRef, _):
+	                    var cls = cRef.get();
+	                    if (cls == null || cls.meta == null || !cls.meta.has(":hxxHtmlTags")) continue;
+	                    collectCustomHtmlTagsFromClass(cls, out);
+	                case TAbstract(aRef, _):
+	                    var abs = aRef.get();
+	                    if (abs == null || abs.meta == null || !abs.meta.has(":hxxHtmlTags")) continue;
+	                    if (abs.impl == null) continue;
+	                    var impl = abs.impl.get();
+	                    if (impl == null) continue;
+	                    collectCustomHtmlTagsFromClass(impl, out);
+	                default:
+	            }
+	        }
+
+	        return out;
+	    }
+
+	    static function collectCustomHtmlTagsFromClass(cls: haxe.macro.Type.ClassType, out: Map<String, Array<String>>): Void {
+	        if (cls == null) return;
+	        for (field in cls.statics.get()) {
+	            if (field == null) continue;
+
+	            var tag = extractStringConst(field.expr());
+	            if (tag == null || tag.length == 0) continue;
+
+	            var attrs: Array<String> = [];
+	            if (field.meta != null && field.meta.has(":hxxTagAttrs")) {
+	                for (entry in field.meta.extract(":hxxTagAttrs")) {
+	                    if (entry == null || entry.params == null) continue;
+	                    attrs = mergeUniqueStrings(attrs, extractStringArrayConst(entry.params));
+	                }
+	            }
+
+	            out.set(tag.toLowerCase(), attrs);
+	        }
+	    }
+
+	    static function mergeUniqueStrings(existing: Array<String>, next: Array<String>): Array<String> {
+	        var out = existing != null ? existing.copy() : [];
+	        if (next == null) return out;
+	        var seen: Map<String, Bool> = new Map();
+	        for (s in out) if (s != null) seen.set(s.toLowerCase(), true);
+	        for (s in next) {
+	            if (s == null) continue;
+	            var k = s.toLowerCase();
+	            if (seen.exists(k)) continue;
+	            seen.set(k, true);
+	            out.push(s);
+	        }
+	        return out;
+	    }
+
+	    static function extractStringArrayConst(params: Array<Expr>): Array<String> {
+	        var out: Array<String> = [];
+	        if (params == null || params.length == 0) return out;
+
+	        function addExpr(e: Expr): Void {
+	            if (e == null) return;
+	            switch (e.expr) {
+	                case EConst(CString(s, _)):
+	                    if (s != null && s.length > 0) out.push(s);
+	                case EMeta(_, inner):
+	                    addExpr(inner);
+	                case EParenthesis(inner):
+	                    addExpr(inner);
+	                default:
+	            }
+	        }
+
+	        // Support both forms:
+	        // - @:hxxTagAttrs(["a", "b"])
+	        // - @:hxxTagAttrs("a", "b")
+	        if (params.length == 1) {
+	            switch (params[0].expr) {
+	                case EArrayDecl(items):
+	                    for (i in items) addExpr(i);
+	                    return out;
+	                default:
+	            }
+	        }
+
+	        for (p in params) addExpr(p);
+	        return out;
+	    }
+	    #end
+
+	    static var strictHtmlAllowedTagCache: Null<Map<String, Bool>> = null;
+
+	    static function validateHtmlTagName(tag: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+	        if (!strictHtmlTagTypingEnabled()) return;
+	        if (tag == null || tag.length == 0) return;
+
+	        var first = tag.charAt(0);
+	        // Skip dot-components and slot tags.
+	        if (first == "." || first == ":") return;
+
+	        if (HXXComponentRegistry.getElementType(tag) != null) return;
+	        if (isCustomHtmlTagRegistered(tag)) return;
+	        if (isStrictHtmlAllowedTag(tag)) return;
+
+	        error(
+	            ctx,
+	            'HEEx tag error: <' + tag + '> is not a registered HTML tag under -D hxx_strict_html. ' +
+	            'Either register/allow it (e.g., -D hxx_strict_html_allow_tags=' + tag + ') or disable strict mode.',
+	            pos
+	        );
+	    }
+
+	    static function isStrictHtmlAllowedTag(tag: String): Bool {
+	        if (tag == null || tag.length == 0) return false;
+	        if (strictHtmlAllowedTagCache == null) strictHtmlAllowedTagCache = buildStrictHtmlAllowedTags();
+	        if (strictHtmlAllowedTagCache == null) return false;
+	        return strictHtmlAllowedTagCache.exists(tag.toLowerCase());
+	    }
+
+	    static function buildStrictHtmlAllowedTags(): Map<String, Bool> {
+	        var out: Map<String, Bool> = new Map();
+
+	        #if macro
+	        var raw = Context.definedValue("hxx_strict_html_allow_tags");
+	        if (raw == null || raw.length == 0) return out;
+
+	        for (part in raw.split(",")) {
+	            var trimmed = part.trim();
+	            if (trimmed.length == 0) continue;
+	            out.set(trimmed.toLowerCase(), true);
+	        }
+	        #end
+
+	        return out;
+	    }
+
+		    static function getAllowedHtmlAttributesForTag(tag: String): Map<String, Bool> {
+	        var key = tag.toLowerCase();
+	        if (allowedHtmlAttributeCache.exists(key)) return allowedHtmlAttributeCache.get(key);
 
         var allowed: Map<String, Bool> = new Map();
 
         var globals = getGlobalHtmlAttributes();
         for (k in globals.keys()) allowed.set(k, true);
 
-        var attrs = HXXComponentRegistry.getAllowedAttributes(tag);
-        for (a in attrs) addAllowedAttributeForms(allowed, a);
+	        if (HXXComponentRegistry.getElementType(tag) != null) {
+	            var attrs = HXXComponentRegistry.getAllowedAttributes(tag);
+	            for (a in attrs) addAllowedAttributeForms(allowed, a);
+	        } else {
+	            var customAttrs = getCustomHtmlTagAttributes(tag);
+	            if (customAttrs != null) for (a in customAttrs) addAllowedAttributeForms(allowed, a);
+	        }
 
-        allowedHtmlAttributeCache.set(key, allowed);
-        return allowed;
-    }
+	        allowedHtmlAttributeCache.set(key, allowed);
+	        return allowed;
+	    }
 
     static function getGlobalHtmlAttributes(): Map<String, Bool> {
         if (globalHtmlAttributeCache != null) return globalHtmlAttributeCache;

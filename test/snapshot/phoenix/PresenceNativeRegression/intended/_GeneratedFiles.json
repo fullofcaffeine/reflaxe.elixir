@@ -1,10 +1,14 @@
 {
   "filesGenerated": [
   "type.ex",
+  "test_more_edge_cases.ex",
   "string_buf.ex",
   "std.ex",
+  "standard_presence.ex",
   "regular_presence.ex",
+  "phoenix/presence.ex",
   "my_app_web/presence.ex",
+  "my_app/custom_presence.ex",
   "main.ex",
   "haxe/iterators/array_iterator.ex"
 ],
