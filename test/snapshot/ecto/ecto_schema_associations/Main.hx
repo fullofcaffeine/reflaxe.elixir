@@ -31,15 +31,11 @@ class Post {
     @:belongs_to("organization")
     public var organization: Organization;
 
-    @:many_to_many("tags", {through: "posts_tags"})
+    @:many_to_many("tags")
     public var tags: Array<Tag>;
 }
 
 class Main {
     public static function main() {
-        var _ = new Organization();
-        var _ = new Tag();
-        var _ = new Post();
     }
 }
-
