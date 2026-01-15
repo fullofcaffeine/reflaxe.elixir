@@ -48,6 +48,16 @@ See: [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md).
 - **Full Phoenix Integration** - LiveView, Ecto, OTP, GenServers all supported
 - **Future Expansion** - Haxe's multi-target nature enables future platform support
 
+The BEAM is designed to *recover* from failures (supervision + “let it crash/let it heal”), but typed code still helps a lot:
+- Prevent accidental crashes and make refactors safer.
+- Make *intentional* failures explicit (e.g. `Result`/`Option` patterns) so you can be deliberate about what should crash vs what should be handled locally.
+
+### How this compares to Gleam
+
+Gleam is an excellent typed BEAM language with a strong focus on correctness and a great compiler UX. Reflaxe.Elixir takes a different path:
+- **Direct Elixir ecosystem leverage**: Reflaxe.Elixir generates idiomatic Elixir and targets HEEx (`~H`) and Phoenix/LiveView patterns directly.
+- **Fewer “FFI boundary” tradeoffs**: in Gleam, calling into non-Gleam libraries via externals is powerful, but the external code can’t be type-checked by the Gleam compiler and editor assistance is reduced. Reflaxe.Elixir aims to keep you on the “typed path” while still producing standard Elixir/Phoenix code.
+
 ### 💡 Real-World Scenarios
 
 #### Build Type-Safe Phoenix Applications
@@ -76,8 +86,8 @@ The foundation for multi-target development:
 |---|---|---|---|---|
 | **Type Safety** | ✅ Compile-time | ✅ Compile-time | ❌ Runtime | ✅ Compile-time |
 | **BEAM Integration** | ✅ Full Phoenix/OTP | ✅ Native | ✅ Native | ❌ None |
-| **Phoenix LiveView** | ✅ Native support | ⚠️ Via FFI | ✅ Native | ❌ None |
-| **Multi-target Potential** | ✅ Haxe foundation | ❌ BEAM only | ❌ BEAM only | ⚠️ JS only |
+| **Phoenix LiveView** | ✅ Native support | ⚠️ Via externals (tradeoffs) | ✅ Native | ❌ None |
+| **Multi-target Potential** | ✅ Haxe foundation | ✅ BEAM + JS | ❌ BEAM only | ⚠️ JS only |
 | **Ecosystem Maturity** | ✅ Since 2005 | ⚠️ New | ✅ Mature | ✅ Mature |
 | **Learning Curve** | ✅ TypeScript-like | ⚠️ Rust-like | ⚠️ Ruby-like | ✅ Familiar |
 
