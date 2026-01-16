@@ -18,10 +18,10 @@ defmodule CounterLive do
   def render(_, assigns) do
     ~H"""
 <div>
-          <h1>Counter: <%= Kernel.to_string(@count) %></h1>
-          <button phx-click="increment">+</button>
-          <button phx-click="decrement">-</button>
-        </div>
+	          <h1>Counter: <%= Kernel.to_string(@count) %></h1>
+	          <button phx-click={"increment"}>+</button>
+	          <button phx-click={"decrement"}>-</button>
+	        </div>
 """
   end
 end

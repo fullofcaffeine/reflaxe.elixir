@@ -4,6 +4,7 @@
 -lib reflaxe
 -D reflaxe_runtime
 -D elixir_output=out
+-D hxx_strict_phx_events
 --macro reflaxe.elixir.CompilerInit.Start()
-EventName
-CounterLive
+CounterLiveDerivedEvents
+

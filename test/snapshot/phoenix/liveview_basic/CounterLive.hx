@@ -37,11 +37,11 @@ class CounterLive {
 		return NoReply(socket);
 	}
 	
-    public function render(assigns: CounterAssigns): String {
-        return HXX.hxx('<div>
-          <h1>Counter: ${assigns.count}</h1>
-          <button phx-click="increment">+</button>
-          <button phx-click="decrement">-</button>
-        </div>');
-    }
+	    public function render(assigns: CounterAssigns): String {
+	        return HXX.hxx('<div>
+	          <h1>Counter: ${assigns.count}</h1>
+	          <button phx-click=${EventName.Increment}>+</button>
+	          <button phx-click=${EventName.Decrement}>-</button>
+	        </div>');
+	    }
 }
