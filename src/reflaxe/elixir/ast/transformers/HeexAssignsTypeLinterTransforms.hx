@@ -16,6 +16,7 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxe.macro.TypeTools;
+import reflaxe.elixir.macros.LiveViewEventRegistry;
 import reflaxe.elixir.macros.RepoDiscovery;
 #end
 
@@ -2160,7 +2161,7 @@ class HeexAssignsTypeLinterTransforms {
         if (name.length == 0) return;
 
         if (!allowed.exists(name)) {
-            error(ctx, 'HEEx ' + canonicalAttr + ' error: unknown event "' + name + '" (not present in any @:phxEventNames registry)', pos);
+            error(ctx, 'HEEx ' + canonicalAttr + ' error: unknown event "' + name + '" (not present in any known event registry)', pos);
         }
         #end
     }
@@ -2183,13 +2184,13 @@ class HeexAssignsTypeLinterTransforms {
         #if macro
         var allowed = getAllowedPhxEventNames();
         if (allowed == null) {
-            error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, you must define an event registry (add @:phxEventNames to an enum abstract of String)', pos);
+            error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, you must define an event registry (add @:phxEventNames to an enum abstract of String) or make events derivable from handle_event switch cases', pos);
             return;
         }
 
         var name = extractConstStringFromHeexExpr(value);
         if (name == null) {
-            error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, ' + canonicalAttr + ' must be a compile-time constant from your event registry (e.g., EventName.Save)', pos);
+            error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, ' + canonicalAttr + ' must be a compile-time constant (e.g., EventName.Save or {"save"})', pos);
             return;
         }
         #end
@@ -2243,29 +2244,37 @@ class HeexAssignsTypeLinterTransforms {
     static function buildAllowedPhxEventNames(): Null<Map<String, Bool>> {
         var allowed: Map<String, Bool> = new Map();
 
+        // Include events derived from @:liveview handle_event/3 switch cases, if any.
+        var derived = LiveViewEventRegistry.getAllEventNames();
+        if (derived != null) {
+            for (k in derived.keys()) allowed.set(k, true);
+        }
+
         var discovered = RepoDiscovery.getDiscovered();
         if (discovered == null || discovered.length == 0) {
             RepoDiscovery.run();
             discovered = RepoDiscovery.getDiscovered();
         }
 
-        if (discovered == null || discovered.length == 0) return null;
+        if ((discovered == null || discovered.length == 0) && !allowed.keys().hasNext()) return null;
 
-        for (typePath in discovered) {
-            var t: haxe.macro.Type = null;
-            try t = Context.getType(typePath) catch (_:Dynamic) t = null;
-            if (t == null) continue;
+        if (discovered != null) {
+            for (typePath in discovered) {
+                var t: haxe.macro.Type = null;
+                try t = Context.getType(typePath) catch (_:Dynamic) t = null;
+                if (t == null) continue;
 
-            switch (TypeTools.follow(t)) {
-                case TAbstract(aRef, _):
-                    var abs = aRef.get();
-                    if (abs == null || abs.meta == null || !abs.meta.has(":phxEventNames")) continue;
-                    collectConstStringStaticsFromAbstract(abs, allowed);
-                case TInst(cRef, _):
-                    var cls = cRef.get();
-                    if (cls == null || cls.meta == null || !cls.meta.has(":phxEventNames")) continue;
-                    collectConstStringStaticsFromClass(cls, allowed);
-                default:
+                switch (TypeTools.follow(t)) {
+                    case TAbstract(aRef, _):
+                        var abs = aRef.get();
+                        if (abs == null || abs.meta == null || !abs.meta.has(":phxEventNames")) continue;
+                        collectConstStringStaticsFromAbstract(abs, allowed);
+                    case TInst(cRef, _):
+                        var cls = cRef.get();
+                        if (cls == null || cls.meta == null || !cls.meta.has(":phxEventNames")) continue;
+                        collectConstStringStaticsFromClass(cls, allowed);
+                    default:
+                }
             }
         }
 

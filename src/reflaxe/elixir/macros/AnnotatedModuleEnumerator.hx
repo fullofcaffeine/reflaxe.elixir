@@ -6,6 +6,7 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import reflaxe.elixir.macros.MigrationRegistry;
+import reflaxe.elixir.macros.LiveViewEventRegistry;
 
 /**
  * AnnotatedModuleEnumerator
@@ -67,6 +68,7 @@ class AnnotatedModuleEnumerator {
 
         final fields = Context.getBuildFields();
         final isSchema = meta.has(":schema");
+        final isLiveView = meta.has(":liveview");
 
         if (isSchema) {
             normalizeSchemaMetadata(cls);
@@ -75,6 +77,10 @@ class AnnotatedModuleEnumerator {
             for (field in fields) {
                 if (isSchemaField(field)) ensureSchemaFieldKept(field);
             }
+        }
+
+        if (isLiveView) {
+            registerLiveViewEvents(cls, fields);
         }
 
         var shouldKeepModule = false;
@@ -121,6 +127,90 @@ class AnnotatedModuleEnumerator {
         return fields;
         #end
         return null;
+    }
+
+    static function registerLiveViewEvents(cls: haxe.macro.Type.ClassType, fields: Array<Field>): Void {
+        // Register LiveView event names from `handle_event/3` switch cases.
+        //
+        // Supported shapes:
+        // - `return switch (event) { case "increment": ... }`
+        // - `switch (event) { case EventName.Increment: ... }` (compile-time string constants)
+        //
+        // NOTE: This is intentionally conservative. It does not attempt to infer events from
+        // dynamic expressions or from template strings; it only harvests compile-time constants.
+        final moduleName = (cls.pack.length > 0) ? (cls.pack.join(".") + "." + cls.name) : cls.name;
+        if (fields == null) return;
+
+        for (field in fields) {
+            if (field == null) continue;
+            if (field.name != "handle_event" && field.name != "handleEvent") continue;
+
+            // Prefer `@:native("handle_event")` static functions, but accept canonical name too.
+            if (!isPublicStatic(field)) continue;
+
+            final expr = switch (field.kind) {
+                case FFun(f):
+                    f.expr;
+                default:
+                    null;
+            }
+            if (expr == null) continue;
+
+            var events: Array<String> = [];
+            collectSwitchCaseConstants(expr, events);
+            if (events.length > 0) {
+                LiveViewEventRegistry.registerMany(moduleName, events, field.pos);
+            }
+        }
+    }
+
+    static function collectSwitchCaseConstants(expr: Expr, out: Array<String>): Void {
+        if (expr == null) return;
+        if (expr.expr == null) return;
+        switch (expr.expr) {
+            case EReturn(e):
+                collectSwitchCaseConstants(e, out);
+            case ESwitch(_target, cases, _default):
+                for (c in cases) {
+                    if (c == null || c.values == null) continue;
+                    for (v in c.values) {
+                        var s = tryEvalConstString(v);
+                        if (s != null) out.push(s);
+                    }
+                    if (c.expr != null) collectSwitchCaseConstants(c.expr, out);
+                }
+                if (_default != null) collectSwitchCaseConstants(_default, out);
+            case EBlock(exprs):
+                if (exprs != null) for (e in exprs) collectSwitchCaseConstants(e, out);
+            case EIf(cond, eThen, eElse):
+                collectSwitchCaseConstants(cond, out);
+                collectSwitchCaseConstants(eThen, out);
+                if (eElse != null) collectSwitchCaseConstants(eElse, out);
+            case EWhile(cond, body, _):
+                collectSwitchCaseConstants(cond, out);
+                collectSwitchCaseConstants(body, out);
+            case EFor(it, body):
+                collectSwitchCaseConstants(it, out);
+                collectSwitchCaseConstants(body, out);
+            case ETry(e, catches):
+                collectSwitchCaseConstants(e, out);
+                if (catches != null) {
+                    for (c in catches) if (c != null && c.expr != null) collectSwitchCaseConstants(c.expr, out);
+                }
+            case ECall(fn, args):
+                collectSwitchCaseConstants(fn, out);
+                if (args != null) for (a in args) collectSwitchCaseConstants(a, out);
+            case EBinop(_, a, b):
+                collectSwitchCaseConstants(a, out);
+                collectSwitchCaseConstants(b, out);
+            case EUnop(_, _, a):
+                collectSwitchCaseConstants(a, out);
+            case EParenthesis(a):
+                collectSwitchCaseConstants(a, out);
+            case EMeta(_, a):
+                collectSwitchCaseConstants(a, out);
+            case _:
+        }
     }
 
     static function normalizeSchemaMetadata(cls: haxe.macro.Type.ClassType): Void {
