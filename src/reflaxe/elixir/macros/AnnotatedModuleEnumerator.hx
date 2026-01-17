@@ -148,69 +148,98 @@ class AnnotatedModuleEnumerator {
             // Prefer `@:native("handle_event")` static functions, but accept canonical name too.
             if (!isPublicStatic(field)) continue;
 
+            var eventVarName: Null<String> = null;
             final expr = switch (field.kind) {
                 case FFun(f):
+                    if (f != null && f.args != null && f.args.length > 0) {
+                        eventVarName = f.args[0].name;
+                    }
                     f.expr;
                 default:
                     null;
             }
             if (expr == null) continue;
+            if (eventVarName == null || eventVarName.length == 0) eventVarName = "event";
 
             var events: Array<String> = [];
-            collectSwitchCaseConstants(expr, events);
+            collectSwitchCaseConstants(expr, eventVarName, events);
             if (events.length > 0) {
                 LiveViewEventRegistry.registerMany(moduleName, events, field.pos);
             }
         }
     }
 
-    static function collectSwitchCaseConstants(expr: Expr, out: Array<String>): Void {
+    static function collectSwitchCaseConstants(expr: Expr, switchVarName: String, out: Array<String>): Void {
         if (expr == null) return;
         if (expr.expr == null) return;
         switch (expr.expr) {
             case EReturn(e):
-                collectSwitchCaseConstants(e, out);
-            case ESwitch(_target, cases, _default):
-                for (c in cases) {
-                    if (c == null || c.values == null) continue;
-                    for (v in c.values) {
-                        var s = tryEvalConstString(v);
-                        if (s != null) out.push(s);
+                collectSwitchCaseConstants(e, switchVarName, out);
+            case ESwitch(target, cases, _default):
+                // Only collect events from `switch(<eventVar>)` to avoid false positives from
+                // other unrelated switches inside handle_event bodies.
+                if (switchTargetIsVar(target, switchVarName)) {
+                    for (c in cases) {
+                        if (c == null || c.values == null) continue;
+                        for (v in c.values) {
+                            var s = tryEvalConstString(v);
+                            if (s != null) out.push(s);
+                        }
                     }
-                    if (c.expr != null) collectSwitchCaseConstants(c.expr, out);
                 }
-                if (_default != null) collectSwitchCaseConstants(_default, out);
+
+                // Always recurse into case bodies to find additional event switches (e.g. nested logic).
+                for (c in cases) {
+                    if (c == null) continue;
+                    if (c.expr != null) collectSwitchCaseConstants(c.expr, switchVarName, out);
+                }
+                if (_default != null) collectSwitchCaseConstants(_default, switchVarName, out);
             case EBlock(exprs):
-                if (exprs != null) for (e in exprs) collectSwitchCaseConstants(e, out);
+                if (exprs != null) for (e in exprs) collectSwitchCaseConstants(e, switchVarName, out);
             case EIf(cond, eThen, eElse):
-                collectSwitchCaseConstants(cond, out);
-                collectSwitchCaseConstants(eThen, out);
-                if (eElse != null) collectSwitchCaseConstants(eElse, out);
+                collectSwitchCaseConstants(cond, switchVarName, out);
+                collectSwitchCaseConstants(eThen, switchVarName, out);
+                if (eElse != null) collectSwitchCaseConstants(eElse, switchVarName, out);
             case EWhile(cond, body, _):
-                collectSwitchCaseConstants(cond, out);
-                collectSwitchCaseConstants(body, out);
+                collectSwitchCaseConstants(cond, switchVarName, out);
+                collectSwitchCaseConstants(body, switchVarName, out);
             case EFor(it, body):
-                collectSwitchCaseConstants(it, out);
-                collectSwitchCaseConstants(body, out);
+                collectSwitchCaseConstants(it, switchVarName, out);
+                collectSwitchCaseConstants(body, switchVarName, out);
             case ETry(e, catches):
-                collectSwitchCaseConstants(e, out);
+                collectSwitchCaseConstants(e, switchVarName, out);
                 if (catches != null) {
-                    for (c in catches) if (c != null && c.expr != null) collectSwitchCaseConstants(c.expr, out);
+                    for (c in catches) if (c != null && c.expr != null) collectSwitchCaseConstants(c.expr, switchVarName, out);
                 }
             case ECall(fn, args):
-                collectSwitchCaseConstants(fn, out);
-                if (args != null) for (a in args) collectSwitchCaseConstants(a, out);
+                collectSwitchCaseConstants(fn, switchVarName, out);
+                if (args != null) for (a in args) collectSwitchCaseConstants(a, switchVarName, out);
             case EBinop(_, a, b):
-                collectSwitchCaseConstants(a, out);
-                collectSwitchCaseConstants(b, out);
+                collectSwitchCaseConstants(a, switchVarName, out);
+                collectSwitchCaseConstants(b, switchVarName, out);
             case EUnop(_, _, a):
-                collectSwitchCaseConstants(a, out);
+                collectSwitchCaseConstants(a, switchVarName, out);
             case EParenthesis(a):
-                collectSwitchCaseConstants(a, out);
+                collectSwitchCaseConstants(a, switchVarName, out);
             case EMeta(_, a):
-                collectSwitchCaseConstants(a, out);
+                collectSwitchCaseConstants(a, switchVarName, out);
             case _:
         }
+    }
+
+    static function switchTargetIsVar(expr: Expr, varName: String): Bool {
+        if (expr == null || varName == null || varName.length == 0) return false;
+        if (expr.expr == null) return false;
+        return switch (expr.expr) {
+            case EConst(CIdent(name)):
+                name == varName;
+            case EParenthesis(inner):
+                switchTargetIsVar(inner, varName);
+            case EMeta(_, inner):
+                switchTargetIsVar(inner, varName);
+            default:
+                false;
+        };
     }
 
     static function normalizeSchemaMetadata(cls: haxe.macro.Type.ClassType): Void {
