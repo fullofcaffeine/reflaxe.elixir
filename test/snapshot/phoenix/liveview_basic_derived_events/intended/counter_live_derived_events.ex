@@ -9,8 +9,8 @@ defmodule CounterLiveDerivedEvents do
     ~H"""
 <div>
           <h1>Counter: <%= Kernel.to_string(@count) %></h1>
-          <button phx-click={"increment"}>+</button>
-          <button phx-click={"decrement"}>-</button>
+          <button phx-click="increment">+</button>
+          <button phx-click="decrement">-</button>
         </div>
 """
   end
