@@ -8,6 +8,7 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 import haxe.macro.TypeTools;
 import reflaxe.elixir.macros.RepoDiscovery;
+import reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms;
 import phoenix.types.HXXComponentRegistry;
 import sys.io.File;
 
@@ -39,11 +40,12 @@ class HxxRegistryIndex {
         var customTags = collectCustomHtmlTags(discovered);
         var phxHookNames = collectConstStringRegistry(discovered, ":phxHookNames");
         var phxEventNames = collectConstStringRegistry(discovered, ":phxEventNames");
+        var components = collectComponentIndex();
 
         if (Context.defined("hxx_index_debug")) {
             var shown = discovered.length > 50 ? discovered.slice(0, 50) : discovered;
             Context.warning('[hxx-index] discovered=' + discovered.length + ' [' + shown.join(", ") + (discovered.length > 50 ? ", …" : "") + ']', Context.currentPos());
-            Context.warning('[hxx-index] customTags=' + customTags.length + ' phxHookNames=' + phxHookNames.length + ' phxEventNames=' + phxEventNames.length, Context.currentPos());
+            Context.warning('[hxx-index] customTags=' + customTags.length + ' components=' + components.length + ' phxHookNames=' + phxHookNames.length + ' phxEventNames=' + phxEventNames.length, Context.currentPos());
         }
 
         var htmlTags: Array<Dynamic> = [];
@@ -58,10 +60,12 @@ class HxxRegistryIndex {
         }
 
         var data: Dynamic = {
+            schemaVersion: 1,
             generatedAt: Date.now().toString(),
             discoveredCount: discovered.length,
             htmlTags: htmlTags,
             customTags: customTags,
+            components: components,
             phxHookNames: phxHookNames,
             phxEventNames: phxEventNames
         };
@@ -70,6 +74,18 @@ class HxxRegistryIndex {
         if (dir != null && dir.length > 0 && !sys.FileSystem.exists(dir)) sys.FileSystem.createDirectory(dir);
         sys.io.File.saveContent(outPath, Json.stringify(data, null, "  "));
         Context.info('[hxx-index] Wrote ' + outPath, Context.currentPos());
+    }
+
+    static function collectComponentIndex(): Array<Dynamic> {
+        #if macro
+        try {
+            return HeexAssignsTypeLinterTransforms.exportComponentIndexForTooling();
+        } catch (_:Dynamic) {
+            return [];
+        }
+        #else
+        return [];
+        #end
     }
 
     static function collectConstStringRegistry(discovered: Array<String>, metaName: String): Array<String> {
