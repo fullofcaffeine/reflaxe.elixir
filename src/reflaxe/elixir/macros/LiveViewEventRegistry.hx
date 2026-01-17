@@ -76,6 +76,11 @@ class LiveViewEventRegistry {
         return out;
     }
 
+    public static function getEventsForModule(moduleName: String): Map<String, Bool> {
+        var events = moduleToEvents.get(moduleName);
+        return events != null ? events : new Map();
+    }
+
     public static function getSummary(): String {
         var lines: Array<String> = [];
         for (moduleName in moduleToEvents.keys()) {
