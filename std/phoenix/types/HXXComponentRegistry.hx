@@ -308,6 +308,18 @@ class HXXComponentRegistry {
     public static function getElementType(elementName: String): Null<ElementTypeInfo> {
         return htmlElements.get(elementName.toLowerCase());
     }
+
+    /**
+     * List all registered built-in HTML element names.
+     *
+     * Useful for editor tooling and diagnostics (e.g., exporting a typed tag/attr index).
+     */
+    public static function listHtmlElements(): Array<String> {
+        var out: Array<String> = [];
+        for (k in htmlElements.keys()) out.push(k);
+        out.sort((a, b) -> a < b ? -1 : (a > b ? 1 : 0));
+        return out;
+    }
     
     /**
      * Check if an element is registered
@@ -356,6 +368,16 @@ class HXXComponentRegistry {
      */
     public static function registerComponent(component: ComponentDefinition): Void {
         phoenixComponents.set(component.name, component);
+    }
+
+    /**
+     * List registered Phoenix component names (only those registered at runtime).
+     */
+    public static function listPhoenixComponents(): Array<String> {
+        var out: Array<String> = [];
+        for (k in phoenixComponents.keys()) out.push(k);
+        out.sort((a, b) -> a < b ? -1 : (a > b ? 1 : 0));
+        return out;
     }
     
     /**
