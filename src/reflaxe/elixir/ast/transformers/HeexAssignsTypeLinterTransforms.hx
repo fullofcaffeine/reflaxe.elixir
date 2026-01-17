@@ -135,6 +135,85 @@ class HeexAssignsTypeLinterTransforms {
     static var phxEventNameCache: Null<Map<String, Bool>> = null;
     #end
 
+    #if macro
+    /**
+     * Tooling export: discovered component index.
+     *
+     * Used by `tools/HxxRegistryIndex.hx` to emit a JSON vocabulary for editor tooling.
+     * This is macro-only to avoid bloating runtime output.
+     */
+    public static function exportComponentIndexForTooling(): Array<Dynamic> {
+        buildComponentFunctionIndex();
+        if (componentFunctionIndex == null) return [];
+
+        function mapToObject(map: Map<String, String>): Dynamic {
+            var obj: Dynamic = {};
+            if (map == null) return obj;
+            for (k in map.keys()) Reflect.setField(obj, k, map.get(k));
+            return obj;
+        }
+
+        function requiredKeys(map: Map<String, Bool>): Array<String> {
+            var keys: Array<String> = [];
+            if (map == null) return keys;
+            for (k in map.keys()) if (map.get(k) == true) keys.push(k);
+            keys.sort((a, b) -> a < b ? -1 : (a > b ? 1 : 0));
+            return keys;
+        }
+
+        var out: Array<Dynamic> = [];
+        for (fn in componentFunctionIndex.keys()) {
+            var defs = componentFunctionIndex.get(fn);
+            if (defs == null) continue;
+            for (def in defs) {
+                if (def == null) continue;
+
+                var slotsObj: Dynamic = {};
+                if (def.slots != null) {
+                    for (slotName in def.slots.keys()) {
+                        var slot = def.slots.get(slotName);
+                        if (slot == null) continue;
+
+                        var letObj: Dynamic = null;
+                        if (slot.letBinding != null) {
+                            letObj = {
+                                props: mapToObject(slot.letBinding.props),
+                                requiredProps: requiredKeys(slot.letBinding.required),
+                                typeName: slot.letBinding.typeName
+                            };
+                        }
+
+                        Reflect.setField(slotsObj, slotName, {
+                            required: slot.required,
+                            props: mapToObject(slot.props),
+                            requiredProps: requiredKeys(slot.requiredProps),
+                            letBinding: letObj
+                        });
+                    }
+                }
+
+                out.push({
+                    dotTag: "." + def.functionName,
+                    functionName: def.functionName,
+                    moduleTypePath: def.moduleTypePath,
+                    nativeModuleName: def.nativeModuleName,
+                    props: mapToObject(def.props),
+                    requiredProps: requiredKeys(def.required),
+                    slots: slotsObj
+                });
+            }
+        }
+
+        out.sort((a, b) -> {
+            var at = Std.string(Reflect.field(a, "dotTag"));
+            var bt = Std.string(Reflect.field(b, "dotTag"));
+            return at < bt ? -1 : (at > bt ? 1 : 0);
+        });
+
+        return out;
+    }
+    #end
+
     // Public entry: non-contextual (throws on error)
     public static function transformPass(ast: ElixirAST): ElixirAST {
         return lint(ast, null);
@@ -1831,7 +1910,7 @@ class HeexAssignsTypeLinterTransforms {
                     if (field == null || field.meta == null || !field.meta.has(":component")) continue;
 
                     var fnName = NameUtils.toSnakeCase(field.name);
-                    var funArgs = switch (field.type) {
+                    var funArgs = switch (TypeTools.follow(field.type)) {
                         case TFun(args, _):
                             args;
                         default:
