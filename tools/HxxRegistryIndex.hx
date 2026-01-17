@@ -9,6 +9,8 @@ import haxe.macro.Type;
 import haxe.macro.TypeTools;
 import reflaxe.elixir.macros.RepoDiscovery;
 import reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms;
+import reflaxe.elixir.macros.LiveViewEventRegistry;
+import reflaxe.elixir.macros.LiveViewTemplateUsageRegistry;
 import phoenix.types.HXXComponentRegistry;
 import sys.io.File;
 
@@ -41,6 +43,7 @@ class HxxRegistryIndex {
         var phxHookNames = collectConstStringRegistry(discovered, ":phxHookNames");
         var phxEventNames = collectConstStringRegistry(discovered, ":phxEventNames");
         var components = collectComponentIndex();
+        var liveViews = collectLiveViewModuleIndex(discovered);
 
         if (Context.defined("hxx_index_debug")) {
             var shown = discovered.length > 50 ? discovered.slice(0, 50) : discovered;
@@ -66,6 +69,7 @@ class HxxRegistryIndex {
             htmlTags: htmlTags,
             customTags: customTags,
             components: components,
+            liveViews: liveViews,
             phxHookNames: phxHookNames,
             phxEventNames: phxEventNames
         };
@@ -83,6 +87,97 @@ class HxxRegistryIndex {
         } catch (_:Dynamic) {
             return [];
         }
+        #else
+        return [];
+        #end
+    }
+
+    static function collectLiveViewModuleIndex(discovered: Array<String>): Array<Dynamic> {
+        #if macro
+        if (discovered == null) return [];
+
+        function sortKeys(map: Map<String, Bool>): Array<String> {
+            var out: Array<String> = [];
+            if (map == null) return out;
+            for (k in map.keys()) out.push(k);
+            out.sort((a, b) -> a < b ? -1 : (a > b ? 1 : 0));
+            return out;
+        }
+
+        function nativeName(cls: haxe.macro.Type.ClassType): Null<String> {
+            if (cls == null || cls.meta == null || !cls.meta.has(":native")) return null;
+            var entries = cls.meta.extract(":native");
+            if (entries == null || entries.length == 0) return null;
+            var params = entries[0].params;
+            if (params == null || params.length == 0) return null;
+            return switch (params[0].expr) {
+                case EConst(CString(s, _)): s;
+                default: null;
+            };
+        }
+
+        var out: Array<Dynamic> = [];
+        var processedModules: Map<String, Bool> = new Map();
+
+        for (typePath in discovered) {
+            if (typePath == null || typePath.length == 0) continue;
+
+            // Discovered entries are type paths. `Context.getModule` expects a module path
+            // (usually `pkg.Module`). If the type path refers to an additional type in the module
+            // (`pkg.Module.Type`), we need to peel until `getModule` succeeds.
+            var modulePath: Null<String> = typePath;
+            var moduleTypes: Array<Type> = null;
+            while (modulePath != null && modulePath.length > 0) {
+                try {
+                    moduleTypes = Context.getModule(modulePath);
+                    break;
+                } catch (_: Dynamic) {
+                    var lastDot = modulePath.lastIndexOf(".");
+                    if (lastDot <= 0) {
+                        modulePath = null;
+                    } else {
+                        modulePath = modulePath.substr(0, lastDot);
+                    }
+                }
+            }
+            if (modulePath == null || moduleTypes == null) continue;
+            if (processedModules.exists(modulePath)) continue;
+            processedModules.set(modulePath, true);
+
+            for (mt in moduleTypes) {
+                var cls: Null<haxe.macro.Type.ClassType> = null;
+                switch (TypeTools.follow(mt)) {
+                    case TInst(cRef, _):
+                        cls = cRef.get();
+                    default:
+                }
+                if (cls == null || cls.meta == null || !cls.meta.has(":liveview")) continue;
+
+                var moduleTypePath = (cls.pack != null && cls.pack.length > 0)
+                    ? (cls.pack.concat([cls.name]).join("."))
+                    : cls.name;
+
+                var derivedEvents = sortKeys(LiveViewEventRegistry.getEventsForModule(moduleTypePath));
+                var templateEvents = sortKeys(LiveViewTemplateUsageRegistry.getEventsForModule(moduleTypePath));
+                var templateHooks = sortKeys(LiveViewTemplateUsageRegistry.getHooksForModule(moduleTypePath));
+
+                out.push({
+                    moduleTypePath: moduleTypePath,
+                    nativeModuleName: nativeName(cls),
+                    derivedEvents: derivedEvents,
+                    templateEvents: templateEvents,
+                    templateHooks: templateHooks
+                });
+            }
+        }
+
+        out.sort((a, b) -> {
+            var am = Std.string(Reflect.field(a, "moduleTypePath"));
+            var bm = Std.string(Reflect.field(b, "moduleTypePath"));
+            return am < bm ? -1 : (am > bm ? 1 : 0);
+        });
+
+        return out;
         #else
         return [];
         #end

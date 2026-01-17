@@ -6,6 +6,7 @@
 -cp test/snapshot/phoenix/hxx_strict_phx_hook_interp_valid
 -cp test/snapshot/phoenix/hxx_component_let_typing_valid
 -cp test/snapshot/phoenix/hxx_custom_tag_registry
+-cp test/snapshot/phoenix/liveview_basic_derived_events
 --no-output
 -D elixir_output=tmp/_hxx_index_out
 --macro tools.HxxRegistryIndex.generate("tmp/hxx-registry.json")

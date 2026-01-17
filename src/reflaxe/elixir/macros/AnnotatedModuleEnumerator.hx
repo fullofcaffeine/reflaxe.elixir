@@ -7,6 +7,7 @@ import haxe.macro.Expr;
 import haxe.macro.Type;
 import reflaxe.elixir.macros.MigrationRegistry;
 import reflaxe.elixir.macros.LiveViewEventRegistry;
+import reflaxe.elixir.macros.LiveViewTemplateUsageRegistry;
 
 /**
  * AnnotatedModuleEnumerator
@@ -81,6 +82,7 @@ class AnnotatedModuleEnumerator {
 
         if (isLiveView) {
             registerLiveViewEvents(cls, fields);
+            registerLiveViewTemplatePhxUsage(cls, fields);
         }
 
         var shouldKeepModule = false;
@@ -167,6 +169,253 @@ class AnnotatedModuleEnumerator {
                 LiveViewEventRegistry.registerMany(moduleName, events, field.pos);
             }
         }
+    }
+
+    static function registerLiveViewTemplatePhxUsage(cls: haxe.macro.Type.ClassType, fields: Array<Field>): Void {
+        // Best-effort: scan `render/1` bodies for HXX.hxx(...) templates and record `phx-*` names
+        // used in those templates for editor tooling indexes.
+        //
+        // This intentionally operates on the *Haxe AST* (pre-Elixir pipeline) so it can run in
+        // tooling-only macro contexts (e.g. docs:hxx:index) without needing to run the full compiler.
+        final moduleName = (cls.pack.length > 0) ? (cls.pack.join(".") + "." + cls.name) : cls.name;
+        if (fields == null) return;
+
+        for (field in fields) {
+            if (field == null) continue;
+            if (field.name != "render") continue;
+            var body: Null<Expr> = switch (field.kind) {
+                case FFun(f): f != null ? f.expr : null;
+                default: null;
+            };
+            if (body == null) continue;
+
+            var templates: Array<Expr> = [];
+            collectHxxTemplateArguments(body, templates);
+            if (templates.length == 0) continue;
+
+            for (t in templates) {
+                if (t == null) continue;
+                var buf = new StringBuf();
+                collectConstTemplateText(t, buf);
+                var reconstructed = buf.toString();
+                if (reconstructed != null && reconstructed.length > 0) {
+                    scanTemplateForPhxUsage(moduleName, reconstructed, field.pos);
+                }
+            }
+        }
+    }
+
+    static function collectHxxTemplateArguments(expr: Expr, out: Array<Expr>): Void {
+        if (expr == null || expr.expr == null) return;
+        switch (expr.expr) {
+            case EReturn(e):
+                collectHxxTemplateArguments(e, out);
+            case ECall(fn, args):
+                if (isHxxStaticCall(fn, "hxx") && args != null && args.length > 0) {
+                    out.push(args[0]);
+                }
+                collectHxxTemplateArguments(fn, out);
+                if (args != null) for (a in args) collectHxxTemplateArguments(a, out);
+            case EBlock(exprs):
+                if (exprs != null) for (e in exprs) collectHxxTemplateArguments(e, out);
+            case EIf(cond, eThen, eElse):
+                collectHxxTemplateArguments(cond, out);
+                collectHxxTemplateArguments(eThen, out);
+                if (eElse != null) collectHxxTemplateArguments(eElse, out);
+            case ESwitch(target, cases, def):
+                collectHxxTemplateArguments(target, out);
+                if (cases != null) {
+                    for (c in cases) {
+                        if (c == null) continue;
+                        if (c.values != null) for (v in c.values) collectHxxTemplateArguments(v, out);
+                        if (c.expr != null) collectHxxTemplateArguments(c.expr, out);
+                    }
+                }
+                if (def != null) collectHxxTemplateArguments(def, out);
+            case EWhile(cond, body, _):
+                collectHxxTemplateArguments(cond, out);
+                collectHxxTemplateArguments(body, out);
+            case EFor(it, body):
+                collectHxxTemplateArguments(it, out);
+                collectHxxTemplateArguments(body, out);
+            case ETry(e, catches):
+                collectHxxTemplateArguments(e, out);
+                if (catches != null) {
+                    for (c in catches) if (c != null && c.expr != null) collectHxxTemplateArguments(c.expr, out);
+                }
+            case EBinop(_, a, b):
+                collectHxxTemplateArguments(a, out);
+                collectHxxTemplateArguments(b, out);
+            case EUnop(_, _, a):
+                collectHxxTemplateArguments(a, out);
+            case EParenthesis(a):
+                collectHxxTemplateArguments(a, out);
+            case EMeta(_, a):
+                collectHxxTemplateArguments(a, out);
+            default:
+        }
+    }
+
+    static function isHxxStaticCall(fn: Expr, name: String): Bool {
+        if (fn == null || fn.expr == null) return false;
+        return switch (fn.expr) {
+            case EField(owner, fieldName):
+                if (fieldName != name) return false;
+                if (owner == null || owner.expr == null) return false;
+                switch (owner.expr) {
+                    case EConst(CIdent("HXX")):
+                        true;
+                    case EField(_, "HXX"):
+                        true;
+                    default:
+                        false;
+                }
+            case EMeta(_, inner):
+                isHxxStaticCall(inner, name);
+            case EParenthesis(inner):
+                isHxxStaticCall(inner, name);
+            default:
+                false;
+        };
+    }
+
+    static function collectConstTemplateText(expr: Expr, buf: StringBuf): Void {
+        if (expr == null || expr.expr == null) return;
+        switch (expr.expr) {
+            case EConst(CString(s, _)):
+                buf.add(s);
+            case EBinop(OpAdd, a, b):
+                collectConstTemplateText(a, buf);
+                collectConstTemplateText(b, buf);
+            case EParenthesis(inner):
+                collectConstTemplateText(inner, buf);
+            case EMeta(_, inner):
+                collectConstTemplateText(inner, buf);
+            default:
+                // Only inline compile-time known string constants; skip dynamic inserts (assigns, etc.)
+                var s = tryEvalConstString(expr);
+                if (s != null) buf.add(s);
+        }
+    }
+
+    static function scanTemplateForPhxUsage(moduleName: String, template: String, pos: haxe.macro.Expr.Position): Void {
+        if (moduleName == null || moduleName.length == 0) return;
+        if (template == null || template.length == 0) return;
+
+        // Keep aligned with HEEx attribute validation.
+        final eventAttrs: Array<String> = [
+            "phx-click", "phx-submit", "phx-change", "phx-blur", "phx-focus",
+            "phx-keydown", "phx-keyup", "phx-window-keydown", "phx-window-keyup",
+            "phx-click-away"
+        ];
+
+        inline function isWs(ch: String): Bool return ch != null && ~/^\\s$/.match(ch);
+        inline function isAttrChar(ch: String): Bool {
+            if (ch == null || ch.length == 0) return false;
+            var c = ch.charCodeAt(0);
+            return (c >= "A".code && c <= "Z".code)
+                || (c >= "a".code && c <= "z".code)
+                || (c >= "0".code && c <= "9".code)
+                || ch == "-" || ch == "_";
+        }
+        function isEventAttr(name: String): Bool {
+            for (ev in eventAttrs) if (ev == name) return true;
+            return false;
+        }
+
+        var i = 0;
+        while (i < template.length) {
+            var idx = template.indexOf("phx-", i);
+            if (idx == -1) break;
+            var j = idx;
+            while (j < template.length && isAttrChar(template.charAt(j))) j++;
+            var attrName = template.substr(idx, j - idx);
+            var isHook = attrName == "phx-hook";
+            var isEvent = isEventAttr(attrName);
+            if (!isHook && !isEvent) { i = j; continue; }
+
+            var k = j;
+            while (k < template.length && isWs(template.charAt(k))) k++;
+            if (k >= template.length || template.charAt(k) != "=") { i = j; continue; }
+            k++;
+            while (k < template.length && isWs(template.charAt(k))) k++;
+            if (k >= template.length) break;
+
+            var value: Null<String> = null;
+            var ch = template.charAt(k);
+            if (ch == "\"" || ch == "'") {
+                var q = ch;
+                k++;
+                var start = k;
+                while (k < template.length && template.charAt(k) != q) k++;
+                if (k < template.length) value = template.substr(start, k - start);
+                i = k + 1;
+            } else if (ch == "{") {
+                // Only record constant forms like {"..."} / {'...'}.
+                var exprStart = k + 1;
+                k++;
+                var depth = 1;
+                while (k < template.length && depth > 0) {
+                    var ch2 = template.charAt(k);
+                    if (ch2 == "{") depth++;
+                    else if (ch2 == "}") depth--;
+                    k++;
+                }
+                var exprEndExclusive = k - 1;
+                if (exprEndExclusive > exprStart) {
+                    var inner = StringTools.trim(template.substr(exprStart, exprEndExclusive - exprStart));
+                    if (inner.length >= 2) {
+                        var q0 = inner.charAt(0);
+                        var q1 = inner.charAt(inner.length - 1);
+                        if ((q0 == "\"" && q1 == "\"") || (q0 == "'" && q1 == "'")) {
+                            value = inner.substr(1, inner.length - 2);
+                        }
+                    }
+                }
+                i = k;
+            } else {
+                // Bareword until whitespace or tag end.
+                var start2 = k;
+                while (k < template.length) {
+                    var ch2 = template.charAt(k);
+                    if (isWs(ch2) || ch2 == ">" || ch2 == "/") break;
+                    k++;
+                }
+                if (k > start2) value = template.substr(start2, k - start2);
+                i = k;
+            }
+
+            if (value != null) {
+                var trimmed = StringTools.trim(value);
+                if (trimmed.length > 0) {
+                    // HXX attribute interpolations commonly appear as `${ConstName.Value}` inside the
+                    // template string (not Haxe string interpolation). If the inner expression is a
+                    // compile-time string constant, record the resolved value; otherwise, skip.
+                    if (StringTools.startsWith(trimmed, "${") && StringTools.endsWith(trimmed, "}")) {
+                        var inner = StringTools.trim(trimmed.substr(2, trimmed.length - 3));
+                        var resolved: Null<String> = null;
+                        try {
+                            var parsed = Context.parse(inner, pos);
+                            resolved = tryEvalConstString(parsed);
+                        } catch (_: Dynamic) {
+                            resolved = null;
+                        }
+                        if (resolved == null) {
+                            // Do not record dynamic values.
+                            trimmed = "";
+                        } else {
+                            trimmed = StringTools.trim(resolved);
+                        }
+                    }
+
+                    if (trimmed.length > 0) {
+                        if (isHook) LiveViewTemplateUsageRegistry.registerHook(moduleName, trimmed);
+                        else if (isEvent) LiveViewTemplateUsageRegistry.registerEvent(moduleName, trimmed);
+                    }
+                }
+            }
+        }
+        var _ = pos;
     }
 
     static function collectSwitchCaseConstants(expr: Expr, switchVarName: String, out: Array<String>): Void {
@@ -433,12 +682,91 @@ class AnnotatedModuleEnumerator {
     }
 
     static function tryEvalConstString(expr: Expr): Null<String> {
+        if (expr == null || expr.expr == null) return null;
+
+        // Fast path: literal string.
+        switch (expr.expr) {
+            case EConst(CString(s, _)):
+                return s;
+            default:
+        }
+
+        function extractStringConst(expr: Null<TypedExpr>): Null<String> {
+            if (expr == null) return null;
+            return switch (expr.expr) {
+                case TConst(TString(s)):
+                    s;
+                case TMeta(_, inner):
+                    extractStringConst(inner);
+                case TCast(inner, _):
+                    extractStringConst(inner);
+                case TParenthesis(inner):
+                    extractStringConst(inner);
+                default:
+                    null;
+            };
+        }
+
+        function extractTypePath(expr: Expr): Null<String> {
+            if (expr == null || expr.expr == null) return null;
+            return switch (expr.expr) {
+                case EConst(CIdent(name)):
+                    name;
+                case EField(inner, name):
+                    var base = extractTypePath(inner);
+                    base != null ? (base + "." + name) : null;
+                case EParenthesis(inner):
+                    extractTypePath(inner);
+                case EMeta(_, inner):
+                    extractTypePath(inner);
+                default:
+                    null;
+            };
+        }
+
+        // Best-effort: if this is a type-path field access (`DbTable.Posts`), resolve by reading the
+        // owner's static field expr. This avoids "Type is not ready to be accessed" failures.
+        switch (expr.expr) {
+            case EField(owner, fieldName):
+                var ownerTypePath = extractTypePath(owner);
+                if (ownerTypePath != null && ownerTypePath.length > 0 && fieldName != null && fieldName.length > 0) {
+                    try {
+                        var ownerType = Context.getType(ownerTypePath);
+                        switch (haxe.macro.TypeTools.follow(ownerType)) {
+                            case TAbstract(aRef, _):
+                                var abs = aRef.get();
+                                if (abs != null && abs.impl != null) {
+                                    var impl = abs.impl.get();
+                                    if (impl != null) {
+                                        for (f in impl.statics.get()) {
+                                            if (f != null && f.name == fieldName) {
+                                                var s = extractStringConst(f.expr());
+                                                if (s != null) return s;
+                                            }
+                                        }
+                                    }
+                                }
+                            case TInst(cRef, _):
+                                var cls = cRef.get();
+                                if (cls != null) {
+                                    for (f in cls.statics.get()) {
+                                        if (f != null && f.name == fieldName) {
+                                            var s = extractStringConst(f.expr());
+                                            if (s != null) return s;
+                                        }
+                                    }
+                                }
+                            default:
+                        }
+                    } catch (_: Dynamic) {}
+                }
+            default:
+        }
+
+        // Fallback: ask Haxe to type the expression (can fail in some macro ordering cases).
         try {
             final typed = Context.typeExpr(expr);
-            return switch (typed.expr) {
-                case TConst(TString(s)): s;
-                default: null;
-            }
+            return extractStringConst(typed);
         } catch (_: Dynamic) {
             return null;
         }
