@@ -32,6 +32,18 @@ class User {
     public var posts: Array<Post>;
 }
 
+@:schema("posts")
+class Post {
+    @:primary_key
+    public var id: Int;
+
+    @:field({type: "string", nullable: false})
+    public var title: String;
+
+    @:field({type: "integer"})
+    public var userId: Int;
+}
+
 @:changeset
 class UserChangeset {
     @:validate_required(["name", "email"])
@@ -156,12 +168,6 @@ typedef UserStats = {
     total: Int,
     active: Int,
     inactive: Int
-}
-
-typedef Post = {
-    id: Int,
-    title: String,
-    user_id: Int
 }
 
 typedef UserMutationResult = {
