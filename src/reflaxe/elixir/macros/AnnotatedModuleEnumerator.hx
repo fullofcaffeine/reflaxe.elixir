@@ -323,45 +323,45 @@ class AnnotatedModuleEnumerator {
             return false;
         }
 
-        var i = 0;
-        while (i < template.length) {
-            var idx = template.indexOf("phx-", i);
-            if (idx == -1) break;
-            var j = idx;
-            while (j < template.length && isAttrChar(template.charAt(j))) j++;
-            var attrName = template.substr(idx, j - idx);
+        var scanIndex = 0;
+        while (scanIndex < template.length) {
+            var attrStart = template.indexOf("phx-", scanIndex);
+            if (attrStart == -1) break;
+            var nameEnd = attrStart;
+            while (nameEnd < template.length && isAttrChar(template.charAt(nameEnd))) nameEnd++;
+            var attrName = template.substr(attrStart, nameEnd - attrStart);
             var isHook = attrName == "phx-hook";
             var isEvent = isEventAttr(attrName);
-            if (!isHook && !isEvent) { i = j; continue; }
+            if (!isHook && !isEvent) { scanIndex = nameEnd; continue; }
 
-            var k = j;
-            while (k < template.length && isWs(template.charAt(k))) k++;
-            if (k >= template.length || template.charAt(k) != "=") { i = j; continue; }
-            k++;
-            while (k < template.length && isWs(template.charAt(k))) k++;
-            if (k >= template.length) break;
+            var cursor = nameEnd;
+            while (cursor < template.length && isWs(template.charAt(cursor))) cursor++;
+            if (cursor >= template.length || template.charAt(cursor) != "=") { scanIndex = nameEnd; continue; }
+            cursor++;
+            while (cursor < template.length && isWs(template.charAt(cursor))) cursor++;
+            if (cursor >= template.length) break;
 
             var value: Null<String> = null;
-            var ch = template.charAt(k);
+            var ch = template.charAt(cursor);
             if (ch == "\"" || ch == "'") {
                 var q = ch;
-                k++;
-                var start = k;
-                while (k < template.length && template.charAt(k) != q) k++;
-                if (k < template.length) value = template.substr(start, k - start);
-                i = k + 1;
+                cursor++;
+                var valueStart = cursor;
+                while (cursor < template.length && template.charAt(cursor) != q) cursor++;
+                if (cursor < template.length) value = template.substr(valueStart, cursor - valueStart);
+                scanIndex = cursor + 1;
             } else if (ch == "{") {
                 // Only record constant forms like {"..."} / {'...'}.
-                var exprStart = k + 1;
-                k++;
-                var depth = 1;
-                while (k < template.length && depth > 0) {
-                    var ch2 = template.charAt(k);
-                    if (ch2 == "{") depth++;
-                    else if (ch2 == "}") depth--;
-                    k++;
+                var exprStart = cursor + 1;
+                cursor++;
+                var braceDepth = 1;
+                while (cursor < template.length && braceDepth > 0) {
+                    var ch2 = template.charAt(cursor);
+                    if (ch2 == "{") braceDepth++;
+                    else if (ch2 == "}") braceDepth--;
+                    cursor++;
                 }
-                var exprEndExclusive = k - 1;
+                var exprEndExclusive = cursor - 1;
                 if (exprEndExclusive > exprStart) {
                     var inner = StringTools.trim(template.substr(exprStart, exprEndExclusive - exprStart));
                     if (inner.length >= 2) {
@@ -372,17 +372,17 @@ class AnnotatedModuleEnumerator {
                         }
                     }
                 }
-                i = k;
+                scanIndex = cursor;
             } else {
                 // Bareword until whitespace or tag end.
-                var start2 = k;
-                while (k < template.length) {
-                    var ch2 = template.charAt(k);
+                var valueStart = cursor;
+                while (cursor < template.length) {
+                    var ch2 = template.charAt(cursor);
                     if (isWs(ch2) || ch2 == ">" || ch2 == "/") break;
-                    k++;
+                    cursor++;
                 }
-                if (k > start2) value = template.substr(start2, k - start2);
-                i = k;
+                if (cursor > valueStart) value = template.substr(valueStart, cursor - valueStart);
+                scanIndex = cursor;
             }
 
             if (value != null) {
