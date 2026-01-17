@@ -172,25 +172,25 @@ find_affected_tests() {
     while IFS= read -r file; do
         case "$file" in
             src/reflaxe/elixir/helpers/ArrayCompiler.hx|src/reflaxe/elixir/ast/*Array*)
-                affected_tests="$affected_tests stdlib/array_* core/arrays"
+                affected_tests="$affected_tests stdlib core/arrays"
                 ;;
             src/reflaxe/elixir/*Loop*|src/reflaxe/elixir/*While*|src/reflaxe/elixir/*For*)
-                affected_tests="$affected_tests core/loops core/for_* core/while_*"
+                affected_tests="$affected_tests core/loops"
                 ;;
             src/reflaxe/elixir/*Pattern*|src/reflaxe/elixir/*Match*)
-                affected_tests="$affected_tests core/pattern_* core/match_*"
+                affected_tests="$affected_tests core/pattern_matching core/enhanced_patterns core/enhanced_pattern_matching core/PatternMatching_Enhanced"
                 ;;
             src/reflaxe/elixir/*Phoenix*|std/phoenix/*)
-                affected_tests="$affected_tests phoenix/*"
+                affected_tests="$affected_tests phoenix"
                 ;;
             src/reflaxe/elixir/*Ecto*|std/ecto/*)
-                affected_tests="$affected_tests ecto/*"
+                affected_tests="$affected_tests ecto"
                 ;;
             src/reflaxe/elixir/*OTP*|std/otp/*)
-                affected_tests="$affected_tests otp/*"
+                affected_tests="$affected_tests otp"
                 ;;
             std/*)
-                affected_tests="$affected_tests stdlib/*"
+                affected_tests="$affected_tests stdlib"
                 ;;
             test/snapshot/*/Main.hx)
                 # If a test file changed, run that specific test
@@ -236,9 +236,17 @@ run_tests() {
         fi
         echo -e "${BLUE}Affected tests: $affected_tests${RESET}"
         # Convert to make targets
+        local changed_aggregate_mode=true
         for test in $affected_tests; do
-            make_target="$make_target test-$(echo $test | sed 's|/|__|g')"
+            local target="test-$(echo $test | sed 's|/|__|g')"
+            make_target="$make_target $target"
+            if [[ "$target" == *"__"* ]]; then
+                changed_aggregate_mode=false
+            fi
         done
+        if [ "$changed_aggregate_mode" = true ]; then
+            aggregate_mode=true
+        fi
     elif [ -n "$CATEGORY" ]; then
         echo -e "${YELLOW}Running $CATEGORY tests...${RESET}"
         make_target="test-$CATEGORY"
