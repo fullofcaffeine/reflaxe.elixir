@@ -5,6 +5,7 @@ import HXX;
 @:hxxHtmlTags
 class CustomTags {
     @:hxxTagAttrs(["enabled", "variant"])
+    @:hxxTagAttrKinds({enabled: "bool", variant: "string"})
     public static final MyWidget = "my-widget";
 }
 
@@ -20,4 +21,3 @@ class Main {
 
     public static function main() {}
 }
-

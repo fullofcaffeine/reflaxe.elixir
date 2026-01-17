@@ -1,0 +1,23 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "string_buf.ex",
+  "std.ex",
+  "reflect.ex",
+  "phoenix/types/socket_transport.ex",
+  "phoenix/types/socket_tools.ex",
+  "phoenix/types/flash_type_tools.ex",
+  "phoenix/types/flash_type.ex",
+  "phoenix/types/flash_map_tools.ex",
+  "phoenix/types/flash.ex",
+  "phoenix/types/_socket/socket_impl_.ex",
+  "phoenix/types/_assigns/assigns_impl_.ex",
+  "haxe/iterators/array_iterator.ex",
+  "elixir/types/_atom/atom_impl_.ex",
+  "app_web/some_live.ex",
+  "app_web/core_components.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}

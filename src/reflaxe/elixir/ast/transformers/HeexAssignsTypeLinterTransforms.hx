@@ -512,6 +512,9 @@ class HeexAssignsTypeLinterTransforms {
 
             // 2b) Component prop kind validation (when the component + prop is resolvable)
             validateComponentPropValueKind(tag, attr, fields, ctx, pos);
+
+            // 2c) Custom HTML tag attribute typing (registered via @:hxxHtmlTags).
+            validateCustomHtmlTagAttributeValueKind(tag, attr, fields, ctx, pos);
         }
 
         // 3) Assigns field usage within `{ ... }` attribute expressions
@@ -541,6 +544,10 @@ class HeexAssignsTypeLinterTransforms {
 
         // If the parent component definition is discoverable, validate the slot exists.
         var def = resolveComponentDefinition(parentTag);
+        if (def == null && strictSlotTypingEnabled()) {
+            error(ctx, 'HEEx slot tag error: under -D hxx_strict_slots, <' + tag + '> requires its parent <' + parentTag + '> to be resolvable (add a discoverable @:component definition or disable -D hxx_strict_slots)', pos);
+            return;
+        }
         if (def != null) {
             var slots = def.slots;
             if (slots == null || !slots.exists(slotName)) {
@@ -590,7 +597,13 @@ class HeexAssignsTypeLinterTransforms {
 
 	            if (letDef == null || letDef.props == null || !letDef.props.keys().hasNext()) {
 	                var ownerPart = (isSlotTag(tag) && parentTag != null && parentTag.length > 0) ? (' (slot of <' + parentTag + '>)') : "";
-	                error(ctx, 'HEEx :let error: <' + tag + '>' + ownerPart + ' does not declare a typed :let binding (add a Slot<..., LetType> or disable -D hxx_strict_slots)', pos);
+                    if (isSlotTag(tag) && parentTag != null && resolveComponentDefinition(parentTag) == null) {
+                        error(ctx, 'HEEx :let error: <' + tag + '>' + ownerPart + ' cannot be type-checked because parent component <' + parentTag + '> is not resolvable under -D hxx_strict_slots', pos);
+                    } else if (isHeexComponentTag(tag) && resolveComponentDefinition(tag) == null) {
+                        error(ctx, 'HEEx :let error: <' + tag + '>' + ownerPart + ' cannot be type-checked because the component is not resolvable under -D hxx_strict_slots', pos);
+                    } else {
+	                    error(ctx, 'HEEx :let error: <' + tag + '>' + ownerPart + ' does not declare a typed :let binding (add a Slot<..., LetType> or disable -D hxx_strict_slots)', pos);
+                    }
 	            } else {
 	                var isSimpleVar = switch (value.def) {
 	                    case EVar(_): true;
@@ -627,8 +640,20 @@ class HeexAssignsTypeLinterTransforms {
         if (!isSlotTag(slotTag)) return;
         if (parentTag == null || !isHeexComponentTag(parentTag)) return;
 
+        var parentDef = resolveComponentDefinition(parentTag);
+        if (parentDef == null && strictSlotTypingEnabled()) {
+            error(ctx, 'HEEx slot error: under -D hxx_strict_slots, <' + slotTag + '> cannot be type-checked because parent <' + parentTag + '> is not resolvable', pos);
+            return;
+        }
+
         var slotDef = resolveSlotDefinition(slotTag, parentTag);
-        if (slotDef == null) return;
+        if (slotDef == null) {
+            if (strictSlotTypingEnabled() && parentDef != null) {
+                var slotName = slotTag.length > 1 ? slotTag.substr(1) : "";
+                error(ctx, 'HEEx slot error: under -D hxx_strict_slots, <' + parentTag + '> does not define slot <:' + slotName + '>', pos);
+            }
+            return;
+        }
 
         var present = new Map<String, Bool>();
         for (attr in attributes) {
@@ -657,6 +682,12 @@ class HeexAssignsTypeLinterTransforms {
         if (attributeName == null || attributeName.length == 0) return;
         if (attributeName.startsWith(":")) return;
 
+        var parentDef = parentTag != null ? resolveComponentDefinition(parentTag) : null;
+        if (parentDef == null && strictSlotTypingEnabled()) {
+            error(ctx, 'HEEx slot prop error: under -D hxx_strict_slots, <' + slotTag + '> cannot be type-checked because parent <' + parentTag + '> is not resolvable', pos);
+            return;
+        }
+
         var slotDef = resolveSlotDefinition(slotTag, parentTag);
         if (slotDef == null) return;
 
@@ -677,6 +708,12 @@ class HeexAssignsTypeLinterTransforms {
         if (!isSlotTag(slotTag)) return;
         if (attr == null || attr.name == null || attr.name.length == 0) return;
         if (attr.name.startsWith(":")) return;
+
+        var parentDef = parentTag != null ? resolveComponentDefinition(parentTag) : null;
+        if (parentDef == null && strictSlotTypingEnabled()) {
+            error(ctx, 'HEEx slot prop error: under -D hxx_strict_slots, <' + slotTag + '> cannot be type-checked because parent <' + parentTag + '> is not resolvable', pos);
+            return;
+        }
 
         var slotDef = resolveSlotDefinition(slotTag, parentTag);
         if (slotDef == null) return;
@@ -1837,6 +1874,13 @@ class HeexAssignsTypeLinterTransforms {
     }> {
         var followed = TypeTools.follow(t);
         return switch (followed) {
+            case TAbstract(aRef, params):
+                var abs = aRef.get();
+                if (abs != null && abs.name == "Assigns" && abs.pack.join(".") == "phoenix.types" && params != null && params.length == 1) {
+                    propsFromAssignsType(params[0]);
+                } else {
+                    null;
+                }
             case TAnonymous(a):
                 var props = new Map<String, String>();
                 var required = new Map<String, Bool>();
@@ -1904,6 +1948,13 @@ class HeexAssignsTypeLinterTransforms {
     }> {
         var followed = TypeTools.follow(t);
         return switch (followed) {
+            case TAbstract(aRef, params):
+                var abs = aRef.get();
+                if (abs != null && abs.name == "Assigns" && abs.pack.join(".") == "phoenix.types" && params != null && params.length == 1) {
+                    letBindingPropsFromType(params[0]);
+                } else {
+                    null;
+                }
             case TAnonymous(a):
                 var props = new Map<String, String>();
                 var required = new Map<String, Bool>();
@@ -2329,6 +2380,7 @@ class HeexAssignsTypeLinterTransforms {
 	    }
 
 	    static var customHtmlTagRegistryCache: Null<Map<String, Array<String>>> = null;
+        static var customHtmlTagKindRegistryCache: Null<Map<String, Map<String, String>>> = null;
 
 	    static function isCustomHtmlTagRegistered(tag: String): Bool {
 	        if (tag == null || tag.length == 0) return false;
@@ -2346,23 +2398,44 @@ class HeexAssignsTypeLinterTransforms {
 	    static function getCustomHtmlTagRegistry(): Map<String, Array<String>> {
 	        if (customHtmlTagRegistryCache != null) return customHtmlTagRegistryCache;
 	        #if macro
-	        customHtmlTagRegistryCache = buildCustomHtmlTagRegistry();
+	        ensureCustomHtmlTagRegistriesBuilt();
 	        #else
 	        customHtmlTagRegistryCache = new Map();
+	        if (customHtmlTagKindRegistryCache == null) customHtmlTagKindRegistryCache = new Map();
 	        #end
 	        return customHtmlTagRegistryCache;
 	    }
 
+        static function getCustomHtmlTagAttributeKinds(tag: String): Null<Map<String, String>> {
+            if (tag == null || tag.length == 0) return null;
+            var reg = getCustomHtmlTagKindRegistry();
+            var key = tag.toLowerCase();
+            return reg.exists(key) ? reg.get(key) : null;
+        }
+
+        static function getCustomHtmlTagKindRegistry(): Map<String, Map<String, String>> {
+            if (customHtmlTagKindRegistryCache != null) return customHtmlTagKindRegistryCache;
+            #if macro
+            ensureCustomHtmlTagRegistriesBuilt();
+            #else
+            customHtmlTagKindRegistryCache = new Map();
+            if (customHtmlTagRegistryCache == null) customHtmlTagRegistryCache = new Map();
+            #end
+            return customHtmlTagKindRegistryCache;
+        }
+
 	    #if macro
-	    static function buildCustomHtmlTagRegistry(): Map<String, Array<String>> {
-	        var out: Map<String, Array<String>> = new Map();
+	    static function ensureCustomHtmlTagRegistriesBuilt(): Void {
+	        if (customHtmlTagRegistryCache != null && customHtmlTagKindRegistryCache != null) return;
+	        if (customHtmlTagRegistryCache == null) customHtmlTagRegistryCache = new Map();
+	        if (customHtmlTagKindRegistryCache == null) customHtmlTagKindRegistryCache = new Map();
 
 	        var discovered = RepoDiscovery.getDiscovered();
 	        if (discovered == null || discovered.length == 0) {
 	            RepoDiscovery.run();
 	            discovered = RepoDiscovery.getDiscovered();
 	        }
-	        if (discovered == null || discovered.length == 0) return out;
+	        if (discovered == null || discovered.length == 0) return;
 
 	        for (typePath in discovered) {
 	            var t: haxe.macro.Type = null;
@@ -2373,22 +2446,20 @@ class HeexAssignsTypeLinterTransforms {
 	                case TInst(cRef, _):
 	                    var cls = cRef.get();
 	                    if (cls == null || cls.meta == null || !cls.meta.has(":hxxHtmlTags")) continue;
-	                    collectCustomHtmlTagsFromClass(cls, out);
+	                    collectCustomHtmlTagsFromClass(cls, customHtmlTagRegistryCache, customHtmlTagKindRegistryCache);
 	                case TAbstract(aRef, _):
 	                    var abs = aRef.get();
 	                    if (abs == null || abs.meta == null || !abs.meta.has(":hxxHtmlTags")) continue;
 	                    if (abs.impl == null) continue;
 	                    var impl = abs.impl.get();
 	                    if (impl == null) continue;
-	                    collectCustomHtmlTagsFromClass(impl, out);
+	                    collectCustomHtmlTagsFromClass(impl, customHtmlTagRegistryCache, customHtmlTagKindRegistryCache);
 	                default:
 	            }
 	        }
-
-	        return out;
 	    }
 
-	    static function collectCustomHtmlTagsFromClass(cls: haxe.macro.Type.ClassType, out: Map<String, Array<String>>): Void {
+	    static function collectCustomHtmlTagsFromClass(cls: haxe.macro.Type.ClassType, out: Map<String, Array<String>>, kinds: Map<String, Map<String, String>>): Void {
 	        if (cls == null) return;
 	        for (field in cls.statics.get()) {
 	            if (field == null) continue;
@@ -2397,6 +2468,7 @@ class HeexAssignsTypeLinterTransforms {
 	            if (tag == null || tag.length == 0) continue;
 
 	            var attrs: Array<String> = [];
+                var attrKinds: Map<String, String> = new Map();
 	            if (field.meta != null && field.meta.has(":hxxTagAttrs")) {
 	                for (entry in field.meta.extract(":hxxTagAttrs")) {
 	                    if (entry == null || entry.params == null) continue;
@@ -2404,7 +2476,27 @@ class HeexAssignsTypeLinterTransforms {
 	                }
 	            }
 
-	            out.set(tag.toLowerCase(), attrs);
+                if (field.meta != null && field.meta.has(":hxxTagAttrKinds")) {
+                    for (entry in field.meta.extract(":hxxTagAttrKinds")) {
+                        if (entry == null || entry.params == null) continue;
+                        attrKinds = mergeKindMaps(attrKinds, extractStringToStringMapConst(entry.params));
+                    }
+                }
+
+                // Ensure typed attrs are also allowed attrs.
+                for (k in attrKinds.keys()) attrs = mergeUniqueStrings(attrs, [k]);
+
+                var tagKey = tag.toLowerCase();
+
+                if (out.exists(tagKey)) {
+                    attrs = mergeUniqueStrings(out.get(tagKey), attrs);
+                }
+	            out.set(tagKey, attrs);
+
+                if (kinds.exists(tagKey)) {
+                    attrKinds = mergeKindMaps(kinds.get(tagKey), attrKinds);
+                }
+                kinds.set(tagKey, attrKinds);
 	        }
 	    }
 
@@ -2455,7 +2547,106 @@ class HeexAssignsTypeLinterTransforms {
 	        for (p in params) addExpr(p);
 	        return out;
 	    }
+
+        static function extractStringToStringMapConst(params: Array<Expr>): Map<String, String> {
+            var out: Map<String, String> = new Map();
+            if (params == null || params.length == 0) return out;
+
+            // Support:
+            // - @:hxxTagAttrKinds({enabled: "bool", variant: "string"})
+            // - @:hxxTagAttrKinds("enabled", "bool", "variant", "string")
+            if (params.length == 1) {
+                switch (params[0].expr) {
+                    case EObjectDecl(fields):
+                        if (fields == null) return out;
+                        for (f in fields) {
+                            if (f == null) continue;
+                            var key = f.field;
+                            var value: Null<String> = null;
+                            switch (f.expr.expr) {
+                                case EConst(CString(s, _)):
+                                    value = s;
+                                case EParenthesis(inner):
+                                    switch (inner.expr) {
+                                        case EConst(CString(s, _)):
+                                            value = s;
+                                        default:
+                                    }
+                                default:
+                            }
+                            if (key != null && key.length > 0 && value != null && value.length > 0) {
+                                var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(key));
+                                if (canonical != null) out.set(canonical, value);
+                            }
+                        }
+                        return out;
+                    default:
+                }
+            }
+
+            var i = 0;
+            while (i + 1 < params.length) {
+                var key: Null<String> = null;
+                var value: Null<String> = null;
+                switch (params[i].expr) {
+                    case EConst(CString(s, _)):
+                        key = s;
+                    default:
+                }
+                switch (params[i + 1].expr) {
+                    case EConst(CString(s, _)):
+                        value = s;
+                    default:
+                }
+                if (key != null && key.length > 0 && value != null && value.length > 0) {
+                    var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(key));
+                    if (canonical != null) out.set(canonical, value);
+                }
+                i += 2;
+            }
+            return out;
+        }
+
+        static function mergeKindMaps(existing: Map<String, String>, next: Map<String, String>): Map<String, String> {
+            var out: Map<String, String> = new Map();
+            if (existing != null) for (k in existing.keys()) out.set(k, existing.get(k));
+            if (next == null) return out;
+            for (k in next.keys()) {
+                var left = out.exists(k) ? out.get(k) : null;
+                var right = next.get(k);
+                if (left == null || left.length == 0) {
+                    out.set(k, right);
+                } else if (right != null && right.length > 0 && left != right) {
+                    out.set(k, mergeKindUnion(left, right));
+                }
+            }
+            return out;
+        }
 	    #end
+
+        static function validateCustomHtmlTagAttributeValueKind(tag: String, attr: EAttribute, fields: Map<String,String>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+            if (tag == null || tag.length == 0) return;
+            if (attr == null || attr.name == null || attr.name.length == 0) return;
+            if (attr.name.startsWith(":")) return;
+            if (isHeexComponentTag(tag) || isSlotTag(tag)) return;
+
+            // Built-in HTML tags use the HXXComponentRegistry typing.
+            if (HXXComponentRegistry.getElementType(tag) != null) return;
+
+            var kinds = getCustomHtmlTagAttributeKinds(tag);
+            if (kinds == null) return;
+
+            var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(attr.name));
+            if (canonical == null) return;
+
+            var expected = kinds.exists(canonical) ? kinds.get(canonical) : null;
+            if (expected == null || expected == "unknown") return;
+
+            var actual = inferHeexExprKind(attr.value, fields);
+            if (!attributeKindsCompatible(expected, actual)) {
+                error(ctx, 'HEEx attribute type error: <' + tag + '> "' + canonical + '" expects ' + expected + ' but got ' + actual, pos);
+            }
+        }
 
 	    static var strictHtmlAllowedTagCache: Null<Map<String, Bool>> = null;
 
@@ -3115,6 +3306,12 @@ class HeexAssignsTypeLinterTransforms {
         var out = new Map<String, String>();
         var followed = TypeTools.follow(t);
         switch (followed) {
+            case TAbstract(aRef, params):
+                var abs = aRef.get();
+                if (abs != null && abs.name == "Assigns" && abs.pack.join(".") == "phoenix.types" && params != null && params.length == 1) {
+                    return fieldsFromType(params[0]);
+                }
+                return null;
             case TAnonymous(a):
                 for (f in a.get().fields) {
                     var kind = kindFromType(f.type);
