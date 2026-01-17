@@ -2171,15 +2171,6 @@ class HeexAssignsTypeLinterTransforms {
         if (value == null) return;
         if (value.metadata == null || value.metadata.heexAttrIsDynamic == null) return;
 
-        if (!value.metadata.heexAttrIsDynamic) {
-            error(
-                ctx,
-                'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, ' + canonicalAttr + ' must be an expression (use ' + canonicalAttr + '={EventName.Name} / HXX ' + canonicalAttr + '=$${EventName.Name})',
-                pos
-            );
-            return;
-        }
-
         // TSX-level mode: require a compile-time known event name from a registry.
         #if macro
         var allowed = getAllowedPhxEventNames();
@@ -2192,6 +2183,14 @@ class HeexAssignsTypeLinterTransforms {
         if (name == null) {
             error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, ' + canonicalAttr + ' must be a compile-time constant (e.g., EventName.Save or {"save"})', pos);
             return;
+        }
+        name = name.trim();
+        if (name.length == 0) return;
+
+        // If the attribute was written as a literal (e.g. `phx-click="increment"`),
+        // accept it only when it is still a compile-time constant known to the registry.
+        if (!allowed.exists(name)) {
+            error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, unknown event "' + name + '"', pos);
         }
         #end
     }

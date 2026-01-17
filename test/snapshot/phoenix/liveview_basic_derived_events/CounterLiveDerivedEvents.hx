@@ -34,12 +34,10 @@ class CounterLiveDerivedEvents {
     }
 
     public function render(assigns: DerivedAssigns): String {
-        // Under strict phx events, these literals are allowed because they are derived from handle_event switch cases.
         return HXX.hxx('<div>
           <h1>Counter: ${assigns.count}</h1>
-          <button phx-click={"increment"}>+</button>
-          <button phx-click={"decrement"}>-</button>
+          <button phx-click="increment">+</button>
+          <button phx-click="decrement">-</button>
         </div>');
     }
 }
-
