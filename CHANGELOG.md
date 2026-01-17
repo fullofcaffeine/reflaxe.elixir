@@ -1,3 +1,25 @@
+# [1.4.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.3.0...v1.4.0) (2026-01-17)
+
+
+### Bug Fixes
+
+* **examples:** make 06-user-management compile cleanly under WAE ([1804ad3](https://github.com/fullofcaffeine/reflaxe.elixir/commit/1804ad3c1077e330ff23e7ba4b901087c4246d8a))
+* **liveview:** avoid false positives in derived event registry ([8613fec](https://github.com/fullofcaffeine/reflaxe.elixir/commit/8613fecdff61e2485b29124a5433a597331799bd))
+* **test-runner:** make --changed category-safe ([a2e51e1](https://github.com/fullofcaffeine/reflaxe.elixir/commit/a2e51e1cf7d06980490f336e7dc01df52b9aca03))
+
+
+### Features
+
+* **ecto:** emit schema associations incl many_to_many ([ebad340](https://github.com/fullofcaffeine/reflaxe.elixir/commit/ebad34024b9e5b53de62edbd286ea02ba5d03882))
+* **ecto:** macro-keep schemas + default many_to_many join_through ([c91d437](https://github.com/fullofcaffeine/reflaxe.elixir/commit/c91d43712a8a6857022d272e8ae76b1afdb26f44))
+* **ecto:** normalize const strings in many_to_many options ([2aed63c](https://github.com/fullofcaffeine/reflaxe.elixir/commit/2aed63c3d6808cc46a6e4dd143eaee2cb5a00f3f))
+* **ecto:** validate @:schema table names via migration registry ([16c3b85](https://github.com/fullofcaffeine/reflaxe.elixir/commit/16c3b85069eb3d87a3e15e48ab785b88a575435c))
+* **hxx:** accept strict phx-event string literals ([f8e8873](https://github.com/fullofcaffeine/reflaxe.elixir/commit/f8e8873b06fefbd21cf30c06795e328787d7a18f))
+* **hxx:** derive LiveView phx events from handle_event ([a37110e](https://github.com/fullofcaffeine/reflaxe.elixir/commit/a37110e70ebc385245f57a3ae1a46f03d794fad3))
+* **hxx:** export component/slot vocab in registry index ([92c5aeb](https://github.com/fullofcaffeine/reflaxe.elixir/commit/92c5aebbf594af92ac53bffb8458c3b431b6d083))
+* **hxx:** tighten slots, components, and custom tags ([b5991c8](https://github.com/fullofcaffeine/reflaxe.elixir/commit/b5991c80f8becef62792cd49a112fb08cd18aa6e))
+* **tools:** export HXX tag/hook/event registry index ([b88c0a3](https://github.com/fullofcaffeine/reflaxe.elixir/commit/b88c0a34beb153dc4ffcb24a650f83dd91642b57))
+
 # [1.3.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.2.0...v1.3.0) (2026-01-15)
 
 
