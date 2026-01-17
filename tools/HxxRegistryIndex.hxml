@@ -1,0 +1,10 @@
+-lib reflaxe
+-lib reflaxe.elixir
+-cp src
+-cp tools
+-cp test/snapshot/phoenix/hxx_strict_phx_events_interp_valid
+-cp test/snapshot/phoenix/hxx_strict_phx_hook_interp_valid
+-cp test/snapshot/phoenix/hxx_custom_tag_registry
+--no-output
+-D elixir_output=tmp/_hxx_index_out
+--macro tools.HxxRegistryIndex.generate("tmp/hxx-registry.json")
