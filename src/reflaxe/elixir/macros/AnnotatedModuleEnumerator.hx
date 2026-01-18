@@ -165,6 +165,7 @@ class AnnotatedModuleEnumerator {
 
             var events: Array<String> = [];
             collectSwitchCaseConstants(expr, eventVarName, events);
+            collectEventEqualityConstants(expr, eventVarName, events);
             if (events.length > 0) {
                 LiveViewEventRegistry.registerMany(moduleName, events, field.pos);
             }
@@ -474,6 +475,76 @@ class AnnotatedModuleEnumerator {
                 collectSwitchCaseConstants(a, switchVarName, out);
             case _:
         }
+    }
+
+    static function collectEventEqualityConstants(expr: Expr, eventVarName: String, out: Array<String>): Void {
+        if (expr == null || expr.expr == null) return;
+        switch (expr.expr) {
+            case EReturn(e):
+                collectEventEqualityConstants(e, eventVarName, out);
+            case EIf(cond, eThen, eElse):
+                collectEventEqualityConstants(cond, eventVarName, out);
+                collectEventEqualityConstants(eThen, eventVarName, out);
+                if (eElse != null) collectEventEqualityConstants(eElse, eventVarName, out);
+            case EBinop(OpEq, a, b):
+                if (exprIsVar(a, eventVarName)) {
+                    var s = tryEvalConstString(b);
+                    if (s != null) out.push(s);
+                } else if (exprIsVar(b, eventVarName)) {
+                    var s = tryEvalConstString(a);
+                    if (s != null) out.push(s);
+                }
+                // Recurse to find nested comparisons.
+                collectEventEqualityConstants(a, eventVarName, out);
+                collectEventEqualityConstants(b, eventVarName, out);
+            case ESwitch(target, cases, _default):
+                collectEventEqualityConstants(target, eventVarName, out);
+                if (cases != null) {
+                    for (c in cases) {
+                        if (c == null) continue;
+                        if (c.values != null) for (v in c.values) collectEventEqualityConstants(v, eventVarName, out);
+                        if (c.expr != null) collectEventEqualityConstants(c.expr, eventVarName, out);
+                    }
+                }
+                if (_default != null) collectEventEqualityConstants(_default, eventVarName, out);
+            case EBlock(exprs):
+                if (exprs != null) for (e in exprs) collectEventEqualityConstants(e, eventVarName, out);
+            case EWhile(cond, body, _):
+                collectEventEqualityConstants(cond, eventVarName, out);
+                collectEventEqualityConstants(body, eventVarName, out);
+            case EFor(it, body):
+                collectEventEqualityConstants(it, eventVarName, out);
+                collectEventEqualityConstants(body, eventVarName, out);
+            case ETry(e, catches):
+                collectEventEqualityConstants(e, eventVarName, out);
+                if (catches != null) {
+                    for (c in catches) if (c != null && c.expr != null) collectEventEqualityConstants(c.expr, eventVarName, out);
+                }
+            case ECall(fn, args):
+                collectEventEqualityConstants(fn, eventVarName, out);
+                if (args != null) for (a in args) collectEventEqualityConstants(a, eventVarName, out);
+            case EUnop(_, _, a):
+                collectEventEqualityConstants(a, eventVarName, out);
+            case EParenthesis(a):
+                collectEventEqualityConstants(a, eventVarName, out);
+            case EMeta(_, a):
+                collectEventEqualityConstants(a, eventVarName, out);
+            default:
+        }
+    }
+
+    static function exprIsVar(expr: Expr, varName: String): Bool {
+        if (expr == null || expr.expr == null || varName == null || varName.length == 0) return false;
+        return switch (expr.expr) {
+            case EConst(CIdent(name)):
+                name == varName;
+            case EParenthesis(inner):
+                exprIsVar(inner, varName);
+            case EMeta(_, inner):
+                exprIsVar(inner, varName);
+            default:
+                false;
+        };
     }
 
     static function switchTargetIsVar(expr: Expr, varName: String): Bool {

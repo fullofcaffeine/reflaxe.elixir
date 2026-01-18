@@ -178,6 +178,17 @@ class ElixirOutputIterator {
             trace('[ElixirOutputIterator] Input module: ${moduleName} (size=${originalSize})');
             #end
 
+            // Provide per-module context for contextual transformer passes.
+            //
+            // WHY
+            // - Some passes (e.g. HEEx/HXX linting under strict flags) need to know which
+            //   module/class is currently being transformed in order to enforce local rules.
+            //
+            // HOW
+            // - Map the `BaseType` in `DataAndFileInfo` to `CompilationContext.currentModule`
+            //   and `currentClass` (when applicable) for the duration of the transform.
+            setContextForCurrentOutput(astData);
+
             // Apply transformation passes to the AST
             // The metadata from the outer AST node needs to be preserved
             // when passing to the transformer
@@ -185,6 +196,8 @@ class ElixirOutputIterator {
             final transformedAST = ElixirASTTransformer.transform(astData.data, context);
 
             #if debug_output_iterator trace('[ElixirOutputIterator] Transformation complete'); #end
+
+            clearContextForCurrentOutput();
 
             // Generic gating: suppress emission of compile-time-only empty modules
             // WHAT: Avoid generating `.ex` files for modules that have no runtime content
@@ -294,6 +307,33 @@ class ElixirOutputIterator {
             // Return the same DataAndFileInfo but with string output instead of AST
             return astData.withOutput(output);
         }
+    }
+
+    function setContextForCurrentOutput(astData: DataAndFileInfo<ElixirAST>): Void {
+        if (astData == null || astData.baseType == null) return;
+
+        // Use the Haxe type path (pack + name). This is the stable identifier used by
+        // compiler macros (RepoDiscovery, LiveView registries, etc.).
+        var typePath = astData.baseType.pack != null && astData.baseType.pack.length > 0
+            ? astData.baseType.pack.join(".") + "." + astData.baseType.name
+            : astData.baseType.name;
+
+        if (typePath != null && typePath.length > 0) {
+            context.setCurrentModule(typePath);
+        }
+
+        // BaseType is a structural supertype; only ClassType has `fields`.
+        // Use reflection to avoid depending on macro-only RTTI checks.
+        if (Reflect.hasField(astData.baseType, "fields")) {
+            context.currentClass = cast astData.baseType;
+        } else {
+            context.currentClass = null;
+        }
+    }
+
+    function clearContextForCurrentOutput(): Void {
+        context.clearModuleContext();
+        context.currentClass = null;
     }
 
     #if macro

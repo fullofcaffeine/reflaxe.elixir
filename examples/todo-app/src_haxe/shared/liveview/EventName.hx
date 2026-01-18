@@ -13,7 +13,6 @@ package shared.liveview;
  * - Templates: `phx-click=${EventName.ToggleForm}` (compiles to `phx-click="toggle_form"`).
  * - Server: compare `event == EventName.ToggleForm`.
  */
-@:phxEventNames
 enum abstract EventName(String) from String to String {
     // TodoLive
     var ToggleForm = "toggle_form";
