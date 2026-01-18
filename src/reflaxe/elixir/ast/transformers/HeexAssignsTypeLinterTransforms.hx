@@ -2276,7 +2276,7 @@ class HeexAssignsTypeLinterTransforms {
 
     static function validatePhxEventName(canonicalAttr: String, value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
         #if macro
-        var allowed = getAllowedPhxEventNames();
+        var allowed = getAllowedPhxEventNamesForContext(ctx);
         if (allowed == null) return;
 
         if (value == null) return;
@@ -2303,9 +2303,9 @@ class HeexAssignsTypeLinterTransforms {
 
         // TSX-level mode: require a compile-time known event name from a registry.
         #if macro
-        var allowed = getAllowedPhxEventNames();
+        var allowed = getAllowedPhxEventNamesForContext(ctx);
         if (allowed == null) {
-            error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, you must define an event registry (add @:phxEventNames to an enum abstract of String) or make events derivable from handle_event switch cases', pos);
+            error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, you must either define an event registry (add @:phxEventNames to an enum abstract of String) or compile inside a @:liveview where events can be derived from handle_event/3', pos);
             return;
         }
 
@@ -2336,6 +2336,34 @@ class HeexAssignsTypeLinterTransforms {
         if (phxEventNameCache != null) return phxEventNameCache;
         phxEventNameCache = buildAllowedPhxEventNames();
         return phxEventNameCache;
+    }
+
+    static function getAllowedPhxEventNamesForContext(ctx: Null<reflaxe.elixir.CompilationContext>): Null<Map<String, Bool>> {
+        // Prefer LiveView-local events derived from handle_event/3.
+        //
+        // WHY
+        // - Under -D hxx_strict_phx_events, we want TSX-level correctness: a LiveView template should
+        //   only accept events that the same LiveView can actually handle.
+        //
+        // HOW
+        // - If we're compiling a @:liveview module and any derived events exist for it, use those
+        //   (optionally unioned with any explicit @:phxEventNames registries).
+        // - Otherwise, fall back to explicit @:phxEventNames registries (global).
+        if (ctx != null && ctx.currentClass != null && ctx.currentClass.meta != null && ctx.currentClass.meta.has(":liveview")) {
+            var moduleTypePath = (ctx.currentClass.pack != null && ctx.currentClass.pack.length > 0)
+                ? (ctx.currentClass.pack.join(".") + "." + ctx.currentClass.name)
+                : ctx.currentClass.name;
+            if (moduleTypePath != null && moduleTypePath.length > 0) {
+                var derived = LiveViewEventRegistry.getEventsForModule(moduleTypePath);
+                if (derived != null && derived.keys().hasNext()) {
+                    // For @:liveview modules, keep the check local: only accept events that
+                    // this module can actually handle.
+                    return derived;
+                }
+            }
+        }
+
+        return getAllowedPhxEventNames();
     }
 
     static function buildAllowedPhxHookNames(): Null<Map<String, Bool>> {
@@ -2373,19 +2401,13 @@ class HeexAssignsTypeLinterTransforms {
     static function buildAllowedPhxEventNames(): Null<Map<String, Bool>> {
         var allowed: Map<String, Bool> = new Map();
 
-        // Include events derived from @:liveview handle_event/3 switch cases, if any.
-        var derived = LiveViewEventRegistry.getAllEventNames();
-        if (derived != null) {
-            for (k in derived.keys()) allowed.set(k, true);
-        }
-
         var discovered = RepoDiscovery.getDiscovered();
         if (discovered == null || discovered.length == 0) {
             RepoDiscovery.run();
             discovered = RepoDiscovery.getDiscovered();
         }
 
-        if ((discovered == null || discovered.length == 0) && !allowed.keys().hasNext()) return null;
+        if (discovered == null || discovered.length == 0) return null;
 
         if (discovered != null) {
             for (typePath in discovered) {
