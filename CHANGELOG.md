@@ -1,3 +1,16 @@
+# [1.10.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.9.0...v1.10.0) (2026-01-18)
+
+
+### Bug Fixes
+
+* **todo-app:** use LiveSocket for merge in InlineMarkupLive ([1f62369](https://github.com/fullofcaffeine/reflaxe.elixir/commit/1f62369675b054c8e74e749abc6f4eed5f1a7e5a))
+
+
+### Features
+
+* **hxx:** inline markup demo + string expr normalization ([973d16b](https://github.com/fullofcaffeine/reflaxe.elixir/commit/973d16b359755167b5d4400cd72e1202e116d277))
+* **hxx:** support typed phx constants in inline markup ([8ef7266](https://github.com/fullofcaffeine/reflaxe.elixir/commit/8ef7266a76a34c4a6e02d71a1fbc9632e00b6306))
+
 # [1.9.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.8.0...v1.9.0) (2026-01-18)
 
 
