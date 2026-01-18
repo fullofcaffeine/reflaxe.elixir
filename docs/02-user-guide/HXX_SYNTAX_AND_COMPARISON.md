@@ -16,6 +16,7 @@ See also:
 - 02-user-guide/HXX_TYPE_SAFETY.md – Type system and validation
 - 06-guides/HXX_GUIDE.md – Practical authoring patterns
 - 03-compiler-development/hxx-template-compilation.md – Technical pipeline
+- 02-user-guide/INLINE_MARKUP.md – Optional TSX-like inline markup sugar
 
 ## Authoring Model
 
