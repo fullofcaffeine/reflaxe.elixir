@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.4.0...v1.5.0) (2026-01-18)
+
+
+### Features
+
+* **hxx:** export per-liveview template phx usage ([d139ea0](https://github.com/fullofcaffeine/reflaxe.elixir/commit/d139ea0ae0ef183742495ebdffc221af3cbb3850))
+
 # [1.4.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.3.0...v1.4.0) (2026-01-17)
 
 
