@@ -72,7 +72,7 @@
 # Opt-in: enforce typed phx-hook usage in templates (reject literal phx-hook="Name")
 -D hxx_strict_phx_hook
 
-# Opt-in: enforce typed phx-* event usage in templates (reject literal phx-click="save")
+# Opt-in: enforce validated phx-* event usage in templates (per-LiveView derived allowlist)
 -D hxx_strict_phx_events
 
 # Opt-in: require dot-components to resolve to discoverable @:component definitions.
