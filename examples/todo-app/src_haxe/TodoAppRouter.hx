@@ -183,6 +183,15 @@ import reflaxe.elixir.macros.HttpMethod;
 	        controller: controllers.UserController,
 	        action: controllers.UserController.delete
 	    },
+
+        // Inline markup (TSX-like) showcase
+        {
+            name: "inlineMarkup",
+            method: HttpMethod.LIVE,
+            path: "/dev/inline-markup",
+            controller: server.live.InlineMarkupLive,
+            action: server.live.InlineMarkupLive.index
+        },
 	    
 		    // LiveDashboard + mailbox preview (dev-only)
 		    {

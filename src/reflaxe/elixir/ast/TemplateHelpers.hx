@@ -331,7 +331,7 @@ class TemplateHelpers {
 	                k++;
 	            }
 	            var inner = s.substr(nextInterpIndex + 2, (k - 1) - (nextInterpIndex + 2));
-	            var expr = StringTools.trim(inner);
+	            var expr = normalizeInlineTemplateExpr(inner);
             if (expr.length >= 2 && expr.charAt(0) == '"' && expr.charAt(1) == '<') {
                 #if macro
                 haxe.macro.Context.error("HXX: injecting HTML via string inside interpolation is not allowed. Use HXX.block('...') or inline markup.", haxe.macro.Context.currentPos());
@@ -341,7 +341,7 @@ class TemplateHelpers {
             }
             var tern = splitTopLevelTernary(expr);
             if (tern != null) {
-                var cond = StringTools.replace(tern.cond, "assigns.", "@");
+                var cond = normalizeInlineTemplateExpr(tern.cond);
                 var th = extractBlockHtml(StringTools.trim(tern.thenPart));
                 var el = extractBlockHtml(StringTools.trim(tern.elsePart));
                 if (th != null || el != null) {
@@ -349,10 +349,10 @@ class TemplateHelpers {
                     var elseQ = (el != null && el != "") ? toQuoted(el) : '""';
                     parts.push('<%= if ' + cond + ', do: ' + thenQ + ', else: ' + elseQ + ' %>');
                 } else {
-                    parts.push('<%= ' + StringTools.replace(expr, "assigns.", "@") + ' %>');
+                    parts.push('<%= ' + expr + ' %>');
                 }
             } else {
-                parts.push('<%= ' + StringTools.replace(expr, "assigns.", "@") + ' %>');
+                parts.push('<%= ' + expr + ' %>');
             }
             i = k;
         }
@@ -382,18 +382,35 @@ class TemplateHelpers {
         return out.toString();
     }
 
+    /**
+     * Normalizes inline template expressions that originate from string-based templates
+     * (e.g. `HXX.hxx("...")` or inline markup literals rewritten to strings).
+     *
+     * - `assigns.*` → `@*` (HEEx idiom)
+     * - `null` → `nil` (Elixir)
+     *
+     * NOTE: This is intentionally shallow; it does not type-check or translate arbitrary
+     * Haxe expressions. Inline markup should keep interpolations simple.
+     */
+    static function normalizeInlineTemplateExpr(expr: String): String {
+        if (expr == null) return "";
+        var normalized = StringTools.trim(expr);
+        normalized = StringTools.replace(normalized, "assigns.", "@");
+        normalized = ~/\bnull\b/g.replace(normalized, "nil");
+        return normalized;
+    }
+
     static function convertInlineExprForAttrInterpolation(expr: String): String {
         if (expr == null) return "";
-        var e = StringTools.trim(expr);
-        e = StringTools.replace(e, "assigns.", "@");
-        var tern = splitTopLevelTernary(e);
+        var normalized = normalizeInlineTemplateExpr(expr);
+        var tern = splitTopLevelTernary(normalized);
         if (tern != null) {
-            var cond = StringTools.replace(StringTools.trim(tern.cond), "assigns.", "@");
+            var cond = normalizeInlineTemplateExpr(tern.cond);
             var th = StringTools.trim(tern.thenPart);
             var el = StringTools.trim(tern.elsePart);
             return 'if ' + cond + ', do: ' + th + ', else: ' + el;
         }
-        return e;
+        return normalized;
     }
 
     static function buildInterpolatedAttrExpr(value: String): String {
@@ -426,7 +443,7 @@ class TemplateHelpers {
 	                    break;
 	                }
 	                var inner = StringTools.trim(value.substr(eexInterpIndex + 3, endTag - (eexInterpIndex + 3)));
-	                inner = StringTools.replace(inner, "assigns.", "@");
+	                inner = normalizeInlineTemplateExpr(inner);
 	                parts.push('Kernel.to_string(' + inner + ')');
 	                i = endTag + 2;
 	                continue;
@@ -939,11 +956,10 @@ class TemplateHelpers {
                 if (c == '{') depth++; else if (c == '}') depth--; p++;
             }
             var inner = s.substr(j + 2, (p - 1) - (j + 2));
-            var expr = StringTools.trim(inner);
-            expr = StringTools.replace(expr, "assigns.", "@");
+            var expr = normalizeInlineTemplateExpr(inner);
             var tern = splitTopLevelTernary(expr);
             if (tern != null) {
-                var cond = StringTools.replace(StringTools.trim(tern.cond), "assigns.", "@");
+                var cond = normalizeInlineTemplateExpr(tern.cond);
                 var th = StringTools.trim(tern.thenPart);
                 var el = StringTools.trim(tern.elsePart);
                 expr = 'if ' + cond + ', do: ' + th + ', else: ' + el;

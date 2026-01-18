@@ -54,21 +54,23 @@ Implementation: `src/reflaxe/elixir/macros/InlineMarkup.hx`.
 
 Haxe’s markup lexer has XML-ish rules that affect what can be the **root** tag of a markup literal.
 
-### Root tag must be a valid XML name — or a fragment
+### Root tag must be a valid XML name
 
 - ✅ Valid roots: `<div>`, `<span>`, `<my-widget>` (custom tags), `<svg>`, …
-- ✅ Fragment root: `<> ... </>` (React-style)
 - ❌ Not valid root: Phoenix dot-components like `<.form>` because `.form` is not a valid XML name.
 
 Recommended pattern for dot-components:
 
 ```haxe
-return <>
+return <div>
   <.form for=${assigns.formFor} action="/save">
     ...
   </.form>
-</>;
+</div>;
 ```
+
+Note: Haxe 4’s inline markup lexer does not support React-style fragment roots (`<> ... </>`). If fragment
+syntax becomes available in a future Haxe release, we can adopt it to avoid wrapper elements.
 
 ## Interpolation and HEEx
 
@@ -96,4 +98,3 @@ Note: inline-markup completion detection is heuristic (it avoids triggering insi
 - **Runtime:** no impact (everything is compile-time).
 - **Compile time:** there is a small extra AST walk *only* when `-D hxx_inline_markup` is enabled and only for
   the scoped Phoenix-facing modules (or `@:hxx_inline_markup`).
-

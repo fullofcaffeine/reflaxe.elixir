@@ -77,7 +77,7 @@ How it works (high-level):
 
 Limitations:
 - Haxe’s markup lexer requires a valid XML root tag name. Phoenix dot-components like `<.form>` can’t be the root
-  of an inline markup literal; wrap them in a fragment `<> ... </>` (or a normal element).
+  of an inline markup literal; wrap them in a normal element (e.g. `<div>...</div>`).
 
 Performance:
 - Inline markup has no runtime cost. Compile-time overhead is a small additional AST walk to rewrite `@:markup` into `HXX.hxx(...)`.
