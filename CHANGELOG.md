@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.6.0...v1.7.0) (2026-01-18)
+
+
+### Features
+
+* **hxx-index:** resolve used components per LiveView ([f0b1a96](https://github.com/fullofcaffeine/reflaxe.elixir/commit/f0b1a96e2b1b1d3ac473db368c6027effaf28cc0))
+
 # [1.6.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.5.1...v1.6.0) (2026-01-18)
 
 
