@@ -8,7 +8,6 @@ import reflaxe.elixir.macros.MacroTimingHelper;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTPrinter;
 import haxe.macro.Type;
-import haxe.macro.TypedExprTools;
 
 /**
  * TemplateHelpers: HXX Template Processing Utilities
@@ -295,19 +294,19 @@ class TemplateHelpers {
         #end
     }
 
-	    static function rewriteInterpolationsInternal(s:String):String {
-	        if (s == null) return s;
-	        // Fix up stray trailing quotes after brace-style attribute expressions (`attr={expr}"`),
-	        // which can occur when string concatenations are nested and the closing quote lands in
-	        // a later chunk after the `<%=` marker has already been rewritten away.
-	        s = rewriteAttributeBraceTrailingQuotes(s);
-	        // NOTE: Even when there are no explicit `${...}` / `#{...}` markers, Haxe string interpolation
-	        // inside an HXX template (e.g. `value=${assigns.query}`) becomes string concatenation and
-	        // we may have already emitted `<%= ... %>` fragments (via collectTemplateContent).
-	        // We still need to run attribute-level rewrites so `attr=<%= expr %>` becomes `attr={expr}`.
-        if (s.indexOf("${") == -1 && s.indexOf("#{") == -1 && s.indexOf("<for {") == -1 && s.indexOf("<%") == -1) {
-            return s;
-        }
+		    static function rewriteInterpolationsInternal(s:String):String {
+		        if (s == null) return s;
+		        // Fix up stray trailing quotes after brace-style attribute expressions (`attr={expr}"`),
+		        // which can occur when string concatenations are nested and the closing quote lands in
+		        // a later chunk after the `<%=` marker has already been rewritten away.
+		        s = rewriteAttributeBraceTrailingQuotes(s);
+		        // NOTE: Even when there are no explicit `${...}` / `#{...}` markers, Haxe string interpolation
+		        // inside an HXX template (e.g. `value=${assigns.query}`) becomes string concatenation and
+		        // we may have already emitted `<%= ... %>` fragments (via collectTemplateContent).
+		        // We still need to run attribute-level rewrites so `attr=<%= expr %>` becomes `attr={expr}`.
+	        if (s.indexOf("${") == -1 && s.indexOf("#{") == -1 && s.indexOf("<for {") == -1 && s.indexOf("<%") == -1) {
+	            return s;
+	        }
         s = rewriteAttributeInterpolations(s);
         s = rewriteAttributeEexInterpolations(s);
         // HEEx does not allow `<%=` interpolations inside quoted attribute values. When the
@@ -396,8 +395,68 @@ class TemplateHelpers {
         if (expr == null) return "";
         var normalized = StringTools.trim(expr);
         normalized = StringTools.replace(normalized, "assigns.", "@");
-        normalized = ~/\bnull\b/g.replace(normalized, "nil");
+        normalized = replaceWordOutsideQuotes(normalized, "null", "nil");
+
         return normalized;
+    }
+
+    static function replaceWordOutsideQuotes(src: String, word: String, replacement: String): String {
+        if (src == null || src == "") return src;
+        if (word == null || word == "") return src;
+        if (replacement == null) replacement = "";
+
+        inline function isWordChar(ch: String): Bool {
+            return ~/^[A-Za-z0-9_]$/.match(ch);
+        }
+
+        var out: StringBuf = null;
+        var i = 0;
+        var quote: Null<String> = null;
+        while (i < src.length) {
+            var ch = src.charAt(i);
+            if (quote != null) {
+                // Preserve escapes inside quoted strings.
+                if (ch == "\\" && i + 1 < src.length) {
+                    if (out != null) out.add(ch);
+                    i++;
+                    ch = src.charAt(i);
+                    if (out != null) out.add(ch);
+                    i++;
+                    continue;
+                }
+                if (ch == quote) quote = null;
+                if (out != null) out.add(ch);
+                i++;
+                continue;
+            }
+
+            if (ch == "\"" || ch == "'") {
+                quote = ch;
+                if (out != null) out.add(ch);
+                i++;
+                continue;
+            }
+
+            if (i + word.length <= src.length && src.substr(i, word.length) == word) {
+                var prev = (i == 0) ? "" : src.charAt(i - 1);
+                var next = (i + word.length >= src.length) ? "" : src.charAt(i + word.length);
+                var prevOk = (prev == "") || !isWordChar(prev);
+                var nextOk = (next == "") || !isWordChar(next);
+                if (prevOk && nextOk) {
+                    if (out == null) {
+                        out = new StringBuf();
+                        out.add(src.substr(0, i));
+                    }
+                    out.add(replacement);
+                    i += word.length;
+                    continue;
+                }
+            }
+
+            if (out != null) out.add(ch);
+            i++;
+        }
+        return out != null ? out.toString() : src;
     }
 
     static function convertInlineExprForAttrInterpolation(expr: String): String {
@@ -417,6 +476,9 @@ class TemplateHelpers {
         if (value == null) return "\"\"";
 	        var parts: Array<String> = [];
 	        var i = 0;
+        // Marker prefix for interpolation parts; these are rendered differently depending on whether
+        // the final attribute value is mixed (static + interp) or a single expression.
+        var interpPrefix = "\u0000";
 	        while (i < value.length) {
 	            var hashInterpIndex = value.indexOf("#{", i);
 	            var dollarInterpIndex = value.indexOf("${", i);
@@ -444,7 +506,7 @@ class TemplateHelpers {
 	                }
 	                var inner = StringTools.trim(value.substr(eexInterpIndex + 3, endTag - (eexInterpIndex + 3)));
 	                inner = normalizeInlineTemplateExpr(inner);
-	                parts.push('Kernel.to_string(' + inner + ')');
+	                parts.push(interpPrefix + inner);
 	                i = endTag + 2;
 	                continue;
 	            }
@@ -474,13 +536,26 @@ class TemplateHelpers {
 	                throw "HXX: injecting HTML via string inside attribute interpolation is not allowed. Use HXX.block('...') or inline markup.";
 	                #end
 	            }
-	            parts.push('Kernel.to_string(' + convertInlineExprForAttrInterpolation(expr) + ')');
+	            parts.push(interpPrefix + convertInlineExprForAttrInterpolation(expr));
 	            i = k;
 	        }
 
         if (parts.length == 0) return "\"\"";
-        if (parts.length == 1) return parts[0];
-        return '(' + parts.join(" <> ") + ')';
+        if (parts.length == 1) {
+            var single = parts[0];
+            return StringTools.startsWith(single, interpPrefix) ? single.substr(interpPrefix.length) : single;
+        }
+
+        // Mixed attribute: join static strings and interpolate expressions by converting them to binaries.
+        var rendered: Array<String> = [];
+        for (p in parts) {
+            if (StringTools.startsWith(p, interpPrefix)) {
+                rendered.push('Kernel.to_string(' + p.substr(interpPrefix.length) + ')');
+            } else {
+                rendered.push(p);
+            }
+        }
+        return '(' + rendered.join(" <> ") + ')';
     }
 
     static function rewriteQuotedAttributeMixedInterpolations(s: String): String {

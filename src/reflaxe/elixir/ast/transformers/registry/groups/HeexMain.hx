@@ -40,6 +40,13 @@ class HeexMain {
     });
 
     passes.push({
+      name: "HeexInlineMarkupConstStringRefs",
+      description: "Rewrite brace attribute refs (HookName.X/EventName.Y) to string literals inside ~H",
+      enabled: true,
+      pass: reflaxe.elixir.ast.transformers.HeexInlineMarkupConstStringRefsTransforms.transformPass
+    });
+
+    passes.push({
       name: "HeexStripToStringInSigils",
       description: "Remove trailing .to_string() in <%= ... %> within ~H",
       enabled: true,

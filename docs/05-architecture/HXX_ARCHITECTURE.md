@@ -79,6 +79,11 @@ Limitations:
 - Haxe’s markup lexer requires a valid XML root tag name. Phoenix dot-components like `<.form>` can’t be the root
   of an inline markup literal; wrap them in a normal element (e.g. `<div>...</div>`).
 
+Strict phx-hook / phx-event typing:
+- Inline markup brace attribute expressions are raw text. For common patterns like `phx-hook={HookName.Ping}` /
+  `phx-click={EventName.Save}`, the HEEx transformer rewrites those constant references into string literals
+  (e.g. `phx-hook={"Ping"}`) so output is valid Elixir and strict linters can treat them as compile-time constants.
+
 Performance:
 - Inline markup has no runtime cost. Compile-time overhead is a small additional AST walk to rewrite `@:markup` into `HXX.hxx(...)`.
 
