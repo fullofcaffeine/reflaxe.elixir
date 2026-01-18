@@ -1,3 +1,15 @@
+# [1.9.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.8.0...v1.9.0) (2026-01-18)
+
+
+### Features
+
+* **hxx:** inline markup sugar + prefer hxx() ([0090319](https://github.com/fullofcaffeine/reflaxe.elixir/commit/0090319ee80b896cb24fdfd48fc9af9587d74db6))
+
+
+### Performance Improvements
+
+* **hxx:** make inline markup opt-in + scoped ([3bd179c](https://github.com/fullofcaffeine/reflaxe.elixir/commit/3bd179cd2c726f84b20a419f2f2aa97bcf47b896))
+
 # [1.8.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.7.0...v1.8.0) (2026-01-18)
 
 
