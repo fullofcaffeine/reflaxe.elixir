@@ -135,9 +135,12 @@ If you want to enforce typed LiveView event names (`phx-click`, `phx-submit`, `p
 ```
 
 In strict mode:
-- Literal event strings like `phx-click="save"` are rejected.
-- `phx-click={@event}` (dynamic) is rejected.
-- Use a compile-time constant from a `@:phxEventNames` registry (recommended: `phx-click=${EventName.Save}` in HXX).
+- Event names must be compile-time constants, and must be known to the compiler.
+- In a `@:liveview` module, the compiler can *derive* allowed events from your `handle_event/3` body (literal strings in `switch (event)` and `if (event == "...")` comparisons).
+- Otherwise, define a `@:phxEventNames` registry and reference it from templates (recommended: `phx-click=${EventName.Save}` in HXX).
+
+Rejected in strict mode:
+- Fully dynamic event expressions (e.g. `phx-click={@event}`) are rejected because they cannot be validated.
 
 ### Control Flow
 - Block conditionals in content use HXX control tags (normalized to HEEx):

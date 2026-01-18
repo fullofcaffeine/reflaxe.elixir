@@ -144,7 +144,21 @@ Opt-in strict mode:
 ## Pattern: Typed LiveView Event Names (`phx-click`, `phx-submit`, ...)
 
 LiveView event names are stringly-typed by default (`phx-click="save"`). To make refactors safe and keep
-your templates aligned with a single source of truth, define a registry:
+your templates aligned with a single source of truth, you have two options:
+
+1) **Derive events from your LiveView**
+
+In a `@:liveview` module, the compiler can derive a per-module allowlist of event names from `handle_event/3`
+when the event comparisons are literal strings:
+- `switch (event) { case "save": ... }`
+- `if (event == "save") { ... }`
+
+With `-D hxx_strict_phx_events`, templates in that module will only accept events that the same LiveView
+can actually handle.
+
+2) **Define an explicit registry**
+
+If your event dispatch is more dynamic (or you want a shared vocabulary across modules), define a registry:
 
 ```haxe
 @:phxEventNames
@@ -160,11 +174,11 @@ Then:
 - `phx-change=${EventName.Validate}`
 
 When at least one `@:phxEventNames` registry exists in the project, the compiler lints statically-known
-event usages (expression form). Dynamic event expressions (e.g. `phx-click={@event}`) are intentionally
+event usages (expression form). Fully dynamic event expressions (e.g. `phx-click={@event}`) are intentionally
 not validated to keep false positives low.
 
 Opt-in strict mode:
-- `-D hxx_strict_phx_events` rejects literal `phx-click="save"` (and other event attrs) and requires the expression form (recommended: `phx-click=${EventName.Save}` in HXX).
+- `-D hxx_strict_phx_events` requires compile-time constants that the compiler can validate (derived from the current `@:liveview` module and/or from `@:phxEventNames` registries). Fully dynamic event expressions are rejected.
 
 ## Anti-Pattern: `__elixir__()` in Application Code
 
