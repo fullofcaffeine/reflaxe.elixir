@@ -546,7 +546,7 @@ class CounterView {
 ```
 
 Notes:
-- Inline markup is enabled automatically for Elixir builds in this repo; in other projects, enable it with `-D hxx_inline_markup`.
+- Inline markup is opt-in: enable it with `-D hxx_inline_markup`.
 - For a fragment root (React-style), you can use `<> ... </>`.
 - The root tag must be a valid XML name (or a fragment), so Phoenix dot-components like `<.form>` cannot be the root; wrap them in `<> ... </>` (or a normal element).
 

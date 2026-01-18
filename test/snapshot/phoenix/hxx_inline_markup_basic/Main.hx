@@ -4,6 +4,7 @@ typedef Assigns = {
     var count: Int;
 }
 
+@:hxx_inline_markup
 class Main {
     public static function render(assigns: Assigns): String {
         return <div class="counter">
@@ -14,4 +15,3 @@ class Main {
 
     public static function main() {}
 }
-
