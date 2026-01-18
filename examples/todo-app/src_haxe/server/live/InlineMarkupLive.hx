@@ -1,10 +1,11 @@
 package server.live;
 
-import HXX.*;
-import phoenix.Phoenix.MountResult;
-import phoenix.Phoenix.Socket;
-import server.types.Types.MountParams;
-import server.types.Types.Session;
+	import HXX.*;
+	import phoenix.Phoenix.MountResult;
+	import phoenix.Phoenix.Socket;
+	import phoenix.LiveSocket;
+	import server.types.Types.MountParams;
+	import server.types.Types.Session;
 
 typedef InlineMarkupLiveAssigns = {
     var message: String;
@@ -38,13 +39,14 @@ class InlineMarkupLive {
      */
     public static function index(): String {
         return "index";
-    }
+	    }
 
-    public static function mount(_params: MountParams, _session: Session, socket: Socket<InlineMarkupLiveAssigns>): MountResult<InlineMarkupLiveAssigns> {
-        return Ok(socket.merge({
-            message: "Hello from inline markup 👋"
-        }));
-    }
+	    public static function mount(_params: MountParams, _session: Session, socket: Socket<InlineMarkupLiveAssigns>): MountResult<InlineMarkupLiveAssigns> {
+	        var liveSocket: LiveSocket<InlineMarkupLiveAssigns> = socket;
+	        return Ok(liveSocket.merge({
+	            message: "Hello from inline markup 👋"
+	        }));
+	    }
 
     public static function render(assigns: InlineMarkupLiveAssigns): String {
         return <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
@@ -68,4 +70,3 @@ class InlineMarkupLive {
         </div>;
     }
 }
-
