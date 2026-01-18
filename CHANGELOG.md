@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.5.0...v1.5.1) (2026-01-18)
+
+
+### Bug Fixes
+
+* **hxx:** derive strict phx events per LiveView ([3a14fa5](https://github.com/fullofcaffeine/reflaxe.elixir/commit/3a14fa514a4ceb7d34339421d7ef2a437da10438))
+
 # [1.5.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.4.0...v1.5.0) (2026-01-18)
 
 
