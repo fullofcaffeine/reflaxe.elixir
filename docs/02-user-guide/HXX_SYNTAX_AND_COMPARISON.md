@@ -27,6 +27,9 @@ Inline markup notes:
 - Root tag must be a valid XML name (Haxe lexer rule) or a fragment `<> ... </>`.
 - Phoenix dot-components like `<.form>` cannot be the *root*; wrap them in `<> ... </>` (or a normal element).
 - Inline markup is pure syntax sugar: it is rewritten into `HXX.hxx("...")` before typing, so it has the same HXX linting and generates the same Elixir.
+
+Enabling:
+- Add `-D hxx_inline_markup` to enable the rewrite macro. To keep overhead minimal, the rewrite only runs for Phoenix-facing modules (`@:liveview`, `@:component`, etc.) unless you also add `@:hxx_inline_markup` to a class.
 - Interpolations keep the same HXX rules: `${expr}` is still the interpolation form (it’s just text inside the markup literal).
 
 Example:

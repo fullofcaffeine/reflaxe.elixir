@@ -67,7 +67,7 @@ as **syntax sugar** over HXX by rewriting `@:markup "..."` (the parser represent
 
 Implementation:
 - `src/reflaxe/elixir/macros/InlineMarkup.hx`
-- Enabled in `src/reflaxe/elixir/CompilerInit.hx` (Elixir builds; opt-in via `-D hxx_inline_markup` for other projects)
+- Opt-in via `-D hxx_inline_markup` (the macro is wired from `src/reflaxe/elixir/CompilerInit.hx`)
 
 Limitations:
 - Haxe’s markup lexer requires a valid XML root tag name. Phoenix dot-components like `<.form>` can’t be the root
