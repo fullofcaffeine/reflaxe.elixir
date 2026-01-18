@@ -11,6 +11,7 @@ import reflaxe.elixir.macros.RepoDiscovery;
 import reflaxe.elixir.ast.transformers.HeexAssignsTypeLinterTransforms;
 import reflaxe.elixir.macros.LiveViewEventRegistry;
 import reflaxe.elixir.macros.LiveViewTemplateUsageRegistry;
+import reflaxe.elixir.ast.NameUtils;
 import phoenix.types.HXXComponentRegistry;
 import sys.io.File;
 
@@ -43,7 +44,7 @@ class HxxRegistryIndex {
         var phxHookNames = collectConstStringRegistry(discovered, ":phxHookNames");
         var phxEventNames = collectConstStringRegistry(discovered, ":phxEventNames");
         var components = collectComponentIndex();
-        var liveViews = collectLiveViewModuleIndex(discovered);
+        var liveViews = collectLiveViewModuleIndex(discovered, components);
 
         if (Context.defined("hxx_index_debug")) {
             var shown = discovered.length > 50 ? discovered.slice(0, 50) : discovered;
@@ -92,9 +93,39 @@ class HxxRegistryIndex {
         #end
     }
 
-    static function collectLiveViewModuleIndex(discovered: Array<String>): Array<Dynamic> {
+    static function collectLiveViewModuleIndex(discovered: Array<String>, components: Array<Dynamic>): Array<Dynamic> {
         #if macro
         if (discovered == null) return [];
+
+        var dotTagToDefs: Map<String, Array<Dynamic>> = new Map();
+        var moduleAndFnToDefs: Map<String, Array<Dynamic>> = new Map();
+        if (components != null) {
+            for (def in components) {
+                if (def == null) continue;
+                var dotTag = Std.string(Reflect.field(def, "dotTag"));
+                var moduleTypePath = Std.string(Reflect.field(def, "moduleTypePath"));
+                var nativeModuleName = Std.string(Reflect.field(def, "nativeModuleName"));
+                var functionName = Std.string(Reflect.field(def, "functionName"));
+
+                if (dotTag != null && dotTag.length > 0) {
+                    var arr = dotTagToDefs.get(dotTag);
+                    if (arr == null) { arr = []; dotTagToDefs.set(dotTag, arr); }
+                    arr.push(def);
+                }
+                if (moduleTypePath != null && moduleTypePath.length > 0 && functionName != null && functionName.length > 0) {
+                    var key = moduleTypePath + "::" + functionName;
+                    var arr2 = moduleAndFnToDefs.get(key);
+                    if (arr2 == null) { arr2 = []; moduleAndFnToDefs.set(key, arr2); }
+                    arr2.push(def);
+                }
+                if (nativeModuleName != null && nativeModuleName.length > 0 && functionName != null && functionName.length > 0) {
+                    var key2 = nativeModuleName + "::" + functionName;
+                    var arr3 = moduleAndFnToDefs.get(key2);
+                    if (arr3 == null) { arr3 = []; moduleAndFnToDefs.set(key2, arr3); }
+                    arr3.push(def);
+                }
+            }
+        }
 
         function sortKeys(map: Map<String, Bool>): Array<String> {
             var out: Array<String> = [];
@@ -102,6 +133,33 @@ class HxxRegistryIndex {
             for (k in map.keys()) out.push(k);
             out.sort((a, b) -> a < b ? -1 : (a > b ? 1 : 0));
             return out;
+        }
+
+        function resolveTemplateComponentTag(tag: String): Array<Dynamic> {
+            if (tag == null) return [];
+            var trimmed = StringTools.trim(tag);
+            if (trimmed.length == 0) return [];
+
+            // Dot components: ".card"
+            if (StringTools.startsWith(trimmed, ".")) {
+                var defs = dotTagToDefs.get(trimmed);
+                return defs != null ? defs : [];
+            }
+
+            // Module-qualified component tags: "MyAppWeb.CoreComponents.button"
+            var lastDot = trimmed.lastIndexOf(".");
+            if (lastDot <= 0 || lastDot >= trimmed.length - 1) return [];
+
+            var moduleName = trimmed.substr(0, lastDot);
+            var fnName = trimmed.substr(lastDot + 1);
+            if (moduleName == null || fnName == null) return [];
+
+            var functionName = NameUtils.toSnakeCase(fnName);
+            var key = moduleName + "::" + functionName;
+            var defs2 = moduleAndFnToDefs.get(key);
+            if (defs2 != null) return defs2;
+
+            return [];
         }
 
         function nativeName(cls: haxe.macro.Type.ClassType): Null<String> {
@@ -163,6 +221,13 @@ class HxxRegistryIndex {
                 var templateComponents = sortKeys(LiveViewTemplateUsageRegistry.getComponentsForModule(moduleTypePath));
                 var templateSlots = sortKeys(LiveViewTemplateUsageRegistry.getSlotsForModule(moduleTypePath));
 
+                var usedComponentsObj: Dynamic = {};
+                for (tag in templateComponents) {
+                    var defs = resolveTemplateComponentTag(tag);
+                    if (defs == null || defs.length == 0) continue;
+                    Reflect.setField(usedComponentsObj, tag, defs);
+                }
+
                 out.push({
                     moduleTypePath: moduleTypePath,
                     nativeModuleName: nativeName(cls),
@@ -170,7 +235,8 @@ class HxxRegistryIndex {
                     templateEvents: templateEvents,
                     templateHooks: templateHooks,
                     templateComponents: templateComponents,
-                    templateSlots: templateSlots
+                    templateSlots: templateSlots,
+                    usedComponents: usedComponentsObj
                 });
             }
         }
