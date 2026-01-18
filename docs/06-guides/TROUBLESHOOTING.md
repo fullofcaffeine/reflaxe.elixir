@@ -548,6 +548,33 @@ If you see port conflicts in CI builds, also see `docs/06-guides/PRODUCTION_DEPL
 
 ## HXX Template Processing
 
+### Problem: "Markup literals must be processed by a macro" (inline markup)
+
+**Symptom:**
+```
+Markup literals must be processed by a macro
+```
+
+**Cause:** You’re using Haxe inline markup (`return <div>...</div>;`) but inline markup sugar is not enabled.
+
+**Solution:**
+1. Enable inline markup rewrite:
+```hxml
+-D hxx_inline_markup
+```
+
+2. If you’re using inline markup in a non-Phoenix module (not `@:liveview`, `@:component`, etc.), opt in per class:
+```haxe
+@:hxx_inline_markup
+class SomeView {
+  public static function render(assigns: { var title:String; }):String {
+    return <h1>${assigns.title}</h1>;
+  }
+}
+```
+
+More: `docs/02-user-guide/INLINE_MARKUP.md`
+
 ### Problem: "invalid attribute value after `=`" in Phoenix templates
 
 **Symptom:**

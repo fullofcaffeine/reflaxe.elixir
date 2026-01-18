@@ -550,6 +550,8 @@ Notes:
 - For a fragment root (React-style), you can use `<> ... </>`.
 - The root tag must be a valid XML name (or a fragment), so Phoenix dot-components like `<.form>` cannot be the root; wrap them in `<> ... </>` (or a normal element).
 
+More: `docs/02-user-guide/INLINE_MARKUP.md`
+
 Compiles to:
 ```elixir  
 defmodule CounterLive do

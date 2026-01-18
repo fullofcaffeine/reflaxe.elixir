@@ -69,6 +69,12 @@ Implementation:
 - `src/reflaxe/elixir/macros/InlineMarkup.hx`
 - Opt-in via `-D hxx_inline_markup` (the macro is wired from `src/reflaxe/elixir/CompilerInit.hx`)
 
+How it works (high-level):
+- Haxe parses `<div>...</div>` into an expression `@:markup "<div>...</div>"`.
+- The `InlineMarkup` build macro walks expressions and rewrites `@:markup` into `HXX.hxx("...")`.
+- After that, the normal HXX detection/linting/lowering runs and emits `~H"""..."""`.
+- The rewrite is copy-on-write and scoped to Phoenix-facing modules to keep overhead minimal.
+
 Limitations:
 - Haxe’s markup lexer requires a valid XML root tag name. Phoenix dot-components like `<.form>` can’t be the root
   of an inline markup literal; wrap them in a fragment `<> ... </>` (or a normal element).
