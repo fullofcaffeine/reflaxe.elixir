@@ -261,6 +261,8 @@ class AnnotatedModuleEnumerator {
     static function isHxxStaticCall(fn: Expr, name: String): Bool {
         if (fn == null || fn.expr == null) return false;
         return switch (fn.expr) {
+            case EConst(CIdent(identName)):
+                identName == name;
             case EField(owner, fieldName):
                 if (fieldName != name) return false;
                 if (owner == null || owner.expr == null) return false;

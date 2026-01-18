@@ -1,6 +1,6 @@
 package server.live;
 
-import HXX;
+import HXX.*;
 import elixir.ElixirMap;
 import elixir.types.Term;
 import haxe.Constraints.Function;
@@ -135,7 +135,7 @@ class AdminLive {
         renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
         assigns = renderAssigns;
 
-        return HXX.hxx('
+        return hxx('
             <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-10 max-w-4xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">

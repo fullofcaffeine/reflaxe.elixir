@@ -1,6 +1,6 @@
 package server.live;
 
-import HXX; // Import HXX for template rendering
+import HXX.*; // Import HXX template helpers
 import ecto.Changeset; // Import Ecto Changeset from the correct location
 import ecto.Query; // Import Ecto Query from the correct location
 import elixir.types.Term;
@@ -1351,7 +1351,7 @@ enum ActivityKind {
 		        renderAssigns = Component.assign(renderAssigns, "header_avatar_style", headerAvatarStyle);
 		        assigns = renderAssigns;
 
-        return HXX.hxx('
+        return hxx('
 			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
 				<div id="root" class="container mx-auto px-4 py-8 max-w-6xl" phx-hook=${HookName.Ping}>
 						<!-- Flash messages (info/error) -->

@@ -1,6 +1,6 @@
 package fixtures.hxxindex;
 
-import HXX;
+import HXX.*;
 import elixir.types.Term;
 import phoenix.LiveSocket;
 import phoenix.Phoenix.HandleEventResult;
@@ -40,7 +40,7 @@ class FixtureLiveView {
     }
 
     public function render(assigns: Assigns): String {
-        return HXX.hxx('
+        return hxx('
           <div id="fixture-liveview" phx-hook=${HookName.Ping}>
             <.card title="Hello">
               <:header label="Hi">Hi</:header>

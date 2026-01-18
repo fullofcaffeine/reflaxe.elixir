@@ -571,11 +571,11 @@ npx lix download
 2. **Verify HXX syntax:**
 ```haxe
 // Correct HXX usage
-import HXX;
-import phoenix.types.Assigns;
+	import HXX.*;
+	import phoenix.types.Assigns;
 
 function render(assigns: Assigns<{content: String}>): String {
-    return HXX.hxx('<div class="container">${assigns.content}</div>');
+    return hxx('<div class="container">${assigns.content}</div>');
 }
 ```
 
@@ -583,7 +583,7 @@ function render(assigns: Assigns<{content: String}>): String {
 ```haxe
 // Avoid manual string concatenation with HTML
 // Let HXX handle the template processing
-return HXX('
+return hxx('
     <div class="form-group">
         <input type="text" value="${assigns.value}">
     </div>
@@ -606,8 +606,8 @@ Generated templates still use `${variable}` instead of `{variable}`:
 **Solution:**
 1. **Ensure HXX function call:**
 ```haxe
-// Must use HXX() function, not just string literals
-return HXX('<div>${assigns.user.name}</div>');
+// Must use `hxx(...)` (or `HXX.hxx(...)`) so templates are processed at compile-time.
+return hxx('<div>${assigns.user.name}</div>');
 
 // Not just:
 return '<div>${assigns.user.name}</div>';
@@ -616,8 +616,8 @@ return '<div>${assigns.user.name}</div>';
 2. **Check template detection:**
 ```haxe
 // HXX templates must contain HTML-like syntax
-return HXX('<div class="user">${user.name}</div>');  // ✅ Detected
-return HXX('${user.name}');                        // ❌ May not be detected
+return hxx('<div class="user">${user.name}</div>');  // ✅ Detected
+return hxx('${user.name}');                          // ❌ May not be detected
 ```
 
 ### Problem: Multiline HXX templates breaking compilation
@@ -630,11 +630,11 @@ Error: Unterminated string or unexpected line ending
 **Solution:**
 ```haxe
 // Use proper multiline string syntax
-import HXX;
-import phoenix.types.Assigns;
+	import HXX.*;
+	import phoenix.types.Assigns;
 
 function complexTemplate(assigns: Assigns<{user: {name: String, email: String}}>): String {
-    return HXX.hxx('
+    return hxx('
         <div class="user-card">
             <h3>${assigns.user.name}</h3>
             <p class="email">${assigns.user.email}</p>
@@ -645,11 +645,10 @@ function complexTemplate(assigns: Assigns<{user: {name: String, email: String}}>
     ');
 }
 
-// Avoid concatenating separate HXX calls
-// This may cause issues:
-var part1 = HXX('<div class="header">');
-var part2 = HXX('<h1>${title}</h1>');
-var part3 = HXX('</div>');
+// Avoid concatenating separate template fragments if you need a single cohesive HEEx block.
+var headerOpen = hxx('<div class="header">');
+var titleTag = hxx('<h1>${title}</h1>');
+var headerClose = hxx('</div>');
 ```
 
 ### Problem: HXX templates not generating proper LiveView syntax
@@ -674,13 +673,13 @@ end
 **Solution:**
 1. **Use in LiveView context:**
 ```haxe
-import HXX;
-import phoenix.types.Assigns;
+	import HXX.*;
+	import phoenix.types.Assigns;
 
 @:liveview
 class MyLive {
     function render(assigns: Assigns<{message: String}>): String {
-        return HXX.hxx('<div class="content">${assigns.message}</div>');
+        return hxx('<div class="content">${assigns.message}</div>');
     }
 }
 ```
@@ -688,13 +687,13 @@ class MyLive {
 2. **Check annotation placement:**
 ```haxe
 // Annotation must be on the class, not the function
-import HXX;
-import phoenix.types.Assigns;
+	import HXX.*;
+	import phoenix.types.Assigns;
 
 @:liveview  // ✅ Correct
 class MyLive {
     function render(assigns: Assigns<{}>): String {
-        return HXX.hxx('...');
+        return hxx('...');
     }
 }
 ```
@@ -711,15 +710,12 @@ The HXX function is built into the compiler. If you see this error:
 
 1. **Check import issues:**
 ```haxe
-// Don't try to import HXX - it's built-in
-// Remove any HXX imports
-
-// Just use it directly:
-import HXX;
-import phoenix.types.Assigns;
+// Import the HXX template helpers:
+	import HXX.*;
+	import phoenix.types.Assigns;
 
 function render(_assigns: Assigns<{}>): String {
-    return HXX.hxx('<div>content</div>');
+    return hxx('<div>content</div>');
 }
 ```
 
@@ -745,7 +741,7 @@ Phoenix events like `phx-click` don't trigger event handlers.
 ```haxe
 // Ensure proper event syntax in HXX
 function todoItem(todo: Todo): String {
-    return HXX.hxx('
+    return hxx('
         <li class="todo-item">
             <input type="checkbox" 
                    phx-click="toggle" 
@@ -793,11 +789,11 @@ Large HXX templates causing slow compilation.
 1. **Break into smaller components:**
 ```haxe
 // Instead of one huge template
-import HXX;
-import phoenix.types.Assigns;
+	import HXX.*;
+	import phoenix.types.Assigns;
 
 function render(assigns: Assigns<{title: String, body: String}>): String {
-    return HXX.hxx('
+    return hxx('
         ${header(assigns)}
         ${content(assigns)}
         ${footer(assigns)}
@@ -805,11 +801,11 @@ function render(assigns: Assigns<{title: String, body: String}>): String {
 }
 
 function header(assigns: Assigns<{title: String, body: String}>): String {
-    return HXX.hxx('<header>${assigns.title}</header>');
+    return hxx('<header>${assigns.title}</header>');
 }
 
 function content(assigns: Assigns<{title: String, body: String}>): String {
-    return HXX.hxx('<main>${assigns.body}</main>');
+    return hxx('<main>${assigns.body}</main>');
 }
 ```
 
@@ -817,7 +813,7 @@ function content(assigns: Assigns<{title: String, body: String}>): String {
 ```haxe
 // Move static HTML to separate templates if needed
 function staticWrapper(): String {
-    return HXX('
+    return hxx('
         <div class="app-layout">
             <nav>Static Navigation</nav>
             <!-- Dynamic content slot -->

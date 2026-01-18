@@ -9,6 +9,7 @@ import haxe.io.Path;
 import reflaxe.elixir.ElixirCompiler;
 import reflaxe.elixir.macros.LiveViewPreserver;
 import reflaxe.elixir.macros.NativeModulePreserver;
+import reflaxe.elixir.macros.InlineMarkup;
 import reflaxe.elixir.macros.BoundaryEnforcer;
 import reflaxe.elixir.macros.StrictModeEnforcer;
 
@@ -107,6 +108,7 @@ class CompilerInit {
         // or DCE will drop them and Phoenix will raise at runtime.
         LiveViewPreserver.init();
         NativeModulePreserver.init();
+        InlineMarkup.enable();
 
         // Enforce example-app purity (opt-in): no __elixir__ injections or ad-hoc extern classes.
         // Enabled by defining `reflaxe_elixir_strict_examples` in repo examples.

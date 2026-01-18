@@ -19,15 +19,24 @@ See also:
 
 ## Authoring Model
 
-- Entrypoint: `HXX.hxx('...')` returns a compile‑time string tagged as HEEx; the builder emits `~H`.
+- Entrypoint: `hxx('...')` returns a compile‑time string tagged as HEEx; the builder emits `~H` (it expands from `HXX.hxx(...)` when you `import HXX.*;`).
 - Nested fragments: `HXX.block('...')` inlines a fragment within a parent template.
+- Optional syntax sugar: Haxe inline markup literals (`return <div>...</div>`) can be enabled to desugar into `HXX.hxx("...")` before typing, reusing the same HXX pipeline and linters.
+
+Inline markup notes:
+- Root tag must be a valid XML name (Haxe lexer rule) or a fragment `<> ... </>`.
+- Phoenix dot-components like `<.form>` cannot be the *root*; wrap them in `<> ... </>` (or a normal element).
+- Inline markup is pure syntax sugar: it is rewritten into `HXX.hxx("...")` before typing, so it has the same HXX linting and generates the same Elixir.
+- Interpolations keep the same HXX rules: `${expr}` is still the interpolation form (it’s just text inside the markup literal).
 
 Example:
 
 ```haxe
+import HXX.*;
+
 class View {
   public static function render(assigns: { name:String, online:Bool }): String {
-    return HXX.hxx('
+    return hxx('
       <div class=${assigns.online ? "online" : "offline"}>
         Hello, ${assigns.name}!
       </div>
@@ -248,7 +257,7 @@ Notes:
 
 ## Migration Tips
 
-- From HEEx: keep your template semantics identical; replace `~H` chunks with `HXX.hxx('...')`. Use Haxe types for assigns.
+- From HEEx: keep your template semantics identical; replace `~H` chunks with `hxx('...')`. Use Haxe types for assigns.
 - From Coconut UI/TSX: move client‑side interactivity to LiveView patterns (events, assigns) or to genes‑generated JS when needed. Keep shared validation in Haxe to use on both server and client.
 
 ## Roadmap to Full Parity
@@ -290,7 +299,7 @@ class Badge {
   // Server: HEEx (Phoenix LiveView)
   @:target("elixir")
   public function renderHeex():String {
-    return HXX.hxx('<span class="badge ${color()}">${label}</span>');
+    return hxx('<span class="badge ${color()}">${label}</span>');
   }
 
   // Client: JSX (ES6 via genes)

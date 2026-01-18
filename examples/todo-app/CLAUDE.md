@@ -111,7 +111,7 @@ The entire point of Reflaxe.Elixir is to write everything in Haxe. Writing manua
 
 ❌ **THIS FAILS** (causes Haxe compilation errors):
 ```haxe
-return HXX.hxx('<button class="${@className}" id="${@id}">
+return hxx('<button class="${@className}" id="${@id}">
     ${@inner_content}
 </button>');
 ```
@@ -122,7 +122,7 @@ return HXX.hxx('<button class="${@className}" id="${@id}">
 
 ✅ **THIS WORKS** (correct Phoenix assigns syntax):
 ```haxe
-return HXX.hxx('<button class={@className} id={@id}>
+return hxx('<button class={@className} id={@id}>
     <%= @inner_content %>
 </button>');
 ```
@@ -228,7 +228,7 @@ Notes
 
 #### UserLive.hx (✅ Correct Pattern)
 ```haxe
-return HXX.hxx('
+return hxx('
     <.input 
         name="search" 
         value={@searchTerm}        // ✅ Correct: {@ for attributes
@@ -242,7 +242,7 @@ return HXX.hxx('
 
 #### RootLayout.hx (✅ Correct Pattern)  
 ```haxe
-return HXX.hxx('
+return hxx('
     <meta name="csrf-token" content={Component.get_csrf_token()}/>  // ✅ Correct
 ');
 ```
@@ -312,14 +312,14 @@ Constraints (project-wide)
 
 #### Before (Broken):
 ```haxe
-return HXX.hxx('<button type="${@type || "button"}" class="${@className}" ${@disabled ? "disabled" : ""}>
+return hxx('<button type="${@type || "button"}" class="${@className}" ${@disabled ? "disabled" : ""}>
     ${@inner_content}
 </button>');
 ```
 
 #### After (Fixed):
 ```haxe
-return HXX.hxx('<button type={@type || "button"} class={@className} disabled={@disabled}>
+return hxx('<button type={@type || "button"} class={@className} disabled={@disabled}>
     <%= @inner_content %>
 </button>');
 ```
@@ -694,7 +694,7 @@ typedef TodoParams = {
 ### 3. Phoenix LiveView Components
 
 ```haxe
-import HXX;
+import HXX.*;
 import elixir.types.Term;
 import phoenix.LiveSocket;
 import phoenix.Phoenix.HandleEventResult;
@@ -725,7 +725,7 @@ class TodoLive {
     }
 
     public static function render(_assigns: Assigns): String {
-        return HXX.hxx('<div class="todo-container"></div>');
+        return hxx('<div class="todo-container"></div>');
     }
 }
 ```

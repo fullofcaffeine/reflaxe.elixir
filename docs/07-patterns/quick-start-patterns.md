@@ -165,7 +165,7 @@ var users = Repo.all(q);
 ## 5) HEEx templates in Haxe (HXX)
 
 ```haxe
-import HXX;
+	import HXX.*;
 import phoenix.types.Assigns;
 
 typedef PageAssigns = {

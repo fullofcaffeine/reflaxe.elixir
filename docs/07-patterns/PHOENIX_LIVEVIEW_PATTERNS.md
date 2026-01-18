@@ -16,7 +16,7 @@ Reflaxe.Elixir generates idiomatic LiveView modules:
 Define assigns as a Haxe `typedef` and keep state updates typed end-to-end.
 
 	```haxe
-	import HXX;
+		import HXX.*;
 	import elixir.types.Term;
 	import phoenix.LiveSocket;
 	import phoenix.Phoenix.HandleEventResult;
@@ -47,14 +47,14 @@ typedef CounterAssigns = { count: Int };
     }
   }
 
-  public static function render(assigns: CounterAssigns): String {
-    return HXX.hxx('
-      <div class="counter">
-        <h1>${assigns.count}</h1>
-        <button phx-click="increment">+</button>
-      </div>
-    ');
-  }
+	  public static function render(assigns: CounterAssigns): String {
+	    return hxx('
+	      <div class="counter">
+	        <h1>${assigns.count}</h1>
+	        <button phx-click="increment">+</button>
+	      </div>
+	    ');
+	  }
 }
 ```
 

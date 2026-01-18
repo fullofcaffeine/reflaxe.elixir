@@ -488,7 +488,7 @@ See `docs/04-api-reference/SOURCE_MAPPING.md` for current status and how to expe
 
 ### Phoenix LiveView
 ```haxe
-	import HXX;
+	import HXX.*;
 	import elixir.types.Term;
 	import phoenix.LiveSocket;
 	import phoenix.Phoenix.HandleEventResult;
@@ -519,16 +519,36 @@ typedef CounterAssigns = { count: Int };
         }
     }
 
-    public static function render(assigns: CounterAssigns): String {
-        return HXX.hxx('
-            <div class="counter">
-                <h1>${assigns.count}</h1>
-                <button phx-click="increment">+</button>
-            </div>
-        ');
-    }
+	    public static function render(assigns: CounterAssigns): String {
+	        return hxx('
+	            <div class="counter">
+	                <h1>${assigns.count}</h1>
+	                <button phx-click="increment">+</button>
+	            </div>
+	        ');
+	    }
+	}
+	```
+
+Inline markup (optional syntax sugar)
+
+If you prefer TSX-like authoring, you can also use Haxe inline markup literals as sugar over `hxx(...)`:
+
+```haxe
+class CounterView {
+  public static function render(assigns: CounterAssigns): String {
+    return <div class="counter">
+      <h1>${assigns.count}</h1>
+      <button phx-click="increment">+</button>
+    </div>;
+  }
 }
 ```
+
+Notes:
+- Inline markup is enabled automatically for Elixir builds in this repo; in other projects, enable it with `-D hxx_inline_markup`.
+- For a fragment root (React-style), you can use `<> ... </>`.
+- The root tag must be a valid XML name (or a fragment), so Phoenix dot-components like `<.form>` cannot be the root; wrap them in `<> ... </>` (or a normal element).
 
 Compiles to:
 ```elixir  

@@ -1,7 +1,7 @@
 {
   "name": "vscode-hxx",
   "displayName": "HXX/HEEx completions (Reflaxe.Elixir)",
-  "description": "Companion extension that provides scoped completions inside HXX.hxx('...') templates using tmp/hxx-registry.json.",
+  "description": "Companion extension that provides scoped completions inside hxx('...') templates using tmp/hxx-registry.json.",
   "version": "0.0.1",
   "publisher": "reflaxe-elixir",
   "engines": {
@@ -38,4 +38,3 @@
     "typescript": "^5.4.5"
   }
 }
-

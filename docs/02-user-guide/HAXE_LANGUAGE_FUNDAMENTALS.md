@@ -43,11 +43,13 @@ var hasEither = (a != null) || (b != null);           // Returns Bool
 This affects template string expressions in Phoenix HEEx templates:
 
 ```haxe
+import HXX.*;
+
 // ❌ WRONG - generates type errors
-HXX.hxx('<span>${assigns.user && assigns.user.name || "Guest"}</span>')
+hxx('<span>${assigns.user && assigns.user.name || "Guest"}</span>')
 
 // ✅ CORRECT - explicit conditional logic
-HXX.hxx('<span>${assigns.user != null && assigns.user.name != null ? assigns.user.name : "Guest"}</span>')
+	hxx('<span>${assigns.user != null && assigns.user.name != null ? assigns.user.name : "Guest"}</span>')
 ```
 
 ## Why This Matters for Compiler Development

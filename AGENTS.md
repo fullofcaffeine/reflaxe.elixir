@@ -745,6 +745,8 @@ class UserClient {
 
 #### 3. Universal Components (Future Vision)
 ```haxe
+import HXX.*;
+
 // Universal component that compiles to both LiveView and React
 @:universal
 class TodoItem {
@@ -755,7 +757,7 @@ class TodoItem {
     // Compiles to LiveView component (Elixir)
     @:target("elixir")
     function render() {
-        return HXX.hxx('
+        return hxx('
             <div class={if completed "completed" else ""}>
                 <input type="checkbox" checked={completed} phx-click="toggle" phx-value-id={id}/>
                 <span>{text}</span>

@@ -1,6 +1,6 @@
 package server.components;
 
-import HXX;
+import HXX.*;
 import elixir.Enum;
 import elixir.types.Term;
 import phoenix.Component;
@@ -145,7 +145,7 @@ class CoreComponents {
      */
     @:component
     public static function modal(assigns: ModalAssigns): String {
-        return HXX.hxx('
+        return hxx('
             <div id=${assigns.id} class="modal" phx-show=${assigns.show}>
                 ${assigns.inner_content != null ? assigns.inner_content : ""}
             </div>
@@ -157,7 +157,7 @@ class CoreComponents {
      */
     @:component
     public static function button(assigns: ButtonAssigns): String {
-        return HXX.hxx('
+        return hxx('
             <button
                 type=${assigns.type != null ? assigns.type : "button"}
                 class=${assigns.className}
@@ -173,7 +173,7 @@ class CoreComponents {
      */
     @:component
     public static function input(assigns: InputAssigns): String {
-        return HXX.hxx('
+        return hxx('
             <div class="form-group">
                 <label for=${assigns.field.id}>${assigns.label}</label>
                 <input
@@ -199,7 +199,7 @@ class CoreComponents {
      */
     @:component
     public static function error(assigns: ErrorAssigns): String {
-        return HXX.hxx('
+        return hxx('
             <if {assigns.field.errors != null && assigns.field.errors.length > 0}>
                 <div class="error-message">
                     ${Enum.join(assigns.field.errors != null ? assigns.field.errors : [], ", ")}
@@ -213,7 +213,7 @@ class CoreComponents {
      */
     @:component  
     public static function simple_form(assigns: FormAssigns): String {
-        return HXX.hxx('
+        return hxx('
             <.form :let={f} for=${assigns.formFor} action=${assigns.action} method=${assigns.method != null ? assigns.method : "post"}>
                 ${assigns.inner_content}
             </.form>
@@ -225,7 +225,7 @@ class CoreComponents {
      */
     @:component
     public static function header(assigns: HeaderAssigns): String {
-        return HXX.hxx('
+        return hxx('
             <header class="header">
                 <h1>${assigns.title}</h1>
                 <if {assigns.actions}>
@@ -245,7 +245,7 @@ class CoreComponents {
      */
 	    @:component
 	    public static function card(assigns: CardAssigns): String {
-	        return HXX.hxx('
+	        return hxx('
 	            <section class={["bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden", @className]}>
 	                <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
 	                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">#{@title}</h2>
@@ -271,7 +271,7 @@ class CoreComponents {
      */
     @:component
     public static function table(assigns: TableAssigns): String {
-        return HXX.hxx('
+        return hxx('
             <table class="table">
                 <thead>
                     <tr>
@@ -298,7 +298,7 @@ class CoreComponents {
      */
     @:component
     public static function list(assigns: ListAssigns): String {
-        return HXX.hxx('
+        return hxx('
             <ul class="list">
                 <for {item in assigns.items}>
                     <li>#{item}</li>
@@ -312,7 +312,7 @@ class CoreComponents {
      */
     @:component
     public static function back(assigns: BackAssigns): String {
-        return HXX.hxx('
+        return hxx('
             <div class="back-link">
                 <.link navigate=${assigns.navigate}>
                     ← Back
@@ -326,7 +326,7 @@ class CoreComponents {
      */
     @:component
     public static function icon(assigns: IconAssigns): String {
-        return HXX.hxx('
+        return hxx('
             <span class=${iconClass(assigns.name, assigns.className)}></span>
         ');
     }
@@ -336,7 +336,7 @@ class CoreComponents {
      */
     @:component
     public static function label(assigns: LabelAssigns): String {
-        return HXX.hxx('
+        return hxx('
             <label for=${assigns.htmlFor} class=${assigns.className}>
                 ${assigns.inner_content}
             </label>
