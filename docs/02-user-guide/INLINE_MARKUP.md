@@ -80,6 +80,34 @@ Inline markup is still **HXX text** under the hood, so the rules are the same:
 - Attribute interpolation uses `attr=${expr}`.
 - `assigns.*` is mapped to `@*` in HEEx.
 
+## Typed `phx-hook` / `phx-*` Names in Inline Markup
+
+Inline markup attribute brace expressions like `phx-hook={HookName.Ping}` are authored as **raw text**
+inside the markup literal. That means they are **not** type-checked as normal Haxe expressions.
+
+To keep strict Phoenix typing usable (and to ensure the generated HEEx is valid Elixir), the compiler
+rewrites simple string-constant references inside brace attributes into **literal binaries**:
+
+Haxe:
+
+```haxe
+@:phxHookNames
+enum abstract HookName(String) from String to String {
+  var Ping = "Ping";
+}
+
+return <div phx-hook={HookName.Ping}></div>;
+```
+
+Generated HEEx:
+
+```elixir
+<div phx-hook={"Ping"}></div>
+```
+
+This makes `-D hxx_strict_phx_hook` / `-D hxx_strict_phx_events` compatible with inline markup, while
+still keeping inline markup “pure sugar” over HXX.
+
 ## Editor Completions
 
 The companion VSCode extension (`tools/vscode-hxx/`) reads `tmp/hxx-registry.json` and provides:
