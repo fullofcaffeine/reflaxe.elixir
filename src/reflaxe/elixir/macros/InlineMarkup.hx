@@ -32,6 +32,7 @@ import haxe.macro.Expr;
  * - Haxe's markup lexer requires a valid XML root tag name at the start of the literal. Phoenix
  *   dot-components like `<.form>` cannot be the *root* of an inline markup literal; wrap them
  *   in a normal element (e.g. `<div>...</div>`) when using inline markup.
+ * - Haxe 4 inline markup does not support fragment roots (`<> ... </>`).
  */
 class InlineMarkup {
     /**

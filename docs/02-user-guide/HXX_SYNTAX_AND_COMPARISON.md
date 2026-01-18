@@ -25,8 +25,8 @@ See also:
 - Optional syntax sugar: Haxe inline markup literals (`return <div>...</div>`) can be enabled to desugar into `HXX.hxx("...")` before typing, reusing the same HXX pipeline and linters.
 
 Inline markup notes:
-- Root tag must be a valid XML name (Haxe lexer rule) or a fragment `<> ... </>`.
-- Phoenix dot-components like `<.form>` cannot be the *root*; wrap them in `<> ... </>` (or a normal element).
+- Root tag must be a valid XML name (Haxe lexer rule).
+- Phoenix dot-components like `<.form>` cannot be the *root*; wrap them in a normal element (e.g. `<div>...</div>`).
 - Inline markup is pure syntax sugar: it is rewritten into `HXX.hxx("...")` before typing, so it has the same HXX linting and generates the same Elixir.
 
 Enabling:

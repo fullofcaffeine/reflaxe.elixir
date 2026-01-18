@@ -154,18 +154,20 @@ class CoreComponents {
     
     /**
      * Renders a button component
+     *
+     * NOTE
+     * - This uses Haxe inline markup as pure syntax sugar over `hxx('...')`.
+     * - Requires `-D hxx_inline_markup` (enabled in `build-server.hxml` for this app).
      */
     @:component
     public static function button(assigns: ButtonAssigns): String {
-        return hxx('
-            <button
-                type=${assigns.type != null ? assigns.type : "button"}
-                class=${assigns.className}
-                disabled=${assigns.disabled}
-            >
-                ${assigns.inner_content}
-            </button>
-        ');
+        return <button
+            type=${assigns.type != null ? assigns.type : "button"}
+            class=${assigns.className}
+            disabled=${assigns.disabled}
+        >
+            ${assigns.inner_content}
+        </button>;
     }
     
     /**
