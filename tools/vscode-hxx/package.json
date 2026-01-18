@@ -1,0 +1,41 @@
+{
+  "name": "vscode-hxx",
+  "displayName": "HXX/HEEx completions (Reflaxe.Elixir)",
+  "description": "Companion extension that provides scoped completions inside HXX.hxx('...') templates using tmp/hxx-registry.json.",
+  "version": "0.0.1",
+  "publisher": "reflaxe-elixir",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:haxe"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "HXX",
+      "properties": {
+        "hxx.indexPath": {
+          "type": "string",
+          "default": "${workspaceFolder}/tmp/hxx-registry.json",
+          "description": "Path to the generated HXX registry JSON (run: npm run docs:hxx:index)."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -p .",
+    "watch": "tsc -p . -w",
+    "lint": "node -e \"process.exit(0)\"",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.5"
+  }
+}
+
