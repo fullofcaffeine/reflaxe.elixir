@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.7.0...v1.8.0) (2026-01-18)
+
+
+### Features
+
+* **vscode:** add HXX completion companion extension ([331fbfc](https://github.com/fullofcaffeine/reflaxe.elixir/commit/331fbfc9c4cbd8df2d2c2dacf73b85424e66156f))
+
 # [1.7.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.6.0...v1.7.0) (2026-01-18)
 
 
