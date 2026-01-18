@@ -201,6 +201,7 @@ class AnnotatedModuleEnumerator {
                 var reconstructed = buf.toString();
                 if (reconstructed != null && reconstructed.length > 0) {
                     scanTemplateForPhxUsage(moduleName, reconstructed, field.pos);
+                    scanTemplateForComponentAndSlotUsage(moduleName, reconstructed);
                 }
             }
         }
@@ -417,6 +418,64 @@ class AnnotatedModuleEnumerator {
             }
         }
         var _ = pos;
+    }
+
+    static function scanTemplateForComponentAndSlotUsage(moduleName: String, template: String): Void {
+        if (moduleName == null || moduleName.length == 0) return;
+        if (template == null || template.length == 0) return;
+
+        inline function isWs(ch: String): Bool return ch != null && ~/^\\s$/.match(ch);
+        inline function isTagNameChar(ch: String): Bool {
+            if (ch == null || ch.length == 0) return false;
+            var c = ch.charCodeAt(0);
+            return (c >= "A".code && c <= "Z".code)
+                || (c >= "a".code && c <= "z".code)
+                || (c >= "0".code && c <= "9".code)
+                || ch == "-" || ch == "_" || ch == "." || ch == ":";
+        }
+
+        var i = 0;
+        while (i < template.length) {
+            var lt = template.indexOf("<", i);
+            if (lt == -1) break;
+            if (lt + 1 >= template.length) break;
+
+            var next = template.charAt(lt + 1);
+            // Skip HTML comments.
+            if (next == "!" && template.substr(lt, 4) == "<!--") {
+                var end = template.indexOf("-->", lt + 4);
+                i = end == -1 ? (lt + 4) : (end + 3);
+                continue;
+            }
+            // Skip HEEx/EEx markers.
+            if (next == "%" || next == "=") {
+                i = lt + 1;
+                continue;
+            }
+
+            var nameStart = lt + 1;
+            if (next == "/") nameStart++;
+            while (nameStart < template.length && isWs(template.charAt(nameStart))) nameStart++;
+            if (nameStart >= template.length) break;
+
+            var nameEnd = nameStart;
+            while (nameEnd < template.length && isTagNameChar(template.charAt(nameEnd))) nameEnd++;
+            if (nameEnd <= nameStart) { i = lt + 1; continue; }
+
+            var tagName = template.substr(nameStart, nameEnd - nameStart);
+            if (tagName == null || tagName.length == 0) { i = nameEnd; continue; }
+
+            // Only record opening tags.
+            if (next != "/") {
+                if (StringTools.startsWith(tagName, ".") || tagName.indexOf(".") != -1) {
+                    LiveViewTemplateUsageRegistry.registerComponent(moduleName, tagName);
+                } else if (StringTools.startsWith(tagName, ":") && tagName.length > 1) {
+                    LiveViewTemplateUsageRegistry.registerSlot(moduleName, tagName.substr(1));
+                }
+            }
+
+            i = nameEnd;
+        }
     }
 
     static function collectSwitchCaseConstants(expr: Expr, switchVarName: String, out: Array<String>): Void {

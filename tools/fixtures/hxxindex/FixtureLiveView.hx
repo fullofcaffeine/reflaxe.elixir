@@ -19,6 +19,7 @@ typedef Assigns = {
  *
  * - Uses `phx-click=${EventName.Increment}` and `phx-hook=${HookName.Ping}` so the compiler can derive
  *   per-module event/hook usage for editor tooling.
+ * - Uses dot-components and slot tags so the tooling index can report per-template component/slot usage.
  */
 @:liveview
 class FixtureLiveView {
@@ -39,6 +40,14 @@ class FixtureLiveView {
     }
 
     public function render(assigns: Assigns): String {
-        return HXX.hxx('<div id="fixture-liveview" phx-hook=${HookName.Ping}><button phx-click=${EventName.Increment}>+</button><span>${assigns.count}</span></div>');
+        return HXX.hxx('
+          <div id="fixture-liveview" phx-hook=${HookName.Ping}>
+            <.card title="Hello">
+              <:header label="Hi">Hi</:header>
+              <button phx-click=${EventName.Increment}>+</button>
+              <span>${assigns.count}</span>
+            </.card>
+          </div>
+        ');
     }
 }

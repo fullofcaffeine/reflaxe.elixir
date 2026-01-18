@@ -34,6 +34,8 @@ using StringTools;
 class LiveViewTemplateUsageRegistry {
     static var moduleToHooks: Map<String, Map<String, Bool>> = new Map();
     static var moduleToEvents: Map<String, Map<String, Bool>> = new Map();
+    static var moduleToComponents: Map<String, Map<String, Bool>> = new Map();
+    static var moduleToSlots: Map<String, Map<String, Bool>> = new Map();
 
     public static function registerHook(moduleName: String, hook: String): Void {
         register(moduleToHooks, moduleName, hook);
@@ -41,6 +43,26 @@ class LiveViewTemplateUsageRegistry {
 
     public static function registerEvent(moduleName: String, event: String): Void {
         register(moduleToEvents, moduleName, event);
+    }
+
+    /**
+     * Register a function component tag name used in a template.
+     *
+     * Stored form:
+     * - Dot components: ".card", ".form"
+     * - Module-qualified components: "MyAppWeb.CoreComponents.button"
+     */
+    public static function registerComponent(moduleName: String, componentTag: String): Void {
+        register(moduleToComponents, moduleName, componentTag);
+    }
+
+    /**
+     * Register a slot tag name used in a template.
+     *
+     * Stored form: "header", "col", "actions" (no leading ":").
+     */
+    public static function registerSlot(moduleName: String, slotName: String): Void {
+        register(moduleToSlots, moduleName, slotName);
     }
 
     public static function getHooksForModule(moduleName: String): Map<String, Bool> {
@@ -51,6 +73,16 @@ class LiveViewTemplateUsageRegistry {
     public static function getEventsForModule(moduleName: String): Map<String, Bool> {
         var events = moduleToEvents.get(moduleName);
         return events != null ? events : new Map();
+    }
+
+    public static function getComponentsForModule(moduleName: String): Map<String, Bool> {
+        var components = moduleToComponents.get(moduleName);
+        return components != null ? components : new Map();
+    }
+
+    public static function getSlotsForModule(moduleName: String): Map<String, Bool> {
+        var slots = moduleToSlots.get(moduleName);
+        return slots != null ? slots : new Map();
     }
 
     static function register(map: Map<String, Map<String, Bool>>, moduleName: String, value: String): Void {

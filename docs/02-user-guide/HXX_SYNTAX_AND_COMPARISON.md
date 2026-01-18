@@ -191,6 +191,25 @@ class CustomTags {
 }
 ```
 
+-## Editor tooling: JSON index export
++## Editor tooling: JSON index export
+
+You can generate a small JSON vocabulary for editor tooling (autocomplete/lint helpers) that includes:
+- built-in HTML tags + allowed attributes
+- discovered dot-components + their props/slots
+- global hook/event registries (`@:phxHookNames` / `@:phxEventNames`)
+- per-`@:liveview`:
+  - `derivedEvents` (from `handle_event/3`)
+  - `templateEvents` / `templateHooks` / `templateComponents` / `templateSlots` (from template scanning)
+
+Generate:
+
+```bash
+npm run docs:hxx:index
+```
+
+This writes `tmp/hxx-registry.json`.
+
 Notes:
 - Registered custom tags are recognized by `-D hxx_strict_html` (so they don’t error as “unknown tags”).
 - Attribute validation for custom tags is only enabled when you provide an explicit `@:hxxTagAttrs(...)` allowlist.

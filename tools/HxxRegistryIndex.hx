@@ -160,13 +160,17 @@ class HxxRegistryIndex {
                 var derivedEvents = sortKeys(LiveViewEventRegistry.getEventsForModule(moduleTypePath));
                 var templateEvents = sortKeys(LiveViewTemplateUsageRegistry.getEventsForModule(moduleTypePath));
                 var templateHooks = sortKeys(LiveViewTemplateUsageRegistry.getHooksForModule(moduleTypePath));
+                var templateComponents = sortKeys(LiveViewTemplateUsageRegistry.getComponentsForModule(moduleTypePath));
+                var templateSlots = sortKeys(LiveViewTemplateUsageRegistry.getSlotsForModule(moduleTypePath));
 
                 out.push({
                     moduleTypePath: moduleTypePath,
                     nativeModuleName: nativeName(cls),
                     derivedEvents: derivedEvents,
                     templateEvents: templateEvents,
-                    templateHooks: templateHooks
+                    templateHooks: templateHooks,
+                    templateComponents: templateComponents,
+                    templateSlots: templateSlots
                 });
             }
         }
