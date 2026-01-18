@@ -38,8 +38,10 @@ In LiveView modules, take a typed socket and update assigns via `LiveSocket.assi
 In `render/1`, prefer a typed assigns parameter:
 
 ```haxe
+import HXX.*;
+
 public static function render(assigns: CounterAssigns): String {
-  return HXX.hxx('<h1>${assigns.count}</h1>');
+  return hxx('<h1>${assigns.count}</h1>');
 }
 ```
 
@@ -55,6 +57,7 @@ Key behavior:
 Example in a function component:
 
 ```haxe
+import HXX.*;
 import phoenix.Component;
 import phoenix.types.Assigns;
 
@@ -63,7 +66,7 @@ typedef ButtonAssigns = { label: String };
 	class MyComponents {
 	  public static function button(_ignored: Term): String {
 	    var assigns: Assigns<ButtonAssigns> = Component.assigns();
-	    return HXX.hxx('<button>${assigns.label}</button>');
+	    return hxx('<button>${assigns.label}</button>');
 	  }
 	}
 	```

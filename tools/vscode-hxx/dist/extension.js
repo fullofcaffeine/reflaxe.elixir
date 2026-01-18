@@ -68,8 +68,8 @@ function typePathForHaxeDocument(doc) {
 }
 function isInsideHxxString(doc, pos) {
     // Best-effort: locate the nearest quote boundaries on the current line (or nearby lines if the string is multiline).
-    // Then ensure there is an `HXX.hxx(` between the start of the document and the cursor, and that the cursor is
-    // within the first argument string.
+    // Then ensure there is an `HXX.hxx(` or `hxx(` between the start of the document and the cursor, and that the cursor
+    // is within the first argument string.
     const full = doc.getText();
     const offset = doc.offsetAt(pos);
     // Scan backwards for opening quote.
@@ -99,14 +99,43 @@ function isInsideHxxString(doc, pos) {
     if (!(start < offset && offset <= end))
         return null;
     const beforeStart = full.slice(0, start);
-    const callIndex = beforeStart.lastIndexOf('HXX.hxx(');
+    const callIndexQualified = beforeStart.lastIndexOf('HXX.hxx(');
+    const callIndexUnqualified = beforeStart.lastIndexOf('hxx(');
+    const callIndex = Math.max(callIndexQualified, callIndexUnqualified);
     if (callIndex < 0)
         return null;
     // Ensure the quote we found is inside the argument list for that call (not a previous string).
     const between = full.slice(callIndex, start);
-    if (!between.includes('HXX.hxx('))
+    if (!(between.includes('HXX.hxx(') || between.includes('hxx(')))
         return null;
     return { stringStart: start, stringEnd: end };
+}
+function isInsideStringOnLine(line, col) {
+    // Best-effort: count unescaped single/double quotes on the current line.
+    // This avoids offering inline-markup completions inside arbitrary string literals.
+    let inSingle = false;
+    let inDouble = false;
+    for (let i = 0; i < Math.min(col, line.length); i++) {
+        const ch = line[i];
+        if (ch === '\\\\') {
+            i++;
+            continue;
+        }
+        if (!inDouble && ch === "'")
+            inSingle = !inSingle;
+        else if (!inSingle && ch === '"')
+            inDouble = !inDouble;
+    }
+    return inSingle || inDouble;
+}
+function isLikelyInlineMarkupContext(doc, pos) {
+    // Inline markup is source-level `<tag ...>` (not inside quotes). Use cheap heuristics:
+    // - must be in a tag-name/attr context (so we know we're after a `<`)
+    // - must not be inside a normal string literal on this line
+    const line = doc.lineAt(pos.line).text;
+    if (isInsideStringOnLine(line, pos.character))
+        return false;
+    return true;
 }
 function completionIsInTagNameContext(doc, pos) {
     const line = doc.lineAt(pos.line).text;
@@ -169,12 +198,13 @@ function activate(context) {
         provideCompletionItems(document, position) {
             if (!registry)
                 return;
-            if (!isInsideHxxString(document, position))
-                return;
+            const inHxxString = !!isInsideHxxString(document, position);
             const moduleTypePath = typePathForHaxeDocument(document);
             const scope = buildLiveViewScope(registry, moduleTypePath);
             const tagCtx = completionIsInTagNameContext(document, position);
             if (tagCtx) {
+                if (!inHxxString && !isLikelyInlineMarkupContext(document, position))
+                    return;
                 const items = [];
                 const tags = new Set();
                 // Prefer scoped tags (what this template uses), fall back to global dot-components.
@@ -195,6 +225,8 @@ function activate(context) {
             }
             const attrCtx = completionIsInAttrNameContext(document, position);
             if (attrCtx) {
+                if (!inHxxString && !isLikelyInlineMarkupContext(document, position))
+                    return;
                 const items = [];
                 const { tagName, prefix } = attrCtx;
                 // Component props.

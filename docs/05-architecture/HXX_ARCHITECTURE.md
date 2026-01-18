@@ -11,7 +11,7 @@ There is **no runtime HXX engine**: the generated Elixir contains standard Phoen
 
 Reflaxe.Elixir ships a small, non‑inline stub in `std/HXX.hx`:
 
-- `HXX.hxx(templateStr: String): String`
+- `HXX.hxx(templateStr: String): String` (commonly used as `hxx('...')` via `import HXX.*;`)
 - `HXX.block(content: String): String`
 
 These functions exist so user code can type‑check normally. The compiler **intercepts** calls to
@@ -21,7 +21,7 @@ These functions exist so user code can type‑check normally. The compiler **int
 
 During AST building, the compiler:
 
-1. Detects `HXX.hxx(...)` calls in the typed AST
+1. Detects `HXX.hxx(...)` calls in the typed AST (including unqualified `hxx(...)` calls via `import HXX.*;`)
 2. Collects the template string (including concatenation shapes created by Haxe interpolation)
 3. Converts HXX/HTML conventions into HEEx‑compatible content
 4. Emits an Elixir AST sigil node representing `~H"""..."""`
@@ -59,17 +59,35 @@ There is also an optional macro implementation (`reflaxe.elixir.macros.HXX`) whi
 and pre‑process string literals, tagging them for the builder. The **recommended default** for
 applications is the `std/HXX.hx` stub + AST‑intercept path to avoid nested macro forwarding issues.
 
+## Optional: Inline Markup (Syntax Sugar)
+
+Haxe also supports inline markup literals (`return <div>...</div>`). Reflaxe.Elixir enables these
+as **syntax sugar** over HXX by rewriting `@:markup "..."` (the parser representation) into
+`HXX.hxx("...")` before typing, so the existing HXX pipeline and linters apply.
+
+Implementation:
+- `src/reflaxe/elixir/macros/InlineMarkup.hx`
+- Enabled in `src/reflaxe/elixir/CompilerInit.hx` (Elixir builds; opt-in via `-D hxx_inline_markup` for other projects)
+
+Limitations:
+- Haxe’s markup lexer requires a valid XML root tag name. Phoenix dot-components like `<.form>` can’t be the root
+  of an inline markup literal; wrap them in a fragment `<> ... </>` (or a normal element).
+
+Performance:
+- Inline markup has no runtime cost. Compile-time overhead is a small additional AST walk to rewrite `@:markup` into `HXX.hxx(...)`.
+
 ## Minimal Example
 
 Haxe:
 
 ```haxe
+import HXX.*;
 import phoenix.types.Assigns;
 
 typedef AssignsData = { var title: String; }
 
 function render(assigns: Assigns<AssignsData>): String {
-  return HXX.hxx('<h1>${assigns.title}</h1>');
+  return hxx('<h1>${assigns.title}</h1>');
 }
 ```
 

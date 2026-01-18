@@ -1,6 +1,6 @@
 package server.layouts;
 
-import HXX; // Compile-time HXX → ~H macro
+import HXX.*; // Compile-time hxx(...) → ~H macro
 import plug.CSRFProtection;
 import phoenix.types.Assigns;
 import phoenix.types.Assigns.LayoutAssigns;
@@ -27,7 +27,7 @@ class Layouts {
      *   lets our HEEx transformer convert this string into a `~H` sigil.
      */
     @:component public static function root(assigns: Assigns<LayoutAssigns<User, TodoLiveAssigns>>): String {
-        return HXX.hxx('
+        return hxx('
             <!DOCTYPE html>
             <html lang="en" class="h-full">
                 <head>
@@ -56,7 +56,7 @@ class Layouts {
      * - Wraps content in a responsive container and basic page chrome.
      */
     @:component public static function app(assigns: Assigns<LayoutAssigns<User, TodoLiveAssigns>>): String {
-        return HXX.hxx('
+        return hxx('
             <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-8 max-w-6xl">
                     ${assigns.inner_content}
