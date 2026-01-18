@@ -1,3 +1,10 @@
+# [1.6.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.5.1...v1.6.0) (2026-01-18)
+
+
+### Features
+
+* **hxx:** export template components + slots ([4c5d9d1](https://github.com/fullofcaffeine/reflaxe.elixir/commit/4c5d9d130827d23bf96c3f781ba242dd6c375cf0))
+
 ## [1.5.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.5.0...v1.5.1) (2026-01-18)
 
 
