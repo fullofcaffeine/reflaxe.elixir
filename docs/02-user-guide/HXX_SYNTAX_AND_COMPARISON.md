@@ -201,6 +201,7 @@ You can generate a small JSON vocabulary for editor tooling (autocomplete/lint h
 - per-`@:liveview`:
   - `derivedEvents` (from `handle_event/3`)
   - `templateEvents` / `templateHooks` / `templateComponents` / `templateSlots` (from template scanning)
+  - `usedComponents` (best-effort join of `templateComponents` → component definitions)
 
 Generate:
 
