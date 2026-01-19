@@ -45,7 +45,7 @@ class GithubOAuthController {
         };
     }
 
-    public static function github(conn: Conn<{}>, _params: Term): Conn<{}> {
+    public static function github(conn: Conn<{}>, params: Term): Conn<{}> {
         if (!GithubOAuth.isConfigured()) {
             return conn
                 .putFlash("error", "GitHub OAuth is not configured. Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET.")

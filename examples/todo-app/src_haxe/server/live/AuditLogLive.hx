@@ -81,7 +81,7 @@ typedef AuditLogLiveRenderAssigns = {> AuditLogLiveAssigns,
 class AuditLogLive {
     static inline var DEFAULT_LIMIT = 50;
 
-    public static function mount(_params: MountParams, session: Session, socket: Socket<AuditLogLiveAssigns>): MountResult<AuditLogLiveAssigns> {
+    public static function mount(params: MountParams, session: Session, socket: Socket<AuditLogLiveAssigns>): MountResult<AuditLogLiveAssigns> {
         var sock: LiveSocket<AuditLogLiveAssigns> = socket;
 
         var userId = sessionUserId(session);

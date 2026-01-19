@@ -100,7 +100,7 @@ typedef OrganizationLiveRenderAssigns = {> OrganizationLiveAssigns,
 @:native("TodoAppWeb.OrganizationLive")
 @:liveview
 class OrganizationLive {
-    public static function mount(_params: MountParams, session: Session, socket: Socket<OrganizationLiveAssigns>): MountResult<OrganizationLiveAssigns> {
+    public static function mount(params: MountParams, session: Session, socket: Socket<OrganizationLiveAssigns>): MountResult<OrganizationLiveAssigns> {
         var sock: LiveSocket<OrganizationLiveAssigns> = socket;
 
         var userId = sessionUserId(session);

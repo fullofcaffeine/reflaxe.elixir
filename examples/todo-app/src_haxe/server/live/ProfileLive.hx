@@ -66,7 +66,7 @@ typedef ProfileLiveRenderAssigns = {> ProfileLiveAssigns,
 @:native("TodoAppWeb.ProfileLive")
 @:liveview
 class ProfileLive {
-    public static function mount(_params: MountParams, session: Session, socket: Socket<ProfileLiveAssigns>): MountResult<ProfileLiveAssigns> {
+    public static function mount(params: MountParams, session: Session, socket: Socket<ProfileLiveAssigns>): MountResult<ProfileLiveAssigns> {
         var sock: LiveSocket<ProfileLiveAssigns> = socket;
 
         var userId = sessionUserId(session);
