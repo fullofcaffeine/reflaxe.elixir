@@ -37,7 +37,6 @@ class GithubOAuthController {
                     .redirect("/todos");
             case Error(userChangeset):
                 {
-                    Std.string(userChangeset);
                     conn
                         .putFlash("error", "Could not sign in with GitHub. Please try again.")
                         .redirect("/login");
@@ -60,7 +59,6 @@ class GithubOAuthController {
                 withState.redirectExternal(url);
             case Error(err):
                 {
-                    Std.string(err);
                     withState
                         .putFlash("error", "Could not start GitHub login. Please try again.")
                         .redirect("/login");
@@ -104,7 +102,6 @@ class GithubOAuthController {
                 signInWithGithubIdentity(cleaned, identity);
             case Error(err):
                 {
-                    Std.string(err);
                     cleaned
                         .putFlash("error", "Could not sign in with GitHub. Please try again.")
                         .redirect("/login");

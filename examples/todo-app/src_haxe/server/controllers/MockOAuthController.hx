@@ -47,7 +47,6 @@ class MockOAuthController {
                     .redirect("/todos");
             case Error(userChangeset):
                 {
-                    Std.string(userChangeset);
                     conn
                         .putFlash("error", "Could not sign in. Please try again.")
                         .redirect("/login");
@@ -115,4 +114,3 @@ class MockOAuthController {
         return signIn(cleaned, identity.email, identity.name);
     }
 }
-

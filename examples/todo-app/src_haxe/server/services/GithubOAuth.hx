@@ -148,7 +148,6 @@ class GithubOAuth {
                 return (first != null && first.trim() != "") ? first : null;
             case Error(err):
                 {
-                    Std.string(err);
                     null;
                 }
         };

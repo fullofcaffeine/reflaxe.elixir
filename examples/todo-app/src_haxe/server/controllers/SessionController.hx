@@ -46,8 +46,6 @@ class SessionController {
                     .redirect("/todos");
             case Error(error):
                 {
-                    // Ensure the bound error is used so generated Elixir compiles under --warnings-as-errors.
-                    Std.string(error);
                     conn
                         .putFlash("error", "Could not sign in. Please check your details and try again.")
                         .redirect("/login");
