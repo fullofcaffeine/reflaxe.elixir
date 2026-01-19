@@ -57,7 +57,7 @@ typedef AdminLiveRenderAssigns = {> AdminLiveAssigns,
 @:native("TodoAppWeb.AdminLive")
 @:liveview
 class AdminLive {
-    public static function mount(_params: MountParams, session: Session, socket: Socket<AdminLiveAssigns>): MountResult<AdminLiveAssigns> {
+    public static function mount(params: MountParams, session: Session, socket: Socket<AdminLiveAssigns>): MountResult<AdminLiveAssigns> {
         var sock: LiveSocket<AdminLiveAssigns> = socket;
 
         var userId = sessionUserId(session);

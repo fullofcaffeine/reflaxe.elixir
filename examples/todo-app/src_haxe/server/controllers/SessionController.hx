@@ -55,7 +55,7 @@ class SessionController {
         };
     }
 
-    public static function delete(conn: Conn<{}>, _params: Term): Conn<{}> {
+    public static function delete(conn: Conn<{}>, params: Term): Conn<{}> {
         return conn
             .deleteSession("user_id")
             .putFlash("info", "Signed out.")

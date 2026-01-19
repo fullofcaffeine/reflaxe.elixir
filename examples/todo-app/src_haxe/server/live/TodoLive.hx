@@ -262,9 +262,9 @@ enum ActivityKind {
 			 * 
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
-		    public static function mount(_params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
-		        // Prepare LiveSocket wrapper
-		        var sock: LiveSocket<TodoLiveAssigns> = socket;
+			    public static function mount(params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
+			        // Prepare LiveSocket wrapper
+			        var sock: LiveSocket<TodoLiveAssigns> = socket;
 
 		        var auth = getUserFromSession(session);
 		        var currentUser = auth.user;

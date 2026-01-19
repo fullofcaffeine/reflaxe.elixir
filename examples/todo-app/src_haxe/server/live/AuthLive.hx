@@ -52,7 +52,7 @@ typedef AuthLiveRenderAssigns = {> AuthLiveAssigns,
 @:native("TodoAppWeb.AuthLive")
 @:liveview
 class AuthLive {
-    public static function mount(_params: MountParams, session: Session, socket: Socket<AuthLiveAssigns>): MountResult<AuthLiveAssigns> {
+    public static function mount(params: MountParams, session: Session, socket: Socket<AuthLiveAssigns>): MountResult<AuthLiveAssigns> {
         var sock: LiveSocket<AuthLiveAssigns> = socket;
 
         var maybeUserId = sessionUserId(session);

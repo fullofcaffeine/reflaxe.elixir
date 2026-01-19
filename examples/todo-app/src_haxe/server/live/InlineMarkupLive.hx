@@ -41,7 +41,7 @@ class InlineMarkupLive {
         return "index";
 	    }
 
-	    public static function mount(_params: MountParams, _session: Session, socket: Socket<InlineMarkupLiveAssigns>): MountResult<InlineMarkupLiveAssigns> {
+	    public static function mount(params: MountParams, session: Session, socket: Socket<InlineMarkupLiveAssigns>): MountResult<InlineMarkupLiveAssigns> {
 	        var liveSocket: LiveSocket<InlineMarkupLiveAssigns> = socket;
 	        return Ok(liveSocket.merge({
 	            message: "Hello from inline markup 👋"
