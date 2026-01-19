@@ -11,7 +11,25 @@ See also:
 - `docs/04-api-reference/STDLIB_SUPPORT_MATRIX.md`
 - `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md`
 - `docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md`
+- `docs/02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md`
 - `docs/06-guides/KNOWN_LIMITATIONS.md`
+
+## “reflaxe_runtime” is not a Mix project
+
+`reflaxe_runtime` is a **Haxe compilation define**, not an Elixir/Mix project.
+
+You will see it in `.hxml` files and docs because it gates code that should type-check during compilation
+(`#if (macro || reflaxe_runtime)` / `#if (elixir || reflaxe_runtime)`) even though it does not exist at runtime
+in other targets (and should not leak into the Haxe macro/interp contexts). See
+`docs/02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md`.
+
+Runtime helpers that *must exist as emitted Elixir* (for example, the exception/throw bridge used by the
+Elixir lowering pipeline) live as Haxe sources under:
+
+- `std/reflaxe/elixir/runtime/**` (native modules like `Reflaxe.Elixir.HaxeThrow`)
+
+They are forcibly included/kept at macro-time by `src/reflaxe/elixir/CompilerInit.hx`, so they are emitted
+into your app’s generated `.ex` output even under `-dce full`.
 
 ## The core strategy
 
@@ -102,4 +120,3 @@ For `sys.*`:
 
 Track the current stdlib parity work in bd:
 - `haxe.elixir-hm47` (stdlib parity roadmap)
-
