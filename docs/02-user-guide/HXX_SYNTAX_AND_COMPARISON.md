@@ -204,8 +204,7 @@ class CustomTags {
 }
 ```
 
--## Editor tooling: JSON index export
-+## Editor tooling: JSON index export
+## Editor tooling: JSON index export
 
 You can generate a small JSON vocabulary for editor tooling (autocomplete/lint helpers) that includes:
 - built-in HTML tags + allowed attributes

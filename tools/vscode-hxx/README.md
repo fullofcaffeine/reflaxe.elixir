@@ -1,7 +1,7 @@
 # `vscode-hxx` (in-repo) — HXX/HEEx completions for Haxe
 
 vshaxe (and the Haxe completion server) cannot offer semantic completions **inside string literals**, so
-This companion VSCode extension provides tag/attr completions inside:
+this companion VSCode extension provides tag/attr completions inside:
 - `hxx('...')` templates (recommended; also works with `HXX.hxx('...')`)
 - Haxe inline markup literals (`<div>...</div>`) when enabled via `-D hxx_inline_markup`
 
@@ -33,3 +33,7 @@ npm run docs:hxx:index
   - dot-components (`<.card ...>`)
   - slot tags (`<:header ...>`)
 - Attribute completion for known component props/slot props (best-effort).
+- Value completion for Phoenix attributes (best-effort):
+  - `phx-hook=` values from your `@:phxHookNames` registry (optionally narrowed by what the current template uses).
+  - `phx-click=` / `phx-submit=` / `phx-change=` / etc values from the current LiveView’s derived events (from `handle_event/3`),
+    falling back to global `@:phxEventNames` registries when no local derivation is available.

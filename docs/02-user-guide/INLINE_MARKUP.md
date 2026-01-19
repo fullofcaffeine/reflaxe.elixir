@@ -114,6 +114,9 @@ The companion VSCode extension (`tools/vscode-hxx/`) reads `tmp/hxx-registry.jso
 
 - Tag completions (dot-components and slot tags)
 - Attribute completions for known component props and slot props
+- Value completions (best-effort):
+  - `phx-hook=` values from your `@:phxHookNames` registry (optionally narrowed by what the current template uses)
+  - `phx-click=` / `phx-submit=` / `phx-change=` / etc values from the current LiveView’s derived events, falling back to global `@:phxEventNames` registries
 
 It works inside both:
 - `hxx('...')` / `HXX.hxx('...')` templates
