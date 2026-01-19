@@ -63,7 +63,7 @@ end) do
     sum * 2
   end
   defp throw_error(_, message) do
-    throw(message)
+    raise Reflaxe.Elixir.HaxeThrow, [value: message]
   end
   describe "Performance Tests" do
     test "slow operation" do
@@ -103,8 +103,13 @@ end) do
         _ = throw_error(context, "Test error")
         flunk("Should have thrown an error")
       rescue
-        e ->
-          assert true
+        haxe_exception ->
+          (case {(case haxe_exception do
+  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+  _ -> haxe_exception
+end), haxe_exception} do
+            {_e, _} -> assert true
+          end)
       end
     end
     test "fail method" do

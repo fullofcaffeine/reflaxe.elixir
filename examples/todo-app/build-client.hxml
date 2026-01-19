@@ -26,5 +26,10 @@
 # Exclude server code from client compilation
 --macro exclude('server')
 
+# Default: bootstrap Phoenix LiveSocket from typed Haxe (Genes) in `client.Boot`.
+# `assets/js/phoenix_app.js` keeps a guard to avoid double-connect.
+# To revert to the canonical JS bootstrap, remove this define.
+-D todoapp_hx_live_socket_bootstrap
+
 # Main client entry point - minimal boot for Phoenix hooks
 -main client.Boot

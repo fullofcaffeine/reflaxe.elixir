@@ -9,7 +9,7 @@ defmodule Main do
   end
   defp perform_risky_operation() do
     if (:rand.uniform() > 0.5) do
-      throw("Random failure")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Random failure"]
     end
     "Success"
   end

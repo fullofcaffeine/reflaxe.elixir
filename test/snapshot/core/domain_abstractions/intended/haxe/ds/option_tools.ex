@@ -127,7 +127,7 @@ defmodule OptionTools do
   def expect(option, message) do
     (case option do
       {:some, value} -> value
-      {:none} -> throw("Expected Some value but got None: " <> message)
+      {:none} -> raise Reflaxe.Elixir.HaxeThrow, [value: "Expected Some value but got None: " <> message]
     end)
   end
   def some(value) do

@@ -3,6 +3,8 @@
   "type.ex",
   "string_buf.ex",
   "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
   "phoenix/safe_pub_sub.ex",
   "myapp/my_parser.ex",
   "myapp/main.ex",

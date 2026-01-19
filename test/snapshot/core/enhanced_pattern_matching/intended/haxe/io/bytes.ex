@@ -8,7 +8,7 @@ defmodule Bytes do
   end
   def get_string(struct, pos, len, _) do
     if (pos < 0 or len < 0 or pos + len > length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     slice = :binary.part(struct.b, pos, len)
     :unicode.characters_to_list(slice, :utf8)
@@ -18,13 +18,13 @@ defmodule Bytes do
   end
   def get(struct, pos) do
     if (pos < 0 or pos >= length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     :binary.at(struct.b, pos)
   end
   def set(struct, pos, v) do
     if (pos < 0 or pos >= length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     before_part = if (pos > 0) do
       :binary.part(struct.b, 0, pos)
@@ -41,7 +41,7 @@ defmodule Bytes do
   end
   def blit(struct, pos, src, srcpos, len) do
     if (pos < 0 or srcpos < 0 or len < 0 or pos + len > length(struct) or srcpos + len > length(src)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     src_slice = :binary.part(src.b, srcpos, len)
     before_part = if (pos > 0) do
@@ -59,14 +59,14 @@ defmodule Bytes do
   end
   def sub(struct, pos, len) do
     if (pos < 0 or len < 0 or pos + len > length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     sub_binary = :binary.part(struct.b, pos, len)
     _ = new(len, sub_binary)
   end
   def fill(struct, pos, len, value) do
     if (pos < 0 or len < 0 or pos + len > length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     fill_bytes = :binary.copy(<<value::8>>, len)
     before_part = if (pos > 0) do
@@ -94,13 +94,13 @@ defmodule Bytes do
   end
   def get_double(struct, pos) do
     if (pos < 0 or pos + 8 > length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     <<value::float-little-size(64)>> = :binary.part(struct.b, pos, 8); value
   end
   def set_double(struct, pos, v) do
     if (pos < 0 or pos + 8 > length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     before_part = if (pos > 0) do
       :binary.part(struct.b, 0, pos)
@@ -117,13 +117,13 @@ defmodule Bytes do
   end
   def get_float(struct, pos) do
     if (pos < 0 or pos + 4 > length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     <<value::float-little-size(32)>> = :binary.part(struct.b, pos, 4); value
   end
   def set_float(struct, pos, v) do
     if (pos < 0 or pos + 4 > length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     before_part = if (pos > 0) do
       :binary.part(struct.b, 0, pos)
@@ -140,13 +140,13 @@ defmodule Bytes do
   end
   def get_u_int16(struct, pos) do
     if (pos < 0 or pos + 2 > length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     <<value::little-unsigned-size(16)>> = :binary.part(struct.b, pos, 2); value
   end
   def set_u_int16(struct, pos, v) do
     if (pos < 0 or pos + 2 > length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     before_part = if (pos > 0) do
       :binary.part(struct.b, 0, pos)
@@ -163,13 +163,13 @@ defmodule Bytes do
   end
   def get_int32(struct, pos) do
     if (pos < 0 or pos + 4 > length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     <<value::little-signed-size(32)>> = :binary.part(struct.b, pos, 4); value
   end
   def set_int32(struct, pos, v) do
     if (pos < 0 or pos + 4 > length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     before_part = if (pos > 0) do
       :binary.part(struct.b, 0, pos)
@@ -186,13 +186,13 @@ defmodule Bytes do
   end
   def get_int64(struct, pos) do
     if (pos < 0 or pos + 8 > length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     <<value::little-signed-size(64)>> = :binary.part(struct.b, pos, 8); value
   end
   def set_int64(struct, pos, v) do
     if (pos < 0 or pos + 8 > length(struct)) do
-      throw("Out of bounds")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
     before_part = if (pos > 0) do
       :binary.part(struct.b, 0, pos)

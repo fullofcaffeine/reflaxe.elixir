@@ -9,7 +9,9 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.ERescueClause;
+import reflaxe.elixir.ast.ElixirAST.ECaseClause;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
+import reflaxe.elixir.ast.builders.ModuleBuilder;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
 
@@ -49,6 +51,9 @@ import reflaxe.elixir.ast.analyzers.VariableAnalyzer;
  */
 @:nullSafety(Off)
 class ExceptionBuilder {
+
+    static inline var HAXE_THROW_MODULE = "Reflaxe.Elixir.HaxeThrow";
+    static inline var HAXE_THROW_VALUE_FIELD = "value";
     
     /**
      * Build try/catch exception handling block
@@ -81,14 +86,42 @@ class ExceptionBuilder {
             return null;
         }
         
-        // Build rescue clauses from catch blocks
-        var rescueClauses: Array<ERescueClause> = [];
-        
+        // Haxe `try/catch` must not intercept loop-control `throw(:break|:continue)` which we use internally.
+        // Those are Elixir `throw/1` payloads and are intentionally handled by `catch` clauses in LoopBuilder.
+        // Therefore, we compile Haxe exceptions as Elixir exceptions (raise/rescue), not `throw`.
+
+        var exceptionVarName = "haxe_exception";
+        var exceptionVar = makeAST(EVar(exceptionVarName));
+
+        // Normalize the rescued exception into a "thrown value":
+        // - If it's our wrapper exception, unwrap the original value.
+        // - Otherwise, treat the exception struct itself as the thrown value.
+        var unwrapValueVarName = "haxe_unwrapped_value";
+        var unwrapCase = makeAST(ECase(exceptionVar, [
+            {
+                pattern: PStruct(HAXE_THROW_MODULE, [{key: HAXE_THROW_VALUE_FIELD, value: PVar(unwrapValueVarName)}]),
+                body: makeAST(EVar(unwrapValueVarName))
+            },
+            {
+                pattern: PWildcard,
+                body: exceptionVar
+            }
+        ]));
+
+        // Dispatch uses `{thrown_value, exception}` so we can bind either the original thrown
+        // value (default) or the exception struct (for `catch(e:haxe.Exception)`).
+        var dispatchScrutinee = makeAST(ETuple([unwrapCase, exceptionVar]));
+
+        var hasCatchAll = false;
+        var hasHaxeExceptionCatch = false;
+        var caseClauses: Array<ECaseClause> = [];
+
         for (c in catches) {
-            // Create pattern for the exception variable
-            var pattern = PVar(VariableAnalyzer.toElixirVarName(c.v.name));
-            
-            // Build the catch body
+            var catchVarName = VariableAnalyzer.toElixirVarName(c.v.name);
+            var isHaxeExceptionCatch = isHaxeExceptionCatchType(c.v.t);
+            if (isCatchAll(c.v)) hasCatchAll = true;
+            if (isHaxeExceptionCatch) hasHaxeExceptionCatch = true;
+
             var catchBody = if (context.compiler != null) {
                 // CRITICAL FIX: Call ElixirASTBuilder.buildFromTypedExpr directly to preserve context
                 // Using compiler.compileExpressionImpl creates a NEW context, losing ClauseContext registrations
@@ -96,22 +129,48 @@ class ExceptionBuilder {
             } else {
                 makeAST(ENil);
             };
-            
-            if (catchBody == null) {
-                catchBody = makeAST(ENil);
+
+            if (catchBody == null) catchBody = makeAST(ENil);
+
+            var pattern:EPattern;
+            var guard:Null<ElixirAST> = null;
+
+            if (isHaxeExceptionCatch) {
+                // Bind the exception struct itself as the catch variable.
+                pattern = PTuple([PWildcard, catchVarName == "_" ? PWildcard : PVar(catchVarName)]);
+            } else {
+                // Bind the original thrown value as the catch variable.
+                var thrownBinderName = catchVarName == "_" ? "haxe_catch_value" : catchVarName;
+                pattern = PTuple([PVar(thrownBinderName), PWildcard]);
+                if (!isCatchAll(c.v)) {
+                    guard = buildCatchTypeGuard(makeAST(EVar(thrownBinderName)), c.v.t);
+                    if (guard == null) guard = makeAST(EBoolean(false));
+                }
             }
-            
-            rescueClauses.push({
+
+            caseClauses.push({
                 pattern: pattern,
+                guard: guard,
                 body: catchBody
             });
-            
-            #if debug_ast_builder
-            #end
         }
-        
-        // Generate try/rescue block
-        // ETry(body, rescueClauses, elseClauses, afterBlock, catchAllBlock)
+
+        if (!hasCatchAll && !hasHaxeExceptionCatch) {
+            // Preserve original exception and stacktrace when no Haxe catch matches.
+            // This keeps semantics consistent with Haxe: unmatched exceptions propagate.
+            caseClauses.push({
+                pattern: PWildcard,
+                body: makeAST(ECall(null, "reraise", [exceptionVar, makeAST(EVar("__STACKTRACE__"))]))
+            });
+        }
+
+        var rescueBody = makeAST(ECase(dispatchScrutinee, caseClauses));
+
+        var rescueClauses: Array<ERescueClause> = [{
+            pattern: PVar(exceptionVarName),
+            body: rescueBody
+        }];
+
         return ETry(body, rescueClauses, [], null, null);
     }
     
@@ -144,8 +203,92 @@ class ExceptionBuilder {
             return null;
         }
         
-        return EThrow(throwExpr);
+        // Compile Haxe `throw` as Elixir `raise` so it is caught by `rescue` and does not
+        // interfere with internal loop-control `throw(:break|:continue)` which uses `catch`.
+        //
+        // We wrap non-exception values in a stable exception module so Haxe can `throw` any term
+        // (strings, ints, maps, etc.) while still using Elixir's exception mechanism.
+        // Ensure the thrown expression is evaluated exactly once: we only pass it as `value: ...`.
+        // The wrapper exception can derive a message on demand (or default to an empty message).
+        var attrs = makeAST(EKeywordList([
+            {key: HAXE_THROW_VALUE_FIELD, value: throwExpr}
+        ]));
+        return ERaise(makeAST(EVar(HAXE_THROW_MODULE)), attrs);
     }
+
+    static function buildCatchTypeGuard(valueExpr: ElixirAST, t: Null<Type>): Null<ElixirAST> {
+        if (t == null) return null;
+        return switch (t) {
+            case TDynamic(_):
+                null;
+            case TLazy(f):
+                buildCatchTypeGuard(valueExpr, f());
+            case TMono(_):
+                null;
+            case TAbstract(absRef, _):
+                var abs = absRef.get();
+                var pack = abs.pack;
+                var name = abs.name;
+                // Common core abstracts.
+                if (pack.length == 0) {
+                    switch (name) {
+                        case "Int": makeAST(ECall(null, "is_integer", [valueExpr]));
+                        case "Float": makeAST(ECall(null, "is_float", [valueExpr]));
+                        case "Bool": makeAST(ECall(null, "is_boolean", [valueExpr]));
+                        default: null;
+                    }
+                } else {
+                    null;
+                }
+            case TInst(clsRef, _):
+                var cls = clsRef.get();
+                if (cls.name == "String") {
+                    makeAST(ECall(null, "is_binary", [valueExpr]));
+                } else if (cls.name == "Array") {
+                    makeAST(ECall(null, "is_list", [valueExpr]));
+                } else if (cls.name == "Map") {
+                    makeAST(ECall(null, "is_map", [valueExpr]));
+                } else {
+                    // User-defined classes compile to structs; use is_struct/2 for precise matching.
+                    var moduleName = ModuleBuilder.extractModuleName(cls);
+                    makeAST(ECall(null, "is_struct", [valueExpr, makeAST(EVar(moduleName))]));
+                }
+            case TEnum(enumRef, _):
+                // Enums compile to tagged tuples like {:some, v} / {:none}.
+                // We approximate `catch(e:MyEnum)` as `is_tuple(e) and elem(e, 0) in [:tag1, ...]`.
+                var enm = enumRef.get();
+                var tags: Array<ElixirAST> = [];
+                for (c in enm.constructs) {
+                    tags.push(makeAST(EAtom(c.name)));
+                }
+                // Avoid generating nonsense for empty enums.
+                if (tags.length == 0) {
+                    null;
+                } else {
+                    var isTuple = makeAST(ECall(null, "is_tuple", [valueExpr]));
+                    var tag0 = makeAST(ECall(null, "elem", [valueExpr, makeAST(EInteger(0))]));
+                    var inTags = makeAST(EBinary(In, tag0, makeAST(EList(tags))));
+                    makeAST(EBinary(And, isTuple, inTags));
+                }
+            default:
+                null;
+        }
+    }
+
+    static function isHaxeExceptionCatchType(t: Null<Type>): Bool {
+        if (t == null) return false;
+        return switch (t) {
+            case TLazy(f):
+                isHaxeExceptionCatchType(f());
+            case TInst(clsRef, _):
+                var cls = clsRef.get();
+                cls.pack.length == 1 && cls.pack[0] == "haxe" && cls.name == "Exception";
+            default:
+                false;
+        };
+    }
+
+    // NOTE: buildTry tracks presence inline.
     
     /**
      * Build break control flow exception

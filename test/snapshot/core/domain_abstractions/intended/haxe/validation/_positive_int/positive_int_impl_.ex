@@ -2,7 +2,7 @@ defmodule PositiveInt_Impl_ do
   import Kernel, except: [to_string: 1], warn: false
   def _new(value) do
     if (value <= 0) do
-      throw("Value must be positive, got: " <> Kernel.to_string(value))
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Value must be positive, got: " <> Kernel.to_string(value)]
     end
     value
   end
@@ -17,7 +17,7 @@ defmodule PositiveInt_Impl_ do
   end
   def multiply_by_int(this1, multiplier) do
     if (multiplier <= 0) do
-      throw("Multiplier must be positive, got: " <> Kernel.to_string(multiplier))
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Multiplier must be positive, got: " <> Kernel.to_string(multiplier)]
     end
     this1 * multiplier
   end

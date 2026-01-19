@@ -1,0 +1,25 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "sys/io/file_seek.ex",
+  "sys/io/file_output.ex",
+  "sys/io/file_input.ex",
+  "sys/io/file.ex",
+  "sys/file_system.ex",
+  "string_tools.ex",
+  "string_buf.ex",
+  "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "main.ex",
+  "haxe/iterators/array_iterator.ex",
+  "haxe/io/output.ex",
+  "haxe/io/input.ex",
+  "haxe/io/eof.ex",
+  "haxe/io/bytes.ex",
+  "elixir/types/_atom/atom_impl_.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}

@@ -81,7 +81,7 @@ defmodule Type do
     _ignore_enum = enum
     _ignore_i = index
     _ignore_p = params
-    throw("Type.createEnumIndex not implemented for Elixir target")
+    raise Reflaxe.Elixir.HaxeThrow, [value: "Type.createEnumIndex not implemented for Elixir target"]
   end
   def get_enum_constructs(enum) do
     _ignore_enum = enum

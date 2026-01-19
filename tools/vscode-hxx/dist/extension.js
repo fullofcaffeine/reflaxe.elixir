@@ -175,6 +175,81 @@ function completionIsInAttrNameContext(doc, pos) {
         return null;
     return { tagName, prefix: lastPart };
 }
+function completionIsInAttrValueContext(doc, pos) {
+    const full = doc.getText();
+    const offset = doc.offsetAt(pos);
+    // Find the last `<` before the cursor and ensure we're still inside the tag.
+    const lt = full.lastIndexOf('<', offset);
+    if (lt < 0)
+        return null;
+    const between = full.slice(lt, offset);
+    if (between.includes('>'))
+        return null;
+    const eqRel = between.lastIndexOf('=');
+    if (eqRel < 0)
+        return null;
+    // Extract attr name (chars before `=`).
+    const beforeEq = between.slice(0, eqRel);
+    let i = beforeEq.length - 1;
+    while (i >= 0 && /[A-Za-z0-9_:-]/.test(beforeEq[i]))
+        i--;
+    const attrName = beforeEq.slice(i + 1);
+    if (!attrName)
+        return null;
+    // Find value start (skip spaces after `=`).
+    let valueStart = lt + eqRel + 1;
+    while (valueStart < offset && /\s/.test(full[valueStart]))
+        valueStart++;
+    if (valueStart >= offset) {
+        // No value typed yet; suggest a wrapped value.
+        return {
+            attrName,
+            prefix: '',
+            wrap: 'none',
+            replaceRange: new vscode.Range(pos, pos)
+        };
+    }
+    // Determine wrapping style.
+    let wrap = 'none';
+    const first = full[valueStart];
+    if (first === '{') {
+        wrap = 'braces';
+        valueStart++;
+        while (valueStart < offset && /\s/.test(full[valueStart]))
+            valueStart++;
+        if (valueStart < offset && full[valueStart] === '"') {
+            wrap = 'braceQuoted';
+            valueStart++;
+        }
+    }
+    else if (first === '"' || first === "'") {
+        wrap = 'quotes';
+        valueStart++;
+    }
+    // Compute prefix token to replace.
+    const tokenChars = /[A-Za-z0-9_\\-]/; // event names are commonly snake_case
+    let tokenStart = offset;
+    while (tokenStart > valueStart && tokenChars.test(full[tokenStart - 1]))
+        tokenStart--;
+    const prefix = full.slice(tokenStart, offset);
+    return {
+        attrName,
+        prefix,
+        wrap,
+        replaceRange: new vscode.Range(doc.positionAt(tokenStart), pos)
+    };
+}
+function isPhxEventAttr(attrName) {
+    return (attrName === 'phx-click' ||
+        attrName === 'phx-submit' ||
+        attrName === 'phx-change' ||
+        attrName === 'phx-blur' ||
+        attrName === 'phx-focus' ||
+        attrName === 'phx-keydown' ||
+        attrName === 'phx-keyup' ||
+        attrName === 'phx-window-keydown' ||
+        attrName === 'phx-window-keyup');
+}
 function buildLiveViewScope(index, moduleTypePath) {
     if (!index.liveViews || !moduleTypePath)
         return null;
@@ -222,6 +297,62 @@ function activate(context) {
                     items.push(item);
                 }
                 return items;
+            }
+            const valueCtx = completionIsInAttrValueContext(document, position);
+            if (valueCtx) {
+                if (!inHxxString && !isLikelyInlineMarkupContext(document, position))
+                    return;
+                const { attrName, prefix, wrap, replaceRange } = valueCtx;
+                // phx-hook value completions (from global hook registry, optionally narrowed by template usage).
+                if (attrName === 'phx-hook') {
+                    const names = new Set();
+                    if (scope?.templateHooks)
+                        scope.templateHooks.forEach((n) => names.add(n));
+                    if (registry.phxHookNames)
+                        registry.phxHookNames.forEach((n) => names.add(n));
+                    const sorted = Array.from(names).sort();
+                    const items = [];
+                    for (const name of sorted) {
+                        if (prefix && !name.startsWith(prefix))
+                            continue;
+                        const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Value);
+                        const insert = wrap === 'braceQuoted' || wrap === 'quotes'
+                            ? name
+                            : wrap === 'braces'
+                                ? `"${name}"`
+                                : `{"${name}"}`;
+                        item.insertText = insert;
+                        item.range = replaceRange;
+                        items.push(item);
+                    }
+                    if (items.length)
+                        return items;
+                }
+                // phx-* event value completions (prefer per-LiveView derived events, fall back to global registry).
+                if (isPhxEventAttr(attrName)) {
+                    const names = new Set();
+                    if (scope?.derivedEvents && scope.derivedEvents.length)
+                        scope.derivedEvents.forEach((n) => names.add(n));
+                    else if (registry.phxEventNames)
+                        registry.phxEventNames.forEach((n) => names.add(n));
+                    const sorted = Array.from(names).sort();
+                    const items = [];
+                    for (const name of sorted) {
+                        if (prefix && !name.startsWith(prefix))
+                            continue;
+                        const item = new vscode.CompletionItem(name, vscode.CompletionItemKind.Value);
+                        const insert = wrap === 'braceQuoted' || wrap === 'quotes'
+                            ? name
+                            : wrap === 'braces'
+                                ? `"${name}"`
+                                : `{"${name}"}`;
+                        item.insertText = insert;
+                        item.range = replaceRange;
+                        items.push(item);
+                    }
+                    if (items.length)
+                        return items;
+                }
             }
             const attrCtx = completionIsInAttrNameContext(document, position);
             if (attrCtx) {

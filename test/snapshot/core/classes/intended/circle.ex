@@ -1,6 +1,7 @@
 defmodule Circle do
   def new(x, y, radius_param) do
-    struct = Shape.new(x, y, "Circle")
+    struct = %{:radius => nil, :velocity => nil}
+    struct = Map.merge(struct, Shape.new(x, y, "Circle"))
     struct = %{struct | radius: radius_param}
     struct = %{struct | velocity: Point.new(0, 0)}
     struct

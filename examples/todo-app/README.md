@@ -171,7 +171,7 @@ The todo-app is designed to demonstrate **end-to-end Haxe→Elixir** for applica
   - Why: Ecto executes seeds as Elixir scripts; keeping them Elixir-first is fine for an example app.
 - Phoenix JS bootstrap: `assets/js/phoenix_app.js`
   - Why: this mirrors Phoenix’s canonical LiveView bootstrap and stays stable across Phoenix upgrades.
-  - Optional: the Haxe client can also bootstrap LiveSocket when compiled with `-D todoapp_hx_live_socket_bootstrap` (the JS file keeps a guard to avoid double connections).
+  - Default in this repo: the Haxe client also bootstraps LiveSocket (typed Genes) so more of the client boot is type-checked; the JS file keeps a guard to avoid double connections.
 
 **Haxe-authored migrations (compiled to `.exs`)**
 - Haxe sources: `examples/todo-app/src_haxe/server/migrations/*.hx`
@@ -211,7 +211,7 @@ graph LR
 - Why JS here and not Haxe?
   - This file mirrors Phoenix’s canonical bootstrap and stays stable across Phoenix upgrades.
   - All meaningful client behavior (Hooks, utils, shared types) remains in Haxe for type safety.
-  - Optional: compile the client with `-D todoapp_hx_live_socket_bootstrap` to connect LiveSocket from typed Haxe (Genes); `phoenix_app.js` will detect `window.liveSocket` and skip.
+  - Default in this repo: the client build enables `-D todoapp_hx_live_socket_bootstrap`, so the Haxe bundle can connect LiveSocket and `phoenix_app.js` will detect `window.liveSocket` and skip.
 
 ### Watch Mode
 ```bash
@@ -233,7 +233,7 @@ Note
 - The layout emits a standard Phoenix CSRF meta tag using Plug:
   - `examples/todo-app/lib/todo_app_web/layouts.ex` includes
     `<meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()}/>`
-- LiveSocket reads this token in `phoenix_app.js` (or in `client.Boot` when `-D todoapp_hx_live_socket_bootstrap` is enabled) and passes it as `_csrf_token`.
+- LiveSocket reads this token in `client.Boot` (default) or `phoenix_app.js` (fallback) and passes it as `_csrf_token`.
 ```
 
 ### Testing

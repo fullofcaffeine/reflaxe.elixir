@@ -1539,16 +1539,30 @@ class ElixirASTTransformer {
                                     // synthetic `super` variable with an empty method name (function var call).
                                     //
                                     // Elixir has no inheritance; constructors compile to `Module.new/arity`.
-                                    // Rebind `struct` to the parent constructor result so downstream code
-                                    // sees the initialized base fields and we avoid invalid `Parent.(...)` calls.
+                                    // Merge the parent constructor result into the pre-initialized `struct` map.
+                                    //
+                                    // IMPORTANT:
+                                    // - Elixir constructors are functional: they return a new value.
+                                    // - Reflaxe.Elixir injects an initial `struct` map with *all instance fields*
+                                    //   present (set to nil) so downstream `%{struct | field: ...}` updates are safe.
+                                    // - If we *replace* `struct` with the parent constructor result, subclass-only
+                                    //   keys disappear and later updates can crash at runtime.
+                                    // - Therefore we `Map.merge/2` the parent result into the current `struct`,
+                                    //   preserving subclass keys while allowing the parent to initialize base fields.
                                     if (methodName == "") {
+                                        var parentCtor = makeAST(ERemoteCall(
+                                            makeAST(EVar(parentModule)),
+                                            "new",
+                                            args
+                                        ));
+                                        var merged = makeAST(ERemoteCall(
+                                            makeAST(EVar("Map")),
+                                            "merge",
+                                            [makeAST(EVar("struct")), parentCtor]
+                                        ));
                                         return makeAST(EMatch(
                                             PVar("struct"),
-                                            makeAST(ERemoteCall(
-                                                makeAST(EVar(parentModule)),
-                                                "new",
-                                                args
-                                            ))
+                                            merged
                                         ));
                                     }
 

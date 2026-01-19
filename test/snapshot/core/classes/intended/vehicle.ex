@@ -5,6 +5,6 @@ defmodule Vehicle do
     struct
   end
   def accelerate(_) do
-    throw("Abstract method")
+    raise Reflaxe.Elixir.HaxeThrow, [value: "Abstract method"]
   end
 end

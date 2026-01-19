@@ -4,6 +4,8 @@
   "task_supervisor.ex",
   "string_buf.ex",
   "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
   "my_worker.ex",
   "my_supervisor.ex",
   "my_complex_worker.ex",

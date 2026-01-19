@@ -1,0 +1,206 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+JSON=0
+REFERENCE_PATH=""
+
+say() {
+  if [[ "$JSON" -eq 1 ]]; then
+    echo "[stdlib-parity] $*" >&2
+  else
+    echo "[stdlib-parity] $*"
+  fi
+}
+
+usage() {
+  cat >&2 <<'EOF'
+Usage: scripts/stdlib-parity-report.sh --reference PATH [--json]
+
+Compares this repo's stdlib overrides (Elixir-target Haxe std) against a reference Haxe stdlib.
+
+The report focuses on the Haxe standard library namespaces:
+  - top-level modules (e.g. Array, Date, EReg, Sys, Type, ...)
+  - haxe/** modules
+  - sys/** modules
+
+Options:
+  --reference PATH   Path to a reference stdlib. Accepts:
+                     - /path/to/haxe/std
+                     - /path/to/haxe-repo (containing haxe/std)
+                     - /path/to/haxe (containing std/)
+  --json             Emit machine-readable JSON to stdout (default: human-readable text)
+  -h, --help         Show this help
+
+Examples:
+  scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference/haxe/std
+  scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --json
+EOF
+  exit 2
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --reference) REFERENCE_PATH="$2"; shift 2 ;;
+    --json) JSON=1; shift 1 ;;
+    -h|--help) usage ;;
+    *) usage ;;
+  esac
+done
+
+if [[ -z "$REFERENCE_PATH" ]]; then
+  usage
+fi
+
+cd "$ROOT_DIR"
+
+say "Repo: $ROOT_DIR"
+say "Reference input: $REFERENCE_PATH"
+
+python3 - "$ROOT_DIR" "$REFERENCE_PATH" "$JSON" <<'PY'
+import json
+import os
+import sys
+from pathlib import Path
+
+root_dir = Path(sys.argv[1])
+reference_input = Path(sys.argv[2])
+json_mode = int(sys.argv[3]) == 1
+
+def resolve_reference_std(path: Path) -> Path:
+  candidates = []
+  candidates.append(path)
+  candidates.append(path / "std")
+  candidates.append(path / "haxe" / "std")
+  # If user pointed at ".../haxe", try its std/ directly.
+  if path.name == "haxe":
+    candidates.append(path / "std")
+
+  for candidate in candidates:
+    if (candidate / "Std.hx").exists() or (candidate / "Array.hx").exists():
+      return candidate
+  raise SystemExit(
+    "ERROR: Could not locate reference stdlib. Expected Std.hx under one of: "
+    f"{', '.join(str(c) for c in candidates)}"
+  )
+
+def module_id_from_relpath(rel: Path) -> str:
+  # Normalize .cross.hx -> .hx module id.
+  name = rel.as_posix()
+  if name.endswith(".cross.hx"):
+    name = name[: -len(".cross.hx")]
+  elif name.endswith(".hx"):
+    name = name[: -len(".hx")]
+  else:
+    raise ValueError(f"Unexpected path (not .hx/.cross.hx): {rel}")
+  return name.replace("/", ".")
+
+def collect_std_modules(std_root: Path, allow_cross: bool) -> set[str]:
+  modules: set[str] = set()
+  suffixes = [".hx"] + ([".cross.hx"] if allow_cross else [])
+
+  for file in std_root.rglob("*"):
+    if not file.is_file():
+      continue
+    if not any(str(file).endswith(suf) for suf in suffixes):
+      continue
+
+    rel = file.relative_to(std_root)
+    # Only consider Haxe std namespaces: top-level, haxe/**, sys/**.
+    if rel.parts[0] not in ("haxe", "sys") and len(rel.parts) != 1:
+      continue
+    modules.add(module_id_from_relpath(rel))
+
+  return modules
+
+reference_std = resolve_reference_std(reference_input)
+
+reference_modules = collect_std_modules(reference_std, allow_cross=False)
+
+local_std_root = root_dir / "std"
+local_std_shadow_root = root_dir / "std" / "_std"
+
+local_candidates = set()
+if local_std_root.exists():
+  local_candidates |= collect_std_modules(local_std_root, allow_cross=True)
+if local_std_shadow_root.exists():
+  local_candidates |= collect_std_modules(local_std_shadow_root, allow_cross=False)
+
+# Focus “coverage” on modules that are actually part of the reference stdlib, plus
+# any haxe.* / sys.* modules we ship (useful for parity planning).
+local_std_modules = set()
+local_nonstdlib_modules = set()
+for module in local_candidates:
+  if module in reference_modules or module.startswith("haxe.") or module.startswith("sys."):
+    local_std_modules.add(module)
+  else:
+    local_nonstdlib_modules.add(module)
+
+intersection = sorted(reference_modules & local_std_modules)
+reference_only = sorted(reference_modules - local_std_modules)
+local_only = sorted(local_std_modules - reference_modules)
+
+def group_by_prefix(modules: list[str]) -> dict[str, int]:
+  counts: dict[str, int] = {"<top-level>": 0, "haxe": 0, "sys": 0}
+  for module in modules:
+    if "." not in module:
+      counts["<top-level>"] += 1
+    elif module.startswith("haxe."):
+      counts["haxe"] += 1
+    elif module.startswith("sys."):
+      counts["sys"] += 1
+    else:
+      counts.setdefault("other", 0)
+      counts["other"] += 1
+  return counts
+
+report = {
+  "reference": {
+    "std_root": str(reference_std),
+    "total_modules": len(reference_modules),
+    "counts_by_prefix": group_by_prefix(list(reference_modules)),
+  },
+  "local": {
+    "stdlib_roots_considered": [str(p) for p in [local_std_root, local_std_shadow_root] if p.exists()],
+    "total_candidates": len(local_candidates),
+    "total_std_modules": len(local_std_modules),
+    "counts_by_prefix": group_by_prefix(list(local_std_modules)),
+    "nonstdlib_modules_under_std_dir": sorted(local_nonstdlib_modules),
+  },
+  "diff": {
+    "intersection": {"count": len(intersection), "modules": intersection},
+    "reference_only": {"count": len(reference_only), "modules": reference_only},
+    "local_only": {"count": len(local_only), "modules": local_only},
+  },
+}
+
+if json_mode:
+  print(json.dumps(report, indent=2, sort_keys=True))
+else:
+  def header(title: str) -> None:
+    print("")
+    print(f"== {title} ==")
+
+  print(f"[stdlib-parity] Reference std root: {report['reference']['std_root']}")
+  print(f"[stdlib-parity] Reference modules: {report['reference']['total_modules']}")
+  print(f"[stdlib-parity] Local std modules: {report['local']['total_std_modules']} (candidates scanned: {report['local']['total_candidates']})")
+
+  header("Counts by prefix (reference)")
+  for key, value in report["reference"]["counts_by_prefix"].items():
+    print(f"- {key}: {value}")
+
+  header("Counts by prefix (local std modules)")
+  for key, value in report["local"]["counts_by_prefix"].items():
+    print(f"- {key}: {value}")
+
+  header("Coverage summary")
+  print(f"- Intersection (local provides): {report['diff']['intersection']['count']}")
+  print(f"- Reference-only (missing locally): {report['diff']['reference_only']['count']}")
+  print(f"- Local-only (not in reference): {report['diff']['local_only']['count']}")
+
+  header("Next steps suggestion")
+  print("- Start with sys.* gaps (ports/files/network) and haxe.io gaps (BytesBuffer/Input/Output).")
+  print("- Use this report as an input to a bd epic for stdlib parity work.")
+PY
+

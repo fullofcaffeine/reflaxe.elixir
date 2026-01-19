@@ -1,9 +1,12 @@
+import {LiveSocket} from "phoenix_live_view"
+import {Socket} from "phoenix"
 import {Register} from "../genes/Register.js"
 import {Theme} from "./utils/Theme.js"
 import {ThemeToggleHook} from "./hooks/ThemeToggleHook.js"
 import {PingHook} from "./hooks/PingHook.js"
 import {CopyToClipboardHook} from "./hooks/CopyToClipboardHook.js"
 import {AutoFocusHook} from "./hooks/AutoFocusHook.js"
+import {StringTools} from "../StringTools.js"
 
 const $global = Register.$global
 
@@ -14,6 +17,24 @@ const $global = Register.$global
 */
 export const Boot = Register.global("$hxClasses")["client.Boot"] = 
 class Boot {
+	static readCsrfToken() {
+		let meta = window.document.querySelector("meta[name='csrf-token']");
+		if (meta == null) {
+			return null;
+		} else {
+			return meta.getAttribute("content");
+		};
+	}
+	static connectLiveView(hooks) {
+		let csrfToken = Boot.readCsrfToken();
+		let params = {};
+		if (csrfToken != null && StringTools.trim(csrfToken) != "") {
+			params._csrf_token = csrfToken;
+		};
+		let liveSocket = new LiveSocket("/live", Socket, {"params": params, "hooks": hooks});
+		liveSocket.connect();
+		window.liveSocket = liveSocket;
+	}
 	static buildHooks() {
 		let hooks = {};
 		hooks["AutoFocus"] = {"mounted": function () {
@@ -36,6 +57,7 @@ class Boot {
 		Theme.applyStoredOrDefault();
 		let hooks = Boot.buildHooks();
 		window.Hooks = Object.assign(window.Hooks || {}, hooks);
+		Boot.connectLiveView(hooks);
 	}
 	static get __name__() {
 		return "client.Boot"

@@ -85,8 +85,20 @@ class Boot {
     js.Syntax.code("window.Hooks = Object.assign(window.Hooks || {}, {0})", hooks);
 
     #if todoapp_hx_live_socket_bootstrap
-    // Optional: do the standard Phoenix LiveView bootstrap from typed Haxe (Genes) instead of raw JS.
-    // `assets/js/phoenix_app.js` keeps a fallback guard to avoid double-connect.
+    // Optional: Do the Phoenix LiveView bootstrap from typed Haxe (Genes).
+    //
+    // Bootstrapping LiveView is a side-effectful “pick one owner” responsibility, so the todo-app
+    // supports two mutually-exclusive owners:
+    // 1) Default (no flag): `assets/js/phoenix_app.js` does the canonical Phoenix bootstrap
+    //    (`new LiveSocket(...).connect()`), and the Haxe/Genes bundle only publishes hooks onto
+    //    `window.Hooks`.
+    // 2) Opt-in (with `-D todoapp_hx_live_socket_bootstrap`): this Haxe/Genes bundle also runs the
+    //    LiveSocket bootstrap (`connectLiveView(hooks)`), so more of the client boot is typed.
+    //
+    // The todo-app enables this define by default in `build-client.hxml`. Remove it there if you
+    // want to switch back to the JS bootstrap.
+    //
+    // `assets/js/phoenix_app.js` still keeps a runtime guard to avoid double-connect.
     connectLiveView(hooks);
     #end
   }

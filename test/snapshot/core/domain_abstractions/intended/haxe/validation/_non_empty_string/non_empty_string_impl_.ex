@@ -2,7 +2,7 @@ defmodule NonEmptyString_Impl_ do
   import Kernel, except: [to_string: 1, length: 1], warn: false
   def _new(value) do
     if (Kernel.is_nil(value) or String.length(value) == 0) do
-      throw("String cannot be empty or null")
+      raise Reflaxe.Elixir.HaxeThrow, [value: "String cannot be empty or null"]
     end
     value
   end

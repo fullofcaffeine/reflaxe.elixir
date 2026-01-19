@@ -4,6 +4,8 @@
   "string_buf.ex",
   "std.ex",
   "status.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
   "nested_result.ex",
   "main.ex",
   "haxe/iterators/array_iterator.ex"

@@ -1,6 +1,8 @@
 defmodule NotImplementedException do
   defexception [:message]
   def new(message, previous, pos) do
-    PosException.new(message, previous, pos)
+    struct = %{}
+    struct = Map.merge(struct, PosException.new(message, previous, pos))
+    struct
   end
 end
