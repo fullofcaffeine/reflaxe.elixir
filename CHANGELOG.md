@@ -1,3 +1,10 @@
+## [1.10.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.10.0...v1.10.1) (2026-01-19)
+
+
+### Bug Fixes
+
+* stabilize exception runtime + refresh snapshots ([8ff02d3](https://github.com/fullofcaffeine/reflaxe.elixir/commit/8ff02d3104d56610e7ed1d3504b132b86fe03d28))
+
 # [1.10.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.9.0...v1.10.0) (2026-01-18)
 
 
