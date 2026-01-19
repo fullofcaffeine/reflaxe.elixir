@@ -155,6 +155,25 @@ class CompilerInit {
             reflaxe.elixir.macros.RepoDiscovery.run();
         } catch (e: haxe.Exception) {}
 
+        // Ensure the exception wrapper module exists when compiling Haxe `throw` / `try-catch`.
+        //
+        // The AST pipeline lowers Haxe exceptions to Elixir `raise`/`rescue` and uses a stable
+        // wrapper exception (`Reflaxe.Elixir.HaxeThrow`) to represent "throw any value" semantics.
+        // The generated Elixir may reference `%Reflaxe.Elixir.HaxeThrow{...}` even if user code
+        // never directly references the Haxe type path, so we must keep it explicitly under `-dce full`.
+        try {
+            // `Compiler.keep()` alone does not force a module to be typed/compiled; it only prevents
+            // DCE from removing it *if* it is already part of the compilation.
+            //
+            // Because our generated Elixir can pattern-match on `%Reflaxe.Elixir.HaxeThrow{...}`
+            // without any user-facing Haxe reference, we must also force it into the compilation.
+            Compiler.include("reflaxe.elixir.runtime", true);
+            Context.getType("reflaxe.elixir.runtime.ReflaxeException");
+            Compiler.keep("reflaxe.elixir.runtime.ReflaxeException");
+            Context.getType("reflaxe.elixir.runtime.HaxeThrow");
+            Compiler.keep("reflaxe.elixir.runtime.HaxeThrow");
+        } catch (e: haxe.Exception) {}
+
         // Choose preprocessor profile
         var useFastPrepasses = !Context.defined("full_prepasses");
         var prepasses: Array<ExpressionPreprocessor> = [];

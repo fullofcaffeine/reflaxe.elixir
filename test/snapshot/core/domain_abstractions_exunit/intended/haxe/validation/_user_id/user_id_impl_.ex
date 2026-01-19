@@ -4,7 +4,7 @@ defmodule UserId_Impl_ do
     _this1 = (case validate(user_id) do
       {:ok, this1} -> this1
       {:error, reason} ->
-        throw(reason)
+        raise Reflaxe.Elixir.HaxeThrow, [value: reason]
         reason
     end)
   end

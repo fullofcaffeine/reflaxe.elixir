@@ -294,7 +294,7 @@ We intentionally keep the LiveView bootstrap as a tiny, hand‑written JS entry 
 - Rationale (1.0 scope):
   - Matches Phoenix’s idiomatic setup and minimizes friction on upgrades.
   - Keeps the bootstrap minimal while concentrating typed logic in Haxe.
-  - Optional: compile the client with `-D todoapp_hx_live_socket_bootstrap` to connect LiveSocket from typed Haxe (Genes); `phoenix_app.js` has a guard to prevent double-connect.
+  - Default in this repo: `build-client.hxml` enables `-D todoapp_hx_live_socket_bootstrap` so the typed Haxe client can connect LiveSocket; `phoenix_app.js` keeps a guard to prevent double-connect.
 
 Watchers
 - Dev watcher runs the Haxe client watcher when available:
@@ -308,7 +308,7 @@ CSRF meta
 Constraints (project-wide)
 - No `-D analyzer-optimize` in any HXML; it destroys functional patterns for Elixir and JS
 - No Dynamic on public surfaces; JS hooks are typed (`typedef Hooks`) and use js interop only at the boundary
-- Phoenix idioms: LiveSocket bootstrap in `assets/js/phoenix_app.js` with `hooks` + CSRF meta, plus an optional typed Haxe bootstrap (`-D todoapp_hx_live_socket_bootstrap`) guarded by `window.liveSocket`
+- Phoenix idioms: LiveSocket bootstrap in `assets/js/phoenix_app.js` with `hooks` + CSRF meta, plus a typed Haxe bootstrap (default via `-D todoapp_hx_live_socket_bootstrap`) guarded by `window.liveSocket`
 
 #### Before (Broken):
 ```haxe

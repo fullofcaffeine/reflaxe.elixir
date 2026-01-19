@@ -1,0 +1,20 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "string_buf.ex",
+  "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "my_app_web/presence_live.ex",
+  "my_app_web/mixed_usage.ex",
+  "my_app_web/incorrect_usage.ex",
+  "my_app_web/conditional_presence.ex",
+  "my_app_web/complex_presence.ex",
+  "main.ex",
+  "haxe/iterators/array_iterator.ex",
+  "elixir/types/_atom/atom_impl_.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}

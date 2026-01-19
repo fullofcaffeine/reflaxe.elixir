@@ -4,6 +4,8 @@
   "type.ex",
   "string_buf.ex",
   "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

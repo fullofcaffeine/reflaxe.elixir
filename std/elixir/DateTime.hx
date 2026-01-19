@@ -176,6 +176,19 @@ extern class NaiveDateTime {
      * Parses an ISO8601 string to NaiveDateTime
      */
     static function from_iso8601(string: String): haxe.functional.Result<NaiveDateTime, String>;
+
+    /**
+     * Converts an Erlang `:calendar.datetime()` tuple to a NaiveDateTime.
+     *
+     * Elixir API:
+     * - `NaiveDateTime.from_erl/2`
+     * - `NaiveDateTime.from_erl!/2`
+     */
+    @:native("NaiveDateTime.from_erl")
+    static function fromErl(datetime: elixir.types.Term, ?microsecond: elixir.types.Term): haxe.functional.Result<NaiveDateTime, elixir.types.Term>;
+
+    @:native("NaiveDateTime.from_erl!")
+    static function fromErlBang(datetime: elixir.types.Term, ?microsecond: elixir.types.Term): NaiveDateTime;
     
     /**
      * Compares two naive datetimes

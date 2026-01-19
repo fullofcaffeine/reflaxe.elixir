@@ -6902,9 +6902,145 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     }
   };
 
-  // js/client/Boot.js
+  // js/HxOverrides.js
   var $global8 = Register.$global;
+  var HxOverrides = Register.global("$hxClasses")["HxOverrides"] = class HxOverrides2 {
+    static cca(s, index) {
+      let x = s.charCodeAt(index);
+      if (x != x) {
+        return void 0;
+      }
+      ;
+      return x;
+    }
+    static substr(s, pos, len) {
+      if (len == null) {
+        len = s.length;
+      } else if (len < 0) {
+        if (pos == 0) {
+          len = s.length + len;
+        } else {
+          return "";
+        }
+        ;
+      }
+      ;
+      return s.substr(pos, len);
+    }
+    static now() {
+      return Date.now();
+    }
+    static get __name__() {
+      return "HxOverrides";
+    }
+    get __class__() {
+      return HxOverrides2;
+    }
+  };
+  (typeof performance != "undefined" ? typeof performance.now == "function" : false) ? HxOverrides.now = performance.now.bind(performance) : null;
+
+  // js/StringTools.js
+  var $global9 = Register.$global;
+  var StringTools = Register.global("$hxClasses")["StringTools"] = class StringTools2 {
+    /**
+    Tells if the character in the string `s` at position `pos` is a space.
+    
+    A character is considered to be a space character if its character code
+    is 9,10,11,12,13 or 32.
+    
+    If `s` is the empty String `""`, or if pos is not a valid position within
+    `s`, the result is false.
+    */
+    static isSpace(s, pos) {
+      let c = HxOverrides.cca(s, pos);
+      if (!(c > 8 && c < 14)) {
+        return c == 32;
+      } else {
+        return true;
+      }
+      ;
+    }
+    /**
+    Removes leading space characters of `s`.
+    
+    This function internally calls `isSpace()` to decide which characters to
+    remove.
+    
+    If `s` is the empty String `""` or consists only of space characters, the
+    result is the empty String `""`.
+    */
+    static ltrim(s) {
+      let l = s.length;
+      let r = 0;
+      while (r < l && StringTools2.isSpace(s, r))
+        ++r;
+      if (r > 0) {
+        return HxOverrides.substr(s, r, l - r);
+      } else {
+        return s;
+      }
+      ;
+    }
+    /**
+    Removes trailing space characters of `s`.
+    
+    This function internally calls `isSpace()` to decide which characters to
+    remove.
+    
+    If `s` is the empty String `""` or consists only of space characters, the
+    result is the empty String `""`.
+    */
+    static rtrim(s) {
+      let l = s.length;
+      let r = 0;
+      while (r < l && StringTools2.isSpace(s, l - r - 1))
+        ++r;
+      if (r > 0) {
+        return HxOverrides.substr(s, 0, l - r);
+      } else {
+        return s;
+      }
+      ;
+    }
+    /**
+    Removes leading and trailing space characters of `s`.
+    
+    This is a convenience function for `ltrim(rtrim(s))`.
+    */
+    static trim(s) {
+      return StringTools2.ltrim(StringTools2.rtrim(s));
+    }
+    static get __name__() {
+      return "StringTools";
+    }
+    get __class__() {
+      return StringTools2;
+    }
+  };
+
+  // js/client/Boot.js
+  var $global10 = Register.$global;
   var Boot = Register.global("$hxClasses")["client.Boot"] = class Boot2 {
+    static readCsrfToken() {
+      let meta = window.document.querySelector("meta[name='csrf-token']");
+      if (meta == null) {
+        return null;
+      } else {
+        return meta.getAttribute("content");
+      }
+      ;
+    }
+    static connectLiveView(hooks) {
+      let csrfToken = Boot2.readCsrfToken();
+      let params = {};
+      if (csrfToken != null && StringTools.trim(csrfToken) != "") {
+        params._csrf_token = csrfToken;
+      }
+      ;
+      let liveSocket = new LiveSocket("/live", Socket, { "params": params, "hooks": hooks });
+      liveSocket.connect();
+      window.liveSocket = liveSocket;
+    }
     static buildHooks() {
       let hooks = {};
       hooks["AutoFocus"] = { "mounted": function() {
@@ -6927,6 +7063,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       Theme.applyStoredOrDefault();
       let hooks = Boot2.buildHooks();
       window.Hooks = Object.assign(window.Hooks || {}, hooks);
+      Boot2.connectLiveView(hooks);
     }
     static get __name__() {
       return "client.Boot";
@@ -6937,7 +7074,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/hx_app.js
-  var $global9 = Register.$global;
+  var $global11 = Register.$global;
   Boot.main();
 
   // js/phoenix_app.js

@@ -5,6 +5,8 @@
   "string_buf.ex",
   "std.ex",
   "reflect.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
   "phoenix/types/flash_type_tools.ex",
   "phoenix/types/flash_type.ex",
   "phoenix/types/flash_map_tools.ex",

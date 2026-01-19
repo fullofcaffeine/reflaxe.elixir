@@ -1,0 +1,13 @@
+{
+  "filesGenerated": [
+  "string_buf.ex",
+  "result.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "main.ex",
+  "haxe/iterators/array_iterator.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}

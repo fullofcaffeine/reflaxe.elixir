@@ -38,7 +38,7 @@ defmodule ResultTools do
   def unwrap(result) do
     (case result do
       {:ok, value} -> value
-      {:error, error} -> throw("Attempted to unwrap Error result: " <> inspect(error))
+      {:error, error} -> raise Reflaxe.Elixir.HaxeThrow, [value: "Attempted to unwrap Error result: " <> inspect(error)]
     end)
   end
   def unwrap_or(result, default_value) do

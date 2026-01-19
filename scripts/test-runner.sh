@@ -205,16 +205,17 @@ find_affected_tests() {
 
 # Function to get failed tests from last run
 get_failed_tests() {
-    if [ -f "$TEST_DIR/test-results.tmp" ]; then
-        grep "❌" "$TEST_DIR/test-results.tmp" | sed 's/❌ //' | sed 's/ -.*//' | tr '\n' ' '
-    else
-        echo ""
+    if ls "$TEST_DIR"/test-results*.tmp >/dev/null 2>&1; then
+        cat "$TEST_DIR"/test-results*.tmp 2>/dev/null | grep "❌" | sed 's/❌ //' | sed 's/ -.*//' | tr '\n' ' ' || true
+        return
     fi
+    echo ""
 }
 
 # Function to run tests
 run_tests() {
     local make_target=""
+    local make_vars=""
     local make_args="-j$PARALLEL"
     
     # Determine what tests to run
@@ -253,30 +254,29 @@ run_tests() {
         aggregate_mode=true
     elif [ -n "$PATTERN" ]; then
         echo -e "${YELLOW}Running tests matching pattern: $PATTERN${RESET}"
-        make_target="test-pattern PATTERN=$PATTERN"
+        make_target="test-pattern"
+        make_vars="PATTERN=$PATTERN"
     else
         echo -e "${YELLOW}Running all tests...${RESET}"
         make_target="all"
         aggregate_mode=true
     fi
     
-    # Add verbose flag if requested
-    if [ "$VERBOSE" = true ]; then
-        make_args="$make_args -v"
-    fi
+    # NOTE: GNU make uses `-v/--version` to print version and exit (it does not mean "verbose").
+    # This runner's --verbose flag is reserved for future enhancements; keep it non-breaking today.
     
     # Start Haxe server if requested
     start_haxe_server
     
     # Run the tests
     cd "$TEST_DIR"
-    echo -e "${BLUE}Executing (deadline ${DEADLINE}s): make -f Makefile $make_args $make_target${RESET}"
+    echo -e "${BLUE}Executing (deadline ${DEADLINE}s): make -f Makefile $make_args $make_vars $make_target${RESET}"
     # Ensure fresh results file for accurate summary
     rm -f test-results*.tmp 2>/dev/null || true
     
     if [ "$UPDATE" = true ]; then
         # If updating, run tests and then update failed ones
-        make -f Makefile $make_args $make_target || true
+        make -f Makefile $make_args $make_vars $make_target || true
         
         # Find failed tests and update their intended outputs
         local failed_tests=$(get_failed_tests)
@@ -293,7 +293,7 @@ run_tests() {
     else
         if [ "$aggregate_mode" = true ]; then
             # Aggregated targets (all/categories) return proper exit codes
-            if "$PROJECT_ROOT/scripts/util/with-timeout.sh" "$DEADLINE" make -f Makefile $make_args $make_target; then
+            if "$PROJECT_ROOT/scripts/util/with-timeout.sh" "$DEADLINE" make -f Makefile $make_args $make_vars $make_target; then
                 echo -e "${GREEN}All tests passed! ✅${RESET}"
                 exit 0
             else
@@ -305,7 +305,7 @@ run_tests() {
         else
             # Non-aggregated targets (pattern/changed/failed): decide based on result files and make status
             set +e
-            "$PROJECT_ROOT/scripts/util/with-timeout.sh" "$DEADLINE" make -f Makefile $make_args $make_target
+            "$PROJECT_ROOT/scripts/util/with-timeout.sh" "$DEADLINE" make -f Makefile $make_args $make_vars $make_target
             make_status=$?
             set -e
 
@@ -337,16 +337,16 @@ run_tests() {
 
 # Function to show test statistics
 show_stats() {
-    if [ -f "$TEST_DIR/test-results.tmp" ]; then
+    if ls "$TEST_DIR"/test-results*.tmp >/dev/null 2>&1; then
         local passed=0
         local failed=0
         
-        if grep -q "✅" "$TEST_DIR/test-results.tmp" 2>/dev/null; then
-            passed=$(grep -c "✅" "$TEST_DIR/test-results.tmp")
+        if cat "$TEST_DIR"/test-results*.tmp 2>/dev/null | grep -q "✅"; then
+            passed=$(cat "$TEST_DIR"/test-results*.tmp 2>/dev/null | grep -c "✅")
         fi
         
-        if grep -q "❌" "$TEST_DIR/test-results.tmp" 2>/dev/null; then
-            failed=$(grep -c "❌" "$TEST_DIR/test-results.tmp")
+        if cat "$TEST_DIR"/test-results*.tmp 2>/dev/null | grep -q "❌"; then
+            failed=$(cat "$TEST_DIR"/test-results*.tmp 2>/dev/null | grep -c "❌")
         fi
         
         local total=$((passed + failed))
@@ -360,7 +360,7 @@ show_stats() {
         if [ "$failed" -gt 0 ]; then
             echo ""
             echo -e "${YELLOW}Failed tests:${RESET}"
-            grep "❌" "$TEST_DIR/test-results.tmp" | sed 's/^/  /'
+            cat "$TEST_DIR"/test-results*.tmp 2>/dev/null | grep "❌" | sed 's/^/  /' || true
         fi
     fi
 }

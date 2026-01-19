@@ -2,6 +2,7 @@
 
 This document describes how Reflaxe.Elixir transforms Haxe's imperative programming constructs into Elixir's functional paradigm.
 See also:
+- [Imperative→Functional Lowering](../02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md)
 - [Haxe→Elixir Mappings](../02-user-guide/HAXE_ELIXIR_MAPPINGS.md)
 - [Standard Library Handling](../04-api-reference/STANDARD_LIBRARY_HANDLING.md)
 
@@ -276,7 +277,13 @@ var count: Int = 0;          // Compiler knows to use +
 ```
 
 ### 3. Avoid Complex Mutations
-Complex mutation patterns may not translate efficiently:
+Complex mutation patterns **do compile correctly**, but they can produce less idiomatic output and/or extra allocations on the BEAM.
+
+In particular, Haxe `Array` is represented as an immutable Elixir list for this target, so an indexed “in-place” update like `array[i] = ...` requires rebuilding the list. Doing that inside a loop can turn a linear pass into **O(n²)** work.
+
+Reflaxe.Elixir intentionally does **not** auto-rewrite arbitrary mutation-heavy loops into `Enum.map/2` unless it can prove the rewrite is semantics-safe (e.g. the loop counter isn’t observed after the loop, there’s no early-exit control flow, and there aren’t multiple interacting mutations).
+
+If you want the cleanest and fastest Elixir, write the functional shape explicitly:
 ```haxe
 // Avoid
 while (condition) {
@@ -741,6 +748,58 @@ function processData(input: String): Int {
     }
 }
 ```
+
+### How Exceptions Compile (Haxe `throw` / `try-catch`)
+
+Reflaxe.Elixir compiles Haxe exceptions using Elixir’s **`raise` / `rescue`** mechanism (not `throw/1`), so:
+
+- Haxe `try/catch` does **not** accidentally intercept internal loop-control signals (we use Elixir `throw(:break|:continue)` inside some lowered loops).
+- Exceptions raised by Elixir/Phoenix libraries can be caught by Haxe `try/catch`.
+
+#### Haxe `throw`
+
+Haxe:
+```haxe
+throw "oops";
+```
+
+Elixir (shape):
+```elixir
+raise Reflaxe.Elixir.HaxeThrow, value: "oops"
+```
+
+Notes:
+- Non-exception values are wrapped in `Reflaxe.Elixir.HaxeThrow` with a `value` field.
+- `Reflaxe.Elixir.HaxeThrow.exception/1` derives `message` from `inspect(value)` when `message:` is not provided.
+
+#### Haxe `try/catch`
+
+Haxe:
+```haxe
+try {
+  throw "oops";
+} catch (e:String) {
+  trace(e);
+}
+```
+
+Elixir (shape):
+```elixir
+try do
+  raise Reflaxe.Elixir.HaxeThrow, value: "oops"
+rescue
+  haxe_exception ->
+    case {unwrap(haxe_exception), haxe_exception} do
+      {e, _} when is_binary(e) -> ...
+      _ -> reraise(haxe_exception, __STACKTRACE__)
+    end
+end
+```
+
+Notes:
+- Catch clauses are matched in order using guard-based type checks (`is_binary/1`, `is_integer/1`, `is_struct/2`, tagged-enum tuple checks, etc.).
+- `catch(e:haxe.Exception)` is treated as a wildcard catch and binds the **exception struct** (so `e.message` remains meaningful).
+- If no catch matches, we re-raise the original exception preserving stacktrace (`reraise/2`).
 
 **Result-Based Approach**:
 ```haxe

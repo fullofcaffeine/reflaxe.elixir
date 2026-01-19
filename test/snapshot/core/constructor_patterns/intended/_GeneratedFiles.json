@@ -1,0 +1,18 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "todo_worker.ex",
+  "todo_formatter.ex",
+  "string_buf.ex",
+  "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "main.ex",
+  "haxe/iterators/array_iterator.ex",
+  "data_structure_test.ex",
+  "constructor_test/user.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}

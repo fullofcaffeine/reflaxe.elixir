@@ -2,7 +2,7 @@ defmodule Email_Impl_ do
   import Kernel, except: [to_string: 1], warn: false
   def _new(email) do
     if (not is_valid_email(email)) do
-      throw("Invalid email address: " <> email)
+      raise Reflaxe.Elixir.HaxeThrow, [value: "Invalid email address: " <> email]
     end
     email
   end

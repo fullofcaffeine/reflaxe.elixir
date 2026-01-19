@@ -1,0 +1,17 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "string_tools.ex",
+  "string_buf.ex",
+  "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "phoenix/types/hxx_component_registry.ex",
+  "phoenix/types/attribute_helper.ex",
+  "main.ex",
+  "haxe/iterators/array_iterator.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}

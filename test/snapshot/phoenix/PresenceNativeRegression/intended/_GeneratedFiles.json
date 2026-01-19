@@ -6,6 +6,8 @@
   "std.ex",
   "standard_presence.ex",
   "regular_presence.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
   "phoenix/presence.ex",
   "my_app_web/presence.ex",
   "my_app/custom_presence.ex",

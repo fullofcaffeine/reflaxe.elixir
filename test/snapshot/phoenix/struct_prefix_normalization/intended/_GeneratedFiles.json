@@ -1,0 +1,15 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "todo_app_web/todo_live.ex",
+  "todo.ex",
+  "string_buf.ex",
+  "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "haxe/iterators/array_iterator.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}

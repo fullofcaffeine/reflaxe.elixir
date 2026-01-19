@@ -5,6 +5,8 @@
   "std.ex",
   "reflect_test.ex",
   "reflect.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
   "my_app_web/special_presence.ex",
   "my_app_web/normal_module.ex",
   "my_app_web/chat_presence.ex",

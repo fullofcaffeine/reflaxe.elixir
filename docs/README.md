@@ -22,9 +22,11 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 ### 📖 User Guide
 **[02-user-guide/](02-user-guide/)** - Complete user documentation for application developers
 - [Haxe Language Fundamentals](02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md) - Core concepts
+- [Imperative→Functional Lowering](02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md) - How mutation/loops become immutable Elixir
 - [Writing Idiomatic Haxe](02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md) - Guidelines for clean, idiomatic Elixir output
 - [Haxe→Elixir Mappings](02-user-guide/HAXE_ELIXIR_MAPPINGS.md) - Language conversion guide
 - [Elixir Idioms & Hygiene](02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md) - Naming, unused vars, enum shapes, loop semantics
+- [Porting stdlib code (JS→Elixir)](02-user-guide/PORTING_STDLIB_CODE_JS_TO_ELIXIR.md) - Practical portability example
 - [Phoenix Integration](02-user-guide/PHOENIX_INTEGRATION.md) - Building Phoenix applications
 - [Type-Safe Phoenix Abstractions](02-user-guide/TYPE_SAFE_PHOENIX_ABSTRACTIONS.md) - Assigns/Socket/Flash typed surfaces
 - [Phoenix LiveView Architecture](02-user-guide/PHOENIX_LIVEVIEW_ARCHITECTURE.md) - Real-time UI patterns
@@ -45,6 +47,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 **[04-api-reference/](04-api-reference/)** - Technical reference documentation
 - [Annotations](04-api-reference/ANNOTATIONS.md) - @:router, @:liveview, @:schema reference
 - [Standard Library](04-api-reference/STANDARD_LIBRARY_HANDLING.md) - Stdlib strategy + guidance
+- [Stdlib Support Matrix](04-api-reference/STDLIB_SUPPORT_MATRIX.md) - What’s overridden vs upstream vs missing
 - [Haxe Macro APIs](04-api-reference/HAXE_MACRO_APIS.md) - Correct macro API usage
 - [Source Mapping](04-api-reference/SOURCE_MAPPING.md) - Experimental source map design/status
 - [Router DSL](04-api-reference/ROUTER_DSL.md) - Phoenix router DSL reference

@@ -64,13 +64,20 @@ extern class File {
     public static function statWithOptions(path: String, options: Map<String, Term>): {_0: String, _1: Term};
     
     @:native("File.stat!")
-    public static function statBang(path: String): Map<String, Term>; // Returns stat or raises
+    public static function statBang(path: String): Term; // Returns %File.Stat{} or raises
     
     @:native("File.lstat")
     public static function lstat(path: String): {_0: String, _1: Term}; // Like stat but for symlinks
     
     @:native("File.lstat!")
-    public static function lstatBang(path: String): Map<String, Term>;
+    public static function lstatBang(path: String): Term;
+
+    // Path resolution
+    @:native("File.realpath")
+    public static function realpath(path: String): {_0: String, _1: String}; // {:ok, path} | {:error, reason}
+
+    @:native("File.realpath!")
+    public static function realpathBang(path: String): String; // Returns resolved path or raises
     
     // File existence and type checking
     @:native("File.exists?")
