@@ -221,7 +221,6 @@ class OrganizationLive {
         return switch (getOrCreateOrganizationBySlug(slug)) {
             case Error(changeset):
                 {
-                    Std.string(changeset);
                     LiveView.putFlash(socket, FlashType.Error, "Could not create organization.");
                 }
             case Ok(org):
@@ -241,7 +240,6 @@ class OrganizationLive {
                             LiveView.pushNavigate(withFlash, {to: "/todos"});
                         case Error(updateChangeset):
                             {
-                                Std.string(updateChangeset);
                                 LiveView.putFlash(socket, FlashType.Error, "Could not switch organization.");
                             }
                     }
@@ -360,7 +358,6 @@ class OrganizationLive {
                 })) {
                     case Ok(_entry):
                     case Error(err):
-                        Std.string(err);
                 }
 
                 var updatedCurrentUser = updatedUser.id == currentUser.id ? updatedUser : currentUser;
@@ -381,7 +378,6 @@ class OrganizationLive {
                 updatedSocket = LiveView.putFlash(updatedSocket, FlashType.Info, "Role updated.");
                 updatedSocket;
             case Error(err):
-                Std.string(err);
                 LiveView.putFlash(socket, FlashType.Error, "Could not update role.");
         };
     }
@@ -418,10 +414,9 @@ class OrganizationLive {
 	                    entityId: invite.id,
 	                    metadata: auditMetadata
 	                })) {
-	                    case Ok(_entry):
-	                    case Error(err):
-	                        Std.string(err);
-	                }
+                    case Ok(_entry):
+                    case Error(err):
+                }
 
 	                var emailSent = InviteEmail.deliverInvite(
 	                    invite.email,
@@ -443,10 +438,9 @@ class OrganizationLive {
 	                    emailSent ? FlashType.Info : FlashType.Error,
 	                    emailSent ? "Invite created. Email sent (preview at /dev/mailbox)." : "Invite created, but email failed to send."
 	                );
-	            case Error(err):
-	                Std.string(err);
-	                LiveView.putFlash(socket, FlashType.Error, "Could not create invite.");
-	        };
+            case Error(err):
+                LiveView.putFlash(socket, FlashType.Error, "Could not create invite.");
+        };
 	    }
 
     static function revokeInvite(params: Term, socket: LiveSocket<OrganizationLiveAssigns>): LiveSocket<OrganizationLiveAssigns> {
@@ -487,10 +481,9 @@ class OrganizationLive {
 	                    entityId: invite.id,
 	                    metadata: auditMetadata
 	                })) {
-	                    case Ok(_entry):
-	                    case Error(err):
-	                        Std.string(err);
-	                }
+                    case Ok(_entry):
+                    case Error(err):
+                }
 
 	                var refreshed = loadInvites(socket.assigns.current_org_id);
 	                var updated = socket.merge({invite_rows: refreshed});
