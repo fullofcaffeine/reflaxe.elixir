@@ -10,6 +10,9 @@ package server.infrastructure;
 @:native("TodoAppWeb.Endpoint")
 @:endpoint
 @:appName("todo_app")
+@:endpointSockets([
+    {path: "/socket", socket: server.infrastructure.UserSocket, session: true}
+])
 class Endpoint {
     /**
      * Get static paths for asset serving

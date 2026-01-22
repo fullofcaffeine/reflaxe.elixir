@@ -33,6 +33,18 @@ See working references:
 - Minimal Phoenix: `examples/03-phoenix-app/`
 - End-to-end LiveView + Ecto: `examples/todo-app/`
 
+## Channels (Socket + Channel Modules)
+
+Phoenix Channels are a **client/server boundary**: your browser code (typically JS) connects to a server-side `Phoenix.Socket`, joins a topic, and exchanges events with a `Phoenix.Channel`.
+
+Reflaxe.Elixir supports the server-side pieces via annotations so your generated Elixir remains Phoenix-idiomatic:
+
+- `@:socket` marks a module as a `Phoenix.Socket` and emits `use Phoenix.Socket`.
+- `@:socketChannels([{topic, channel}])` emits `channel "<topic>", <ChannelModule>` routes on the socket.
+- `@:endpointSockets([{path, socket, session?}])` mounts one or more sockets on your `@:endpoint` (e.g. `"/socket"`).
+
+See a working end-to-end reference (Haxe→Elixir server + Haxe→JS client) in `examples/todo-app/src_haxe/shared/channels/` and `examples/todo-app/src_haxe/server/channels/`.
+
 ## Naming & Module Mapping
 
 Use `@:native("MyAppWeb.SomeModule")` to select the Elixir module name the Haxe class compiles to. This is the primary mechanism for Phoenix-friendly naming.

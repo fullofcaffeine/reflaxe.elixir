@@ -7,6 +7,7 @@ async function waitForLiveViewConnected(page: Page) {
 async function login(page: Page, base: string, name: string, email: string) {
   await page.goto(base + '/login')
   await expect(page.locator('h1')).toContainText('Sign in')
+  await waitForLiveViewConnected(page)
 
   const loginForm = page
     .locator('form[action="/auth/login"]')
@@ -15,6 +16,8 @@ async function login(page: Page, base: string, name: string, email: string) {
     })
     .first()
 
+  await expect(loginForm.locator('input[name="name"][type="text"]')).toBeVisible()
+  await expect(loginForm.locator('input[name="email"][type="email"]')).toBeVisible()
   await loginForm.locator('input[name="name"][type="text"]').fill(name)
   await loginForm.locator('input[name="email"][type="email"]').fill(email)
   await loginForm.getByRole('button', { name: /continue/i }).click()
@@ -40,6 +43,7 @@ test('invites can be created by an admin and are accepted on login', async ({ br
   await expect(adminPage.getByTestId('org-slug')).toHaveText(orgSlug, { timeout: 20000 })
 
   await adminPage.goto(base + '/org')
+  await waitForLiveViewConnected(adminPage)
   await expect(adminPage.getByTestId('org-title')).toBeVisible({ timeout: 20000 })
 
   await expect(adminPage.getByTestId('invite-email')).toBeVisible({ timeout: 20000 })
@@ -58,6 +62,7 @@ test('invites can be created by an admin and are accepted on login', async ({ br
   await expect(inviteePage.getByTestId('org-slug')).toHaveText(orgSlug, { timeout: 20000 })
 
   await inviteePage.goto(base + '/org')
+  await waitForLiveViewConnected(inviteePage)
   await expect(inviteePage.getByTestId('org-current-slug')).toHaveText(orgSlug, { timeout: 20000 })
 
   // Invited as admin, so the invites section should be visible and show acceptance.

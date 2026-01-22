@@ -29,6 +29,9 @@ import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirAST.SchemaAssociationKind;
 import reflaxe.elixir.ast.ElixirAST.SchemaAssociationMeta;
 import reflaxe.elixir.ast.ElixirAST.RouterRouteMeta;
+import reflaxe.elixir.ast.ElixirAST.SocketChannelMeta;
+import reflaxe.elixir.ast.ElixirAST.EndpointSocketMeta;
+import reflaxe.elixir.ast.builders.ModuleBuilder;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.CompilationContext;
 
@@ -2581,12 +2584,21 @@ class ElixirCompiler extends GenericCompiler<
             #end
         }
 
+        // Enable Socket transformation pass for @:socket modules
+        if (classType.meta.has(":socket")) {
+            metadata.isSocket = true;
+            metadata.socketChannels = extractSocketChannelsFromMeta(classType);
+            #if debug_annotation_transforms
+            #end
+        }
+
         // Enable Endpoint transformation pass for @:endpoint modules
         // Endpoints are also supervisors and need child_spec/start_link preservation
         if (classType.meta.has(":endpoint")) {
             metadata.isEndpoint = true;
             // Endpoints are supervisors too - they need child_spec/start_link
             metadata.isSupervisor = true;
+            metadata.endpointSockets = extractEndpointSocketsFromMeta(classType);
             #if debug_annotation_transforms
             #end
         }
@@ -3557,6 +3569,239 @@ class ElixirCompiler extends GenericCompiler<
                 Context.error("@:routes parameter must be an array: @:routes([{...}])", routesExpr.pos);
                 null;
         };
+    }
+
+    private function extractSocketChannelsFromMeta(classType: ClassType): Null<Array<SocketChannelMeta>> {
+        var meta = classType.meta.extract(":socketChannels");
+        var metaAlt = classType.meta.extract("socketChannels");
+        if (metaAlt != null && metaAlt.length > 0) {
+            meta = meta != null && meta.length > 0 ? meta.concat(metaAlt) : metaAlt;
+        }
+        if (meta == null || meta.length == 0) return null;
+
+        var entry = meta[0];
+        if (entry.params == null || entry.params.length == 0) {
+            Context.error("@:socketChannels requires an array parameter: @:socketChannels([{topic: \"...\", channel: SomeChannel}])", entry.pos);
+            return null;
+        }
+
+        function extractDotPath(expr: Expr): Null<String> {
+            return switch (expr.expr) {
+                case EConst(CIdent(ident)):
+                    ident;
+                case EField(e, field):
+                    var base = extractDotPath(e);
+                    base != null ? (base + "." + field) : field;
+                default:
+                    null;
+            };
+        }
+
+        function extractStringValue(expr: Expr, fieldName: String, pos: haxe.macro.Expr.Position): Null<String> {
+            return switch (expr.expr) {
+                case EConst(CString(s, _)): s;
+                case EConst(CIdent(ident)): ident;
+                default:
+                    Context.error('${fieldName} must be a string literal or identifier', pos);
+                    null;
+            };
+        }
+
+        function resolveElixirModuleName(typePath: String, pos: haxe.macro.Expr.Position): Null<String> {
+            if (typePath == null || typePath.length == 0) return null;
+            try {
+                var t = Context.getType(typePath);
+                return switch (t) {
+                    case TInst(c, _):
+                        ModuleBuilder.extractModuleName(c.get());
+                    default:
+                        Context.error('Expected class type for ${typePath}', pos);
+                        null;
+                };
+            } catch (e) {
+                Context.error('Could not resolve type: ${typePath}', pos);
+                return null;
+            }
+        }
+
+        function extractElixirModule(expr: Expr, fieldName: String, pos: haxe.macro.Expr.Position): Null<String> {
+            return switch (expr.expr) {
+                case EConst(CString(s, _)):
+                    StringTools.startsWith(s, "Elixir.") ? s.substr("Elixir.".length) : s;
+                default:
+                    var path = extractDotPath(expr);
+                    if (path == null) {
+                        Context.error('${fieldName} must be a string literal or type reference (e.g. server.channels.PingChannel)', pos);
+                        null;
+                    } else {
+                        resolveElixirModuleName(path, pos);
+                    }
+            };
+        }
+
+        function parseOne(expr: Expr): Null<SocketChannelMeta> {
+            return switch (expr.expr) {
+                case EObjectDecl(fields):
+                    var topic: Null<String> = null;
+                    var channel: Null<String> = null;
+                    for (f in fields) {
+                        switch (f.field) {
+                            case "topic":
+                                topic = extractStringValue(f.expr, "topic", f.expr.pos);
+                            case "channel":
+                                channel = extractElixirModule(f.expr, "channel", f.expr.pos);
+                            default:
+                                Context.warning('Unknown socket channel field: ${f.field}', f.expr.pos);
+                        }
+                    }
+                    if (topic == null || channel == null) {
+                        Context.error("socketChannels entry requires topic/channel", expr.pos);
+                        null;
+                    } else {
+                        {topic: topic, channel: channel};
+                    }
+                default:
+                    Context.error("socketChannels entries must be object literals", expr.pos);
+                    null;
+            };
+        }
+
+        return switch (entry.params[0].expr) {
+            case EArrayDecl(items):
+                var out: Array<SocketChannelMeta> = [];
+                for (it in items) {
+                    var parsed = parseOne(it);
+                    if (parsed != null) out.push(parsed);
+                }
+                out.length > 0 ? out : null;
+            default:
+                Context.error("@:socketChannels must be an array literal", entry.params[0].pos);
+                null;
+        }
+    }
+
+    private function extractEndpointSocketsFromMeta(classType: ClassType): Null<Array<EndpointSocketMeta>> {
+        var meta = classType.meta.extract(":endpointSockets");
+        var metaAlt = classType.meta.extract("endpointSockets");
+        if (metaAlt != null && metaAlt.length > 0) {
+            meta = meta != null && meta.length > 0 ? meta.concat(metaAlt) : metaAlt;
+        }
+        if (meta == null || meta.length == 0) return null;
+
+        var entry = meta[0];
+        if (entry.params == null || entry.params.length == 0) {
+            Context.error("@:endpointSockets requires an array parameter: @:endpointSockets([{path: \"/socket\", socket: SomeSocket}])", entry.pos);
+            return null;
+        }
+
+        function extractDotPath(expr: Expr): Null<String> {
+            return switch (expr.expr) {
+                case EConst(CIdent(ident)):
+                    ident;
+                case EField(e, field):
+                    var base = extractDotPath(e);
+                    base != null ? (base + "." + field) : field;
+                default:
+                    null;
+            };
+        }
+
+        function extractStringValue(expr: Expr, fieldName: String, pos: haxe.macro.Expr.Position): Null<String> {
+            return switch (expr.expr) {
+                case EConst(CString(s, _)): s;
+                case EConst(CIdent(ident)): ident;
+                default:
+                    Context.error('${fieldName} must be a string literal or identifier', pos);
+                    null;
+            };
+        }
+
+        function extractBoolValue(expr: Expr, fieldName: String, pos: haxe.macro.Expr.Position): Null<Bool> {
+            return switch (expr.expr) {
+                case EConst(CIdent("true")): true;
+                case EConst(CIdent("false")): false;
+                default:
+                    Context.error('${fieldName} must be a boolean literal', pos);
+                    null;
+            };
+        }
+
+        function resolveElixirModuleName(typePath: String, pos: haxe.macro.Expr.Position): Null<String> {
+            if (typePath == null || typePath.length == 0) return null;
+            try {
+                var t = Context.getType(typePath);
+                return switch (t) {
+                    case TInst(c, _):
+                        ModuleBuilder.extractModuleName(c.get());
+                    default:
+                        Context.error('Expected class type for ${typePath}', pos);
+                        null;
+                };
+            } catch (e) {
+                Context.error('Could not resolve type: ${typePath}', pos);
+                return null;
+            }
+        }
+
+        function extractElixirModule(expr: Expr, fieldName: String, pos: haxe.macro.Expr.Position): Null<String> {
+            return switch (expr.expr) {
+                case EConst(CString(s, _)):
+                    StringTools.startsWith(s, "Elixir.") ? s.substr("Elixir.".length) : s;
+                default:
+                    var path = extractDotPath(expr);
+                    if (path == null) {
+                        Context.error('${fieldName} must be a string literal or type reference (e.g. server.infrastructure.UserSocket)', pos);
+                        null;
+                    } else {
+                        resolveElixirModuleName(path, pos);
+                    }
+            };
+        }
+
+        function parseOne(expr: Expr): Null<EndpointSocketMeta> {
+            return switch (expr.expr) {
+                case EObjectDecl(fields):
+                    var path: Null<String> = null;
+                    var socket: Null<String> = null;
+                    var session: Null<Bool> = null;
+                    for (f in fields) {
+                        switch (f.field) {
+                            case "path":
+                                path = extractStringValue(f.expr, "path", f.expr.pos);
+                            case "socket":
+                                socket = extractElixirModule(f.expr, "socket", f.expr.pos);
+                            case "session":
+                                session = extractBoolValue(f.expr, "session", f.expr.pos);
+                            default:
+                                Context.warning('Unknown endpoint socket field: ${f.field}', f.expr.pos);
+                        }
+                    }
+                    if (path == null || socket == null) {
+                        Context.error("endpointSockets entry requires path/socket", expr.pos);
+                        null;
+                    } else {
+                        var out: EndpointSocketMeta = {path: path, socket: socket};
+                        if (session != null) Reflect.setField(out, "session", session);
+                        out;
+                    }
+                default:
+                    Context.error("endpointSockets entries must be object literals", expr.pos);
+                    null;
+            };
+        }
+
+        return switch (entry.params[0].expr) {
+            case EArrayDecl(items):
+                var out: Array<EndpointSocketMeta> = [];
+                for (it in items) {
+                    var parsed = parseOne(it);
+                    if (parsed != null) out.push(parsed);
+                }
+                out.length > 0 ? out : null;
+            default:
+                Context.error("@:endpointSockets must be an array literal", entry.params[0].pos);
+                null;
+        }
     }
 
     /**
