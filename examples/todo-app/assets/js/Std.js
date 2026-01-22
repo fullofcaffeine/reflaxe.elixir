@@ -17,4 +17,7 @@ class Std {
 
 
 ;{
+	String.__name__ = true;
+	Array.__name__ = true;
+	Date.__name__ = "Date";
 }

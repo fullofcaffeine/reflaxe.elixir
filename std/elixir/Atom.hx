@@ -55,6 +55,21 @@ extern class Atom {
             return fromString(name);
         }
     }
+
+    /**
+     * Return an existing atom for `name`, or null if it does not exist.
+     *
+     * IMPORTANT
+     * - This mirrors `String.to_existing_atom/1` semantics and is safe for
+     *   untrusted input because it will never create new atoms.
+     */
+    public static inline function existingOrNull(name: String): Null<Term> {
+        try {
+            return existingFromString(name);
+        } catch (_: haxe.Exception) {
+            return null;
+        }
+    }
     
     public static inline function exists(name: String): Bool {
         try {

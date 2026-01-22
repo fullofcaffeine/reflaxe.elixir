@@ -6902,8 +6902,115 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     }
   };
 
-  // js/HxOverrides.js
+  // js/shared/channels/PingProtocol.js
   var $global8 = Register.$global;
+  var PingClientEvent = Register.global("$hxEnums")["shared.channels.PingClientEvent"] = {
+    __ename__: "shared.channels.PingClientEvent",
+    Ping: Object.assign((payload) => ({ _hx_index: 0, __enum__: "shared.channels.PingClientEvent", "payload": payload }), { _hx_name: "Ping", __params__: ["payload"] })
+  };
+  PingClientEvent.__constructs__ = [PingClientEvent.Ping];
+  PingClientEvent.__empty_constructs__ = [];
+  var PingServerEvent = Register.global("$hxEnums")["shared.channels.PingServerEvent"] = {
+    __ename__: "shared.channels.PingServerEvent",
+    Pong: Object.assign((payload) => ({ _hx_index: 0, __enum__: "shared.channels.PingServerEvent", "payload": payload }), { _hx_name: "Pong", __params__: ["payload"] })
+  };
+  PingServerEvent.__constructs__ = [PingServerEvent.Pong];
+  PingServerEvent.__empty_constructs__ = [];
+  var PingProtocol = Register.global("$hxClasses")["shared.channels.PingProtocol"] = class PingProtocol2 {
+    static encodePingPayload(payload) {
+      let out = { "request_id": payload.requestId };
+      return out;
+    }
+    static decodePingPayload(payload) {
+      let requestId = payload != null ? payload.request_id : null;
+      if (requestId != null) {
+        return { "requestId": requestId };
+      } else {
+        return null;
+      }
+      ;
+    }
+    static encodeSend(event) {
+      let payload = event.payload;
+      return { "event": "ping", "payload": PingProtocol2.encodePingPayload(payload) };
+    }
+    static decodeRecv(eventName, payload) {
+      if (eventName == "pong") {
+        let decoded = PingProtocol2.decodePingPayload(payload);
+        if (decoded != null) {
+          return PingServerEvent.Pong(decoded);
+        } else {
+          return null;
+        }
+        ;
+      } else {
+        return null;
+      }
+      ;
+    }
+    static get __name__() {
+      return "shared.channels.PingProtocol";
+    }
+    get __class__() {
+      return PingProtocol2;
+    }
+  };
+
+  // js/phoenix/channels/TypedChannelClient.js
+  var $global9 = Register.$global;
+  var TypedChannelClient = Register.global("$hxClasses")["phoenix.channels.TypedChannelClient"] = class TypedChannelClient2 extends Register.inherits() {
+    [Register.new](channel, encodeSend, decodeRecv, eventNames) {
+      this.channel = channel;
+      this.encodeSend = encodeSend;
+      this.decodeRecv = decodeRecv;
+      this.handlers = [];
+      let self2 = this;
+      let _g = 0;
+      while (_g < eventNames.length) {
+        let eventName = eventNames[_g];
+        ++_g;
+        this.channel.on(eventName, function(payload) {
+          let decoded = self2.decodeRecv(eventName, payload);
+          if (decoded == null) {
+            return;
+          }
+          ;
+          let _g2 = 0;
+          let _g1 = self2.handlers;
+          while (_g2 < _g1.length) {
+            let handler = _g1[_g2];
+            ++_g2;
+            handler(decoded);
+          }
+          ;
+        });
+      }
+      ;
+    }
+    onMessage(handler) {
+      this.handlers.push(handler);
+    }
+    join(timeout) {
+      return this.channel.join(timeout);
+    }
+    push(message, timeout) {
+      let encoded = this.encodeSend(message);
+      return this.channel.push(encoded.event, encoded.payload, timeout);
+    }
+    static get __name__() {
+      return "phoenix.channels.TypedChannelClient";
+    }
+    get __class__() {
+      return TypedChannelClient2;
+    }
+  };
+  TypedChannelClient.prototype.channel = null;
+  TypedChannelClient.prototype.encodeSend = null;
+  TypedChannelClient.prototype.decodeRecv = null;
+  TypedChannelClient.prototype.handlers = null;
+
+  // js/HxOverrides.js
+  var $global10 = Register.$global;
   var HxOverrides = Register.global("$hxClasses")["HxOverrides"] = class HxOverrides2 {
     static cca(s, index) {
       let x = s.charCodeAt(index);
@@ -6940,7 +7047,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   (typeof performance != "undefined" ? typeof performance.now == "function" : false) ? HxOverrides.now = performance.now.bind(performance) : null;
 
   // js/StringTools.js
-  var $global9 = Register.$global;
+  var $global11 = Register.$global;
   var StringTools = Register.global("$hxClasses")["StringTools"] = class StringTools2 {
     /**
     Tells if the character in the string `s` at position `pos` is a space.
@@ -7018,8 +7125,49 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
     }
   };
 
+  // js/client/channels/PingChannelClient.js
+  var $global12 = Register.$global;
+  var PingChannelClient = Register.global("$hxClasses")["client.channels.PingChannelClient"] = class PingChannelClient2 {
+    static readCsrfToken() {
+      let meta = window.document.querySelector("meta[name='csrf-token']");
+      if (meta == null) {
+        return null;
+      } else {
+        return meta.getAttribute("content");
+      }
+      ;
+    }
+    static bootstrap() {
+      let csrf = PingChannelClient2.readCsrfToken();
+      let params = {};
+      if (csrf != null && StringTools.trim(csrf) != "") {
+        params["_csrf_token"] = csrf;
+      }
+      ;
+      let socket = new Socket("/socket", { "params": params });
+      socket.connect();
+      let channel = socket.channel("typed:lobby", {});
+      let client = new TypedChannelClient(channel, PingProtocol.encodeSend, PingProtocol.decodeRecv, ["pong"]);
+      client.onMessage(function(message) {
+        let payload = message.payload;
+        window.__typed_channel_last_pong = payload.requestId;
+      });
+      client.join().receive("ok", function(_resp) {
+        let requestId = "ping_" + (/* @__PURE__ */ new Date()).getTime();
+        client.push(PingClientEvent.Ping({ "requestId": requestId }));
+        window.__typed_channel_ready = true;
+      });
+    }
+    static get __name__() {
+      return "client.channels.PingChannelClient";
+    }
+    get __class__() {
+      return PingChannelClient2;
+    }
+  };
+
   // js/client/Boot.js
-  var $global10 = Register.$global;
+  var $global13 = Register.$global;
   var Boot = Register.global("$hxClasses")["client.Boot"] = class Boot2 {
     static readCsrfToken() {
       let meta = window.document.querySelector("meta[name='csrf-token']");
@@ -7063,6 +7211,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       Theme.applyStoredOrDefault();
       let hooks = Boot2.buildHooks();
       window.Hooks = Object.assign(window.Hooks || {}, hooks);
+      PingChannelClient.bootstrap();
       Boot2.connectLiveView(hooks);
     }
     static get __name__() {
@@ -7074,7 +7223,7 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   };
 
   // js/hx_app.js
-  var $global11 = Register.$global;
+  var $global14 = Register.$global;
   Boot.main();
 
   // js/phoenix_app.js

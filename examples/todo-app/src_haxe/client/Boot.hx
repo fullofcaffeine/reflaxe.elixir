@@ -1,17 +1,19 @@
 package client;
 
-import client.extern.PhoenixHookContext;
-import client.extern.PhoenixHook;
-import client.extern.PhoenixLiveSocket;
-import client.extern.PhoenixLiveSocket.LiveSocketParams;
-import client.extern.PhoenixSocket;
+import phoenix.Socket;
+import phoenix.live_view.Hook;
+import phoenix.live_view.HookContext;
+import phoenix.live_view.LiveSocket;
+import phoenix.live_view.LiveSocket.LiveSocketParams;
 import client.hooks.AutoFocusHook;
 import client.hooks.CopyToClipboardHook;
 import client.hooks.PingHook;
 import client.hooks.ThemeToggleHook;
 import client.utils.Theme;
+import client.channels.PingChannelClient;
 
 import haxe.DynamicAccess;
+import StringTools;
 
 /**
  * Minimal, typed Phoenix LiveView hook registry for bootstrapping interactivity.
@@ -19,7 +21,7 @@ import haxe.DynamicAccess;
  * Only uses dynamic interop at the Phoenix Hook boundary (`this` context).
  */
 class Boot {
-  static inline function hookContext(): PhoenixHookContext {
+  static inline function hookContext(): HookContext {
     return cast js.Lib.nativeThis;
   }
 
@@ -28,16 +30,16 @@ class Boot {
     return meta == null ? null : meta.getAttribute("content");
   }
 
-  static function connectLiveView(hooks: DynamicAccess<PhoenixHook>): Void {
+  static function connectLiveView(hooks: DynamicAccess<Hook>): Void {
     var csrfToken = readCsrfToken();
     var params: LiveSocketParams = {};
     if (csrfToken != null && StringTools.trim(csrfToken) != "") {
       params._csrf_token = csrfToken;
     }
 
-    var liveSocket = new PhoenixLiveSocket(
+    var liveSocket = new LiveSocket(
       "/live",
-      PhoenixSocket,
+      Socket,
       {
         params: params,
         hooks: hooks
@@ -48,7 +50,7 @@ class Boot {
     js.Syntax.code("window.liveSocket = {0}", liveSocket);
   }
 
-  static function buildHooks(): DynamicAccess<PhoenixHook> {
+  static function buildHooks(): DynamicAccess<Hook> {
     return HookRegistry.build({
       AutoFocus: {
         mounted: function(): Void {
@@ -83,6 +85,10 @@ class Boot {
 
     // Publish hooks for phoenix_app.js to pick up
     js.Syntax.code("window.Hooks = Object.assign(window.Hooks || {}, {0})", hooks);
+
+    // Boot a minimal typed Phoenix Channel client to validate cross-runtime channel APIs.
+    // This is independent of LiveView boot ownership (assets/js vs Haxe/Genes).
+    PingChannelClient.bootstrap();
 
     #if todoapp_hx_live_socket_bootstrap
     // Bootstrap Phoenix LiveView from typed Haxe (Genes).

@@ -6,6 +6,8 @@
 -cp src_haxe
 # Enable Genes ES6 module generator (uses haxe_libraries/genes.hxml)
 -lib genes
+# Typed Phoenix JS externs (Channels + LiveView)
+-lib phoenix_js
 
 # NOTE: Our vendored `-lib genes` does not automatically apply genes/extraParams.hxml,
 # so we explicitly enable the generator here.

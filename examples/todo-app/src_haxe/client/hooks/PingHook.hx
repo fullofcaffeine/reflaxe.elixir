@@ -1,9 +1,9 @@
 package client.hooks;
 
-import client.extern.PhoenixHookContext;
+import phoenix.live_view.HookContext;
 
 class PingHook {
-  public static function mounted(hook: PhoenixHookContext): Void {
+  public static function mounted(hook: HookContext): Void {
     try {
       if (hook.pushEvent != null) {
         hook.pushEvent("ping", {});
@@ -11,4 +11,3 @@ class PingHook {
     } catch (_: Dynamic) {}
   }
 }
-

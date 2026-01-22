@@ -1,0 +1,17 @@
+# phoenix_js — Phoenix Channels + LiveView JS externs (repo-local)
+#
+# This library provides typed externs for the official Phoenix JS packages:
+# - `phoenix` (Socket/Channel/Push)
+# - `phoenix_live_view` (LiveSocket + hook types)
+#
+# Client builds (e.g. examples/todo-app/build-client.hxml) should use:
+#   -lib phoenix_js
+#
+# Paths are rooted at the workspace via SCOPE_DIR so the library can be used
+# from tests, examples and tools without depending on global haxelib state.
+
+-cp ${SCOPE_DIR}/vendor/phoenix_js/src
+
+# Library define for conditional compilation flags
+-D phoenix_js=0.1.0
+
