@@ -1,3 +1,15 @@
+# [1.11.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.10.1...v1.11.0) (2026-01-23)
+
+
+### Bug Fixes
+
+* underscore unused clause binders more broadly ([66e068a](https://github.com/fullofcaffeine/reflaxe.elixir/commit/66e068a0b275155724ef7a9f18b047e70e1af29e))
+
+
+### Features
+
+* typed Phoenix channels + org-scoped users API ([21c4bab](https://github.com/fullofcaffeine/reflaxe.elixir/commit/21c4bab8274e4156ce026e8a37211bbafc0e7e8c))
+
 ## [1.10.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.10.0...v1.10.1) (2026-01-19)
 
 
