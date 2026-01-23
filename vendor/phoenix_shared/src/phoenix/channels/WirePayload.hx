@@ -61,7 +61,7 @@ class WirePayload {
     public static inline function getString(payload: Object, key: String): Null<String> {
         if (payload == null || key == null) return null;
         return cast js.Syntax.code(
-            "((p,k)=>{var v=p[k]; return v==null?null:String(v);})({0},{1})",
+            "((p,k)=>{var v=p[k]; return (typeof v==='string') ? v : null;})({0},{1})",
             payload,
             key
         );
@@ -126,7 +126,11 @@ class WirePayload {
 
     public static function getString(payload: Term, key: String): Null<String> {
         var value = get(payload, key);
-        return value != null ? Kernel.toString(value) : null;
+        if (value == null) return null;
+        if (Kernel.isBinary(value)) return cast value;
+        if (Kernel.isAtom(value)) return Atom.toString(value);
+        if (Kernel.isInteger(value) || Kernel.isFloat(value) || Kernel.isBoolean(value)) return Kernel.toString(value);
+        return null;
     }
 
     public static function getInt(payload: Term, key: String): Null<Int> {
