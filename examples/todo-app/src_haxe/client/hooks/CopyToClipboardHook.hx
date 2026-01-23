@@ -1,13 +1,13 @@
 package client.hooks;
 
-import client.extern.PhoenixHookContext;
+import phoenix.live_view.HookContext;
 import js.Browser;
 import js.html.Event;
 import js.html.TextAreaElement;
 import js.lib.Promise;
 
 class CopyToClipboardHook {
-  public static function mounted(hook: PhoenixHookContext): Void {
+  public static function mounted(hook: HookContext): Void {
     var el = hook.el;
     el.addEventListener("click", function(_: Event): Void {
       var text = el.getAttribute("data-copy-text");

@@ -8,6 +8,43 @@ Reflaxe.Elixir uses Haxe metadata annotations to control code generation. Annota
 
 ## Supported Annotations
 
+### @:socket - Phoenix Socket (Channels)
+
+Marks a class as a `Phoenix.Socket` module for Channels.
+
+This is used alongside `@:socketChannels([...])` to declare topic routing. The compiler emits:
+
+- `use Phoenix.Socket`
+- `channel "<topic>", <ChannelModule>`
+- default `connect/3` and `id/1` definitions if you don’t provide them
+
+**Usage**:
+```haxe
+@:native("MyAppWeb.UserSocket")
+@:socket
+@:socketChannels([{topic: "typed:*", channel: server.channels.PingChannel}])
+class UserSocket {}
+```
+
+### @:socketChannels([...]) - Socket Topic Routing
+
+Declares the `channel/2` routes for a `@:socket` module.
+
+- Each entry must be an object literal `{topic: String, channel: <Haxe type reference>}`.
+- The `channel` type is resolved to its fully-qualified Elixir module name at compile time (respects `@:native`).
+
+### @:endpointSockets([...]) - Endpoint Socket Mounts
+
+Adds one or more `socket/3` mounts to a `@:endpoint` module (for example, to mount Channels at `"/socket"`).
+
+**Usage**:
+```haxe
+@:native("MyAppWeb.Endpoint")
+@:endpoint
+@:endpointSockets([{path: "/socket", socket: server.infrastructure.UserSocket, session: true}])
+class Endpoint {}
+```
+
 ### @:controller - Phoenix Controller
 
 Marks a class as a Phoenix controller for handling HTTP requests.

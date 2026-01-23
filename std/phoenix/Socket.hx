@@ -15,14 +15,11 @@ import js.lib.Object as JsObject;
 import js.lib.Function as JsFunction;
 #end
 
-// DEPRECATED: LiveViewSocket has been removed
-// Use phoenix.Phoenix.Socket<T> instead for type-safe LiveView sockets
-// See Phoenix.hx for the three-layer socket design documentation
-
 /**
  * Phoenix Socket for client-side WebSocket connections (JavaScript)
  */
-@:native("Socket")
+#if js
+@:jsRequire("phoenix", "Socket")
 extern class Socket {
 	/**
 	 * Create a new Phoenix Socket
@@ -91,7 +88,6 @@ typedef SocketOptions = {
 /**
  * Phoenix Channel for pub/sub messaging (JavaScript)
  */  
-@:native("Channel")
 extern class Channel {
 	/**
 	 * Join the channel
@@ -127,10 +123,11 @@ extern class Channel {
 /**
  * Phoenix Push for tracking message delivery (JavaScript)
  */
-@:native("Push")  
 extern class Push {
 	/**
 	 * Handle successful response
 	 */
 	function receive(status: String, callback: JsObject -> Void): Push;
 }
+
+#end

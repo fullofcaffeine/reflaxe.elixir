@@ -67,6 +67,13 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.endpointTransformPass
         });
+
+        passes.push({
+            name: "SocketTransform",
+            description: "Transform @:socket modules into Phoenix.Socket structure",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.AnnotationTransforms.socketTransformPass
+        });
         
         passes.push({
             name: "LiveViewTransform",
@@ -4548,6 +4555,22 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.RemoteCallModuleAliasCaseNormalizeTransforms.pass,
             runAfter: ["EFnUnusedArgUnderscore_AbsoluteLast"]
+        });
+
+        // Absolute-last replay: underscore unused case/with/receive pattern binders.
+        //
+        // WHY
+        // - Several late binder normalization/promote passes may adjust case patterns after the
+        //   first unused-binder sweep. Under `--warnings-as-errors`, any remaining unused binders
+        //   are fatal.
+        // - Replaying the pass at the very end is safe: it only prefixes truly-unused binders and
+        //   does not alter clause bodies.
+        passes.push({
+            name: "CaseClauseUnusedBinderUnderscore_AbsoluteLastReplay",
+            description: "Absolute-last: underscore unused case/with/receive binders (replay)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.pass,
+            runAfter: ["RemoteCallModuleAliasCaseNormalize_AbsoluteLast"]
         });
 
         // Filter disabled passes first

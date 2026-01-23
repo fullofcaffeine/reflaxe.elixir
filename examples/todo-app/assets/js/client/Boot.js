@@ -6,6 +6,7 @@ import {ThemeToggleHook} from "./hooks/ThemeToggleHook.js"
 import {PingHook} from "./hooks/PingHook.js"
 import {CopyToClipboardHook} from "./hooks/CopyToClipboardHook.js"
 import {AutoFocusHook} from "./hooks/AutoFocusHook.js"
+import {PingChannelClient} from "./channels/PingChannelClient.js"
 import {StringTools} from "../StringTools.js"
 
 const $global = Register.$global
@@ -57,6 +58,7 @@ class Boot {
 		Theme.applyStoredOrDefault();
 		let hooks = Boot.buildHooks();
 		window.Hooks = Object.assign(window.Hooks || {}, hooks);
+		PingChannelClient.bootstrap();
 		Boot.connectLiveView(hooks);
 	}
 	static get __name__() {

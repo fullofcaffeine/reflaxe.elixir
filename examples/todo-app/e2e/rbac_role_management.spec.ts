@@ -47,6 +47,7 @@ test('admins can promote members to admin', async ({ browser }) => {
 
   // Promote the user via the org admin UI.
   await adminPage.goto(base + '/org')
+  await waitForLiveViewConnected(adminPage)
   await expect(adminPage.getByTestId('members-title')).toBeVisible({ timeout: 20000 })
 
   const memberRow = adminPage
@@ -73,4 +74,3 @@ test('admins can promote members to admin', async ({ browser }) => {
   await userContext.close()
   await adminContext.close()
 })
-

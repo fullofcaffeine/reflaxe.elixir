@@ -133,8 +133,7 @@ class Accounts {
                     metadata: auditMetadata
                 })) {
                     case Ok(_entry):
-                    case Error(err):
-                        Std.string(err);
+                    case Error(_):
                 }
         }
     }

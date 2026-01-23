@@ -35,7 +35,7 @@ class GithubOAuthController {
                     .putSession("user_id", userRecord.id)
                     .putFlash("info", 'Signed in with GitHub as ${userRecord.name}.')
                     .redirect("/todos");
-            case Error(userChangeset):
+            case Error(_):
                 {
                     conn
                         .putFlash("error", "Could not sign in with GitHub. Please try again.")
@@ -57,7 +57,7 @@ class GithubOAuthController {
         return switch (GithubOAuth.buildAuthorizeUrl(withState, state)) {
             case Ok(url):
                 withState.redirectExternal(url);
-            case Error(err):
+            case Error(_):
                 {
                     withState
                         .putFlash("error", "Could not start GitHub login. Please try again.")
@@ -100,7 +100,7 @@ class GithubOAuthController {
         return switch (GithubOAuth.authenticate(conn, code)) {
             case Ok(identity):
                 signInWithGithubIdentity(cleaned, identity);
-            case Error(err):
+            case Error(_):
                 {
                     cleaned
                         .putFlash("error", "Could not sign in with GitHub. Please try again.")
