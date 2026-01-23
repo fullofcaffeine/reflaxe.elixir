@@ -31,11 +31,12 @@ This epic is module-level scoped first (coverage), then drills into API/behavior
 ## Workstreams (proposed order)
 
 1) **Core top-level modules**
-   - Done: `EReg`
-   - Next: `DateTools`, `List`, `Map`, `Xml`, `Enum`, `StdTypes`, `UInt`
+   - Done: `EReg`, `DateTools`, `IntIterator`, `List`, `Map`
+   - Next: `Xml`, `UInt`, `UnicodeString` (core-types like `Any`, `Class`, `StdTypes` are typically not override targets)
 
 2) **`haxe.io` + core utilities**
-   - Prioritize: `haxe.io.*` (Input/Output/Bytes/BytesBuffer), `haxe.crypto.*` (if present in reference), `haxe.Json`, `haxe.Exception`, `haxe.CallStack`
+   - Done (core building blocks): `haxe.io.BufferInput`, `haxe.io.BytesBuffer`, `haxe.io.BytesInput`, `haxe.io.BytesOutput`, `haxe.io.FPHelper`
+   - Next: `haxe.Json`, `haxe.Exception`, `haxe.CallStack`, and remaining `haxe.io.*` utilities as-needed
 
 3) **`sys.*` runtime integration**
    - Prioritize: `sys.io.File`, `sys.FileSystem`, `sys.io.Process`, `sys.net.Socket`, `sys.thread.*`
