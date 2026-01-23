@@ -30,6 +30,7 @@ These modules are implemented/overridden in this repo (and covered by snapshot t
 Top-level:
 - `Array`
 - `Date`
+- `DateTools`
 - `EReg`
 - `Lambda`
 - `Math`
@@ -98,7 +99,7 @@ If a given upstream std module produces invalid/non-idiomatic Elixir, it becomes
 Top-level std modules that exist upstream but are not yet overridden/validated specifically for Elixir:
 
 - `Xml` (XML parsing/printing)
-- `DateTools`, `List`, `Map`, `UInt`, etc.
+- `List`, `Map`, `UInt`, etc.
 
 `sys.*` surfaces that still need BEAM mapping (not exhaustive):
 

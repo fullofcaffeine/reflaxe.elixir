@@ -1,10 +1,11 @@
 {
   "diff": {
     "intersection": {
-      "count": 38,
+      "count": 39,
       "modules": [
         "Array",
         "Date",
+        "DateTools",
         "EReg",
         "Lambda",
         "Math",
@@ -58,11 +59,10 @@
       ]
     },
     "reference_only": {
-      "count": 166,
+      "count": 165,
       "modules": [
         "Any",
         "Class",
-        "DateTools",
         "Enum",
         "EnumValue",
         "IntIterator",
@@ -231,7 +231,7 @@
   },
   "local": {
     "counts_by_prefix": {
-      "<top-level>": 12,
+      "<top-level>": 13,
       "haxe": 29,
       "sys": 6
     },
@@ -260,8 +260,8 @@
       "/REDACTED_LOCAL_PATH",
       "/REDACTED_LOCAL_PATH"
     ],
-    "total_candidates": 52,
-    "total_std_modules": 47
+    "total_candidates": 53,
+    "total_std_modules": 48
   },
   "reference": {
     "counts_by_prefix": {
