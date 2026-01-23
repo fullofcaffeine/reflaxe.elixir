@@ -67,7 +67,11 @@ test('api users are isolated per organization', async ({ browser }) => {
   })
   expect(updateRes.status()).toBe(404)
 
+  const deleteRes = await pageA.request.delete(base + `/api/users/${createBody.user.id}`, {
+    headers: { accept: 'application/json' },
+  })
+  expect(deleteRes.status()).toBe(404)
+
   await ctxA.close()
   await ctxB.close()
 })
-

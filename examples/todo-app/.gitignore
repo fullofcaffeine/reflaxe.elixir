@@ -5,6 +5,7 @@ _build/
 
 # Generated files
 assets/js/haxe/
+assets/js/js/
 lib/
 !lib/todo_app/mailer.ex
 !lib/todo_app/invite_email.ex

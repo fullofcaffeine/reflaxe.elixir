@@ -137,6 +137,17 @@ for module in local_candidates:
   else:
     local_nonstdlib_modules.add(module)
 
+runtime_overrides_declared = {
+  # Implemented via compiler-emitted native runtime shims (not Haxe std override files).
+  # See: src/reflaxe/elixir/ast/transformers/StdHaxeRuntimeOverrideTransforms.hx
+  "EReg",
+  "haxe.exceptions.PosException",
+  "haxe.iterators.ArrayIterator",
+}
+runtime_overrides_present = sorted([m for m in runtime_overrides_declared if m in reference_modules])
+for module in runtime_overrides_present:
+  local_std_modules.add(module)
+
 intersection = sorted(reference_modules & local_std_modules)
 reference_only = sorted(reference_modules - local_std_modules)
 local_only = sorted(local_std_modules - reference_modules)
@@ -167,6 +178,10 @@ report = {
     "total_std_modules": len(local_std_modules),
     "counts_by_prefix": group_by_prefix(list(local_std_modules)),
     "nonstdlib_modules_under_std_dir": sorted(local_nonstdlib_modules),
+    "runtime_overrides": {
+      "declared": sorted(runtime_overrides_declared),
+      "counted_as_present": runtime_overrides_present,
+    },
   },
   "diff": {
     "intersection": {"count": len(intersection), "modules": intersection},
@@ -203,4 +218,3 @@ else:
   print("- Start with sys.* gaps (ports/files/network) and haxe.io gaps (BytesBuffer/Input/Output).")
   print("- Use this report as an input to a bd epic for stdlib parity work.")
 PY
-

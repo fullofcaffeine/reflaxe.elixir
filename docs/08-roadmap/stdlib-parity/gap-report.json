@@ -1,10 +1,11 @@
 {
   "diff": {
     "intersection": {
-      "count": 31,
+      "count": 33,
       "modules": [
         "Array",
         "Date",
+        "EReg",
         "Lambda",
         "Math",
         "Reflect",
@@ -18,6 +19,7 @@
         "haxe.ds.BalancedTree",
         "haxe.ds.EnumValueMap",
         "haxe.ds.Option",
+        "haxe.exceptions.PosException",
         "haxe.format.JsonPrinter",
         "haxe.io.Bytes",
         "haxe.io.BytesData",
@@ -51,12 +53,11 @@
       ]
     },
     "reference_only": {
-      "count": 173,
+      "count": 171,
       "modules": [
         "Any",
         "Class",
         "DateTools",
-        "EReg",
         "Enum",
         "EnumValue",
         "IntIterator",
@@ -125,7 +126,6 @@
         "haxe.ds.WeakMap",
         "haxe.exceptions.ArgumentException",
         "haxe.exceptions.NotImplementedException",
-        "haxe.exceptions.PosException",
         "haxe.extern.AsVar",
         "haxe.extern.EitherType",
         "haxe.extern.Rest",
@@ -231,8 +231,8 @@
   },
   "local": {
     "counts_by_prefix": {
-      "<top-level>": 11,
-      "haxe": 23,
+      "<top-level>": 12,
+      "haxe": 24,
       "sys": 6
     },
     "nonstdlib_modules_under_std_dir": [
@@ -244,12 +244,24 @@
       "Process",
       "TodoAppChangeset"
     ],
+    "runtime_overrides": {
+      "counted_as_present": [
+        "EReg",
+        "haxe.exceptions.PosException",
+        "haxe.iterators.ArrayIterator"
+      ],
+      "declared": [
+        "EReg",
+        "haxe.exceptions.PosException",
+        "haxe.iterators.ArrayIterator"
+      ]
+    },
     "stdlib_roots_considered": [
       "/REDACTED_LOCAL_PATH",
       "/REDACTED_LOCAL_PATH"
     ],
     "total_candidates": 47,
-    "total_std_modules": 40
+    "total_std_modules": 42
   },
   "reference": {
     "counts_by_prefix": {
