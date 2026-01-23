@@ -13,9 +13,9 @@ defmodule Shape do
   end
   def move(struct, dx, dy) do
     fh = struct.position
-    _x = fh.x + dx
+    fh = %{fh | x: fh.x + dx}
     fh = struct.position
-    y = fh.y + dy
-    y
+    fh = %{fh | y: fh.y + dy}
+    fh
   end
 end

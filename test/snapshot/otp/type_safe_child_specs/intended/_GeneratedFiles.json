@@ -10,6 +10,7 @@
   "my_supervisor.ex",
   "my_complex_worker.ex",
   "my_app/application.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "elixir/otp/type_safe_child_spec.ex",
   "elixir/otp/supervisor_strategy.ex",

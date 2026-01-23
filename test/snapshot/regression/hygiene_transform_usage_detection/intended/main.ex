@@ -48,7 +48,7 @@ end)
     "Value: #{t}"
   end
   defp field_vs_ident(obj, _) do
-    _ = Map.put(obj, "t", 1)
+    _ = Map.put(obj, :t, 1)
     nil
   end
   defp multiple_unused(_, _, _) do
