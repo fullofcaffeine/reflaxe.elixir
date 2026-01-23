@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 43,
+      "count": 44,
       "modules": [
         "Array",
         "Date",
@@ -19,6 +19,7 @@
         "StringTools",
         "Sys",
         "Type",
+        "haxe.Exception",
         "haxe.Json",
         "haxe.Log",
         "haxe.ds.BalancedTree",
@@ -63,7 +64,7 @@
       ]
     },
     "reference_only": {
-      "count": 161,
+      "count": 160,
       "modules": [
         "Any",
         "Class",
@@ -79,7 +80,6 @@
         "haxe.EntryPoint",
         "haxe.EnumFlags",
         "haxe.EnumTools",
-        "haxe.Exception",
         "haxe.Http",
         "haxe.Int32",
         "haxe.Int64",
@@ -232,7 +232,7 @@
   "local": {
     "counts_by_prefix": {
       "<top-level>": 16,
-      "haxe": 30,
+      "haxe": 31,
       "sys": 6
     },
     "nonstdlib_modules_under_std_dir": [
@@ -260,8 +260,8 @@
       "/Users/fullofcaffeine/workspace/code/haxe.elixir.codex/std",
       "/Users/fullofcaffeine/workspace/code/haxe.elixir.codex/std/_std"
     ],
-    "total_candidates": 57,
-    "total_std_modules": 52
+    "total_candidates": 58,
+    "total_std_modules": 53
   },
   "reference": {
     "counts_by_prefix": {
