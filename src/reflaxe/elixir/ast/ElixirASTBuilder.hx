@@ -28,6 +28,7 @@ import reflaxe.elixir.ast.builders.ControlFlowBuilder;
 import reflaxe.elixir.ast.builders.CallExprBuilder;
 import reflaxe.elixir.ast.builders.VariableBuilder;
 import reflaxe.elixir.ast.builders.FieldAccessBuilder;
+import reflaxe.elixir.ast.builders.AssignmentBuilder;
 import reflaxe.elixir.ast.builders.SwitchBuilder;
 import reflaxe.elixir.ast.builders.ExceptionBuilder;
 import reflaxe.elixir.ast.builders.ReturnBuilder;
@@ -1715,167 +1716,10 @@ class ElixirASTBuilder {
             // Binary Operations
             // ================================================================
             case TBinop(op, e1, e2):
-                // Handle assignments specially since they need pattern extraction
-                var result = switch(op) {
-                    case OpAssign:
-                        // Abstract constructors assign to `this` to define the underlying value:
-                        //   this = expr;
-                        // In Elixir there is no mutable `this`, so the assignment expression should
-                        // simply evaluate to the RHS (which becomes the constructor return value).
-                        //
-                        // This prevents generating invalid/self-referential binders like `struct = ...`
-                        // and avoids empty bodies (which trigger warnings-as-errors for unused params).
-                        switch (e1.expr) {
-                            case TConst(TThis):
-                                var rhsAst = buildFromTypedExpr(e2, currentContext);
-                                rhsAst != null ? rhsAst.def : ENil;
-                            default:
-                        // Assignment needs pattern extraction for the left side
-                        // SPECIAL: Map/struct-like field assignment on a local variable
-                        // params.userId = value -> params = Map.put(params, "user_id", value)
-                        var isLocalFieldAssign = false;
-                        var baseLocalName: Null<String> = null;
-                        var fieldNameForPut: Null<String> = null;
-                        var baseIsSchemaStruct: Bool = false;
-                        switch (e1.expr) {
-                            case TField(baseExpr, fa):
-                                switch (baseExpr.expr) {
-                                    case TLocal(v):
-                                        var baseVarName = ElixirASTHelpers.toElixirVarName(v.name);
-                                        // Avoid transforming instance field (this/_this)
-                                        if (baseVarName != "this" && baseVarName != "_this") {
-                                            isLocalFieldAssign = true;
-                                            baseLocalName = baseVarName;
-                                            // Extract field name from FieldAccess
-                                            var rawFieldName = switch (fa) {
-                                                case FInstance(_, _, cf): cf.get().name;
-                                                case FStatic(_, cf): cf.get().name;
-                                                case FAnon(cf): cf.get().name;
-                                                case FClosure(_, cf): cf.get().name;
-                                                case FEnum(_, ef): ef.name;
-                                                case FDynamic(s): s;
-                                            };
-                                            fieldNameForPut = reflaxe.elixir.ast.NameUtils.toSnakeCase(rawFieldName);
-                                            // Detect when base is an Ecto schema struct to prefer struct update syntax
-                                            baseIsSchemaStruct = switch (baseExpr.t) {
-                                                case TInst(c, _):
-                                                    var ct = c.get();
-                                                    ct != null && ct.meta != null && ct.meta.has(":schema");
-                                                default: false;
-                                            };
-                                        }
-                                    default:
-                                }
-                            default:
-                        }
-
-                        var pattern = (isLocalFieldAssign && baseLocalName != null)
-                            ? PVar(baseLocalName)
-                            : PatternBuilder.extractPattern(e1, currentContext);
-
-                        // Flatten nested underscore assignment: x = _ = expr → x = expr
-                        var rightIsUnderscoreAssign = false;
-                        var flattenedRight: Null<TypedExpr> = null;
-                        switch (e2.expr) {
-                            case TBinop(OpAssign, innerLhs, innerRhs):
-                                switch (innerLhs.expr) {
-                                    case TLocal(v) if (v.name == "_"):
-                                        rightIsUnderscoreAssign = true;
-                                        flattenedRight = innerRhs;
-                                    default:
-                                }
-                            default:
-                        }
-
-                        var rightAST = if (isLocalFieldAssign && baseLocalName != null && fieldNameForPut != null) {
-                            // Prefer struct update syntax when assigning a field on a schema struct;
-                            // otherwise, fall back to Map.put on maps.
-                            var valueAST = buildFromTypedExpr(rightIsUnderscoreAssign && flattenedRight != null ? flattenedRight : e2, currentContext);
-                            if (baseIsSchemaStruct) {
-                                // %{base | field: value}
-                                makeAST(EStructUpdate(
-                                    makeAST(EVar(baseLocalName)),
-                                    [{ key: fieldNameForPut, value: valueAST }]
-                                ));
-                            } else {
-                                // Map.put(base, "field", value)
-                                makeAST(ERemoteCall(
-                                    makeAST(EVar("Map")),
-                                    "put",
-                                    [
-                                        makeAST(EVar(baseLocalName)),
-                                        makeAST(EString(fieldNameForPut)),
-                                        valueAST
-                                    ]
-                                ));
-                            }
-                        } else if (rightIsUnderscoreAssign && flattenedRight != null) {
-                            buildFromTypedExpr(flattenedRight, currentContext);
-                        } else {
-                            buildFromTypedExpr(e2, currentContext);
-                        }
-                        var shouldSkipAssign = false;
-                        switch(pattern) {
-                            case PVar(name):
-                                var valueName = switch(rightAST != null ? rightAST.def : null) {
-                                    case EVar(varName): varName;
-                                    default: null;
-                                };
-
-                                if (PatternDetector.isTempPatternVarName(name)) {
-                                    shouldSkipAssign = switch(rightAST != null ? rightAST.def : null) {
-                                        case EVar(varName) if (varName == name || PatternDetector.isTempPatternVarName(varName)):
-                                            true;
-                                        default:
-                                            false;
-                                    };
-                                } else if (valueName != null) {
-                                    if (valueName == name) {
-                                        shouldSkipAssign = true;
-                                    } else if (PatternDetector.isTempPatternVarName(valueName)) {
-                                        shouldSkipAssign = true;
-                                    }
-                                }
-                            default:
-                        }
-
-                        if (shouldSkipAssign) {
-                            null;
-                        } else {
-                            // Build a match node so we can attach metadata (varId) for binder retention
-                            var matchNode = makeAST(EMatch(pattern, rightAST));
-                            // Attach varId when left is a local variable (or base when rewriting field assign)
-                            switch (e1.expr) {
-                                case TLocal(v):
-                                    if (matchNode.metadata == null) matchNode.metadata = {};
-                                    matchNode.metadata.varId = v.id;
-                                case TField(baseExpr, _):
-                                    switch (baseExpr.expr) {
-                                        case TLocal(v2):
-                                            if (matchNode.metadata == null) matchNode.metadata = {};
-                                            matchNode.metadata.varId = v2.id;
-                                        default:
-                                    }
-                                default:
-                            }
-                            matchNode.def;
-                        }
-                        }
-
-                    case OpAssignOp(innerOp):
-                        // Compound assignment: x += 1 becomes x = x + 1
-                        var pattern = PatternBuilder.extractPattern(e1, currentContext);
-                        var leftAST = buildFromTypedExpr(e1, currentContext);
-                        var rightAST = buildFromTypedExpr(e2, currentContext);
-
-                        // Build the inner binary operation
-                        var innerBinop = BinaryOpBuilder.buildBinopFromAST(
-                            innerOp, leftAST, rightAST,
-                            e1, e2,
-                            function(s) return reflaxe.elixir.ast.NameUtils.toSnakeCase(s)
-                        );
-                        EMatch(pattern, innerBinop);
-
+                switch (op) {
+                    case OpAssign | OpAssignOp(_):
+                        // Assignment operators require special lowering (immutability + binder metadata).
+                        AssignmentBuilder.build(op, e1, e2, expr, currentContext);
                     default:
                         // Regular binary operations
                         var leftAST = buildFromTypedExpr(e1, currentContext);
@@ -1888,8 +1732,7 @@ class ElixirASTBuilder {
                             function(s) return reflaxe.elixir.ast.NameUtils.toSnakeCase(s)
                         );
                         ast.def;
-                };
-                result;
+                }
 
             // ================================================================
             // Unary Operations

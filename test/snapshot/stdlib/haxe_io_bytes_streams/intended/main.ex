@@ -7,24 +7,23 @@ defmodule Main do
   end
   defp bytes_buffer() do
     buffer = %BytesBuffer{}
-    buffer = Map.put(buffer, "parts_reversed", [65 | buffer.parts_reversed])
-    _byte_length = buffer.byte_length + 1
+    buffer = %{buffer | parts_reversed: [65 | buffer.parts_reversed]}
+    buffer = %{buffer | byte_length: buffer.byte_length + 1}
     encoding = nil
     src = Bytes.of_string("BC", encoding)
     buffer = if (length(src) == 0) do
       nil
       buffer
     else
-      buffer = Map.put(buffer, "parts_reversed", [Bytes.get_data(src) | buffer.parts_reversed])
-      _ = buffer.byte_length + length(src)
-      buffer
+      buffer = %{buffer | parts_reversed: [Bytes.get_data(src) | buffer.parts_reversed]}
+      %{buffer | byte_length: buffer.byte_length + length(src)}
     end
-    buffer = Map.put(buffer, "parts_reversed", [<<16909060::little-signed-size(32)>> | buffer.parts_reversed])
-    _ = buffer.byte_length + 4
-    buffer = Map.put(buffer, "parts_reversed", [<<1.5::float-little-size(32)>> | buffer.parts_reversed])
-    _ = buffer.byte_length + 4
-    buffer = Map.put(buffer, "parts_reversed", [<<3.25::float-little-size(64)>> | buffer.parts_reversed])
-    _ = buffer.byte_length + 8
+    buffer = %{buffer | parts_reversed: [<<16909060::little-signed-size(32)>> | buffer.parts_reversed]}
+    buffer = %{buffer | byte_length: buffer.byte_length + 4}
+    buffer = %{buffer | parts_reversed: [<<1.5::float-little-size(32)>> | buffer.parts_reversed]}
+    buffer = %{buffer | byte_length: buffer.byte_length + 4}
+    buffer = %{buffer | parts_reversed: [<<3.25::float-little-size(64)>> | buffer.parts_reversed]}
+    buffer = %{buffer | byte_length: buffer.byte_length + 8}
     _bytes = BytesBuffer.get_bytes(buffer)
     nil
   end

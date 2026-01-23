@@ -359,11 +359,12 @@ class FieldAccessBuilder {
             return null;
         }
         
+        var snakeField = NameUtils.toSnakeCase(fieldName);
         // Generate Map.get for dynamic field access
         return ERemoteCall(
             makeAST(EVar("Map")),
             "get",
-            [objAST, makeAST(EAtom(fieldName))]
+            [objAST, makeAST(EAtom(snakeField))]
         );
     }
     
