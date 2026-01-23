@@ -1,15 +1,115 @@
 defmodule Main do
   def main() do
     obj = %{:name => "John", :age => 30, :active => true}
-    name = Map.get(obj, "name")
+    name = (case {obj, "name"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.fetch(reflect_obj, reflect_field) do
+          {:ok, reflect_value} -> reflect_value
+          _ ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil -> nil
+              reflect_atom ->
+                Map.get(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
     _ = assert(name == "John", "Field retrieval should work")
-    missing = Map.get(obj, "missing")
+    missing = (case {obj, "missing"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.fetch(reflect_obj, reflect_field) do
+          {:ok, reflect_value} -> reflect_value
+          _ ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil -> nil
+              reflect_atom ->
+                Map.get(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
     _ = assert(Kernel.is_nil(missing), "Missing field should return null")
-    updated = Map.put(obj, "age", 31)
-    _ = assert(Map.get(updated, "age") == 31, "Field should be updated")
+    updated = (case {obj, "age", 31} do
+      {reflect_obj, reflect_field, reflect_value} ->
+        (case Map.has_key?(reflect_obj, reflect_field) do
+          true ->
+            Map.put(reflect_obj, reflect_field, reflect_value)
+          false ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil ->
+                Map.put(reflect_obj, reflect_field, reflect_value)
+              reflect_atom ->
+                Map.put(reflect_obj, reflect_atom, reflect_value)
+            end)
+        end)
+    end)
+    _ = assert((case {updated, "age"} do
+  {reflect_obj, reflect_field} ->
+    (case Map.fetch(reflect_obj, reflect_field) do
+      {:ok, reflect_value} -> reflect_value
+      _ ->
+        (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+          nil -> nil
+          reflect_atom ->
+            Map.get(reflect_obj, reflect_atom)
+        end)
+    end)
+end) == 31, "Field should be updated")
     _ = assert(obj.age == 30, "Original object should be unchanged (immutability)")
-    with_email = Map.put(obj, "email", "john@example.com")
-    _ = assert(Map.get(with_email, "email") == "john@example.com", "New field should be added")
+    with_email = (case {obj, "email", "john@example.com"} do
+      {reflect_obj, reflect_field, reflect_value} ->
+        (case Map.has_key?(reflect_obj, reflect_field) do
+          true ->
+            Map.put(reflect_obj, reflect_field, reflect_value)
+          false ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil ->
+                Map.put(reflect_obj, reflect_field, reflect_value)
+              reflect_atom ->
+                Map.put(reflect_obj, reflect_atom, reflect_value)
+            end)
+        end)
+    end)
+    _ = assert((case {with_email, "email"} do
+  {reflect_obj, reflect_field} ->
+    (case Map.fetch(reflect_obj, reflect_field) do
+      {:ok, reflect_value} -> reflect_value
+      _ ->
+        (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+          nil -> nil
+          reflect_atom ->
+            Map.get(reflect_obj, reflect_atom)
+        end)
+    end)
+end) == "john@example.com", "New field should be added")
     fields = Reflect.fields(obj)
     _ = assert(length(fields) == 3, "Should have 3 fields")
     _ = assert((fn -> 
@@ -30,17 +130,115 @@ defmodule Main do
                     idx -> idx
                 end
              >= 0 end).(), "Should have 'active' field")
-    _ = assert(Map.has_key?(obj, "name") == true, "Should have 'name' field")
-    _ = assert(Map.has_key?(obj, "missing") == false, "Should not have 'missing' field")
-    without_age = Reflect.delete_field(obj, "age")
-    _ = assert(Map.has_key?(without_age, "age") == false, "Field should be deleted")
-    _ = assert(Map.has_key?(obj, "age") == true, "Original should still have field (immutability)")
+    _ = assert((case {obj, "name"} do
+  {reflect_obj, reflect_field} ->
+    (case Map.has_key?(reflect_obj, reflect_field) do
+      true -> true
+      false ->
+        (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+          nil -> false
+          reflect_atom ->
+            Map.has_key?(reflect_obj, reflect_atom)
+        end)
+    end)
+end) == true, "Should have 'name' field")
+    _ = assert((case {obj, "missing"} do
+  {reflect_obj, reflect_field} ->
+    (case Map.has_key?(reflect_obj, reflect_field) do
+      true -> true
+      false ->
+        (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+          nil -> false
+          reflect_atom ->
+            Map.has_key?(reflect_obj, reflect_atom)
+        end)
+    end)
+end) == false, "Should not have 'missing' field")
+    without_age = (case {obj, "age"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.has_key?(reflect_obj, reflect_field) do
+          true ->
+            Map.delete(reflect_obj, reflect_field)
+          false ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil ->
+                Map.delete(reflect_obj, reflect_field)
+              reflect_atom ->
+                Map.delete(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
+    _ = assert((case {without_age, "age"} do
+  {reflect_obj, reflect_field} ->
+    (case Map.has_key?(reflect_obj, reflect_field) do
+      true -> true
+      false ->
+        (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+          nil -> false
+          reflect_atom ->
+            Map.has_key?(reflect_obj, reflect_atom)
+        end)
+    end)
+end) == false, "Field should be deleted")
+    _ = assert((case {obj, "age"} do
+  {reflect_obj, reflect_field} ->
+    (case Map.has_key?(reflect_obj, reflect_field) do
+      true -> true
+      false ->
+        (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+          nil -> false
+          reflect_atom ->
+            Map.has_key?(reflect_obj, reflect_atom)
+        end)
+    end)
+end) == true, "Original should still have field (immutability)")
     _ = assert(Reflect.is_object(obj) == true, "Object should be detected")
     _ = assert(Reflect.is_object("string") == false, "String should not be object")
     _ = assert(Reflect.is_object(42) == false, "Number should not be object")
     _ = assert(Reflect.is_object([1, 2, 3]) == false, "Array should not be object")
     copied = obj
-    _ = assert(Map.get(copied, "name") == "John", "Copy should have same fields")
+    _ = assert((case {copied, "name"} do
+  {reflect_obj, reflect_field} ->
+    (case Map.fetch(reflect_obj, reflect_field) do
+      {:ok, reflect_value} -> reflect_value
+      _ ->
+        (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+          nil -> nil
+          reflect_atom ->
+            Map.get(reflect_obj, reflect_atom)
+        end)
+    end)
+end) == "John", "Copy should have same fields")
     _ = assert(Reflect.compare("a", "b") < 0, "a should be less than b")
     _ = assert(Reflect.compare("b", "a") > 0, "b should be greater than a")
     _ = assert(Reflect.compare("same", "same") == 0, "Same strings should be equal")

@@ -4,7 +4,14 @@ defmodule Main do
     %{:shared_resource => "database_connection", :test_environment => "test"}
   end
   setup context do
-    shared_resource = Map.get(context, :shared_resource)
+    shared_resource = (case context do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "shared_resource") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :shared_resource)
+        end)
+    end)
     %{:test_id => :rand.uniform(), :timestamp => DateTime.utc_now()}
   end
   setup context do

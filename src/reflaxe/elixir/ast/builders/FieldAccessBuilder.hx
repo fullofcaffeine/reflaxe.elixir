@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.builders;
 import haxe.macro.Type;
 import haxe.macro.TypedExprTools;
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.CompilationContext;
@@ -359,13 +360,59 @@ class FieldAccessBuilder {
             return null;
         }
         
+        // Dynamic objects may be maps with either atom keys (Haxe object literals) or
+        // string keys (e.g., JSON decoded payloads). Prefer string keys (wire format),
+        // but fall back to atoms when present.
         var snakeField = NameUtils.toSnakeCase(fieldName);
-        // Generate Map.get for dynamic field access
-        return ERemoteCall(
+
+        // Special-case: `dyn.length` should behave like `length(dyn)` for lists (Haxe Array),
+        // matching the existing EField printer behavior for `.length`.
+        if (snakeField == "length") {
+            return ECall(null, "length", [objAST]);
+        }
+
+        var outerVarName = "_dyn_obj";
+        var valueVarName = "_dyn_value";
+        var objVar = makeAST(EVar(outerVarName));
+
+        var fetchByString = makeAST(ERemoteCall(
+            makeAST(EVar("Map")),
+            "fetch",
+            [objVar, makeAST(EString(snakeField))]
+        ));
+
+        var getByAtom = makeAST(ERemoteCall(
             makeAST(EVar("Map")),
             "get",
-            [objAST, makeAST(EAtom(snakeField))]
-        );
+            [objVar, makeAST(EAtom(snakeField))]
+        ));
+
+        // Use Map.fetch/2 so we only fall back when the key is truly missing,
+        // not when it exists with a nil value (e.g. JSON `null`).
+        var innerCase = makeAST(ECase(fetchByString, [
+            {
+                pattern: EPattern.PTuple([
+                    EPattern.PLiteral(makeAST(EAtom("ok"))),
+                    EPattern.PVar(valueVarName)
+                ]),
+                body: makeAST(EVar(valueVarName))
+            },
+            {
+                // Map.fetch/2 returns :error, but use a wildcard to stay resilient to any
+                // upstream shape rewrites and keep the intent clear.
+                pattern: EPattern.PWildcard,
+                body: getByAtom
+            }
+        ]));
+
+        var outerCase = makeAST(ECase(objAST, [
+            {
+                pattern: EPattern.PVar(outerVarName),
+                body: innerCase
+            }
+        ]));
+
+        return outerCase.def;
     }
     
     /**

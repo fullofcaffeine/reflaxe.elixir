@@ -11,6 +11,7 @@
   "my_app_web/conditional_presence.ex",
   "my_app_web/complex_presence.ex",
   "main.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "elixir/types/_atom/atom_impl_.ex"
 ],

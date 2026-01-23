@@ -28,7 +28,23 @@ defmodule TestAppWeb.GoldenLive do
 """
   end
   defp extract_id(params) do
-    id_value = Map.get(params, "id")
+    id_value = (case {params, "id"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.fetch(reflect_obj, reflect_field) do
+          {:ok, reflect_value} -> reflect_value
+          _ ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil -> nil
+              reflect_atom ->
+                Map.get(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
     if (Kernel.is_nil(id_value)) do
       0
     else
@@ -54,15 +70,63 @@ defmodule TestAppWeb.GoldenLive do
         live = Phoenix.Component.update(live, :counter, fn n -> n + 1 end)
         live
       event == "set_sort" ->
-        sort_by_value = Map.get(params, "sort_by")
+        sort_by_value = (case {params, "sort_by"} do
+          {reflect_obj, reflect_field} ->
+            (case Map.fetch(reflect_obj, reflect_field) do
+              {:ok, reflect_value} -> reflect_value
+              _ ->
+                (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+                  nil -> nil
+                  reflect_atom ->
+                    Map.get(reflect_obj, reflect_atom)
+                end)
+            end)
+        end)
         live = Phoenix.Component.assign(live, :sort_by, (if (not Kernel.is_nil(sort_by_value)), do: sort_by_value, else: "created"))
         live
       event == "search" ->
-        query_value = Map.get(params, "query")
+        query_value = (case {params, "query"} do
+          {reflect_obj, reflect_field} ->
+            (case Map.fetch(reflect_obj, reflect_field) do
+              {:ok, reflect_value} -> reflect_value
+              _ ->
+                (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+                  nil -> nil
+                  reflect_atom ->
+                    Map.get(reflect_obj, reflect_atom)
+                end)
+            end)
+        end)
         live = Phoenix.Component.assign(live, :search_query, (if (not Kernel.is_nil(query_value)), do: query_value, else: ""))
         live
       event == "toggle_tag" ->
-        tag = Map.get(params, "tag")
+        tag = (case {params, "tag"} do
+          {reflect_obj, reflect_field} ->
+            (case Map.fetch(reflect_obj, reflect_field) do
+              {:ok, reflect_value} -> reflect_value
+              _ ->
+                (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+                  nil -> nil
+                  reflect_atom ->
+                    Map.get(reflect_obj, reflect_atom)
+                end)
+            end)
+        end)
         live = if (not Kernel.is_nil(tag)) do
           current_tags = socket.assigns.selected_tags
           updated_tags = if (Enum.member?(current_tags, tag)) do

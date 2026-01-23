@@ -10,17 +10,217 @@ defmodule Main do
   defp test_field_operations() do
     obj = %{:name => "Alice", :age => 30, :active => true}
     nested = %{:user => %{:id => 1, :name => "Bob"}, :settings => %{:theme => "dark", :notifications => true}}
-    _name = Map.get(obj, "name")
-    _age = Map.get(obj, "age")
-    _missing = Map.get(obj, "nonexistent")
-    _nested_name = Map.get(Map.get(nested, "user"), "name")
-    _updated = Map.put(obj, "age", 31)
-    _new_field = Map.put(obj, "city", "New York")
-    _has_name = Map.has_key?(obj, "name")
-    _has_city = Map.has_key?(obj, "city")
-    _has_nested = Map.has_key?(nested, "user")
-    _deleted = Reflect.delete_field(obj, "age")
-    _deleted_missing = Reflect.delete_field(obj, "nonexistent")
+    _name = (case {obj, "name"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.fetch(reflect_obj, reflect_field) do
+          {:ok, reflect_value} -> reflect_value
+          _ ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil -> nil
+              reflect_atom ->
+                Map.get(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
+    _age = (case {obj, "age"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.fetch(reflect_obj, reflect_field) do
+          {:ok, reflect_value} -> reflect_value
+          _ ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil -> nil
+              reflect_atom ->
+                Map.get(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
+    _missing = (case {obj, "nonexistent"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.fetch(reflect_obj, reflect_field) do
+          {:ok, reflect_value} -> reflect_value
+          _ ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil -> nil
+              reflect_atom ->
+                Map.get(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
+    _nested_name = (case {(case {nested, "user"} do
+  {reflect_obj, reflect_field} ->
+    (case Map.fetch(reflect_obj, reflect_field) do
+      {:ok, reflect_value} -> reflect_value
+      _ ->
+        (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+          nil -> nil
+          reflect_atom ->
+            Map.get(reflect_obj, reflect_atom)
+        end)
+    end)
+end), "name"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.fetch(reflect_obj, reflect_field) do
+          {:ok, reflect_value} -> reflect_value
+          _ ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil -> nil
+              reflect_atom ->
+                Map.get(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
+    _updated = (case {obj, "age", 31} do
+      {reflect_obj, reflect_field, reflect_value} ->
+        (case Map.has_key?(reflect_obj, reflect_field) do
+          true ->
+            Map.put(reflect_obj, reflect_field, reflect_value)
+          false ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil ->
+                Map.put(reflect_obj, reflect_field, reflect_value)
+              reflect_atom ->
+                Map.put(reflect_obj, reflect_atom, reflect_value)
+            end)
+        end)
+    end)
+    _new_field = (case {obj, "city", "New York"} do
+      {reflect_obj, reflect_field, reflect_value} ->
+        (case Map.has_key?(reflect_obj, reflect_field) do
+          true ->
+            Map.put(reflect_obj, reflect_field, reflect_value)
+          false ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil ->
+                Map.put(reflect_obj, reflect_field, reflect_value)
+              reflect_atom ->
+                Map.put(reflect_obj, reflect_atom, reflect_value)
+            end)
+        end)
+    end)
+    _has_name = (case {obj, "name"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.has_key?(reflect_obj, reflect_field) do
+          true -> true
+          false ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil -> false
+              reflect_atom ->
+                Map.has_key?(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
+    _has_city = (case {obj, "city"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.has_key?(reflect_obj, reflect_field) do
+          true -> true
+          false ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil -> false
+              reflect_atom ->
+                Map.has_key?(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
+    _has_nested = (case {nested, "user"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.has_key?(reflect_obj, reflect_field) do
+          true -> true
+          false ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil -> false
+              reflect_atom ->
+                Map.has_key?(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
+    _deleted = (case {obj, "age"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.has_key?(reflect_obj, reflect_field) do
+          true ->
+            Map.delete(reflect_obj, reflect_field)
+          false ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil ->
+                Map.delete(reflect_obj, reflect_field)
+              reflect_atom ->
+                Map.delete(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
+    _deleted_missing = (case {obj, "nonexistent"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.has_key?(reflect_obj, reflect_field) do
+          true ->
+            Map.delete(reflect_obj, reflect_field)
+          false ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil ->
+                Map.delete(reflect_obj, reflect_field)
+              reflect_atom ->
+                Map.delete(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
     nil
   end
   defp test_field_listing() do
@@ -83,8 +283,40 @@ defmodule Main do
     _greeting = Reflect.call_method(nil, greet, ["World"])
     _no_args_result = Reflect.call_method(nil, no_args, [])
     calculator = %{:value => 100, :add_to => fn n -> n + 100 end, :multiply_by => fn n -> n * 2 end}
-    _added = Reflect.call_method(calculator, Map.get(calculator, "addTo"), [50])
-    _multiplied = Reflect.call_method(calculator, Map.get(calculator, "multiplyBy"), [25])
+    _added = Reflect.call_method(calculator, ((case {calculator, "addTo"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.fetch(reflect_obj, reflect_field) do
+          {:ok, reflect_value} -> reflect_value
+          _ ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil -> nil
+              reflect_atom ->
+                Map.get(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)), [50])
+    _multiplied = Reflect.call_method(calculator, ((case {calculator, "multiplyBy"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.fetch(reflect_obj, reflect_field) do
+          {:ok, reflect_value} -> reflect_value
+          _ ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil -> nil
+              reflect_atom ->
+                Map.get(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)), [25])
     nil
   end
 end

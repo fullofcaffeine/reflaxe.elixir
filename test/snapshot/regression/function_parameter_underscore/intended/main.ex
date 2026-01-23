@@ -21,6 +21,13 @@ defmodule Main do
     "#{prefix}.#{suffix}"
   end
   defp process_config(config) do
-    config.name
+    inspect(((case config do
+        dyn_obj ->
+          (case Map.fetch(dyn_obj, "name") do
+            {:ok, dyn_value} -> dyn_value
+            _ ->
+              Map.get(dyn_obj, :name)
+          end)
+      end)))
   end
 end

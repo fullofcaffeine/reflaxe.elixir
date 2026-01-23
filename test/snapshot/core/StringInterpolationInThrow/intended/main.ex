@@ -99,6 +99,13 @@ end), haxe_exception} do
     end
   end
   defp get_errors_map(changeset) do
-    Map.get(changeset, :errors)
+    (case changeset do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "errors") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :errors)
+        end)
+    end)
   end
 end

@@ -1475,18 +1475,15 @@ class BinderTransforms {
      * - Eliminates runtime conversion and ensures idiomatic atom literals in generated code.
      */
     public static function stringToAtomLiteralPass(ast: ElixirAST): ElixirAST {
-        inline function toAtom(e: ElixirAST): ElixirAST {
-            return switch (e.def) {
-                case EString(s): makeAST(EAtom(s));
-                default: e;
-            };
-        }
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ERemoteCall(mod, func, args):
                     switch (mod.def) {
                         case EVar(m) if (m == "String" && (func == "to_atom" || func == "to_existing_atom") && args != null && args.length == 1):
-                            toAtom(args[0]);
+                            switch (args[0].def) {
+                                case EString(s): makeAST(EAtom(s));
+                                default: n;
+                            }
                         default: n;
                     }
                 default: n;

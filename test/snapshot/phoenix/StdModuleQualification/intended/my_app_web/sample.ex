@@ -12,6 +12,22 @@ defmodule MyAppWeb.Sample do
   end
   def reflect_map_get() do
     m = %{}
-    _a = Map.get(m, "a")
+    (case {m, "a"} do
+      {reflect_obj, reflect_field} ->
+        (case Map.fetch(reflect_obj, reflect_field) do
+          {:ok, reflect_value} -> reflect_value
+          _ ->
+            (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+              nil -> nil
+              reflect_atom ->
+                Map.get(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
   end
 end

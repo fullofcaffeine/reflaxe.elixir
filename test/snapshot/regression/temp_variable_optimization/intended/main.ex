@@ -7,7 +7,14 @@ defmodule Main do
   defp test_basic_ternary() do
     config = %{:name => "test"}
     _id = if (not Kernel.is_nil(config)) do
-      Map.get(config, :id)
+      (case config do
+        dyn_obj ->
+          (case Map.fetch(dyn_obj, "id") do
+            {:ok, dyn_value} -> dyn_value
+            _ ->
+              Map.get(dyn_obj, :id)
+          end)
+      end)
     else
       "default"
     end
