@@ -4,10 +4,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 JSON=0
+MARKDOWN=0
 REFERENCE_PATH=""
 
 say() {
-  if [[ "$JSON" -eq 1 ]]; then
+  if [[ "$JSON" -eq 1 || "$MARKDOWN" -eq 1 ]]; then
     echo "[stdlib-parity] $*" >&2
   else
     echo "[stdlib-parity] $*"
@@ -16,7 +17,7 @@ say() {
 
 usage() {
   cat >&2 <<'EOF'
-Usage: scripts/stdlib-parity-report.sh --reference PATH [--json]
+Usage: scripts/stdlib-parity-report.sh --reference PATH [--json|--markdown]
 
 Compares this repo's stdlib overrides (Elixir-target Haxe std) against a reference Haxe stdlib.
 
@@ -31,11 +32,13 @@ Options:
                      - /path/to/haxe-repo (containing haxe/std)
                      - /path/to/haxe (containing std/)
   --json             Emit machine-readable JSON to stdout (default: human-readable text)
+  --markdown         Emit markdown summary to stdout (for docs)
   -h, --help         Show this help
 
 Examples:
   scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference/haxe/std
   scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --json
+  scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --markdown
 EOF
   exit 2
 }
@@ -44,6 +47,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --reference) REFERENCE_PATH="$2"; shift 2 ;;
     --json) JSON=1; shift 1 ;;
+    --markdown) MARKDOWN=1; shift 1 ;;
     -h|--help) usage ;;
     *) usage ;;
   esac
@@ -53,20 +57,27 @@ if [[ -z "$REFERENCE_PATH" ]]; then
   usage
 fi
 
+if [[ "$JSON" -eq 1 && "$MARKDOWN" -eq 1 ]]; then
+  echo "ERROR: --json and --markdown are mutually exclusive" >&2
+  usage
+fi
+
 cd "$ROOT_DIR"
 
 say "Repo: $ROOT_DIR"
 say "Reference input: $REFERENCE_PATH"
 
-python3 - "$ROOT_DIR" "$REFERENCE_PATH" "$JSON" <<'PY'
+python3 - "$ROOT_DIR" "$REFERENCE_PATH" "$JSON" "$MARKDOWN" <<'PY'
 import json
 import os
 import sys
+import datetime
 from pathlib import Path
 
 root_dir = Path(sys.argv[1])
 reference_input = Path(sys.argv[2])
 json_mode = int(sys.argv[3]) == 1
+markdown_mode = int(sys.argv[4]) == 1
 
 def resolve_reference_std(path: Path) -> Path:
   candidates = []
@@ -192,6 +203,60 @@ report = {
 
 if json_mode:
   print(json.dumps(report, indent=2, sort_keys=True))
+elif markdown_mode:
+  print("# Stdlib Parity Gap Report (Module-Level)")
+  print("")
+  print(f"Generated: {datetime.date.today().isoformat()}")
+  print("")
+  print("This report compares this repo’s Elixir-target stdlib overrides (`std/` and `std/_std/`) against the reference repository.")
+  print("")
+  print("To regenerate:")
+  print("")
+  print("```bash")
+  print("scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --json > docs/08-roadmap/stdlib-parity/gap-report.json")
+  print("scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --markdown > docs/08-roadmap/stdlib-parity/gap-report.md")
+  print("```")
+  print("")
+  print("## Summary")
+  print("")
+  print(f"- Reference std modules: **{report['reference']['total_modules']}**")
+  print(f"- Local std modules present: **{report['local']['total_std_modules']}** (candidates scanned: {report['local']['total_candidates']})")
+  print(f"- Intersection (local provides): **{report['diff']['intersection']['count']}**")
+  print(f"- Missing locally (reference-only): **{report['diff']['reference_only']['count']}**")
+  print(f"- Local-only: **{report['diff']['local_only']['count']}**")
+  print("")
+  print("## Missing modules (high-level)")
+  missing = report['diff']['reference_only']['modules']
+  top = [m for m in missing if '.' not in m]
+  haxe_mods = [m for m in missing if m.startswith('haxe.')]
+  sys_mods = [m for m in missing if m.startswith('sys.')]
+
+  def highlight(modules: list[str], candidates: list[str]) -> list[str]:
+    return [m for m in candidates if m in modules]
+  if top:
+    print(f"Top-level ({len(top)}): `" + "`, `".join(top) + "`")
+    print("")
+  haxe_high = highlight(haxe_mods, [
+    "haxe.CallStack",
+    "haxe.Http",
+    "haxe.Int64",
+    "haxe.Serializer",
+    "haxe.Template",
+  ])
+  sys_high = highlight(sys_mods, [
+    "sys.io.Process",
+    "sys.net.Socket",
+    "sys.net.UdpSocket",
+    "sys.ssl.Socket",
+  ])
+
+  haxe_hint = (" including `" + "`, `".join(haxe_high) + "`") if haxe_high else ""
+  sys_hint = (" including `" + "`, `".join(sys_high) + "`") if sys_high else ""
+  print(f"`haxe.*` ({len(haxe_mods)}): heavy gaps{haxe_hint}.")
+  print(f"`sys.*` ({len(sys_mods)}): gaps across IO/process/network/threading{sys_hint}.")
+  print("")
+  if report['local']['runtime_overrides']['counted_as_present']:
+    print("Note: This report counts the compiler-emitted runtime overrides as “present”: `" + "`, `".join(report['local']['runtime_overrides']['counted_as_present']) + "`.")
 else:
   def header(title: str) -> None:
     print("")
