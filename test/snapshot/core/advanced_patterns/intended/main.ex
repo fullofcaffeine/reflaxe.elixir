@@ -18,22 +18,22 @@ defmodule Main do
     (case arr do
       [] -> "empty"
       [_head | _tail] ->
-        x = arr[0]
+        x = Enum.at(arr, 0)
         "single: #{Kernel.to_string(x)}"
       2 ->
-        x = arr[0]
-        y = arr[1]
+        x = Enum.at(arr, 0)
+        y = Enum.at(arr, 1)
         "pair: #{Kernel.to_string(x)},#{Kernel.to_string(y)}"
       3 ->
-        x = arr[0]
-        y = arr[1]
-        z = arr[2]
+        x = Enum.at(arr, 0)
+        y = Enum.at(arr, 1)
+        z = Enum.at(arr, 2)
         "triple: #{Kernel.to_string(x)},#{Kernel.to_string(y)},#{Kernel.to_string(z)}"
       4 ->
-        first = arr[0]
-        second = arr[1]
-        third = arr[2]
-        fourth = arr[3]
+        first = Enum.at(arr, 0)
+        second = Enum.at(arr, 1)
+        third = Enum.at(arr, 2)
+        fourth = Enum.at(arr, 3)
         "quad: #{Kernel.to_string(first)},#{Kernel.to_string(second)},#{Kernel.to_string(third)},#{Kernel.to_string(fourth)}"
       _ ->
         a = arr
@@ -117,45 +117,45 @@ defmodule Main do
   def match_matrix(matrix) do
     (case matrix do
       [] -> "empty matrix"
-      [head | _tail] when length(head) == 1 ->
-        x = head[0]
+      [head | _tail] when length(Enum.at(matrix, 0)) == 1 ->
+        x = Enum.at(head, 0)
         "single element: #{Kernel.to_string(x)}"
-      [_head | _tail] when length(m) == length(_head) -> "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
+      [_head | _tail] when length(m) == length(Enum.at(m, 0)) -> "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
       [_head | _tail] -> "non-square matrix"
       2 ->
         cond do
-          length(matrix[1]) == 2 ->
-            c = g[0]
-            d = g[1]
-            b = g[1]
-            a = g[0]
+          length(Enum.at(matrix, 1)) == 2 ->
+            c = Enum.at(g, 0)
+            d = Enum.at(g, 1)
+            b = Enum.at(g, 1)
+            a = Enum.at(g, 0)
             "2x2 matrix: [[" <> Kernel.to_string(a) <> "," <> Kernel.to_string(b) <> "],[" <> Kernel.to_string(c) <> "," <> Kernel.to_string(d) <> "]]"
           true ->
             m = matrix
-            if (length(m) == length(m[0])) do
+            if (length(m) == length(Enum.at(m, 0))) do
               "square matrix " <> Kernel.to_string(length(m)) <> "x" <> Kernel.to_string(length(m))
             else
               "non-square matrix"
             end
         end
-      2 when length(m) == length(m[0]) -> "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
+      2 when length(m) == length(Enum.at(m, 0)) -> "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
       2 -> "non-square matrix"
       3 ->
         cond do
-          length(matrix[1]) == 3 ->
-            if (length(matrix[2]) == 3) do
-              h = g[1]
-              i = g[2]
-              a = g[0]
-              b = g[1]
-              c = g[2]
-              f = g[2]
-              e = g[1]
-              d = g[0]
+          length(Enum.at(matrix, 1)) == 3 ->
+            if (length(Enum.at(matrix, 2)) == 3) do
+              h = Enum.at(g, 1)
+              i = Enum.at(g, 2)
+              a = Enum.at(g, 0)
+              b = Enum.at(g, 1)
+              c = Enum.at(g, 2)
+              f = Enum.at(g, 2)
+              e = Enum.at(g, 1)
+              d = Enum.at(g, 0)
               "3x3 matrix"
             else
               m = matrix
-              if (length(m) == length(m[0])) do
+              if (length(m) == length(Enum.at(m, 0))) do
                 "square matrix " <> Kernel.to_string(length(m)) <> "x" <> Kernel.to_string(length(m))
               else
                 "non-square matrix"
@@ -163,17 +163,17 @@ defmodule Main do
             end
           true ->
             m = matrix
-            if (length(m) == length(m[0])) do
+            if (length(m) == length(Enum.at(m, 0))) do
               "square matrix " <> Kernel.to_string(length(m)) <> "x" <> Kernel.to_string(length(m))
             else
               "non-square matrix"
             end
         end
-      3 when length(m) == length(m[0]) -> "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
+      3 when length(m) == length(Enum.at(m, 0)) -> "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
       3 -> "non-square matrix"
       _ ->
         m = matrix
-        if (length(m) == length(m[0])) do
+        if (length(m) == length(Enum.at(m, 0))) do
           "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
         else
           "non-square matrix"

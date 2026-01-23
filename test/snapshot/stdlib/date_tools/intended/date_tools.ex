@@ -48,10 +48,13 @@ defmodule DateTools do
     (case e do
       "%" -> "%"
       "A" ->
-        DateTools.day_names()[date = DateTime.to_date(d)
-dow = Date.day_of_week(date)
-if (dow == 7), do: 0, else: dow]
-      "B" -> DateTools.month_names()[(d.month - 1)]
+        Enum.at(DateTools.day_names(), (fn ->
+          date = DateTime.to_date(d)
+          dow = Date.day_of_week(date)
+          if (dow == 7), do: 0, else: dow
+        end).())
+      "B" ->
+        Enum.at(DateTools.month_names(), (d.month - 1))
       "C" ->
         StringTools.lpad(inspect(trunc(d.year / 100)), "0", 2)
       "D" ->
@@ -69,15 +72,19 @@ if (dow == 7), do: 0, else: dow]
       "Y" ->
         inspect(d.year)
       "a" ->
-        DateTools.day_short_names()[date = DateTime.to_date(d)
-dow = Date.day_of_week(date)
-if (dow == 7), do: 0, else: dow]
+        Enum.at(DateTools.day_short_names(), (fn ->
+          date = DateTime.to_date(d)
+          dow = Date.day_of_week(date)
+          if (dow == 7), do: 0, else: dow
+        end).())
       "d" ->
         StringTools.lpad(inspect(d.day), "0", 2)
       "e" ->
         inspect(d.day)
-      "b" -> DateTools.month_short_names()[(d.month - 1)]
-      "h" -> DateTools.month_short_names()[(d.month - 1)]
+      "b" ->
+        Enum.at(DateTools.month_short_names(), (d.month - 1))
+      "h" ->
+        Enum.at(DateTools.month_short_names(), (d.month - 1))
       "H" ->
         StringTools.lpad(inspect(d.hour), (if (e == "H"), do: "0", else: " "), 2)
       "k" ->

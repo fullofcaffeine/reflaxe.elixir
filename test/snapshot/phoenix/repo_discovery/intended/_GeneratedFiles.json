@@ -7,6 +7,7 @@
   "reflaxe/elixir/haxe_throw.ex",
   "my_app/repo.ex",
   "main.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "ecto/postgres_extension.ex",
   "ecto/json_library.ex",

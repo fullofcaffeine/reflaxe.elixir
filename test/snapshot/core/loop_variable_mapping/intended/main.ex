@@ -17,8 +17,8 @@ defmodule Main do
       _g = 0
       array_length = length(array)
       Enum.reduce(0..(array_length - 1)//1, result_acc, fn j, result_acc ->
-        if (array[i] < array[j]) do
-          result_acc = Enum.concat(result_acc, [array[i] + array[j]])
+        if (Enum.at(array, i) < Enum.at(array, j)) do
+          result_acc = Enum.concat(result_acc, [Enum.at(array, i) + Enum.at(array, j)])
           result_acc
         else
           result_acc

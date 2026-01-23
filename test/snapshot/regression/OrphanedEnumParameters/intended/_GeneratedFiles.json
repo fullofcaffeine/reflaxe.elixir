@@ -9,6 +9,7 @@
   "reflaxe/elixir/haxe_throw.ex",
   "message.ex",
   "main.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "event.ex",
   "content.ex",

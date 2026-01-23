@@ -38,7 +38,7 @@ defmodule Main do
     _g = 0
     items_length = length(items)
     _ = Enum.reduce(0..(items_length - 1)//1, names, fn i, names_acc ->
-      item = items[i]
+      item = Enum.at(items, i)
       if (item.id > 1) do
         Enum.concat(names_acc, [item.name])
       else
@@ -84,8 +84,8 @@ end)
     _g = 0
     todos_length = length(todos)
     found = Enum.reduce(0..(todos_length - 1)//1, found, fn i, found_acc ->
-      if (todos[i].id == target_id) do
-        found_acc = todos[i]
+      if (Enum.at(todos, i).id == target_id) do
+        found_acc = Enum.at(todos, i)
         throw(:break)
         found_acc
       else

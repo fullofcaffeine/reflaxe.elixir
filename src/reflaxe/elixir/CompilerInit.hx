@@ -168,8 +168,6 @@ class CompilerInit {
             // Because our generated Elixir can pattern-match on `%Reflaxe.Elixir.HaxeThrow{...}`
             // without any user-facing Haxe reference, we must also force it into the compilation.
             Compiler.include("reflaxe.elixir.runtime", true);
-            Context.getType("reflaxe.elixir.runtime.ReflaxeException");
-            Compiler.keep("reflaxe.elixir.runtime.ReflaxeException");
             Context.getType("reflaxe.elixir.runtime.HaxeThrow");
             Compiler.keep("reflaxe.elixir.runtime.HaxeThrow");
         } catch (e: haxe.Exception) {}

@@ -87,7 +87,7 @@ end) do
       _g = 0
       g_value = length(user_entry.metas)
       Enum.reduce(0..(g_value - 1)//1, all_metadata_acc, fn i, all_metadata_acc ->
-        meta_item = user_entry.metas[i]
+        meta_item = Enum.at(user_entry.metas, i)
         processed_meta = %{:id => user_id, :index => i, :data => meta_item}
         Enum.concat(all_metadata_acc, [processed_meta])
       end)

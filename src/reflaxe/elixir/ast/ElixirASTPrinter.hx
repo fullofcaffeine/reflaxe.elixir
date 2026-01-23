@@ -139,6 +139,38 @@ class ElixirASTPrinter {
                     if (idxWeb > 0) observedAppPrefix = name.substring(0, idxWeb);
                 }
 
+                // Exception modules: emit `defexception` inside the module.
+                //
+                // NOTE: Some parts of the pipeline represent modules as `EDefmodule` (do-block form).
+                // Preserve the same behavior as the `EModule` printer path by injecting `defexception`
+                // based on module metadata.
+                if (ast.metadata != null && ast.metadata.isException == true) {
+                    var hasDefexception = false;
+                    switch (doBlockUnwrapped.def) {
+                        case EBlock(stmts):
+                            for (s in stmts) switch (s.def) {
+                                case ECall(_, fn, _) if (fn == "defexception"):
+                                    hasDefexception = true;
+                                case ERaw(code) if (code != null && code.indexOf("defexception") != -1):
+                                    hasDefexception = true;
+                                default:
+                            }
+                        default:
+                    }
+                    if (!hasDefexception) {
+                        var exceptionFields: Array<String> = ["message"];
+                        if (ast.metadata != null && ast.metadata.instanceFields != null) {
+                            for (f in ast.metadata.instanceFields) {
+                                if (f == null || f.length == 0) continue;
+                                if (f == "message") continue;
+                                exceptionFields.push(f);
+                            }
+                        }
+                        var fieldsList = exceptionFields.map(f -> ":" + f).join(", ");
+                        moduleContent += indentStr(indent + 1) + 'defexception [' + fieldsList + ']\n';
+                    }
+                }
+
                 // Optional alias injection for Repo in non-Web modules
                 inline function needsRepoAliasInBlock(block: ElixirAST): Bool {
                     var hasAlias = false;
@@ -285,15 +317,16 @@ class ElixirASTPrinter {
                     var result = 'defmodule ${name} do\n';
                     // Include :message plus any additional instance fields so `%{struct | field: ...}`
                     // updates remain valid for exception structs (e.g., CustomException.code).
-                    var exceptionFields: Array<String> = ["message"];
+                    var exceptionFields: Array<String> = ["message", "previous", "native", "stack"];
                     if (ast.metadata != null && ast.metadata.instanceFields != null) {
                         for (f in ast.metadata.instanceFields) {
                             if (f == null || f.length == 0) continue;
-                            if (f == "message") continue;
+                            if (f == "message" || f == "previous" || f == "native" || f == "stack") continue;
                             exceptionFields.push(f);
                         }
                     }
-                    // Preserve stable ordering: message first, then sorted instance fields (already sorted in metadata).
+                    // Preserve stable ordering: message first, then core exception fields,
+                    // then sorted instance fields (already sorted in metadata).
                     var fieldsList = exceptionFields.map(f -> ":" + f).join(", ");
                     result += indentStr(indent + 1) + 'defexception [' + fieldsList + ']\n';
                     // Set module context while printing body for proper qualification
@@ -1005,9 +1038,9 @@ class ElixirASTPrinter {
                 var qualifiedModule = (function() {
                     if (module.indexOf('.') != -1) return module;
                     inline function appPrefix(): Null<String> {
-                        if (currentModuleName == null) return observedAppPrefix;
+                        if (currentModuleName == null) return null;
                         var idx = currentModuleName.indexOf("Web");
-                        return idx > 0 ? currentModuleName.substring(0, idx) : observedAppPrefix;
+                        return idx > 0 ? currentModuleName.substring(0, idx) : null;
                     }
                     var p = appPrefix();
                     return (p != null ? p + '.' + module : module);
@@ -1163,9 +1196,9 @@ class ElixirASTPrinter {
                         // Fallback: Module.new() -> %<App>.Module{}
                         if (funcName == "new" && args.length == 0) {
                             inline function appPrefix(): Null<String> {
-                                if (currentModuleName == null) return observedAppPrefix;
+                                if (currentModuleName == null) return null;
                                 var idx = currentModuleName.indexOf("Web");
-                                return idx > 0 ? currentModuleName.substring(0, idx) : observedAppPrefix;
+                                return idx > 0 ? currentModuleName.substring(0, idx) : null;
                             }
                             switch (target.def) {
                                 case EVar(n):
@@ -1677,7 +1710,10 @@ class ElixirASTPrinter {
                 }
                 
             case EAccess(target, key):
-                print(target, 0) + '[' + print(key, 0) + ']';
+                // IMPORTANT: The access key expression must be a *single* Elixir expression.
+                // Multi-statement blocks must be wrapped (IIFE) to avoid both syntax errors and
+                // leaking Haxe-local vars into the surrounding Elixir scope.
+                print(target, 0) + '[' + printFunctionArg(key, 0) + ']';
                 
             case ERange(start, end, exclusive, step):
                 print(start, 0) + (exclusive ? '...' : '..') + print(end, 0) + (step != null ? '//' + print(step, 0) : '');

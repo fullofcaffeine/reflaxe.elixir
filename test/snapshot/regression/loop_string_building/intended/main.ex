@@ -29,7 +29,7 @@ defmodule Main do
     _g = 0
     items_length = length(items)
     _ = Enum.each(0..(items_length - 1)//1, fn idx ->
-  _item = items[idx]
+  _item = Enum.at(items, idx)
   nil
 end)
   end

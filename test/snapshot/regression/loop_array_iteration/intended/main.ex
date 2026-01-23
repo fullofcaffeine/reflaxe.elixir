@@ -11,7 +11,7 @@ defmodule Main do
     grid_length = length(grid)
     _ = Enum.each(0..(grid_length - 1)//1, fn row ->
   _g = 0
-  grid_length = length(grid[row])
+  grid_length = length(Enum.at(grid, row))
   _ = Enum.each(0..(grid_length - 1)//1, fn _ -> nil end)
 end)
   end

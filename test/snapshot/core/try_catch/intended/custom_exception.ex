@@ -1,8 +1,8 @@
 defmodule CustomException do
-  defexception [:message, :code]
+  defexception [:message, :previous, :native, :stack, :code]
   def new(message, code_param) do
-    struct = %{:code => nil}
-    struct = Map.merge(struct, Exception.new(message))
+    struct = %CustomException{}
+    struct = Map.merge(struct, Map.delete(Reflaxe.Exception.new(message), :__struct__))
     struct = %{struct | code: code_param}
     struct
   end

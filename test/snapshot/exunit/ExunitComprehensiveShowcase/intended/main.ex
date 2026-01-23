@@ -88,7 +88,7 @@ end) do
     test "setup ran" do
       actual = length(context[:test_data])
       assert actual == 3
-      actual = context[:test_data][0]
+      actual = Enum.at(context[:test_data], 0)
       assert actual == "apple"
       actual = context[:counter]
       assert actual == 0

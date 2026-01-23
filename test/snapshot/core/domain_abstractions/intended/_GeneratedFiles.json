@@ -7,6 +7,7 @@
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",
   "main.ex",
+  "int_iterator.ex",
   "haxe/validation/_user_id/user_id_impl_.ex",
   "haxe/validation/_positive_int/positive_int_impl_.ex",
   "haxe/validation/_non_empty_string/non_empty_string_impl_.ex",

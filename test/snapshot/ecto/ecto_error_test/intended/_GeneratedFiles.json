@@ -8,6 +8,7 @@
   "main.ex",
   "invalid_schema.ex",
   "invalid_changeset.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

@@ -107,7 +107,7 @@ end).()]
         b = length(arr)
         if (n < b), do: n, else: b
       end).())
-    g = Enum.reduce(0..(g_value - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [arr[i]]) end)
+    g = Enum.reduce(0..(g_value - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [Enum.at(arr, i)]) end)
     g
   end
   def functional_methods() do

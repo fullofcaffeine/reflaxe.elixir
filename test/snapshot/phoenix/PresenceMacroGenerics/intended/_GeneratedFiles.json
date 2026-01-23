@@ -7,6 +7,7 @@
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",
   "main.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "external_usage.ex",
   "elixir/types/_atom/atom_impl_.ex",

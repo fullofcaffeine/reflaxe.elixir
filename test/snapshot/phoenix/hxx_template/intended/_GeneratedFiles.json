@@ -8,6 +8,7 @@
   "reflaxe/elixir/haxe_throw.ex",
   "main.ex",
   "live_view_components.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "form_template.ex"
 ],

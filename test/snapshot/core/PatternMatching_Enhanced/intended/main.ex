@@ -66,18 +66,18 @@ end)
   _description = (case arr do
     [] -> "empty"
     [_head | _tail] ->
-      x = arr[0]
+      x = Enum.at(arr, 0)
       "single: " <> Kernel.to_string(x)
     2 ->
-      x = arr[0]
-      y = arr[1]
+      x = Enum.at(arr, 0)
+      y = Enum.at(arr, 1)
       "pair: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y)
     3 ->
-      x = arr[0]
-      y = arr[1]
-      z = arr[2]
+      x = Enum.at(arr, 0)
+      y = Enum.at(arr, 1)
+      z = Enum.at(arr, 2)
       "triple: " <> Kernel.to_string(x) <> ", " <> Kernel.to_string(y) <> ", " <> Kernel.to_string(z)
-    _ -> "length=" <> Kernel.to_string(length(arr)) <> ", first=" <> (if (length(arr) > 0), do: inspect(arr[0]), else: "none")
+    _ -> "length=" <> Kernel.to_string(length(arr)) <> ", first=" <> (if (length(arr) > 0), do: inspect(Enum.at(arr, 0)), else: "none")
   end)
   nil
 end)

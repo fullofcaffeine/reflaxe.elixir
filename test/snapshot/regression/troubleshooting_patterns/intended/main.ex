@@ -111,17 +111,17 @@ defmodule Main do
   def test_binary_segments() do
     request = [71, 69, 84, 32, 47, 97, 112, 105, 32, 72, 84, 84, 80]
     if (length(request) == 4) do
-      (case request[0] do
+      (case Enum.at(request, 0) do
         71 ->
           cond do
-            request[2] == 84 ->
-              if (request[3] == 32) do
+            Enum.at(request, 2) == 84 ->
+              if (Enum.at(request, 3) == 32) do
                 "GET request detected"
               else
-                method1 = request[0]
-                method2 = request[1]
-                method3 = request[2]
-                method4 = request[3]
+                method1 = Enum.at(request, 0)
+                method2 = Enum.at(request, 1)
+                method3 = Enum.at(request, 2)
+                method4 = Enum.at(request, 3)
                 if (length(request) >= 4) do
                   "Other method: " <> <<method1::utf8>> <> <<method2::utf8>> <> <<method3::utf8>> <> <<method4::utf8>>
                 else
@@ -140,10 +140,10 @@ end).(), "") <> " + more data"
                 end
               end
             true ->
-              method1 = request[0]
-              method2 = request[1]
-              method3 = request[2]
-              method4 = request[3]
+              method1 = Enum.at(request, 0)
+              method2 = Enum.at(request, 1)
+              method3 = Enum.at(request, 2)
+              method4 = Enum.at(request, 3)
               if (length(request) >= 4) do
                 "Other method: " <> <<method1::utf8>> <> <<method2::utf8>> <> <<method3::utf8>> <> <<method4::utf8>>
               else
@@ -176,14 +176,14 @@ end).(), "") end).()} + more data"
         71 -> "Invalid HTTP request"
         80 ->
           cond do
-            request[2] == 83 ->
-              if (request[3] == 84) do
+            Enum.at(request, 2) == 83 ->
+              if (Enum.at(request, 3) == 84) do
                 "POST request detected"
               else
-                method1 = request[0]
-                method2 = request[1]
-                method3 = request[2]
-                method4 = request[3]
+                method1 = Enum.at(request, 0)
+                method2 = Enum.at(request, 1)
+                method3 = Enum.at(request, 2)
+                method4 = Enum.at(request, 3)
                 if (length(request) >= 4) do
                   "Other method: " <> <<method1::utf8>> <> <<method2::utf8>> <> <<method3::utf8>> <> <<method4::utf8>>
                 else
@@ -202,10 +202,10 @@ end).(), "") <> " + more data"
                 end
               end
             true ->
-              method1 = request[0]
-              method2 = request[1]
-              method3 = request[2]
-              method4 = request[3]
+              method1 = Enum.at(request, 0)
+              method2 = Enum.at(request, 1)
+              method3 = Enum.at(request, 2)
+              method4 = Enum.at(request, 3)
               if (length(request) >= 4) do
                 "Other method: " <> <<method1::utf8>> <> <<method2::utf8>> <> <<method3::utf8>> <> <<method4::utf8>>
               else
@@ -237,10 +237,10 @@ end).(), "") <> " + more data"
 end).(), "") end).()} + more data"
         80 -> "Invalid HTTP request"
         _ ->
-          method1 = request[0]
-          method2 = request[1]
-          method3 = request[2]
-          method4 = request[3]
+          method1 = Enum.at(request, 0)
+          method2 = Enum.at(request, 1)
+          method3 = Enum.at(request, 2)
+          method4 = Enum.at(request, 3)
           if (length(request) >= 4) do
             "Other method: #{<<method1::utf8>>}#{<<method2::utf8>>}#{<<method3::utf8>>}#{<<method4::utf8>>}"
           else
