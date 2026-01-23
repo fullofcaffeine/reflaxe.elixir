@@ -450,60 +450,38 @@ Checklist before merging a transform:
 - [ ] Pass explains WHAT/WHY/HOW in hxdoc and includes generic examples
 - [ ] Grep check: `rg -n "todo_|toggle_todo|cancel_edit|presenceSocket|live_socket|updated_todo" src/` returns zero in logic (docs are allowed)
 
-## ⚠️ CRITICAL: Target-Conditional Classpath Architecture (January 2025 Discovery)
+## ⚠️ CRITICAL: Target-Conditional Stdlib Injection (Implemented)
 
-**FUNDAMENTAL ARCHITECTURAL ISSUE**: The current `.cross.hx` staging mechanism is flawed - it makes Elixir-specific code available in ALL compilation contexts (macro, interp, etc.) when it should ONLY be available when compiling to Elixir target.
+**FUNDAMENTAL RULE**: Elixir-only stdlib code must never leak into macro evaluation or other targets (e.g. JS/genes).
 
-### The Problem
-When .cross.hx files containing `__elixir__()` calls are staged to the classpath:
-- They become available during macro evaluation (fails with "Unknown identifier: __elixir__")
-- They're available when compiling to other targets (JavaScript, etc.)
-- They override standard Haxe implementations in ALL contexts
+### What lives where
 
-### The Correct Architecture (How Mature Reflaxe Compilers Work)
-**Target-conditional classpath injection** - Standard library overrides should ONLY be added to the classpath when actually compiling to the target platform:
+- `std/**/*.cross.hx`
+  - Cross-platform override files selected by Haxe when compiling in `cross` mode (Reflaxe targets on Haxe 4).
+  - These shadow upstream Haxe stdlib by classpath precedence (Elixir builds only).
+- `std/_std/**/*.hx`
+  - Elixir-only shims/bridge modules (often `@:native(...)` wrappers or runtime helpers).
+  - These must be classpath-gated so non-Elixir builds never see `__elixir__()`.
 
-```haxe
-// In CompilerInit.hx or bootstrap macro
-public static function Start() {
-    // ONLY add Elixir-specific paths when target is Elixir
-    if (Context.definedValue("target.name") == "elixir") {
-        // Add staged .cross.hx files to classpath
-        Compiler.addClassPath("std/_std/");
-    }
-    // Macro context and other targets use regular Haxe stdlib
-}
-```
+### How gating works
 
-### Why This Matters
-1. **Macro context uses regular Haxe stdlib** - No __elixir__() failures
-2. **Other targets unaffected** - JavaScript compilation doesn't see Elixir-specific code
-3. **Clean separation** - Target-specific code only available when needed
-4. **Matches hxcpp pattern** - This is how mature Reflaxe compilers handle it
+- Consumer installs rely on `extraParams.hxml`, which runs:
+  - `reflaxe.elixir.CompilerBootstrap.Start()` (earliest injection; also injects `vendor/reflaxe/src`)
+  - `reflaxe.elixir.CompilerInit.Start()` (compiler registration + redundant early injection)
+- We only add `std/` and `std/_std/` to the classpath when we detect an Elixir build:
+  - Haxe 4: `-D elixir_output=...` is the stable signal (platform is commonly `cross`)
+  - Haxe 5: Elixir custom target (`CustomTarget("elixir")`) + `target.name == "elixir"`
 
-### Current Workaround (Temporary)
-The staging mechanism works but requires all contexts to handle Elixir-specific code:
-- `std/_std/` contains staged .cross.hx files
-- `haxe_libraries/reflaxe.elixir.hxml` includes them unconditionally
-- This causes "Unknown identifier: __elixir__" in macro context
+### Why this matters
 
-### Implementation (Complete)
-Classpath gating is implemented in `CompilerInit.Start()`:
-- Adds `std/_std/` only when compiling to Elixir target.
-- Haxe 5: gated by `CustomTarget("elixir")`.
-- Haxe 4: gated by `target.name == "elixir"` or presence of `-D elixir_output`.
-- `haxe_libraries/reflaxe.elixir.hxml` no longer unconditionally includes `std/_std/`.
+- Prevents “Unknown identifier: __elixir__” during macro time.
+- Prevents cross-target shadowing (JS builds shouldn’t see Elixir stdlib overrides).
+- Ensures consistent typing: injection must happen early (before stdlib types are cached).
 
-Activation scenarios:
-- Elixir builds in tests/examples (`-D elixir_output`) → activated
-- Custom target Elixir (Haxe 5) → activated
-- JS/genes builds, macro-only tools → not activated
-
-See: `docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md` for details and verification steps.
-
-**Reference Implementations**:
-- hxcpp: Conditionally adds C++ stdlib based on target
-- reflaxe.cs: Adds C# paths only during C# compilation
+See:
+- `docs/01-getting-started/cross-hx.md`
+- `docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md`
+- `docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md`
 
 ## 🎯 Phoenix Idiomatic Patterns with Type-Safe Augmentation
 

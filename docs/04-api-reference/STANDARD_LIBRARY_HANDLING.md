@@ -50,10 +50,15 @@ This repo ships a small set of Elixir-target overrides in `std/`:
 - `std/*.cross.hx`: “cross” overrides for core modules (`Array`, `String`, `Std`, etc.)
 - `std/haxe/**`: selected Haxe std modules implemented/adjusted for Elixir
 - `std/sys/**`: BEAM-backed `sys.*` surfaces
-- `std/_std/**`: **staged overrides** injected only for Elixir builds (to prevent `__elixir__()` leaking into macro/other targets)
+- `std/_std/**`: **Elixir-only shims** injected only for Elixir builds (to prevent `__elixir__()` leaking into macro/other targets)
 
 The injection point is macro-time, in:
-- `src/reflaxe/elixir/CompilerInit.hx:1` (adds `std/` and `std/_std/` only when targeting Elixir)
+- `src/reflaxe/elixir/CompilerBootstrap.hx:1` (early injection, invoked from `extraParams.hxml`)
+- `src/reflaxe/elixir/CompilerInit.hx:1` (compiler registration + early injection)
+
+See also:
+- `docs/01-getting-started/cross-hx.md`
+- `docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md`
 
 This keeps:
 - macro context and other targets using the official Haxe stdlib
