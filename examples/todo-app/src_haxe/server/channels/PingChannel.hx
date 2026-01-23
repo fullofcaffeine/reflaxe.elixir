@@ -1,12 +1,13 @@
 package server.channels;
 
 import elixir.types.Term;
-import phoenix.Channel;
 import phoenix.channels.JoinResult;
 import phoenix.channels.ReplyResult;
+import phoenix.channels.TypedChannelServer;
 import StringTools;
-import shared.channels.WirePayload;
 import shared.channels.PingProtocol;
+import shared.channels.PingProtocol.PingClientEvent;
+import shared.channels.PingProtocol.PingServerEvent;
 
 /**
  * PingChannel
@@ -34,18 +35,22 @@ class PingChannel {
     }
 
     public static function handle_in(event: String, payload: Term, socket: Term): ReplyResult<Term> {
-        if (event != PingProtocol.EventPing) {
+        var protocol = PingProtocol.serverProtocol();
+        var decoded: Null<PingClientEvent> = TypedChannelServer.decode(protocol, event, payload);
+
+        if (decoded == null) {
             return Noreply(socket);
         }
 
-        var requestId = WirePayload.getString(payload, PingProtocol.WireKeyRequestId);
-        if (requestId == null || StringTools.trim(requestId) == "") {
-            return Noreply(socket);
-        }
-
-        var outgoing: Term = {};
-        outgoing = elixir.ElixirMap.put(outgoing, PingProtocol.WireKeyRequestId, requestId);
-        Channel.broadcast(socket, PingProtocol.EventPong, outgoing);
-        return Noreply(socket);
+        return switch (decoded) {
+            case Ping(ping):
+                if (ping.requestId == null || StringTools.trim(ping.requestId) == "") {
+                    Noreply(socket);
+                } else {
+                    var pong: PingServerEvent = Pong({requestId: ping.requestId});
+                    TypedChannelServer.broadcast(socket, protocol, pong);
+                    Noreply(socket);
+                }
+        };
     }
 }

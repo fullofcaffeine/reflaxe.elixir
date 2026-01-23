@@ -1,19 +1,13 @@
 package shared.channels;
 
+import phoenix.channels.ChannelProtocol;
+import phoenix.channels.EncodedEvent;
+import phoenix.channels.Payload;
+import phoenix.channels.WirePayload;
+
 typedef PingPayload = {
     var requestId: String;
 }
-
-#if js
-typedef PingEncodedEvent = {
-    var event: String;
-    var payload: js.lib.Object;
-}
-
-typedef PingWirePayload = {
-    @:optional var request_id: String;
-}
-#end
 
 enum PingClientEvent {
     Ping(payload: PingPayload);
@@ -29,32 +23,67 @@ class PingProtocol {
     public static inline var EventPing: String = "ping";
     public static inline var EventPong: String = "pong";
 
-    #if js
-    public static function encodePingPayload(payload: PingPayload): js.lib.Object {
-        var out: PingWirePayload = {request_id: payload.requestId};
-        return cast out;
+    static function encodePingPayload(payload: PingPayload): Payload {
+        #if js
+        return cast {request_id: payload.requestId};
+        #else
+        var out = WirePayload.empty();
+        return WirePayload.putString(out, WireKeyRequestId, payload.requestId);
+        #end
     }
 
-    public static function decodePingPayload(payload: PingWirePayload): Null<PingPayload> {
-        var requestId = payload != null ? payload.request_id : null;
+    static function decodePingPayload(payload: Payload): Null<PingPayload> {
+        var requestId = WirePayload.getString(payload, WireKeyRequestId);
         return requestId != null ? {requestId: requestId} : null;
     }
 
-    public static function encodeSend(event: PingClientEvent): PingEncodedEvent {
+    static function encodeClientSend(event: PingClientEvent): EncodedEvent {
         return switch (event) {
             case Ping(payload):
                 {event: EventPing, payload: encodePingPayload(payload)};
-        }
+        };
     }
 
-    public static function decodeRecv(eventName: String, payload: js.lib.Object): Null<PingServerEvent> {
+    static function decodeClientRecv(eventName: String, payload: Payload): Null<PingServerEvent> {
         return switch (eventName) {
             case EventPong:
-                var decoded = decodePingPayload(cast payload);
+                var decoded = decodePingPayload(payload);
                 decoded != null ? Pong(decoded) : null;
             default:
                 null;
         };
     }
-    #end
+
+    static function encodeServerSend(event: PingServerEvent): EncodedEvent {
+        return switch (event) {
+            case Pong(payload):
+                {event: EventPong, payload: encodePingPayload(payload)};
+        };
+    }
+
+    static function decodeServerRecv(eventName: String, payload: Payload): Null<PingClientEvent> {
+        return switch (eventName) {
+            case EventPing:
+                var decoded = decodePingPayload(payload);
+                decoded != null ? Ping(decoded) : null;
+            default:
+                null;
+        };
+    }
+
+    public static function clientProtocol(): ChannelProtocol<PingClientEvent, PingServerEvent> {
+        return {
+            eventNames: [EventPong],
+            encodeSend: encodeClientSend,
+            decodeRecv: decodeClientRecv
+        };
+    }
+
+    public static function serverProtocol(): ChannelProtocol<PingServerEvent, PingClientEvent> {
+        return {
+            eventNames: [EventPing],
+            encodeSend: encodeServerSend,
+            decodeRecv: decodeServerRecv
+        };
+    }
 }

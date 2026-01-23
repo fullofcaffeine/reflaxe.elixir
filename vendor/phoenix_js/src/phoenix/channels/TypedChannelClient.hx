@@ -4,11 +4,9 @@ package phoenix.channels;
 
 import phoenix.Socket.Channel;
 import phoenix.Socket.Push;
-
-typedef EncodedEvent = {
-  var event: String;
-  var payload: js.lib.Object;
-}
+import phoenix.channels.ChannelProtocol;
+import phoenix.channels.EncodedEvent;
+import phoenix.channels.Payload;
 
 /**
  * TypedChannelClient
@@ -29,13 +27,13 @@ typedef EncodedEvent = {
 class TypedChannelClient<TSend, TRecv> {
   final channel: Channel;
   final encodeSend: TSend -> EncodedEvent;
-  final decodeRecv: (String, js.lib.Object) -> Null<TRecv>;
+  final decodeRecv: (String, Payload) -> Null<TRecv>;
   final handlers: Array<TRecv -> Void>;
 
   public function new(
     channel: Channel,
     encodeSend: TSend -> EncodedEvent,
-    decodeRecv: (String, js.lib.Object) -> Null<TRecv>,
+    decodeRecv: (String, Payload) -> Null<TRecv>,
     eventNames: Array<String>
   ) {
     this.channel = channel;
@@ -45,7 +43,7 @@ class TypedChannelClient<TSend, TRecv> {
 
     var self = this;
     for (eventName in eventNames) {
-      this.channel.on(eventName, function(payload: js.lib.Object): Void {
+      this.channel.on(eventName, function(payload: Payload): Void {
         var decoded = self.decodeRecv(eventName, payload);
         if (decoded == null) return;
         for (handler in self.handlers) {
@@ -70,6 +68,18 @@ class TypedChannelClient<TSend, TRecv> {
   public function push(message: TSend, ?timeout: Int): Push {
     var encoded = encodeSend(message);
     return channel.push(encoded.event, encoded.payload, timeout);
+  }
+
+  public static inline function fromProtocol<TSend, TRecv>(
+    channel: Channel,
+    protocol: ChannelProtocol<TSend, TRecv>
+  ): TypedChannelClient<TSend, TRecv> {
+    return new TypedChannelClient(
+      channel,
+      protocol.encodeSend,
+      protocol.decodeRecv,
+      protocol.eventNames
+    );
   }
 }
 

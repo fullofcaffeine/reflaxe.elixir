@@ -27,12 +27,7 @@ class PingChannelClient {
         socket.connect();
 
         var channel = socket.channel(PingProtocol.Topic, cast {});
-        var client = new TypedChannelClient<PingClientEvent, PingServerEvent>(
-            channel,
-            PingProtocol.encodeSend,
-            PingProtocol.decodeRecv,
-            [PingProtocol.EventPong]
-        );
+        var client = TypedChannelClient.fromProtocol(channel, PingProtocol.clientProtocol());
 
         client.onMessage(function(message: PingServerEvent): Void {
             switch (message) {

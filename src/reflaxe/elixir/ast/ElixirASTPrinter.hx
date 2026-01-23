@@ -580,8 +580,32 @@ class ElixirASTPrinter {
             // Pattern Matching
             // ================================================================
             case ECase(expr, clauses):
+                // IMPORTANT: Some expressions (try/if/cond/with/case/receive) end with `end` and cannot be used
+                // directly as a `case` scrutinee without parentheses because Elixir rejects `end do` sequences:
+                //   case try do ... end do ... end   # invalid
+                //   case (try do ... end) do ... end # valid
+                var exprStr = print(expr, 0);
+                var scrutineeNeedsParens = switch (expr.def) {
+                    case EIf(_, _, _)
+                        | EUnless(_, _, _)
+                        | ETry(_, _, _, _, _)
+                        | ECase(_, _)
+                        | ECond(_)
+                        | EWith(_, _, _)
+                        | EReceive(_, _)
+                        | EFn(_):
+                        true;
+                    case EBlock(stmts) if (stmts.length > 1):
+                        true;
+                    default:
+                        false;
+                };
+                if (scrutineeNeedsParens) {
+                    var trimmed = exprStr.trim();
+                    if (!(trimmed.startsWith("(") && trimmed.endsWith(")"))) exprStr = '(' + exprStr + ')';
+                }
                 '(' + (
-                    'case ' + print(expr, 0) + ' do\n' +
+                    'case ' + exprStr + ' do\n' +
                     [for (clause in clauses) 
                         indentStr(indent + 1) + printCaseClause(clause, indent + 1)
                     ].join('\n') + '\n' +

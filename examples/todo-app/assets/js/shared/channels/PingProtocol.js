@@ -25,22 +25,21 @@ PingServerEvent.__empty_constructs__ = []
 export const PingProtocol = Register.global("$hxClasses")["shared.channels.PingProtocol"] = 
 class PingProtocol {
 	static encodePingPayload(payload) {
-		let out = {"request_id": payload.requestId};
-		return out;
+		return {"request_id": payload.requestId};
 	}
 	static decodePingPayload(payload) {
-		let requestId = (payload != null) ? payload.request_id : null;
+		let requestId = (payload == null) ? null : ((p,k)=>{var v=p[k]; return v==null?null:String(v);})(payload,"request_id");
 		if (requestId != null) {
 			return {"requestId": requestId};
 		} else {
 			return null;
 		};
 	}
-	static encodeSend(event) {
+	static encodeClientSend(event) {
 		let payload = event.payload;
 		return {"event": "ping", "payload": PingProtocol.encodePingPayload(payload)};
 	}
-	static decodeRecv(eventName, payload) {
+	static decodeClientRecv(eventName, payload) {
 		if (eventName == "pong") {
 			let decoded = PingProtocol.decodePingPayload(payload);
 			if (decoded != null) {
@@ -51,6 +50,9 @@ class PingProtocol {
 		} else {
 			return null;
 		};
+	}
+	static clientProtocol() {
+		return {"eventNames": ["pong"], "encodeSend": PingProtocol.encodeClientSend, "decodeRecv": PingProtocol.decodeClientRecv};
 	}
 	static get __name__() {
 		return "shared.channels.PingProtocol"

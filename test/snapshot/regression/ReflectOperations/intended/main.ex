@@ -15,12 +15,12 @@ defmodule Main do
         (case Map.fetch(reflect_obj, reflect_field) do
           {:ok, reflect_value} -> reflect_value
           _ ->
-            (case try do
+            (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -32,12 +32,12 @@ end do
         (case Map.fetch(reflect_obj, reflect_field) do
           {:ok, reflect_value} -> reflect_value
           _ ->
-            (case try do
+            (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -49,12 +49,12 @@ end do
         (case Map.fetch(reflect_obj, reflect_field) do
           {:ok, reflect_value} -> reflect_value
           _ ->
-            (case try do
+            (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -66,12 +66,12 @@ end do
     (case Map.fetch(reflect_obj, reflect_field) do
       {:ok, reflect_value} -> reflect_value
       _ ->
-        (case try do
+        (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
           nil -> nil
           reflect_atom ->
             Map.get(reflect_obj, reflect_atom)
@@ -82,12 +82,12 @@ end), "name"} do
         (case Map.fetch(reflect_obj, reflect_field) do
           {:ok, reflect_value} -> reflect_value
           _ ->
-            (case try do
+            (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -100,12 +100,12 @@ end do
           true ->
             Map.put(reflect_obj, reflect_field, reflect_value)
           false ->
-            (case try do
+            (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
               nil ->
                 Map.put(reflect_obj, reflect_field, reflect_value)
               reflect_atom ->
@@ -119,12 +119,12 @@ end do
           true ->
             Map.put(reflect_obj, reflect_field, reflect_value)
           false ->
-            (case try do
+            (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
               nil ->
                 Map.put(reflect_obj, reflect_field, reflect_value)
               reflect_atom ->
@@ -137,12 +137,12 @@ end do
         (case Map.has_key?(reflect_obj, reflect_field) do
           true -> true
           false ->
-            (case try do
+            (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
               nil -> false
               reflect_atom ->
                 Map.has_key?(reflect_obj, reflect_atom)
@@ -154,12 +154,12 @@ end do
         (case Map.has_key?(reflect_obj, reflect_field) do
           true -> true
           false ->
-            (case try do
+            (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
               nil -> false
               reflect_atom ->
                 Map.has_key?(reflect_obj, reflect_atom)
@@ -171,12 +171,12 @@ end do
         (case Map.has_key?(reflect_obj, reflect_field) do
           true -> true
           false ->
-            (case try do
+            (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
               nil -> false
               reflect_atom ->
                 Map.has_key?(reflect_obj, reflect_atom)
@@ -189,12 +189,12 @@ end do
           true ->
             Map.delete(reflect_obj, reflect_field)
           false ->
-            (case try do
+            (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
               nil ->
                 Map.delete(reflect_obj, reflect_field)
               reflect_atom ->
@@ -208,12 +208,12 @@ end do
           true ->
             Map.delete(reflect_obj, reflect_field)
           false ->
-            (case try do
+            (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
               nil ->
                 Map.delete(reflect_obj, reflect_field)
               reflect_atom ->
@@ -288,12 +288,12 @@ end do
         (case Map.fetch(reflect_obj, reflect_field) do
           {:ok, reflect_value} -> reflect_value
           _ ->
-            (case try do
+            (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)
@@ -305,12 +305,12 @@ end do
         (case Map.fetch(reflect_obj, reflect_field) do
           {:ok, reflect_value} -> reflect_value
           _ ->
-            (case try do
+            (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
               nil -> nil
               reflect_atom ->
                 Map.get(reflect_obj, reflect_atom)

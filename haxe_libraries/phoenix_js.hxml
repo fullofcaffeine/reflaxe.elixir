@@ -11,7 +11,7 @@
 # from tests, examples and tools without depending on global haxelib state.
 
 -cp ${SCOPE_DIR}/vendor/phoenix_js/src
+-cp ${SCOPE_DIR}/vendor/phoenix_shared/src
 
 # Library define for conditional compilation flags
 -D phoenix_js=0.1.0
-
