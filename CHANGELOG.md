@@ -1,3 +1,10 @@
+## [1.11.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.11.0...v1.11.1) (2026-01-23)
+
+
+### Bug Fixes
+
+* stateful EReg runtime + phoenix_js channel externs ([0d43b29](https://github.com/fullofcaffeine/reflaxe.elixir/commit/0d43b298cd51ec276baae7a91f3782b6172b87d3))
+
 # [1.11.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.10.1...v1.11.0) (2026-01-23)
 
 
