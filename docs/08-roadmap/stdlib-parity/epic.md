@@ -36,7 +36,8 @@ This epic is module-level scoped first (coverage), then drills into API/behavior
 
 2) **`haxe.io` + core utilities**
    - Done (core building blocks): `haxe.io.BufferInput`, `haxe.io.BytesBuffer`, `haxe.io.BytesInput`, `haxe.io.BytesOutput`, `haxe.io.FPHelper`, `haxe.Json`
-   - Next: `haxe.Exception`, `haxe.CallStack`, and remaining `haxe.io.*` utilities as-needed
+   - Done: `haxe.Exception`
+   - Next: `haxe.CallStack`, and remaining `haxe.io.*` utilities as-needed
 
 3) **`sys.*` runtime integration**
    - Prioritize: `sys.io.File`, `sys.FileSystem`, `sys.io.Process`, `sys.net.Socket`, `sys.thread.*`
