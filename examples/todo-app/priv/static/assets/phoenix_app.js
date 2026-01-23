@@ -6918,7 +6918,14 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   PingServerEvent.__empty_constructs__ = [];
   var PingProtocol = Register.global("$hxClasses")["shared.channels.PingProtocol"] = class PingProtocol2 {
     static encodePingPayload(payload) {
-      return { "request_id": payload.requestId };
+      let out = {};
+      if (out == null) {
+        return out;
+      } else {
+        out["request_id"] = payload.requestId;
+        return out;
+      }
+      ;
     }
     static decodePingPayload(payload) {
       let requestId = payload == null ? null : ((p, k) => {

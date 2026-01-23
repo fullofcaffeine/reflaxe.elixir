@@ -24,12 +24,8 @@ class PingProtocol {
     public static inline var EventPong: String = "pong";
 
     static function encodePingPayload(payload: PingPayload): Payload {
-        #if js
-        return cast {request_id: payload.requestId};
-        #else
         var out = WirePayload.empty();
         return WirePayload.putString(out, WireKeyRequestId, payload.requestId);
-        #end
     }
 
     static function decodePingPayload(payload: Payload): Null<PingPayload> {

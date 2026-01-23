@@ -3006,31 +3006,9 @@ class ElixirASTBuilder {
                                     #end
                                     #end
                                 } else {
-                                    // Check metadata to see if this is truly a temp extraction variable
-                                    var isExtractionTemp = false;
-
-                                    // First check if we have VarOrigin metadata
-                                    if (currentContext.tempVarRenameMap.exists(Std.string(v.id))) {
-                                        // This is a renamed temp variable
-                                        isExtractionTemp = true;
-                                    } else if (varName == "g" || (varName.startsWith("g") && varName.length > 1 &&
-                                              varName.charAt(1) >= '0' && varName.charAt(1) <= '9')) {
-                                        // Name pattern suggests temp var, but need more context
-                                        // Check if this variable was created from TEnumParameter
-                                        // For now, be conservative and only treat as temp if we're sure
-                                        isExtractionTemp = false; // Conservative: avoid false positives
-                                    }
-
-                                    if (isExtractionTemp) {
-                                        // This is definitely a temp extraction variable
-                                        extractedVarName = varName;
-                                        skipExtraction = true;
-
-                                        #if debug_enum_extraction
-                                        #if debug_ast_builder
-                                        #end
-                                        #end
-                                    }
+                                    // No ClauseContext mapping: do not assume this local has already been
+                                    // destructured. Emit `elem/2` normally so non-pattern contexts (like
+                                    // optimized single-constructor enum handling) remain correct.
                                 }
                             case _:
                                 // Not a local variable, normal extraction needed
@@ -3124,8 +3102,85 @@ class ElixirASTBuilder {
                                 inner;
                         }
                     case _:
-                        // Default: ignore casts.
-                        convertExpression(e);
+                        // Haxe can optimize a match on a *single-constructor* enum into a cast from
+                        // the enum value to its sole constructor-parameter type.
+                        //
+                        // We represent enums as tagged tuples `{:tag, param1, ...}`; so this cast must
+                        // extract the parameter by tuple index (elem(enum, 1)).
+                        var paramTupleIndex: Null<Int> = null;
+                        var targetType = haxe.macro.TypeTools.follow(expr.t);
+                        var sourceType = haxe.macro.TypeTools.follow(e.t);
+
+                        var enumRef: Null<Ref<EnumType>> = switch (sourceType) {
+                            case TEnum(ref, _):
+                                ref;
+                            case TAbstract(absRef, params):
+                                var abs = absRef.get();
+                                if (abs != null && abs.pack.length == 0 && abs.name == "Null" && params != null && params.length == 1) {
+                                    switch (haxe.macro.TypeTools.follow(params[0])) {
+                                        case TEnum(ref, _):
+                                            ref;
+                                        default:
+                                            null;
+                                    }
+                                } else {
+                                    null;
+                                }
+                            default:
+                                null;
+                        };
+
+                        if (enumRef != null) {
+                            var enumType = enumRef.get();
+                            if (enumType != null && enumType.constructs != null) {
+                                var onlyConstructor: Null<EnumField> = null;
+                                var constructorCount = 0;
+                                for (_ => ctor in enumType.constructs) {
+                                    onlyConstructor = ctor;
+                                    constructorCount++;
+                                    if (constructorCount > 1) break;
+                                }
+
+                                if (constructorCount == 1 && onlyConstructor != null) {
+                                    switch (onlyConstructor.type) {
+                                        case TFun(args, _):
+                                            if (args != null && args.length == 1) {
+                                                var paramType = haxe.macro.TypeTools.follow(args[0].t);
+                                                var matches = false;
+                                                #if macro
+                                                try {
+                                                    // Avoid treating casts to Dynamic as payload extraction; Dynamic unifies with almost anything.
+                                                    var targetIsDynamic = switch (targetType) {
+                                                        case TDynamic(_): true;
+                                                        default: false;
+                                                    };
+                                                    if (!targetIsDynamic) {
+                                                        matches = Context.unify(paramType, targetType) || Context.unify(targetType, paramType);
+                                                    }
+                                                } catch (_: Any) {}
+                                                #end
+                                                if (matches) {
+                                                    // +1 because tuple index 0 is the tag atom.
+                                                    paramTupleIndex = 1;
+                                                }
+                                            }
+                                        default:
+                                    }
+                                }
+                            }
+                        }
+
+                        if (paramTupleIndex != null) {
+                            var enumExpr = buildFromTypedExpr(e, currentContext);
+                            if (enumExpr != null) {
+                                ECall(null, "elem", [enumExpr, makeAST(EInteger(paramTupleIndex))]);
+                            } else {
+                                convertExpression(e);
+                            }
+                        } else {
+                            // Default: ignore casts.
+                            convertExpression(e);
+                        }
                 }
 
             case TTypeExpr(m):
