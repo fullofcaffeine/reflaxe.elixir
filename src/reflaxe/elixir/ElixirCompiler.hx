@@ -2174,21 +2174,39 @@ class ElixirCompiler extends GenericCompiler<
             // Haxe constructors mutate `this`; in Elixir we build a fresh `struct` map, run the body
             // against it, and return it.
             if (isConstructor) {
-                // Build initial map with all instance fields present so `%{struct | field: ...}` updates are safe.
-                var initPairs: Array<reflaxe.elixir.ast.ElixirAST.EMapPair> = [];
-                for (field in classType.fields.get()) {
-                    switch (field.kind) {
-                        case FVar(_, _):
-                            var snakeFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
-                            initPairs.push({
-                                key: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EAtom(snakeFieldName)),
-                                value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ENil)
-                            });
-                        default:
+                var isExceptionConstructor = false;
+                var exceptionCheck: Null<ClassType> = classType;
+                while (exceptionCheck != null) {
+                    var isHaxeExceptionRoot = (exceptionCheck.pack.length == 1 && exceptionCheck.pack[0] == "haxe" && exceptionCheck.name == "Exception");
+                    var isReflaxeExceptionRoot = (exceptionCheck.pack.length == 1 && exceptionCheck.pack[0] == "Reflaxe" && exceptionCheck.name == "Exception");
+                    if (isHaxeExceptionRoot || isReflaxeExceptionRoot) {
+                        isExceptionConstructor = true;
+                        break;
                     }
+                    exceptionCheck = if (exceptionCheck.superClass != null) exceptionCheck.superClass.t.get() else null;
                 }
 
-                var initStruct = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EMap(initPairs));
+                var initStruct = if (isExceptionConstructor) {
+                    // Exception classes must construct a real exception struct so `is_struct/2` matches
+                    // and `raise <ExceptionModule>` interops naturally with Elixir/Phoenix.
+                    var ctorModuleName = ModuleBuilder.extractModuleName(classType);
+                    reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EStruct(ctorModuleName, []));
+                } else {
+                    // Build initial map with all instance fields present so `%{struct | field: ...}` updates are safe.
+                    var initPairs: Array<reflaxe.elixir.ast.ElixirAST.EMapPair> = [];
+                    for (field in classType.fields.get()) {
+                        switch (field.kind) {
+                            case FVar(_, _):
+                                var snakeFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
+                                initPairs.push({
+                                    key: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EAtom(snakeFieldName)),
+                                    value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ENil)
+                                });
+                            default:
+                        }
+                    }
+                    reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EMap(initPairs));
+                };
                 var initAssign = reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EMatch(PVar("struct"), initStruct));
 
                 var ctorExprs: Array<reflaxe.elixir.ast.ElixirAST> = [initAssign];
@@ -2393,7 +2411,14 @@ class ElixirCompiler extends GenericCompiler<
             var isException = false;
             var currentClass = parentClass;
             while (currentClass != null) {
-                if (currentClass.pack.length == 1 && currentClass.pack[0] == "haxe" && currentClass.name == "Exception") {
+                // NOTE: For the Elixir target we override `haxe.Exception` to `@:native("Reflaxe.Exception")`.
+                // In some macro/type contexts Haxe reports the native module path (`Reflaxe.Exception`) as the
+                // effective superclass pack/name, so detect both:
+                // - Haxe stdlib root: `haxe.Exception`
+                // - Elixir runtime root: `Reflaxe.Exception`
+                var isHaxeExceptionRoot = (currentClass.pack.length == 1 && currentClass.pack[0] == "haxe" && currentClass.name == "Exception");
+                var isReflaxeExceptionRoot = (currentClass.pack.length == 1 && currentClass.pack[0] == "Reflaxe" && currentClass.name == "Exception");
+                if (isHaxeExceptionRoot || isReflaxeExceptionRoot) {
                     isException = true;
                     break;
                 }
@@ -2403,6 +2428,15 @@ class ElixirCompiler extends GenericCompiler<
             
             #if debug_inheritance
             #end
+        }
+        // Exception root detection:
+        // - `haxe.Exception` is `extern` in the upstream stdlib; for Elixir builds we provide a concrete
+        //   implementation under `std/haxe/Exception.cross.hx` that emits as `Reflaxe.Exception`.
+        // - In some contexts Haxe reports the native module path (`Reflaxe.Exception`) as the effective
+        //   type pack/name, so treat both as the exception root module.
+        if ((classType.pack.length == 1 && classType.pack[0] == "haxe" && classType.name == "Exception")
+            || (classType.pack.length == 1 && classType.pack[0] == "Reflaxe" && classType.name == "Exception")) {
+            metadata.isException = true;
         }
 
         // Enable ExUnit transformation pass for @:exunit modules

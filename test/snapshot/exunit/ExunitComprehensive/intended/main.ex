@@ -48,19 +48,19 @@ defmodule Main do
       String.split(context[:test_string], " ")
     end
     _ = Assert.equals(length(parts), 2, "Split should produce 2 parts")
-    _ = Assert.equals(parts[0], "Hello", "First part should be 'Hello'")
-    _ = Assert.equals(parts[1], "World", "Second part should be 'World'")
+    _ = Assert.equals(Enum.at(parts, 0), "Hello", "First part should be 'Hello'")
+    _ = Assert.equals(Enum.at(parts, 1), "World", "Second part should be 'World'")
   end
   test "array operations" do
     _ = Assert.equals(length(context[:test_data]), 5, "Array should have 5 elements")
-    _ = Assert.equals(context[:test_data][0], 1, "First element should be 1")
-    _ = Assert.equals(context[:test_data][(length(context[:test_data]) - 1)], 5, "Last element should be 5")
+    _ = Assert.equals(Enum.at(context[:test_data], 0), 1, "First element should be 1")
+    _ = Assert.equals(Enum.at(context[:test_data], (length(context[:test_data]) - 1)), 5, "Last element should be 5")
     doubled = Enum.map(context[:test_data], fn x -> x * 2 end)
-    _ = Assert.equals(doubled[0], 2, "First doubled element should be 2")
-    _ = Assert.equals(doubled[4], 10, "Last doubled element should be 10")
+    _ = Assert.equals(Enum.at(doubled, 0), 2, "First doubled element should be 2")
+    _ = Assert.equals(Enum.at(doubled, 4), 10, "Last doubled element should be 10")
     filtered = Enum.filter(context[:test_data], fn x -> x > 2 end)
     _ = Assert.equals(length(filtered), 3, "Filtered array should have 3 elements")
-    _ = Assert.equals(filtered[0], 3, "First filtered element should be 3")
+    _ = Assert.equals(Enum.at(filtered, 0), 3, "First filtered element should be 3")
     sum = 0
     _g = 0
     g_value = context[:test_data]

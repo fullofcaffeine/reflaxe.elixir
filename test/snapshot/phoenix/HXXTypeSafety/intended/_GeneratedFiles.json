@@ -9,6 +9,7 @@
   "phoenix/types/hxx_component_registry.ex",
   "phoenix/types/attribute_helper.ex",
   "main.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

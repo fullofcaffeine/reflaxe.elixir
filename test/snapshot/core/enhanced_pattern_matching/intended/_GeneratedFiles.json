@@ -7,6 +7,7 @@
   "std.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/io/status.ex",
   "haxe/io/bytes.ex",

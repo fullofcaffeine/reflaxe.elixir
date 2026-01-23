@@ -8,6 +8,7 @@
   "reflaxe/elixir/haxe_throw.ex",
   "option.ex",
   "main.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "bulk_action.ex"
 ],

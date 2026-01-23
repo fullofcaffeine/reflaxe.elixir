@@ -15,14 +15,16 @@ end), haxe_exception} do
         end)
     end
     try do
-      raise Reflaxe.Elixir.HaxeThrow, [value: Exception.new("Exception object")]
+      raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("Exception object")]
     rescue
       haxe_exception ->
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {_, _e} -> nil
+          {e, _} when is_struct(e, Reflaxe.Exception) -> nil
+          _ ->
+            reraise(haxe_exception, __STACKTRACE__)
         end)
     end
   end
@@ -32,7 +34,7 @@ end), haxe_exception} do
         (case type do
           1 -> raise Reflaxe.Elixir.HaxeThrow, [value: "String error"]
           2 -> raise Reflaxe.Elixir.HaxeThrow, [value: 42]
-          3 -> raise Reflaxe.Elixir.HaxeThrow, [value: Exception.new("Exception error")]
+          3 -> raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("Exception error")]
           4 -> raise Reflaxe.Elixir.HaxeThrow, [value: %{:error => "Object error"}]
           _ -> nil
         end)
@@ -44,7 +46,7 @@ end), haxe_exception} do
 end), haxe_exception} do
             {e, _} when is_binary(e) -> nil
             {e, _} when is_integer(e) -> nil
-            {_, _e} -> nil
+            {e, _} when is_struct(e, Reflaxe.Exception) -> nil
             {_e, _} -> nil
           end)
       end
@@ -126,7 +128,7 @@ end), haxe_exception} do
   end
   def divide(a, b) do
     if (b == 0) do
-      raise Reflaxe.Elixir.HaxeThrow, [value: Exception.new("Division by zero")]
+      raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("Division by zero")]
     end
     a / b
   end
@@ -141,12 +143,14 @@ end), haxe_exception} do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {_, _e} -> nil
+          {e, _} when is_struct(e, Reflaxe.Exception) -> nil
+          _ ->
+            reraise(haxe_exception, __STACKTRACE__)
         end)
     end
   end
   def rethrow_example() do
-    inner_function = fn -> raise Reflaxe.Elixir.HaxeThrow, [value: Exception.new("Original error")] end
+    inner_function = fn -> raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("Original error")] end
     middle_function = fn ->
       try do
         inner_function.()
@@ -156,7 +160,9 @@ end), haxe_exception} do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-            {_, e} -> raise Reflaxe.Elixir.HaxeThrow, [value: e]
+            {e, _} when is_struct(e, Reflaxe.Exception) -> raise Reflaxe.Elixir.HaxeThrow, [value: e]
+            _ ->
+              reraise(haxe_exception, __STACKTRACE__)
           end)
       end
     end
@@ -168,13 +174,15 @@ end), haxe_exception} do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {_, _e} -> nil
+          {e, _} when is_struct(e, Reflaxe.Exception) -> nil
+          _ ->
+            reraise(haxe_exception, __STACKTRACE__)
         end)
     end
   end
   def stack_trace_example() do
     try do
-      level3 = fn -> raise Reflaxe.Elixir.HaxeThrow, [value: Exception.new("Deep error")] end
+      level3 = fn -> raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("Deep error")] end
       level2 = fn -> level3.() end
       level1 = fn -> level2.() end
       _ = level1.()
@@ -184,7 +192,9 @@ end), haxe_exception} do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {_, _e} -> nil
+          {e, _} when is_struct(e, Reflaxe.Exception) -> nil
+          _ ->
+            reraise(haxe_exception, __STACKTRACE__)
         end)
     end
   end

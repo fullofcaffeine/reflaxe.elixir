@@ -9,6 +9,7 @@
   "my_app_web/ping_channel.ex",
   "my_app_web/endpoint.ex",
   "main.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

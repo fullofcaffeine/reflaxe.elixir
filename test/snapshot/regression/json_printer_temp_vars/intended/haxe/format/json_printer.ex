@@ -43,7 +43,7 @@ defmodule JsonPrinter do
     items = []
     _g = 0
     arr_length = length(arr)
-    items = Enum.reduce(0..(arr_length - 1)//1, items, fn i, items_acc -> Enum.concat(items_acc, [write_value(struct, arr[i], inspect(i))]) end)
+    items = Enum.reduce(0..(arr_length - 1)//1, items, fn i, items_acc -> Enum.concat(items_acc, [write_value(struct, Enum.at(arr, i), inspect(i))]) end)
     if (not Kernel.is_nil(struct.space) and length(items) > 0) do
       "[
   #{Enum.join(items, ",\n  ")}
@@ -57,7 +57,23 @@ defmodule JsonPrinter do
     pairs = []
     _g = 0
     pairs = Enum.reduce(fields, pairs, fn field, pairs_acc ->
-      value = Map.get(obj, field)
+      value = (case {obj, field} do
+        {reflect_obj, reflect_field} ->
+          (case Map.fetch(reflect_obj, reflect_field) do
+            {:ok, reflect_value} -> reflect_value
+            _ ->
+              (case (try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end) do
+                nil -> nil
+                reflect_atom ->
+                  Map.get(reflect_obj, reflect_atom)
+              end)
+          end)
+      end)
       key = quote_string(struct, field)
       val = write_value(struct, value, field)
       if (not Kernel.is_nil(struct.space)) do

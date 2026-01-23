@@ -12,6 +12,7 @@
   "my_app_web/presence.ex",
   "my_app/custom_presence.ex",
   "main.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex"
 ],
   "id": 0,

@@ -12,7 +12,7 @@ defmodule JsonPrinter do
     arr_length = length(arr)
     items = Enum.reduce(0..(arr_length - 1)//1, items, fn i, items_acc ->
       items_acc = if (i > 0), do: items_acc <> ", ", else: items_acc
-      items_acc <> write_value(struct, arr[i])
+      items_acc <> write_value(struct, Enum.at(arr, i))
     end)
     _ = StringBuf.add(struct.buffer, items)
     _ = StringBuf.add(struct.buffer, "]")
@@ -25,7 +25,7 @@ defmodule JsonPrinter do
     fields_length = length(fields)
     result = Enum.reduce(0..(fields_length - 1)//1, result, fn i, result_acc ->
       result_acc = if (i > 0), do: result_acc <> ", ", else: result_acc
-      field = fields[i]
+      field = Enum.at(fields, i)
       value = (case {obj, field} do
         {reflect_obj, reflect_field} ->
           (case Map.fetch(reflect_obj, reflect_field) do

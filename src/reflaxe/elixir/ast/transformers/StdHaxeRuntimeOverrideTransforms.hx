@@ -72,6 +72,18 @@ class StdHaxeRuntimeOverrideTransforms {
         return makeASTWithMeta(EDefmodule("PosException", posExceptionBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
     }
     static inline function posExceptionBlock(meta: ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
+        // Ensure `defexception [...]` includes the fields used by this override even if Haxe DCE
+        // prunes them from the type surface (e.g., when PosException.toString() is eliminated).
+        //
+        // Without this, `%__MODULE__{..., pos_infos: ...}` can fail at Elixir compile-time with:
+        //   ** (KeyError) key :pos_infos not found expanding struct: PosException.__struct__/1
+        if (meta != null) {
+            if (meta.instanceFields == null) meta.instanceFields = [];
+            if (meta.instanceFields.indexOf("pos_infos") == -1) {
+                meta.instanceFields.push("pos_infos");
+                meta.instanceFields.sort(function(a, b) return a < b ? -1 : (a > b ? 1 : 0));
+            }
+        }
         var raw = makeAST(ERaw(
             "  def new(message, previous, pos) do\n" +
             "    pos_infos =\n" +
@@ -80,9 +92,9 @@ class StdHaxeRuntimeOverrideTransforms {
             "      else\n" +
             "        pos\n" +
             "      end\n" +
-            "    %{:message => message, :previous => previous, :posInfos => pos_infos}\n" +
+            "    %__MODULE__{message: message, previous: previous, native: nil, stack: [], pos_infos: pos_infos}\n" +
             "  end\n" +
-            "  def to_string(struct), do: \"#{Kernel.to_string(struct.message)} in #{struct.posInfos.className}.#{struct.posInfos.methodName} at #{struct.posInfos.fileName}:#{struct.posInfos.lineNumber}\"\n"
+            "  def to_string(struct), do: \"#{Kernel.to_string(struct.message)} in #{struct.pos_infos.className}.#{struct.pos_infos.methodName} at #{struct.pos_infos.fileName}:#{struct.pos_infos.lineNumber}\"\n"
         ));
         return makeASTWithMeta(EBlock([raw]), meta, pos);
     }

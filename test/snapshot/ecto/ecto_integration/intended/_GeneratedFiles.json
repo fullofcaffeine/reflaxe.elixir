@@ -12,6 +12,7 @@
   "reflaxe/elixir/haxe_throw.ex",
   "post.ex",
   "organization.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "ecto_integration_simple.ex",
   "create_users_table.ex",

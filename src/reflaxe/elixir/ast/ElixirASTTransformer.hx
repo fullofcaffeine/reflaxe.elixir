@@ -1555,10 +1555,18 @@ class ElixirASTTransformer {
                                             "new",
                                             args
                                         ));
+                                        // Parent ctors may now return structs (not just maps). When merging parent
+                                        // fields into a derived struct, ensure we never overwrite the derived
+                                        // `__struct__` identity.
+                                        var parentFields = makeAST(ERemoteCall(
+                                            makeAST(EVar("Map")),
+                                            "delete",
+                                            [parentCtor, makeAST(EAtom("__struct__"))]
+                                        ));
                                         var merged = makeAST(ERemoteCall(
                                             makeAST(EVar("Map")),
                                             "merge",
-                                            [makeAST(EVar("struct")), parentCtor]
+                                            [makeAST(EVar("struct")), parentFields]
                                         ));
                                         return makeAST(EMatch(
                                             PVar("struct"),
@@ -3282,7 +3290,8 @@ class ElixirASTTransformer {
                 case EModule(name, attributes, body):
                     // Insert generated functions at the end of the module body
                     var newBody = body.concat(generatedFunctions);
-                    return makeAST(EModule(name, attributes, newBody));
+                    // Preserve module metadata (e.g., isException/isLiveView flags) when rewriting.
+                    return makeASTWithMeta(EModule(name, attributes, newBody), transformed.metadata, transformed.pos);
                 default:
                     // For non-module nodes, we need to wrap or handle differently
                     // This shouldn't happen in normal compilation

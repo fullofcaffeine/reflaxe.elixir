@@ -88,16 +88,16 @@ end) do
     (case arr do
       [] -> "empty array"
       [_head | _tail] ->
-        x = arr[0]
+        x = Enum.at(arr, 0)
         "single element: #{Kernel.to_string(x)}"
       2 ->
-        x = arr[0]
-        y = arr[1]
+        x = Enum.at(arr, 0)
+        y = Enum.at(arr, 1)
         "pair: [#{Kernel.to_string(x)}, #{Kernel.to_string(y)}]"
       3 ->
-        x = arr[0]
-        y = arr[1]
-        z = arr[2]
+        x = Enum.at(arr, 0)
+        y = Enum.at(arr, 1)
+        z = Enum.at(arr, 2)
         "triple: [#{Kernel.to_string(x)}, #{Kernel.to_string(y)}, #{Kernel.to_string(z)}]"
       _ ->
         a = arr
@@ -162,7 +162,7 @@ end) do
       {:valid} -> "Data is valid"
       {:invalid, errors} ->
         cond do
-          length(errors) == 1 -> "Single error: " <> errors[0]
+          length(errors) == 1 -> "Single error: " <> Enum.at(errors, 0)
           true ->
             if (length(errors) > 1) do
               "Multiple errors: " <> Kernel.to_string(length(errors)) <> " issues"

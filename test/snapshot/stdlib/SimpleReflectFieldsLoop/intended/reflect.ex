@@ -41,10 +41,44 @@ defmodule Reflect do
     f1 == f2
   end
   def get_property(o, field) do
-    Map.get(o, field)
+    (case {o, field} do
+      {reflect_obj, reflect_field} ->
+        (case Map.fetch(reflect_obj, reflect_field) do
+          {:ok, reflect_value} -> reflect_value
+          _ ->
+            (case (try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end) do
+              nil -> nil
+              reflect_atom ->
+                Map.get(reflect_obj, reflect_atom)
+            end)
+        end)
+    end)
   end
   def set_property(o, field, value) do
-    Map.put(o, field, value)
+    (case {o, field, value} do
+      {reflect_obj, reflect_field, reflect_value} ->
+        (case Map.has_key?(reflect_obj, reflect_field) do
+          true ->
+            Map.put(reflect_obj, reflect_field, reflect_value)
+          false ->
+            (case (try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end) do
+              nil ->
+                Map.put(reflect_obj, reflect_field, reflect_value)
+              reflect_atom ->
+                Map.put(reflect_obj, reflect_atom, reflect_value)
+            end)
+        end)
+    end)
   end
   def make_var_args(f) do
     fn args -> f.(args) end

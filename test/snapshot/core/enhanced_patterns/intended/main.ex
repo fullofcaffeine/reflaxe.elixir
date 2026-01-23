@@ -2,7 +2,7 @@ defmodule Main do
   def test_binary_patterns() do
     data = [72, 101, 108, 108, 111]
     switch_result_1 = (case data do
-      [head | tail] when head == 72 and tail != [] ->
+      [_head | tail] when Enum.at(data, 0) == 72 and tail != [] ->
         "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   _g = []
   g_value = 1
@@ -14,8 +14,8 @@ defmodule Main do
   _g
 end).(), ",") end).()}"
       [] -> "Empty binary"
-      [_head | _tail] when _head == 72 -> "Starts with 'H' (single byte)"
-      [_head | _tail] when _head == 72 and _tail != [] ->
+      [_head | _tail] when Enum.at(data, 0) == 72 -> "Starts with 'H' (single byte)"
+      [_head | _tail] when Enum.at(data, 0) == 72 and _tail != [] ->
         "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   _g = []
   g_value = 1
@@ -30,7 +30,7 @@ end).(), ",") end).()}"
       [_head | _tail] -> "Other binary pattern"
       2 ->
         arr = data
-        if (arr[0] == 72 and length(arr) > 1) do
+        if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
           "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   _g = []
   g_value = 1
@@ -42,8 +42,8 @@ end).(), ",") end).()}"
   _g
 end).(), ",") end).()}"
         else
-          first = data[0]
-          _second = data[1]
+          first = Enum.at(data, 0)
+          _second = Enum.at(data, 1)
           if (first > 64 and first < 90) do
             "2-byte uppercase start"
           else
@@ -57,7 +57,7 @@ end).(), ",") end).()}"
         end
       5 ->
         arr = data
-        if (arr[0] == 72 and length(arr) > 1) do
+        if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
           "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   _g = []
   g_value = 1
@@ -69,11 +69,11 @@ end).(), ",") end).()}"
   _g
 end).(), ",") end).()}"
         else
-          a = data[0]
-          _b = data[1]
-          _c = data[2]
-          _d = data[3]
-          _e = data[4]
+          a = Enum.at(data, 0)
+          _b = Enum.at(data, 1)
+          _c = Enum.at(data, 2)
+          _d = Enum.at(data, 3)
+          _e = Enum.at(data, 4)
           if (a == 72) do
             "5-byte message starting with H"
           else
@@ -87,7 +87,7 @@ end).(), ",") end).()}"
         end
       _ ->
         arr = data
-        if (arr[0] == 72 and length(arr) > 1) do
+        if (Enum.at(arr, 0) == 72 and length(arr) > 1) do
           "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   _g = []
   g_value = 1
@@ -114,24 +114,24 @@ end).(), ",") end).()}"
     switch_result_2 = (case packet do
       3 ->
         cond do
-          packet[1] == 0 ->
-            size = packet[2]
+          Enum.at(packet, 1) == 0 ->
+            size = Enum.at(packet, 2)
             "Protocol v1, size=" <> Kernel.to_string(size) <> " (header only)"
           true ->
             arr = packet
-            if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
-              "Protocol v1, size=" <> Kernel.to_string(arr[2]) <> ", data=" <> Enum.join((fn ->
+            if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
+              "Protocol v1, size=" <> Kernel.to_string(Enum.at(arr, 2)) <> ", data=" <> Enum.join((fn ->
   (fn ->
     g = []
     arr_length = length(arr)
-    g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [inspect(arr[i])]) end)
+    g = Enum.reduce(3..(arr_length - 1)//1, g, fn i, g_acc -> Enum.concat(g_acc, [inspect(Enum.at(arr, i))]) end)
     g
   end).()
 end).(), ",")
             else
-              version = packet[0]
-              flags = packet[1]
-              size = packet[2]
+              version = Enum.at(packet, 0)
+              flags = Enum.at(packet, 1)
+              size = Enum.at(packet, 2)
               if (version > 1) do
                 "Future protocol v" <> Kernel.to_string(version)
               else
@@ -140,7 +140,7 @@ end).(), ",")
               end
             end
         end
-      3 when length(packet) >= 4 and packet[0] == 1 and packet[1] == 0 ->
+      3 when length(packet) >= 4 and Enum.at(packet, 0) == 1 and Enum.at(packet, 1) == 0 ->
         "Protocol v1, size=#{Kernel.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
   _g = []
   g_value = 3
@@ -156,7 +156,7 @@ end).(), ",") end).()}"
       3 -> "Unknown packet format"
       4 ->
         arr = packet
-        if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
+        if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
           "Protocol v1, size=#{Kernel.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
   _g = []
   g_value = 3
@@ -168,15 +168,15 @@ end).(), ",") end).()}"
   _g
 end).(), ",") end).()}"
         else
-          version = packet[0]
-          flags = packet[1]
-          size = packet[2]
-          _payload = packet[3]
+          version = Enum.at(packet, 0)
+          flags = Enum.at(packet, 1)
+          size = Enum.at(packet, 2)
+          _payload = Enum.at(packet, 3)
           "Packet: v#{Kernel.to_string(version)}, flags=#{Kernel.to_string(flags)}, size=#{Kernel.to_string(size)}"
         end
       _ ->
         arr = packet
-        if (length(arr) >= 4 and arr[0] == 1 and arr[1] == 0) do
+        if (length(arr) >= 4 and Enum.at(arr, 0) == 1 and Enum.at(arr, 1) == 0) do
           "Protocol v1, size=#{Kernel.to_string(arr[2])}, data=#{(fn -> Enum.join((fn ->
   _g = []
   g_value = 3
