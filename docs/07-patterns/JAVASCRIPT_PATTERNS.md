@@ -13,6 +13,7 @@
 
 See also:
 - `examples/todo-app/build-client.hxml` (Genes-based client build)
+- `haxe_libraries/phoenix_js.hxml` + `vendor/phoenix_js/src` (typed Phoenix JS externs for Channels + LiveView)
 - Haxe manual: https://haxe.org/manual/
 
 ## Modern Haxe JavaScript Patterns ⚡ **REQUIRED READING**

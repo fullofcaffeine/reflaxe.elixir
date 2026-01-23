@@ -45,6 +45,18 @@ Reflaxe.Elixir supports the server-side pieces via annotations so your generated
 
 See a working end-to-end reference (Haxe→Elixir server + Haxe→JS client) in `examples/todo-app/src_haxe/shared/channels/` and `examples/todo-app/src_haxe/server/channels/`.
 
+### Client-side (Genes / Haxe→JS)
+
+For browser code, use the repo-local `phoenix_js` library (`-lib phoenix_js`) which provides typed externs for:
+
+- `phoenix.Socket` (Phoenix channels JS client)
+- `phoenix.live_view.LiveSocket` (Phoenix LiveView JS client)
+- `phoenix.channels.TypedChannelClient` (minimal typed wrapper around JS channels)
+
+See:
+- `examples/todo-app/build-client.hxml` (uses `-lib genes` + `-lib phoenix_js`)
+- `examples/todo-app/src_haxe/client/channels/PingChannelClient.hx` (typed channel client example)
+
 ## Naming & Module Mapping
 
 Use `@:native("MyAppWeb.SomeModule")` to select the Elixir module name the Haxe class compiles to. This is the primary mechanism for Phoenix-friendly naming.
