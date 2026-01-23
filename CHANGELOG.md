@@ -1,3 +1,10 @@
+## [1.11.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.11.1...v1.11.2) (2026-01-23)
+
+
+### Bug Fixes
+
+* unused pattern binders + api users isolation ([5f6e392](https://github.com/fullofcaffeine/reflaxe.elixir/commit/5f6e392f54e33dc2f4111c6aefea722bcd2c4af9))
+
 ## [1.11.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.11.0...v1.11.1) (2026-01-23)
 
 
