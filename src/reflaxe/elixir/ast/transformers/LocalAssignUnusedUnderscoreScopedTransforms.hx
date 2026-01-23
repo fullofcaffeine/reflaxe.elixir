@@ -154,19 +154,14 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
               rewritten = makeASTWithMeta(EMatch(PVar('_' + b), rhs), s.metadata, s.pos);
             }
           }
-        case EMatch(PTuple(items), rhs):
-          // Tuple rebinding (common for while→reduce_while): underscore any binder element
-          // that is not referenced later in the same block to avoid WAE warnings like:
+        case EMatch(pat, rhs):
+          // Pattern match rebinding (common for while→reduce_while): underscore any binder
+          // inside the pattern that is not referenced later in the same block to avoid WAE
+          // warnings like:
           //   "variable \"pos\" is unused (there is a variable with the same name in the context ...)".
-          var newItems = [];
-          var changed = false;
-          for (it in items) {
-            var rewrittenIt = underscoreTupleBinderIfUnused(it, usedLater);
-            if (rewrittenIt != it) changed = true;
-            newItems.push(rewrittenIt);
-          }
-          if (changed) {
-            rewritten = makeASTWithMeta(EMatch(PTuple(newItems), rhs), s.metadata, s.pos);
+          var newPat = underscorePatternBinderIfUnused(pat, usedLater);
+          if (newPat != pat) {
+            rewritten = makeASTWithMeta(EMatch(newPat, rhs), s.metadata, s.pos);
           }
         case EBinary(Match, {def: EVar(b2)}, rhs2):
           if (skipAliasToCaseScrutinee(rhs2, nextStmt)) {
@@ -217,7 +212,7 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
     return m != null && m.exists(name);
   }
 
-  static function underscoreTupleBinderIfUnused(p:EPattern, usedLater:Map<String,Bool>):EPattern {
+  static function underscorePatternBinderIfUnused(p:EPattern, usedLater:Map<String,Bool>):EPattern {
     return switch (p) {
       case PVar(name):
         if (name == null || name.length == 0) return p;
@@ -225,15 +220,17 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
         if (name == "_" || name.charAt(0) == '_') return p;
         if (usedLater.exists(name)) return p;
         PVar('_' + name);
-      case PTuple(items): PTuple([for (it in items) underscoreTupleBinderIfUnused(it, usedLater)]);
-      case PList(items): PList([for (it in items) underscoreTupleBinderIfUnused(it, usedLater)]);
-      case PCons(h, t): PCons(underscoreTupleBinderIfUnused(h, usedLater), underscoreTupleBinderIfUnused(t, usedLater));
-      case PMap(fs): PMap([for (f in fs) { key: f.key, value: underscoreTupleBinderIfUnused(f.value, usedLater) }]);
-      case PStruct(mod, fs): PStruct(mod, [for (f in fs) { key: f.key, value: underscoreTupleBinderIfUnused(f.value, usedLater) }]);
-      case PBinary(segs): PBinary([for (s in segs) { pattern: underscoreTupleBinderIfUnused(s.pattern, usedLater), size: s.size, type: s.type, modifiers: s.modifiers }]);
-      case PPin(inner): PPin(underscoreTupleBinderIfUnused(inner, usedLater));
+      case PTuple(items): PTuple([for (it in items) underscorePatternBinderIfUnused(it, usedLater)]);
+      case PList(items): PList([for (it in items) underscorePatternBinderIfUnused(it, usedLater)]);
+      case PCons(h, t): PCons(underscorePatternBinderIfUnused(h, usedLater), underscorePatternBinderIfUnused(t, usedLater));
+      case PMap(fs): PMap([for (f in fs) { key: f.key, value: underscorePatternBinderIfUnused(f.value, usedLater) }]);
+      case PStruct(mod, fs): PStruct(mod, [for (f in fs) { key: f.key, value: underscorePatternBinderIfUnused(f.value, usedLater) }]);
+      case PBinary(segs): PBinary([for (s in segs) { pattern: underscorePatternBinderIfUnused(s.pattern, usedLater), size: s.size, type: s.type, modifiers: s.modifiers }]);
+      case PPin(_):
+        // Pins are uses, not binders; never rewrite `^var` to `^_var`.
+        p;
       case PAlias(nm, inner):
-        var renamedInner = underscoreTupleBinderIfUnused(inner, usedLater);
+        var renamedInner = underscorePatternBinderIfUnused(inner, usedLater);
         if (nm != null && nm.length > 0 && nm.charAt(0) != '_' && !usedLater.exists(nm)) {
           PAlias('_' + nm, renamedInner);
         } else {
@@ -303,8 +300,9 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
         PStruct(mod, [for (f in fs) { key: f.key, value: underscoreUnusedInPattern(f.value, used) }]);
       case PBinary(segs):
         PBinary([for (s in segs) { pattern: underscoreUnusedInPattern(s.pattern, used), size: s.size, type: s.type, modifiers: s.modifiers }]);
-      case PPin(inner):
-        PPin(underscoreUnusedInPattern(inner, used));
+      case PPin(_):
+        // Pins are uses, not binders; never rewrite `^var` to `^_var`.
+        p;
       default:
         p;
     }

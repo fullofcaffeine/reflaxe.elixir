@@ -104,6 +104,8 @@ import StringTools;
 	        if (userId == null) return null;
 
 	        var currentUser: Null<User> = Repo.get(User, userId);
+	        if (currentUser == null) return null;
+	        if (!currentUser.active) return null;
 	        return currentUser;
 	    }
 
