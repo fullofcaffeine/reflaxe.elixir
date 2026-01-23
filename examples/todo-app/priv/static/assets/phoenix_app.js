@@ -6918,11 +6918,13 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   PingServerEvent.__empty_constructs__ = [];
   var PingProtocol = Register.global("$hxClasses")["shared.channels.PingProtocol"] = class PingProtocol2 {
     static encodePingPayload(payload) {
-      let out = { "request_id": payload.requestId };
-      return out;
+      return { "request_id": payload.requestId };
     }
     static decodePingPayload(payload) {
-      let requestId = payload != null ? payload.request_id : null;
+      let requestId = payload == null ? null : ((p, k) => {
+        var v = p[k];
+        return v == null ? null : String(v);
+      })(payload, "request_id");
       if (requestId != null) {
         return { "requestId": requestId };
       } else {
@@ -6930,11 +6932,11 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       }
       ;
     }
-    static encodeSend(event) {
+    static encodeClientSend(event) {
       let payload = event.payload;
       return { "event": "ping", "payload": PingProtocol2.encodePingPayload(payload) };
     }
-    static decodeRecv(eventName, payload) {
+    static decodeClientRecv(eventName, payload) {
       if (eventName == "pong") {
         let decoded = PingProtocol2.decodePingPayload(payload);
         if (decoded != null) {
@@ -6947,6 +6949,9 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
         return null;
       }
       ;
+    }
+    static clientProtocol() {
+      return { "eventNames": ["pong"], "encodeSend": PingProtocol2.encodeClientSend, "decodeRecv": PingProtocol2.decodeClientRecv };
     }
     static get __name__() {
       return "shared.channels.PingProtocol";
@@ -7147,7 +7152,8 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       let socket = new Socket("/socket", { "params": params });
       socket.connect();
       let channel = socket.channel("typed:lobby", {});
-      let client = new TypedChannelClient(channel, PingProtocol.encodeSend, PingProtocol.decodeRecv, ["pong"]);
+      let protocol = PingProtocol.clientProtocol();
+      let client = new TypedChannelClient(channel, protocol.encodeSend, protocol.decodeRecv, protocol.eventNames);
       client.onMessage(function(message) {
         let payload = message.payload;
         window.__typed_channel_last_pong = payload.requestId;

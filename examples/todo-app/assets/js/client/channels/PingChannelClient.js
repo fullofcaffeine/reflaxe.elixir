@@ -25,7 +25,8 @@ class PingChannelClient {
 		let socket = new Socket("/socket", {"params": params});
 		socket.connect();
 		let channel = socket.channel("typed:lobby", {});
-		let client = new TypedChannelClient(channel, PingProtocol.encodeSend, PingProtocol.decodeRecv, ["pong"]);
+		let protocol = PingProtocol.clientProtocol();
+		let client = new TypedChannelClient(channel, protocol.encodeSend, protocol.decodeRecv, protocol.eventNames);
 		client.onMessage(function (message) {
 			let payload = message.payload;
 			window.__typed_channel_last_pong = payload.requestId;

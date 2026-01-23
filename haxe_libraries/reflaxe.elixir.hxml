@@ -26,6 +26,9 @@
 # Target-specific overrides in std/_std are injected conditionally by CompilerInit
 # (target-conditional stdlib gating) to avoid leaking __elixir__() into macro/other targets.
 
+# Shared cross-target Phoenix helpers (used by both JS + Elixir sides of Channels)
+-cp ${SCOPE_DIR}/vendor/phoenix_shared/src
+
 # Depend on the base Reflaxe framework
 -lib reflaxe
 

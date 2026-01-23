@@ -93,12 +93,12 @@ end).()
     (case Map.fetch(reflect_obj, reflect_field) do
       {:ok, reflect_value} -> reflect_value
       _ ->
-        (case try do
+        (case (try do
   String.to_existing_atom(reflect_field)
 rescue
   _ ->
     nil
-end do
+end) do
           nil -> nil
           reflect_atom ->
             Map.get(reflect_obj, reflect_atom)
