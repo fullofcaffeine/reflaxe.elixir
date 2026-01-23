@@ -57,11 +57,25 @@ end).() end).(), "Should contain 'World'")
   end
   test "pattern matching" do
     result = %{:type => "ok", :value => "success"}
-    (case Map.get(result, :type) do
+    (case (case result do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "type") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :type)
+    end)
+end) do
       "error" ->
         Assert.fail("Should not match error")
       "ok" ->
-        Assert.equals("success", Map.get(result, :value), "Should match ok tuple")
+        Assert.equals("success", ((case result do
+          dyn_obj ->
+            (case Map.fetch(dyn_obj, "value") do
+              {:ok, dyn_value} -> dyn_value
+              _ ->
+                Map.get(dyn_obj, :value)
+            end)
+        end)), "Should match ok tuple")
       _ ->
         Assert.fail("Should match one of the patterns")
     end)

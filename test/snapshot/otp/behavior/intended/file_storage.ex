@@ -5,8 +5,23 @@ defmodule FileStorage do
     struct
   end
   def init(struct, config) do
-    if (not Kernel.is_nil(Map.get(config, :path))) do
-      struct = %{struct | base_path: Map.get(config, :path)}
+    cond_value = (case config do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "path") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :path)
+        end)
+    end)
+    if (not Kernel.is_nil(cond_value)) do
+      struct = %{struct | base_path: (case config do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "path") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :path)
+    end)
+end)}
     end
     %{:ok => struct}
   end

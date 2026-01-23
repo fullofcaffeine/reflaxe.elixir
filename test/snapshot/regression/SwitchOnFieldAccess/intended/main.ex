@@ -6,7 +6,14 @@ defmodule Main do
     nil
   end
   defp parse_message1(msg) do
-    (case Map.get(msg, :type) do
+    (case (case msg do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "type") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :type)
+    end)
+end) do
       "other" -> {:some, "found other"}
       "test" -> {:some, "found test"}
       _ -> {:none}
@@ -16,7 +23,14 @@ defmodule Main do
     if (Kernel.is_nil(msg)) do
       {:none}
     else
-      (case Map.get(msg, :type) do
+      (case (case msg do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "type") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :type)
+    end)
+end) do
         "other" -> {:some, "found other"}
         "test" -> {:some, "found test"}
         _ -> {:none}

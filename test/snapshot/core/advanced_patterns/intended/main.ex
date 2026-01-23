@@ -236,7 +236,7 @@ defmodule Main do
           else
             v = value
             cond do
-              Std.is(v, Array) -> "array of length " <> length(v)
+              Std.is(v, Array) -> "array of length " <> inspect(length(v))
               Kernel.is_nil(value) -> "null value"
               :true -> "unknown type"
             end

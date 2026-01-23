@@ -40,18 +40,63 @@ defmodule UserQueries do
   end
   def search_users(filters) do
     query = from("users", "u", %{:select => "u"})
-    query = if (not Kernel.is_nil(Map.get(filters, :name))) do
-      where(query, "u", %{:name_ilike => Map.get(filters, :name)})
+    cond_value = (case filters do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "name") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :name)
+        end)
+    end)
+    query = if (not Kernel.is_nil(cond_value)) do
+      where(query, "u", (fn -> %{:name_ilike => (case filters do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "name") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :name)
+    end)
+end)} end).())
     else
       query
     end
-    query = if (not Kernel.is_nil(Map.get(filters, :email))) do
-      where(query, "u", %{:email => Map.get(filters, :email)})
+    cond_value = (case filters do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "email") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :email)
+        end)
+    end)
+    query = if (not Kernel.is_nil(cond_value)) do
+      where(query, "u", (fn -> %{:email => (case filters do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "email") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :email)
+    end)
+end)} end).())
     else
       query
     end
-    query = if (not Kernel.is_nil(Map.get(filters, :min_age))) do
-      where(query, "u", %{:age_gte => Map.get(filters, :min_age)})
+    cond_value = (case filters do
+      dyn_obj ->
+        (case Map.fetch(dyn_obj, "min_age") do
+          {:ok, dyn_value} -> dyn_value
+          _ ->
+            Map.get(dyn_obj, :min_age)
+        end)
+    end)
+    query = if (not Kernel.is_nil(cond_value)) do
+      where(query, "u", (fn -> %{:age_gte => (case filters do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "min_age") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :min_age)
+    end)
+end)} end).())
     else
       query
     end

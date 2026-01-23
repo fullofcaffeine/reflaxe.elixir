@@ -18,17 +18,60 @@ defmodule Main do
   end
   defp parse_message(type, msg) do
     (case type do
-      "bulk_update" when Kernel.is_map_key(msg, :action) ->
-        bulk_action = parse_bulk_action(Map.get(msg, :action))
+      "bulk_update" when not Kernel.is_nil(((case msg do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "action") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :action)
+    end)
+end))) ->
+        bulk_action = parse_bulk_action(((case msg do
+            dyn_obj ->
+              (case Map.fetch(dyn_obj, "action") do
+                {:ok, dyn_value} -> dyn_value
+                _ ->
+                  Map.get(dyn_obj, :action)
+              end)
+          end)))
         (case bulk_action do
           {:some, action} -> {:some, {:bulk_update, action}}
           {:none} -> {:none}
         end)
       "bulk_update" -> {:none}
-      "system_alert" when Kernel.is_map_key(msg, :message) and Kernel.is_map_key(msg, :level) ->
-        alert_level = parse_alert_level(Map.get(msg, :level))
+      "system_alert" when not Kernel.is_nil(((case msg do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "message") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :message)
+    end)
+end))) and not Kernel.is_nil(((case msg do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "level") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :level)
+    end)
+end))) ->
+        alert_level = parse_alert_level(((case msg do
+            dyn_obj ->
+              (case Map.fetch(dyn_obj, "level") do
+                {:ok, dyn_value} -> dyn_value
+                _ ->
+                  Map.get(dyn_obj, :level)
+              end)
+          end)))
         (case alert_level do
-          {:some, level} -> {:some, {:system_alert, Map.get(msg, :message), level}}
+          {:some, level} ->
+            {:some, {:system_alert, (case msg do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "message") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :message)
+    end)
+end), level}}
           {:none} -> {:none}
         end)
       "system_alert" -> {:none}

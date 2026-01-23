@@ -54,16 +54,57 @@ defmodule Main do
       Std.is(value, Int) -> "Int: " <> inspect(value)
       Std.is(value, Float) -> "Float: " <> inspect(value)
       Std.is(value, String) -> "String: " <> inspect(value)
-      Std.is(value, Array) -> "Array of length: " <> length(value)
+      Std.is(value, Array) -> "Array of length: " <> inspect(length(value))
       :true -> "Unknown type"
     end
   end
   def dynamic_method_calls() do
     obj = %{}
-    obj = obj |> Map.put(:value, 10) |> Map.put(:increment, fn -> Map.get(obj, :value) + 1 end) |> Map.put(:get_value, fn -> Map.get(obj, :value) end)
-    _ = Map.get(obj, :increment).()
+    obj = obj |> Map.put(:value, 10) |> Map.put(:increment, fn ->
+  (case obj do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "value") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :value)
+    end)
+end) + 1
+end) |> Map.put(:get_value, fn ->
+  (case obj do
+    dyn_obj ->
+      (case Map.fetch(dyn_obj, "value") do
+        {:ok, dyn_value} -> dyn_value
+        _ ->
+          Map.get(dyn_obj, :value)
+      end)
+  end)
+end)
+    _ = (case obj do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "increment") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :increment)
+    end)
+end).()
     method_name = "increment"
-    _ = Reflect.call_method(obj, Map.get(obj, method_name), [])
+    _ = Reflect.call_method(obj, ((case {obj, method_name} do
+  {reflect_obj, reflect_field} ->
+    (case Map.fetch(reflect_obj, reflect_field) do
+      {:ok, reflect_value} -> reflect_value
+      _ ->
+        (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+          nil -> nil
+          reflect_atom ->
+            Map.get(reflect_obj, reflect_atom)
+        end)
+    end)
+end)), [])
     nil
   end
   def main() do

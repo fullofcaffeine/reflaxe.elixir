@@ -9,6 +9,7 @@
   "std.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",
+  "int_iterator.ex",
   "int_display.ex",
   "haxe/iterators/array_iterator.ex"
 ],

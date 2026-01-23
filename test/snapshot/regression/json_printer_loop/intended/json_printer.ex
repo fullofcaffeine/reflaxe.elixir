@@ -26,7 +26,23 @@ defmodule JsonPrinter do
     result = Enum.reduce(0..(fields_length - 1)//1, result, fn i, result_acc ->
       result_acc = if (i > 0), do: result_acc <> ", ", else: result_acc
       field = fields[i]
-      value = Map.get(obj, field)
+      value = (case {obj, field} do
+        {reflect_obj, reflect_field} ->
+          (case Map.fetch(reflect_obj, reflect_field) do
+            {:ok, reflect_value} -> reflect_value
+            _ ->
+              (case try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end do
+                nil -> nil
+                reflect_atom ->
+                  Map.get(reflect_obj, reflect_atom)
+              end)
+          end)
+      end)
       result_acc <> "\"" <> field <> "\": " <> write_value(struct, value)
     end)
     _ = StringBuf.add(struct.buffer, result)

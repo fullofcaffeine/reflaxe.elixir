@@ -6,6 +6,7 @@ import haxe.macro.Type;
 import haxe.macro.Expr;
 import haxe.macro.Type.TypedExpr;
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.EPattern;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.CompilationContext;
 import reflaxe.elixir.helpers.PatternDetector;
@@ -1116,34 +1117,252 @@ class CallExprBuilder {
                         }
                 }
                 
-            case "Reflect":
-                switch(methodName) {
-                    case "field":
-                        // Reflect.field(obj, field) → Map.get(obj, field)
-                        if (args.length == 2) {
-                            var obj = buildExpression(args[0]);
-                            var field = buildExpression(args[1]);
-                            return ERemoteCall(makeAST(EVar("Map")), "get", [obj, field]);
+	            case "Reflect":
+	                switch(methodName) {
+	                    case "field":
+	                        if (args.length == 2) {
+                            // Reflect.field(obj, field)
+                            //
+                            // Elixir maps can be keyed by atoms or strings. Haxe Dynamic objects
+                            // and JSON payloads commonly use string keys, while Haxe object literals
+                            // compile to atom-keyed maps. Try the provided key first, then fall back
+                            // to an existing atom (safe: does not create atoms).
+                            var objExpr = buildExpression(args[0]);
+                            var fieldExpr = buildExpression(args[1]);
+
+	                            var objVarName = "_reflect_obj";
+	                            var fieldVarName = "_reflect_field";
+	                            var valueVarName = "_reflect_value";
+	                            var atomVarName = "_reflect_atom";
+
+	                            var tuple = makeAST(ETuple([objExpr, fieldExpr]));
+	                            var objVar = makeAST(EVar(objVarName));
+	                            var fieldVar = makeAST(EVar(fieldVarName));
+
+	                            inline function tryExistingAtom(field: ElixirAST): ElixirAST {
+	                                return makeAST(ETry(
+	                                    makeAST(ERemoteCall(makeAST(EVar("String")), "to_existing_atom", [field])),
+	                                    [{ pattern: EPattern.PWildcard, body: makeAST(ENil) }],
+	                                    [],
+	                                    null,
+	                                    null
+	                                ));
+	                            }
+
+	                            // Use Map.fetch/2 so we do not treat `nil` values as "missing" keys.
+	                            var directFetch = makeAST(ERemoteCall(makeAST(EVar("Map")), "fetch", [objVar, fieldVar]));
+
+	                            var tryAtom = tryExistingAtom(fieldVar);
+
+	                            var atomCase = makeAST(ECase(tryAtom, [
+	                                {
+	                                    pattern: EPattern.PLiteral(makeAST(ENil)),
+                                    body: makeAST(ENil)
+                                },
+                                {
+                                    pattern: EPattern.PVar(atomVarName),
+                                    body: makeAST(ERemoteCall(
+                                        makeAST(EVar("Map")),
+                                        "get",
+                                        [objVar, makeAST(EVar(atomVarName))]
+	                                    ))
+	                                }
+	                            ]));
+
+		                            var innerCase = makeAST(ECase(directFetch, [
+		                                {
+		                                    pattern: EPattern.PTuple([
+		                                        EPattern.PLiteral(makeAST(EAtom("ok"))),
+		                                        EPattern.PVar(valueVarName)
+		                                    ]),
+		                                    body: makeAST(EVar(valueVarName))
+		                                },
+		                                {
+		                                    // Map.fetch/2 returns :error, but use a wildcard to stay resilient to any
+		                                    // upstream shape rewrites and keep the intent clear.
+		                                    pattern: EPattern.PWildcard,
+		                                    body: atomCase
+		                                }
+		                            ]));
+
+	                            var outerCase = makeAST(ECase(tuple, [
+                                {
+                                    pattern: EPattern.PTuple([EPattern.PVar(objVarName), EPattern.PVar(fieldVarName)]),
+                                    body: innerCase
+                                }
+                            ]));
+
+                            return outerCase.def;
                         }
                         
-                    case "setField":
-                        // Reflect.setField(obj, field, value) → Map.put(obj, field, value)
-                        if (args.length == 3) {
-                            var obj = buildExpression(args[0]);
-                            var field = buildExpression(args[1]);
-                            var value = buildExpression(args[2]);
-                            return ERemoteCall(makeAST(EVar("Map")), "put", [obj, field, value]);
-                        }
+	                    case "setField":
+	                        if (args.length == 3) {
+                            // Reflect.setField(obj, field, value)
+                            //
+                            // Prefer an existing atom key when possible (safe), otherwise keep the
+                            // provided key (typically a string).
+                            var objExpr = buildExpression(args[0]);
+                            var fieldExpr = buildExpression(args[1]);
+                            var valueExpr = buildExpression(args[2]);
+
+                            var objVarName = "_reflect_obj";
+                            var fieldVarName = "_reflect_field";
+                            var valueVarName = "_reflect_value";
+                            var atomVarName = "_reflect_atom";
+
+	                            var tuple = makeAST(ETuple([objExpr, fieldExpr, valueExpr]));
+	                            var objVar = makeAST(EVar(objVarName));
+	                            var fieldVar = makeAST(EVar(fieldVarName));
+	                            var valueVar = makeAST(EVar(valueVarName));
+
+	                            inline function tryExistingAtom(field: ElixirAST): ElixirAST {
+	                                return makeAST(ETry(
+	                                    makeAST(ERemoteCall(makeAST(EVar("String")), "to_existing_atom", [field])),
+	                                    [{ pattern: EPattern.PWildcard, body: makeAST(ENil) }],
+	                                    [],
+	                                    null,
+	                                    null
+	                                ));
+	                            }
+
+	                            // If the provided key already exists (e.g. JSON maps with string keys),
+	                            // update it directly. Otherwise, fall back to an existing atom key when safe.
+	                            var directHas = makeAST(ERemoteCall(makeAST(EVar("Map")), "has_key?", [objVar, fieldVar]));
+	                            var tryAtom = tryExistingAtom(fieldVar);
+
+	                            var putByKey = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [objVar, fieldVar, valueVar]));
+	                            var putByAtom = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [objVar, makeAST(EVar(atomVarName)), valueVar]));
+
+	                            var atomCase = makeAST(ECase(tryAtom, [
+	                                { pattern: EPattern.PLiteral(makeAST(ENil)), body: putByKey },
+	                                { pattern: EPattern.PVar(atomVarName), body: putByAtom }
+	                            ]));
+
+	                            var putCase = makeAST(ECase(directHas, [
+	                                { pattern: EPattern.PLiteral(makeAST(EBoolean(true))), body: putByKey },
+	                                { pattern: EPattern.PLiteral(makeAST(EBoolean(false))), body: atomCase }
+	                            ]));
+
+	                            var outerCase = makeAST(ECase(tuple, [
+	                                {
+	                                    pattern: EPattern.PTuple([EPattern.PVar(objVarName), EPattern.PVar(fieldVarName), EPattern.PVar(valueVarName)]),
+	                                    body: putCase
+	                                }
+	                            ]));
+
+	                            return outerCase.def;
+	                        }
                         
-                    case "hasField":
-                        // Reflect.hasField(obj, field) → Map.has_key?(obj, field)
-                        if (args.length == 2) {
-                            var obj = buildExpression(args[0]);
-                            var field = buildExpression(args[1]);
-                            return ERemoteCall(makeAST(EVar("Map")), "has_key?", [obj, field]);
-                        }
-                }
-        }
+	                    case "hasField":
+	                        if (args.length == 2) {
+                            // Reflect.hasField(obj, field)
+                            //
+                            // Check both the provided key and an existing atom key (safe).
+                            var objExpr = buildExpression(args[0]);
+                            var fieldExpr = buildExpression(args[1]);
+
+                            var objVarName = "_reflect_obj";
+                            var fieldVarName = "_reflect_field";
+                            var atomVarName = "_reflect_atom";
+
+                            var tuple = makeAST(ETuple([objExpr, fieldExpr]));
+	                            var objVar = makeAST(EVar(objVarName));
+	                            var fieldVar = makeAST(EVar(fieldVarName));
+
+	                            var directHas = makeAST(ERemoteCall(makeAST(EVar("Map")), "has_key?", [objVar, fieldVar]));
+
+	                            inline function tryExistingAtom(field: ElixirAST): ElixirAST {
+	                                return makeAST(ETry(
+	                                    makeAST(ERemoteCall(makeAST(EVar("String")), "to_existing_atom", [field])),
+	                                    [{ pattern: EPattern.PWildcard, body: makeAST(ENil) }],
+	                                    [],
+	                                    null,
+	                                    null
+	                                ));
+	                            }
+	                            var tryAtom = tryExistingAtom(fieldVar);
+
+                            var atomHasCase = makeAST(ECase(tryAtom, [
+                                { pattern: EPattern.PLiteral(makeAST(ENil)), body: makeAST(EBoolean(false)) },
+                                {
+                                    pattern: EPattern.PVar(atomVarName),
+                                    body: makeAST(ERemoteCall(
+                                        makeAST(EVar("Map")),
+                                        "has_key?",
+                                        [objVar, makeAST(EVar(atomVarName))]
+                                    ))
+                                }
+                            ]));
+
+                            var hasCase = makeAST(ECase(directHas, [
+                                { pattern: EPattern.PLiteral(makeAST(EBoolean(true))), body: makeAST(EBoolean(true)) },
+                                { pattern: EPattern.PLiteral(makeAST(EBoolean(false))), body: atomHasCase }
+                            ]));
+
+                            var outerCase = makeAST(ECase(tuple, [
+                                {
+                                    pattern: EPattern.PTuple([EPattern.PVar(objVarName), EPattern.PVar(fieldVarName)]),
+                                    body: hasCase
+                                }
+                            ]));
+
+	                            return outerCase.def;
+	                        }
+
+	                    case "deleteField":
+	                        if (args.length == 2) {
+	                            // Reflect.deleteField(obj, field)
+	                            //
+	                            // Delete using the provided key when present (e.g. JSON maps with string keys),
+	                            // otherwise fall back to an existing atom key when safe.
+	                            var objExpr = buildExpression(args[0]);
+	                            var fieldExpr = buildExpression(args[1]);
+
+	                            var objVarName = "_reflect_obj";
+	                            var fieldVarName = "_reflect_field";
+	                            var atomVarName = "_reflect_atom";
+
+	                            var tuple = makeAST(ETuple([objExpr, fieldExpr]));
+	                            var objVar = makeAST(EVar(objVarName));
+	                            var fieldVar = makeAST(EVar(fieldVarName));
+
+	                            inline function tryExistingAtom(field: ElixirAST): ElixirAST {
+	                                return makeAST(ETry(
+	                                    makeAST(ERemoteCall(makeAST(EVar("String")), "to_existing_atom", [field])),
+	                                    [{ pattern: EPattern.PWildcard, body: makeAST(ENil) }],
+	                                    [],
+	                                    null,
+	                                    null
+	                                ));
+	                            }
+
+	                            var directHas = makeAST(ERemoteCall(makeAST(EVar("Map")), "has_key?", [objVar, fieldVar]));
+	                            var tryAtom = tryExistingAtom(fieldVar);
+
+	                            var deleteByKey = makeAST(ERemoteCall(makeAST(EVar("Map")), "delete", [objVar, fieldVar]));
+	                            var deleteByAtom = makeAST(ERemoteCall(makeAST(EVar("Map")), "delete", [objVar, makeAST(EVar(atomVarName))]));
+
+	                            var atomDeleteCase = makeAST(ECase(tryAtom, [
+	                                { pattern: EPattern.PLiteral(makeAST(ENil)), body: deleteByKey },
+	                                { pattern: EPattern.PVar(atomVarName), body: deleteByAtom }
+	                            ]));
+
+	                            var deleteCase = makeAST(ECase(directHas, [
+	                                { pattern: EPattern.PLiteral(makeAST(EBoolean(true))), body: deleteByKey },
+	                                { pattern: EPattern.PLiteral(makeAST(EBoolean(false))), body: atomDeleteCase }
+	                            ]));
+
+	                            var outerCase = makeAST(ECase(tuple, [
+	                                {
+	                                    pattern: EPattern.PTuple([EPattern.PVar(objVarName), EPattern.PVar(fieldVarName)]),
+	                                    body: deleteCase
+	                                }
+	                            ]));
+
+	                            return outerCase.def;
+	                        }
+	                }
+	        }
         
         // Not a special call
         return null;

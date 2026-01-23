@@ -14,6 +14,7 @@
   "phoenix/types/flash.ex",
   "phoenix/types/_socket/socket_impl_.ex",
   "phoenix/types/_assigns/assigns_impl_.ex",
+  "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "elixir/types/_atom/atom_impl_.ex",
   "app_web/some_live.ex",

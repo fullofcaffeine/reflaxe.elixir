@@ -281,17 +281,17 @@ end).(), "") end).()} + more data"
   end
   def test_pattern_matching_edge_cases() do
     data = [1, [2, 3], %{:name => "test", :value => 42}]
-    switch_result_3 = (case Map.get(data, :length) do
-      0 when Std.is(arr, Array) and Map.get(arr, :length) > 3 -> "Large array with #{length(arr)} elements"
-      0 -> "Empty array"
-      1 ->
+    switch_result_3 = (case data do
+      [] when Std.is(data, Array) and length(data) > 3 -> "Large array with #{inspect(length(arr))} elements"
+      [] -> "Empty array"
+      [_head | _tail] ->
         x = data[0]
         if (Std.is(x, Int)) do
           "Single integer: #{inspect(x)}"
         else
           arr = data
-          if (Std.is(arr, Array) and Map.get(arr, :length) > 3) do
-            "Large array with #{length(arr)} elements"
+          if (Std.is(arr, Array) and length(arr) > 3) do
+            "Large array with #{inspect(length(arr))} elements"
           else
             "Other data structure"
           end
@@ -300,11 +300,18 @@ end).(), "") end).()} + more data"
         x = data[0]
         y = data[1]
         if (Std.is(x, Int) and Std.is(y, Array)) do
-          "Integer and array: #{inspect(x)}, [#{inspect(Map.get(y, :join).(","))}]"
+          "Integer and array: #{inspect(x)}, [#{(fn -> inspect((case y do
+    _dyn_obj ->
+      (case Map.fetch(_dyn_obj, "join") do
+        {:ok, _dyn_value} -> _dyn_value
+        _ ->
+          Map.get(_dyn_obj, :join)
+      end)
+  end).(",")) end).()}]"
         else
           arr = data
-          if (Std.is(arr, Array) and Map.get(arr, :length) > 3) do
-            "Large array with #{length(arr)} elements"
+          if (Std.is(arr, Array) and length(arr) > 3) do
+            "Large array with #{inspect(length(arr))} elements"
           else
             "Other data structure"
           end
@@ -313,20 +320,35 @@ end).(), "") end).()} + more data"
         _x = data[0]
         _y = data[1]
         z = data[2]
-        if (Std.is(z, Dynamic) and not Kernel.is_nil(Map.get(z, :name))) do
-          "Three elements ending with object: #{z.name}"
+        cond_value = not Kernel.is_nil(((case z do
+  dyn_obj ->
+    (case Map.fetch(dyn_obj, "name") do
+      {:ok, dyn_value} -> dyn_value
+      _ ->
+        Map.get(dyn_obj, :name)
+    end)
+end)))
+        if (Std.is(z, Dynamic) and cond_value) do
+          "Three elements ending with object: #{(fn -> inspect(((case z do
+    _dyn_obj ->
+      (case Map.fetch(_dyn_obj, "name") do
+        {:ok, _dyn_value} -> _dyn_value
+        _ ->
+          Map.get(_dyn_obj, :name)
+      end)
+  end))) end).()}"
         else
           arr = data
-          if (Std.is(arr, Array) and Map.get(arr, :length) > 3) do
-            "Large array with #{length(arr)} elements"
+          if (Std.is(arr, Array) and length(arr) > 3) do
+            "Large array with #{inspect(length(arr))} elements"
           else
             "Other data structure"
           end
         end
       _ ->
         arr = data
-        if (Std.is(arr, Array) and Map.get(arr, :length) > 3) do
-          "Large array with #{length(arr)} elements"
+        if (Std.is(arr, Array) and length(arr) > 3) do
+          "Large array with #{inspect(length(arr))} elements"
         else
           "Other data structure"
         end

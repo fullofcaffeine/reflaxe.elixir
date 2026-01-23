@@ -258,11 +258,11 @@ end).(), ",") end).()}"
   def test_type_guards() do
     value = "Hello World"
     v = value
-    if (Std.is(v, String) and Map.get(v, :length) > 10) do
+    if (Std.is(v, String) and length(v) > 10) do
       "Long string: #{inspect(v)}"
     else
       v = value
-      if (Std.is(v, String) and Map.get(v, :length) <= 10) do
+      if (Std.is(v, String) and length(v) <= 10) do
         "Short string: #{inspect(v)}"
       else
         v = value
@@ -283,7 +283,7 @@ end).(), ",") end).()}"
               else
                 v = value
                 cond do
-                  Std.is(v, Array) -> "Array with " <> length(v) <> " elements"
+                  Std.is(v, Array) -> "Array with " <> inspect(length(v)) <> " elements"
                   Kernel.is_nil(value) -> "Null value"
                   :true -> "Unknown type"
                 end
