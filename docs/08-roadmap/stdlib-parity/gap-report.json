@@ -1,13 +1,16 @@
 {
   "diff": {
     "intersection": {
-      "count": 39,
+      "count": 42,
       "modules": [
         "Array",
         "Date",
         "DateTools",
         "EReg",
+        "IntIterator",
         "Lambda",
+        "List",
+        "Map",
         "Math",
         "Reflect",
         "Std",
@@ -59,15 +62,12 @@
       ]
     },
     "reference_only": {
-      "count": 165,
+      "count": 162,
       "modules": [
         "Any",
         "Class",
         "Enum",
         "EnumValue",
-        "IntIterator",
-        "List",
-        "Map",
         "StdTypes",
         "UInt",
         "UnicodeString",
@@ -231,7 +231,7 @@
   },
   "local": {
     "counts_by_prefix": {
-      "<top-level>": 13,
+      "<top-level>": 16,
       "haxe": 29,
       "sys": 6
     },
@@ -260,8 +260,8 @@
       "/Users/fullofcaffeine/workspace/code/haxe.elixir.codex/std",
       "/Users/fullofcaffeine/workspace/code/haxe.elixir.codex/std/_std"
     ],
-    "total_candidates": 53,
-    "total_std_modules": 48
+    "total_candidates": 56,
+    "total_std_modules": 51
   },
   "reference": {
     "counts_by_prefix": {

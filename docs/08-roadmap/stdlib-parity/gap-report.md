@@ -14,14 +14,14 @@ scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference
 ## Summary
 
 - Reference std modules: **204**
-- Local std modules present: **48** (candidates scanned: 53)
-- Intersection (local provides): **39**
-- Missing locally (reference-only): **165**
+- Local std modules present: **51** (candidates scanned: 56)
+- Intersection (local provides): **42**
+- Missing locally (reference-only): **162**
 - Local-only: **9**
 
 ## Missing modules (high-level)
 
-Top-level (11): `Any`, `Class`, `Enum`, `EnumValue`, `IntIterator`, `List`, `Map`, `StdTypes`, `UInt`, `UnicodeString`, `Xml`
+Top-level (8): `Any`, `Class`, `Enum`, `EnumValue`, `StdTypes`, `UInt`, `UnicodeString`, `Xml`
 
 `haxe.*` (126): heavy gaps including `haxe.Json`, `haxe.Http`, `haxe.CallStack`, `haxe.Exception`, `haxe.Int64`, `haxe.Serializer`, `haxe.Template`, …
 
