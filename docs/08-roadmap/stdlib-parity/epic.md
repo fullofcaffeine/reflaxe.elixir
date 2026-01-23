@@ -31,7 +31,8 @@ This epic is module-level scoped first (coverage), then drills into API/behavior
 ## Workstreams (proposed order)
 
 1) **Core top-level modules**
-   - Prioritize: `EReg`, `DateTools`, `List`, `Map`, `Xml`, `Enum`, `StdTypes`, `UInt`
+   - Done: `EReg`
+   - Next: `DateTools`, `List`, `Map`, `Xml`, `Enum`, `StdTypes`, `UInt`
 
 2) **`haxe.io` + core utilities**
    - Prioritize: `haxe.io.*` (Input/Output/Bytes/BytesBuffer), `haxe.crypto.*` (if present in reference), `haxe.Json`, `haxe.Exception`, `haxe.CallStack`
@@ -53,4 +54,3 @@ Create one task per module (or small module cluster) with:
 
 - This epic does not imply 1:1 parity with hxcpp/js quirks—parity target is the reference Elixir stdlib + Haxe std semantics.
 - Prefer BEAM-native idioms where they preserve Haxe semantics; avoid runtime-only “string patch” fixes.
-

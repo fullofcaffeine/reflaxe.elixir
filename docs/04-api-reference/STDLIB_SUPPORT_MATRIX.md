@@ -30,6 +30,7 @@ These modules are implemented/overridden in this repo (and covered by snapshot t
 Top-level:
 - `Array`
 - `Date`
+- `EReg`
 - `Lambda`
 - `Math`
 - `Reflect`
@@ -91,7 +92,6 @@ If a given upstream std module produces invalid/non-idiomatic Elixir, it becomes
 
 Top-level std modules that exist upstream but are not yet overridden/validated specifically for Elixir:
 
-- `EReg` (regex)
 - `Xml` (XML parsing/printing)
 - `DateTools`, `List`, `Map`, `UInt`, etc.
 
@@ -105,4 +105,3 @@ Top-level std modules that exist upstream but are not yet overridden/validated s
 
 Track the ongoing parity roadmap in bd:
 - `haxe.elixir-hm47` (stdlib parity roadmap)
-

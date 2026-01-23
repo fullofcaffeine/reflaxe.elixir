@@ -2,8 +2,8 @@ package phoenix.channels;
 
 #if js
 
-import phoenix.Channel;
-import phoenix.Push;
+import phoenix.Socket.Channel;
+import phoenix.Socket.Push;
 
 typedef EncodedEvent = {
   var event: String;
@@ -74,4 +74,3 @@ class TypedChannelClient<TSend, TRecv> {
 }
 
 #end
-
