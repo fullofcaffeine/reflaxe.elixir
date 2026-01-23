@@ -45,7 +45,7 @@ class MockOAuthController {
                     .putSession("user_id", userRecord.id)
                     .putFlash("info", 'Signed in with Mock OAuth as ${userRecord.name}.')
                     .redirect("/todos");
-            case Error(userChangeset):
+            case Error(_):
                 {
                     conn
                         .putFlash("error", "Could not sign in. Please try again.")

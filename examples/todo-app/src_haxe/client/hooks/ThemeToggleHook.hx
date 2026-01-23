@@ -1,6 +1,6 @@
 package client.hooks;
 
-import client.extern.PhoenixHookContext;
+import phoenix.live_view.HookContext;
 import client.utils.Theme;
 import client.utils.ThemePreference;
 import js.html.Element;
@@ -25,7 +25,7 @@ class ThemeToggleHook {
     }
   }
 
-  public static function mounted(ctx: PhoenixHookContext): Void {
+  public static function mounted(ctx: HookContext): Void {
     unbindClick(ctx);
 
     var preference = Theme.applyStoredOrDefault();
@@ -42,11 +42,11 @@ class ThemeToggleHook {
     ctx.el.addEventListener("click", handler);
   }
 
-  public static function destroyed(ctx: PhoenixHookContext): Void {
+  public static function destroyed(ctx: HookContext): Void {
     unbindClick(ctx);
   }
 
-  static function unbindClick(ctx: PhoenixHookContext): Void {
+  static function unbindClick(ctx: HookContext): Void {
     var elementDynamic: Dynamic = cast ctx.el;
     if (!Reflect.hasField(elementDynamic, handlerField)) return;
 

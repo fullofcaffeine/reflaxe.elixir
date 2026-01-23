@@ -4,6 +4,7 @@ import plug.Conn;
 import contexts.Accounts;
 import contexts.Users;
 import elixir.ElixirMap;
+import elixir.Atom;
 import elixir.Kernel;
 import elixir.types.Term;
 import elixir.DateTime.NaiveDateTime;
@@ -12,26 +13,6 @@ import haxe.functional.Result;
 import server.infrastructure.Repo;
 import server.schemas.User;
 import StringTools;
-
-// Type-safe parameter definitions for each action
-typedef IndexParams = {}  // Empty params for index
-typedef ShowParams = {id: String};
-typedef CreateParams = {
-    name: String,
-    email: String,
-    ?bio: String,
-    ?role: String,
-    ?active: Bool
-};
-typedef UpdateParams = {
-    id: String,
-    ?name: String,
-    ?email: String,
-    ?bio: String,
-    ?role: String,
-    ?active: Bool
-};
-typedef DeleteParams = {id: String};
 
 /**
  * UserController: Type-safe Phoenix controller showcasing Haxe→Elixir benefits
@@ -84,9 +65,36 @@ typedef DeleteParams = {id: String};
 	            .json({error: message});
 	    }
 
+	    static function getParam(params: Term, key: String): Term {
+	        if (params == null) return null;
+
+	        var value: Term = ElixirMap.get(params, key);
+	        if (value != null) return value;
+
+	        // Test helpers and internal calls may use atom keys. Avoid creating atoms from request keys.
+	        var atom = Atom.existingOrNull(key);
+	        return atom != null ? ElixirMap.get(params, atom) : null;
+	    }
+
+	    static function getStringParam(params: Term, key: String): Null<String> {
+	        var value = getParam(params, key);
+	        return value != null ? cast value : null;
+	    }
+
+	    static function getBoolParam(params: Term, key: String): Null<Bool> {
+	        var value = getParam(params, key);
+	        return value != null ? cast value : null;
+	    }
+
+	    static function parseParamId(params: Term): Null<Int> {
+	        var idValue = getParam(params, "id");
+	        if (idValue == null) return null;
+	        return Std.parseInt(Kernel.toString(idValue));
+	    }
+
 	    static function parseSessionUserId(term: Term): Null<Int> {
 	        if (term == null) return null;
-	        var parsed = Std.parseInt(Std.string(term));
+	        var parsed = Std.parseInt(Kernel.toString(term));
 	        return parsed;
 	    }
 
@@ -118,17 +126,6 @@ typedef DeleteParams = {id: String};
 	    }
 	    
 	    /**
-	     * Generate a unique ID for new users
-	     * Uses timestamp and random for uniqueness
-     */
-    private static function generateUniqueId(): String {
-        // Use Haxe's standard library (avoid raw Elixir injection)
-        var timestamp = Date.now().getTime();
-        var random = Math.floor(Math.random() * 10000);
-        return '${timestamp}_${random}';
-    }
-    
-	    /**
 	     * List all users (GET /api/users)
      * 
      * Traditional Phoenix:
@@ -141,7 +138,7 @@ typedef DeleteParams = {id: String};
      * 
 	     * With Haxe, we get type-safe JSON responses and can refactor safely.
 	    */
-	    public static function index(conn: Conn<IndexParams>, params: IndexParams): Conn<IndexParams> {
+	    public static function index(conn: Conn<{}>, params: Term): Conn<{}> {
 	        var currentUser = currentUserFromSession(conn);
 	        if (currentUser == null) return error(conn, 401, "Unauthorized");
 	        if (currentUser.role != "admin") return error(conn, 403, "Forbidden");
@@ -157,20 +154,20 @@ typedef DeleteParams = {id: String};
      * Notice the type-safe params structure - we KNOW at compile time
      * that 'id' must exist. No runtime pattern matching needed!
      * 
-     * @param conn The request connection (typed with ShowParams)
-     * @param params Must contain 'id' field (compile-time enforced)
-     * @return JSON response with user data
-     */
-	    public static function show(conn: Conn<ShowParams>, params: ShowParams): Conn<ShowParams> {
-	        var currentUser = currentUserFromSession(conn);
-	        if (currentUser == null) return error(conn, 401, "Unauthorized");
-	        if (currentUser.role != "admin") return error(conn, 403, "Forbidden");
+	     * @param conn The request connection (typed with ShowParams)
+	     * @param params Must contain 'id' field (compile-time enforced)
+	     * @return JSON response with user data
+	     */
+		    public static function show(conn: Conn<{}>, params: Term): Conn<{}> {
+		        var currentUser = currentUserFromSession(conn);
+		        if (currentUser == null) return error(conn, 401, "Unauthorized");
+		        if (currentUser.role != "admin") return error(conn, 403, "Forbidden");
 
-	        var userId = Std.parseInt(params.id);
-	        if (userId == null) return error(conn, 400, "Invalid user id");
+		        var userId = parseParamId(params);
+		        if (userId == null) return error(conn, 400, "Invalid user id");
 
-	        var user = Users.getUserInOrganization(userId, currentUser.organizationId);
-	        if (user == null) return error(conn, 404, "User not found");
+		        var user = Users.getUserInOrganization(userId, currentUser.organizationId);
+		        if (user == null) return error(conn, 404, "User not found");
 
 	        return conn.json({user: userJson(user)});
 	    }
@@ -187,40 +184,45 @@ typedef DeleteParams = {id: String};
      * }
      * function create(conn: Conn, params: UserParams): Conn
      * ```
-     * 
-     * This gives you compile-time validation of required fields!
-     */
-	    public static function create(conn: Conn<CreateParams>, params: CreateParams): Conn<CreateParams> {
-	        var currentUser = currentUserFromSession(conn);
-	        if (currentUser == null) return error(conn, 401, "Unauthorized");
-	        if (currentUser.role != "admin") return error(conn, 403, "Forbidden");
+	     * 
+	     * This gives you compile-time validation of required fields!
+	     */
+		    public static function create(conn: Conn<{}>, params: Term): Conn<{}> {
+		        var currentUser = currentUserFromSession(conn);
+		        if (currentUser == null) return error(conn, 401, "Unauthorized");
+		        if (currentUser.role != "admin") return error(conn, 403, "Forbidden");
 
-	        var normalizedName = Accounts.normalizeName(params.name);
-	        var normalizedEmail = Accounts.normalizeEmail(params.email);
+		        var name = getStringParam(params, "name") ?? "";
+		        var email = getStringParam(params, "email") ?? "";
 
-	        if (StringTools.trim(normalizedName) == "" || StringTools.trim(normalizedEmail) == "") {
-	            return error(conn, 422, "Name and email are required");
-	        }
+		        var normalizedName = Accounts.normalizeName(name);
+		        var normalizedEmail = Accounts.normalizeEmail(email);
+
+		        if (StringTools.trim(normalizedName) == "" || StringTools.trim(normalizedEmail) == "") {
+		            return error(conn, 422, "Name and email are required");
+		        }
 
 	        var attrs: Term = {};
-	        attrs = ElixirMap.put(attrs, "name", normalizedName);
-	        attrs = ElixirMap.put(attrs, "email", normalizedEmail);
+		        attrs = ElixirMap.put(attrs, "name", normalizedName);
+		        attrs = ElixirMap.put(attrs, "email", normalizedEmail);
 
-	        if (params.bio != null) {
-	            var bioValue = StringTools.trim(params.bio);
-	            attrs = ElixirMap.put(attrs, "bio", bioValue == "" ? null : bioValue);
-	        }
+		        var bio = getStringParam(params, "bio");
+		        if (bio != null) {
+		            var bioValue = StringTools.trim(bio);
+		            attrs = ElixirMap.put(attrs, "bio", bioValue == "" ? null : bioValue);
+		        }
 
-	        var userStruct: User = cast Kernel.struct(User);
-	        var changeset = User.changeset(userStruct, attrs);
+		        var userStruct: User = cast Kernel.struct(User);
+		        var changeset = User.changeset(userStruct, attrs);
 
-	        var now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), TimePrecision.Second);
-	        changeset = changeset
-	            .putChange("password_hash", Accounts.generateDemoPasswordHash(normalizedEmail))
-	            .putChange("confirmed_at", now)
-	            .putChange("organization_id", currentUser.organizationId)
-	            .putChange("role", normalizeRole(params.role))
-	            .putChange("active", params.active != null ? params.active : true);
+		        var requestedActive = getBoolParam(params, "active");
+		        var now = NaiveDateTime.truncate(NaiveDateTime.utc_now(), TimePrecision.Second);
+		        changeset = changeset
+		            .putChange("password_hash", Accounts.generateDemoPasswordHash(normalizedEmail))
+		            .putChange("confirmed_at", now)
+		            .putChange("organization_id", currentUser.organizationId)
+		            .putChange("role", normalizeRole(getStringParam(params, "role")))
+		            .putChange("active", requestedActive != null ? requestedActive : true);
 
 	        return switch (Repo.insert(changeset)) {
 	            case Ok(user):
@@ -231,54 +233,60 @@ typedef DeleteParams = {id: String};
 	        };
 	    }
     
-    /**
-     * Update an existing user (PUT /api/users/:id)
+	    /**
+	     * Update an existing user (PUT /api/users/:id)
      * 
-     * Combines URL parameters (id) with body parameters.
-     * Type-safe with UpdateParams ensuring id always exists.
-     */
-	    public static function update(conn: Conn<UpdateParams>, params: UpdateParams): Conn<UpdateParams> {
-	        var currentUser = currentUserFromSession(conn);
-	        if (currentUser == null) return error(conn, 401, "Unauthorized");
-	        if (currentUser.role != "admin") return error(conn, 403, "Forbidden");
+	     * Combines URL parameters (id) with body parameters.
+	     * Type-safe with UpdateParams ensuring id always exists.
+	     */
+		    public static function update(conn: Conn<{}>, params: Term): Conn<{}> {
+		        var currentUser = currentUserFromSession(conn);
+		        if (currentUser == null) return error(conn, 401, "Unauthorized");
+		        if (currentUser.role != "admin") return error(conn, 403, "Forbidden");
 
-	        var userId = Std.parseInt(params.id);
-	        if (userId == null) return error(conn, 400, "Invalid user id");
+		        var userId = parseParamId(params);
+		        if (userId == null) return error(conn, 400, "Invalid user id");
 
-	        var user = Users.getUserInOrganization(userId, currentUser.organizationId);
-	        if (user == null) return error(conn, 404, "User not found");
+		        var user = Users.getUserInOrganization(userId, currentUser.organizationId);
+		        if (user == null) return error(conn, 404, "User not found");
 
-	        if (user.id == currentUser.id) {
-	            if (params.active == false) return error(conn, 422, "Cannot deactivate your own account");
-	            if (params.role != null && normalizeRole(params.role) != currentUser.role) {
-	                return error(conn, 422, "Cannot change your own role");
-	            }
-	        }
+		        if (user.id == currentUser.id) {
+		            if (getBoolParam(params, "active") == false) return error(conn, 422, "Cannot deactivate your own account");
+		            var requestedRole = getStringParam(params, "role");
+		            if (requestedRole != null && normalizeRole(requestedRole) != currentUser.role) {
+		                return error(conn, 422, "Cannot change your own role");
+		            }
+		        }
 
-	        var nextName = params.name != null ? Accounts.normalizeName(params.name) : user.name;
-	        var nextEmail = params.email != null ? Accounts.normalizeEmail(params.email) : user.email;
+		        var requestedName = getStringParam(params, "name");
+		        var requestedEmail = getStringParam(params, "email");
+		        var nextName = requestedName != null ? Accounts.normalizeName(requestedName) : user.name;
+		        var nextEmail = requestedEmail != null ? Accounts.normalizeEmail(requestedEmail) : user.email;
 
-	        if (StringTools.trim(nextName) == "" || StringTools.trim(nextEmail) == "") {
-	            return error(conn, 422, "Name and email must be non-empty");
-	        }
+		        if (StringTools.trim(nextName) == "" || StringTools.trim(nextEmail) == "") {
+		            return error(conn, 422, "Name and email must be non-empty");
+		        }
 
 	        var attrs: Term = {};
-	        attrs = ElixirMap.put(attrs, "name", nextName);
-	        attrs = ElixirMap.put(attrs, "email", nextEmail);
+		        attrs = ElixirMap.put(attrs, "name", nextName);
+		        attrs = ElixirMap.put(attrs, "email", nextEmail);
 
-	        if (params.bio != null) {
-	            var bioValue = StringTools.trim(params.bio);
-	            attrs = ElixirMap.put(attrs, "bio", bioValue == "" ? null : bioValue);
-	        }
+		        var requestedBio = getStringParam(params, "bio");
+		        if (requestedBio != null) {
+		            var bioValue = StringTools.trim(requestedBio);
+		            attrs = ElixirMap.put(attrs, "bio", bioValue == "" ? null : bioValue);
+		        }
 
-	        var changeset = User.changeset(user, attrs);
+		        var changeset = User.changeset(user, attrs);
 
-	        if (params.role != null) {
-	            changeset = changeset.putChange("role", normalizeRole(params.role));
-	        }
-	        if (params.active != null) {
-	            changeset = changeset.putChange("active", params.active);
-	        }
+		        var role = getStringParam(params, "role");
+		        if (role != null) {
+		            changeset = changeset.putChange("role", normalizeRole(role));
+		        }
+		        var active = getBoolParam(params, "active");
+		        if (active != null) {
+		            changeset = changeset.putChange("active", active);
+		        }
 
 	        return switch (Repo.update(changeset)) {
 	            case Ok(updated):
@@ -292,17 +300,17 @@ typedef DeleteParams = {id: String};
     /**
      * Delete a user (DELETE /api/users/:id)
      * 
-     * Type-safe deletion - the compiler ensures 'id' exists.
-     * No need for defensive programming or nil checks!
-     */
-	    public static function delete(conn: Conn<DeleteParams>, params: DeleteParams): Conn<DeleteParams> {
-	        var currentUser = currentUserFromSession(conn);
-	        if (currentUser == null) return error(conn, 401, "Unauthorized");
-	        if (currentUser.role != "admin") return error(conn, 403, "Forbidden");
+	     * Type-safe deletion - the compiler ensures 'id' exists.
+	     * No need for defensive programming or nil checks!
+	     */
+		    public static function delete(conn: Conn<{}>, params: Term): Conn<{}> {
+		        var currentUser = currentUserFromSession(conn);
+		        if (currentUser == null) return error(conn, 401, "Unauthorized");
+		        if (currentUser.role != "admin") return error(conn, 403, "Forbidden");
 
-	        var userId = Std.parseInt(params.id);
-	        if (userId == null) return error(conn, 400, "Invalid user id");
-	        if (userId == currentUser.id) return error(conn, 422, "Cannot delete your own account");
+		        var userId = parseParamId(params);
+		        if (userId == null) return error(conn, 400, "Invalid user id");
+		        if (userId == currentUser.id) return error(conn, 422, "Cannot delete your own account");
 
 	        var user = Users.getUserInOrganization(userId, currentUser.organizationId);
 	        if (user == null) return error(conn, 404, "User not found");

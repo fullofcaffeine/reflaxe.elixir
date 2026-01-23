@@ -134,7 +134,10 @@ class VariableUsageCollector {
                     var next = extendShadow(shadowed, add);
                     walk(cl.body, next, refs);
                 }
-                if (after != null) walk(after.body, shadowed, refs);
+                if (after != null) {
+                    walk(after.timeout, shadowed, refs);
+                    walk(after.body, shadowed, refs);
+                }
 
             // With: each clause pattern binds names; these are visible in do/else
             case EWith(clauses, doBlock, elseBlock):
@@ -182,8 +185,22 @@ class VariableUsageCollector {
                 for (p in pairs) { walk(p.key, shadowed, refs); walk(p.value, shadowed, refs); }
             case EStructUpdate(base, fields):
                 walk(base, shadowed, refs); for (f in fields) walk(f.value, shadowed, refs);
+            case EStruct(_module, fields):
+                for (f in fields) walk(f.value, shadowed, refs);
+            case EBitstring(segments):
+                for (s in segments) {
+                    walk(s.value, shadowed, refs);
+                    if (s.size != null) walk(s.size, shadowed, refs);
+                }
             case ETuple(elems) | EList(elems):
                 for (e in elems) walk(e, shadowed, refs);
+
+            // Misc expression forms
+            case EMacroCall(_macroName, args, doBlock):
+                for (a in args) walk(a, shadowed, refs);
+                walk(doBlock, shadowed, refs);
+            case ECapture(expr, _):
+                walk(expr, shadowed, refs);
 
             // Anonymous functions: binder args shadow same-named outer vars
             case EFn(clauses):
@@ -209,6 +226,27 @@ class VariableUsageCollector {
                 }
                 if (afterBlock != null) walk(afterBlock, shadowed, refs);
                 if (elseBlock != null) walk(elseBlock, shadowed, refs);
+
+            case ERaise(exception, attributes):
+                walk(exception, shadowed, refs);
+                if (attributes != null) walk(attributes, shadowed, refs);
+            case EThrow(value):
+                walk(value, shadowed, refs);
+            case ESend(target, message):
+                walk(target, shadowed, refs);
+                walk(message, shadowed, refs);
+            case EModuleAttribute(_name, value):
+                walk(value, shadowed, refs);
+            case EQuote(options, expr):
+                for (o in options) walk(o, shadowed, refs);
+                walk(expr, shadowed, refs);
+            case EUnquote(expr) | EUnquoteSplicing(expr):
+                walk(expr, shadowed, refs);
+            case EUse(_module, options):
+                for (o in options) walk(o, shadowed, refs);
+            case EFragment(_tag, attrs, children):
+                for (a in attrs) walk(a.value, shadowed, refs);
+                for (c in children) walk(c, shadowed, refs);
 
             // Ignore raw literals and strings for now; ERaw/ESigil usage is handled by
             // transform-specific heuristics when needed.

@@ -79,7 +79,8 @@ class AnnotationTransforms {
      * 
      * WHY: Phoenix endpoints require specific structure with use statement, plugs, and sockets
      * WHAT: Replaces minimal module body with complete endpoint configuration
-     * HOW: Detects isEndpoint metadata and builds proper Phoenix.Endpoint AST
+     * HOW: Detects isEndpoint metadata and builds proper Phoenix.Endpoint AST.
+     *      Also supports additional sockets via `@:endpointSockets([...])`.
      */
     public static function endpointTransformPass(ast: ElixirAST): ElixirAST {
         #if debug_annotation_transforms
@@ -94,7 +95,7 @@ class AnnotationTransforms {
                 #end
                 
                 var appName = (ast.metadata != null && ast.metadata.appName != null) ? ast.metadata.appName : extractAppName(name);
-                var endpointBody = buildEndpointBody(name, appName);
+                var endpointBody = buildEndpointBody(name, appName, ast.metadata);
                 // EModule expects Array<ElixirAST> body; unwrap block to statements
                 var stmts = switch (endpointBody.def) {
                     case EBlock(s): s;
@@ -107,7 +108,7 @@ class AnnotationTransforms {
                 #end
                 
                 var appName = (ast.metadata != null && ast.metadata.appName != null) ? ast.metadata.appName : extractAppName(name);
-                var endpointBody = buildEndpointBody(name, appName);
+                var endpointBody = buildEndpointBody(name, appName, ast.metadata);
                 
                 // Create new module with endpoint body, preserving metadata
                 return makeASTWithMeta(
@@ -143,7 +144,7 @@ class AnnotationTransforms {
     /**
      * Build complete Phoenix.Endpoint module body
      */
-    static function buildEndpointBody(moduleName: String, appName: String): ElixirAST {
+    static function buildEndpointBody(moduleName: String, appName: String, metadata: ElixirMetadata): ElixirAST {
         var statements = [];
         
         // use Phoenix.Endpoint, otp_app: :app_name
@@ -178,6 +179,36 @@ class AnnotationTransforms {
             makeAST(EVar("Phoenix.LiveView.Socket")),
             socketOptions
         ])));
+
+        // Optional additional sockets (channels, etc.) via @:endpointSockets([...]).
+        var extraSockets = metadata != null ? metadata.endpointSockets : null;
+        if (extraSockets != null) {
+            for (socketMeta in extraSockets) {
+                if (socketMeta == null || socketMeta.path == null || socketMeta.socket == null) continue;
+                var socketModuleName = socketMeta.socket;
+
+                // Default: enable websocket, disable longpoll.
+                var sessionEnabled = socketMeta.session == true;
+                var wsValue: ElixirAST = sessionEnabled
+                    ? makeAST(EKeywordList([
+                        {key: "connect_info", value: makeAST(EKeywordList([
+                            {key: "session", value: makeAST(EVar("@session_options"))}
+                        ]))}
+                    ]))
+                    : makeAST(EBoolean(true));
+
+                var opts = makeAST(EKeywordList([
+                    {key: "websocket", value: wsValue},
+                    {key: "longpoll", value: makeAST(EBoolean(false))}
+                ]));
+
+                statements.push(makeAST(ECall(null, "socket", [
+                    makeAST(EString(socketMeta.path)),
+                    makeAST(EVar(socketModuleName)),
+                    opts
+                ])));
+            }
+        }
         
         // plug Plug.Static configuration
         // Use the sigil directly for the only option instead of calling a function
@@ -267,6 +298,108 @@ class AnnotationTransforms {
         
         
         return makeAST(EBlock(statements));
+    }
+
+    /**
+     * Transform @:socket modules into Phoenix.Socket structure
+     *
+     * WHAT
+     * - Emits a Phoenix socket module (`use Phoenix.Socket`) with `channel/2` routes.
+     * - Ensures `connect/3` and `id/1` exist (adds safe defaults if missing).
+     *
+     * WHY
+     * - Channels require a socket module (typically `<App>Web.UserSocket`) that declares
+     *   `channel "topic:*", MyChannel` routes. Haxe class bodies cannot contain Elixir
+     *   module-level directives, so we generate them from `@:socket` + metadata.
+     *
+     * HOW
+     * - When `metadata.isSocket == true`:
+     *   - Prepend `use Phoenix.Socket`.
+     *   - Emit one `channel "<topic>", <ChannelModule>` call per `metadata.socketChannels`.
+     *   - Append existing defs.
+     *   - If `connect/3` missing, emit `def connect(_params, socket, _connect_info), do: {:ok, socket}`.
+     *   - If `id/1` missing, emit `def id(_socket), do: nil`.
+     *
+     * EXAMPLES
+     * Haxe:
+     *   @:native("MyAppWeb.UserSocket")
+     *   @:socket
+     *   @:socketChannels([{topic: "typed:*", channel: server.channels.PingChannel}])
+     *   class UserSocket {}
+     *
+     * Elixir (generated):
+     *   defmodule MyAppWeb.UserSocket do
+     *     use Phoenix.Socket
+     *     channel "typed:*", MyAppWeb.PingChannel
+     *     def connect(_params, socket, _connect_info), do: {:ok, socket}
+     *     def id(_socket), do: nil
+     *   end
+     */
+    public static function socketTransformPass(ast: ElixirAST): ElixirAST {
+        if (ast == null || ast.metadata == null || ast.metadata.isSocket != true) return ast;
+
+        function buildSocketStatements(existingBody: ElixirAST, metadata: ElixirMetadata): Array<ElixirAST> {
+            var statements: Array<ElixirAST> = [makeAST(EUse("Phoenix.Socket", []))];
+
+            var existingDefinitions: Map<String, Bool> = new Map();
+            switch (existingBody.def) {
+                case EBlock(stmts):
+                    for (s in stmts) switch (s.def) {
+                        case EDef(name, args, _, _) if (name != null): existingDefinitions.set('${name}/${args != null ? args.length : 0}', true);
+                        case EDefp(name, args, _, _) if (name != null): existingDefinitions.set('${name}/${args != null ? args.length : 0}', true);
+                        default:
+                    }
+                default:
+            }
+
+            var channels = metadata != null ? metadata.socketChannels : null;
+            if (channels != null) {
+                for (c in channels) {
+                    if (c == null || c.topic == null || c.channel == null) continue;
+                    var channelModuleName = c.channel;
+                    statements.push(makeAST(ECall(null, "channel", [
+                        makeAST(EString(c.topic)),
+                        makeAST(EVar(channelModuleName))
+                    ])));
+                }
+            }
+
+            if (!existingDefinitions.exists("connect/3")) {
+                statements.push(makeAST(EDef(
+                    "connect",
+                    [EPattern.PVar("_params"), EPattern.PVar("socket"), EPattern.PVar("_connect_info")],
+                    null,
+                    makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("ok"))), makeAST(EVar("socket"))]))
+                )));
+            }
+
+            if (!existingDefinitions.exists("id/1")) {
+                statements.push(makeAST(EDef(
+                    "id",
+                    [EPattern.PVar("_socket")],
+                    null,
+                    makeAST(ENil)
+                )));
+            }
+
+            switch (existingBody.def) {
+                case EBlock(stmts2):
+                    statements = statements.concat(stmts2);
+                default:
+                    statements.push(existingBody);
+            }
+
+            return statements;
+        }
+
+        return switch (ast.def) {
+            case EDefmodule(name, body):
+                makeASTWithMeta(EModule(name, [], buildSocketStatements(body, ast.metadata)), ast.metadata, ast.pos);
+            case EModule(name, attrs, stmts):
+                makeASTWithMeta(EModule(name, attrs, buildSocketStatements(makeAST(EBlock(stmts)), ast.metadata)), ast.metadata, ast.pos);
+            default:
+                ast;
+        }
     }
     
     /**

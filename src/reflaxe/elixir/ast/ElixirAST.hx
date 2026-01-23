@@ -620,6 +620,25 @@ typedef RouterRouteMeta = {
 }
 
 /**
+ * Socket channel metadata parsed from @:socketChannels on @:socket modules.
+ */
+typedef SocketChannelMeta = {
+    var topic: String;
+    // Fully-qualified Elixir module name (resolved at compile time, respects @:native).
+    var channel: String;
+}
+
+/**
+ * Endpoint socket metadata parsed from @:endpointSockets on @:endpoint modules.
+ */
+typedef EndpointSocketMeta = {
+    var path: String;
+    // Fully-qualified Elixir module name (resolved at compile time, respects @:native).
+    var socket: String;
+    @:optional var session: Bool;
+}
+
+/**
  * Ecto-specific context for schemas, queries, etc.
  */
 enum EctoContext {
@@ -776,6 +795,9 @@ typedef ElixirMetadata = {
     ?isController: Bool,          // @:controller Phoenix.Controller
     ?isPresence: Bool,            // @:presence Phoenix.Presence
     ?isPhoenixWeb: Bool,          // @:phoenixWeb AppNameWeb module with macros
+    ?isSocket: Bool,             // @:socket Phoenix.Socket module
+    ?socketChannels: Array<SocketChannelMeta>, // Parsed @:socketChannels metadata for Socket emission
+    ?endpointSockets: Array<EndpointSocketMeta>, // Parsed @:endpointSockets metadata for Endpoint emission
     ?isExunit: Bool,              // @:exunit ExUnit.Case test module
     ?isTest: Bool,                // @:test on a method in ExUnit module
     ?isSetup: Bool,               // @:setup on a method in ExUnit module

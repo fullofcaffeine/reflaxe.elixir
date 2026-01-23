@@ -1,0 +1,17 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "string_buf.ex",
+  "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "my_app_web/user_socket.ex",
+  "my_app_web/ping_channel.ex",
+  "my_app_web/endpoint.ex",
+  "main.ex",
+  "haxe/iterators/array_iterator.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}

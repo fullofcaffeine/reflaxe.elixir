@@ -44,7 +44,7 @@ class SessionController {
                     .putSession("user_id", user.id)
                     .putFlash("info", 'Signed in as ${user.name}.')
                     .redirect("/todos");
-            case Error(error):
+            case Error(_):
                 {
                     conn
                         .putFlash("error", "Could not sign in. Please check your details and try again.")

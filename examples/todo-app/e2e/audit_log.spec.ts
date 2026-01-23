@@ -7,6 +7,7 @@ async function waitForLiveViewConnected(page: Page) {
 async function login(page: Page, base: string, name: string, email: string) {
   await page.goto(base + '/login')
   await expect(page.locator('h1')).toContainText('Sign in')
+  await waitForLiveViewConnected(page)
 
   const loginForm = page
     .locator('form[action="/auth/login"]')
@@ -15,6 +16,8 @@ async function login(page: Page, base: string, name: string, email: string) {
     })
     .first()
 
+  await expect(loginForm.locator('input[name="name"][type="text"]')).toBeVisible()
+  await expect(loginForm.locator('input[name="email"][type="email"]')).toBeVisible()
   await loginForm.locator('input[name="name"][type="text"]').fill(name)
   await loginForm.locator('input[name="email"][type="email"]').fill(email)
   await loginForm.getByRole('button', { name: /continue/i }).click()
@@ -44,6 +47,7 @@ test('role updates are recorded and visible in the audit log', async ({ browser 
 
   // Promote the user via the org admin UI (this should emit an audit log entry).
   await adminPage.goto(base + '/org')
+  await waitForLiveViewConnected(adminPage)
   await expect(adminPage.getByTestId('members-title')).toBeVisible({ timeout: 20000 })
 
   const memberRow = adminPage
@@ -89,6 +93,7 @@ test('invite create + accept are recorded in the audit log', async ({ browser })
   await login(adminPage, base, `PW Audit Invite Admin ${runId}`, adminEmail)
 
   await adminPage.goto(base + '/org')
+  await waitForLiveViewConnected(adminPage)
   await expect(adminPage.getByTestId('org-title')).toBeVisible({ timeout: 20000 })
 
   await adminPage.getByTestId('invite-email').fill(inviteeEmail)
