@@ -3109,19 +3109,38 @@ using StringTools;
      * HOW: Pattern matches on Type structure
      */
     static function getEnumTypeFromExpression(expr: TypedExpr): Null<EnumType> {
-        return switch(expr.t) {
-            case TEnum(ref, _):
-                ref.get();
-            case TAbstract(ref, _):
-                // Check if abstract wraps an enum
-                var abs = ref.get();
-                switch(abs.type) {
-                    case TEnum(enumRef, _): enumRef.get();
-                    default: null;
-                }
-            default:
-                null;
-        };
+        if (expr == null) return null;
+
+        function fromType(t: Type): Null<EnumType> {
+            if (t == null) return null;
+
+            var followed = haxe.macro.TypeTools.follow(t);
+            return switch (followed) {
+                case TEnum(ref, _):
+                    ref.get();
+
+                case TAbstract(ref, params):
+                    var abs = ref.get();
+
+                    // Common case: `Null<Enum>` needs unwrapping to recover the enum.
+                    if (abs != null && abs.pack.length == 0 && abs.name == "Null" && params != null && params.length == 1) {
+                        fromType(params[0]);
+                    } else {
+                        // Check if abstract wraps an enum
+                        switch (abs.type) {
+                            case TEnum(enumRef, _):
+                                enumRef.get();
+                            default:
+                                null;
+                        }
+                    }
+
+                default:
+                    null;
+            };
+        }
+
+        return fromType(expr.t);
     }
 
     /**

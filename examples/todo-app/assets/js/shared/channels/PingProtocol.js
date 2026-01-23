@@ -25,7 +25,13 @@ PingServerEvent.__empty_constructs__ = []
 export const PingProtocol = Register.global("$hxClasses")["shared.channels.PingProtocol"] = 
 class PingProtocol {
 	static encodePingPayload(payload) {
-		return {"request_id": payload.requestId};
+		let out = {};
+		if (out == null) {
+			return out;
+		} else {
+			out["request_id"] = payload.requestId;
+			return out;
+		};
 	}
 	static decodePingPayload(payload) {
 		let requestId = (payload == null) ? null : ((p,k)=>{var v=p[k]; return v==null?null:String(v);})(payload,"request_id");
