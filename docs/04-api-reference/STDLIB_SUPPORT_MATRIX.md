@@ -47,10 +47,15 @@ Top-level:
 - `haxe.ds.EnumValueMap` (staged under `std/_std`)
 - `haxe.ds.Option`
 - `haxe.format.JsonPrinter`
+- `haxe.io.BufferInput`
 - `haxe.io.Bytes`
+- `haxe.io.BytesBuffer`
 - `haxe.io.BytesData`
+- `haxe.io.BytesInput`
+- `haxe.io.BytesOutput`
 - `haxe.io.Encoding`
 - `haxe.io.Eof`
+- `haxe.io.FPHelper`
 - `haxe.io.Input`
 - `haxe.io.Output`
 - `haxe.iterators.ArrayIterator`

@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 33,
+      "count": 38,
       "modules": [
         "Array",
         "Date",
@@ -21,10 +21,15 @@
         "haxe.ds.Option",
         "haxe.exceptions.PosException",
         "haxe.format.JsonPrinter",
+        "haxe.io.BufferInput",
         "haxe.io.Bytes",
+        "haxe.io.BytesBuffer",
         "haxe.io.BytesData",
+        "haxe.io.BytesInput",
+        "haxe.io.BytesOutput",
         "haxe.io.Encoding",
         "haxe.io.Eof",
+        "haxe.io.FPHelper",
         "haxe.io.Input",
         "haxe.io.Output",
         "haxe.iterators.ArrayIterator",
@@ -53,7 +58,7 @@
       ]
     },
     "reference_only": {
-      "count": 171,
+      "count": 166,
       "modules": [
         "Any",
         "Class",
@@ -136,12 +141,7 @@
         "haxe.http.HttpNodeJs",
         "haxe.http.HttpStatus",
         "haxe.io.ArrayBufferView",
-        "haxe.io.BufferInput",
-        "haxe.io.BytesBuffer",
-        "haxe.io.BytesInput",
-        "haxe.io.BytesOutput",
         "haxe.io.Error",
-        "haxe.io.FPHelper",
         "haxe.io.Float32Array",
         "haxe.io.Float64Array",
         "haxe.io.Int32Array",
@@ -232,7 +232,7 @@
   "local": {
     "counts_by_prefix": {
       "<top-level>": 12,
-      "haxe": 24,
+      "haxe": 29,
       "sys": 6
     },
     "nonstdlib_modules_under_std_dir": [
@@ -260,8 +260,8 @@
       "/REDACTED_LOCAL_PATH",
       "/REDACTED_LOCAL_PATH"
     ],
-    "total_candidates": 47,
-    "total_std_modules": 42
+    "total_candidates": 52,
+    "total_std_modules": 47
   },
   "reference": {
     "counts_by_prefix": {

@@ -14,16 +14,16 @@ scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference
 ## Summary
 
 - Reference std modules: **204**
-- Local std modules present: **42** (candidates scanned: 47)
-- Intersection (local provides): **33**
-- Missing locally (reference-only): **171**
+- Local std modules present: **47** (candidates scanned: 52)
+- Intersection (local provides): **38**
+- Missing locally (reference-only): **166**
 - Local-only: **9**
 
 ## Missing modules (high-level)
 
 Top-level (12): `Any`, `Class`, `DateTools`, `Enum`, `EnumValue`, `IntIterator`, `List`, `Map`, `StdTypes`, `UInt`, `UnicodeString`, `Xml`
 
-`haxe.*` (131): heavy gaps including `haxe.Json`, `haxe.Http`, `haxe.CallStack`, `haxe.Exception`, `haxe.Int64`, `haxe.Serializer`, `haxe.Template`, …
+`haxe.*` (126): heavy gaps including `haxe.Json`, `haxe.Http`, `haxe.CallStack`, `haxe.Exception`, `haxe.Int64`, `haxe.Serializer`, `haxe.Template`, …
 
 `sys.*` (28): gaps across IO/process/network/threading including `sys.io.Process`, `sys.net.Socket`, `sys.net.UdpSocket`, `sys.ssl.Socket`, `sys.thread.*`, …
 
