@@ -4,9 +4,11 @@ This document describes how Reflaxe.Elixir gates Elixir-specific staged standard
 
 ## WHAT
 
-- Elixir-only overrides live under `std/_std/` (e.g., `.cross.hx` files using `__elixir__()`).
-- These paths are added to the Haxe classpath only when building the Elixir target.
-- Macro contexts and non-Elixir targets see the regular `std/` externs without Elixir-specific overrides.
+- Elixir-specific stdlib work in this repo is split into two buckets:
+  - `std/**/*.cross.hx`: cross-platform overrides selected by Haxe when compiling in `cross` mode (Reflaxe targets on Haxe 4).
+  - `std/_std/**/*.hx`: Elixir-only shims/bridge modules that must never leak into macro-only or non-Elixir builds.
+- `std/` and `std/_std/` are added to the Haxe classpath only when we detect an Elixir build.
+- Macro contexts and non-Elixir targets use the upstream Haxe stdlib (no `__elixir__()` leaks).
 
 ## WHY
 
@@ -16,9 +18,12 @@ This document describes how Reflaxe.Elixir gates Elixir-specific staged standard
 
 ## HOW
 
-Implemented in `src/reflaxe/elixir/CompilerInit.hx` inside `CompilerInit.Start()`:
+Implemented in two places:
 
-1) Haxe 5 platform guard (already present):
+- `src/reflaxe/elixir/CompilerBootstrap.hx` (`CompilerBootstrap.Start()`) — earliest possible injection (invoked from `extraParams.hxml`).
+- `src/reflaxe/elixir/CompilerInit.hx` (`CompilerInit.Start()`) — compiler registration + a redundant early injection (safe) for repo-local builds.
+
+### Haxe 5 platform guard (Elixir target only)
 
 ```haxe
 #if (haxe >= version("5.0.0"))
@@ -29,25 +34,33 @@ switch (haxe.macro.Compiler.getConfiguration().platform) {
 #end
 ```
 
-2) Classpath injection (Elixir only):
+### Classpath injection (Elixir builds only)
 
 ```haxe
 var targetName = Context.definedValue("target.name");
-var thisFile = Context.resolvePath("reflaxe/elixir/CompilerInit.hx");
-var repoRoot = Path.directory(Path.directory(Path.directory(Path.directory(thisFile))));
-var stagedStd = Path.normalize(Path.join([repoRoot, "std/_std"]));
+var isElixirBuild = (targetName == "elixir" || Context.defined("elixir_output"));
 
-// Gate strictly to Elixir target. Fallback for Haxe 4 where target.name may be unset: use -D elixir_output.
-if (targetName == "elixir" || Context.defined("elixir_output")) {
-  haxe.macro.Compiler.addClassPath(stagedStd);
+if (isElixirBuild) {
+  // Compute <repo>/std + <repo>/std/_std from this library's resolved path.
+  var compilerInitPath = Context.resolvePath("reflaxe/elixir/CompilerInit.hx");
+  var elixirDir = Path.directory(compilerInitPath);      // .../src/reflaxe/elixir
+  var reflaxeDir = Path.directory(elixirDir);            // .../src/reflaxe
+  var srcDir = Path.directory(reflaxeDir);               // .../src
+  var libraryRoot = Path.directory(srcDir);              // .../
+
+  var standardLibrary = Path.normalize(Path.join([libraryRoot, "std"]));
+  var stagedStd = Path.normalize(Path.join([libraryRoot, "std/_std"]));
+
+  Compiler.addClassPath(standardLibrary); // <repo>/std
+  Compiler.addClassPath(stagedStd);       // <repo>/std/_std
 }
 ```
 
-3) Library configuration update:
+### Library configuration update
 
 - Removed the unconditional `-cp std/_std/` from `haxe_libraries/reflaxe.elixir.hxml`.
-- Kept `-cp std/` (generic externs).
-- Rationale: classpath gating is now handled centrally by the bootstrap macro.
+- Kept `-cp std/` for local-repo development convenience (consumer installs rely on `extraParams.hxml`).
+- Rationale: classpath gating is handled centrally by the bootstrap macros, so `std/_std` should never be unconditional.
 
 ## Activation Scenarios
 
@@ -60,7 +73,7 @@ Gating activates (i.e., `std/_std/` is added) in these scenarios:
 
 - Haxe 4 + Reflaxe.Elixir builds (tests/examples):
   - `--macro reflaxe.elixir.CompilerInit.Start()` is present
-  - Either `Context.definedValue("target.name") == "elixir"` OR `-D elixir_output=...` is set (fallback)
+  - `-D elixir_output=...` is set (stable signal; `target.name` is commonly `cross` under Haxe 4 for Reflaxe targets)
   - Typical: test snapshots (`test/snapshot/*/compile.hxml`), examples (`examples/todo-app/build-server.hxml`)
 
 Gating DOES NOT activate in these scenarios:
@@ -71,8 +84,8 @@ Gating DOES NOT activate in these scenarios:
 
 ## Verification
 
-- Elixir builds: `haxe build-server.hxml` succeed; mix compiles; Elixir-only overrides are present.
-- Non-Elixir builds: `haxe build-client.hxml` (genes) succeed; no `__elixir__()` symbols; no staged overrides on classpath.
+- Elixir builds: `haxe examples/todo-app/build-server.hxml` succeeds; mix compiles; Elixir-only shims are present.
+- Non-Elixir builds: `haxe examples/todo-app/build-client.hxml` (genes) succeeds; no `__elixir__()` symbols; no staged overrides on classpath.
 - Macro contexts: running macro tools no longer error on `__elixir__()`.
 
 ## Notes

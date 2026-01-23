@@ -341,8 +341,8 @@ The compiler automatically generates runtime support modules from different sour
 3. **How the Compiler Knows to Use Log.trace()**:
    - Haxe has a built-in `trace()` function that's part of the language
    - The Haxe compiler (not our Reflaxe compiler) transforms `trace()` calls into calls to `haxe.Log.trace()`
-   - Our Reflaxe.Elixir compiler sees these as static method calls to the Log class
-   - It then compiles the haxe/Log.hx file to generate the Log module in Elixir
+   - Our Reflaxe.Elixir compiler sees these as static method calls to the Log module
+   - Our override `std/haxe/Log.cross.hx` shadows upstream `haxe/Log.hx` for Elixir builds and compiles to `haxe/log.ex`
 
 4. **Dependency Tracking**:
    - `ElixirASTBuilder.trackDependency()` tracks which modules are used
@@ -355,15 +355,15 @@ out/
 ├── main.ex           # Your compiled code
 ├── std.ex            # From std/Std.cross.hx (our custom implementation)
 ├── haxe/
-│   └── log.ex        # From Haxe stdlib's haxe/Log.hx
+│   └── log.ex        # From std/haxe/Log.cross.hx (shadows upstream haxe/Log.hx)
 └── map_tools.ex      # From std/MapTools.cross.hx (if used)
 ```
 
 **Cross-Platform Files (.cross.hx)**:
-- Use `.cross.hx` extension for cross-platform utility classes
-- Examples: `MapTools.cross.hx`, `Std.cross.hx`
-- These override or extend Haxe's default implementations
-- Provide Elixir-specific optimizations using `__elixir__()`
+- Use `.cross.hx` for `cross`-platform overrides (Reflaxe targets on Haxe 4).
+- Examples: `MapTools.cross.hx`, `Std.cross.hx`, `haxe/Log.cross.hx`
+- These shadow or extend upstream Haxe implementations for Elixir builds.
+- Many overrides inject native Elixir via `__elixir__()` to stay idiomatic and efficient.
 
 **Instead of Creating Core Classes in std/**:
 - Never create `Log.hx` - it comes from Haxe's standard library

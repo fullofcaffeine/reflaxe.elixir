@@ -2,13 +2,14 @@
 
 > At a glance
 > - `.cross.hx` = target‑specific implementation of a familiar API (same surface, idiomatic target code)
-> - Lives under `std/`, staged to `std/_std/` during build, and classpath‑gated so only Elixir builds see them
+> - Lives under `std/` and is selected by Haxe when compiling for the `cross` platform (the mode used by Reflaxe targets on Haxe 4)
+> - Elixir-only shims live under `std/_std/` and are classpath‑gated so only Elixir builds see them
 > - Prefer `.cross.hx` for stable API mappings; use macros for authoring ergonomics; use AST transforms for shape‑driven rewrites
 > - Transitional stubs (e.g., `std/HXX.cross.hx`) are allowed only with explicit removal criteria and gating
 
 This guide explains what `.cross.hx` files are, why they exist in Reflaxe‑based compilers (like Haxe → Elixir), when to use them, and how they are loaded. It is written for developers new to Haxe and Reflaxe.
 
-If you want the deeper, architecture‑level details (classpath staging and ordering), read: docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md
+If you want the deeper, architecture‑level details (Haxe module resolution + target-gated classpaths), read: docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md
 
 ## What Is a `.cross.hx` File?
 
@@ -31,20 +32,28 @@ std/
   HXX.cross.hx
 ```
 
-During compilation, the compiler stages these files to `std/_std/` (with the `.cross` suffix removed), making them appear as normal Haxe sources to the compiler/type checker:
+When compiling for the `cross` platform, Haxe treats files ending in `.cross.hx` as platform-specific
+module implementations. That is, these files participate in normal module resolution while still
+being visually distinct from upstream Haxe stdlib sources.
 
-- `std/String.cross.hx` → `std/_std/String.hx`
+Separately, we keep a small set of **Elixir-only** `.hx` shims under `std/_std/`. Those shims are
+not selected by the `cross` file-suffix mechanism; instead, they are made available only when we
+detect an Elixir build (see below).
 
-See the staging flow in docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md
+See the full mechanism in docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md
 
 ## How Are They Loaded? (Target‑Conditional Gating)
 
-We only want the Elixir‑specific overrides when compiling to Elixir. Otherwise, macro tools, unit tests, or other targets would “see” Elixir‑only code and fail (for example, code using `__elixir__()` would not exist in JS or macro contexts).
+We only want the Elixir‑specific overrides when compiling to Elixir. Otherwise, macro tools, unit tests,
+or other targets would “see” Elixir‑only code and fail (for example, code using `__elixir__()` would not
+exist in JS or macro contexts).
 
-This project implements target‑conditional gating in the compiler bootstrap (CompilerInit.Start):
+This project implements target‑conditional gating in the compiler bootstrap macros (`CompilerBootstrap.Start()` and `CompilerInit.Start()`):
 
-- When building the Elixir target (or when `-D elixir_output` is present), the staged `std/_std/` path is added to the classpath.
-- For other contexts (macro‑only tools, tests on other targets), the staging path is not added.
+- When building the Elixir target (or when `-D elixir_output` is present), the `std/` and `std/_std/`
+  paths are added to the classpath by the bootstrap macros (`CompilerBootstrap.Start()` and
+  `CompilerInit.Start()`).
+- For other contexts (macro‑only tools, non-Elixir targets), those paths are not added.
 
 Benefits:
 
@@ -144,9 +153,9 @@ A: Build with Elixir target and inspect the generated `.ex`; the output should m
 
 ## Further Reading
 
-- docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md — How staging works (std → std/_std) with examples
+- docs/03-compiler-development/CROSS_FILES_STAGING_MECHANISM.md — How `.cross.hx` resolution + `std/_std` gating works
 - docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md — Why we gate `.cross.hx` by target and how it’s implemented
-- docs/03-compiler-development/hxx-template-compilation.md — How HXX authoring flows through the AST pipeline into HEEx (~H)
+- docs/05-architecture/HXX_ARCHITECTURE.md — How HXX authoring flows through the AST pipeline into HEEx (~H)
 
 ---
 
