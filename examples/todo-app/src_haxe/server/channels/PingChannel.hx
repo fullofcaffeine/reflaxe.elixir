@@ -1,9 +1,9 @@
 package server.channels;
 
-import elixir.Tuple;
-import elixir.types.Atom;
 import elixir.types.Term;
 import phoenix.Channel;
+import phoenix.channels.JoinResult;
+import phoenix.channels.ReplyResult;
 import StringTools;
 import shared.channels.WirePayload;
 import shared.channels.PingProtocol;
@@ -29,23 +29,23 @@ import shared.channels.PingProtocol;
 class PingChannel {
     public static inline var Topic: String = PingProtocol.Topic;
 
-    public static function join(topic: String, _payload: Term, socket: Term): haxe.functional.Result<Term, Term> {
+    public static function join(topic: String, _payload: Term, socket: Term): JoinResult<Term> {
         return (topic == Topic) ? Ok(socket) : Error("unauthorized");
     }
 
-    public static function handle_in(event: String, payload: Term, socket: Term): Term {
+    public static function handle_in(event: String, payload: Term, socket: Term): ReplyResult<Term> {
         if (event != PingProtocol.EventPing) {
-            return cast Tuple.make2(Atom.fromString("noreply"), socket);
+            return Noreply(socket);
         }
 
         var requestId = WirePayload.getString(payload, PingProtocol.WireKeyRequestId);
         if (requestId == null || StringTools.trim(requestId) == "") {
-            return cast Tuple.make2(Atom.fromString("noreply"), socket);
+            return Noreply(socket);
         }
 
         var outgoing: Term = {};
         outgoing = elixir.ElixirMap.put(outgoing, PingProtocol.WireKeyRequestId, requestId);
         Channel.broadcast(socket, PingProtocol.EventPong, outgoing);
-        return cast Tuple.make2(Atom.fromString("noreply"), socket);
+        return Noreply(socket);
     }
 }
