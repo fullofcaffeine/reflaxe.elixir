@@ -53,6 +53,9 @@ class StdStringBufOverrideTransforms {
         // Align to intended HXXTypeSafety snapshot shape
         var code = (
         "  defstruct parts: []\n" +
+        "  def new() do\n" +
+        "    %__MODULE__{}\n" +
+        "  end\n" +
         "  def add(struct, x) do\n" +
         "    str = if Kernel.is_nil(x), do: \"null\", else: inspect(x)\n" +
         "    %{struct | parts: struct.parts ++ [str]}\n" +

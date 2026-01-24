@@ -31,7 +31,7 @@ defmodule Main do
     if (String.downcase(str1) == String.downcase(str2)), do: nil
   end
   def string_building() do
-    buf = %StringBuf{}
+    buf = StringBuf.new()
     _ = StringBuf.add(buf, "Building ")
     _ = StringBuf.add(buf, "a ")
     _ = StringBuf.add(buf, "string ")

@@ -8,7 +8,7 @@ defmodule Main do
     _ = Circle.set_velocity(circle, 1, 2)
     _ = Circle.update(circle, 1.5)
     _unit_circle = Circle.create_unit()
-    container = %container{}
+    container = container.new()
     _ = Container.add(container, "Hello")
     _ = Container.add(container, "World")
     _lengths = Container.map(container, fn s -> String.length(s) end)

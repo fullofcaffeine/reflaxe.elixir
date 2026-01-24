@@ -1,8 +1,8 @@
 defmodule Main do
   defp test() do
-    _node = %TreeNode{}
-    l = %TreeNode{}
-    r = %TreeNode{}
+    _node = TreeNode.new()
+    l = TreeNode.new()
+    r = TreeNode.new()
     if ((fn ->
   this = l.left
   if (Kernel.is_nil(this)), do: 0, else: this._height

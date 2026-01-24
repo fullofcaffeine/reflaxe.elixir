@@ -6,7 +6,7 @@ defmodule Main do
     _ = fp_helper()
   end
   defp bytes_buffer() do
-    buffer = %BytesBuffer{}
+    buffer = BytesBuffer.new()
     buffer = %{buffer | parts_reversed: [65 | buffer.parts_reversed]}
     buffer = %{buffer | byte_length: buffer.byte_length + 1}
     encoding = nil
@@ -28,9 +28,9 @@ defmodule Main do
     nil
   end
   defp bytes_input_output() do
-    out = %BytesOutput{}
+    out = BytesOutput.new()
     _ = BytesOutput.write_byte(out, 0)
-    _ = Output.write_string(out, "hi")
+    _ = Output.write_string(out, "hi", nil)
     bytes = BytesOutput.get_bytes(out)
     input = BytesInput.new(bytes)
     _first = BytesInput.read_byte(input)

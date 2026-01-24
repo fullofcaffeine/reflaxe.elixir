@@ -40,7 +40,7 @@ defmodule FileInput do
             {t, _} -> t
         end
     if (tag == :eof) do
-      raise Reflaxe.Elixir.HaxeThrow, [value: %Eof{}]
+      raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
     end
     if (tag == :ok) do
       data = elem(result, 1)
@@ -63,7 +63,7 @@ defmodule FileInput do
             {t, _} -> t
         end
       if (tag == :eof) do
-        raise Reflaxe.Elixir.HaxeThrow, [value: %Eof{}]
+        raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
       end
       if (tag == :ok) do
         data = elem(result, 1)

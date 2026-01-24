@@ -72,6 +72,7 @@ Top-level:
 - `sys.io.File`
 - `sys.io.FileInput`
 - `sys.io.FileOutput`
+- `sys.io.Process`
 - `sys.io.FileSeek`
 
 Notes:
@@ -106,7 +107,6 @@ Top-level std modules that exist upstream but are not yet overridden/validated s
 
 `sys.*` surfaces that still need BEAM mapping (not exhaustive):
 
-- `sys.io.Process`
 - `sys.net.*` (Socket/UdpSocket/Host)
 - `sys.thread.*` (EventLoop, pools)
 - `sys.ssl.*`

@@ -1,21 +1,24 @@
-/**
- * Input: Elixir-compatible Input stream implementation
- * 
- * WHY: The standard Haxe Input uses exception handling with typed catch
- * clauses that are incompatible with the Elixir target.
- * 
- * WHAT: A minimal Input implementation that avoids exception-based
- * error handling while maintaining API compatibility.
- * 
- * HOW: Uses return values and null checks instead of exceptions.
- * Essential methods only - extend as needed.
- */
 package haxe.io;
 
 import haxe.io.Bytes;
 
 /**
- * An Input is an abstract reader for reading bytes from a stream.
+ * Input (Elixir target)
+ *
+ * WHAT
+ * - Target-compatible implementation of Haxe's `haxe.io.Input` base class.
+ *
+ * WHY
+ * - The upstream `haxe.io.Input` assumes a mutable underlying `BytesData`
+ *   representation for some targets when reading bytes.
+ * - On the Elixir target, `BytesData` is a BEAM binary, so we implement the
+ *   core API using `Bytes.get/set` and preserve the standard EOF contract.
+ *
+ * HOW
+ * - `readByte()` remains abstract (implementations throw `Eof` on EOF).
+ * - `readBytes()` loops over `readByte()` and catches `Eof` to return partial reads.
+ * - Higher-level helpers (`readAll`, `readLine`, numeric reads, etc.) match the
+ *   upstream stdlib behavior.
  */
 class Input {
     /**
@@ -24,98 +27,245 @@ class Input {
     public var bigEndian(default, set): Bool;
     
     function set_bigEndian(b: Bool): Bool {
-        // In Elixir, we need to return the value being set
-        // The actual struct update will be handled by the compiler
+        bigEndian = b;
         return b;
     }
     
     /**
-     * Read one byte from the input stream.
-     * Returns -1 if end of stream reached.
+     * Read and return one byte.
      */
     public function readByte(): Int {
-        // Override in subclasses
-        return -1;
+        throw new haxe.exceptions.NotImplementedException();
     }
     
     /**
-     * Read len bytes from the input stream into the buffer.
-     * Returns the number of bytes actually read.
+     * Read `len` bytes and write them into `s` to the position specified by `pos`.
+     *
+     * Returns the actual length of read data that can be smaller than `len`.
+     *
+     * See `readFullBytes` that tries to read the exact amount of specified bytes.
      */
-    public function readBytes(b: Bytes, pos: Int, len: Int): Int {
-        if (pos < 0 || len < 0 || pos + len > b.length)
-            throw "Invalid parameters";
-            
-        var k = len;
-        while (k > 0) {
-            var byte = readByte();
-            if (byte < 0) {
-                // End of stream reached
-                break;
-            }
-            b.set(pos, byte);
-            pos = pos + 1;
-            k = k - 1;
+    public function readBytes(s: Bytes, pos: Int, len: Int): Int {
+        if (pos < 0 || len < 0 || pos + len > s.length) {
+            throw Error.OutsideBounds;
         }
+
+        var k = len;
+
+        try {
+            while (k > 0) {
+                s.set(pos, readByte());
+                pos += 1;
+                k -= 1;
+            }
+        } catch (_: Eof) {}
+
         return len - k;
     }
     
+    public function close(): Void {}
+
+    /* ------------------ API ------------------ */
     /**
-     * Read all available bytes from the input stream.
+     * Read and return all available data.
+     *
+     * The `bufsize` optional argument specifies the size of chunks by
+     * which data is read.
      */
     public function readAll(?bufsize: Int): Bytes {
-        if (bufsize == null) bufsize = 4096;
-        
+        if (bufsize == null) {
+            bufsize = (1 << 14);
+        }
+
         var buf = Bytes.alloc(bufsize);
-        var total = Bytes.alloc(0);
-        var len = 0;
-        
-        while (true) {
-            var n = readBytes(buf, 0, bufsize);
-            if (n == 0) break;
-            
-            var newTotal = Bytes.alloc(len + n);
-            newTotal.blit(0, total, 0, len);
-            newTotal.blit(len, buf, 0, n);
-            total = newTotal;
-            len += n;
-        }
-        
-        return total;
+        var total = new haxe.io.BytesBuffer();
+
+        try {
+            while (true) {
+                var len = readBytes(buf, 0, bufsize);
+                if (len == 0) {
+                    throw Error.Blocked;
+                }
+                total.addBytes(buf, 0, len);
+            }
+        } catch (_: Eof) {}
+
+        return total.getBytes();
     }
     
     /**
-     * Read a string of specified length from the input stream.
+     * Read `len` bytes and write them into `s` to the position specified by `pos`.
+     *
+     * Unlike `readBytes`, this method tries to read the exact `len` amount of bytes.
      */
-    public function readString(len: Int): String {
-        var b = Bytes.alloc(len);
-        var actual = readBytes(b, 0, len);
-        if (actual < len) {
-            // Resize buffer to actual bytes read
-            var smaller = Bytes.alloc(actual);
-            smaller.blit(0, b, 0, actual);
-            b = smaller;
+    public function readFullBytes(s: Bytes, pos: Int, len: Int): Void {
+        while (len > 0) {
+            var k = readBytes(s, pos, len);
+            if (k == 0) {
+                throw Error.Blocked;
+            }
+            pos += k;
+            len -= k;
         }
-        return b.toString();
     }
-    
+
     /**
-     * Read a line from the input stream.
+     * Read and return `nbytes` bytes.
+     */
+    public function read(nbytes: Int): Bytes {
+        var s = Bytes.alloc(nbytes);
+        var p = 0;
+        while (nbytes > 0) {
+            var k = readBytes(s, p, nbytes);
+            if (k == 0) {
+                throw Error.Blocked;
+            }
+            p += k;
+            nbytes -= k;
+        }
+        return s;
+    }
+
+    /**
+     * Read a string until a character code specified by `end` is occurred.
+     *
+     * The final character is not included in the resulting string.
+     */
+    public function readUntil(end: Int): String {
+        var buf = new BytesBuffer();
+        var last: Int;
+        while ((last = readByte()) != end) {
+            buf.addByte(last);
+        }
+        return buf.getBytes().toString();
+    }
+
+    /**
+     * Read a line of text separated by CR and/or LF bytes.
+     *
+     * The CR/LF characters are not included in the resulting string.
      */
     public function readLine(): String {
-        var buf = new StringBuf();
+        var buf = new BytesBuffer();
         var last: Int;
-        while ((last = readByte()) >= 0) {
-            if (last == '\n'.code) break;
-            if (last != '\r'.code) buf.addChar(last);
+        var s: String;
+
+        try {
+            while ((last = readByte()) != 10) {
+                buf.addByte(last);
+            }
+            s = buf.getBytes().toString();
+            if (s.charCodeAt(s.length - 1) == 13) {
+                s = s.substr(0, -1);
+            }
+        } catch (e: Eof) {
+            s = buf.getBytes().toString();
+            if (s.length == 0) {
+                throw e;
+            }
         }
-        return buf.toString();
+
+        return s;
     }
-    
+
     /**
-     * Close the input stream.
+     * Read a 32-bit floating point number.
+     *
+     * Endianness is specified by the `bigEndian` property.
      */
-    public function close(): Void {
-        // Override in subclasses
+    public function readFloat(): Float {
+        return FPHelper.i32ToFloat(readInt32());
+    }
+
+    /**
+     * Read a 64-bit double-precision floating point number.
+     *
+     * Endianness is specified by the `bigEndian` property.
+     */
+    public function readDouble(): Float {
+        var i1 = readInt32();
+        var i2 = readInt32();
+        return bigEndian ? FPHelper.i64ToDouble(i2, i1) : FPHelper.i64ToDouble(i1, i2);
+    }
+
+    /**
+     * Read a 8-bit signed integer.
+     */
+    public function readInt8(): Int {
+        var n = readByte();
+        if (n >= 128) return n - 256;
+        return n;
+    }
+
+    /**
+     * Read a 16-bit signed integer.
+     *
+     * Endianness is specified by the `bigEndian` property.
+     */
+    public function readInt16(): Int {
+        var ch1 = readByte();
+        var ch2 = readByte();
+        var n = bigEndian ? ch2 | (ch1 << 8) : ch1 | (ch2 << 8);
+        if ((n & 0x8000) != 0) return n - 0x10000;
+        return n;
+    }
+
+    /**
+     * Read a 16-bit unsigned integer.
+     *
+     * Endianness is specified by the `bigEndian` property.
+     */
+    public function readUInt16(): Int {
+        var ch1 = readByte();
+        var ch2 = readByte();
+        return bigEndian ? ch2 | (ch1 << 8) : ch1 | (ch2 << 8);
+    }
+
+    /**
+     * Read a 24-bit signed integer.
+     *
+     * Endianness is specified by the `bigEndian` property.
+     */
+    public function readInt24(): Int {
+        var ch1 = readByte();
+        var ch2 = readByte();
+        var ch3 = readByte();
+        var n = bigEndian ? ch3 | (ch2 << 8) | (ch1 << 16) : ch1 | (ch2 << 8) | (ch3 << 16);
+        if ((n & 0x800000) != 0) return n - 0x1000000;
+        return n;
+    }
+
+    /**
+     * Read a 24-bit unsigned integer.
+     *
+     * Endianness is specified by the `bigEndian` property.
+     */
+    public function readUInt24(): Int {
+        var ch1 = readByte();
+        var ch2 = readByte();
+        var ch3 = readByte();
+        return bigEndian ? ch3 | (ch2 << 8) | (ch1 << 16) : ch1 | (ch2 << 8) | (ch3 << 16);
+    }
+
+    /**
+     * Read a 32-bit signed integer.
+     *
+     * Endianness is specified by the `bigEndian` property.
+     */
+    public function readInt32(): Int {
+        var ch1 = readByte();
+        var ch2 = readByte();
+        var ch3 = readByte();
+        var ch4 = readByte();
+        return bigEndian ? ch4 | (ch3 << 8) | (ch2 << 16) | (ch1 << 24) : ch1 | (ch2 << 8) | (ch3 << 16) | (ch4 << 24);
+    }
+
+    /**
+     * Read `len` bytes as a string.
+     */
+    public function readString(len: Int, ?encoding: Encoding): String {
+        var b = Bytes.alloc(len);
+        readFullBytes(b, 0, len);
+        return b.getString(0, len, encoding);
     }
 }

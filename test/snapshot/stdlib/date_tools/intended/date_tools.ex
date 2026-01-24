@@ -120,7 +120,7 @@ defmodule DateTools do
     end)
   end
   defp __format(d, f) do
-    result = %StringBuf{}
+    result = StringBuf.new()
     p = 0
     {result, p} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, p}, fn _, {acc_result, acc_p} ->
       try do

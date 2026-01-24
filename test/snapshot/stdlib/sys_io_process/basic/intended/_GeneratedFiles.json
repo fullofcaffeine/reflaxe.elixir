@@ -1,0 +1,29 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "sys/io/process.ex",
+  "sys/io/_process/port_output.ex",
+  "sys/io/_process/port_input.ex",
+  "sys/io/_process/disabled_output.ex",
+  "sys/io/_process/disabled_input.ex",
+  "string_tools.ex",
+  "string_buf.ex",
+  "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "main.ex",
+  "int_iterator.ex",
+  "haxe/iterators/array_iterator.ex",
+  "haxe/io/output.ex",
+  "haxe/io/input.ex",
+  "haxe/io/fp_helper.ex",
+  "haxe/io/eof.ex",
+  "haxe/io/bytes_buffer.ex",
+  "haxe/io/bytes.ex",
+  "haxe/exceptions/pos_exception.ex",
+  "haxe/exceptions/not_implemented_exception.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}

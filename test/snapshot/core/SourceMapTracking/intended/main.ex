@@ -20,7 +20,7 @@ defmodule Main do
 end)
   end
   defp test_class_tracking() do
-    calc = %Calculator{}
+    calc = Calculator.new()
     _ = Calculator.add(calc, 5)
     _ = Calculator.multiply(calc, 2)
     nil

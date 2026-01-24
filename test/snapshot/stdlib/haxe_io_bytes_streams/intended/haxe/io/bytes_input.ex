@@ -18,7 +18,7 @@ defmodule BytesInput do
   end
   def read_byte(struct) do
     if (struct.remaining == 0) do
-      raise Reflaxe.Elixir.HaxeThrow, [value: %Eof{}]
+      raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
     end
     struct = %{struct | remaining: (struct.remaining - 1)}
     struct = %{struct | pos: struct.pos + 1}
@@ -32,7 +32,7 @@ defmodule BytesInput do
       0
     else
       if (struct.remaining == 0) do
-        raise Reflaxe.Elixir.HaxeThrow, [value: %Eof{}]
+        raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
       end
       len = if (len > struct.remaining), do: struct.remaining, else: len
       slice = :binary.part(struct.data, struct.pos, len)
