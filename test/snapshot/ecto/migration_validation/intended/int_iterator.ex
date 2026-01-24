@@ -1,6 +1,6 @@
 defmodule IntIterator do
   def new(min_param, max_param) do
-    struct = %{:min => nil, :max => nil}
+    struct = %{:__reflaxe_class__ => IntIterator, :min => nil, :max => nil}
     struct = %{struct | min: min_param}
     struct = %{struct | max: max_param}
     struct

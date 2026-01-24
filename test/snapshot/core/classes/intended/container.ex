@@ -1,6 +1,6 @@
 defmodule Container do
   def new() do
-    struct = %{:items => nil}
+    struct = %{:__reflaxe_class__ => Container, :items => nil}
     struct = %{struct | items: []}
     struct
   end
@@ -18,7 +18,7 @@ defmodule Container do
     _g = 0
     g_value = struct.items
     result = Enum.reduce(g_value, result, fn item, result_acc ->
-      _ = add(result_acc, fn_param.(item))
+      _ = apply(Map.get(result_acc, :__reflaxe_class__) || Map.get(result_acc, :__struct__), :add, [result_acc, fn_param.(item)])
       result_acc
     end)
     result

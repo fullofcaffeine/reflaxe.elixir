@@ -1,6 +1,6 @@
 defmodule FileStorage do
   def new() do
-    struct = %{:base_path => nil}
+    struct = %{:__reflaxe_class__ => FileStorage, :base_path => nil}
     struct = %{struct | base_path: "/tmp/storage"}
     struct
   end
@@ -13,8 +13,8 @@ defmodule FileStorage do
             Map.get(dyn_obj, :path)
         end)
     end)
-    if (not Kernel.is_nil(cond_value)) do
-      struct = %{struct | base_path: (case config do
+    struct = if (not Kernel.is_nil(cond_value)) do
+      %{struct | base_path: (case config do
   dyn_obj ->
     (case Map.fetch(dyn_obj, "path") do
       {:ok, dyn_value} -> dyn_value
@@ -22,6 +22,8 @@ defmodule FileStorage do
         Map.get(dyn_obj, :path)
     end)
 end)}
+    else
+      struct
     end
     %{:ok => struct}
   end

@@ -9,8 +9,17 @@ defmodule Reflaxe.Exception do
     struct = %{ struct | stack: [] }
     struct
   end
-  defp get_message(struct) do
+  def get_message(struct) do
     Map.get(struct, :message)
+    item
+  end
+  def get_stack(struct) do
+    Map.get(struct, :stack, [])
+    item
+  end
+  def get_previous(struct) do
+    Map.get(struct, :previous)
+    item
   end
   def get_native(struct) do
     Map.get(struct, :native)

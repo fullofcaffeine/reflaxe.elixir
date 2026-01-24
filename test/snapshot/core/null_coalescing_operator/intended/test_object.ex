@@ -1,6 +1,6 @@
 defmodule TestObject do
   def new() do
-    %{}
+    %{:__reflaxe_class__ => TestObject}
   end
   def get_name(_) do
     "TestName"

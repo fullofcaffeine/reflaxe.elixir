@@ -21,7 +21,7 @@ defmodule Main do
   end
   test "string operations" do
     str = "Hello, World!"
-    _ = Assert.equals(13, length(str), "String length should be correct")
+    _ = Assert.equals(13, str.length, "String length should be correct")
     _ = Assert.is_true((fn -> (fn ->
   (case :binary.match(str, "World") do
   {pos, _} -> pos

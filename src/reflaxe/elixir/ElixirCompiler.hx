@@ -2186,14 +2186,20 @@ class ElixirCompiler extends GenericCompiler<
                     exceptionCheck = if (exceptionCheck.superClass != null) exceptionCheck.superClass.t.get() else null;
                 }
 
+                var ctorModuleName = ModuleBuilder.extractModuleName(classType);
                 var initStruct = if (isExceptionConstructor) {
                     // Exception classes must construct a real exception struct so `is_struct/2` matches
                     // and `raise <ExceptionModule>` interops naturally with Elixir/Phoenix.
-                    var ctorModuleName = ModuleBuilder.extractModuleName(classType);
                     reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EStruct(ctorModuleName, []));
                 } else {
                     // Build initial map with all instance fields present so `%{struct | field: ...}` updates are safe.
                     var initPairs: Array<reflaxe.elixir.ast.ElixirAST.EMapPair> = [];
+                    // Tag instances with their runtime module for virtual dispatch (`apply/3`).
+                    // Use the extracted module alias so @:native and app prefixing remain correct.
+                    initPairs.push({
+                        key: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EAtom("__reflaxe_class__")),
+                        value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar(ctorModuleName))
+                    });
                     for (field in classType.fields.get()) {
                         switch (field.kind) {
                             case FVar(_, _):
@@ -2290,9 +2296,41 @@ class ElixirCompiler extends GenericCompiler<
                 }
             }
 
-            var funcDef = (funcData.field.isPublic || isMainEntrypoint) ?
-                EDef(elixirName, params, null, funcBody) :
-                EDefp(elixirName, params, null, funcBody);
+            // Haxe property accessors (`get_*/set_*`) are often implemented as private methods
+            // even when the property itself is public. Haxe enforces privacy at compile time,
+            // but our generated Elixir will call these accessors across modules (e.g. `obj.message`
+            // → `Reflaxe.Exception.get_message(obj)`), so emitting them as `defp` breaks runtime.
+            function isPublicPropertyAccessor(fieldName: String): Bool {
+                if (fieldName == null) return false;
+                var propName: Null<String> = null;
+                var isGetter = false;
+                var isSetter = false;
+                if (StringTools.startsWith(fieldName, "get_")) {
+                    propName = fieldName.substr(4);
+                    isGetter = true;
+                } else if (StringTools.startsWith(fieldName, "set_")) {
+                    propName = fieldName.substr(4);
+                    isSetter = true;
+                }
+                if (propName == null || propName.length == 0) return false;
+
+                for (f in classType.fields.get()) {
+                    if (f == null || f.name != propName) continue;
+                    if (!f.isPublic) return false;
+                    return switch (f.kind) {
+                        case FVar(read, write):
+                            (isGetter && read == AccCall) || (isSetter && write == AccCall);
+                        default:
+                            false;
+                    };
+                }
+                return false;
+            }
+
+            var emitPublic = funcData.field.isPublic || isMainEntrypoint || isPublicPropertyAccessor(funcData.field.name);
+            var funcDef = emitPublic
+                ? EDef(elixirName, params, null, funcBody)
+                : EDefp(elixirName, params, null, funcBody);
 
             if (isMainEntrypoint && currentCompiledModule != null && modulesWithBootstrap.indexOf(currentCompiledModule) < 0) {
                 modulesWithBootstrap.push(currentCompiledModule);
@@ -2651,6 +2689,109 @@ class ElixirCompiler extends GenericCompiler<
             return a < b ? -1 : (a > b ? 1 : 0);
         });
         metadata.instanceFields = instanceFieldList;
+
+        // --------------------------------------------------------------------
+        // Inheritance: generate delegation wrappers for inherited instance methods.
+        //
+        // WHY
+        // - We implement virtual dispatch using `apply/3` on the receiver's runtime module.
+        // - Subclasses may not re-emit parent methods, so we generate thin wrappers that
+        //   delegate to the parent module for any inherited public method that the subclass
+        //   does not override.
+        //
+        // HOW
+        // - For each direct parent instance method (excluding `new`), if it would be emitted
+        //   as a public `def` in the parent and the current module does not already define
+        //   it, emit:
+        //     def name(struct, args...), do: Parent.name(struct, args...)
+        // --------------------------------------------------------------------
+        if (classType.superClass != null) {
+            var parentType = classType.superClass.t.get();
+            if (parentType != null) {
+                var existingFunctionNames: Map<String, Bool> = new Map();
+                for (f in fields) {
+                    if (f == null || f.def == null) continue;
+                    switch (f.def) {
+                        case EDef(name, _, _, _)
+                           | EDefp(name, _, _, _)
+                           | EDefmacro(name, _, _, _)
+                           | EDefmacrop(name, _, _, _):
+                            existingFunctionNames.set(name, true);
+                        default:
+                    }
+                }
+
+                function isPublicPropertyAccessorForClass(klass: ClassType, fieldName: String): Bool {
+                    if (klass == null || fieldName == null) return false;
+                    var propName: Null<String> = null;
+                    var isGetter = false;
+                    var isSetter = false;
+                    if (StringTools.startsWith(fieldName, "get_")) {
+                        propName = fieldName.substr(4);
+                        isGetter = true;
+                    } else if (StringTools.startsWith(fieldName, "set_")) {
+                        propName = fieldName.substr(4);
+                        isSetter = true;
+                    }
+                    if (propName == null || propName.length == 0) return false;
+
+                    for (f in klass.fields.get()) {
+                        if (f == null || f.name != propName) continue;
+                        if (!f.isPublic) return false;
+                        return switch (f.kind) {
+                            case FVar(read, write):
+                                (isGetter && read == AccCall) || (isSetter && write == AccCall);
+                            default:
+                                false;
+                        };
+                    }
+                    return false;
+                }
+
+                var parentModuleName = ModuleBuilder.extractModuleName(parentType);
+                for (field in parentType.fields.get()) {
+                    if (field == null) continue;
+                    if (field.name == "new") continue;
+                    var isMethod = switch (field.kind) { case FMethod(_): true; default: false; };
+                    if (!isMethod) continue;
+
+                    var emitPublic = field.isPublic || isPublicPropertyAccessorForClass(parentType, field.name);
+                    if (!emitPublic) continue;
+
+                    var elixirName = reflaxe.elixir.ast.NameUtils.toSafeElixirFunctionName(field.name);
+                    if (existingFunctionNames.exists(elixirName)) continue;
+
+                    var argPatterns: Array<reflaxe.elixir.ast.ElixirAST.EPattern> = [PVar("struct")];
+                    var argVars: Array<reflaxe.elixir.ast.ElixirAST> = [reflaxe.elixir.ast.ElixirAST.makeAST(EVar("struct"))];
+
+                    switch (haxe.macro.TypeTools.follow(field.type)) {
+                        case TFun(fnArgs, _):
+                            for (fnArg in fnArgs) {
+                                var paramName = reflaxe.elixir.ast.NameUtils.toSafeElixirParameterName(fnArg.name);
+                                argPatterns.push(PVar(paramName));
+                                argVars.push(reflaxe.elixir.ast.ElixirAST.makeAST(EVar(paramName)));
+                            }
+                        default:
+                            // Unexpected non-function field; skip.
+                            continue;
+                    }
+
+                    var parentCall = reflaxe.elixir.ast.ElixirAST.makeAST(ERemoteCall(
+                        reflaxe.elixir.ast.ElixirAST.makeAST(EVar(parentModuleName)),
+                        elixirName,
+                        argVars
+                    ));
+
+                    fields.push(reflaxe.elixir.ast.ElixirAST.makeAST(EDef(
+                        elixirName,
+                        argPatterns,
+                        null,
+                        parentCall
+                    )));
+                    existingFunctionNames.set(elixirName, true);
+                }
+            }
+        }
 
         // Build the module using ModuleBuilder with metadata
         var moduleAST = reflaxe.elixir.ast.builders.ModuleBuilder.buildClassModule(classType, fields, metadata);

@@ -1,9 +1,13 @@
 defmodule Input do
+  def set_big_endian(struct, b) do
+    _ = %{struct | big_endian: b}
+    b
+  end
   def read_byte(_) do
     raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{:file_name => "../../../../std/haxe/io/Input.hx", :line_number => 38, :class_name => "haxe.io.Input", :method_name => "readByte"})]
   end
   def read_bytes(struct, s, pos, len) do
-    if (pos < 0 or len < 0 or pos + len > length(s)) do
+    if (pos < 0 or len < 0 or pos + len > s.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
     end
     k = len
@@ -11,7 +15,7 @@ defmodule Input do
       {s, pos, k} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, pos, k}, fn _, {acc_s, acc_pos, acc_k} ->
         try do
           if (acc_k > 0) do
-            acc_s = Bytes.set(acc_s, acc_pos, read_byte(struct))
+            _ = apply(Map.get(acc_s, :__reflaxe_class__) || Map.get(acc_s, :__struct__), :set, [acc_s, acc_pos, apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])])
             acc_pos = acc_pos + 1
             acc_k = (acc_k - 1)
             {:cont, {acc_s, acc_pos, acc_k}}
@@ -52,17 +56,17 @@ end), haxe_exception} do
     try do
       Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
         try do
-          len = read_bytes(struct, buf, 0, bufsize)
+          len = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_bytes, [struct, buf, 0, bufsize])
           if (len == 0) do
             raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
           end
-          if (len < 0 or len > length(buf)) do
+          if (len < 0 or len > buf.length) do
             raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
           end
           if (len == 0) do
             nil
           else
-            slice = :binary.part(Bytes.get_data(buf), 0, len)
+            slice = :binary.part(apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_data, [buf]), 0, len)
             total = %{total | parts_reversed: [slice | total.parts_reversed]}
             total = %{total | byte_length: total.byte_length + len}
           end
@@ -89,13 +93,13 @@ end), haxe_exception} do
             reraise(haxe_exception, __STACKTRACE__)
         end)
     end
-    _ = BytesBuffer.get_bytes(total)
+    _ = apply(Map.get(total, :__reflaxe_class__) || Map.get(total, :__struct__), :get_bytes, [total])
   end
   def read_full_bytes(struct, s, pos, len) do
     {pos, len} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, len}, fn _, {acc_pos, acc_len} ->
       try do
         if (acc_len > 0) do
-          k = read_bytes(struct, s, acc_pos, acc_len)
+          k = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_bytes, [struct, s, acc_pos, acc_len])
           if (k == 0) do
             raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
           end
@@ -123,7 +127,7 @@ end), haxe_exception} do
     {_nbytes, _p} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {nbytes, p}, fn _, {acc_nbytes, acc_p} ->
       try do
         if (acc_nbytes > 0) do
-          k = read_bytes(struct, s, acc_p, acc_nbytes)
+          k = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_bytes, [struct, s, acc_p, acc_nbytes])
           if (k == 0) do
             raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
           end
@@ -150,7 +154,7 @@ end), haxe_exception} do
     buf = BytesBuffer.new()
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
-    if ((last = read_byte(struct)) != end_param) do
+    if ((last = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])) != end_param) do
       buf = %{buf | parts_reversed: [last | buf.parts_reversed]}
       buf = %{buf | byte_length: buf.byte_length + 1}
       {:cont, acc}
@@ -168,7 +172,8 @@ end), haxe_exception} do
       {:cont, acc}
   end
 end)
-    _ = Bytes.to_string(BytesBuffer.get_bytes(buf))
+    reflaxe_dispatch_receiver = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_bytes, [buf])
+    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
   end
   def read_line(struct) do
     buf = BytesBuffer.new()
@@ -176,7 +181,7 @@ end)
     try do
       _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
-    if ((last = read_byte(struct)) != 10) do
+    if ((last = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])) != 10) do
       buf = %{buf | parts_reversed: [last | buf.parts_reversed]}
       buf = %{buf | byte_length: buf.byte_length + 1}
       {:cont, acc}
@@ -194,7 +199,8 @@ end)
       {:cont, acc}
   end
 end)
-      s = Bytes.to_string(BytesBuffer.get_bytes(buf))
+      reflaxe_dispatch_receiver = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_bytes, [buf])
+      s = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
       cond_value = (if ((String.length(s) - 1) < 0) do
         nil
       else
@@ -212,7 +218,8 @@ end)
   _ -> haxe_exception
 end), haxe_exception} do
           {e, _} when is_struct(e, Eof) ->
-            s = Bytes.to_string(BytesBuffer.get_bytes(buf))
+            reflaxe_dispatch_receiver = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_bytes, [buf])
+            s = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
             if (String.length(s) == 0) do
               raise Reflaxe.Elixir.HaxeThrow, [value: e]
             end
@@ -223,11 +230,11 @@ end), haxe_exception} do
     s
   end
   def read_float(struct) do
-    FPHelper.i32_to_float(read_int32(struct))
+    FPHelper.i32_to_float(apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_int32, [struct]))
   end
   def read_double(struct) do
-    i1 = read_int32(struct)
-    i2 = read_int32(struct)
+    i1 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_int32, [struct])
+    i2 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_int32, [struct])
     if (struct.big_endian) do
       FPHelper.i64_to_double(i2, i1)
     else
@@ -235,43 +242,43 @@ end), haxe_exception} do
     end
   end
   def read_int8(struct) do
-    n = read_byte(struct)
+    n = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
     if (n >= 128), do: (n - 256), else: n
   end
   def read_int16(struct) do
-    ch1 = read_byte(struct)
-    ch2 = read_byte(struct)
+    ch1 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
+    ch2 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
     n = if (struct.big_endian), do: Bitwise.bor(ch2, Bitwise.bsl(ch1, 8)), else: Bitwise.bor(ch1, Bitwise.bsl(ch2, 8))
     if (Bitwise.band(n, 32768) != 0), do: (n - 65536), else: n
   end
   def read_u_int16(struct) do
-    ch1 = read_byte(struct)
-    ch2 = read_byte(struct)
+    ch1 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
+    ch2 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
     if (struct.big_endian), do: Bitwise.bor(ch2, Bitwise.bsl(ch1, 8)), else: Bitwise.bor(ch1, Bitwise.bsl(ch2, 8))
   end
   def read_int24(struct) do
-    ch1 = read_byte(struct)
-    ch2 = read_byte(struct)
-    ch3 = read_byte(struct)
+    ch1 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
+    ch2 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
+    ch3 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
     n = if (struct.big_endian), do: Bitwise.bor(Bitwise.bor(ch3, Bitwise.bsl(ch2, 8)), Bitwise.bsl(ch1, 16)), else: Bitwise.bor(Bitwise.bor(ch1, Bitwise.bsl(ch2, 8)), Bitwise.bsl(ch3, 16))
     if (Bitwise.band(n, 8388608) != 0), do: (n - 16777216), else: n
   end
   def read_u_int24(struct) do
-    ch1 = read_byte(struct)
-    ch2 = read_byte(struct)
-    ch3 = read_byte(struct)
+    ch1 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
+    ch2 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
+    ch3 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
     if (struct.big_endian), do: Bitwise.bor(Bitwise.bor(ch3, Bitwise.bsl(ch2, 8)), Bitwise.bsl(ch1, 16)), else: Bitwise.bor(Bitwise.bor(ch1, Bitwise.bsl(ch2, 8)), Bitwise.bsl(ch3, 16))
   end
   def read_int32(struct) do
-    ch1 = read_byte(struct)
-    ch2 = read_byte(struct)
-    ch3 = read_byte(struct)
-    ch4 = read_byte(struct)
+    ch1 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
+    ch2 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
+    ch3 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
+    ch4 = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
     if (struct.big_endian), do: Bitwise.bor(Bitwise.bor(Bitwise.bor(ch4, Bitwise.bsl(ch3, 8)), Bitwise.bsl(ch2, 16)), Bitwise.bsl(ch1, 24)), else: Bitwise.bor(Bitwise.bor(Bitwise.bor(ch1, Bitwise.bsl(ch2, 8)), Bitwise.bsl(ch3, 16)), Bitwise.bsl(ch4, 24))
   end
   def read_string(struct, len, encoding) do
     b = Bytes.alloc(len)
-    _ = read_full_bytes(struct, b, 0, len)
-    _ = Bytes.get_string(b, 0, len, encoding)
+    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_full_bytes, [struct, b, 0, len])
+    _ = apply(Map.get(b, :__reflaxe_class__) || Map.get(b, :__struct__), :get_string, [b, 0, len, encoding])
   end
 end

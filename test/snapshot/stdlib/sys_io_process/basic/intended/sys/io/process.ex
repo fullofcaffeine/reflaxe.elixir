@@ -1,24 +1,24 @@
-defmodule Process do
+defmodule Sys.IO.Process do
   def new(cmd, args, detached) do
-    struct = %{:stdout => nil, :stderr => nil, :stdin => nil, :port => nil, :exit_code_cache => nil, :is_closed => nil}
+    struct = %{:__reflaxe_class__ => Sys.IO.Process, :stdout => nil, :stderr => nil, :stdin => nil, :port => nil, :exit_code_cache => nil, :is_closed => nil}
     struct = %{struct | is_closed: false}
     struct = %{struct | exit_code_cache: nil}
     use_stdio = detached != true
-    if (Kernel.is_nil(args)) do
-      struct = %{struct | port: open_shell_command(cmd, use_stdio)}
+    struct = if (Kernel.is_nil(args)) do
+      %{struct | port: open_shell_command(cmd, use_stdio)}
     else
-      struct = %{struct | port: open_executable(cmd, args, use_stdio)}
+      %{struct | port: open_executable(cmd, args, use_stdio)}
     end
-    if (use_stdio) do
+    struct = if (use_stdio) do
       merged_output = PortInput.new(struct.port)
       struct = %{struct | stdout: merged_output}
       struct = %{struct | stderr: merged_output}
-      _ = %{struct | stdin: PortOutput.new(struct.port)}
+      %{struct | stdin: PortOutput.new(struct.port)}
     else
-      disabled_input = disabled_input.new()
+      disabled_input = DisabledInput.new()
       struct = %{struct | stdout: disabled_input}
       struct = %{struct | stderr: disabled_input}
-      _ = %{struct | stdin: DisabledOutput.new()}
+      %{struct | stdin: DisabledOutput.new()}
     end
     struct
   end
@@ -35,27 +35,27 @@ defmodule Process do
     if (not Kernel.is_nil(struct.exit_code_cache)) do
       struct.exit_code_cache
     else
-      maybe = 
+      maybe = (
             port = struct.port
             receive do
               {^port, {:exit_status, status}} -> status
             after 0 ->
               nil
             end
-        
+        )
       if (not Kernel.is_nil(maybe)) do
         _ = %{struct | exit_code_cache: maybe}
         maybe
       else
-        if (not block) do
+        if (block == false) do
           nil
         else
-          status = 
+          status = (
             port = struct.port
             receive do
               {^port, {:exit_status, status}} -> status
             end
-        
+        )
           _ = %{struct | exit_code_cache: status}
           status
         end
@@ -76,7 +76,7 @@ defmodule Process do
     end
   end
   def kill(struct) do
-    close(struct)
+    apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :close, [struct])
   end
   defp open_executable(cmd, args, use_stdio) do
     executable = System.find_executable(cmd)

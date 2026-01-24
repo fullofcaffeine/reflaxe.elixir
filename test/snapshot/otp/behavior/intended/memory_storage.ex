@@ -1,6 +1,6 @@
 defmodule MemoryStorage do
   def new() do
-    struct = %{:data => nil}
+    struct = %{:__reflaxe_class__ => MemoryStorage, :data => nil}
     struct = %{struct | data: %{}}
     struct
   end
@@ -9,20 +9,20 @@ defmodule MemoryStorage do
   end
   def get(struct, key) do
     this1 = struct.data
-    _ = Map.get(this1, key)
+    _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :get, [this1, key])
   end
   def put(struct, key, value) do
     this1 = struct.data
-    _ = Map.put(this1, key, value)
+    _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :set, [this1, key, value])
     true
   end
   def delete(struct, key) do
     this1 = struct.data
-    _ = StringMap.remove(this1, key)
+    _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :remove, [this1, key])
   end
   def list(struct) do
     this1 = struct.data
-    k = _ = Map.keys(this1)
+    k = _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :keys, [this1])
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {[]}, fn _, {acc__g} ->
       try do
         if (k.has_next.()) do

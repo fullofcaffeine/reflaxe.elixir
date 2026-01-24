@@ -2407,11 +2407,11 @@ class ElixirASTBuilder {
                 
             case TBreak:
                 // Delegate to ExceptionBuilder for break control flow
-                ExceptionBuilder.buildBreak(currentContext);
+                return ExceptionBuilder.buildBreak(currentContext);
                 
             case TContinue:
                 // Delegate to ExceptionBuilder for continue control flow
-                ExceptionBuilder.buildContinue(currentContext);
+                return ExceptionBuilder.buildContinue(currentContext);
                 
             // ================================================================
             // Pattern Matching (Switch/Case)

@@ -1,9 +1,12 @@
 defmodule BytesBuffer do
   def new() do
-    struct = %{:parts_reversed => nil, :byte_length => nil, :length => nil}
+    struct = %{:__reflaxe_class__ => BytesBuffer, :parts_reversed => nil, :byte_length => nil, :length => nil}
     struct = %{struct | parts_reversed: []}
     struct = %{struct | byte_length: 0}
     struct
+  end
+  def get_length(struct) do
+    struct.byte_length
   end
   def add_byte(struct, byte) do
     struct = %{struct | parts_reversed: [byte | struct.parts_reversed]}
@@ -11,20 +14,20 @@ defmodule BytesBuffer do
     struct
   end
   def add(struct, src) do
-    if (length(src) == 0) do
+    if (src.length == 0) do
       nil
     else
-      struct = %{struct | parts_reversed: [Bytes.get_data(src) | struct.parts_reversed]}
-      _ = %{struct | byte_length: struct.byte_length + length(src)}
+      struct = %{struct | parts_reversed: [apply(Map.get(src, :__reflaxe_class__) || Map.get(src, :__struct__), :get_data, [src]) | struct.parts_reversed]}
+      _ = %{struct | byte_length: struct.byte_length + src.length}
     end
   end
   def add_string(struct, v, encoding) do
     src = Bytes.of_string(v, encoding)
-    if (length(src) == 0) do
+    if (src.length == 0) do
       nil
     else
-      struct = %{struct | parts_reversed: [Bytes.get_data(src) | struct.parts_reversed]}
-      _ = %{struct | byte_length: struct.byte_length + length(src)}
+      struct = %{struct | parts_reversed: [apply(Map.get(src, :__reflaxe_class__) || Map.get(src, :__struct__), :get_data, [src]) | struct.parts_reversed]}
+      _ = %{struct | byte_length: struct.byte_length + src.length}
     end
   end
   def add_int32(struct, v) do
@@ -48,13 +51,13 @@ defmodule BytesBuffer do
     struct
   end
   def add_bytes(struct, src, pos, len) do
-    if (pos < 0 or len < 0 or pos + len > length(src)) do
+    if (pos < 0 or len < 0 or pos + len > src.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
     end
     if (len == 0) do
       nil
     else
-      slice = :binary.part(Bytes.get_data(src), pos, len)
+      slice = :binary.part(apply(Map.get(src, :__reflaxe_class__) || Map.get(src, :__struct__), :get_data, [src]), pos, len)
       struct = %{struct | parts_reversed: [slice | struct.parts_reversed]}
       _ = %{struct | byte_length: struct.byte_length + len}
     end

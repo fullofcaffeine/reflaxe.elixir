@@ -2,7 +2,7 @@ defmodule DeleteLive do
   use Phoenix.Component
   use Phoenix.LiveView, layout: {DeleteLive.Layouts, :app}
   def new() do
-    %{}
+    %{:__reflaxe_class__ => DeleteLive}
   end
   def mount(_, _, socket) do
     socket = Phoenix.Component.assign(socket, :count, 0)

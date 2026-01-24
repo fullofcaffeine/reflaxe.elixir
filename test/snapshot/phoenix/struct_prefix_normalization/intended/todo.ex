@@ -4,6 +4,6 @@ defmodule Todo do
     
   end
   def new() do
-    %{}
+    %{:__reflaxe_class__ => Todo}
   end
 end

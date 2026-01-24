@@ -1,6 +1,6 @@
 defmodule Calculator do
   def new() do
-    struct = %{:value => nil}
+    struct = %{:__reflaxe_class__ => Calculator, :value => nil}
     struct = %{struct | value: 0}
     struct = %{struct | value: 0}
     struct

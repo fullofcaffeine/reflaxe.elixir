@@ -8,7 +8,7 @@ defmodule SourceMapValidationTest do
     _g = 0
     _ = Enum.each(array, fn item -> process_item(item) end)
     instance = TestClass.new("example")
-    _ = TestClass.do_something(instance)
+    _ = apply(Map.get(instance, :__reflaxe_class__) || Map.get(instance, :__struct__), :do_something, [instance])
     nil
   end
   defp test_function(_, _) do

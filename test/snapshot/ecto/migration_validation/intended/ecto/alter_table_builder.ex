@@ -1,6 +1,6 @@
 defmodule AlterTableBuilder do
   def new(name) do
-    struct = %{:table_name => nil, :operations => nil}
+    struct = %{:__reflaxe_class__ => AlterTableBuilder, :table_name => nil, :operations => nil}
     struct = %{struct | table_name: name}
     struct = %{struct | operations: []}
     struct

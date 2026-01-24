@@ -21,8 +21,8 @@ end)
   end
   defp test_class_tracking() do
     calc = Calculator.new()
-    _ = Calculator.add(calc, 5)
-    _ = Calculator.multiply(calc, 2)
+    _ = apply(Map.get(calc, :__reflaxe_class__) || Map.get(calc, :__struct__), :add, [calc, 5])
+    _ = apply(Map.get(calc, :__reflaxe_class__) || Map.get(calc, :__struct__), :multiply, [calc, 2])
     nil
   end
 end

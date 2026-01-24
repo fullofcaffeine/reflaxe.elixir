@@ -5,6 +5,6 @@ defmodule Organization do
     _ = timestamps()
   end
   def new() do
-    %{:id => nil, :name => nil, :domain => nil, :users => nil, :inserted_at => nil, :updated_at => nil}
+    %{:__reflaxe_class__ => Organization, :id => nil, :name => nil, :domain => nil, :users => nil, :inserted_at => nil, :updated_at => nil}
   end
 end

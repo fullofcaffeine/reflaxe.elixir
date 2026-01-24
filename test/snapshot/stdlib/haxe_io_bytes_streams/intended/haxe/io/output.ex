@@ -1,16 +1,20 @@
 defmodule Output do
+  def set_big_endian(struct, b) do
+    _ = %{struct | big_endian: b}
+    b
+  end
   def write_byte(_, _) do
     raise Reflaxe.Elixir.HaxeThrow, [value: NotImplementedException.new(nil, nil, %{:file_name => "../../../../std/haxe/io/Output.hx", :line_number => 38, :class_name => "haxe.io.Output", :method_name => "writeByte"})]
   end
   def write_bytes(struct, s, pos, len) do
-    if (pos < 0 or len < 0 or pos + len > length(s)) do
+    if (pos < 0 or len < 0 or pos + len > s.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
     end
     k = len
     {_pos, _k} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, k}, fn _, {acc_pos, acc_k} ->
       try do
         if (acc_k > 0) do
-          _ = write_byte(struct, Bytes.get(s, acc_pos))
+          _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, apply(Map.get(s, :__reflaxe_class__) || Map.get(s, :__struct__), :get, [s, acc_pos])])
           acc_pos = acc_pos + 1
           acc_k = (acc_k - 1)
           {:cont, {acc_pos, acc_k}}
@@ -37,12 +41,12 @@ defmodule Output do
     
   end
   def write(struct, s) do
-    l = length(s)
+    l = s.length
     p = 0
     {_l, _p} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {l, p}, fn _, {acc_l, acc_p} ->
       try do
         if (acc_l > 0) do
-          k = write_bytes(struct, s, acc_p, acc_l)
+          k = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_bytes, [struct, s, acc_p, acc_l])
           if (k == 0) do
             raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
           end
@@ -68,7 +72,7 @@ defmodule Output do
     {pos, len} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, len}, fn _, {acc_pos, acc_len} ->
       try do
         if (acc_len > 0) do
-          k = write_bytes(struct, s, acc_pos, acc_len)
+          k = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_bytes, [struct, s, acc_pos, acc_len])
           acc_pos = acc_pos + k
           acc_len = (acc_len - k)
           {:cont, {acc_pos, acc_len}}
@@ -88,73 +92,73 @@ defmodule Output do
     end)
   end
   def write_float(struct, x) do
-    write_int32(struct, FPHelper.float_to_i32(x))
+    apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, FPHelper.float_to_i32(x)])
   end
   def write_double(struct, x) do
     i64 = FPHelper.double_to_i64(x)
     if (struct.big_endian) do
-      _ = write_int32(struct, i64.high)
-      _ = write_int32(struct, i64.low)
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, i64.high])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, i64.low])
     else
-      _ = write_int32(struct, i64.low)
-      _ = write_int32(struct, i64.high)
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, i64.low])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, i64.high])
     end
   end
   def write_int8(struct, x) do
     if (x < -128 or x >= 128) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:overflow}]
     end
-    _ = write_byte(struct, Bitwise.band(x, 255))
+    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.band(x, 255)])
   end
   def write_int16(struct, x) do
     if (x < -32768 or x >= 32768) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:overflow}]
     end
-    _ = write_u_int16(struct, Bitwise.band(x, 65535))
+    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_u_int16, [struct, Bitwise.band(x, 65535)])
   end
   def write_u_int16(struct, x) do
     if (x < 0 or x >= 65536) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:overflow}]
     end
     if (struct.big_endian) do
-      _ = write_byte(struct, Bitwise.bsr(x, 8))
-      _ = write_byte(struct, Bitwise.band(x, 255))
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.bsr(x, 8)])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.band(x, 255)])
     else
-      _ = write_byte(struct, Bitwise.band(x, 255))
-      _ = write_byte(struct, Bitwise.bsr(x, 8))
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.band(x, 255)])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.bsr(x, 8)])
     end
   end
   def write_int24(struct, x) do
     if (x < -8388608 or x >= 8388608) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:overflow}]
     end
-    _ = write_u_int24(struct, Bitwise.band(x, 16777215))
+    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_u_int24, [struct, Bitwise.band(x, 16777215)])
   end
   def write_u_int24(struct, x) do
     if (x < 0 or x >= 16777216) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:overflow}]
     end
     if (struct.big_endian) do
-      _ = write_byte(struct, Bitwise.bsr(x, 16))
-      _ = write_byte(struct, Bitwise.band(Bitwise.bsr(x, 8), 255))
-      _ = write_byte(struct, Bitwise.band(x, 255))
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.bsr(x, 16)])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.band(Bitwise.bsr(x, 8), 255)])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.band(x, 255)])
     else
-      _ = write_byte(struct, Bitwise.band(x, 255))
-      _ = write_byte(struct, Bitwise.band(Bitwise.bsr(x, 8), 255))
-      _ = write_byte(struct, Bitwise.bsr(x, 16))
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.band(x, 255)])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.band(Bitwise.bsr(x, 8), 255)])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.bsr(x, 16)])
     end
   end
   def write_int32(struct, x) do
     if (struct.big_endian) do
-      _ = write_byte(struct, Bitwise.bsr(x, 24))
-      _ = write_byte(struct, Bitwise.band(Bitwise.bsr(x, 16), 255))
-      _ = write_byte(struct, Bitwise.band(Bitwise.bsr(x, 8), 255))
-      _ = write_byte(struct, Bitwise.band(x, 255))
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.bsr(x, 24)])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.band(Bitwise.bsr(x, 16), 255)])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.band(Bitwise.bsr(x, 8), 255)])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.band(x, 255)])
     else
-      _ = write_byte(struct, Bitwise.band(x, 255))
-      _ = write_byte(struct, Bitwise.band(Bitwise.bsr(x, 8), 255))
-      _ = write_byte(struct, Bitwise.band(Bitwise.bsr(x, 16), 255))
-      _ = write_byte(struct, Bitwise.bsr(x, 24))
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.band(x, 255)])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.band(Bitwise.bsr(x, 8), 255)])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.band(Bitwise.bsr(x, 16), 255)])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_byte, [struct, Bitwise.bsr(x, 24)])
     end
   end
   def prepare(_, _) do
@@ -166,7 +170,7 @@ defmodule Output do
     try do
       Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
         try do
-          len = Input.read_bytes(i, buf, 0, bufsize)
+          len = apply(Map.get(i, :__reflaxe_class__) || Map.get(i, :__struct__), :read_bytes, [i, buf, 0, bufsize])
           if (len == 0) do
             raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
           end
@@ -174,7 +178,7 @@ defmodule Output do
           {len, p} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {len, p}, fn _, {acc_len, acc_p} ->
             try do
               if (acc_len > 0) do
-                k = write_bytes(struct, buf, acc_p, acc_len)
+                k = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_bytes, [struct, buf, acc_p, acc_len])
                 if (k == 0) do
                   raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
                 end
@@ -221,6 +225,6 @@ end), haxe_exception} do
   end
   def write_string(struct, s, encoding) do
     b = Bytes.of_string(s, encoding)
-    _ = write_full_bytes(struct, b, 0, length(b))
+    _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_full_bytes, [struct, b, 0, b.length])
   end
 end

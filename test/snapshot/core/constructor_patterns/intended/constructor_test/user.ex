@@ -4,6 +4,6 @@ defmodule ConstructorTest.User do
     
   end
   def new() do
-    %{:id => nil, :name => nil, :email => nil}
+    %{:__reflaxe_class__ => ConstructorTest.User, :id => nil, :name => nil, :email => nil}
   end
 end

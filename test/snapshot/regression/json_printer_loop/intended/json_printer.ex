@@ -1,12 +1,13 @@
 defmodule JsonPrinter do
   import Kernel, except: [to_string: 1], warn: false
   def new() do
-    struct = %{:buffer => nil}
+    struct = %{:__reflaxe_class__ => JsonPrinter, :buffer => nil}
     struct = %{struct | buffer: StringBuf.new()}
     struct
   end
   def write_array(struct, arr) do
-    _ = StringBuf.add(struct.buffer, "[")
+    reflaxe_dispatch_receiver = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, "["])
     items = ""
     _g = 0
     arr_length = length(arr)
@@ -14,11 +15,14 @@ defmodule JsonPrinter do
       items_acc = if (i > 0), do: items_acc <> ", ", else: items_acc
       items_acc <> write_value(struct, Enum.at(arr, i))
     end)
-    _ = StringBuf.add(struct.buffer, items)
-    _ = StringBuf.add(struct.buffer, "]")
+    reflaxe_dispatch_receiver = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, items])
+    reflaxe_dispatch_receiver = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, "]"])
   end
   def write_object(struct, obj) do
-    _ = StringBuf.add(struct.buffer, "{")
+    reflaxe_dispatch_receiver = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, "{"])
     fields = Reflect.fields(obj)
     result = ""
     _g = 0
@@ -45,8 +49,10 @@ end) do
       end)
       result_acc <> "\"" <> field <> "\": " <> write_value(struct, value)
     end)
-    _ = StringBuf.add(struct.buffer, result)
-    _ = StringBuf.add(struct.buffer, "}")
+    reflaxe_dispatch_receiver = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, result])
+    reflaxe_dispatch_receiver = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :add, [reflaxe_dispatch_receiver, "}"])
   end
   defp write_value(struct, v) do
     if (Kernel.is_nil(v)) do
@@ -76,6 +82,7 @@ end) do
     end
   end
   def to_string(struct) do
-    StringBuf.to_string(struct.buffer)
+    reflaxe_dispatch_receiver = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
   end
 end

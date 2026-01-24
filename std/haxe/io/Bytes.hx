@@ -73,9 +73,9 @@ class Bytes {
             throw "Out of bounds";
         }
         
-        // Extract the binary slice and convert to string
+        // Extract the binary slice and convert to an Elixir string (UTF-8 binary).
         var slice = untyped __elixir__(':binary.part({0}, {1}, {2})', b, pos, len);
-        return untyped __elixir__(':unicode.characters_to_list({0}, :utf8)', slice);
+        return untyped __elixir__(':unicode.characters_to_binary({0}, :utf8)', slice);
     }
     
     /**

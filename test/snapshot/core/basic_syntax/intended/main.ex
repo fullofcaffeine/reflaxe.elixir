@@ -27,7 +27,7 @@ defmodule Main do
     __haxe_static_put__(:static_var, value)
   end
   def new(value) do
-    struct = %{:instance_var => nil}
+    struct = %{:__reflaxe_class__ => Main, :instance_var => nil}
     struct = %{struct | instance_var: value}
     struct
   end

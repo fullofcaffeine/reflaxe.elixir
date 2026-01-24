@@ -25,10 +25,10 @@ defmodule Main do
   end
   test "boolean assertions" do
     _ = Assert.is_true((fn -> true end).(), "5 should be greater than 3")
-    _ = Assert.is_true((fn -> (fn -> length("test") == 4 end).() end).(), "String length check should work")
+    _ = Assert.is_true((fn -> (fn -> "test".length == 4 end).() end).(), "String length check should work")
     _ = Assert.is_true((fn -> (fn -> not Kernel.is_nil(context[:test_data]) end).() end).(), "Test data should be initialized")
     _ = Assert.is_false((fn -> false end).(), "2 should not be greater than 5")
-    _ = Assert.is_false((fn -> (fn -> length("") > 0 end).() end).(), "Empty string should have zero length")
+    _ = Assert.is_false((fn -> (fn -> "".length > 0 end).() end).(), "Empty string should have zero length")
     _ = Assert.is_false((fn -> false end).(), "1 + 1 should not equal 3")
   end
   test "null assertions" do
@@ -37,7 +37,7 @@ defmodule Main do
     _ = Assert.is_null(nil, "Literal null should be null")
   end
   test "string operations" do
-    _ = Assert.equals(length(context[:test_string]), 11, "String length should be 11")
+    _ = Assert.equals(context[:test_string].length, 11, "String length should be 11")
     _ = Assert.equals(String.upcase(context[:test_string]), "HELLO WORLD", "Uppercase conversion should work")
     _ = Assert.equals(String.downcase(context[:test_string]), "hello world", "Lowercase conversion should work")
     _ = Assert.is_true((fn -> (fn -> :binary.match(context[:test_string], "World") != :nomatch end).() end).(), "String should contain 'World'")
@@ -54,7 +54,7 @@ defmodule Main do
   test "array operations" do
     _ = Assert.equals(length(context[:test_data]), 5, "Array should have 5 elements")
     _ = Assert.equals(Enum.at(context[:test_data], 0), 1, "First element should be 1")
-    _ = Assert.equals(Enum.at(context[:test_data], (length(context[:test_data]) - 1)), 5, "Last element should be 5")
+    _ = Assert.equals(Enum.at(context[:test_data], (context[:test_data].length - 1)), 5, "Last element should be 5")
     doubled = Enum.map(context[:test_data], fn x -> x * 2 end)
     _ = Assert.equals(Enum.at(doubled, 0), 2, "First doubled element should be 2")
     _ = Assert.equals(Enum.at(doubled, 4), 10, "Last doubled element should be 10")
@@ -93,15 +93,42 @@ defmodule Main do
     _ = Assert.is_true((fn -> data_nested_flag end).(), "Nested flag should be true")
     _ = Assert.equals(data_nested_count, 3, "Nested count should be 3")
     map = %{}
-    map = Map.put(map, "one", 1)
-    _ = map
+    _ = apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :set, [map, "one", 1])
+    _ = apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :set, [map, "two", 2])
+    _ = apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :set, [map, "three", 3])
+    _ = Assert.is_true((fn -> (fn -> apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :exists, [map, "one"]) end).() end).(), "Map should contain 'one'")
+    _ = Assert.equals(apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :get, [map, "two"]), 2, "Map value for 'two' should be 2")
+    _ = Assert.is_false((fn -> (fn -> apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :exists, [map, "four"]) end).() end).(), "Map should not contain 'four'")
+    k = apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :keys, [map])
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {[]}, fn _, {acc__g} ->
+      try do
+        if (k.has_next.()) do
+          k = k.next.()
+          acc__g = acc__g ++ [k]
+          {:cont, {acc__g}}
+        else
+          {:halt, {acc__g}}
+        end
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc__g}}
+        :throw, :continue ->
+          {:cont, {acc__g}}
+      end
+    end)
+    keys = []
+    _ = Assert.equals(length(keys), 3, "Map should have 3 keys")
   end
   test "edge cases" do
     _ = Assert.equals(0, 0, "Empty array should have length 0")
     _ = Assert.is_true((fn -> true end).(), "Empty array check should work")
     empty_str = ""
-    _ = Assert.equals(length(empty_str), 0, "Empty string should have length 0")
-    _ = Assert.is_false((fn -> (fn -> length(empty_str) > 0 end).() end).(), "Empty string should not have positive length")
+    _ = Assert.equals(empty_str.length, 0, "Empty string should have length 0")
+    _ = Assert.is_false((fn -> (fn -> empty_str.length > 0 end).() end).(), "Empty string should not have positive length")
     single_0 = 42
     _ = Assert.equals(1, 1, "Single element array should have length 1")
     _ = Assert.equals(single_0, 42, "Single element should be 42")

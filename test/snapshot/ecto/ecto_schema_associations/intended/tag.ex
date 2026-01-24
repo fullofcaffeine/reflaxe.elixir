@@ -4,6 +4,6 @@ defmodule Tag do
     
   end
   def new() do
-    %{:id => nil, :name => nil}
+    %{:__reflaxe_class__ => Tag, :id => nil, :name => nil}
   end
 end

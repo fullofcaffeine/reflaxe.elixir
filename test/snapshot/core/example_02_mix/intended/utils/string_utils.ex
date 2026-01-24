@@ -53,9 +53,12 @@ defmodule StringUtils do
     else
       s = String.downcase(text)
       slug = _ = StringTools.ltrim(StringTools.rtrim(s))
-      slug = EReg.replace(EReg.new("[^a-z0-9\\s-]", "g"), slug, "")
-      slug = EReg.replace(EReg.new("\\s+", "g"), slug, "-")
-      slug = EReg.replace(EReg.new("-+", "g"), slug, "-")
+      reflaxe_dispatch_receiver = EReg.new("[^a-z0-9\\s-]", "g")
+      slug = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, ""])
+      reflaxe_dispatch_receiver = EReg.new("\\s+", "g")
+      slug = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, "-"])
+      reflaxe_dispatch_receiver = EReg.new("-+", "g")
+      slug = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, slug, "-"])
       Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {slug}, fn _, {acc_slug} ->
         try do
           cond_value = (String.at(acc_slug, 0) || "")
@@ -148,7 +151,8 @@ defmodule StringUtils do
     end
   end
   defp remove_excess_whitespace(text) do
-    EReg.replace(EReg.new("\\s+", "g"), text, " ")
+    reflaxe_dispatch_receiver = EReg.new("\\s+", "g")
+    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, text, " "])
   end
   defp normalize_case(text) do
     "#{(fn -> String.upcase((fn -> if (0 < 0) do

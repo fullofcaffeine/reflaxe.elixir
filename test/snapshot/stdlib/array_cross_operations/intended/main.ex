@@ -19,12 +19,12 @@ defmodule Main do
   end
   defp test_list_operations() do
     items = ["apple", "banana", "cherry", "date"]
-    _cherry_index = 
+    _cherry_index = (
                 case Enum.find_index(items, fn item -> item == "cherry" end) do
                     nil -> -1
                     idx -> idx
                 end
-            
+            )
     list = [1, 2, 3]
     list = list ++ [4]
     _combined = list ++ [5, 6, 7]

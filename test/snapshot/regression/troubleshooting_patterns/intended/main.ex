@@ -129,7 +129,7 @@ defmodule Main do
                   if (length(arr) >= 9) do
                     "Full HTTP request: " <> Enum.join((fn ->
   (fn ->
-    g = Array.slice(arr, 0, 4)
+    g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
     g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
     g
   end).()
@@ -151,7 +151,7 @@ end).(), "") <> " + more data"
                 if (length(arr) >= 9) do
                   "Full HTTP request: " <> Enum.join((fn ->
   (fn ->
-    g = Array.slice(arr, 0, 4)
+    g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
     g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
     g
   end).()
@@ -166,7 +166,7 @@ end).(), "") <> " + more data"
           "Full HTTP request: #{(fn -> Enum.join((fn ->
   _g = []
   g_value = 0
-  _g2 = Array.slice(arr, 0, 4)
+  _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
   _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
     _g_acc = _g_acc ++ [<<b::utf8>>]
     _g_acc
@@ -191,7 +191,7 @@ end).(), "") end).()} + more data"
                   if (length(arr) >= 9) do
                     "Full HTTP request: " <> Enum.join((fn ->
   (fn ->
-    g = Array.slice(arr, 0, 4)
+    g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
     g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
     g
   end).()
@@ -213,7 +213,7 @@ end).(), "") <> " + more data"
                 if (length(arr) >= 9) do
                   "Full HTTP request: " <> Enum.join((fn ->
   (fn ->
-    g = Array.slice(arr, 0, 4)
+    g = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
     g = Enum.reduce(g, g, fn b, g_acc -> Enum.concat(g_acc, [<<b::utf8>>]) end)
     g
   end).()
@@ -228,7 +228,7 @@ end).(), "") <> " + more data"
           "Full HTTP request: #{(fn -> Enum.join((fn ->
   _g = []
   g_value = 0
-  _g2 = Array.slice(arr, 0, 4)
+  _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
   _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
     _g_acc = _g_acc ++ [<<b::utf8>>]
     _g_acc
@@ -249,7 +249,7 @@ end).(), "") end).()} + more data"
               "Full HTTP request: #{(fn -> Enum.join((fn ->
   _g = []
   g_value = 0
-  _g2 = Array.slice(arr, 0, 4)
+  _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
   _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
     _g_acc = _g_acc ++ [<<b::utf8>>]
     _g_acc
@@ -267,7 +267,7 @@ end).(), "") end).()} + more data"
         "Full HTTP request: #{(fn -> Enum.join((fn ->
   _g = []
   g_value = 0
-  _g2 = Array.slice(arr, 0, 4)
+  _g2 = apply(Map.get(arr, :__reflaxe_class__) || Map.get(arr, :__struct__), :slice, [arr, 0, 4])
   _g = Enum.reduce(_g2, _g, fn b, _g_acc ->
     _g_acc = _g_acc ++ [<<b::utf8>>]
     _g_acc

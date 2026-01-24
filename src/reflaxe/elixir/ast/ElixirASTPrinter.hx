@@ -766,7 +766,14 @@ class ElixirASTPrinter {
                     patternStr + ' = ' + print(expr, 0);
                 } else {
                     // Regular assignment - pass indent for proper nesting of block expressions (case, cond, etc.)
-                    patternStr + ' = ' + print(expr, indent);
+                    var rhsPrinted = print(expr, indent);
+                    // IMPORTANT: Multi-statement __elixir__() injections compile to ERaw strings.
+                    // In Elixir, `x =` binds only the *first* expression unless the RHS is a single
+                    // expression or explicitly grouped. Wrap multi-line ERaw RHS in parentheses so
+                    // the assignment captures the last expression value:
+                    //   x = (a = 1\n a + 1)
+                    rhsPrinted = maybeWrapRawMultilineRhs(expr, rhsPrinted);
+                    patternStr + ' = ' + rhsPrinted;
                 }
                 
             case EWith(clauses, doBlock, elseBlock):
@@ -1603,6 +1610,14 @@ class ElixirASTPrinter {
 	                            default:
 	                        }
 
+	                        // Assignment RHS: wrap multi-line ERaw injections so `=` captures the full
+	                        // expression value (see maybeWrapRawMultilineRhs for details).
+	                        if (op == Match && isRight) {
+	                            var printed = print(operand, 0);
+	                            printed = maybeWrapRawMultilineRhs(operand, printed);
+	                            return printed;
+	                        }
+
 	                        // Match expressions must be parenthesized when used as operands of other
 	                        // infix operators to preserve Elixir precedence.
 	                        //
@@ -1668,10 +1683,6 @@ class ElixirASTPrinter {
                 unaryOpToString(op) + print(expr, 0);
                 
             case EField(target, field):
-                // Special-case: list.length -> length(list)
-                if (field == "length") {
-                    return 'length(' + print(target, 0) + ')';
-                }
                 // Special-case: now.to_iso8601 -> DateTime.to_iso8601(now)
                 if (field == "to_iso8601") {
                     return 'DateTime.to_iso8601(' + print(target, 0) + ')';
@@ -2923,6 +2934,23 @@ class ElixirASTPrinter {
         }
     }
 
+    static function maybeWrapRawMultilineRhs(expr: ElixirAST, printed: String): String {
+        if (printed == null || expr == null || expr.def == null) return printed;
+        return switch (expr.def) {
+            case ERaw(code) if (code != null && code.indexOf('\n') != -1):
+                // If the injected snippet already groups itself as a single expression (e.g. "(...)" or "if ... end"),
+                // we can leave it as-is. Otherwise, wrap to ensure `=` binds the whole RHS.
+                var trimmed = StringTools.trim(code);
+                if (StringTools.startsWith(trimmed, "(") && StringTools.endsWith(trimmed, ")")) {
+                    printed;
+                } else {
+                    '(' + printed + ')';
+                }
+            default:
+                printed;
+        };
+    }
+
     // Ensure printed argument is a single safe expression.
     // If it contains line breaks and is not already wrapped (paren/IIFE),
     // wrap it in an IIFE to prevent splitting the call site.
@@ -2991,12 +3019,21 @@ class ElixirASTPrinter {
                     }
                 }
                 // In <App>.* (non-Web) modules, qualify single-segment CamelCase roots to <App>.<Name>.
+                //
+                // IMPORTANT:
+                // - Do not apply this heuristic for arbitrary dotted namespaces (e.g. Sys.IO.*).
+                // - Only apply when we have observed a Phoenix-like app prefix and it matches the
+                //   current module's first segment.
+                //
                 // This prevents undefined module warnings for app-local helper modules (e.g., UserChangeset)
-                // without requiring cross-module registry knowledge.
-                if (currentModuleName != null && currentModuleName.indexOf(".") != -1) {
+                // without requiring cross-module registry knowledge, while keeping stdlib namespaces safe.
+                if (observedAppPrefix != null && currentModuleName != null && currentModuleName.indexOf(".") != -1) {
                     var dot = currentModuleName.indexOf(".");
                     var appPrefix = dot > 0 ? currentModuleName.substring(0, dot) : null;
-                    if (appPrefix != null && isSingleSegmentCamelRoot(n) && n != appPrefix && n != appPrefix + "Web") {
+                    if (appPrefix != null && appPrefix == observedAppPrefix
+                        && isSingleSegmentCamelRoot(n)
+                        && n != appPrefix
+                        && n != appPrefix + "Web") {
                         return appPrefix + "." + n;
                     }
                 }

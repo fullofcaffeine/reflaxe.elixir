@@ -1,6 +1,6 @@
 defmodule TestBuilder do
   def new(name_param) do
-    struct = %{:name => nil, :items => nil}
+    struct = %{:__reflaxe_class__ => TestBuilder, :name => nil, :items => nil}
     struct = %{struct | name: name_param}
     struct = %{struct | items: []}
     struct

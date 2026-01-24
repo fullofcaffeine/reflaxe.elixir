@@ -13,6 +13,9 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
 typedef MigrationCallStep = {name: String, args: Array<ElixirAST>};
 typedef MigrationCallChain = {base: ElixirAST, calls: Array<MigrationCallStep>};
 typedef MigrationColumnTypeInfo = {typeExpr: ElixirAST, extraOptions: Array<ElixirAST.EKeywordPair>};
+typedef MigrationSequentialChainExtract = {chain: MigrationCallChain, nextIndex: Int};
+typedef MigrationAssignmentExtract = {name: String, value: ElixirAST};
+typedef MigrationCallStepExtract = {receiver: ElixirAST, step: MigrationCallStep};
 
 /**
  * EctoMigrationExsTransforms
@@ -132,13 +135,47 @@ class EctoMigrationExsTransforms {
     }
 
     static function buildUpStatements(body: ElixirAST, pos: Position): Null<Array<ElixirAST>> {
-        var statements = unwrapStatements(body);
+        var statements = flattenTopLevelStatements(unwrapStatements(body));
         var out: Array<ElixirAST> = [];
 
-        for (statement in statements) {
+        #if debug_ecto_migration_exs
+        trace("[EctoMigrationExs] up statements:");
+        for (si in 0...statements.length) {
+            var stmt = statements[si];
+            var extra = switch (stmt.def) {
+                case EMatch(pattern, value):
+                    ' match=' + Std.string(pattern) + ' value=' + Type.enumConstructor(value.def);
+                case EBinary(Match, left, right):
+                    ' match=EBinary(Match, ' + Type.enumConstructor(left.def) + ', ' + Type.enumConstructor(right.def) + ')';
+                default:
+                    "";
+            };
+            trace('  [${si}] (${Type.enumConstructor(stmt.def)})${extra} ' + ElixirASTPrinter.print(stmt, 0));
+        }
+        #end
+
+        var i = 0;
+        while (i < statements.length) {
+            var statement = statements[i];
+            if (isIgnorableStatement(statement)) {
+                i++;
+                continue;
+            }
+
+            var sequential = extractSequentialCallChain(statements, i);
+            if (sequential != null) {
+                #if debug_ecto_migration_exs
+                trace('  [${i}] sequential chain: ' + sequential.chain.calls.map(c -> c.name).join(" -> "));
+                #end
+                var built = buildUpStatementsFromChain(sequential.chain, pos);
+                if (built == null) return null;
+                out = out.concat(built);
+                i = sequential.nextIndex;
+                continue;
+            }
+
             var chain = extractCallChain(statement);
             if (chain == null) {
-                if (isIgnorableStatement(statement)) continue;
                 var rendered = ElixirASTPrinter.print(statement, 0);
                 if (rendered.length > 220) rendered = rendered.substr(0, 220) + "...";
                 compilerError('Unsupported migration up/0 body shape. Expected a builder call chain. Got: ${rendered}', pos);
@@ -148,6 +185,7 @@ class EctoMigrationExsTransforms {
             var built = buildUpStatementsFromChain(chain, pos);
             if (built == null) return null;
             out = out.concat(built);
+            i++;
         }
 
         if (out.length == 0) {
@@ -159,13 +197,44 @@ class EctoMigrationExsTransforms {
     }
 
     static function buildDownStatements(body: ElixirAST, pos: Position): Null<Array<ElixirAST>> {
-        var statements = unwrapStatements(body);
+        var statements = flattenTopLevelStatements(unwrapStatements(body));
         var out: Array<ElixirAST> = [];
 
-        for (statement in statements) {
+        #if debug_ecto_migration_exs
+        trace("[EctoMigrationExs] down statements:");
+        for (si in 0...statements.length) {
+            var stmt = statements[si];
+            var extra = switch (stmt.def) {
+                case EMatch(pattern, value):
+                    ' match=' + Std.string(pattern) + ' value=' + Type.enumConstructor(value.def);
+                case EBinary(Match, left, right):
+                    ' match=EBinary(Match, ' + Type.enumConstructor(left.def) + ', ' + Type.enumConstructor(right.def) + ')';
+                default:
+                    "";
+            };
+            trace('  [${si}] (${Type.enumConstructor(stmt.def)})${extra} ' + ElixirASTPrinter.print(stmt, 0));
+        }
+        #end
+
+        var i = 0;
+        while (i < statements.length) {
+            var statement = statements[i];
+            if (isIgnorableStatement(statement)) {
+                i++;
+                continue;
+            }
+
+            var sequential = extractSequentialCallChain(statements, i);
+            if (sequential != null) {
+                var built = buildDownStatementsFromChain(sequential.chain, pos);
+                if (built == null) return null;
+                out = out.concat(built);
+                i = sequential.nextIndex;
+                continue;
+            }
+
             var chain = extractCallChain(statement);
             if (chain == null) {
-                if (isIgnorableStatement(statement)) continue;
                 var rendered = ElixirASTPrinter.print(statement, 0);
                 if (rendered.length > 220) rendered = rendered.substr(0, 220) + "...";
                 compilerError('Unsupported migration down/0 body shape. Expected a builder call chain. Got: ${rendered}', pos);
@@ -175,6 +244,7 @@ class EctoMigrationExsTransforms {
             var built = buildDownStatementsFromChain(chain, pos);
             if (built == null) return null;
             out = out.concat(built);
+            i++;
         }
 
         if (out.length == 0) {
@@ -494,6 +564,77 @@ class EctoMigrationExsTransforms {
 
         while (true) {
             switch (current.def) {
+                // Dynamic dispatch instance method call:
+                //   apply(runtime_module, :method, [builder | args])
+                //
+                // NOTE: This is the primary shape produced by CallExprBuilder for public instance methods.
+                case ECall(_target, "apply", applyArgs) if (applyArgs.length == 3):
+                    var methodName: Null<String> = switch (unwrap(applyArgs[1]).def) {
+                        case EAtom(name):
+                            name;
+                        default:
+                            null;
+                    };
+                    var argElements: Null<Array<ElixirAST>> = switch (unwrap(applyArgs[2]).def) {
+                        case EList(elements):
+                            elements;
+                        default:
+                            null;
+                    };
+                    if (methodName == null || argElements == null || argElements.length == 0) break;
+
+                    var builder = unwrapStatement(argElements[0]);
+                    var stepArgs = (argElements.length > 1) ? argElements.slice(1) : [];
+                    reversedSteps.push({name: canonicalizeCallName(methodName), args: stepArgs});
+                    current = builder;
+
+                // CallExprBuilder sometimes wraps instance calls in an expression block to bind a complex receiver:
+                //   reflaxe_dispatch_receiver = <receiver_expr>
+                //   apply(runtime_module, :method, [reflaxe_dispatch_receiver | args])
+                //
+                // For migration parsing we want to treat this as a single call step whose builder is <receiver_expr>.
+                case EBlock(expressions) if (expressions.length >= 2):
+                    var lastExpr = expressions[expressions.length - 1];
+                    var receiverName: Null<String> = null;
+                    var receiverValue: Null<ElixirAST> = null;
+                    for (prefixExpr in expressions.slice(0, expressions.length - 1)) {
+                        switch (prefixExpr.def) {
+                            case EMatch(PVar(name), value):
+                                receiverName = name;
+                                receiverValue = value;
+                            default:
+                        }
+                    }
+                    if (receiverName == null || receiverValue == null) break;
+
+                    switch (unwrapStatement(lastExpr).def) {
+                        case ECall(_target2, "apply", applyArgs2) if (applyArgs2.length == 3):
+                            var methodName2: Null<String> = switch (unwrap(applyArgs2[1]).def) {
+                                case EAtom(name):
+                                    name;
+                                default:
+                                    null;
+                            };
+                            var argElements2: Null<Array<ElixirAST>> = switch (unwrap(applyArgs2[2]).def) {
+                                case EList(elements):
+                                    elements;
+                                default:
+                                    null;
+                            };
+                            if (methodName2 == null || argElements2 == null || argElements2.length == 0) break;
+                            var receiverRef = unwrapStatement(argElements2[0]);
+                            switch (receiverRef.def) {
+                                case EVar(name) if (name == receiverName):
+                                    var stepArgs2 = (argElements2.length > 1) ? argElements2.slice(1) : [];
+                                    reversedSteps.push({name: canonicalizeCallName(methodName2), args: stepArgs2});
+                                    current = unwrapStatement(receiverValue);
+                                default:
+                                    break;
+                            }
+                        default:
+                            break;
+                    }
+
                 case ECall(_target, funcName, args):
                     if (args.length == 0) break;
 
@@ -533,8 +674,136 @@ class EctoMigrationExsTransforms {
         return switch (current.def) {
             case EMatch(_pattern, value):
                 unwrapStatement(value);
+            case EBinary(Match, _left, value):
+                unwrapStatement(value);
             default:
                 current;
+        };
+    }
+
+    // ======================================================================
+    // Sequential-chain extraction (reflaxe_dispatch_receiver threading)
+    // ======================================================================
+
+    static function extractSequentialCallChain(statements: Array<ElixirAST>, startIndex: Int): Null<MigrationSequentialChainExtract> {
+        // This is the normalized shape produced by the AST pipeline for fluent builder DSL:
+        //
+        //   receiver = apply(..., :create_table/:alter_table, [struct, ...])
+        //   receiver = _ = apply(..., :add_column, [receiver, ...])
+        //   _ = apply(..., :add_timestamps, [receiver])
+        //
+        // We stitch these statement-level calls into a single MigrationCallChain so the DSL
+        // conversion logic can operate on a stable representation.
+
+        var firstAssign = extractAssignment(statements[startIndex]);
+        if (firstAssign == null) return null;
+        if (firstAssign.name == "_") return null;
+
+        var firstCallExpr = unwrapCallExpr(firstAssign.value);
+        var firstStep = extractCallStep(firstCallExpr);
+        if (firstStep == null) return null;
+
+        // Only treat this as a sequential chain when the first call starts a migration builder.
+        if (firstStep.step.name != "create_table" && firstStep.step.name != "alter_table") return null;
+
+        var receiverVarName = firstAssign.name;
+        var calls: Array<MigrationCallStep> = [firstStep.step];
+
+        var i = startIndex + 1;
+        while (i < statements.length) {
+            var statement = statements[i];
+            if (isIgnorableStatement(statement)) {
+                i++;
+                continue;
+            }
+
+            var assignment = extractAssignment(statement);
+            if (assignment == null) break;
+            if (assignment.name != "_" && assignment.name != receiverVarName) break;
+
+            var callExpr = unwrapCallExpr(assignment.value);
+            var step = extractCallStep(callExpr);
+            if (step == null) break;
+
+            // Must be operating on the same threaded receiver variable.
+            switch (unwrapStatement(step.receiver).def) {
+                case EVar(name) if (name == receiverVarName):
+                    calls.push(step.step);
+                    i++;
+                default:
+                    return {chain: {base: firstStep.receiver, calls: calls}, nextIndex: i};
+            }
+        }
+
+        return {chain: {base: firstStep.receiver, calls: calls}, nextIndex: i};
+    }
+
+    static function extractAssignment(statement: ElixirAST): Null<MigrationAssignmentExtract> {
+        var current = unwrap(statement);
+        return switch (current.def) {
+            case EMatch(PVar(name), value):
+                {name: name, value: value};
+            case EBinary(Match, left, right):
+                switch (unwrap(left).def) {
+                    case EVar(name):
+                        {name: name, value: right};
+                    default:
+                        null;
+                }
+            default:
+                null;
+        };
+    }
+
+    static function unwrapCallExpr(expr: ElixirAST): ElixirAST {
+        // Strip nested match wrappers like:
+        //   receiver = _ = apply(...)
+        // so we can parse the underlying call.
+        var current = unwrap(expr);
+        while (true) {
+            current = switch (current.def) {
+                case EMatch(_pattern, value):
+                    unwrap(value);
+                case EBinary(Match, _left, value):
+                    unwrap(value);
+                default:
+                    return current;
+            };
+        }
+        return current;
+    }
+
+    static function extractCallStep(expr: ElixirAST): Null<MigrationCallStepExtract> {
+        var current = unwrapStatement(expr);
+        return switch (current.def) {
+            case ECall(_target, "apply", applyArgs) if (applyArgs.length == 3):
+                var methodName: Null<String> = switch (unwrap(applyArgs[1]).def) {
+                    case EAtom(name):
+                        name;
+                    default:
+                        null;
+                };
+                var argElements: Null<Array<ElixirAST>> = switch (unwrap(applyArgs[2]).def) {
+                    case EList(elements):
+                        elements;
+                    default:
+                        null;
+                };
+                if (methodName == null || argElements == null || argElements.length == 0) null else {
+                    var receiver = argElements[0];
+                    var stepArgs = (argElements.length > 1) ? argElements.slice(1) : [];
+                    {receiver: receiver, step: {name: canonicalizeCallName(methodName), args: stepArgs}};
+                }
+            case ECall(_target2, funcName, args) if (args.length >= 1):
+                var receiver2 = args[0];
+                var stepArgs2 = (args.length > 1) ? args.slice(1) : [];
+                {receiver: receiver2, step: {name: canonicalizeCallName(funcName), args: stepArgs2}};
+            case ERemoteCall(_mod, funcName2, args2) if (args2.length >= 1):
+                var receiver3 = args2[0];
+                var stepArgs3 = (args2.length > 1) ? args2.slice(1) : [];
+                {receiver: receiver3, step: {name: canonicalizeCallName(funcName2), args: stepArgs3}};
+            default:
+                null;
         };
     }
 
@@ -567,6 +836,64 @@ class EctoMigrationExsTransforms {
                 expressions;
             default:
                 [unwrapped];
+        };
+    }
+
+    static function flattenTopLevelStatements(statements: Array<ElixirAST>): Array<ElixirAST> {
+        var out: Array<ElixirAST> = [];
+        for (statement in statements) {
+            for (expanded in expandStatement(statement)) out.push(expanded);
+        }
+        return out;
+    }
+
+    static function expandStatement(statement: ElixirAST): Array<ElixirAST> {
+        var unwrapped = unwrap(statement);
+        return switch (unwrapped.def) {
+            case EBlock(expressions) | EDo(expressions):
+                var out: Array<ElixirAST> = [];
+                for (e in expressions) {
+                    for (expanded in expandStatement(e)) out.push(expanded);
+                }
+                out;
+            case EMatch(pattern, value):
+                var rhs = unwrap(value);
+                switch (rhs.def) {
+                    case EBlock(expressions2) | EDo(expressions2) if (expressions2.length > 0):
+                        var out: Array<ElixirAST> = [];
+                        var firstExpr = expressions2[0];
+
+                        // If the first expression already binds the same variable, the outer
+                        // match is redundant and would produce `x = x = ...` when flattened.
+                        // Drop the outer match and expand the block directly.
+                        var droppedOuter = false;
+                        switch (pattern) {
+                            case PVar(name):
+                                switch (unwrap(firstExpr).def) {
+                                    case EMatch(PVar(bound), _) if (bound == name):
+                                        droppedOuter = true;
+                                    case EBinary(Match, left, _) if (switch (unwrap(left).def) { case EVar(n): n == name; default: false; }):
+                                        droppedOuter = true;
+                                    default:
+                                }
+                            default:
+                        }
+
+                        if (droppedOuter) {
+                            for (expandedFirst in expandStatement(firstExpr)) out.push(expandedFirst);
+                        } else {
+                            var first = makeASTWithMeta(EMatch(pattern, firstExpr), statement.metadata, statement.pos);
+                            for (expandedFirst in expandStatement(first)) out.push(expandedFirst);
+                        }
+                        for (j in 1...expressions2.length) {
+                            for (expandedRest in expandStatement(expressions2[j])) out.push(expandedRest);
+                        }
+                        out;
+                    default:
+                        [statement];
+                }
+            default:
+                [statement];
         };
     }
 

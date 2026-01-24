@@ -1,6 +1,6 @@
 defmodule MySupervisor do
   def new(config_param) do
-    struct = %{:config => nil}
+    struct = %{:__reflaxe_class__ => MySupervisor, :config => nil}
     struct = %{struct | config: config_param}
     struct
   end

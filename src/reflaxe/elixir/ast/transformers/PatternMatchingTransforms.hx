@@ -237,8 +237,13 @@ class PatternMatchingTransforms {
         // Look for if statements at the start of the body that can become guards
         if (clause.body == null || clause.body.def == null) return clause;
         switch(clause.body.def) {
-            case EIf(cond, thenBranch, elseBranch) if (elseBranch == null || isRaiseOrThrow(elseBranch)):
-                // This if can be converted to a guard
+            case EIf(cond, thenBranch, elseBranch)
+                if ((elseBranch == null || isNilExpr(elseBranch)) && !isRaiseOrThrow(thenBranch)):
+                // This if can be converted to a guard.
+                //
+                // IMPORTANT: Only do this when the else-branch is effectively `nil` and the
+                // then-branch is not a raise/throw. Converting `if cond do raise(...) end` into
+                // a guard changes semantics by allowing fallthrough to later clauses.
                 var newGuard = clause.guard != null 
                     ? makeAST(EBinary(And, clause.guard, cond))
                     : cond;
@@ -253,6 +258,32 @@ class PatternMatchingTransforms {
                 return clause;
         }
     }
+
+    static function isNilExpr(expr: Null<ElixirAST>): Bool {
+        if (expr == null || expr.def == null) return true;
+        return switch (expr.def) {
+            case ENil:
+                true;
+            case EBlock(stmts):
+                if (stmts == null || stmts.length == 0) {
+                    true;
+                } else if (stmts.length == 1) {
+                    isNilExpr(stmts[0]);
+                } else {
+                    false;
+                }
+            case EDo(stmts):
+                if (stmts == null || stmts.length == 0) {
+                    true;
+                } else if (stmts.length == 1) {
+                    isNilExpr(stmts[0]);
+                } else {
+                    false;
+                }
+            default:
+                false;
+        };
+    }
     
     /**
      * Check if an expression is a raise or throw
@@ -260,16 +291,32 @@ class PatternMatchingTransforms {
     static function isRaiseOrThrow(expr: ElixirAST): Bool {
         if (expr == null || expr.def == null) return false;
         return switch(expr.def) {
-            case ECall(target, "throw", _): 
-                switch(target != null ? target.def : null) {
-                    case EVar("Kernel"): true;
-                    default: false;
+            case EParen(inner):
+                isRaiseOrThrow(inner);
+            case EBlock(stmts):
+                if (stmts == null || stmts.length == 0) {
+                    false;
+                } else {
+                    var meaningful = [];
+                    for (s in stmts) if (!isNilExpr(s)) meaningful.push(s);
+                    meaningful.length == 1 ? isRaiseOrThrow(meaningful[0]) : false;
                 }
-            case ECall(target, "raise", _):
-                switch(target != null ? target.def : null) {
-                    case EVar("Kernel"): true;
-                    default: false;
+            case EDo(stmts):
+                if (stmts == null || stmts.length == 0) {
+                    false;
+                } else {
+                    var meaningful = [];
+                    for (s in stmts) if (!isNilExpr(s)) meaningful.push(s);
+                    meaningful.length == 1 ? isRaiseOrThrow(meaningful[0]) : false;
                 }
+            case ERaise(_, _):
+                true;
+            case EThrow(_):
+                true;
+            case ECall(_t, "raise", _):
+                true;
+            case ECall(_t, "throw", _):
+                true;
             default: false;
         };
     }

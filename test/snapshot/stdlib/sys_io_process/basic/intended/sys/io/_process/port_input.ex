@@ -1,6 +1,6 @@
 defmodule PortInput do
   def new(port_param) do
-    struct = %{:port => nil, :buffer => nil, :buffer_offset => nil, :ended => nil}
+    struct = %{:__reflaxe_class__ => PortInput, :port => nil, :buffer => nil, :buffer_offset => nil, :ended => nil}
     struct = %{struct | ended: false}
     struct = %{struct | buffer_offset: 0}
     struct = %{struct | buffer: nil}
@@ -12,10 +12,26 @@ defmodule PortInput do
       raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
     end
     struct = %{struct | buffer_offset: struct.buffer_offset + 1}
-    Bytes.get(struct.buffer, struct.buffer_offset)
+    reflaxe_dispatch_receiver = struct.buffer
+    _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get, [reflaxe_dispatch_receiver, struct.buffer_offset])
+  end
+  def read_all(struct, _) do
+    data = (
+            port = struct.port
+            chunks = Enum.reduce_while(Stream.repeatedly(fn -> :ok end), [], fn _, acc ->
+              receive do
+                {^port, {:data, chunk}} -> {:cont, [chunk | acc]}
+                {^port, {:exit_status, status}} ->
+                  send(self(), {port, {:exit_status, status}})
+                  {:halt, acc}
+              end
+            end)
+            :erlang.iolist_to_binary(Enum.reverse(chunks))
+        )
+    _ = Bytes.of_data(data)
   end
   def read_bytes(_, buf, pos, len) do
-    if (pos < 0 or len < 0 or pos + len > length(buf)) do
+    if (pos < 0 or len < 0 or pos + len > buf.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
     end
     if (len == 0) do
@@ -29,7 +45,7 @@ defmodule PortInput do
     if (struct.ended) do
       false
     else
-      if (not Kernel.is_nil(struct.buffer) and struct.buffer_offset < length(struct.buffer)) do
+      if (not Kernel.is_nil(struct.buffer) and struct.buffer_offset < struct.buffer.length) do
         true
       else
         struct = %{struct | buffer: nil}
@@ -83,5 +99,50 @@ defmodule PortInput do
               {^port, {:exit_status, status}} -> {:exit, status}
             end
         
+  end
+  def set_big_endian(struct, b) do
+    Input.set_big_endian(struct, b)
+  end
+  def close(struct) do
+    Input.close(struct)
+  end
+  def read_full_bytes(struct, s, pos, len) do
+    Input.read_full_bytes(struct, s, pos, len)
+  end
+  def read(struct, nbytes) do
+    Input.read(struct, nbytes)
+  end
+  def read_until(struct, end_param) do
+    Input.read_until(struct, end_param)
+  end
+  def read_line(struct) do
+    Input.read_line(struct)
+  end
+  def read_float(struct) do
+    Input.read_float(struct)
+  end
+  def read_double(struct) do
+    Input.read_double(struct)
+  end
+  def read_int8(struct) do
+    Input.read_int8(struct)
+  end
+  def read_int16(struct) do
+    Input.read_int16(struct)
+  end
+  def read_u_int16(struct) do
+    Input.read_u_int16(struct)
+  end
+  def read_int24(struct) do
+    Input.read_int24(struct)
+  end
+  def read_u_int24(struct) do
+    Input.read_u_int24(struct)
+  end
+  def read_int32(struct) do
+    Input.read_int32(struct)
+  end
+  def read_string(struct, len, encoding) do
+    Input.read_string(struct, len, encoding)
   end
 end
