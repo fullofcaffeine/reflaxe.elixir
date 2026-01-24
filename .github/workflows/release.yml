@@ -21,7 +21,7 @@ jobs:
   release:
     name: Semantic Release
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
@@ -37,6 +37,90 @@ jobs:
           fetch-depth: 0
           ref: ${{ github.event.workflow_run.head_sha || 'main' }}
           token: ${{ secrets.RELEASE_TOKEN || github.token }}
+
+      - name: Gate on required workflows (same SHA)
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          REQUIRED_WORKFLOWS: >-
+            dogfood.yml:Dogfood (Generated Phoenix App),
+            sentinel.yml:QA Sentinel Smoke,
+            examples.yml:Example Compilation Tests
+        run: |
+          set -euo pipefail
+
+          repo="${GITHUB_REPOSITORY}"
+          sha="${SHA}"
+          api="https://api.github.com/repos/${repo}"
+          deadline_secs=900
+          interval_secs=15
+
+          echo "[release] Gate: require workflows success for ${sha}"
+
+          IFS=',' read -r -a required <<< "${REQUIRED_WORKFLOWS}"
+
+          start=$SECONDS
+          while true; do
+            pending=0
+            failed=0
+
+            for entry in "${required[@]}"; do
+              entry="$(echo "$entry" | xargs)"
+              wf_file="${entry%%:*}"
+              wf_name="${entry#*:}"
+
+              runs_json="$(curl -fsSL \
+                -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+                -H "Accept: application/vnd.github+json" \
+                "${api}/actions/workflows/${wf_file}/runs?branch=main&per_page=20")"
+
+              run_json="$(echo "$runs_json" | jq -c --arg sha "$sha" \
+                '.workflow_runs[] | select(.head_sha == $sha) | {status, conclusion, html_url} ' \
+                | head -n 1 || true)"
+
+              if [ -z "$run_json" ]; then
+                echo "[release]   - ${wf_name}: not found yet"
+                pending=1
+                continue
+              fi
+
+              status="$(echo "$run_json" | jq -r '.status')"
+              conclusion="$(echo "$run_json" | jq -r '.conclusion')"
+              url="$(echo "$run_json" | jq -r '.html_url')"
+
+              if [ "$status" != "completed" ]; then
+                echo "[release]   - ${wf_name}: ${status} (${url})"
+                pending=1
+                continue
+              fi
+
+              if [ "$conclusion" != "success" ]; then
+                echo "[release]   - ${wf_name}: ${conclusion} (${url})"
+                failed=1
+                continue
+              fi
+
+              echo "[release]   - ${wf_name}: success"
+            done
+
+            if [ $failed -eq 1 ]; then
+              echo "[release] Gate failed: required workflows did not succeed."
+              exit 1
+            fi
+
+            if [ $pending -eq 0 ]; then
+              echo "[release] Gate passed."
+              break
+            fi
+
+            elapsed=$((SECONDS - start))
+            if [ $elapsed -ge $deadline_secs ]; then
+              echo "[release] Gate timeout after ${deadline_secs}s waiting for required workflows."
+              exit 1
+            fi
+
+            sleep "${interval_secs}"
+          done
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
