@@ -1,6 +1,6 @@
 # Stdlib Parity Gap Report (Module-Level)
 
-Generated: 2026-01-23
+Generated: 2026-01-24
 
 This report compares this repo’s Elixir-target stdlib overrides (`std/` and `std/_std/`) against the reference repository.
 
@@ -14,13 +14,13 @@ scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --markdown 
 ## Summary
 
 - Reference std modules: **204**
-- Local std modules present: **54** (candidates scanned: 59)
-- Intersection (local provides): **45**
-- Missing locally (reference-only): **159**
+- Local std modules present: **55** (candidates scanned: 60)
+- Intersection (local provides): **46**
+- Missing locally (reference-only): **158**
 - Local-only: **9**
 
 ## Missing modules (high-level)
-Top-level (8): `Any`, `Class`, `Enum`, `EnumValue`, `StdTypes`, `UInt`, `UnicodeString`, `Xml`
+Top-level (7): `Any`, `Class`, `Enum`, `EnumValue`, `StdTypes`, `UnicodeString`, `Xml`
 
 `haxe.*` (124): heavy gaps including `haxe.CallStack`, `haxe.Http`, `haxe.Int64`, `haxe.Serializer`, `haxe.Template`.
 `sys.*` (27): gaps across IO/process/network/threading including `sys.net.Socket`, `sys.net.UdpSocket`, `sys.ssl.Socket`.

@@ -31,8 +31,8 @@ This epic is module-level scoped first (coverage), then drills into API/behavior
 ## Workstreams (proposed order)
 
 1) **Core top-level modules**
-   - Done: `EReg`, `DateTools`, `IntIterator`, `List`, `Map`
-   - Next: `Xml`, `UInt`, `UnicodeString` (core-types like `Any`, `Class`, `StdTypes` are typically not override targets)
+   - Done: `EReg`, `DateTools`, `IntIterator`, `List`, `Map`, `UInt`
+   - Next: `Xml`, `UnicodeString` (core-types like `Any`, `Class`, `StdTypes` are typically not override targets)
 
 2) **`haxe.io` + core utilities**
    - Done (core building blocks): `haxe.io.BufferInput`, `haxe.io.BytesBuffer`, `haxe.io.BytesInput`, `haxe.io.BytesOutput`, `haxe.io.FPHelper`, `haxe.Json`

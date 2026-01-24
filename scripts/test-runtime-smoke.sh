@@ -22,6 +22,7 @@ RUNTIME_TIMEOUT_SECS="${RUNTIME_TIMEOUT_SECS:-20}"
 TEST_DIRS=(
   "test/snapshot/core/try_catch"
   "test/snapshot/stdlib/sys_io_process/basic"
+  "test/snapshot/stdlib/uint_32bit_semantics"
 )
 
 echo "[runtime-smoke] compile-timeout=${COMPILE_TIMEOUT_SECS}s runtime-timeout=${RUNTIME_TIMEOUT_SECS}s"
