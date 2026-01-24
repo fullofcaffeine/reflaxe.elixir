@@ -154,6 +154,8 @@ examples/**/lib/sys.ex*
 examples/**/lib/type.ex*
 examples/**/lib/reflect.ex*
 examples/**/lib/e_reg.ex
+examples/**/lib/int_iterator.ex*
+examples/**/lib/reflaxe/
 
 # Deprecated templates (no longer used)
 /templates/test/test-results.tmp
@@ -170,3 +172,4 @@ examples/**/lib/e_reg.ex
 
 # Debug-only snapshot outputs (never commit)
 test/snapshot/**/out_dbg*/
+test/snapshot/**/out_nomig/

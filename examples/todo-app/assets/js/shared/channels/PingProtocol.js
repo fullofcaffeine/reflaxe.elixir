@@ -34,7 +34,7 @@ class PingProtocol {
 		};
 	}
 	static decodePingPayload(payload) {
-		let requestId = (payload == null) ? null : ((p,k)=>{var v=p[k]; return v==null?null:String(v);})(payload,"request_id");
+		let requestId = (payload == null) ? null : ((p,k)=>{var v=p[k]; return (typeof v==='string') ? v : null;})(payload,"request_id");
 		if (requestId != null) {
 			return {"requestId": requestId};
 		} else {

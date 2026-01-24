@@ -5,6 +5,7 @@ import js.lib.Object;
 #else
 import elixir.Atom;
 import elixir.ElixirMap;
+import elixir.Enum;
 import elixir.Kernel;
 import elixir.types.Term;
 #end
@@ -34,6 +35,12 @@ class WirePayload {
         return cast {};
     }
 
+    public static inline function putPayload(payload: Object, key: String, value: Object): Object {
+        if (payload == null || key == null) return payload;
+        Reflect.setField(cast payload, key, value);
+        return payload;
+    }
+
     public static inline function putString(payload: Object, key: String, value: String): Object {
         if (payload == null || key == null) return payload;
         Reflect.setField(cast payload, key, value);
@@ -56,6 +63,27 @@ class WirePayload {
         if (payload == null || key == null) return payload;
         Reflect.setField(cast payload, key, value);
         return payload;
+    }
+
+    public static inline function putStringArray(payload: Object, key: String, value: Array<String>): Object {
+        if (payload == null || key == null) return payload;
+        Reflect.setField(cast payload, key, value);
+        return payload;
+    }
+
+    public static inline function putIntArray(payload: Object, key: String, value: Array<Int>): Object {
+        if (payload == null || key == null) return payload;
+        Reflect.setField(cast payload, key, value);
+        return payload;
+    }
+
+    public static inline function getPayload(payload: Object, key: String): Null<Object> {
+        if (payload == null || key == null) return null;
+        return cast js.Syntax.code(
+            "((p,k)=>{var v=p[k]; if(v!=null && typeof v==='object' && !Array.isArray(v)) return v; return null;})({0},{1})",
+            payload,
+            key
+        );
     }
 
     public static inline function getString(payload: Object, key: String): Null<String> {
@@ -93,9 +121,31 @@ class WirePayload {
             key
         );
     }
+
+    public static inline function getStringArray(payload: Object, key: String): Null<Array<String>> {
+        if (payload == null || key == null) return null;
+        return cast js.Syntax.code(
+            "((p,k)=>{var v=p[k]; if(!Array.isArray(v)) return null; for(var i=0;i<v.length;i++){if(typeof v[i] !== 'string') return null;} return v;})({0},{1})",
+            payload,
+            key
+        );
+    }
+
+    public static inline function getIntArray(payload: Object, key: String): Null<Array<Int>> {
+        if (payload == null || key == null) return null;
+        return cast js.Syntax.code(
+            "((p,k)=>{var v=p[k]; if(!Array.isArray(v)) return null; var out=[]; for(var i=0;i<v.length;i++){var x=v[i]; if(typeof x==='number'){out.push(x|0); continue;} if(typeof x==='string'){var n=parseInt(x,10); if(Number.isFinite(n)){out.push(n|0); continue;} } return null;} return out;})({0},{1})",
+            payload,
+            key
+        );
+    }
     #else
     public static inline function empty(): Term {
         return cast {};
+    }
+
+    public static inline function putPayload(payload: Term, key: String, value: Term): Term {
+        return ElixirMap.put(payload, key, value);
     }
 
     public static inline function putString(payload: Term, key: String, value: String): Term {
@@ -111,6 +161,14 @@ class WirePayload {
     }
 
     public static inline function putFloat(payload: Term, key: String, value: Float): Term {
+        return ElixirMap.put(payload, key, value);
+    }
+
+    public static inline function putStringArray(payload: Term, key: String, value: Array<String>): Term {
+        return ElixirMap.put(payload, key, value);
+    }
+
+    public static inline function putIntArray(payload: Term, key: String, value: Array<Int>): Term {
         return ElixirMap.put(payload, key, value);
     }
 
@@ -136,7 +194,12 @@ class WirePayload {
     public static function getInt(payload: Term, key: String): Null<Int> {
         var value = get(payload, key);
         if (value == null) return null;
-        return Kernel.isInteger(value) ? cast value : null;
+        if (Kernel.isInteger(value)) return cast value;
+        if (Kernel.isFloat(value)) return cast untyped __elixir__('if {0} == trunc({0}), do: trunc({0}), else: nil', value);
+        if (Kernel.isBinary(value)) {
+            return cast untyped __elixir__('case Integer.parse({0}) do {n, \"\"} -> n; _ -> nil end', value);
+        }
+        return null;
     }
 
     public static function getBool(payload: Term, key: String): Null<Bool> {
@@ -151,6 +214,56 @@ class WirePayload {
         if (Kernel.isFloat(value)) return cast value;
         if (Kernel.isInteger(value)) return cast untyped __elixir__('{0} * 1.0', value);
         return null;
+    }
+
+    public static function getPayload(payload: Term, key: String): Null<Term> {
+        var value = get(payload, key);
+        if (value == null) return null;
+        return Kernel.isMap(value) ? value : null;
+    }
+
+    public static function getStringArray(payload: Term, key: String): Null<Array<String>> {
+        var value = get(payload, key);
+        if (value == null || !Kernel.isList(value)) return null;
+
+        var items: Array<Term> = cast value;
+        var ok = Enum.all(items, function(item: Term) return Kernel.isBinary(item) || Kernel.isAtom(item));
+        if (!ok) return null;
+
+        return cast Enum.map(items, function(item: Term) {
+            if (Kernel.isAtom(item)) return Atom.toString(item);
+            return cast item;
+        });
+    }
+
+    public static function getIntArray(payload: Term, key: String): Null<Array<Int>> {
+        var value = get(payload, key);
+        if (value == null || !Kernel.isList(value)) return null;
+
+        return cast untyped __elixir__('
+            Enum.reduce_while({0}, [], fn v, acc ->
+              cond do
+                is_integer(v) ->
+                  {:cont, [v | acc]}
+
+                is_float(v) and v == trunc(v) ->
+                  {:cont, [trunc(v) | acc]}
+
+                is_binary(v) ->
+                  case Integer.parse(v) do
+                    {n, \"\"} -> {:cont, [n | acc]}
+                    _ -> {:halt, :error}
+                  end
+
+                true ->
+                  {:halt, :error}
+              end
+            end)
+            |> case do
+              :error -> nil
+              acc -> Enum.reverse(acc)
+            end
+        ', value);
     }
     #end
 }

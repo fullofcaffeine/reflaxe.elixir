@@ -1,0 +1,18 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "string_buf.ex",
+  "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "phoenix/channels/wire_payload.ex",
+  "main.ex",
+  "int_iterator.ex",
+  "haxe/iterators/array_iterator.ex",
+  "elixir/reduce_while_result.ex",
+  "elixir/common_atoms.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}
