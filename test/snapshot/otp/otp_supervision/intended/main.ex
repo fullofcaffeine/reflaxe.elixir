@@ -62,10 +62,8 @@ end)
       nil
     else
       (case result do
-        0 ->
-          value = elem(result, 1)
-          value
-        1 -> nil
+        {:ok, value} -> value
+        {:exit, _reason} -> nil
       end)
     end
     _ = Task.start(fn -> nil end)
