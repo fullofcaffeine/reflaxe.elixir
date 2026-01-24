@@ -232,9 +232,8 @@ class Output {
     public function writeInput(i: Input, ?bufsize: Int): Void {
         if (bufsize == null) bufsize = 4096;
         var buf = Bytes.alloc(bufsize);
-
-        try {
-            while (true) {
+        while (true) {
+            try {
                 var len = i.readBytes(buf, 0, bufsize);
                 if (len == 0) {
                     throw Error.Blocked;
@@ -249,8 +248,10 @@ class Output {
                     p += k;
                     len -= k;
                 }
+            } catch (_: Eof) {
+                break;
             }
-        } catch (_: Eof) {}
+        }
     }
 
     /**

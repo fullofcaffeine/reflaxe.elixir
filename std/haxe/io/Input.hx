@@ -51,14 +51,17 @@ class Input {
         }
 
         var k = len;
-
-        try {
-            while (k > 0) {
+        while (k > 0) {
+            try {
                 s.set(pos, readByte());
-                pos += 1;
-                k -= 1;
+            } catch (e: Eof) {
+                // Match Haxe std behavior: return partial reads, but throw EOF when no data was read.
+                if (k == len) throw e;
+                break;
             }
-        } catch (_: Eof) {}
+            pos += 1;
+            k -= 1;
+        }
 
         return len - k;
     }
@@ -79,17 +82,17 @@ class Input {
 
         var buf = Bytes.alloc(bufsize);
         var total = new haxe.io.BytesBuffer();
-
-        try {
-            while (true) {
+        while (true) {
+            try {
                 var len = readBytes(buf, 0, bufsize);
                 if (len == 0) {
                     throw Error.Blocked;
                 }
                 total.addBytes(buf, 0, len);
+            } catch (_: Eof) {
+                break;
             }
-        } catch (_: Eof) {}
-
+        }
         return total.getBytes();
     }
     
@@ -147,24 +150,22 @@ class Input {
      */
     public function readLine(): String {
         var buf = new BytesBuffer();
-        var last: Int;
-        var s: String;
-
-        try {
-            while ((last = readByte()) != 10) {
+        while (true) {
+            try {
+                var last = readByte();
+                if (last == 10) break;
                 buf.addByte(last);
-            }
-            s = buf.getBytes().toString();
-            if (s.charCodeAt(s.length - 1) == 13) {
-                s = s.substr(0, -1);
-            }
-        } catch (e: Eof) {
-            s = buf.getBytes().toString();
-            if (s.length == 0) {
-                throw e;
+            } catch (e: Eof) {
+                var s = buf.getBytes().toString();
+                if (s.length == 0) throw e;
+                return s;
             }
         }
 
+        var s = buf.getBytes().toString();
+        if (s.length > 0 && s.charCodeAt(s.length - 1) == 13) {
+            s = s.substr(0, -1);
+        }
         return s;
     }
 

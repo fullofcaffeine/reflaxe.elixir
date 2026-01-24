@@ -42,7 +42,7 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
             var isHandleInfo = name == "handle_info" && args != null && args.length == 2;
             if (!isRender && !isHandleEvent && !isHandleInfo) return n;
           }
-          var newBody = rewriteWithScope(body, collectPatternVars(args));
+          var newBody = rewriteWithScope(ensureBlock(body), collectPatternVars(args));
           makeASTWithMeta(EDef(name, args, guards, newBody), n.metadata, n.pos);
         case EDefp(name, args, guards, body) if (name != "mount"):
           if (n.metadata != null && (Reflect.field(n.metadata, "isLiveView") == true)) {
@@ -51,17 +51,27 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
             var isHandleInfo = name == "handle_info" && args != null && args.length == 2;
             if (!isRender && !isHandleEvent && !isHandleInfo) return n;
           }
-          var newBody = rewriteWithScope(body, collectPatternVars(args));
+          var newBody = rewriteWithScope(ensureBlock(body), collectPatternVars(args));
           makeASTWithMeta(EDefp(name, args, guards, newBody), n.metadata, n.pos);
         case EMacroCall("test", macroArgs, doBlock):
           // ExUnit "test" blocks are macro do-blocks, not def bodies, but they compile as
           // regular Elixir code and are subject to --warnings-as-errors.
-          var newDoBlock = rewriteWithScope(doBlock, new Map<String, Bool>());
+          var newDoBlock = rewriteWithScope(ensureBlock(doBlock), new Map<String, Bool>());
           makeASTWithMeta(EMacroCall("test", macroArgs, newDoBlock), n.metadata, n.pos);
         default:
           n;
       }
     });
+  }
+
+  static function ensureBlock(node: ElixirAST): ElixirAST {
+    if (node == null || node.def == null) return node;
+    return switch (node.def) {
+      case EBlock(_) | EDo(_):
+        node;
+      default:
+        makeASTWithMeta(EBlock([node]), node.metadata, node.pos);
+    };
   }
 
   static function rewriteWithScope(node: ElixirAST, outerScope: Map<String, Bool>): ElixirAST {
@@ -106,6 +116,26 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
           outClauses.push({args: c.args, guard: newGuard, body: newBody});
         }
         makeASTWithMeta(EFn(outClauses), node.metadata, node.pos);
+
+      case ETry(tryBody, rescueClauses, catchClauses, afterBlock, elseBlock):
+        var newTryBody = rewriteWithScope(tryBody, cloneScope(scope));
+        var newRescue = rescueClauses == null ? [] : [
+          for (r in rescueClauses) {
+            pattern: r.pattern,
+            varName: r.varName,
+            body: rewriteWithScope(r.body, cloneScope(scope))
+          }
+        ];
+        var newCatch = catchClauses == null ? [] : [
+          for (c in catchClauses) {
+            kind: c.kind,
+            pattern: c.pattern,
+            body: rewriteWithScope(c.body, cloneScope(scope))
+          }
+        ];
+        var newAfter = afterBlock != null ? rewriteWithScope(afterBlock, cloneScope(scope)) : null;
+        var newElse = elseBlock != null ? rewriteWithScope(elseBlock, cloneScope(scope)) : null;
+        makeASTWithMeta(ETry(newTryBody, newRescue, newCatch, newAfter, newElse), node.metadata, node.pos);
 
       default:
         ElixirASTTransformer.transformAST(node, child -> rewriteWithScope(child, scope));
@@ -186,6 +216,23 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
               default:
             }
           }
+        case EBinary(Match, leftExpr, rhs3):
+          // Destructuring match emitted as binary match (e.g. `{a, b} = Enum.reduce_while(...)`).
+          // If the binders are unused later, replace with a wildcard match to preserve side effects
+          // without triggering Elixir "unused variable" warnings.
+          var binders = getExprBinders(leftExpr);
+          if (binders.length > 0) {
+            var anyUsed = false;
+            for (b in binders) if (usedLater.exists(b)) { anyUsed = true; break; }
+            if (!anyUsed) {
+              rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs3), s.metadata, s.pos);
+            } else {
+              var newLeft = underscoreExprBindersIfUnused(leftExpr, usedLater);
+              if (newLeft != leftExpr) {
+                rewritten = makeASTWithMeta(EBinary(Match, newLeft, rhs3), s.metadata, s.pos);
+              }
+            }
+          }
         default:
       }
 
@@ -200,9 +247,88 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
     if (stmt == null || stmt.def == null) return [];
     return switch (stmt.def) {
       case EMatch(PVar(name), _): name == null ? [] : [name];
+      case EMatch(pat, _): collectPatternVarNames(pat);
       case EBinary(Match, {def: EVar(name)}, _): name == null ? [] : [name];
+      case EBinary(Match, left, _): getExprBinders(left);
       default: [];
     }
+  }
+
+  static function collectPatternVarNames(p: EPattern): Array<String> {
+    var out: Array<String> = [];
+    collectPatternVarNamesInto(p, new Map<String, Bool>(), out);
+    return out;
+  }
+
+  static function collectPatternVarNamesInto(p: EPattern, seen: Map<String, Bool>, out: Array<String>): Void {
+    switch (p) {
+      case PVar(name):
+        if (name != null && name.length > 0 && !seen.exists(name)) {
+          seen.set(name, true);
+          out.push(name);
+        }
+      case PLiteral(_):
+      case PTuple(items):
+        for (it in items) collectPatternVarNamesInto(it, seen, out);
+      case PList(items):
+        for (it in items) collectPatternVarNamesInto(it, seen, out);
+      case PCons(h, t):
+        collectPatternVarNamesInto(h, seen, out);
+        collectPatternVarNamesInto(t, seen, out);
+      case PMap(fs):
+        for (f in fs) collectPatternVarNamesInto(f.value, seen, out);
+      case PStruct(_, fs):
+        for (f in fs) collectPatternVarNamesInto(f.value, seen, out);
+      case PBinary(segs):
+        for (s in segs) collectPatternVarNamesInto(s.pattern, seen, out);
+      case PAlias(name, inner):
+        if (name != null && name.length > 0 && !seen.exists(name)) {
+          seen.set(name, true);
+          out.push(name);
+        }
+        collectPatternVarNamesInto(inner, seen, out);
+      case PPin(_):
+      case PWildcard:
+    }
+  }
+
+  static function getExprBinders(expr: ElixirAST): Array<String> {
+    if (expr == null || expr.def == null) return [];
+    var out: Array<String> = [];
+    var seen: Map<String, Bool> = new Map();
+    collectExprBindersInto(expr, seen, out);
+    return out;
+  }
+
+  static function collectExprBindersInto(expr: ElixirAST, seen: Map<String, Bool>, out: Array<String>): Void {
+    if (expr == null || expr.def == null) return;
+    switch (expr.def) {
+      case EVar(name):
+        if (name != null && name.length > 0 && !seen.exists(name) && name != "_") {
+          seen.set(name, true);
+          out.push(name);
+        }
+      case ETuple(items) | EList(items):
+        for (it in items) collectExprBindersInto(it, seen, out);
+      default:
+    }
+  }
+
+  static function underscoreExprBindersIfUnused(expr: ElixirAST, usedLater: Map<String, Bool>): ElixirAST {
+    if (expr == null || expr.def == null) return expr;
+    return switch (expr.def) {
+      case EVar(name):
+        if (name == null || name.length == 0) expr;
+        else if (name == "_" || name.charAt(0) == '_') expr;
+        else if (usedLater.exists(name)) expr;
+        else makeAST(EVar('_' + name));
+      case ETuple(items):
+        makeAST(ETuple([for (it in items) underscoreExprBindersIfUnused(it, usedLater)]));
+      case EList(items):
+        makeAST(EList([for (it in items) underscoreExprBindersIfUnused(it, usedLater)]));
+      default:
+        expr;
+    };
   }
 
   static inline function isRebind(name: String, rebindAt: Array<Map<String,Bool>>, idx: Int): Bool {

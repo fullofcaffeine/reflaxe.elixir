@@ -481,6 +481,17 @@ class ElixirASTPassRegistry {
         });
 
         // (DiscriminantRewrite already ran before alias cleanup)
+
+        // Thread outer-scope variable updates through reduce_while accumulators.
+        // This must run before ReduceWhileAccumulator, which assumes the accumulator already
+        // carries any variables that need to survive outside the reducer closure.
+        passes.push({
+            name: "ReduceWhileOuterAssignToAccumulator",
+            description: "Rewrite reduce_while loops that assign outer vars into accumulator threading",
+            enabled: #if fast_boot false #else true #end,
+            pass: reflaxe.elixir.ast.transformers.ReduceWhileOuterAssignToAccumulatorTransforms.pass,
+            runAfter: ["AssignmentExtraction"]
+        });
         
         // Reduce while accumulator transformation (must run after assignment extraction)
         passes.push({
@@ -524,6 +535,15 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_arrayLengthFieldToFunctionPass
         });
 
+        // Split FPHelper.double_to_i64(...) results into integer high/low parts.
+        // This runs after most normalization and before later field rewrites.
+        passes.push({
+            name: "FPHelperDoubleToI64FieldAccessRewrite",
+            description: "Rewrite i64.high/low from FPHelper.double_to_i64 to Bitwise ops (WAE)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.FPHelperDoubleToI64FieldAccessRewriteTransforms.pass
+        });
+        
         // DateTime method rewrite: now.to_iso8601() -> DateTime.to_iso8601(now)
         passes.push({
             name: "DateTimeMethodRewrite",
