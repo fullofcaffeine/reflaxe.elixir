@@ -1,3 +1,23 @@
+# [1.12.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.11.2...v1.12.0) (2026-01-24)
+
+
+### Bug Fixes
+
+* **ast:** correct struct/map field assignment lowering ([65a5330](https://github.com/fullofcaffeine/reflaxe.elixir/commit/65a53307453770a75f018c214f6fc23a53a6e40c))
+* **channels:** make WirePayload.getString strict ([5feb797](https://github.com/fullofcaffeine/reflaxe.elixir/commit/5feb797d6f50ad93a6ac8ae134b4bf53bbefebb7))
+* **elixir:** exception structs + safe list indexing ([b525b49](https://github.com/fullofcaffeine/reflaxe.elixir/commit/b525b494db585000a4e56575d6f2098d832a4643))
+* **std:** avoid WAE unused get_native ([ee1b082](https://github.com/fullofcaffeine/reflaxe.elixir/commit/ee1b08295f9b4511ebd1a34bf474602f9da0ff0b))
+
+
+### Features
+
+* **channels:** share typed protocol across JS+Elixir ([46f9dbd](https://github.com/fullofcaffeine/reflaxe.elixir/commit/46f9dbd373413431e5db0be3e2a908d034319b66))
+* **phoenix:** add typed channel callback results ([bf507aa](https://github.com/fullofcaffeine/reflaxe.elixir/commit/bf507aa409abe2130cedb3d3028c607838633649))
+* **stdlib:** add DateTools ([9e6a4de](https://github.com/fullofcaffeine/reflaxe.elixir/commit/9e6a4de9de46a26ac4ea8e4f71216270b8e19a7b))
+* **stdlib:** add haxe.io bytes streams + FPHelper ([aa034b3](https://github.com/fullofcaffeine/reflaxe.elixir/commit/aa034b300ed45d7619ea5d5357afc6ed5ebc810a))
+* **stdlib:** add haxe.Json + string-key dynamic access ([b658dc8](https://github.com/fullofcaffeine/reflaxe.elixir/commit/b658dc80263aa3f2e6d3549bd387286ccac738e7))
+* **stdlib:** add List/Map/IntIterator modules ([0646f12](https://github.com/fullofcaffeine/reflaxe.elixir/commit/0646f125422f90ed386c81244c2dce602ed1c1a2))
+
 ## [1.11.2](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.11.1...v1.11.2) (2026-01-23)
 
 
