@@ -3178,3 +3178,69 @@ See also: docs/03-compiler-development/transformers-overview.md (updated with th
 - Shape-affecting optimizations (e.g., inlining switch_result_* binders, string→~H conversions) must have a single production policy. If a gate exists, tests must use the same gate settings as production builds.
 - When a test fails due to shape changes, prefer updating the snapshot to reflect the improved idiomatic output rather than introducing a test-only exception.
 - Rationale: tests are a contract for production behavior. Keeping them aligned prevents drift, avoids hidden branches, and enforces correctness and idiomatic output for real apps.
+
+## Escalation Protocol: GPT‑5 Pro Consult (Repomix)
+
+If a task becomes too complex/uncertain to resolve confidently within a normal agent iteration (e.g., subtle compiler invariants, multi-pass ordering bugs, target boundary encoding/decoding design), pause and ask the user for a GPT‑5 Pro consult using a *minimal* repo extract.
+
+### When to escalate
+- You can reproduce a failure but the root cause spans multiple subsystems (builder → transformer → printer → stdlib/runtime).
+- You have 2–3 plausible fixes and need help picking the most idiomatic/architecturally correct one.
+- The change would require a new cross-target abstraction and you want validation of the API design.
+
+### What to tell the user (tailored prompt template)
+Use a prompt like this (fill in the bracketed fields):
+
+```
+You are GPT‑5 Pro. You are reviewing a Haxe→Elixir compiler + stdlib.
+
+Goal:
+- [one sentence: what must work / what is failing]
+
+Repro:
+- [exact command(s) + where run]
+- [exact error output / stacktrace]
+
+Constraints:
+- AST pipeline only (no string-gen path)
+- No band-aids / no test-only gates
+- Don’t edit generated *.ex as source of truth
+- Keep APIs Phoenix-faithful; no invented functions
+
+Context:
+- [what changed recently / relevant commits]
+- [suspected subsystem(s): builder/transformer/printer/stdlib]
+
+Ask:
+1) Identify the root cause.
+2) Recommend the most elegant fix (and why).
+3) Call out any edge cases / tests we should add (runtime + snapshots).
+```
+
+### Repomix (include only what’s needed)
+If `repomix` is not installed, use `npx`. Prefer a *small include set*.
+
+Compiler/stdlib/runtime issue example:
+```
+npx repomix@latest \
+  --include "src/reflaxe/elixir/**" \
+  --include "std/**" \
+  --include "test/snapshot/stdlib/haxe_io_bytes_streams/**" \
+  --include ".github/workflows/ci.yml" \
+  --output "/tmp/reflaxe-elixir-repomix.txt"
+```
+
+Channels boundary (shared protocol + JS client + Elixir server) example:
+```
+npx repomix@latest \
+  --include "vendor/phoenix_shared/src/phoenix/channels/**" \
+  --include "vendor/phoenix_js/src/phoenix/channels/**" \
+  --include "std/phoenix/**" \
+  --include "examples/todo-app/src_haxe/**/channels/**" \
+  --output "/tmp/reflaxe-elixir-repomix.txt"
+```
+
+Then ask the user to paste:
+- The repomix output file contents
+- The failing logs (last ~200 lines)
+- The exact commands used to reproduce
