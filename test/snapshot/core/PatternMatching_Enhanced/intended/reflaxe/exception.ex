@@ -12,7 +12,7 @@ defmodule Reflaxe.Exception do
   defp get_message(struct) do
     Map.get(struct, :message)
   end
-  defp get_native(struct) do
+  def get_native(struct) do
     Map.get(struct, :native)
   end
   def to_string(struct) do

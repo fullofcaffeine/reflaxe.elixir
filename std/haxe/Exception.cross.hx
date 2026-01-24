@@ -59,7 +59,7 @@ class Exception {
      * Native exception, which caused this exception.
      */
     public var native(get, never): Any;
-    final private function get_native(): Any {
+    public function get_native(): Any {
         return untyped __elixir__('Map.get({0}, :native)', this);
     }
 
