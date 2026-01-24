@@ -11,9 +11,14 @@ class Main {
         var detachedCode = detached.exitCode();
         detached.close();
 
-        trace(out);
-        trace(code);
-        trace(detachedCode);
+        if (out != "hello") {
+            throw 'sys.io.Process stdout mismatch: "$out"';
+        }
+        if (code != 0) {
+            throw 'sys.io.Process exitCode mismatch: $code';
+        }
+        if (detachedCode != 3) {
+            throw 'sys.io.Process detached exitCode mismatch: $detachedCode';
+        }
     }
 }
-

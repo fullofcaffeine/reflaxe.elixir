@@ -1,6 +1,6 @@
 defmodule JsonPrinter do
   def new(replacer_param, space_param) do
-    struct = %{:replacer => nil, :space => nil}
+    struct = %{:__reflaxe_class__ => JsonPrinter, :replacer => nil, :space => nil}
     struct = %{struct | replacer: replacer_param}
     struct = %{struct | space: space_param}
     struct

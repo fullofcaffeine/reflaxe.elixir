@@ -6,6 +6,6 @@ defmodule Comment do
     _ = timestamps()
   end
   def new() do
-    %{:id => nil, :body => nil, :post => nil, :post_id => nil, :user => nil, :user_id => nil, :inserted_at => nil, :updated_at => nil}
+    %{:__reflaxe_class__ => Comment, :id => nil, :body => nil, :post => nil, :post_id => nil, :user => nil, :user_id => nil, :inserted_at => nil, :updated_at => nil}
   end
 end

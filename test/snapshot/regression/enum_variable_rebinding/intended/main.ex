@@ -5,6 +5,7 @@ defmodule Main do
       {:ok, _value} -> "Success"
       {:error, _g} -> "Error: #{_g}"
     end)
+    result_value = {:ok, 42}
     _msg2 = (case result_value do
       {:ok, value} -> "Got: #{Kernel.to_string(value)}"
       {:error, _error} -> "Failed"

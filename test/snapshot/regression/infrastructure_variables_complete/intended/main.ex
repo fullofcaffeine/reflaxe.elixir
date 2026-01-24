@@ -49,8 +49,33 @@ defmodule Main do
   end
   defp test_map_iterator() do
     user_map = %{}
-    user_map = Map.put(user_map, 1, "Alice")
-    _ = user_map
+    _ = apply(Map.get(user_map, :__reflaxe_class__) || Map.get(user_map, :__struct__), :set, [user_map, 1, "Alice"])
+    _ = apply(Map.get(user_map, :__reflaxe_class__) || Map.get(user_map, :__struct__), :set, [user_map, 2, "Bob"])
+    _ = apply(Map.get(user_map, :__reflaxe_class__) || Map.get(user_map, :__struct__), :set, [user_map, 3, "Charlie"])
+    result = []
+    g = apply(Map.get(user_map, :__reflaxe_class__) || Map.get(user_map, :__struct__), :key_value_iterator, [user_map])
+    Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result}, fn _, {acc_result} ->
+      try do
+        if (g.has_next.()) do
+          key = g.next.().key
+          value = g.next.().value
+          acc_result = acc_result ++ ["" <> Kernel.to_string(key) <> ": " <> value]
+          {:cont, {acc_result}}
+        else
+          {:halt, {acc_result}}
+        end
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc_result}}
+        :throw, :continue ->
+          {:cont, {acc_result}}
+      end
+    end)
+    nil
   end
   defp test_result_pattern_matching() do
     results = [%{:status => "ok", :value => 42}, %{:status => "error", :value => -1}]

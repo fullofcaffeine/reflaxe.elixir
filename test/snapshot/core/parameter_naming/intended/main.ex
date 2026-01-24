@@ -1,6 +1,6 @@
 defmodule Main do
   def new() do
-    %{}
+    %{:__reflaxe_class__ => Main}
   end
   def greet_user(_, user_name, message) do
     "Hello #{user_name}: #{message}"

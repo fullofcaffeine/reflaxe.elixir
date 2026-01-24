@@ -8,7 +8,7 @@ defmodule Main do
     _ = SwitchReturnTest.working_unwrap_or(test_result, 0)
     _ = SwitchReturnTest.map_or_else(test_result, fn x -> x * 2 end, fn -> -1 end)
     instance = SwitchReturnTest.new()
-    _ = SwitchReturnTest.instance_unwrap_or(instance, test_result, 0)
+    _ = apply(Map.get(instance, :__reflaxe_class__) || Map.get(instance, :__struct__), :instance_unwrap_or, [instance, test_result, 0])
     nil
   end
 end

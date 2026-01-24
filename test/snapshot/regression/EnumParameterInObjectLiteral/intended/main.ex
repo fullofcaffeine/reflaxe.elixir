@@ -6,7 +6,7 @@ defmodule Main do
       {:none} -> nil
     end)
     simple_action = {:some, {:complete_all}}
-    _ = parse_action(simple_action)
+    _result_value = parse_action(simple_action)
     nil
   end
   defp parse_action(opt_action) do

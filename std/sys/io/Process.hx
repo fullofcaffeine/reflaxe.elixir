@@ -23,6 +23,7 @@ import haxe.io.Eof;
  * - `stderr` is redirected into `stdout` (BEAM ports do not provide separate
  *   stderr streams without external drivers); both fields reference `stdout`.
  */
+@:native("Sys.IO.Process")
 class Process {
     /** Standard output stream (merged stdout+stderr). */
     public var stdout(default, null): haxe.io.Input;
@@ -86,7 +87,10 @@ class Process {
             return maybe;
         }
 
-        if (!block) return null;
+        // IMPORTANT: Prefer an explicit comparison over `!block` so that, if a caller
+        // reaches this function with a missing/`nil` value at runtime (Elixir interop),
+        // we still default to blocking semantics.
+        if (block == false) return null;
 
         var status: Int = untyped __elixir__('
             port = {0}
@@ -164,6 +168,40 @@ private class PortInput extends haxe.io.Input {
         var value = buffer.get(bufferOffset);
         bufferOffset += 1;
         return value;
+    }
+
+    /**
+     * Override readAll for BEAM ports.
+     *
+     * WHY
+     * - `haxe.io.Input.readAll()` in the upstream stdlib is implemented in terms of
+     *   `readBytes`, which assumes `Bytes.set/blit` mutate in place.
+     * - On the Elixir target our `Bytes` implementation is immutable, so the base
+     *   implementation cannot fill a preallocated buffer correctly.
+     *
+     * HOW
+     * - Read all `{:data, binary}` messages from the port until `{:exit_status, status}`.
+     * - Re-send the exit_status message back to self so `Process.exitCode()` can still
+     *   observe it (mirrors `ensureBuffered()` behavior).
+     * - Return a single `Bytes` built from the collected binary.
+     */
+    override public function readAll(?bufsize: Int): Bytes {
+        // bufsize is ignored: BEAM ports deliver binary chunks sized by the driver/OS.
+        // NOTE: Wrap the multi-expression snippet in parentheses so it is treated as
+        // a single Elixir expression when used as the RHS of `=` assignments.
+        var data: Term = untyped __elixir__('(
+            port = {0}
+            chunks = Enum.reduce_while(Stream.repeatedly(fn -> :ok end), [], fn _, acc ->
+              receive do
+                {^port, {:data, chunk}} -> {:cont, [chunk | acc]}
+                {^port, {:exit_status, status}} ->
+                  send(self(), {port, {:exit_status, status}})
+                  {:halt, acc}
+              end
+            end)
+            :erlang.iolist_to_binary(Enum.reverse(chunks))
+        )', port);
+        return Bytes.ofData(data);
     }
 
     override public function readBytes(buf: Bytes, pos: Int, len: Int): Int {

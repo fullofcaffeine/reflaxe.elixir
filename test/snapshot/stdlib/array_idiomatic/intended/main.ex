@@ -37,7 +37,7 @@ defmodule Main do
   defp test_reverse_function() do
     numbers = [1, 2, 3, 4, 5]
     copy = numbers
-    _ = Array.reverse(copy)
+    _ = apply(Map.get(copy, :__reflaxe_class__) || Map.get(copy, :__struct__), :reverse, [copy])
     nil
   end
   defp test_sort_function() do
@@ -54,18 +54,18 @@ defmodule Main do
   end
   defp test_index_of_function() do
     numbers = [1, 2, 3, 4, 5, 3, 6]
-    _first_three = 
+    _first_three = (
                 case Enum.find_index(numbers, fn item -> item == 3 end) do
                     nil -> -1
                     idx -> idx
                 end
-            
-    _not_found = 
+            )
+    _not_found = (
                 case Enum.find_index(numbers, fn item -> item == 10 end) do
                     nil -> -1
                     idx -> idx
                 end
-            
+            )
     nil
   end
   defp test_join_function() do
@@ -76,8 +76,8 @@ defmodule Main do
   end
   defp test_slice_function() do
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    _from_third = Array.slice(numbers, 2, nil)
-    _middle = Array.slice(numbers, 2, 5)
+    _from_third = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :slice, [numbers, 2, nil])
+    _middle = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :slice, [numbers, 2, 5])
     nil
   end
   defp test_iterator_function() do

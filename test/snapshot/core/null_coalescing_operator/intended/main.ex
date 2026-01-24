@@ -55,25 +55,25 @@ defmodule Main do
     second = nil
     third = "final"
     _result = if (not Kernel.is_nil((tmp = if (not Kernel.is_nil((tmp = first))), do: tmp, else: second))), do: tmp, else: third
-    _complex = "#{(fn -> tmp = first
+    _complex = ("#{(fn -> tmp = first
 if (tmp != nil), do: tmp, else: "a" end).()}#{(fn -> tmp = second
-if (tmp != nil), do: tmp, else: "b" end).()}"
+if (tmp != nil), do: tmp, else: "b" end).()}")
   end
   defp test_method_calls() do
     obj = nil
     _name = if (not Kernel.is_nil((tmp = if (not Kernel.is_nil(obj)) do
-  TestObject.get_name(obj)
+  apply(Map.get(obj, :__reflaxe_class__) || Map.get(obj, :__struct__), :get_name, [obj])
 else
   nil
 end))), do: tmp, else: "Anonymous"
     _value = if (not Kernel.is_nil((tmp = if (not Kernel.is_nil(obj)) do
-  TestObject.get_value(obj)
+  apply(Map.get(obj, :__reflaxe_class__) || Map.get(obj, :__struct__), :get_value, [obj])
 else
   nil
 end))), do: tmp, else: 100
     opt = get_optional()
     _result = if (not Kernel.is_nil((tmp = if (not Kernel.is_nil(opt)) do
-  TestObject.process(opt)
+  apply(Map.get(opt, :__reflaxe_class__) || Map.get(opt, :__struct__), :process, [opt])
 else
   nil
 end))), do: tmp, else: "default"

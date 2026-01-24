@@ -1,6 +1,6 @@
 defmodule TestStruct do
   def new() do
-    struct = %{:field => nil}
+    struct = %{:__reflaxe_class__ => TestStruct, :field => nil}
     struct = %{struct | field: ""}
     struct
   end

@@ -1,6 +1,6 @@
 defmodule TableBuilder do
   def new() do
-    struct = %{:columns => nil}
+    struct = %{:__reflaxe_class__ => TableBuilder, :columns => nil}
     struct = %{struct | columns: []}
     struct
   end

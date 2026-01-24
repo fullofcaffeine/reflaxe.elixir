@@ -117,10 +117,10 @@ defmodule Main do
   def match_matrix(matrix) do
     (case matrix do
       [] -> "empty matrix"
-      [head | _tail] when length(Enum.at(matrix, 0)) == 1 ->
+      [head | _tail] when length(head) == 1 ->
         x = Enum.at(head, 0)
         "single element: #{Kernel.to_string(x)}"
-      [_head | _tail] when length(m) == length(Enum.at(m, 0)) -> "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
+      [head | _tail] when length(m) == length(head) -> "square matrix #{Kernel.to_string(length(m))}x#{Kernel.to_string(length(m))}"
       [_head | _tail] -> "non-square matrix"
       2 ->
         cond do

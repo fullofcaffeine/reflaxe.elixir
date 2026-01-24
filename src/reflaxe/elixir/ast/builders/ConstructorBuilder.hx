@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.builders;
 	import haxe.macro.Type;
 	import haxe.macro.Expr;
 	import haxe.macro.Context;
+	import haxe.macro.TypeTools;
 	import reflaxe.elixir.ast.ElixirAST;
 	import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 	import reflaxe.elixir.ast.ElixirAST.makeAST;
@@ -86,6 +87,29 @@ class ConstructorBuilder {
         context.isInConstructorArgContext = false;
         #if debug_ast_builder trace('[ConstructorBuilder] RESET FLAG isInConstructorArgContext = false'); #end
 
+        // Optional args: Haxe typed constructor calls can omit trailing optional parameters.
+        // Elixir requires exact arity, so pad omitted trailing optionals with `nil`.
+        //
+        // Example (Haxe):
+        //   new haxe.Exception("oops") // where new(message, ?previous, ?native)
+        // Elixir (desired):
+        //   Reflaxe.Exception.new("oops", nil, nil)
+        var expectedCtorArgs: Null<Array<{name: String, opt: Bool, t: Type}>> = null;
+        if (classType.constructor != null) {
+            switch (TypeTools.follow(classType.constructor.get().type)) {
+                case TFun(fnArgs, _):
+                    expectedCtorArgs = fnArgs;
+                default:
+            }
+        }
+        if (expectedCtorArgs != null && args.length < expectedCtorArgs.length) {
+            for (i in args.length...expectedCtorArgs.length) {
+                if (expectedCtorArgs[i].opt) {
+                    args.push(makeAST(ENil));
+                }
+            }
+        }
+
 	        // ====================================================================
 	        // PATTERN 1: Ecto Schemas
 	        // ====================================================================
@@ -144,7 +168,7 @@ class ConstructorBuilder {
 	        // Default: call the module's new function: ModuleName.new(args)
 	        #if debug_ast_builder trace('[ConstructorBuilder] Generating Module.new() call'); #end
 	        var moduleRef = makeAST(EVar(moduleName));
-	        return ECall(moduleRef, "new", args);
+	        return ERemoteCall(moduleRef, "new", args);
 	    }
     
     /**

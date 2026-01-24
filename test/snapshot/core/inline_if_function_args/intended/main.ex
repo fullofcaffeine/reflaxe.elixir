@@ -9,8 +9,13 @@ defmodule Main do
   defp test_map_put() do
     map = %{}
     condition = true
-    map = Map.put(map, "bool_key", (if (condition), do: "true", else: "false"))
-    _ = map
+    value = 42
+    _ = apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :set, [map, "bool_key", (if (condition), do: "true", else: "false")])
+    _ = apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :set, [map, "number_key", (if (value > 10), do: "high", else: "low")])
+    is_active = false
+    _ = apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :set, [map, "status", (if (is_active), do: "active", else: "inactive")])
+    maybe = nil
+    _ = apply(Map.get(map, :__reflaxe_class__) || Map.get(map, :__struct__), :set, [map, "nullable", (if (not Kernel.is_nil(maybe)), do: maybe, else: "default")])
   end
   defp test_function_calls() do
     flag = true

@@ -224,6 +224,9 @@ class NumericSuffixVarNormalizeTransforms {
         if (rename == null || Lambda.count(rename) == 0) return body;
         return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
             return switch (x.def) {
+                case EMatch(pat, rhs):
+                    var newPat = renamePattern(pat, rename);
+                    (newPat == pat) ? x : makeASTWithMeta(EMatch(newPat, rhs), x.metadata, x.pos);
                 case EVar(v) if (isLowerName(v) && rename.exists(v)):
                     makeASTWithMeta(EVar(rename.get(v)), x.metadata, x.pos);
                 default:

@@ -5,7 +5,7 @@ defmodule Main do
     _ = test_method_override()
   end
   defp test_basic_inheritance() do
-    _child = child.new("Alice", 25)
+    _child = Child.new("Alice", 25)
     nil
   end
   defp test_exception_inheritance() do

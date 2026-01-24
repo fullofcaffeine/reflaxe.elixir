@@ -7,9 +7,9 @@ defmodule Main do
   end
   defp test_constructors() do
     elixir_month = 1
-    _d1 = 
+    _d1 = (
             {:ok, naive} = NaiveDateTime.new(2024, elixir_month, 15, 10, 30, 45)
-            DateTime.from_naive!(naive, "Etc/UTC")
+            DateTime.from_naive!(naive, "Etc/UTC"))
     _now = DateTime.utc_now()
     timestamp = 1.7040672e+12
     _ = Date_Impl_.from_time(timestamp)
@@ -19,36 +19,36 @@ defmodule Main do
   end
   defp test_getters() do
     elixir_month = 3
-    d = 
+    d = (
             {:ok, naive} = NaiveDateTime.new(2024, elixir_month, 15, 14, 30, 45)
-            DateTime.from_naive!(naive, "Etc/UTC")
+            DateTime.from_naive!(naive, "Etc/UTC"))
     _ms = d
     nil
   end
   defp test_utc_methods() do
     elixir_month = 6
-    _d = 
+    _d = (
             {:ok, naive} = NaiveDateTime.new(2024, elixir_month, 21, 8, 15, 30)
-            DateTime.from_naive!(naive, "Etc/UTC")
+            DateTime.from_naive!(naive, "Etc/UTC"))
     nil
   end
   defp test_conversions() do
     elixir_month = 12
-    _d = 
+    _d = (
             {:ok, naive} = NaiveDateTime.new(2024, elixir_month, 25, 0, 0, 0)
-            DateTime.from_naive!(naive, "Etc/UTC")
+            DateTime.from_naive!(naive, "Etc/UTC"))
     elixir_month = 1
-    _sunday = 
+    _sunday = (
             {:ok, naive} = NaiveDateTime.new(2024, elixir_month, 7, 0, 0, 0)
-            DateTime.from_naive!(naive, "Etc/UTC")
+            DateTime.from_naive!(naive, "Etc/UTC"))
     elixir_month = 1
-    _monday = 
+    _monday = (
             {:ok, naive} = NaiveDateTime.new(2024, elixir_month, 8, 0, 0, 0)
-            DateTime.from_naive!(naive, "Etc/UTC")
+            DateTime.from_naive!(naive, "Etc/UTC"))
     elixir_month = 7
-    original = 
+    original = (
             {:ok, naive} = NaiveDateTime.new(2024, elixir_month, 4, 12, 0, 0)
-            DateTime.from_naive!(naive, "Etc/UTC")
+            DateTime.from_naive!(naive, "Etc/UTC"))
     timestamp = original
     _restored = Date_Impl_.from_time(timestamp)
     nil

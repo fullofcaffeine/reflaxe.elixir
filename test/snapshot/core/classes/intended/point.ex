@@ -1,7 +1,7 @@
 defmodule Point do
   import Kernel, except: [to_string: 1], warn: false
   def new(x_param, y_param) do
-    struct = %{:x => nil, :y => nil}
+    struct = %{:__reflaxe_class__ => Point, :x => nil, :y => nil}
     struct = %{struct | x: x_param}
     struct = %{struct | y: y_param}
     struct

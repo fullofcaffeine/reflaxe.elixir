@@ -32,14 +32,14 @@ defmodule Main do
   end
   def string_building() do
     buf = StringBuf.new()
-    _ = StringBuf.add(buf, "Building ")
-    _ = StringBuf.add(buf, "a ")
-    _ = StringBuf.add(buf, "string ")
-    _ = StringBuf.add(buf, "efficiently")
-    _ = StringBuf.add(buf, "!")
-    _ = StringBuf.add(buf, "!")
-    _ = StringBuf.add(buf, "!")
-    _result = StringBuf.to_string(buf)
+    _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :add, [buf, "Building "])
+    _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :add, [buf, "a "])
+    _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :add, [buf, "string "])
+    _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :add, [buf, "efficiently"])
+    _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :add, [buf, "!"])
+    _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :add, [buf, "!"])
+    _ = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :add, [buf, "!"])
+    _result = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :to_string, [buf])
     parts = []
     parts = parts ++ ["Item #{Kernel.to_string(1)}"]
     parts = parts ++ ["Item #{Kernel.to_string(2)}"]
@@ -52,15 +52,15 @@ defmodule Main do
   def regex_operations() do
     text = "The year is 2024 and the time is 15:30"
     digit_regex = EReg.new("\\d+", "")
-    if (EReg.match(digit_regex, text)), do: nil
+    if (apply(Map.get(digit_regex, :__reflaxe_class__) || Map.get(digit_regex, :__struct__), :match, [digit_regex, text])), do: nil
     all_numbers = EReg.new("\\d+", "g")
     numbers = []
     temp = text
     {_numbers, _temp} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {numbers, temp}, fn _, {acc_numbers, acc_temp} ->
       try do
-        if (EReg.match(all_numbers, acc_temp)) do
-          acc_numbers = acc_numbers ++ [EReg.matched(all_numbers, 0)]
-          acc_temp = EReg.matched_right(all_numbers)
+        if (apply(Map.get(all_numbers, :__reflaxe_class__) || Map.get(all_numbers, :__struct__), :match, [all_numbers, acc_temp])) do
+          acc_numbers = acc_numbers ++ [apply(Map.get(all_numbers, :__reflaxe_class__) || Map.get(all_numbers, :__struct__), :matched, [all_numbers, 0])]
+          acc_temp = apply(Map.get(all_numbers, :__reflaxe_class__) || Map.get(all_numbers, :__struct__), :matched_right, [all_numbers])
           {:cont, {acc_numbers, acc_temp}}
         else
           {:halt, {acc_numbers, acc_temp}}
@@ -76,7 +76,8 @@ defmodule Main do
           {:cont, {acc_numbers, acc_temp}}
       end
     end)
-    _replaced = EReg.replace(EReg.new("\\d+", ""), text, "XXX")
+    reflaxe_dispatch_receiver = EReg.new("\\d+", "")
+    _replaced = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :replace, [reflaxe_dispatch_receiver, text, "XXX"])
     _email_regex = EReg.new("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", "")
     nil
   end

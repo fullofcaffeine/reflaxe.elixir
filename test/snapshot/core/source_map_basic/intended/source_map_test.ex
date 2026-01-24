@@ -1,6 +1,6 @@
 defmodule SourceMapTest do
   def new() do
-    %{}
+    %{:__reflaxe_class__ => SourceMapTest}
   end
   def simple_method(_) do
     "test"
@@ -10,8 +10,8 @@ defmodule SourceMapTest do
   end
   def main() do
     test = SourceMapTest.new()
-    _result = simple_method(test)
-    _condition = conditional_method(test, 42)
+    _result = apply(Map.get(test, :__reflaxe_class__) || Map.get(test, :__struct__), :simple_method, [test])
+    _condition = apply(Map.get(test, :__reflaxe_class__) || Map.get(test, :__struct__), :conditional_method, [test, 42])
     nil
   end
 end

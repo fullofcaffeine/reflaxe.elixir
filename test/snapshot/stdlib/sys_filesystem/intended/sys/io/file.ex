@@ -1,4 +1,4 @@
-defmodule File do
+defmodule Sys.IO.File do
   def get_content(path) do
     read!(path)
   end
@@ -10,7 +10,7 @@ defmodule File do
     _ = Bytes.of_data(data)
   end
   def save_bytes(path, bytes) do
-    write!(path, Bytes.get_data(bytes))
+    write!(path, apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get_data, [bytes]))
   end
   def read(path, binary) do
     device = open_bang(path, (if (binary), do: ["read", "binary"], else: ["read"]))

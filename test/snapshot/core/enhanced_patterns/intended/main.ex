@@ -2,7 +2,7 @@ defmodule Main do
   def test_binary_patterns() do
     data = [72, 101, 108, 108, 111]
     switch_result_1 = (case data do
-      [_head | tail] when Enum.at(data, 0) == 72 and tail != [] ->
+      [head | tail] when head == 72 and tail != [] ->
         "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   _g = []
   g_value = 1
@@ -14,8 +14,8 @@ defmodule Main do
   _g
 end).(), ",") end).()}"
       [] -> "Empty binary"
-      [_head | _tail] when Enum.at(data, 0) == 72 -> "Starts with 'H' (single byte)"
-      [_head | _tail] when Enum.at(data, 0) == 72 and _tail != [] ->
+      [head | _tail] when head == 72 -> "Starts with 'H' (single byte)"
+      [head | tail] when head == 72 and tail != [] ->
         "Starts with 'H', rest: #{(fn -> Enum.join((fn ->
   _g = []
   g_value = 1

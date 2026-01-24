@@ -1,6 +1,6 @@
 defmodule MyWorker do
   def new(config_param) do
-    struct = %{:config => nil}
+    struct = %{:__reflaxe_class__ => MyWorker, :config => nil}
     struct = %{struct | config: config_param}
     struct
   end

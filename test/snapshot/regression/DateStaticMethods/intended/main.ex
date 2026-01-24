@@ -12,11 +12,11 @@ defmodule Main do
     _minute = current_date.minute
     _second = current_date.second
     _time = current_date
-    _date_str = case current_date do
+    _date_str = (case current_date do
   %NaiveDateTime{} = nd -> NaiveDateTime.to_iso8601(nd)
   %DateTime{} = dt -> DateTime.to_iso8601(dt)
   other -> Kernel.to_string(other)
-end
+end)
     nil
   end
 end

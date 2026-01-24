@@ -1,12 +1,13 @@
 defmodule Shape do
   def new(x, y, name_param) do
-    struct = %{:position => nil, :name => nil}
+    struct = %{:__reflaxe_class__ => Shape, :position => nil, :name => nil}
     struct = %{struct | position: Point.new(x, y)}
     struct = %{struct | name: name_param}
     struct
   end
   def draw(struct) do
-    "#{struct.name} at #{Point.to_string(struct.position)}"
+    "#{struct.name} at #{(fn -> reflaxe_dispatch_receiver = struct.position
+apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver]) end).()}"
   end
   def get_position(struct) do
     struct.position

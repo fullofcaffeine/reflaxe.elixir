@@ -1,6 +1,6 @@
 defmodule TestString do
   def new(s) do
-    struct = %{:str => nil}
+    struct = %{:__reflaxe_class__ => TestString, :str => nil}
     struct = %{struct | str: s}
     struct
   end

@@ -287,10 +287,10 @@ update-intended:
 			echo "❌ Test not found: $(TEST)"; \
 			exit 1; \
 		fi; \
-		echo "Compiling $(TEST) to generate new output via test target (timeout $(UPDATE_TIMEOUT))..."; \
-		test_name=$$(echo "$(TEST)" | sed 's|/|__|g'); \
-		if $(WITH_TIMEOUT) $(UPDATE_TIMEOUT_SECS) $(MAKE) -f $(MAKEFILE_LIST) -j1 test-$$test_name >/dev/null 2>&1 || true; then \
-		if [ -d $$testdir/$(OUTPUT_DIR) ]; then \
+		echo "Compiling $(TEST) to generate new output (timeout $(UPDATE_TIMEOUT))..."; \
+		rm -rf $$testdir/$(OUTPUT_DIR); \
+		if (cd $$testdir && $(WITH_TIMEOUT) $(UPDATE_TIMEOUT_SECS) haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml) > /dev/null 2>&1; then \
+		if [ -d "$$testdir/$(OUTPUT_DIR)" ]; then \
 			rm -rf $$testdir/intended && \
 			cp -r $$testdir/$(OUTPUT_DIR) $$testdir/intended && \
 			echo "✅ Updated intended output for $(TEST)"; \
@@ -389,8 +389,83 @@ test-exec:
 		echo "This will compile, compare, AND execute the generated Elixir code"; \
 		exit 1; \
 	fi; \
-	test_name=$$(echo "$(TEST)" | sed 's|/|__|g'); \
-	RUN_TESTS=1 $(MAKE) -f $(MAKEFILE_LIST) test-$$test_name
+	test_path=$$(echo "$(TEST)" | sed 's|__|/|g'); \
+	testdir=$(TEST_DIR)/$$test_path; \
+	if [ ! -f "$$testdir/compile.hxml" ]; then \
+		echo "❌ $$test_path - Test directory not found"; \
+		exit 1; \
+	fi; \
+	echo "Compiling $$test_path (timeout $(TIMEOUT))..."; \
+	if ! $(WITH_TIMEOUT) $(TIMEOUT_SECS) bash -c "cd $$testdir && haxe --no-traces -D no_traces -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
+		echo "❌ $$test_path - Compilation failed"; \
+		exit 1; \
+	fi; \
+	if [ "$(COMPARE_INTENDED)" != "0" ] && [ -d "$$testdir/intended" ] && [ -d "$$testdir/$(OUTPUT_DIR)" ]; then \
+		if ! diff -r \
+			--exclude="_GeneratedFiles.json" \
+			--exclude="erl_crash.dump" \
+			--exclude="bootstrap_*.ex" \
+			--exclude="*.exs.ex" \
+			--exclude="*.ex.map" \
+			--exclude="*.exs.map" \
+			--exclude="std.ex" \
+			--exclude="reflect.ex" \
+			--exclude="string_buf.ex" \
+			--exclude="type.ex" \
+			--exclude="int_iterator.ex" \
+			--exclude="hxx.ex" \
+			--exclude="_any/*" \
+			--exclude="haxe" \
+			--exclude="_enum_value/*" \
+			--exclude="haxe/_call_stack/*" \
+			--exclude="haxe/_constraints/*" \
+			--exclude="haxe/_int32/*" \
+			--exclude="haxe/iterators/*" \
+			--exclude="haxe/ds/*" \
+			$$testdir/intended $$testdir/$(OUTPUT_DIR) > /dev/null 2>&1; then \
+			echo "❌ $$test_path - Output mismatch"; \
+			exit 1; \
+		fi; \
+	fi; \
+	outdir="$$testdir/$(OUTPUT_DIR)"; \
+	entry=$$(ls "$$outdir"/*.exs 2>/dev/null | head -n 1); \
+	if [ -z "$$entry" ]; then \
+		if [ -f "$$outdir/main.ex" ]; then entry="$$outdir/main.ex"; \
+		elif [ -f "$$outdir/Main.ex" ]; then entry="$$outdir/Main.ex"; \
+		fi; \
+	fi; \
+	if [ -z "$$entry" ]; then \
+		echo "❌ $$test_path - No executable entry point"; \
+		exit 1; \
+	fi; \
+	echo "Running $$test_path ($$(basename $$entry)) (timeout $(RUNTIME_TIMEOUT))..."; \
+	if [[ "$$entry" == *.exs ]]; then \
+		if ! (cd "$$outdir" && $(WITH_TIMEOUT) $(RUNTIME_TIMEOUT_SECS) elixir "$$(basename $$entry)" >/dev/null 2>&1); then \
+			echo "❌ $$test_path - Runtime failed"; \
+			exit 1; \
+		fi; \
+	else \
+		entry_name="$$(basename "$$entry")"; \
+		if ! (cd "$$outdir" && { \
+			requires=(); \
+			[ -f "reflaxe/exception.ex" ] && requires+=("-r" "reflaxe/exception.ex"); \
+			[ -f "reflaxe/elixir/haxe_throw.ex" ] && requires+=("-r" "reflaxe/elixir/haxe_throw.ex"); \
+			ex_files="$$(find . -type f -name "*.ex" -print | sed 's|^\./||' | LC_ALL=C sort)"; \
+			while IFS= read -r f; do \
+				[ -z "$$f" ] && continue; \
+				[ "$$f" = "$$entry_name" ] && continue; \
+				[ "$$f" = "reflaxe/exception.ex" ] && continue; \
+				[ "$$f" = "reflaxe/elixir/haxe_throw.ex" ] && continue; \
+				requires+=("-r" "$$f"); \
+			done <<< "$$ex_files"; \
+			requires+=("-r" "$$entry_name"); \
+			$(WITH_TIMEOUT) $(RUNTIME_TIMEOUT_SECS) elixir "$${requires[@]}" -e 'unless function_exported?(Main, :main, 0), do: raise("Missing Main.main/0"); Main.main()' >/dev/null 2>&1; \
+		}); then \
+			echo "❌ $$test_path - Runtime failed"; \
+			exit 1; \
+		fi; \
+	fi; \
+	echo "✅ $$test_path - Runtime OK"
 
 # Run the output of a specific test with Elixir
 # Accepts both formats: stdlib/array_cross_operations or stdlib__array_cross_operations

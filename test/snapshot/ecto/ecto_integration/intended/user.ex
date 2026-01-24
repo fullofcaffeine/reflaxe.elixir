@@ -6,7 +6,7 @@ defmodule User do
     _ = timestamps()
   end
   def new() do
-    struct = %{:id => nil, :name => nil, :email => nil, :age => nil, :active => nil, :posts => nil, :organization => nil, :organization_id => nil, :inserted_at => nil, :updated_at => nil}
+    struct = %{:__reflaxe_class__ => User, :id => nil, :name => nil, :email => nil, :age => nil, :active => nil, :posts => nil, :organization => nil, :organization_id => nil, :inserted_at => nil, :updated_at => nil}
     struct = %{struct | active: true}
     struct
   end

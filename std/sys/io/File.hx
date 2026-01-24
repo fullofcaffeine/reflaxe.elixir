@@ -19,6 +19,7 @@ import haxe.io.Bytes;
  * - Uses `File.open!/2` (via `untyped __elixir__`) to create an Erlang IO device
  *   for streaming read/write handles (`FileInput` / `FileOutput`).
  */
+@:native("Sys.IO.File")
 class File {
     public static function getContent(path: String): String {
         return ElixirFile.readBang(path);
@@ -76,4 +77,3 @@ class File {
         ', path, modes);
     }
 }
-

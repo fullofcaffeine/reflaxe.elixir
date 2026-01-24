@@ -765,11 +765,65 @@ class CallExprBuilder {
                             ? resolvedMethodName
                             : ElixirNaming.toVarName(methodName);
 
-                        // Instance methods compile to module functions with the instance
-                        // passed as the first argument: Module.method(struct, ...).
+                        // --------------------------------------------------------------------
+                        // Instance method calls
+                        //
+                        // WHY
+                        // - Haxe instance methods are virtual by default; calls must dispatch to overrides.
+                        // - Reflaxe.Elixir represents instances as maps/structs. Subclasses may not re-emit
+                        //   parent methods, so ElixirCompiler generates delegation wrappers for inherited
+                        //   public methods (inheritance → delegation).
+                        //
+                        // HOW
+                        // - For public instance methods, dispatch via `apply/3` on the receiver's runtime
+                        //   module:
+                        //     apply(Map.get(obj, :__reflaxe_class__) || Map.get(obj, :__struct__), :method, [obj | args])
+                        // - For private instance methods (`defp`), keep static dispatch (local call when in
+                        //   the same module) because private functions are not exported and cannot be invoked
+                        //   via `apply/3`.
+                        // --------------------------------------------------------------------
                         var receiverAst = buildExpression(obj);
                         var callArgs = [receiverAst].concat(argASTs);
 
+                        var isPublicMethod = cf.get().isPublic;
+                        var isSuperReceiver = switch (obj.expr) { case TConst(TSuper): true; default: false; };
+                        if (isPublicMethod && !isSuperReceiver) {
+                            var receiverRef = receiverAst;
+                            var prefix: Array<ElixirAST> = [];
+                            switch (receiverAst.def) {
+                                case EVar(_):
+                                    // Receiver is already a stable binding; do not re-bind.
+                                default:
+                                    var tempReceiverName = "reflaxe_dispatch_receiver";
+                                    prefix.push(makeAST(EMatch(PVar(tempReceiverName), receiverAst)));
+                                    receiverRef = makeAST(EVar(tempReceiverName));
+                            }
+
+                            var runtimeModule = makeAST(EBinary(
+                                OrElse,
+                                makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiverRef, makeAST(EAtom("__reflaxe_class__"))])),
+                                makeAST(ERemoteCall(makeAST(EVar("Map")), "get", [receiverRef, makeAST(EAtom("__struct__"))]))
+                            ));
+
+                            var applyCall = makeAST(ECall(
+                                null,
+                                "apply",
+                                [
+                                    runtimeModule,
+                                    makeAST(EAtom(elixirMethodName)),
+                                    makeAST(EList([receiverRef].concat(argASTs)))
+                                ]
+                            ));
+
+                            if (prefix.length > 0) {
+                                prefix.push(applyCall);
+                                return EBlock(prefix);
+                            }
+
+                            return applyCall.def;
+                        }
+
+                        // Private instance methods: static dispatch within the declaring module.
                         var currentClass = context.getCurrentClass();
                         var isSameModule = currentClass != null && currentClass.name == className;
                         if (isSameModule) {

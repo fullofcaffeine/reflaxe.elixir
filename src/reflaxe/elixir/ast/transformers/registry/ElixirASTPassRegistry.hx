@@ -252,15 +252,6 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_conditionalReassignmentPass
         });
 
-        // Hoist state updates from statement-position control-flow (if/case/cond) so
-        // rebinding survives Elixir branch scoping (and avoids WAE shadow warnings).
-        passes.push({
-            name: "ControlFlowStateHoist",
-            description: "Hoist stateful rebinds from if/case/cond statements into outer matches",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ControlFlowStateHoistTransforms.pass
-        });
-        
         // Remove redundant nil initialization pass (should run before pipeline optimization)
         passes.push({
             name: "RemoveRedundantNilInit",
@@ -276,6 +267,18 @@ class ElixirASTPassRegistry {
             description: "Rewrite instance field locals to struct/map updates",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.InstanceFieldLoweringTransforms.pass
+        });
+
+        // Hoist state updates from statement-position control-flow (if/case/cond) so
+        // rebinding survives Elixir branch scoping (and avoids WAE shadow warnings).
+        //
+        // IMPORTANT: This must run after InstanceFieldLowering so instance field writes
+        // (lowered to `struct = %{struct | ...}`) are visible to the hoister.
+        passes.push({
+            name: "ControlFlowStateHoist",
+            description: "Hoist stateful rebinds from if/case/cond statements into outer matches",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ControlFlowStateHoistTransforms.pass
         });
         
         // String method rewrites are handled in String.cross.hx (generate idiomatic code directly).
@@ -565,7 +568,9 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "PatternMatchingGuardOptimization",
             description: "Optimize pattern matching by extracting guards from case bodies",
-            enabled: true,
+            // Disabled: converting `if cond do raise(...) end` into `when cond -> raise(...)`
+            // changes semantics by allowing fallthrough to later clauses.
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.PatternMatchingTransforms.guardOptimizationPass
         });
 

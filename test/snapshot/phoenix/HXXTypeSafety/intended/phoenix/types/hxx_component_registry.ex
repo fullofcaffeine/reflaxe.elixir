@@ -18,85 +18,85 @@ defmodule HXXComponentRegistry do
     __haxe_static_get__(:html_elements, (fn ->
         g = %{}
         value = %{:name => "input", :attribute_type => "InputAttributes", :allowed_attributes => get_input_attributes(), :void_element => true}
-        _ = Map.put(g, "input", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "input", value])
         value = %{:name => "button", :attribute_type => "ButtonAttributes", :allowed_attributes => get_button_attributes(), :void_element => false}
-        _ = Map.put(g, "button", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "button", value])
         value = %{:name => "form", :attribute_type => "FormAttributes", :allowed_attributes => get_form_attributes(), :void_element => false}
-        _ = Map.put(g, "form", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "form", value])
         value = %{:name => "select", :attribute_type => "SelectAttributes", :allowed_attributes => get_select_attributes(), :void_element => false}
-        _ = Map.put(g, "select", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "select", value])
         value = %{:name => "option", :attribute_type => "OptionAttributes", :allowed_attributes => get_option_attributes(), :void_element => false}
-        _ = Map.put(g, "option", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "option", value])
         value = %{:name => "textarea", :attribute_type => "TextAreaAttributes", :allowed_attributes => get_text_area_attributes(), :void_element => false}
-        _ = Map.put(g, "textarea", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "textarea", value])
         value = %{:name => "label", :attribute_type => "LabelAttributes", :allowed_attributes => get_label_attributes(), :void_element => false}
-        _ = Map.put(g, "label", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "label", value])
         value = %{:name => "a", :attribute_type => "AnchorAttributes", :allowed_attributes => get_anchor_attributes(), :void_element => false}
-        _ = Map.put(g, "a", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "a", value])
         value = %{:name => "p", :attribute_type => "ParagraphAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "p", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "p", value])
         value = %{:name => "div", :attribute_type => "DivAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "div", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "div", value])
         value = %{:name => "span", :attribute_type => "SpanAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "span", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "span", value])
         value = %{:name => "h1", :attribute_type => "HeadingAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "h1", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "h1", value])
         value = %{:name => "h2", :attribute_type => "HeadingAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "h2", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "h2", value])
         value = %{:name => "h3", :attribute_type => "HeadingAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "h3", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "h3", value])
         value = %{:name => "h4", :attribute_type => "HeadingAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "h4", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "h4", value])
         value = %{:name => "h5", :attribute_type => "HeadingAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "h5", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "h5", value])
         value = %{:name => "h6", :attribute_type => "HeadingAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "h6", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "h6", value])
         value = %{:name => "img", :attribute_type => "ImageAttributes", :allowed_attributes => get_image_attributes(), :void_element => true}
-        _ = Map.put(g, "img", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "img", value])
         value = %{:name => "video", :attribute_type => "VideoAttributes", :allowed_attributes => get_video_attributes(), :void_element => false}
-        _ = Map.put(g, "video", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "video", value])
         value = %{:name => "audio", :attribute_type => "AudioAttributes", :allowed_attributes => get_audio_attributes(), :void_element => false}
-        _ = Map.put(g, "audio", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "audio", value])
         value = %{:name => "ul", :attribute_type => "ListAttributes", :allowed_attributes => get_list_attributes(), :void_element => false}
-        _ = Map.put(g, "ul", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "ul", value])
         value = %{:name => "ol", :attribute_type => "ListAttributes", :allowed_attributes => get_list_attributes(), :void_element => false}
-        _ = Map.put(g, "ol", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "ol", value])
         value = %{:name => "li", :attribute_type => "ListItemAttributes", :allowed_attributes => get_list_item_attributes(), :void_element => false}
-        _ = Map.put(g, "li", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "li", value])
         value = %{:name => "table", :attribute_type => "TableAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "table", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "table", value])
         value = %{:name => "tr", :attribute_type => "TableRowAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "tr", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "tr", value])
         value = %{:name => "td", :attribute_type => "TableCellAttributes", :allowed_attributes => get_table_cell_attributes(), :void_element => false}
-        _ = Map.put(g, "td", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "td", value])
         value = %{:name => "th", :attribute_type => "TableCellAttributes", :allowed_attributes => get_table_cell_attributes(), :void_element => false}
-        _ = Map.put(g, "th", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "th", value])
         value = %{:name => "meta", :attribute_type => "MetaAttributes", :allowed_attributes => get_meta_attributes(), :void_element => true}
-        _ = Map.put(g, "meta", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "meta", value])
         value = %{:name => "link", :attribute_type => "LinkAttributes", :allowed_attributes => get_link_attributes(), :void_element => true}
-        _ = Map.put(g, "link", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "link", value])
         value = %{:name => "script", :attribute_type => "ScriptAttributes", :allowed_attributes => get_script_attributes(), :void_element => false}
-        _ = Map.put(g, "script", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "script", value])
         value = %{:name => "style", :attribute_type => "StyleAttributes", :allowed_attributes => get_style_attributes(), :void_element => false}
-        _ = Map.put(g, "style", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "style", value])
         value = %{:name => "article", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "article", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "article", value])
         value = %{:name => "section", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "section", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "section", value])
         value = %{:name => "nav", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "nav", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "nav", value])
         value = %{:name => "aside", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "aside", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "aside", value])
         value = %{:name => "header", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "header", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "header", value])
         value = %{:name => "footer", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "footer", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "footer", value])
         value = %{:name => "main", :attribute_type => "SemanticAttributes", :allowed_attributes => get_global_attributes(), :void_element => false}
-        _ = Map.put(g, "main", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "main", value])
         value = %{:name => "br", :attribute_type => "GlobalAttributes", :allowed_attributes => get_global_attributes(), :void_element => true}
-        _ = Map.put(g, "br", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "br", value])
         value = %{:name => "hr", :attribute_type => "GlobalAttributes", :allowed_attributes => get_global_attributes(), :void_element => true}
-        _ = Map.put(g, "hr", value)
+        _ = apply(Map.get(g, :__reflaxe_class__) || Map.get(g, :__struct__), :set, [g, "hr", value])
         g
       end).())
   end
@@ -112,12 +112,12 @@ defmodule HXXComponentRegistry do
   def get_element_type(element_name) do
     this1 = HXXComponentRegistry.html_elements()
     key = String.downcase(element_name)
-    _ = Map.get(this1, key)
+    _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :get, [this1, key])
   end
   def list_html_elements() do
     out = []
     this1 = HXXComponentRegistry.html_elements()
-    k = _ = Map.keys(this1)
+    k = _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :keys, [this1])
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {out}, fn _, {acc_out} ->
       try do
         if (k.has_next.()) do
@@ -153,19 +153,19 @@ end).(a, b) < 0
     (fn ->
   this1 = HXXComponentRegistry.html_elements()
   key = String.downcase(element_name)
-  _ = Map.has_key?(this1, key)
+  _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :exists, [this1, key])
 end).() or (fn ->
   this1 = HXXComponentRegistry.phoenix_components()
-  _ = Map.has_key?(this1, element_name)
+  _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :exists, [this1, element_name])
 end).()
   end
   def validate_attribute(element_name, attribute_name) do
     this = HXXComponentRegistry.html_elements()
     key = String.downcase(element_name)
-    element = _ = Map.get(this, key)
+    element = _ = apply(Map.get(this, :__reflaxe_class__) || Map.get(this, :__struct__), :get, [this, key])
     if (Kernel.is_nil(element)) do
       this = HXXComponentRegistry.phoenix_components()
-      component = _ = Map.get(this, element_name)
+      component = _ = apply(Map.get(this, :__reflaxe_class__) || Map.get(this, :__struct__), :get, [this, element_name])
       if (not Kernel.is_nil(component)), do: validate_component_attribute(component, attribute_name), else: false
       (fn ->
   this = element.allowedAttributes
@@ -191,12 +191,12 @@ end).() != -1
   def get_allowed_attributes(element_name) do
     this1 = HXXComponentRegistry.html_elements()
     key = String.downcase(element_name)
-    element = _ = Map.get(this1, key)
+    element = _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :get, [this1, key])
     if (not Kernel.is_nil(element)) do
       element.allowedAttributes
     else
       this1 = HXXComponentRegistry.phoenix_components()
-      component = _ = Map.get(this1, element_name)
+      component = _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :get, [this1, element_name])
       if (not Kernel.is_nil(component)) do
         Enum.map(component.attributes, fn a -> a.name end)
       else
@@ -207,13 +207,12 @@ end).() != -1
   def register_component(component) do
     this1 = HXXComponentRegistry.phoenix_components()
     key = component.name
-    this1 = Map.put(this1, key, component)
-    HXXComponentRegistry.phoenix_components(this1)
+    _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :set, [this1, key, component])
   end
   def list_phoenix_components() do
     out = []
     this1 = HXXComponentRegistry.phoenix_components()
-    k = _ = Map.keys(this1)
+    k = _ = apply(Map.get(this1, :__reflaxe_class__) || Map.get(this1, :__struct__), :keys, [this1])
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {out}, fn _, {acc_out} ->
       try do
         if (k.has_next.()) do

@@ -15,11 +15,11 @@ defmodule Main do
     Date.from_unix(trunc(t), "millisecond")
   end
   defp deep_nesting(t) do
-    v = ceil(if (t < 0) do
+    v = (ceil(if (t < 0) do
   -t
 else
   t
-end)
+end))
     floor(v)
   end
   defp mixed_ops(t, u) do

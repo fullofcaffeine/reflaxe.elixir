@@ -329,6 +329,16 @@ class FieldAccessBuilder {
             if (isString) {
                 return ERemoteCall(makeAST(EVar("String")), "length", [objAST]);
             }
+
+            // Haxe `Array.length` should lower to `length(list)` on the BEAM.
+            // Keep `length` as a field for other struct-like types (e.g. Bytes has a `length` field).
+            var isArray = switch (receiverInnerType) {
+                case TInst(_.get() => {name: "Array"}, _): true;
+                default: false;
+            };
+            if (isArray) {
+                return ECall(null, "length", [objAST]);
+            }
         }
 
         // Generate field access (use snake_case for Elixir struct/map fields)

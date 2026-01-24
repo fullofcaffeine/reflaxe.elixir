@@ -1,6 +1,6 @@
 defmodule Vehicle do
   def new() do
-    struct = %{:speed => nil}
+    struct = %{:__reflaxe_class__ => Vehicle, :speed => nil}
     struct = %{struct | speed: 0}
     struct
   end

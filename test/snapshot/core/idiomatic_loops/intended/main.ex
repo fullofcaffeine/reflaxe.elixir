@@ -12,7 +12,7 @@ defmodule Main do
     g = 0
     _ = Enum.each(fruits, fn _ -> nil end)
     scores = %{"Alice" => 95, "Bob" => 87, "Charlie" => 92}
-    g = StringMap.key_value_iterator(scores)
+    g = apply(Map.get(scores, :__reflaxe_class__) || Map.get(scores, :__struct__), :key_value_iterator, [scores])
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (g.has_next.()) do

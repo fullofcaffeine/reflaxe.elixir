@@ -1,6 +1,6 @@
 defmodule SwitchReturnTest do
   def new() do
-    %{}
+    %{:__reflaxe_class__ => SwitchReturnTest}
   end
   def instance_unwrap_or(_, result, default_value) do
     (case result do

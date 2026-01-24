@@ -6,6 +6,7 @@ package reflaxe.elixir.ast;
 import haxe.macro.Context;
 #end
 
+import haxe.macro.Type;
 import haxe.macro.Expr.Position;
 import reflaxe.elixir.ast.ASTUtils;
 import reflaxe.elixir.ast.ElixirAST.VarOrigin;
@@ -1462,6 +1463,58 @@ class ElixirASTTransformer {
     static function selfReferenceTransformPass(ast: ElixirAST): ElixirAST {
         // First pass: collect module metadata for context
         var moduleMetadata: ElixirMetadata = null;
+
+        /**
+         * Pad trailing optional args for calls when the Haxe TypedExpr omitted them.
+         *
+         * WHY:
+         * - Elixir requires exact arity.
+         * - `super(...)` calls are transformed later (inheritance → delegation) and can bypass
+         *   CallExprBuilder's optional-arg padding.
+         *
+         * HOW:
+         * - If the original TypedExpr is `TCall(callee, _)` and `callee.t` is `TFun`, pad
+         *   omitted trailing `opt` params with `nil`.
+         */
+        function padTrailingOptionalCallArgs(node: ElixirAST, args: Array<ElixirAST>): Array<ElixirAST> {
+            if (node == null || node.metadata == null || node.metadata.sourceExpr == null) return args;
+
+            switch (node.metadata.sourceExpr.expr) {
+                case TCall(callee, _):
+                    var funArgs: Null<Array<{name: String, opt: Bool, t: Type}>> = null;
+
+                    // Most calls have a function-typed callee.
+                    switch (haxe.macro.TypeTools.follow(callee.t)) {
+                        case TFun(fnArgs, _):
+                            funArgs = fnArgs;
+                        case TInst(classRef, _) if (switch (callee.expr) { case TConst(TSuper): true; default: false; }):
+                            // `super(...)` calls can appear as a call on a `TSuper` instance rather than a
+                            // function-typed callee. In that case, pad using the parent's constructor type.
+                            var classType = classRef.get();
+                            if (classType != null && classType.constructor != null) {
+                                switch (haxe.macro.TypeTools.follow(classType.constructor.get().type)) {
+                                    case TFun(fnArgs, _):
+                                        funArgs = fnArgs;
+                                    default:
+                                }
+                            }
+                        default:
+                    }
+
+                    if (funArgs != null && args.length < funArgs.length) {
+                        var padded = args.copy();
+                        for (i in args.length...funArgs.length) {
+                            if (funArgs[i].opt) {
+                                padded.push(makeAST(ENil));
+                            }
+                        }
+                        return padded;
+                    }
+                default:
+            }
+
+            return args;
+        }
         
         function collectModuleMetadata(node: ElixirAST): Void {
             if (node == null || node.def == null) return;
@@ -1550,10 +1603,11 @@ class ElixirASTTransformer {
                                     // - Therefore we `Map.merge/2` the parent result into the current `struct`,
                                     //   preserving subclass keys while allowing the parent to initialize base fields.
                                     if (methodName == "") {
+                                        var paddedArgs = padTrailingOptionalCallArgs(node, args);
                                         var parentCtor = makeAST(ERemoteCall(
                                             makeAST(EVar(parentModule)),
                                             "new",
-                                            args
+                                            paddedArgs
                                         ));
                                         // Parent ctors may now return structs (not just maps). When merging parent
                                         // fields into a derived struct, ensure we never overwrite the derived
@@ -1598,7 +1652,8 @@ class ElixirASTTransformer {
                                     };
                                     
                                     // Build delegation call: ParentModule.method(struct, original_args...)
-                                    var delegationArgs = [makeAST(EVar("struct"))].concat(args);
+                                    var paddedArgs = padTrailingOptionalCallArgs(node, args);
+                                    var delegationArgs = [makeAST(EVar("struct"))].concat(paddedArgs);
                                     return makeAST(ERemoteCall(
                                         makeAST(EVar(parentModule)),  // Use EVar for module alias, not EAtom
                                         elixirMethodName,
@@ -4309,17 +4364,34 @@ class ElixirASTTransformer {
         
         return switch(ast.def) {
             case EField(target, "length"):
-                // This is an array.length field access that needs to become length(array)
-                #if debug_ast_transformer
-                var targetStr = ElixirASTPrinter.printAST(target);
-                #end
-                {
-                    def: ECall(null, "length", [
-                        transformAST(target, arrayLengthFieldToFunctionPass)
-                    ]),
-                    metadata: ast.metadata,
-                    pos: ast.pos
+                // Only rewrite `.length` to `length(x)` for list-typed targets (Haxe Array).
+                // Many stdlib structs legitimately have a `length` field (e.g., Bytes); rewriting those
+                // produces invalid runtime behavior (Kernel.length/1 expects a list).
+                var rewrittenTarget = transformAST(target, arrayLengthFieldToFunctionPass);
+
+                var targetIsList = switch (target.def) {
+                    case EList(_): true;
+                    default: false;
                 };
+                if (!targetIsList && target != null && target.metadata != null && target.metadata.elixirType == "list") {
+                    targetIsList = true;
+                }
+
+                if (targetIsList) {
+                    // array.length -> length(array)
+                    {
+                        def: ECall(null, "length", [rewrittenTarget]),
+                        metadata: ast.metadata,
+                        pos: ast.pos
+                    };
+                } else {
+                    // Preserve field access for non-list types (e.g., Bytes.length).
+                    {
+                        def: EField(rewrittenTarget, "length"),
+                        metadata: ast.metadata,
+                        pos: ast.pos
+                    };
+                }
                 
             case ECall(expr, funcName, args):
                 // Regular call, transform recursively

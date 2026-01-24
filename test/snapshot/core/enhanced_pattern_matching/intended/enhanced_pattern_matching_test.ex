@@ -174,19 +174,19 @@ end) do
     end)
   end
   def match_binary_pattern(data) do
-    bytes = (case Bytes.of_string(data, nil) do
-      [] -> "empty"
-      [_head | _tail] -> "single byte: #{Kernel.to_string(bytes.get(bytes, 0))}"
+    bytes = Bytes.of_string(data, nil)
+    (case bytes.length do
+      0 -> "empty"
+      1 -> "single byte: #{Kernel.to_string(apply(Map.get(bytes, :__reflaxe_class__) || Map.get(bytes, :__struct__), :get, [bytes, 0]))}"
       _ ->
-        n = length(bytes)
+        n = bytes.length
         if (n <= 4) do
           "small data: #{Kernel.to_string(n)} bytes"
         else
-          n = length(bytes)
+          n = bytes.length
           "large data: #{Kernel.to_string(n)} bytes"
         end
     end)
-    bytes
   end
   defp validate_input(input) do
     if (String.length(input) == 0) do

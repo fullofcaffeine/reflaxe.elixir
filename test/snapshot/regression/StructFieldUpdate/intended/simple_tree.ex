@@ -1,6 +1,6 @@
 defmodule SimpleTree do
   def new(root_param) do
-    struct = %{:root => nil}
+    struct = %{:__reflaxe_class__ => SimpleTree, :root => nil}
     struct = %{struct | root: root_param}
     struct
   end

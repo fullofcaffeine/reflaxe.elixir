@@ -2,9 +2,9 @@ defmodule Main do
   def basic_array_ops() do
     numbers = [1, 2, 3, 4, 5]
     numbers = numbers ++ [6]
-    _ = Array.unshift(numbers, 0)
-    _popped = Array.pop(numbers)
-    _shifted = Array.shift(numbers)
+    _ = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :unshift, [numbers, 0])
+    _popped = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :pop, [numbers])
+    _shifted = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :shift, [numbers])
     _ = 1
     _ = "hello"
     _ = true
@@ -49,7 +49,7 @@ defmodule Main do
     words = ["Hello", "World", "from", "Haxe"]
     _sentence = Enum.join(words, " ")
     reversed = numbers
-    _ = Array.reverse(reversed)
+    _ = apply(Map.get(reversed, :__reflaxe_class__) || Map.get(reversed, :__struct__), :reverse, [reversed])
     unsorted = [3, 1, 4, 1, 5, 9, 2, 6]
     _ = Enum.sort(unsorted, fn a, b -> (fn a, b -> (a - b) end).(a, b) < 0 end)
     nil
@@ -102,8 +102,8 @@ end).()]
     Enum.filter(Enum.map(arr, fn x -> x * x end), fn x -> x > 10 end)
   end
   def first_n(arr, n) do
-    g_value = 0
-    g = trunc((fn ->
+    g = []
+    g_value = trunc((fn ->
         b = length(arr)
         if (n < b), do: n, else: b
       end).())

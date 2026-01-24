@@ -24,7 +24,7 @@ defmodule Main do
       assert actual == "world"
     end
     test "string length" do
-      actual = length("hello")
+      actual = "hello".length
       assert actual == 5
     end
   end

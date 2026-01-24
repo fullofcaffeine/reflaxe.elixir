@@ -4,6 +4,6 @@ defmodule Organization do
     
   end
   def new() do
-    %{:id => nil, :name => nil}
+    %{:__reflaxe_class__ => Organization, :id => nil, :name => nil}
   end
 end
