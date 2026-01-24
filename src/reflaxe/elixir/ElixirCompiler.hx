@@ -1719,15 +1719,11 @@ class ElixirCompiler extends GenericCompiler<
         // Set current class in context for same-module optimization
         context.currentClass = classType;
 
-        // Collect instance field names (snake_case) for this class.
+        // Collect instance field names (snake_case) for this class *including inherited fields*.
         // Used to avoid parameter/field naming collisions and to drive instance-field lowering.
         var instanceFieldNames: Map<String, Bool> = new Map();
-        for (field in classType.fields.get()) {
-            switch (field.kind) {
-                case FVar(_, _):
-                    instanceFieldNames.set(reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name), true);
-                default:
-            }
+        for (snakeFieldName in collectInstanceVarSnakeNames(classType)) {
+            instanceFieldNames.set(snakeFieldName, true);
         }
 
 	        // Build fields from the funcFields parameter (which is already ClassFuncData array)
@@ -2200,16 +2196,11 @@ class ElixirCompiler extends GenericCompiler<
                         key: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EAtom("__reflaxe_class__")),
                         value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EVar(ctorModuleName))
                     });
-                    for (field in classType.fields.get()) {
-                        switch (field.kind) {
-                            case FVar(_, _):
-                                var snakeFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
-                                initPairs.push({
-                                    key: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EAtom(snakeFieldName)),
-                                    value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ENil)
-                                });
-                            default:
-                        }
+                    for (snakeFieldName in collectInstanceVarSnakeNames(classType)) {
+                        initPairs.push({
+                            key: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EAtom(snakeFieldName)),
+                            value: reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.ENil)
+                        });
                     }
                     reflaxe.elixir.ast.ElixirAST.makeAST(reflaxe.elixir.ast.ElixirAST.ElixirASTDef.EMap(initPairs));
                 };
@@ -2876,6 +2867,44 @@ class ElixirCompiler extends GenericCompiler<
                 "Dynamic";
             case _: "String"; // Reasonable default
         }
+    }
+
+    /**
+     * Collect snake_case instance field names for a class, including inherited fields.
+     *
+     * WHY
+     * - Reflaxe objects are represented as Elixir maps, and we rely on `%{struct | field: ...}`
+     *   updates for idiomatic lowering. Map-update requires the key to exist.
+     * - When calling base-class methods on subclass instances, base fields (e.g. `big_endian`
+     *   from `haxe.io.Input/Output`) must be present on the subclass instance map to avoid
+     *   runtime `KeyError`.
+     *
+     * HOW
+     * - Walk the `superClass` chain starting from `classType`, collecting `FVar` fields.
+     * - De-duplicate by snake_case name, preferring the most-derived definition.
+     */
+    private function collectInstanceVarSnakeNames(classType: ClassType): Array<String> {
+        var snakeNames: Array<String> = [];
+        var seen: Map<String, Bool> = new Map();
+
+        var current: Null<ClassType> = classType;
+        while (current != null) {
+            for (field in current.fields.get()) {
+                switch (field.kind) {
+                    case FVar(_, _):
+                        var snakeFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
+                        if (!seen.exists(snakeFieldName)) {
+                            seen.set(snakeFieldName, true);
+                            snakeNames.push(snakeFieldName);
+                        }
+                    default:
+                }
+            }
+
+            current = if (current.superClass != null) current.superClass.t.get() else null;
+        }
+
+        return snakeNames;
     }
 
     static function extractSchemaAssociationsFromTypeFields(typeFields: Array<ClassField>): Array<SchemaAssociationMeta> {

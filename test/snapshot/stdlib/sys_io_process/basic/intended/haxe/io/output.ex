@@ -69,7 +69,7 @@ defmodule Output do
     end)
   end
   def write_full_bytes(struct, s, pos, len) do
-    {pos, len} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, len}, fn _, {acc_pos, acc_len} ->
+    {_pos, _len} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, len}, fn _, {acc_pos, acc_len} ->
       try do
         if (acc_len > 0) do
           k = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_bytes, [struct, s, acc_pos, acc_len])
@@ -97,11 +97,11 @@ defmodule Output do
   def write_double(struct, x) do
     i64 = FPHelper.double_to_i64(x)
     if (struct.big_endian) do
-      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, i64.high])
-      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, i64.low])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, Bitwise.bsr(i64, 32)])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, Bitwise.band(i64, (Bitwise.bsl(1, 32) - 1))])
     else
-      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, i64.low])
-      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, i64.high])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, Bitwise.band(i64, (Bitwise.bsl(1, 32) - 1))])
+      _ = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_int32, [struct, Bitwise.bsr(i64, 32)])
     end
   end
   def write_int8(struct, x) do
@@ -167,48 +167,36 @@ defmodule Output do
   def write_input(struct, i, bufsize) do
     bufsize = if (Kernel.is_nil(bufsize)), do: 4096, else: bufsize
     buf = Bytes.alloc(bufsize)
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  try do
     try do
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+      len = apply(Map.get(i, :__reflaxe_class__) || Map.get(i, :__struct__), :read_bytes, [i, buf, 0, bufsize])
+      if (len == 0) do
+        raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
+      end
+      p = 0
+      {_len, _p} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {len, p}, fn _, {acc_len, acc_p} ->
         try do
-          len = apply(Map.get(i, :__reflaxe_class__) || Map.get(i, :__struct__), :read_bytes, [i, buf, 0, bufsize])
-          if (len == 0) do
-            raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
-          end
-          p = 0
-          {len, p} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {len, p}, fn _, {acc_len, acc_p} ->
-            try do
-              if (acc_len > 0) do
-                k = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_bytes, [struct, buf, acc_p, acc_len])
-                if (k == 0) do
-                  raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
-                end
-                acc_p = acc_p + k
-                acc_len = (acc_len - k)
-                {:cont, {acc_len, acc_p}}
-              else
-                {:halt, {acc_len, acc_p}}
-              end
-            catch
-              :throw, {:break, break_state} ->
-                {:halt, break_state}
-              :throw, {:continue, continue_state} ->
-                {:cont, continue_state}
-              :throw, :break ->
-                {:halt, {acc_len, acc_p}}
-              :throw, :continue ->
-                {:cont, {acc_len, acc_p}}
+          if (acc_len > 0) do
+            k = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_bytes, [struct, buf, acc_p, acc_len])
+            if (k == 0) do
+              raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
             end
-          end)
-          {:cont, acc}
+            acc_p = acc_p + k
+            acc_len = (acc_len - k)
+            {:cont, {acc_len, acc_p}}
+          else
+            {:halt, {acc_len, acc_p}}
+          end
         catch
           :throw, {:break, break_state} ->
             {:halt, break_state}
           :throw, {:continue, continue_state} ->
             {:cont, continue_state}
           :throw, :break ->
-            {:halt, acc}
+            {:halt, {acc_len, acc_p}}
           :throw, :continue ->
-            {:cont, acc}
+            {:cont, {acc_len, acc_p}}
         end
       end)
     rescue
@@ -217,11 +205,23 @@ defmodule Output do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {haxe_catch_value, _} when is_struct(haxe_catch_value, Eof) -> nil
+          {haxe_catch_value, _} when is_struct(haxe_catch_value, Eof) or is_map(haxe_catch_value) and is_map_key(haxe_catch_value, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, haxe_catch_value) == Eof -> throw({:break, acc})
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
         end)
     end
+    {:cont, acc}
+  catch
+    :throw, {:break, break_state} ->
+      {:halt, break_state}
+    :throw, {:continue, continue_state} ->
+      {:cont, continue_state}
+    :throw, :break ->
+      {:halt, acc}
+    :throw, :continue ->
+      {:cont, acc}
+  end
+end)
   end
   def write_string(struct, s, encoding) do
     b = Bytes.of_string(s, encoding)

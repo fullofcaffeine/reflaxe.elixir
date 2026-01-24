@@ -42,7 +42,7 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
             var isHandleInfo = name == "handle_info" && args != null && args.length == 2;
             if (!isRender && !isHandleEvent && !isHandleInfo) return n;
           }
-          var newBody = rewriteWithScope(ensureBlock(body), collectPatternVars(args));
+          var newBody = rewriteWithScope(ensureBlock(body), collectPatternVars(args), new Map<String, Bool>());
           makeASTWithMeta(EDef(name, args, guards, newBody), n.metadata, n.pos);
         case EDefp(name, args, guards, body) if (name != "mount"):
           if (n.metadata != null && (Reflect.field(n.metadata, "isLiveView") == true)) {
@@ -51,12 +51,12 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
             var isHandleInfo = name == "handle_info" && args != null && args.length == 2;
             if (!isRender && !isHandleEvent && !isHandleInfo) return n;
           }
-          var newBody = rewriteWithScope(ensureBlock(body), collectPatternVars(args));
+          var newBody = rewriteWithScope(ensureBlock(body), collectPatternVars(args), new Map<String, Bool>());
           makeASTWithMeta(EDefp(name, args, guards, newBody), n.metadata, n.pos);
         case EMacroCall("test", macroArgs, doBlock):
           // ExUnit "test" blocks are macro do-blocks, not def bodies, but they compile as
           // regular Elixir code and are subject to --warnings-as-errors.
-          var newDoBlock = rewriteWithScope(ensureBlock(doBlock), new Map<String, Bool>());
+          var newDoBlock = rewriteWithScope(ensureBlock(doBlock), new Map<String, Bool>(), new Map<String, Bool>());
           makeASTWithMeta(EMacroCall("test", macroArgs, newDoBlock), n.metadata, n.pos);
         default:
           n;
@@ -74,36 +74,21 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
     };
   }
 
-  static function rewriteWithScope(node: ElixirAST, outerScope: Map<String, Bool>): ElixirAST {
+  static function rewriteWithScope(node: ElixirAST, outerScope: Map<String, Bool>, usedAfter: Map<String, Bool>): ElixirAST {
     if (node == null || node.def == null) return node;
     var scope = outerScope != null ? outerScope : new Map<String, Bool>();
+    var usedAfterScope = usedAfter != null ? usedAfter : new Map<String, Bool>();
 
     return switch (node.def) {
       case EBlock(stmts):
-        // First rewrite nested blocks with sequential scope, then apply same-level
-        // unused-assign underscore on the block statements.
-        var localScope = cloneScope(scope);
-        var nested:Array<ElixirAST> = [];
-        for (s in stmts) {
-          var rewrittenStmt = rewriteWithScope(s, localScope);
-          nested.push(rewrittenStmt);
-          bindFromStatement(rewrittenStmt, localScope);
-        }
-        makeASTWithMeta(EBlock(rewrite(nested, scope)), node.metadata, node.pos);
+        makeASTWithMeta(EBlock(rewriteStatementsInBlock(stmts, scope, usedAfterScope)), node.metadata, node.pos);
 
       case EDo(stmts):
-        var localScope = cloneScope(scope);
-        var nested:Array<ElixirAST> = [];
-        for (s in stmts) {
-          var rewrittenStmt = rewriteWithScope(s, localScope);
-          nested.push(rewrittenStmt);
-          bindFromStatement(rewrittenStmt, localScope);
-        }
-        makeASTWithMeta(EDo(rewrite(nested, scope)), node.metadata, node.pos);
+        makeASTWithMeta(EDo(rewriteStatementsInBlock(stmts, scope, usedAfterScope)), node.metadata, node.pos);
 
       case ECase(expr, clauses):
-        var newExpr = rewriteWithScope(expr, scope);
-        var newClauses = rewriteClauses(clauses, scope);
+        var newExpr = rewriteWithScope(expr, scope, usedAfterScope);
+        var newClauses = rewriteClauses(clauses, scope, usedAfterScope);
         makeASTWithMeta(ECase(newExpr, newClauses), node.metadata, node.pos);
 
       case EFn(clauses):
@@ -111,48 +96,54 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
         for (c in clauses) {
           var fnScope = cloneScope(scope);
           for (a in c.args) collectPatternVarsInto(a, fnScope);
-          var newGuard = c.guard != null ? rewriteWithScope(c.guard, fnScope) : null;
-          var newBody = rewriteWithScope(c.body, fnScope);
+          // Anonymous functions are isolated scopes: outer uses must not prevent unused-binder cleanup inside.
+          var newGuard = c.guard != null ? rewriteWithScope(c.guard, fnScope, new Map<String, Bool>()) : null;
+          var newBody = rewriteWithScope(c.body, fnScope, new Map<String, Bool>());
           outClauses.push({args: c.args, guard: newGuard, body: newBody});
         }
         makeASTWithMeta(EFn(outClauses), node.metadata, node.pos);
 
       case ETry(tryBody, rescueClauses, catchClauses, afterBlock, elseBlock):
-        var newTryBody = rewriteWithScope(tryBody, cloneScope(scope));
+        var newTryBody = rewriteWithScope(tryBody, cloneScope(scope), usedAfterScope);
         var newRescue = rescueClauses == null ? [] : [
           for (r in rescueClauses) {
             pattern: r.pattern,
             varName: r.varName,
-            body: rewriteWithScope(r.body, cloneScope(scope))
+            body: rewriteWithScope(r.body, cloneScope(scope), usedAfterScope)
           }
         ];
         var newCatch = catchClauses == null ? [] : [
           for (c in catchClauses) {
             kind: c.kind,
             pattern: c.pattern,
-            body: rewriteWithScope(c.body, cloneScope(scope))
+            body: rewriteWithScope(c.body, cloneScope(scope), usedAfterScope)
           }
         ];
-        var newAfter = afterBlock != null ? rewriteWithScope(afterBlock, cloneScope(scope)) : null;
-        var newElse = elseBlock != null ? rewriteWithScope(elseBlock, cloneScope(scope)) : null;
+        var newAfter = afterBlock != null ? rewriteWithScope(afterBlock, cloneScope(scope), usedAfterScope) : null;
+        var newElse = elseBlock != null ? rewriteWithScope(elseBlock, cloneScope(scope), usedAfterScope) : null;
         makeASTWithMeta(ETry(newTryBody, newRescue, newCatch, newAfter, newElse), node.metadata, node.pos);
 
       default:
-        ElixirASTTransformer.transformAST(node, child -> rewriteWithScope(child, scope));
+        ElixirASTTransformer.transformAST(node, child -> rewriteWithScope(child, scope, usedAfterScope));
     };
   }
 
-  static function rewrite(stmts:Array<ElixirAST>, outerScope: Map<String, Bool>):Array<ElixirAST> {
+  static function rewriteStatementsInBlock(stmts:Array<ElixirAST>, outerScope: Map<String, Bool>, usedAfter: Map<String, Bool>):Array<ElixirAST> {
     if (stmts == null) return stmts;
-    var out:Array<ElixirAST> = [];
-    var usedLater = new Map<String,Bool>();
+    var usedAfterSeed = usedAfter != null ? usedAfter : new Map<String, Bool>();
+
+    // Precompute the scope at each statement boundary so nested rewrites can decide
+    // whether a binder is a new declaration or a rebinding.
+    var scopeBefore:Array<Map<String, Bool>> = [];
+    var forwardScope = cloneScope(outerScope);
+    for (s in stmts) {
+      scopeBefore.push(cloneScope(forwardScope));
+      bindFromStatement(s, forwardScope);
+    }
 
     // Track which assignments are *rebindings* (the binder name appeared earlier in the same block).
-    // We must be conservative here: rewriting a rebinding `name = ...` to `_name = ...` can corrupt
-    // semantics when the variable is used after the block (or when later passes normalize names).
     var rebindAt:Array<Map<String,Bool>> = [];
-    var declaredSoFar = new Map<String,Bool>();
-    if (outerScope != null) for (k in outerScope.keys()) declaredSoFar.set(k, true);
+    var declaredSoFar = cloneScope(outerScope);
     for (i in 0...stmts.length) {
       var rebindNames = new Map<String,Bool>();
       var binders = getStatementBinders(stmts[i]);
@@ -163,84 +154,86 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
       rebindAt.push(rebindNames);
     }
 
-    // Reverse scan so we see future uses without quadratic lookahead
+    // Precompute "used later" sets for each statement, seeded with variables used after this block
+    // (e.g. variables referenced after an `if` / `case` expression that binds them inside branches).
+    var usedLaterByIndex:Array<Map<String,Bool>> = [];
+    for (_ in 0...stmts.length) usedLaterByIndex.push(new Map<String,Bool>());
+    var usedLater = cloneScope(usedAfterSeed);
     var idx = stmts.length - 1;
     while (idx >= 0) {
-      var s = stmts[idx];
-      var rewritten = s;
-      var nextStmt:ElixirAST = (idx + 1 < stmts.length) ? stmts[idx + 1] : null;
-      switch (s.def) {
-        case EMatch(PVar(b), rhs):
-          if (skipAliasToCaseScrutinee(rhs, nextStmt)) {
-            idx--;
-            continue;
-          }
-          if (shouldRewriteBinder(b, usedLater)) {
-            if (isRebind(b, rebindAt, idx)) {
-              // For rebindings that are unused after this statement, prefer a wildcard match:
-              // `_ = expr` preserves side effects without changing the meaning of prior `b`.
-              rewritten = makeASTWithMeta(EMatch(PWildcard, rhs), s.metadata, s.pos);
-            } else {
-              rewritten = makeASTWithMeta(EMatch(PVar('_' + b), rhs), s.metadata, s.pos);
-            }
-          }
-        case EMatch(pat, rhs):
-          // Pattern match rebinding (common for while→reduce_while): underscore any binder
-          // inside the pattern that is not referenced later in the same block to avoid WAE
-          // warnings like:
-          //   "variable \"pos\" is unused (there is a variable with the same name in the context ...)".
-          var newPat = underscorePatternBinderIfUnused(pat, usedLater);
-          if (newPat != pat) {
-            rewritten = makeASTWithMeta(EMatch(newPat, rhs), s.metadata, s.pos);
-          }
-        case EBinary(Match, {def: EVar(b2)}, rhs2):
-          if (skipAliasToCaseScrutinee(rhs2, nextStmt)) {
-            idx--;
-            continue;
-          }
-          if (shouldRewriteBinder(b2, usedLater)) {
-            if (isRebind(b2, rebindAt, idx)) {
-              rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs2), s.metadata, s.pos);
-            } else {
-              rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b2)), rhs2), s.metadata, s.pos);
-            }
-          } else {
-            // also allow aligning Map.get(params, "key") → key when key used later
-            switch (rhs2.def) {
-              case ERemoteCall({def: EVar("Map")}, "get", ra) if (ra != null && ra.length == 2):
-                switch (ra[1].def) {
-                  case EString(key) if (usedLater.exists(key) && !usedLater.exists(b2)):
-                    rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar(key)), rhs2), s.metadata, s.pos);
-                  default:
-                }
-              default:
-            }
-          }
-        case EBinary(Match, leftExpr, rhs3):
-          // Destructuring match emitted as binary match (e.g. `{a, b} = Enum.reduce_while(...)`).
-          // If the binders are unused later, replace with a wildcard match to preserve side effects
-          // without triggering Elixir "unused variable" warnings.
-          var binders = getExprBinders(leftExpr);
-          if (binders.length > 0) {
-            var anyUsed = false;
-            for (b in binders) if (usedLater.exists(b)) { anyUsed = true; break; }
-            if (!anyUsed) {
-              rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs3), s.metadata, s.pos);
-            } else {
-              var newLeft = underscoreExprBindersIfUnused(leftExpr, usedLater);
-              if (newLeft != leftExpr) {
-                rewritten = makeASTWithMeta(EBinary(Match, newLeft, rhs3), s.metadata, s.pos);
-              }
-            }
-          }
-        default:
-      }
-
-      collectUsedVars(rewritten, usedLater);
-      out.unshift(rewritten);
+      usedLaterByIndex[idx] = cloneScope(usedLater);
+      collectUsedVars(stmts[idx], usedLater);
       idx--;
     }
+
+    var out:Array<ElixirAST> = [];
+    for (i in 0...stmts.length) {
+      var stmt = stmts[i];
+      var nextStmt:ElixirAST = (i + 1 < stmts.length) ? stmts[i + 1] : null;
+      var stmtUsedAfter = usedLaterByIndex[i];
+
+      // First rewrite nested blocks with knowledge of outer "used later" variables, so we do not
+      // erase bindings that are only referenced after a nested `if`/`case`/`try`.
+      var rewrittenNested = rewriteWithScope(stmt, scopeBefore[i], stmtUsedAfter);
+      out.push(rewriteStatementBinders(rewrittenNested, stmtUsedAfter, rebindAt, i, nextStmt));
+    }
     return out;
+  }
+
+  static function rewriteStatementBinders(stmt:ElixirAST, usedLater:Map<String,Bool>, rebindAt:Array<Map<String,Bool>>, idx:Int, nextStmt:ElixirAST):ElixirAST {
+    if (stmt == null || stmt.def == null) return stmt;
+    var rewritten = stmt;
+    switch (stmt.def) {
+      case EMatch(PVar(b), rhs):
+        if (skipAliasToCaseScrutinee(rhs, nextStmt)) return stmt;
+        if (shouldRewriteBinder(b, usedLater)) {
+          if (isRebind(b, rebindAt, idx)) {
+            rewritten = makeASTWithMeta(EMatch(PWildcard, rhs), stmt.metadata, stmt.pos);
+          } else {
+            rewritten = makeASTWithMeta(EMatch(PVar('_' + b), rhs), stmt.metadata, stmt.pos);
+          }
+        }
+      case EMatch(pat, rhs):
+        var newPat = underscorePatternBinderIfUnused(pat, usedLater);
+        if (newPat != pat) {
+          rewritten = makeASTWithMeta(EMatch(newPat, rhs), stmt.metadata, stmt.pos);
+        }
+      case EBinary(Match, {def: EVar(b2)}, rhs2):
+        if (skipAliasToCaseScrutinee(rhs2, nextStmt)) return stmt;
+        if (shouldRewriteBinder(b2, usedLater)) {
+          if (isRebind(b2, rebindAt, idx)) {
+            rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs2), stmt.metadata, stmt.pos);
+          } else {
+            rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar('_' + b2)), rhs2), stmt.metadata, stmt.pos);
+          }
+        } else {
+          switch (rhs2.def) {
+            case ERemoteCall({def: EVar("Map")}, "get", ra) if (ra != null && ra.length == 2):
+              switch (ra[1].def) {
+                case EString(key) if (usedLater.exists(key) && !usedLater.exists(b2)):
+                  rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar(key)), rhs2), stmt.metadata, stmt.pos);
+                default:
+              }
+            default:
+          }
+        }
+      case EBinary(Match, leftExpr, rhs3):
+        var binders = getExprBinders(leftExpr);
+        if (binders.length > 0) {
+          var anyUsed = false;
+          for (b in binders) if (usedLater.exists(b)) { anyUsed = true; break; }
+          if (!anyUsed) {
+            rewritten = makeASTWithMeta(EBinary(Match, makeAST(EVar("_")), rhs3), stmt.metadata, stmt.pos);
+          } else {
+            var newLeft = underscoreExprBindersIfUnused(leftExpr, usedLater);
+            if (newLeft != leftExpr) {
+              rewritten = makeASTWithMeta(EBinary(Match, newLeft, rhs3), stmt.metadata, stmt.pos);
+            }
+          }
+        }
+      default:
+    }
+    return rewritten;
   }
 
   static function getStatementBinders(stmt: ElixirAST): Array<String> {
@@ -395,15 +388,17 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
     }
   }
 
-  static function rewriteClauses(cs:Array<ECaseClause>, outerScope: Map<String, Bool>):Array<ECaseClause> {
+  static function rewriteClauses(cs:Array<ECaseClause>, outerScope: Map<String, Bool>, usedAfter: Map<String, Bool>):Array<ECaseClause> {
     var out:Array<ECaseClause> = [];
     for (c in cs) {
       var used = new Map<String,Bool>();
       var clauseScope = cloneScope(outerScope);
       collectPatternVarsInto(c.pattern, clauseScope);
-      var newBody = rewriteWithScope(c.body, clauseScope);
+      // Clause-bound variables can be referenced after the case expression; include outer uses.
+      if (usedAfter != null) for (k in usedAfter.keys()) used.set(k, true);
+      var newBody = rewriteWithScope(c.body, clauseScope, usedAfter);
       if (newBody != null) collectUsedVars(newBody, used);
-      var newGuard = c.guard != null ? rewriteWithScope(c.guard, clauseScope) : null;
+      var newGuard = c.guard != null ? rewriteWithScope(c.guard, clauseScope, usedAfter) : null;
       if (newGuard != null) collectUsedVars(newGuard, used);
       var pat = underscoreUnusedInPattern(c.pattern, used);
       out.push({ pattern: pat, guard: newGuard, body: newBody });

@@ -19,7 +19,7 @@ defmodule Main do
       try do
         if (acc_count < 10) do
           acc_sum = acc_sum + acc_count
-          old_count = acc_count
+          _old_count = acc_count
           acc_count = acc_count + 1
           {:cont, {acc_count, acc_sum}}
         else

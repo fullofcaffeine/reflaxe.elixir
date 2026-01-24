@@ -12,7 +12,7 @@ defmodule Main do
           if (key == "test") do
             "Found: " <> key
           else
-            old_count = acc_count
+            _old_count = acc_count
             acc_count = acc_count + 1
             {:cont, {acc_count}}
           end
@@ -67,11 +67,11 @@ defmodule Main do
     {_processed, _index} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {processed, index}, fn _, {acc_processed, acc_index} ->
       try do
         if (acc_index < length(items) and acc_processed < max_count) do
-          item = Enum.at(items, acc_index)
+          _item = Enum.at(items, acc_index)
           if (verbose), do: nil
-          old_processed = acc_processed
+          _old_processed = acc_processed
           acc_processed = acc_processed + 1
-          old_index = acc_index
+          _old_index = acc_index
           acc_index = acc_index + 1
           {:cont, {acc_processed, acc_index}}
         else

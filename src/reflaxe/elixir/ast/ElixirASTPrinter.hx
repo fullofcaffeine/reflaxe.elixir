@@ -1821,7 +1821,15 @@ class ElixirASTPrinter {
                 Std.string(value);
                 
             case EFloat(value):
-                Std.string(value);
+                // Haxe can print scientific notation without a decimal point (e.g. "1e-12").
+                // Elixir requires a decimal point before the exponent (e.g. "1.0e-12").
+                var s = Std.string(value);
+                var eIdx = s.indexOf("e");
+                if (eIdx < 0) eIdx = s.indexOf("E");
+                if (eIdx >= 0 && s.indexOf(".") < 0) {
+                    s = s.substr(0, eIdx) + ".0" + s.substr(eIdx);
+                }
+                s;
                 
             case EBoolean(value):
                 value ? 'true' : 'false';

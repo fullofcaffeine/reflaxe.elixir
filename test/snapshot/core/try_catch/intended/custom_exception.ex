@@ -1,9 +1,9 @@
 defmodule CustomException do
   defexception [:message, :previous, :native, :stack, :code]
   import Kernel, except: [to_string: 1], warn: false
-  def new(message, code_param) do
+  def new(message_param, code_param) do
     struct = %CustomException{}
-    struct = Map.merge(struct, Map.delete(Reflaxe.Exception.new(message, nil, nil), :__struct__))
+    struct = Map.merge(struct, Map.delete(Reflaxe.Exception.new(message_param, nil, nil), :__struct__))
     struct = %{struct | code: code_param}
     struct
   end

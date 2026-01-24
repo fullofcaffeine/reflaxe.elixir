@@ -34,7 +34,7 @@ defmodule Main do
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
       try do
         if (acc_i < 5) do
-          old_i = acc_i
+          _old_i = acc_i
           acc_i = acc_i + 1
           {:cont, {acc_i}}
         else
@@ -55,7 +55,7 @@ defmodule Main do
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
       try do
         if (acc_j > 0) do
-          old_j = acc_j
+          _old_j = acc_j
           acc_j = (acc_j - 1)
           {:cont, {acc_j}}
         else
@@ -78,7 +78,7 @@ defmodule Main do
       try do
         if (acc_k <= 5) do
           acc_sum = acc_sum + acc_k
-          old_k = acc_k
+          _old_k = acc_k
           acc_k = acc_k + 1
           {:cont, {acc_sum, acc_k}}
         else
@@ -101,11 +101,11 @@ defmodule Main do
       try do
         if (acc_x < 3) do
           y = 0
-          {acc_total, y} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc_total, y}, fn _, {acc_total, acc_y} ->
+          {acc_total, _y} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {acc_total, y}, fn _, {acc_total, acc_y} ->
             try do
               if (acc_y < 3) do
                 acc_total = acc_total + 1
-                old_y = acc_y
+                _old_y = acc_y
                 acc_y = acc_y + 1
                 {:cont, {acc_total, acc_y}}
               else
@@ -122,7 +122,7 @@ defmodule Main do
                 {:cont, {acc_total, acc_y}}
             end
           end)
-          old_x = acc_x
+          _old_x = acc_x
           acc_x = acc_x + 1
           {:cont, {acc_total, acc_x}}
         else

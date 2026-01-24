@@ -1,6 +1,6 @@
 defmodule PortOutput do
   def new(port_param) do
-    struct = %{:__reflaxe_class__ => PortOutput, :port => nil}
+    struct = %{:__reflaxe_class__ => PortOutput, :port => nil, :big_endian => nil}
     struct = %{struct | port: port_param}
     struct
   end

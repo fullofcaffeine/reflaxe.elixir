@@ -38,7 +38,7 @@ defmodule Main do
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {has_keys}, fn _, {acc_has_keys} ->
       try do
         if (key.has_next.()) do
-          key = key.next.()
+          _ = key.next.()
           acc_has_keys = true
           throw({:break, {acc_has_keys}})
           {:cont, {acc_has_keys}}
@@ -62,7 +62,7 @@ defmodule Main do
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {empty_has_keys}, fn _, {acc_empty_has_keys} ->
       try do
         if (key.has_next.()) do
-          key = key.next.()
+          _ = key.next.()
           acc_empty_has_keys = true
           throw({:break, {acc_empty_has_keys}})
           {:cont, {acc_empty_has_keys}}
@@ -92,7 +92,7 @@ defmodule Main do
   try do
     if (key.has_next.()) do
       key = key.next.()
-      value = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :get, [numbers, key])
+      _value = apply(Map.get(numbers, :__reflaxe_class__) || Map.get(numbers, :__struct__), :get, [numbers, key])
       nil
       {:cont, acc}
     else
@@ -119,7 +119,7 @@ end)
   try do
     if (key.has_next.()) do
       key = key.next.()
-      value = apply(Map.get(int_map, :__reflaxe_class__) || Map.get(int_map, :__struct__), :get, [int_map, key])
+      _value = apply(Map.get(int_map, :__reflaxe_class__) || Map.get(int_map, :__struct__), :get, [int_map, key])
       nil
       {:cont, acc}
     else

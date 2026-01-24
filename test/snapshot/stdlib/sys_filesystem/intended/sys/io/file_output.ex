@@ -1,6 +1,6 @@
 defmodule FileOutput do
   def new(device_param) do
-    struct = %{:__reflaxe_class__ => FileOutput, :device => nil}
+    struct = %{:__reflaxe_class__ => FileOutput, :device => nil, :big_endian => nil}
     struct = %{struct | device: device_param}
     struct
   end

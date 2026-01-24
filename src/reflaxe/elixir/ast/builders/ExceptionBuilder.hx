@@ -249,9 +249,10 @@ class ExceptionBuilder {
                 } else if (cls.name == "Map") {
                     makeAST(ECall(null, "is_map", [valueExpr]));
                 } else {
-                    // User-defined classes compile to structs; use is_struct/2 for precise matching.
+                    // User-defined classes compile to reflaxe objects (maps tagged with :__reflaxe_class__).
+                    // Some runtime exceptions are real Elixir structs (e.g. defexception), so we accept both.
                     var moduleName = ModuleBuilder.extractModuleName(cls);
-                    makeAST(ECall(null, "is_struct", [valueExpr, makeAST(EVar(moduleName))]));
+                    buildReflaxeOrStructGuard(valueExpr, moduleName);
                 }
             case TEnum(enumRef, _):
                 // Enums compile to tagged tuples like {:some, v} / {:none}.
@@ -286,6 +287,35 @@ class ExceptionBuilder {
             default:
                 false;
         };
+    }
+
+    /**
+     * Build a guard that matches either:
+     * - a real Elixir struct of the given module (is_struct/2), OR
+     * - a reflaxe class map tagged with `:__reflaxe_class__ => Module`.
+     *
+     * WHY
+     * - Reflaxe.Elixir represents most Haxe class instances as tagged maps, not Elixir structs.
+     * - Haxe `try/catch(e:MyClass)` must still work reliably under `--warnings-as-errors` and
+     *   runtime execution; `is_struct/2` alone is insufficient for tagged maps like `%{:__reflaxe_class__ => Eof}`.
+     *
+     * NOTE
+     * - We only use guard-safe operations: is_map/1, is_map_key/2, map access, and is_struct/2.
+     */
+    static function buildReflaxeOrStructGuard(valueExpr: ElixirAST, moduleName: String): ElixirAST {
+        var moduleAst = makeAST(EVar(moduleName));
+        var structGuard = makeAST(ECall(null, "is_struct", [valueExpr, moduleAst]));
+
+        var isMapGuard = makeAST(ECall(null, "is_map", [valueExpr]));
+        var keyAtom = makeAST(EAtom("__reflaxe_class__"));
+        // Elixir guard: is_map_key(map, key)
+        var hasKeyGuard = makeAST(ECall(null, "is_map_key", [valueExpr, keyAtom]));
+        // Guard-safe map access: use :erlang.map_get/2 (Access.get/2 is not allowed in guards).
+        var classAccess = makeAST(ERemoteCall(makeAST(EAtom("erlang")), "map_get", [keyAtom, valueExpr]));
+        var classEqGuard = makeAST(EBinary(Equal, classAccess, moduleAst));
+        var taggedMapGuard = makeAST(EBinary(And, isMapGuard, makeAST(EBinary(And, hasKeyGuard, classEqGuard))));
+
+        return makeAST(EBinary(Or, structGuard, taggedMapGuard));
     }
 
     // NOTE: buildTry tracks presence inline.

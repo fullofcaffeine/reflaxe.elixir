@@ -17,8 +17,8 @@ defmodule Main do
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (g.has_next.()) do
-      name = g.next.().key
-      hex = g.next.().value
+      _name = g.next.().key
+      _hex = g.next.().value
       nil
       {:cont, acc}
     else
@@ -140,14 +140,14 @@ end)
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (g.has_next.()) do
-      dept = g.next.().key
+      _dept = g.next.().key
       employees = g.next.().value
       g = apply(Map.get(employees, :__reflaxe_class__) || Map.get(employees, :__struct__), :key_value_iterator, [employees])
       _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
         try do
           if (g.has_next.()) do
-            name = g.next.().key
-            years = g.next.().value
+            _name = g.next.().key
+            _years = g.next.().value
             nil
             {:cont, acc}
           else

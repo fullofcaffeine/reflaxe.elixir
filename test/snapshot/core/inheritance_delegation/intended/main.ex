@@ -17,7 +17,7 @@ defmodule Main do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {e, _} when is_struct(e, CustomException) -> nil
+          {e, _} when is_struct(e, CustomException) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == CustomException -> nil
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
         end)

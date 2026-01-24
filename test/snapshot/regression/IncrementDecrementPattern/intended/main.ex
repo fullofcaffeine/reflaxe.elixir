@@ -9,9 +9,9 @@ defmodule Main do
     {_k, _pos} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k, pos}, fn _, {acc_k, acc_pos} ->
       try do
         if (acc_k > 0) do
-          old_pos = acc_pos
+          _old_pos = acc_pos
           acc_pos = acc_pos + 1
-          old_k = acc_k
+          _old_k = acc_k
           acc_k = (acc_k - 1)
           {:cont, {acc_k, acc_pos}}
         else
