@@ -1,6 +1,6 @@
 defmodule DisabledOutput do
   def new() do
-    %{:__reflaxe_class__ => DisabledOutput}
+    %{:__reflaxe_class__ => DisabledOutput, :big_endian => nil}
   end
   def write_byte(_, _) do
     raise Reflaxe.Elixir.HaxeThrow, [value: "sys.io.Process: stdin is not available for detached processes"]

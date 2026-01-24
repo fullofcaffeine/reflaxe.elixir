@@ -12,7 +12,7 @@ defmodule Main do
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k}, fn _, {acc_k} ->
       try do
         if (acc_k < 5) do
-          old_k = acc_k
+          _old_k = acc_k
           acc_k = acc_k + 1
           {:cont, {acc_k}}
         else

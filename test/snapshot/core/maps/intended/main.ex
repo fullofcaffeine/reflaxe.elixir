@@ -9,7 +9,7 @@ defmodule Main do
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (key.has_next.()) do
-      key = key.next.()
+      _ = key.next.()
       nil
       {:cont, acc}
     else
@@ -39,7 +39,7 @@ end)
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (key.has_next.()) do
-      key = key.next.()
+      _ = key.next.()
       nil
       {:cont, acc}
     else
@@ -117,7 +117,7 @@ end)
   try do
     if (color.has_next.()) do
       color = color.next.()
-      hex = StringTools.hex(apply(Map.get(colors, :__reflaxe_class__) || Map.get(colors, :__struct__), :get, [colors, color]), 6)
+      _hex = StringTools.hex(apply(Map.get(colors, :__reflaxe_class__) || Map.get(colors, :__struct__), :get, [colors, color]), 6)
       nil
       {:cont, acc}
     else
@@ -139,7 +139,7 @@ end)
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (n.has_next.()) do
-      n = n.next.()
+      _ = n.next.()
       nil
       {:cont, acc}
     else
@@ -179,7 +179,7 @@ end)
       _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
         try do
           if (field.has_next.()) do
-            field = field.next.()
+            _ = field.next.()
             nil
             {:cont, acc}
           else
@@ -220,7 +220,7 @@ end)
       try do
         if (key.has_next.()) do
           key = key.next.()
-          value = apply(Map.get(acc_doubled, :__reflaxe_class__) || Map.get(acc_doubled, :__struct__), :set, [acc_doubled, key, value])
+          _value = apply(Map.get(acc_doubled, :__reflaxe_class__) || Map.get(acc_doubled, :__struct__), :set, [acc_doubled, key, value])
           {:cont, {acc_doubled}}
         else
           {:halt, {acc_doubled}}
@@ -240,7 +240,7 @@ end)
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (key.has_next.()) do
-      key = key.next.()
+      _ = key.next.()
       nil
       {:cont, acc}
     else
@@ -286,7 +286,7 @@ end)
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (key.has_next.()) do
-      key = key.next.()
+      _ = key.next.()
       nil
       {:cont, acc}
     else
@@ -354,7 +354,7 @@ end)
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (key.has_next.()) do
-      key = key.next.()
+      _ = key.next.()
       nil
       {:cont, acc}
     else
@@ -381,7 +381,7 @@ end)
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (color.has_next.()) do
-      color = color.next.()
+      _ = color.next.()
       nil
       {:cont, acc}
     else
@@ -440,7 +440,7 @@ end)
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (key.has_next.()) do
-      key = key.next.()
+      _ = key.next.()
       nil
       {:cont, acc}
     else

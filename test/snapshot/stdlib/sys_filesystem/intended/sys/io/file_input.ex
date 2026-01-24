@@ -1,6 +1,6 @@
 defmodule FileInput do
   def new(device_param) do
-    struct = %{:__reflaxe_class__ => FileInput, :device => nil}
+    struct = %{:__reflaxe_class__ => FileInput, :device => nil, :big_endian => nil}
     struct = %{struct | device: device_param}
     struct
   end

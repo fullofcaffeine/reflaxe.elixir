@@ -1,6 +1,6 @@
 defmodule DisabledInput do
   def new() do
-    %{:__reflaxe_class__ => DisabledInput}
+    %{:__reflaxe_class__ => DisabledInput, :big_endian => nil}
   end
   def read_byte(_) do
     raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]

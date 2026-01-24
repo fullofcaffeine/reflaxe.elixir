@@ -5,7 +5,7 @@ defmodule SimpleTree do
     struct
   end
   def set(struct, key, value) do
-    struct = %{struct | root: insert_node(struct, struct.root, key, value)}
+    _ = %{struct | root: insert_node(struct, struct.root, key, value)}
   end
   def get(struct, key) do
     find_node(struct, struct.root, key)

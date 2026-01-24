@@ -11,39 +11,43 @@ defmodule Input do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
     end
     k = len
-    try do
-      {s, pos, k} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, pos, k}, fn _, {acc_s, acc_pos, acc_k} ->
-        try do
-          if (acc_k > 0) do
-            _ = apply(Map.get(acc_s, :__reflaxe_class__) || Map.get(acc_s, :__struct__), :set, [acc_s, acc_pos, apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])])
-            acc_pos = acc_pos + 1
-            acc_k = (acc_k - 1)
-            {:cont, {acc_s, acc_pos, acc_k}}
-          else
-            {:halt, {acc_s, acc_pos, acc_k}}
-          end
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, {acc_s, acc_pos, acc_k}}
-          :throw, :continue ->
-            {:cont, {acc_s, acc_pos, acc_k}}
-        end
-      end)
-    rescue
-      haxe_exception ->
-        (case {(case haxe_exception do
+    {_s, _pos, k} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {s, pos, k}, fn _, {acc_s, acc_pos, acc_k} ->
+      try do
+        if (acc_k > 0) do
+          try do
+            apply(Map.get(acc_s, :__reflaxe_class__) || Map.get(acc_s, :__struct__), :set, [acc_s, acc_pos, apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])])
+          rescue
+            haxe_exception ->
+              (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {haxe_catch_value, _} when is_struct(haxe_catch_value, Eof) -> nil
-          _ ->
-            reraise(haxe_exception, __STACKTRACE__)
-        end)
-    end
+                {e, _} when is_struct(e, Eof) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Eof ->
+                  if (acc_k == len) do
+                    raise Reflaxe.Elixir.HaxeThrow, [value: e]
+                  end
+                  throw({:break, {acc_s, acc_pos, acc_k}})
+                _ ->
+                  reraise(haxe_exception, __STACKTRACE__)
+              end)
+          end
+          acc_pos = acc_pos + 1
+          acc_k = (acc_k - 1)
+          {:cont, {acc_s, acc_pos, acc_k}}
+        else
+          {:halt, {acc_s, acc_pos, acc_k}}
+        end
+      catch
+        :throw, {:break, break_state} ->
+          {:halt, break_state}
+        :throw, {:continue, continue_state} ->
+          {:cont, continue_state}
+        :throw, :break ->
+          {:halt, {acc_s, acc_pos, acc_k}}
+        :throw, :continue ->
+          {:cont, {acc_s, acc_pos, acc_k}}
+      end
+    end)
     (len - k)
   end
   def close(_) do
@@ -53,50 +57,50 @@ end), haxe_exception} do
     bufsize = if (Kernel.is_nil(bufsize)), do: 16384, else: bufsize
     buf = Bytes.alloc(bufsize)
     total = BytesBuffer.new()
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+  try do
     try do
-      Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
-        try do
-          len = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_bytes, [struct, buf, 0, bufsize])
-          if (len == 0) do
-            raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
-          end
-          if (len < 0 or len > buf.length) do
-            raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
-          end
-          if (len == 0) do
-            nil
-          else
-            slice = :binary.part(apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_data, [buf]), 0, len)
-            total = %{total | parts_reversed: [slice | total.parts_reversed]}
-            total = %{total | byte_length: total.byte_length + len}
-          end
-          {:cont, acc}
-        catch
-          :throw, {:break, break_state} ->
-            {:halt, break_state}
-          :throw, {:continue, continue_state} ->
-            {:cont, continue_state}
-          :throw, :break ->
-            {:halt, acc}
-          :throw, :continue ->
-            {:cont, acc}
-        end
-      end)
+      len = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_bytes, [struct, buf, 0, bufsize])
+      if (len == 0) do
+        raise Reflaxe.Elixir.HaxeThrow, [value: {:blocked}]
+      end
+      if (len < 0 or len > buf.length) do
+        raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
+      end
+      if (len == 0) do
+        nil
+      else
+        slice = :binary.part(apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_data, [buf]), 0, len)
+        total = %{total | parts_reversed: [slice | total.parts_reversed]}
+        _ = %{total | byte_length: total.byte_length + len}
+      end
     rescue
       haxe_exception ->
         (case {(case haxe_exception do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {haxe_catch_value, _} when is_struct(haxe_catch_value, Eof) -> nil
+          {haxe_catch_value, _} when is_struct(haxe_catch_value, Eof) or is_map(haxe_catch_value) and is_map_key(haxe_catch_value, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, haxe_catch_value) == Eof -> throw({:break, acc})
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
         end)
     end
+    {:cont, acc}
+  catch
+    :throw, {:break, break_state} ->
+      {:halt, break_state}
+    :throw, {:continue, continue_state} ->
+      {:cont, continue_state}
+    :throw, :break ->
+      {:halt, acc}
+    :throw, :continue ->
+      {:cont, acc}
+  end
+end)
     _ = apply(Map.get(total, :__reflaxe_class__) || Map.get(total, :__struct__), :get_bytes, [total])
   end
   def read_full_bytes(struct, s, pos, len) do
-    {pos, len} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, len}, fn _, {acc_pos, acc_len} ->
+    {_pos, _len} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {pos, len}, fn _, {acc_pos, acc_len} ->
       try do
         if (acc_len > 0) do
           k = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_bytes, [struct, s, acc_pos, acc_len])
@@ -156,7 +160,7 @@ end), haxe_exception} do
   try do
     if ((last = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])) != end_param) do
       buf = %{buf | parts_reversed: [last | buf.parts_reversed]}
-      buf = %{buf | byte_length: buf.byte_length + 1}
+      _ = %{buf | byte_length: buf.byte_length + 1}
       {:cont, acc}
     else
       {:halt, acc}
@@ -177,17 +181,33 @@ end)
   end
   def read_line(struct) do
     buf = BytesBuffer.new()
-    s = nil
-    try do
-      _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
+    _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
-    if ((last = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])) != 10) do
+    try do
+      last = apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :read_byte, [struct])
+      if (last == 10) do
+        throw({:break, acc})
+      end
       buf = %{buf | parts_reversed: [last | buf.parts_reversed]}
-      buf = %{buf | byte_length: buf.byte_length + 1}
-      {:cont, acc}
-    else
-      {:halt, acc}
+      _ = %{buf | byte_length: buf.byte_length + 1}
+    rescue
+      haxe_exception ->
+        (case {(case haxe_exception do
+  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
+  _ -> haxe_exception
+end), haxe_exception} do
+          {e, _} when is_struct(e, Eof) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Eof ->
+            reflaxe_dispatch_receiver = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_bytes, [buf])
+            s = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+            if (String.length(s) == 0) do
+              raise Reflaxe.Elixir.HaxeThrow, [value: e]
+            end
+            s
+          _ ->
+            reraise(haxe_exception, __STACKTRACE__)
+        end)
     end
+    {:cont, acc}
   catch
     :throw, {:break, break_state} ->
       {:halt, break_state}
@@ -199,33 +219,17 @@ end)
       {:cont, acc}
   end
 end)
-      reflaxe_dispatch_receiver = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_bytes, [buf])
-      s = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
-      cond_value = (if ((String.length(s) - 1) < 0) do
-        nil
-      else
-        Enum.at(String.to_charlist(s), (String.length(s) - 1))
-      end)
-      s = if (cond_value == 13) do
-        String.slice(s, 0, -1)
-      else
-        s
-      end
-    rescue
-      haxe_exception ->
-        (case {(case haxe_exception do
-  %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
-  _ -> haxe_exception
-end), haxe_exception} do
-          {e, _} when is_struct(e, Eof) ->
-            reflaxe_dispatch_receiver = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_bytes, [buf])
-            s = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
-            if (String.length(s) == 0) do
-              raise Reflaxe.Elixir.HaxeThrow, [value: e]
-            end
-          _ ->
-            reraise(haxe_exception, __STACKTRACE__)
-        end)
+    reflaxe_dispatch_receiver = apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_bytes, [buf])
+    s = _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :to_string, [reflaxe_dispatch_receiver])
+    cond_value = (if ((String.length(s) - 1) < 0) do
+  nil
+else
+  Enum.at(String.to_charlist(s), (String.length(s) - 1))
+end) == 13
+    s = if (String.length(s) > 0 and cond_value) do
+      String.slice(s, 0, -1)
+    else
+      s
     end
     s
   end

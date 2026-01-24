@@ -26,7 +26,7 @@ end), haxe_exception} do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {e, _} when is_struct(e, Reflaxe.Exception) ->
+          {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception ->
             Reflaxe.Exception.get_message(e)
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
@@ -54,7 +54,7 @@ end), haxe_exception} do
 end), haxe_exception} do
             {e, _} when is_binary(e) -> "string:" <> e
             {e, _} when is_integer(e) -> "int:" <> Kernel.to_string(e)
-            {e, _} when is_struct(e, Reflaxe.Exception) -> "exception:" <> Reflaxe.Exception.get_message(e)
+            {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception -> "exception:" <> Reflaxe.Exception.get_message(e)
             {_e, _} -> "dynamic"
           end)
       end
@@ -143,7 +143,7 @@ end), haxe_exception} do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {e, _} when is_struct(e, CustomException) -> "" <> Reflaxe.Exception.get_message(e) <> ":" <> Kernel.to_string(e.code)
+          {e, _} when is_struct(e, CustomException) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == CustomException -> "" <> Reflaxe.Exception.get_message(e) <> ":" <> Kernel.to_string(e.code)
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
         end)
@@ -172,7 +172,7 @@ end), haxe_exception} do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {e, _} when is_struct(e, Reflaxe.Exception) ->
+          {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception ->
             Reflaxe.Exception.get_message(e)
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
@@ -192,7 +192,7 @@ end), haxe_exception} do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-            {e, _} when is_struct(e, Reflaxe.Exception) -> raise Reflaxe.Elixir.HaxeThrow, [value: e]
+            {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception -> raise Reflaxe.Elixir.HaxeThrow, [value: e]
             _ ->
               reraise(haxe_exception, __STACKTRACE__)
           end)
@@ -204,7 +204,7 @@ end), haxe_exception} do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {e, _} when is_struct(e, Reflaxe.Exception) ->
+          {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception ->
             Reflaxe.Exception.get_message(e)
           _ ->
             reraise(haxe_exception, __STACKTRACE__)
@@ -227,7 +227,7 @@ end), haxe_exception} do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-          {e, _} when is_struct(e, Reflaxe.Exception) ->
+          {e, _} when is_struct(e, Reflaxe.Exception) or is_map(e) and is_map_key(e, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, e) == Reflaxe.Exception ->
             Reflaxe.Exception.get_message(e)
           _ ->
             reraise(haxe_exception, __STACKTRACE__)

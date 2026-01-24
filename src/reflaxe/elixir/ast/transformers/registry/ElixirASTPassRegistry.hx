@@ -483,14 +483,19 @@ class ElixirASTPassRegistry {
         // (DiscriminantRewrite already ran before alias cleanup)
 
         // Thread outer-scope variable updates through reduce_while accumulators.
-        // This must run before ReduceWhileAccumulator, which assumes the accumulator already
-        // carries any variables that need to survive outside the reducer closure.
+        //
+        // NOTE (ordering)
+        // - This pass must run AFTER StructUpdateTransform, because StructUpdateTransform can
+        //   materialize reducer-body assignments (e.g. `buf = %{buf | ...}`) from earlier shapes.
+        // - It must run BEFORE ReduceWhileAccumulator/ReduceWhileResultBinding so those passes see
+        //   the expanded accumulator tuple and keep subsequent threading consistent.
         passes.push({
             name: "ReduceWhileOuterAssignToAccumulator",
             description: "Rewrite reduce_while loops that assign outer vars into accumulator threading",
             enabled: #if fast_boot false #else true #end,
             pass: reflaxe.elixir.ast.transformers.ReduceWhileOuterAssignToAccumulatorTransforms.pass,
-            runAfter: ["AssignmentExtraction"]
+            runAfter: ["AssignmentExtraction", "StructUpdateTransform"],
+            runBefore: ["ReduceWhileAccumulator"]
         });
         
         // Reduce while accumulator transformation (must run after assignment extraction)
@@ -498,7 +503,8 @@ class ElixirASTPassRegistry {
             name: "ReduceWhileAccumulator",
             description: "Fix variable shadowing in reduce_while loops by proper accumulator threading",
             enabled: #if fast_boot false #else true #end,
-            pass: reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.reduceWhileAccumulatorPass
+            pass: reflaxe.elixir.ast.transformers.ReduceWhileAccumulatorTransform.reduceWhileAccumulatorPass,
+            runAfter: ["ReduceWhileOuterAssignToAccumulator"]
         });
 
         // Ensure reduce_while results are bound back to local accumulator variables
@@ -506,7 +512,8 @@ class ElixirASTPassRegistry {
             name: "ReduceWhileResultBinding",
             description: "Bind Enum.reduce_while result to original accumulator locals",
             enabled: #if fast_boot false #else true #end,
-            pass: reflaxe.elixir.ast.transformers.ReduceWhileResultBindingTransforms.bindReduceWhileResultPass
+            pass: reflaxe.elixir.ast.transformers.ReduceWhileResultBindingTransforms.bindReduceWhileResultPass,
+            runAfter: ["ReduceWhileAccumulator"]
         });
         // Early chain assign normalization group (order preserved)
         passes = passes.concat(reflaxe.elixir.ast.transformers.registry.groups.AssignChainEarly.build());

@@ -39,7 +39,7 @@ defmodule Phoenix.Channels.WirePayload do
   %Reflaxe.Elixir.HaxeThrow{value: haxe_unwrapped_value} -> haxe_unwrapped_value
   _ -> haxe_exception
 end), haxe_exception} do
-              {haxe_catch_value, _} when is_struct(haxe_catch_value, Reflaxe.Exception) -> nil
+              {haxe_catch_value, _} when is_struct(haxe_catch_value, Reflaxe.Exception) or is_map(haxe_catch_value) and is_map_key(haxe_catch_value, :__reflaxe_class__) and :erlang.map_get(:__reflaxe_class__, haxe_catch_value) == Reflaxe.Exception -> nil
               _ ->
                 reraise(haxe_exception, __STACKTRACE__)
             end)

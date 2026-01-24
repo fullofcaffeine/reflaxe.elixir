@@ -1,6 +1,6 @@
 defmodule PortInput do
   def new(port_param) do
-    struct = %{:__reflaxe_class__ => PortInput, :port => nil, :buffer => nil, :buffer_offset => nil, :ended => nil}
+    struct = %{:__reflaxe_class__ => PortInput, :port => nil, :buffer => nil, :buffer_offset => nil, :ended => nil, :big_endian => nil}
     struct = %{struct | ended: false}
     struct = %{struct | buffer_offset: 0}
     struct = %{struct | buffer: nil}

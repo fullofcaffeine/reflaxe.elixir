@@ -36,7 +36,7 @@ end))
     t + 1
   end
   defp unused_param(_) do
-    1
+    
   end
   defp for_loop_test(arr) do
     sum = 0

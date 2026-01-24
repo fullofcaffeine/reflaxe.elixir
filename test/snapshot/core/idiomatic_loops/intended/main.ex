@@ -16,8 +16,8 @@ defmodule Main do
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (g.has_next.()) do
-      name = g.next.().key
-      score = g.next.().value
+      _name = g.next.().key
+      _score = g.next.().value
       nil
       {:cont, acc}
     else
@@ -40,7 +40,7 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {i}, fn _, {acc_i} ->
       try do
         if (acc_i < 5) do
-          old_i = acc_i
+          _old_i = acc_i
           acc_i = acc_i + 1
           {:cont, {acc_i}}
         else
@@ -63,7 +63,7 @@ end)
         if (acc_j >= 3) do
           throw({:break, {acc_j}})
         end
-        old_j = acc_j
+        _old_j = acc_j
         acc_j = acc_j + 1
         {:cont, {acc_j}}
       catch
@@ -81,7 +81,7 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {k}, fn _, {acc_k} ->
       try do
         if (acc_k < 10) do
-          old_k = acc_k
+          _old_k = acc_k
           acc_k = acc_k + 1
           if (rem(acc_k, 2) != 0) do
             throw({:continue, {acc_k}})
@@ -106,7 +106,7 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {m}, fn _, {acc_m} ->
       try do
         if (acc_m < 3) do
-          old_m = acc_m
+          _old_m = acc_m
           acc_m = acc_m + 1
           {:cont, {acc_m}}
         else
@@ -150,7 +150,7 @@ end)
           Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {inner}, fn _, {acc_inner} ->
             try do
               if (acc_inner < 2) do
-                old_inner = acc_inner
+                _old_inner = acc_inner
                 acc_inner = acc_inner + 1
                 {:cont, {acc_inner}}
               else
@@ -167,7 +167,7 @@ end)
                 {:cont, {acc_inner}}
             end
           end)
-          old_outer = acc_outer
+          _old_outer = acc_outer
           acc_outer = acc_outer + 1
           {:cont, {acc_outer}}
         else
@@ -188,7 +188,7 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
       try do
         if (acc_j < 2) do
-          old_j = acc_j
+          _old_j = acc_j
           acc_j = acc_j + 1
           {:cont, {acc_j}}
         else
@@ -209,7 +209,7 @@ end)
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {j}, fn _, {acc_j} ->
       try do
         if (acc_j < 2) do
-          old_j = acc_j
+          _old_j = acc_j
           acc_j = acc_j + 1
           {:cont, {acc_j}}
         else

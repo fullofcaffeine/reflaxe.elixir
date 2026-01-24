@@ -343,6 +343,8 @@ jobs:
         run: npx lix download
       - name: Run quick snapshot suite
         run: npm run test:quick
+      - name: Runtime smoke (stdlib IO)
+        run: bash scripts/ci/runtime-smoke-stdlib-io.sh
       - name: Run Mix tests (fast)
         run: npm run test:mix-fast
 

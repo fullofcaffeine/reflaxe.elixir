@@ -241,7 +241,7 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 				extractEnumReduceWhileCall(rhs);
 			case EBinary(Match, left, rhs):
 				switch (unwrapParen(left).def) {
-					case EVar("_"):
+					case EVar("_") | EUnderscore:
 						extractEnumReduceWhileCall(rhs);
 					default:
 						null;

@@ -1,36 +1,74 @@
 defmodule BytesOutput do
   def new() do
-    struct = %{:__reflaxe_class__ => BytesOutput, :buffer => nil, :length => nil}
-    struct = %{struct | buffer: BytesBuffer.new()}
+    struct = %{:__reflaxe_class__ => BytesOutput, :ref_id => nil, :dict_key => nil, :length => nil, :big_endian => nil}
+    struct = %{struct | ref_id: :erlang.unique_integer([:positive])}
+    struct = %{struct | dict_key: {:reflaxe_bytes_output, struct.ref_id}}
+    state = %{:parts_reversed => [], :byte_length => 0}
+    Process.put(struct.dict_key, state)
     struct
   end
   def get_length(struct) do
-    struct.buffer.byte_length
+    state = Process.get(struct.dict_key)
+state = if (Kernel.is_nil(state)) do
+  state = %{:parts_reversed => [], :byte_length => 0}
+  Process.put(struct.dict_key, state)
+  state
+else
+  state
+end
+state.byte_length
   end
   def write_byte(struct, c) do
-    this = struct.buffer
-    _parts_reversed = [c | _this.parts_reversed]
-    byte_length = this.byte_length + 1
-    byte_length
+    state = Process.get(struct.dict_key)
+    state = if (Kernel.is_nil(state)) do
+      state = %{:parts_reversed => [], :byte_length => 0}
+      Process.put(struct.dict_key, state)
+      state
+    else
+      state
+    end
+    state = state |> Map.put(:parts_reversed, [c | state.parts_reversed]) |> Map.put(:byte_length, state.byte_length + 1)
+    Process.put(struct.dict_key, state)
   end
   def write_bytes(struct, buf, pos, len) do
-    this = struct.buffer
     if (pos < 0 or len < 0 or pos + len > buf.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
     end
     if (len == 0) do
-      nil
+      0
     else
       slice = :binary.part(apply(Map.get(buf, :__reflaxe_class__) || Map.get(buf, :__struct__), :get_data, [buf]), pos, len)
-      _parts_reversed = [slice | _this.parts_reversed]
-      _byte_length = this.byte_length + len
+      state = Process.get(struct.dict_key)
+      state = if (Kernel.is_nil(state)) do
+        state = %{:parts_reversed => [], :byte_length => 0}
+        Process.put(struct.dict_key, state)
+        state
+      else
+        state
+      end
+      state = state |> Map.put(:parts_reversed, [slice | state.parts_reversed]) |> Map.put(:byte_length, state.byte_length + len)
+      Process.put(struct.dict_key, state)
+      len
     end
-    len
+  end
+  def write_input(struct, i, bufsize) do
+    bytes = apply(Map.get(i, :__reflaxe_class__) || Map.get(i, :__struct__), :read_all, [i, bufsize])
+    if (bytes.length > 0) do
+      apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :write_bytes, [struct, bytes, 0, bytes.length])
+    end
   end
   def get_bytes(struct) do
-    current = struct.buffer
-    _ = %{struct | buffer: nil}
-    _ = apply(Map.get(current, :__reflaxe_class__) || Map.get(current, :__struct__), :get_bytes, [current])
+    state = Process.get(struct.dict_key)
+    state = if (Kernel.is_nil(state)) do
+      state = %{:parts_reversed => [], :byte_length => 0}
+      Process.put(struct.dict_key, state)
+      state
+    else
+      state
+    end
+    Process.delete(struct.dict_key)
+    binary = :erlang.iolist_to_binary(:lists.reverse(state.parts_reversed))
+    _ = Bytes.of_data(binary)
   end
   def set_big_endian(struct, b) do
     Output.set_big_endian(struct, b)
@@ -73,9 +111,6 @@ defmodule BytesOutput do
   end
   def prepare(struct, nbytes) do
     Output.prepare(struct, nbytes)
-  end
-  def write_input(struct, i, bufsize) do
-    Output.write_input(struct, i, bufsize)
   end
   def write_string(struct, s, encoding) do
     Output.write_string(struct, s, encoding)

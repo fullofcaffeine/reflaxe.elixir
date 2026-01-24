@@ -6,8 +6,8 @@ defmodule Main do
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
     if (g.has_next.()) do
-      name = g.next.().key
-      hex = g.next.().value
+      _name = g.next.().key
+      _hex = g.next.().value
       nil
       {:cont, acc}
     else
