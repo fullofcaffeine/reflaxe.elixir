@@ -1,6 +1,6 @@
 defmodule Main do
   def main() do
-    test = %PropertySetterTest{}
+    test = PropertySetterTest.new()
     _ = PropertySetterTest.set_value(test, 42)
     _ = PropertySetterTest.set_name(test, "Test")
     if (test.value == 42 and test.name == "Test"), do: nil

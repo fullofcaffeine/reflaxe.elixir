@@ -302,7 +302,7 @@ class ElixirASTPassRegistry {
         passes.push({
             name: "ModuleNewToStructLiteral",
             description: "Rewrite Module.new() → %<App>.Module{} using module context to derive <App>",
-            enabled: true,
+            enabled: false,
             pass: reflaxe.elixir.ast.transformers.ModuleNewToStructLiteral.moduleNewToStructLiteralPass
         });
         // Ensure struct module segments are in alias case (UpperCamel) to satisfy Elixir struct naming rules

@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "AAYC,AAAA;AASI,EAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAQA,EAAA;AACI,IAAA,AAAO,aAAM;AAAA;AAQjB,EAAA;AACI,IAAA,AAAO;AAAA;AAAA;AAAA",
+  "version": 3,
+  "file": "int_iterator.ex",
+  "sources": [
+  "std/IntIterator.cross.hx"
+]
+}

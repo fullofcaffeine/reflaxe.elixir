@@ -1193,27 +1193,6 @@ class ElixirASTPrinter {
                         return parts.join(', ');
                     })();
                     if (target != null) {
-                        // Fallback: Module.new() -> %<App>.Module{}
-                        if (funcName == "new" && args.length == 0) {
-                            inline function appPrefix(): Null<String> {
-                                if (currentModuleName == null) return null;
-                                var idx = currentModuleName.indexOf("Web");
-                                return idx > 0 ? currentModuleName.substring(0, idx) : null;
-                            }
-                            switch (target.def) {
-                                case EVar(n):
-                                    var modStr = (function(){
-                                        if (n.indexOf('.') == -1) {
-                                            var p = appPrefix();
-                                            return (p != null ? p + '.' + n : n);
-                                        } else {
-                                            return n;
-                                        }
-                                    })();
-                                    return '%'+modStr+'{}';
-                                default:
-                            }
-                        }
                         // Check if this is a function variable call (marked with empty funcName)
                         if (funcName == "") {
                             // Function variable call - ensure target is parenthesized when needed, then use .() syntax
@@ -2900,12 +2879,6 @@ class ElixirASTPrinter {
         
         // Check what kind of expression this is
         switch(arg.def) {
-            case ERemoteCall(module, funcName, args) if (funcName == "new" && args.length == 0):
-                var moduleStr = printQualifiedModule(module);
-                return '%'+moduleStr+'{}';
-            case ECall(module, funcName, args) if (module != null && funcName == "new" && args.length == 0):
-                var moduleStr = printQualifiedModule(module);
-                return '%'+moduleStr+'{}';
             case EIf(condition, thenBranch, elseBranch):
                 // An if expression needs parentheses when used as a function argument
                 // if it will be printed inline (single line)

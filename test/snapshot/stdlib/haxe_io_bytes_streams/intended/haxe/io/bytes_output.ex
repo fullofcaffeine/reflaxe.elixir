@@ -1,7 +1,7 @@
 defmodule BytesOutput do
   def new() do
     struct = %{:buffer => nil, :length => nil}
-    struct = %{struct | buffer: %BytesBuffer{}}
+    struct = %{struct | buffer: BytesBuffer.new()}
     struct
   end
   def write_byte(struct, c) do

@@ -17,7 +17,9 @@
   "haxe/io/bytes_input.ex",
   "haxe/io/bytes_buffer.ex",
   "haxe/io/bytes.ex",
-  "haxe/io/buffer_input.ex"
+  "haxe/io/buffer_input.ex",
+  "haxe/exceptions/pos_exception.ex",
+  "haxe/exceptions/not_implemented_exception.ex"
 ],
   "id": 0,
   "wasCached": false,

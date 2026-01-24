@@ -14,7 +14,7 @@ defmodule Container do
     length(struct.items)
   end
   def map(struct, fn_param) do
-    result = %Container{}
+    result = Container.new()
     _g = 0
     g_value = struct.items
     result = Enum.reduce(g_value, result, fn item, result_acc ->

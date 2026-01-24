@@ -2,7 +2,7 @@ defmodule JsonPrinter do
   import Kernel, except: [to_string: 1], warn: false
   def new() do
     struct = %{:buffer => nil}
-    struct = %{struct | buffer: %StringBuf{}}
+    struct = %{struct | buffer: StringBuf.new()}
     struct
   end
   def write_array(struct, arr) do

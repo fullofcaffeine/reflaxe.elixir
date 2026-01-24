@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 44,
+      "count": 45,
       "modules": [
         "Array",
         "Date",
@@ -46,7 +46,8 @@
         "sys.io.File",
         "sys.io.FileInput",
         "sys.io.FileOutput",
-        "sys.io.FileSeek"
+        "sys.io.FileSeek",
+        "sys.io.Process"
       ]
     },
     "local_only": {
@@ -64,7 +65,7 @@
       ]
     },
     "reference_only": {
-      "count": 160,
+      "count": 159,
       "modules": [
         "Any",
         "Class",
@@ -203,7 +204,6 @@
         "sys.db.Mysql",
         "sys.db.ResultSet",
         "sys.db.Sqlite",
-        "sys.io.Process",
         "sys.net.Address",
         "sys.net.Host",
         "sys.net.Socket",
@@ -233,7 +233,7 @@
     "counts_by_prefix": {
       "<top-level>": 16,
       "haxe": 31,
-      "sys": 6
+      "sys": 7
     },
     "nonstdlib_modules_under_std_dir": [
       "ArrayTools",
@@ -260,8 +260,8 @@
       "/Users/fullofcaffeine/workspace/code/haxe.elixir.codex/std",
       "/Users/fullofcaffeine/workspace/code/haxe.elixir.codex/std/_std"
     ],
-    "total_candidates": 58,
-    "total_std_modules": 53
+    "total_candidates": 59,
+    "total_std_modules": 54
   },
   "reference": {
     "counts_by_prefix": {

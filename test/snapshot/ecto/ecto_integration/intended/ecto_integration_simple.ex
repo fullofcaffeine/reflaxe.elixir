@@ -8,7 +8,7 @@ defmodule EctoIntegrationSimple do
     _active_users = UserQueries.active_users()
     _users = MyApp.Repo.all(user)
     _account_users = Accounts.list_users()
-    _live_view = %UserLive{}
+    _live_view = UserLive.new()
     org = %Organization{}
     _ = %{org | name: "Test Org"}
     post = %Post{}

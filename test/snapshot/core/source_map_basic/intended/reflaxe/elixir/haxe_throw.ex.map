@@ -1,0 +1,10 @@
+{
+  "sourceRoot": "",
+  "names": [],
+  "mappings": "AA+CC,AAAA;AAAA;AAGI,EAAA;AAAA;AAAA;AAAA;AAAA;AAWA,EAAA;AACI,IAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA;AAAA",
+  "version": 3,
+  "file": "haxe_throw.ex",
+  "sources": [
+  "std/reflaxe/elixir/runtime/HaxeThrow.hx"
+]
+}
