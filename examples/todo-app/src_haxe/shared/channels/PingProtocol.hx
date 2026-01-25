@@ -3,7 +3,10 @@ package shared.channels;
 import phoenix.channels.ChannelProtocol;
 import phoenix.channels.EncodedEvent;
 import phoenix.channels.Payload;
-import phoenix.channels.WirePayload;
+import phoenix.channels.WireCodec;
+import phoenix.channels.WireCodecs;
+import phoenix.channels.WireField;
+import phoenix.channels.WireFields;
 
 typedef PingPayload = {
     var requestId: String;
@@ -23,14 +26,19 @@ class PingProtocol {
     public static inline var EventPing: String = "ping";
     public static inline var EventPong: String = "pong";
 
-    static function encodePingPayload(payload: PingPayload): Payload {
-        var out = WirePayload.empty();
-        return WirePayload.putString(out, WireKeyRequestId, payload.requestId);
+    static final requestIdField: WireField<String> = WireFields.string(WireKeyRequestId);
+    static final pingPayloadCodec: WireCodec<PingPayload> = WireCodecs.object1(
+        requestIdField,
+        function(requestId: String): PingPayload return {requestId: requestId},
+        function(payload: PingPayload): String return payload.requestId
+    );
+
+    static inline function encodePingPayload(payload: PingPayload): Payload {
+        return pingPayloadCodec.encode(payload);
     }
 
-    static function decodePingPayload(payload: Payload): Null<PingPayload> {
-        var requestId = WirePayload.getString(payload, WireKeyRequestId);
-        return requestId != null ? {requestId: requestId} : null;
+    static inline function decodePingPayload(payload: Payload): Null<PingPayload> {
+        return pingPayloadCodec.decode(payload);
     }
 
     static function encodeClientSend(event: PingClientEvent): EncodedEvent {

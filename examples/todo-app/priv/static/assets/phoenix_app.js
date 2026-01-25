@@ -6917,35 +6917,13 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
   PingServerEvent.__constructs__ = [PingServerEvent.Pong];
   PingServerEvent.__empty_constructs__ = [];
   var PingProtocol = Register.global("$hxClasses")["shared.channels.PingProtocol"] = class PingProtocol2 {
-    static encodePingPayload(payload) {
-      let out = {};
-      if (out == null) {
-        return out;
-      } else {
-        out["request_id"] = payload.requestId;
-        return out;
-      }
-      ;
-    }
-    static decodePingPayload(payload) {
-      let requestId = payload == null ? null : ((p, k) => {
-        var v = p[k];
-        return typeof v === "string" ? v : null;
-      })(payload, "request_id");
-      if (requestId != null) {
-        return { "requestId": requestId };
-      } else {
-        return null;
-      }
-      ;
-    }
     static encodeClientSend(event) {
       let payload = event.payload;
-      return { "event": "ping", "payload": PingProtocol2.encodePingPayload(payload) };
+      return { "event": "ping", "payload": PingProtocol2.pingPayloadCodec.encode(payload) };
     }
     static decodeClientRecv(eventName, payload) {
       if (eventName == "pong") {
-        let decoded = PingProtocol2.decodePingPayload(payload);
+        let decoded = PingProtocol2.pingPayloadCodec.decode(payload);
         if (decoded != null) {
           return PingServerEvent.Pong(decoded);
         } else {
@@ -6967,6 +6945,51 @@ removing illegal node: "${(childNode.outerHTML || childNode.nodeValue).trim()}"
       return PingProtocol2;
     }
   };
+  PingProtocol.requestIdField = { "key": "request_id", "put": function(payload, value) {
+    if (payload == null) {
+      return payload;
+    } else {
+      payload["request_id"] = value;
+      return payload;
+    }
+    ;
+  }, "get": function(payload) {
+    if (payload == null) {
+      return null;
+    } else {
+      return ((p, k) => {
+        var v = p[k];
+        return typeof v === "string" ? v : null;
+      })(payload, "request_id");
+    }
+    ;
+  } };
+  PingProtocol.pingPayloadCodec = function($this) {
+    var $r0;
+    let fieldA = PingProtocol.requestIdField;
+    let from = function(requestId) {
+      return { "requestId": requestId };
+    };
+    let getA = function(payload) {
+      return payload.requestId;
+    };
+    $r0 = { "encode": function(value) {
+      let payload = {};
+      let fieldA1 = fieldA;
+      let payload1 = getA(value);
+      payload = fieldA1.put(payload, payload1);
+      return payload;
+    }, "decode": function(payload) {
+      let a = fieldA.get(payload);
+      if (a != null) {
+        return from(a);
+      } else {
+        return null;
+      }
+      ;
+    } };
+    return $r0;
+  }(void 0);
 
   // js/phoenix/channels/TypedChannelClient.js
   var $global9 = Register.$global;
