@@ -289,6 +289,16 @@ class PresenceMacro {
 		var classTopic: Null<String> = null;
 		if (localClass != null) {
 			var classType = localClass.get();
+
+            // Presence modules must exist at runtime (they are started under supervision trees).
+            // These classes are often "empty" in Haxe and most generated helpers are `extern inline`,
+            // so Haxe DCE may prune the class entirely. Mark as `@:keep` so the Elixir backend
+            // always emits the `defmodule` for the presence module.
+            //
+            // This is a semantic requirement (not a test-only gate): Phoenix expects the module
+            // referenced in `children` to exist (it provides child_spec via `use Phoenix.Presence`).
+            classType.meta.add(":keep", [], Context.currentPos());
+
 			if (classType.meta.has(":presenceTopic")) {
 				var topicMeta = classType.meta.extract(":presenceTopic");
 				if (topicMeta.length > 0 && topicMeta[0].params != null && topicMeta[0].params.length > 0) {

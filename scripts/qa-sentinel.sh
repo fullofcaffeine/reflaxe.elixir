@@ -64,6 +64,7 @@ set +m
 #      scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4011 --playwright --e2e-spec "e2e/<spec>.ts" --deadline 600
 #   --playwright     After readiness, run Playwright tests (examples/todo-app/e2e/*.spec.ts by default)
 #   --e2e-spec GLOB  Playwright spec or glob (relative to --app); default: e2e/*.spec.ts
+#   --no-wae         Disable `mix compile --warnings-as-errors` (useful for upgrade/dogfood baselines)
 #
 # ENV (timeouts/probes)
 #   BUILD_TIMEOUT      Haxe build timeout (default: 300s)
@@ -115,6 +116,8 @@ QUIET=0
 # Non-blocking options
 ASYNC=0
 DEADLINE=""
+# Warnings-as-errors (WAE) for `mix compile`
+WAE=1
 # Optional E2E
 RUN_PLAYWRIGHT=0
 E2E_WORKERS=1
@@ -145,6 +148,7 @@ while [[ $# -gt 0 ]]; do
     --keep-alive) KEEP_ALIVE=1; shift 1 ;;
     --verbose|-v) VERBOSE=1; shift 1 ;;
     --async) ASYNC=1; shift 1 ;;
+    --no-wae) WAE=0; shift 1 ;;
     --playwright) RUN_PLAYWRIGHT=1; shift 1 ;;
     --e2e-spec) E2E_SPEC="$2"; shift 2 ;;
     --e2e-workers) E2E_WORKERS="$2"; shift 2 ;;
@@ -348,6 +352,7 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   if [[ "$VERBOSE" -eq 1 ]]; then CHILD_FLAGS+=("--verbose"); fi
   if [[ "$QUIET" -eq 1 ]]; then CHILD_FLAGS+=("--quiet"); fi
   if [[ "$NO_HEARTBEAT" -eq 1 ]]; then CHILD_FLAGS+=("--no-heartbeat"); fi
+  if [[ "$WAE" -eq 0 ]]; then CHILD_FLAGS+=("--no-wae"); fi
   if [[ "$COMPILE_MIGRATIONS" -eq 1 ]]; then CHILD_FLAGS+=("--compile-migrations" "--migrations-hxml" "$MIGRATIONS_HXML"); fi
   if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
     CHILD_FLAGS+=("--playwright" "--e2e-spec" "$E2E_SPEC" "--e2e-workers" "$E2E_WORKERS")
@@ -422,7 +427,7 @@ log "[QA]  6) GET /, scan logs, teardown (unless --keep-alive)"
 if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
   log "[QA]  7) Run Playwright E2E (spec: ${E2E_SPEC:-e2e}, workers: ${E2E_WORKERS})"
 fi
-log "[QA] Config: PORT=$PORT ENV=$ENV_NAME KEEP_ALIVE=$KEEP_ALIVE VERBOSE=$VERBOSE"
+log "[QA] Config: PORT=$PORT ENV=$ENV_NAME KEEP_ALIVE=$KEEP_ALIVE VERBOSE=$VERBOSE WAE=$WAE"
 
 # Optional overall deadline for synchronous mode too
 if [[ -n "${DEADLINE}" && "${ASYNC}" -eq 0 ]]; then
@@ -613,11 +618,20 @@ fi
 run_step_with_log "Step 2.cleanup: prune unused Elixir helper outputs" 30s /tmp/qa-haxe-prune2.log "bash -lc 'rm -rf lib/elixir/types'" || exit 1
 
 # Compile first so DB tasks do not incur compile cost repeatedly.
-# Gate on Elixir warnings via --warnings-as-errors (WAE) for public-release hygiene.
 # Compile application only (skip deps recompile inside per-run root to avoid rebar include_lib issues).
-if ! run_step_with_log "Step 3: mix compile (WAE, no deps)" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile --warnings-as-errors --no-deps-check"; then
-  # As a bounded fallback, attempt normal compile once more (still WAE).
-  run_step_with_log "Step 3 (retry): mix compile (WAE)" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile --warnings-as-errors" || exit 1
+if [[ "$WAE" -eq 1 ]]; then
+  # Gate on Elixir warnings via --warnings-as-errors (WAE) for public-release hygiene.
+  if ! run_step_with_log "Step 3: mix compile (WAE, no deps)" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile --warnings-as-errors --no-deps-check"; then
+    # As a bounded fallback, attempt normal compile once more (still WAE).
+    run_step_with_log "Step 3 (retry): mix compile (WAE)" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile --warnings-as-errors" || exit 1
+  fi
+else
+  # Some upgrade/dogfood checks compile older dependency tags under newer toolchains.
+  # In that scenario, warnings may be expected; require compilation success but don't
+  # escalate warnings to errors.
+  if ! run_step_with_log "Step 3: mix compile (no WAE, no deps)" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile --no-deps-check"; then
+    run_step_with_log "Step 3 (retry): mix compile (no WAE)" "$COMPILE_TIMEOUT" /tmp/qa-mix-compile.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix compile" || exit 1
+  fi
 fi
 
 if [[ "$ENV_NAME" != "dev" && "$COMPILE_MIGRATIONS" -eq 1 ]]; then
@@ -777,7 +791,11 @@ else
   fi
 fi
 
-log "[QA] OK: build + runtime smoke passed (app compiled with --warnings-as-errors)"
+if [[ "$WAE" -eq 1 ]]; then
+  log "[QA] OK: build + runtime smoke passed (app compiled with --warnings-as-errors)"
+else
+  log "[QA] OK: build + runtime smoke passed (app compiled without --warnings-as-errors)"
+fi
 
 # Optional: run Playwright tests after readiness
 if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
