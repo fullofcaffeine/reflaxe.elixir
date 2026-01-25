@@ -2,7 +2,12 @@
 
 Generated: 2026-01-24
 
-This report compares this repo’s Elixir-target stdlib overrides (`std/` and `std/_std/`) against the reference repository.
+This report compares this repo’s Elixir-target stdlib overrides against the reference repository.
+
+Local roots considered:
+- `/REDACTED_LOCAL_PATH`
+- `/REDACTED_LOCAL_PATH`
+- `/REDACTED_LOCAL_PATH`
 
 To regenerate:
 

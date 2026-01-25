@@ -258,6 +258,7 @@
     },
     "stdlib_roots_considered": [
       "/REDACTED_LOCAL_PATH",
+      "/REDACTED_LOCAL_PATH",
       "/REDACTED_LOCAL_PATH"
     ],
     "total_candidates": 60,

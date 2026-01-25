@@ -125,18 +125,46 @@ def collect_std_modules(std_root: Path, allow_cross: bool) -> set[str]:
 
   return modules
 
+def collect_prefixed_modules(prefix: str, root: Path, allow_cross: bool) -> set[str]:
+  """
+  Collect modules from a subtree that is *not* laid out like std/ itself.
+
+  Example:
+    root_dir/src/haxe/Exception.cross.hx should be reported as `haxe.Exception`.
+
+  This is needed because consumer installs always have the library `src/` classpath
+  immediately, while `std/` is injected later via bootstrap macros.
+  """
+  modules: set[str] = set()
+  if not root.exists():
+    return modules
+
+  suffixes = [".hx"] + ([".cross.hx"] if allow_cross else [])
+  for file in root.rglob("*"):
+    if not file.is_file():
+      continue
+    if not any(str(file).endswith(suf) for suf in suffixes):
+      continue
+    rel = file.relative_to(root)
+    modules.add(prefix + "." + module_id_from_relpath(rel))
+  return modules
+
 reference_std = resolve_reference_std(reference_input)
 
 reference_modules = collect_std_modules(reference_std, allow_cross=False)
 
 local_std_root = root_dir / "std"
 local_std_shadow_root = root_dir / "std" / "_std"
+local_src_haxe_root = root_dir / "src" / "haxe"
+local_src_sys_root = root_dir / "src" / "sys"
 
 local_candidates = set()
 if local_std_root.exists():
   local_candidates |= collect_std_modules(local_std_root, allow_cross=True)
 if local_std_shadow_root.exists():
   local_candidates |= collect_std_modules(local_std_shadow_root, allow_cross=False)
+local_candidates |= collect_prefixed_modules("haxe", local_src_haxe_root, allow_cross=True)
+local_candidates |= collect_prefixed_modules("sys", local_src_sys_root, allow_cross=True)
 
 # Focus “coverage” on modules that are actually part of the reference stdlib, plus
 # any haxe.* / sys.* modules we ship (useful for parity planning).
@@ -184,7 +212,11 @@ report = {
     "counts_by_prefix": group_by_prefix(list(reference_modules)),
   },
   "local": {
-    "stdlib_roots_considered": [str(p) for p in [local_std_root, local_std_shadow_root] if p.exists()],
+    "stdlib_roots_considered": [
+      str(p)
+      for p in [local_std_root, local_std_shadow_root, local_src_haxe_root, local_src_sys_root]
+      if p.exists()
+    ],
     "total_candidates": len(local_candidates),
     "total_std_modules": len(local_std_modules),
     "counts_by_prefix": group_by_prefix(list(local_std_modules)),
@@ -208,7 +240,11 @@ elif markdown_mode:
   print("")
   print(f"Generated: {datetime.date.today().isoformat()}")
   print("")
-  print("This report compares this repo’s Elixir-target stdlib overrides (`std/` and `std/_std/`) against the reference repository.")
+  print("This report compares this repo’s Elixir-target stdlib overrides against the reference repository.")
+  print("")
+  print("Local roots considered:")
+  for root in report["local"]["stdlib_roots_considered"]:
+    print(f"- `{root}`")
   print("")
   print("To regenerate:")
   print("")
