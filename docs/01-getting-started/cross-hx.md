@@ -60,6 +60,25 @@ This project implements target‑conditional gating in the compiler bootstrap ma
   `CompilerInit.Start()`).
 - For other contexts (macro‑only tools, non-Elixir targets), those paths are not added.
 
+### What is `-D elixir_output`?
+
+On **Haxe 4**, Reflaxe targets compile under the `cross` platform, so `#if cross` is not specific enough
+to mean “Elixir”. Reflaxe.Elixir therefore uses the presence of the `elixir_output` define as the stable
+signal that the Elixir backend is active.
+
+In practice, builds pass it as:
+
+```bash
+-D elixir_output=<output_dir>
+```
+
+You’ll also see a few early-resolved overrides under `src/` use it as:
+
+- `#if elixir_output ... #else extern ... #end`
+
+That pattern keeps those modules safe when they are visible to non-Elixir compilation contexts (macros,
+JS/genes, tooling), while still providing the correct Elixir implementation when the Elixir backend is active.
+
 Benefits:
 
 - Macro context uses the regular Haxe stdlib (no `__elixir__()` errors).

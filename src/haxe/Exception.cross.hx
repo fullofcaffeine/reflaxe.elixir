@@ -26,6 +26,20 @@ package haxe;
  *   raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("oops")]
  */
 @:coreApi
+/**
+ * Why `#if elixir_output`?
+ *
+ * This file lives under the library `src/` classpath so **consumer installs** pick it up
+ * before bootstrap macros can inject `std/` and `std/_std/`.
+ *
+ * That means this module can be seen in non-Elixir compilation contexts too (e.g. macro typing,
+ * JS/genes builds, tooling). The `elixir_output` define is our stable “we are compiling for the
+ * Elixir backend” signal in Haxe 4 (Reflaxe targets compile under the `cross` platform, so `#if cross`
+ * alone is not specific enough).
+ *
+ * - When `-D elixir_output=...` is present, we emit the real Elixir-backed implementation (uses `__elixir__()`).
+ * - Otherwise we expose only an `extern` surface so other targets/tools don’t pull in Elixir-only code.
+ */
 #if elixir_output
 @:native("Reflaxe.Exception")
 class Exception {
