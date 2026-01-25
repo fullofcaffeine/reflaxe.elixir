@@ -227,13 +227,13 @@ enum ActivityKind {
 		        // Join/leave messages
 		        for (key in newKeys) {
 		            if (!containsKey(prevKeys, key)) {
-		                var name = presenceDisplayName(newUsers.get(key), key, currentUserKey);
+		                var name = presenceDisplayName(ElixirMap.getWithDefault(newUsers, key, null), key, currentUserKey);
 		                updated = pushActivity(updated, PresenceJoin, name + " joined");
 		            }
 		        }
 		        for (key in prevKeys) {
 		            if (!containsKey(newKeys, key)) {
-		                var name = presenceDisplayName(prevUsers.get(key), key, currentUserKey);
+		                var name = presenceDisplayName(ElixirMap.getWithDefault(prevUsers, key, null), key, currentUserKey);
 		                updated = pushActivity(updated, PresenceLeave, name + " left");
 		            }
 		        }
@@ -241,10 +241,10 @@ enum ActivityKind {
 		        // Editing transitions (start/stop)
 		        for (key in newKeys) {
 		            if (containsKey(prevKeys, key)) {
-		                var before = presenceEditingTodoId(prevUsers.get(key));
-		                var after = presenceEditingTodoId(newUsers.get(key));
+		                var before = presenceEditingTodoId(ElixirMap.getWithDefault(prevUsers, key, null));
+		                var after = presenceEditingTodoId(ElixirMap.getWithDefault(newUsers, key, null));
 		                if (before != after) {
-		                    var name = presenceDisplayName(newUsers.get(key), key, currentUserKey);
+		                    var name = presenceDisplayName(ElixirMap.getWithDefault(newUsers, key, null), key, currentUserKey);
 		                    if (after != null) {
 		                        updated = pushActivity(updated, EditStart, name + " started editing #" + Std.string(after));
 		                    } else {
@@ -932,7 +932,9 @@ enum ActivityKind {
 	        var onlineUserKeys = ElixirMap.keys(assigns.online_users);
 	        for (presenceKey in onlineUserKeys) {
 	            if (presenceKey != currentUserKey) {
-	                var entry = assigns.online_users.get(presenceKey);
+	                // `TodoPresence.list/1` returns a plain Elixir map (not a Haxe Map impl),
+	                // so we must use `Map.get/3` instead of calling a Haxe Map instance method.
+	                var entry = ElixirMap.getWithDefault(assigns.online_users, presenceKey, null);
 	                if (entry != null && entry.metas != null && entry.metas.length > 0) {
 	                    var meta: Null<PresenceMeta> = Enum.at(entry.metas, 0);
 	                    if (meta != null && meta.editingTodoId != null && meta.editingTodoId == todoId) {
@@ -953,7 +955,9 @@ enum ActivityKind {
 
 	        var onlineUserKeys = ElixirMap.keys(assigns.online_users);
 	        for (presenceKey in onlineUserKeys) {
-	            var entry = assigns.online_users.get(presenceKey);
+	            // `TodoPresence.list/1` returns a plain Elixir map (not a Haxe Map impl),
+	            // so we must use `Map.get/3` instead of calling a Haxe Map instance method.
+	            var entry = ElixirMap.getWithDefault(assigns.online_users, presenceKey, null);
 	            if (entry != null && entry.metas != null && entry.metas.length > 0) {
 	                var meta: Null<PresenceMeta> = Enum.at(entry.metas, 0);
 	                if (meta != null) {

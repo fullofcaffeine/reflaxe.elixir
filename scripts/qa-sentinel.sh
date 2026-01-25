@@ -805,7 +805,7 @@ if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
   run_step_with_log "Playwright browsers install" 600s /tmp/qa-playwright-browsers.log "npx -C . playwright install" || { cleanup || true; exit 1; }
   # Important: do NOT quote the spec so that shell globs expand (e.g., e2e/*.spec.ts)
   SPEC_ARG=${E2E_SPEC:-e2e}
-  if ! BASE_URL="http://localhost:$PORT" bash -lc "npx -C . playwright test ${SPEC_ARG} --workers=${E2E_WORKERS}" >/tmp/qa-playwright-run.log 2>&1; then
+  if ! run_step_with_log "Playwright tests" 300s /tmp/qa-playwright-run.log "BASE_URL=\"http://localhost:$PORT\" npx -C . playwright test ${SPEC_ARG} --workers=${E2E_WORKERS}"; then
     log "[QA] ❌ Playwright tests failed. Last 120 lines:"
     tail -n 120 /tmp/qa-playwright-run.log || true
     cleanup || true
