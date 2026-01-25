@@ -1,3 +1,22 @@
+# [1.13.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.12.0...v1.13.0) (2026-01-25)
+
+
+### Bug Fixes
+
+* **channels:** expand WirePayload codecs ([ab41c97](https://github.com/fullofcaffeine/reflaxe.elixir/commit/ab41c9714e4085dd68073221a62ffe036575ef68))
+* **ci:** repair LiveView presence map access ([04863d8](https://github.com/fullofcaffeine/reflaxe.elixir/commit/04863d8cbae6ce83bf9f66243b7d86e244c6aef9))
+* **ci:** stabilize dogfood + sentinel smoke ([f5b10e9](https://github.com/fullofcaffeine/reflaxe.elixir/commit/f5b10e960c4dbf5fc493c71a0bb40ab1cd5d799c))
+* **elixir:** correct inherited fields + stdlib IO runtime smoke ([ee16547](https://github.com/fullofcaffeine/reflaxe.elixir/commit/ee1654768c0d9a5fce46a2681b6695ceae3f47d0))
+* **elixir:** eliminate WAE in stdlib IO + Int64 ([3b2e44b](https://github.com/fullofcaffeine/reflaxe.elixir/commit/3b2e44bdc4334de8e22d515a44c05760b359aa55))
+* **elixir:** repair migration exs + raw assignment semantics ([1c3414e](https://github.com/fullofcaffeine/reflaxe.elixir/commit/1c3414eed5ca8bf4bb990b4d010b37d2a6ee98ee))
+* **stdlib:** implement UInt 32-bit semantics ([8a4ba64](https://github.com/fullofcaffeine/reflaxe.elixir/commit/8a4ba642aea8c0bc8ee822a3efaa6ff0841d0f34))
+
+
+### Features
+
+* **channels:** add shared WireCodecs + smoke typed channel ([0c60b05](https://github.com/fullofcaffeine/reflaxe.elixir/commit/0c60b05cf856dca606cdad3b9ae7a6b375840a29))
+* **stdlib:** implement sys.io.Process (BEAM) ([6b27a90](https://github.com/fullofcaffeine/reflaxe.elixir/commit/6b27a90bb8b344b7e61277a39535be0c65fcbd12))
+
 # [1.12.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.11.2...v1.12.0) (2026-01-24)
 
 
