@@ -76,6 +76,19 @@ This repo’s “staging” mechanism is **classpath gating**, not file copying:
   - `std/` (externs + `.cross.hx` overrides)
   - `std/_std/` (Elixir-only shims)
 
+### Why `elixir_output` shows up inside some `.cross.hx` files
+
+Most target-specific code is hidden from other contexts by classpath gating (macros only add `std/` and
+`std/_std/` for Elixir builds). However, a small set of overrides must live on the library `src/` classpath
+so consumer installs resolve them *before* bootstrap macros run (example: `src/haxe/Exception.cross.hx`).
+
+Because `src/` is visible in more situations (tools, JS/genes builds, etc.), those early overrides often use:
+
+- `#if elixir_output ... #else extern ... #end`
+
+This ensures they only emit Elixir-specific implementations (including `__elixir__()` injections) when the
+Elixir backend is actually active, while remaining harmless type surfaces elsewhere.
+
 Implementation:
 
 - `src/reflaxe/elixir/CompilerBootstrap.hx`
