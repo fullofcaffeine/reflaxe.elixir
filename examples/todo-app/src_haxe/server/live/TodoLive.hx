@@ -932,8 +932,16 @@ enum ActivityKind {
 	        var onlineUserKeys = ElixirMap.keys(assigns.online_users);
 	        for (presenceKey in onlineUserKeys) {
 	            if (presenceKey != currentUserKey) {
-	                // `TodoPresence.list/1` returns a plain Elixir map (not a Haxe Map impl),
-	                // so we must use `Map.get/3` instead of calling a Haxe Map instance method.
+	                // NOTE: `TodoPresence.list/1` returns a *native* Elixir map (`%{}`), not a Haxe
+	                // `Map<K,V>` runtime value.
+	                //
+	                // Haxe `Map<K,V>.get(k)` expects the value to be a Haxe map implementation
+	                // (on this target, that compiles to calling `get/2` on a struct module).
+	                // A plain Elixir map has no `__struct__`, so calling the Haxe `Map.get` method
+	                // would crash at runtime (seen as `nil.get/2` in CI).
+	                //
+	                // For boundary payloads from Phoenix (Presence/JSON), prefer Elixir-native
+	                // `Map.get/3` via `ElixirMap.getWithDefault/3` (idiomatic + zero allocations).
 	                var entry = ElixirMap.getWithDefault(assigns.online_users, presenceKey, null);
 	                if (entry != null && entry.metas != null && entry.metas.length > 0) {
 	                    var meta: Null<PresenceMeta> = Enum.at(entry.metas, 0);
@@ -955,8 +963,7 @@ enum ActivityKind {
 
 	        var onlineUserKeys = ElixirMap.keys(assigns.online_users);
 	        for (presenceKey in onlineUserKeys) {
-	            // `TodoPresence.list/1` returns a plain Elixir map (not a Haxe Map impl),
-	            // so we must use `Map.get/3` instead of calling a Haxe Map instance method.
+	            // NOTE: `TodoPresence.list/1` returns a native Elixir map; see note above.
 	            var entry = ElixirMap.getWithDefault(assigns.online_users, presenceKey, null);
 	            if (entry != null && entry.metas != null && entry.metas.length > 0) {
 	                var meta: Null<PresenceMeta> = Enum.at(entry.metas, 0);
