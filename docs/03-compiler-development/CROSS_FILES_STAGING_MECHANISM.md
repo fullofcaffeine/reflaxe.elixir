@@ -41,8 +41,13 @@ npx haxe -v --no-output <your.hxml>
 
 In an Elixir build, you should see things like:
 
-- `Parsed .../std/String.cross.hx`
 - `Parsed .../std/Std.cross.hx`
+- `Parsed .../std/StringTools.cross.hx` (and other `.cross.hx` overrides that apply)
+- `Parsed .../src/haxe/Exception.cross.hx` (early-resolved override needed before bootstrap can inject `std/`)
+
+Note: some upstream Haxe stdlib modules may still appear as `Parsed .../std/<module>.hx` before
+bootstrap runs. If a module must be overridden *that* early for correctness, it should live on the
+library `src/` classpath (consumer installs always have `src/` immediately).
 
 Macro typing uses a different platform (eval), so it will *not* select `.cross.hx` files.
 
@@ -83,4 +88,3 @@ More context: `docs/05-architecture/TARGET_CONDITIONAL_STDLIB_GATING.md`.
 - Prefer `std/**/*.cross.hx` when you are replacing a well-known Haxe API with an idiomatic Elixir mapping.
 - Use `std/_std/**/*.hx` sparingly for Elixir-only bridge modules and shims that must not leak into other contexts.
 - Do not add repo-level classpaths like `../../std` to JS/genes builds; use `-lib` and library-provided hxml instead.
-

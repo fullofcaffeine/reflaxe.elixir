@@ -2,7 +2,8 @@
 
 > At a glance
 > - `.cross.hx` = target‑specific implementation of a familiar API (same surface, idiomatic target code)
-> - Lives under `std/` and is selected by Haxe when compiling for the `cross` platform (the mode used by Reflaxe targets on Haxe 4)
+> - Usually lives under `std/` and is selected by Haxe when compiling for the `cross` platform (the mode used by Reflaxe targets on Haxe 4)
+>   - Exception: a small set of *early-resolved* overrides may live under the library `src/` classpath so consumer installs pick them up before bootstrap macros run (example: `src/haxe/Exception.cross.hx`)
 > - Elixir-only shims live under `std/_std/` and are classpath‑gated so only Elixir builds see them
 > - Prefer `.cross.hx` for stable API mappings; use macros for authoring ergonomics; use AST transforms for shape‑driven rewrites
 > - Transitional stubs (e.g., `std/HXX.cross.hx`) are allowed only with explicit removal criteria and gating
@@ -31,6 +32,10 @@ std/
   StringTools.cross.hx
   HXX.cross.hx
 ```
+
+Practical note (consumer installs)
+- When installed via haxelib/lix, the library’s `src/` classpath is available immediately, but `std/` is injected via bootstrap macros.
+- Some Haxe stdlib modules are resolved *very early* (before bootstrap can run). If a `.cross.hx` override must win for those modules, it needs to live on the initial classpath (under `src/`).
 
 When compiling for the `cross` platform, Haxe treats files ending in `.cross.hx` as platform-specific
 module implementations. That is, these files participate in normal module resolution while still

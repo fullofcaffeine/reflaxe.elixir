@@ -36,7 +36,19 @@ VERBOSE=1
 MODE="local"
 
 TO_TAG="v$(node -p "require('${ROOT_DIR}/package.json').version")"
-FROM_TAG="v1.0.7"
+# Default upgrade baseline: previous release tag.
+#
+# WHY
+# - Dogfood is meant to validate the real-user upgrade path.
+# - Very old tags can legitimately fail under newer Elixir/OTP toolchains and WAE settings,
+#   producing noise unrelated to the current upgrade story.
+#
+# HOW
+# - Select the second-most-recent semver tag if available; fall back to a pinned legacy tag.
+FROM_TAG="$(git tag --list 'v[0-9]*' --sort=-version:refname | sed -n '2p' || true)"
+if [[ -z "$FROM_TAG" ]]; then
+  FROM_TAG="v1.0.7"
+fi
 
 usage() {
   cat <<EOF
@@ -155,12 +167,17 @@ sentinel_run() {
   local app_dir="$1"; shift
   local hxml_file="$1"; shift
   local label="$1"; shift
+  local wae_enabled="${1:-1}"; shift || true
 
   log ""
   log "[dogfood] QA sentinel: ${label}"
 
   local out
-  out="$("$SENTINEL" --app "$app_dir" --hxml "$hxml_file" --env dev --port "$PORT" --async --deadline 900 --verbose)"
+  local sentinel_args=(--app "$app_dir" --hxml "$hxml_file" --env dev --port "$PORT" --async --deadline 900 --verbose)
+  if [[ "$wae_enabled" -eq 0 ]]; then
+    sentinel_args+=(--no-wae)
+  fi
+  out="$("$SENTINEL" "${sentinel_args[@]}")"
   echo "$out"
 
   local run_id
@@ -278,7 +295,10 @@ run_step "mix ecto.create (project)" 300 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_S
 run_step "mix ecto.migrate (project)" 300 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix ecto.migrate"
 
 # 4) Validate boot + compile via QA sentinel.
-sentinel_run "$app_dir" "build.hxml" "baseline (${FROM_TAG})"
+# Baseline should be runnable, but older released tags can emit warnings under newer
+# Elixir/OTP toolchains. Compile baseline without WAE so dogfood focuses on the
+# upgrade destination being warning-clean.
+sentinel_run "$app_dir" "build.hxml" "baseline (${FROM_TAG})" 0
 
 # 5) Upgrade: update lix + mix dependency tag, then validate again.
 if [[ "$MODE" == "local" ]]; then
@@ -298,6 +318,6 @@ else
   run_step "mix deps.update reflaxe_elixir (project)" 900 "$app_dir" "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 mix deps.update reflaxe_elixir"
 fi
 
-sentinel_run "$app_dir" "build.hxml" "upgraded (${TO_TAG})"
+sentinel_run "$app_dir" "build.hxml" "upgraded (${TO_TAG})" 1
 
 echo "[dogfood] ✅ Dogfood complete: ${FROM_TAG} -> ${TO_TAG}"

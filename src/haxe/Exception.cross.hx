@@ -26,6 +26,7 @@ package haxe;
  *   raise Reflaxe.Elixir.HaxeThrow, [value: Reflaxe.Exception.new("oops")]
  */
 @:coreApi
+#if elixir_output
 @:native("Reflaxe.Exception")
 class Exception {
     /**
@@ -127,3 +128,45 @@ build.(build, {0}, "")
 ', this);
     }
 }
+#else
+extern class Exception {
+    /**
+     * Exception message.
+     */
+    public var message(get, never):String;
+    private function get_message():String;
+
+    /**
+     * The call stack at the moment of the exception creation.
+     */
+    public var stack(get, never):CallStack;
+    private function get_stack():CallStack;
+
+    /**
+     * Contains an exception, which was passed to `previous` constructor argument.
+     */
+    public var previous(get, never):Null<Exception>;
+    private function get_previous():Null<Exception>;
+
+    /**
+     * Native exception, which caused this exception.
+     */
+    public var native(get, never):Any;
+    final private function get_native():Any;
+
+    /**
+     * Used internally for wildcard catches like `catch(e:Exception)`.
+     */
+    static private function caught(value:Any):Exception;
+
+    /**
+     * Used internally for wrapping non-throwable values for `throw` expressions.
+     */
+    static private function thrown(value:Any):Any;
+
+    public function new(message:String, ?previous:Exception, ?native:Any):Void;
+    private function unwrap():Any;
+    public function toString():String;
+    public function details():String;
+}
+#end

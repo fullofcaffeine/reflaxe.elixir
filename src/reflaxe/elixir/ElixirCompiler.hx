@@ -2460,7 +2460,7 @@ class ElixirCompiler extends GenericCompiler<
         }
         // Exception root detection:
         // - `haxe.Exception` is `extern` in the upstream stdlib; for Elixir builds we provide a concrete
-        //   implementation under `std/haxe/Exception.cross.hx` that emits as `Reflaxe.Exception`.
+        //   implementation under `src/haxe/Exception.cross.hx` that emits as `Reflaxe.Exception`.
         // - In some contexts Haxe reports the native module path (`Reflaxe.Exception`) as the effective
         //   type pack/name, so treat both as the exception root module.
         if ((classType.pack.length == 1 && classType.pack[0] == "haxe" && classType.name == "Exception")
