@@ -27,11 +27,11 @@
  * ### Field Access Translation
  * | Haxe Code | Generated Elixir | Notes |
  * |-----------|------------------|-------|
- * | `Reflect.field(obj, "name")` | `Map.get(obj, String.to_existing_atom("name"))` | Safe atom lookup |
- * | `Reflect.setField(obj, "age", 31)` | `Map.put(obj, String.to_atom("age"), 31)` | Returns new map |
- * | `Reflect.fields(obj)` | `Map.keys(obj) \|> Enum.map(&Atom.to_string/1)` | Converts atoms to strings |
- * | `Reflect.hasField(obj, "name")` | `Map.has_key?(obj, :name)` | Compiler-optimized |
- * | `Reflect.deleteField(obj, "age")` | `Map.delete(obj, :age)` | Returns new map |
+ * | `Reflect.field(obj, "name")` | `Map.get(obj, "name")` or `Map.get(obj, :name)` | Supports string *and* atom keys |
+ * | `Reflect.setField(obj, "age", 31)` | `Map.put(obj, "age", 31)` or `Map.put(obj, :age, 31)` | Updates existing key type; defaults to string |
+ * | `Reflect.fields(obj)` | `Map.keys(obj)` (atoms→strings, strings passthrough) | Mixed-key safe |
+ * | `Reflect.hasField(obj, "name")` | `Map.has_key?(obj, "name")` or `Map.has_key?(obj, :name)` | Mixed-key safe |
+ * | `Reflect.deleteField(obj, "age")` | `Map.delete(obj, "age")` or `Map.delete(obj, :age)` | Mixed-key safe |
  * 
  * ## Elixir Idioms and Immutability
  * 
@@ -45,10 +45,9 @@
  * ```
  * 
  * ### Atom vs String Keys
- * - Field names are converted to atoms for idiomatic Elixir
- * - `String.to_existing_atom` used for safe lookups (field)
- * - `String.to_atom` used for creation (setField)
- * - This matches Elixir conventions while maintaining safety
+ * - Field access supports both **string keys** (e.g. JSON) and **atom keys** (e.g. Haxe object literals).
+ * - Lookups/deletes first try the string key, then fall back to an existing atom key (no atom creation).
+ * - Writes preserve the existing key type when present; otherwise default to **string keys** to avoid atom leaks.
  * 
  * ### Pattern Matching Compatibility
  * Generated maps work seamlessly with Elixir pattern matching:
@@ -259,8 +258,21 @@ class Reflect {
      * @return The value of the field, or null if it doesn't exist
      */
     public static function field(o: Dynamic, field: String): Dynamic {
-        // Use native Elixir Map.get with atom conversion
-        return untyped __elixir__('Map.get({0}, String.to_existing_atom({1}))', o, field);
+        // JSON payloads use string keys; Haxe object literals typically use atom keys.
+        // Prefer string lookup first, then fall back to an existing atom key if present.
+        return untyped __elixir__(
+            "if Map.has_key?({0}, {1}) do\n" +
+            "  Map.get({0}, {1})\n" +
+            "else\n" +
+            "  try do\n" +
+            "    Map.get({0}, String.to_existing_atom({1}))\n" +
+            "  rescue\n" +
+            "    ArgumentError -> nil\n" +
+            "  end\n" +
+            "end",
+            o,
+            field
+        );
     }
     
     /**
@@ -280,9 +292,29 @@ class Reflect {
      */
     @:hack  // Override core API signature for Elixir immutability
     public static function setField(o: Dynamic, field: String, value: Dynamic): Dynamic {
-        // Use native Elixir Map.put with atom conversion
-        // Returns the new map (Elixir immutability)
-        return untyped __elixir__('Map.put({0}, String.to_atom({1}), {2})', o, field, value);
+        // Preserve the existing key type if present:
+        // - if the map already has a string key, keep string keys (common for JSON payloads)
+        // - otherwise, if the map has an existing atom key, update that atom key
+        // - otherwise, default to string keys to avoid creating atoms from arbitrary strings
+        return untyped __elixir__(
+            "if Map.has_key?({0}, {1}) do\n" +
+            "  Map.put({0}, {1}, {2})\n" +
+            "else\n" +
+            "  try do\n" +
+            "    key = String.to_existing_atom({1})\n" +
+            "    if Map.has_key?({0}, key) do\n" +
+            "      Map.put({0}, key, {2})\n" +
+            "    else\n" +
+            "      Map.put({0}, {1}, {2})\n" +
+            "    end\n" +
+            "  rescue\n" +
+            "    ArgumentError -> Map.put({0}, {1}, {2})\n" +
+            "  end\n" +
+            "end",
+            o,
+            field,
+            value
+        );
     }
     
     /**
@@ -296,8 +328,19 @@ class Reflect {
      * @return Array of field names as strings
      */
     public static function fields(o: Dynamic): Array<String> {
-        // Use native Elixir to get map keys and convert atoms to strings
-        return untyped __elixir__('Map.keys({0}) |> Enum.map(&Atom.to_string/1)', o);
+        // Map keys may be atoms (Haxe object literals) or strings (JSON payloads).
+        // Return only string-like keys, converting atoms to strings.
+        return untyped __elixir__(
+            "Map.keys({0})\n" +
+            "|> Enum.flat_map(fn k ->\n" +
+            "  cond do\n" +
+            "    is_atom(k) -> [Atom.to_string(k)]\n" +
+            "    is_binary(k) -> [k]\n" +
+            "    true -> []\n" +
+            "  end\n" +
+            "end)",
+            o
+        );
     }
     
     /**
@@ -312,7 +355,19 @@ class Reflect {
      * @return True if the field exists, false otherwise
      */
     public static function hasField(o: Dynamic, field: String): Bool {
-        return untyped __elixir__('Map.has_key?({0}, String.to_existing_atom({1}))', o, field);
+        return untyped __elixir__(
+            "if Map.has_key?({0}, {1}) do\n" +
+            "  true\n" +
+            "else\n" +
+            "  try do\n" +
+            "    Map.has_key?({0}, String.to_existing_atom({1}))\n" +
+            "  rescue\n" +
+            "    ArgumentError -> false\n" +
+            "  end\n" +
+            "end",
+            o,
+            field
+        );
     }
     
     /**
@@ -330,9 +385,25 @@ class Reflect {
      */
     @:hack  // Override core API signature for Elixir immutability
     public static function deleteField(o: Dynamic, field: String): Dynamic {
-        // Use native Elixir Map.delete
-        // Returns the new map without the field (Elixir immutability)
-        return untyped __elixir__('Map.delete({0}, String.to_existing_atom({1}))', o, field);
+        // Delete supports both string and atom keys without creating atoms.
+        return untyped __elixir__(
+            "if Map.has_key?({0}, {1}) do\n" +
+            "  Map.delete({0}, {1})\n" +
+            "else\n" +
+            "  try do\n" +
+            "    key = String.to_existing_atom({1})\n" +
+            "    if Map.has_key?({0}, key) do\n" +
+            "      Map.delete({0}, key)\n" +
+            "    else\n" +
+            "      {0}\n" +
+            "    end\n" +
+            "  rescue\n" +
+            "    ArgumentError -> {0}\n" +
+            "  end\n" +
+            "end",
+            o,
+            field
+        );
     }
     
     /**
