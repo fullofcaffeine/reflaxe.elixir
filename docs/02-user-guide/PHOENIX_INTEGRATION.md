@@ -45,6 +45,18 @@ Reflaxe.Elixir supports the server-side pieces via annotations so your generated
 
 See a working end-to-end reference (Haxe→Elixir server + Haxe→JS client) in `examples/todo-app/src_haxe/shared/channels/` and `examples/todo-app/src_haxe/server/channels/`.
 
+### Shared Protocol Types (Client + Server)
+
+For channel payloads, the repo includes a small, shared, cross-target protocol layer:
+
+- `phoenix.channels.ChannelProtocol` (event names + encode/decode)
+- `phoenix.channels.WirePayload` (safe string-key payload access; string-first + existing-atom fallback on Elixir)
+- `phoenix.channels.WireFields` / `phoenix.channels.WireCodecs` (composable typed codecs)
+
+These are included automatically:
+- **Server builds** via `-lib reflaxe.elixir` (see `haxe_libraries/reflaxe.elixir.hxml`)
+- **Client builds** via `-lib phoenix_js` (see `haxe_libraries/phoenix_js.hxml`)
+
 ### Client-side (Genes / Haxe→JS)
 
 For browser code, use the repo-local `phoenix_js` library (`-lib phoenix_js`) which provides typed externs for:
@@ -56,6 +68,17 @@ For browser code, use the repo-local `phoenix_js` library (`-lib phoenix_js`) wh
 See:
 - `examples/todo-app/build-client.hxml` (uses `-lib genes` + `-lib phoenix_js`)
 - `examples/todo-app/src_haxe/client/channels/PingChannelClient.hx` (typed channel client example)
+
+### Server-side Helpers (Haxe→Elixir)
+
+On the server, prefer keeping your code Phoenix-native while using typed helpers where the wire is untyped:
+
+- `phoenix.channels.TypedChannelServer.decode(protocol, event, payload)` → typed inbound message (or `null`)
+- `phoenix.channels.TypedChannelServer.broadcast/push(..., typedMessage)` → encodes to `{event, payload}` then calls `Phoenix.Channel.*`
+
+Reference implementation:
+- `examples/todo-app/src_haxe/shared/channels/PingProtocol.hx`
+- `examples/todo-app/src_haxe/server/channels/PingChannel.hx`
 
 ## Naming & Module Mapping
 
