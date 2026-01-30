@@ -1,7 +1,7 @@
 {
   "diff": {
     "intersection": {
-      "count": 50,
+      "count": 53,
       "modules": [
         "Array",
         "Date",
@@ -20,6 +20,7 @@
         "Sys",
         "Type",
         "UInt",
+        "haxe.DynamicAccess",
         "haxe.Exception",
         "haxe.Json",
         "haxe.Log",
@@ -45,6 +46,8 @@
         "haxe.io.Output",
         "haxe.iterators.ArrayIterator",
         "haxe.iterators.ArrayKeyValueIterator",
+        "haxe.iterators.DynamicAccessIterator",
+        "haxe.iterators.DynamicAccessKeyValueIterator",
         "haxe.iterators.MapKeyValueIterator",
         "sys.FileStat",
         "sys.FileSystem",
@@ -70,7 +73,7 @@
       ]
     },
     "reference_only": {
-      "count": 154,
+      "count": 151,
       "modules": [
         "Any",
         "Class",
@@ -81,7 +84,6 @@
         "Xml",
         "haxe.CallStack",
         "haxe.Constraints",
-        "haxe.DynamicAccess",
         "haxe.EntryPoint",
         "haxe.EnumFlags",
         "haxe.EnumTools",
@@ -153,8 +155,6 @@
         "haxe.io.UInt16Array",
         "haxe.io.UInt32Array",
         "haxe.io.UInt8Array",
-        "haxe.iterators.DynamicAccessIterator",
-        "haxe.iterators.DynamicAccessKeyValueIterator",
         "haxe.iterators.HashMapKeyValueIterator",
         "haxe.iterators.RestIterator",
         "haxe.iterators.RestKeyValueIterator",
@@ -232,7 +232,7 @@
   "local": {
     "counts_by_prefix": {
       "<top-level>": 17,
-      "haxe": 35,
+      "haxe": 38,
       "sys": 7
     },
     "nonstdlib_modules_under_std_dir": [
@@ -261,8 +261,8 @@
       "/REDACTED_LOCAL_PATH",
       "/REDACTED_LOCAL_PATH"
     ],
-    "total_candidates": 64,
-    "total_std_modules": 59
+    "total_candidates": 67,
+    "total_std_modules": 62
   },
   "reference": {
     "counts_by_prefix": {
