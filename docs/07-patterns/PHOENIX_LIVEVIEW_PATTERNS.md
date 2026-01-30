@@ -66,6 +66,9 @@ Notes:
 
 LiveView event params arrive as an untyped map. Prefer converting **once** at the boundary (per event), then operating on typed values.
 
+Important: those params are **native Elixir maps** (`%{}`) at runtime. They are not guaranteed to be a Haxe `Map<K,V>` value,
+so use Elixir-native accessors like `elixir.ElixirMap.get/3` (or typed decode helpers) rather than calling Haxe `Map` instance methods.
+
 ```haxe
 typedef CreateTodoParams = {
   title: String,

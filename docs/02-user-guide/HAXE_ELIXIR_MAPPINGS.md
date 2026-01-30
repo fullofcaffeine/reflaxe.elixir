@@ -199,12 +199,21 @@ typedef User = {
 | `String` | `String.t()` | UTF-8 binary strings |
 | `Bool` | `boolean()` | `true` or `false` atoms |
 | `Array<T>` | `list(T)` | Immutable linked lists |
-| `Map<K,V>` | `map(K, V)` | Immutable hash maps |
+| `Map<K,V>` | `map(K, V)` | Immutable hash maps (see note below) |
 | `Dynamic` | `term()` | Any Elixir term |
 | `Void` | `:ok` or `nil` | Context dependent |
 | `Null<T>` | `T \| nil` | Nullable types |
 | `Option<T>` | `{:some, T} \| {:none}` | Type-safe null handling |
 | `Result<T,E>` | `{:ok, T} \| {:error, E}` | Explicit error handling |
+
+### Note: Haxe `Map<K,V>` vs native Elixir `%{}`
+
+In Elixir, many framework APIs (Phoenix params, `Presence.list/2`, JSON payloads, etc.) return **native maps**
+(`%{}`) as plain runtime terms.
+
+Those values are **not guaranteed** to be a Haxe `Map<K,V>` runtime object, even if they are “map-like”.
+When dealing with boundary terms, prefer Elixir-native helpers like `elixir.ElixirMap.get/3` (and typed
+decode helpers such as `WirePayload`) instead of calling Haxe `Map` instance methods.
 
 ### Special Type Compilations
 
