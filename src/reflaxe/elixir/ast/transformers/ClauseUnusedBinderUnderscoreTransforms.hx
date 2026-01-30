@@ -50,8 +50,16 @@ class ClauseUnusedBinderUnderscoreTransforms {
                     for (cl in clauses) {
                         var binders = collectPatternBinders(cl.pattern);
                         var used = collectUsedVars(cl.body);
+                        // Variables referenced in a clause guard are "used" as far as Elixir warnings go.
+                        if (cl.guard != null) {
+                            var guardUsed = collectUsedVars(cl.guard);
+                            for (g in guardUsed) if (!arrayContains(used, g)) used.push(g);
+                        }
                         // Treat EString/ERaw interpolations ("#{name}") as usage as well
-                        for (b in binders) if (!arrayContains(used, b) && stringInterpolatesName(cl.body, b)) used.push(b);
+                        for (b in binders) {
+                            if (!arrayContains(used, b) && stringInterpolatesName(cl.body, b)) used.push(b);
+                            if (cl.guard != null && !arrayContains(used, b) && stringInterpolatesName(cl.guard, b)) used.push(b);
+                        }
 
                         // Compute clause-local declared names from pattern and simple matches
                         var declared = collectDeclaredVars(cl.body);
@@ -96,6 +104,11 @@ class ClauseUnusedBinderUnderscoreTransforms {
             case PMap(kvs): PMap([for (kv in kvs) { key: kv.key, value: underscoreBinders(kv.value, names) }]);
             case PStruct(nm, fs): PStruct(nm, [for (f in fs) { key: f.key, value: underscoreBinders(f.value, names) }]);
             case PPin(inner): PPin(underscoreBinders(inner, names));
+            case PAlias(varName, inner):
+                var nextVar = (names.indexOf(varName) != -1 && varName.charAt(0) != "_") ? ("_" + varName) : varName;
+                PAlias(nextVar, underscoreBinders(inner, names));
+            case PBinary(segments):
+                PBinary([for (seg in segments) { pattern: underscoreBinders(seg.pattern, names), size: seg.size, type: seg.type, modifiers: seg.modifiers }]);
             default: p;
         }
     }
@@ -111,6 +124,8 @@ class ClauseUnusedBinderUnderscoreTransforms {
                 case PMap(kvs): for (kv in kvs) walk(kv.value);
                 case PStruct(_, fs): for (f in fs) walk(f.value);
                 case PPin(inner): walk(inner);
+                case PAlias(varName, inner): out.push(varName); walk(inner);
+                case PBinary(segs): for (s in segs) walk(s.pattern);
                 default:
             }
         }
@@ -161,6 +176,7 @@ class ClauseUnusedBinderUnderscoreTransforms {
                             case PStruct(_, fs): for (f in fs) pv(f.value);
                             case PPin(inner): pv(inner);
                             case PAlias(a, inner): out.push(a); pv(inner);
+                            case PBinary(segs): for (s in segs) pv(s.pattern);
                             default:
                         }
                     }
