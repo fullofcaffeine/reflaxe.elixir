@@ -929,20 +929,12 @@ enum ActivityKind {
 	        var names: Array<String> = [];
 	        var currentUserKey = Std.string(assigns.current_user.id);
 
-	        var onlineUserKeys = ElixirMap.keys(assigns.online_users);
-	        for (presenceKey in onlineUserKeys) {
+	        for (presenceKey in assigns.online_users.keys()) {
 	            if (presenceKey != currentUserKey) {
-	                // NOTE: `TodoPresence.list/1` returns a *native* Elixir map (`%{}`), not a Haxe
-	                // `Map<K,V>` runtime value.
-	                //
-	                // Haxe `Map<K,V>.get(k)` expects the value to be a Haxe map implementation
-	                // (on this target, that compiles to calling `get/2` on a struct module).
-	                // A plain Elixir map has no `__struct__`, so calling the Haxe `Map.get` method
-	                // would crash at runtime (seen as `nil.get/2` in CI).
-	                //
-	                // For boundary payloads from Phoenix (Presence/JSON), prefer Elixir-native
-	                // `Map.get/3` via `ElixirMap.getWithDefault/3` (idiomatic + zero allocations).
-	                var entry = ElixirMap.getWithDefault(assigns.online_users, presenceKey, null);
+	                // NOTE: `TodoPresence.list/1` returns a native Elixir map (`%{}`).
+	                // On the Elixir target, Haxe `Map<K,V>` is represented as a native map too,
+	                // so `assigns.online_users.get/1` lowers to idiomatic `Map.get/2` safely.
+	                var entry = assigns.online_users.get(presenceKey);
 	                if (entry != null && entry.metas != null && entry.metas.length > 0) {
 	                    var meta: Null<PresenceMeta> = Enum.at(entry.metas, 0);
 	                    if (meta != null && meta.editingTodoId != null && meta.editingTodoId == todoId) {
@@ -961,10 +953,8 @@ enum ActivityKind {
 	        var views: Array<OnlineUserView> = [];
 	        var currentUserKey = Std.string(assigns.current_user.id);
 
-	        var onlineUserKeys = ElixirMap.keys(assigns.online_users);
-	        for (presenceKey in onlineUserKeys) {
-	            // NOTE: `TodoPresence.list/1` returns a native Elixir map; see note above.
-	            var entry = ElixirMap.getWithDefault(assigns.online_users, presenceKey, null);
+	        for (presenceKey in assigns.online_users.keys()) {
+	            var entry = assigns.online_users.get(presenceKey);
 	            if (entry != null && entry.metas != null && entry.metas.length > 0) {
 	                var meta: Null<PresenceMeta> = Enum.at(entry.metas, 0);
 	                if (meta != null) {

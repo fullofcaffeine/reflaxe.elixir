@@ -28,6 +28,15 @@ This is why we treat “Map parity” as a first-class workstream: it is the hig
 - Regeneration script: `scripts/stdlib-parity-report.sh`
 - Reference repo: `../haxe.elixir.reference`
 
+## Current status (rolling)
+
+- Latest gap report: **148 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Recently closed (high leverage):
+  - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
+  - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
+  - `haxe.DynamicAccess` + iterators (typed dynamic map access for JSON/string-key payloads)
+  - `Reflect` improvements for string-key JSON maps vs atom-key “object literal” maps
+
 ## Root Layout (source of truth)
 
 Most stdlib overrides live under `std/` and are injected only for Elixir builds via bootstrap macros.
@@ -151,6 +160,7 @@ These require careful design on BEAM; we should not “fake” POSIX semantics.
 2) **`haxe.io` + core utilities**
    - Done (core building blocks): `haxe.io.BufferInput`, `haxe.io.BytesBuffer`, `haxe.io.BytesInput`, `haxe.io.BytesOutput`, `haxe.io.FPHelper`, `haxe.Json`
    - Done: `haxe.Exception`
+   - Done: `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper`
    - Next: `haxe.CallStack`, and remaining `haxe.io.*` utilities as-needed
 
 3) **`sys.*` runtime integration**
