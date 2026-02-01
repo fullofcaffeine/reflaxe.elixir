@@ -138,7 +138,7 @@ defmodule Main do
     end)
     invalid_email_result = Email_Impl_.parse("invalid")
     invalid_email_option = ResultTools.to_option(invalid_email_result)
-    assert invalid_email_option == :none
+    assert match?({:none}, invalid_email_option)
   end
   test "error handling" do
     invalid_email = Email_Impl_.parse("invalid-email")

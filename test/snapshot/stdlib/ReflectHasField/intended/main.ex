@@ -139,11 +139,10 @@ end) do
         end)
     end)
     _fields = Reflect.fields(obj)
-    obj_without_age = (case {obj, "age"} do
+    {reflect_deleted_obj, obj} = (case {obj, "age"} do
       {reflect_obj, reflect_field} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
-          true ->
-            Map.delete(reflect_obj, reflect_field)
+          true -> {true, Map.delete(reflect_obj, reflect_field)}
           false ->
             (case (try do
   String.to_existing_atom(reflect_field)
@@ -151,13 +150,12 @@ rescue
   _ ->
     nil
 end) do
-              nil ->
-                Map.delete(reflect_obj, reflect_field)
-              reflect_atom ->
-                Map.delete(reflect_obj, reflect_atom)
+              nil -> {false, reflect_obj}
+              reflect_atom -> {Map.has_key?(reflect_obj, reflect_atom), Map.delete(reflect_obj, reflect_atom)}
             end)
         end)
     end)
+    obj_without_age = reflect_deleted_obj
     _still_has_age = (case {obj_without_age, "age"} do
       {reflect_obj, reflect_field} ->
         (case Map.has_key?(reflect_obj, reflect_field) do

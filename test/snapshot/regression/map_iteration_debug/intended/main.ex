@@ -1,7 +1,7 @@
 defmodule Main do
   def main() do
     colors = %{}
-    _ = apply(Map.get(colors, :__reflaxe_class__) || Map.get(colors, :__struct__), :set, [colors, "red", "#FF0000"])
+    colors = Map.put(colors, "red", "#FF0000")
     g = apply(Map.get(colors, :__reflaxe_class__) || Map.get(colors, :__struct__), :key_value_iterator, [colors])
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do

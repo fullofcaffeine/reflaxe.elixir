@@ -21,7 +21,7 @@ import haxe.functional.Result;
  * - Result.Ok(v) → {:ok, v}
  * - Result.Error(e) → {:error, e}
  * - Option.Some(v) → {:some, v}
- * - Option.None → :none
+ * - Option.None → {:none}
  * 
  * These assertions use Elixir's `match?/2` macro for pattern matching
  * rather than direct equality, making tests more idiomatic and readable.
@@ -142,13 +142,13 @@ class Assert {
     /**
      * Assert that an Option<T> is None.
      * 
-     * WHY: Option.None compiles to the :none atom in Elixir.
+     * WHY: Option.None compiles to the {:none} tagged tuple in Elixir.
      * This assertion provides type-safe checking for absent values.
      * 
      * @param option The Option to check
      * @param message Optional failure message
      */
     extern inline public static function assertIsNone<T>(option: Option<T>, ?message: String): Void {
-        untyped __elixir__('assert {0} == :none', option);
+        untyped __elixir__('assert match?({:none}, {0})', option);
     }
 }

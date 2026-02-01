@@ -173,6 +173,7 @@ examples/**/lib/reflaxe/
 # Debug-only snapshot outputs (never commit)
 test/snapshot/**/out_dbg*/
 test/snapshot/**/out_nomig/
+test/snapshot/**/tmp/
 
 # Haxe-authored ExUnit runtime test outputs (generated)
 test/fixtures/_generated_haxe_exunit/

@@ -94,134 +94,26 @@ end) do
             end)
         end)
     end)
-    _updated = (case {obj, "age", 31} do
-      {reflect_obj, reflect_field, reflect_value} ->
-        (case Map.has_key?(reflect_obj, reflect_field) do
-          true ->
+    obj = (case {obj, "age", 31} do
+  {reflect_obj, reflect_field, reflect_value} ->
+    (case Map.has_key?(reflect_obj, reflect_field) do
+      true ->
+        Map.put(reflect_obj, reflect_field, reflect_value)
+      false ->
+        (case (try do
+  String.to_existing_atom(reflect_field)
+rescue
+  _ ->
+    nil
+end) do
+          nil ->
             Map.put(reflect_obj, reflect_field, reflect_value)
-          false ->
-            (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-              nil ->
-                Map.put(reflect_obj, reflect_field, reflect_value)
-              reflect_atom ->
-                Map.put(reflect_obj, reflect_atom, reflect_value)
-            end)
+          reflect_atom ->
+            Map.put(reflect_obj, reflect_atom, reflect_value)
         end)
     end)
-    _new_field = (case {obj, "city", "New York"} do
-      {reflect_obj, reflect_field, reflect_value} ->
-        (case Map.has_key?(reflect_obj, reflect_field) do
-          true ->
-            Map.put(reflect_obj, reflect_field, reflect_value)
-          false ->
-            (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-              nil ->
-                Map.put(reflect_obj, reflect_field, reflect_value)
-              reflect_atom ->
-                Map.put(reflect_obj, reflect_atom, reflect_value)
-            end)
-        end)
-    end)
-    _has_name = (case {obj, "name"} do
-      {reflect_obj, reflect_field} ->
-        (case Map.has_key?(reflect_obj, reflect_field) do
-          true -> true
-          false ->
-            (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-              nil -> false
-              reflect_atom ->
-                Map.has_key?(reflect_obj, reflect_atom)
-            end)
-        end)
-    end)
-    _has_city = (case {obj, "city"} do
-      {reflect_obj, reflect_field} ->
-        (case Map.has_key?(reflect_obj, reflect_field) do
-          true -> true
-          false ->
-            (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-              nil -> false
-              reflect_atom ->
-                Map.has_key?(reflect_obj, reflect_atom)
-            end)
-        end)
-    end)
-    _has_nested = (case {nested, "user"} do
-      {reflect_obj, reflect_field} ->
-        (case Map.has_key?(reflect_obj, reflect_field) do
-          true -> true
-          false ->
-            (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-              nil -> false
-              reflect_atom ->
-                Map.has_key?(reflect_obj, reflect_atom)
-            end)
-        end)
-    end)
-    _deleted = (case {obj, "age"} do
-      {reflect_obj, reflect_field} ->
-        (case Map.has_key?(reflect_obj, reflect_field) do
-          true ->
-            Map.delete(reflect_obj, reflect_field)
-          false ->
-            (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-              nil ->
-                Map.delete(reflect_obj, reflect_field)
-              reflect_atom ->
-                Map.delete(reflect_obj, reflect_atom)
-            end)
-        end)
-    end)
-    _deleted_missing = (case {obj, "nonexistent"} do
-      {reflect_obj, reflect_field} ->
-        (case Map.has_key?(reflect_obj, reflect_field) do
-          true ->
-            Map.delete(reflect_obj, reflect_field)
-          false ->
-            (case (try do
-  String.to_existing_atom(reflect_field)
-rescue
-  _ ->
-    nil
-end) do
-              nil ->
-                Map.delete(reflect_obj, reflect_field)
-              reflect_atom ->
-                Map.delete(reflect_obj, reflect_atom)
-            end)
-        end)
-    end)
-    nil
+end)
+    _updated = obj
   end
   defp test_field_listing() do
     simple = %{:x => 10, :y => 20}

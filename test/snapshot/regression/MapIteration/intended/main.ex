@@ -10,9 +10,7 @@ defmodule Main do
   end
   defp test_simple_map_iteration() do
     colors = %{}
-    _ = apply(Map.get(colors, :__reflaxe_class__) || Map.get(colors, :__struct__), :set, [colors, "red", "#FF0000"])
-    _ = apply(Map.get(colors, :__reflaxe_class__) || Map.get(colors, :__struct__), :set, [colors, "green", "#00FF00"])
-    _ = apply(Map.get(colors, :__reflaxe_class__) || Map.get(colors, :__struct__), :set, [colors, "blue", "#0000FF"])
+    colors = colors |> Map.put("red", "#FF0000") |> Map.put("green", "#00FF00") |> Map.put("blue", "#0000FF")
     g = apply(Map.get(colors, :__reflaxe_class__) || Map.get(colors, :__struct__), :key_value_iterator, [colors])
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
@@ -38,9 +36,7 @@ end)
   end
   defp test_key_only_iteration() do
     inventory = %{}
-    _ = apply(Map.get(inventory, :__reflaxe_class__) || Map.get(inventory, :__struct__), :set, [inventory, "apples", 10])
-    _ = apply(Map.get(inventory, :__reflaxe_class__) || Map.get(inventory, :__struct__), :set, [inventory, "oranges", 5])
-    _ = apply(Map.get(inventory, :__reflaxe_class__) || Map.get(inventory, :__struct__), :set, [inventory, "bananas", 8])
+    inventory = inventory |> Map.put("apples", 10) |> Map.put("oranges", 5) |> Map.put("bananas", 8)
     keys = []
     g = apply(Map.get(inventory, :__reflaxe_class__) || Map.get(inventory, :__struct__), :key_value_iterator, [inventory])
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {keys}, fn _, {acc_keys} ->
@@ -68,9 +64,7 @@ end)
   end
   defp test_value_only_iteration() do
     scores = %{}
-    _ = apply(Map.get(scores, :__reflaxe_class__) || Map.get(scores, :__struct__), :set, [scores, "Alice", 95])
-    _ = apply(Map.get(scores, :__reflaxe_class__) || Map.get(scores, :__struct__), :set, [scores, "Bob", 87])
-    _ = apply(Map.get(scores, :__reflaxe_class__) || Map.get(scores, :__struct__), :set, [scores, "Charlie", 92])
+    scores = scores |> Map.put("Alice", 95) |> Map.put("Bob", 87) |> Map.put("Charlie", 92)
     total = 0
     g = apply(Map.get(scores, :__reflaxe_class__) || Map.get(scores, :__struct__), :key_value_iterator, [scores])
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {total}, fn _, {acc_total} ->
@@ -98,9 +92,7 @@ end)
   end
   defp test_map_comprehension() do
     prices = %{}
-    _ = apply(Map.get(prices, :__reflaxe_class__) || Map.get(prices, :__struct__), :set, [prices, "apple", 1.5])
-    _ = apply(Map.get(prices, :__reflaxe_class__) || Map.get(prices, :__struct__), :set, [prices, "orange", 2])
-    _ = apply(Map.get(prices, :__reflaxe_class__) || Map.get(prices, :__struct__), :set, [prices, "banana", 0.75])
+    prices = prices |> Map.put("apple", 1.5) |> Map.put("orange", 2) |> Map.put("banana", 0.75)
     g_value = apply(Map.get(prices, :__reflaxe_class__) || Map.get(prices, :__struct__), :key_value_iterator, [prices])
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {[]}, fn _, {acc__g} ->
       try do
@@ -129,13 +121,11 @@ end)
   defp test_nested_map_iteration() do
     departments = %{}
     engineering = %{}
-    _ = apply(Map.get(engineering, :__reflaxe_class__) || Map.get(engineering, :__struct__), :set, [engineering, "Alice", 5])
-    _ = apply(Map.get(engineering, :__reflaxe_class__) || Map.get(engineering, :__struct__), :set, [engineering, "Bob", 3])
-    _ = apply(Map.get(departments, :__reflaxe_class__) || Map.get(departments, :__struct__), :set, [departments, "Engineering", engineering])
+    engineering = engineering |> Map.put("Alice", 5) |> Map.put("Bob", 3)
+    departments = Map.put(departments, "Engineering", engineering)
     sales = %{}
-    _ = apply(Map.get(sales, :__reflaxe_class__) || Map.get(sales, :__struct__), :set, [sales, "Charlie", 7])
-    _ = apply(Map.get(sales, :__reflaxe_class__) || Map.get(sales, :__struct__), :set, [sales, "Diana", 4])
-    _ = apply(Map.get(departments, :__reflaxe_class__) || Map.get(departments, :__struct__), :set, [departments, "Sales", sales])
+    sales = sales |> Map.put("Charlie", 7) |> Map.put("Diana", 4)
+    departments = Map.put(departments, "Sales", sales)
     g = apply(Map.get(departments, :__reflaxe_class__) || Map.get(departments, :__struct__), :key_value_iterator, [departments])
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
@@ -182,10 +172,7 @@ end)
   end
   defp test_map_iteration_with_filter() do
     ages = %{}
-    _ = apply(Map.get(ages, :__reflaxe_class__) || Map.get(ages, :__struct__), :set, [ages, "Alice", 25])
-    _ = apply(Map.get(ages, :__reflaxe_class__) || Map.get(ages, :__struct__), :set, [ages, "Bob", 17])
-    _ = apply(Map.get(ages, :__reflaxe_class__) || Map.get(ages, :__struct__), :set, [ages, "Charlie", 30])
-    _ = apply(Map.get(ages, :__reflaxe_class__) || Map.get(ages, :__struct__), :set, [ages, "Diana", 16])
+    ages = ages |> Map.put("Alice", 25) |> Map.put("Bob", 17) |> Map.put("Charlie", 30) |> Map.put("Diana", 16)
     adults = []
     g = apply(Map.get(ages, :__reflaxe_class__) || Map.get(ages, :__struct__), :key_value_iterator, [ages])
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {adults}, fn _, {acc_adults} ->
@@ -213,9 +200,7 @@ end)
   end
   defp test_map_iteration_with_accumulation() do
     products = %{}
-    _ = apply(Map.get(products, :__reflaxe_class__) || Map.get(products, :__struct__), :set, [products, "laptop", 999.99])
-    _ = apply(Map.get(products, :__reflaxe_class__) || Map.get(products, :__struct__), :set, [products, "mouse", 25.5])
-    _ = apply(Map.get(products, :__reflaxe_class__) || Map.get(products, :__struct__), :set, [products, "keyboard", 75])
+    products = products |> Map.put("laptop", 999.99) |> Map.put("mouse", 25.5) |> Map.put("keyboard", 75)
     descriptions = []
     total_value = 0
     g = apply(Map.get(products, :__reflaxe_class__) || Map.get(products, :__struct__), :key_value_iterator, [products])

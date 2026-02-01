@@ -191,37 +191,22 @@ class ExUnitAssertTransforms {
   }
 
   static function optionIsSomeExpr(value: ElixirAST): ElixirAST {
-    var idiomatic = makeAST(ECall(null, "match?", [
+    return makeAST(ECall(null, "match?", [
       makeAST(ETuple([
         makeAST(EAtom(ElixirAtom.raw("some"))),
         makeAST(EUnderscore)
       ])),
       value
     ]));
-    var legacy = makeAST(ECall(null, "match?", [
-      makeAST(ETuple([
-        makeAST(EInteger(0)),
-        makeAST(EUnderscore)
-      ])),
-      value
-    ]));
-    return makeAST(EBinary(EBinaryOp.Or, idiomatic, legacy));
   }
 
   static function optionIsNoneExpr(value: ElixirAST): ElixirAST {
-    var idiomatic = makeAST(ECall(null, "match?", [
+    return makeAST(ECall(null, "match?", [
       makeAST(ETuple([
         makeAST(EAtom(ElixirAtom.raw("none")))
       ])),
       value
     ]));
-    var legacy = makeAST(ECall(null, "match?", [
-      makeAST(ETuple([
-        makeAST(EInteger(1))
-      ])),
-      value
-    ]));
-    return makeAST(EBinary(EBinaryOp.Or, idiomatic, legacy));
   }
 
   static function resultIsOkExpr(value: ElixirAST): ElixirAST {
