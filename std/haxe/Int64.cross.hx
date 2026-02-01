@@ -28,8 +28,7 @@ abstract Int64(Int) from Int to Int {
         // - mask to 64 bits
         // - interpret as signed (two's complement)
         return untyped __elixir__(
-            "x = :erlang.band({0}, 18446744073709551615)\n" +
-            "if x >= 9223372036854775808, do: x - 18446744073709551616, else: x",
+            "reflaxe_i64_clamp = :erlang.band({0}, 18446744073709551615)\nif reflaxe_i64_clamp >= 9223372036854775808, do: reflaxe_i64_clamp - 18446744073709551616, else: reflaxe_i64_clamp",
             x
         );
     }
@@ -55,13 +54,13 @@ abstract Int64(Int) from Int to Int {
         return make(high, i32);
     }
 
-    public static inline function toInt(x: Int64): Int {
+    public static inline function toInt(int64Value: Int64): Int {
         var min: Int64 = Int64.ofInt(-2147483648);
         var max: Int64 = Int64.ofInt(2147483647);
-        if (Int64.compare(x, min) < 0 || Int64.compare(x, max) > 0) {
+        if (Int64.compare(int64Value, min) < 0 || Int64.compare(int64Value, max) > 0) {
             throw "Overflow";
         }
-        return cast x;
+        return cast int64Value;
     }
 
     public static inline function isInt64(val: Dynamic): Bool {

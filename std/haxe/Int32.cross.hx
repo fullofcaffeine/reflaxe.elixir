@@ -21,8 +21,7 @@ abstract Int32(Int) from Int to Int {
         // - mask to 32 bits
         // - interpret as signed (two's complement)
         return untyped __elixir__(
-            "x = :erlang.band({0}, 4294967295)\n" +
-            "if x >= 2147483648, do: x - 4294967296, else: x",
+            "reflaxe_i32_clamp = :erlang.band({0}, 4294967295)\nif reflaxe_i32_clamp >= 2147483648, do: reflaxe_i32_clamp - 4294967296, else: reflaxe_i32_clamp",
             x
         );
     }
@@ -117,4 +116,3 @@ abstract Int32(Int) from Int to Int {
         return clamp(shifted);
     }
 }
-

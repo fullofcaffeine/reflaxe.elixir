@@ -11,6 +11,13 @@ import StringTools;
  */
 class Int64Helper {
     public static function parseString(sParam: String): Int64 {
+        #if (!macro && elixir_output)
+        var parsed: Int = untyped __elixir__(
+            "s = String.trim({0})\ncase Integer.parse(s) do\n  {i, \"\"} ->\n    if i < -9223372036854775808 or i > 9223372036854775807 do\n      raise Reflaxe.Elixir.HaxeThrow, [value: \"NumberFormatError\"]\n    else\n      i\n    end\n  _ -> raise Reflaxe.Elixir.HaxeThrow, [value: \"NumberFormatError\"]\nend",
+            sParam
+        );
+        return cast parsed;
+        #else
         var base = Int64.ofInt(10);
         var current = Int64.ofInt(0);
         var multiplier = Int64.ofInt(1);
@@ -48,6 +55,7 @@ class Int64Helper {
         }
 
         return current;
+        #end
     }
 
     public static function fromFloat(f: Float): Int64 {
@@ -78,4 +86,3 @@ class Int64Helper {
         return neg ? Int64.neg(result) : result;
     }
 }
-

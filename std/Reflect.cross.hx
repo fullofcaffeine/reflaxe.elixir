@@ -261,15 +261,7 @@ class Reflect {
         // JSON payloads use string keys; Haxe object literals typically use atom keys.
         // Prefer string lookup first, then fall back to an existing atom key if present.
         return untyped __elixir__(
-            "if Map.has_key?({0}, {1}) do\n" +
-            "  Map.get({0}, {1})\n" +
-            "else\n" +
-            "  try do\n" +
-            "    Map.get({0}, String.to_existing_atom({1}))\n" +
-            "  rescue\n" +
-            "    ArgumentError -> nil\n" +
-            "  end\n" +
-            "end",
+            "if Map.has_key?({0}, {1}) do\n  Map.get({0}, {1})\nelse\n  try do\n    Map.get({0}, String.to_existing_atom({1}))\n  rescue\n    ArgumentError -> nil\n  end\nend",
             o,
             field
         );
@@ -297,20 +289,7 @@ class Reflect {
         // - otherwise, if the map has an existing atom key, update that atom key
         // - otherwise, default to string keys to avoid creating atoms from arbitrary strings
         return untyped __elixir__(
-            "if Map.has_key?({0}, {1}) do\n" +
-            "  Map.put({0}, {1}, {2})\n" +
-            "else\n" +
-            "  try do\n" +
-            "    key = String.to_existing_atom({1})\n" +
-            "    if Map.has_key?({0}, key) do\n" +
-            "      Map.put({0}, key, {2})\n" +
-            "    else\n" +
-            "      Map.put({0}, {1}, {2})\n" +
-            "    end\n" +
-            "  rescue\n" +
-            "    ArgumentError -> Map.put({0}, {1}, {2})\n" +
-            "  end\n" +
-            "end",
+            "if Map.has_key?({0}, {1}) do\n  Map.put({0}, {1}, {2})\nelse\n  try do\n    key = String.to_existing_atom({1})\n    if Map.has_key?({0}, key) do\n      Map.put({0}, key, {2})\n    else\n      Map.put({0}, {1}, {2})\n    end\n  rescue\n    ArgumentError -> Map.put({0}, {1}, {2})\n  end\nend",
             o,
             field,
             value
@@ -331,14 +310,7 @@ class Reflect {
         // Map keys may be atoms (Haxe object literals) or strings (JSON payloads).
         // Return only string-like keys, converting atoms to strings.
         return untyped __elixir__(
-            "Map.keys({0})\n" +
-            "|> Enum.flat_map(fn k ->\n" +
-            "  cond do\n" +
-            "    is_atom(k) -> [Atom.to_string(k)]\n" +
-            "    is_binary(k) -> [k]\n" +
-            "    true -> []\n" +
-            "  end\n" +
-            "end)",
+            "Map.keys({0})\n|> Enum.flat_map(fn k ->\n  cond do\n    is_atom(k) -> [Atom.to_string(k)]\n    is_binary(k) -> [k]\n    true -> []\n  end\nend)",
             o
         );
     }
@@ -356,15 +328,7 @@ class Reflect {
      */
     public static function hasField(o: Dynamic, field: String): Bool {
         return untyped __elixir__(
-            "if Map.has_key?({0}, {1}) do\n" +
-            "  true\n" +
-            "else\n" +
-            "  try do\n" +
-            "    Map.has_key?({0}, String.to_existing_atom({1}))\n" +
-            "  rescue\n" +
-            "    ArgumentError -> false\n" +
-            "  end\n" +
-            "end",
+            "if Map.has_key?({0}, {1}) do\n  true\nelse\n  try do\n    Map.has_key?({0}, String.to_existing_atom({1}))\n  rescue\n    ArgumentError -> false\n  end\nend",
             o,
             field
         );
@@ -387,20 +351,7 @@ class Reflect {
     public static function deleteField(o: Dynamic, field: String): Dynamic {
         // Delete supports both string and atom keys without creating atoms.
         return untyped __elixir__(
-            "if Map.has_key?({0}, {1}) do\n" +
-            "  Map.delete({0}, {1})\n" +
-            "else\n" +
-            "  try do\n" +
-            "    key = String.to_existing_atom({1})\n" +
-            "    if Map.has_key?({0}, key) do\n" +
-            "      Map.delete({0}, key)\n" +
-            "    else\n" +
-            "      {0}\n" +
-            "    end\n" +
-            "  rescue\n" +
-            "    ArgumentError -> {0}\n" +
-            "  end\n" +
-            "end",
+            "if Map.has_key?({0}, {1}) do\n  Map.delete({0}, {1})\nelse\n  try do\n    key = String.to_existing_atom({1})\n    if Map.has_key?({0}, key) do\n      Map.delete({0}, key)\n    else\n      {0}\n    end\n  rescue\n    ArgumentError -> {0}\n  end\nend",
             o,
             field
         );

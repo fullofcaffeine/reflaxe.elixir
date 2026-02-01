@@ -22,28 +22,32 @@ extern class Jason {
      * Returns {:ok, json} or {:error, reason}
      */
     @:native("encode")
-    public static function encode(term: Term, ?opts: JasonOptions): ElixirResult<String, Term>;
+    @:overload(function(term: Term, opts: JasonOptions): ElixirResult<String, Term> {})
+    public static function encode(term: Term): ElixirResult<String, Term>;
     
     /**
      * Encode a value to JSON string, raises on error
      * @throws JasonEncodeError if encoding fails
      */
     @:native("encode!")
-    public static function encodeStrict(term: Term, ?opts: JasonOptions): String;
+    @:overload(function(term: Term, opts: JasonOptions): String {})
+    public static function encodeStrict(term: Term): String;
     
     /**
      * Decode a JSON string
      * Returns {:ok, value} or {:error, reason}
      */
     @:native("decode")
-    public static function decode(json: String, ?opts: JasonDecodeOptions): ElixirResult<Term, Term>;
+    @:overload(function(json: String, opts: JasonDecodeOptions): ElixirResult<Term, Term> {})
+    public static function decode(json: String): ElixirResult<Term, Term>;
     
     /**
      * Decode a JSON string, raises on error
      * @throws JasonDecodeError if decoding fails
      */
     @:native("decode!")
-    public static function decodeStrict(json: String, ?opts: JasonDecodeOptions): Term;
+    @:overload(function(json: String, opts: JasonDecodeOptions): Term {})
+    public static function decodeStrict(json: String): Term;
 }
 
 /**

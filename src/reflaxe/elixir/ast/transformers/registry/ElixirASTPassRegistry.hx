@@ -3437,6 +3437,19 @@ class ElixirASTPassRegistry {
             ]
         });
 
+        // Compile `haxe.test.Assert.*` calls into ExUnit assertions inside ExUnit modules.
+        // IMPORTANT: Must run before AssertArgIIFE so we don't wrap (and scope-isolate) expressions that
+        // rely on rebinding in the surrounding scope.
+        passes.push({
+            name: "ExUnitAssert_Final",
+            description: "Rewrite Assert.* to ExUnit assert/refute/assert_raise/etc inside ExUnit modules",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.ExUnitAssertTransforms.pass,
+            runAfter: [
+                "FunctionArgMultiStmtIIFE_Final"
+            ]
+        });
+
         // Stabilize Assert boolean arguments by isolating complex expressions in IIFEs
         passes.push({
             name: "AssertArgIIFE_Final",
@@ -3444,7 +3457,7 @@ class ElixirASTPassRegistry {
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AssertArgIIFETransforms.pass,
             runAfter: [
-                "FunctionArgMultiStmtIIFE_Final"
+                "ExUnitAssert_Final"
             ]
         });
 

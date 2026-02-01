@@ -52,7 +52,9 @@ class FunctionArgMultiStmtIIFETransforms {
     function isMultiBlock(x: ElixirAST): Bool {
       return switch (x.def) {
         case EBlock(stmts) | EDo(stmts): stmts != null && stmts.length > 1;
-        case EParen(inner): isMultiBlock(inner);
+        // Parenthesized multi-expression blocks are valid Elixir expressions and, critically,
+        // do not introduce a new scope (unlike an IIFE). Do not wrap these.
+        case EParen(_): false;
         default: false;
       }
     }

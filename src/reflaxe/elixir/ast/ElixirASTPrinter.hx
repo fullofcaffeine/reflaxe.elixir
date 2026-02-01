@@ -1344,18 +1344,21 @@ class ElixirASTPrinter {
                 // structs for non-schema modules (e.g., BalancedTree). Rely on AST transform stage.
                 // Qualify struct literal in changeset/2 to match remote module
                 var argStr = (function(){
-                    // Aggressive stabilization for Assert boolean assertions: wrap first arg in IIFE to
-                    // guarantee single-expression semantics even when inline expansions introduce multiple statements.
-                    // Shape-agnostic and limited to Assert.is_true/2 and Assert.is_false/2.
-                    switch (module.def) {
-                        case EVar(m) if (m == "Assert" && (funcName == "is_true" || funcName == "is_false") && args.length >= 1):
-                            var parts: Array<String> = [];
-                            var firstPrinted = '(fn -> ' + print(args[0], indent) + ' end).()';
-                            parts.push(firstPrinted);
-                            for (i in 1...args.length) parts.push(sanitizeArgPrinted(printFunctionArg(args[i], indent), indent));
-                            return parts.join(', ');
-                        default:
-                    }
+	                    // Aggressive stabilization for Assert boolean assertions: wrap first arg in IIFE to
+	                    // guarantee single-expression semantics even when inline expansions introduce multiple statements.
+	                    // Shape-agnostic and limited to Assert.is_true/2 and Assert.is_false/2.
+	                    switch (module.def) {
+	                        case EVar(m) if (m == "Assert" && (funcName == "is_true" || funcName == "is_false") && args.length >= 1):
+	                            var parts: Array<String> = [];
+	                            var noIife = (args[0].metadata != null && args[0].metadata.noIifeWrap == true);
+	                            var firstPrinted = noIife
+	                                ? sanitizeArgPrinted(printFunctionArg(args[0], indent), indent)
+	                                : '(fn -> ' + print(args[0], indent) + ' end).()';
+	                            parts.push(firstPrinted);
+	                            for (i in 1...args.length) parts.push(sanitizeArgPrinted(printFunctionArg(args[i], indent), indent));
+	                            return parts.join(', ');
+	                        default:
+	                    }
                     if (funcName == "changeset" && args.length >= 1) {
                         var parts: Array<String> = [];
                         // Force first arg to %<RemoteModule>{} when it's a bare struct literal
@@ -2895,6 +2898,157 @@ class ElixirASTPrinter {
      */
     static function printFunctionArg(arg: ElixirAST, indentLevel: Int = 0): String {
         if (arg == null) return "";
+
+        inline function isNumericSentinel(n: ElixirAST): Bool {
+            return n != null && n.def != null && switch (n.def) {
+                case EInteger(v): v == 0 || v == 1;
+                case EFloat(f): f == 0.0;
+                default: false;
+            };
+        }
+
+        function astEq(a: ElixirAST, b: ElixirAST): Bool {
+            if (a == null || b == null) return a == b;
+            if (Type.enumIndex(a.def) != Type.enumIndex(b.def)) return false;
+            return switch [a.def, b.def] {
+                case [EVar(va), EVar(vb)]: va == vb;
+                case [EAtom(aa), EAtom(ab)]: aa == ab;
+                case [EString(sa), EString(sb)]: sa == sb;
+                case [EInteger(ia), EInteger(ib)]: ia == ib;
+                case [EFloat(fa), EFloat(fb)]: fa == fb;
+                case [EBoolean(ba), EBoolean(bb)]: ba == bb;
+                case [ENil, ENil]: true;
+                case [EParen(ia), EParen(ib)]: astEq(ia, ib);
+                case [EField(oa, fa), EField(ob, fb)]: fa == fb && astEq(oa, ob);
+                case [EAccess(oa, ka), EAccess(ob, kb)]: astEq(oa, ob) && astEq(ka, kb);
+                case [ECall(ta, fa, aa), ECall(tb, fb, ab)]:
+                    if (fa != fb || !astEq(ta, tb)) {
+                        false;
+                    } else if (aa == null || ab == null) {
+                        aa == ab;
+                    } else if (aa.length != ab.length) {
+                        false;
+                    } else {
+                        var ok = true;
+                        for (i in 0...aa.length) if (!astEq(aa[i], ab[i])) { ok = false; break; }
+                        ok;
+                    }
+                case [ERemoteCall(ma, fa, aa), ERemoteCall(mb, fb, ab)]:
+                    if (fa != fb || !astEq(ma, mb)) {
+                        false;
+                    } else if (aa == null || ab == null) {
+                        aa == ab;
+                    } else if (aa.length != ab.length) {
+                        false;
+                    } else {
+                        var ok = true;
+                        for (i in 0...aa.length) if (!astEq(aa[i], ab[i])) { ok = false; break; }
+                        ok;
+                    }
+                default:
+                    false;
+            };
+        }
+
+        function looksLikeNativeMapRemoveRebindBlock(block: ElixirAST): Bool {
+            if (block == null || block.def == null) return false;
+            var stmts = switch (block.def) {
+                case EBlock(ss): ss;
+                default: null;
+            };
+            if (stmts == null) return false;
+
+            var meaningful = [for (s in stmts) if (!isNumericSentinel(s)) s];
+            if (meaningful.length != 3) return false;
+
+            var existedName: Null<String> = null;
+            var mapVarName: Null<String> = null;
+            var keyExpr: Null<ElixirAST> = null;
+
+            // existed = Map.has_key?(m, key)
+            switch (meaningful[0].def) {
+                case EMatch(PVar(existed), {def: ERemoteCall({def: EVar("Map")}, "has_key?", args0)}) if (args0 != null && args0.length == 2):
+                    existedName = existed;
+                    switch (args0[0].def) {
+                        case EVar(m): mapVarName = m;
+                        default: return false;
+                    }
+                    keyExpr = args0[1];
+                default:
+                    return false;
+            }
+
+            // m = Map.delete(m, key)
+            switch (meaningful[1].def) {
+                case EMatch(PVar(m2), {def: ERemoteCall({def: EVar("Map")}, "delete", args1)}) if (args1 != null && args1.length == 2):
+                    if (mapVarName == null || m2 != mapVarName) return false;
+                    switch (args1[0].def) {
+                        case EVar(m3) if (m3 == mapVarName):
+                        default: return false;
+                    }
+                    if (keyExpr == null || !astEq(keyExpr, args1[1])) return false;
+                default:
+                    return false;
+            }
+
+            // existed
+            return switch (meaningful[2].def) {
+                case EVar(v) if (existedName != null && v == existedName): true;
+                default: false;
+            };
+        }
+
+        function looksLikeReflectDeleteFieldRebindBlock(block: ElixirAST): Bool {
+            if (block == null || block.def == null) return false;
+            inline function normalizeVarName(n: String): String {
+                if (n == null) return n;
+                var i = 0;
+                while (i < n.length && n.charAt(i) == "_") i++;
+                return i > 0 ? n.substr(i) : n;
+            }
+            var stmts = switch (block.def) {
+                case EBlock(ss): ss;
+                default: null;
+            };
+            if (stmts == null) return false;
+
+            var meaningful = [for (s in stmts) if (!isNumericSentinel(s)) s];
+            if (meaningful.length != 2) return false;
+
+            var deletedName: Null<String> = null;
+
+            switch (meaningful[0].def) {
+                case EMatch(PTuple([PVar(dn), PVar(_)]), rhs):
+                    deletedName = dn;
+                    // RHS is the CallExprBuilder-generated Reflect.deleteField outer case:
+                    // case {obj, field} do { _reflect_obj, _reflect_field } -> ... end
+                    var rhs0 = rhs;
+                    while (rhs0 != null) switch (rhs0.def) {
+                        case EParen(inner):
+                            rhs0 = inner;
+                            continue;
+                        default:
+                            break;
+                    }
+                    switch (rhs0.def) {
+                        case ECase(_, clauses) if (clauses != null && clauses.length == 1):
+                            switch (clauses[0].pattern) {
+                                case EPattern.PTuple([EPattern.PVar(a), EPattern.PVar(b)])
+                                    if (normalizeVarName(a) == "reflect_obj" && normalizeVarName(b) == "reflect_field"):
+                                default: return false;
+                            }
+                        default:
+                            return false;
+                    }
+                default:
+                    return false;
+            }
+
+            return switch (meaningful[1].def) {
+                case EVar(v) if (deletedName != null && v == deletedName): true;
+                default: false;
+            };
+        }
         
         // Check what kind of expression this is
         switch(arg.def) {
@@ -2927,14 +3081,33 @@ class ElixirASTPrinter {
                 return '(' + print(arg, indentLevel) + ')';
                 
             case EBlock(expressions) if (expressions.length > 1):
-                // Multi-statement blocks in function arguments must be wrapped
-                // in immediately-invoked anonymous functions
+                // Multi-statement blocks in function arguments must be wrapped in an IIFE
+                // to preserve Haxe block scoping (locals must not leak).
+                //
+                // Exception: some compiler-synthesized blocks intentionally rely on rebinding
+                // persisting in the surrounding Elixir scope (e.g., native map-backed Haxe Map ops).
+                // Those blocks are marked with `metadata.noIifeWrap` (or match a known safe rebinding shape).
+                if ((arg.metadata != null && arg.metadata.noIifeWrap == true)
+                    || looksLikeNativeMapRemoveRebindBlock(arg)
+                    || looksLikeReflectDeleteFieldRebindBlock(arg)) {
+                    return '(' + print(arg, indentLevel) + ')';
+                }
                 return '(fn -> ' + print(arg, indentLevel).rtrim() + ' end).()';
             case EDo(stmts) if (stmts.length > 1):
                 // Do-end blocks used as function arguments should also be wrapped
                 return '(fn -> ' + print(arg, indentLevel).rtrim() + ' end).()';
             case EParen(inner) if (switch (inner.def) { case EBlock(exprs) if (exprs.length > 1): true; default: false; }):
-                // Parenthesized multi-statement block as argument → wrap in IIFE too
+                // Parenthesized multi-statement block as argument.
+                //
+                // Default: wrap in IIFE to preserve Haxe block scoping.
+                // Opt-out: when marked `noIifeWrap` (or matching a known safe rebinding shape),
+                // print as-is so rebinding persists.
+                if ((arg.metadata != null && arg.metadata.noIifeWrap == true)
+                    || (inner.metadata != null && inner.metadata.noIifeWrap == true)
+                    || looksLikeNativeMapRemoveRebindBlock(inner)
+                    || looksLikeReflectDeleteFieldRebindBlock(inner)) {
+                    return print(arg, indentLevel);
+                }
                 return '(fn -> ' + print(inner, indentLevel).rtrim() + ' end).()';
             
             default:
