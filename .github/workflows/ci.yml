@@ -223,6 +223,15 @@ jobs:
         with:
           otp-version: ${{ env.OTP_VERSION }}
           elixir-version: ${{ env.ELIXIR_VERSION }}
+      - name: Cache Hex/Mix (reduce deps.get flakiness)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.hex
+            ~/.mix
+          key: ${{ runner.os }}-mix-hex-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-hex-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-
       - name: Install npm dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Cache Haxe toolchain (lix)
