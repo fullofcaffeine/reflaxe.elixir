@@ -292,6 +292,9 @@ main() {
   # Allow CI (or local dev) to skip heavy/duplicate examples by directory name.
   # Space-separated list, e.g.: EXAMPLES_ELIXIR_WAE_SKIP="todo-app test-integration"
   local skip_examples="${EXAMPLES_ELIXIR_WAE_SKIP:-}"
+  # Allow CI (or local dev) to run a subset (shard) of examples by directory name.
+  # Space-separated list, e.g.: EXAMPLES_ELIXIR_WAE_ONLY="01-simple-modules 02-mix-project"
+  local only_examples="${EXAMPLES_ELIXIR_WAE_ONLY:-}"
 
   # Ensure Hex/Rebar are present in non-interactive CI environments.
   # Some Mix versions prompt to install these, which can hang CI until timeout.
@@ -324,6 +327,11 @@ main() {
 
     if [[ -n "$skip_examples" ]] && printf ' %s ' "$skip_examples" | grep -Fq " ${name} "; then
       msg "== $name (skipped: EXAMPLES_ELIXIR_WAE_SKIP) =="
+      continue
+    fi
+
+    if [[ -n "$only_examples" ]] && ! printf ' %s ' "$only_examples" | grep -Fq " ${name} "; then
+      msg "== $name (skipped: EXAMPLES_ELIXIR_WAE_ONLY) =="
       continue
     fi
 

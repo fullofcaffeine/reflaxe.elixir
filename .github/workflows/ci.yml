@@ -198,9 +198,17 @@ jobs:
         run: npm run test:examples
 
   examples-elixir:
-    name: Examples (Elixir WAE)
+    name: Examples (Elixir WAE) / ${{ matrix.shard }}
     runs-on: ubuntu-latest
     needs: [guards]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - shard: core
+            only: '01-simple-modules 02-mix-project 03-phoenix-app 04-ecto-migrations 05-heex-templates'
+          - shard: advanced
+            only: '06-user-management 07-protocols 08-behaviors 09-phoenix-router 10-option-patterns 11-domain-validation'
     timeout-minutes: 45
     env:
       TIMEOUT_DEPS_GET: '600'
@@ -213,6 +221,7 @@ jobs:
       # - test-integration: covered by full `CI / Tests`
       # - lix-installation: covered by docs + install guides; compile-check is covered in `Examples` job
       EXAMPLES_ELIXIR_WAE_SKIP: 'todo-app test-integration lix-installation'
+      EXAMPLES_ELIXIR_WAE_ONLY: ${{ matrix.only }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
