@@ -28,10 +28,11 @@ end) do
     end)
   end
   def set(this1, key, value) do
-    (case {this1, key, value} do
+    _ = (case {this1, key, value} do
       {reflect_obj, reflect_field, reflect_value} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
-          true -> reflect_obj = Map.put(reflect_obj, reflect_field, reflect_value)
+          true ->
+            Map.put(reflect_obj, reflect_field, reflect_value)
           false ->
             (case (try do
   String.to_existing_atom(reflect_field)
@@ -39,8 +40,10 @@ rescue
   _ ->
     nil
 end) do
-              nil -> reflect_obj = Map.put(reflect_obj, reflect_field, reflect_value)
-              reflect_atom -> reflect_obj = Map.put(reflect_obj, reflect_atom, reflect_value)
+              nil ->
+                Map.put(reflect_obj, reflect_field, reflect_value)
+              reflect_atom ->
+                Map.put(reflect_obj, reflect_atom, reflect_value)
             end)
         end)
     end)
@@ -66,10 +69,11 @@ end) do
     end)
   end
   def set_field(this1, field, value) do
-    (case {this1, field, value} do
+    _ = (case {this1, field, value} do
       {reflect_obj, reflect_field, reflect_value} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
-          true -> reflect_obj = Map.put(reflect_obj, reflect_field, reflect_value)
+          true ->
+            Map.put(reflect_obj, reflect_field, reflect_value)
           false ->
             (case (try do
   String.to_existing_atom(reflect_field)
@@ -77,8 +81,10 @@ rescue
   _ ->
     nil
 end) do
-              nil -> reflect_obj = Map.put(reflect_obj, reflect_field, reflect_value)
-              reflect_atom -> reflect_obj = Map.put(reflect_obj, reflect_atom, reflect_value)
+              nil ->
+                Map.put(reflect_obj, reflect_field, reflect_value)
+              reflect_atom ->
+                Map.put(reflect_obj, reflect_atom, reflect_value)
             end)
         end)
     end)
@@ -111,7 +117,7 @@ end) do
     _g = 0
     g_value = Reflect.fields(this1)
     _ = Enum.each(g_value, fn field ->
-  (case {result, field, (case {this1, field} do
+  result = (case {result, field, (case {this1, field} do
   {reflect_obj, reflect_field} ->
     (case Map.fetch(reflect_obj, reflect_field) do
       {:ok, reflect_value} -> reflect_value
@@ -150,7 +156,7 @@ end)
     _g = 0
     g_value = Reflect.fields(to_dynamic(other))
     _ = Enum.each(g_value, fn field ->
-  (case {result, field, (case {to_dynamic(other), field} do
+  result = (case {result, field, (case {to_dynamic(other), field} do
   {reflect_obj, reflect_field} ->
     (case Map.fetch(reflect_obj, reflect_field) do
       {:ok, reflect_value} -> reflect_value
@@ -193,7 +199,7 @@ end)
     _g = 0
     g_value = Reflect.fields(this1)
     _ = Enum.each(g_value, fn existing_field ->
-  (case {result, existing_field, (case {this1, existing_field} do
+  result = (case {result, existing_field, (case {this1, existing_field} do
   {reflect_obj, reflect_field} ->
     (case Map.fetch(reflect_obj, reflect_field) do
       {:ok, reflect_value} -> reflect_value
@@ -229,10 +235,11 @@ end) do
       end)
   end)
 end)
-    (case {result, field, value} do
+    result = (case {result, field, value} do
       {reflect_obj, reflect_field, reflect_value} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
-          true -> reflect_obj = Map.put(reflect_obj, reflect_field, reflect_value)
+          true ->
+            Map.put(reflect_obj, reflect_field, reflect_value)
           false ->
             (case (try do
   String.to_existing_atom(reflect_field)
@@ -240,8 +247,10 @@ rescue
   _ ->
     nil
 end) do
-              nil -> reflect_obj = Map.put(reflect_obj, reflect_field, reflect_value)
-              reflect_atom -> reflect_obj = Map.put(reflect_obj, reflect_atom, reflect_value)
+              nil ->
+                Map.put(reflect_obj, reflect_field, reflect_value)
+              reflect_atom ->
+                Map.put(reflect_obj, reflect_atom, reflect_value)
             end)
         end)
     end)

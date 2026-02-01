@@ -11,13 +11,13 @@ defmodule Main do
     :ok
   end
   test "basic" do
-    _ = Assert.equals(1, 1, "Basic equality should work")
-    _ = Assert.is_true((fn -> true end).(), "True should be true")
-    _ = Assert.is_false((fn -> false end).(), "False should be false")
+    _ = assert(1 == 1, "Basic equality should work")
+    _ = assert(true, "True should be true")
+    _ = refute(false, "False should be false")
   end
   test "string" do
     str = "Hello"
-    _ = Assert.equals(5, str.length, "String length should be 5")
-    _ = Assert.equals("HELLO", String.upcase(str), "Uppercase should work")
+    _ = assert(5 == str.length, "String length should be 5")
+    _ = assert("HELLO" == String.upcase(str), "Uppercase should work")
   end
 end
