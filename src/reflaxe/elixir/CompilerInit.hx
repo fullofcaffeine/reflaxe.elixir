@@ -49,36 +49,8 @@ class CompilerInit {
         // `reflaxe` is vendored under `vendor/reflaxe` and injected onto the classpath
         // by `CompilerBootstrap.Start()`. We still need to initialize Reflaxe's compiler hooks.
         ReflectCompiler.Start();
-        
-        var fastBoot = Context.defined("fast_boot");
 
-        // Target-conditional classpath gating for staged overrides in std/_std.
-        //
-        // IMPORTANT: This must run early.
-        // Some stdlib modules can be loaded before later initialization steps (including RepoDiscovery),
-        // and injecting staged overrides after types are already cached can lead to inconsistent typing.
-        //
-        // Only add Elixir-specific staged stdlib when compiling to Elixir target.
-        // This prevents __elixir__ usage from leaking into macro/other targets.
-        var targetName = Context.definedValue("target.name");
-        // Derive repository root from this file's location: <root>/src/reflaxe/elixir/CompilerInit.hx
-        try {
-            var compilerInitPath = Context.resolvePath("reflaxe/elixir/CompilerInit.hx");
-            var elixirDir = Path.directory(compilerInitPath);      // .../src/reflaxe/elixir
-            var reflaxeDir = Path.directory(elixirDir);            // .../src/reflaxe
-            var srcDir = Path.directory(reflaxeDir);               // .../src
-            var libraryRoot = Path.directory(srcDir);              // .../
-            var standardLibrary = Path.normalize(Path.join([libraryRoot, "std"]));
-            var stagedStd = Path.normalize(Path.join([libraryRoot, "std/_std"]));
-            // Gate injection strictly to Elixir target. Fallback for Haxe 4 builds where
-            // target.name may be unset: rely on presence of -D elixir_output define used by this target.
-            if (targetName == "elixir" || Context.defined("elixir_output")) {
-                Compiler.addClassPath(standardLibrary);
-                Compiler.addClassPath(stagedStd);
-            }
-        } catch (e: haxe.Exception) {
-            // If resolvePath fails in certain contexts, skip gating silently (non-Elixir targets)
-        }
+        var fastBoot = Context.defined("fast_boot");
 
         // Treat Haxe's canonical Result as an Elixir-idiomatic enum.
         //

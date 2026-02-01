@@ -39,6 +39,19 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - Mix tests (fast): `npm run test:mix-fast`
 - Todo-app runtime smoke (non-blocking): `npm run qa:sentinel` then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`
 
+### Common CI failure mode: WAE examples + `std/_std` gating
+
+If `CI / Examples (Elixir WAE)` fails with warnings in generated modules like `lib/haxe/ds/balanced_tree.ex`
+or `lib/haxe/ds/enum_value_map.ex`, it usually means the Elixir-only staged stdlib (`std/_std/`) was **not**
+on the classpath during the Haxe→Elixir compile. Fix by ensuring:
+
+- `CompilerBootstrap.Start()` runs for both consumer installs **and** repo-local scoped-lib builds:
+  - consumer: `extraParams.hxml`
+  - repo harness: `haxe_libraries/reflaxe.elixir.hxml`
+- Bootstrap detection works for Haxe 4 Reflaxe builds:
+  - prefer `-D elixir_output=...` (stable harness signal)
+  - fall back to `platform == cross` (Reflaxe targets on Haxe 4)
+
 ## 🧯 CI Failure Triage (No-auth environments)
 
 GitHub Actions step logs often require a signed-in session to view or download. In no-auth environments, you can still:

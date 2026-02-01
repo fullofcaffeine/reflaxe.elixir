@@ -20,8 +20,8 @@ This document describes how Reflaxe.Elixir gates Elixir-specific staged standard
 
 Implemented in two places:
 
-- `src/reflaxe/elixir/CompilerBootstrap.hx` (`CompilerBootstrap.Start()`) — earliest possible injection (invoked from `extraParams.hxml`).
-- `src/reflaxe/elixir/CompilerInit.hx` (`CompilerInit.Start()`) — compiler registration + a redundant early injection (safe) for repo-local builds.
+- `src/reflaxe/elixir/CompilerBootstrap.hx` (`CompilerBootstrap.Start()`) — earliest possible injection (invoked from `extraParams.hxml` and, in this repo, also from `haxe_libraries/reflaxe.elixir.hxml` for scoped-lib builds).
+- `src/reflaxe/elixir/CompilerInit.hx` (`CompilerInit.Start()`) — compiler registration + safety metadata (does not own classpath gating).
 
 ### Haxe 5 platform guard (Elixir target only)
 
@@ -41,26 +41,25 @@ var targetName = Context.definedValue("target.name");
 var isElixirBuild = (targetName == "elixir" || Context.defined("elixir_output"));
 
 if (isElixirBuild) {
-  // Compute <repo>/std + <repo>/std/_std from this library's resolved path.
-  var compilerInitPath = Context.resolvePath("reflaxe/elixir/CompilerInit.hx");
-  var elixirDir = Path.directory(compilerInitPath);      // .../src/reflaxe/elixir
+  // Compute <repo>/std/_std from this library's resolved path.
+  var bootstrapPath = Context.resolvePath("reflaxe/elixir/CompilerBootstrap.hx");
+  var elixirDir = Path.directory(bootstrapPath);         // .../src/reflaxe/elixir
   var reflaxeDir = Path.directory(elixirDir);            // .../src/reflaxe
   var srcDir = Path.directory(reflaxeDir);               // .../src
   var libraryRoot = Path.directory(srcDir);              // .../
 
-  var standardLibrary = Path.normalize(Path.join([libraryRoot, "std"]));
   var stagedStd = Path.normalize(Path.join([libraryRoot, "std/_std"]));
 
-  Compiler.addClassPath(standardLibrary); // <repo>/std
-  Compiler.addClassPath(stagedStd);       // <repo>/std/_std
+  Compiler.addClassPath(stagedStd);       // <repo>/std/_std (Elixir-only)
 }
 ```
 
 ### Library configuration update
 
 - Removed the unconditional `-cp std/_std/` from `haxe_libraries/reflaxe.elixir.hxml`.
-- Kept `-cp std/` for local-repo development convenience (consumer installs rely on `extraParams.hxml`).
-- Rationale: classpath gating is handled centrally by the bootstrap macros, so `std/_std` should never be unconditional.
+- Kept `-cp std/` for local-repo development convenience.
+- Added `--macro reflaxe.elixir.CompilerBootstrap.Start()` so repo-local scoped-lib builds get the same gating behavior as consumer installs.
+- Rationale: `std/_std` must never be unconditional, but *must* be injected early for Elixir builds to avoid WAE warnings from accidentally-generated stdlib data structures (e.g., `haxe.ds.BalancedTree`).
 
 ## Activation Scenarios
 
@@ -72,8 +71,10 @@ Gating activates (i.e., `std/_std/` is added) in these scenarios:
   - Result: classpath injection runs; Elixir-only overrides are available
 
 - Haxe 4 + Reflaxe.Elixir builds (tests/examples):
-  - `--macro reflaxe.elixir.CompilerInit.Start()` is present
-  - `-D elixir_output=...` is set (stable signal; `target.name` is commonly `cross` under Haxe 4 for Reflaxe targets)
+  - `--macro reflaxe.elixir.CompilerBootstrap.Start()` is present
+  - Elixir build signals:
+    - Preferred: `-D elixir_output=...` (stable signal used throughout the harness)
+    - Early fallback: `platform == cross` (Reflaxe targets on Haxe 4)
   - Typical: test snapshots (`test/snapshot/*/compile.hxml`), examples (`examples/todo-app/build-server.hxml`)
 
 Gating DOES NOT activate in these scenarios:

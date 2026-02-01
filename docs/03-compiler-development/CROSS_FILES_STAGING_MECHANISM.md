@@ -71,10 +71,20 @@ This repo’s “staging” mechanism is **classpath gating**, not file copying:
 - In consumer projects, `extraParams.hxml` (loaded via `-lib reflaxe.elixir`) invokes:
   - `reflaxe.elixir.CompilerBootstrap.Start()`
   - `reflaxe.elixir.CompilerInit.Start()`
+- In this repository’s own test/examples harness (scoped libs via `haxe_libraries/*.hxml`),
+  `haxe_libraries/reflaxe.elixir.hxml` also invokes `CompilerBootstrap.Start()` so local builds
+  behave like consumer installs (stdlib overrides are present early).
 - Those macros detect an Elixir build (Haxe 4: `-D elixir_output=...`; Haxe 5: custom target)
   and then add:
   - `std/` (externs + `.cross.hx` overrides)
   - `std/_std/` (Elixir-only shims)
+
+Important detail (Haxe 4 / `cross`)
+- Reflaxe targets compile under the `cross` platform on Haxe 4.
+- When `CompilerBootstrap.Start()` is invoked from a library `.hxml` (via `-lib ...`), it can run
+  before downstream `-D elixir_output=...` arguments are observed by macro code.
+- For that reason, the bootstrap treats `platform == cross` as an early “this is a Reflaxe build”
+  signal, and uses `-D elixir_output=...` as a secondary confirmation where available.
 
 ### Why `elixir_output` shows up inside some `.cross.hx` files
 
