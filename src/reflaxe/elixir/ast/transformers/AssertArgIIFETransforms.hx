@@ -47,7 +47,9 @@ class AssertArgIIFETransforms {
   static function needsIIFE(arg: ElixirAST): Bool {
     return switch (arg.def) {
       case EVar(_) | EInteger(_) | EBoolean(_) | EAtom(_) | EString(_): false;
-      case EParen(inner): needsIIFE(inner);
+      // Parenthesized multi-expression blocks are valid Elixir expressions and should not be
+      // isolated in an IIFE (which introduces a new scope and can break intended rebinding).
+      case EParen(_): false;
       default: true; // be conservative: wrap all non-trivial expressions
     }
   }

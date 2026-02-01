@@ -677,20 +677,34 @@ class AssignmentExtractionTransforms {
                     );
                     
                 case EParen(inner):
-                    // First extract from the inner expression
+                    // Parentheses are an explicit "expression boundary": if we extract assignments
+                    // from inside a parenthesized expression, keep them *inside* the parentheses
+                    // as a multi-expression block, instead of hoisting them to statement-level.
+                    //
+                    // This is important for constructs that rely on rebinding to persist in the
+                    // surrounding scope (parentheses do not introduce a new scope, unlike IIFEs).
+                    var before = extracted.length;
                     var cleanInner = extractFromExpr(inner);
-                    
-                    // If we extracted assignments, don't wrap in parentheses anymore
-                    // since the extracted assignments need to be at statement level
-                    if (extracted.length > 0) {
-                        return cleanInner;
-                    } else {
+
+                    if (extracted.length > before) {
+                        var localExtracted = extracted.slice(before, extracted.length);
+                        extracted.splice(before, extracted.length - before);
+
+                        var statements = localExtracted.copy();
+                        statements.push(cleanInner);
+
                         return makeASTWithMeta(
-                            EParen(cleanInner),
+                            EParen(makeAST(EBlock(statements))),
                             e.metadata,
                             e.pos
                         );
                     }
+
+                    return makeASTWithMeta(
+                        EParen(cleanInner),
+                        e.metadata,
+                        e.pos
+                    );
                     
                 case EFn(clauses):
                     #if debug_assignment_extraction

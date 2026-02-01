@@ -730,6 +730,7 @@ typedef ElixirMetadata = {
     ?inComprehension: Bool,       // Inside for comprehension
     ?inGuard: Bool,               // Inside guard clause
     ?redundantEnumExtraction: Bool, // Marks redundant enum extraction for removal
+    ?noIifeWrap: Bool,            // Printer hint: do not wrap expression in an IIFE when used as an argument
 
     // Payload binder canonicalization locks (Phoenix/LiveView transforms)
     ?lockPayloadBinder: Bool,       // Prevent later passes from rewriting payload binder names

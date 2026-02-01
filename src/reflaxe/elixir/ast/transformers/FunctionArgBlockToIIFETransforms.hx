@@ -43,16 +43,12 @@ class FunctionArgBlockToIIFETransforms {
                 case ECall(target, name, args):
                     var newArgs = [];
                     for (a in args) if (shouldWrap(a)) {
-                        #if debug_iife
-                        #end
                         newArgs.push(makeIIFE(unwrapParens(a)));
                     } else newArgs.push(a);
                     if (newArgs != args) makeAST(ECall(target, name, newArgs)) else n;
                 case ERemoteCall(mod, fnName, argsList):
                     var rewrittenArgs = [];
                     for (argNode in argsList) if (shouldWrap(argNode)) {
-                        #if debug_iife
-                        #end
                         rewrittenArgs.push(makeIIFE(unwrapParens(argNode)));
                     } else rewrittenArgs.push(argNode);
                     if (rewrittenArgs != argsList) makeAST(ERemoteCall(mod, fnName, rewrittenArgs)) else n;
@@ -173,12 +169,9 @@ class FunctionArgBlockToIIFETransforms {
         return switch (a.def) {
             case EBlock(sts): needsWrapFor(sts);
             case EDo(statements): needsWrapFor(statements);
-            case EParen(inner):
-                switch (inner.def) {
-                    case EBlock(es): needsWrapFor(es);
-                    case EDo(exprs): needsWrapFor(exprs);
-                    default: false;
-                }
+            // Parenthesized multi-expression blocks are valid Elixir expressions and
+            // intentionally preserve the surrounding scope (unlike an IIFE).
+            case EParen(_): false;
             default: false;
         }
     }
