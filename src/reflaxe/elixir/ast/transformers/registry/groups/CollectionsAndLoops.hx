@@ -43,7 +43,10 @@ class CollectionsAndLoops {
       name: "MapKeysIteratorReduceWhileRewrite",
       description: "Rewrite iterator-driven reduce_while loops over Map.keys/1 into direct Enum.reduce_while",
       enabled: true,
-      pass: reflaxe.elixir.ast.transformers.MapKeysIteratorReduceWhileRewriteTransforms.pass
+      pass: reflaxe.elixir.ast.transformers.MapKeysIteratorReduceWhileRewriteTransforms.pass,
+      // This rewrite relies on the late match-chain normalization performed by MatchBlockRhsExtractLast_Final,
+      // which turns `Map.keys(m)` discards into stable `iter = _ = Map.keys(m)` assignments.
+      runAfter: ["ReduceWhileResultBinding", "MatchBlockRhsExtractLast_Final"]
     });
 
     passes.push({
