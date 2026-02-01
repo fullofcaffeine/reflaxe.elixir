@@ -143,11 +143,11 @@ end), haxe_exception} do
       some_value = {:some, 42}
       none_value = {:none}
       assert match?({:some, _}, some_value)
-      assert none_value == :none
+      assert match?({:none}, none_value)
       found = find_in_array(context, context[:test_data], "banana")
       assert match?({:some, _}, found)
       not_found = find_in_array(context, context[:test_data], "dragonfruit")
-      assert not_found == :none
+      assert match?({:none}, not_found)
     end
   end
   describe "Basic Assertions" do
