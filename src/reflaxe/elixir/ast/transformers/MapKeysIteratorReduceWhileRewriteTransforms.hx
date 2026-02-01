@@ -6,6 +6,9 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+#if debug_map_keys_reduce_while
+import reflaxe.elixir.ast.ElixirASTPrinter;
+#end
 
 /**
  * MapKeysIteratorReduceWhileRewriteTransforms
@@ -27,6 +30,11 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   `Enum.reduce_while(Map.keys(map), acc, fn iter, acc -> <then-branch-without-next> end)`
  * - When the reduce_while result is used only via an outer accumulator variable, rebind
  *   `{outer} = Enum.reduce_while(...)` so the mutation survives.
+ *
+ * ORDERING
+ * - This pass must run after late match-chain normalization (notably `MatchBlockRhsExtractLast_Final`)
+ *   so `Map.keys(map)` appears in a stable assignment shape (`iter = _ = Map.keys(map)`), rather than
+ *   being buried in a nested statement block. See `CollectionsAndLoops` registry for the ordering.
  *
  * EXAMPLES
  * Elixir (before):
@@ -81,10 +89,99 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
         var i = 0;
 
         while (i < stmts.length) {
+            #if debug_map_keys_reduce_while
+            var printedStmt = ElixirASTPrinter.print(stmts[i], 0);
+            if (printedStmt != null && printedStmt.indexOf("has_next") != -1 && printedStmt.indexOf("Stream.iterate") != -1) {
+                var escapedStmt = printedStmt.split("\n").join("\\n");
+                #if sys
+                Sys.println('[MapKeysReduceWhile] candidate stmt: ' + escapedStmt);
+                #else
+                trace('[MapKeysReduceWhile] candidate stmt: ' + escapedStmt);
+                #end
+            }
+            if (printedStmt != null && printedStmt.indexOf("Map.keys") != -1 && i + 1 < stmts.length) {
+                var nextPrinted = ElixirASTPrinter.print(stmts[i + 1], 0);
+                var escapedSelf = printedStmt.split("\n").join("\\n");
+                var escapedNext = nextPrinted != null ? nextPrinted.split("\n").join("\\n") : "<null>";
+                #if sys
+                Sys.println('[MapKeysReduceWhile] stmt has Map.keys; next=' + escapedNext);
+                Sys.println('[MapKeysReduceWhile] stmt=' + escapedSelf);
+                #else
+                trace('[MapKeysReduceWhile] stmt has Map.keys; next=' + escapedNext);
+                trace('[MapKeysReduceWhile] stmt=' + escapedSelf);
+                #end
+            }
+            #end
+
+            // Nested-block variant:
+            // Some passes temporarily wrap multiple sequential statements into an EBlock statement.
+            // When that block ends with `_ = Map.keys(...)` and the *next* statement is the iterator-driven
+            // reduce_while, we can still do the rewrite by hoisting the Map.keys expression out of the block.
+            var nestedTail = extractTrailingMapKeysDiscardFromStmtBlock(stmts[i]);
+            if (nestedTail != null && i + 1 < stmts.length) {
+                var reduceAny0 = extractIteratorReduceWhileAnyIter(stmts[i + 1]);
+                if (reduceAny0 != null) {
+                    var newFnNested = makeAST(EFn([{
+                        args: [PVar(reduceAny0.iterVar), reduceAny0.accPattern],
+                        guard: null,
+                        body: reduceAny0.thenBody
+                    }]));
+                    var newReduceNested = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
+                        nestedTail.keysExpr,
+                        reduceAny0.initialAcc,
+                        newFnNested
+                    ]));
+
+                    var trimmedBlockStmt = nestedTail.rebuildWithoutKeysDiscard();
+                    if (trimmedBlockStmt != null) out.push(trimmedBlockStmt);
+
+                    out.push(rebuildWrapper(stmts[i + 1], newReduceNested, reduceAny0.maybeOuterTupleBind));
+                    i += 2;
+                    continue;
+                }
+            }
+
+            // Nested-block variant (init assignment):
+            // Some lowering sequences wrap iterator initialization in a nested block statement, e.g.:
+            //   (begin) this1 = assigns.online_users; presence_key = _ = Map.keys(this1) (end)
+            //   Enum.reduce_while(Stream.iterate(...), ...)
+            //
+            // In that shape the init isn't a top-level statement, so hoist it here.
+            var nestedInit = extractTrailingMapKeysInitFromStmtBlock(stmts[i]);
+            if (nestedInit != null && i + 1 < stmts.length) {
+                var reduce0 = extractIteratorReduceWhile(stmts[i + 1], nestedInit.iterVar);
+                if (reduce0 != null) {
+                    var newFn0 = makeAST(EFn([{
+                        args: [PVar(nestedInit.iterVar), reduce0.accPattern],
+                        guard: null,
+                        body: reduce0.thenBody
+                    }]));
+                    var newReduce0 = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
+                        nestedInit.keysExpr,
+                        reduce0.initialAcc,
+                        newFn0
+                    ]));
+
+                    var trimmedBlockStmt0 = nestedInit.rebuildWithoutKeysInit();
+                    if (trimmedBlockStmt0 != null) out.push(trimmedBlockStmt0);
+
+                    out.push(rebuildWrapper(stmts[i + 1], newReduce0, reduce0.maybeOuterTupleBind));
+                    i += 2;
+                    continue;
+                }
+            }
+
             var init = extractMapKeysInit(stmts[i]);
             if (init != null && i + 1 < stmts.length) {
                 var reduce = extractIteratorReduceWhile(stmts[i + 1], init.iterVar);
                 if (reduce != null) {
+                    #if debug_map_keys_reduce_while
+                    #if sys
+                    Sys.println('[MapKeysReduceWhile] rewrite via init iterVar=' + init.iterVar);
+                    #else
+                    trace('[MapKeysReduceWhile] rewrite via init iterVar=' + init.iterVar);
+                    #end
+                    #end
                     // Build new reduce_while over Map.keys(mapExpr)
                     var newFn = makeAST(EFn([{
                         args: [PVar(init.iterVar), reduce.accPattern],
@@ -104,6 +201,39 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
                 }
             }
 
+            // Variant: `_ = Map.keys(map)` directly followed by the iterator-driven reduce_while.
+            // This shape can appear transiently while other hygiene/assignment passes are still
+            // normalizing chained matches. We still want to rewrite the reduce_while to iterate
+            // directly over the keys list and drop the now-redundant discard.
+            var keysDiscard = extractMapKeysDiscard(stmts[i]);
+            if (keysDiscard != null && i + 1 < stmts.length) {
+                var reduceAny = extractIteratorReduceWhileAnyIter(stmts[i + 1]);
+                if (reduceAny != null) {
+                    #if debug_map_keys_reduce_while
+                    #if sys
+                    Sys.println('[MapKeysReduceWhile] rewrite via discard iterVar=' + reduceAny.iterVar);
+                    #else
+                    trace('[MapKeysReduceWhile] rewrite via discard iterVar=' + reduceAny.iterVar);
+                    #end
+                    #end
+                    var newFn2 = makeAST(EFn([{
+                        args: [PVar(reduceAny.iterVar), reduceAny.accPattern],
+                        guard: null,
+                        body: reduceAny.thenBody
+                    }]));
+                    var newReduceCall2 = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
+                        keysDiscard,
+                        reduceAny.initialAcc,
+                        newFn2
+                    ]));
+
+                    var wrappedStmt2 = rebuildWrapper(stmts[i + 1], newReduceCall2, reduceAny.maybeOuterTupleBind);
+                    out.push(wrappedStmt2);
+                    i += 2;
+                    continue;
+                }
+            }
+
             out.push(stmts[i]);
             i++;
         }
@@ -117,6 +247,8 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
             return makeASTWithMeta(EMatch(outerTupleBind, rewrittenReduce), originalStmt.metadata, originalStmt.pos);
         }
         return switch (originalStmt.def) {
+            case EMatch(PWildcard, _):
+                makeASTWithMeta(EMatch(PWildcard, rewrittenReduce), originalStmt.metadata, originalStmt.pos);
             case EMatch(PVar("_"), _):
                 makeASTWithMeta(EMatch(PVar("_"), rewrittenReduce), originalStmt.metadata, originalStmt.pos);
             case EMatch(pat, _):
@@ -157,22 +289,131 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
         if (lhs == null || rhs == null) return null;
 
         // Unwrap `iter = _ = Map.keys(m)`
-        var keysCandidate = unwrapNestedDiscard(rhs);
+        var keysCandidate = unwrapNestedDiscard(unwrapParen(rhs));
         if (isMapKeysCall(keysCandidate)) {
             return { iterVar: lhs, keysExpr: keysCandidate };
         }
         return null;
     }
 
+    private static function extractMapKeysDiscard(stmt: ElixirAST): Null<ElixirAST> {
+        if (stmt == null || stmt.def == null) return null;
+        return switch (stmt.def) {
+            case EMatch(PWildcard, rhs):
+                var candidate = unwrapNestedDiscard(unwrapParen(rhs));
+                isMapKeysCall(candidate) ? candidate : null;
+            case EBinary(Match, left, rhs):
+                switch (left.def) {
+                    case EVar("_") | EUnderscore:
+                        var candidate2 = unwrapNestedDiscard(unwrapParen(rhs));
+                        isMapKeysCall(candidate2) ? candidate2 : null;
+                    default:
+                        null;
+                }
+            default:
+                null;
+        };
+    }
+
+    private static function extractTrailingMapKeysDiscardFromStmtBlock(stmt: ElixirAST): Null<{
+        keysExpr: ElixirAST,
+        rebuildWithoutKeysDiscard: Void -> Null<ElixirAST>
+    }> {
+        if (stmt == null || stmt.def == null) return null;
+
+        function mk(blockKind: String, inner: Array<ElixirAST>): Null<{
+            keysExpr: ElixirAST,
+            rebuildWithoutKeysDiscard: Void -> Null<ElixirAST>
+        }> {
+            if (inner == null || inner.length == 0) return null;
+            var last = inner[inner.length - 1];
+            var keysExpr = extractMapKeysDiscard(last);
+            if (keysExpr == null) return null;
+            var prefix = inner.slice(0, inner.length - 1);
+            return {
+                keysExpr: keysExpr,
+                rebuildWithoutKeysDiscard: function() {
+                    if (prefix.length == 0) return null;
+                    return switch (blockKind) {
+                        case "block":
+                            makeASTWithMeta(EBlock(prefix), stmt.metadata, stmt.pos);
+                        case "do":
+                            makeASTWithMeta(EDo(prefix), stmt.metadata, stmt.pos);
+                        default:
+                            makeASTWithMeta(EBlock(prefix), stmt.metadata, stmt.pos);
+                    };
+                }
+            };
+        }
+
+        return switch (stmt.def) {
+            case EBlock(inner):
+                mk("block", inner);
+            case EDo(innerDo):
+                mk("do", innerDo);
+            default:
+                null;
+        };
+    }
+
+    private static function extractTrailingMapKeysInitFromStmtBlock(stmt: ElixirAST): Null<{
+        iterVar: String,
+        keysExpr: ElixirAST,
+        rebuildWithoutKeysInit: Void -> Null<ElixirAST>
+    }> {
+        if (stmt == null || stmt.def == null) return null;
+
+        function mk(blockKind: String, inner: Array<ElixirAST>): Null<{
+            iterVar: String,
+            keysExpr: ElixirAST,
+            rebuildWithoutKeysInit: Void -> Null<ElixirAST>
+        }> {
+            if (inner == null || inner.length == 0) return null;
+            var last = inner[inner.length - 1];
+            var init = extractMapKeysInit(last);
+            if (init == null) return null;
+            var prefix = inner.slice(0, inner.length - 1);
+            return {
+                iterVar: init.iterVar,
+                keysExpr: init.keysExpr,
+                rebuildWithoutKeysInit: function() {
+                    if (prefix.length == 0) return null;
+                    return switch (blockKind) {
+                        case "block":
+                            makeASTWithMeta(EBlock(prefix), stmt.metadata, stmt.pos);
+                        case "do":
+                            makeASTWithMeta(EDo(prefix), stmt.metadata, stmt.pos);
+                        default:
+                            makeASTWithMeta(EBlock(prefix), stmt.metadata, stmt.pos);
+                    };
+                }
+            };
+        }
+
+        return switch (stmt.def) {
+            case EBlock(inner):
+                mk("block", inner);
+            case EDo(innerDo):
+                mk("do", innerDo);
+            default:
+                null;
+        };
+    }
+
     private static function unwrapNestedDiscard(expr: ElixirAST): ElixirAST {
         if (expr == null || expr.def == null) return expr;
-        return switch (expr.def) {
+        var unwrapped = unwrapParen(expr);
+        return switch (unwrapped.def) {
+            case EParen(inner):
+                unwrapNestedDiscard(inner);
             case EBinary(Match, left, rhs):
-                switch (left.def) { case EVar("_"): rhs; default: expr; }
+                switch (left.def) { case EVar("_") | EUnderscore: rhs; default: unwrapped; }
+            case EMatch(PWildcard, rhs):
+                rhs;
             case EMatch(PVar("_"), rhs):
                 rhs;
             default:
-                expr;
+                unwrapped;
         };
     }
 
@@ -208,12 +449,14 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
         }
 
         if (callNode == null || callNode.def == null) return null;
+        // Some passes wrap statements in parens or single-statement blocks.
+        callNode = unwrapSingleStatementBlock(callNode);
 
         // Expect Enum.reduce_while(Stream.iterate(...), acc, fn _, accPat -> try do if iter.has_next.() do ... end catch ... end end)
         var initialAcc: Null<ElixirAST> = null;
         var fnNode: Null<ElixirAST> = null;
 
-        switch (callNode.def) {
+        switch (unwrapParen(callNode).def) {
             case ERemoteCall(mod, "reduce_while", args) if (isEnum(mod) && args != null && args.length == 3):
                 if (!isStreamIterate(args[0])) return null;
                 initialAcc = args[1];
@@ -225,6 +468,8 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
             default:
                 return null;
         }
+
+        fnNode = fnNode != null ? unwrapSingleStatementBlock(fnNode) : fnNode;
 
         var accPattern: Null<EPattern> = null;
         var thenBody: Null<ElixirAST> = null;
@@ -281,24 +526,142 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
         };
     }
 
-    private static function extractTryIfThenBody(body: ElixirAST, iterVar: String): Null<ElixirAST> {
+	    private static function extractTryIfThenBody(body: ElixirAST, iterVar: String): Null<ElixirAST> {
+	        if (body == null || body.def == null) return null;
+
+	        // Expect: try do if iter.has_next.() do <then> else <else> end catch ... end
+	        var root = unwrapSingleStatementBlock(body);
+	        switch (root.def) {
+	            case ETry(tryBody, rescue, catchClauses, afterBlock, elseBlock):
+	                var inner = unwrapSingleStatementBlock(tryBody);
+	                switch (inner.def) {
+	                    case EIf(cond, thenBranch, _elseBranch):
+	                        if (!isHasNextCall(cond, iterVar)) return null;
+	                        var cleanedThen = dropLeadingNextAssign(thenBranch, iterVar);
+	                        return makeAST(ETry(cleanedThen, rescue, catchClauses, afterBlock, elseBlock));
+	                    default:
+	                        return null;
+	                }
+	            default:
+	                return null;
+	        }
+	    }
+
+    private static function extractIteratorReduceWhileAnyIter(stmt: ElixirAST): Null<{
+        iterVar: String,
+        initialAcc: ElixirAST,
+        accPattern: EPattern,
+        thenBody: ElixirAST,
+        maybeOuterTupleBind: Null<EPattern>
+    }> {
+        if (stmt == null || stmt.def == null) return null;
+
+        var callNode: Null<ElixirAST> = null;
+        switch (stmt.def) {
+            case EMatch(_, rhs):
+                callNode = rhs;
+            case EBinary(Match, left, rhs):
+                switch (left.def) { case EVar("_") | EUnderscore: callNode = rhs; default: callNode = stmt; }
+            default:
+                callNode = stmt;
+        }
+
+        if (callNode == null || callNode.def == null) return null;
+        callNode = unwrapSingleStatementBlock(callNode);
+
+        var initialAcc: Null<ElixirAST> = null;
+        var fnNode: Null<ElixirAST> = null;
+        switch (unwrapParen(callNode).def) {
+            case ERemoteCall(mod, "reduce_while", args) if (isEnum(mod) && args != null && args.length == 3):
+                if (!isStreamIterate(args[0])) return null;
+                initialAcc = args[1];
+                fnNode = args[2];
+            case ECall(target, "reduce_while", args) if (target != null && isEnum(target) && args != null && args.length == 3):
+                if (!isStreamIterate(args[0])) return null;
+                initialAcc = args[1];
+                fnNode = args[2];
+            default:
+                return null;
+        }
+
+        fnNode = fnNode != null ? unwrapSingleStatementBlock(fnNode) : fnNode;
+
+        var accPattern: Null<EPattern> = null;
+        var thenBody: Null<ElixirAST> = null;
+        var iterVar: Null<String> = null;
+
+        switch (fnNode.def) {
+            case EFn(clauses) if (clauses != null && clauses.length == 1):
+                var clause = clauses[0];
+                if (clause.args == null || clause.args.length != 2) return null;
+                accPattern = clause.args[1];
+
+                var extracted = extractTryIfThenBodyAnyIter(clause.body);
+                if (extracted == null) return null;
+                iterVar = extracted.iterVar;
+                thenBody = extracted.thenBody;
+            default:
+                return null;
+        }
+
+        var outerTupleBind: Null<EPattern> = null;
+        var wrapperIsDiscard = switch (stmt.def) {
+            case EMatch(pattern, _):
+                switch (pattern) { case PWildcard | PVar("_"): true; default: false; }
+            case EBinary(Match, left, _):
+                switch (left.def) { case EVar("_") | EUnderscore: true; default: false; }
+            default:
+                false;
+        };
+        var isWrapped = switch (stmt.def) {
+            case EMatch(_, _) | EBinary(Match, _, _): true;
+            default: false;
+        };
+        if (!isWrapped || wrapperIsDiscard) outerTupleBind = extractSingleVarTuplePattern(initialAcc);
+
+        return {
+            iterVar: iterVar,
+            initialAcc: initialAcc,
+            accPattern: accPattern,
+            thenBody: thenBody,
+            maybeOuterTupleBind: outerTupleBind
+        };
+    }
+
+    private static function extractTryIfThenBodyAnyIter(body: ElixirAST): Null<{ iterVar: String, thenBody: ElixirAST }> {
         if (body == null || body.def == null) return null;
 
-        // Expect: try do if iter.has_next.() do <then> else <else> end catch ... end
-        switch (body.def) {
+        var root = unwrapSingleStatementBlock(body);
+        switch (root.def) {
             case ETry(tryBody, rescue, catchClauses, afterBlock, elseBlock):
                 var inner = unwrapSingleStatementBlock(tryBody);
                 switch (inner.def) {
                     case EIf(cond, thenBranch, _elseBranch):
-                        if (!isHasNextCall(cond, iterVar)) return null;
+                        var iterVar = extractHasNextVar(cond);
+                        if (iterVar == null) return null;
                         var cleanedThen = dropLeadingNextAssign(thenBranch, iterVar);
-                        return makeAST(ETry(cleanedThen, rescue, catchClauses, afterBlock, elseBlock));
+                        return { iterVar: iterVar, thenBody: makeAST(ETry(cleanedThen, rescue, catchClauses, afterBlock, elseBlock)) };
                     default:
                         return null;
                 }
             default:
                 return null;
         }
+    }
+
+    private static function extractHasNextVar(expr: ElixirAST): Null<String> {
+        if (expr == null || expr.def == null) return null;
+        return switch (unwrapParen(expr).def) {
+            case ECall(target, "", args) if (args != null && args.length == 0):
+                switch (unwrapParen(target).def) {
+                    case EField({def: EVar(v)}, "has_next"):
+                        v;
+                    default:
+                        null;
+                }
+            default:
+                null;
+        };
     }
 
     private static function unwrapParen(e: ElixirAST): ElixirAST {
@@ -396,7 +759,8 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 
     private static function isStreamIterate(expr: ElixirAST): Bool {
         if (expr == null || expr.def == null) return false;
-        return switch (expr.def) {
+        var unwrapped = unwrapParen(expr);
+        return switch (unwrapped.def) {
             case ERemoteCall(mod, "iterate", args) if (args != null && args.length == 2 && isModuleName(mod, "Stream")):
                 true;
             case ECall(target, "iterate", args) if (target != null && args != null && args.length == 2 && isModuleName(target, "Stream")):

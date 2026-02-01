@@ -798,30 +798,45 @@ class CallExprBuilder {
                             default:
                         }
 
-                        if (isNativeMapReceiver) {
-                            var receiverAst = buildExpression(obj);
-                            var receiverLocal: Null<TVar> = switch (obj.expr) {
-                                case TLocal(vLocal): vLocal;
-                                default: null;
-                            };
-                            var receiverVarName: Null<String> = receiverLocal != null
-                                ? VariableBuilder.resolveVariableName(receiverLocal, context)
-                                : null;
+	                        if (isNativeMapReceiver) {
+	                            var receiverAst = buildExpression(obj);
+	                            var receiverLocal: Null<TVar> = switch (obj.expr) {
+	                                case TLocal(vLocal): vLocal;
+	                                default: null;
+	                            };
+	                            var receiverVarName: Null<String> = receiverLocal != null
+	                                ? VariableBuilder.resolveVariableName(receiverLocal, context)
+	                                : null;
 
                             inline function receiverRef(): ElixirAST {
                                 return receiverVarName != null ? makeAST(EVar(receiverVarName)) : receiverAst;
                             }
 
-                            switch (methodName) {
-                                case "get" if (argASTs != null && argASTs.length == 1):
-                                    return ERemoteCall(makeAST(EVar("Map")), "get", [receiverAst, argASTs[0]]);
+	                            switch (methodName) {
+	                                case "get" if (argASTs != null && argASTs.length == 1):
+	                                    return ERemoteCall(makeAST(EVar("Map")), "get", [receiverAst, argASTs[0]]);
 
-                                case "exists" if (argASTs != null && argASTs.length == 1):
-                                    return ERemoteCall(makeAST(EVar("Map")), "has_key?", [receiverAst, argASTs[0]]);
+	                                case "keys" if (argASTs != null && argASTs.length == 0):
+	                                    // Haxe `Map.keys()` returns an iterator-like value.
+	                                    //
+	                                    // On the Elixir target we represent Haxe maps as native Elixir maps (`%{}`),
+	                                    // which do not carry `:__struct__`/`:__reflaxe_class__`. Therefore we must not
+	                                    // call this through virtual dispatch.
+	                                    //
+	                                    // We lower to `Map.keys/1` (list of keys).
+	                                    //
+	                                    // IMPORTANT: Haxe desugars `for (k in map.keys())` into an iterator-style loop
+	                                    // that calls `hasNext/next`. On Elixir, `Map.keys/1` returns a list, so the
+	                                    // AST pipeline includes a late rewrite pass that turns this iterator-driven
+	                                    // loop lowering into `Enum.reduce_while(Map.keys(map), ...)`.
+	                                    return ERemoteCall(makeAST(EVar("Map")), "keys", [receiverAst]);
 
-                                case "set" if (argASTs != null && argASTs.length == 2 && receiverVarName != null):
-                                    var putCall = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [receiverRef(), argASTs[0], argASTs[1]]));
-                                    return EMatch(PVar(receiverVarName), putCall);
+	                                case "exists" if (argASTs != null && argASTs.length == 1):
+	                                    return ERemoteCall(makeAST(EVar("Map")), "has_key?", [receiverAst, argASTs[0]]);
+
+	                                case "set" if (argASTs != null && argASTs.length == 2 && receiverVarName != null):
+	                                    var putCall = makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [receiverRef(), argASTs[0], argASTs[1]]));
+	                                    return EMatch(PVar(receiverVarName), putCall);
 
                                 case "copy":
                                     // Persistent map value semantics: rebinding on writes naturally keeps snapshots stable.
