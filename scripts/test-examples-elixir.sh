@@ -289,6 +289,10 @@ main() {
   rm -rf "$LOG_DIR" 2>/dev/null || true
   mkdir -p "$LOG_DIR"
 
+  # Allow CI (or local dev) to skip heavy/duplicate examples by directory name.
+  # Space-separated list, e.g.: EXAMPLES_ELIXIR_WAE_SKIP="todo-app test-integration"
+  local skip_examples="${EXAMPLES_ELIXIR_WAE_SKIP:-}"
+
   # Ensure Hex/Rebar are present in non-interactive CI environments.
   # Some Mix versions prompt to install these, which can hang CI until timeout.
   msg "Bootstrapping Hex/Rebar"
@@ -315,6 +319,11 @@ main() {
 
     # Skip repo-level docs file placeholders, if any.
     if [ "$name" = "README.md" ]; then
+      continue
+    fi
+
+    if [[ -n "$skip_examples" ]] && printf ' %s ' "$skip_examples" | grep -Fq " ${name} "; then
+      msg "== $name (skipped: EXAMPLES_ELIXIR_WAE_SKIP) =="
       continue
     fi
 
