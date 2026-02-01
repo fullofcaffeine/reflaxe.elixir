@@ -118,25 +118,74 @@ validate_haxe_only_example() {
   local out_dir
   out_dir="$(make_tmp_out_dir "$dir")"
 
-  local sources_file sources
-  sources_file="$(mktemp "${TMPDIR:-/tmp}/reflaxe-elixir-example-exs.XXXXXX")"
-  list_elixir_sources "$dir" "$sources_file"
-  if [ ! -s "$sources_file" ]; then
+  # Compile `.ex` files in a deterministic, dependency-friendly order.
+  #
+  # NOTE: `find` traversal order differs across platforms/filesystems. `elixirc` compilation
+  # order can matter for structs/macros, so we enforce an order here to avoid “passes locally
+  # but fails on CI (linux)” drift.
+  local ex_files
+  ex_files="$(cd "$dir" && find lib -type f -name "*.ex" -print 2>/dev/null | sed 's|^\\./||' | LC_ALL=C sort || true)"
+  if [ -z "${ex_files}" ]; then
     msg "No .ex files under ${name}/lib; skipping elixirc"
-    rm -f "$sources_file" 2>/dev/null || true
     return 0
   fi
 
-  sources=()
-  while IFS= read -r line; do
-    [ -n "$line" ] || continue
-    sources+=("$line")
-  done < "$sources_file"
-  rm -f "$sources_file" 2>/dev/null || true
+  local ordered=()
+
+  # Known runtime/bridge modules that other generated modules commonly depend on.
+  local prefer=(
+    "lib/reflaxe/exception.ex"
+    "lib/reflaxe/elixir/haxe_throw.ex"
+    "lib/type.ex"
+    "lib/reflect.ex"
+    "lib/std.ex"
+    "lib/string_tools.ex"
+    "lib/string_buf.ex"
+    "lib/sys.ex"
+  )
+
+  remove_one() {
+    local needle="$1"
+    ex_files="$(printf '%s\n' "$ex_files" | grep -Fxv "$needle" || true)"
+  }
+
+  for p in "${prefer[@]}"; do
+    if printf '%s\n' "$ex_files" | grep -Fxq "$p"; then
+      ordered+=("$p")
+      remove_one "$p"
+    fi
+  done
+
+  # Compile Reflaxe + Haxe runtime modules early (they often define structs/macros used elsewhere).
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    case "$f" in
+      lib/reflaxe/*)
+        ordered+=("$f")
+        ;;
+    esac
+  done <<< "$(printf '%s\n' "$ex_files" | grep '^lib/reflaxe/' || true)"
+  ex_files="$(printf '%s\n' "$ex_files" | grep -v '^lib/reflaxe/' || true)"
+
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    case "$f" in
+      lib/haxe/*)
+        ordered+=("$f")
+        ;;
+    esac
+  done <<< "$(printf '%s\n' "$ex_files" | grep '^lib/haxe/' || true)"
+  ex_files="$(printf '%s\n' "$ex_files" | grep -v '^lib/haxe/' || true)"
+
+  # Remaining app modules (stable sorted order).
+  while IFS= read -r f; do
+    [ -n "$f" ] || continue
+    ordered+=("$f")
+  done <<< "$ex_files"
 
   # Compile into a temp dir to avoid polluting the repo with .beam files.
   # Note: elixirc writes beams even when only checking warnings.
-  run_step "$TIMEOUT_ELIXIRC" "$dir" env elixirc --warnings-as-errors -o "$out_dir" "${sources[@]}"
+  run_step "$TIMEOUT_ELIXIRC" "$dir" env elixirc --warnings-as-errors -o "$out_dir" "${ordered[@]}"
   rm -rf "$out_dir" 2>/dev/null || true
 }
 
