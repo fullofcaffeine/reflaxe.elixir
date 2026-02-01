@@ -32,6 +32,29 @@ run_step() {
   "${ROOT_DIR}/scripts/with-timeout.sh" --secs "$secs" --cwd "$cwd" --echo -- "$@"
 }
 
+run_step_retry() {
+  local attempts="$1"
+  local secs="$2"
+  local cwd="$3"
+  shift 3
+
+  local n=1
+  while true; do
+    if run_step "$secs" "$cwd" "$@"; then
+      return 0
+    fi
+
+    if [[ "$n" -ge "$attempts" ]]; then
+      return 1
+    fi
+
+    local backoff="$(( n * 2 ))"
+    msg "Retrying (attempt $((n + 1))/$attempts) after ${backoff}s: $*"
+    sleep "$backoff"
+    n="$((n + 1))"
+  done
+}
+
 make_tmp_out_dir() {
   local base="$1"
   local out="${base}/_build/elixirc_validate"
@@ -62,7 +85,9 @@ validate_mix_example() {
 
   msg "== $name (mix compile --warnings-as-errors) =="
 
-  run_step "$TIMEOUT_DEPS_GET" "$dir" env MIX_ENV=test mix deps.get
+  # deps.get is the most network-sensitive part (Hex), so allow a couple retries to
+  # reduce CI flakiness without hiding real compile failures.
+  run_step_retry 3 "$TIMEOUT_DEPS_GET" "$dir" env MIX_ENV=test mix deps.get
   run_step "$TIMEOUT_DEPS_COMPILE" "$dir" env MIX_ENV=test mix deps.compile
 
   # Compile the app under WAE, but do not recompile deps (deps may have warnings we do not control).
@@ -116,8 +141,8 @@ main() {
   # Ensure Hex/Rebar are present in non-interactive CI environments.
   # Some Mix versions prompt to install these, which can hang CI until timeout.
   msg "Bootstrapping Hex/Rebar"
-  run_step 60 "$ROOT_DIR" mix local.hex --force
-  run_step 60 "$ROOT_DIR" mix local.rebar --force
+  run_step_retry 3 60 "$ROOT_DIR" mix local.hex --force
+  run_step_retry 3 60 "$ROOT_DIR" mix local.rebar --force
 
   local dir name
   for dir in "$EXAMPLES_DIR"/*; do
