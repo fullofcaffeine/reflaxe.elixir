@@ -27,6 +27,26 @@ What these scripts do
 
 Always use these sentinels for runtime checks. Do not run `mix phx.server` in the foreground during agent work.
 
+## ✅ CI Parity Checklist (Required before pushing)
+
+These failures usually come from running only a subset locally (e.g. `test:quick`) while CI runs additional suites and strict example compilation.
+
+- Snapshots (quick): `npm run test:quick` (core/stdlib/regression)
+- Snapshots (full CI categories): `scripts/test-chunks.sh`
+  - CI includes: `core,stdlib,regression,phoenix,liveview,ecto,otp,exunit,bootstrap`
+  - If you changed an AST pass or stdlib shaping, prefer running the full categories to avoid “works locally but CI fails” on later suites.
+- Examples (strict warnings): `npm run test:examples-elixir` (mix compile `--warnings-as-errors`, no deps check)
+- Mix tests (fast): `npm run test:mix-fast`
+- Todo-app runtime smoke (non-blocking): `npm run qa:sentinel` then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`
+
+## 🧯 CI Failure Triage (No-auth environments)
+
+GitHub Actions step logs often require a signed-in session to view or download. In no-auth environments, you can still:
+
+- Identify which *job + step* failed via the GitHub API (no logs, but enough to narrow scope):
+  - `python3 - <<'PY'\nimport json,urllib.request\nrun_id=<RUN_ID>\nurl=f'https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/actions/runs/{run_id}/jobs?per_page=100'\nreq=urllib.request.Request(url, headers={'Accept':'application/vnd.github+json'})\nwith urllib.request.urlopen(req) as r:\n  data=json.load(r)\nfor j in data.get('jobs', []):\n  if j.get('conclusion')=='failure':\n    print(j['name'], j['id'])\n    for s in j.get('steps', []):\n      if s.get('conclusion')=='failure':\n        print('  failing step:', s.get('name'))\nPY`
+- Ask the user to paste the last ~200 lines from the failing step output; include the run id + job id URL.
+
 ### ⛔ Hard Rule: No Sync Sentinel During Agent Work
 
 - Agents must never invoke `scripts/qa-sentinel.sh` in synchronous mode while working in the terminal.
