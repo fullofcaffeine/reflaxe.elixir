@@ -28,13 +28,96 @@ export HEX_HTTP_TIMEOUT="${HEX_HTTP_TIMEOUT:-120}"
 export HEX_HTTP_CONCURRENCY="${HEX_HTTP_CONCURRENCY:-1}"
 
 msg() { printf "\n[examples-elixir] %s\n" "$*"; }
-fail() { echo "[examples-elixir] ❌ $*" >&2; exit 1; }
+
+LOG_DIR_DEFAULT="${ROOT_DIR}/_tmp/examples-elixir-wae"
+LOG_DIR="${LOG_DIR:-$LOG_DIR_DEFAULT}"
+
+CURRENT_EXAMPLE=""
+CURRENT_PHASE=""
+LAST_LOG_FILE=""
+LAST_CMD=""
+
+append_step_summary() {
+  local title="$1"
+  local body="$2"
+  if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
+    {
+      echo "### ${title}"
+      echo
+      echo '```'
+      echo "$body"
+      echo '```'
+      echo
+    } >>"$GITHUB_STEP_SUMMARY"
+  fi
+}
+
+emit_github_error() {
+  local title="$1"
+  local body="$2"
+  if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+    # GitHub annotation body must be a single line; keep it short and actionable.
+    local one_line
+    one_line="$(printf '%s' "$body" | tr '\n' ' ' | sed -E 's/[[:space:]]+/ /g' | cut -c1-2000)"
+    echo "::error title=${title}::${one_line}"
+  fi
+}
+
+fail() {
+  local message="$1"
+  echo "[examples-elixir] ❌ ${message}" >&2
+
+  if [[ -n "${LAST_LOG_FILE:-}" && -f "$LAST_LOG_FILE" ]]; then
+    echo "[examples-elixir] Last log: $LAST_LOG_FILE" >&2
+    echo "[examples-elixir] ---- tail (200) ----" >&2
+    tail -n 200 "$LAST_LOG_FILE" >&2 || true
+    echo "[examples-elixir] --------------------" >&2
+
+    local summary
+    summary="$(
+      printf 'Example: %s\nPhase: %s\nCommand: %s\nLog: %s\n\n' \
+        "${CURRENT_EXAMPLE:-unknown}" \
+        "${CURRENT_PHASE:-unknown}" \
+        "${LAST_CMD:-unknown}" \
+        "${LAST_LOG_FILE}"
+      tail -n 200 "$LAST_LOG_FILE" 2>/dev/null || true
+    )"
+    append_step_summary "Examples (Elixir WAE) failure" "$summary"
+    emit_github_error "Examples (Elixir WAE) failed" "Example=${CURRENT_EXAMPLE:-unknown} Phase=${CURRENT_PHASE:-unknown} Command=${LAST_CMD:-unknown} Log=${LAST_LOG_FILE} :: $(tail -n 40 \"$LAST_LOG_FILE\" 2>/dev/null || true)"
+  else
+    append_step_summary "Examples (Elixir WAE) failure" "$(
+      printf 'Example: %s\nPhase: %s\nCommand: %s\n\n%s\n' \
+        "${CURRENT_EXAMPLE:-unknown}" \
+        "${CURRENT_PHASE:-unknown}" \
+        "${LAST_CMD:-unknown}" \
+        "${message}"
+    )"
+    emit_github_error "Examples (Elixir WAE) failed" "Example=${CURRENT_EXAMPLE:-unknown} Phase=${CURRENT_PHASE:-unknown} Command=${LAST_CMD:-unknown} :: ${message}"
+  fi
+
+  exit 1
+}
 
 run_step() {
   local secs="$1"
   local cwd="$2"
   shift 2
-  "${ROOT_DIR}/scripts/with-timeout.sh" --secs "$secs" --cwd "$cwd" --echo -- "$@"
+
+  mkdir -p "$LOG_DIR"
+  local safe_example="${CURRENT_EXAMPLE:-root}"
+  safe_example="${safe_example//\//_}"
+  local safe_phase="${CURRENT_PHASE:-step}"
+  safe_phase="${safe_phase// /_}"
+  local log_file
+  log_file="$(mktemp "${LOG_DIR}/${safe_example}.${safe_phase}.XXXXXX.log")"
+  LAST_LOG_FILE="$log_file"
+  LAST_CMD="$(printf '%q ' "$@")"
+
+  set +e
+  "${ROOT_DIR}/scripts/with-timeout.sh" --secs "$secs" --cwd "$cwd" --echo -- "$@" 2>&1 | tee "$log_file"
+  local rc=${PIPESTATUS[0]}
+  set -e
+  return "$rc"
 }
 
 run_step_retry() {
@@ -88,29 +171,39 @@ validate_mix_example() {
   local dir="$1"
   local name="$2"
 
+  CURRENT_EXAMPLE="$name"
+
   msg "== $name (mix compile --warnings-as-errors) =="
 
   # deps.get is the most network-sensitive part (Hex), so allow a couple retries to
   # reduce CI flakiness without hiding real compile failures.
-  run_step_retry 5 "$TIMEOUT_DEPS_GET" "$dir" env MIX_ENV=test mix deps.get
-  run_step "$TIMEOUT_DEPS_COMPILE" "$dir" env MIX_ENV=test mix deps.compile
+  CURRENT_PHASE="deps.get"
+  run_step_retry 5 "$TIMEOUT_DEPS_GET" "$dir" env MIX_ENV=test mix deps.get || fail "mix deps.get failed for $name"
+
+  CURRENT_PHASE="deps.compile"
+  run_step "$TIMEOUT_DEPS_COMPILE" "$dir" env MIX_ENV=test mix deps.compile || fail "mix deps.compile failed for $name"
 
   # Compile the app under WAE, but do not recompile deps (deps may have warnings we do not control).
   # Force recompilation so warnings can't hide behind cached artifacts.
-  run_step "$TIMEOUT_MIX_COMPILE" "$dir" env MIX_ENV=test HAXE_NO_SERVER=1 mix compile --force --warnings-as-errors --no-deps-check
+  CURRENT_PHASE="mix.compile"
+  run_step "$TIMEOUT_MIX_COMPILE" "$dir" env MIX_ENV=test HAXE_NO_SERVER=1 mix compile --force --warnings-as-errors --no-deps-check || fail "mix compile --warnings-as-errors failed for $name"
 }
 
 validate_haxe_only_example() {
   local dir="$1"
   local name="$2"
 
+  CURRENT_EXAMPLE="$name"
+
   msg "== $name (elixirc --warnings-as-errors) =="
 
   # Generate Elixir outputs
   if [ -f "${dir}/compile-all.hxml" ]; then
-    run_step "$TIMEOUT_HAXE_BUILD" "$dir" "$HAXE_BIN" compile-all.hxml
+    CURRENT_PHASE="haxe.build"
+    run_step "$TIMEOUT_HAXE_BUILD" "$dir" "$HAXE_BIN" compile-all.hxml || fail "haxe compile-all.hxml failed for $name"
   elif [ -f "${dir}/build.hxml" ]; then
-    run_step "$TIMEOUT_HAXE_BUILD" "$dir" "$HAXE_BIN" build.hxml
+    CURRENT_PHASE="haxe.build"
+    run_step "$TIMEOUT_HAXE_BUILD" "$dir" "$HAXE_BIN" build.hxml || fail "haxe build.hxml failed for $name"
   else
     fail "No build.hxml or compile-all.hxml found for ${name}"
   fi
@@ -185,12 +278,16 @@ validate_haxe_only_example() {
 
   # Compile into a temp dir to avoid polluting the repo with .beam files.
   # Note: elixirc writes beams even when only checking warnings.
-  run_step "$TIMEOUT_ELIXIRC" "$dir" env elixirc --warnings-as-errors -o "$out_dir" "${ordered[@]}"
+  CURRENT_PHASE="elixirc"
+  run_step "$TIMEOUT_ELIXIRC" "$dir" env elixirc --warnings-as-errors -o "$out_dir" "${ordered[@]}" || fail "elixirc --warnings-as-errors failed for $name"
   rm -rf "$out_dir" 2>/dev/null || true
 }
 
 main() {
   [ -d "$EXAMPLES_DIR" ] || fail "examples/ directory not found at $EXAMPLES_DIR"
+
+  rm -rf "$LOG_DIR" 2>/dev/null || true
+  mkdir -p "$LOG_DIR"
 
   # Ensure Hex/Rebar are present in non-interactive CI environments.
   # Some Mix versions prompt to install these, which can hang CI until timeout.
@@ -202,10 +299,14 @@ main() {
   if printf '%s' "$archives" | grep -qE '^[*][[:space:]]+hex-'; then
     msg "Hex already available; skipping mix local.hex"
   else
-    run_step_retry 5 60 "$ROOT_DIR" mix local.hex --force
+    CURRENT_EXAMPLE="bootstrap"
+    CURRENT_PHASE="mix.local.hex"
+    run_step_retry 5 60 "$ROOT_DIR" mix local.hex --force || fail "mix local.hex --force failed"
   fi
 
-  run_step_retry 5 60 "$ROOT_DIR" mix local.rebar --force
+  CURRENT_EXAMPLE="bootstrap"
+  CURRENT_PHASE="mix.local.rebar"
+  run_step_retry 5 60 "$ROOT_DIR" mix local.rebar --force || fail "mix local.rebar --force failed"
 
   local dir name
   for dir in "$EXAMPLES_DIR"/*; do
