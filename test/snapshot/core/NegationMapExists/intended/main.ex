@@ -2,14 +2,18 @@ defmodule Main do
   def main() do
     error_map = %{}
     field = "test"
-    if (not apply(Map.get(error_map, :__reflaxe_class__) || Map.get(error_map, :__struct__), :exists, [error_map, field])) do
-      apply(Map.get(error_map, :__reflaxe_class__) || Map.get(error_map, :__struct__), :set, [error_map, field, []])
+    error_map = if (not Map.has_key?(error_map, field)) do
+      Map.put(error_map, field, [])
+    else
+      error_map
     end
-    has_field = apply(Map.get(error_map, :__reflaxe_class__) || Map.get(error_map, :__struct__), :exists, [error_map, field])
-    if (not has_field) do
-      apply(Map.get(error_map, :__reflaxe_class__) || Map.get(error_map, :__struct__), :set, [error_map, field, ["value"]])
+    has_field = Map.has_key?(error_map, field)
+    error_map = if (not has_field) do
+      Map.put(error_map, field, ["value"])
+    else
+      error_map
     end
-    values = apply(Map.get(error_map, :__reflaxe_class__) || Map.get(error_map, :__struct__), :get, [error_map, field])
+    values = Map.get(error_map, field)
     _ = values ++ ["new value"]
     nil
   end

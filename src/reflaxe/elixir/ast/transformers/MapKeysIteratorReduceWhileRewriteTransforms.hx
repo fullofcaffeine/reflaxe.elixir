@@ -420,9 +420,12 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
     private static function isMapKeysCall(expr: ElixirAST): Bool {
         if (expr == null || expr.def == null) return false;
         return switch (expr.def) {
-            case ERemoteCall(mod, "keys", args) if (args != null && args.length == 1 && isModuleName(mod, "Map")):
+            // NOTE: Some ultra-late passes temporarily downcase remote-call module names (e.g. `map.keys/1`)
+            // and normalize them back to aliases (e.g. `Map.keys/1`) at the absolute end.
+            // Accept both spellings here so this rewrite can run before the final alias-normalization sweep.
+            case ERemoteCall(mod, "keys", args) if (args != null && args.length == 1 && (isModuleName(mod, "Map") || isModuleName(mod, "map"))):
                 true;
-            case ECall(target, "keys", args) if (target != null && args != null && args.length == 1 && isModuleName(target, "Map")):
+            case ECall(target, "keys", args) if (target != null && args != null && args.length == 1 && (isModuleName(target, "Map") || isModuleName(target, "map"))):
                 true;
             default:
                 false;
@@ -443,7 +446,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
             case EMatch(pat, rhs):
                 callNode = rhs;
             case EBinary(Match, left, rhs):
-                switch (left.def) { case EVar("_"): callNode = rhs; default: callNode = stmt; }
+                switch (left.def) { case EVar("_") | EUnderscore: callNode = rhs; default: callNode = stmt; }
             default:
                 callNode = stmt;
         }
@@ -497,7 +500,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
                     default: false;
                 }
             case EBinary(Match, left, _):
-                switch (left.def) { case EVar("_"): true; default: false; }
+                switch (left.def) { case EVar("_") | EUnderscore: true; default: false; }
             default:
                 false;
         };
@@ -526,7 +529,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
         };
     }
 
-	    private static function extractTryIfThenBody(body: ElixirAST, iterVar: String): Null<ElixirAST> {
+    private static function extractTryIfThenBody(body: ElixirAST, iterVar: String): Null<ElixirAST> {
 	        if (body == null || body.def == null) return null;
 
 	        // Expect: try do if iter.has_next.() do <then> else <else> end catch ... end
@@ -537,7 +540,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
 	                switch (inner.def) {
 	                    case EIf(cond, thenBranch, _elseBranch):
 	                        if (!isHasNextCall(cond, iterVar)) return null;
-	                        var cleanedThen = dropLeadingNextAssign(thenBranch, iterVar);
+	                        var cleanedThen = dropLeadingNextAdvance(thenBranch, iterVar);
 	                        return makeAST(ETry(cleanedThen, rescue, catchClauses, afterBlock, elseBlock));
 	                    default:
 	                        return null;
@@ -639,7 +642,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
                     case EIf(cond, thenBranch, _elseBranch):
                         var iterVar = extractHasNextVar(cond);
                         if (iterVar == null) return null;
-                        var cleanedThen = dropLeadingNextAssign(thenBranch, iterVar);
+                        var cleanedThen = dropLeadingNextAdvance(thenBranch, iterVar);
                         return { iterVar: iterVar, thenBody: makeAST(ETry(cleanedThen, rescue, catchClauses, afterBlock, elseBlock)) };
                     default:
                         return null;
@@ -683,7 +686,7 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
         };
     }
 
-    private static function dropLeadingNextAssign(thenBranch: ElixirAST, iterVar: String): ElixirAST {
+    private static function dropLeadingNextAdvance(thenBranch: ElixirAST, iterVar: String): ElixirAST {
         if (thenBranch == null || thenBranch.def == null) return thenBranch;
         var stmts: Array<ElixirAST> = switch (unwrapParen(thenBranch).def) {
             case EBlock(ss): ss;
@@ -693,8 +696,11 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
         if (stmts.length == 0) return thenBranch;
 
         var startIndex = 0;
-        // Drop `iterVar = iterVar.next.()` if it is the first statement.
-        if (isNextAssign(stmts[0], iterVar)) startIndex = 1;
+        // Drop the loop's "advance" statement if it is the first statement:
+        // - `iter = iter.next.()`
+        // - `_ = iter.next.()`
+        // - `iter.next.()` (statement position)
+        if (isNextAdvanceStmt(stmts[0], iterVar)) startIndex = 1;
 
         var outStmts = stmts.slice(startIndex);
         return makeAST(EBlock(outStmts));
@@ -730,6 +736,34 @@ class MapKeysIteratorReduceWhileRewriteTransforms {
             default:
                 false;
         };
+    }
+
+    private static function isNextDiscard(stmt: ElixirAST, iterVar: String): Bool {
+        if (stmt == null || stmt.def == null) return false;
+        return switch (stmt.def) {
+            case EMatch(PWildcard, rhs):
+                isNextCall(rhs, iterVar);
+            case EMatch(PVar("_"), rhs):
+                isNextCall(rhs, iterVar);
+            case EBinary(Match, left, rhs):
+                switch (left.def) {
+                    case EVar("_") | EUnderscore:
+                        isNextCall(rhs, iterVar);
+                    default:
+                        false;
+                }
+            default:
+                false;
+        };
+    }
+
+    private static function isNextAdvanceStmt(stmt: ElixirAST, iterVar: String): Bool {
+        if (stmt == null || stmt.def == null) return false;
+        if (isNextAssign(stmt, iterVar)) return true;
+        if (isNextDiscard(stmt, iterVar)) return true;
+        // Bare call expression in statement position.
+        if (isNextCall(stmt, iterVar)) return true;
+        return false;
     }
 
     private static function isNextCall(expr: ElixirAST, iterVar: String): Bool {

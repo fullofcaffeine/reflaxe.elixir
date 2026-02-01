@@ -49,9 +49,9 @@ abstract Int64(Int) from Int to Int {
 
     @:from public static inline function ofInt(x: Int): Int64 {
         // Sign-extend the low 32 bits of `x`.
-        var i32: Int32 = x;
-        var high: Int32 = (i32 >> 31);
-        return make(high, i32);
+        var int32Value: Int32 = x;
+        var high: Int32 = (int32Value >> 31);
+        return make(high, int32Value);
     }
 
     public static inline function toInt(int64Value: Int64): Int {

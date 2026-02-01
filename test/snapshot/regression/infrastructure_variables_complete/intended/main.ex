@@ -49,9 +49,7 @@ defmodule Main do
   end
   defp test_map_iterator() do
     user_map = %{}
-    _ = apply(Map.get(user_map, :__reflaxe_class__) || Map.get(user_map, :__struct__), :set, [user_map, 1, "Alice"])
-    _ = apply(Map.get(user_map, :__reflaxe_class__) || Map.get(user_map, :__struct__), :set, [user_map, 2, "Bob"])
-    _ = apply(Map.get(user_map, :__reflaxe_class__) || Map.get(user_map, :__struct__), :set, [user_map, 3, "Charlie"])
+    user_map = user_map |> Map.put(1, "Alice") |> Map.put(2, "Bob") |> Map.put(3, "Charlie")
     result = []
     g = apply(Map.get(user_map, :__reflaxe_class__) || Map.get(user_map, :__struct__), :key_value_iterator, [user_map])
     Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result}, fn _, {acc_result} ->

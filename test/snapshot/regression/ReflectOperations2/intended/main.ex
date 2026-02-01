@@ -121,10 +121,11 @@ end) do
         end)
     end)
     mutable_obj = %{:x => 10, :y => 20}
-    (case {mutable_obj, "z", 30} do
+    mutable_obj = (case {mutable_obj, "z", 30} do
       {reflect_obj, reflect_field, reflect_value} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
-          true -> reflect_obj = Map.put(reflect_obj, reflect_field, reflect_value)
+          true ->
+            Map.put(reflect_obj, reflect_field, reflect_value)
           false ->
             (case (try do
   String.to_existing_atom(reflect_field)
@@ -132,8 +133,10 @@ rescue
   _ ->
     nil
 end) do
-              nil -> reflect_obj = Map.put(reflect_obj, reflect_field, reflect_value)
-              reflect_atom -> reflect_obj = Map.put(reflect_obj, reflect_atom, reflect_value)
+              nil ->
+                Map.put(reflect_obj, reflect_field, reflect_value)
+              reflect_atom ->
+                Map.put(reflect_obj, reflect_atom, reflect_value)
             end)
         end)
     end)
@@ -172,10 +175,10 @@ end) do
         end)
     end)
     deletable_obj = %{:a => 1, :b => 2, :c => 3}
-    (case {deletable_obj, "b"} do
+    {_reflect_deleted_deletable_obj, deletable_obj} = (case {deletable_obj, "b"} do
       {reflect_obj, reflect_field} ->
         (case Map.has_key?(reflect_obj, reflect_field) do
-          true -> reflect_obj = Map.delete(reflect_obj, reflect_field)
+          true -> {true, Map.delete(reflect_obj, reflect_field)}
           false ->
             (case (try do
   String.to_existing_atom(reflect_field)
@@ -183,8 +186,8 @@ rescue
   _ ->
     nil
 end) do
-              nil -> reflect_obj = Map.delete(reflect_obj, reflect_field)
-              reflect_atom -> reflect_obj = Map.delete(reflect_obj, reflect_atom)
+              nil -> {false, reflect_obj}
+              reflect_atom -> {Map.has_key?(reflect_obj, reflect_atom), Map.delete(reflect_obj, reflect_atom)}
             end)
         end)
     end)
