@@ -208,6 +208,11 @@ jobs:
       TIMEOUT_MIX_COMPILE: '600'
       TIMEOUT_HAXE_BUILD: '300'
       TIMEOUT_ELIXIRC: '300'
+      # Keep this job focused and bounded. Heavy end-to-end apps are covered by dedicated workflows.
+      # - todo-app: covered by `.github/workflows/sentinel.yml` (QA sentinel + Playwright)
+      # - test-integration: covered by full `CI / Tests`
+      # - lix-installation: covered by docs + install guides; compile-check is covered in `Examples` job
+      EXAMPLES_ELIXIR_WAE_SKIP: 'todo-app test-integration lix-installation'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
