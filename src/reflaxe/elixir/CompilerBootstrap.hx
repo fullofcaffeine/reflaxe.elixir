@@ -111,10 +111,17 @@ class CompilerBootstrap {
 				return;
 			}
 
+			// Inject `std/` (externs + `.cross.hx` overrides) and `std/_std/` (Elixir-only shims).
+			//
+			// This must run before `CompilerInit` and other macro modules are typed so that stdlib types
+			// (e.g. `haxe.ds.*`) resolve to our extern-backed surfaces rather than the canonical Haxe
+			// stdlib implementations (which can generate Elixir warnings under WAE).
+			var standardLibrary = Path.normalize(Path.join([libraryRoot, "std"]));
 			// Inject staged stdlib overrides early (before `CompilerInit` and other macro modules are typed)
 			// so that stdlib types (e.g. haxe.ds.*) resolve to our extern-backed surfaces rather than the
 			// canonical Haxe stdlib implementations (which can generate Elixir warnings under WAE).
 			var stagedStd = Path.normalize(Path.join([libraryRoot, "std/_std"]));
+			Compiler.addClassPath(standardLibrary);
 			Compiler.addClassPath(stagedStd);
 		} catch (e: haxe.Exception) {
 			// If resolvePath fails in certain contexts, skip silently (non-Elixir targets)
