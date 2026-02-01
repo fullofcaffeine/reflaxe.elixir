@@ -1,0 +1,153 @@
+package stdlib_parity;
+
+import haxe.Int32;
+import haxe.Int64;
+import haxe.DynamicAccess;
+import haxe.Json;
+import haxe.test.ExUnit.TestCase;
+import haxe.test.Assert;
+
+/**
+ * StdlibParityTest
+ *
+ * BEAM runtime semantic tests for Elixir-target stdlib overrides.
+ *
+ * These tests are authored in Haxe and compiled to ExUnit modules, then loaded
+ * by `test/exunit/test_helper.exs` during the mix test suite.
+ */
+@:exunit
+class StdlibParityTest extends TestCase {
+    @:describe("haxe.Int64")
+    @:test
+    function testInt64WrapOverflow(): Void {
+        var max = Int64.parseString("9223372036854775807");
+        var wrapped = max + Int64.ofInt(1);
+        Assert.equals("-9223372036854775808", Int64.toStr(wrapped));
+    }
+
+    @:describe("haxe.Int64")
+    @:test
+    function testInt64WrapUnderflow(): Void {
+        var min = Int64.parseString("-9223372036854775808");
+        var wrapped = min - Int64.ofInt(1);
+        Assert.equals("9223372036854775807", Int64.toStr(wrapped));
+    }
+
+    @:describe("haxe.Int64")
+    @:test
+    function testInt64HighLowRoundTrip(): Void {
+        var high = Int32.ofInt(305419896); // 0x12345678
+        var low = Int32.ofInt(-1698898192); // 0x9ABCDEF0 (signed)
+        var x = Int64.make(high, low);
+        Assert.equals((high : Int), (x.high : Int));
+        Assert.equals((low : Int), (x.low : Int));
+    }
+
+    @:describe("haxe.Int64")
+    @:test
+    function testInt64UnsignedShiftRight(): Void {
+        var negOne = Int64.ofInt(-1);
+        var shifted = negOne >>> 1;
+        Assert.equals("9223372036854775807", Int64.toStr(shifted));
+    }
+
+    @:describe("haxe.Int64")
+    @:test
+    function testInt64ToIntOverflowRaises(): Void {
+        Assert.doesNotRaise(() -> {
+            var ok = Int64.toInt(Int64.parseString("2147483647"));
+            Assert.equals(2147483647, ok);
+        });
+
+        Assert.raises(() -> {
+            Int64.toInt(Int64.parseString("2147483648"));
+        });
+    }
+
+    @:describe("haxe.ds.Map (native map backend)")
+    @:test
+    function testStringMapOps(): Void {
+        var m: Map<String, Int> = new Map();
+        Assert.isFalse(m.exists("a"));
+
+        m.set("a", 1);
+        Assert.isTrue(m.exists("a"));
+        Assert.equals(1, m.get("a"));
+
+        m.set("a", 2);
+        Assert.equals(2, m.get("a"));
+
+        Assert.isTrue(m.remove("a"));
+        Assert.isFalse(m.exists("a"));
+        Assert.isNull(m.get("a"));
+    }
+
+    @:describe("haxe.ds.Map (native map backend)")
+    @:test
+    function testMapCopyIsPersistentValue(): Void {
+        var m: Map<String, Int> = new Map();
+        m.set("k", 1);
+
+        var snapshot = m.copy();
+        m.set("k", 2);
+        m.set("new", 9);
+
+        Assert.equals(1, snapshot.get("k"));
+        Assert.isNull(snapshot.get("new"));
+        Assert.equals(2, m.get("k"));
+    }
+
+    @:describe("Reflect + JSON string keys")
+    @:test
+    function testReflectJsonStringKeys(): Void {
+        var obj: Dynamic = Json.parse("{\"a\":1,\"b\":2}");
+        Assert.isTrue(Reflect.hasField(obj, "a"));
+        Assert.isFalse(Reflect.hasField(obj, "c"));
+
+        var a: Int = cast Reflect.field(obj, "a");
+        Assert.equals(1, a);
+
+        Reflect.setField(obj, "c", 3);
+        var c: Int = cast Reflect.field(obj, "c");
+        Assert.equals(3, c);
+
+        Assert.isTrue(Reflect.deleteField(obj, "b"));
+        Assert.isFalse(Reflect.hasField(obj, "b"));
+    }
+
+    @:describe("Reflect + object literal atom keys")
+    @:test
+    function testReflectObjectLiteralAtomKeys(): Void {
+        var obj = {foo: 1, bar: 2};
+
+        var foo: Int = cast Reflect.field(obj, "foo");
+        Assert.equals(1, foo);
+
+        Reflect.setField(obj, "baz", 3);
+        var baz: Int = cast Reflect.field(obj, "baz");
+        Assert.equals(3, baz);
+
+        Assert.isTrue(Reflect.deleteField(obj, "bar"));
+        Assert.isFalse(Reflect.hasField(obj, "bar"));
+
+        var fields = Reflect.fields(obj);
+        Assert.contains(fields, "foo");
+        Assert.contains(fields, "baz");
+    }
+
+    @:describe("haxe.DynamicAccess (uses Reflect on Elixir)")
+    @:test
+    function testDynamicAccessJsonPayload(): Void {
+        var payload: DynamicAccess<Int> = cast Json.parse("{\"x\":5}");
+        Assert.equals(5, payload.get("x"));
+
+        payload.set("y", 7);
+        Assert.isTrue(payload.exists("y"));
+        Assert.equals(7, payload.get("y"));
+
+        Assert.isTrue(payload.remove("x"));
+        Assert.isFalse(payload.exists("x"));
+        Assert.isNull(payload.get("x"));
+    }
+}
+
