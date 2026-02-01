@@ -5,6 +5,7 @@ package reflaxe.elixir;
 import haxe.io.Path;
 import haxe.macro.Compiler;
 import haxe.macro.Context;
+import StringTools;
 
 /**
  * CompilerBootstrap
@@ -40,15 +41,60 @@ import haxe.macro.Context;
 class CompilerBootstrap {
 	static var bootstrapped: Bool = false;
 
+	static function hasDefineInArgs(defineName: String): Bool {
+		var config = Compiler.getConfiguration();
+		if (config == null) return false;
+
+		var args = config.args;
+		var i = 0;
+		while (i < args.length) {
+			var arg = args[i];
+			if (arg == "-D" || arg == "--define") {
+				if (i + 1 < args.length) {
+					var defineArg = args[i + 1];
+					if (defineArg == defineName || StringTools.startsWith(defineArg, defineName + "=")) return true;
+				}
+				i += 2;
+				continue;
+			}
+
+			if (StringTools.startsWith(arg, "-D" + defineName)) return true;
+			i += 1;
+		}
+
+		return false;
+	}
+
+	static function isElixirBuild(): Bool {
+		var targetName = Context.definedValue("target.name");
+		if (targetName == "elixir") return true;
+		if (Context.defined("elixir_output")) return true;
+
+		// Haxe 4 Reflaxe targets compile under the `cross` platform. This is available
+		// early (before downstream `-D elixir_output=...` defines may be observed by
+		// macros invoked from a `-lib` hxml file).
+		var config = Compiler.getConfiguration();
+		if (config != null) {
+			switch (config.platform) {
+				case Cross:
+					return true;
+				#if (haxe >= version("5.0.0"))
+				case CustomTarget("elixir"):
+					return true;
+				#end
+				case _:
+			}
+		}
+
+		// Haxe 4: Elixir builds are typically `cross` and identified via `-D elixir_output=...`.
+		return hasDefineInArgs("elixir_output");
+	}
+
 	public static function Start() {
 		if (bootstrapped) return;
 		bootstrapped = true;
 
-		// For Haxe 4 builds, `target.name` may be unset; `-D elixir_output=...` is the stable signal
-		// for this target. We still inject vendored Reflaxe unconditionally so `CompilerInit` can type
-		// even in non-Elixir contexts where the library may be present.
-		var targetName = Context.definedValue("target.name");
-		var isElixirBuild = (targetName == "elixir" || Context.defined("elixir_output"));
+		var shouldInjectStd = isElixirBuild();
 
 		try {
 			var bootstrapPath = Context.resolvePath("reflaxe/elixir/CompilerBootstrap.hx");
@@ -61,14 +107,14 @@ class CompilerBootstrap {
 
 			Compiler.addClassPath(vendoredReflaxe);
 
-			if (!isElixirBuild) {
+			if (!shouldInjectStd) {
 				return;
 			}
 
-			var standardLibrary = Path.normalize(Path.join([libraryRoot, "std"]));
+			// Inject staged stdlib overrides early (before `CompilerInit` and other macro modules are typed)
+			// so that stdlib types (e.g. haxe.ds.*) resolve to our extern-backed surfaces rather than the
+			// canonical Haxe stdlib implementations (which can generate Elixir warnings under WAE).
 			var stagedStd = Path.normalize(Path.join([libraryRoot, "std/_std"]));
-
-			Compiler.addClassPath(standardLibrary);
 			Compiler.addClassPath(stagedStd);
 		} catch (e: haxe.Exception) {
 			// If resolvePath fails in certain contexts, skip silently (non-Elixir targets)

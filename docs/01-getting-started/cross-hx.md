@@ -55,9 +55,9 @@ exist in JS or macro contexts).
 
 This project implements target‑conditional gating in the compiler bootstrap macros (`CompilerBootstrap.Start()` and `CompilerInit.Start()`):
 
-- When building the Elixir target (or when `-D elixir_output` is present), the `std/` and `std/_std/`
-  paths are added to the classpath by the bootstrap macros (`CompilerBootstrap.Start()` and
-  `CompilerInit.Start()`).
+- When building the Elixir target, `std/_std/` is added to the classpath by the bootstrap macro
+  (`CompilerBootstrap.Start()`). The `std/` path itself is provided by library configuration
+  (scoped libs via `haxe_libraries/*.hxml` in this repo; consumer installs may also inject it via bootstrap).
 - For other contexts (macro‑only tools, non-Elixir targets), those paths are not added.
 
 ### What is `-D elixir_output`?

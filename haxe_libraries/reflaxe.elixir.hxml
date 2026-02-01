@@ -35,5 +35,8 @@
 # Define the library version
 -D reflaxe.elixir=1.1.6
 
+# Bootstrap early (target-conditional stdlib gating + vendored reflaxe injection)
+--macro reflaxe.elixir.CompilerBootstrap.Start()
+
 # Initialize the Elixir compiler
 --macro reflaxe.elixir.CompilerInit.Start()

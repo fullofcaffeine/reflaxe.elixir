@@ -195,12 +195,14 @@ main() {
   # Ensure Hex/Rebar are present in non-interactive CI environments.
   # Some Mix versions prompt to install these, which can hang CI until timeout.
   msg "Bootstrapping Hex/Rebar"
-  # Note: `mix help hex` may exit 0 even when Hex is missing; inspect output instead.
-  hex_help="$(mix help hex 2>&1 || true)"
-  if printf '%s' "$hex_help" | grep -qi "could not be found"; then
-    run_step_retry 5 60 "$ROOT_DIR" mix local.hex --force
-  else
+  # Note: Avoid `mix help hex` here. When Hex is missing, Mix may prompt for installation
+  # even for help output, which breaks non-interactive CI. `mix archive` is safe and does
+  # not require Hex to be installed.
+  archives="$(mix archive 2>/dev/null || true)"
+  if printf '%s' "$archives" | grep -qE '^[*][[:space:]]+hex-'; then
     msg "Hex already available; skipping mix local.hex"
+  else
+    run_step_retry 5 60 "$ROOT_DIR" mix local.hex --force
   fi
 
   run_step_retry 5 60 "$ROOT_DIR" mix local.rebar --force
