@@ -22,6 +22,11 @@ TIMEOUT_ELIXIRC="${TIMEOUT_ELIXIRC:-180}"
 
 HAXE_BIN="${HAXE_BIN:-haxe}"
 
+# Hex (deps.get) occasionally flakes in CI due to transient network/TLS issues.
+# Keep these conservative defaults but allow override by environment.
+export HEX_HTTP_TIMEOUT="${HEX_HTTP_TIMEOUT:-120}"
+export HEX_HTTP_CONCURRENCY="${HEX_HTTP_CONCURRENCY:-1}"
+
 msg() { printf "\n[examples-elixir] %s\n" "$*"; }
 fail() { echo "[examples-elixir] ❌ $*" >&2; exit 1; }
 
@@ -87,7 +92,7 @@ validate_mix_example() {
 
   # deps.get is the most network-sensitive part (Hex), so allow a couple retries to
   # reduce CI flakiness without hiding real compile failures.
-  run_step_retry 3 "$TIMEOUT_DEPS_GET" "$dir" env MIX_ENV=test mix deps.get
+  run_step_retry 5 "$TIMEOUT_DEPS_GET" "$dir" env MIX_ENV=test mix deps.get
   run_step "$TIMEOUT_DEPS_COMPILE" "$dir" env MIX_ENV=test mix deps.compile
 
   # Compile the app under WAE, but do not recompile deps (deps may have warnings we do not control).
@@ -141,8 +146,13 @@ main() {
   # Ensure Hex/Rebar are present in non-interactive CI environments.
   # Some Mix versions prompt to install these, which can hang CI until timeout.
   msg "Bootstrapping Hex/Rebar"
-  run_step_retry 3 60 "$ROOT_DIR" mix local.hex --force
-  run_step_retry 3 60 "$ROOT_DIR" mix local.rebar --force
+  if mix help hex >/dev/null 2>&1; then
+    msg "Hex already available; skipping mix local.hex"
+  else
+    run_step_retry 5 60 "$ROOT_DIR" mix local.hex --force
+  fi
+
+  run_step_retry 5 60 "$ROOT_DIR" mix local.rebar --force
 
   local dir name
   for dir in "$EXAMPLES_DIR"/*; do
