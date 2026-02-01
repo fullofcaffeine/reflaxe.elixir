@@ -150,7 +150,7 @@ Examples are tested in CI/CD on every commit to ensure:
 
 Notes:
 - The heavyweight end-to-end `todo-app/` is validated by the dedicated **QA Sentinel** workflow (`.github/workflows/sentinel.yml`) which boots Phoenix in the background and runs Playwright smoke specs.
-- The `Examples (Elixir WAE)` CI job validates the smaller tutorial examples under `--warnings-as-errors` and skips `todo-app/`, `test-integration/`, and `lix-installation/` to keep runtime bounded (those are covered elsewhere).
+- The `Examples (Elixir WAE)` CI job validates the tutorial examples under `--warnings-as-errors` (sharded for runtime) and skips `todo-app/`, `test-integration/`, and `lix-installation/` to keep runtime bounded (those are covered elsewhere).
 
 ## 📖 Common Patterns
 
