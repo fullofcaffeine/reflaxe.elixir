@@ -22,7 +22,6 @@ defmodule Main do
     map = Map.delete(map, "job")
     _job_after_remove = Map.get(map, "job")
     map = %{}
-    nil
     _value_after_clear = Map.get(map, "name")
     nil
   end
@@ -74,7 +73,6 @@ defmodule Main do
     _ = Enum.reduce_while(Map.keys(numbers), :ok, fn key, acc ->
   try do
     _value = Map.get(numbers, key)
-    nil
     {:cont, acc}
   catch
     :throw, {:break, break_state} ->
@@ -94,7 +92,6 @@ end)
     _ = Enum.reduce_while(Map.keys(int_map), :ok, fn key, acc ->
   try do
     _value = Map.get(int_map, key)
-    nil
     {:cont, acc}
   catch
     :throw, {:break, break_state} ->

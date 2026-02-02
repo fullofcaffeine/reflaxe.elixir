@@ -90,9 +90,7 @@ defmodule OptionTools do
         {:some, value} ->
           result_acc = Enum.concat(result_acc, [value])
           result_acc
-        {:none} ->
-          nil
-          result_acc
+        {:none} -> result_acc
       end)
     end)
     result

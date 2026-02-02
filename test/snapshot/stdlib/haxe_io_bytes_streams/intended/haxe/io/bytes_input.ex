@@ -35,9 +35,7 @@ state.pos
       p > struct.total_length ->
         p = struct.total_length
         p
-      :true ->
-        :nil
-        p
+      :true -> p
     end
     state = Process.get(struct.dict_key)
     state = if (Kernel.is_nil(state)) do

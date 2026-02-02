@@ -1,8 +1,5 @@
 defmodule Main do
   def main() do
-    nil
-    nil
-    nil
     evens = []
     evens = evens ++ [0]
     evens = evens ++ [2]

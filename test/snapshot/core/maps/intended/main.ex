@@ -6,7 +6,6 @@ defmodule Main do
     map = Map.delete(map, "two")
     _ = Enum.reduce_while(Map.keys(map), :ok, fn _key, acc ->
   try do
-    nil
     {:cont, acc}
   catch
     :throw, {:break, break_state} ->
@@ -20,14 +19,12 @@ defmodule Main do
   end
 end)
     nil
-    nil
   end
   def int_map() do
     map = %{}
     map = map |> Map.put(1, "first") |> Map.put(2, "second") |> Map.put(10, "tenth") |> Map.put(100, "hundredth")
     _ = Enum.reduce_while(Map.keys(map), :ok, fn _key, acc ->
   try do
-    nil
     {:cont, acc}
   catch
     :throw, {:break, break_state} ->
@@ -86,7 +83,6 @@ end)
     _ = Enum.reduce_while(Map.keys(colors), :ok, fn color, acc ->
   try do
     _hex = StringTools.hex(Map.get(colors, color), 6)
-    nil
     {:cont, acc}
   catch
     :throw, {:break, break_state} ->
@@ -102,7 +98,6 @@ end)
     squares = %{1 => 1, 2 => 4, 3 => 9, 4 => 16, 5 => 25}
     _ = Enum.reduce_while(Map.keys(squares), :ok, fn _n, acc ->
   try do
-    nil
     {:cont, acc}
   catch
     :throw, {:break, break_state} ->
@@ -128,7 +123,6 @@ end)
     user_data = Map.get(users, username)
     _ = Enum.reduce_while(Map.keys(user_data), :ok, fn _field, acc ->
       try do
-        nil
         {:cont, acc}
       catch
         :throw, {:break, break_state} ->
@@ -175,7 +169,6 @@ end)
     end)
     _ = Enum.reduce_while(Map.keys(doubled), :ok, fn _key, acc ->
   try do
-    nil
     {:cont, acc}
   catch
     :throw, {:break, break_state} ->
@@ -211,7 +204,6 @@ end)
     end)
     _ = Enum.reduce_while(Map.keys(filtered), :ok, fn _key, acc ->
   try do
-    nil
     {:cont, acc}
   catch
     :throw, {:break, break_state} ->
@@ -261,7 +253,6 @@ end)
     end)
     _ = Enum.reduce_while(Map.keys(merged), :ok, fn _key, acc ->
   try do
-    nil
     {:cont, acc}
   catch
     :throw, {:break, break_state} ->
@@ -280,7 +271,6 @@ end)
     map = map |> Map.put({:red}, "FF0000") |> Map.put({:green}, "00FF00") |> Map.put({:blue}, "0000FF")
     _ = Enum.reduce_while(Map.keys(map), :ok, fn _color, acc ->
   try do
-    nil
     {:cont, acc}
   catch
     :throw, {:break, break_state} ->
@@ -327,7 +317,6 @@ end)
     output = process_map(input)
     _ = Enum.reduce_while(Map.keys(output), :ok, fn _key, acc ->
   try do
-    nil
     {:cont, acc}
   catch
     :throw, {:break, break_state} ->

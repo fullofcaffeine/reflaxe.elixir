@@ -28,7 +28,6 @@
   "haxe/iterators/array_iterator.ex",
   "haxe/exceptions/pos_exception.ex",
   "haxe/exceptions/not_implemented_exception.ex",
-  "haxe/ds/_map/map_impl_.ex",
   "golden_message.ex",
   "elixir/types/_atom/atom_impl_.ex",
   "ecto/option.ex",

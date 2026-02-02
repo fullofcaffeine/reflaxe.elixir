@@ -18,6 +18,7 @@
   "haxe/io/bytes_buffer.ex",
   "haxe/io/bytes.ex",
   "haxe/io/buffer_input.ex",
+  "haxe/int64_helper.ex",
   "haxe/exceptions/pos_exception.ex",
   "haxe/exceptions/not_implemented_exception.ex"
 ],
