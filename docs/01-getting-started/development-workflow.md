@@ -389,14 +389,13 @@ incremental builds during `mix compile` and `mix phx.server`.
 
 Behavior (no configuration required):
 
-- Auto‑manage: Mix ensures a `haxe --wait` server is available for incremental compilation.
+- Auto‑start (dev by default): In `MIX_ENV=dev`, Mix can auto-start `haxe --wait` for incremental compilation.
+- Direct compile (CI/prod/test by default): In short-lived builds, we default to direct `haxe` to avoid leaking `haxe --wait` OS processes.
 - Reuse (owned): If Mix started the server in this VM, it is reused automatically.
-- Attach / relocate (default): If the configured port is already bound, Mix first tries attaching to the prior compatible server recorded in the cookie (same project/toolchain). If that fails, it relocates to a free port and starts its own server.
-- Attach (opt‑in): If `HAXE_SERVER_ALLOW_ATTACH=1` and the configured port is already bound by a compatible Haxe server, Mix attaches and uses it (no extra server, no port churn).
-- Auto‑start: If none is running, Mix starts one in the background.
-- Cookie: Mix records the last working server port per project/toolchain in `.reflaxe_elixir/haxe_server.json` to reduce port churn across restarts.
-- Fallback: If the server cannot be reached, Mix compiles directly (no server) and
-  refreshes the server in the background for the next compile.
+- Attach (opt‑in): If `HAXE_SERVER_ALLOW_ATTACH=1` and the configured port is already bound by a compatible server, Mix attaches and uses it (including a prior server recorded in the cookie).
+- Relocate: If the configured port is already bound and attach is not enabled (or not compatible), Mix relocates to a free port and starts its own server.
+- Cookie: Mix records the last working server info per project/toolchain in `.reflaxe_elixir/haxe_server.json` to reduce port churn across restarts and enable stale-server cleanup.
+- Fallback: If the server cannot be reached, Mix compiles directly (no server).
 
 Defaults and environment variables:
 
@@ -404,6 +403,7 @@ Defaults and environment variables:
 - `HAXE_NO_SERVER=1` — disable the server for the current run (use direct Haxe).
 - `HAXE_SERVER_PORT=<port>` — force a specific port (e.g., `6116`).
 - `HAXE_SERVER_ALLOW_ATTACH=1` — allow attaching to an externally-started compatible server on the configured port.
+- `HAXE_SERVER_AUTOSTART=dev|always|never` — control when Mix should auto-start the server (default: `dev`).
 
 Notes:
 

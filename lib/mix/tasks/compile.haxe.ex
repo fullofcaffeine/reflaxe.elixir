@@ -158,18 +158,7 @@ defmodule Mix.Tasks.Compile.Haxe do
   
   defp compile_haxe(config) do
     Mix.shell().info("Compiling Haxe files...")
-    # Automatically start the Haxe compilation server in dev-like envs
-    # unless the user opts out via HAXE_NO_SERVER=1. This is transparent
-    # and falls back cleanly to direct compilation on any failure.
-    if (Mix.env() in [:dev, :test, :e2e]) and System.get_env("HAXE_NO_SERVER") != "1" do
-      try do
-        unless HaxeServer.running?() do
-          {:ok, _} = HaxeServer.start_link([])
-        end
-      rescue
-        _ -> :ok
-      end
-    end
+    _ = HaxeServer.ensure_running_if_configured(Mix.env())
     
     # Start file watcher if enabled and in dev environment
     if config[:watch] && Mix.env() == :dev && !config[:no_watch] do

@@ -114,8 +114,8 @@ run_step "rewrite mix.exs reflaxe_elixir dep to path" 60 "$app_dir" \
   "python3 -c 'import re,sys; p=\"mix.exs\"; repo=sys.argv[1]; t=open(p,\"r\",encoding=\"utf-8\").read(); pat=r\"\\{:reflaxe_elixir,[^}]*runtime:\\s*false[^}]*\\}\"; rep=\"{:reflaxe_elixir, path: \\\"%s\\\", runtime: false}\" % repo; n=re.sub(pat, rep, t, count=1, flags=re.S);  (n!=t) or sys.exit(\"No reflaxe_elixir dependency found to rewrite in mix.exs\"); open(p,\"w\",encoding=\"utf-8\").write(n)' '${ROOT_DIR}'"
 
 # Compile-only smoke (no servers). DB boot/runtime is covered by the QA sentinel / dogfood lanes.
-run_step "mix deps.get" 600 "$app_dir" "mix deps.get"
-run_step "mix compile" 900 "$app_dir" "mix compile"
+run_step "mix deps.get" 600 "$app_dir" "HAXE_NO_SERVER=1 mix deps.get"
+run_step "mix compile" 900 "$app_dir" "HAXE_NO_SERVER=1 mix compile"
 
 echo ""
 echo "[docs-smoke] ✅ OK"

@@ -44,8 +44,9 @@ mix compile.haxe --force
 
 **Environment Variables:**
 - `MIX_QUIET=1` - Suppress all output except errors
-- `HAXE_SERVER_PORT=6116` - Preferred port for the Haxe compilation server (default: 6116). If the port is busy, the server may attach to a prior compatible server recorded in the cookie for the same project/toolchain, or relocate to a free port.
-- `HAXE_SERVER_ALLOW_ATTACH=1` - Allow attaching to an externally-started compatible `haxe --wait` server on the configured port (default: off)
+- `HAXE_SERVER_PORT=6116` - Preferred port for the Haxe compilation server (default: 6116). If the port is busy, the server relocates unless attach is explicitly enabled.
+- `HAXE_SERVER_ALLOW_ATTACH=1` - Allow attaching to an externally-started compatible `haxe --wait` server (including a prior compatible server recorded in the cookie) (default: off)
+- `HAXE_SERVER_AUTOSTART=dev|always|never` - Control when Mix should auto-start `haxe --wait` (default: `dev`)
 - `HAXE_NO_SERVER=1` - Disable the Haxe `--wait` server and compile directly
 - `HAXE_NO_COMPILE=1` - Skip Haxe compilation entirely (useful for CI/sentinels)
 

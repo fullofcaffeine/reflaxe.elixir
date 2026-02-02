@@ -28,16 +28,7 @@ defmodule HaxeCompiler do
     source_dir = Keyword.get(opts, :source_dir, "src_haxe")
     target_dir = Keyword.get(opts, :target_dir, "lib")
     verbose = Keyword.get(opts, :verbose, false)
-    # Ensure HaxeServer is running in dev-like envs unless explicitly disabled
-    if (Mix.env() in [:dev, :test, :e2e]) and System.get_env("HAXE_NO_SERVER") != "1" do
-      try do
-        unless HaxeServer.running?() do
-          {:ok, _} = HaxeServer.start_link([])
-        end
-      rescue
-        _ -> :ok
-      end
-    end
+    _ = HaxeServer.ensure_running_if_configured(Mix.env())
     
     cond do
       not File.exists?(hxml_file) ->
@@ -242,8 +233,15 @@ defmodule HaxeCompiler do
     #   HAXE_FAST_BOOT=1 mix compile
     common_args = if fast_boot_enabled?(), do: ["-D", "fast_boot"], else: []
     
-    compilation_result = case HaxeServer.running?() do
-      true ->
+    compilation_result =
+      case {System.get_env("HAXE_NO_SERVER"), HaxeServer.running?()} do
+      {"1", _} ->
+        if verbose do
+          Mix.shell().info("HAXE_NO_SERVER=1; using direct Haxe compilation")
+        end
+        compile_with_direct_haxe(hxml_file, verbose, common_args)
+
+      {_, true} ->
         if verbose do
           Mix.shell().info("Using Haxe server for incremental compilation")
         end
@@ -261,7 +259,7 @@ defmodule HaxeCompiler do
             end)
             compile_with_direct_haxe(hxml_file, verbose, common_args)
         end
-      false ->
+      {_, false} ->
         if verbose do
           Mix.shell().info("Using direct Haxe compilation")
         end

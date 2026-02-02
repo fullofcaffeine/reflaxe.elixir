@@ -104,6 +104,7 @@ Note: CI may use synchronous mode for readability, but MUST include `--deadline`
 - Every command you invoke MUST have a clear finish condition and return control.
 - Long‑running steps must be bounded by time or completion signals:
   - Wrap commands with `scripts/with-timeout.sh --secs <N>`.
+    - macOS note: `scripts/with-timeout.sh` uses a `python3` `setsid()` fallback when `setsid` is unavailable, and timeouts must return `124` (terminated) or `137` (force-killed).
   - When using the QA sentinel in `--async` mode, always provide a `--deadline <SECS>`.
   - For log viewing, prefer bounded peeks or finish‑aware follow:
     - One‑shot: `scripts/qa-logpeek.sh --run-id <RUN_ID> --last 200`
@@ -111,6 +112,10 @@ Note: CI may use synchronous mode for readability, but MUST include `--deadline`
     - Finish‑aware follow: `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 60` (stops on `[QA] DONE status=` or after 60s)
 - Never run unbounded watchers, tails, or foreground servers during agent work.
 - If a step exceeds its cap, abort immediately, surface the last 200 lines, apply the fix in compiler/std/app Haxe (not generated .ex), then rerun under caps.
+
+CI hygiene notes (to prevent flaky hangs):
+- Prefer direct Haxe compilation in CI/compile-check jobs (`HAXE_NO_SERVER=1`) to avoid leaked `haxe --wait` OS processes.
+- Haxe `--wait` server mode must use the real `haxe` binary (not the `node_modules/.bin/haxe` Node shim); the server resolves the real binary via `.haxerc`/Lix.
 
 ### 🔭 Optional: Playwright E2E Smoke (when server is up)
 
