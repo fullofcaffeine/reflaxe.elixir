@@ -272,6 +272,12 @@ jobs:
         run: npx lix download
       - name: Validate examples Elixir (warnings as errors)
         run: npm run test:examples-elixir
+      - name: Upload examples-elixir logs (failure only)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: examples-elixir-wae-logs-${{ matrix.shard }}
+          path: _tmp/examples-elixir-wae
 
   budgets:
     name: Budgets (perf + determinism)
