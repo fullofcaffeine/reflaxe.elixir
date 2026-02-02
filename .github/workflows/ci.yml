@@ -205,8 +205,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - shard: core
-            only: '01-simple-modules 02-mix-project 03-phoenix-app 04-ecto-migrations 05-heex-templates'
+          - shard: core-1
+            only: '01-simple-modules 02-mix-project'
+          - shard: core-2
+            only: '03-phoenix-app 04-ecto-migrations 05-heex-templates'
           - shard: advanced
             only: '06-user-management 07-protocols 08-behaviors 09-phoenix-router 10-option-patterns 11-domain-validation'
     timeout-minutes: 45
