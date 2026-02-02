@@ -59,6 +59,11 @@ GitHub Actions step logs often require a signed-in session to view or download. 
 - Identify which *job + step* failed via the GitHub API (no logs, but enough to narrow scope):
   - `python3 - <<'PY'\nimport json,urllib.request\nrun_id=<RUN_ID>\nurl=f'https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/actions/runs/{run_id}/jobs?per_page=100'\nreq=urllib.request.Request(url, headers={'Accept':'application/vnd.github+json'})\nwith urllib.request.urlopen(req) as r:\n  data=json.load(r)\nfor j in data.get('jobs', []):\n  if j.get('conclusion')=='failure':\n    print(j['name'], j['id'])\n    for s in j.get('steps', []):\n      if s.get('conclusion')=='failure':\n        print('  failing step:', s.get('name'))\nPY`
 - Ask the user to paste the last ~200 lines from the failing step output; include the run id + job id URL.
+- Beware unauthenticated rate limits (60 req/hour). Avoid tight polling loops; prefer a single `runs/:id` + `runs/:id/jobs` query.
+- `CI / Examples (Elixir WAE)` debug aids:
+  - `scripts/test-examples-elixir.sh` writes per-step logs to `_tmp/examples-elixir-wae/`.
+  - The CI job shards via `EXAMPLES_ELIXIR_WAE_ONLY` (see `.github/workflows/ci.yml`) so you can rerun a single shard/example locally.
+  - On CI failures, `_tmp/examples-elixir-wae/` is uploaded as an artifact (`examples-elixir-wae-logs-<shard>`).
 
 ### ⛔ Hard Rule: No Sync Sentinel During Agent Work
 
