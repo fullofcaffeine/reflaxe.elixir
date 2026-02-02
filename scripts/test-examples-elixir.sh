@@ -83,11 +83,11 @@ fail() {
       tail -n 200 "$LAST_LOG_FILE" 2>/dev/null || true
     )"
     append_step_summary "Examples (Elixir WAE) failure" "$summary"
-    emit_github_error "Examples (Elixir WAE) failed" "Example=${CURRENT_EXAMPLE:-unknown} Phase=${CURRENT_PHASE:-unknown} Command=${LAST_CMD:-unknown} Log=${LAST_LOG_FILE} :: $(tail -n 40 \"$LAST_LOG_FILE\" 2>/dev/null || true)"
-  else
-    append_step_summary "Examples (Elixir WAE) failure" "$(
-      printf 'Example: %s\nPhase: %s\nCommand: %s\n\n%s\n' \
-        "${CURRENT_EXAMPLE:-unknown}" \
+	    emit_github_error "Examples (Elixir WAE) failed" "Example=${CURRENT_EXAMPLE:-unknown} Phase=${CURRENT_PHASE:-unknown} Command=${LAST_CMD:-unknown} Log=${LAST_LOG_FILE} :: $(tail -n 40 "$LAST_LOG_FILE" 2>/dev/null || true)"
+	  else
+	    append_step_summary "Examples (Elixir WAE) failure" "$(
+	      printf 'Example: %s\nPhase: %s\nCommand: %s\n\n%s\n' \
+	        "${CURRENT_EXAMPLE:-unknown}" \
         "${CURRENT_PHASE:-unknown}" \
         "${LAST_CMD:-unknown}" \
         "${message}"
