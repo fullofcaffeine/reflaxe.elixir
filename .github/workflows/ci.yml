@@ -214,10 +214,10 @@ jobs:
     timeout-minutes: 60
     env:
       TIMEOUT_DEPS_GET: '600'
-      TIMEOUT_DEPS_COMPILE: '600'
-      TIMEOUT_MIX_COMPILE: '600'
-      TIMEOUT_HAXE_BUILD: '300'
-      TIMEOUT_ELIXIRC: '300'
+      TIMEOUT_DEPS_COMPILE: '900'
+      TIMEOUT_MIX_COMPILE: '1200'
+      TIMEOUT_HAXE_BUILD: '600'
+      TIMEOUT_ELIXIRC: '600'
       # Keep this job focused and bounded. Heavy end-to-end apps are covered by dedicated workflows.
       # - todo-app: covered by `.github/workflows/sentinel.yml` (QA sentinel + Playwright)
       # - test-integration: covered by full `CI / Tests`
