@@ -34,9 +34,7 @@ defmodule Main do
     state = {:loading, 50}
     description = ""
     _ = (case state do
-      {:loading, _progress} ->
-        nil
-        description
+      {:loading, _progress} -> description
       {:processing, progress} ->
         description = "Progress: #{Kernel.to_string(progress)}%"
         description

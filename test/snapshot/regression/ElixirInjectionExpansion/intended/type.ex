@@ -54,7 +54,6 @@ defmodule Type do
   end
   def get_super_class(c) do
     ignore = c
-    nil
     ignore
   end
   def get_class_name(c) do

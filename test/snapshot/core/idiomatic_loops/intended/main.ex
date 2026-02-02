@@ -18,7 +18,6 @@ defmodule Main do
     if (g.has_next.()) do
       _name = g.next.().key
       _score = g.next.().value
-      nil
       {:cont, acc}
     else
       {:halt, acc}
@@ -86,7 +85,6 @@ end)
           if (rem(acc_k, 2) != 0) do
             throw({:continue, {acc_k}})
           end
-          nil
           {:cont, {acc_k}}
         else
           {:halt, {acc_k}}
@@ -300,11 +298,8 @@ end) do
   "finish" when current_state_acc == 1 ->
     current_state_acc = 2
     current_state_acc
-  "work" ->
-    nil
-    current_state_acc
+  "work" -> current_state_acc
 end)
-      nil
       current_state_acc
     end)
     items = ["valid1", "error", "valid2", "valid3"]

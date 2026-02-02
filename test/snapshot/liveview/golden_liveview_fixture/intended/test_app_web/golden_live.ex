@@ -143,9 +143,7 @@ end) do
         id = extract_id(params)
         live = Phoenix.Component.update(live, :counter, fn n -> n + id end)
         live
-      :true ->
-        :nil
-        live
+      :true -> live
     end
     {:noreply, live}
   end

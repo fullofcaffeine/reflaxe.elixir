@@ -26,7 +26,6 @@ defmodule Main do
       _ = 2
       _ = cols
       rows_acc = rows_acc + 1
-      nil
       rows_acc
     end)
     nil

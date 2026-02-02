@@ -13,7 +13,6 @@ defmodule Main do
                 _ -> DateTime.utc_now()
             end
         )
-    nil
     parsed_date
   end
 end

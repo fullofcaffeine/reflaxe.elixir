@@ -87,12 +87,7 @@ defmodule Main do
     iter_array = numbers
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
-    if (iter_current < length(iter_array)) do
-      nil
-      {:cont, acc}
-    else
-      {:halt, acc}
-    end
+    if (iter_current < length(iter_array)), do: {:cont, acc}, else: {:halt, acc}
   catch
     :throw, {:break, break_state} ->
       {:halt, break_state}

@@ -22,9 +22,7 @@ defmodule TestAppWeb.FastBootLive do
       "toggle" ->
         socket = Phoenix.Component.assign(socket, :active, not socket.assigns.active)
         socket
-      _ ->
-        nil
-        socket
+      _ -> socket
     end)
     {:noreply, socket}
   end

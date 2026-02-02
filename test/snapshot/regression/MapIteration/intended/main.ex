@@ -17,7 +17,6 @@ defmodule Main do
     if (g.has_next.()) do
       _name = g.next.().key
       _hex = g.next.().value
-      nil
       {:cont, acc}
     else
       {:halt, acc}
@@ -138,7 +137,6 @@ end)
           if (g.has_next.()) do
             _name = g.next.().key
             _years = g.next.().value
-            nil
             {:cont, acc}
           else
             {:halt, acc}

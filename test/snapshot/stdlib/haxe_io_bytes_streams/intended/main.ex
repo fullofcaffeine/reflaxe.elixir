@@ -18,7 +18,6 @@ defmodule Main do
     encoding = nil
     src = Bytes.of_string("BC", encoding)
     buffer = if (src.length == 0) do
-      nil
       buffer
     else
       buffer = %{buffer | parts_reversed: [apply(Map.get(src, :__reflaxe_class__) || Map.get(src, :__struct__), :get_data, [src]) | buffer.parts_reversed]}

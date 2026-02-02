@@ -4,6 +4,7 @@
   "test_app_web/fast_boot_live.ex",
   "string_buf.ex",
   "std.ex",
+  "reflect.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",
   "phoenix/types/flash_type_tools.ex",

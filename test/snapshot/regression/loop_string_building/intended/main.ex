@@ -6,25 +6,6 @@ defmodule Main do
     result = "#{result}Item #{Kernel.to_string(2)}, "
     result = "#{result}Item #{Kernel.to_string(3)}, "
     _ = "#{result}Item #{Kernel.to_string(4)}, "
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
-    nil
     items = ["apple", "banana", "cherry"]
     _g = 0
     items_length = length(items)

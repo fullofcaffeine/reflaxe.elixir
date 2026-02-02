@@ -35,9 +35,22 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - Snapshots (full CI categories): `scripts/test-chunks.sh`
   - CI includes: `core,stdlib,regression,phoenix,liveview,ecto,otp,exunit,bootstrap`
   - If you changed an AST pass or stdlib shaping, prefer running the full categories to avoid “works locally but CI fails” on later suites.
+- CI-equivalent full suite: `npm test`
 - Examples (strict warnings): `npm run test:examples-elixir` (mix compile `--warnings-as-errors`, no deps check)
 - Mix tests (fast): `npm run test:mix-fast`
 - Todo-app runtime smoke (non-blocking): `npm run qa:sentinel` then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`
+
+### Common CI failure mode: “unused literal” warnings
+
+If CI shows `warning: code block contains unused literal ...`, it usually means a Haxe expression used for side-effects
+inlined into a statement list and left a bare literal behind (commonly from setters returning the assigned value).
+
+- Fix upstream in the AST pipeline by dropping **non-final** literal statements *at the absolute end of the pipeline*
+  (see `BareLiteralDrop_AbsoluteLast` in `ElixirASTPassRegistry.hx`).
+- Expect snapshot diffs across multiple suites; update intended outputs with targeted runs:
+  - `make -C test update-intended TEST=core/<name>`
+  - `make -C test update-intended TEST=stdlib/<name>`
+  - `make -C test update-intended TEST=phoenix/<name>` / `liveview/<name>` / etc.
 
 ### Common CI failure mode: WAE examples + `std/_std` gating
 
