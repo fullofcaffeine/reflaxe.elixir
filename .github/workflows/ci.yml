@@ -197,40 +197,40 @@ jobs:
       - name: Compile-check examples
         run: npm run test:examples
 
-	  examples-elixir:
-	    name: Examples (Elixir WAE) / ${{ matrix.shard }}
-	    runs-on: ubuntu-latest
-	    needs: [guards]
-	    strategy:
-	      fail-fast: false
-	      matrix:
-	        include:
-	          # Keep shards small so first-run (cold) Mix compiles don't exceed job timeouts.
-	          - shard: mix-01
-	            only: '01-simple-modules'
-	          - shard: mix-02
-	            only: '02-mix-project'
-	          - shard: mix-03
-	            only: '03-phoenix-app'
-	          - shard: mix-04
-	            only: '04-ecto-migrations'
-	          - shard: mix-05
-	            only: '05-heex-templates'
-	          - shard: mix-06
-	            only: '06-user-management'
-	          - shard: mix-07-08
-	            only: '07-protocols 08-behaviors'
-	          - shard: mix-09-10-11
-	            only: '09-phoenix-router 10-option-patterns 11-domain-validation'
-	    timeout-minutes: 90
-	    env:
-	      TIMEOUT_DEPS_GET: '600'
-	      TIMEOUT_DEPS_COMPILE: '1200'
-	      TIMEOUT_MIX_COMPILE: '1800'
-	      TIMEOUT_HAXE_BUILD: '600'
-	      TIMEOUT_ELIXIRC: '600'
-	      # Keep this job focused and bounded. Heavy end-to-end apps are covered by dedicated workflows.
-	      # - todo-app: covered by `.github/workflows/sentinel.yml` (QA sentinel + Playwright)
+  examples-elixir:
+    name: Examples (Elixir WAE) / ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    needs: [guards]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Keep shards small so first-run (cold) Mix compiles don't exceed job timeouts.
+          - shard: mix-01
+            only: '01-simple-modules'
+          - shard: mix-02
+            only: '02-mix-project'
+          - shard: mix-03
+            only: '03-phoenix-app'
+          - shard: mix-04
+            only: '04-ecto-migrations'
+          - shard: mix-05
+            only: '05-heex-templates'
+          - shard: mix-06
+            only: '06-user-management'
+          - shard: mix-07-08
+            only: '07-protocols 08-behaviors'
+          - shard: mix-09-10-11
+            only: '09-phoenix-router 10-option-patterns 11-domain-validation'
+    timeout-minutes: 90
+    env:
+      TIMEOUT_DEPS_GET: '600'
+      TIMEOUT_DEPS_COMPILE: '1200'
+      TIMEOUT_MIX_COMPILE: '1800'
+      TIMEOUT_HAXE_BUILD: '600'
+      TIMEOUT_ELIXIRC: '600'
+      # Keep this job focused and bounded. Heavy end-to-end apps are covered by dedicated workflows.
+      # - todo-app: covered by `.github/workflows/sentinel.yml` (QA sentinel + Playwright)
       # - test-integration: covered by full `CI / Tests`
       # - lix-installation: covered by docs + install guides; compile-check is covered in `Examples` job
       EXAMPLES_ELIXIR_WAE_SKIP: 'todo-app test-integration lix-installation'
