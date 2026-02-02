@@ -666,13 +666,13 @@ defmodule HaxeCompiler do
     base_env = System.get_env() |> Enum.into([])
 
     haxe_libraries_dir = find_haxe_libraries_in_ancestors(File.cwd!())
+    resolved_haxelib_path = System.get_env("HAXELIB_PATH") || haxe_libraries_dir
     
     # Add or override specific Haxe environment variables
+    # NOTE: Mix tasks often run from nested directories (examples/*) and need to resolve `-lib` via the
+    # repo's scoped `haxe_libraries/`. Use the nearest ancestor `haxe_libraries/` as the fallback.
     haxe_env = [
-      # If HAXELIB_PATH is set (by tests), include it
-      {"HAXELIB_PATH", System.get_env("HAXELIB_PATH")},
-      # Include the project's haxe_libraries path as fallback
-      {"HAXEPATH", haxe_libraries_dir}
+      {"HAXELIB_PATH", resolved_haxelib_path}
     ]
     |> Enum.filter(fn {_key, value} -> value != nil end)
     |> Enum.into(%{})
