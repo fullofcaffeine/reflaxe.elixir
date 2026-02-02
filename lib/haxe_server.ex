@@ -82,6 +82,45 @@ defmodule HaxeServer do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
+  @doc false
+  def should_autostart?(mix_env) when is_atom(mix_env) do
+    # The Haxe compilation server spawns a long-lived `haxe --wait` OS process.
+    #
+    # In short-lived Mix invocations (CI, `mix compile`, `mix test`) that OS process can leak
+    # after the BEAM VM exits (terminate callbacks are not guaranteed to run during shutdown),
+    # which leads to port churn and hangs when output pipes never close.
+    #
+    # Default: only autostart in dev. Override via env var if you know you want it elsewhere.
+    cond do
+      System.get_env("HAXE_NO_SERVER") == "1" ->
+        false
+
+      true ->
+        case System.get_env("HAXE_SERVER_AUTOSTART") |> to_string() |> String.trim() |> String.downcase() do
+          "" -> mix_env == :dev
+          "dev" -> mix_env == :dev
+          "always" -> true
+          "never" -> false
+          _ -> mix_env == :dev
+        end
+    end
+  end
+
+  @doc false
+  def ensure_running_if_configured(mix_env) when is_atom(mix_env) do
+    if should_autostart?(mix_env) do
+      try do
+        unless running?() do
+          {:ok, _} = start_link([])
+        end
+      rescue
+        _ -> :ok
+      end
+    end
+
+    :ok
+  end
+
   @doc """
   Checks if the Haxe server is currently running.
   """
@@ -358,8 +397,8 @@ defmodule HaxeServer do
 
   defp stop_haxe_server(%{server_pid: nil}), do: :ok
 
-  defp stop_haxe_server(%{server_pid: port, server_os_pid: os_pid, owns_server: true})
-       when is_port(port) do
+  defp stop_haxe_server(%{server_pid: port, server_os_pid: os_pid, owns_server: true, port: port_number})
+       when is_port(port) and is_integer(port_number) do
     # Best-effort shutdown order:
     # 1) Close the Erlang port.
     # 2) Explicitly terminate the OS process tree (node wrapper + underlying haxe) if still alive.
@@ -374,6 +413,7 @@ defmodule HaxeServer do
     end
 
     kill_process_tree(os_pid)
+    kill_wait_processes_by_port(port_number)
     :ok
   end
 
@@ -509,69 +549,111 @@ defmodule HaxeServer do
       cookie_port = cookie_port_for_cache_key(state)
 
       cond do
-        is_integer(cookie_port) and cookie_port > 0 and cookie_port != state.port and
+        state.allow_external_attach and
+            is_integer(cookie_port) and cookie_port > 0 and cookie_port != state.port and
             attach_to_cookie_server?(%{state | port: cookie_port}) and
             external_server_compatible?(%{state | port: cookie_port}) ->
           Logger.debug(
             "Haxe server port #{state.port} is in use; attaching to prior server on cookie port #{cookie_port}"
           )
 
-          attached = %{state | port: cookie_port, server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}
+          attached = %{
+            state
+            | port: cookie_port,
+              server_pid: nil,
+              server_os_pid: nil,
+              owns_server: false,
+              status: :running
+          }
+
           _ = write_cookie(attached)
           {:ok, attached}
 
-        attach_to_cookie_server?(state) and external_server_compatible?(state) ->
+        state.allow_external_attach and attach_to_cookie_server?(state) and external_server_compatible?(state) ->
           Logger.debug(
             "Haxe server port #{state.port} is in use; attaching to prior server (cookie match)"
           )
 
           _ = write_cookie(%{state | owns_server: false, status: :running})
 
-          {:ok,
-           %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
+          {:ok, %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
 
         state.allow_external_attach and external_server_compatible?(state) ->
           Logger.debug("Haxe server port #{state.port} is in use; attaching to existing server")
 
-          {:ok,
-           %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
+          {:ok, %{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :running}}
 
         true ->
-          new_port = find_available_port()
-          Logger.debug("Haxe server port #{state.port} is in use; relocating to #{new_port}")
-          relocated = %{state | port: new_port}
+          # Prefer deterministic behavior over cross-process reuse unless the user opted in.
+          #
+          # When a prior Mix VM exits, GenServer terminate callbacks are not guaranteed to run.
+          # That can leak `haxe --wait` OS processes and leave the server port bound. If the
+          # cookie indicates we previously owned such a server, kill it before relocating.
+          _ = maybe_cleanup_stale_cookie_server(state)
 
-          case start_haxe_server(relocated) do
-            {:ok, pid2, os_pid2} ->
-              Logger.debug("Haxe server relocated and started on port #{new_port}")
+          if port_available?(state.port) do
+            start_or_attach_server(%{state | server_pid: nil, server_os_pid: nil, owns_server: false, status: :stopped})
+          else
+            new_port = find_available_port()
+            Logger.debug("Haxe server port #{state.port} is in use; relocating to #{new_port}")
+            relocated = %{state | port: new_port}
 
-              started = %{
-                relocated
-                | server_pid: pid2,
-                  server_os_pid: os_pid2,
-                  owns_server: true,
-                  status: :running
-              }
+            case start_haxe_server(relocated) do
+              {:ok, pid2, os_pid2} ->
+                Logger.debug("Haxe server relocated and started on port #{new_port}")
 
-              _ = write_cookie(started)
-              {:ok, started}
+                started = %{
+                  relocated
+                  | server_pid: pid2,
+                    server_os_pid: os_pid2,
+                    owns_server: true,
+                    status: :running
+                }
 
-            {:error, reason2} ->
-              Logger.warning(
-                "Failed to start Haxe server after relocation: #{inspect(reason2)}; will retry"
-              )
+                _ = write_cookie(started)
+                {:ok, started}
 
-              {:error,
-               %{
-                 relocated
-                 | server_pid: nil,
-                   server_os_pid: nil,
-                   owns_server: false,
-                   status: :error
-               }}
+              {:error, reason2} ->
+                Logger.warning(
+                  "Failed to start Haxe server after relocation: #{inspect(reason2)}; will retry"
+                )
+
+                {:error,
+                 %{
+                   relocated
+                   | server_pid: nil,
+                     server_os_pid: nil,
+                     owns_server: false,
+                     status: :error
+                 }}
+            end
           end
       end
     end
+  end
+
+  defp maybe_cleanup_stale_cookie_server(state) do
+    case read_cookie(state.cookie_path) do
+      {:ok,
+       %{
+         "version" => @cookie_version,
+         "port" => cookie_port,
+         "cache_key" => cookie_key,
+         "owns_server" => true,
+         "server_os_pid" => os_pid
+       }}
+      when cookie_key == state.cache_key and is_integer(cookie_port) and cookie_port > 0 and is_integer(os_pid) and os_pid > 0 ->
+        kill_process_tree(os_pid)
+        kill_wait_processes_by_port(cookie_port)
+        # The cookie is now stale; best-effort remove so future runs don't repeatedly try to kill.
+        _ = File.rm(state.cookie_path)
+        :ok
+
+      _ ->
+        :ok
+    end
+  rescue
+    _ -> :ok
   end
 
   defp allow_external_attach?() do
@@ -675,9 +757,38 @@ defmodule HaxeServer do
     _ -> :ok
   end
 
-  defp maybe_remove_cookie(%{owns_server: true, cookie_path: path}) when is_binary(path) do
-    _ = File.rm(path)
-    :ok
+  defp maybe_remove_cookie(%{owns_server: true, cookie_path: path, server_os_pid: os_pid, port: port_number} = state)
+       when is_binary(path) and is_integer(port_number) do
+    # Only remove the cookie once we're confident the OS server is actually gone.
+    #
+    # Rationale: On some platforms/wrappers, a `haxe --wait` process can outlive the BEAM VM even
+    # when we close the port. If we remove the cookie too aggressively, subsequent runs cannot
+    # identify and reap the stale server (leading to port churn and leaked servers).
+    kill_exe = System.find_executable("kill")
+    pgrep_exe = System.find_executable("pgrep")
+
+    os_pid_alive =
+      if is_binary(kill_exe) and is_integer(os_pid) do
+        process_alive?(os_pid, kill_exe)
+      else
+        false
+      end
+
+    wait_alive =
+      if is_binary(pgrep_exe) do
+        {out, status} = System.cmd(pgrep_exe, ["-f", "haxe --wait #{port_number}"], stderr_to_stdout: true)
+        status == 0 and String.trim(out) != ""
+      else
+        false
+      end
+
+    if os_pid_alive or wait_alive do
+      _ = write_cookie(%{state | owns_server: true})
+      :ok
+    else
+      _ = File.rm(path)
+      :ok
+    end
   rescue
     _ -> :ok
   end
@@ -725,6 +836,44 @@ defmodule HaxeServer do
 
       remaining = Enum.filter(ordered, fn pid -> process_alive?(pid, kill_exe) end)
       _ = kill_pids(remaining, "-KILL", kill_exe)
+    end
+
+    :ok
+  end
+
+  defp kill_wait_processes_by_port(port) when not is_integer(port), do: :ok
+
+  defp kill_wait_processes_by_port(port) when is_integer(port) do
+    kill_exe = System.find_executable("kill")
+    pgrep_exe = System.find_executable("pgrep")
+
+    if kill_exe != nil and pgrep_exe != nil do
+      pattern = "haxe --wait #{port}"
+      {out, status} = System.cmd(pgrep_exe, ["-f", pattern], stderr_to_stdout: true)
+
+      pids =
+        if status == 0 do
+          out
+          |> String.split(~r/\s+/, trim: true)
+          |> Enum.flat_map(fn s ->
+            case Integer.parse(s) do
+              {n, ""} -> [n]
+              _ -> []
+            end
+          end)
+        else
+          []
+        end
+
+      if pids != [] do
+        _ = System.cmd(kill_exe, ["-TERM" | Enum.map(pids, &Integer.to_string/1)], stderr_to_stdout: true)
+        Process.sleep(100)
+
+        remaining =
+          Enum.filter(pids, fn pid -> process_alive?(pid, kill_exe) end)
+
+        _ = System.cmd(kill_exe, ["-KILL" | Enum.map(remaining, &Integer.to_string/1)], stderr_to_stdout: true)
+      end
     end
 
     :ok
@@ -854,7 +1003,18 @@ defmodule HaxeServer do
           {haxe_exe, []}
 
         {:error, _reason} ->
-          {cmd, args}
+          # Fall back to a real `haxe` on PATH if available (not the node shim).
+          case System.find_executable("haxe") do
+            nil ->
+              {cmd, args}
+
+            exe ->
+              if is_binary(exe) and not haxeshim?(exe) do
+                {exe, []}
+              else
+                {cmd, args}
+              end
+          end
       end
     else
       {cmd, args}
@@ -867,22 +1027,44 @@ defmodule HaxeServer do
     # (`--wait`/`--connect`) because it injects `--haxe-version` into server requests.
     #
     # For server mode we prefer the real Haxe binary when available.
-    case Path.basename(cmd) do
-      "haxeshim.js" -> true
-      "haxe" -> haxeshim_file?(cmd)
-      _ -> haxeshim_file?(cmd)
+    base = Path.basename(cmd)
+
+    cond do
+      base == "haxeshim.js" ->
+        true
+
+      # Lix installs a Node wrapper under node_modules/.bin; treat it as a shim even if the
+      # bundled script doesn't include the string "haxeshim" near the top of the file.
+      base == "haxe" and in_node_bin_dir?(cmd) ->
+        true
+
+      base == "haxe.cmd" and String.contains?(cmd, "node_modules") ->
+        true
+
+      true ->
+        haxeshim_file?(cmd)
     end
   rescue
     _ -> false
   end
 
+  defp in_node_bin_dir?(path) do
+    parts = Path.split(Path.expand(path))
+    Enum.chunk_every(parts, 2, 1, :discard)
+    |> Enum.any?(fn
+      ["node_modules", ".bin"] -> true
+      _ -> false
+    end)
+  end
+
   defp haxeshim_file?(cmd) do
     if File.exists?(cmd) do
       case File.open(cmd, [:read], fn file ->
-             IO.read(file, 4096) || ""
+             IO.read(file, 8192) || ""
            end) do
         {:ok, chunk} when is_binary(chunk) ->
-          String.contains?(chunk, "haxeshim")
+          String.starts_with?(chunk, "#!/usr/bin/env node") or
+            String.contains?(chunk, "haxeshim")
 
         _ ->
           false

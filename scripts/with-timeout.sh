@@ -54,6 +54,16 @@ start_cmd() {
     else
       setsid "${CMD[@]}" &
     fi
+  elif command -v python3 >/dev/null 2>&1; then
+    # macOS often lacks `setsid` by default. Use python to create a new session/process group.
+    #
+    # The python process is immediately replaced by the target command via execvp, so $! is
+    # still the command PID (in a fresh session).
+    if [[ "$QUIET" -eq 1 ]]; then
+      python3 -c 'import os,sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" >/dev/null 2>&1 &
+    else
+      python3 -c 'import os,sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" &
+    fi
   else
     # Fallback: background in current group
     if [[ "$QUIET" -eq 1 ]]; then
@@ -124,6 +134,10 @@ list_descendants() {
 (
   sleep "$SECS" || true
   if kill -0 "$CMD_PID" 2>/dev/null; then
+    # Mark timeout early to avoid a race where the parent reaps the command and
+    # kills this watchdog before we can write the marker.
+    echo 124 >"$MARKER_FILE" 2>/dev/null || true
+
     # Prefer killing the entire session if available (handles grandchildren in separate PGIDs)
     if command -v pkill >/dev/null 2>&1 && [[ -n "$SESS_CHILD" && "$SESS_CHILD" != "0" ]]; then
       pkill -TERM -s "$SESS_CHILD" 2>/dev/null || true
@@ -152,7 +166,6 @@ list_descendants() {
       exit 137
     else
       echo "[timeout] command timed out after ${SECS}s (terminated)" >&2
-      echo 124 >"$MARKER_FILE" 2>/dev/null || true
       exit 124
     fi
   fi

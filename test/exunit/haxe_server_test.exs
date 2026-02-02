@@ -5,6 +5,9 @@ defmodule HaxeServerTest do
   alias HaxeServer
 
   setup do
+    previous_haxe_no_server = System.get_env("HAXE_NO_SERVER")
+    System.delete_env("HAXE_NO_SERVER")
+
     # Stop any running server before each test
     case Process.whereis(HaxeServer) do
       nil ->
@@ -21,11 +24,34 @@ defmodule HaxeServerTest do
 
         Process.sleep(100)
     end
-    
+
+    on_exit(fn ->
+      # Ensure we don't leave a running `haxe --wait` process behind if this was the last test.
+      case Process.whereis(HaxeServer) do
+        nil ->
+          :ok
+
+        pid ->
+          try do
+            GenServer.stop(pid, :normal)
+          catch
+            :exit, {:noproc, _} -> :ok
+            :exit, _ -> :ok
+          end
+
+          Process.sleep(100)
+      end
+
+      case previous_haxe_no_server do
+        nil -> System.delete_env("HAXE_NO_SERVER")
+        value -> System.put_env("HAXE_NO_SERVER", value)
+      end
+    end)
+
     :ok
   end
 
-  describe "start_link/1" do
+	  describe "start_link/1" do
     test "starts the GenServer with default options" do
       assert {:ok, pid} = HaxeServer.start_link([])
       assert Process.alive?(pid)
@@ -54,7 +80,7 @@ defmodule HaxeServerTest do
       :gen_tcp.close(socket)
     end
 
-    test "attaches to cookie port when env port is occupied" do
+	    test "attaches to cookie port when env port is occupied" do
       project_root = Path.expand("../..", __DIR__)
       cookie_dir = Path.join(project_root, ".reflaxe_elixir")
       cookie_path = Path.join(cookie_dir, "haxe_server.json")
@@ -65,7 +91,8 @@ defmodule HaxeServerTest do
           _ -> nil
         end
 
-      previous_env_port = System.get_env("HAXE_SERVER_PORT")
+	      previous_env_port = System.get_env("HAXE_SERVER_PORT")
+	      previous_allow_attach = System.get_env("HAXE_SERVER_ALLOW_ATTACH")
 
       haxe_exe =
         System.find_executable("haxe") ||
@@ -77,22 +104,32 @@ defmodule HaxeServerTest do
 
       {resolved_haxe_exe, resolved_haxe_args} = HaxeServer.resolve_haxe_cmd(haxe_exe, [], project_root)
 
-      # Start an external haxe --wait server on a cookie port.
-      cookie_port = find_free_port()
-      port =
-        Port.open(
-          {:spawn_executable, resolved_haxe_exe},
+	      # Start an external haxe --wait server on a cookie port.
+	      #
+	      # NOTE: `Port.close/1` is not guaranteed to terminate the underlying OS process on all
+	      # platforms/wrappers (especially when haxeshim spawns a real `haxe --wait` child). Capture
+	      # the OS PID so we can kill the process tree explicitly in cleanup to avoid leaks that can
+	      # destabilize subsequent tests (port churn / hangs).
+	      cookie_port = find_free_port()
+	      port =
+	        Port.open(
+	          {:spawn_executable, resolved_haxe_exe},
           [
             :binary,
             :exit_status,
             :stderr_to_stdout,
             {:args, resolved_haxe_args ++ ["--wait", Integer.to_string(cookie_port)]}
           ]
-        )
+	        )
 
-      Process.sleep(500)
+	      Process.sleep(500)
+	      cookie_os_pid =
+	        case Port.info(port, :os_pid) do
+	          {:os_pid, pid} when is_integer(pid) -> pid
+	          _ -> nil
+	        end
 
-      # Occupy the env-requested port so the server can't bind it.
+	      # Occupy the env-requested port so the server can't bind it.
       ipv6_opts = [:binary, active: false, ip: {0, 0, 0, 0, 0, 0, 0, 0}, ipv6_v6only: false]
 
       socket =
@@ -101,8 +138,9 @@ defmodule HaxeServerTest do
           {:error, _} -> {:ok, s} = :gen_tcp.listen(0, [:binary, active: false]); s
         end
 
-      {:ok, {_addr, env_port}} = :inet.sockname(socket)
-      System.put_env("HAXE_SERVER_PORT", Integer.to_string(env_port))
+	      {:ok, {_addr, env_port}} = :inet.sockname(socket)
+	      System.put_env("HAXE_SERVER_PORT", Integer.to_string(env_port))
+	      System.put_env("HAXE_SERVER_ALLOW_ATTACH", "1")
 
       # Write a cookie pointing at the running external server, using the same cache key logic.
       File.mkdir_p!(cookie_dir)
@@ -138,27 +176,33 @@ defmodule HaxeServerTest do
         Process.sleep(100)
         {_response, stats} = HaxeServer.status()
         assert stats.port == cookie_port
-      after
+	      after
         File.cd!(old_cwd)
         _ = HaxeServer.stop()
         :gen_tcp.close(socket)
 
-        try do
-          Port.close(port)
-        rescue
-          _ -> :ok
-        end
+	        try do
+	          Port.close(port)
+	        rescue
+	          _ -> :ok
+	        end
+	        kill_process_tree(cookie_os_pid)
 
-        case previous_env_port do
-          nil -> System.delete_env("HAXE_SERVER_PORT")
-          value -> System.put_env("HAXE_SERVER_PORT", value)
-        end
+	        case previous_env_port do
+	          nil -> System.delete_env("HAXE_SERVER_PORT")
+	          value -> System.put_env("HAXE_SERVER_PORT", value)
+	        end
+
+	        case previous_allow_attach do
+	          nil -> System.delete_env("HAXE_SERVER_ALLOW_ATTACH")
+	          value -> System.put_env("HAXE_SERVER_ALLOW_ATTACH", value)
+	        end
 
         case previous_cookie do
           nil -> File.rm(cookie_path)
           contents -> File.write!(cookie_path, contents)
-        end
-      end
+	      end
+	    end
     end
 
     test "starts with custom port option" do
@@ -377,7 +421,13 @@ defmodule HaxeServerTest do
 
   defp find_free_port() do
     # Prefer a dual-stack bind to match lix/haxeshim's default (::) behavior.
-    ipv6_opts = [:binary, active: false, reuseaddr: true, ip: {0, 0, 0, 0, 0, 0, 0, 0}, ipv6_v6only: false]
+    ipv6_opts = [
+      :binary,
+      active: false,
+      reuseaddr: true,
+      ip: {0, 0, 0, 0, 0, 0, 0, 0},
+      ipv6_v6only: false
+    ]
 
     case :gen_tcp.listen(0, ipv6_opts) do
       {:ok, socket} ->
@@ -390,6 +440,66 @@ defmodule HaxeServerTest do
         {:ok, {_addr, port}} = :inet.sockname(socket)
         :gen_tcp.close(socket)
         port
+    end
+  end
+
+  defp kill_process_tree(os_pid) when not is_integer(os_pid), do: :ok
+
+  defp kill_process_tree(os_pid) when is_integer(os_pid) do
+    kill_exe = System.find_executable("kill")
+    pgrep_exe = System.find_executable("pgrep")
+
+    if is_binary(kill_exe) and is_binary(pgrep_exe) do
+      all = collect_descendant_pids([os_pid], MapSet.new(), pgrep_exe)
+      ordered = all |> MapSet.to_list() |> Enum.reverse()
+
+      _ =
+        System.cmd(kill_exe, ["-TERM" | Enum.map(ordered, &Integer.to_string/1)],
+          stderr_to_stdout: true
+        )
+
+      Process.sleep(100)
+
+      remaining =
+        Enum.filter(ordered, fn pid ->
+          case System.cmd(kill_exe, ["-0", Integer.to_string(pid)], stderr_to_stdout: true) do
+            {_out, 0} -> true
+            {_out, _} -> false
+          end
+        end)
+
+      _ =
+        System.cmd(kill_exe, ["-KILL" | Enum.map(remaining, &Integer.to_string/1)],
+          stderr_to_stdout: true
+        )
+    end
+
+    :ok
+  end
+
+  defp collect_descendant_pids([], acc, _pgrep_exe), do: acc
+
+  defp collect_descendant_pids([pid | rest], acc, pgrep_exe) do
+    if MapSet.member?(acc, pid) do
+      collect_descendant_pids(rest, acc, pgrep_exe)
+    else
+      {out, status} = System.cmd(pgrep_exe, ["-P", Integer.to_string(pid)], stderr_to_stdout: true)
+
+      children =
+        if status == 0 do
+          out
+          |> String.split(~r/\s+/, trim: true)
+          |> Enum.flat_map(fn s ->
+            case Integer.parse(s) do
+              {n, ""} -> [n]
+              _ -> []
+            end
+          end)
+        else
+          []
+        end
+
+      collect_descendant_pids(rest ++ children, MapSet.put(acc, pid), pgrep_exe)
     end
   end
 end

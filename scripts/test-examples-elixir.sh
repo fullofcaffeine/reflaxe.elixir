@@ -178,10 +178,10 @@ validate_mix_example() {
   # deps.get is the most network-sensitive part (Hex), so allow a couple retries to
   # reduce CI flakiness without hiding real compile failures.
   CURRENT_PHASE="deps.get"
-  run_step_retry 5 "$TIMEOUT_DEPS_GET" "$dir" env MIX_ENV=test mix deps.get || fail "mix deps.get failed for $name"
+  run_step_retry 5 "$TIMEOUT_DEPS_GET" "$dir" env MIX_ENV=test HAXE_NO_SERVER=1 mix deps.get || fail "mix deps.get failed for $name"
 
   CURRENT_PHASE="deps.compile"
-  run_step "$TIMEOUT_DEPS_COMPILE" "$dir" env MIX_ENV=test mix deps.compile || fail "mix deps.compile failed for $name"
+  run_step "$TIMEOUT_DEPS_COMPILE" "$dir" env MIX_ENV=test HAXE_NO_SERVER=1 mix deps.compile || fail "mix deps.compile failed for $name"
 
   # Compile the app under WAE, but do not recompile deps (deps may have warnings we do not control).
   # Force recompilation so warnings can't hide behind cached artifacts.
