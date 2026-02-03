@@ -20,16 +20,43 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Ensure warnings-as-errors compliance and eliminate undefined-variable errors
  *   in generated stdlib by emitting idiomatic, binder-consistent Elixir.
  *   This follows the stdlib philosophy of pragmatic native implementations.
+ * - Some generated stdlib modules (notably `haxe.ds.BalancedTree`) call `*.new/arity` for
+ *   iterator helpers. If those modules are emitted as docs-only stubs, WAE fails with
+ *   `undefined or private` warnings.
+ *
+ *   These iterator overrides intentionally trade *perfect purity* for *correct API shape*:
+ *   the Haxe iterator API is stateful (`next()` advances). In Elixir, most iterator usage is
+ *   rewritten to `Enum.*` by the AST pipeline, but when iterators do execute at runtime (e.g.,
+ *   manual `while (it.hasNext()) it.next()` patterns), we still need a safe, deterministic
+ *   implementation.
+ *
+ *   To preserve the calling convention (`next(it)` with no returned updated iterator),
+ *   we store advancement state in the current process dictionary, keyed by a unique `ref`.
  *
  * HOW
  * - Detect EDefmodule/EModule names and replace bodies with ERaw definitions
  *   that use consistent parameter names and minimal logic matching Haxe intent.
+ * - `ArrayIterator`:
+ *   - `new/1` builds a struct and seeds a unique `ref`.
+ *   - `has_next/1` and `next/1` read/update the current index via `Process.get/put`.
+ * - `MapKeyValueIterator`:
+ *   - Accepts `IMap<K,V>`, which may be a plain `%{}` or one of our Haxe Map-backed
+ *     wrappers (e.g. map stored under `:h`, `:map`, or `:data`).
+ *   - Normalizes to a `pairs = Map.to_list(...)` list once at construction, then iterates
+ *     deterministically over that list.
+ *
+ *   Note: The `IMap` unwrapping is intentionally shape-based (keys/fields), not
+ *   app-specific (no domain naming heuristics).
  *
  * EXAMPLES
  * Before (generated):
  *   def has_next(_struct) do struct.current < length(struct.array) end
  * After (override):
  *   def has_next(struct), do: struct.current < length(struct.array)
+ *
+ * Elixir (MapKeyValueIterator, shape-normalized):
+ *   it = MapKeyValueIterator.new(map_like)
+ *   if MapKeyValueIterator.has_next(it), do: MapKeyValueIterator.next(it)
  */
 class StdHaxeRuntimeOverrideTransforms {
     public static function transformPass(ast: ElixirAST): ElixirAST {
