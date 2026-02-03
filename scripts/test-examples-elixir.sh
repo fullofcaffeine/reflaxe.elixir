@@ -184,9 +184,17 @@ validate_mix_example() {
   run_step "$TIMEOUT_DEPS_COMPILE" "$dir" env MIX_ENV=test HAXE_NO_SERVER=1 mix deps.compile || fail "mix deps.compile failed for $name"
 
   # Compile the app under WAE, but do not recompile deps (deps may have warnings we do not control).
-  # Force recompilation so warnings can't hide behind cached artifacts.
+  #
+  # Important: `mix compile --force` can trigger dependency recompilation. Under WAE that can
+  # fail the job due to upstream warnings (e.g. Elixir 1.18 introduced stricter type warnings
+  # that some older deps still emit). To keep the gate focused on *our* code:
+  # - clean only the current project build artifacts
+  # - compile under WAE with deps checking disabled
+  CURRENT_PHASE="mix.clean"
+  run_step "$TIMEOUT_MIX_COMPILE" "$dir" env MIX_ENV=test HAXE_NO_SERVER=1 mix clean || fail "mix clean failed for $name"
+
   CURRENT_PHASE="mix.compile"
-  run_step "$TIMEOUT_MIX_COMPILE" "$dir" env MIX_ENV=test HAXE_NO_SERVER=1 mix compile --force --warnings-as-errors --no-deps-check || fail "mix compile --warnings-as-errors failed for $name"
+  run_step "$TIMEOUT_MIX_COMPILE" "$dir" env MIX_ENV=test HAXE_NO_SERVER=1 mix compile --warnings-as-errors --no-deps-check || fail "mix compile --warnings-as-errors failed for $name"
 }
 
 validate_haxe_only_example() {
