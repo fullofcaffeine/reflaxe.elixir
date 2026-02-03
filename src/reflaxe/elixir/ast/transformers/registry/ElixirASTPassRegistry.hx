@@ -1025,7 +1025,7 @@ class ElixirASTPassRegistry {
         // Stdlib overrides for Haxe runtime modules (binder-consistent, native Elixir)
         passes.push({
             name: "StdHaxeRuntimeOverride",
-            description: "Override ArrayIterator/PosException with binder-consistent native implementations",
+            description: "Override select Haxe runtime modules with binder-consistent native implementations",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.StdHaxeRuntimeOverrideTransforms.transformPass
         });

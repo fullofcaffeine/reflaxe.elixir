@@ -14,7 +14,7 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * WHAT
  * - Provides minimal, target-native overrides for select Haxe std runtime modules
  *   whose direct compilation leads to binder/usage mismatches (_struct vs struct).
- *   Current overrides: ArrayIterator, PosException, EReg.
+ *   Current overrides: ArrayIterator, MapKeyValueIterator, PosException, EReg.
  *
  * WHY
  * - Ensure warnings-as-errors compliance and eliminate undefined-variable errors
@@ -37,6 +37,7 @@ class StdHaxeRuntimeOverrideTransforms {
             return switch (n.def) {
                 case EDefmodule(name, _):
                     if (name == "ArrayIterator") arrayIteratorDef(n)
+                    else if (name == "MapKeyValueIterator") mapKeyValueIteratorDef(n)
                     else if (name == "PosException") posExceptionDef(n)
                     else if (name == "EReg") eRegDef(n)
                     else n;
@@ -44,6 +45,9 @@ class StdHaxeRuntimeOverrideTransforms {
                     if (name == "ArrayIterator") {
                         var blk = arrayIteratorBlock(n.metadata, n.pos);
                         makeASTWithMeta(EModule(name, attrs, [blk]), n.metadata, n.pos);
+                    } else if (name == "MapKeyValueIterator") {
+                        var blk0 = mapKeyValueIteratorBlock(n.metadata, n.pos);
+                        makeASTWithMeta(EModule(name, attrs, [blk0]), n.metadata, n.pos);
                     } else if (name == "PosException") {
                         var blk2 = posExceptionBlock(n.metadata, n.pos);
                         makeASTWithMeta(EModule(name, attrs, [blk2]), n.metadata, n.pos);
@@ -62,8 +66,51 @@ class StdHaxeRuntimeOverrideTransforms {
     }
     static inline function arrayIteratorBlock(meta: ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
         var raw = makeAST(ERaw(
-            "  def has_next(struct), do: struct.current < length(struct.array)\n" +
-            "  def next(struct), do: struct.array[struct.current + 1]\n"
+            "  defstruct array: [], current: 0, ref: nil\n" +
+            "  def new(array), do: %__MODULE__{array: array, current: 0, ref: make_ref()}\n" +
+            "  defp state_key(ref), do: {__MODULE__, ref}\n" +
+            "  defp current_index(struct) do\n" +
+            "    if Kernel.is_nil(struct.ref), do: struct.current, else: Process.get(state_key(struct.ref), struct.current)\n" +
+            "  end\n" +
+            "  def has_next(struct), do: current_index(struct) < length(struct.array)\n" +
+            "  def next(struct) do\n" +
+            "    i = current_index(struct)\n" +
+            "    if not Kernel.is_nil(struct.ref), do: Process.put(state_key(struct.ref), i + 1)\n" +
+            "    Enum.at(struct.array, i)\n" +
+            "  end\n"
+        ));
+        return makeASTWithMeta(EBlock([raw]), meta, pos);
+    }
+
+    static inline function mapKeyValueIteratorDef(orig: ElixirAST): ElixirAST {
+        return makeASTWithMeta(EDefmodule("MapKeyValueIterator", mapKeyValueIteratorBlock(orig.metadata, orig.pos)), orig.metadata, orig.pos);
+    }
+    static inline function mapKeyValueIteratorBlock(meta: ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
+        var raw = makeAST(ERaw(
+            "  defstruct pairs: [], ref: nil\n" +
+            "  def new(map) do\n" +
+            "    pairs =\n" +
+            "      cond do\n" +
+            "        Kernel.is_map(map) and Map.has_key?(map, :h) and Kernel.is_map(map.h) -> Map.to_list(map.h)\n" +
+            "        Kernel.is_map(map) and Map.has_key?(map, :map) and Kernel.is_map(map.map) -> Map.to_list(map.map)\n" +
+            "        Kernel.is_map(map) and Map.has_key?(map, :data) and Kernel.is_map(map.data) -> Map.to_list(map.data)\n" +
+            "        Kernel.is_map(map) and Map.has_key?(map, :__struct__) -> map |> Map.from_struct() |> Map.to_list()\n" +
+            "        Kernel.is_map(map) -> Map.to_list(map)\n" +
+            "        true -> []\n" +
+            "      end\n" +
+            "    %__MODULE__{pairs: pairs, ref: make_ref()}\n" +
+            "  end\n" +
+            "  defp state_key(ref), do: {__MODULE__, ref}\n" +
+            "  defp current_index(struct), do: Process.get(state_key(struct.ref), 0)\n" +
+            "  def has_next(struct), do: current_index(struct) < length(struct.pairs)\n" +
+            "  def next(struct) do\n" +
+            "    i = current_index(struct)\n" +
+            "    Process.put(state_key(struct.ref), i + 1)\n" +
+            "    case Enum.at(struct.pairs, i) do\n" +
+            "      {k, v} -> %{:key => k, :value => v}\n" +
+            "      _ -> %{:key => nil, :value => nil}\n" +
+            "    end\n" +
+            "  end\n"
         ));
         return makeASTWithMeta(EBlock([raw]), meta, pos);
     }
