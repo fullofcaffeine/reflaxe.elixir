@@ -30,12 +30,13 @@ This is why we treat “Map parity” as a first-class workstream: it is the hig
 
 ## Current status (rolling)
 
-- Latest gap report: **148 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
+- Latest gap report: **147 missing** modules (see `docs/08-roadmap/stdlib-parity/gap-report.md`)
 - Recently closed (high leverage):
   - `haxe.Int32`, `haxe.Int64`, `haxe.Int64Helper` (deterministic overflow + bitwise semantics on BEAM)
   - `haxe.ds.Map` + `haxe.ds.StringMap`/`IntMap`/`ObjectMap` surfaces (native `%{}` backend; lowered to `Map.*`)
   - `haxe.DynamicAccess` + iterators (typed dynamic map access for JSON/string-key payloads)
   - `Reflect` improvements for string-key JSON maps vs atom-key “object literal” maps
+  - `haxe.crypto.Md5` (BEAM-native `:crypto.hash/2` for runtime, pure Haxe fallback for macro context)
 
 ## Root Layout (source of truth)
 
