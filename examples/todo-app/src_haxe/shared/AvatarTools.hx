@@ -1,10 +1,9 @@
 package shared;
 
 import StringTools;
+import haxe.crypto.Md5;
 #if (elixir || reflaxe_runtime)
 import elixir.Enum;
-#else
-import haxe.crypto.Md5;
 #end
 
 /**
@@ -22,8 +21,11 @@ import haxe.crypto.Md5;
  * - Initials: derived from name (preferred) or email local-part fallback.
  * - Color: stable palette index derived from a simple string hash.
  * - Gravatar URL: computed from a lowercase-trimmed email and MD5:
- *   - Elixir: native `:crypto` via `elixir.ErlangCrypto.md5HexLower/1`
- *   - JS/other: `haxe.crypto.Md5.encode/1`
+ *   - All targets: `haxe.crypto.Md5.encode/1`
+ *
+ * Notes
+ * - `haxe.crypto.Md5` is a stdlib surface. In Elixir builds, Reflaxe.Elixir provides an override
+ *   so this stays efficient and idiomatic on BEAM while keeping the same API for JS (genes).
  */
 class AvatarTools {
     static inline var DEFAULT_SIZE = 64;
@@ -108,20 +110,15 @@ class AvatarTools {
      * - Elixir: uses `elixir.ErlangCrypto.md5HexLower/1` (native :crypto)
      * - JS/other: uses `haxe.crypto.Md5.encode/1`
      */
-    public static function gravatarUrl(email: String, ?size: Int): Null<String> {
-        var normalizedEmail = normalizeEmail(email);
-        if (normalizedEmail == "") return null;
+	    public static function gravatarUrl(email: String, ?size: Int): Null<String> {
+	        var normalizedEmail = normalizeEmail(email);
+	        if (normalizedEmail == "") return null;
 
-        var chosenSize = size != null ? size : DEFAULT_SIZE;
+	        var chosenSize = size != null ? size : DEFAULT_SIZE;
+	        var hash = Md5.encode(normalizedEmail).toLowerCase();
 
-        #if (elixir || reflaxe_runtime)
-        var hash = elixir.ErlangCrypto.md5HexLower(normalizedEmail);
-        #else
-        var hash = Md5.encode(normalizedEmail).toLowerCase();
-        #end
-
-        return 'https://www.gravatar.com/avatar/${hash}?d=identicon&s=${chosenSize}';
-    }
+	        return 'https://www.gravatar.com/avatar/${hash}?d=identicon&s=${chosenSize}';
+	    }
 
     static function initialsFromName(trimmedName: String): String {
         var parts = trimmedName.split(" ").filter(p -> StringTools.trim(p) != "");
@@ -136,11 +133,11 @@ class AvatarTools {
             return (a + b).toUpperCase();
         }
 
-        var only = parts.length == 1 ? Enum.at(parts, 0) : trimmedName;
-        if (only == null || only == "") return "??";
-        if (only.length >= 2) return (only.charAt(0) + only.charAt(1)).toUpperCase();
-        return only.charAt(0).toUpperCase();
-    }
+	        var only = parts.length == 1 ? safeArrayAt(parts, 0) : trimmedName;
+	        if (only == null || only == "") return "??";
+	        if (only.length >= 2) return (only.charAt(0) + only.charAt(1)).toUpperCase();
+	        return only.charAt(0).toUpperCase();
+	    }
 
     static function initialsFromEmail(normalizedEmail: String): String {
         var parts = normalizedEmail.split("@");

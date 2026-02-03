@@ -37,3 +37,14 @@ When shared code truly needs target-specific behavior (e.g. crypto primitives), 
 - an implementation per target (same API), or
 - moving that helper into `server/` or `client/` packages.
 
+## Example: `AvatarTools.gravatarUrl/2`
+
+`shared.AvatarTools.gravatarUrl(email, size)` is used by server-rendered LiveView templates
+and is also safe to call from the genes client build.
+
+- It uses `haxe.crypto.Md5.encode/1` as the single shared API across targets.
+- In Elixir builds, Reflaxe.Elixir overrides `haxe.crypto.Md5` to delegate to BEAM-native `:crypto`
+  (so we keep idiomatic/fast output without changing the Haxe call sites).
+
+As a rule, avoid `#if elixir ... else return null` in `shared/` unless the helper is truly
+server-only and cannot sensibly be implemented on the client.

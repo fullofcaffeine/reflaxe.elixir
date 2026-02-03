@@ -4,6 +4,7 @@ import haxe.Int32;
 import haxe.Int64;
 import haxe.DynamicAccess;
 import haxe.Json;
+import haxe.crypto.Md5;
 import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
 
@@ -149,5 +150,10 @@ class StdlibParityTest extends TestCase {
         Assert.isFalse(payload.exists("x"));
         Assert.isNull(payload.get("x"));
     }
-}
 
+    @:describe("haxe.crypto.Md5")
+    @:test
+    function testMd5EncodeLowerHex(): Void {
+        Assert.equals("098f6bcd4621d373cade4e832627b4f6", Md5.encode("test"));
+    }
+}

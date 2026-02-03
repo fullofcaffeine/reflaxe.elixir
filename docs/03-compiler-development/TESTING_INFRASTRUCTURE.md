@@ -4,6 +4,20 @@
 
 Reflaxe.Elixir uses a dual-mode testing system with shared utilities to provide both sequential and parallel test execution with identical behavior and 100% reliability.
 
+## CI lanes (why “WAE” and “mix-0x” exist)
+
+GitHub Actions runs a few higher-level “integration” checks in addition to snapshot tests:
+
+- **Examples (Elixir WAE)**: compiles each example’s generated Elixir under `mix compile --warnings-as-errors`.
+  - **WAE** = “warnings as errors”. This is a release-hygiene gate: warnings often indicate subtle
+    codegen/stdlib issues (unused vars, undefined funcs, module conflicts) that would otherwise slip through.
+- **`mix-01`, `mix-02`, … shards**: the examples list is split into multiple matrix shards so the WAE job:
+  - finishes faster (parallel execution),
+  - avoids per-job timeouts,
+  - and isolates failures (you get a single shard log instead of one huge run).
+
+The same WAE philosophy is used by the todo-app QA sentinel when it runs `mix compile --warnings-as-errors`.
+
 ## Architecture Components
 
 ```
