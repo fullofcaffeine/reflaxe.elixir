@@ -55,14 +55,19 @@ start_cmd() {
       setsid "${CMD[@]}" &
     fi
   elif command -v python3 >/dev/null 2>&1; then
-    # macOS often lacks `setsid` by default. Use python to create a new session/process group.
+    # macOS often lacks `setsid` by default. Use python to create a fresh process group.
+    #
+    # Important: prefer `setpgrp()` over `setsid()` here.
+    # - `setsid()` detaches from the controlling terminal/session and can lead to odd IO behavior
+    #   for some commands (notably BEAM/Mix output + buffering).
+    # - a dedicated process group is sufficient for our kill-by-PGID strategy.
     #
     # The python process is immediately replaced by the target command via execvp, so $! is
-    # still the command PID (in a fresh session).
+    # still the command PID (in a fresh process group).
     if [[ "$QUIET" -eq 1 ]]; then
-      python3 -c 'import os,sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" >/dev/null 2>&1 &
+      python3 -c 'import os,sys; os.setpgrp(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" >/dev/null 2>&1 &
     else
-      python3 -c 'import os,sys; os.setsid(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" &
+      python3 -c 'import os,sys; os.setpgrp(); os.execvp(sys.argv[1], sys.argv[1:])' "${CMD[@]}" &
     fi
   else
     # Fallback: background in current group

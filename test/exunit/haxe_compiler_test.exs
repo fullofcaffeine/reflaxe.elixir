@@ -16,7 +16,10 @@ defmodule HaxeCompilerTest do
     end
     
     # Create temporary test directories
-    test_dir = Path.join([System.tmp_dir!(), "haxe_compiler_test_#{:rand.uniform(10000)}"])
+    # Use a collision-free directory name. `:rand.uniform/1` can collide across runs and
+    # leave stray files behind if cleanup fails, which makes filesystem-based assertions flaky.
+    unique_id = :erlang.unique_integer([:positive, :monotonic])
+    test_dir = Path.join([System.tmp_dir!(), "haxe_compiler_test_#{unique_id}"])
     source_dir = Path.join(test_dir, "src_haxe")
     target_dir = Path.join(test_dir, "lib")
     

@@ -16,6 +16,7 @@ Our GitHub Actions CI runs primarily on **Ubuntu**, plus a macOS smoke job. CI c
   - Elixir: `1.14.x`
   - Erlang/OTP: `25.x`
   - Runs a bounded subset (`npm run test:quick` + `npm run test:mix-fast`)
+  - Note: `npm run test:mix-fast` feature-detects newer Mix flags (e.g. `--stale`) to stay compatible with Elixir `1.14`.
 
 - macOS smoke (bounded):
   - Node.js: `20`
