@@ -67,6 +67,19 @@ on the classpath during the Haxe→Elixir compile. Fix by ensuring:
   - prefer `-D elixir_output=...` (stable harness signal)
   - fall back to `platform == cross` (Reflaxe targets on Haxe 4)
 
+### Common CI failure mode: WAE examples + iterator runtime stubs
+
+If `CI / Examples (Elixir WAE)` fails with warnings like:
+- `ArrayIterator.new/1 is undefined or private`
+- `MapKeyValueIterator.new/1 is undefined (module MapKeyValueIterator is not available)`
+
+it usually means we emitted a stub iterator module (docs-only or partial runtime) but the generated stdlib
+still calls `*.new/arity` (e.g., from `haxe.ds.BalancedTree.iterator/1`).
+
+- Fix in `src/reflaxe/elixir/ast/transformers/StdHaxeRuntimeOverrideTransforms.hx` by providing a minimal,
+  binder-consistent runtime for the iterator modules, including `new/arity`, `has_next/1`, and `next/1`.
+- Keep the override pass enabled in `src/reflaxe/elixir/ast/transformers/registry/ElixirASTPassRegistry.hx`.
+
 ## 🧯 CI Failure Triage (No-auth environments)
 
 GitHub Actions step logs often require a signed-in session to view or download. In no-auth environments, you can still:
