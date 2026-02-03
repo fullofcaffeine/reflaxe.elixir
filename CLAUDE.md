@@ -104,7 +104,7 @@ Note: CI may use synchronous mode for readability, but MUST include `--deadline`
 - Every command you invoke MUST have a clear finish condition and return control.
 - Long‑running steps must be bounded by time or completion signals:
   - Wrap commands with `scripts/with-timeout.sh --secs <N>`.
-    - macOS note: `scripts/with-timeout.sh` uses a `python3` `setsid()` fallback when `setsid` is unavailable, and timeouts must return `124` (terminated) or `137` (force-killed).
+    - macOS note: `scripts/with-timeout.sh` uses a `python3` `setpgrp()` fallback when `setsid` is unavailable, and timeouts must return `124` (terminated) or `137` (force-killed).
   - When using the QA sentinel in `--async` mode, always provide a `--deadline <SECS>`.
   - For log viewing, prefer bounded peeks or finish‑aware follow:
     - One‑shot: `scripts/qa-logpeek.sh --run-id <RUN_ID> --last 200`
@@ -116,6 +116,8 @@ Note: CI may use synchronous mode for readability, but MUST include `--deadline`
 CI hygiene notes (to prevent flaky hangs):
 - Prefer direct Haxe compilation in CI/compile-check jobs (`HAXE_NO_SERVER=1`) to avoid leaked `haxe --wait` OS processes.
 - Haxe `--wait` server mode must use the real `haxe` binary (not the `node_modules/.bin/haxe` Node shim); the server resolves the real binary via `.haxerc`/Lix.
+- CI uses `concurrency.cancel-in-progress`; a “failed” check may simply be a **canceled** run from a newer push. Always confirm the job status before chasing logs.
+- Minimum toolchain CI runs OTP 25 / Elixir 1.14. Avoid newer Mix flags (notably `mix test --stale`). Use `npm run test:mix-fast` (wrapped by `scripts/test-mix-fast.sh`, which feature-detects support).
 
 ### 🔭 Optional: Playwright E2E Smoke (when server is up)
 
