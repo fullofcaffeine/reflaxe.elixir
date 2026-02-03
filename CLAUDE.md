@@ -80,6 +80,19 @@ still calls `*.new/arity` (e.g., from `haxe.ds.BalancedTree.iterator/1`).
   binder-consistent runtime for the iterator modules, including `new/arity`, `has_next/1`, and `next/1`.
 - Keep the override pass enabled in `src/reflaxe/elixir/ast/transformers/registry/ElixirASTPassRegistry.hx`.
 
+### Common CI failure mode: WAE examples + Phoenix LiveView deps on Elixir 1.18+
+
+If `CI / Examples (Elixir WAE)` fails or times out compiling examples that depend on Phoenix LiveView (e.g.
+`03-phoenix-app`, `05-heex-templates`, `06-user-management`, `09-phoenix-router`), it’s often due to:
+
+- **Outdated `phoenix_live_view`** emitting expensive compiler warnings under newer Elixir versions
+  (Elixir 1.18 introduced stricter type warnings; some older LiveView releases warn and can compile slowly).
+
+Fixes:
+- Prefer keeping example deps current (e.g. `{:phoenix_live_view, "~> 1.0"}`) and regenerate `mix.lock`.
+- Keep the WAE gate focused on our code by compiling deps without WAE, then cleaning only the project and
+  running `mix compile --warnings-as-errors --no-deps-check` (see `scripts/test-examples-elixir.sh`).
+
 ## 🧯 CI Failure Triage (No-auth environments)
 
 GitHub Actions step logs often require a signed-in session to view or download. In no-auth environments, you can still:

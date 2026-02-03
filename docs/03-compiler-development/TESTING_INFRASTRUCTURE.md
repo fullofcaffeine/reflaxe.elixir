@@ -11,6 +11,8 @@ GitHub Actions runs a few higher-level “integration” checks in addition to s
 - **Examples (Elixir WAE)**: compiles each example’s generated Elixir under `mix compile --warnings-as-errors`.
   - **WAE** = “warnings as errors”. This is a release-hygiene gate: warnings often indicate subtle
     codegen/stdlib issues (unused vars, undefined funcs, module conflicts) that would otherwise slip through.
+  - Keep example dependencies compatible with the CI Elixir version. Newer Elixir releases can introduce
+    stricter warnings that older deps still emit (which can slow compiles and break WAE gates).
 - **`mix-01`, `mix-02`, … shards**: the examples list is split into multiple matrix shards so the WAE job:
   - finishes faster (parallel execution),
   - avoids per-job timeouts,
