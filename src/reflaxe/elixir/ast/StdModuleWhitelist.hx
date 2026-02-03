@@ -41,6 +41,7 @@ class StdModuleWhitelist {
             // Haxe stdlib helper modules commonly emitted as top-level Elixir modules
             // (their on-disk path may be under lib/haxe/**, but the module names are unqualified).
             "OptionTools","ResultTools","Assert","TestCase",
+            "Md5",
             "Bytes","Input","Output","Sys","Eof",
             "NotImplementedException","PosException","FPHelper",
             // Common Haxe stdlib modules emitted as top-level Elixir modules
