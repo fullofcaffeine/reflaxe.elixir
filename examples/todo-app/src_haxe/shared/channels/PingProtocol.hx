@@ -8,6 +8,25 @@ import phoenix.channels.WireCodecs;
 import phoenix.channels.WireField;
 import phoenix.channels.WireFields;
 
+/**
+ * PingProtocol (todo-app)
+ *
+ * WHAT
+ * - A fully typed Phoenix Channel wire protocol shared by:
+ *   - server (Haxe→Elixir): `server.channels.PingChannel`
+ *   - client (Haxe→JS via genes): `client.channels.PingChannelClient`
+ *
+ * WHY
+ * - Channels are a client/server boundary. We want a single authoritative definition of:
+ *   - topic + event names
+ *   - payload keys and encoding/decoding
+ *   - the allowed direction of messages (client→server vs server→client)
+ *
+ * HOW
+ * - `WireFields` defines stable JSON keys (snake_case atoms/strings on the wire).
+ * - `WireCodecs` builds small decoders/encoders that are usable on both targets.
+ * - `ChannelProtocol` is then used by each side to register exactly what it can send/receive.
+ */
 typedef PingPayload = {
     var requestId: String;
 }

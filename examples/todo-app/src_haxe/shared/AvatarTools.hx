@@ -3,6 +3,8 @@ package shared;
 import StringTools;
 #if (elixir || reflaxe_runtime)
 import elixir.Enum;
+#else
+import haxe.crypto.Md5;
 #end
 
 /**
@@ -10,7 +12,7 @@ import elixir.Enum;
  *
  * WHAT
  * - Tiny helper for deriving user avatars (initials + deterministic color), with an optional
- *   Gravatar URL when compiling to Elixir.
+ *   Gravatar URL when an email is present.
  *
  * WHY
  * - The todo-app showcase benefits from richer UI without introducing new DB schema fields.
@@ -19,7 +21,9 @@ import elixir.Enum;
  * HOW
  * - Initials: derived from name (preferred) or email local-part fallback.
  * - Color: stable palette index derived from a simple string hash.
- * - Gravatar URL: computed from a lowercase-trimmed email and MD5 (Erlang :crypto) when available.
+ * - Gravatar URL: computed from a lowercase-trimmed email and MD5:
+ *   - Elixir: native `:crypto` via `elixir.ErlangCrypto.md5HexLower/1`
+ *   - JS/other: `haxe.crypto.Md5.encode/1`
  */
 class AvatarTools {
     static inline var DEFAULT_SIZE = 64;
@@ -41,6 +45,21 @@ class AvatarTools {
         return StringTools.trim(email).toLowerCase();
     }
 
+    /**
+     * Safe array access that works across targets.
+     *
+     * Elixir: arrays are represented as lists, so we use `Enum.at/2`.
+     * JS: arrays are native and can be indexed directly.
+     */
+    static inline function safeArrayAt<T>(array: Array<T>, index: Int): Null<T> {
+        #if (elixir || reflaxe_runtime)
+        return Enum.at(array, index);
+        #else
+        if (index < 0 || index >= array.length) return null;
+        return array[index];
+        #end
+    }
+
     public static function initials(name: String, email: String): String {
         var trimmedName = StringTools.trim(name);
         if (trimmedName != "") return initialsFromName(trimmedName);
@@ -51,20 +70,29 @@ class AvatarTools {
         return "??";
     }
 
+    /**
+     * Returns a stable Tailwind background class for the user’s avatar.
+     *
+     * The returned value is deterministic for a given (email/name) so the UI stays consistent
+     * without storing extra fields in the DB.
+     */
     public static function avatarBgClass(name: String, email: String): String {
         var seed = normalizeEmail(email);
         if (seed == "") seed = StringTools.trim(name).toLowerCase();
         if (seed == "") seed = "unknown";
         var idx = hashToIndex(seed, palette.length);
 
-        #if (elixir || reflaxe_runtime)
-        var chosen = Enum.at(palette, idx);
+        var chosen = safeArrayAt(palette, idx);
         return chosen != null ? chosen : "bg-gray-600";
-        #else
-        return palette[idx];
-        #end
     }
 
+    /**
+     * Inline CSS style for a Gravatar background image.
+     *
+     * Server-only usage today (LiveView templates). Safe to call from the client too, but keep in
+     * mind this produces a `background-image: url(...)` string, which you should not build from
+     * untrusted user input.
+     */
     public static function avatarStyle(name: String, email: String, ?size: Int): String {
         var chosenSize = size != null ? size : DEFAULT_SIZE;
         var url = gravatarUrl(email, chosenSize);
@@ -73,6 +101,13 @@ class AvatarTools {
             : "";
     }
 
+    /**
+     * Returns a Gravatar URL for the given email, or `null` if the email is empty.
+     *
+     * Target-specific implementation:
+     * - Elixir: uses `elixir.ErlangCrypto.md5HexLower/1` (native :crypto)
+     * - JS/other: uses `haxe.crypto.Md5.encode/1`
+     */
     public static function gravatarUrl(email: String, ?size: Int): Null<String> {
         var normalizedEmail = normalizeEmail(email);
         if (normalizedEmail == "") return null;
@@ -81,18 +116,19 @@ class AvatarTools {
 
         #if (elixir || reflaxe_runtime)
         var hash = elixir.ErlangCrypto.md5HexLower(normalizedEmail);
-        return 'https://www.gravatar.com/avatar/${hash}?d=identicon&s=${chosenSize}';
         #else
-        return null;
+        var hash = Md5.encode(normalizedEmail).toLowerCase();
         #end
+
+        return 'https://www.gravatar.com/avatar/${hash}?d=identicon&s=${chosenSize}';
     }
 
     static function initialsFromName(trimmedName: String): String {
         var parts = trimmedName.split(" ").filter(p -> StringTools.trim(p) != "");
 
         if (parts.length >= 2) {
-            var first = Enum.at(parts, 0);
-            var second = Enum.at(parts, 1);
+            var first = safeArrayAt(parts, 0);
+            var second = safeArrayAt(parts, 1);
 
             var a = (first != null && first != "") ? first.charAt(0) : "";
             var b = (second != null && second != "") ? second.charAt(0) : "";
@@ -108,7 +144,7 @@ class AvatarTools {
 
     static function initialsFromEmail(normalizedEmail: String): String {
         var parts = normalizedEmail.split("@");
-        var local = Enum.at(parts, 0);
+        var local = safeArrayAt(parts, 0);
         if (local == null) local = normalizedEmail;
 
         if (local.length >= 2) return (local.charAt(0) + local.charAt(1)).toUpperCase();
