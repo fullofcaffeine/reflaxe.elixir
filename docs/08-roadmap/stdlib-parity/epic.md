@@ -192,6 +192,18 @@ Create one task per module (or small module cluster) with:
 - Snapshot(s) added/updated that lock in the intended Elixir shape and semantics.
 - A runtime ExUnit test that executes on BEAM for key behavior (avoid “snapshot-only” confidence).
 
+## Next actions (turn this into BD work)
+
+1) **Create the BD epic** using the template below.
+2) **Generate a prioritized task list** from `gap-report.json`:
+   - Tier 0 (DX unblockers): maps/iterators/callstack/exceptions/bytes/json
+   - Tier 1 (ecosystem blockers): serializer/unserializer/template/http
+   - Tier 2 (BEAM integration): `sys.net.*`, `sys.ssl.*`, `sys.thread.*`
+3) **Open one BD task per module/cluster**, each including:
+   - Reference link(s) to `haxe.elixir.reference`
+   - Snapshots + Haxe-authored ExUnit runtime semantics test(s)
+   - WAE criteria: `npm run test:mix-fast`, `npm run test:examples-elixir`, and todo-app QA sentinel
+
 ## Task template (copy/paste)
 
 For each module/cluster task:
