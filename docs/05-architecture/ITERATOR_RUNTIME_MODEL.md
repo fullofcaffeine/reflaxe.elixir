@@ -51,7 +51,12 @@ This keeps iterator semantics correct without changing the call sites.
 - a plain Elixir map (`%{}`) (common for boundary terms like Phoenix params/payloads)
 - a Haxe map implementation (e.g. `BalancedTree`) represented as a struct/map with `__reflaxe_class__` dispatch
 
-To avoid “shape sniffing” (checking arbitrary fields like `:h`/`:data`), the project is planning a **single canonical `IMap` unwrap contract**.
+To avoid “shape sniffing” (checking arbitrary internal fields), the canonical direction is:
+
+- `MapKeyValueIterator.new/1` accepts either:
+  - a plain Elixir map (`%{}`), or
+  - a list of `{k,v}` pairs
+- Non-map `IMap` implementations (tree-backed, custom, etc.) should *produce* pairs and call `new(pairs)` from their own runtime implementation.
 
 Tracking:
 - BD task: `haxe.elixir-hm47.23` (child of stdlib parity epic)
@@ -60,4 +65,3 @@ Tracking:
 
 - Short-term CI safety net: `src/reflaxe/elixir/ast/transformers/StdHaxeRuntimeOverrideTransforms.hx`
 - Long-term target: real stdlib/runtime modules under `std/` / `std/_std/` with upstream-matching signatures and runtime tests.
-

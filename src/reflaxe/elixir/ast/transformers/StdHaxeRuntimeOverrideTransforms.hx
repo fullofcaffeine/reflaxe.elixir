@@ -115,14 +115,15 @@ class StdHaxeRuntimeOverrideTransforms {
     static inline function mapKeyValueIteratorBlock(meta: ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
         var raw = makeAST(ERaw(
             "  defstruct pairs: [], ref: nil\n" +
-            "  def new(map) do\n" +
+            "  # MapKeyValueIterator is used for Haxe `for (k => v in map)`-style loops.\n" +
+            "  # Runtime contract:\n" +
+            "  # - Haxe `Map`/`StringMap`/`IntMap` values are plain Elixir maps (`%{}`) and are passed here directly.\n" +
+            "  # - Non-map `IMap` implementations (e.g. tree-backed maps) should pass a list of `{k,v}` pairs.\n" +
+            "  def new(map_or_pairs) do\n" +
             "    pairs =\n" +
             "      cond do\n" +
-            "        Kernel.is_map(map) and Map.has_key?(map, :h) and Kernel.is_map(map.h) -> Map.to_list(map.h)\n" +
-            "        Kernel.is_map(map) and Map.has_key?(map, :map) and Kernel.is_map(map.map) -> Map.to_list(map.map)\n" +
-            "        Kernel.is_map(map) and Map.has_key?(map, :data) and Kernel.is_map(map.data) -> Map.to_list(map.data)\n" +
-            "        Kernel.is_map(map) and Map.has_key?(map, :__struct__) -> map |> Map.from_struct() |> Map.to_list()\n" +
-            "        Kernel.is_map(map) -> Map.to_list(map)\n" +
+            "        Kernel.is_list(map_or_pairs) -> map_or_pairs\n" +
+            "        Kernel.is_map(map_or_pairs) -> Map.to_list(map_or_pairs)\n" +
             "        true -> []\n" +
             "      end\n" +
             "    %__MODULE__{pairs: pairs, ref: make_ref()}\n" +
