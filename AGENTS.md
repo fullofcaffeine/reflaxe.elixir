@@ -368,6 +368,10 @@ Examples
   - `rg` should show diffs only in `std/_std/*.hx`, `std/*.cross.hx`, or `src/reflaxe/elixir/**`.
   - No diffs to `reflect.ex`, `std.ex`, `string_buf.ex`, `type.ex`, `int_iterator.ex`, or `test/snapshot/**/out/**` unless accompanied by matching upstream `.hx` changes and a note explaining why the `.ex` is canonical.
 - Temporary runtime edits for debugging are allowed only if clearly annotated “DEBUG ONLY” and removed in the same PR after the proper upstream fix lands.
+- CI/WAE hygiene for stdlib overrides:
+  - When adding/overriding a stdlib module in `std/**/*.cross.hx`, keep the public API (signatures + overloads) identical to upstream Haxe stdlib.
+  - Avoid adding `@:coreApi` unless the upstream module is `@:coreApi` (core types get special treatment).
+  - Verify locally before pushing: `npm run test:quick` + `npm run test:mix-fast` + `npm run test:examples-elixir` (WAE gate).
 
 **⚠️ ARCHITECTURAL UPDATE: Complete Migration to AST Pipeline (August 2025)**
 - **The compiler now extends GenericCompiler<ElixirAST>** - Pure AST-based architecture
