@@ -1,12 +1,27 @@
 package shared;
 
 /**
- * Shared type definitions for Todo application
- * Used by both client (Haxe→JS) and server (Haxe→Elixir) code
+ * TodoTypes (todo-app)
+ *
+ * WHAT
+ * - Shared domain types (typedefs + enums) used by both:
+ *   - server build (Haxe→Elixir): LiveViews, schemas, controllers
+ *   - client build (Haxe→JS via genes): hooks and any client-side state
+ *
+ * WHY
+ * - Single source of truth across the client/server boundary:
+ *   - event payload shapes don’t drift
+ *   - enum/tag refactors are type-checked
+ *   - tests and UI code share consistent contracts
+ *
+ * HOW
+ * - `typedef` describes JSON-like shapes (maps/objects) used at boundaries.
+ * - `@:elixirIdiomatic` enums compile to Elixir-friendly tagged tuples on the server,
+ *   while remaining normal Haxe enums on the client.
  */
 
 /**
- * Todo item data structure
+ * Todo item shape as rendered/serialized by the todo-app.
  */
 typedef Todo = {
     id: Int,
@@ -22,7 +37,7 @@ typedef Todo = {
 };
 
 /**
- * User data structure
+ * User shape as rendered/serialized by the todo-app.
  */
 typedef User = {
     id: Int,
@@ -33,7 +48,10 @@ typedef User = {
 };
 
 /**
- * Todo priority levels
+ * Todo priority levels.
+ *
+ * Server: `@:elixirIdiomatic` → `{:low | :medium | :high}`
+ * Client: standard Haxe enum values.
  */
 @:elixirIdiomatic
 enum TodoPriority {
@@ -43,7 +61,7 @@ enum TodoPriority {
 }
 
 /**
- * Filter options for todos
+ * Filter options for the UI (active/completed/all).
  */
 @:elixirIdiomatic
 enum TodoFilter {
@@ -53,7 +71,7 @@ enum TodoFilter {
 }
 
 /**
- * Sort options for todos
+ * Sort options for the UI.
  */
 @:elixirIdiomatic
 enum TodoSort {
@@ -63,7 +81,10 @@ enum TodoSort {
 }
 
 /**
- * LiveView socket assigns structure
+ * LiveView socket assigns structure (server-only concept).
+ *
+ * This is kept in `shared/` because the shape is referenced across multiple server modules and
+ * occasionally reused by client-side helpers (e.g. for typed decoding/validation).
  */
 typedef TodoLiveAssigns = {
     todos: Array<Todo>,
@@ -82,7 +103,10 @@ typedef TodoLiveAssigns = {
 };
 
 /**
- * Phoenix LiveView event payloads
+ * Phoenix LiveView event payload shapes (server receives these).
+ *
+ * These are intentionally JSON-ish shapes so they can be validated/decoded and evolve without
+ * coupling to internal structs.
  */
 typedef TodoEvents = {
     toggle_todo: {id: Int},
@@ -101,7 +125,7 @@ typedef TodoEvents = {
 };
 
 /**
- * Client-side state for JavaScript hooks
+ * Client-side state for JavaScript hooks (genes build).
  */
 typedef ClientState = {
     darkMode: Bool,
@@ -110,7 +134,7 @@ typedef ClientState = {
 };
 
 /**
- * Phoenix PubSub message types
+ * Phoenix PubSub message shapes (server internal).
  */
 typedef PubSubMessages = {
     todo_added: {todo: Todo},

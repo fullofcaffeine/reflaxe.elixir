@@ -3,6 +3,20 @@ package;
 using StringTools;
 using Lambda;
 
+/**
+ * PrewarmDummy (todo-app)
+ *
+ * WHAT
+ * - A small, standalone entry point that references frequently-used std modules.
+ *
+ * WHY
+ * - Useful for local experiments where you want to “warm” the Haxe typer/server cache
+ *   (parse/type common modules) without compiling the whole app.
+ *
+ * HOW
+ * - Not referenced by the normal todo-app builds.
+ * - Can be used manually with a tiny HXML that points at this file as `-main PrewarmDummy`.
+ */
 class PrewarmDummy {
   static function main() {
     // Touch common std modules to prime typer/cache quickly
