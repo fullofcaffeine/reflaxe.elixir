@@ -82,6 +82,7 @@ compile.protocols
 .temp/
 .tmp/
 /tmp/
+/_tmp/
 
 # Debug/macro dumps (never commit)
 **/dump/
