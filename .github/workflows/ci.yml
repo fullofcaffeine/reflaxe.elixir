@@ -236,20 +236,29 @@ jobs:
             cache_paths: |
               examples/06-user-management/deps
               examples/06-user-management/_build
-          - shard: mix-07-08
-            only: '07-protocols 08-behaviors'
+          - shard: mix-07
+            only: '07-protocols'
             cache_paths: |
               examples/07-protocols/deps
               examples/07-protocols/_build
+          - shard: mix-08
+            only: '08-behaviors'
+            cache_paths: |
               examples/08-behaviors/deps
               examples/08-behaviors/_build
-          - shard: mix-09-10-11
-            only: '09-phoenix-router 10-option-patterns 11-domain-validation'
+          - shard: mix-09
+            only: '09-phoenix-router'
             cache_paths: |
               examples/09-phoenix-router/deps
               examples/09-phoenix-router/_build
+          - shard: mix-10
+            only: '10-option-patterns'
+            cache_paths: |
               examples/10-option-patterns/deps
               examples/10-option-patterns/_build
+          - shard: mix-11
+            only: '11-domain-validation'
+            cache_paths: |
               examples/11-domain-validation/deps
               examples/11-domain-validation/_build
     timeout-minutes: 90
