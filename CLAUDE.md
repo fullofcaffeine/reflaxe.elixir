@@ -372,6 +372,8 @@ Examples
   - When adding/overriding a stdlib module in `std/**/*.cross.hx`, keep the public API (signatures + overloads) identical to upstream Haxe stdlib.
   - Avoid adding `@:coreApi` unless the upstream module is `@:coreApi` (core types get special treatment).
   - Verify locally before pushing: `npm run test:quick` + `npm run test:mix-fast` + `npm run test:examples-elixir` (WAE gate).
+- CI/WAE hygiene for `Examples (Elixir WAE)`:
+  - Cache each example’s `examples/<name>/{deps,_build}` in CI. Without this, cold Phoenix examples can exceed the 90-minute job timeout and get cancelled mid-run.
 
 **⚠️ ARCHITECTURAL UPDATE: Complete Migration to AST Pipeline (August 2025)**
 - **The compiler now extends GenericCompiler<ElixirAST>** - Pure AST-based architecture

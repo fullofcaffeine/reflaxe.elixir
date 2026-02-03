@@ -208,20 +208,50 @@ jobs:
           # Keep shards small so first-run (cold) Mix compiles don't exceed job timeouts.
           - shard: mix-01
             only: '01-simple-modules'
+            cache_paths: |
+              examples/01-simple-modules/deps
+              examples/01-simple-modules/_build
           - shard: mix-02
             only: '02-mix-project'
+            cache_paths: |
+              examples/02-mix-project/deps
+              examples/02-mix-project/_build
           - shard: mix-03
             only: '03-phoenix-app'
+            cache_paths: |
+              examples/03-phoenix-app/deps
+              examples/03-phoenix-app/_build
           - shard: mix-04
             only: '04-ecto-migrations'
+            cache_paths: |
+              examples/04-ecto-migrations/deps
+              examples/04-ecto-migrations/_build
           - shard: mix-05
             only: '05-heex-templates'
+            cache_paths: |
+              examples/05-heex-templates/deps
+              examples/05-heex-templates/_build
           - shard: mix-06
             only: '06-user-management'
+            cache_paths: |
+              examples/06-user-management/deps
+              examples/06-user-management/_build
           - shard: mix-07-08
             only: '07-protocols 08-behaviors'
+            cache_paths: |
+              examples/07-protocols/deps
+              examples/07-protocols/_build
+              examples/08-behaviors/deps
+              examples/08-behaviors/_build
           - shard: mix-09-10-11
             only: '09-phoenix-router 10-option-patterns 11-domain-validation'
+            cache_paths: |
+              examples/09-phoenix-router/deps
+              examples/09-phoenix-router/_build
+              examples/10-option-patterns/deps
+              examples/10-option-patterns/_build
+              examples/11-domain-validation/deps
+              examples/11-domain-validation/_build
     timeout-minutes: 90
     env:
       TIMEOUT_DEPS_GET: '600'
@@ -259,6 +289,14 @@ jobs:
           key: ${{ runner.os }}-mix-hex-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ hashFiles('**/mix.lock') }}
           restore-keys: |
             ${{ runner.os }}-mix-hex-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-
+      - name: Cache example deps/_build (speed up WAE shards)
+        uses: actions/cache@v4
+        with:
+          path: ${{ matrix.cache_paths }}
+          key: ${{ runner.os }}-examples-elixir-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ matrix.shard }}-${{ hashFiles('**/mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-examples-elixir-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-${{ matrix.shard }}-
+            ${{ runner.os }}-examples-elixir-${{ env.ELIXIR_VERSION }}-${{ env.OTP_VERSION }}-
       - name: Install npm dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Cache Haxe toolchain (lix)
