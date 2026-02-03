@@ -22,6 +22,9 @@ In practice, this means:
 
 This is why we treat “Map parity” as a first-class workstream: it is the highest leverage way to remove gotchas while still generating idiomatic Elixir.
 
+Related (ongoing) work:
+- Iterator + `IMap` runtime canonicalization: BD `haxe.elixir-hm47.23` (removes remaining “map wrapper shape” ambiguity and moves iterator runtime into stdlib as source of truth).
+
 ## Inputs
 
 - Module-level gap report: `docs/08-roadmap/stdlib-parity/gap-report.json`
