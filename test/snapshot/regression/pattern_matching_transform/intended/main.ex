@@ -25,8 +25,10 @@ defmodule Main do
     (case value do
       {:some, value} ->
         (case value do
-          {:ok, _value} -> "Got number: #{Kernel.to_string(n)}"
-          {:error, _reason} -> "Got error: #{e}"
+          {:ok, value} ->
+            n = value
+            "Got number: #{Kernel.to_string(n)}"
+          {:error, e} -> "Got error: #{e}"
         end)
       {:none} -> "Got nothing"
     end)

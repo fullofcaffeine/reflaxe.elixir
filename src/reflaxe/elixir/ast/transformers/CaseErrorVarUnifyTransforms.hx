@@ -5,6 +5,7 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
 
 /**
  * CaseErrorVarUnifyTransforms
@@ -164,7 +165,7 @@ class CaseErrorVarUnifyTransforms {
     return out;
   }
 
-  static function processClause(cl: {pattern:EPattern, guard:ElixirAST, body:ElixirAST}, inScope: Map<String, Bool>): {pattern:EPattern, guard:ElixirAST, body:ElixirAST} {
+	  static function processClause(cl: {pattern:EPattern, guard:ElixirAST, body:ElixirAST}, inScope: Map<String, Bool>): {pattern:EPattern, guard:ElixirAST, body:ElixirAST} {
     // Only {:error, PVar(b)}
     var tag = switch (cl.pattern) {
       case PTuple(es) if (es.length == 2):
@@ -176,11 +177,16 @@ class CaseErrorVarUnifyTransforms {
       case PTuple(es) if (es.length == 2): switch (es[1]) { case PVar(n): n; default: null; }
       default: null;
     };
-    if (binder == null) return cl;
-    // Promote _x -> x when body references x
-    if (binder.length > 1 && binder.charAt(0) == '_') {
-      var cand = binder.substr(1);
-      if (bodyUsesName(cl.body, cand)) {
+	    if (binder == null) return cl;
+
+	    inline function isEnvLike(name: String): Bool {
+	      return name == "socket" || name == "conn" || name == "params" || name == "event";
+	    }
+
+	    // Promote _x -> x when body references x
+	    if (binder.length > 1 && binder.charAt(0) == '_') {
+	      var cand = binder.substr(1);
+	      if (bodyUsesName(cl.body, cand)) {
         var newPat = switch (cl.pattern) {
           case PTuple(es2) if (es2.length == 2): PTuple([es2[0], PVar(cand)]);
           default: cl.pattern;
@@ -188,40 +194,79 @@ class CaseErrorVarUnifyTransforms {
         return { pattern: newPat, guard: cl.guard, body: cl.body };
       }
     }
-    // Replace undefined simple vars with the bound binder (when body uses it and no rename needed)
-    var used = collectNames(cl.body);
-    // Only do replacement when a single undefined lower-case var exists
-    var declared = collectDeclared(cl.pattern, cl.body);
-    var undef:Array<String> = [];
-    for (u in used.keys()) {
-      if (!declared.exists(u) && isLower(u) && (inScope == null || !inScope.exists(u))) {
-        undef.push(u);
-      }
-    }
-    if (undef.length == 1) {
-      var target = binder;
-      var newBody = ElixirASTTransformer.transformNode(cl.body, function(x: ElixirAST): ElixirAST {
-        return switch (x.def) { case EVar(v) if (v == undef[0]): makeASTWithMeta(EVar(target), x.metadata, x.pos); default: x; }
-      });
-      return { pattern: cl.pattern, guard: cl.guard, body: newBody };
-    }
-    return cl;
-  }
+	    // Replace undefined simple vars with the bound binder (when body uses it and no rename needed)
+	    var used = collectNames(cl.body);
+	    // Only do replacement when a single undefined lower-case var exists
+	    var declared = collectDeclared(cl.pattern, cl.body);
+	    var undef:Array<String> = [];
+	    for (u in used.keys()) {
+	      if (!declared.exists(u) && isLower(u) && (inScope == null || !inScope.exists(u))) {
+	        undef.push(u);
+	      }
+	    }
+	    if (undef.length == 1) {
+	      var undefinedName = undef[0];
 
-  static function bodyUsesName(body: ElixirAST, name:String):Bool {
-    var used = false;
-    ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
-      switch (n.def) { case EVar(v) if (v == name): used = true; default: }
-      return n;
-    });
-    return used;
-  }
+	      // Prefer renaming the binder to the single undefined local when the binder itself
+	      // is not referenced. This avoids trying to rewrite inside interpolated strings
+	      // (which are not structured ElixirAST vars).
+	      if (!isEnvLike(undefinedName) && !bodyUsesName(cl.body, binder) && undefinedName != binder) {
+	        var newPat = switch (cl.pattern) {
+	          case PTuple(es2) if (es2.length == 2): PTuple([es2[0], PVar(undefinedName)]);
+	          default: cl.pattern;
+	        };
+	        return { pattern: newPat, guard: cl.guard, body: cl.body };
+	      }
 
-  static function collectNames(body: ElixirAST): Map<String,Bool> {
-    var m = new Map<String,Bool>();
-    reflaxe.elixir.ast.ASTUtils.walk(body, function(n:ElixirAST){ switch (n.def) { case EVar(v): m.set(v,true); default: }});
-    return m;
-  }
+	      var target = binder;
+	      var newBody = ElixirASTTransformer.transformNode(cl.body, function(x: ElixirAST): ElixirAST {
+	        return switch (x.def) { case EVar(v) if (v == undefinedName): makeASTWithMeta(EVar(target), x.metadata, x.pos); default: x; }
+	      });
+	      return { pattern: cl.pattern, guard: cl.guard, body: newBody };
+	    }
+	    return cl;
+	  }
+
+	  static function bodyUsesName(body: ElixirAST, name:String):Bool {
+	    var used = false;
+	    ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
+	      switch (n.def) {
+	        case EVar(v) if (v == name):
+	          used = true;
+	        case EString(s):
+	          var tmp = new Map<String,Bool>();
+	          ElixirCodeVarRefTokenizer.collectFromInterpolatedStringText(s, tmp);
+	          if (tmp.exists(name)) used = true;
+	        case ERaw(code) if (code != null && code.indexOf("#{") != -1):
+	          var tmp2 = new Map<String,Bool>();
+	          ElixirCodeVarRefTokenizer.collectFromElixirCode(code, tmp2);
+	          if (tmp2.exists(name)) used = true;
+	        default:
+	      }
+	      return n;
+	    });
+	    return used;
+	  }
+
+	  static function collectNames(body: ElixirAST): Map<String,Bool> {
+	    var m = new Map<String,Bool>();
+	    reflaxe.elixir.ast.ASTUtils.walk(body, function(n:ElixirAST) {
+	      switch (n.def) {
+	        case EVar(v):
+	          m.set(v, true);
+	        case EString(s):
+	          var tmp = new Map<String,Bool>();
+	          ElixirCodeVarRefTokenizer.collectFromInterpolatedStringText(s, tmp);
+	          for (k in tmp.keys()) m.set(k, true);
+	        case ERaw(code) if (code != null && code.indexOf("#{") != -1):
+	          var tmp2 = new Map<String,Bool>();
+	          ElixirCodeVarRefTokenizer.collectFromElixirCode(code, tmp2);
+	          for (k2 in tmp2.keys()) m.set(k2, true);
+	        default:
+	      }
+	    });
+	    return m;
+	  }
   static function collectDeclared(p:EPattern, body:ElixirAST): Map<String,Bool> {
     var d = new Map<String,Bool>();
     // pattern binds
