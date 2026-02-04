@@ -684,7 +684,7 @@ defmodule HaxeCompiler do
     candidate = Path.join(start_dir, "haxe_libraries")
 
     cond do
-      File.dir?(candidate) ->
+      File.dir?(candidate) and haxe_libraries_usable?(candidate) ->
         candidate
 
       start_dir == "/" or start_dir == Path.dirname(start_dir) ->
@@ -693,6 +693,17 @@ defmodule HaxeCompiler do
       true ->
         find_haxe_libraries_in_ancestors(Path.dirname(start_dir))
     end
+  end
+
+  defp haxe_libraries_usable?(dir) when is_binary(dir) do
+    # Some example/template projects include an empty `haxe_libraries/` directory.
+    # Treating that as authoritative breaks `-lib` resolution (it can fall back to a globally
+    # installed library) and can cause CI-only drift where stdlib gating/macros don't run.
+    #
+    # Only accept a directory as a scoped lib root when it actually contains hxml entries.
+    not Enum.empty?(Path.wildcard(Path.join(dir, "*.hxml")))
+  rescue
+    _ -> false
   end
   
 end

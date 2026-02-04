@@ -61,8 +61,9 @@ on the classpath during the Haxe→Elixir compile. Fix by ensuring:
 - `CompilerBootstrap.Start()` runs for both consumer installs **and** repo-local scoped-lib builds:
   - consumer: `extraParams.hxml`
   - repo harness: `haxe_libraries/reflaxe.elixir.hxml`
-- Mix tasks that invoke Haxe from nested dirs (examples/*) must export `HAXELIB_PATH` pointing at the
-  nearest ancestor `haxe_libraries/` (see `lib/haxe_compiler.ex`).
+- Mix tasks that invoke Haxe from nested dirs (examples/*) must export `HAXELIB_PATH` pointing at a
+  *usable* scoped-lib directory (one that contains `haxe_libraries/*.hxml`), not an empty placeholder
+  `haxe_libraries/` created by templates (see `lib/haxe_compiler.ex`).
 - Bootstrap detection works for Haxe 4 Reflaxe builds:
   - prefer `-D elixir_output=...` (stable harness signal)
   - fall back to `platform == cross` (Reflaxe targets on Haxe 4)
