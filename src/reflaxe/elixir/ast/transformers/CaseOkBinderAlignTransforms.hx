@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ASTUtils;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
 
 /**
  * CaseOkBinderAlignTransforms
@@ -215,23 +216,37 @@ class CaseOkBinderAlignTransforms {
         for (k in declaredBefore.keys()) declaredInBody.set(k, true);
         declaredInBody.set(currentLow, true);
 
-        // Collect lowercase locals referenced in body that are NOT declared anywhere in-scope.
+        // Collect lowercase locals referenced in body (including inside string/ERaw interpolations)
+        // that are NOT declared anywhere in-scope.
         var undefined:Array<String> = [];
         var originalByLower = new Map<String,String>();
         var seen = new Map<String,Bool>();
+
+        inline function considerCandidate(v: String): Void {
+            if (v == null || v.length == 0) return;
+            var firstChar = v.charAt(0);
+            if (firstChar.toLowerCase() != firstChar) return;
+            var vlow = v.toLowerCase();
+            if (seen.exists(vlow)) return;
+            if (!allowLocalCandidate(vlow, currentLow, funcArgs)) return;
+            if (declaredInBody.exists(vlow)) return;
+            seen.set(vlow, true);
+            undefined.push(vlow);
+            if (!originalByLower.exists(vlow)) originalByLower.set(vlow, v);
+        }
+
         ASTUtils.walk(body, function(n:ElixirAST) {
             switch (n.def) {
                 case EVar(v) if (v != null):
-                    // Only consider actual locals (lowercase start). Skip module-like refs.
-                    var firstChar = v.charAt(0);
-                    if (firstChar.toLowerCase() == firstChar) {
-                        var vlow = v.toLowerCase();
-                        if (!seen.exists(vlow) && allowLocalCandidate(vlow, currentLow, funcArgs) && !declaredInBody.exists(vlow)) {
-                            seen.set(vlow, true);
-                            undefined.push(vlow);
-                            if (!originalByLower.exists(vlow)) originalByLower.set(vlow, v);
-                        }
-                    }
+                    considerCandidate(v);
+                case EString(s):
+                    var tmp = new Map<String,Bool>();
+                    ElixirCodeVarRefTokenizer.collectFromInterpolatedStringText(s, tmp);
+                    for (k in tmp.keys()) considerCandidate(k);
+                case ERaw(code) if (code != null && code.indexOf("#{") != -1):
+                    var tmp2 = new Map<String,Bool>();
+                    ElixirCodeVarRefTokenizer.collectFromElixirCode(code, tmp2);
+                    for (k2 in tmp2.keys()) considerCandidate(k2);
                 default:
             }
         });

@@ -4610,27 +4610,42 @@ class ElixirASTPassRegistry {
         //   are fatal.
         // - Replaying the pass at the very end is safe: it only prefixes truly-unused binders and
         //   does not alter clause bodies.
-	        passes.push({
-	            name: "CaseClauseUnusedBinderUnderscore_AbsoluteLastReplay",
-	            description: "Absolute-last: underscore unused case/with/receive binders (replay)",
-	            enabled: true,
-	            pass: reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.pass,
-	            runAfter: ["RemoteCallModuleAliasCaseNormalize_AbsoluteLast"]
-	        });
+		        passes.push({
+		            name: "CaseClauseUnusedBinderUnderscore_AbsoluteLastReplay",
+		            description: "Absolute-last: underscore unused case/with/receive binders (replay)",
+		            enabled: true,
+		            pass: reflaxe.elixir.ast.transformers.CaseClauseUnusedBinderUnderscoreFinalTransforms.pass,
+		            runAfter: ["RemoteCallModuleAliasCaseNormalize_AbsoluteLast"]
+		        });
 
-	        // Absolute-last cleanup: drop non-final bare literal statements to avoid warnings like
-	        // “code block contains unused literal 7” (commonly produced by inlined setters returning the value).
+		        // Absolute-last replay: drop any no-op self-assignments like `v = v`.
+		        //
+		        // WHY
+		        // - Some ultra-late alias/binder repair passes can reintroduce clause-local `v = v`
+		        //   statements (e.g. when an alias `v = _v` remains after `_v` is promoted to `v`).
+		        // - Keeping a final replay here is cheap and keeps output idiomatic without relying
+		        //   on fragile ordering of the many late hygiene passes.
+		        passes.push({
+		            name: "DropSelfAssignNoop_AbsoluteLastReplay",
+		            description: "Absolute-last: remove no-op self-assignments v = v (replay)",
+		            enabled: true,
+		            pass: reflaxe.elixir.ast.transformers.DropSelfAssignNoopTransforms.pass,
+		            runAfter: ["CaseClauseUnusedBinderUnderscore_AbsoluteLastReplay"]
+		        });
+
+		        // Absolute-last cleanup: drop non-final bare literal statements to avoid warnings like
+		        // “code block contains unused literal 7” (commonly produced by inlined setters returning the value).
 	        //
 	        // NOTE
 	        // - This must run *after* ExUnit assert compilation and other ultra-late rewriters, which can
 	        //   introduce new statement lists where the literal becomes non-final.
-	        passes.push({
-	            name: "BareLiteralDrop_AbsoluteLast",
-	            description: "Absolute-last: remove non-final literal statements in EBlock/EDo",
-	            enabled: true,
-	            pass: reflaxe.elixir.ast.transformers.BareLiteralDropTransforms.pass,
-	            runAfter: ["CaseClauseUnusedBinderUnderscore_AbsoluteLastReplay"]
-	        });
+		        passes.push({
+		            name: "BareLiteralDrop_AbsoluteLast",
+		            description: "Absolute-last: remove non-final literal statements in EBlock/EDo",
+		            enabled: true,
+		            pass: reflaxe.elixir.ast.transformers.BareLiteralDropTransforms.pass,
+		            runAfter: ["DropSelfAssignNoop_AbsoluteLastReplay"]
+		        });
 
 	        // Filter disabled passes first
 	        var enabled = passes.filter(p -> p.enabled);

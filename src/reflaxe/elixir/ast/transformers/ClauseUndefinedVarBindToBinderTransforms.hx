@@ -6,6 +6,7 @@ import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
+import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
 
 /**
  * ClauseUndefinedVarBindToBinderTransforms
@@ -294,51 +295,25 @@ class ClauseUndefinedVarBindToBinderTransforms {
     return m;
   }
 
-  static function collectUsed(ast: ElixirAST): Map<String,Bool> {
-    var names = new Map<String,Bool>();
-    reflaxe.elixir.ast.ASTUtils.walk(ast, function(n: ElixirAST) {
-      if (n == null || n.def == null) return;
-      switch (n.def) {
-        case EVar(v): if (allow(v)) names.set(v, true);
-        case EString(s):
-          var block = new EReg("\\#\\{([^}]*)\\}", "g");
-          var pos = 0;
-          while (block.matchSub(s, pos)) {
-            var inner = block.matched(1);
-            var tok = new EReg("[a-z_][a-z0-9_]*", "gi");
-            var tpos = 0;
-            while (tok.matchSub(inner, tpos)) {
-              var id = tok.matched(0);
-              if (allow(id)) {
-                var mp = tok.matchedPos();
-                var before = mp.pos > 0 ? inner.substr(mp.pos - 1, 1) : null;
-                var afterIdx = mp.pos + mp.len;
-                var after = afterIdx < inner.length ? inner.substr(afterIdx, 1) : null;
-
-                // Skip atoms/keywords (`:ok`, `key:`) and function calls (`inspect(...)`).
-                var nextNonWsIdx = afterIdx;
-                while (nextNonWsIdx < inner.length) {
-                  var ch = inner.substr(nextNonWsIdx, 1);
-                  if (ch != " " && ch != "\t" && ch != "\n" && ch != "\r") break;
-                  nextNonWsIdx++;
-                }
-                var nextNonWs = nextNonWsIdx < inner.length ? inner.substr(nextNonWsIdx, 1) : null;
-
-                if (before == ":" || after == ":" || nextNonWs == "(") {
-                  // ignore
-                } else {
-                  names.set(id, true);
-                }
-              }
-              tpos = tok.matchedPos().pos + tok.matchedPos().len;
-            }
-            pos = block.matchedPos().pos + block.matchedPos().len;
-          }
-        default:
-      }
-    });
-    return names;
-  }
+	  static function collectUsed(ast: ElixirAST): Map<String,Bool> {
+	    var names = new Map<String,Bool>();
+	    reflaxe.elixir.ast.ASTUtils.walk(ast, function(n: ElixirAST) {
+	      if (n == null || n.def == null) return;
+	      switch (n.def) {
+	        case EVar(v): if (allow(v)) names.set(v, true);
+	        case EString(s):
+	          var tmp = new Map<String,Bool>();
+	          ElixirCodeVarRefTokenizer.collectFromInterpolatedStringText(s, tmp);
+	          for (k in tmp.keys()) if (allow(k)) names.set(k, true);
+	        case ERaw(code) if (code != null && code.indexOf("#{") != -1):
+	          var tmp2 = new Map<String,Bool>();
+	          ElixirCodeVarRefTokenizer.collectFromElixirCode(code, tmp2);
+	          for (k2 in tmp2.keys()) if (allow(k2)) names.set(k2, true);
+	        default:
+	      }
+	    });
+	    return names;
+	  }
 
   static function hasAliasInBody(body:ElixirAST, lhs:String, rhs:String):Bool {
     var found = false;

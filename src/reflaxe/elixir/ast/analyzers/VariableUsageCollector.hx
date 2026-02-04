@@ -4,6 +4,7 @@ package reflaxe.elixir.ast.analyzers;
 
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
+import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
 
 /**
  * VariableUsageCollector
@@ -61,9 +62,9 @@ class VariableUsageCollector {
 
     // ------------------------ Internals ------------------------
 
-    static function walk(n: ElixirAST, shadowed: Map<String, Bool>, refs: Map<String, Bool>): Void {
-        if (n == null || n.def == null) return;
-        switch (n.def) {
+	    static function walk(n: ElixirAST, shadowed: Map<String, Bool>, refs: Map<String, Bool>): Void {
+	        if (n == null || n.def == null) return;
+	        switch (n.def) {
             // References
             case EVar(v):
                 if (!shadowed.exists(v)) refs.set(v, true);
@@ -91,14 +92,20 @@ class VariableUsageCollector {
                 }
             case EMatch(_, rhsExpr):
                 walk(rhsExpr, shadowed, refs);
-            case EUnary(_, expr):
-                walk(expr, shadowed, refs);
+	            case EUnary(_, expr):
+	                walk(expr, shadowed, refs);
 
-            // Blocks / groups
-            case EBlock(stmts):
-                for (s in stmts) walk(s, shadowed, refs);
-            case EDo(statements):
-                for (s in statements) walk(s, shadowed, refs);
+	            // Interpolated strings: references inside `#{...}` do not appear as EVar nodes.
+	            case EString(v):
+	                var tmp = new Map<String, Bool>();
+	                ElixirCodeVarRefTokenizer.collectFromInterpolatedStringText(v, tmp);
+	                for (k in tmp.keys()) if (!shadowed.exists(k)) refs.set(k, true);
+
+	            // Blocks / groups
+	            case EBlock(stmts):
+	                for (s in stmts) walk(s, shadowed, refs);
+	            case EDo(statements):
+	                for (s in statements) walk(s, shadowed, refs);
             case EParen(e):
                 walk(e, shadowed, refs);
             case EPipe(l, r):
