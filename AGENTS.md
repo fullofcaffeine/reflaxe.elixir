@@ -106,6 +106,12 @@ GitHub Actions step logs often require a signed-in session to view or download. 
   - The CI job shards via `EXAMPLES_ELIXIR_WAE_ONLY` (see `.github/workflows/ci.yml`) so you can rerun a single shard/example locally.
   - On CI failures, `_tmp/examples-elixir-wae/` is uploaded as an artifact (`examples-elixir-wae-logs-<shard>`).
 
+## ✅ Hard Rule: CI Must Be Green Before Next Task
+
+- Before starting the next task, confirm that the *latest* CI run for `main` is green (not `failure` and not `cancelled`).
+- If you push multiple commits quickly, older runs may show `cancelled` due to workflow concurrency or job timeouts—only the newest run matters.
+- Quick check (no auth, GitHub API): query the latest workflow run for the current `HEAD` SHA and ensure all jobs conclude `success`.
+
 ### ⛔ Hard Rule: No Sync Sentinel During Agent Work
 
 - Agents must never invoke `scripts/qa-sentinel.sh` in synchronous mode while working in the terminal.

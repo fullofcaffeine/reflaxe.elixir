@@ -113,10 +113,26 @@ run_step() {
   LAST_LOG_FILE="$log_file"
   LAST_CMD="$(printf '%q ' "$@")"
 
+  # Don't stream via `tee`. If a child process leaks and keeps the stdout pipe open, `tee`
+  # will block indefinitely and CI will hit the job-level timeout (90m) instead of failing fast.
+  #
+  # We always capture full logs to disk, and we print tails on failure in `fail()`.
   set +e
-  "${ROOT_DIR}/scripts/with-timeout.sh" --secs "$secs" --cwd "$cwd" --echo -- "$@" 2>&1 | tee "$log_file"
-  local rc=${PIPESTATUS[0]}
+  "${ROOT_DIR}/scripts/with-timeout.sh" --secs "$secs" --cwd "$cwd" --echo -- "$@" >>"$log_file" 2>&1
+  local rc=$?
   set -e
+
+  # Optional: show a small tail when verbose so local dev has quick context without opening the log.
+  if [[ "${VERBOSE:-0}" == "1" ]]; then
+    tail -n 40 "$log_file" 2>/dev/null || true
+  fi
+
+  # Best-effort cleanup in CI: avoid leaked background processes (e.g. `haxe --wait`) from
+  # keeping later steps alive or interfering across shards.
+  if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+    "${ROOT_DIR}/scripts/haxe-server-cleanup.sh" >/dev/null 2>&1 || true
+  fi
+
   return "$rc"
 }
 
