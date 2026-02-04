@@ -20,6 +20,27 @@ GitHub Actions runs a few higher-level “integration” checks in addition to s
 
 The same WAE philosophy is used by the todo-app QA sentinel when it runs `mix compile --warnings-as-errors`.
 
+### How shards map to the repo
+
+The WAE job is implemented by:
+
+- CI workflow: `.github/workflows/ci.yml` (matrix shards `mix-01`…`mix-11`)
+- Runner script: `scripts/test-examples-elixir.sh` (called by `npm run test:examples-elixir`)
+
+Each shard sets `EXAMPLES_ELIXIR_WAE_ONLY=<example-name>` so we compile **one** example per job. This keeps
+wall-clock time predictable, and it makes the failure logs focused (CI uploads `_tmp/examples-elixir-wae/`
+as an artifact on failure).
+
+### Why you sometimes see “cancelled” checks
+
+This repo uses GitHub Actions concurrency cancellation (`cancel-in-progress`). If you push multiple commits
+quickly, older runs will often show `cancelled` even when nothing is wrong. Only the **latest** run for the
+current `HEAD` matters.
+
+Quick no-auth sanity check:
+
+- Use the GitHub API to query the CI workflow run for the current `HEAD` SHA and ensure all jobs conclude `success`.
+
 ## Architecture Components
 
 ```

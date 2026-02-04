@@ -40,13 +40,16 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   - `new/1` builds a struct and seeds a unique `ref`.
  *   - `has_next/1` and `next/1` read/update the current index via `Process.get/put`.
  * - `MapKeyValueIterator`:
- *   - Accepts `IMap<K,V>`, which may be a plain `%{}` or one of our Haxe Map-backed
- *     wrappers (e.g. map stored under `:h`, `:map`, or `:data`).
+ *   - Accepts `IMap<K,V>` at runtime as either:
+ *     - a plain Elixir map (`%{}`), or
+ *     - a list of `{k, v}` pairs (recommended for non-map `IMap` implementations).
  *   - Normalizes to a `pairs = Map.to_list(...)` list once at construction, then iterates
  *     deterministically over that list.
  *
  *   Note: The `IMap` unwrapping is intentionally shape-based (keys/fields), not
  *   app-specific (no domain naming heuristics).
+ *
+ * See also: `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
  *
  * EXAMPLES
  * Before (generated):
