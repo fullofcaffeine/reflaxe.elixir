@@ -1,3 +1,11 @@
+## [1.14.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.14.0...v1.14.1) (2026-02-04)
+
+
+### Bug Fixes
+
+* **ci:** stabilize WAE + mix tests ([babf092](https://github.com/fullofcaffeine/reflaxe.elixir/commit/babf092a1bef5d985213bd8d8610d50f00620e4e))
+* **hygiene:** detect interpolation var usage ([bd79871](https://github.com/fullofcaffeine/reflaxe.elixir/commit/bd79871a3939a5e433653271c973e5e101ec3461))
+
 # [1.14.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.13.0...v1.14.0) (2026-02-04)
 
 
