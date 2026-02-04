@@ -94,6 +94,23 @@ Fixes:
 - Keep the WAE gate focused on our code by compiling deps without WAE, then cleaning only the project and
   running `mix compile --warnings-as-errors --no-deps-check` (see `scripts/test-examples-elixir.sh`).
 
+## 🧠 CI Lesson: Macro vs Target stdlib caching (WAE + haxe.ds.*)
+
+Elixir WAE failures can be caused by **canonical Haxe stdlib modules** being emitted into generated Elixir,
+even when we intend to replace them with Elixir-target surfaces:
+
+- `haxe.ds.Map` (stdlib) can instantiate `haxe.ds.EnumValueMap`, which extends `haxe.ds.BalancedTree`.
+- If we only inject Elixir overrides via **macro-time classpath changes**, CI can still end up compiling the
+  canonical stdlib `.hx` into `.ex` (then Elixir warns under WAE).
+- You **cannot** shadow `haxe.ds.EnumValueMap` with an `extern` during macro/eval compilation:
+  eval cannot instantiate extern classes and will fail with `Instance constructor not found: haxe.ds.EnumValueMap`.
+
+Our fix pattern for this class of issue:
+- Provide **bootstrap-safe dual-mode modules** under `std/_bootstrap/**` that are on the classpath from the
+  beginning (via `haxe_libraries/reflaxe.elixir.hxml`):
+  - `#if macro`: small, correct in-memory implementation (keeps eval happy)
+  - `#else`: Elixir-target `@:nativeGen extern` surface (prevents emitting canonical stdlib to `.ex`)
+
 ## 🧯 CI Failure Triage (No-auth environments)
 
 GitHub Actions step logs often require a signed-in session to view or download. In no-auth environments, you can still:
