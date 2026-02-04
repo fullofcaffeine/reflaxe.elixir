@@ -6,6 +6,8 @@ import haxe.io.Path;
 import haxe.macro.Compiler;
 import haxe.macro.Context;
 import StringTools;
+import sys.FileSystem;
+import sys.io.File;
 
 /**
  * CompilerBootstrap
@@ -40,6 +42,63 @@ import StringTools;
  */
 class CompilerBootstrap {
 	static var bootstrapped: Bool = false;
+
+	static function argsContainDefine(args: Array<String>, defineName: String): Bool {
+		var i = 0;
+		while (i < args.length) {
+			var arg = args[i];
+			if (arg == "-D" || arg == "--define") {
+				if (i + 1 < args.length) {
+					var defineArg = args[i + 1];
+					if (defineArg == defineName || StringTools.startsWith(defineArg, defineName + "=")) return true;
+				}
+				i += 2;
+				continue;
+			}
+
+			if (StringTools.startsWith(arg, "-D" + defineName)) return true;
+			i += 1;
+		}
+
+		return false;
+	}
+
+	static function hxmlContainsDefine(hxmlPath: String, defineName: String, seen: Map<String, Bool>): Bool {
+		var normalizedPath = Path.normalize(hxmlPath);
+		if (seen.exists(normalizedPath)) return false;
+		seen.set(normalizedPath, true);
+
+		if (!FileSystem.exists(normalizedPath)) return false;
+
+		var content = File.getContent(normalizedPath);
+		var args: Array<String> = [];
+		for (line in content.split("\n")) {
+			var raw = StringTools.trim(line);
+			if (raw.length == 0) continue;
+			if (StringTools.startsWith(raw, "#")) continue;
+
+			var commentIndex = raw.indexOf("#");
+			if (commentIndex >= 0) raw = StringTools.trim(raw.substr(0, commentIndex));
+			if (raw.length == 0) continue;
+
+			for (token in raw.split(" ")) {
+				var t = StringTools.trim(token);
+				if (t.length > 0) args.push(t);
+			}
+		}
+
+		if (argsContainDefine(args, defineName)) return true;
+
+		// Handle nested hxml includes (e.g. `@other.hxml`) if present.
+		for (arg in args) {
+			if (StringTools.startsWith(arg, "@")) {
+				var nested = arg.substr(1);
+				if (hxmlContainsDefine(nested, defineName, seen)) return true;
+			}
+		}
+
+		return false;
+	}
 
 	static function injectClassPathsFirst(paths: Array<String>): Void {
 		if (paths == null || paths.length == 0) return;
@@ -87,20 +146,18 @@ class CompilerBootstrap {
 		if (config == null) return false;
 
 		var args = config.args;
-		var i = 0;
-		while (i < args.length) {
-			var arg = args[i];
-			if (arg == "-D" || arg == "--define") {
-				if (i + 1 < args.length) {
-					var defineArg = args[i + 1];
-					if (defineArg == defineName || StringTools.startsWith(defineArg, defineName + "=")) return true;
-				}
-				i += 2;
-				continue;
-			}
+		if (argsContainDefine(args, defineName)) return true;
 
-			if (StringTools.startsWith(arg, "-D" + defineName)) return true;
-			i += 1;
+		// In some invocations (notably `haxe build.hxml`), `config.args` may contain only the
+		// hxml file path at macro time, *before* its `-D ...` lines are expanded into args.
+		// Parse the referenced hxml files directly so bootstrap gating remains deterministic.
+		var seen = new Map<String, Bool>();
+		for (arg in args) {
+			if (StringTools.endsWith(arg, ".hxml") && hxmlContainsDefine(arg, defineName, seen)) return true;
+			if (StringTools.startsWith(arg, "@")) {
+				var nested = arg.substr(1);
+				if (hxmlContainsDefine(nested, defineName, seen)) return true;
+			}
 		}
 
 		return false;
