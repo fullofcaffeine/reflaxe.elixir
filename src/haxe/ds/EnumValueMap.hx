@@ -1,9 +1,9 @@
 package haxe.ds;
 
 /**
- * EnumValueMap (bootstrap-safe).
+ * EnumValueMap (Elixir target) — bootstrap-safe override
  *
- * See `BalancedTree.hx` in this directory for rationale.
+ * See `src/haxe/ds/BalancedTree.hx` for a beginner-friendly explanation of why this is dual-mode.
  */
 #if macro
 class EnumValueMap<K:EnumValue, V> extends BalancedTree<K, V> {

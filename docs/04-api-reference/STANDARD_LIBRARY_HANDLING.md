@@ -52,6 +52,28 @@ This repo ships a small set of Elixir-target overrides in `std/`:
 - `std/sys/**`: BEAM-backed `sys.*` surfaces
 - `std/_std/**`: **Elixir-only shims** injected only for Elixir builds (to prevent `__elixir__()` leaking into macro/other targets)
 
+### Bootstrap-safe overrides (early, dual-mode)
+
+Some stdlib modules are resolved **very early** during compilation, and Haxe runs macros using the `eval` interpreter.
+That combination means a few modules must satisfy two requirements at once:
+
+1) **Macro/eval phase (host-side)**: constructors must exist and be runnable (eval can instantiate classes).
+2) **Elixir output phase (target-side)**: we must avoid emitting the canonical Haxe stdlib implementation when it is
+   non-idiomatic for BEAM or produces Elixir warnings that fail CI under `--warnings-as-errors` (WAE).
+
+For those specific modules, we use a **dual-mode override** under `src/`:
+
+- `#if macro`: small in-memory implementation (keeps macro/eval happy).
+- `#else`: `@:nativeGen extern` surface (prevents canonical stdlib code from being emitted into generated `.ex`).
+
+Examples:
+- `src/haxe/ds/BalancedTree.hx`
+- `src/haxe/ds/EnumValueMap.hx`
+
+Why `src/`?
+- For haxelib installs, `src/` is the only path guaranteed to be on the initial classpath for `-lib reflaxe.elixir`.
+- Macro-time classpath injection can be too late because Haxe may cache some stdlib modules before bootstrap macros run.
+
 The injection point is macro-time, in:
 - `src/reflaxe/elixir/CompilerBootstrap.hx:1` (early injection, invoked from `extraParams.hxml`)
 - `src/reflaxe/elixir/CompilerInit.hx:1` (compiler registration + early injection)

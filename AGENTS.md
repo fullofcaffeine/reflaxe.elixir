@@ -106,8 +106,7 @@ even when we intend to replace them with Elixir-target surfaces:
   eval cannot instantiate extern classes and will fail with `Instance constructor not found: haxe.ds.EnumValueMap`.
 
 Our fix pattern for this class of issue:
-- Provide **bootstrap-safe dual-mode modules** under `std/_bootstrap/**` that are on the classpath from the
-  beginning (via `haxe_libraries/reflaxe.elixir.hxml`):
+- Provide **bootstrap-safe dual-mode modules** on the **initial classpath** (under `src/haxe/**`):
   - `#if macro`: small, correct in-memory implementation (keeps eval happy)
   - `#else`: Elixir-target `@:nativeGen extern` surface (prevents emitting canonical stdlib to `.ex`)
 

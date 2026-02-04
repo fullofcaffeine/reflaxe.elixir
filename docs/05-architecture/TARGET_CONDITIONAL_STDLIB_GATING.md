@@ -7,6 +7,9 @@ This document describes how Reflaxe.Elixir gates Elixir-specific staged standard
 - Elixir-specific stdlib work in this repo is split into two buckets:
   - `std/**/*.cross.hx`: cross-platform overrides selected by Haxe when compiling in `cross` mode (Reflaxe targets on Haxe 4).
   - `std/_std/**/*.hx`: Elixir-only shims/bridge modules that must never leak into macro-only or non-Elixir builds.
+- Additionally, a tiny set of **bootstrap-safe overrides** live under `src/haxe/**`:
+  - These are resolved *very early* (before bootstrap macros run) and must work in both macro/eval and target compilation.
+  - Example: `src/haxe/ds/BalancedTree.hx`, `src/haxe/ds/EnumValueMap.hx`.
 - `std/` and `std/_std/` are added to the Haxe classpath only when we detect an Elixir build.
 - Macro contexts and non-Elixir targets use the upstream Haxe stdlib (no `__elixir__()` leaks).
 
@@ -60,6 +63,7 @@ if (isElixirBuild) {
 - Kept `-cp std/` for local-repo development convenience.
 - Added `--macro reflaxe.elixir.CompilerBootstrap.Start()` so repo-local scoped-lib builds get the same gating behavior as consumer installs.
 - Rationale: `std/_std` must never be unconditional, but *must* be injected early for Elixir builds to avoid WAE warnings from accidentally-generated stdlib data structures (e.g., `haxe.ds.BalancedTree`).
+- For the handful of modules that must be available before macros run, we place a bootstrap-safe dual-mode implementation under `src/` instead of `std/_std/`.
 
 ## Activation Scenarios
 
