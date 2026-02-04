@@ -111,15 +111,15 @@ class AvatarTools {
      * - In Elixir builds, Reflaxe.Elixir overrides `haxe.crypto.Md5` to delegate to BEAM-native
      *   `:crypto` so call sites stay portable while output stays idiomatic/fast.
      */
-	    public static function gravatarUrl(email: String, ?size: Int): Null<String> {
-	        var normalizedEmail = normalizeEmail(email);
-	        if (normalizedEmail == "") return null;
+    public static function gravatarUrl(email: String, ?size: Int): Null<String> {
+        var normalizedEmail = normalizeEmail(email);
+        if (normalizedEmail == "") return null;
 
-	        var chosenSize = size != null ? size : DEFAULT_SIZE;
-	        var hash = Md5.encode(normalizedEmail).toLowerCase();
+        var chosenSize = size != null ? size : DEFAULT_SIZE;
+        var hash = Md5.encode(normalizedEmail).toLowerCase();
 
-	        return 'https://www.gravatar.com/avatar/${hash}?d=identicon&s=${chosenSize}';
-	    }
+        return 'https://www.gravatar.com/avatar/${hash}?d=identicon&s=${chosenSize}';
+    }
 
     static function initialsFromName(trimmedName: String): String {
         var parts = trimmedName.split(" ").filter(p -> StringTools.trim(p) != "");
@@ -134,11 +134,11 @@ class AvatarTools {
             return (a + b).toUpperCase();
         }
 
-	        var only = parts.length == 1 ? safeArrayAt(parts, 0) : trimmedName;
-	        if (only == null || only == "") return "??";
-	        if (only.length >= 2) return (only.charAt(0) + only.charAt(1)).toUpperCase();
-	        return only.charAt(0).toUpperCase();
-	    }
+        var only = parts.length == 1 ? safeArrayAt(parts, 0) : trimmedName;
+        if (only == null || only == "") return "??";
+        if (only.length >= 2) return (only.charAt(0) + only.charAt(1)).toUpperCase();
+        return only.charAt(0).toUpperCase();
+    }
 
     static function initialsFromEmail(normalizedEmail: String): String {
         var parts = normalizedEmail.split("@");

@@ -74,6 +74,24 @@ Why `src/`?
 - For haxelib installs, `src/` is the only path guaranteed to be on the initial classpath for `-lib reflaxe.elixir`.
 - Macro-time classpath injection can be too late because Haxe may cache some stdlib modules before bootstrap macros run.
 
+What does this “replace”?
+- Only the specific modules we place under `src/haxe/**` are shadowed early.
+- Everything else still comes from the upstream Haxe stdlib unless we explicitly override it via:
+  - `std/*.cross.hx` (cross-platform override selection), or
+  - `std/haxe/**`, `std/sys/**`, `std/_std/**` (Elixir-target additions/shims).
+
+Why the path looks like the Haxe stdlib (`src/haxe/ds/...`)?
+- This is intentional: Haxe module resolution is path-based. Putting a file at `haxe/ds/BalancedTree.hx`
+  on the classpath shadows the upstream `haxe.ds.BalancedTree` module *for this compilation*.
+- We keep it surgical: only add these early overrides when we have a concrete macro/eval + WAE reason.
+
+Is this a Reflaxe convention?
+- It’s a common pattern across target compilers (including Reflaxe-based ones): when a module must be
+  resolved before bootstrap/injection can run, it needs to live on the library’s initial classpath.
+- The “dual-mode” approach (`#if macro` implementation, `#else` extern) is specific to our constraints:
+  Haxe eval must be able to instantiate the type, but we don’t want to emit the upstream implementation
+  into Elixir output when it is non-idiomatic or breaks `--warnings-as-errors`.
+
 The injection point is macro-time, in:
 - `src/reflaxe/elixir/CompilerBootstrap.hx:1` (early injection, invoked from `extraParams.hxml`)
 - `src/reflaxe/elixir/CompilerInit.hx:1` (compiler registration + early injection)

@@ -172,6 +172,7 @@ examples/**/lib/reflaxe/
 /haxe/
 
 # Debug-only snapshot outputs (never commit)
+test/snapshot/**/out/
 test/snapshot/**/out_dbg*/
 test/snapshot/**/out_nomig/
 test/snapshot/**/tmp/
