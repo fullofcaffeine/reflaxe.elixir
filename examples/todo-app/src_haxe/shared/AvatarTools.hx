@@ -106,9 +106,10 @@ class AvatarTools {
     /**
      * Returns a Gravatar URL for the given email, or `null` if the email is empty.
      *
-     * Target-specific implementation:
-     * - Elixir: uses `elixir.ErlangCrypto.md5HexLower/1` (native :crypto)
-     * - JS/other: uses `haxe.crypto.Md5.encode/1`
+     * Cross-target behavior:
+     * - All targets call `haxe.crypto.Md5.encode/1`.
+     * - In Elixir builds, Reflaxe.Elixir overrides `haxe.crypto.Md5` to delegate to BEAM-native
+     *   `:crypto` so call sites stay portable while output stays idiomatic/fast.
      */
 	    public static function gravatarUrl(email: String, ?size: Int): Null<String> {
 	        var normalizedEmail = normalizeEmail(email);
