@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Ensure background watchdog termination doesn't emit job-control noise like:
+#   "Terminated: 15 ( sleep ... )"
+# Some environments enable `monitor` via inherited shell options.
+set +m 2>/dev/null || true
 # Portable timeout wrapper in pure bash. Kills the full process group.
 # Usage: with-timeout.sh --secs N [--grace S] [--cwd DIR] [--quiet] [--echo] [--env KEY=VAL ...] -- <cmd> [args...]
 
@@ -136,8 +140,22 @@ list_descendants() {
 }
 
 # Watchdog
+#
+# Instead of a single long sleep (which we then have to interrupt with signals), we poll the
+# command PID until it exits or the timeout elapses. This avoids noisy "Terminated: 15" messages
+# from bash when the watchdog is signaled in non-interactive environments.
 (
-  sleep "$SECS" || true
+  interval="0.2"
+  ticks="$(( SECS * 5 ))"
+
+  while [[ "$ticks" -gt 0 ]]; do
+    if ! kill -0 "$CMD_PID" 2>/dev/null; then
+      exit 0
+    fi
+    sleep "$interval" || true
+    ticks="$(( ticks - 1 ))"
+  done
+
   if kill -0 "$CMD_PID" 2>/dev/null; then
     # Mark timeout early to avoid a race where the parent reaps the command and
     # kills this watchdog before we can write the marker.
@@ -174,6 +192,7 @@ list_descendants() {
       exit 124
     fi
   fi
+
   exit 0
 ) &
 WATCH_PID=$!
@@ -185,8 +204,7 @@ wait "$CMD_PID"
 RC=$?
 set -e
 
-# Stop watchdog if still running
-kill "$WATCH_PID" 2>/dev/null || true
+# Wait for watchdog to exit (should be quick if the command finished before timeout)
 wait "$WATCH_PID" 2>/dev/null || true
 
 # If the watchdog fired, override RC with the conventional timeout exit codes (124/137).

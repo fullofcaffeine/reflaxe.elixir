@@ -201,13 +201,24 @@ validate_mix_example() {
 
   # Compile the app under WAE, but do not recompile deps (deps may have warnings we do not control).
   #
-  # Important: `mix compile --force` can trigger dependency recompilation. Under WAE that can
-  # fail the job due to upstream warnings (e.g. Elixir 1.18 introduced stricter type warnings
-  # that some older deps still emit). To keep the gate focused on *our* code:
-  # - clean only the current project build artifacts
-  # - compile under WAE with deps checking disabled
-  CURRENT_PHASE="mix.clean"
-  run_step "$TIMEOUT_MIX_COMPILE" "$dir" env MIX_ENV=test HAXE_NO_SERVER=1 mix clean || fail "mix clean failed for $name"
+  # Key detail: avoid `mix clean`, which deletes build artifacts for the whole project and can
+  # force expensive dependency recompilation. Instead, delete only the current app's build output
+  # so `mix compile` recompiles the app (and surfaces warnings) while reusing cached deps beams.
+  CURRENT_PHASE="mix.app"
+  local app
+  # Resolve the app name from `mix.exs` without compiling. Avoid running this through `run_step`
+  # because that captures output to a log file (we need the value here).
+  app="$(
+    cd "$dir" && \
+      env MIX_ENV=test HAXE_NO_SERVER=1 mix run --no-start --no-compile -e 'IO.write(Mix.Project.config()[:app])' \
+        2>/dev/null
+  )"
+  if [[ -z "${app}" ]]; then
+    fail "Failed to resolve Mix app name for $name"
+  fi
+
+  CURRENT_PHASE="mix.app.clean"
+  run_step 30 "$dir" rm -rf "_build/test/lib/${app}" "_build/dev/lib/${app}" || fail "Failed to clean app build output for $name (app=${app})"
 
   CURRENT_PHASE="mix.compile"
   run_step "$TIMEOUT_MIX_COMPILE" "$dir" env MIX_ENV=test HAXE_NO_SERVER=1 mix compile --warnings-as-errors --no-deps-check || fail "mix compile --warnings-as-errors failed for $name"
