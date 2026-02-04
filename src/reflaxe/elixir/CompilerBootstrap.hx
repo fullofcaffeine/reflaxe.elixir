@@ -41,6 +41,47 @@ import StringTools;
 class CompilerBootstrap {
 	static var bootstrapped: Bool = false;
 
+	static function injectClassPathsFirst(paths: Array<String>): Void {
+		if (paths == null || paths.length == 0) return;
+
+		var config = Compiler.getConfiguration();
+		if (config == null) {
+			for (p in paths) Compiler.addClassPath(p);
+			return;
+		}
+
+		var classPathField = "classPath";
+		var existingDynamic: Dynamic = null;
+		if (Reflect.hasField(config, "classPath")) {
+			existingDynamic = Reflect.field(config, "classPath");
+		} else if (Reflect.hasField(config, "classPaths")) {
+			classPathField = "classPaths";
+			existingDynamic = Reflect.field(config, "classPaths");
+		}
+
+		if (existingDynamic == null || !Std.isOfType(existingDynamic, Array)) {
+			// Fall back to append behavior if we can't introspect/replace the classpath list.
+			for (p in paths) Compiler.addClassPath(p);
+			return;
+		}
+
+		// Ensure our overrides win by putting them at the *front* of the classpath list.
+		//
+		// `Compiler.addClassPath` appends, which is too late to shadow the built-in stdlib paths.
+		// That can cause CI-only drift under WAE where canonical stdlib modules (e.g. `haxe.ds.*`)
+		// are compiled to Elixir and emit warnings.
+		var existing: Array<String> = cast existingDynamic;
+		var normalized = new Map<String, Bool>();
+		var keep: Array<String> = [];
+
+		for (p in paths) normalized.set(Path.normalize(p), true);
+		for (p in existing) {
+			if (!normalized.exists(Path.normalize(p))) keep.push(p);
+		}
+
+		Reflect.setField(config, classPathField, paths.concat(keep));
+	}
+
 	static function hasDefineInArgs(defineName: String): Bool {
 		var config = Compiler.getConfiguration();
 		if (config == null) return false;
@@ -105,9 +146,8 @@ class CompilerBootstrap {
 
 			var vendoredReflaxe = Path.normalize(Path.join([libraryRoot, "vendor", "reflaxe", "src"]));
 
-			Compiler.addClassPath(vendoredReflaxe);
-
 			if (!shouldInjectStd) {
+				injectClassPathsFirst([vendoredReflaxe]);
 				return;
 			}
 
@@ -121,8 +161,7 @@ class CompilerBootstrap {
 			// so that stdlib types (e.g. haxe.ds.*) resolve to our extern-backed surfaces rather than the
 			// canonical Haxe stdlib implementations (which can generate Elixir warnings under WAE).
 			var stagedStd = Path.normalize(Path.join([libraryRoot, "std/_std"]));
-			Compiler.addClassPath(standardLibrary);
-			Compiler.addClassPath(stagedStd);
+			injectClassPathsFirst([stagedStd, standardLibrary, vendoredReflaxe]);
 		} catch (e: haxe.Exception) {
 			// If resolvePath fails in certain contexts, skip silently (non-Elixir targets)
 		}
