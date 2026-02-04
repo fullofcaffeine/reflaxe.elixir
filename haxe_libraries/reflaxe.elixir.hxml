@@ -18,10 +18,6 @@
 # Include the compiler source code
 -cp ${SCOPE_DIR}/src/
 
-# Bootstrap-safe stdlib externs that must be available from the start of compilation
-# (before macro execution) to avoid CI-only drift under Elixir WAE.
--cp ${SCOPE_DIR}/std/_bootstrap/
-
 # Staged .cross.hx files are injected conditionally by the bootstrap macro
 # to avoid leaking __elixir__() into macro/other targets.
 

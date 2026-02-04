@@ -49,7 +49,7 @@ Top-level:
 `haxe.*`:
 - `haxe.Log`
 - `haxe.ds.BalancedTree`
-- `haxe.ds.EnumValueMap` (staged under `std/_std`)
+- `haxe.ds.EnumValueMap` (bootstrap-safe override under `src/haxe/ds`)
 - `haxe.ds.Option`
 - `haxe.format.JsonPrinter`
 - `haxe.io.BufferInput`

@@ -1,25 +1,30 @@
 package haxe.ds;
 
 /**
- * BalancedTree (bootstrap-safe).
+ * BalancedTree (Elixir target) — bootstrap-safe override
  *
- * WHY
- * - The canonical Haxe stdlib implementation compiles to Elixir but is not valid on BEAM
- *   (it relies on mutable class semantics and triggers WAE failures in Elixir).
- * - These extern surfaces must be available *before* Haxe caches core stdlib types; relying
- *   on macro-time classpath injection has proven non-deterministic in CI.
+ * This module exists because Haxe compilation has **two phases**:
  *
- * HOW
- * - This directory is included directly by `haxe_libraries/reflaxe.elixir.hxml`, so it is
- *   present from the start of compilation (before macro execution).
- * - Kept minimal (only `BalancedTree` + `EnumValueMap`) to avoid shadowing core map types
- *   used by macro/runtime compilation.
+ * 1) **Macro / eval phase** (host-side):
+ *    - Haxe executes macros using the `eval` interpreter.
+ *    - In that phase, classes can be instantiated and their constructors must exist.
  *
- * DESIGN
- * - Macro/eval context (where externs are not instantiable): provide a small, correct in-memory
- *   implementation to keep Haxe's own macro stdlib working.
- * - Target context (non-macro): provide an extern surface so the Elixir target does not emit
- *   the canonical Haxe implementation into generated `.ex` output.
+ * 2) **Target compilation phase** (Elixir output):
+ *    - The same compilation also needs `haxe.ds.BalancedTree` to exist as a type.
+ *    - However, the canonical Haxe stdlib implementation is not a good fit for BEAM and can
+ *      produce Elixir warnings that fail CI under `--warnings-as-errors` (WAE).
+ *
+ * To satisfy both phases, this file is **dual-mode**:
+ *
+ * - `#if macro`: provides a small, correct, in-memory implementation (so eval/macros work).
+ * - `#else`: provides an `@:nativeGen extern` surface (so Elixir codegen does not emit the
+ *   canonical stdlib implementation into generated `.ex` files).
+ *
+ * Why `src/`?
+ * - `src/` is the only path guaranteed to be available immediately when a project uses
+ *   `-lib reflaxe.elixir` (haxelib installs use `classPath: "src"`).
+ * - Relying purely on macro-time classpath injection can be non-deterministic because some
+ *   stdlib modules are resolved/cached before bootstrap macros run.
  */
 #if macro
 class BalancedTree<K, V> implements haxe.Constraints.IMap<K, V> {
@@ -129,6 +134,7 @@ class TreeNode<K, V> {
         value = v;
         right = r;
     }
+
     public function get_height(): Int {
         return 0;
     }
@@ -140,6 +146,7 @@ class TreeNode<K, V> {
 #else
 @:nativeGen
 extern class BalancedTree<K, V> implements haxe.Constraints.IMap<K, V> {
+    // Kept as a field to match stdlib subclasses (EnumValueMap.copy assigns it).
     public var root: TreeNode<K, V>;
 
     #if (haxe_ver >= 5)
@@ -147,21 +154,16 @@ extern class BalancedTree<K, V> implements haxe.Constraints.IMap<K, V> {
     #end
 
     public function new():Void;
-
     public function set(key:K, value:V):Void;
     public function get(key:K):Null<V>;
     public function exists(key:K):Bool;
     public function remove(key:K):Bool;
-
     public function iterator():Iterator<V>;
     public function keys():Iterator<K>;
     public function keyValueIterator():KeyValueIterator<K, V>;
-
     public function copy():BalancedTree<K, V>;
     public function toString():String;
-
     public function clear():Void;
-
     function compare(k1: K, k2: K): Int;
 }
 

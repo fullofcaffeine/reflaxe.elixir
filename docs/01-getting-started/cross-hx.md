@@ -36,6 +36,7 @@ std/
 Practical note (consumer installs)
 - When installed via haxelib/lix, the library’s `src/` classpath is available immediately, but `std/` is injected via bootstrap macros.
 - Some Haxe stdlib modules are resolved *very early* (before bootstrap can run). If a `.cross.hx` override must win for those modules, it needs to live on the initial classpath (under `src/`).
+  - In rare cases we also use this “early override” pattern for plain `.hx` modules that must work in **both** macro/eval and Elixir target compilation. Those files are dual-mode (`#if macro` implementation, `#else` extern) and live under `src/haxe/**` (example: `src/haxe/ds/BalancedTree.hx`).
 
 When compiling for the `cross` platform, Haxe treats files ending in `.cross.hx` as platform-specific
 module implementations. That is, these files participate in normal module resolution while still
