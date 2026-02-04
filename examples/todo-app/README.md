@@ -164,6 +164,10 @@ The todo-app is designed to demonstrate **end-to-end Haxe→Elixir** for applica
 - Shared/domain types: `examples/todo-app/src_haxe/shared/**` → `examples/todo-app/lib/shared/**`
 - Client hooks: `examples/todo-app/src_haxe/client/**` → bundled JS under `priv/static/assets/` via `build-client.hxml`
 
+Shared code note:
+- `src_haxe/shared/` is the place to put typed client/server boundary contracts (payload typedefs, event names,
+  and channel protocols). See `examples/todo-app/src_haxe/shared/README.md`.
+
 **Hand-written (Elixir/Phoenix conventions)**
 - Phoenix project scaffolding and configuration: `mix.exs`, `config/*.exs`
   - Why: Phoenix expects these files and patterns; keeping them idiomatic makes gradual adoption easy.

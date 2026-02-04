@@ -33,6 +33,18 @@ on either side.
   - `-lib genes` (JS generator)
   - `-lib phoenix_js` (typed Phoenix JS externs)
 
+In shared code, you’ll sometimes see:
+- `#if (elixir || reflaxe_runtime)` guards
+
+Why:
+- `elixir` is the obvious signal when compiling with the Elixir target.
+- `reflaxe_runtime` is a stable signal in this repo’s tooling/harness for “Elixir build context”
+  (including some snapshot/interop compiles) where `elixir` may not be defined yet.
+
+Rule of thumb:
+- Prefer writing truly portable code in `shared/` with no `#if`.
+- If you need a target-specific branch, keep the *API* identical on both sides and document why.
+
 When shared code truly needs target-specific behavior (e.g. crypto primitives), prefer:
 - an implementation per target (same API), or
 - moving that helper into `server/` or `client/` packages.
