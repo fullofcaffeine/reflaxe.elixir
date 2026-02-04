@@ -10,8 +10,10 @@ defmodule SourceMapLookupIntegrationTest do
   test "source maps emit and lookup returns real Haxe positions" do
     File.rm_rf!(@out_dir)
 
+    haxe_bin = System.get_env("HAXE_PATH") || "haxe"
+
     {out, status} =
-      System.cmd("haxe", ["compile.hxml", "-D", "source_map_enabled"], cd: @fixture_dir, stderr_to_stdout: true)
+      System.cmd(haxe_bin, ["compile.hxml", "-D", "source_map_enabled"], cd: @fixture_dir, stderr_to_stdout: true)
 
     assert status == 0, "haxe compile failed:\n#{out}"
     assert File.exists?(@generated_ex), "expected generated file to exist: #{@generated_ex}"

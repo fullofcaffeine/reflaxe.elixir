@@ -1,12 +1,36 @@
 # Test environment setup
-# Set up paths for Haxe compiler
-System.put_env("HAXE_PATH", System.find_executable("haxe") || "haxe")
-System.put_env("NPX_PATH", System.find_executable("npx") || "npx")
-
 # Set HAXELIB_PATH to project's haxe_libraries for test environments
 project_root = Path.expand(Path.join([__DIR__, "../.."]))
 haxe_libraries_path = Path.join(project_root, "haxe_libraries")
 System.put_env("HAXELIB_PATH", haxe_libraries_path)
+
+# Prefer a real lix-managed Haxe binary over any Node-based shim.
+#
+# Why:
+# - `System.find_executable("haxe")` can resolve to an npm-installed wrapper (or other Node shim)
+#   that may hang or be incompatible with `scripts/with-timeout.sh`.
+# - The project pins a Haxe toolchain via `.haxerc` + lix; use that when possible so CI and local
+#   behavior match.
+haxe_hint =
+  cond do
+    is_binary(System.get_env("HAXE_PATH")) and File.exists?(System.get_env("HAXE_PATH")) ->
+      System.get_env("HAXE_PATH")
+
+    File.exists?(Path.join([project_root, "node_modules", ".bin", "haxe"])) ->
+      Path.join([project_root, "node_modules", ".bin", "haxe"])
+
+    true ->
+      System.find_executable("haxe") || "haxe"
+  end
+
+{resolved_haxe, _args} = HaxeServer.resolve_haxe_cmd(haxe_hint, [], project_root)
+System.put_env("HAXE_PATH", resolved_haxe)
+
+# Prefer deterministic, non-leaky test runs: never auto-start `haxe --wait` server in ExUnit.
+System.put_env("HAXE_NO_SERVER", "1")
+
+# Set up paths for helper tooling
+System.put_env("NPX_PATH", System.find_executable("npx") || "npx")
 
 # Ensure test fixtures directory exists
 File.mkdir_p!(Path.join(project_root, "test/fixtures"))
@@ -24,9 +48,11 @@ if File.dir?(haxe_test_src) do
 
   haxe_bin = System.get_env("HAXE_PATH") || "haxe"
   timeout_script = Path.join(project_root, "scripts/with-timeout.sh")
+  bash_bin = System.find_executable("bash") || "bash"
 
   {output, status} =
-    System.cmd(timeout_script, [
+    System.cmd(bash_bin, [
+      timeout_script,
       "--secs",
       "240",
       "--",
@@ -55,11 +81,40 @@ if File.dir?(haxe_test_src) do
 
   ExUnit.start()
 
-  generated_dir
-  |> Path.join("**/*.ex")
-  |> Path.wildcard()
-  |> Enum.sort()
-  |> Enum.each(&Code.require_file/1)
+  ex_files =
+    generated_dir
+    |> Path.join("**/*.ex")
+    |> Path.wildcard()
+    |> Enum.map(&Path.relative_to(&1, generated_dir))
+    |> Enum.sort()
+
+  # Dependency-friendly load order: require core runtime modules (like `Reflaxe.Elixir.HaxeThrow`)
+  # before stdlib stubs that reference them.
+  prefer = [
+    "reflaxe/exception.ex",
+    "reflaxe/elixir/haxe_throw.ex",
+    "type.ex",
+    "reflect.ex",
+    "std.ex",
+    "string_tools.ex",
+    "string_buf.ex",
+    "sys.ex"
+  ]
+
+  {preferred, remaining} = Enum.split_with(ex_files, fn rel -> rel in prefer end)
+
+  preferred =
+    prefer
+    |> Enum.filter(&(&1 in preferred))
+
+  {reflaxe, remaining} = Enum.split_with(remaining, &String.starts_with?(&1, "reflaxe/"))
+  {haxe, remaining} = Enum.split_with(remaining, &String.starts_with?(&1, "haxe/"))
+
+  ordered = preferred ++ reflaxe ++ haxe ++ remaining
+
+  Enum.each(ordered, fn rel ->
+    Code.require_file(Path.join(generated_dir, rel))
+  end)
 else
   ExUnit.start()
 end
