@@ -1,3 +1,33 @@
+# [1.14.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.13.0...v1.14.0) (2026-02-04)
+
+
+### Bug Fixes
+
+* **bootstrap:** inject std/ for consumer builds ([582bf76](https://github.com/fullofcaffeine/reflaxe.elixir/commit/582bf76864536d00f1634881c08992fa620cfdb5))
+* **bootstrap:** parse hxml args to detect elixir defines ([f3f56ea](https://github.com/fullofcaffeine/reflaxe.elixir/commit/f3f56ead351202a88192ff16e230c65980bca1fe))
+* **bootstrap:** prepend stdlib paths so Elixir overrides win ([6d4edff](https://github.com/fullofcaffeine/reflaxe.elixir/commit/6d4edff8978e488cfdcab63d49e33c117ccdc9f7))
+* **ci:** apply std/_std gating in scoped-lib builds ([8920712](https://github.com/fullofcaffeine/reflaxe.elixir/commit/8920712e840b6e763f3fddb69b4e5004869105ce))
+* **ci:** cache deps/_build for example WAE shards ([c556520](https://github.com/fullofcaffeine/reflaxe.elixir/commit/c556520508552deb417bac10d9b13528a2ba5a82))
+* **ci:** make iterator runtime stubs WAE-safe ([cf2ee97](https://github.com/fullofcaffeine/reflaxe.elixir/commit/cf2ee977e9305c9a316521c84c97d430fd9a9f4d))
+* **ci:** make tests + examples WAE-clean ([20bc64f](https://github.com/fullofcaffeine/reflaxe.elixir/commit/20bc64f9acbd016c57036878b2ebc165212d5596))
+* **ci:** prevent WAE hangs and leaked haxe --wait ([b505d41](https://github.com/fullofcaffeine/reflaxe.elixir/commit/b505d4133fe8b606c96dbbeda83f7606c016b71f))
+* **ci:** split examples-elixir WAE shards ([a8a7a54](https://github.com/fullofcaffeine/reflaxe.elixir/commit/a8a7a542881afd5d0d8fcf4d689f1c9fb12e9e3c))
+* **ci:** stabilize smoke + tests ([273c8f8](https://github.com/fullofcaffeine/reflaxe.elixir/commit/273c8f89b6155762eb6f4fb7e23711544dfdfb78))
+* **haxe-compiler:** export HAXELIB_PATH for nested builds ([611aacc](https://github.com/fullofcaffeine/reflaxe.elixir/commit/611aacc6351134876e3e0014cfec0eba21a89469))
+* **hygiene:** drop unused literal statements ([6c7b898](https://github.com/fullofcaffeine/reflaxe.elixir/commit/6c7b898f4d5405f01326e4659596f9ebc76d27ce))
+* **hygiene:** underscore unused binders across alias/binary and guards ([542ac1f](https://github.com/fullofcaffeine/reflaxe.elixir/commit/542ac1f7cdfb073721cd2f161a28c6659c4884a1))
+* **loop:** rewrite Map.keys iterator reduce_while ([f82685b](https://github.com/fullofcaffeine/reflaxe.elixir/commit/f82685b3e505a696e206d18cc51d957d550bcc8f))
+* **mix:** ignore empty haxe_libraries placeholders ([d216d51](https://github.com/fullofcaffeine/reflaxe.elixir/commit/d216d51122575d272d3dd6f733294b2843915b5a))
+* **printer:** don't qualify Md5 to <App>.Md5 ([d2b642d](https://github.com/fullofcaffeine/reflaxe.elixir/commit/d2b642d5b93a312c8e1b73d05d59ea2e5a4d80dc))
+* **std:** bootstrap BalancedTree/EnumValueMap for WAE ([2f03ae1](https://github.com/fullofcaffeine/reflaxe.elixir/commit/2f03ae13aea2e6e7ce9f279d3a17550b8afb0593))
+* **stdlib:** add Md5 parity slice ([989ee52](https://github.com/fullofcaffeine/reflaxe.elixir/commit/989ee52c029ac1324beeb52d105c5ac3e8bd0f93))
+
+
+### Features
+
+* **stdlib:** add DynamicAccess; fix Reflect for string-key maps ([8802b00](https://github.com/fullofcaffeine/reflaxe.elixir/commit/8802b0036f9f274eb07d3dde498c7c1ca0bb00de))
+* **stdlib:** add elixir-target haxe.ds.Map + map externs ([72a8f00](https://github.com/fullofcaffeine/reflaxe.elixir/commit/72a8f000b381c51b1edfb548671cde8b5105ea96))
+
 # [1.13.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.12.0...v1.13.0) (2026-01-25)
 
 
