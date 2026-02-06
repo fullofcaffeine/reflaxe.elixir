@@ -3,6 +3,23 @@ set -euo pipefail
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "[pre-commit] ERROR: gitleaks is required but not installed."
+  echo "[pre-commit] Install: https://github.com/gitleaks/gitleaks#installing"
+  exit 1
+fi
+
+echo "[pre-commit] Running gitleaks on staged changes..."
+GITLEAKS_HELP="$(gitleaks --help 2>&1 || true)"
+if printf '%s' "$GITLEAKS_HELP" | grep -q '\<protect\>'; then
+  gitleaks protect --staged --redact --config "$ROOT_DIR/.gitleaks.toml"
+elif printf '%s' "$GITLEAKS_HELP" | grep -q '\<git\>'; then
+  gitleaks git --staged --redact --config "$ROOT_DIR/.gitleaks.toml"
+else
+  echo "[pre-commit] ERROR: unsupported gitleaks CLI; expected 'protect' or 'git' command."
+  exit 1
+fi
+
 echo "[pre-commit] Running name-heuristics guard..."
 "$ROOT_DIR/scripts/lint/name_heuristics_guard.sh"
 
