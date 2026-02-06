@@ -12,6 +12,7 @@ Security fixes are best-effort and there is no formal SLA.
 We run a few lightweight checks in CI to reduce risk in a public repo:
 
 - **Secret scanning**: `gitleaks` on every PR/push.
+  - Local enforcement: `npm run hooks:install` enables a pre-commit hook that scans staged changes.
 - **Dependency updates**: Dependabot for GitHub Actions, npm, and Mix (see `.github/dependabot.yml`).
 - **Static analysis**: CodeQL for JavaScript/TypeScript (Haxe/Elixir are not currently supported by CodeQL).
 
