@@ -6,7 +6,7 @@ This todo-app is a **100% Haxe-powered Phoenix LiveView application** that compi
 
 **Client build (JS)**
 - The client uses **Genes** to generate split ES modules from Haxe (`build-client.hxml`).
-- Output entry module: `assets/js/hx_app.js` (imported by `assets/js/app.js`, then bundled by esbuild).
+- Output entry module: `assets/js/hx_app.js` (stable; promoted from `assets/js/_hx_app_tmp.js` in watch mode to avoid esbuild races).
 
 ## 🎯 Core Philosophy
 
@@ -82,7 +82,8 @@ haxe build-server.hxml   # Compile server only (Haxe→Elixir)
 haxe build-client.hxml   # Compile client only (Haxe→JS via Genes)
 
 # Client output locations (Genes)
-# - Entry: assets/js/hx_app.js
+# - Entry (stable): assets/js/hx_app.js
+# - Entry (intermediate, Haxe `-js` output): assets/js/_hx_app_tmp.js
 # - Modules: assets/js/client/** and assets/js/genes/**
 
 # Clean and rebuild

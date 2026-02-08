@@ -210,8 +210,8 @@ graph LR
   - Pick up LiveView Hooks from `window.Hooks` (populated by the Haxe bundle).
   - Create and connect `LiveSocket` (unless already bootstrapped by Haxe), and expose `window.liveSocket`.
 - Haxe integration:
-  - The Haxe client compiles via Genes to `assets/js/hx_app.js` (entry) plus supporting modules under `assets/js/client/**` and `assets/js/genes/**` (`build-client.hxml`).
-  - `assets/js/app.js` imports `./hx_app.js`, and `phoenix_app.js` imports `./app.js`, so Hooks exported by Haxe are available to LiveView.
+  - The Haxe client compiles via Genes to `assets/js/_hx_app_tmp.js` (intermediate entry) plus supporting modules under `assets/js/client/**` and `assets/js/genes/**` (`build-client.hxml`).
+  - In dev, the Haxe watcher promotes `assets/js/_hx_app_tmp.js` to the stable `assets/js/hx_app.js` path atomically (see `config/dev.exs`) so esbuild `--watch` never sees an imported module disappear. `assets/js/app.js` imports `./hx_app.js`, and `phoenix_app.js` imports `./app.js`, so Hooks exported by Haxe are available to LiveView.
 - Why JS here and not Haxe?
   - This file mirrors Phoenix’s canonical bootstrap and stays stable across Phoenix upgrades.
   - All meaningful client behavior (Hooks, utils, shared types) remains in Haxe for type safety.

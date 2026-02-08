@@ -234,10 +234,38 @@ mix haxe.watch --dirs src_haxe,test
 mix haxe.watch --hxml build.hxml
 ```
 
+**Options:**
+- `--hxml <file>` - HXML file to run (default: `build.hxml`)
+- `--dirs <dir1,dir2,...>` - Comma-separated list of directories to watch (defaults depend on task)
+- `--debounce <ms>` - Debounce window for file events before compiling (default: `200`)
+- `--once` - Compile once and exit (no watcher)
+- `--promote <from:to,...>` - Post-compile file promotion spec (comma-separated `from:to` pairs)
+  - Use this to publish Haxe outputs into stable paths without exposing intermediate build artifacts to other watchers.
+  - Example: `--promote assets/js/_hx_app_tmp.js:assets/js/hx_app.js`
+- `--verbose` - Print more detailed output
+
 ## Generation Tasks
 
 These tasks generate **Haxe-first** scaffolding (they write `.hx` source files).
 Elixir output is produced when you run `mix compile.haxe` (or `haxe build.hxml`).
+
+### mix haxe.phoenix.scaffold
+
+Applies the Phoenix client JS scaffold needed for Haxe client builds (Genes) to work reliably with
+Phoenix's asset watchers.
+
+This task wires the "temp output + promote" pattern to avoid esbuild `--watch` racing Haxe's `-js`
+output deletion window (which can otherwise produce transient `Could not resolve "./hx_app.js"` errors).
+
+```bash
+mix haxe.phoenix.scaffold
+mix haxe.phoenix.scaffold --verbose
+mix haxe.phoenix.scaffold --warn-only
+```
+
+**Options:**
+- `--verbose` - Print more detailed output
+- `--warn-only` - Do not raise on unexpected Phoenix template shapes; emit warnings and skip those patches
 
 ### mix haxe.gen.project
 
@@ -248,6 +276,16 @@ mix haxe.gen.project
 mix haxe.gen.project --phoenix
 mix haxe.gen.project --basic-modules
 ```
+
+If you pass `--phoenix`, the task also scaffolds the client JS build plumbing used by Phoenix LiveView:
+
+- Writes/updates `build-client.hxml` (Genes) to output to `assets/js/_hx_app_tmp.js`
+- Ensures a stable import path at `assets/js/hx_app.js`
+- Patches `assets/js/app.js` to import `./hx_app.js` and merge hooks from `window.Hooks`
+- Adds a dev watcher that promotes `_hx_app_tmp.js -> hx_app.js` after successful compiles
+
+This avoids the common esbuild `--watch` race where Haxe deletes the `-js` output at compile start and
+esbuild briefly fails with `Could not resolve "./hx_app.js"`.
 
 ### mix haxe.gen.schema
 

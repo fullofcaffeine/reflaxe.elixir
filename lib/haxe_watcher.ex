@@ -40,6 +40,7 @@ defmodule HaxeWatcher do
   @default_debounce_ms 100
   @default_auto_compile true
   @default_build_file "build.hxml"
+  @default_promote_files []
 
   # Client API
 
@@ -101,6 +102,7 @@ defmodule HaxeWatcher do
     debounce_ms = Keyword.get(opts, :debounce_ms, @default_debounce_ms)
     auto_compile = Keyword.get(opts, :auto_compile, @default_auto_compile)
     build_file = Keyword.get(opts, :build_file, @default_build_file)
+    promote_files = Keyword.get(opts, :promote_files, @default_promote_files)
     
     state = %{
       dirs: dirs,
@@ -108,6 +110,7 @@ defmodule HaxeWatcher do
       debounce_ms: debounce_ms,
       auto_compile: auto_compile,
       build_file: build_file,
+      promote_files: promote_files,
       watcher_pid: nil,
       debounce_timer: nil,
       file_count: 0,
@@ -340,6 +343,7 @@ defmodule HaxeWatcher do
     # Log compilation result
     case result do
       {:ok, _output} ->
+        promote_files_best_effort(state.promote_files)
         Logger.info("✅ Haxe compilation successful")
         
       {:error, {exit_code, output}} ->
@@ -366,6 +370,56 @@ defmodule HaxeWatcher do
     }
     
     {:noreply, new_state}
+  end
+
+  defp promote_files_best_effort([]), do: :ok
+
+  defp promote_files_best_effort(promote_files) when is_list(promote_files) do
+    Enum.each(promote_files, fn
+      {from, to} when is_binary(from) and is_binary(to) ->
+        promote_file_best_effort(from, to)
+
+      _ ->
+        :ok
+    end)
+  end
+
+  defp promote_file_best_effort(from, to) do
+    if File.exists?(from) do
+      case File.read(from) do
+        {:ok, contents} ->
+          atomic_replace_best_effort(to, contents)
+
+        {:error, reason} ->
+          Logger.warning("Failed to read promote source #{from}: #{inspect(reason)}")
+      end
+    end
+  end
+
+  defp atomic_replace_best_effort(path, contents) when is_binary(path) and is_binary(contents) do
+    dir = Path.dirname(path)
+
+    if is_binary(dir) and dir != "." do
+      _ = File.mkdir_p(dir)
+    end
+
+    tmp = path <> ".tmp." <> Integer.to_string(:rand.uniform(1_000_000_000))
+
+    with :ok <- File.write(tmp, contents) do
+      case File.rename(tmp, path) do
+        :ok ->
+          :ok
+
+        {:error, _reason} ->
+          # Fallback: rewrite in place (keeps the path present), then clean up tmp.
+          _ = File.write(path, contents)
+          _ = File.rm(tmp)
+          :ok
+      end
+    else
+      {:error, _reason} ->
+        :ok
+    end
   end
 
   defp compile_with_server_or_fallback(build_file_path) do

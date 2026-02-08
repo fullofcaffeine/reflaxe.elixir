@@ -97,7 +97,15 @@ server.live.TodoLive
 --macro addMetadata('@:genes.disableNativeAccessors', 'haxe.Exception')
 
 # JavaScript target output (kept separate from Phoenix bootstrap)
--js assets/js/hx_app.js
+#
+# Important: Haxe deletes the `-js` output file at the start of compilation. If Phoenix runs esbuild
+# in `--watch` mode and imports that output (e.g. `import "./hx_app.js"`), the brief deletion window
+# can race esbuild and cause transient "Could not resolve ./hx_app.js" errors.
+#
+# Recommended pattern:
+# - Compile to a temp file that is allowed to disappear during rebuilds.
+# - Promote it into a stable import path after successful compilation (e.g. via `mix haxe.watch --promote`).
+-js assets/js/_hx_app_tmp.js
 -D js-unflatten
 --dce=full
 
@@ -173,8 +181,9 @@ server.live.TodoLive
 # Elixir: Specify output directory
 -D elixir_output=lib
 
-# JavaScript (Genes): Direct file output
--js assets/js/hx_app.js
+# JavaScript (Genes):
+# Prefer compiling to a temp output and promoting into a stable import path if you use esbuild --watch.
+-js assets/js/_hx_app_tmp.js
 
 # Multiple outputs for libraries
 --each              # Reset for each target
@@ -380,7 +389,7 @@ TodoApp
 --macro genes.Generator.use()
 --macro addMetadata('@:genes.disableNativeAccessors', 'haxe.Exception')
 
--js assets/js/hx_app.js
+-js assets/js/_hx_app_tmp.js
 -D js-unflatten
 --dce=full
 -D real-position

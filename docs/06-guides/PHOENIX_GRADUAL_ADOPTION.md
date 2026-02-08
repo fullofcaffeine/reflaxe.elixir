@@ -50,6 +50,19 @@ mix haxe.gen.project --phoenix --basic-modules --force
 This writes `src_haxe/<app>_hx/**`, `build.hxml`, `package.json` + `.haxerc` (unless `--skip-npm`), updates `mix.exs`,
 and adds the generated output dir to `.gitignore`.
 
+If you pass `--phoenix`, it also scaffolds an esbuild-friendly Haxe client JS build:
+
+- Adds `build-client.hxml` (Genes) that outputs to `assets/js/_hx_app_tmp.js`
+- Ensures a stable import path at `assets/js/hx_app.js` (published via promotion)
+- Patches `assets/js/app.js` so `LiveSocket` merges hooks from `window.Hooks`
+- Adds a dev watcher using `mix haxe.watch --promote ...` to avoid transient esbuild `--watch` resolution errors
+
+If you want to apply only the Phoenix client JS wiring (without the rest of the project scaffolding), use:
+
+```bash
+mix haxe.phoenix.scaffold
+```
+
 If you use this option, you can skip to **Step 5**.
 
 ### Option B: manual setup
