@@ -128,6 +128,34 @@ defmodule HaxePhoenixScaffoldTest do
   end
   """
 
+  @mix_exs_assets_spacing """
+  defmodule MyApp.MixProject do
+    use Mix.Project
+
+    def project do
+      [
+        app: :my_app,
+        version: "0.1.0",
+        elixir: "~> 1.14",
+        aliases: aliases(),
+        deps: []
+      ]
+    end
+
+    def application do
+      [extra_applications: [:logger]]
+    end
+
+    defp aliases do
+      [
+        "assets.setup" : ["esbuild.install --if-missing"],
+        "assets.build" : ["esbuild my_app"],
+        "assets.deploy" : ["esbuild my_app --minify", "phx.digest"]
+      ]
+    end
+  end
+  """
+
   test "scaffolds build-client + stable hx_app wiring and is idempotent" do
     root =
       Path.join(
@@ -261,6 +289,31 @@ defmodule HaxePhoenixScaffoldTest do
 
     mix_exs = File.read!(Path.join(root, "mix.exs"))
     assert mix_exs =~ "BEGIN reflaxe_elixir haxe_compile_client_alias"
+  end
+
+  test "patches mix.exs assets aliases when spacing varies" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_mix_spacing_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+
+    File.write!(Path.join(assets_js, "app.js"), @minimal_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @minimal_dev_exs)
+    File.write!(Path.join(root, "mix.exs"), @mix_exs_assets_spacing)
+    File.write!(Path.join(root, ".gitignore"), "")
+
+    assert :ok == HaxePhoenixScaffold.apply!(root)
+
+    mix_exs = File.read!(Path.join(root, "mix.exs"))
+    assert mix_exs =~ "BEGIN reflaxe_elixir assets.build_task"
+    assert mix_exs =~ "BEGIN reflaxe_elixir assets.deploy_task"
   end
 
   test "strict mode fails fast; warn-only mode skips with warning" do

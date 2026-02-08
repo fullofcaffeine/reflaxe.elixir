@@ -612,18 +612,24 @@ defmodule HaxePhoenixScaffold do
         updated
 
       :missing ->
-        token = ~s("#{alias_name}": [)
-        idx = binary_index(content, token)
+        pattern = ~r/"#{Regex.escape(alias_name)}"\s*:\s*\[/
 
-        if is_nil(idx) do
+        match =
+          case Regex.run(pattern, content, return: :index) do
+            [{pos, len} | _] -> {pos, len}
+            _ -> nil
+          end
+
+        if is_nil(match) do
           warn_or_raise(
-            "failed to patch mix.exs: could not find #{inspect(token)} for #{alias_name} alias",
+            "failed to patch mix.exs: could not find an #{inspect(alias_name)} alias entry (expected \\\"#{alias_name}\\\": [ ... ] shape).",
             strict
           )
 
           content
         else
-          insert_at = idx + byte_size(token)
+          {pos, len} = match
+          insert_at = pos + len
           remainder = String.slice(content, insert_at..-1//1)
           remainder_indent = if String.starts_with?(remainder, "\n"), do: "", else: "\n        "
 
