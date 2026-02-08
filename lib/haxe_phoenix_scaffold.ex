@@ -473,18 +473,24 @@ defmodule HaxePhoenixScaffold do
         updated
 
       :missing ->
-        token = "watchers: ["
-        idx = binary_index(content, token)
+        # Be tolerant to formatter drift (space/no-space) while still anchoring to the canonical Phoenix key.
+        # We intentionally keep the insertion inside the watchers list so the diff is obvious and removable.
+        idx =
+          case Regex.run(~r/watchers:\s*\[/, content, return: :index) do
+            [{pos, len} | _] -> {pos, len}
+            _ -> nil
+          end
 
         if is_nil(idx) do
           warn_or_raise(
-            "failed to patch config/dev.exs: could not find `watchers: [` (expected Phoenix dev.exs shape). Re-run with --warn-only to skip.",
+            "failed to patch config/dev.exs: could not find a `watchers:` list (expected Phoenix dev.exs shape). Re-run with --warn-only to skip.",
             strict
           )
 
           content
         else
-          insert_at = idx + byte_size(token)
+          {pos, len} = idx
+          insert_at = pos + len
 
           insertion =
             "\n\n" <>
@@ -537,11 +543,19 @@ defmodule HaxePhoenixScaffold do
         updated
 
       :missing ->
-        idx = binary_index(content, "defp aliases")
+        idx =
+          case Regex.run(~r/\bdefp\s+aliases\b/, content, return: :index) do
+            [{pos, _len} | _] -> pos
+            _ ->
+              case Regex.run(~r/\bdef\s+aliases\b/, content, return: :index) do
+                [{pos2, _len2} | _] -> pos2
+                _ -> nil
+              end
+          end
 
         if is_nil(idx) do
           warn_or_raise(
-            "failed to patch mix.exs: could not find `defp aliases` (expected Phoenix mix.exs shape). Re-run with --warn-only to skip.",
+            "failed to patch mix.exs: could not find an `aliases` function (expected Phoenix mix.exs shape). Re-run with --warn-only to skip.",
             strict
           )
 

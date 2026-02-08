@@ -257,6 +257,24 @@ Phoenix's asset watchers.
 This task wires the "temp output + promote" pattern to avoid esbuild `--watch` racing Haxe's `-js`
 output deletion window (which can otherwise produce transient `Could not resolve "./hx_app.js"` errors).
 
+**Idempotency + marker blocks**
+
+This task is safe to run repeatedly. It patches files using explicit marker blocks:
+
+- `BEGIN reflaxe_elixir ...` / `END reflaxe_elixir ...`
+
+On re-run, only the content inside those blocks is replaced (no repeated insertions).
+On first run, if an expected Phoenix shape isn't found, the task fails fast by default.
+Use `--warn-only` to keep going (it emits a warning and skips that patch).
+
+**Files patched**
+
+- `build-client.hxml`: outputs to `assets/js/_hx_app_tmp.js` (temp).
+- `assets/js/hx_app.js`: ensures a stable file exists for esbuild imports.
+- `assets/js/app.js`: imports `./hx_app.js` and merges `window.Hooks` into Phoenix hooks.
+- `config/dev.exs`: adds a `haxe_client:` watcher under `watchers:` that runs `mix haxe.watch --promote ...`.
+- `mix.exs`: adds a `"haxe.compile.client"` alias and ensures `assets.build`/`assets.deploy` run it first.
+
 ```bash
 mix haxe.phoenix.scaffold
 mix haxe.phoenix.scaffold --verbose

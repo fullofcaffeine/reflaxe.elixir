@@ -62,6 +62,16 @@ defmodule HaxePhoenixScaffoldTest do
     ]
   """
 
+  @dev_exs_watchers_no_space """
+  import Config
+
+  config :my_app, MyAppWeb.Endpoint,
+    http: [ip: {127, 0, 0, 1}, port: 4000],
+    watchers:[
+      esbuild: {Esbuild, :install_and_run, [:my_app, ~w(--sourcemap=inline --watch)]}
+    ]
+  """
+
   @minimal_mix_exs """
   defmodule MyApp.MixProject do
     use Mix.Project
@@ -81,6 +91,34 @@ defmodule HaxePhoenixScaffoldTest do
     end
 
     defp aliases do
+      [
+        "assets.setup": ["esbuild.install --if-missing"],
+        "assets.build": ["esbuild my_app"],
+        "assets.deploy": ["esbuild my_app --minify", "phx.digest"]
+      ]
+    end
+  end
+  """
+
+  @mix_exs_def_aliases """
+  defmodule MyApp.MixProject do
+    use Mix.Project
+
+    def project do
+      [
+        app: :my_app,
+        version: "0.1.0",
+        elixir: "~> 1.14",
+        aliases: aliases(),
+        deps: []
+      ]
+    end
+
+    def application do
+      [extra_applications: [:logger]]
+    end
+
+    def aliases do
       [
         "assets.setup": ["esbuild.install --if-missing"],
         "assets.build": ["esbuild my_app"],
@@ -196,6 +234,33 @@ defmodule HaxePhoenixScaffoldTest do
     app_js = File.read!(Path.join([assets_js, "app.js"]))
     assert app_js =~ "BEGIN reflaxe_elixir hooks_property"
     assert app_js =~ "hooks: {...colocatedHooks, ...(window.Hooks || {})},"
+  end
+
+  test "patches dev.exs + mix.exs when formatted differently" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_fmt_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+
+    File.write!(Path.join(assets_js, "app.js"), @phoenix_17ish_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @dev_exs_watchers_no_space)
+    File.write!(Path.join(root, "mix.exs"), @mix_exs_def_aliases)
+    File.write!(Path.join(root, ".gitignore"), "")
+
+    assert :ok == HaxePhoenixScaffold.apply!(root)
+
+    dev_exs = File.read!(Path.join(config_dir, "dev.exs"))
+    assert dev_exs =~ "BEGIN reflaxe_elixir haxe_client"
+
+    mix_exs = File.read!(Path.join(root, "mix.exs"))
+    assert mix_exs =~ "BEGIN reflaxe_elixir haxe_compile_client_alias"
   end
 
   test "strict mode fails fast; warn-only mode skips with warning" do
