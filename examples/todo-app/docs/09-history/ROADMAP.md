@@ -11,7 +11,7 @@ As of **2026-01-02**, the todo-app client build uses **Genes** to generate split
 
 **How it’s wired**
 - `build-client.hxml` enables Genes via `--macro genes.Generator.use()`.
-- Output entry module: `assets/js/hx_app.js` (imports `client.Boot` and calls `Boot.main()`).
+- Output entry module: `assets/js/hx_app.js` (stable; promoted from `assets/js/_hx_app_tmp.js` in watch mode to avoid esbuild races).
 - Supporting modules are emitted under `assets/js/client/**` and `assets/js/genes/**`.
 
 ## Historical: Standard Haxe JS Compilation

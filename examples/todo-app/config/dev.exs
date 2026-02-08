@@ -34,8 +34,22 @@ optional_watchers =
     [
       # Server Haxe watcher: regenerates Elixir into lib/ so Phoenix code reloader picks it up.
       mix: ["haxe.watch", "--hxml", "build-server.hxml", "--dirs", "src_haxe/server,src_haxe/shared,src_haxe/contexts", "--debounce", "150", cd: todo_app_root],
-      # Client Haxe watcher: regenerates assets/js/hx_app.js; esbuild --watch rebundles into priv/static.
-      mix: ["haxe.watch", "--hxml", "build-client.hxml", "--dirs", "src_haxe/client,src_haxe/shared,src_haxe/contexts", "--debounce", "150", cd: todo_app_root]
+      # Client Haxe watcher:
+      # - Haxe outputs to assets/js/_hx_app_tmp.js (deleted/recreated each rebuild).
+      # - We promote that output into the stable assets/js/hx_app.js path so esbuild --watch
+      #   never sees an imported module temporarily disappear.
+      mix: [
+        "haxe.watch",
+        "--hxml",
+        "build-client.hxml",
+        "--dirs",
+        "src_haxe/client,src_haxe/shared,src_haxe/contexts",
+        "--debounce",
+        "150",
+        "--promote",
+        "assets/js/_hx_app_tmp.js:assets/js/hx_app.js,assets/js/_hx_app_tmp.js.map:assets/js/hx_app.js.map",
+        cd: todo_app_root
+      ]
     ]
   else
     []

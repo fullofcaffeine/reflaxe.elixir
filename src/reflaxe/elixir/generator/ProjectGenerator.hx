@@ -118,7 +118,9 @@ class ProjectGenerator {
 	}
 	
 	// Phoenix generators already create the correct JS/CSS asset pipeline (including LiveView JS).
-	// Reflaxe.Elixir intentionally does not generate or reimplement Phoenix assets.
+	// Reflaxe.Elixir intentionally does not reimplement Phoenix assets, but for Phoenix/LiveView
+	// projects we do generate a minimal, opt-in Haxe client integration:
+	// - `mix haxe.phoenix.scaffold` applies the Phoenix client JS scaffold (Genes build + watcher promotion)
 	
 	function addHaxeIntegration(projectPath: String, options: GeneratorOptions): Void {
 		// 1. Update mix.exs to include :haxe compiler + config, and add the reflaxe_elixir Mix dependency.
@@ -163,6 +165,9 @@ class ProjectGenerator {
 			var packageContent = generatePackageJson(options.name);
 			File.saveContent(packagePath, packageContent);
 		}
+		
+		// Phoenix/LiveView scaffolding is applied after dependencies are installed (so the generated
+		// project can run the canonical Mix task: `mix haxe.phoenix.scaffold`).
 	}
 	
 	function addToExistingProject(options: GeneratorOptions): Void {
@@ -357,6 +362,16 @@ class ProjectGenerator {
 				if (FileSystem.exists("assets") && FileSystem.exists(Path.join(["assets", "package.json"]))) {
 					Sys.println("  Installing Phoenix assets...");
 					Sys.command("mix", ["assets.setup"]);
+				}
+
+				// Phoenix/LiveView: apply the canonical Phoenix client scaffold via Mix tooling.
+				if (options.type == "phoenix" || options.type == "liveview") {
+					Sys.println("  Applying Phoenix client scaffold...");
+					var args = options.verbose ? ["haxe.phoenix.scaffold", "--verbose"] : ["haxe.phoenix.scaffold"];
+					var rc = Sys.command("mix", args);
+					if (rc != 0) {
+						throw 'Failed to apply Phoenix client scaffold (exit $rc).';
+					}
 				}
 			}
 			

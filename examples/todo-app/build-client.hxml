@@ -16,7 +16,18 @@
 --macro addMetadata('@:genes.disableNativeAccessors', 'haxe.Exception')
 
 # JavaScript target output (separate from Phoenix bootstrap to avoid overwriting LiveView init)
--js assets/js/hx_app.js
+#
+# IMPORTANT:
+# Haxe deletes the `-js` output file at the start of compilation. Since Phoenix runs esbuild in
+# `--watch` mode and `assets/js/app.js` imports `./hx_app.js`, that temporary deletion can race
+# esbuild and produce transient "Could not resolve ./hx_app.js" errors.
+#
+# To keep esbuild stable in watch mode, compile into a temporary entry file and then promote
+# it into a stable path used by esbuild imports:
+# - Haxe writes `assets/js/_hx_app_tmp.js` (and deletes it during rebuilds).
+# - The dev watcher promotes that output into `assets/js/hx_app.js` atomically (see config/dev.exs),
+#   so esbuild never sees an imported module temporarily disappear.
+-js assets/js/_hx_app_tmp.js
 -D js-unflatten               # Better module structure
 # NOTE: -D analyzer-optimize removed - destroys functional patterns
 --dce=full

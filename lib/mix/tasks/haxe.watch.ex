@@ -15,13 +15,16 @@ defmodule Mix.Tasks.Haxe.Watch do
       mix haxe.watch --dirs src,lib # Watch specific directories
       mix haxe.watch --hxml build.hxml # Use a specific HXML file
   
-  ## Options
-  
-    * `--verbose` - Show detailed compilation output
-    * `--once` - Compile once and exit (no watching)
-    * `--dirs` - Comma-separated list of directories to watch
-    * `--debounce` - Debounce period in milliseconds (default: 100)
-    * `--hxml` - Path to build.hxml file (default: "build.hxml")
+	  ## Options
+	  
+	    * `--verbose` - Show detailed compilation output
+	    * `--once` - Compile once and exit (no watching)
+	    * `--dirs` - Comma-separated list of directories to watch
+	    * `--debounce` - Debounce period in milliseconds (default: 100)
+	    * `--hxml` - Path to build.hxml file (default: "build.hxml")
+	    * `--promote` - Post-compile file promotion spec (comma-separated `from:to` pairs)
+	      - Example: `--promote assets/js/_hx_app_tmp.js:assets/js/hx_app.js`
+	      - Intended for Phoenix+esbuild watch mode when Haxe deletes its `-js` output during rebuilds
   
   ## Configuration
   
@@ -43,17 +46,18 @@ defmodule Mix.Tasks.Haxe.Watch do
   @shortdoc "Watches and recompiles Haxe files on changes"
   
   @impl Mix.Task
-  def run(args) do
-    # Parse command line options
-    {opts, _, _} = OptionParser.parse(args,
-      switches: [
-        verbose: :boolean,
-        once: :boolean,
-        dirs: :string,
-        debounce: :integer,
-        hxml: :string
-      ]
-    )
+	  def run(args) do
+	    # Parse command line options
+	    {opts, _, _} = OptionParser.parse(args,
+	      switches: [
+	        verbose: :boolean,
+	        once: :boolean,
+	        dirs: :string,
+	        debounce: :integer,
+	        hxml: :string,
+	        promote: :string
+	      ]
+	    )
     
     # Get configuration from mix.exs
     config = get_watch_config(opts)
@@ -84,7 +88,7 @@ defmodule Mix.Tasks.Haxe.Watch do
     end
   end
   
-  defp get_watch_config(opts) do
+	  defp get_watch_config(opts) do
     # Start with project config
     project_config = Mix.Project.config()[:haxe] || []
 
@@ -96,7 +100,7 @@ defmodule Mix.Tasks.Haxe.Watch do
     # use the same build configuration.
     hxml_file = opts[:hxml] || Keyword.get(project_config, :hxml_file, "build.hxml")
 
-    dirs =
+	    dirs =
       case opts[:dirs] do
         nil ->
           # Prefer explicit watch_dirs; otherwise default to the project source_dir.
@@ -104,35 +108,104 @@ defmodule Mix.Tasks.Haxe.Watch do
 
         dirs_string ->
           String.split(dirs_string, ",") |> Enum.map(&String.trim/1)
-      end
+	      end
 
-    # Build final configuration
-    [
-      dirs: dirs,
-      debounce_ms: opts[:debounce] || Keyword.get(project_config, :debounce_ms, 100),
+	    promote_files = parse_promote_spec(opts[:promote])
+
+	    # Build final configuration
+	    [
+	      dirs: dirs,
+	      debounce_ms: opts[:debounce] || Keyword.get(project_config, :debounce_ms, 100),
       # HaxeWatcher expects :build_file; HaxeCompiler expects :hxml_file
       build_file: hxml_file,
       hxml_file: hxml_file,
-      verbose: opts[:verbose] || false,
-      auto_compile: true,
-      source_dir: source_dir,
-      target_dir: Keyword.get(project_config, :target_dir, "lib")
-    ]
-  end
+	      verbose: opts[:verbose] || false,
+	      auto_compile: true,
+	      promote_files: promote_files,
+	      source_dir: source_dir,
+	      target_dir: Keyword.get(project_config, :target_dir, "lib")
+	    ]
+	  end
+
+	  defp parse_promote_spec(nil), do: []
+	  defp parse_promote_spec(""), do: []
+
+	  defp parse_promote_spec(spec) when is_binary(spec) do
+	    spec
+	    |> String.split(",", trim: true)
+	    |> Enum.map(&String.trim/1)
+	    |> Enum.reduce([], fn pair, acc ->
+	      case String.split(pair, ":", parts: 2) do
+	        [from, to] ->
+	          from = String.trim(from)
+	          to = String.trim(to)
+
+	          if from != "" and to != "" do
+	            acc ++ [{from, to}]
+	          else
+	            acc
+	          end
+
+	        _ ->
+	          acc
+	      end
+	    end)
+	  end
   
-  defp compile_once(config) do
-    Mix.shell().info("Compiling Haxe files...")
-    
-    case HaxeCompiler.compile(config) do
-      {:ok, files} ->
-        Mix.shell().info("✓ Compiled #{length(files)} file(s)")
-        
-      {:error, reason} ->
-        Mix.shell().error("✗ Compilation failed:")
-        Mix.shell().error(reason)
-        exit({:shutdown, 1})
-    end
-  end
+	  defp compile_once(config) do
+	    Mix.shell().info("Compiling Haxe files...")
+	    
+	    case HaxeCompiler.compile(config) do
+	      {:ok, files} ->
+	        promote_files_best_effort(config[:promote_files] || [])
+	        Mix.shell().info("✓ Compiled #{length(files)} file(s)")
+	        
+	      {:error, reason} ->
+	        Mix.shell().error("✗ Compilation failed:")
+	        Mix.shell().error(reason)
+	        exit({:shutdown, 1})
+	    end
+	  end
+
+	  defp promote_files_best_effort([]), do: :ok
+
+	  defp promote_files_best_effort(promote_files) when is_list(promote_files) do
+	    Enum.each(promote_files, fn
+	      {from, to} when is_binary(from) and is_binary(to) ->
+	        if File.exists?(from) do
+	          case File.read(from) do
+	            {:ok, contents} -> atomic_replace_best_effort(to, contents)
+	            _ -> :ok
+	          end
+	        end
+
+	      _ ->
+	        :ok
+	    end)
+	  end
+
+	  defp atomic_replace_best_effort(path, contents) when is_binary(path) and is_binary(contents) do
+	    dir = Path.dirname(path)
+	    if is_binary(dir) and dir != "." do
+	      _ = File.mkdir_p(dir)
+	    end
+
+	    tmp = path <> ".tmp." <> Integer.to_string(:rand.uniform(1_000_000_000))
+
+	    with :ok <- File.write(tmp, contents) do
+	      case File.rename(tmp, path) do
+	        :ok ->
+	          :ok
+
+	        {:error, _} ->
+	          _ = File.write(path, contents)
+	          _ = File.rm(tmp)
+	          :ok
+	      end
+	    else
+	      _ -> :ok
+	    end
+	  end
   
   defp start_watching(config) do
     Mix.shell().info("Starting Haxe file watcher...")

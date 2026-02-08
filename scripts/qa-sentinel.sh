@@ -358,22 +358,98 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
     CHILD_FLAGS+=("--playwright" "--e2e-spec" "$E2E_SPEC" "--e2e-workers" "$E2E_WORKERS")
   fi
   log "[QA] Async mode: dispatching background sentinel (RUN_ID=$RUN_ID)"
-  # Launch background child fully detached; prefer setsid, fallback to nohup.
+  # Launch background child fully detached; prefer setsid.
+  # On macOS (no setsid), use a python3 launcher with start_new_session=True so the child
+  # survives after this parent process exits (some CI/agent harnesses reap process groups).
   # Avoid nested bash -lc quoting that previously caused "unexpected EOF" when
   # E2E_SPEC contained spaces. Invoke the script directly with an argv array.
   CHILD_CMD=( "$0" "${CHILD_FLAGS[@]}" )
   if command -v setsid >/dev/null 2>&1; then
     setsid env ASYNC_CHILD=1 E2E_SPEC="$E2E_SPEC" E2E_WORKERS="$E2E_WORKERS" QA_SKIP_HAXE="${QA_SKIP_HAXE:-}" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" "${CHILD_CMD[@]}" </dev/null >"$LOG_MAIN" 2>&1 &
+  elif command -v python3 >/dev/null 2>&1; then
+    PY_LAUNCHER="$(mktemp /tmp/qa-sentinel-launcher.XXXXXX.py)"
+    cat >"$PY_LAUNCHER" <<'PY'
+import os
+import subprocess
+import sys
+import time
+
+log_path = sys.argv[1]
+deadline = sys.argv[2]
+child_argv = sys.argv[3:]
+
+env = os.environ.copy()
+env["ASYNC_CHILD"] = "1"
+
+log = open(log_path, "ab", buffering=0)
+child = subprocess.Popen(
+    child_argv,
+    stdin=subprocess.DEVNULL,
+    stdout=log,
+    stderr=log,
+    env=env,
+    start_new_session=True,
+)
+
+watchdog_pid = 0
+if deadline:
+    try:
+        secs = int(deadline)
+    except Exception:
+        secs = 0
+
+    if secs > 0:
+        watchdog = subprocess.Popen(
+            [
+                sys.executable,
+                "-c",
+                (
+                    "import os,signal,time,sys;"
+                    "pid=int(sys.argv[1]);secs=int(sys.argv[2]);"
+                    "time.sleep(secs);"
+                    "try:\n"
+                    "  os.kill(pid, signal.SIGTERM)\n"
+                    "except Exception:\n"
+                    "  pass\n"
+                    "time.sleep(1);"
+                    "try:\n"
+                    "  os.kill(pid, signal.SIGKILL)\n"
+                    "except Exception:\n"
+                    "  pass\n"
+                ),
+                str(child.pid),
+                str(secs),
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        watchdog_pid = watchdog.pid
+
+print(f"{child.pid} {watchdog_pid}")
+PY
+    PIDS_LINE="$(
+      env E2E_SPEC="$E2E_SPEC" E2E_WORKERS="$E2E_WORKERS" QA_SKIP_HAXE="${QA_SKIP_HAXE:-}" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" \
+        python3 "$PY_LAUNCHER" "$LOG_MAIN" "${DEADLINE:-}" "${CHILD_CMD[@]}"
+    )"
+    rm -f "$PY_LAUNCHER" >/dev/null 2>&1 || true
+    SENTINEL_PID="${PIDS_LINE%% *}"
+    WATCHDOG_PID="${PIDS_LINE#* }"
   else
     nohup env ASYNC_CHILD=1 E2E_SPEC="$E2E_SPEC" E2E_WORKERS="$E2E_WORKERS" QA_SKIP_HAXE="${QA_SKIP_HAXE:-}" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" "${CHILD_CMD[@]}" </dev/null >"$LOG_MAIN" 2>&1 &
   fi
-  SENTINEL_PID=$!
-  # Disown the child so shells never warn/wait on background jobs
-  { disown "$SENTINEL_PID" 2>/dev/null || true; } >/dev/null 2>&1
-  if [[ -n "$DEADLINE" ]]; then
-    ( sleep "$DEADLINE"; kill -TERM "$SENTINEL_PID" >/dev/null 2>&1 || true; sleep 1; kill -KILL "$SENTINEL_PID" >/dev/null 2>&1 || true ) </dev/null >/dev/null 2>&1 &
-    WATCHDOG_PID=$!
-    { disown "$WATCHDOG_PID" 2>/dev/null || true; } >/dev/null 2>&1
+  if [[ -z "${SENTINEL_PID:-}" ]]; then
+    SENTINEL_PID=$!
+    # Disown the child so shells never warn/wait on background jobs
+    { disown "$SENTINEL_PID" 2>/dev/null || true; } >/dev/null 2>&1
+  fi
+  if [[ -n "${DEADLINE:-}" ]]; then
+    if [[ -z "${WATCHDOG_PID:-}" || "${WATCHDOG_PID:-0}" == "0" ]]; then
+      ( sleep "$DEADLINE"; kill -TERM "$SENTINEL_PID" >/dev/null 2>&1 || true; sleep 1; kill -KILL "$SENTINEL_PID" >/dev/null 2>&1 || true ) </dev/null >/dev/null 2>&1 &
+      WATCHDOG_PID=$!
+      { disown "$WATCHDOG_PID" 2>/dev/null || true; } >/dev/null 2>&1
+    fi
     log "[QA] Async watchdog enabled: DEADLINE=$DEADLINE (PID=$WATCHDOG_PID)"
   fi
   echo "QA_SENTINEL_PID=$SENTINEL_PID"

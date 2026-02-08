@@ -36,6 +36,19 @@ mix setup
 mix phx.server
 ```
 
+What you get from the generator (Phoenix types):
+
+- Server Haxe integration (`build.hxml`, `src_haxe/**`, `mix.exs` compiler wiring)
+- Client Haxe integration for LiveView hooks:
+  - `build-client.hxml` outputs to `assets/js/_hx_app_tmp.js`
+  - A stable import path `assets/js/hx_app.js` (published via promotion after successful compiles)
+  - `assets/js/app.js` imports `./hx_app.js` and merges hooks from `window.Hooks`
+  - A dev watcher that runs `mix haxe.watch --hxml build-client.hxml --promote ...`
+
+The temp output + promotion pattern is important because Haxe deletes its `-js` output at the start of compilation; in
+watch mode that can race esbuild and cause transient `Could not resolve "./hx_app.js"` errors unless the imported path
+is stable.
+
 If you pass `--skip-install` (or installs fail), run the installs manually:
 
 ```bash
@@ -47,6 +60,7 @@ REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/ref
 npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 npx lix download
 mix setup
+mix haxe.phoenix.scaffold
 mix phx.server
 ```
 

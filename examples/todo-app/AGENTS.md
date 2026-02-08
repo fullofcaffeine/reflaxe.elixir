@@ -289,8 +289,8 @@ We intentionally keep the LiveView bootstrap as a tiny, hand‑written JS entry 
   - Create/connect `LiveSocket` unless already bootstrapped by Haxe.
   - Expose `window.liveSocket` for debugging.
 - Haxe integration:
-  - Haxe client compiles via Genes to `assets/js/hx_app.js` (entry) plus modules under `assets/js/client/**` and `assets/js/genes/**`, and publishes `window.Hooks`.
-  - `assets/js/app.js` imports `./hx_app.js`; `phoenix_app.js` imports `./app.js` to register Hooks.
+  - Haxe client compiles via Genes to `assets/js/_hx_app_tmp.js` (intermediate entry) plus modules under `assets/js/client/**` and `assets/js/genes/**`, and publishes `window.Hooks`.
+  - In dev, the Haxe watcher promotes `assets/js/_hx_app_tmp.js` to the stable `assets/js/hx_app.js` path atomically (see `config/dev.exs`) so esbuild `--watch` never sees an imported module disappear. `assets/js/app.js` imports `./hx_app.js`; `phoenix_app.js` imports `./app.js` to register Hooks.
 - Rationale (1.0 scope):
   - Matches Phoenix’s idiomatic setup and minimizes friction on upgrades.
   - Keeps the bootstrap minimal while concentrating typed logic in Haxe.

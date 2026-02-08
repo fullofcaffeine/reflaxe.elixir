@@ -16,7 +16,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   ## Options
 
     * `--basic-modules` - Include basic utility modules (StringUtils, MathHelper)
-    * `--phoenix` - Add Phoenix-specific configuration and examples
+    * `--phoenix` - Add Phoenix-specific configuration and examples (LiveView module + client JS scaffold)
     * `--skip-examples` - Don't generate example Haxe files
     * `--skip-npm` - Don't create package.json or install npm dependencies
     * `--haxe-dir` - Directory for Haxe source files (default: "src_haxe")
@@ -100,6 +100,15 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
     # 7. Update .gitignore
     update_gitignore(config)
+
+    # 7b. Phoenix client JS scaffold (Genes + esbuild --watch safe promotion)
+    if config.phoenix do
+      Mix.Task.run("haxe.phoenix.scaffold", [])
+
+      Mix.shell().info(
+        "Created Phoenix client scaffold (build-client.hxml + watchers + stable hx_app.js)"
+      )
+    end
 
     # 8. Display next steps
     display_next_steps(config)

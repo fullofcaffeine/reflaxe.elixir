@@ -13,9 +13,31 @@ This guide describes the common “edit → compile → reload” loop when usin
    - Uses a background Haxe compilation server when available.
 
 2. **Client build/watch (Haxe → JS)**
-   - Typically run via Phoenix endpoint watchers as `haxe build-client.hxml --wait <port>`.
-   - This keeps an incremental JS compiler process alive during `mix phx.server`.
+   - Typically run via Phoenix endpoint watchers as `mix haxe.watch --hxml build-client.hxml ...`.
+   - This keeps an incremental client compiler process alive during `mix phx.server`.
    - Recommended generator: **Genes** (ES modules) via `-lib genes` in `build-client.hxml`.
+
+### Important: esbuild `--watch` + Haxe `-js` output races
+
+Haxe deletes the `-js` output file at the start of compilation. If your esbuild entry imports that file
+(for example `assets/js/app.js` contains `import "./hx_app.js"`), then in watch mode esbuild can see a
+brief window where the module disappears and error with:
+
+- `Could not resolve "./hx_app.js"`
+
+**Recommended pattern (used by `examples/todo-app/`):**
+- Have `build-client.hxml` write its `-js` output to a temp path (example: `assets/js/_hx_app_tmp.js`).
+- After a successful compile, promote that temp file into the stable import path (example: `assets/js/hx_app.js`).
+- Configure Phoenix watchers to use `mix haxe.watch --promote from:to` so promotion happens atomically.
+
+If you want this wiring scaffolded automatically in a Phoenix app, run:
+
+```bash
+mix haxe.phoenix.scaffold
+```
+
+This task patches `config/dev.exs`, `mix.exs`, and `assets/js/app.js` using explicit marker blocks
+(`BEGIN reflaxe_elixir ...` / `END reflaxe_elixir ...`) so reruns update only the block content.
 
 ## Recommended Workflow
 

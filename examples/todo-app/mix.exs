@@ -94,7 +94,13 @@ defmodule TodoApp.MixProject do
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": ["haxe.compile.client", "tailwind todo_app", "esbuild todo_app"],
       "assets.deploy": ["haxe.compile.client", "tailwind todo_app --minify", "esbuild todo_app --minify --tree-shaking=true --drop:debugger --drop:console", "phx.digest"],
-      "haxe.compile.client": ["cmd haxe build-client.hxml"],
+      # IMPORTANT: Haxe deletes the `-js` output at compile start, which can race esbuild --watch.
+      # `build-client.hxml` outputs to a temp file (`assets/js/_hx_app_tmp.js`) and this task promotes
+      # it into the stable import path (`assets/js/hx_app.js`) after successful compilation.
+      #
+      # Note: Mix aliases only support passing args by putting them in the same string.
+      "haxe.compile.client":
+        "haxe.watch --once --hxml build-client.hxml --promote assets/js/_hx_app_tmp.js:assets/js/hx_app.js,assets/js/_hx_app_tmp.js.map:assets/js/hx_app.js.map",
       "haxe.compile.tests": ["cmd haxe build-tests.hxml"]
     ]
   end
