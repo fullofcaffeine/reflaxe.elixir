@@ -56,6 +56,7 @@ If you pass `--phoenix`, it also scaffolds an esbuild-friendly Haxe client JS bu
 - Ensures a stable import path at `assets/js/hx_app.js` (published via promotion)
 - Patches `assets/js/app.js` so `LiveSocket` merges hooks from `window.Hooks`
 - Adds a dev watcher using `mix haxe.watch --promote ...` to avoid transient esbuild `--watch` resolution errors
+- Adds `.gitignore` entries for `assets/js/_hx_app_tmp.js*` and `assets/js/hx_app.js*` so client build artifacts don’t churn diffs
 
 If you want to apply only the Phoenix client JS wiring (without the rest of the project scaffolding), use:
 
