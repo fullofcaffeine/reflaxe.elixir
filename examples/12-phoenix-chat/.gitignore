@@ -43,6 +43,13 @@ node_modules/
 .haxe_cache/
 .reflaxe_elixir/
 
+# Genes multi-file JS outputs (generated from Haxe client build)
+assets/js/client/
+assets/js/genes/
+assets/js/haxe/
+assets/js/Std.js
+assets/js/Std.js.map
+
 # Reflaxe.Elixir (Haxe client JS intermediate output)
 assets/js/_hx_app_tmp.js
 assets/js/_hx_app_tmp.js.map

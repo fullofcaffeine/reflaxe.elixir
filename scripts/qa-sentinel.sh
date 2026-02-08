@@ -161,6 +161,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Default HXML selection:
+# - `examples/todo-app` uses build-server.hxml
+# - scaffolded Mix projects typically use build.hxml
+if [[ "${HXML_FILE:-}" == "build-server.hxml" && ! -f "${APP_DIR}/build-server.hxml" && -f "${APP_DIR}/build.hxml" ]]; then
+  HXML_FILE="build.hxml"
+fi
+
 # If Playwright is requested and no explicit env provided (still 'dev'),
 # default to e2e for proper DB isolation and server settings
 if [[ "$RUN_PLAYWRIGHT" -eq 1 && "$ENV_NAME" == "dev" ]]; then
@@ -710,6 +717,11 @@ else
   fi
 fi
 
+HAS_ECTO=0
+if mix help ecto.migrate >/dev/null 2>&1; then
+  HAS_ECTO=1
+fi
+
 if [[ "$ENV_NAME" != "dev" && "$COMPILE_MIGRATIONS" -eq 1 ]]; then
   if [[ -f "$MIGRATIONS_HXML" ]]; then
     run_step_with_log "Step 3.migrations: Haxe build ($HAXE_CMD $MIGRATIONS_HXML)" 300s /tmp/qa-haxe-migrations.log "$HAXE_CMD $MIGRATIONS_HXML" || exit 1
@@ -721,19 +733,27 @@ if [[ "$ENV_NAME" == "dev" ]]; then
   # In dev, never drop the database (avoid clobbering a developer's local state),
   # but do ensure the schema is up to date to prevent runtime crashes like:
   #   ERROR 42703 (undefined_column) column t0.organization_id does not exist
-  run_step_with_log "DB ensure ($ENV_NAME)" 120s /tmp/qa-mix-db-ensure.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix ecto.create --quiet" || true
-  run_step_with_log "DB migrate ($ENV_NAME)" 300s /tmp/qa-mix-db-migrate.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix ecto.migrate" || exit 1
-elif [[ "$ENV_NAME" != "dev" ]]; then
-  if [[ "$REUSE_DB" -eq 1 ]]; then
+  if [[ "$HAS_ECTO" -eq 1 ]]; then
     run_step_with_log "DB ensure ($ENV_NAME)" 120s /tmp/qa-mix-db-ensure.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix ecto.create --quiet" || true
     run_step_with_log "DB migrate ($ENV_NAME)" 300s /tmp/qa-mix-db-migrate.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix ecto.migrate" || exit 1
   else
-    run_step_with_log "DB drop ($ENV_NAME)" 120s /tmp/qa-mix-db-drop.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix ecto.drop --quiet" || true
-    run_step_with_log "DB create ($ENV_NAME)" 120s /tmp/qa-mix-db-create.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix ecto.create --quiet" || true
-    run_step_with_log "DB migrate ($ENV_NAME)" 300s /tmp/qa-mix-db-migrate.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix ecto.migrate" || exit 1
+    log "[QA] DB steps skipped: no ecto.migrate task detected"
   fi
-  if [[ -n "$SEEDS_FILE" ]]; then
-    run_step_with_log "DB seeds ($ENV_NAME)" 180s /tmp/qa-mix-db-seeds.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix run '$SEEDS_FILE'" || exit 1
+elif [[ "$ENV_NAME" != "dev" ]]; then
+  if [[ "$HAS_ECTO" -eq 1 ]]; then
+    if [[ "$REUSE_DB" -eq 1 ]]; then
+      run_step_with_log "DB ensure ($ENV_NAME)" 120s /tmp/qa-mix-db-ensure.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix ecto.create --quiet" || true
+      run_step_with_log "DB migrate ($ENV_NAME)" 300s /tmp/qa-mix-db-migrate.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix ecto.migrate" || exit 1
+    else
+      run_step_with_log "DB drop ($ENV_NAME)" 120s /tmp/qa-mix-db-drop.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix ecto.drop --quiet" || true
+      run_step_with_log "DB create ($ENV_NAME)" 120s /tmp/qa-mix-db-create.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix ecto.create --quiet" || true
+      run_step_with_log "DB migrate ($ENV_NAME)" 300s /tmp/qa-mix-db-migrate.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix ecto.migrate" || exit 1
+    fi
+    if [[ -n "$SEEDS_FILE" ]]; then
+      run_step_with_log "DB seeds ($ENV_NAME)" 180s /tmp/qa-mix-db-seeds.log "HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT mix run '$SEEDS_FILE'" || exit 1
+    fi
+  else
+    log "[QA] DB steps skipped: no ecto.migrate task detected"
   fi
 fi
 
