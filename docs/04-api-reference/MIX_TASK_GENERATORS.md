@@ -131,6 +131,8 @@ Phoenix client wiring is handled by a dedicated task:
 mix haxe.phoenix.scaffold
 ```
 
+For a scenario-driven overview (greenfield vs existing app, fail-fast vs `--warn-only`, and how marker blocks work), see `docs/06-guides/SCAFFOLDING_SYSTEM.md`.
+
 This is the canonical entrypoint for integrating a Haxe-generated JS client bundle (Genes) into Phoenix LiveView in a way that is robust under esbuild `--watch`.
 
 Key behaviors:
