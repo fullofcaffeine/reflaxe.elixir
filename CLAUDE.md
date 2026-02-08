@@ -40,6 +40,10 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - Mix tests (fast): `npm run test:mix-fast`
 - Todo-app runtime smoke (non-blocking): `npm run qa:sentinel` then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`
 
+## 🎨 Frontend/UI Work (Required)
+
+- When making changes to **frontend/UI/UX** (HTML/CSS/JS, LiveView templates, hooks, layouts), use the `$frontend-design` skill to keep output production-grade and intentional.
+
 ### Common CI failure mode: “unused literal” warnings
 
 If CI shows `warning: code block contains unused literal ...`, it usually means a Haxe expression used for side-effects

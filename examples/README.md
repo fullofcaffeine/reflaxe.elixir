@@ -59,12 +59,17 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 **Features**: Domain validation patterns, typed constraints  
 **Use Case**: Modeling rich domain logic in Haxe for the BEAM
 
-### 12. [todo-app](./todo-app/)
+### 12. [12-phoenix-chat](./12-phoenix-chat/)
+**Difficulty**: Intermediate  
+**Features**: LiveView + PubSub + Presence, tiny client hook (Genes)  
+**Use Case**: Real-time chat patterns in a small, focused Phoenix example
+
+### 13. [todo-app](./todo-app/)
 **Difficulty**: Advanced  
 **Features**: Full Phoenix LiveView app, Ecto, Playwright E2E  
 **Use Case**: End-to-end reference app (recommended for Phoenix/LiveView)
 
-### 13. [test-integration](./test-integration/)
+### 14. [test-integration](./test-integration/)
 **Difficulty**: Intermediate  
 **Features**: Mix compiler task testing, build pipeline validation  
 **Use Case**: Testing Haxe→Elixir compilation in Mix projects

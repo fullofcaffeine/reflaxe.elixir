@@ -1,0 +1,15 @@
+{
+  "name": "phoenix_chat",
+  "version": "0.1.0",
+  "description": "Elixir project with Reflaxe.Elixir support",
+  "scripts": {
+    "compile": "haxe build.hxml",
+    "test": "mix test",
+    "watch": "nodemon --watch src_haxe --ext hx --exec \"haxe build.hxml\"",
+    "setup:haxe": "npx lix download"
+  },
+  "devDependencies": {
+    "lix": "^15.12.4",
+    "nodemon": "^3.0.0"
+  }
+}

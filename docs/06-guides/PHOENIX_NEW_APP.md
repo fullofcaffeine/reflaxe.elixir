@@ -88,10 +88,12 @@ From here, greenfield and “add to existing” are the same workflow.
 Continue with:
 
 - `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`
+  - For a concrete end-to-end walkthrough, see `docs/06-guides/PHOENIX_CHAT_TUTORIAL.md`.
 
 ## Recommended Template Starting Points
 
 If you prefer a ready-made example to copy:
 
 - `examples/03-phoenix-app/` — minimal Phoenix app authored in Haxe
+- `examples/12-phoenix-chat/` — Presence + PubSub + LiveView in Haxe (chat tutorial)
 - `examples/todo-app/` — end-to-end Phoenix LiveView + Ecto + Playwright E2E

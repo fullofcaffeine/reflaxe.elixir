@@ -68,6 +68,8 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Quickstart](06-guides/QUICKSTART.md) - Fast track to productivity
 - [Phoenix (New App)](06-guides/PHOENIX_NEW_APP.md) - Greenfield Phoenix setup
 - [Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md) - Gradual adoption in an existing app
+- [Phoenix Chat Tutorial](06-guides/PHOENIX_CHAT_TUTORIAL.md) - Presence + PubSub + LiveView in Haxe
+- [Portable Chat Tutorial](06-guides/PORTABLE_CHAT_TUTORIAL.md) - Shared Haxe domain logic pattern
 - [Dogfooding](06-guides/DOGFOODING.md) - External Phoenix app upgrade validation
 - [Todo-app Cowboy Toolchain](06-guides/TODOAPP_COWBOY_TOOLCHAIN.md) - Why the todo-app pins Cowboy deps
 - [Production Hardening](06-guides/PRODUCTION_READINESS.md) - Non‑alpha criteria + checklist
