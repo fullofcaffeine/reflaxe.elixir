@@ -435,7 +435,7 @@ class ProjectGenerator {
 	
 	function generateBuildHxml(options: GeneratorOptions): String {
 		var haxeNamespace = toSnakeCase(options.name) + "_hx";
-		var appName = toPascalCase(options.name) + "Hx";
+		var appName = toPascalCase(options.name);
 		var outputDir = 'lib/${haxeNamespace}';
 		var phoenixFlags = options.type == "phoenix" || options.type == "liveview" ? "-D hxx_string_to_sigil\n" : "";
 
@@ -460,7 +460,7 @@ class ProjectGenerator {
 # Elixir is not a UTF-16 platform
 -D no-utf16
 
-# Application module prefix (helps avoid collisions with Elixir built-ins like `Application`)
+# Application module prefix
 -D app_name=${appName}
 
 # Enable dead code elimination to remove unused functions and reduce output noise

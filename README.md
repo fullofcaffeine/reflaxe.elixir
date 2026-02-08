@@ -183,8 +183,8 @@ Once installed, add to your `build.hxml`:
 # Elixir is not a UTF-16 platform
 -D no-utf16
 
-# Application module prefix (prevents collisions with Elixir built-ins like `Application`)
--D app_name=MyAppHx
+# Application module prefix (used for Phoenix/Ecto integration; typically your app module name)
+-D app_name=MyApp
 
 # Enable dead code elimination to reduce output noise
 -dce full
@@ -386,6 +386,8 @@ Start at **[docs/README.md](docs/README.md)** for the curated documentation inde
 - **[Quickstart](docs/06-guides/QUICKSTART.md)** - Your first Haxe→Elixir project
 - **[Phoenix (New App)](docs/06-guides/PHOENIX_NEW_APP.md)** - Greenfield Phoenix setup
 - **[Phoenix (Existing App)](docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md)** - Add Haxe to an existing Phoenix app
+- **[Phoenix Chat Tutorial](docs/06-guides/PHOENIX_CHAT_TUTORIAL.md)** - Presence + PubSub + LiveView in Haxe
+- **[Portable Chat Tutorial](docs/06-guides/PORTABLE_CHAT_TUTORIAL.md)** - Shared Haxe domain logic pattern
 - **[Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)** - Controllers, LiveView, Ecto, Channels
 - **[Escape Hatches](docs/02-user-guide/ESCAPE_HATCHES.md)** - Calling Elixir from Haxe safely
 - **[Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md)** - Sharp edges and experimental surfaces
