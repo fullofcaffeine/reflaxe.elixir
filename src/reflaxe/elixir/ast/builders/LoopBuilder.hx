@@ -3421,6 +3421,25 @@ class LoopBuilder {
                     var to = mapped(name);
                     to != null ? makeASTWithMeta(EVar(to), n.metadata, n.pos) : n;
 
+                // Some builders emit assignments as `left = rhs` using EBinary(Match, ...).
+                // Rewrite the binder to the reducer var so subsequent passes see an actual
+                // accumulator rebind (and we don't silently drop the update as an unused shadow).
+                case EBinary(Match, left, rhs):
+                    function rewriteLeftBinder(l: ElixirAST): ElixirAST {
+                        return switch (l.def) {
+                            case EVar(nm):
+                                var toL = mapped(nm);
+                                toL != null ? makeASTWithMeta(EVar(toL), l.metadata, l.pos) : l;
+                            case EParen(inner):
+                                var inner2 = rewriteLeftBinder(inner);
+                                inner2 != inner ? makeASTWithMeta(EParen(inner2), l.metadata, l.pos) : l;
+                            default:
+                                l;
+                        }
+                    }
+                    var newLeft = rewriteLeftBinder(left);
+                    newLeft != left ? makeASTWithMeta(EBinary(Match, newLeft, rhs), n.metadata, n.pos) : n;
+
                 // Match with pattern binder (assignments): rewrite LHS patterns for threaded vars.
                 case EMatch(pattern, rhs):
                     var newPattern = renamePattern(pattern);
