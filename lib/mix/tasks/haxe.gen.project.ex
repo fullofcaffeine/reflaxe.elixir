@@ -103,11 +103,20 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
     # 7b. Phoenix client JS scaffold (Genes + esbuild --watch safe promotion)
     if config.phoenix do
-      Mix.Task.run("haxe.phoenix.scaffold", [])
+      if phoenix_project_shape?() do
+        Mix.Task.run("haxe.phoenix.scaffold", [])
 
-      Mix.shell().info(
-        "Created Phoenix client scaffold (build-client.hxml + watchers + stable hx_app.js)"
-      )
+        Mix.shell().info(
+          "Created Phoenix client scaffold (build-client.hxml + watchers + stable hx_app.js)"
+        )
+      else
+        Mix.shell().info("""
+        Skipping Phoenix client scaffold: this project doesn't look like a Phoenix app (missing assets/js/app.js or config/dev.exs).
+
+        Once you have a Phoenix app structure, run:
+          mix haxe.phoenix.scaffold
+        """)
+      end
     end
 
     # 8. Display next steps
@@ -145,6 +154,13 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       File.mkdir_p!(dir)
       Mix.shell().info("Created directory: #{dir}")
     end)
+  end
+
+  defp phoenix_project_shape? do
+    File.dir?(Path.join(["assets", "js"])) and
+      File.exists?(Path.join(["assets", "js", "app.js"])) and
+      File.dir?("config") and
+      File.exists?(Path.join(["config", "dev.exs"]))
   end
 
   # Create build.hxml configuration file
