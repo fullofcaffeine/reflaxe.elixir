@@ -1,0 +1,170 @@
+# Phoenix Chat Tutorial (Haxe + Presence + LiveView)
+
+This tutorial walks through building a small real-time chat LiveView in **Haxe**, compiled to idiomatic Elixir, with:
+
+- PubSub broadcasts for chat messages
+- Phoenix Presence for “Online users”
+- A tiny client-side hook (auto-scroll) compiled with Genes (Haxe -> JS)
+
+Reference implementation: `examples/12-phoenix-chat/`.
+
+## Goal
+
+- Write “normal Haxe” (imperative is fine).
+- Let the compiler lower it into the functional Elixir shapes Phoenix expects.
+- Keep the generated Elixir readable and framework-faithful.
+
+## Prereqs
+
+- Elixir + Phoenix installed
+- Node installed (for assets)
+- Haxe toolchain managed via lix (recommended)
+
+## 1) Create a Phoenix app (baseline)
+
+```bash
+mix phx.new phoenix_chat
+cd phoenix_chat
+mix setup
+mix phx.server
+```
+
+Confirm you can load `http://localhost:4000/` before adding Haxe.
+
+## 2) Add Reflaxe.Elixir (server-side)
+
+Add the dependency to `mix.exs`:
+
+```elixir
+defp deps do
+  [
+    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "<RELEASE_TAG>", only: [:dev, :test], runtime: false},
+    # ...
+  ]
+end
+```
+
+Then scaffold the Haxe integration:
+
+```bash
+mix deps.get
+mix haxe.gen.project --phoenix --basic-modules --force
+```
+
+What you get:
+
+- `build.hxml` + `src_haxe/**` (server Haxe -> Elixir)
+- Mix compiler wiring (`compilers: [:haxe] ++ Mix.compilers()`)
+- A starter LiveView module in Haxe
+
+**Important:** In Phoenix projects, `build.hxml` should set `-D app_name=<YourAppModule>` (e.g. `PhoenixChat`).
+Presence/Router/Endpoint transforms derive `otp_app` and `PubSub` module names from this prefix.
+
+## 3) Add the Phoenix client scaffold (Haxe hooks + esbuild watch safety)
+
+Run:
+
+```bash
+mix haxe.phoenix.scaffold
+```
+
+This patches:
+
+- `assets/js/app.js` to `import "./hx_app.js"` and merge `window.Hooks` into LiveView hooks
+- `config/dev.exs` to add a `haxe_client:` watcher that runs `mix haxe.watch --promote ...`
+- `mix.exs` to ensure `assets.build` / `assets.deploy` compile the client Haxe first
+
+**Fail-fast by default:** if your Phoenix templates are heavily customized and the task can’t find safe insertion
+points, it raises (so you don’t end up with a half-wired project). Use `--warn-only` for best-effort mode:
+
+```bash
+mix haxe.phoenix.scaffold --warn-only
+```
+
+Details: `docs/06-guides/WATCHER_WORKFLOW.md`.
+
+## 4) Implement Presence (server)
+
+Create a Presence module in Haxe:
+
+```haxe
+package phoenix_chat_hx.presence;
+
+import phoenix.PresenceBehavior;
+
+typedef PresenceMeta = {
+  var onlineAt: Float;
+  var name: String;
+}
+
+@:native("PhoenixChatWeb.Presence")
+@:presence
+class ChatPresence implements PresenceBehavior {}
+```
+
+Add it to your supervision tree (Elixir), typically in `lib/phoenix_chat/application.ex`:
+
+```elixir
+children = [
+  {Phoenix.PubSub, name: PhoenixChat.PubSub},
+  PhoenixChatWeb.Presence,
+  PhoenixChatWeb.Endpoint
+]
+```
+
+## 5) Implement Chat LiveView (server)
+
+Write your LiveView in Haxe and compile to `PhoenixChatWeb.AppLive` (or `ChatLive`) using `@:native(...)` + `@:liveview`.
+
+Key behaviors:
+
+- On `mount/3` when connected:
+  - subscribe to `chat:room:<room>`
+  - subscribe to `chat:presence:<room>` (Presence diffs)
+  - `Presence.track` the current user
+  - `Presence.list` to initialize the online list
+- On `handle_event("send_message", ...)`:
+  - append message to assigns
+  - PubSub broadcast to other subscribers (use `broadcast_from` to avoid echo)
+- On `handle_info`:
+  - presence diffs -> refresh `Presence.list(topic)` -> recompute online views
+  - chat message tuples -> append to assigns
+
+See: `examples/12-phoenix-chat/src_haxe/phoenix_chat_hx/live/AppLive.hx`.
+
+## 6) Client hook (auto-scroll)
+
+Implement a tiny LiveView hook in Haxe client code:
+
+- `src_haxe/client/Boot.hx` publishes `window.Hooks.AutoScroll`
+- the LiveView template uses `phx-hook="AutoScroll"` on the messages container
+
+See: `examples/12-phoenix-chat/src_haxe/client/Boot.hx`.
+
+## 7) Run and manually test
+
+Run:
+
+```bash
+mix setup
+mix phx.server
+```
+
+Manual test checklist:
+
+1. Open `http://localhost:4000/` in two separate browser windows (not just two tabs in the same session).
+2. Both windows should show online count `2`, and one row labeled `you` per window.
+3. Send a message from one window.
+4. The other window should receive it immediately (PubSub).
+5. Close one window: the online count should decrement (Presence).
+
+## Troubleshooting
+
+- `Could not resolve "./hx_app.js"` under esbuild watch:
+  - You’re missing the “temp output + promote” workflow. Re-run `mix haxe.phoenix.scaffold` and ensure
+    `build-client.hxml` outputs to `assets/js/_hx_app_tmp.js`.
+- Presence fails to start with an “unknown registry” error:
+  - Ensure `Phoenix.PubSub` is started in the supervision tree.
+  - Ensure your Presence module uses the correct `otp_app` + `pubsub_server` for your Phoenix app.
+  - Ensure `build.hxml` uses `-D app_name=<YourAppModule>` (not a custom suffix).
+
