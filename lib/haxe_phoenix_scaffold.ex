@@ -20,12 +20,16 @@ defmodule HaxePhoenixScaffold do
   coordinating external file watchers (Haxe compiler + esbuild), not code generation.
   """
 
-  @type option :: {:verbose, boolean()} | {:strict, boolean()}
+  @type option ::
+          {:verbose, boolean()}
+          | {:strict, boolean()}
+          | {:reflaxe_elixir_dep_path, binary() | nil}
 
   @spec apply!(binary(), [option()]) :: :ok
   def apply!(project_root, opts \\ []) when is_binary(project_root) do
     verbose = Keyword.get(opts, :verbose, false)
     strict = Keyword.get(opts, :strict, true)
+    reflaxe_elixir_dep_path = Keyword.get(opts, :reflaxe_elixir_dep_path, nil)
 
     assets_js_dir = Path.join([project_root, "assets", "js"])
     config_dir = Path.join(project_root, "config")
@@ -37,6 +41,15 @@ defmodule HaxePhoenixScaffold do
     unless File.dir?(config_dir) do
       raise "expected Phoenix config dir at #{config_dir}"
     end
+
+    ensure_dir!(Path.join(project_root, "haxe_libraries"))
+
+    ensure_haxe_libraries!(
+      project_root,
+      reflaxe_elixir_dep_path,
+      verbose: verbose,
+      strict: strict
+    )
 
     ensure_file!(
       Path.join(project_root, "build-client.hxml"),
@@ -78,6 +91,59 @@ defmodule HaxePhoenixScaffold do
     :ok
   end
 
+  @haxe_lib_stub_signature_prefix "reflaxe_elixir:scaffolded_haxe_library"
+
+  defp ensure_haxe_libraries!(project_root, reflaxe_elixir_dep_path, opts)
+       when is_binary(project_root) and (is_binary(reflaxe_elixir_dep_path) or is_nil(reflaxe_elixir_dep_path)) do
+    verbose = Keyword.get(opts, :verbose, false)
+
+    default_dep_path = Path.join([project_root, "deps", "reflaxe_elixir"])
+
+    # Prefer the dep checkout path if present (portable across machines, works for Hex/git deps,
+    # and also for path deps once Mix has created the `deps/` symlink).
+    dep_path =
+      if File.dir?(default_dep_path) do
+        default_dep_path
+      else
+        reflaxe_elixir_dep_path || default_dep_path
+      end
+
+    relative_dep_path =
+      if is_binary(dep_path) do
+        relative_path(project_root, dep_path)
+      else
+        "deps/reflaxe_elixir"
+      end
+
+    # These .hxml files live in the Phoenix project itself (not in this repo). They are required
+    # so client builds can resolve `-lib genes` and `-lib phoenix_js` without needing global haxelib
+    # state. The files are signature-managed so reruns can update them without clobbering user edits.
+    helder_set_desired = helder_set_hxml()
+    genes_desired = genes_hxml(relative_dep_path)
+    phoenix_js_desired = phoenix_js_hxml(relative_dep_path)
+
+    ensure_file!(
+      Path.join([project_root, "haxe_libraries", "helder.set.hxml"]),
+      helder_set_desired,
+      verbose: verbose,
+      patch: &maybe_patch_scaffolded_file(&1, helder_set_hxml_signature(), helder_set_desired)
+    )
+
+    ensure_file!(
+      Path.join([project_root, "haxe_libraries", "genes.hxml"]),
+      genes_desired,
+      verbose: verbose,
+      patch: &maybe_patch_scaffolded_file(&1, genes_hxml_signature(), genes_desired)
+    )
+
+    ensure_file!(
+      Path.join([project_root, "haxe_libraries", "phoenix_js.hxml"]),
+      phoenix_js_desired,
+      verbose: verbose,
+      patch: &maybe_patch_scaffolded_file(&1, phoenix_js_hxml_signature(), phoenix_js_desired)
+    )
+  end
+
   defp binary_index(haystack, needle) when is_binary(haystack) and is_binary(needle) do
     case :binary.match(haystack, needle) do
       {pos, _len} -> pos
@@ -91,6 +157,29 @@ defmodule HaxePhoenixScaffold do
     else
       IO.warn(message)
       :warned
+    end
+  end
+
+  defp relative_path(from_dir, to_dir) when is_binary(from_dir) and is_binary(to_dir) do
+    from = Path.expand(from_dir)
+    to = Path.expand(to_dir)
+
+    from_parts = Path.split(from)
+    to_parts = Path.split(to)
+
+    common_len =
+      Enum.zip(from_parts, to_parts)
+      |> Enum.take_while(fn {a, b} -> a == b end)
+      |> length()
+
+    from_rest = Enum.drop(from_parts, common_len)
+    to_rest = Enum.drop(to_parts, common_len)
+
+    up = List.duplicate("..", max(length(from_rest), 0))
+
+    case up ++ to_rest do
+      [] -> "."
+      parts -> Path.join(parts)
     end
   end
 
@@ -140,6 +229,15 @@ defmodule HaxePhoenixScaffold do
 
     File.write!(tmp, content)
     File.rename!(tmp, path)
+  end
+
+  defp maybe_patch_scaffolded_file(existing, signature, desired)
+       when is_binary(existing) and is_binary(signature) and is_binary(desired) do
+    if String.contains?(existing, signature) do
+      desired
+    else
+      existing
+    end
   end
 
   defp maybe_patch_build_client_hxml(content) do
@@ -953,6 +1051,67 @@ defmodule HaxePhoenixScaffold do
 
     # Main client entry point
     -main client.Boot
+    """
+  end
+
+  defp helder_set_hxml_signature do
+    "#{@haxe_lib_stub_signature_prefix}:helder.set:v1"
+  end
+
+  defp genes_hxml_signature do
+    "#{@haxe_lib_stub_signature_prefix}:genes:v1"
+  end
+
+  defp phoenix_js_hxml_signature do
+    "#{@haxe_lib_stub_signature_prefix}:phoenix_js:v1"
+  end
+
+  defp helder_set_hxml do
+    """
+    # #{helder_set_hxml_signature()}
+    # helder.set — small Set<T> abstraction used by genes
+    #
+    # This file is scaffold-managed by `mix haxe.phoenix.scaffold`. If you customize it, remove
+    # the signature line above to opt out of future updates.
+
+    # @install: lix --silent download "haxelib:/helder.set#0.3.1" into helder.set/0.3.1/haxelib
+    -cp ${HAXE_LIBCACHE}/helder.set/0.3.1/haxelib/src
+    -D helder.set=0.3.1
+    """
+  end
+
+  defp genes_hxml(reflaxe_elixir_rel_path) when is_binary(reflaxe_elixir_rel_path) do
+    """
+    # #{genes_hxml_signature()}
+    # genes — ES6 JavaScript generator (vendored inside reflaxe_elixir)
+    #
+    # This file is scaffold-managed by `mix haxe.phoenix.scaffold`. If you customize it, remove
+    # the signature line above to opt out of future updates.
+
+    # genes core sources (vendored)
+    -cp ${SCOPE_DIR}/#{reflaxe_elixir_rel_path}/vendor/genes/src
+
+    # genes depends on helder.set for its Set<T> abstraction
+    -lib helder.set
+
+    # Library define for conditional compilation flags
+    -D genes=0.4.14
+    """
+  end
+
+  defp phoenix_js_hxml(reflaxe_elixir_rel_path) when is_binary(reflaxe_elixir_rel_path) do
+    """
+    # #{phoenix_js_hxml_signature()}
+    # phoenix_js — Phoenix Channels + LiveView JS externs (vendored inside reflaxe_elixir)
+    #
+    # This file is scaffold-managed by `mix haxe.phoenix.scaffold`. If you customize it, remove
+    # the signature line above to opt out of future updates.
+
+    -cp ${SCOPE_DIR}/#{reflaxe_elixir_rel_path}/vendor/phoenix_js/src
+    -cp ${SCOPE_DIR}/#{reflaxe_elixir_rel_path}/vendor/phoenix_shared/src
+
+    # Library define for conditional compilation flags
+    -D phoenix_js=0.1.0
     """
   end
 

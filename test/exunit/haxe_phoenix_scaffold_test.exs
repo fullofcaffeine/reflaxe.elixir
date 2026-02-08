@@ -99,6 +99,17 @@ defmodule HaxePhoenixScaffoldTest do
     ]
   """
 
+  @dev_exs_watchers_tailwind """
+  import Config
+
+  config :my_app, MyAppWeb.Endpoint,
+    http: [ip: {127, 0, 0, 1}, port: 4000],
+    watchers: [
+      esbuild: {Esbuild, :install_and_run, [:my_app, ~w(--sourcemap=inline --watch)]},
+      tailwind: {Tailwind, :install_and_run, [:my_app, ~w(--watch)]}
+    ]
+  """
+
   @minimal_mix_exs """
   defmodule MyApp.MixProject do
     use Mix.Project
@@ -183,6 +194,34 @@ defmodule HaxePhoenixScaffoldTest do
   end
   """
 
+  @mix_exs_tailwind_assets """
+  defmodule MyApp.MixProject do
+    use Mix.Project
+
+    def project do
+      [
+        app: :my_app,
+        version: "0.1.0",
+        elixir: "~> 1.14",
+        aliases: aliases(),
+        deps: []
+      ]
+    end
+
+    def application do
+      [extra_applications: [:logger]]
+    end
+
+    defp aliases do
+      [
+        "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
+        "assets.build": ["tailwind my_app", "esbuild my_app"],
+        "assets.deploy": ["tailwind my_app --minify", "esbuild my_app --minify", "phx.digest"]
+      ]
+    end
+  end
+  """
+
   test "scaffolds build-client + stable hx_app wiring and is idempotent" do
     root =
       Path.join(
@@ -203,6 +242,20 @@ defmodule HaxePhoenixScaffoldTest do
 
     assert :ok == HaxePhoenixScaffold.apply!(root)
     assert :ok == HaxePhoenixScaffold.apply!(root)
+
+    genes_hxml = File.read!(Path.join([root, "haxe_libraries", "genes.hxml"]))
+    assert genes_hxml =~ "reflaxe_elixir:scaffolded_haxe_library:genes:v1"
+    assert genes_hxml =~ "-cp ${SCOPE_DIR}/deps/reflaxe_elixir/vendor/genes/src"
+    assert genes_hxml =~ "-lib helder.set"
+
+    phoenix_js_hxml = File.read!(Path.join([root, "haxe_libraries", "phoenix_js.hxml"]))
+    assert phoenix_js_hxml =~ "reflaxe_elixir:scaffolded_haxe_library:phoenix_js:v1"
+    assert phoenix_js_hxml =~ "-cp ${SCOPE_DIR}/deps/reflaxe_elixir/vendor/phoenix_js/src"
+    assert phoenix_js_hxml =~ "-cp ${SCOPE_DIR}/deps/reflaxe_elixir/vendor/phoenix_shared/src"
+
+    helder_set_hxml = File.read!(Path.join([root, "haxe_libraries", "helder.set.hxml"]))
+    assert helder_set_hxml =~ "reflaxe_elixir:scaffolded_haxe_library:helder.set:v1"
+    assert helder_set_hxml =~ "${HAXE_LIBCACHE}/helder.set/0.3.1/haxelib/src"
 
     build_client = File.read!(Path.join(root, "build-client.hxml"))
     assert build_client =~ "assets/js/_hx_app_tmp.js"
@@ -239,6 +292,32 @@ defmodule HaxePhoenixScaffoldTest do
     gitignore = File.read!(Path.join(root, ".gitignore"))
     assert gitignore =~ "assets/js/_hx_app_tmp.js"
     assert gitignore =~ "assets/js/hx_app.js"
+  end
+
+  test "does not clobber custom haxe_libraries stubs without signature" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_custom_libs_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+    File.mkdir_p!(Path.join(root, "haxe_libraries"))
+
+    File.write!(Path.join(assets_js, "app.js"), @minimal_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @minimal_dev_exs)
+    File.write!(Path.join(root, "mix.exs"), @minimal_mix_exs)
+    File.write!(Path.join(root, ".gitignore"), "")
+
+    custom_genes = "# custom genes.hxml\n-cp vendor/genes/src\n"
+    File.write!(Path.join([root, "haxe_libraries", "genes.hxml"]), custom_genes)
+
+    assert :ok == HaxePhoenixScaffold.apply!(root)
+    assert File.read!(Path.join([root, "haxe_libraries", "genes.hxml"])) == custom_genes
   end
 
   test "patches Phoenix 1.7-ish app.js variants without relying on Hooks variable shape" do
@@ -393,6 +472,111 @@ defmodule HaxePhoenixScaffoldTest do
     mix_exs = File.read!(Path.join(root, "mix.exs"))
     assert mix_exs =~ "BEGIN reflaxe_elixir assets.build_task"
     assert mix_exs =~ "BEGIN reflaxe_elixir assets.deploy_task"
+  end
+
+  test "patches dev.exs with multiple watchers (tailwind + esbuild)" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_multi_watchers_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+
+    File.write!(Path.join(assets_js, "app.js"), @phoenix_17ish_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @dev_exs_watchers_tailwind)
+    File.write!(Path.join(root, "mix.exs"), @minimal_mix_exs)
+    File.write!(Path.join(root, ".gitignore"), "")
+
+    assert :ok == HaxePhoenixScaffold.apply!(root)
+
+    dev_exs = File.read!(Path.join(config_dir, "dev.exs"))
+    assert dev_exs =~ "BEGIN reflaxe_elixir haxe_client"
+    assert count(dev_exs, "BEGIN reflaxe_elixir haxe_client") == 1
+  end
+
+  test "patches mix.exs assets aliases when tailwind is present" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_mix_tailwind_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+
+    File.write!(Path.join(assets_js, "app.js"), @minimal_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @minimal_dev_exs)
+    File.write!(Path.join(root, "mix.exs"), @mix_exs_tailwind_assets)
+    File.write!(Path.join(root, ".gitignore"), "")
+
+    assert :ok == HaxePhoenixScaffold.apply!(root)
+
+    mix_exs = File.read!(Path.join(root, "mix.exs"))
+    assert mix_exs =~ "BEGIN reflaxe_elixir assets.build_task"
+    assert mix_exs =~ "BEGIN reflaxe_elixir assets.deploy_task"
+  end
+
+  test "does not clobber a user-custom hx_app.js" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_custom_hx_app_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+
+    File.write!(Path.join(assets_js, "app.js"), @minimal_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @minimal_dev_exs)
+    File.write!(Path.join(root, "mix.exs"), @minimal_mix_exs)
+    File.write!(Path.join(root, ".gitignore"), "")
+
+    custom = "// user custom hx_app\nexport const hello = 1;\n"
+    File.write!(Path.join(assets_js, "hx_app.js"), custom)
+
+    assert :ok == HaxePhoenixScaffold.apply!(root)
+    assert File.read!(Path.join(assets_js, "hx_app.js")) == custom
+  end
+
+  test "migrates build-client.hxml -js target from stable path to temp path" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_build_client_migrate_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+
+    File.write!(Path.join(assets_js, "app.js"), @minimal_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @minimal_dev_exs)
+    File.write!(Path.join(root, "mix.exs"), @minimal_mix_exs)
+    File.write!(Path.join(root, ".gitignore"), "")
+
+    File.write!(
+      Path.join(root, "build-client.hxml"),
+      "-lib reflaxe.elixir\n-cp src_haxe\n-js assets/js/hx_app.js\n--main client.Boot\n"
+    )
+
+    assert :ok == HaxePhoenixScaffold.apply!(root)
+
+    build_client = File.read!(Path.join(root, "build-client.hxml"))
+    assert build_client =~ "-js assets/js/_hx_app_tmp.js"
+    refute build_client =~ "-js assets/js/hx_app.js\n"
   end
 
   test "strict mode fails fast; warn-only mode skips with warning" do
