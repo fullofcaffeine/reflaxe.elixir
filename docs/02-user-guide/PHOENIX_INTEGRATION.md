@@ -103,6 +103,11 @@ If you have an existing Phoenix app, start by generating modules into a separate
 - Call from Elixir (`MyAppHx.SomeModule.some_fun(...)`)
 - Later, when ready, you can `@:native` into `MyApp.*` / `MyAppWeb.*` and switch routing/delegation
 
+Important: `-D app_name` is independent of this isolation pattern.
+
+- Use `-D app_name=MyApp` (your Phoenix app module) so Phoenix/Ecto integrations can derive framework modules like `MyApp.Repo`, `MyAppWeb.Endpoint`, and Presence `otp_app`/PubSub correctly.
+- Use the Haxe package name (e.g. `my_app_hx.*`) + `-D elixir_output=lib/my_app_hx` to control the generated “Haxe namespace” (`MyAppHx.*`).
+
 This avoids “big bang” rewrites and keeps diffs easy to review.
 
 ## Tooling (Mix)

@@ -4,6 +4,9 @@ This guide shows how to integrate Reflaxe.Elixir into an **existing** Phoenix ap
 
 The core idea: **compile Haxe modules into their own Elixir namespace** first (`MyAppHx.*`), call them from Elixir, and only later replace/rename modules when you’re ready.
 
+Important: this “Haxe namespace” is controlled by your Haxe packages + `-D elixir_output` (for example `src_haxe/my_app_hx/*` → `lib/my_app_hx/*` → `MyAppHx.*`).
+`-D app_name` should still match your Phoenix app module (for example `-D app_name=MyApp`) so Phoenix/Ecto integrations can derive framework modules correctly.
+
 ## What You Need
 
 - Elixir 1.14+
