@@ -17,6 +17,11 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
     * `--basic-modules` - Include basic utility modules (StringUtils, MathHelper)
     * `--phoenix` - Add Phoenix-specific configuration and examples (LiveView module + client JS scaffold)
+      - If the current project does not look like a Phoenix app (missing `assets/js/app.js` or `config/dev.exs`),
+        the task scaffolds the server-side pieces but skips the client JS scaffold and prints the next step:
+        `mix haxe.phoenix.scaffold`.
+      - `mix haxe.phoenix.scaffold` is fail-fast by default (strict marker-block patching); use `--warn-only` if you
+        want best-effort patching under heavy template customization.
     * `--skip-examples` - Don't generate example Haxe files
     * `--skip-npm` - Don't create package.json or install npm dependencies
     * `--haxe-dir` - Directory for Haxe source files (default: "src_haxe")

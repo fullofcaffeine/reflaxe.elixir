@@ -65,6 +65,34 @@ mix haxe.phoenix.scaffold
 
 If you use this option, you can skip to **Step 5**.
 
+#### Which Generator Should I Use?
+
+There are two “scaffolding” entrypoints because they solve two different user stories:
+
+- **Existing Elixir/Phoenix app (in-place)**: Use Mix tasks.
+  - `mix haxe.gen.project` adds server-side plumbing (`build.hxml`, `src_haxe/**`, `mix.exs` compiler config).
+  - `mix haxe.phoenix.scaffold` adds client-side plumbing for LiveView hooks (Genes + esbuild watch safety).
+- **Greenfield app (create a new project folder)**: Use the Haxe project generator (`haxe --run Run create ...`).
+  - It shells out to the canonical Phoenix Mix generator (`mix phx.new`) to create a real Phoenix app,
+    then layers the same Haxe integration on top.
+
+Both flows converge on the same Phoenix client scaffolding behavior: `mix haxe.phoenix.scaffold`.
+
+#### Fail-Fast vs Warn-Only
+
+`mix haxe.phoenix.scaffold` is **strict by default**:
+
+- If it cannot find the expected Phoenix shapes (for example a `watchers:` list in `config/dev.exs`, or a recognizable `LiveSocket` hooks shape in `assets/js/app.js`), it raises.
+- This avoids silently generating “half wired” projects that only fail later in confusing ways.
+
+If you have a heavily customized Phoenix template and want the task to do a best-effort patch, use:
+
+```bash
+mix haxe.phoenix.scaffold --warn-only
+```
+
+This emits loud warnings and skips patches it cannot apply safely.
+
 ### Option B: manual setup
 
 Create:
