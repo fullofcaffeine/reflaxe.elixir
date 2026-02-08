@@ -1,3 +1,15 @@
+# [1.15.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.14.1...v1.15.0) (2026-02-08)
+
+
+### Bug Fixes
+
+* **generator:** align app_name with Phoenix module ([470eac7](https://github.com/fullofcaffeine/reflaxe.elixir/commit/470eac735018e29bd289b5da0df56bc2d2aa0ba2))
+
+
+### Features
+
+* **scaffold:** harden Phoenix client integration ([2331bab](https://github.com/fullofcaffeine/reflaxe.elixir/commit/2331bab7de532cfd89adbb9121035020a24eea6d))
+
 ## [1.14.1](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.14.0...v1.14.1) (2026-02-04)
 
 
