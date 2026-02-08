@@ -56,7 +56,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     app_name = get_app_name()
     module_name = get_module_name()
     haxe_namespace = "#{app_name}_hx"
-    elixir_namespace = "#{module_name}Hx"
+    elixir_namespace = module_name
     default_output_dir = Path.join(["lib", haxe_namespace])
 
     project_config = %{
@@ -234,7 +234,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     # Elixir is not a UTF-16 platform
     -D no-utf16
 
-    # Application module prefix (prevents collisions with Elixir built-ins like `Application`)
+    # Application module prefix
     -D app_name=#{config.elixir_namespace}
 
     # Enable dead code elimination to remove unused functions and reduce output noise

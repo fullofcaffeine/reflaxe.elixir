@@ -49,7 +49,7 @@ class TestProjectGeneratorTemplates {
         assertContains(buildHxml, "-D elixir_output=lib/demo_hx", "build.hxml uses an isolated elixir_output dir");
         assertContains(buildHxml, "-D reflaxe_runtime", "build.hxml includes reflaxe_runtime define");
         assertContains(buildHxml, "-D no-utf16", "build.hxml includes no-utf16 define");
-        assertContains(buildHxml, "-D app_name=DemoHx", "build.hxml includes app_name define");
+        assertContains(buildHxml, "-D app_name=Demo", "build.hxml includes app_name define");
         assertContains(buildHxml, "-dce full", "build.hxml enables dead code elimination");
         assertContains(buildHxml, "--main demo_hx.Main", "build.hxml sets a stable --main");
         assertNotContains(buildHxml, "CompilerInit.Start()", "build.hxml does not duplicate the bootstrap macro");
@@ -86,7 +86,7 @@ class TestProjectGeneratorTemplates {
         var buildHxml = File.getContent(Path.join([runDir, "build.hxml"]));
         assertContains(buildHxml, "-lib reflaxe.elixir", "mix task build.hxml includes reflaxe.elixir lib");
         assertContains(buildHxml, "-D elixir_output=lib/demo_hx", "mix task build.hxml defaults to isolated output dir");
-        assertContains(buildHxml, "-D app_name=DemoHx", "mix task build.hxml uses an isolated app_name prefix");
+        assertContains(buildHxml, "-D app_name=Demo", "mix task build.hxml uses an app_name prefix");
         assertContains(buildHxml, "-D no-utf16", "mix task build.hxml includes no-utf16");
         assertContains(buildHxml, "-D reflaxe_runtime", "mix task build.hxml includes reflaxe_runtime");
         assertContains(buildHxml, "-dce full", "mix task build.hxml enables dead code elimination");

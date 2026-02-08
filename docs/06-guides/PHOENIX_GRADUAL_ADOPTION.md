@@ -115,8 +115,8 @@ Minimal `build.hxml` (server-side Haxe→Elixir):
 # Keep generated Elixir isolated during gradual adoption
 -D elixir_output=lib/my_app_hx
 
-# Application module prefix (prevents collisions with Elixir built-ins like `Application`)
--D app_name=MyAppHx
+# Application module prefix
+-D app_name=MyApp
 -dce full
 
 # Entrypoint Haxe class (package.ClassName). Adjust to your app:
