@@ -216,6 +216,27 @@ Once installed, add to your `build.hxml`:
 
 For complete compiler configuration guidance, see [docs/01-getting-started/compiler-flags-guide.md](docs/01-getting-started/compiler-flags-guide.md).
 
+### Codegen Philosophy (One Pipeline + Feature Flags)
+
+Reflaxe.Elixir has a single semantics-preserving compilation pipeline that aims to be **Haxe-friendly by default**
+(you can write straightforward Haxe, including loops/rebinding) while lowering to **idiomatic Elixir shapes**
+where it is semantics-safe.
+
+Some codegen strategies are behind **feature flags** so you can opt in/out during rollouts or when debugging a
+regression:
+
+- `docs/04-api-reference/FEATURE_FLAGS.md`
+- `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md`
+
+### Interop: “Elixir-Like” Haxe via Typed Externs (Optional)
+
+You can keep most of your code “portable stdlib-first”, and still use typed extern surfaces for BEAM/Phoenix/Ecto
+integration when you want Elixir-native APIs and shapes (structs/atoms/tagged tuples):
+
+- `docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md`
+- `docs/02-user-guide/ESCAPE_HATCHES.md`
+- Opt-in discipline for app code: `docs/06-guides/STRICT_MODE.md`
+
 ## Quick Start
 
 ### Start Here (New to Haxe and/or Phoenix?)

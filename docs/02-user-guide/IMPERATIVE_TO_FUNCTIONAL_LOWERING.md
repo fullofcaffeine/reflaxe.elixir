@@ -149,6 +149,7 @@ Rules of thumb:
    - `docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md`
 2) Check known limitations:
    - `docs/06-guides/KNOWN_LIMITATIONS.md`
-3) Reduce to a minimal repro and add a snapshot test (or negative snapshot) when appropriate:
+3) If you suspect a codegen-shape regression, toggle the relevant feature flag to narrow scope:
+   - `docs/04-api-reference/FEATURE_FLAGS.md`
+4) Reduce to a minimal repro and add a snapshot test (or negative snapshot) when appropriate:
    - `docs/03-compiler-development/TESTING_INFRASTRUCTURE.md`
-
