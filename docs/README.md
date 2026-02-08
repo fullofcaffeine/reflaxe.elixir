@@ -48,6 +48,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Annotations](04-api-reference/ANNOTATIONS.md) - @:router, @:liveview, @:schema reference
 - [Standard Library](04-api-reference/STANDARD_LIBRARY_HANDLING.md) - Stdlib strategy + guidance
 - [Stdlib Support Matrix](04-api-reference/STDLIB_SUPPORT_MATRIX.md) - What’s overridden vs upstream vs missing
+- [Feature Flags](04-api-reference/FEATURE_FLAGS.md) - User-facing codegen toggles (gradual rollout / debugging)
 - [Haxe Macro APIs](04-api-reference/HAXE_MACRO_APIS.md) - Correct macro API usage
 - [Source Mapping](04-api-reference/SOURCE_MAPPING.md) - Experimental source map design/status
 - [Router DSL](04-api-reference/ROUTER_DSL.md) - Phoenix router DSL reference
