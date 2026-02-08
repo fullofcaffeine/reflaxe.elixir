@@ -1023,6 +1023,11 @@ cd examples/todo-app && mix dev          # setup + start with watchers
 # It destroys idiomatic Elixir patterns. Use -dce full instead.
 ```
 
+## 🎨 Frontend/UI Work (Skill Requirement)
+
+When implementing or redesigning anything related to **frontend/UI/UX** (CSS, layout, components, templates, client JS/TS, LiveView/HXX markup),
+use the `$frontend-design` skill for that work so the output is intentional and production-grade.
+
 ### Issue Tracking with bd (Beads)
 
 This project uses **bd** (Beads) for dependency-aware issue tracking. Issues are stored in `.beads/beads.db` with prefix `haxe.elixir`.

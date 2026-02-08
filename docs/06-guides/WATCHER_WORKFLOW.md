@@ -44,9 +44,10 @@ This task patches `config/dev.exs`, `mix.exs`, and `assets/js/app.js` using expl
 - `assets/js/_hx_app_tmp.js` is the Genes entry output path (temp).
   - Haxe deletes this file at the start of each rebuild, so it is not safe to import directly from esbuild watch.
 - `assets/js/hx_app.js` is the stable import path.
-  - The scaffold writes a committed stub file (signature: `reflaxe_elixir:hx_app_stub:v1`).
+  - The scaffold writes a stub file (signature: `reflaxe_elixir:hx_app_stub:v1`) so esbuild has a file to import on first boot.
   - The watcher promotes `_hx_app_tmp.js -> hx_app.js` after successful compiles so esbuild always has a file to import.
   - The scaffold only overwrites `hx_app.js` if it detects its own stub signature; user customizations are not clobbered.
+  - The scaffold also adds `.gitignore` entries for both the temp output and the promoted stable output to keep repo diffs clean.
 
 ## Recommended Workflow
 

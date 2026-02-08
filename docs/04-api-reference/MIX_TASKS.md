@@ -274,6 +274,7 @@ Use `--warn-only` to keep going (it emits a warning and skips that patch).
 - `assets/js/app.js`: imports `./hx_app.js` and merges `window.Hooks` into Phoenix hooks.
 - `config/dev.exs`: adds a `haxe_client:` watcher under `watchers:` that runs `mix haxe.watch --promote ...`.
 - `mix.exs`: adds a `"haxe.compile.client"` alias and ensures `assets.build`/`assets.deploy` run it first.
+- `.gitignore`: ignores the temp output and promoted stable output (`assets/js/_hx_app_tmp.js*`, `assets/js/hx_app.js*`).
 
 ```bash
 mix haxe.phoenix.scaffold

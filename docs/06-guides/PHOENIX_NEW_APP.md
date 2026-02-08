@@ -44,6 +44,7 @@ What you get from the generator (Phoenix types):
   - A stable import path `assets/js/hx_app.js` (published via promotion after successful compiles)
   - `assets/js/app.js` imports `./hx_app.js` and merges hooks from `window.Hooks`
   - A dev watcher that runs `mix haxe.watch --hxml build-client.hxml --promote ...`
+  - `.gitignore` entries for `assets/js/_hx_app_tmp.js*` and `assets/js/hx_app.js*` (client build artifacts)
 
 The temp output + promotion pattern is important because Haxe deletes its `-js` output at the start of compilation; in
 watch mode that can race esbuild and cause transient `Could not resolve "./hx_app.js"` errors unless the imported path

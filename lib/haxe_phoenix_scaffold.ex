@@ -190,6 +190,10 @@ defmodule HaxePhoenixScaffold do
         updated
 
       :missing ->
+        # If the import already exists (but isn't marker-managed), don't duplicate it.
+        if String.contains?(content, Enum.at(desired_lines, 0)) do
+          content
+        else
         lines = String.split(content, "\n", trim: false)
 
         last_import_index =
@@ -216,6 +220,7 @@ defmodule HaxePhoenixScaffold do
           )
 
         List.insert_at(lines, insert_at, Enum.join(block, "\n")) |> Enum.join("\n")
+        end
 
       :error ->
         warn_or_raise(
@@ -237,6 +242,7 @@ defmodule HaxePhoenixScaffold do
     end_token_property = "END reflaxe_elixir hooks_property"
 
     desired_after_decl = ["Object.assign(Hooks, window.Hooks || {});"]
+    desired_property_line = "hooks: window.Hooks || {},"
 
     # 1) If a hooks property block exists, keep it and ensure it includes `window.Hooks`.
     case replace_marker_block_lines_with(
@@ -311,12 +317,18 @@ defmodule HaxePhoenixScaffold do
                 end)
 
               if is_nil(hooks_prop_index) do
-                warn_or_raise(
-                  "failed to patch assets/js/app.js: could not find a `Hooks` declaration or a `hooks:` LiveSocket option (expected Phoenix LiveView app.js shape)",
-                  strict
-                )
+                case upsert_live_socket_hooks_property(lines, begin_token_property, end_token_property, desired_property_line) do
+                  {:ok, updated_lines} ->
+                    Enum.join(updated_lines, "\n")
 
-                content
+                  :error ->
+                    warn_or_raise(
+                      "failed to patch assets/js/app.js: could not find a `Hooks` declaration, a `hooks:` LiveSocket option, or a recognizable LiveSocket options object",
+                      strict
+                    )
+
+                    content
+                end
               else
                 original = Enum.at(lines, hooks_prop_index)
                 indent = leading_indent(original)
@@ -358,6 +370,70 @@ defmodule HaxePhoenixScaffold do
         )
 
         content
+    end
+  end
+
+  defp upsert_live_socket_hooks_property(lines, begin_token, end_token, desired_line)
+       when is_list(lines) and is_binary(begin_token) and is_binary(end_token) and is_binary(desired_line) do
+    live_socket_index =
+      lines
+      |> Enum.with_index()
+      |> Enum.find_value(fn {line, idx} ->
+        if String.contains?(line, "new LiveSocket"), do: idx, else: nil
+      end)
+
+    if is_nil(live_socket_index) do
+      :error
+    else
+      live_socket_line = Enum.at(lines, live_socket_index)
+
+      cond do
+        # Inline empty options object: `new LiveSocket(..., {})`
+        Regex.match?(~r/new LiveSocket.*\{\s*\}/, live_socket_line) ->
+          indent =
+            leading_indent(live_socket_line)
+            |> Kernel.<>("  ")
+
+          block =
+            marker_block_lines(begin_token, end_token, [desired_line],
+              indent: indent,
+              comment_prefix: "//"
+            )
+
+          replacement =
+            live_socket_line
+            |> String.replace("{", "{\n" <> Enum.join(block, "\n") <> "\n", global: false)
+
+          updated_lines =
+            lines
+            |> List.replace_at(live_socket_index, replacement)
+            |> Enum.join("\n")
+            |> String.split("\n", trim: false)
+
+          {:ok, updated_lines}
+
+        # Multiline options object starting on this line (common in Phoenix templates).
+        String.contains?(live_socket_line, "{") ->
+          indent =
+            lines
+            |> Enum.at(live_socket_index + 1, "  ")
+            |> leading_indent()
+            |> case do
+              "" -> "  "
+              i -> i
+            end
+
+          block =
+            marker_block_lines(begin_token, end_token, [desired_line],
+              indent: indent,
+              comment_prefix: "//"
+            )
+
+          {:ok, List.insert_at(lines, live_socket_index + 1, Enum.join(block, "\n"))}
+
+        true ->
+          :error
+      end
     end
   end
 
@@ -468,6 +544,12 @@ defmodule HaxePhoenixScaffold do
       "],"
     ]
 
+    # If the entry already exists (but isn't marker-managed), don't duplicate it.
+    if String.contains?(content, "haxe_client: [") and
+         not String.contains?(content, begin_token) and
+         not String.contains?(content, end_token) do
+      content
+    else
     case replace_marker_block_lines(content, begin_token, end_token, desired_lines) do
       {:ok, updated} ->
         updated
@@ -515,6 +597,7 @@ defmodule HaxePhoenixScaffold do
 
         content
     end
+    end
   end
 
   defp patch_mix_exs(content, opts) do
@@ -538,6 +621,12 @@ defmodule HaxePhoenixScaffold do
       "],"
     ]
 
+    # If the alias already exists (but isn't marker-managed), don't duplicate it.
+    if String.contains?(content, "\"haxe.compile.client\":") and
+         not String.contains?(content, begin_token) and
+         not String.contains?(content, end_token) do
+      content
+    else
     case replace_marker_block_lines(content, begin_token, end_token, desired_lines) do
       {:ok, updated} ->
         updated
@@ -598,6 +687,7 @@ defmodule HaxePhoenixScaffold do
 
         content
     end
+    end
   end
 
   defp upsert_assets_alias_task_marker(content, alias_name, opts) do
@@ -607,6 +697,18 @@ defmodule HaxePhoenixScaffold do
     end_token = "END reflaxe_elixir #{alias_name}_task"
     desired_lines = ["\"haxe.compile.client\","]
 
+    # If the task is already present (but isn't marker-managed), don't duplicate it.
+    already_present =
+      Regex.match?(
+        ~r/"#{Regex.escape(alias_name)}"\s*:\s*\[[^\]]*"haxe\.compile\.client"/s,
+        content
+      )
+
+    if already_present and
+         not String.contains?(content, begin_token) and
+         not String.contains?(content, end_token) do
+      content
+    else
     case replace_marker_block_lines(content, begin_token, end_token, desired_lines) do
       {:ok, updated} ->
         updated
@@ -655,19 +757,34 @@ defmodule HaxePhoenixScaffold do
 
         content
     end
+    end
   end
 
   defp patch_gitignore(content) do
-    if String.contains?(content, "assets/js/_hx_app_tmp.js") do
+    entries = [
+      {"# Reflaxe.Elixir (Haxe client JS intermediate output)", "assets/js/_hx_app_tmp.js"},
+      {nil, "assets/js/_hx_app_tmp.js.map"},
+      {"# Reflaxe.Elixir (Haxe client JS stable import target; generated via promotion)", "assets/js/hx_app.js"},
+      {nil, "assets/js/hx_app.js.map"}
+    ]
+
+    missing =
+      entries
+      |> Enum.reject(fn {_comment, path} -> String.contains?(content, path) end)
+
+    if missing == [] do
       content
     else
-      content <>
-        """
+      lines =
+        missing
+        |> Enum.flat_map(fn {comment, path} ->
+          case comment do
+            nil -> [path]
+            _ -> [comment, path]
+          end
+        end)
 
-        # Reflaxe.Elixir (Haxe client JS intermediate output)
-        assets/js/_hx_app_tmp.js
-        assets/js/_hx_app_tmp.js.map
-        """
+      content <> "\n\n" <> Enum.join(lines, "\n") <> "\n"
     end
   end
 

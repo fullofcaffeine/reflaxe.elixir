@@ -353,7 +353,7 @@ defp deps do
   ]
 end
 
-> Note: the `mix haxe.gen.*` generators are Haxe-first scaffolds (they emit **Haxe only**, not Elixir). Treat them as starting points and compare against `examples/todo-app/` for current Phoenix patterns. See `docs/04-api-reference/MIX_TASKS.md` for details.
+> Note: the `mix haxe.gen.*` generators are Haxe-first scaffolds (they emit **Haxe only**, not Elixir). For Phoenix client wiring (Genes + esbuild watch safety), use `mix haxe.phoenix.scaffold` and see `docs/06-guides/WATCHER_WORKFLOW.md` (marker-block + fail-fast behavior). Full task reference: `docs/04-api-reference/MIX_TASKS.md`.
 
 # Compile Haxe as part of your build
 mix compile.haxe
