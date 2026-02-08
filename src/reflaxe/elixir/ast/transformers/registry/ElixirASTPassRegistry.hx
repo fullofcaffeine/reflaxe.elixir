@@ -260,20 +260,29 @@ class ElixirASTPassRegistry {
             pass: reflaxe.elixir.ast.ElixirASTTransformer.alias_removeRedundantNilInitPass
         });
 
-        // Lower instance-field locals (field = ...) to struct/map updates (struct = %{struct | field: ...}).
-        // This prevents undefined-variable errors and preserves mutation semantics for class instance fields.
-        passes.push({
-            name: "InstanceFieldLowering",
-            description: "Rewrite instance field locals to struct/map updates",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.InstanceFieldLoweringTransforms.pass
-        });
+	        // Lower instance-field locals (field = ...) to struct/map updates (struct = %{struct | field: ...}).
+	        // This prevents undefined-variable errors and preserves mutation semantics for class instance fields.
+	        passes.push({
+	            name: "InstanceFieldLowering",
+	            description: "Rewrite instance field locals to struct/map updates",
+	            enabled: true,
+	            pass: reflaxe.elixir.ast.transformers.InstanceFieldLoweringTransforms.pass
+	        });
 
-        // Hoist state updates from statement-position control-flow (if/case/cond) so
-        // rebinding survives Elixir branch scoping (and avoids WAE shadow warnings).
-        //
-        // IMPORTANT: This must run after InstanceFieldLowering so instance field writes
-        // (lowered to `struct = %{struct | ...}`) are visible to the hoister.
+	        // Rebind statement-position list concat updates (e.g., from Array.push lowering)
+	        // so state updates are not silently dropped.
+	        passes.push({
+	            name: "ListConcatUpdateRebind",
+	            description: "Rewrite statement-position list ++/Enum.concat updates to explicit rebindings",
+	            enabled: true,
+	            pass: reflaxe.elixir.ast.transformers.ListConcatUpdateRebindTransforms.pass
+	        });
+
+	        // Hoist state updates from statement-position control-flow (if/case/cond) so
+	        // rebinding survives Elixir branch scoping (and avoids WAE shadow warnings).
+	        //
+	        // IMPORTANT: This must run after InstanceFieldLowering so instance field writes
+	        // (lowered to `struct = %{struct | ...}`) are visible to the hoister.
         passes.push({
             name: "ControlFlowStateHoist",
             description: "Hoist stateful rebinds from if/case/cond statements into outer matches",
@@ -478,6 +487,15 @@ class ElixirASTPassRegistry {
             description: "Extract assignments from binary operations and other expression contexts",
             enabled: true,
             pass: reflaxe.elixir.ast.transformers.AssignmentExtractionTransforms.assignmentExtractionPass
+        });
+
+        // ReduceWhile* passes need imperative list updates in explicit assignment form so
+        // accumulator threading can see and preserve them.
+        passes.push({
+            name: "ListPushRewrite_Early",
+            description: "Early rewrite of list.push(v) to list = Enum.concat(list, [v]) (pre-reduce_while)",
+            enabled: true,
+            pass: reflaxe.elixir.ast.transformers.BinderTransforms.listPushRewritePass
         });
 
         // (DiscriminantRewrite already ran before alias cleanup)

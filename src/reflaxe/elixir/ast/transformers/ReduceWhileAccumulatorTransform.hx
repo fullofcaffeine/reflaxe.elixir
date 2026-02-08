@@ -2,6 +2,7 @@ package reflaxe.elixir.ast.transformers;
 
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTHelpers.*;
+import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 
 using reflaxe.elixir.ast.ElixirASTTransformer;
@@ -121,8 +122,13 @@ class ReduceWhileAccumulatorTransform {
         #if debug_reduce_while_transform
         #end
         
+        // Map outer accumulator locals (from the initial accumulator expression) to the reducer's
+        // accumulator binder vars (often prefixed like `acc_names`). This lets us treat assignments
+        // to the outer locals as accumulator updates instead of unrelated shadowed locals.
+        var outerToAccAliases = buildOuterToAccumulatorAliases(initialAcc, accVarNames);
+
         // Transform the body to handle variable mutations properly
-        var transformedBody = transformClauseBody(clause.body, accVarNames);
+        var transformedBody = transformClauseBody(clause.body, accVarNames, outerToAccAliases);
         
         return {
             args: clause.args,
@@ -160,35 +166,86 @@ class ReduceWhileAccumulatorTransform {
     /**
      * Transform the clause body to properly handle accumulator updates
      */
-    static function transformClauseBody(body: ElixirAST, accVarNames: Array<String>): ElixirAST {
+    static function transformClauseBody(body: ElixirAST, accVarNames: Array<String>, outerToAccAliases: Map<String, String>): ElixirAST {
         // Deep transform to handle nested structures
-        return transformBodyRecursive(body, accVarNames, new Map<String, ElixirAST>(), false);
+        return transformBodyRecursive(body, accVarNames, new Map<String, ElixirAST>(), false, outerToAccAliases);
     }
 
-    static function transformBodyRecursive(body: ElixirAST, accVarNames: Array<String>, accUpdates: Map<String, ElixirAST>, preserveAssignments: Bool = false): ElixirAST {
+    static function transformBodyRecursive(body: ElixirAST, accVarNames: Array<String>, accUpdates: Map<String, ElixirAST>, preserveAssignments: Bool = false, outerToAccAliases: Map<String, String> = null): ElixirAST {
         if (body == null) return null;
+
+        function resolveAccumulatorName(varName: String): Null<String> {
+            if (varName == null) return null;
+            if (accVarNames.indexOf(varName) >= 0) return varName;
+            if (outerToAccAliases != null && outerToAccAliases.exists(varName)) {
+                var mapped = outerToAccAliases.get(varName);
+                if (mapped != null && accVarNames.indexOf(mapped) >= 0) return mapped;
+            }
+            return null;
+        }
+
+        function rewriteAliasedVarRefs(expr: ElixirAST): ElixirAST {
+            if (expr == null || outerToAccAliases == null) return expr;
+            return ElixirASTTransformer.transformAST(expr, function(n: ElixirAST): ElixirAST {
+                return switch (n.def) {
+                    case EVar(name) if (outerToAccAliases.exists(name)):
+                        var mapped = outerToAccAliases.get(name);
+                        mapped != null ? makeAST(EVar(mapped)) : n;
+                    default:
+                        n;
+                }
+            });
+        }
+
+        // Convert a branch body into an expression that yields the updated accumulator variable,
+        // while preserving side effects and without leaving rebinding assignments behind.
+        inline function branchToAccumulatorValue(branchBody: ElixirAST, accVarName: String): ElixirAST {
+            var branchUpdates = new Map<String, ElixirAST>();
+            var transformedBranch = transformBodyRecursive(branchBody, accVarNames, branchUpdates, false, outerToAccAliases);
+            var updatedValue = branchUpdates.exists(accVarName) ? branchUpdates.get(accVarName) : makeAST(EVar(accVarName));
+            return switch (transformedBranch.def) {
+                case EBlock(stmts):
+                    makeAST(EBlock(stmts.concat([updatedValue])));
+                case EDo(stmts2):
+                    makeAST(EBlock(stmts2.concat([updatedValue])));
+                case ENil:
+                    updatedValue;
+                default:
+                    makeAST(EBlock([transformedBranch, updatedValue]));
+            };
+        }
         
         switch(body.def) {
             case ETry(tryBody, rescueClauses, catchClauses, afterBlock, elseBlock):
                 // Preserve try/catch structure while still rewriting accumulator assignments
                 // inside the try body (common for break/continue lowering).
-                var transformedTryBody = transformBodyRecursive(tryBody, accVarNames, accUpdates.copy(), preserveAssignments);
+                //
+                // IMPORTANT:
+                // Reducer bodies lowered from `for` loops are typically wrapped in `try/catch` to
+                // support break/continue semantics. In that shape, we must preserve explicit
+                // accumulator rebindings inside the try body; relying on "update substitution" into
+                // the final `{:cont/:halt, acc}` tuple is brittle and can erase the reducer body when
+                // nested control-flow is involved.
+                //
+                // So inside ETry we always preserve assignments, and allow the final return tuple to
+                // simply reference the accumulator vars (which now hold the updated values).
+                var transformedTryBody = transformBodyRecursive(tryBody, accVarNames, accUpdates.copy(), true, outerToAccAliases);
                 var transformedRescue = rescueClauses == null ? [] : [
                     for (r in rescueClauses) {
                         pattern: r.pattern,
                         varName: r.varName,
-                        body: transformBodyRecursive(r.body, accVarNames, accUpdates.copy(), true)
+                        body: transformBodyRecursive(r.body, accVarNames, accUpdates.copy(), true, outerToAccAliases)
                     }
                 ];
                 var transformedCatch = catchClauses == null ? [] : [
                     for (c in catchClauses) {
                         kind: c.kind,
                         pattern: c.pattern,
-                        body: transformBodyRecursive(c.body, accVarNames, accUpdates.copy(), true)
+                        body: transformBodyRecursive(c.body, accVarNames, accUpdates.copy(), true, outerToAccAliases)
                     }
                 ];
-                var transformedAfter = afterBlock != null ? transformBodyRecursive(afterBlock, accVarNames, accUpdates.copy(), true) : null;
-                var transformedElse = elseBlock != null ? transformBodyRecursive(elseBlock, accVarNames, accUpdates.copy(), true) : null;
+                var transformedAfter = afterBlock != null ? transformBodyRecursive(afterBlock, accVarNames, accUpdates.copy(), true, outerToAccAliases) : null;
+                var transformedElse = elseBlock != null ? transformBodyRecursive(elseBlock, accVarNames, accUpdates.copy(), true, outerToAccAliases) : null;
                 return makeAST(ETry(transformedTryBody, transformedRescue, transformedCatch, transformedAfter, transformedElse));
 
             case EIf(condition, thenBranch, elseBranch):
@@ -208,43 +265,37 @@ class ReduceWhileAccumulatorTransform {
                     // Preserve it and recursively transform branches WITHOUT removing assignments
                     #if debug_ast_transformer trace('[XRay ReduceWhile] Preserving if-expression with return tuples (main control flow)'); #end
 
-                    var transformedThen = transformBodyRecursive(thenBranch, accVarNames, accUpdates.copy(), true);
-                    var transformedElse = elseBranch != null ? transformBodyRecursive(elseBranch, accVarNames, accUpdates.copy(), true) : null;
+                    var transformedThen = transformBodyRecursive(thenBranch, accVarNames, accUpdates.copy(), true, outerToAccAliases);
+                    var transformedElse = elseBranch != null ? transformBodyRecursive(elseBranch, accVarNames, accUpdates.copy(), true, outerToAccAliases) : null;
                     return makeAST(EIf(condition, transformedThen, transformedElse));
                 }
 
                 // Check if this if statement contains accumulator assignments
-                var hasAccAssignments = checkForAccumulatorAssignments(thenBranch, accVarNames) ||
-                                        (elseBranch != null && checkForAccumulatorAssignments(elseBranch, accVarNames));
+                var hasAccAssignments = checkForAccumulatorAssignments(thenBranch, accVarNames, outerToAccAliases) ||
+                                        (elseBranch != null && checkForAccumulatorAssignments(elseBranch, accVarNames, outerToAccAliases));
 
                 if (hasAccAssignments) {
-                    // This if contains accumulator assignments, we need to capture the result
-                    // Generate a new variable name for the result
-                    var resultVarName = findAccumulatorVarInIf(thenBranch, elseBranch, accVarNames);
-
+                    // This if contains accumulator updates (often nested). Rewrite it into an explicit
+                    // accumulator rebinding:
+                    //
+                    //   acc = if cond do ... updated acc ... else acc end
+                    //
+                    // This avoids erasing the reducer body (no "empty block" placeholders) and is robust
+                    // inside ETry-wrapped reducers.
+                    var resultVarName = findAccumulatorVarInIf(thenBranch, elseBranch, accVarNames, outerToAccAliases);
                     if (resultVarName != null) {
-                        // Transform to capture the assignment result
-                        var transformedIf = makeAST(EIf(
+                        var rhs = makeAST(EIf(
                             condition,
-                            extractValueFromAssignment(thenBranch, resultVarName),
-                            elseBranch != null ? extractValueFromAssignment(elseBranch, resultVarName) : null
+                            branchToAccumulatorValue(thenBranch, resultVarName),
+                            elseBranch != null ? branchToAccumulatorValue(elseBranch, resultVarName) : makeAST(EVar(resultVarName))
                         ));
-
-                        // Store the update for later use
-                        accUpdates.set(resultVarName, transformedIf);
-
-                        #if debug_reduce_while_transform
-                        #end
-
-                        // Return empty block (the assignment is captured in accUpdates)
-                        // We can't return null as it breaks subsequent transformations
-                        return makeAST(EBlock([]));
+                        return makeAST(EBinary(Match, makeAST(EVar(resultVarName)), rhs));
                     }
                 }
                 
                 // Regular if without accumulator assignments
-                var transformedThen = transformBodyRecursive(thenBranch, accVarNames, accUpdates.copy());
-                var transformedElse = elseBranch != null ? transformBodyRecursive(elseBranch, accVarNames, accUpdates.copy()) : null;
+                var transformedThen = transformBodyRecursive(thenBranch, accVarNames, accUpdates.copy(), false, outerToAccAliases);
+                var transformedElse = elseBranch != null ? transformBodyRecursive(elseBranch, accVarNames, accUpdates.copy(), false, outerToAccAliases) : null;
                 return makeAST(EIf(condition, transformedThen, transformedElse));
                 
             case ECase(expr, branches):
@@ -254,10 +305,10 @@ class ReduceWhileAccumulatorTransform {
                 
                 // Check if any branch contains accumulator assignments
                 for (branch in branches) {
-                    if (checkForAccumulatorAssignments(branch.body, accVarNames)) {
+                    if (checkForAccumulatorAssignments(branch.body, accVarNames, outerToAccAliases)) {
                         hasAccAssignments = true;
                         // Find which accumulator variable is being assigned
-                        accVarName = findAssignedAccumulator(branch.body, accVarNames);
+                        accVarName = findAssignedAccumulator(branch.body, accVarNames, outerToAccAliases);
                         if (accVarName != null) break;
                     }
                 }
@@ -282,7 +333,7 @@ class ReduceWhileAccumulatorTransform {
                         if (transformedBody == branch.body) {
                             // No assignment in this branch: preserve side effects, but ensure we
                             // return the accumulator unchanged so all branches unify.
-                            var inner = transformBodyRecursive(branch.body, accVarNames, accUpdates.copy(), preserveAssignments);
+                            var inner = transformBodyRecursive(branch.body, accVarNames, accUpdates.copy(), preserveAssignments, outerToAccAliases);
                             if (preserveAssignments) {
                                 transformedBody = switch (inner.def) {
                                     case EBlock(sts): makeAST(EBlock(sts.concat([makeAST(EVar(accVarName))])));
@@ -322,7 +373,7 @@ class ReduceWhileAccumulatorTransform {
                         transformedBranches.push({
                             pattern: branch.pattern,
                             guard: branch.guard,
-                            body: transformBodyRecursive(branch.body, accVarNames, accUpdates.copy())
+                            body: transformBodyRecursive(branch.body, accVarNames, accUpdates.copy(), false, outerToAccAliases)
                         });
                     }
                     return makeAST(ECase(expr, transformedBranches));
@@ -331,16 +382,28 @@ class ReduceWhileAccumulatorTransform {
             case EBlock(exprs):
                 // Process block expressions
                 var transformedExprs = [];
-                var localUpdates = accUpdates.copy();
+                // IMPORTANT:
+                // `accUpdates` is the mutable "thread" used to communicate accumulator updates to
+                // enclosing transforms (notably `branchToAccumulatorValue`). Copying here prevents
+                // nested transforms from observing updates, which can erase reducer logic by making
+                // branches appear to leave the accumulator unchanged.
+                var localUpdates = accUpdates;
                 
                 for (i in 0...exprs.length) {
                     var expr = exprs[i];
                     
                     // Check if this is an assignment to an accumulator variable
                     switch(expr.def) {
-                        case EMatch(PVar(varName), value) if (accVarNames.indexOf(varName) >= 0):
+                        case EMatch(PVar(varName), value):
+                            var accName = resolveAccumulatorName(varName);
+                            if (accName == null) {
+                                var transformed = transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments, outerToAccAliases);
+                                if (transformed != null) transformedExprs.push(transformed);
+                                continue;
+                            }
                             // Store the update - we'll use it when we see the return tuple
-                            localUpdates.set(varName, value);
+                            var rewrittenValue = rewriteAliasedVarRefs(value);
+                            localUpdates.set(accName, rewrittenValue);
 
                             #if debug_reduce_while_transform
                             #end
@@ -349,13 +412,20 @@ class ReduceWhileAccumulatorTransform {
                             if (preserveAssignments) {
                                 #if debug_reduce_while_transform
                                 #end
-                                transformedExprs.push(makeAST(EMatch(PVar(varName), value)));
+                                transformedExprs.push(makeAST(EMatch(PVar(accName), rewrittenValue)));
                             }
                             // Otherwise, don't add the assignment to the output (will be merged into return tuple)
-                        case EBinary(Match, {def: EVar(varName)}, value) if (accVarNames.indexOf(varName) >= 0):
-                            localUpdates.set(varName, value);
+                        case EBinary(Match, {def: EVar(varName)}, value):
+                            var accName2 = resolveAccumulatorName(varName);
+                            if (accName2 == null) {
+                                var transformed2 = transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments, outerToAccAliases);
+                                if (transformed2 != null) transformedExprs.push(transformed2);
+                                continue;
+                            }
+                            var rewrittenValue2 = rewriteAliasedVarRefs(value);
+                            localUpdates.set(accName2, rewrittenValue2);
                             if (preserveAssignments) {
-                                transformedExprs.push(makeAST(EBinary(Match, makeAST(EVar(varName)), value)));
+                                transformedExprs.push(makeAST(EBinary(Match, makeAST(EVar(accName2)), rewrittenValue2)));
                             }
                             
                         case ETuple([atom, accTuple]):
@@ -383,7 +453,7 @@ class ReduceWhileAccumulatorTransform {
                             
                         default:
                             // Recursively transform other expressions
-                            var transformed = transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments);
+                            var transformed = transformBodyRecursive(expr, accVarNames, localUpdates, preserveAssignments, outerToAccAliases);
                             // Only add non-null results
                             if (transformed != null) {
                                 transformedExprs.push(transformed);
@@ -409,6 +479,31 @@ class ReduceWhileAccumulatorTransform {
                 // For other patterns, return as-is
                 return body;
         }
+    }
+
+    static function buildOuterToAccumulatorAliases(initialAcc: ElixirAST, accVarNames: Array<String>): Map<String, String> {
+        var out: Map<String, String> = new Map();
+        if (initialAcc == null || initialAcc.def == null) return out;
+        if (accVarNames == null || accVarNames.length == 0) return out;
+
+        var elems: Array<ElixirAST> = switch (initialAcc.def) {
+            case ETuple(items): items;
+            default: [initialAcc];
+        };
+        if (elems == null || elems.length != accVarNames.length) return out;
+
+        for (i in 0...elems.length) {
+            var e = elems[i];
+            if (e == null || e.def == null) continue;
+            switch (e.def) {
+                case EVar(name):
+                    var mapped = accVarNames[i];
+                    if (name != null && mapped != null && name != mapped) out.set(name, mapped);
+                default:
+            }
+        }
+
+        return out;
     }
     
     /**
@@ -522,24 +617,43 @@ class ReduceWhileAccumulatorTransform {
     /**
      * Check if an AST node contains assignments to accumulator variables
      */
-    static function checkForAccumulatorAssignments(node: ElixirAST, accVarNames: Array<String>): Bool {
+    static function checkForAccumulatorAssignments(node: ElixirAST, accVarNames: Array<String>, outerToAccAliases: Map<String, String>): Bool {
         if (node == null) return false;
         
         switch(node.def) {
-            case EMatch(PVar(varName), _) if (accVarNames.indexOf(varName) >= 0):
-                return true;
-            case EBinary(Match, {def: EVar(varName)}, _) if (accVarNames.indexOf(varName) >= 0):
-                return true;
+            case EMatch(PVar(varName), _):
+                if (accVarNames.indexOf(varName) >= 0) return true;
+                if (outerToAccAliases != null && outerToAccAliases.exists(varName) && accVarNames.indexOf(outerToAccAliases.get(varName)) >= 0) return true;
+                return false;
+            case EBinary(Match, {def: EVar(varName)}, _):
+                if (accVarNames.indexOf(varName) >= 0) return true;
+                if (outerToAccAliases != null && outerToAccAliases.exists(varName) && accVarNames.indexOf(outerToAccAliases.get(varName)) >= 0) return true;
+                return false;
             case EBlock(exprs):
                 for (expr in exprs) {
-                    if (checkForAccumulatorAssignments(expr, accVarNames)) {
+                    if (checkForAccumulatorAssignments(expr, accVarNames, outerToAccAliases)) {
                         return true;
                     }
                 }
                 return false;
+            case EDo(exprsDo):
+                for (exprDo in exprsDo) {
+                    if (checkForAccumulatorAssignments(exprDo, accVarNames, outerToAccAliases)) return true;
+                }
+                return false;
             case EIf(_, thenBranch, elseBranch):
-                return checkForAccumulatorAssignments(thenBranch, accVarNames) ||
-                       (elseBranch != null && checkForAccumulatorAssignments(elseBranch, accVarNames));
+                return checkForAccumulatorAssignments(thenBranch, accVarNames, outerToAccAliases) ||
+                       (elseBranch != null && checkForAccumulatorAssignments(elseBranch, accVarNames, outerToAccAliases));
+            case ECase(_, branches):
+                for (branch in branches) if (checkForAccumulatorAssignments(branch.body, accVarNames, outerToAccAliases)) return true;
+                return false;
+            case ETry(tryBody, rescueClauses, catchClauses, afterBlock, elseBlock):
+                if (checkForAccumulatorAssignments(tryBody, accVarNames, outerToAccAliases)) return true;
+                if (rescueClauses != null) for (r in rescueClauses) if (checkForAccumulatorAssignments(r.body, accVarNames, outerToAccAliases)) return true;
+                if (catchClauses != null) for (c in catchClauses) if (checkForAccumulatorAssignments(c.body, accVarNames, outerToAccAliases)) return true;
+                if (afterBlock != null && checkForAccumulatorAssignments(afterBlock, accVarNames, outerToAccAliases)) return true;
+                if (elseBlock != null && checkForAccumulatorAssignments(elseBlock, accVarNames, outerToAccAliases)) return true;
+                return false;
             default:
                 return false;
         }
@@ -548,14 +662,14 @@ class ReduceWhileAccumulatorTransform {
     /**
      * Find which accumulator variable is being assigned in an if statement
      */
-    static function findAccumulatorVarInIf(thenBranch: ElixirAST, elseBranch: ElixirAST, accVarNames: Array<String>): Null<String> {
+    static function findAccumulatorVarInIf(thenBranch: ElixirAST, elseBranch: ElixirAST, accVarNames: Array<String>, outerToAccAliases: Map<String, String>): Null<String> {
         // Check then branch for assignments
-        var varName = findAssignedAccumulator(thenBranch, accVarNames);
+        var varName = findAssignedAccumulator(thenBranch, accVarNames, outerToAccAliases);
         if (varName != null) return varName;
         
         // Check else branch if it exists
         if (elseBranch != null) {
-            return findAssignedAccumulator(elseBranch, accVarNames);
+            return findAssignedAccumulator(elseBranch, accVarNames, outerToAccAliases);
         }
         
         return null;
@@ -564,19 +678,54 @@ class ReduceWhileAccumulatorTransform {
     /**
      * Find an accumulator variable being assigned in an AST node
      */
-    static function findAssignedAccumulator(node: ElixirAST, accVarNames: Array<String>): Null<String> {
+    static function findAssignedAccumulator(node: ElixirAST, accVarNames: Array<String>, outerToAccAliases: Map<String, String>): Null<String> {
         if (node == null) return null;
         
         switch(node.def) {
-            case EMatch(PVar(varName), _) if (accVarNames.indexOf(varName) >= 0):
-                return varName;
-            case EBinary(Match, {def: EVar(varName)}, _) if (accVarNames.indexOf(varName) >= 0):
-                return varName;
+            case EMatch(PVar(varName), _):
+                if (accVarNames.indexOf(varName) >= 0) return varName;
+                if (outerToAccAliases != null && outerToAccAliases.exists(varName)) {
+                    var mapped = outerToAccAliases.get(varName);
+                    if (mapped != null && accVarNames.indexOf(mapped) >= 0) return mapped;
+                }
+                return null;
+            case EBinary(Match, {def: EVar(varName)}, _):
+                if (accVarNames.indexOf(varName) >= 0) return varName;
+                if (outerToAccAliases != null && outerToAccAliases.exists(varName)) {
+                    var mapped2 = outerToAccAliases.get(varName);
+                    if (mapped2 != null && accVarNames.indexOf(mapped2) >= 0) return mapped2;
+                }
+                return null;
             case EBlock(exprs):
                 for (expr in exprs) {
-                    var result = findAssignedAccumulator(expr, accVarNames);
+                    var result = findAssignedAccumulator(expr, accVarNames, outerToAccAliases);
                     if (result != null) return result;
                 }
+                return null;
+            case EDo(exprsDo):
+                for (exprDo in exprsDo) {
+                    var resultDo = findAssignedAccumulator(exprDo, accVarNames, outerToAccAliases);
+                    if (resultDo != null) return resultDo;
+                }
+                return null;
+            case EIf(_, thenBranch, elseBranch):
+                var inThen = findAssignedAccumulator(thenBranch, accVarNames, outerToAccAliases);
+                if (inThen != null) return inThen;
+                if (elseBranch != null) return findAssignedAccumulator(elseBranch, accVarNames, outerToAccAliases);
+                return null;
+            case ECase(_, branches):
+                for (branch in branches) {
+                    var inBranch = findAssignedAccumulator(branch.body, accVarNames, outerToAccAliases);
+                    if (inBranch != null) return inBranch;
+                }
+                return null;
+            case ETry(tryBody, rescueClauses, catchClauses, afterBlock, elseBlock):
+                var inTry = findAssignedAccumulator(tryBody, accVarNames, outerToAccAliases);
+                if (inTry != null) return inTry;
+                if (rescueClauses != null) for (r in rescueClauses) { var inR = findAssignedAccumulator(r.body, accVarNames, outerToAccAliases); if (inR != null) return inR; }
+                if (catchClauses != null) for (c in catchClauses) { var inC = findAssignedAccumulator(c.body, accVarNames, outerToAccAliases); if (inC != null) return inC; }
+                if (afterBlock != null) { var inAfter = findAssignedAccumulator(afterBlock, accVarNames, outerToAccAliases); if (inAfter != null) return inAfter; }
+                if (elseBlock != null) { var inElse = findAssignedAccumulator(elseBlock, accVarNames, outerToAccAliases); if (inElse != null) return inElse; }
                 return null;
             default:
                 return null;
@@ -595,11 +744,21 @@ class ReduceWhileAccumulatorTransform {
             case EBinary(Match, {def: EVar(name)}, value) if (name == varName):
                 return value;
             case EBlock(exprs):
+                // Preserve any prefix statements required to compute the assigned value.
+                // We return a block that evaluates the prefix, then yields the RHS as the
+                // final expression (or yields the accumulator var unchanged if no assignment).
+                var prefix:Array<ElixirAST> = [];
                 for (expr in exprs) {
-                    var result = extractValueFromAssignment(expr, varName);
-                    if (result != null) return result;
+                    switch (expr.def) {
+                        case EMatch(PVar(name2), value2) if (name2 == varName):
+                            return makeAST(EBlock(prefix.concat([value2])));
+                        case EBinary(Match, {def: EVar(name3)}, value3) if (name3 == varName):
+                            return makeAST(EBlock(prefix.concat([value3])));
+                        default:
+                            prefix.push(expr);
+                    }
                 }
-                return node; // Return the whole block if no assignment found
+                return makeAST(EBlock(prefix.concat([makeAST(EVar(varName))])));
             default:
                 return node;
         }
