@@ -28,7 +28,21 @@ defmodule Mix.Tasks.Haxe.Phoenix.Scaffold do
     verbose = opts[:verbose] || false
     strict = not (opts[:warn_only] || false)
 
-    HaxePhoenixScaffold.apply!(project_root, verbose: verbose, strict: strict)
+    reflaxe_elixir_dep_path = Mix.Project.deps_paths()[:reflaxe_elixir]
+
+    if is_nil(reflaxe_elixir_dep_path) and strict do
+      raise "could not locate reflaxe_elixir in Mix deps. Add it to deps() first or re-run with --warn-only."
+    end
+
+    if is_nil(reflaxe_elixir_dep_path) and not strict do
+      IO.warn("could not locate reflaxe_elixir in Mix deps; generating haxe_libraries stubs with default paths")
+    end
+
+    HaxePhoenixScaffold.apply!(project_root,
+      verbose: verbose,
+      strict: strict,
+      reflaxe_elixir_dep_path: reflaxe_elixir_dep_path
+    )
     :ok
   end
 end
