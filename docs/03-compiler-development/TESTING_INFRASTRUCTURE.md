@@ -41,6 +41,31 @@ Quick no-auth sanity check:
 
 - Use the GitHub API to query the CI workflow run for the current `HEAD` SHA and ensure all jobs conclude `success`.
 
+## Regression Snapshots (Compiler Correctness)
+
+When a bug is found in a real app (especially `examples/todo-app/`), add a focused regression snapshot under:
+
+- `test/snapshot/regression/**`
+
+These tests are intentionally small and deterministic. They lock in compiler behavior at the AST/lowering level and prevent
+“it works in the todo-app but regresses in a later refactor” outcomes.
+
+### Case Study: reduce_while Accumulator Updates (Todo-App Presence)
+
+The todo-app “online users” UI exposed a correctness bug in the `Enum.reduce_while` lowering pipeline.
+
+- Symptom: Presence state existed, but derived UI lists stayed empty (`@online_user_count` rendered `0`, no avatars).
+- Root cause: Haxe `for` loops lower into `Enum.reduce_while(...)`, and list “updates” like `Array.push`/`Array.concat`
+  become `list ++ [value]` on the Elixir target. A bug in accumulator-threading meant updates inside nested control-flow
+  (`if` branches in the reducer) did not escape the recursion, so the reducer returned the original accumulator.
+- Fix: implemented in `src/reflaxe/elixir/ast/transformers/ReduceWhileAccumulatorTransform.hx` and supporting passes to
+  ensure nested-branch updates become explicit accumulator rebindings that survive `try` wrappers and branch lowering.
+- Regression snapshot: `test/snapshot/regression/ReduceWhileAccumulatorBranchUpdates/` guards:
+  - nested `if` updates via `names = names.concat([k])`
+  - statement-position `views.push({...})` lowering into explicit accumulator rebindings
+
+This regression is intentionally generic: any code that builds lists inside loops benefits, not just Presence.
+
 ## Architecture Components
 
 ```

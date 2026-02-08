@@ -119,3 +119,22 @@ Output (defaults; configurable via flags):
 Notes:
 - This task is intended for **gradual adoption**: start by compiling helper modules into `MyAppHx.*`, call them from Elixir, and only later replace Phoenix-facing modules.
 - It does not install Haxe libraries for you. Use `npx lix install ...` + `npx lix download` (see `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`).
+- `--phoenix` is meant to be run from a **Phoenix app root**.
+  - If the project does not look like Phoenix (missing `assets/js/app.js` or `config/dev.exs`), the task will still scaffold the server-side parts and print instructions to run `mix haxe.phoenix.scaffold` once Phoenix files exist.
+
+#### Phoenix Client Scaffold (`mix haxe.phoenix.scaffold`)
+
+Phoenix client wiring is handled by a dedicated task:
+
+```bash
+mix haxe.phoenix.scaffold
+```
+
+This is the canonical entrypoint for integrating a Haxe-generated JS client bundle (Genes) into Phoenix LiveView in a way that is robust under esbuild `--watch`.
+
+Key behaviors:
+- **Marker blocks**: patches `assets/js/app.js`, `config/dev.exs`, and `mix.exs` using explicit `BEGIN reflaxe_elixir ...` / `END reflaxe_elixir ...` blocks (reruns replace block content only).
+- **Fail-fast by default**: if the task cannot find an expected Phoenix insertion point (template drift or heavy customization), it raises instead of silently producing a partial scaffold.
+- **Opt-out**: `mix haxe.phoenix.scaffold --warn-only` emits warnings and skips patches it cannot safely apply.
+
+See `docs/06-guides/WATCHER_WORKFLOW.md` for the rationale and the “temp output + promote” pattern used to avoid transient `Could not resolve "./hx_app.js"` errors under esbuild watch mode.

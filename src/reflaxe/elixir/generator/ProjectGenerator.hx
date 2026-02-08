@@ -9,8 +9,28 @@ import reflaxe.elixir.generator.TemplateContext.TemplateValue;
 using StringTools;
 
 /**
- * Core project generator for Reflaxe.Elixir
- * Handles creation of new projects from templates
+ * ProjectGenerator (Haxe-side scaffolding)
+ *
+ * WHAT
+ * - Creates new Elixir projects (basic / Phoenix / Phoenix LiveView) by shelling out to Mix generators
+ *   (`mix new` / `mix phx.new`) and then layering Reflaxe.Elixir integration on top.
+ * - Supports "add-to-existing" mode to scaffold into an existing Mix project directory.
+ *
+ * WHY
+ * - Greenfield projects should start from the canonical Phoenix templates so they stay aligned with
+ *   upstream conventions (assets, endpoint wiring, and directory structure).
+ * - Existing apps benefit from in-place Mix tasks (`mix haxe.gen.project`, `mix haxe.phoenix.scaffold`)
+ *   because those run in the target project's Mix environment and are easier to adopt incrementally.
+ *
+ * HOW
+ * - For new apps: run the appropriate Mix generator, then patch `mix.exs` to add `:haxe` compiler wiring,
+ *   write `build.hxml` + `src_haxe/**`, and optionally run `mix haxe.phoenix.scaffold` for Phoenix projects
+ *   after dependencies are installed.
+ * - For existing apps: modify files in the current directory without creating a new project folder.
+ *
+ * SCENARIOS
+ * - New Phoenix app with Haxe integration: prefer `haxe --run Run create <name> --type phoenix`.
+ * - Existing Phoenix app (gradual adoption): prefer `mix haxe.gen.project --phoenix` + `mix haxe.phoenix.scaffold`.
  */
 class ProjectGenerator {
 	// Supported generator types:
