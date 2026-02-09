@@ -1,5 +1,19 @@
 import Config
 
+disable_watchers = System.get_env("DISABLE_WATCHERS") == "1"
+
+dev_port =
+  case System.get_env("PORT") do
+    nil ->
+      4000
+
+    val ->
+      case Integer.parse(val) do
+        {int, _} -> int
+        :error -> 4000
+      end
+  end
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
@@ -9,12 +23,16 @@ import Config
 config :phoenix_chat, PhoenixChatWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
   # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}, port: 4000],
+  http: [ip: {127, 0, 0, 1}, port: dev_port],
   check_origin: false,
   code_reloader: true,
   debug_errors: true,
   secret_key_base: "Kv4ECMYMPL2dz3dyI7p5pVRI5naAtIhZMZNsA4nf+/EekEpff8e6LX3W7cyuxVi8",
-  watchers: [
+  watchers:
+    (if disable_watchers do
+       []
+     else
+       [
 
     # BEGIN reflaxe_elixir haxe_client
     # Haxe client JS build:
@@ -37,7 +55,8 @@ config :phoenix_chat, PhoenixChatWeb.Endpoint,
 
     esbuild: {Esbuild, :install_and_run, [:phoenix_chat, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:phoenix_chat, ~w(--watch)]}
-  ]
+       ]
+     end)
 
 # ## SSL Support
 #

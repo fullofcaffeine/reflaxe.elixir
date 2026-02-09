@@ -30,11 +30,11 @@ class SuppressHXXRuntimeModuleTransforms {
   public static function pass(ast: ElixirAST): ElixirAST {
     return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
       return switch (n.def) {
-        case EModule(name, attrs, body) if (name == "HXX"):
+        case EModule(name, attrs, body) if (name == "HXX" || name == "Phoenix.Hxx.HXX2"):
           var meta = n.metadata;
           meta.suppressEmission = true;
           makeASTWithMeta(EModule(name, attrs, body), meta, n.pos);
-	        case EDefmodule(name, doBlock) if (name == "HXX"):
+	        case EDefmodule(name, doBlock) if (name == "HXX" || name == "Phoenix.Hxx.HXX2"):
 	          var meta = n.metadata;
 	          meta.suppressEmission = true;
 	          makeASTWithMeta(EDefmodule(name, doBlock), meta, n.pos);

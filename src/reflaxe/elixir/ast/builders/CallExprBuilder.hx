@@ -4,6 +4,7 @@ package reflaxe.elixir.ast.builders;
 
 import haxe.macro.Type;
 import haxe.macro.Expr;
+import haxe.macro.Context;
 import haxe.macro.Type.TypedExpr;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.EPattern;
@@ -397,8 +398,53 @@ class CallExprBuilder {
                             var cls = classRef.get();
                             var methodName = cf.get().name;
                             if (cls.name == "HXX" && methodName == "hxx" && args.length >= 1) {
+	                                function allowRawHeex(): Bool {
+	                                    if (Context.defined("hxx_allow_raw_heex")) return true;
+
+	                                    // Prefer macro-local context when available. This is the most reliable signal
+	                                    // across builder call sites (even if the compilation context isn't field-scoped).
+	                                    var localClassRef = Context.getLocalClass();
+	                                    if (localClassRef != null) {
+	                                        var localClass = localClassRef.get();
+	                                        if (localClass != null && localClass.meta != null
+	                                            && (localClass.meta.has(":allow_heex") || localClass.meta.has("allow_heex"))
+	                                        ) return true;
+
+	                                        // Method-level metadata: Context.getLocalMethod() is the name; look it up on the class.
+	                                        var localMethodName = Context.getLocalMethod();
+	                                        if (localMethodName != null && localClass != null) {
+	                                            var candidates = localClass.fields.get().concat(localClass.statics.get());
+	                                            for (f in candidates) {
+	                                                if (f != null && f.name == localMethodName && f.meta != null
+	                                                    && (f.meta.has(":allow_heex") || f.meta.has("allow_heex"))
+	                                                ) return true;
+	                                            }
+	                                        }
+	                                    }
+
+	                                    var fn = context != null ? context.getCurrentFunction() : null;
+	                                    if (fn != null && fn.meta != null && (fn.meta.has(":allow_heex") || fn.meta.has("allow_heex"))) return true;
+	                                    var currentClass = context != null ? context.getCurrentClass() : null;
+	                                    if (currentClass != null && currentClass.meta != null && (currentClass.meta.has(":allow_heex") || currentClass.meta.has("allow_heex"))) return true;
+	                                    return false;
+	                                }
+
                                 // Build inner argument AST
                                 var innerAst = buildExpression(args[0]);
+
+                                // Reject raw EEx/HEEx (<% ... %>) in HXX templates by default.
+                                // Raw HEEx is an explicit escape hatch: require @:allow_heex or -D hxx_allow_raw_heex.
+                                if (reflaxe.elixir.ast.TemplateHelpers.hxxSourceContainsRawHeexMarkers(innerAst) && !allowRawHeex()) {
+                                    var pos = context != null ? context.getCurrentPosition() : null;
+                                    context.error(
+                                        "HXX: raw `<% ... %>` blocks are disallowed inside HXX templates by default.\n" +
+                                        "Use HXX control tags (`<if>`, `<for>`, etc.) + typed interpolation (`#{...}`),\n" +
+                                        "or add `@:allow_heex` to the enclosing function/class, or compile with `-D hxx_allow_raw_heex`.",
+                                        pos
+                                    );
+                                    throw "HXX raw HEEx disallowed";
+                                }
+
                                 // Fast-path: if literal string already contains EEx/HEEx markers, emit ~H as-is
                                 switch (innerAst.def) {
                                     case EString(s):

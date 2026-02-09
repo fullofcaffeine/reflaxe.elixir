@@ -7,6 +7,7 @@ import reflaxe.elixir.macros.MacroTimingHelper;
 
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTPrinter;
+import reflaxe.elixir.ast.ASTUtils;
 import haxe.macro.Type;
 
 /**
@@ -28,6 +29,32 @@ import haxe.macro.Type;
  * - Handle template function arguments
  */
 class TemplateHelpers {
+
+    /**
+     * Detect raw EEx/HEEx markers (`<% ... %>`) in the *source* HXX template AST.
+     *
+     * WHY:
+     * - HXX templates should be authored with typed interpolation (`#{...}`) and control tags
+     *   (`<if>`, `<for>`, etc.) so the compiler can lint and normalize templates consistently.
+     * - Raw `<% ... %>` is treated as an explicit escape hatch and should be rejected by default.
+     *
+     * HOW:
+     * - Walk the AST and check only literal string nodes for the substring `<%`.
+     * - This runs before template rewriting inserts `<%=` output markers.
+     */
+    public static function hxxSourceContainsRawHeexMarkers(ast: ElixirAST): Bool {
+        if (ast == null || ast.def == null) return false;
+        var found = false;
+        ASTUtils.walk(ast, function(n: ElixirAST): Void {
+            if (found || n == null || n.def == null) return;
+            switch (n.def) {
+                case EString(s) if (s != null && s.indexOf("<%") != -1):
+                    found = true;
+                default:
+            }
+        });
+        return found;
+    }
     
     /**
      * Render an ElixirAST expression into a HEEx-safe Elixir expression string.

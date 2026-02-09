@@ -14,8 +14,8 @@ class Main {
   // 2) Type mismatch: @sort_by (String) compared to Int literal 1
   public static function render(assigns: Assigns): String {
     return HXX.hxx('<div>
-      <p>Unknown field raw HEEx: <%= @sort_byy %></p>
-      <p>Type mismatch raw HEEx: <%= @sort_by == 1 %></p>
+      <p>Unknown field raw HEEx: #{@sort_byy}</p>
+      <p>Type mismatch raw HEEx: #{@sort_by == 1}</p>
     </div>');
   }
 

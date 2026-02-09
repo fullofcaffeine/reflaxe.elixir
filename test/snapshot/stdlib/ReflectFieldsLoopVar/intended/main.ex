@@ -23,7 +23,7 @@ end) do
           end)
       end)
       if (length(entry.metas) > 0) do
-        meta = user_id
+        meta = Enum.at(entry.metas, 0)
         if (meta.editing_todo_id == 42) do
           Enum.concat(editing_users_acc, [meta])
         else

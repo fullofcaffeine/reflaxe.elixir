@@ -88,6 +88,26 @@ Important:
 - Ecto executes migrations from `priv/repo/migrations/*.exs`.
 - Reflaxe.Elixir can emit runnable `.exs` migrations via an opt-in migration build (`-D ecto_migrations_exs`).
 
+### `mix haxe.gen.extern`
+
+Generates a starter Haxe `extern` from an Elixir or Erlang module.
+
+Examples:
+
+```bash
+mix haxe.gen.extern Enum
+mix haxe.gen.extern Ecto.Changeset --package externs.ecto --out src_haxe/externs
+mix haxe.gen.extern :crypto --package externs.erlang --out src_haxe/externs
+```
+
+Output:
+- `src_haxe/externs/<Module>.hx` (configurable via `--out`, `--package`, `--class-name`)
+
+Notes:
+- This generator is intended to keep app code away from untyped `__elixir__()` strings.
+- The generated extern uses `elixir.types.Term` at the boundary by default (safe, generic).
+- Functions with multiple arities are generated using Haxe overloads.
+
 ### `mix haxe.gen.project`
 
 Adds Reflaxe.Elixir plumbing to an existing Mix project (directory layout, `build.hxml`, Mix compiler config).

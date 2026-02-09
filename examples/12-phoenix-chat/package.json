@@ -9,6 +9,7 @@
     "setup:haxe": "npx lix download"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "lix": "^15.12.4",
     "nodemon": "^3.0.0"
   }

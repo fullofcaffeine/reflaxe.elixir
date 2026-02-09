@@ -8,6 +8,7 @@ typedef ChatMessage = {
     var user_name: String;
     var body: String;
     var at: Float;
+    var row_class: String;
 }
 
 typedef OnlineUserView = {
@@ -15,6 +16,7 @@ typedef OnlineUserView = {
     var name: String;
     var online_at: Float;
     var is_me: Bool;
+    var row_class: String;
 }
 
 typedef AppLiveAssigns = {

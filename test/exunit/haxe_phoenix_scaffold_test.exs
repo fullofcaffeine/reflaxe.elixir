@@ -110,6 +110,23 @@ defmodule HaxePhoenixScaffoldTest do
     ]
   """
 
+  @dev_exs_with_unmanaged_haxe_client """
+  import Config
+
+  config :my_app, MyAppWeb.Endpoint,
+    http: [ip: {127, 0, 0, 1}, port: 4000],
+    watchers: [
+      haxe_client: [
+        "mix",
+        "haxe.watch",
+        "--hxml",
+        "build-client.hxml",
+        "--dirs",
+        "src_haxe"
+      ]
+    ]
+  """
+
   @minimal_mix_exs """
   defmodule MyApp.MixProject do
     use Mix.Project
@@ -131,6 +148,34 @@ defmodule HaxePhoenixScaffoldTest do
     defp aliases do
       [
         "assets.setup": ["esbuild.install --if-missing"],
+        "assets.build": ["esbuild my_app"],
+        "assets.deploy": ["esbuild my_app --minify", "phx.digest"]
+      ]
+    end
+  end
+  """
+
+  @mix_exs_with_unmanaged_haxe_compile_client """
+  defmodule MyApp.MixProject do
+    use Mix.Project
+
+    def project do
+      [
+        app: :my_app,
+        version: "0.1.0",
+        elixir: "~> 1.14",
+        aliases: aliases(),
+        deps: []
+      ]
+    end
+
+    def application do
+      [extra_applications: [:logger]]
+    end
+
+    defp aliases do
+      [
+        "haxe.compile.client": ["haxe.watch --once --hxml build-client.hxml"],
         "assets.build": ["esbuild my_app"],
         "assets.deploy": ["esbuild my_app --minify", "phx.digest"]
       ]
@@ -609,6 +654,70 @@ defmodule HaxePhoenixScaffoldTest do
       end)
 
     assert stderr =~ "could not find a `watchers:` list"
+  end
+
+  test "strict mode fails fast on unmanaged haxe_client watcher; warn-only warns and skips" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+
+    File.write!(Path.join(assets_js, "app.js"), @minimal_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @dev_exs_with_unmanaged_haxe_client)
+    File.write!(Path.join(root, "mix.exs"), @minimal_mix_exs)
+    File.write!(Path.join(root, ".gitignore"), "")
+
+    assert_raise RuntimeError,
+                 ~r/found an existing haxe_client watcher entry, but it is not marker-managed/,
+                 fn ->
+                   HaxePhoenixScaffold.apply!(root, strict: true)
+                 end
+
+    stderr =
+      capture_io(:stderr, fn ->
+        assert :ok == HaxePhoenixScaffold.apply!(root, strict: false)
+      end)
+
+    assert stderr =~ "found an existing haxe_client watcher entry"
+  end
+
+  test "strict mode fails fast on unmanaged haxe.compile.client alias; warn-only warns and skips" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+
+    File.write!(Path.join(assets_js, "app.js"), @minimal_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @minimal_dev_exs)
+    File.write!(Path.join(root, "mix.exs"), @mix_exs_with_unmanaged_haxe_compile_client)
+    File.write!(Path.join(root, ".gitignore"), "")
+
+    assert_raise RuntimeError,
+                 ~r/found an existing \"haxe\.compile\.client\" alias, but it is not marker-managed/,
+                 fn ->
+                   HaxePhoenixScaffold.apply!(root, strict: true)
+                 end
+
+    stderr =
+      capture_io(:stderr, fn ->
+        assert :ok == HaxePhoenixScaffold.apply!(root, strict: false)
+      end)
+
+    assert stderr =~ "found an existing \"haxe.compile.client\" alias"
   end
 
   defp count(haystack, needle) do

@@ -10,7 +10,7 @@ class Main {
     public static function render(assigns: Assigns): String {
         return HXX.hxx('
             <.inputs_for field={@field} :let={f}>
-                <span><%= f.not_a_field %></span>
+                <span>#{f.not_a_field}</span>
             </.inputs_for>
         ');
     }

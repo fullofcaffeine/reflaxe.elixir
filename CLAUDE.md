@@ -44,6 +44,12 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 
 - When making changes to **frontend/UI/UX** (HTML/CSS/JS, LiveView templates, hooks, layouts), use the `$frontend-design` skill to keep output production-grade and intentional.
 
+## 🧩 HXX Raw HEEx Policy (Required)
+
+- Do not embed raw EEx/HEEx blocks (`<% ... %>`, `<%= ... %>`) inside `hxx('...')` / `HXX.hxx('...')` templates.
+- Author templates with HXX constructs instead: `#{...}` for text interpolation and `<if>` / `<for>` control tags.
+- Escape hatch (avoid): add `@:allow_heex` to the enclosing function/class, or compile with `-D hxx_allow_raw_heex`.
+
 ### Common CI failure mode: “unused literal” warnings
 
 If CI shows `warning: code block contains unused literal ...`, it usually means a Haxe expression used for side-effects
@@ -534,6 +540,17 @@ Example hxdoc template:
  *   Enum.each(0..2, fn i -> IO.puts(i) end)
  */
 """
+
+## 🧩 Repair Transform Policy (Required)
+
+- Preferred: fix the upstream builder/transform that introduced the wrong AST shape.
+- Allowed: a repair transform may be introduced only to correct a **deterministic compiler miscompile** with a tight, structural signature (i.e. it is not guesswork, and it cannot accidentally "fix" unrelated user code).
+- Hard constraints for any repair transform:
+  - Must be **AST-shape based** (syntax/structure/API), not app/domain name-based.
+  - Must be **conservative and self-validating** (e.g. only rewrite when later usage proves the intended meaning, such as a variable later being field-accessed as a map/struct).
+  - Must be **strictly more correct** (fixing a crash/incorrect semantics) or a **semantics-preserving cleanup** (e.g. removing constant-true conditionals).
+  - Must include a **dedicated regression snapshot** that fails without the repair.
+  - If operating on `ERaw`, changes must be limited to **semantics-preserving cleanup** only; do not "string patch" behavior. Prefer eliminating `ERaw` at the source so the fix can be expressed as real AST.
 
 - Keep each transformer file under 2000 LOC. If approaching the limit, extract into domain modules.
 - Add focused snapshots where output semantics change; include intended/ regression coverage.

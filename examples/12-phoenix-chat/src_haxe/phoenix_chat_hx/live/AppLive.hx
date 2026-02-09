@@ -99,36 +99,36 @@ class AppLive {
             <div class="chat-frame mx-auto grid max-w-6xl grid-cols-1 gap-4 md:grid-cols-12">
               <aside class="md:col-span-4">
                 <div class="panel">
-                  <div class="panel-h">
-                    <div>
-                      <div class="kicker">Presence</div>
-                      <div class="title">Online</div>
-                    </div>
-                    <div class="badge" title="online users">
-                      <%= @online_user_count %>
-                    </div>
-                  </div>
+	                  <div class="panel-h">
+	                    <div>
+	                      <div class="kicker">Presence</div>
+	                      <div class="title">Online</div>
+	                    </div>
+	                    <div class="badge" title="online users" data-testid="online-count">
+	                      #{@online_user_count}
+	                    </div>
+	                  </div>
 
-                  <div class="panel-b">
-                    <div class="online-list">
-                      <%= if @online_user_count == 0 do %>
-                        <div class="muted">No one is online yet.</div>
-                      <% else %>
-                        <%= for u <- @online_user_views do %>
-                          <div class={"online-row " <> (if u.is_me, do: "is-me", else: "")}>
-                            <div class="dot" aria-hidden="true"></div>
-                            <div class="name"><%= u.name %></div>
-                            <%= if u.is_me do %>
-                              <div class="me">you</div>
-                            <% end %>
+	                  <div class="panel-b">
+	                    <div class="online-list" data-testid="online-list">
+	                      <if {@online_user_count == 0}>
+	                        <div class="muted">No one is online yet.</div>
+	                      <else>
+	                        <for {u in @online_user_views}>
+	                          <div class=#{u.row_class} data-testid="online-row">
+	                            <div class="dot" aria-hidden="true"></div>
+	                            <div class="name">#{u.name}</div>
+	                            <if {u.is_me}>
+	                              <div class="me">you</div>
+	                            </if>
                           </div>
-                        <% end %>
-                      <% end %>
+                        </for>
+                      </if>
                     </div>
 
                     <div class="meta">
                       <div class="label">room</div>
-                      <div class="value"><%= @room %></div>
+                      <div class="value">#{@room}</div>
                     </div>
                   </div>
                 </div>
@@ -143,24 +143,24 @@ class AppLive {
                     </div>
                     <div class="who">
                       <div class="who-label">as</div>
-                      <div class="who-name"><%= @current_user_name %></div>
+                      <div class="who-name">#{@current_user_name}</div>
                     </div>
                   </div>
 
                   <div class="panel-b">
                     <div id="chat-messages" phx-hook="AutoScroll" class="messages">
-                      <%= if length(@messages) == 0 do %>
+                      <if {length(@messages) == 0}>
                         <div class="muted">Say something. It will broadcast to everyone in the room.</div>
-                      <% end %>
-                      <%= for m <- @messages do %>
-                        <div class={"msg " <> (if m.user_id == @current_user_id, do: "mine", else: "")}>
+                      </if>
+                      <for {m in @messages}>
+                        <div class=#{m.row_class}>
                           <div class="msg-h">
-                            <div class="msg-user"><%= m.user_name %></div>
-                            <div class="msg-id">#<%= m.id %></div>
+                            <div class="msg-user">#{m.user_name}</div>
+                            <div class="msg-id">##{m.id}</div>
                           </div>
-                          <div class="msg-b"><%= m.body %></div>
+                          <div class="msg-b">#{m.body}</div>
                         </div>
-                      <% end %>
+                      </for>
                     </div>
 
                     <form phx-submit="send_message" class="composer">
@@ -176,9 +176,9 @@ class AppLive {
                       <button type="submit" class="composer-btn">Send</button>
                     </form>
 
-                    <%= if @status != nil do %>
-                      <div class="status"><%= @status %></div>
-                    <% end %>
+                    <if {@status != nil}>
+                      <div class="status">#{@status}</div>
+                    </if>
                   </div>
                 </div>
               </main>
@@ -225,7 +225,14 @@ class AppLive {
         var at: Float = cast Tuple.elem(payload, 4);
 
         var nextId = socket.assigns.next_message_id;
-        var message: ChatMessage = {id: nextId, user_id: userId, user_name: userName, body: body, at: at};
+        var message: ChatMessage = {
+            id: nextId,
+            user_id: userId,
+            user_name: userName,
+            body: body,
+            at: at,
+            row_class: userId == socket.assigns.current_user_id ? "msg mine" : "msg"
+        };
 
         var updated =
             socket.merge({
@@ -254,7 +261,8 @@ class AppLive {
             user_id: socket.assigns.current_user_id,
             user_name: socket.assigns.current_user_name,
             body: body,
-            at: now
+            at: now,
+            row_class: "msg mine"
         };
 
         var updated =
@@ -291,11 +299,13 @@ class AppLive {
 
             if (entry != null && entry.metas != null && entry.metas.length > 0) {
                 var meta = entry.metas[0];
+                var isMe = key == socket.assigns.current_user_id;
                 views.push({
                     user_id: key,
                     name: meta.name,
                     online_at: meta.onlineAt,
-                    is_me: key == socket.assigns.current_user_id
+                    is_me: isMe,
+                    row_class: isMe ? "online-row is-me" : "online-row"
                 });
             }
         }

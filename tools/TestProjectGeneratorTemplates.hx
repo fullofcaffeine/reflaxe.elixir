@@ -38,6 +38,7 @@ class TestProjectGeneratorTemplates {
         assertExists(Path.join([runDir, "package.json"]), "package.json was created");
         assertExists(Path.join([runDir, ".haxerc"]), ".haxerc was created");
         assertExists(Path.join([runDir, "AGENTS.md"]), "AGENTS.md was created");
+        assertExists(Path.join([runDir, "CLAUDE.md"]), "CLAUDE.md was created");
         assertExists(Path.join([runDir, "src_haxe", "demo_hx", "Main.hx"]), "src_haxe/demo_hx/Main.hx was created");
 
         var mixExs = File.getContent(Path.join([runDir, "mix.exs"]));

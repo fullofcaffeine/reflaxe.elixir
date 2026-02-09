@@ -1,0 +1,8 @@
+# Regression: `entry.metas[0]` inside reduce/for loops must not lower to `meta = key`.
+-cp .
+-main Main
+-lib reflaxe
+-lib reflaxe.elixir
+-D reflaxe_runtime
+--no-output
+-D elixir_output=out

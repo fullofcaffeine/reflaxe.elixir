@@ -17,10 +17,9 @@ class LayoutsTest {
                 <meta name="csrf-token" content={Phoenix.Controller.get_csrf_token()}/>
             </head>
             <body>
-                <%= @inner_content %>
+                #{@inner_content}
             </body>
             </html>
         ');
     }
 }
-

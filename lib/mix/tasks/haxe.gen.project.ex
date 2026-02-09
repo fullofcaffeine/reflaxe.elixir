@@ -140,7 +140,6 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       config.output_dir,
       haxe_base,
       Path.join([haxe_base, "utils"]),
-      Path.join([haxe_base, "services"]),
       ".vscode"
     ]
 
@@ -148,8 +147,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       if config.phoenix do
         base_directories ++
           [
-            Path.join([haxe_base, "live"]),
-            Path.join([haxe_base, "controllers"])
+            Path.join([haxe_base, "live"])
           ]
       else
         base_directories
