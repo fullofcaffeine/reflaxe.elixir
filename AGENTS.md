@@ -1059,6 +1059,8 @@ bd list                          # List all issues
 bd ready                         # Show issues ready to work on (no blockers)
 bd create "Fix bug"              # Create new issue
 bd show haxe.elixir-1            # Show issue details
+bd edit haxe.elixir-1            # Edit in $EDITOR (preferred for large changes)
+bd update haxe.elixir-1 --body-file /path/to/spec.md  # Replace description from a file
 bd update haxe.elixir-1 --status in_progress  # Update status
 bd close haxe.elixir-1           # Close issue
 
@@ -1068,9 +1070,18 @@ bd dep tree haxe.elixir-1        # Visualize dependency tree
 
 # Agent workflow
 bd ready --json                  # Get unblocked work (for automation)
+bd lint --json                   # Advisory lint (missing recommended sections)
 ```
 
 **Agent Integration**: Use `bd ready` to find unblocked work. Create issues when discovering new work during development. Dependencies prevent duplicate effort across agents.
+
+### Plans (Decision Records)
+
+This repo uses a small `plans/` directory to store decision records that are larger than a single task.
+
+- Source-of-truth: beads tasks must be decision-complete and implementable without opening a plan.
+- Plans are an index/history layer and should be kept in sync, but not required reading.
+- Conventions and lifecycle: `plans/README.md`
 
 ### Run Servers in Background (Agents)
 
@@ -3028,13 +3039,14 @@ What architectural patterns should I consider?"
 ### ⚠️ CRITICAL: Re-Planning Process When Tasks Reveal New Insights
 **FUNDAMENTAL RULE: When task execution reveals the plan was wrong, go through the complete re-planning process.**
 
-**The Re-Planning Process (with Shrimp Task Management)**:
-1. **Fetch the whole plan** - Use `list_tasks` to see all current tasks
-2. **Explain the issue to Codex** - Describe what was discovered and why the plan needs revision
-3. **Use process_thought** - Think through the new insights and their implications
-4. **Recreate the whole plan** - Use `split_tasks` with clearAllTasks mode to replace the plan
-5. **Check with Codex** - Validate the revised plan with architectural review
-6. **Start executing again** - Begin from the new first task
+**The Re-Planning Process (Beads + Plans)**:
+1. **Identify the mismatch** - Write down what was discovered and why the current task spec is now wrong.
+2. **Update the beads task(s)** - Make the task(s) decision-complete with the new reality:
+   - update `FILES`, `ALGORITHM`, `FAILURE MODES`, `TESTS`, `VERIFICATION`, and `ROLLOUT` as needed
+   - if this becomes separate work, split into new beads tasks and add dependencies
+3. **Update the plan doc (if one exists)** - Plans live under `plans/` and are historical context. Keep them in sync with the revised beads tasks.
+4. **Re-run the smallest verification** - Use the bounded commands in `VERIFICATION` to confirm the new plan works.
+5. **Only then resume execution** - Continue from the first unblocked beads task.
 
 **When to trigger re-planning**:
 - Task verification fails with score < 80 due to architectural issues
@@ -3055,6 +3067,10 @@ Re-plan: Use EnumBindingPlan as single source of truth for all systems
 - Ensures architectural coherence
 - Prevents accumulating technical debt
 - Leads to proper solutions instead of band-aids
+
+**Planning artifacts**:
+- Beads tasks: `.beads/issues.jsonl`
+- Plans index: `plans/README.md`
 
 ### ⚠️ CRITICAL: Debug-First Development - No Assumptions
 **FUNDAMENTAL RULE: Always rely on debug data first. If you don't see the data/AST, don't assume things.**
