@@ -1,6 +1,6 @@
 # Vendor Directory Context for Reflaxe.Elixir
 
-> **⚠️ SYNC DIRECTIVE**: `AGENTS.md` and `CLAUDE.md` in the same directory must be kept in sync. When updating either file, update the other as well.
+> **Note**: `CLAUDE.md` in this directory is a symlink to `AGENTS.md` (no duplication). Edit `AGENTS.md` only.
 
 > **Parent Context**: See [/AGENTS.md](/AGENTS.md) for project-wide conventions
 
