@@ -777,6 +777,23 @@ Releases are published automatically via semantic versioning; see [docs/10-contr
 3. Add snapshot coverage under `test/snapshot/` (and update intended outputs if needed)
 4. Run `npm test` and `npm run qa:sentinel`
 
+### Task Management (Beads + Plans)
+
+This repo uses Beads (`bd`) for dependency-aware task tracking and a lightweight `plans/` directory for decision records.
+
+- Issues live in `.beads/issues.jsonl` (git-native export) and are edited with `bd`.
+  - Common commands: `bd list`, `bd show <id>`, `bd edit <id>`, `bd update <id> --body-file <file>`, `bd close <id>`
+- Plans live under `plans/`:
+  - `plans/active/` while any related beads tasks are still open
+  - `plans/archived/` once all related beads tasks are closed
+- Source-of-truth rule:
+  - Beads tasks must be decision-complete (files, algorithm, failure modes, tests, verification).
+  - Plans are historical context and cross-task coherence; tasks should not require reading a plan to implement.
+
+See:
+- `plans/README.md` for the plan lifecycle and the task spec contract
+- `.beads/README.md` for Beads usage
+
 ## Roadmap
 
 - Near-term priorities: [ROADMAP.md](ROADMAP.md)

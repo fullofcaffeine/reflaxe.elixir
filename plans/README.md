@@ -40,3 +40,16 @@ When a beads task has a `plan_ref`, it should still include (inline) at least:
 - `VERIFICATION`: bounded commands to run locally
 - `ROLLOUT`: defaults vs opt-ins, backward compatibility notes, escape hatches
 
+## Scope Changes (Agent Policy)
+
+Beads tasks list the expected touch points under `FILES`, but they are not a hard limit.
+
+- Allowed: touch additional files if required to meet the task acceptance criteria.
+- Required: record the scope change:
+  - Update the beads task description (`FILES` and/or add a `TOUCHED` section + rationale), or
+  - Create a follow-up beads task if the scope is truly separate work.
+- Stop and ask the human when:
+  - The scope expansion changes public APIs significantly
+  - The work would add/replace a major subsystem
+  - The change affects multiple examples/apps with non-obvious tradeoffs
+
