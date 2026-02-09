@@ -10,7 +10,7 @@ defmodule TestAppWeb.TestComponent do
   end
   def button(assigns) do
     ~H"""
-<button type={@type || "button"} disabled={@disabled}>
+<button type={@type} disabled={@disabled}>
     <%= @label %>
 </button>
 """

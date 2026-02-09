@@ -3545,21 +3545,27 @@ class ElixirASTPassRegistry {
             ]
         });
 
-        passes.push({
-            name: "ControllerJsonDataArgPickSingleVar_Final",
-            description: "When json(conn, data) and exactly one lower-case var used in body, rewrite arg2 to it",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ControllerJsonDataArgPickSingleVarTransforms.pass,
-            runAfter: [
-                "ControllerJsonDataArgToBinder_Final",
-                "ControllerCaseRenameBinderIfBodyRefsBase_Final"
-            ]
-        });
-        passes.push({
-            name: "ListIndexAccessToEnumAt",
-            description: "Rewrite list index access (entry.metas[0]) to Enum.at(entry.metas, 0)",
-            enabled: true,
-            pass: reflaxe.elixir.ast.transformers.ListIndexAccessToEnumAtTransforms.transformPass
+	        passes.push({
+	            name: "ControllerJsonDataArgPickSingleVar_Final",
+	            description: "When json(conn, data) and exactly one lower-case var used in body, rewrite arg2 to it",
+	            enabled: true,
+	            pass: reflaxe.elixir.ast.transformers.ControllerJsonDataArgPickSingleVarTransforms.pass,
+	            runAfter: [
+	                "ControllerJsonDataArgToBinder_Final",
+	                "ControllerCaseRenameBinderIfBodyRefsBase_Final"
+	            ]
+	        });
+	        passes.push({
+	            name: "ReduceMetasHeadRepair",
+	            description: "Repair accidental meta=binder in reduce branches that check entry.metas",
+	            enabled: true,
+	            pass: reflaxe.elixir.ast.transformers.ReduceMetasHeadRepairTransforms.pass
+	        });
+	        passes.push({
+	            name: "ListIndexAccessToEnumAt",
+	            description: "Rewrite list index access (entry.metas[0]) to Enum.at(entry.metas, 0)",
+	            enabled: true,
+	            pass: reflaxe.elixir.ast.transformers.ListIndexAccessToEnumAtTransforms.transformPass
         });
         passes.push({
             name: "SafePubSubModuleRewrite",

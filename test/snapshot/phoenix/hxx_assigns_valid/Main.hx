@@ -10,11 +10,10 @@ typedef Assigns = {
 class Main {
   public static function render(assigns: Assigns): String {
     return HXX.hxx('<div>
-      <p><%= @completed_todos == 0 %></p>
-      <p><%= @show_form == true %></p>
+      <p>#{@completed_todos == 0}</p>
+      <p>#{@show_form == true}</p>
     </div>');
   }
 
   public static function main() {}
 }
-

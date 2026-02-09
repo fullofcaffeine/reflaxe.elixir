@@ -63,17 +63,17 @@ class TestComponent {
     public static function template(assigns: ComponentAssigns): String {
         // This should generate ~H sigil and trigger use Phoenix.Component
         return HXX.hxx('
-            <div class={@className}>
-                <h1><%= @title %></h1>
-                <p><%= @content %></p>
+            <div class=${assigns.className}>
+                <h1>${assigns.title}</h1>
+                <p>${assigns.content}</p>
             </div>
         ');
     }
     
     public static function button(assigns: ButtonAssigns): String {
         return HXX.hxx('
-            <button type={@type || "button"} disabled={@disabled}>
-                <%= @label %>
+            <button type=${assigns.type} disabled=${assigns.disabled}>
+                ${assigns.label}
             </button>
         ');
     }
@@ -97,9 +97,9 @@ class TestLive {
                     Submit Form
                 </.button>
                 
-                <.input field={@form["name"]} label="Name" />
+                <.input field=${assigns.form["name"]} label="Name" />
                 
-                <.modal id="test-modal" show={@show_modal}>
+                <.modal id="test-modal" show=${assigns.show_modal}>
                     Modal Content Here
                 </.modal>
             </div>

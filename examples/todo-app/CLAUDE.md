@@ -220,8 +220,8 @@ Notes
 // ✅ CORRECT: Phoenix conditional syntax  
 <button class={if @active, do: "btn-active", else: "btn-inactive"}>
 
-// ✅ ALSO CORRECT: Using Phoenix template syntax directly
-<button class="<%= if @active, do: 'btn-active', else: 'btn-inactive' %>">
+// Escape hatch: raw `<% ... %>` blocks are disallowed inside `hxx('...')` by default.
+// Opt-in per function/class via `@:allow_heex` (or compile with `-D hxx_allow_raw_heex`).
 ```
 
 ### Working Examples from Codebase
@@ -252,8 +252,8 @@ return hxx('
 If you find `${@field}` patterns in the codebase:
 
 1. **For attributes**: Change `"${@field}"` → `{@field}`
-2. **For text content**: Change `${@field}` → `<%= @field %>`
-3. **For complex expressions**: Use Phoenix conditional syntax
+2. **For text content**: Change `${@field}` → `#{@field}`
+3. **For complex expressions**: Use `#{if ...}` or `<if {cond}> ... <else> ... </if>`
 
 ## 🧰 Build & Run (Mix Integration)
 

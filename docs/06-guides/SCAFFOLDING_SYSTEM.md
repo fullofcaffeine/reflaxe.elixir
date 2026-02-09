@@ -75,6 +75,7 @@ Do not run `mix haxe.phoenix.scaffold` unless the app is a Phoenix project (it e
 `mix haxe.phoenix.scaffold` is strict by default:
 
 - If it cannot find an expected Phoenix insertion point (template drift or heavy customization), it raises with a specific message.
+- If it finds an existing scaffold entry (like `haxe_client:` or `"haxe.compile.client":`) that is **not** marker-managed, it raises to avoid silently skipping an update and leaving the project in a half-wired drifted state.
 - This avoids producing a “half wired” state that only fails later (typically when `mix phx.server` starts).
 
 If your project is heavily customized and you want best-effort patching:
@@ -142,4 +143,3 @@ These are signature-managed:
 - If you remove the signature line, the file becomes user-owned and will not be overwritten.
 
 This makes client builds reproducible without relying on global haxelib state.
-

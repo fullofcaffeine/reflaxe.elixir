@@ -57,7 +57,7 @@ class Main {
   public static function render(assigns:{ count:Int, active:Bool }):String {
     return HXX.hxx('
       <div>
-        <span data-testid="count"><%= @count %></span>
+        <span data-testid="count">#{@count}</span>
         <span data-testid="status" class={if @active, do: "on", else: "off"}>status</span>
       </div>
     ');

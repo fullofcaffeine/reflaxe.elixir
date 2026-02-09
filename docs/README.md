@@ -46,6 +46,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 ### 📋 API Reference
 **[04-api-reference/](04-api-reference/)** - Technical reference documentation
 - [Annotations](04-api-reference/ANNOTATIONS.md) - @:router, @:liveview, @:schema reference
+- [Atom Type](04-api-reference/ATOM_TYPE.md) - Type-safe atoms for Elixir APIs
 - [Standard Library](04-api-reference/STANDARD_LIBRARY_HANDLING.md) - Stdlib strategy + guidance
 - [Stdlib Support Matrix](04-api-reference/STDLIB_SUPPORT_MATRIX.md) - What’s overridden vs upstream vs missing
 - [Feature Flags](04-api-reference/FEATURE_FLAGS.md) - User-facing codegen toggles (gradual rollout / debugging)
@@ -69,6 +70,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Phoenix (New App)](06-guides/PHOENIX_NEW_APP.md) - Greenfield Phoenix setup
 - [Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md) - Gradual adoption in an existing app
 - [Scaffolding System](06-guides/SCAFFOLDING_SYSTEM.md) - How generators + marker blocks work
+- [Adding Elixir Libraries From Haxe](06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md) - Thin extern + wrapper pattern
 - [Phoenix Chat Tutorial](06-guides/PHOENIX_CHAT_TUTORIAL.md) - Presence + PubSub + LiveView in Haxe
 - [Portable Chat Tutorial](06-guides/PORTABLE_CHAT_TUTORIAL.md) - Shared Haxe domain logic pattern
 - [Dogfooding](06-guides/DOGFOODING.md) - External Phoenix app upgrade validation

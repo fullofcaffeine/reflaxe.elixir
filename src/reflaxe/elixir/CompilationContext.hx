@@ -244,6 +244,15 @@ class CompilationContext implements BuildContext {
     public var currentClass: Null<ClassType>;
 
     /**
+     * Current function being compiled (when inside a class field body).
+     *
+     * WHY: Some transformations need method-level metadata at call sites (e.g. template escape hatches).
+     * WHAT: The ClassField currently being compiled, or null when outside a field body.
+     * HOW: Set by ElixirCompiler while iterating funcFields.
+     */
+    public var currentFunction: Null<ClassField>;
+
+    /**
      * Flag indicating if current module has Phoenix.Presence behavior
      * Affects how certain method calls are generated
      */
@@ -323,6 +332,8 @@ class CompilationContext implements BuildContext {
         isInExUnitTest = false;
         isInConstructorArgContext = false;
         currentModule = null;
+        currentClass = null;
+        currentFunction = null;
         currentModuleHasPresence = false;
 
         // Initialize counters
@@ -664,8 +675,7 @@ class CompilationContext implements BuildContext {
      * Get the current function being compiled
      */
     public function getCurrentFunction(): Null<ClassField> {
-        // This would need to be tracked
-        return null;
+        return currentFunction;
     }
 
     /**

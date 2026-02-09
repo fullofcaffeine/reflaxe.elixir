@@ -31,7 +31,7 @@ Inline markup notes:
 
 Enabling:
 - Add `-D hxx_inline_markup` to enable the rewrite macro. To keep overhead minimal, the rewrite only runs for Phoenix-facing modules (`@:liveview`, `@:component`, etc.) unless you also add `@:hxx_inline_markup` to a class.
-- Interpolations keep the same HXX rules: `${expr}` is still the interpolation form (it’s just text inside the markup literal).
+- Interpolations keep the same HXX rules: prefer `#{...}` for template expressions. `${...}` is supported too, but it is **Haxe** string interpolation (so it only works for real Haxe identifiers, not template-only binders like `row` from `:let`).
 
 Example:
 
@@ -41,8 +41,8 @@ import HXX.*;
 class View {
   public static function render(assigns: { name:String, online:Bool }): String {
     return hxx('
-      <div class=${assigns.online ? "online" : "offline"}>
-        Hello, ${assigns.name}!
+      <div class={if @online, do: "online", else: "offline"}>
+        Hello, #{@name}!
       </div>
     ');
   }
@@ -64,9 +64,13 @@ end
 ## Syntax Overview
 
 ### Interpolations
-- Text: `${expr}` → `<%= expr %>`; `assigns.*` is mapped to `@*`.
-- Attributes: `attr=${expr}` → `attr={expr}`. Ternaries become inline `if`:
-  - `${flag ? "on" : "off"}` → `{if flag, do: "on", else: "off"}`
+- Text (preferred): `#{expr}` → `<%= expr %>`; `assigns.*` is mapped to `@*`.
+- Text (also supported): `${expr}` when `expr` is a Haxe expression (Haxe interpolation), then lowered into HEEx.
+- Attributes: `attr={expr}` stays as `attr={expr}` (HEEx attribute expressions). When written via `${...}`, HXX normalizes to `{...}`.
+
+### Raw HEEx Escape Hatch (Avoid)
+- Raw `<% ... %>` blocks inside `hxx('...')` / `HXX.hxx('...')` are **disallowed by default**.
+- Opt-in escape hatch: add `@:allow_heex` to the enclosing function or class (or compile with `-D hxx_allow_raw_heex`).
 
 ### Assigns
 - `render(assigns: AssignsType)` is required; `@field` references are validated against `AssignsType`.

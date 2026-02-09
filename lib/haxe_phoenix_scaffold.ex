@@ -642,10 +642,21 @@ defmodule HaxePhoenixScaffold do
       "],"
     ]
 
-    # If the entry already exists (but isn't marker-managed), don't duplicate it.
+    # If the entry already exists (but isn't marker-managed), do not silently no-op. Strict mode
+    # must fail fast so users don't think they're scaffolded but actually drift from the expected
+    # watcher shape (promotion spec, debounce, etc.).
     if String.contains?(content, "haxe_client: [") and
          not String.contains?(content, begin_token) and
          not String.contains?(content, end_token) do
+      warn_or_raise(
+        "failed to patch config/dev.exs: found an existing haxe_client watcher entry, but it is not marker-managed.\n" <>
+          "Remove the existing haxe_client watcher and re-run `mix haxe.phoenix.scaffold`, or wrap it in a marker block:\n" <>
+          "  # #{begin_token}\n" <>
+          "  ...\n" <>
+          "  # #{end_token}",
+        strict
+      )
+
       content
     else
     case replace_marker_block_lines(content, begin_token, end_token, desired_lines) do
@@ -719,10 +730,20 @@ defmodule HaxePhoenixScaffold do
       "],"
     ]
 
-    # If the alias already exists (but isn't marker-managed), don't duplicate it.
+    # If the alias already exists (but isn't marker-managed), do not silently no-op. The promote
+    # spec is part of the scaffold contract; strict mode must fail fast on drift.
     if String.contains?(content, "\"haxe.compile.client\":") and
          not String.contains?(content, begin_token) and
          not String.contains?(content, end_token) do
+      warn_or_raise(
+        "failed to patch mix.exs: found an existing \"haxe.compile.client\" alias, but it is not marker-managed.\n" <>
+          "Remove the existing alias and re-run `mix haxe.phoenix.scaffold`, or wrap it in a marker block:\n" <>
+          "  # #{begin_token}\n" <>
+          "  ...\n" <>
+          "  # #{end_token}",
+        strict
+      )
+
       content
     else
     case replace_marker_block_lines(content, begin_token, end_token, desired_lines) do

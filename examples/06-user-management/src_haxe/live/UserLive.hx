@@ -332,24 +332,24 @@ class UserLive {
     public static function button(assigns: ButtonAssigns): String {
         return hxx('
         <button
-            type={if (@type != nil), do: @type, else: "button"}
+            type=#{@type != nil ? @type : "button"}
             disabled={@disabled}
         >
-            <%= @inner_content %>
+            #{@inner_content}
         </button>
         ');
     }
 
     public static function icon(assigns: IconAssigns): String {
         return hxx('
-        <span class={("icon icon-" <> Kernel.to_string(@name))}></span>
+        <span class="icon icon-#{@name}"></span>
         ');
     }
 
     public static function input(assigns: InputAssigns): String {
         return hxx('
         <input
-            type={if (@type != nil), do: @type, else: "text"}
+            type=#{@type != nil ? @type : "text"}
             name={@name}
             value={@value}
             placeholder={@placeholder}
@@ -361,7 +361,7 @@ class UserLive {
     public static function label(assigns: LabelAssigns): String {
         return hxx('
         <label>
-            <%= @inner_content %>
+            #{@inner_content}
         </label>
         ');
     }

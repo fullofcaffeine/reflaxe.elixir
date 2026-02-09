@@ -54,6 +54,20 @@ GREEN := \033[0;32m
 RED := \033[0;31m
 RESET := \033[0m
 
+# Test result temp files
+#
+# WHY:
+# - The Makefile historically used `test-results*.tmp`, which can be polluted by stale
+#   artifacts (e.g. interrupted runs). That makes local runs flaky and can mask real failures.
+# - Use a per-invocation run id so each `make summary-negative` only reads its own outputs.
+#
+# NOTE:
+# - We intentionally leave old run files behind to keep recipes simple and deterministic.
+# - They are ignored by subsequent runs because the glob is run-id scoped.
+TEST_RESULTS_RUN_ID ?= $(shell python3 -c 'import time; print(int(time.time()*1e9))')
+TEST_RESULTS_PREFIX := test-results-$(TEST_RESULTS_RUN_ID)
+TEST_RESULTS_GLOB := $(TEST_RESULTS_PREFIX)-*.tmp
+
 # Discover positive and negative tests
 # Positive tests: all under snapshot except the negative/ subtree
 # NOTE: The snapshot suite includes some legacy/experimental areas that are not
@@ -123,17 +137,17 @@ summary-negative: $(NEGATIVE_TEST_TARGETS)
 	@echo ""
 	@echo "========================================"
 	@neg_total=$$(echo "$(NEGATIVE_TESTS)" | tr ' ' '\n' | sed '/^$$/d' | wc -l | tr -d ' '); \
-	neg_failed=$$(cat test-results*.tmp 2>/dev/null | grep -c "NEG-OK") || neg_failed=0; \
-	neg_unexpected=$$(cat test-results*.tmp 2>/dev/null | grep -c "NEG-UNEXPECTED-SUCCESS") || neg_unexpected=0; \
+	neg_failed=$$(cat $(TEST_RESULTS_GLOB) 2>/dev/null | grep -c "NEG-OK") || neg_failed=0; \
+	neg_unexpected=$$(cat $(TEST_RESULTS_GLOB) 2>/dev/null | grep -c "NEG-UNEXPECTED-SUCCESS") || neg_unexpected=0; \
 	echo "Negative Tests: $$neg_failed/$$neg_total correctly failed"; \
 	if [ "$$neg_total" != "0" ] && [ $$neg_unexpected -eq 0 ] && [ $$neg_failed -eq $$neg_total ]; then \
 		echo "$(GREEN)SUCCESS: All negative tests failed as expected ✅$(RESET)"; \
-		rm -f test-results*.tmp; \
+		rm -f $(TEST_RESULTS_GLOB); \
 		true; \
 	else \
 		if [ $$neg_total -eq 0 ]; then echo "No negative tests found"; fi; \
 		echo "$(RED)FAILED: Some negative tests did not fail as expected$(RESET)"; \
-		cat test-results*.tmp 2>/dev/null | grep "NEG-UNEXPECTED-SUCCESS" | sed 's/^/  /' || true; \
+		cat $(TEST_RESULTS_GLOB) 2>/dev/null | grep "NEG-UNEXPECTED-SUCCESS" | sed 's/^/  /' || true; \
 		exit 1; \
 	fi
 
@@ -148,18 +162,18 @@ summary-negative-safe:
 		name=$${d#negative/}; \
 		td="$(NEGATIVE_DIR)/$$name"; \
 		if [ ! -f "$$td/compile.hxml" ]; then \
-			echo "❌ negative/$$name - Negative test directory not found" | tee -a test-results-$$$$.tmp; \
+			echo "❌ negative/$$name - Negative test directory not found" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
 			continue; \
 		fi; \
 		echo "Running negative negative/$$name (expected failure)..."; \
 		start=$$(date +%s); \
 		if $(WITH_TIMEOUT) $(TIMEOUT_SECS) bash -c "cd $$td && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
 			end=$$(date +%s); duration=$$((end - start)); \
-			echo "NEG-UNEXPECTED-SUCCESS $$name ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+			echo "NEG-UNEXPECTED-SUCCESS $$name ($${duration}s)" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
 			neg_unexpected=$$((neg_unexpected + 1)); \
 		else \
 			end=$$(date +%s); duration=$$((end - start)); \
-			echo "NEG-OK $$name ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+			echo "NEG-OK $$name ($${duration}s)" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
 			neg_failed=$$((neg_failed + 1)); \
 		fi; \
 		neg_total=$$((neg_total + 1)); \
@@ -170,7 +184,7 @@ summary-negative-safe:
 	else \
 		if [ $$neg_total -eq 0 ]; then echo "No negative tests found"; fi; \
 		echo "$(RED)FAILED: Some negative tests did not fail as expected$(RESET)"; \
-		cat test-results*.tmp 2>/dev/null | grep "NEG-UNEXPECTED-SUCCESS" | sed 's/^/  /' || true; \
+		cat $(TEST_RESULTS_GLOB) 2>/dev/null | grep "NEG-UNEXPECTED-SUCCESS" | sed 's/^/  /' || true; \
 		exit 1; \
 	fi
 
@@ -182,18 +196,18 @@ neg-%:
 	name=$$(echo $* | sed 's|__|/|g'); \
 	testdir=$(NEGATIVE_DIR)/$$name; \
 	if [ ! -f $$testdir/compile.hxml ]; then \
-		echo "❌ negative/$$name - Negative test directory not found" | tee -a test-results-$$$.tmp; \
+		echo "❌ negative/$$name - Negative test directory not found" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
 		exit 1; \
 	fi; \
 	echo "Running negative negative/$$name (expected failure)..."; \
 	start=$$(date +%s); \
 	if $(WITH_TIMEOUT) $(TIMEOUT_SECS) bash -c "cd $$testdir && haxe -D elixir_output=$(OUTPUT_DIR) -D reflaxe.dont_output_metadata_id $(HAXE_FLAGS) compile.hxml" > /dev/null 2>&1; then \
 		end=$$(date +%s); duration=$$((end - start)); \
-    echo "NEG-UNEXPECTED-SUCCESS $$name ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+    echo "NEG-UNEXPECTED-SUCCESS $$name ($${duration}s)" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
 		exit 1; \
 	else \
 		end=$$(date +%s); duration=$$((end - start)); \
-    echo "NEG-OK $$name ($${duration}s)" | tee -a test-results-$$$$.tmp; \
+    echo "NEG-OK $$name ($${duration}s)" | tee -a $(TEST_RESULTS_PREFIX)-$$$$.tmp; \
 	fi; \
 	}
 

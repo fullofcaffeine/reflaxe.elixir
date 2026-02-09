@@ -1590,6 +1590,9 @@ class ElixirCompiler extends GenericCompiler<
                         if (tfunc.expr != null) {
                             // Create context for dependency tracking
                             var context = createCompilationContext();
+                            context.currentClass = classType;
+                            context.currentFunction = func;
+                            context.setCurrentPosition(func.pos);
 
                             // Initialize behavior transformer if needed
                             if (context.behaviorTransformer == null) {
@@ -1885,6 +1888,10 @@ class ElixirCompiler extends GenericCompiler<
 		            // Reset anonymous temp naming per function for deterministic output.
 		            var previousAnonymousTempVarCounter = context.anonymousTempVarCounter;
 		            context.anonymousTempVarCounter = 0;
+
+		            // Track current function for method-level metadata checks (e.g. HXX escape hatches).
+		            var previousCurrentFunction = context.currentFunction;
+		            context.currentFunction = funcData.field;
 
 		            try {
 		            
@@ -2401,6 +2408,7 @@ class ElixirCompiler extends GenericCompiler<
 			                context.infraVarSubstitutions = previousInfraVarSubstitutions;
 			                context.loopControlStateStack = previousLoopControlStateStack;
 			                context.anonymousTempVarCounter = previousAnonymousTempVarCounter;
+			                context.currentFunction = previousCurrentFunction;
 			                throw e;
 			            }
 
@@ -2411,6 +2419,7 @@ class ElixirCompiler extends GenericCompiler<
 			            context.infraVarSubstitutions = previousInfraVarSubstitutions;
 			            context.loopControlStateStack = previousLoopControlStateStack;
 			            context.anonymousTempVarCounter = previousAnonymousTempVarCounter;
+			            context.currentFunction = previousCurrentFunction;
 			        }
 
         // Prepare metadata for special module types BEFORE building the module

@@ -266,6 +266,7 @@ This task is safe to run repeatedly. It patches files using explicit marker bloc
 On re-run, only the content inside those blocks is replaced (no repeated insertions).
 On first run, if an expected Phoenix shape isn't found, the task fails fast by default.
 Use `--warn-only` to keep going (it emits a warning and skips that patch).
+If it finds an existing scaffolded entry that is not marker-managed, it also fails fast (to avoid silently skipping updates).
 
 **Files patched**
 

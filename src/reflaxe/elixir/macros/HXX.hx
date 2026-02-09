@@ -3,6 +3,7 @@ package reflaxe.elixir.macros;
 #if macro
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.Type;
 #if (macro && hxx_instrument_sys)
 import reflaxe.elixir.macros.MacroTimingHelper;
 #end
@@ -214,13 +215,60 @@ class HXX {
     }
 
     #if macro
+    static function containsRawHeexMarkers(s: String): Bool {
+        if (s == null) return false;
+        // Any raw EEx/HEEx marker is considered an escape hatch that bypasses HXX typing.
+        // We keep this strict because raw markers are easy to accidentally paste in from
+        // a Phoenix template and silently lose type-safety.
+        return s.indexOf("<%=") != -1
+            || s.indexOf("<% ") != -1
+            || s.indexOf("<%\n") != -1
+            || s.indexOf("<%#") != -1;
+    }
+
+    static function allowRawHeexInHxxTemplates(): Bool {
+        // Transitional flag: allow projects to migrate incrementally if needed.
+        if (Context.defined("hxx_allow_raw_heex")) return true;
+
+        var localClassRef = Context.getLocalClass();
+        if (localClassRef == null) return false;
+        var cls = localClassRef.get();
+        if (cls == null || cls.meta == null) return false;
+
+        // Class-level opt-in.
+        if (cls.meta.has(":allow_heex")) return true;
+
+        var methodName = Context.getLocalMethod();
+        if (methodName == null || methodName.length == 0) return false;
+
+        inline function fieldHasAllowHeex(f: ClassField): Bool {
+            return f != null && f.meta != null && f.meta.has(":allow_heex");
+        }
+
+        // Prefer statics first: LiveView render/1 is typically `public static`.
+        for (f in cls.statics.get()) if (f != null && f.name == methodName && fieldHasAllowHeex(f)) return true;
+        for (f in cls.fields.get()) if (f != null && f.name == methodName && fieldHasAllowHeex(f)) return true;
+
+        return false;
+    }
+
     static function hxxInternal(templateStr: Expr): Expr {
         return switch (templateStr.expr) {
             case EConst(CString(s, _)):
-                // Fast-path: if author already provided EEx/HEEx markers, do not rewrite.
-                // This avoids unnecessary processing and prevents pathological regex scans.
-                // We still tag it so the builder emits a ~H sigil.
-                if (s.indexOf("<%=") != -1 || s.indexOf("<% ") != -1 || s.indexOf("<%\n") != -1) {
+                // By default, do not allow raw EEx/HEEx markers inside HXX templates.
+                // These bypass HXX typing/linting and defeat the main purpose of authoring HEEx in Haxe.
+                if (containsRawHeexMarkers(s)) {
+                    if (!allowRawHeexInHxxTemplates()) {
+                        Context.error(
+                            "Raw HEEx markers (<% ... %>) are not allowed inside hxx('...') by default.\n"
+                            + "Use HXX control tags (<if {cond}>...</if>, <for {x in list}>...</for>) and ${...} interpolations instead.\n"
+                            + "If you must embed raw HEEx, opt in explicitly with @:allow_heex on the containing method or class (or set -D hxx_allow_raw_heex during migration).",
+                            templateStr.pos
+                        );
+                    }
+
+                    // Escape hatch: preserve author-provided HEEx as-is, but still run the minimal
+                    // preprocessing that normalizes HXX control tags if present.
                     var preProcessed = rewriteForBlocks(s);
                     return macro @:heex $v{preProcessed};
                 }

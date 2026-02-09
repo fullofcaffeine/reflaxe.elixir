@@ -58,3 +58,7 @@ assets/js/_hx_app_tmp.js.map
 # Reflaxe.Elixir (Haxe client JS stable import target; generated via promotion)
 assets/js/hx_app.js
 assets/js/hx_app.js.map
+
+# Playwright artifacts
+/test-results/
+/playwright-report/

@@ -257,13 +257,15 @@ class ProjectGenerator {
 			File.saveContent(haxercPath, '{\n  "version": "4.3.7",\n  "resolveLibs": "scoped"\n}\n');
 		}
 		
-		// Always regenerate AGENTS.md from template to ensure correct project name
-		var claudePath = Path.join([projectPath, "AGENTS.md"]);
-		var content = generateClaudeInstructions(options);
-		File.saveContent(claudePath, content);
-		if (options.verbose) {
-			Sys.println('Created AGENTS.md with AI development instructions');
-		}
+			// Always regenerate AGENTS.md + CLAUDE.md from the same template (kept in sync).
+			var agentPath = Path.join([projectPath, "AGENTS.md"]);
+			var claudePath = Path.join([projectPath, "CLAUDE.md"]);
+			var content = generateClaudeInstructions(options);
+			File.saveContent(agentPath, content);
+			File.saveContent(claudePath, content);
+			if (options.verbose) {
+				Sys.println('Created AGENTS.md + CLAUDE.md with AI development instructions');
+			}
 		
 		Sys.println("");
 		Sys.println("✅ Updated mix.exs with :haxe compiler + reflaxe_elixir dependency");
@@ -283,13 +285,15 @@ class ProjectGenerator {
 			File.saveContent(gitignorePath, content);
 		}
 		
-		// Always regenerate AGENTS.md from template to ensure correct project name
-		var claudePath = Path.join([projectPath, "AGENTS.md"]);
-		var content = generateClaudeInstructions(options);
-		File.saveContent(claudePath, content);
-		if (options.verbose) {
-			Sys.println('Created AGENTS.md with AI development instructions');
-		}
+			// Always regenerate AGENTS.md + CLAUDE.md from the same template (kept in sync).
+			var agentPath = Path.join([projectPath, "AGENTS.md"]);
+			var claudePath = Path.join([projectPath, "CLAUDE.md"]);
+			var content = generateClaudeInstructions(options);
+			File.saveContent(agentPath, content);
+			File.saveContent(claudePath, content);
+			if (options.verbose) {
+				Sys.println('Created AGENTS.md + CLAUDE.md with AI development instructions');
+			}
 
 		// Ensure .haxerc exists for lix-managed toolchain
 		var haxercPath = Path.join([projectPath, ".haxerc"]);
@@ -804,26 +808,55 @@ mix phx.server
 ```
 ';
 
-			case "claude.md.tpl":
-				'# AI Development Notes for {{PROJECT_NAME}}
+				case "claude.md.tpl":
+					'# AI/Agent Development Context for {{PROJECT_NAME}}
 
-This project uses Reflaxe.Elixir (Haxe → Elixir) for gradual adoption and type-safe BEAM development.
+> **⚠️ SYNC DIRECTIVE**: `AGENTS.md` and `CLAUDE.md` must be kept in sync. When updating either file, update the other as well.
 
-## Day-to-day
+This project uses Reflaxe.Elixir (Haxe → Elixir) for type-safe BEAM development.
+
+## Day-to-day commands
 
 ```bash
-# Compile once
+# Compile once (Haxe -> Elixir)
 npm run compile
+
+# Watch + recompile on changes (recommended during development)
+mix haxe.watch
 
 # Run Elixir tests
 mix test
 ```
 
-## Phoenix runtime
+## Phoenix projects
 
 ```bash
+# Start the Phoenix dev server (uses config/dev.exs watchers)
 mix phx.server
+
+# If you need to wire the client JS build (Genes + esbuild watch safety):
+mix haxe.phoenix.scaffold
 ```
+
+`mix haxe.phoenix.scaffold` is strict by default (fail-fast). For heavily customized Phoenix templates, use:
+
+```bash
+mix haxe.phoenix.scaffold --warn-only
+```
+
+## Frontend/UI Work (Required)
+
+	- When making changes to frontend/UI/UX (HTML/CSS/JS, LiveView templates, hooks, layouts), use the `$$frontend-design` skill to keep output production-grade and intentional.
+
+## HXX Raw HEEx Policy (Required)
+
+	- Avoid embedding raw EEx/HEEx blocks (`<% ... %>`, `<%= ... %>`) inside `hxx("...")` / `HXX.hxx("...")` templates.
+- Use HXX constructs (`#{...}` text interpolation, `<if>` / `<for>` control tags) and typed assigns instead.
+- Escape hatch (avoid): add `@:allow_heex` to the enclosing function/class, or compile with `-D hxx_allow_raw_heex`.
+
+## Source-of-truth rule
+
+- Do not patch generated `.ex` files to change behavior. Fix the Haxe source (`src_haxe/**`) or the compiler/stdlib upstream instead.
 ';
 
 			case "api_reference.md.tpl":
