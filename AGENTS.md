@@ -1,6 +1,6 @@
 # AI/Agent Development Context for Haxe→Elixir Compiler
 
-> **⚠️ SYNC DIRECTIVE**: `AGENTS.md` and `CLAUDE.md` must be kept in sync. When updating either file, update the other as well. Both files contain identical content to support different AI agent tooling (Claude Code uses `CLAUDE.md`, other agents may use `AGENTS.md`).
+> **Note**: `CLAUDE.md` in this directory is a symlink to `AGENTS.md` (no duplication). Edit `AGENTS.md` only.
 
 ## 🚦 Non-Blocking Todo-App QA (Required)
 
