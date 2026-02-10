@@ -156,8 +156,9 @@ class CoreComponents {
      * Renders a button component
      *
      * NOTE
-     * - This uses Haxe inline markup as pure syntax sugar over `hxx('...')`.
-     * - Requires `-D hxx_inline_markup` (enabled in `build-server.hxml` for this app).
+     * - This uses Haxe inline markup (`return <button ...>`) for typed template authoring.
+     * - Inline markup is enabled by default for Phoenix-facing modules; opt out with `-D hxx_no_inline_markup`
+     *   (or `@:hxx_no_inline_markup` on the class).
      */
     @:component
     public static function button(assigns: ButtonAssigns): String {

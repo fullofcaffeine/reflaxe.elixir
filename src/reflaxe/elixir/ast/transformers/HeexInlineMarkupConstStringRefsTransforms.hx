@@ -49,12 +49,6 @@ class HeexInlineMarkupConstStringRefsTransforms {
     #end
 
     public static function transformPass(ast: ElixirAST): ElixirAST {
-        #if macro
-        if (!Context.defined("hxx_inline_markup") && !Context.defined("hxx_strict_phx_hook") && !Context.defined("hxx_strict_phx_events")) {
-            return ast;
-        }
-        #end
-
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
                 case ESigil(type, content, modifiers) if (type == "H" || type == "h"):

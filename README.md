@@ -557,7 +557,7 @@ typedef CounterAssigns = { count: Int };
 
 Inline markup (optional syntax sugar)
 
-If you prefer TSX-like authoring, you can also use Haxe inline markup literals as sugar over `hxx(...)`:
+If you prefer TSX-like authoring, you can also use Haxe inline markup literals as syntax sugar for HEEx templates (the compiler rewrites them into a canonical template entrypoint and lowers to `~H`):
 
 ```haxe
 class CounterView {

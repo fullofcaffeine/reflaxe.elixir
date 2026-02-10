@@ -351,6 +351,52 @@ defmodule UserLive do
 end
 ```
 
+### Template / HXX Metadata (Phoenix HEEx)
+
+These annotations control how Reflaxe.Elixir processes HEEx templates authored from Haxe (via `hxx('...')` / inline markup).
+
+#### @:allow_heex (Escape Hatch, Avoid)
+
+By default, raw EEx/HEEx markers (`<% ... %>`, `<%= ... %>`) are rejected inside Haxe-authored templates because they bypass the HXX linting surface.
+
+Add `@:allow_heex` to a **class** or **function** to opt in explicitly:
+
+```haxe
+@:liveview
+class MyLive {
+  @:allow_heex
+  public static function render(assigns: MyAssigns): String {
+    return hxx('<div><%= @count %></div>');
+  }
+}
+```
+
+Global escape hatch (migration only): `-D hxx_allow_raw_heex`.
+
+#### Inline Markup Controls
+
+Inline markup (`return <div>...</div>`) is rewritten into a canonical template entrypoint and lowered to `~H` by the compiler.
+
+Controls:
+
+- `@:hxx_no_inline_markup`: opt out for a module.
+- `-D hxx_no_inline_markup`: opt out globally.
+- `@:hxx_inline_markup`: force-enable for non-Phoenix modules (default scope is Phoenix-facing modules like `@:liveview`, `@:component`, etc).
+- `@:hxx_legacy`: force the legacy rewrite path (wrap markup payload in `HXX.hxx("...")`) for migration.
+
+#### Strictness Toggles (Local Metadata)
+
+Most HXX strict checks can be enabled either globally (via `-D ...`) or locally (via `@:...` metadata on the class or function).
+
+Available strictness annotations:
+
+- `@:hxx_strict_components` (global: `-D hxx_strict_components`)
+- `@:hxx_strict_slots` (global: `-D hxx_strict_slots`)
+- `@:hxx_strict_html` (global: `-D hxx_strict_html`)
+- `@:hxx_strict_phx_hook` (global: `-D hxx_strict_phx_hook`)
+- `@:hxx_strict_phx_events` (global: `-D hxx_strict_phx_events`)
+- `@:hxx_allow_string_fallback` (global: `-D hxx_allow_string_fallback`)
+
 ### @:presence - Phoenix Presence
 
 Transforms a class into a Phoenix.Presence module for real-time presence tracking across distributed nodes.

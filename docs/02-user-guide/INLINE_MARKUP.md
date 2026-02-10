@@ -1,4 +1,4 @@
-# Inline Markup (Optional): TSX‑Like Sugar Over `hxx('...')`
+# Inline Markup: TSX‑Like Authoring for Phoenix HEEx
 
 Haxe supports “inline markup” literals:
 
@@ -8,32 +8,29 @@ return <div class="counter">
 </div>;
 ```
 
-In Reflaxe.Elixir, inline markup is **pure syntax sugar** over HXX:
+In Reflaxe.Elixir, inline markup is syntax sugar over a compiler-intercepted template entrypoint:
 
-- Haxe parses inline markup as `@:markup "<div ...>...</div>"` (a string constant with metadata).
-- The compiler normally rejects `@:markup` during typing (“Markup literals must be processed by a macro”).
-- Reflaxe.Elixir provides an opt‑in macro (`InlineMarkup`) that rewrites these expressions into `HXX.hxx("...")`
-  before typing.
-- After rewrite, the standard HXX → HEEx pipeline runs (assigns mapping, attribute normalization, strict checks, etc).
+- Inline markup becomes `@:markup "<div ...>...</div>"` (a string constant with metadata).
+- A build macro rewrites `@:markup` into `phoenix.hxx.HeexTemplate.root(<typed template expr>)` before typing.
+- The compiler lowers `HeexTemplate.root/1` to `~H"""..."""` deterministically (same lowering strategy as `HXX.hxx/1`).
 
-This means inline markup:
-- Generates the **same Elixir** as `hxx('...')`.
-- Has **no runtime cost**.
-- Uses the **same type checking and HXX linting** once rewritten.
+Inline markup parsing extracts `${ ... }` segments and converts them into real Haxe expressions via `Context.parseInlineString`,
+so the Haxe typer checks syntax and types.
 
-## Enabling
+Legacy note: `@:hxx_legacy` forces the old "rewrite to `HXX.hxx(\"...\")`" behavior for migration.
 
-Inline markup is **opt‑in** to avoid any compilation overhead unless you want it.
+Implementation: `src/reflaxe/elixir/macros/InlineMarkup.hx`.
 
-Add the define to your `.hxml` / build:
+## Defaults and Opt-Out
 
-```hxml
--D hxx_inline_markup
-```
+- Inline markup rewrite is enabled by default for Phoenix-facing modules.
+- Opt out globally: `-D hxx_no_inline_markup`
+- Opt out per module: `@:hxx_no_inline_markup`
+- Force legacy rewrite per module: `@:hxx_legacy`
 
 ## Where It Runs (Scope)
 
-Even when enabled, the rewrite is scoped to keep overhead minimal:
+The rewrite is scoped to keep overhead minimal:
 
 - By default, it only runs for Phoenix‑facing modules:
   - `@:liveview`, `@:component`, `@:controller`, `@:channel`, `@:endpoint`, `@:router`, `@:presence`, `@:socket`, `@:phoenix.components`
@@ -47,8 +44,6 @@ class SomeHelper {
   }
 }
 ```
-
-Implementation: `src/reflaxe/elixir/macros/InlineMarkup.hx`.
 
 ## Limitations (Haxe Lexer Rules)
 
@@ -74,19 +69,24 @@ syntax becomes available in a future Haxe release, we can adopt it to avoid wrap
 
 ## Interpolation and HEEx
 
-Inline markup is still **HXX text** under the hood, so the rules are the same:
+Inline markup expressions are authored in Haxe:
 
 - Text interpolation uses `${expr}` and is lowered to HEEx/EEx.
-- Attribute interpolation uses `attr=${expr}`.
-- `assigns.*` is mapped to `@*` in HEEx.
+- Attribute interpolation uses `attr=${expr}` (and supports mixed static + interpolation).
+- `assigns.*` is mapped to `@*` in HEEx where applicable.
 
 ## Typed `phx-hook` / `phx-*` Names in Inline Markup
 
-Inline markup attribute brace expressions like `phx-hook={HookName.Ping}` are authored as **raw text**
-inside the markup literal. That means they are **not** type-checked as normal Haxe expressions.
+Recommended: author hook/event names as normal Haxe expressions:
 
-To keep strict Phoenix typing usable (and to ensure the generated HEEx is valid Elixir), the compiler
-rewrites simple string-constant references inside brace attributes into **literal binaries**:
+```haxe
+return <div phx-hook=${HookName.Ping}></div>;
+```
+
+Escape hatch: brace attributes like `phx-hook={HookName.Ping}` are still supported, but the inner
+expression is raw text. To keep strict Phoenix typing usable (and to ensure generated HEEx is valid
+Elixir), the compiler rewrites known string-constant references inside brace attributes into literal
+binaries:
 
 Haxe:
 
@@ -105,8 +105,7 @@ Generated HEEx:
 <div phx-hook={"Ping"}></div>
 ```
 
-This makes `-D hxx_strict_phx_hook` / `-D hxx_strict_phx_events` compatible with inline markup, while
-still keeping inline markup “pure sugar” over HXX.
+This makes strict hook/event typing compatible with inline markup even when brace attributes are used.
 
 ## Editor Completions
 
@@ -120,12 +119,11 @@ The companion VSCode extension (`tools/vscode-hxx/`) reads `tmp/hxx-registry.jso
 
 It works inside both:
 - `hxx('...')` / `HXX.hxx('...')` templates
-- Inline markup literals (`<div ...>`) when `-D hxx_inline_markup` is enabled
+- Inline markup literals (`<div ...>`)
 
 Note: inline-markup completion detection is heuristic (it avoids triggering inside normal string literals).
 
 ## Performance
 
 - **Runtime:** no impact (everything is compile-time).
-- **Compile time:** there is a small extra AST walk *only* when `-D hxx_inline_markup` is enabled and only for
-  the scoped Phoenix-facing modules (or `@:hxx_inline_markup`).
+- **Compile time:** there is a small extra AST walk only for scoped Phoenix-facing modules (or `@:hxx_inline_markup`).

@@ -62,17 +62,20 @@ applications is the `std/HXX.hx` stub + AST‑intercept path to avoid nested mac
 ## Optional: Inline Markup (Syntax Sugar)
 
 Haxe also supports inline markup literals (`return <div>...</div>`). Reflaxe.Elixir enables these
-as **syntax sugar** over HXX by rewriting `@:markup "..."` (the parser representation) into
-`HXX.hxx("...")` before typing, so the existing HXX pipeline and linters apply.
+as syntax sugar by rewriting `@:markup "..."` (the parser representation) into a canonical,
+compiler-intercepted template entrypoint: `phoenix.hxx.HeexTemplate.root(...)`.
 
 Implementation:
 - `src/reflaxe/elixir/macros/InlineMarkup.hx`
-- Opt-in via `-D hxx_inline_markup` (the macro is wired from `src/reflaxe/elixir/CompilerInit.hx`)
+- Default-on for Phoenix-facing modules; opt out with `-D hxx_no_inline_markup` / `@:hxx_no_inline_markup`
+- Legacy escape hatch: `@:hxx_legacy` forces the old rewrite-to-`HXX.hxx("...")` behavior for that class
 
 How it works (high-level):
 - Haxe parses `<div>...</div>` into an expression `@:markup "<div>...</div>"`.
-- The `InlineMarkup` build macro walks expressions and rewrites `@:markup` into `HXX.hxx("...")`.
-- After that, the normal HXX detection/linting/lowering runs and emits `~H"""..."""`.
+- The `InlineMarkup` build macro walks expressions and rewrites `@:markup` into `HeexTemplate.root(<typedExpr>)`.
+- `${ ... }` segments inside the markup payload are parsed into real Haxe expressions (`Context.parseInlineString`),
+  so the Haxe typer checks syntax and types.
+- The AST builder lowers `HeexTemplate.root/1` to `~H"""..."""` deterministically.
 - The rewrite is copy-on-write and scoped to Phoenix-facing modules to keep overhead minimal.
 
 Limitations:
@@ -85,7 +88,7 @@ Strict phx-hook / phx-event typing:
   (e.g. `phx-hook={"Ping"}`) so output is valid Elixir and strict linters can treat them as compile-time constants.
 
 Performance:
-- Inline markup has no runtime cost. Compile-time overhead is a small additional AST walk to rewrite `@:markup` into `HXX.hxx(...)`.
+Inline markup has no runtime cost. Compile-time overhead is a small additional AST walk to rewrite `@:markup` and parse `${...}` segments.
 
 ## Minimal Example
 
@@ -107,7 +110,7 @@ Generated Elixir:
 ```elixir
 def render(assigns) do
   ~H"""
-  <h1>{assigns.title}</h1>
+  <h1><%= @title %></h1>
   """
 end
 ```

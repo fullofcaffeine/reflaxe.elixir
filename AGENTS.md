@@ -33,6 +33,7 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 
 - Bugs: when you fix a bug, add a regression test/snapshot when it fits (and keep it minimal).
 - If the bug is already covered by an existing test, update/fix that test instead of adding duplicates.
+- Repair transforms (when unavoidable): keep them narrowly scoped and deterministic, document them with hxdoc (WHAT/WHY/HOW/EXAMPLES), and add a regression snapshot. If the repair is compensating for an earlier miscompile shape, add a low-priority follow-up task to prevent the bad shape from being emitted upstream.
 
 - Snapshots (quick): `npm run test:quick` (core/stdlib/regression)
 - Snapshots (full CI categories): `scripts/test-chunks.sh`

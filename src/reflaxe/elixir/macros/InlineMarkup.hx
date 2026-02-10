@@ -10,7 +10,7 @@ import haxe.macro.Expr;
  * InlineMarkup
  *
  * WHAT
- * - Enables Haxe inline markup (`return <div>...</div>`) as syntax sugar for HXX templates.
+ * - Enables Haxe inline markup (`return <div>...</div>`) as syntax sugar for Phoenix HEEx templates.
  * - Rewrites `@:markup "<tag>...</tag>"` expressions (produced by the parser) into a stable
  *   compiler-intercepted call shape: `phoenix.hxx.HeexTemplate.root(<template-expr>)`.
  * - Parses `${ ... }` segments inside inline markup payloads into real Haxe `Expr` nodes, so the
