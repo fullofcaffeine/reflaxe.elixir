@@ -104,7 +104,8 @@ The foundation for multi-target development:
 - **HEEx Templates (typed-first)** - TSX-like inline markup + compile-time lowering to `~H` with optional strict checks for Phoenix/LiveView attributes
   - Inline markup (`return <div>...</div>`) is the recommended default: `${...}` splices are real Haxe expressions (parsed + type-checked) and are lowered into HEEx (`~H`) by the compiler pipeline.
   - Typed loops: `phoenix.hxx.HeexTemplate.for_each(items, (item) -> <li>...</li>)` lowers to a HEEx `<%= for ... do %>` block so repeated markup is not HTML-escaped.
-  - Template strings (`hxx('...')` / `HXX.hxx('...')`) remain supported for migration. Only normal Haxe string interpolation (`${...}` inside a Haxe interpolated string) is type-checked; template-local DSL constructs like `<if { ... }>` / `<for { ... }>` headers and `#{...}` markers are rewritten + linted but are not Haxe-typed.
+  - Template strings (`hxx('...')` / `HXX.hxx('...')`) remain supported for migration, but they are **string-rewritten + linted**, not fully Haxe-typed. Prefer inline markup for typed Haxe expressions.
+  - Layered template modes: `@:hxx_mode("tsx")` enforces a fully-typed authoring style (no raw `<% ... %>`, no `#{...}`, no `<if { ... }>` / `<for { ... }>` markers). `@:hxx_mode("metal")` allows raw HEEx (discouraged).
   - **Template Helper Metadata** ✨ NEW - Uses @:templateHelper metadata for extensible Phoenix function compilation
   - **Type-Safe Phoenix Abstractions** ✨ NEW - Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with operator overloading
 - **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations remain opt‑in/experimental** (`-D ecto_migrations_exs`)  

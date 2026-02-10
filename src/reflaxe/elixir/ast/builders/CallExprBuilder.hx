@@ -14,6 +14,8 @@ import reflaxe.elixir.helpers.PatternDetector;
 import reflaxe.elixir.ast.builders.VariableBuilder;
 import reflaxe.elixir.ast.TypeUtils;
 import reflaxe.elixir.ast.naming.ElixirNaming;
+import reflaxe.elixir.macros.HxxMode;
+import reflaxe.elixir.macros.HxxModeResolver;
 
 /**
  * CallExprBuilder: Handles function/method call expression building
@@ -399,8 +401,11 @@ class CallExprBuilder {
                             var methodName = cf.get().name;
                             var isTemplateProducer = reflaxe.elixir.ast.TemplateEntryPoints.isTemplateProducerStaticCall(cls, methodName);
                             if (isTemplateProducer && args.length >= 1) {
-		                                function allowRawHeex(): Bool {
-		                                    if (Context.defined("hxx_allow_raw_heex")) return true;
+		                                var mode: HxxMode = (context != null && (context.getCurrentClass() != null || context.getCurrentFunction() != null))
+		                                    ? HxxModeResolver.resolveFromTypes(context.getCurrentClass(), context.getCurrentFunction())
+		                                    : HxxModeResolver.resolveFromMacroContext();
+
+		                                function allowHeexRequestedByMeta(): Bool {
 
 	                                    // Prefer macro-local context when available. This is the most reliable signal
 	                                    // across builder call sites (even if the compilation context isn't field-scoped).
@@ -429,21 +434,53 @@ class CallExprBuilder {
 	                                    if (currentClass != null && currentClass.meta != null && (currentClass.meta.has(":allow_heex") || currentClass.meta.has("allow_heex"))) return true;
 	                                    return false;
 	                                }
+		                                var allowHeexMeta = allowHeexRequestedByMeta();
+		                                if (mode == HxxMode.Tsx && allowHeexMeta) {
+		                                    var pos = context != null ? context.getCurrentPosition() : null;
+		                                    context.error(
+		                                        "HXX: @:allow_heex is not permitted when @:hxx_mode(\"tsx\") is active.\n" +
+		                                        "Remove @:allow_heex and keep templates fully typed (no raw `<% ... %>` blocks).",
+		                                        pos
+		                                    );
+		                                    throw "HXX allow_heex disallowed in tsx mode";
+		                                }
+
+		                                var allowRawHeex = HxxModeResolver.allowRawHeexMarkers(mode, allowHeexMeta, Context.defined("hxx_allow_raw_heex"));
 
 	                                // Build inner argument AST
 	                                var innerAst = buildExpression(args[0]);
 
+	                                if (mode == HxxMode.Tsx && reflaxe.elixir.ast.TemplateHelpers.hxxSourceContainsUntypedTemplateMarkers(innerAst)) {
+	                                    var pos = context != null ? context.getCurrentPosition() : null;
+	                                    context.error(
+	                                        "HXX (tsx): untyped template markers are not allowed inside templates.\n" +
+	                                        "Avoid `#{...}` and `<if { ... }>` / `<for { ... }>` in TSX mode.\n" +
+	                                        "Use inline markup `${ ... }` splices and typed helpers like `HeexTemplate.for_each/2`.",
+	                                        pos
+	                                    );
+	                                    throw "HXX untyped markers disallowed in tsx mode";
+	                                }
+
 	                                // Reject raw EEx/HEEx (<% ... %>) in templates by default.
 	                                // Raw HEEx is an explicit escape hatch: require @:allow_heex or -D hxx_allow_raw_heex.
-	                                if (reflaxe.elixir.ast.TemplateHelpers.hxxSourceContainsRawHeexMarkers(innerAst) && !allowRawHeex()) {
+	                                if (reflaxe.elixir.ast.TemplateHelpers.hxxSourceContainsRawHeexMarkers(innerAst) && !allowRawHeex) {
 	                                    var pos = context != null ? context.getCurrentPosition() : null;
 	                                    context.error(
 	                                        "HXX: raw `<% ... %>` blocks are disallowed inside HXX templates by default.\n" +
 	                                        "Use HXX control tags (`<if>`, `<for>`, etc.) + typed interpolation (`#{...}`),\n" +
-	                                        "or add `@:allow_heex` to the enclosing function/class, or compile with `-D hxx_allow_raw_heex`.",
+	                                        "or add `@:allow_heex` to the enclosing function/class, switch the scope to `@:hxx_mode(\"metal\")`,\n" +
+	                                        "or compile with `-D hxx_allow_raw_heex` (migration only).",
 	                                        pos
 	                                    );
 	                                    throw "HXX raw HEEx disallowed";
+	                                }
+	                                if (mode == HxxMode.Metal && reflaxe.elixir.ast.TemplateHelpers.hxxSourceContainsRawHeexMarkers(innerAst)) {
+	                                    var pos = context != null ? context.getCurrentPosition() : null;
+	                                    context.warning(
+	                                        "HXX: raw `<% ... %>` blocks are enabled (metal mode). This bypasses template linting/typing.\n" +
+	                                        "Prefer balanced/tsx mode unless you truly need raw HEEx.",
+	                                        pos
+	                                    );
 	                                }
 
                                 // Fast-path: if literal string already contains EEx/HEEx markers, emit ~H as-is
