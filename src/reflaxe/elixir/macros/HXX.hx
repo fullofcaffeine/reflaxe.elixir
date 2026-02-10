@@ -14,18 +14,23 @@ import phoenix.types.HXXComponentRegistry;
 #end
 
 /**
- * HXX - Phoenix HEEx Template String Macro (Legacy "HXX1")
+ * HXX - Phoenix HEEx Template String Macro (Legacy template strings)
  *
  * Provides compile-time validation/normalization for Phoenix HEEx authored as a *string literal*.
  *
- * Important: because the template body is a string, arbitrary expressions inside the template are not
- * fully type-checked by the Haxe typer. HXX focuses on deterministic, low-false-positive checks:
+ * Important: because the template body is a string, not all template-local constructs can be
+ * type-checked by the Haxe typer. Normal Haxe string interpolation (`${...}` inside an interpolated
+ * string) is type-checked, but textual markers like `#{...}` and control-tag headers like
+ * `<if { ... }>` / `<for { ... }>` are rewritten + linted rather than typed as Haxe AST.
+ *
+ * HXX focuses on deterministic, low-false-positive checks:
  * - HTML/Phoenix attribute normalization and validation
  * - assigns (`@field`) usage linting (via `HeexAssignsTypeLinterTransforms`)
  * - component/slot shape validation when discoverable
  *
  * If you want TSX-like authoring where template expressions are real Haxe AST and type-checked,
- * prefer the inline markup / `phoenix.hxx.HeexTemplate.root(...)` path.
+ * prefer the inline markup / `phoenix.hxx.HeexTemplate.root(...)` path (and typed helpers like
+ * `phoenix.hxx.HeexTemplate.for_each/2` for HEEx-safe loops).
  *
  * ## Why HXX? The Perfect Phoenix Augmentation
  *

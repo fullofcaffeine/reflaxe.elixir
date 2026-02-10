@@ -101,9 +101,10 @@ The foundation for multi-target development:
 
 ### ✅ Stable (v1.1)
 - **Phoenix Integration** - LiveView, controllers, templates, routers 100% supported
-- **HXX Template System (template strings + inline markup)** - Compile-time template parsing + validation with optional strict checks for Phoenix/LiveView attributes
-  - Template strings (`hxx('...')` / `HXX.hxx('...')`) are compile-time validated/normalized, but expressions inside the string are not fully type-checked by the Haxe typer.
-  - Inline markup (`return <div>...</div>`) is TSX-like syntax sugar for authoring templates as Haxe expressions. It rewrites to `phoenix.hxx.HeexTemplate.root(...)` so `${...}` segments are parsed and type-checked by Haxe and then lowered to HEEx (`~H`) in the compiler pipeline.
+- **HEEx Templates (typed-first)** - TSX-like inline markup + compile-time lowering to `~H` with optional strict checks for Phoenix/LiveView attributes
+  - Inline markup (`return <div>...</div>`) is the recommended default: `${...}` splices are real Haxe expressions (parsed + type-checked) and are lowered into HEEx (`~H`) by the compiler pipeline.
+  - Typed loops: `phoenix.hxx.HeexTemplate.for_each(items, (item) -> <li>...</li>)` lowers to a HEEx `<%= for ... do %>` block so repeated markup is not HTML-escaped.
+  - Template strings (`hxx('...')` / `HXX.hxx('...')`) remain supported for migration. Only normal Haxe string interpolation (`${...}` inside a Haxe interpolated string) is type-checked; template-local DSL constructs like `<if { ... }>` / `<for { ... }>` headers and `#{...}` markers are rewritten + linted but are not Haxe-typed.
   - **Template Helper Metadata** ✨ NEW - Uses @:templateHelper metadata for extensible Phoenix function compilation
   - **Type-Safe Phoenix Abstractions** ✨ NEW - Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with operator overloading
 - **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations remain opt‑in/experimental** (`-D ecto_migrations_exs`)  
@@ -513,12 +514,12 @@ See `docs/04-api-reference/SOURCE_MAPPING.md` for current status and how to expe
 
 ### Phoenix LiveView
 ```haxe
-	import HXX.*;
 	import elixir.types.Term;
 	import phoenix.LiveSocket;
 	import phoenix.Phoenix.HandleEventResult;
 	import phoenix.Phoenix.MountResult;
 	import phoenix.Phoenix.Socket;
+	import phoenix.hxx.HeexTemplate;
 
 typedef CounterAssigns = { count: Int };
 
@@ -542,31 +543,28 @@ typedef CounterAssigns = { count: Int };
             case _:
                 HandleEventResult.NoReply(liveSocket);
         }
-    }
+	    }
 
 	    public static function render(assigns: CounterAssigns): String {
-	        return hxx('
-	            <div class="counter">
-	                <h1>${assigns.count}</h1>
-	                <button phx-click="increment">+</button>
-	            </div>
-	        ');
+	        return <div class="counter">
+	            <h1>${assigns.count}</h1>
+	            <button phx-click="increment">+</button>
+	        </div>;
 	    }
 	}
 	```
 
-Inline markup (optional syntax sugar)
+Typed loops in templates
 
-If you prefer TSX-like authoring, you can also use Haxe inline markup literals as syntax sugar for HEEx templates (the compiler rewrites them into a canonical template entrypoint and lowers to `~H`):
+Use `HeexTemplate.for_each/2` for typed, HEEx-safe loops (binders are real Haxe variables, and output is a HEEx `for` block):
 
 ```haxe
-class CounterView {
-  public static function render(assigns: CounterAssigns): String {
-    return <div class="counter">
-      <h1>${assigns.count}</h1>
-      <button phx-click="increment">+</button>
-    </div>;
-  }
+typedef Item = { var name: String; };
+
+public static function render(assigns: { var items: Array<Item>; }): String {
+  return <ul>
+    ${HeexTemplate.for_each(assigns.items, (item) -> <li>${item.name}</li>)}
+  </ul>;
 }
 ```
 
