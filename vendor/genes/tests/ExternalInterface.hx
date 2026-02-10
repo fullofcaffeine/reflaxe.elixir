@@ -1,3 +1,0 @@
-package tests;
-
-interface ExternalInterface {}
