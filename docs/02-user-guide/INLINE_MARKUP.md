@@ -115,6 +115,30 @@ Inline markup expressions are authored in Haxe:
 - Attribute interpolation uses `attr=${expr}` (and supports mixed static + interpolation).
 - `assigns.*` is mapped to `@*` in HEEx where applicable.
 
+## Template Modes
+
+Inline markup is the recommended authoring surface because `${ ... }` splices are parsed into real Haxe expressions and type-checked.
+
+However, the broader template system also supports legacy string-level markers (useful for migration), which are **not** Haxe-typed:
+
+- `#{...}` interpolation markers
+- `<if { ... }>` / `<for { ... }>` control tags
+
+If you want to enforce a fully-typed TSX-like style, enable TSX mode:
+
+```haxe
+@:hxx_mode("tsx")
+class MyLive {
+  public static function render(assigns: Assigns): String {
+    return <div>${assigns.count}</div>;
+  }
+}
+```
+
+In TSX mode, raw `<% ... %>` blocks and string-level markers are rejected.
+
+If you truly need raw HEEx, use `@:hxx_mode("metal")` (discouraged; emits warnings), or the explicit escape hatch `@:allow_heex`.
+
 ## Typed `phx-hook` / `phx-*` Names in Inline Markup
 
 Recommended: author hook/event names as normal Haxe expressions:

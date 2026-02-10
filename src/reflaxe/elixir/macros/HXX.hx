@@ -208,6 +208,14 @@ class HXX {
      * will inline its processed content without wrapping it in an interpolation tag.
      */
     public static macro function block(content: Expr): Expr {
+        var mode = HxxModeResolver.resolveFromMacroContext();
+        if (mode == HxxMode.Tsx) {
+            Context.error(
+                "HXX: block('...') is not allowed in @:hxx_mode(\"tsx\") code.\n" +
+                "Use inline markup (`return <div>...</div>`) or `phoenix.hxx.HeexTemplate.root(...)` instead.",
+                content.pos
+            );
+        }
         return switch (content.expr) {
             case EConst(CString(s, _)):
                 // Return the string literal as-is; outer processing will handle it
@@ -229,10 +237,7 @@ class HXX {
             || s.indexOf("<%#") != -1;
     }
 
-    static function allowRawHeexInHxxTemplates(): Bool {
-        // Transitional flag: allow projects to migrate incrementally if needed.
-        if (Context.defined("hxx_allow_raw_heex")) return true;
-
+    static function allowRawHeexRequestedByMeta(): Bool {
         var localClassRef = Context.getLocalClass();
         if (localClassRef == null) return false;
         var cls = localClassRef.get();
@@ -258,14 +263,44 @@ class HXX {
     static function hxxInternal(templateStr: Expr): Expr {
         return switch (templateStr.expr) {
             case EConst(CString(s, _)):
+                var mode = HxxModeResolver.resolveFromMacroContext();
+                if (mode == HxxMode.Tsx) {
+                    Context.error(
+                        "HXX: string templates (hxx('...')) are not allowed in @:hxx_mode(\"tsx\") code.\n" +
+                        "Use inline markup (`return <div>...</div>`) or `phoenix.hxx.HeexTemplate.root(...)` instead.",
+                        templateStr.pos
+                    );
+                }
+
                 // By default, do not allow raw EEx/HEEx markers inside HXX templates.
                 // These bypass HXX typing/linting and defeat the main purpose of authoring HEEx in Haxe.
                 if (containsRawHeexMarkers(s)) {
-                    if (!allowRawHeexInHxxTemplates()) {
+                    var allowHeexMeta = allowRawHeexRequestedByMeta();
+                    if (mode == HxxMode.Tsx && allowHeexMeta) {
+                        Context.error(
+                            "HXX: @:allow_heex is not permitted when @:hxx_mode(\"tsx\") is active.\n" +
+                            "Remove @:allow_heex and keep templates fully typed (no raw `<% ... %>` blocks).",
+                            templateStr.pos
+                        );
+                    }
+
+                    var allowRawHeex = HxxModeResolver.allowRawHeexMarkers(mode, allowHeexMeta, Context.defined("hxx_allow_raw_heex"));
+                    if (!allowRawHeex) {
                         Context.error(
                             "Raw HEEx markers (<% ... %>) are not allowed inside hxx('...') by default.\n"
                             + "Use HXX control tags (<if {cond}>...</if>, <for {x in list}>...</for>) and ${...} interpolations instead.\n"
-                            + "If you must embed raw HEEx, opt in explicitly with @:allow_heex on the containing method or class (or set -D hxx_allow_raw_heex during migration).",
+                            + "If you must embed raw HEEx, either:\n"
+                            + "- opt in explicitly with @:allow_heex on the containing method or class, or\n"
+                            + "- switch the scope to @:hxx_mode(\"metal\"), or\n"
+                            + "- set -D hxx_allow_raw_heex during migration.",
+                            templateStr.pos
+                        );
+                    }
+
+                    if (mode == HxxMode.Metal) {
+                        Context.warning(
+                            "HXX: raw `<% ... %>` blocks are enabled (metal mode). This bypasses template linting/typing.\n" +
+                            "Prefer balanced/tsx mode unless you truly need raw HEEx.",
                             templateStr.pos
                         );
                     }

@@ -13,17 +13,17 @@ This guide documents the interface, syntax, and developer UX, and compares HXX t
 - No Dynamic widening: Keep precise types; fix transforms instead of using Dynamic.
 
 See also:
-- 02-user-guide/HXX_TYPE_SAFETY.md – Type system and validation
-- 06-guides/HXX_GUIDE.md – Practical authoring patterns
+- 02-user-guide/INLINE_MARKUP.md – Inline markup authoring (typed-first)
+- 02-user-guide/ESCAPE_HATCHES.md – Raw HEEx escape hatches and when (not) to use them
 - 05-architecture/HXX_ARCHITECTURE.md – Technical pipeline
-- 02-user-guide/INLINE_MARKUP.md – TSX-like inline markup authoring (typed-first)
+- 07-patterns/PHOENIX_LIVEVIEW_PATTERNS.md – Practical LiveView authoring patterns
 
 ## Authoring Model
 
 - Typed-first entrypoint: Haxe inline markup literals (`return <div>...</div>`) are rewritten into a canonical template entrypoint (`phoenix.hxx.HeexTemplate.root/1`), which the builder lowers to `~H`.
 - Typed loops: `phoenix.hxx.HeexTemplate.for_each(items, (item) -> <li>...</li>)` lowers to a HEEx `<%= for ... do %>` block so repeated markup is not HTML-escaped.
-- Template strings (migration): `hxx('...')` returns a compile‑time string tagged as HEEx; the builder emits `~H` (it expands from `HXX.hxx(...)` when you `import HXX.*;`).
-- Nested fragments (template strings): `HXX.block('...')` inlines a fragment within a parent template.
+- Template strings (legacy/migration): `hxx('...')` / `HXX.block('...')` are supported in **balanced** mode, but they are string-rewritten + linted (template-local markers are not Haxe-typed).
+- Layered modes: `@:hxx_mode("tsx"|"balanced"|"metal")` controls how strict the template authoring surface is. In TSX mode, legacy string templates and untyped markers are rejected.
 
 Inline markup notes:
 - Root tag must be a valid XML name (Haxe lexer rule).
@@ -36,21 +36,19 @@ Defaults / opt-out:
 - Legacy escape hatch: `@:hxx_legacy` forces the older rewrite-to-`HXX.hxx("...")` behavior for that class.
 
 Interpolation note:
-- In template strings, normal Haxe string interpolation (`${...}` inside a Haxe interpolated string) is type-checked by the Haxe typer. Template-local markers like `#{...}` are authored as text and are rewritten + linted, but are not Haxe-typed.
 - In inline markup, `${...}` segments are parsed into real Haxe expressions (`Context.parseInlineString`) and are fully type-checked by Haxe.
+- In template strings (`hxx('...')`), markers like `#{...}` and `<if { ... }>` / `<for { ... }>` are rewritten + linted, but do not provide Haxe-typed expressions. Prefer inline markup for typed authoring.
 
 Example:
 
 ```haxe
-import HXX.*;
+import phoenix.hxx.HeexTemplate;
 
 class View {
   public static function render(assigns: { name:String, online:Bool }): String {
-    return hxx('
-      <div class={if @online, do: "online", else: "offline"}>
-        Hello, #{@name}!
-      </div>
-    ');
+    return <div class=${assigns.online ? "online" : "offline"}>
+      Hello, ${assigns.name}!
+    </div>;
   }
 }
 ```
@@ -70,13 +68,14 @@ end
 ## Syntax Overview
 
 ### Interpolations
-- Text (preferred): `#{expr}` → `<%= expr %>`; `assigns.*` is mapped to `@*`.
-- Text (also supported): `${expr}` when `expr` is a Haxe expression (Haxe interpolation), then lowered into HEEx.
+- Inline markup (typed): `${haxeExpr}` splices are real Haxe expressions and lower to `<%= ... %>` (and `assigns.*` is mapped to `@*`).
+- Template strings (legacy): `#{expr}` and `${expr}` are string-level markers rewritten into HEEx; they are convenient for migration but are not Haxe-typed.
 - Attributes: `attr={expr}` stays as `attr={expr}` (HEEx attribute expressions). When written via `${...}`, HXX normalizes to `{...}`.
 
 ### Raw HEEx Escape Hatch (Avoid)
 - Raw `<% ... %>` blocks inside `hxx('...')` / `HXX.hxx('...')` are **disallowed by default**.
 - Opt-in escape hatch: add `@:allow_heex` to the enclosing function or class (or compile with `-D hxx_allow_raw_heex`).
+- Metal mode: `@:hxx_mode("metal")` allows raw `<% ... %>` without `@:allow_heex` (discouraged; emits warnings).
 
 ### Assigns
 - `render(assigns: AssignsType)` is required; `@field` references are validated against `AssignsType`.

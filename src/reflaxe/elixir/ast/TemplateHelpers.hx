@@ -55,6 +55,37 @@ class TemplateHelpers {
         });
         return found;
     }
+
+    /**
+     * Detect "string-template" markers that bypass Haxe typing.
+     *
+     * In TSX mode, we want all dynamic pieces to be real Haxe expressions (typed) via:
+     * - inline markup `${ ... }` splices (rewritten by InlineMarkup), and
+     * - typed helpers like `HeexTemplate.for_each/2`.
+     *
+     * Markers like `#{...}` and `<if { ... }>` / `<for { ... }>` are rewritten at the string layer
+     * and do not give the Haxe typer visibility into the expression body.
+     */
+    public static function hxxSourceContainsUntypedTemplateMarkers(ast: ElixirAST): Bool {
+        if (ast == null || ast.def == null) return false;
+        var found = false;
+        ASTUtils.walk(ast, function(n: ElixirAST): Void {
+            if (found || n == null || n.def == null) return;
+            switch (n.def) {
+                case EString(s) if (s != null):
+                    if (s.indexOf("#{") != -1) {
+                        found = true;
+                        return;
+                    }
+                    if (~/<\\s*if\\s*\\{/.match(s) || ~/<\\s*for\\s*\\{/.match(s)) {
+                        found = true;
+                        return;
+                    }
+                default:
+            }
+        });
+        return found;
+    }
     
     /**
      * Render an ElixirAST expression into a HEEx-safe Elixir expression string.
