@@ -12,7 +12,7 @@ import haxe.macro.Expr;
  * WHAT
  * - Enables Haxe inline markup (`return <div>...</div>`) as syntax sugar for HXX templates.
  * - Rewrites `@:markup "<tag>...</tag>"` expressions (produced by the parser) into a stable
- *   compiler-intercepted call shape: `phoenix.hxx.HXX2.root(<template-expr>)`.
+ *   compiler-intercepted call shape: `phoenix.hxx.HeexTemplate.root(<template-expr>)`.
  * - Parses `${ ... }` segments inside inline markup payloads into real Haxe `Expr` nodes, so the
  *   typer checks syntax + types and the backend compiles the expressions into valid Elixir.
  *
@@ -28,8 +28,8 @@ import haxe.macro.Expr;
  * - `build()` walks all field expressions and replaces:
  *     EMeta(name=":markup", innerStringExpr)
  *   with:
- *     phoenix.hxx.HXX2.root(<template-expr>)
- *   (or just `<template-expr>` when already inside `HXX2.root(...)` / `HXX.hxx(...)` / `HXX.block(...)` args).
+ *     phoenix.hxx.HeexTemplate.root(<template-expr>)
+ *   (or just `<template-expr>` when already inside `HeexTemplate.root(...)` / `HXX.hxx(...)` / `HXX.block(...)` args).
  *
  * DEFAULTS / OPT-OUT / LEGACY
  * - Default-on for Phoenix-facing modules (same gating as before).
@@ -131,11 +131,17 @@ class InlineMarkup {
         };
     }
 
-    static function isHxx2RootCallee(expr: Expr): Bool {
+    static function isHeexTemplateRootCallee(expr: Expr): Bool {
         if (expr == null || expr.expr == null) return false;
         return switch (expr.expr) {
             case EField(owner, fieldName) if (fieldName == "root"):
                 switch (owner.expr) {
+                    case EConst(CIdent("HeexTemplate")):
+                        true;
+                    // Allow the fully-qualified type path to appear as an identifier (depends on AST shape).
+                    case EConst(CIdent("phoenix.hxx.HeexTemplate")):
+                        true;
+                    // Legacy: accept old entrypoint names.
                     case EConst(CIdent("HXX2")):
                         true;
                     // Allow the fully-qualified type path to appear as an identifier (depends on AST shape).
@@ -145,9 +151,9 @@ class InlineMarkup {
                         false;
                 }
             case EMeta(_, inner):
-                isHxx2RootCallee(inner);
+                isHeexTemplateRootCallee(inner);
             case EParenthesis(inner):
-                isHxx2RootCallee(inner);
+                isHeexTemplateRootCallee(inner);
             default:
                 false;
         };
@@ -296,7 +302,7 @@ class InlineMarkup {
                         mkHxxCall(strippedLegacy, expr.pos);
                     }
                 } else {
-                    // Default HXX2 path: parse `${ ... }` segments into real Haxe expressions.
+                    // Default path: parse `${ ... }` segments into real Haxe expressions.
                     var rewrittenInner = rewriteExpr(inner, insideHxxArgs);
                     var payloadExpr = switch (rewrittenInner.expr) {
                         case EConst(CString(s, _)):
@@ -309,14 +315,14 @@ class InlineMarkup {
                     if (insideHxxArgs) {
                         payloadExpr;
                     } else {
-                        mkHxx2RootCall(payloadExpr, expr.pos);
+                        mkHeexTemplateRootCall(payloadExpr, expr.pos);
                     }
                 }
             case EMeta(meta, inner):
                 var nextInner = rewriteExpr(inner, insideHxxArgs);
                 if (nextInner == inner) expr else mk(EMeta(meta, nextInner));
             case ECall(fn, args):
-                var nextInside = insideHxxArgs || isHxxCallee(fn, "hxx") || isHxxCallee(fn, "block") || isHxx2RootCallee(fn);
+                var nextInside = insideHxxArgs || isHxxCallee(fn, "hxx") || isHxxCallee(fn, "block") || isHeexTemplateRootCallee(fn);
                 var nextFn = rewriteExpr(fn, insideHxxArgs);
                 var nextArgs = args == null ? null : mapArray(args, (a) -> rewriteExpr(a, nextInside));
                 if (nextFn == fn && nextArgs == args) expr else mk(ECall(nextFn, nextArgs));
@@ -424,8 +430,8 @@ class InlineMarkup {
         return { expr: ECall(callee, [arg]), pos: pos };
     }
 
-    static function mkHxx2RootCall(arg: Expr, pos: Position): Expr {
-        var call = macro phoenix.hxx.HXX2.root($arg);
+    static function mkHeexTemplateRootCall(arg: Expr, pos: Position): Expr {
+        var call = macro phoenix.hxx.HeexTemplate.root($arg);
         call.pos = pos;
         return call;
     }

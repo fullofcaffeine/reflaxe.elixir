@@ -388,7 +388,7 @@ class CallExprBuilder {
             }
         }
 
-        // Handle HXX.hxx(template) and phoenix.hxx.HXX2.root(template) → ESigil("H", content)
+        // Handle HXX.hxx(template) and phoenix.hxx.HeexTemplate.root(template) → ESigil("H", content)
         // This enables deterministic ~H generation even when template entrypoints are stubs returning strings.
         if (e != null) {
             switch (e.expr) {
@@ -397,9 +397,8 @@ class CallExprBuilder {
                         case FStatic(classRef, cf):
                             var cls = classRef.get();
                             var methodName = cf.get().name;
-                            var isHxx1 = (cls.name == "HXX" && methodName == "hxx");
-                            var isPhoenixHxx2Root = (cls.name == "HXX2" && cls.pack != null && cls.pack.join(".") == "phoenix.hxx" && methodName == "root");
-                            if ((isHxx1 || isPhoenixHxx2Root) && args.length >= 1) {
+                            var isTemplateProducer = reflaxe.elixir.ast.TemplateEntryPoints.isTemplateProducerStaticCall(cls, methodName);
+                            if (isTemplateProducer && args.length >= 1) {
 		                                function allowRawHeex(): Bool {
 		                                    if (Context.defined("hxx_allow_raw_heex")) return true;
 

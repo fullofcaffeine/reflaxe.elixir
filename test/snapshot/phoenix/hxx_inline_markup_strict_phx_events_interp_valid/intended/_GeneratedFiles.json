@@ -5,7 +5,6 @@
   "std.ex",
   "reflaxe/exception.ex",
   "reflaxe/elixir/haxe_throw.ex",
-  "phoenix/hxx/hxx2.ex",
   "main.ex",
   "int_iterator.ex",
   "haxe/iterators/array_iterator.ex"

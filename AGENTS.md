@@ -31,6 +31,8 @@ Always use these sentinels for runtime checks. Do not run `mix phx.server` in th
 
 These failures usually come from running only a subset locally (e.g. `test:quick`) while CI runs additional suites and strict example compilation.
 
+- Bugs: when you fix a bug, add a regression test/snapshot when it fits (and keep it minimal).
+
 - Snapshots (quick): `npm run test:quick` (core/stdlib/regression)
 - Snapshots (full CI categories): `scripts/test-chunks.sh`
   - CI includes: `core,stdlib,regression,phoenix,liveview,ecto,otp,exunit,bootstrap`
