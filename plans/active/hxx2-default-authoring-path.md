@@ -1,15 +1,18 @@
-# HXX2: Default Authoring Path (TSX-like Haxe Expressions, Phoenix HEEx Output)
+# HeexTemplate (formerly HXX2): Default Authoring Path (TSX-like Haxe Expressions, Phoenix HEEx Output)
+
+NOTE: The canonical inline-markup entrypoint is now `phoenix.hxx.HeexTemplate.root/1`.
+`phoenix.hxx.HXX2.root/1` remains as a deprecated alias for backward compatibility, but should not be used in new docs/examples.
 
 ## Summary
 
-Make HXX2 the default authoring story for Phoenix LiveView templates, so inline markup provides a TSX-like experience:
+Make HeexTemplate the default authoring story for Phoenix LiveView templates, so inline markup provides a TSX-like experience:
 - `{ ... }` blocks inside markup are **real Haxe expressions** (syntax + type-checked by the typer).
 - Output is still standard Phoenix HEEx (`~H"""..."""`) with no runtime helper tax.
 - Raw HEEx/EEx markers (`<% ... %>`) remain an explicit escape hatch only (`@:allow_heex`), not the default.
 - Reduce cognitive overhead from `-D` flags by preferring metadata defaults and localized opt-outs.
 
 Legacy HXX1 string templates remain supported for backward compatibility and as an escape hatch, but examples/docs should
-push users toward HXX2.
+push users toward HeexTemplate.
 
 ## Motivation (Why This Exists)
 
@@ -19,7 +22,7 @@ into templates (e.g. `<>` or `if ..., do:` inside `class={...}`), which:
 - shifts errors to Elixir compile-time (or runtime)
 - increases drift between “Haxe-first” and “HEEx-first” authoring
 
-HXX2 aims to be:
+HeexTemplate aims to be:
 - Phoenix-first for output conventions
 - Haxe-first for authoring and type safety
 - strict-by-default for “no raw HEEx in HXX” unless explicitly opted in
@@ -32,7 +35,7 @@ HXX2 aims to be:
 ## Beads Mapping
 
 This plan drives:
-- `haxe.elixir-hxx2.2` HXX2 build-macro rewrite
+- `haxe.elixir-hxx2.2` inline-markup build-macro rewrite
 - `haxe.elixir-hxx2.3` Builder lowering to `~H`
 - `haxe.elixir-hxx2.7` Defaults and metadata (reduce `-D`)
 - `haxe.elixir-hxx2.8` Snapshot coverage
@@ -42,7 +45,7 @@ This plan drives:
 
 ### Canonical entrypoint (already stubbed)
 
-`phoenix.hxx.HXX2.root(template: String): String`
+`phoenix.hxx.HeexTemplate.root(template: String): String`
 
 This is a compile-time-only, non-inline function. The compiler detects calls to it in the typed AST and lowers them to
 `ESigil("H", ...)` deterministically (same strategy as `HXX.hxx` today).
@@ -55,18 +58,18 @@ Haxe inline markup is represented in macro AST as:
 Today we rewrite it to `HXX.hxx(innerExpr)` and then the macro processes the template as a string, which prevents `{...}`
 from being treated as a real Haxe expression.
 
-HXX2’s rewrite instead:
+HeexTemplate’s rewrite instead:
 - parses the markup payload
 - extracts `{ ... }` segments
 - turns each `{ ... }` into a real Haxe `Expr` via `Context.parseInlineString`
 - reconstructs a typed Haxe expression that concatenates string fragments and inserted expressions
-- wraps the resulting typed expression with `phoenix.hxx.HXX2.root(...)`
+- wraps the resulting typed expression with `phoenix.hxx.HeexTemplate.root(...)`
 
 This keeps 100% of the expression typing in the Haxe typer and eliminates “raw Elixir in templates” for the common cases.
 
 ### Lowering strategy (builder)
 
-The builder treats `phoenix.hxx.HXX2.root(expr)` like `HXX.hxx(expr)`:
+The builder treats `phoenix.hxx.HeexTemplate.root(expr)` like `HXX.hxx(expr)`:
 - Build the argument expression into ElixirAST.
 - Use `TemplateHelpers.collectTemplateContent(argAst)` to produce a HEEx string.
 - Run the same HEEx normalization passes (control tags, attribute interpolation normalization, assigns rewriting).
@@ -81,7 +84,7 @@ Raw HEEx markers remain forbidden by default; `@:allow_heex` (method/class) or `
 File: `src/reflaxe/elixir/macros/InlineMarkup.hx`
 
 Change:
-- Replace rewrite target from `HXX.hxx(innerExpr)` to `phoenix.hxx.HXX2.root(rewrittenExpr)`.
+- Replace rewrite target from `HXX.hxx(innerExpr)` to `phoenix.hxx.HeexTemplate.root(rewrittenExpr)`.
 
 `rewrittenExpr` construction:
 - If `innerExpr` is already a concatenation expression (rare, but handle defensively), still walk and replace embedded
@@ -105,7 +108,7 @@ Scanning rules (must be deterministic, no heuristics):
 Reconstruction:
 - Build an `Expr` equivalent to:
   - `"<prefix>" + (expr1) + "<mid>" + (expr2) + "<suffix>"`
-- Avoid allocations when no `{...}` blocks exist: just call `HXX2.root(innerExprStringConst)` directly.
+- Avoid allocations when no `{...}` blocks exist: just call `HeexTemplate.root(innerExprStringConst)` directly.
 
 Opt-out / legacy:
 - Default should become “process Phoenix-facing modules” (same gating as current InlineMarkup, but without requiring `-D`).
@@ -126,14 +129,14 @@ Files:
 - `src/reflaxe/elixir/ast/transformers/HeexStringReturnToSigilTransforms.hx` (var binding + return conversions)
 
 Change:
-- Add detection for static calls to `phoenix.hxx.HXX2.root/1`.
+- Add detection for static calls to `phoenix.hxx.HeexTemplate.root/1` (and accept `HXX2.root/1` as deprecated alias).
 - Treat it identically to `HXX.hxx/1` for lowering to `ESigil("H", ...)`.
 - Preserve the raw HEEx policy checks:
   - if the collected content includes raw markers and allowRawHeex=false: error
   - otherwise emit `~H` content (and still run HXX control tag normalization)
 
 Additionally:
-- Extend var-binding conversions to detect `HXX2.root(...)` as a template producer (not only `HXX.hxx`).
+- Extend var-binding conversions to detect `HeexTemplate.root(...)` as a template producer (not only `HXX.hxx`).
 
 ### 3) Defaults and metadata (beads: `haxe.elixir-hxx2.7`)
 
@@ -159,12 +162,12 @@ Strict flags migration:
 ### 4) Tests/snapshots (beads: `haxe.elixir-hxx2.8`)
 
 Add/extend snapshots:
-- Positive: inline markup with `{assigns.foo}` becomes HXX2.root call and lowers to `~H` with `@foo`.
+- Positive: inline markup with `{assigns.foo}` becomes HeexTemplate.root call and lowers to `~H` with `@foo`.
 - Positive: inline markup with attribute value `{cond ? "a" : "b"}` lowers correctly and does not require raw HEEx.
 - Negative: malformed `{` / `}` yields positional compile error.
 - Negative: raw `<% ... %>` markers remain disallowed unless `@:allow_heex`.
 
-Keep existing HXX1 snapshots passing; add new ones specifically keyed to the HXX2 entrypoint.
+Keep existing HXX1 snapshots passing; add new ones specifically keyed to the HeexTemplate entrypoint.
 
 Verification:
 - `npm test`
@@ -172,7 +175,6 @@ Verification:
 
 ## Rollout Notes
 
-- Start by supporting HXX2 lowering without changing existing `hxx('...')` authoring.
-- Once stable, update docs/examples to prefer inline markup + HXX2 patterns.
+- Start by supporting HeexTemplate lowering without changing existing `hxx('...')` authoring.
+- Once stable, update docs/examples to prefer inline markup + HeexTemplate patterns.
 - Keep HXX1 as fallback for at least one minor release cycle.
-
