@@ -397,15 +397,25 @@ class CallExprBuilder {
                 case TField(target, fa):
                     switch (fa) {
                         case FStatic(classRef, cf):
-                            var cls = classRef.get();
-                            var methodName = cf.get().name;
-                            var isTemplateProducer = reflaxe.elixir.ast.TemplateEntryPoints.isTemplateProducerStaticCall(cls, methodName);
-                            if (isTemplateProducer && args.length >= 1) {
-		                                var mode: HxxMode = (context != null && (context.getCurrentClass() != null || context.getCurrentFunction() != null))
-		                                    ? HxxModeResolver.resolveFromTypes(context.getCurrentClass(), context.getCurrentFunction())
-		                                    : HxxModeResolver.resolveFromMacroContext();
+		                            var cls = classRef.get();
+		                            var methodName = cf.get().name;
+		                            var isTemplateProducer = reflaxe.elixir.ast.TemplateEntryPoints.isTemplateProducerStaticCall(cls, methodName);
+		                            if (isTemplateProducer && args.length >= 1) {
+			                                var mode: HxxMode = (context != null && (context.getCurrentClass() != null || context.getCurrentFunction() != null))
+			                                    ? HxxModeResolver.resolveFromTypes(context.getCurrentClass(), context.getCurrentFunction())
+			                                    : HxxModeResolver.resolveFromMacroContext();
 
-		                                function allowHeexRequestedByMeta(): Bool {
+			                                if (mode == HxxMode.Tsx && reflaxe.elixir.ast.TemplateEntryPoints.isHxxStaticCall(cls, methodName)) {
+			                                    var pos = context != null ? context.getCurrentPosition() : null;
+			                                    context.error(
+			                                        "HXX (tsx): string templates via `HXX.hxx(\"...\")` / `hxx(\"...\")` are not allowed.\n" +
+			                                        "Use inline markup (`return <div>...</div>`) or `phoenix.hxx.HeexTemplate.root(...)` instead.",
+			                                        pos
+			                                    );
+			                                    throw "HXX string templates disallowed in tsx mode";
+			                                }
+
+			                                function allowHeexRequestedByMeta(): Bool {
 
 	                                    // Prefer macro-local context when available. This is the most reliable signal
 	                                    // across builder call sites (even if the compilation context isn't field-scoped).
