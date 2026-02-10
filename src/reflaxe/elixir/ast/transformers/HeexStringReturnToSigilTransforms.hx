@@ -508,18 +508,33 @@ class HeexStringReturnToSigilTransforms {
         });
     }
 
-    // Convert final HXX.hxx("...") call into ESigil("H", ...) when encountered
+    static function isTemplateProducerCall(mod: Null<ElixirAST>, fnName: String): Bool {
+        if (fnName == null) return false;
+        if (mod == null) return false;
+
+        function isNamedModule(m: String, expectedSuffix: String): Bool {
+            if (m == expectedSuffix) return true;
+            // Accept fully qualified module names (depending on builder shape).
+            return StringTools.endsWith(m, "." + expectedSuffix);
+        }
+
+        return switch (mod.def) {
+            case EVar(m):
+                (fnName == "hxx" && isNamedModule(m, "HXX"))
+                    || (fnName == "root" && isNamedModule(m, "HXX2"));
+            case EField(_, fld):
+                (fnName == "hxx" && fld == "HXX")
+                    || (fnName == "root" && fld == "HXX2");
+            default:
+                false;
+        }
+    }
+
+    // Convert final HXX.hxx("...") or HXX2.root("...") call into ESigil("H", ...) when encountered
     static function tryConvertHxxCallToHeex(node: ElixirAST): Null<ElixirAST> {
         switch (node.def) {
-            case ECall(mod, fnName, args) if (fnName == "hxx" && args != null && args.length >= 1):
-                // HXX.hxx(template)
-                var isHxx = false;
-                if (mod != null) switch (mod.def) {
-                    case EVar(m) if (m == "HXX"): isHxx = true;
-                    case EField(_, fld) if (fld == "HXX"): isHxx = true;
-                    default:
-                }
-                if (!isHxx) return null;
+            case ECall(mod, fnName, args) if (args != null && args.length >= 1):
+                if (!isTemplateProducerCall(mod, fnName)) return null;
                 // Collect content and normalize control tags
                 var content = reflaxe.elixir.ast.TemplateHelpers.collectTemplateContent(args[0]);
                 content = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(content);
@@ -548,14 +563,8 @@ class HeexStringReturnToSigilTransforms {
                                 switch (r.def) {
                                     case EString(s) if (looksLikeHtml(s)):
                                         return makeASTWithMeta(ESigil("H", '<%= Phoenix.HTML.raw(' + varName + ') %>', ""), last.metadata, last.pos);
-                                    case ECall(m, f, a) if (f == "hxx"):
-                                        var isHxx = false;
-                                        if (m != null) switch (m.def) {
-                                            case EVar(mm) if (mm == "HXX"): isHxx = true;
-                                            case EField(_, fld) if (fld == "HXX"): isHxx = true;
-                                            default:
-                                        }
-                                        if (isHxx) return makeASTWithMeta(ESigil("H", '<%= Phoenix.HTML.raw(' + varName + ') %>', ""), last.metadata, last.pos);
+                                    case ECall(m, f, a):
+                                        if (isTemplateProducerCall(m, f)) return makeASTWithMeta(ESigil("H", '<%= Phoenix.HTML.raw(' + varName + ') %>', ""), last.metadata, last.pos);
                                     default:
                                 }
                             default: }
@@ -564,14 +573,8 @@ class HeexStringReturnToSigilTransforms {
                                 switch (rhs.def) {
                                     case EString(s2) if (looksLikeHtml(s2)):
                                         return makeASTWithMeta(ESigil("H", '<%= Phoenix.HTML.raw(' + varName + ') %>', ""), last.metadata, last.pos);
-                                    case ECall(m2, f2, a2) if (f2 == "hxx"):
-                                        var isHxx2 = false;
-                                        if (m2 != null) switch (m2.def) {
-                                            case EVar(mm2) if (mm2 == "HXX"): isHxx2 = true;
-                                            case EField(_, fld2) if (fld2 == "HXX"): isHxx2 = true;
-                                            default:
-                                        }
-                                        if (isHxx2) return makeASTWithMeta(ESigil("H", '<%= Phoenix.HTML.raw(' + varName + ') %>', ""), last.metadata, last.pos);
+                                    case ECall(m2, f2, a2):
+                                        if (isTemplateProducerCall(m2, f2)) return makeASTWithMeta(ESigil("H", '<%= Phoenix.HTML.raw(' + varName + ') %>', ""), last.metadata, last.pos);
                                     default:
                                 }
                             default: }

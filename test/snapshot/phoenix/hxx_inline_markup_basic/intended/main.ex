@@ -3,7 +3,7 @@ defmodule Main do
   def render(assigns) do
     ~H"""
 <div class="counter">
-          <h1><%= @count %></h1>
+          <h1><%= Kernel.to_string(@count) %></h1>
           <button phx-click="increment">+</button>
         </div>
 """

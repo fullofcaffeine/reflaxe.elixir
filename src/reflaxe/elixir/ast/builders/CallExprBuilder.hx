@@ -388,8 +388,8 @@ class CallExprBuilder {
             }
         }
 
-        // Handle HXX.hxx(template) → ESigil("H", content)
-        // This enables deterministic ~H generation even when HXX is a stub returning strings.
+        // Handle HXX.hxx(template) and phoenix.hxx.HXX2.root(template) → ESigil("H", content)
+        // This enables deterministic ~H generation even when template entrypoints are stubs returning strings.
         if (e != null) {
             switch (e.expr) {
                 case TField(target, fa):
@@ -397,9 +397,11 @@ class CallExprBuilder {
                         case FStatic(classRef, cf):
                             var cls = classRef.get();
                             var methodName = cf.get().name;
-                            if (cls.name == "HXX" && methodName == "hxx" && args.length >= 1) {
-	                                function allowRawHeex(): Bool {
-	                                    if (Context.defined("hxx_allow_raw_heex")) return true;
+                            var isHxx1 = (cls.name == "HXX" && methodName == "hxx");
+                            var isPhoenixHxx2Root = (cls.name == "HXX2" && cls.pack != null && cls.pack.join(".") == "phoenix.hxx" && methodName == "root");
+                            if ((isHxx1 || isPhoenixHxx2Root) && args.length >= 1) {
+		                                function allowRawHeex(): Bool {
+		                                    if (Context.defined("hxx_allow_raw_heex")) return true;
 
 	                                    // Prefer macro-local context when available. This is the most reliable signal
 	                                    // across builder call sites (even if the compilation context isn't field-scoped).
@@ -429,21 +431,21 @@ class CallExprBuilder {
 	                                    return false;
 	                                }
 
-                                // Build inner argument AST
-                                var innerAst = buildExpression(args[0]);
+	                                // Build inner argument AST
+	                                var innerAst = buildExpression(args[0]);
 
-                                // Reject raw EEx/HEEx (<% ... %>) in HXX templates by default.
-                                // Raw HEEx is an explicit escape hatch: require @:allow_heex or -D hxx_allow_raw_heex.
-                                if (reflaxe.elixir.ast.TemplateHelpers.hxxSourceContainsRawHeexMarkers(innerAst) && !allowRawHeex()) {
-                                    var pos = context != null ? context.getCurrentPosition() : null;
-                                    context.error(
-                                        "HXX: raw `<% ... %>` blocks are disallowed inside HXX templates by default.\n" +
-                                        "Use HXX control tags (`<if>`, `<for>`, etc.) + typed interpolation (`#{...}`),\n" +
-                                        "or add `@:allow_heex` to the enclosing function/class, or compile with `-D hxx_allow_raw_heex`.",
-                                        pos
-                                    );
-                                    throw "HXX raw HEEx disallowed";
-                                }
+	                                // Reject raw EEx/HEEx (<% ... %>) in templates by default.
+	                                // Raw HEEx is an explicit escape hatch: require @:allow_heex or -D hxx_allow_raw_heex.
+	                                if (reflaxe.elixir.ast.TemplateHelpers.hxxSourceContainsRawHeexMarkers(innerAst) && !allowRawHeex()) {
+	                                    var pos = context != null ? context.getCurrentPosition() : null;
+	                                    context.error(
+	                                        "HXX: raw `<% ... %>` blocks are disallowed inside HXX templates by default.\n" +
+	                                        "Use HXX control tags (`<if>`, `<for>`, etc.) + typed interpolation (`#{...}`),\n" +
+	                                        "or add `@:allow_heex` to the enclosing function/class, or compile with `-D hxx_allow_raw_heex`.",
+	                                        pos
+	                                    );
+	                                    throw "HXX raw HEEx disallowed";
+	                                }
 
                                 // Fast-path: if literal string already contains EEx/HEEx markers, emit ~H as-is
                                 switch (innerAst.def) {
@@ -455,11 +457,11 @@ class CallExprBuilder {
                                         }
                                     default:
                                 }
-                                // General path: collect template content and normalize HXX control tags
-                                var content = reflaxe.elixir.ast.TemplateHelpers.collectTemplateContent(innerAst);
-                                content = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(content);
-                                return ESigil("H", content, "");
-                            }
+	                                // General path: collect template content and normalize HXX control tags
+	                                var content = reflaxe.elixir.ast.TemplateHelpers.collectTemplateContent(innerAst);
+	                                content = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(content);
+	                                return ESigil("H", content, "");
+	                            }
                         default:
                     }
                 default:
