@@ -69,9 +69,8 @@
 # Enable deterministic render string → ~H conversion
 -D hxx_string_to_sigil
 
-# Opt-in: allow Haxe inline markup (`return <div>...</div>`) as syntax sugar over HXX.
-# This rewrites markup literals into `HXX.hxx("...")` before typing and then runs the same HXX pipeline.
--D hxx_inline_markup
+# Haxe inline markup (`return <div>...</div>`) is enabled by default for Phoenix-facing modules.
+# Opt out with `-D hxx_no_inline_markup` (or `@:hxx_no_inline_markup` on a class).
 
 # Opt-in: enforce typed phx-hook usage in templates (reject literal phx-hook="Name")
 -D hxx_strict_phx_hook

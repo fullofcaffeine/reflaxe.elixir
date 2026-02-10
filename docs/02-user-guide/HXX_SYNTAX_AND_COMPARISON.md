@@ -22,16 +22,21 @@ See also:
 
 - Entrypoint: `hxx('...')` returns a compile‑time string tagged as HEEx; the builder emits `~H` (it expands from `HXX.hxx(...)` when you `import HXX.*;`).
 - Nested fragments: `HXX.block('...')` inlines a fragment within a parent template.
-- Optional syntax sugar: Haxe inline markup literals (`return <div>...</div>`) can be enabled to desugar into `HXX.hxx("...")` before typing, reusing the same HXX pipeline and linters.
+- Inline markup: Haxe inline markup literals (`return <div>...</div>`) are rewritten into a canonical template entrypoint (`phoenix.hxx.HeexTemplate.root/1`), which the builder lowers to `~H`.
 
 Inline markup notes:
 - Root tag must be a valid XML name (Haxe lexer rule).
 - Phoenix dot-components like `<.form>` cannot be the *root*; wrap them in a normal element (e.g. `<div>...</div>`).
-- Inline markup is pure syntax sugar: it is rewritten into `HXX.hxx("...")` before typing, so it has the same HXX linting and generates the same Elixir.
+- Inline markup parses `${...}` segments into real Haxe expressions (`Context.parseInlineString`), so syntax + types are checked by the Haxe typer.
 
-Enabling:
-- Add `-D hxx_inline_markup` to enable the rewrite macro. To keep overhead minimal, the rewrite only runs for Phoenix-facing modules (`@:liveview`, `@:component`, etc.) unless you also add `@:hxx_inline_markup` to a class.
-- Interpolations keep the same HXX rules: prefer `#{...}` for template expressions. `${...}` is supported too, but it is **Haxe** string interpolation (so it only works for real Haxe identifiers, not template-only binders like `row` from `:let`).
+Defaults / opt-out:
+- Inline markup rewrite is enabled by default for Phoenix-facing modules (`@:liveview`, `@:component`, etc.); opt out with `-D hxx_no_inline_markup` or `@:hxx_no_inline_markup`.
+- Force-enable per-module with `@:hxx_inline_markup` (useful for non-Phoenix modules).
+- Legacy escape hatch: `@:hxx_legacy` forces the older rewrite-to-`HXX.hxx("...")` behavior for that class.
+
+Interpolation note:
+- In `hxx('...')` templates, `#{...}` is HEEx-style interpolation authored as text inside the template string.
+- In inline markup, `${...}` is compiled as a Haxe expression (so it only works for real Haxe identifiers, not template-only binders like `row` introduced by `:let`).
 
 Example:
 
@@ -102,7 +107,7 @@ This means:
 #### Opt-in: strict component resolution
 
 By default, the compiler **skips validation** for dot-components it cannot resolve unambiguously (to avoid false positives).
-If you want TSX-level strictness for component tags, enable:
+If you want TSX-level strictness for component tags, enable globally with `-D hxx_strict_components` or locally with `@:hxx_strict_components` (on the class or the `render/1` function):
 
 ```bash
 -D hxx_strict_components
@@ -117,7 +122,7 @@ Phoenix core tags like `<.link>`, `<.form>`, `<.inputs_for>`, and `<.live_compon
 #### Opt-in: strict slot typing for `:let`
 
 By default, `:let` is allowed even if the component/slot does not declare what type is being bound (in that case the linter cannot type-check field access on the bound variable).
-If you want TSX-level strictness for `:let`, enable:
+If you want TSX-level strictness for `:let`, enable globally with `-D hxx_strict_slots` or locally with `@:hxx_strict_slots`:
 
 ```bash
 -D hxx_strict_slots
@@ -129,7 +134,7 @@ In strict mode:
 
 #### Opt-in: strict `phx-hook` typing
 
-If you want to enforce typed `phx-hook` usage (to prevent drift with your hook registry), enable:
+If you want to enforce typed `phx-hook` usage (to prevent drift with your hook registry), enable globally with `-D hxx_strict_phx_hook` or locally with `@:hxx_strict_phx_hook`:
 
 ```bash
 -D hxx_strict_phx_hook
@@ -145,7 +150,7 @@ Note:
 
 #### Opt-in: strict `phx-*` event typing
 
-If you want to enforce typed LiveView event names (`phx-click`, `phx-submit`, `phx-change`, ...), enable:
+If you want to enforce typed LiveView event names (`phx-click`, `phx-submit`, `phx-change`, ...), enable globally with `-D hxx_strict_phx_events` or locally with `@:hxx_strict_phx_events`:
 
 ```bash
 -D hxx_strict_phx_events
@@ -202,7 +207,7 @@ You have two “vocabularies” you can extend:
 ```haxe
 @:hxxHtmlTags
 class CustomTags {
-  // Register the tag name (used by -D hxx_strict_html)
+  // Register the tag name (used by `-D hxx_strict_html` / `@:hxx_strict_html`)
   @:hxxTagAttrs(["enabled", "variant"])
   public static final MyWidget = "my-widget";
 }
@@ -228,13 +233,13 @@ npm run docs:hxx:index
 This writes `tmp/hxx-registry.json`.
 
 Notes:
-- Registered custom tags are recognized by `-D hxx_strict_html` (so they don’t error as “unknown tags”).
+- Registered custom tags are recognized by `-D hxx_strict_html` / `@:hxx_strict_html` (so they don’t error as “unknown tags”).
 - Attribute validation for custom tags is only enabled when you provide an explicit `@:hxxTagAttrs(...)` allowlist.
 
 ### Will the compiler complain about unknown tags?
-- Unknown dot-components (`<.typo ...>`) are only errors under `-D hxx_strict_components` (recommended when you want TSX-level strictness).
+- Unknown dot-components (`<.typo ...>`) are only errors under `-D hxx_strict_components` / `@:hxx_strict_components` (recommended when you want TSX-level strictness).
 - Unknown HTML/custom tags (`<my-widget ...>`) are not errors by default; they are treated as user-defined to support custom elements. Registered HTML tags still get strict attribute checking.
-- If you want TSX-like strictness for custom elements too, enable `-D hxx_strict_html`:
+- If you want TSX-like strictness for custom elements too, enable `-D hxx_strict_html` / `@:hxx_strict_html`:
   - Unknown HTML/custom tags become errors unless registered or explicitly allowed via `-D hxx_strict_html_allow_tags=my-widget,another-tag`.
 
 ## Developer UX

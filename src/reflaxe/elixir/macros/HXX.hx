@@ -14,10 +14,18 @@ import phoenix.types.HXXComponentRegistry;
 #end
 
 /**
- * HXX - Type-Safe Phoenix HEEx Template System
+ * HXX - Phoenix HEEx Template String Macro (Legacy "HXX1")
  *
- * Provides compile-time type safety for Phoenix HEEx templates, equivalent to
- * React with TypeScript JSX, while generating standard Phoenix HEEx output.
+ * Provides compile-time validation/normalization for Phoenix HEEx authored as a *string literal*.
+ *
+ * Important: because the template body is a string, arbitrary expressions inside the template are not
+ * fully type-checked by the Haxe typer. HXX focuses on deterministic, low-false-positive checks:
+ * - HTML/Phoenix attribute normalization and validation
+ * - assigns (`@field`) usage linting (via `HeexAssignsTypeLinterTransforms`)
+ * - component/slot shape validation when discoverable
+ *
+ * If you want TSX-like authoring where template expressions are real Haxe AST and type-checked,
+ * prefer the inline markup / `phoenix.hxx.HeexTemplate.root(...)` path.
  *
  * ## Why HXX? The Perfect Phoenix Augmentation
  *
@@ -28,14 +36,14 @@ import phoenix.types.HXXComponentRegistry;
  * - **Zero Runtime Cost**: Types are compile-time only, generating clean HEEx
  * - **Flexible Naming**: Support for camelCase, snake_case, and kebab-case
  *
- * ## How It Works
+ * ## How It Works (High Level)
  *
  * HXX is a compile-time macro that:
  * 1. Validates HTML elements and attributes against type definitions
  * 2. Converts attribute names (camelCase/snake_case → kebab-case)
- * 3. Transforms Haxe interpolation (${}) to Elixir interpolation (#{})
- * 4. Provides helpful error messages for invalid templates
- * 5. Generates standard HEEx that Phoenix expects
+ * 3. Rewrites HXX control tags (`<if {cond}>`, `<for {x in list}>`) into HEEx
+ * 4. Provides helpful errors for invalid templates
+ * 5. Emits standard HEEx that Phoenix expects
  *
  * ## Developer Experience Benefits
  *
@@ -80,11 +88,11 @@ import phoenix.types.HXXComponentRegistry;
  *
  * ## Usage Examples
  *
- * ### Basic Template
+ * ### Basic Template (String Literal)
  * ```haxe
  * var template = HXX.hxx('
  *     <div className="container">
- *         <h1>${title}</h1>
+ *         <h1>#{assigns.title}</h1>
  *         <button phxClick="save" disabled=${!valid}>
  *             Save
  *         </button>
@@ -92,22 +100,16 @@ import phoenix.types.HXXComponentRegistry;
  * ');
  * ```
  *
- * ### LiveView Component
+ * ### LiveView Component (No Raw EEx/HEEx)
  * ```haxe
  * function render(assigns: Assigns) {
  *     return HXX.hxx('
  *         <div id="todos" phxUpdate="stream">
- *             <%= for todo <- @todos do %>
- *                 <div id={"todo-${todo.id}"}>
- *                     <input type="checkbox"
- *                            checked={todo.completed}
- *                            phxClick="toggle"
- *                            phxValue={todo.id} />
- *                     <span class={todo.completed ? "done" : ""}>
- *                         ${todo.title}
- *                     </span>
+ *             <for {todo in assigns.todos}>
+ *                 <div>
+ *                     <span>#{todo.title}</span>
  *                 </div>
- *             <% end %>
+ *             </for>
  *         </div>
  *     ');
  * }
@@ -138,19 +140,15 @@ import phoenix.types.HXXComponentRegistry;
  * | **Components** | React components | Phoenix functions | Phoenix components |
  * | **Naming** | camelCase only | Flexible (3 styles) | Respects Elixir |
  *
- * ## Type Safety Without Compromise
+ * ## Raw HEEx Escape Hatch
  *
- * HXX provides the same level of type safety as React+TypeScript while:
- * - Generating standard HEEx (not a custom format)
- * - Supporting all Phoenix LiveView features natively
- * - Respecting Elixir naming conventions
- * - Having zero runtime overhead
- * - Working with existing Phoenix tooling
+ * Raw `<% ... %>` / `<%= ... %>` blocks are intentionally disallowed by default because they bypass the
+ * HXX linting surface. If you truly need them, opt in via `@:allow_heex` or `-D hxx_allow_raw_heex`.
  *
  * ## Implementation Details
  *
  * The macro performs these transformations:
- * 1. `${expr}` → `#{expr}` (Haxe to Elixir interpolation)
+ * 1. `${expr}` / `#{expr}` → HEEx interpolation (string-macro level, not Haxe-typed expressions)
  * 2. `className` → `class` (special HTML attributes)
  * 3. `phxClick` → `phx-click` (camelCase to kebab-case)
  * 4. `phx_click` → `phx-click` (snake_case to kebab-case)
@@ -279,9 +277,6 @@ class HXX {
                     for (error in validation.errors) Context.warning(error, templateStr.pos);
                 }
                 var processed = processTemplateString(s, templateStr.pos);
-                #if macro
-                haxe.macro.Context.warning("[HXX] processed (length=" + processed.length + ")", templateStr.pos);
-                #end
                 macro @:heex $v{processed};
             case _:
                 Context.error("hxx() expects a string literal", templateStr.pos);

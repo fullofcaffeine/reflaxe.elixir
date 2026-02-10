@@ -121,12 +121,32 @@ private typedef ComponentSlotDefinition = {
 	    @:optional var indexedTypeName: String; // informational: type of indexed access value (e.g. phoenix.Phoenix.FormField)
 	};
 
+#if macro
+private typedef StrictMeta = {
+    var strictComponents: Bool;
+    var strictSlots: Bool;
+    var strictHtml: Bool;
+    var strictPhxHook: Bool;
+    var strictPhxEvents: Bool;
+    var allowStringFallback: Bool;
+};
+#end
+
 class HeexAssignsTypeLinterTransforms {
     static var componentFunctionIndex: Null<Map<String, Array<ComponentDefinition>>> = null;
     static var componentDefinitionCache: Map<String, Null<ComponentDefinition>> = new Map();
     #if macro
     static var phoenixCoreComponentDefinitionCache: Map<String, Null<ComponentDefinition>> = new Map();
     static var activeAppWebRoot: Null<String> = null;
+
+    // Per-function strictness overrides derived from Haxe source metadata (e.g. `@:hxx_strict_html`).
+    // These are set while linting a specific function and reset immediately after.
+    static var activeStrictComponents: Bool = false;
+    static var activeStrictSlots: Bool = false;
+    static var activeStrictHtml: Bool = false;
+    static var activeStrictPhxHook: Bool = false;
+    static var activeStrictPhxEvents: Bool = false;
+    static var activeAllowStringFallback: Bool = false;
     #end
     static var fileContentCache: Map<String, Null<String>> = new Map();
     static var assignsFieldsCache: Map<String, Null<Map<String, String>>> = new Map();
@@ -280,6 +300,7 @@ class HeexAssignsTypeLinterTransforms {
             hxPath = body.metadata.sourceFile;
         }
 #if debug_assigns_linter
+        trace('[assigns_linter] lintFunction fn=' + functionName + ' hxPath=' + hxPath);
 #end
         if (hxPath == null) return; // No source; skip
         // Skip compiler/library/internal files to avoid scanning whole libs
@@ -304,9 +325,42 @@ class HeexAssignsTypeLinterTransforms {
         // define the same dot-component function name (e.g., `.card`).
         var previousAppWebRoot = activeAppWebRoot;
         activeAppWebRoot = inferAppWebRootFromFileContent(fileContent);
+
+        var previousStrictComponents = activeStrictComponents;
+        var previousStrictSlots = activeStrictSlots;
+        var previousStrictHtml = activeStrictHtml;
+        var previousStrictPhxHook = activeStrictPhxHook;
+        var previousStrictPhxEvents = activeStrictPhxEvents;
+        var previousAllowStringFallback = activeAllowStringFallback;
         #end
 
         var nearLine: Null<Int> = findMinSourceLine(body);
+        // Some template shapes (notably macro-produced `~H` bodies) may not propagate `sourceLine` onto
+        // nested nodes. Fall back to the function node's source line so per-function metadata works.
+        if (nearLine == null && n.metadata != null && n.metadata.sourceLine != null) {
+            nearLine = n.metadata.sourceLine;
+        }
+
+        #if macro
+        var strictMeta = extractStrictMetaForFunction(functionName, fileContent, nearLine);
+        activeStrictComponents = strictMeta.strictComponents;
+        activeStrictSlots = strictMeta.strictSlots;
+        activeStrictHtml = strictMeta.strictHtml;
+        activeStrictPhxHook = strictMeta.strictPhxHook;
+        activeStrictPhxEvents = strictMeta.strictPhxEvents;
+        activeAllowStringFallback = strictMeta.allowStringFallback;
+        #if debug_assigns_linter
+        trace('[assigns_linter] strictMeta fn=' + functionName
+            + ' strictHtml=' + strictMeta.strictHtml
+            + ' strictComponents=' + strictMeta.strictComponents
+            + ' strictSlots=' + strictMeta.strictSlots
+            + ' strictPhxHook=' + strictMeta.strictPhxHook
+            + ' strictPhxEvents=' + strictMeta.strictPhxEvents
+            + ' allowStringFallback=' + strictMeta.allowStringFallback
+            + ' nearLine=' + (nearLine == null ? 'null' : Std.string(nearLine)));
+        #end
+        #end
+
         var assignsTypeSpec = (nearLine != null)
             ? extractAssignsTypeSpecForFunctionBefore(functionName, fileContent, nearLine)
             : extractAssignsTypeSpecForFunction(functionName, fileContent);
@@ -352,6 +406,12 @@ class HeexAssignsTypeLinterTransforms {
 
         #if macro
         activeAppWebRoot = previousAppWebRoot;
+        activeStrictComponents = previousStrictComponents;
+        activeStrictSlots = previousStrictSlots;
+        activeStrictHtml = previousStrictHtml;
+        activeStrictPhxHook = previousStrictPhxHook;
+        activeStrictPhxEvents = previousStrictPhxEvents;
+        activeAllowStringFallback = previousAllowStringFallback;
         #end
     }
 
@@ -1378,7 +1438,7 @@ class HeexAssignsTypeLinterTransforms {
 
     static function strictComponentResolutionEnabled(): Bool {
         #if macro
-        return Context.defined("hxx_strict_components");
+        return Context.defined("hxx_strict_components") || activeStrictComponents;
         #else
         return false;
         #end
@@ -1386,7 +1446,7 @@ class HeexAssignsTypeLinterTransforms {
 
 	    static function strictSlotTypingEnabled(): Bool {
 	        #if macro
-	        return Context.defined("hxx_strict_slots");
+	        return Context.defined("hxx_strict_slots") || activeStrictSlots;
 	        #else
 	        return false;
 	        #end
@@ -1394,7 +1454,7 @@ class HeexAssignsTypeLinterTransforms {
 
 	    static function strictHtmlTagTypingEnabled(): Bool {
 	        #if macro
-	        return Context.defined("hxx_strict_html");
+	        return Context.defined("hxx_strict_html") || activeStrictHtml;
 	        #else
 	        return false;
 	        #end
@@ -1402,7 +1462,7 @@ class HeexAssignsTypeLinterTransforms {
 
 	    static function strictPhxHookTypingEnabled(): Bool {
 	        #if macro
-	        return Context.defined("hxx_strict_phx_hook");
+	        return Context.defined("hxx_strict_phx_hook") || activeStrictPhxHook;
         #else
         return false;
         #end
@@ -1410,7 +1470,7 @@ class HeexAssignsTypeLinterTransforms {
 
 	    static function strictPhxEventTypingEnabled(): Bool {
 	        #if macro
-	        return Context.defined("hxx_strict_phx_events");
+	        return Context.defined("hxx_strict_phx_events") || activeStrictPhxEvents;
 	        #else
 	        return false;
 	        #end
@@ -1418,11 +1478,114 @@ class HeexAssignsTypeLinterTransforms {
 
 	    static function allowHeexStringFallbackEnabled(): Bool {
 	        #if macro
-	        return Context.defined("hxx_allow_string_fallback");
+	        return Context.defined("hxx_allow_string_fallback") || activeAllowStringFallback;
 	        #else
 	        return false;
 	        #end
 	    }
+
+	    #if macro
+	    static function extractStrictMetaForFunction(functionName: String, fileContent: String, nearLine: Null<Int>): StrictMeta {
+	        var lines = fileContent.split("\n");
+	        if (lines.length == 0) {
+	            return {
+	                strictComponents: false,
+	                strictSlots: false,
+	                strictHtml: false,
+	                strictPhxHook: false,
+	                strictPhxEvents: false,
+	                allowStringFallback: false,
+	            };
+	        }
+	        var startIndex = (nearLine != null)
+	            ? Std.int(Math.max(0, Math.min(lines.length - 1, nearLine - 1)))
+	            : (lines.length - 1);
+	
+	        var functionRe = new EReg('\\bfunction\\s+' + functionName + '\\b', "");
+	        var functionLineIndex = -1;
+	        // Source positions are best-effort; some macro-produced nodes can end up with odd `sourceLine`
+	        // values. Avoid relying on it too heavily by finding the closest matching function signature.
+	        var matches: Array<Int> = [];
+	        for (i in 0...lines.length) {
+	            var line = lines[i];
+	            if (line != null && functionRe.match(line)) matches.push(i);
+	        }
+	        if (matches.length == 1) {
+	            functionLineIndex = matches[0];
+	        } else if (matches.length > 1) {
+	            // Pick the match closest to our anchor line.
+	            var best = matches[0];
+	            var bestDist = Std.int(Math.abs(best - startIndex));
+	            for (m in matches) {
+	                var dist = Std.int(Math.abs(m - startIndex));
+	                if (dist < bestDist) { best = m; bestDist = dist; }
+	            }
+	            functionLineIndex = best;
+	        } else {
+	            functionLineIndex = startIndex;
+	        }
+
+        // Regex literal: use single backslashes (not double-escaped like strings).
+        var classLineIndex = findLineIndexBefore(lines, functionLineIndex, ~/\bclass\s+[A-Za-z0-9_]+\b/);
+
+        function hasMetaNear(lineIndex: Int, metaName: String): Bool {
+            if (lineIndex < 0) return false;
+            var metaRe = new EReg('^\\s*@:' + metaName + '\\b', "");
+            var i = lineIndex - 1;
+            while (i >= 0) {
+                var trimmed = StringTools.trim(lines[i]);
+                if (trimmed.length == 0) { i--; continue; }
+                if (StringTools.startsWith(trimmed, "//")) { i--; continue; }
+
+                if (metaRe.match(trimmed)) return true;
+                if (StringTools.startsWith(trimmed, "@:")) { i--; continue; }
+
+                break;
+            }
+            return false;
+        }
+
+        function hasMeta(metaName: String): Bool {
+            return hasMetaNear(functionLineIndex, metaName) || hasMetaNear(classLineIndex, metaName);
+        }
+
+        #if debug_assigns_linter
+        trace('[assigns_linter] strictMeta scan fn=' + functionName
+            + ' functionLineIndex=' + functionLineIndex
+            + ' classLineIndex=' + classLineIndex
+            + ' startIndex=' + startIndex);
+        if (functionLineIndex >= 0 && functionLineIndex < lines.length) {
+            trace('[assigns_linter] strictMeta fnLine=' + StringTools.trim(lines[functionLineIndex]));
+        }
+        if (classLineIndex >= 0 && classLineIndex < lines.length) {
+            trace('[assigns_linter] strictMeta classLine=' + StringTools.trim(lines[classLineIndex]));
+        }
+        if (classLineIndex > 0 && classLineIndex - 1 < lines.length) {
+            trace('[assigns_linter] strictMeta classPrev=' + StringTools.trim(lines[classLineIndex - 1]));
+        }
+        #end
+
+        return {
+            strictComponents: hasMeta("hxx_strict_components"),
+            strictSlots: hasMeta("hxx_strict_slots"),
+            strictHtml: hasMeta("hxx_strict_html"),
+            strictPhxHook: hasMeta("hxx_strict_phx_hook"),
+            strictPhxEvents: hasMeta("hxx_strict_phx_events"),
+            allowStringFallback: hasMeta("hxx_allow_string_fallback"),
+        };
+    }
+
+	    static function findLineIndexBefore(lines: Array<String>, startIndex: Int, re: EReg): Int {
+	        if (lines == null || lines.length == 0) return -1;
+	        var i = Std.int(Math.min(startIndex, lines.length - 1));
+	        while (i >= 0) {
+	            var line = lines[i];
+	            if (line != null && re.match(line)) return i;
+	            i--;
+	        }
+	        return -1;
+	    }
+	    #end
 
 	    static function isKnownPhoenixCoreComponentTag(tag: String): Bool {
 	        if (tag == ".live_component") return true;

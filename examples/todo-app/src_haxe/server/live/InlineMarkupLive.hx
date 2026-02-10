@@ -23,9 +23,10 @@ typedef InlineMarkupLiveAssigns = {
  *   representative of what inline markup is best at: ergonomic, mostly-static UI.
  *
  * HOW
- * - Enabled via `-D hxx_inline_markup` (todo-app sets this in `build-server.hxml`).
- * - The compiler rewrites markup literals into `HXX.hxx("...")` before typing, then the normal HXX
- *   pipeline converts the template into HEEx (~H).
+ * - The compiler rewrites markup literals into a canonical template entrypoint (`phoenix.hxx.HeexTemplate.root/1`)
+ *   and lowers it to HEEx (`~H`) in the AST pipeline.
+ * - `${ ... }` segments are parsed into real Haxe expressions and type-checked by the Haxe typer.
+ * - Opt out with `-D hxx_no_inline_markup` / `@:hxx_no_inline_markup`.
  *
  * EXAMPLES
  * Haxe:
