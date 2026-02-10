@@ -188,8 +188,65 @@ end
 - `@:primary_key` - Primary key field
 - `@:field({options})` - Regular field with options
 - `@:timestamps` - Automatic timestamp fields
-- `@:has_many(field, module, key)` - Has many association
-- `@:belongs_to(field, module)` - Belongs to association
+- `@:has_many(field, module?, foreign_key?)` - Has many association
+- `@:has_one(field, module?, foreign_key?)` - Has one association
+- `@:belongs_to(field, module?, foreign_key?)` - Belongs to association
+- `@:many_to_many(field, module?, join_through?)` - Many-to-many association
+
+#### Association Validation (Compile-Time)
+
+Reflaxe.Elixir validates common Ecto association shapes at **compile time** to catch relationship mistakes early.
+
+What is validated:
+
+- `@:belongs_to("assoc")`: the schema must declare a local FK field.
+  - Default: `<assoc>_id`
+  - Override: pass a third string param or an options object with `foreign_key`.
+- `@:has_many("assoc")` / `@:has_one("assoc")`: when the target schema type is resolvable, the target schema must declare the FK field back to the source schema.
+  - Default: `<source_schema>_id` (from the source class name)
+  - Override: pass a third string param or an options object with `foreign_key`.
+- `@:many_to_many`: not validated (join table mediated).
+
+Field name equivalence:
+
+- FK checks compare **snake_cased names**, so `userId` and `user_id` are treated as the same field.
+
+Example:
+
+```haxe
+@:schema("users")
+class User {
+  @:field public var id: Int;
+
+  @:has_many("posts")
+  public var posts: Array<Post>;
+}
+
+@:schema("posts")
+class Post {
+  @:field public var id: Int;
+
+  // Required by @:belongs_to("user") unless overridden.
+  @:field public var userId: Int;
+
+  @:belongs_to("user")
+  public var user: User;
+}
+```
+
+**Configuration / Escape Hatches**
+
+- Default: missing FK fields are **errors** (compilation fails).
+- `-D ecto_assoc_warn_only`: downgrade missing-FK errors to **warnings**.
+- `-D ecto_no_assoc_validation`: disable association validation globally.
+- `@:ecto_no_assoc_validation`: disable association validation for a single `@:schema` class.
+
+**Limitations (By Design)**
+
+- This validation does **not** introspect your database or migrations. Use migrations + runtime constraints
+  (`foreign_key_constraint`, etc.) for full DB integrity.
+- Cross-schema validation for `@:has_many`/`@:has_one` requires the target schema type to be resolvable in the
+  current compilation (e.g. `Array<Post>`). If the target type is dynamic/unresolvable, validation skips with a warning.
 
 ### @:changeset - Ecto Changeset Validation
 

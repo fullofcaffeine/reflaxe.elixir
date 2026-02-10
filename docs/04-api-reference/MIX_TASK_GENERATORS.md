@@ -30,6 +30,8 @@ Output:
 Notes:
 - Uses modern schema metadata (`@:schema("table")`, `@:field`, `@:timestamps`, `@:changeset(...)`).
 - Emits a `typedef <Schema>Params` plus an extern `changeset/2` that the compiler generates.
+- If you add associations (`@:belongs_to`, `@:has_many`, etc.), the compiler validates common FK shapes at compile time.
+  - Example: `@:belongs_to("user")` requires a local `userId`/`user_id` field unless you override `foreign_key`.
 
 ### `mix haxe.gen.context`
 

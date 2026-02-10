@@ -558,10 +558,8 @@ Markup literals must be processed by a macro
 **Cause:** You’re using Haxe inline markup (`return <div>...</div>;`) but inline markup sugar is not enabled.
 
 **Solution:**
-1. Enable inline markup rewrite:
-```hxml
--D hxx_inline_markup
-```
+1. If you disabled inline markup, re-enable it:
+- Remove `-D hxx_no_inline_markup` (if present), or remove `@:hxx_no_inline_markup` from the class.
 
 2. If you’re using inline markup in a non-Phoenix module (not `@:liveview`, `@:component`, etc.), opt in per class:
 ```haxe
@@ -1083,6 +1081,21 @@ var x = 10; // This is OK
 
 // Avoid `untyped`/`__elixir__()` in application code; use typed externs instead.
 ```
+
+### "Ecto association validation: ... missing a foreign key field ..."
+
+**Cause:** An Ecto association annotation (`@:belongs_to`, `@:has_many`, `@:has_one`) was declared but the expected foreign key field is missing.
+
+**Fix (recommended):**
+- Add the FK field explicitly on the schema (either `snake_case` or `camelCase` is accepted).
+  - Example: `@:belongs_to("user")` requires `user_id` or `userId` unless overridden.
+- If your DB uses a non-standard FK name, override it:
+  - Pass a third string param (e.g. `@:belongs_to("user", "User", "account_id")`), or
+  - Use an options object with `foreign_key` (e.g. `{foreign_key: "account_id"}`).
+
+**Escape hatches (avoid):**
+- `-D ecto_assoc_warn_only` to downgrade these errors to warnings.
+- `-D ecto_no_assoc_validation` or `@:ecto_no_assoc_validation` to disable validation.
 
 ## FAQ
 
