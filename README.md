@@ -101,9 +101,9 @@ The foundation for multi-target development:
 
 ### ✅ Stable (v1.1)
 - **Phoenix Integration** - LiveView, controllers, templates, routers 100% supported
-- **HXX Template System (HXX1 + inline markup)** - Compile-time template parsing + validation with optional strict checks for Phoenix/LiveView attributes
-  - HXX1 (`hxx('...')` / `HXX.hxx('...')`) is a compile-time JSX-like *template string* macro. It validates/normalizes template structure and Phoenix conventions, but template expressions inside the string are not fully type-checked by the Haxe typer.
-  - Inline markup (`return <div>...</div>`) is TSX-like syntax sugar for authoring templates in Haxe code. It rewrites to a canonical template entrypoint so `${...}` segments can become typed Haxe expressions (syntax + type checked) and then be lowered to HEEx (`~H`) in the compiler pipeline.
+- **HXX Template System (template strings + inline markup)** - Compile-time template parsing + validation with optional strict checks for Phoenix/LiveView attributes
+  - Template strings (`hxx('...')` / `HXX.hxx('...')`) are compile-time validated/normalized, but expressions inside the string are not fully type-checked by the Haxe typer.
+  - Inline markup (`return <div>...</div>`) is TSX-like syntax sugar for authoring templates as Haxe expressions. It rewrites to `phoenix.hxx.HeexTemplate.root(...)` so `${...}` segments are parsed and type-checked by Haxe and then lowered to HEEx (`~H`) in the compiler pipeline.
   - **Template Helper Metadata** ✨ NEW - Uses @:templateHelper metadata for extensible Phoenix function compilation
   - **Type-Safe Phoenix Abstractions** ✨ NEW - Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with operator overloading
 - **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations remain opt‑in/experimental** (`-D ecto_migrations_exs`)  
