@@ -81,6 +81,7 @@ Notes:
 
 - This validates schema shapes, not your database. Use migrations + `foreign_key_constraint` for full DB integrity.
 - If the association target type is `Dynamic`/unresolvable, cross-schema validation is skipped with a warning.
+  - If needed, you can provide a string target hint (e.g. `@:has_many("posts", "Post")`) as long as that type is compiled in the same Haxe build.
 
 ## Changesets
 

@@ -246,7 +246,11 @@ class Post {
 - This validation does **not** introspect your database or migrations. Use migrations + runtime constraints
   (`foreign_key_constraint`, etc.) for full DB integrity.
 - Cross-schema validation for `@:has_many`/`@:has_one` requires the target schema type to be resolvable in the
-  current compilation (e.g. `Array<Post>`). If the target type is dynamic/unresolvable, validation skips with a warning.
+  current compilation (e.g. `Array<Post>`).
+  - Prefer typed fields (`Array<Post>`, `Post`) so the validator can resolve the target schema reliably.
+  - If the target type cannot be inferred from the field type, you can provide a string hint as the second param
+    (e.g. `@:has_many("posts", "Post")`) as long as that type is part of the same Haxe compilation.
+  - If the target is dynamic/unresolvable/ambiguous, validation skips with a warning.
 
 ### @:changeset - Ecto Changeset Validation
 
