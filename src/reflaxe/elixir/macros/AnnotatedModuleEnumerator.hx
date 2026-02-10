@@ -8,6 +8,7 @@ import haxe.macro.Type;
 import reflaxe.elixir.macros.MigrationRegistry;
 import reflaxe.elixir.macros.LiveViewEventRegistry;
 import reflaxe.elixir.macros.LiveViewTemplateUsageRegistry;
+import reflaxe.elixir.macros.EctoSchemaAssociationValidator;
 
 /**
  * AnnotatedModuleEnumerator
@@ -75,6 +76,7 @@ class AnnotatedModuleEnumerator {
             normalizeSchemaMetadata(cls);
             validateSchemaTableNameIfKnown(cls);
             maybeInjectManyToManyJoinThrough(cls, fields);
+            EctoSchemaAssociationValidator.ensureAfterTypingHook();
             for (field in fields) {
                 if (isSchemaField(field)) ensureSchemaFieldKept(field);
             }

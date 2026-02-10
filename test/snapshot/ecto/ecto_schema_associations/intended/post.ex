@@ -6,6 +6,6 @@ defmodule Post do
     _ = timestamps()
   end
   def new() do
-    %{:__reflaxe_class__ => Post, :id => nil, :title => nil, :organization => nil, :tags => nil}
+    %{:__reflaxe_class__ => Post, :id => nil, :title => nil, :organization => nil, :organization_id => nil, :tags => nil}
   end
 end

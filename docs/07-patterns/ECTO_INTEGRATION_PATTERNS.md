@@ -33,6 +33,55 @@ Notes:
 - Field names use your Haxe schema fields (e.g. `userId`, `insertedAt`); output is snake_cased to match Ecto fields.
 - When a field doesn’t exist, compilation fails early with a schema validation error.
 
+## Associations (Compile-Time Validation)
+
+Reflaxe.Elixir supports Ecto-style associations on `@:schema` modules and validates the common FK shapes at compile time.
+
+Recommended pattern:
+
+- Declare the association field (typed), and also declare the FK field explicitly.
+- Prefer resolvable target types (`Post`, `Array<Post>`) so cross-schema validation can run.
+
+Example:
+
+```haxe
+@:schema("users")
+class User {
+  @:field public var id: Int;
+
+  @:has_many("posts")
+  public var posts: Array<Post>;
+}
+
+@:schema("posts")
+class Post {
+  @:field public var id: Int;
+
+  @:field public var userId: Int; // validated by @:belongs_to("user")
+
+  @:belongs_to("user")
+  public var user: User;
+}
+```
+
+Validation behavior:
+
+- `@:belongs_to("user")` requires a local FK field `user_id` (or `userId`).
+- `@:has_many("posts")` / `@:has_one("post")` requires the target schema to have `user_id` (or `userId`) when the target schema type is resolvable.
+- FK overrides are supported via a third string param or an options object with `foreign_key`.
+
+Configuration / escape hatches:
+
+- Default: missing FK fields are **errors** (compile fails).
+- `-D ecto_assoc_warn_only`: downgrade missing FK errors to warnings.
+- `-D ecto_no_assoc_validation`: disable globally.
+- `@:ecto_no_assoc_validation`: disable for a single schema.
+
+Notes:
+
+- This validates schema shapes, not your database. Use migrations + `foreign_key_constraint` for full DB integrity.
+- If the association target type is `Dynamic`/unresolvable, cross-schema validation is skipped with a warning.
+
 ## Changesets
 
 Reflaxe.Elixir supports two complementary approaches:

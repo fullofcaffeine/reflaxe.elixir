@@ -30,6 +30,7 @@ class Post {
 
     @:belongs_to("organization")
     public var organization: Organization;
+    public var organization_id: Int;
 
     @:many_to_many("tags")
     public var tags: Array<Tag>;
