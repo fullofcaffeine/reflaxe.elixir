@@ -11,22 +11,32 @@ import haxe.macro.Expr;
  *
  * WHAT
  * - Enables Haxe inline markup (`return <div>...</div>`) as syntax sugar for HXX templates.
- * - Rewrites `@:markup "<tag>...</tag>"` expressions (produced by the parser) into `HXX.hxx("...")`
- *   before typing, so the normal HXX → HEEx pipeline applies.
+ * - Rewrites `@:markup "<tag>...</tag>"` expressions (produced by the parser) into a stable
+ *   compiler-intercepted call shape: `phoenix.hxx.HXX2.root(<template-expr>)`.
+ * - Parses `${ ... }` segments inside inline markup payloads into real Haxe `Expr` nodes, so the
+ *   typer checks syntax + types and the backend compiles the expressions into valid Elixir.
  *
  * WHY
  * - Haxe represents inline markup as an expression metadata `@:markup` on a string constant.
  * - The typer errors on `@:markup` unless a macro rewrites it beforehand.
- * - We want TSX-like authoring ergonomics while reusing the existing HXX implementation and linters.
+ * - Inline markup payloads are otherwise just text, and `${...}` would be handled via string rewrite
+ *   heuristics instead of type-checked compilation.
  *
  * HOW
- * - `enable()` installs a global `@:build(...)` macro when explicitly opted in via:
- *   - `-D hxx_inline_markup`
+ * - `enable()` installs a global `@:build(...)` macro (default-on) unless opted out via:
+ *   - `-D hxx_no_inline_markup`
  * - `build()` walks all field expressions and replaces:
  *     EMeta(name=":markup", innerStringExpr)
  *   with:
- *     HXX.hxx(innerStringExpr)
- *   (or just `innerStringExpr` when already inside `HXX.hxx(...)` / `HXX.block(...)` call args).
+ *     phoenix.hxx.HXX2.root(<template-expr>)
+ *   (or just `<template-expr>` when already inside `HXX2.root(...)` / `HXX.hxx(...)` / `HXX.block(...)` args).
+ *
+ * DEFAULTS / OPT-OUT / LEGACY
+ * - Default-on for Phoenix-facing modules (same gating as before).
+ * - Opt-out per module: `@:hxx_no_inline_markup`
+ * - Global opt-out: `-D hxx_no_inline_markup`
+ * - Legacy escape hatch: `@:hxx_legacy` forces the old rewrite to `HXX.hxx(<string-literal>)`
+ *   (and keeps `${...}` segments as text for the legacy HXX parser).
  *
  * LIMITATIONS
  * - Haxe's markup lexer requires a valid XML root tag name at the start of the literal. Phoenix
@@ -41,8 +51,8 @@ class InlineMarkup {
      * Adds a global `@:build(...)` macro so inline markup works without requiring per-module annotations.
      */
     public static function enable(): Void {
-        // Explicit opt-in: avoid any macro overhead unless inline markup is requested.
-        if (!Context.defined("hxx_inline_markup")) return;
+        // Default-on with explicit global opt-out.
+        if (Context.defined("hxx_no_inline_markup")) return;
 
         // Apply to types only; fields are rewritten by the build macro itself.
         Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.InlineMarkup.build())", true, true, false);
@@ -55,11 +65,24 @@ class InlineMarkup {
         return fields;
     }
 
-    static function shouldProcessLocalType(): Bool {
+    static function localTypeUsesLegacyRewrite(): Bool {
         var localClassRef = Context.getLocalClass();
         if (localClassRef == null) return false;
         var cls = localClassRef.get();
         if (cls == null || cls.meta == null) return false;
+        return cls.meta.has(":hxx_legacy") || cls.meta.has("hxx_legacy");
+    }
+
+    static function shouldProcessLocalType(): Bool {
+        if (Context.defined("hxx_no_inline_markup")) return false;
+
+        var localClassRef = Context.getLocalClass();
+        if (localClassRef == null) return false;
+        var cls = localClassRef.get();
+        if (cls == null || cls.meta == null) return false;
+
+        // Per-module opt-out (even for Phoenix-facing modules).
+        if (cls.meta.has(":hxx_no_inline_markup") || cls.meta.has("hxx_no_inline_markup")) return false;
 
         // Default: only process Phoenix-facing modules where inline markup is likely to be used.
         // Users can opt-in on a per-module basis with `@:hxx_inline_markup`.
@@ -108,6 +131,137 @@ class InlineMarkup {
         };
     }
 
+    static function isHxx2RootCallee(expr: Expr): Bool {
+        if (expr == null || expr.expr == null) return false;
+        return switch (expr.expr) {
+            case EField(owner, fieldName) if (fieldName == "root"):
+                switch (owner.expr) {
+                    case EConst(CIdent("HXX2")):
+                        true;
+                    // Allow the fully-qualified type path to appear as an identifier (depends on AST shape).
+                    case EConst(CIdent("phoenix.hxx.HXX2")):
+                        true;
+                    default:
+                        false;
+                }
+            case EMeta(_, inner):
+                isHxx2RootCallee(inner);
+            case EParenthesis(inner):
+                isHxx2RootCallee(inner);
+            default:
+                false;
+        };
+    }
+
+    static function makeSubPos(base: Position, startOffset: Int, endOffset: Int): Position {
+        var info = Context.getPosInfos(base);
+        var min = info.min + (startOffset < 0 ? 0 : startOffset);
+        var max = info.min + (endOffset < startOffset ? startOffset : endOffset);
+        // Best-effort: clamp to original span when possible.
+        if (max > info.max) max = info.max;
+        if (min > info.max) min = info.max;
+        return Context.makePosition({ file: info.file, min: min, max: max });
+    }
+
+    static function parseInlineMarkupPayloadToTypedExpr(payload: String, payloadPos: Position): Expr {
+        if (payload == null || payload.length == 0) {
+            return macro $v{payload == null ? "" : payload};
+        }
+
+        inline function mkConstString(s: String, pos: Position): Expr {
+            return { expr: EConst(CString(s, null)), pos: pos };
+        }
+
+        inline function mkAdd(a: Expr, b: Expr, pos: Position): Expr {
+            return { expr: EBinop(OpAdd, a, b), pos: pos };
+        }
+
+        var parts: Array<Expr> = [];
+        var literalStart = 0;
+        var index = 0;
+        while (index < payload.length) {
+            var ch = payload.charAt(index);
+            if (ch == "$" && index + 1 < payload.length && payload.charAt(index + 1) == "{") {
+                // Flush preceding literal.
+                if (index > literalStart) {
+                    var lit = payload.substr(literalStart, index - literalStart);
+                    parts.push(mkConstString(lit, makeSubPos(payloadPos, literalStart, index)));
+                }
+
+                var exprOpenIndex = index; // points at '$'
+                var exprStart = index + 2; // after ${
+                var cursor = exprStart;
+                var depth = 1;
+                var inS = false;
+                var inD = false;
+                var escaped = false;
+                while (cursor < payload.length && depth > 0) {
+                    var cj = payload.charAt(cursor);
+                    if (inS || inD) {
+                        if (!escaped && cj == "\\") {
+                            escaped = true;
+                            cursor++;
+                            continue;
+                        }
+                        if (!escaped) {
+                            if (inD && cj == "\"") inD = false;
+                            else if (inS && cj == "'") inS = false;
+                        } else {
+                            escaped = false;
+                        }
+                        cursor++;
+                        continue;
+                    }
+
+                    if (cj == "\"") { inD = true; cursor++; continue; }
+                    if (cj == "'") { inS = true; cursor++; continue; }
+
+                    if (cj == "{") depth++;
+                    else if (cj == "}") depth--;
+                    cursor++;
+                }
+
+                if (depth != 0) {
+                    Context.error("Inline markup: unterminated `${ ... }` expression. Close the `}` or opt out with `-D hxx_no_inline_markup` / `@:hxx_no_inline_markup`.", makeSubPos(payloadPos, exprOpenIndex, payload.length));
+                }
+
+                var exprEndExclusive = cursor - 1;
+                var rawInner = payload.substr(exprStart, exprEndExclusive - exprStart);
+                var trimmed = StringTools.trim(rawInner);
+                if (trimmed.length == 0) {
+                    Context.error("Inline markup: empty `${}` expression is not allowed.", makeSubPos(payloadPos, exprOpenIndex, cursor));
+                }
+
+                var exprPos = makeSubPos(payloadPos, exprStart, exprEndExclusive);
+                var parsed = Context.parseInlineString(trimmed, exprPos);
+                parts.push({ expr: EParenthesis(parsed), pos: exprPos });
+
+                index = cursor;
+                literalStart = index;
+                continue;
+            }
+            index++;
+        }
+
+        // Trailing literal.
+        if (literalStart < payload.length) {
+            parts.push(mkConstString(payload.substr(literalStart), makeSubPos(payloadPos, literalStart, payload.length)));
+        }
+
+        if (parts.length == 0) {
+            return mkConstString("", payloadPos);
+        }
+        if (parts.length == 1) {
+            return parts[0];
+        }
+
+        var acc = parts[0];
+        for (i in 1...parts.length) {
+            acc = mkAdd(acc, parts[i], payloadPos);
+        }
+        return acc;
+    }
+
     static function rewriteExpr(expr: Expr, insideHxxArgs: Bool): Expr {
         if (expr == null || expr.expr == null) return expr;
 
@@ -132,18 +286,37 @@ class InlineMarkup {
         return switch (expr.expr) {
             case EMeta(meta, inner) if (meta != null && meta.name == ":markup"):
                 // Haxe parser encodes markup as `@:markup "<xml...>"`.
-                // If we're already inside `HXX.hxx(...)` / `HXX.block(...)` call args, just strip the metadata.
-                if (insideHxxArgs) {
-                    rewriteExpr(inner, insideHxxArgs);
+                var legacy = localTypeUsesLegacyRewrite();
+                // Legacy escape hatch: preserve old behavior (wrap the raw payload string in HXX.hxx).
+                if (legacy) {
+                    if (insideHxxArgs) {
+                        rewriteExpr(inner, insideHxxArgs);
+                    } else {
+                        var strippedLegacy = rewriteExpr(inner, true);
+                        mkHxxCall(strippedLegacy, expr.pos);
+                    }
                 } else {
-                    var stripped = rewriteExpr(inner, true);
-                    mkHxxCall(stripped, expr.pos);
+                    // Default HXX2 path: parse `${ ... }` segments into real Haxe expressions.
+                    var rewrittenInner = rewriteExpr(inner, insideHxxArgs);
+                    var payloadExpr = switch (rewrittenInner.expr) {
+                        case EConst(CString(s, _)):
+                            parseInlineMarkupPayloadToTypedExpr(s, rewrittenInner.pos);
+                        default:
+                            Context.error("Inline markup: expected a constant string payload from the parser.", rewrittenInner.pos);
+                    }
+
+                    // If we're already inside a template producer call, just strip `@:markup` and keep the argument expression.
+                    if (insideHxxArgs) {
+                        payloadExpr;
+                    } else {
+                        mkHxx2RootCall(payloadExpr, expr.pos);
+                    }
                 }
             case EMeta(meta, inner):
                 var nextInner = rewriteExpr(inner, insideHxxArgs);
                 if (nextInner == inner) expr else mk(EMeta(meta, nextInner));
             case ECall(fn, args):
-                var nextInside = insideHxxArgs || isHxxCallee(fn, "hxx") || isHxxCallee(fn, "block");
+                var nextInside = insideHxxArgs || isHxxCallee(fn, "hxx") || isHxxCallee(fn, "block") || isHxx2RootCallee(fn);
                 var nextFn = rewriteExpr(fn, insideHxxArgs);
                 var nextArgs = args == null ? null : mapArray(args, (a) -> rewriteExpr(a, nextInside));
                 if (nextFn == fn && nextArgs == args) expr else mk(ECall(nextFn, nextArgs));
@@ -249,6 +422,12 @@ class InlineMarkup {
     static function mkHxxCall(arg: Expr, pos: Position): Expr {
         var callee: Expr = { expr: EField({ expr: EConst(CIdent("HXX")), pos: pos }, "hxx"), pos: pos };
         return { expr: ECall(callee, [arg]), pos: pos };
+    }
+
+    static function mkHxx2RootCall(arg: Expr, pos: Position): Expr {
+        var call = macro phoenix.hxx.HXX2.root($arg);
+        call.pos = pos;
+        return call;
     }
 }
 

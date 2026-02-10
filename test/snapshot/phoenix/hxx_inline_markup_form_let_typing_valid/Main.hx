@@ -7,6 +7,7 @@ typedef Assigns = {
 }
 
 @:hxx_inline_markup
+@:hxx_legacy
 class Main {
     public static function render(assigns: Assigns): String {
         return <div>

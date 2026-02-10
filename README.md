@@ -101,7 +101,9 @@ The foundation for multi-target development:
 
 ### ✅ Stable (v1.1)
 - **Phoenix Integration** - LiveView, controllers, templates, routers 100% supported
-- **HXX Template System** - Complete compile-time JSX→HEEx transformation with AST-based processing
+- **HXX Template System (HXX1 + inline markup)** - Compile-time template parsing + validation with optional strict checks for Phoenix/LiveView attributes
+  - HXX1 (`hxx('...')` / `HXX.hxx('...')`) is a compile-time JSX-like *template string* macro. It validates/normalizes template structure and Phoenix conventions, but template expressions inside the string are not fully type-checked by the Haxe typer.
+  - Inline markup (`return <div>...</div>`) is TSX-like syntax sugar for authoring templates in Haxe code. It rewrites to a canonical template entrypoint so `${...}` segments can become typed Haxe expressions (syntax + type checked) and then be lowered to HEEx (`~H`) in the compiler pipeline.
   - **Template Helper Metadata** ✨ NEW - Uses @:templateHelper metadata for extensible Phoenix function compilation
   - **Type-Safe Phoenix Abstractions** ✨ NEW - Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with operator overloading
 - **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations remain opt‑in/experimental** (`-D ecto_migrations_exs`)  
@@ -569,9 +571,10 @@ class CounterView {
 ```
 
 Notes:
-- Inline markup is opt-in: enable it with `-D hxx_inline_markup`.
-- For a fragment root (React-style), you can use `<> ... </>`.
-- The root tag must be a valid XML name (or a fragment), so Phoenix dot-components like `<.form>` cannot be the root; wrap them in `<> ... </>` (or a normal element).
+- Inline markup is enabled by default for Phoenix-facing modules; opt out with `-D hxx_no_inline_markup` or `@:hxx_no_inline_markup`.
+- Legacy escape hatch: `@:hxx_legacy` (forces legacy inline-markup rewrite behavior for that module).
+- Haxe inline markup requires a valid XML root tag name. Phoenix dot-components like `<.form>` cannot be the root; wrap them in a normal element (e.g. `<div>...</div>`).
+- Haxe inline markup does not support fragment roots (`<> ... </>`).
 
 More: `docs/02-user-guide/INLINE_MARKUP.md`
 
@@ -589,15 +592,15 @@ defmodule CounterLive do
     {:noreply, assign(socket, :count, count)}
   end
   
-  def render(assigns) do
-    ~H"""
-    <div class="counter">
-      <h1>{assigns.count}</h1>
-      <button phx-click="increment">+</button>
-    </div>
-    """
-  end
-end
+	  def render(assigns) do
+	    ~H"""
+	    <div class="counter">
+	      <h1><%= @count %></h1>
+	      <button phx-click="increment">+</button>
+	    </div>
+	    """
+	  end
+	end
 ```
 
 Note: the Haxe return values are enums (`MountResult.Ok(...)`, `HandleEventResult.NoReply(...)`), which compile to the standard Elixir atom-tagged tuples (`{:ok, ...}`, `{:noreply, ...}`).
