@@ -441,7 +441,8 @@ jobs:
     name: Smoke (macOS)
     runs-on: macos-latest
     needs: [guards]
-    timeout-minutes: 45
+    # macos-latest can have long queue times; keep this job bounded but avoid spurious cancellations.
+    timeout-minutes: 75
     steps:
       - name: Checkout
         uses: actions/checkout@v4
