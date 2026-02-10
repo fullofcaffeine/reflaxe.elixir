@@ -21,6 +21,46 @@ Legacy note: `@:hxx_legacy` forces the old "rewrite to `HXX.hxx(\"...\")`" behav
 
 Implementation: `src/reflaxe/elixir/macros/InlineMarkup.hx`.
 
+## Typed Control Flow (Recommended)
+
+Because `${ ... }` segments become real Haxe expressions, you can use normal Haxe control flow and keep it type-checked.
+
+### Conditional markup
+
+```haxe
+return <div class="root">
+  ${if (assigns.show) <span class="yes">Yes</span> else <span class="no">No</span>}
+</div>;
+```
+
+This lowers to a real HEEx block:
+
+```elixir
+<%= if @show do %>
+  <span class="yes">Yes</span>
+<% else %>
+  <span class="no">No</span>
+<% end %>
+```
+
+### Loops (avoid HTML-as-string)
+
+In HEEx, returning an HTML string from `<%= ... %>` escapes tags, so you should not build markup by `Enum.join(...)`.
+
+Use `phoenix.hxx.HeexTemplate.for_each/2` instead:
+
+```haxe
+import phoenix.hxx.HeexTemplate;
+
+typedef Item = { var name: String; };
+
+return <ul>
+  ${HeexTemplate.for_each(assigns.items, (item) -> <li>${item.name}</li>)}
+</ul>;
+```
+
+This lowers to a HEEx `for` block so the body is parsed as markup, not an escaped string.
+
 ## Defaults and Opt-Out
 
 - Inline markup rewrite is enabled by default for Phoenix-facing modules.

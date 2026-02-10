@@ -16,13 +16,14 @@ See also:
 - 02-user-guide/HXX_TYPE_SAFETY.md – Type system and validation
 - 06-guides/HXX_GUIDE.md – Practical authoring patterns
 - 05-architecture/HXX_ARCHITECTURE.md – Technical pipeline
-- 02-user-guide/INLINE_MARKUP.md – Optional TSX-like inline markup sugar
+- 02-user-guide/INLINE_MARKUP.md – TSX-like inline markup authoring (typed-first)
 
 ## Authoring Model
 
-- Entrypoint: `hxx('...')` returns a compile‑time string tagged as HEEx; the builder emits `~H` (it expands from `HXX.hxx(...)` when you `import HXX.*;`).
-- Nested fragments: `HXX.block('...')` inlines a fragment within a parent template.
-- Inline markup: Haxe inline markup literals (`return <div>...</div>`) are rewritten into a canonical template entrypoint (`phoenix.hxx.HeexTemplate.root/1`), which the builder lowers to `~H`.
+- Typed-first entrypoint: Haxe inline markup literals (`return <div>...</div>`) are rewritten into a canonical template entrypoint (`phoenix.hxx.HeexTemplate.root/1`), which the builder lowers to `~H`.
+- Typed loops: `phoenix.hxx.HeexTemplate.for_each(items, (item) -> <li>...</li>)` lowers to a HEEx `<%= for ... do %>` block so repeated markup is not HTML-escaped.
+- Template strings (migration): `hxx('...')` returns a compile‑time string tagged as HEEx; the builder emits `~H` (it expands from `HXX.hxx(...)` when you `import HXX.*;`).
+- Nested fragments (template strings): `HXX.block('...')` inlines a fragment within a parent template.
 
 Inline markup notes:
 - Root tag must be a valid XML name (Haxe lexer rule).
@@ -35,8 +36,8 @@ Defaults / opt-out:
 - Legacy escape hatch: `@:hxx_legacy` forces the older rewrite-to-`HXX.hxx("...")` behavior for that class.
 
 Interpolation note:
-- In `hxx('...')` templates, `#{...}` is HEEx-style interpolation authored as text inside the template string.
-- In inline markup, `${...}` is compiled as a Haxe expression (so it only works for real Haxe identifiers, not template-only binders like `row` introduced by `:let`).
+- In template strings, normal Haxe string interpolation (`${...}` inside a Haxe interpolated string) is type-checked by the Haxe typer. Template-local markers like `#{...}` are authored as text and are rewritten + linted, but are not Haxe-typed.
+- In inline markup, `${...}` segments are parsed into real Haxe expressions (`Context.parseInlineString`) and are fully type-checked by Haxe.
 
 Example:
 
@@ -165,9 +166,12 @@ Rejected in strict mode:
 - Fully dynamic event expressions (e.g. `phx-click={@event}`) are rejected because they cannot be validated.
 
 ### Control Flow
-- Block conditionals in content use HXX control tags (normalized to HEEx):
-- `<if cond> ... <else> ... </if>` → HEEx `if/else` block
-- Attribute conditionals become inline `if` as shown above.
+- Typed-first (recommended): use normal Haxe control flow inside `${ ... }` and typed helpers like `HeexTemplate.for_each/2`.
+- Template strings (migration): block conditionals/loops can use HXX control tags (normalized to HEEx):
+  - `<if {cond}> ... <else> ... </if>` → HEEx `if/else` block
+  - `<for {pattern in expr}> ... </for>` → HEEx `for` block
+
+Note: The `{cond}` / `{pattern in expr}` headers inside template strings are not parsed as Haxe AST, so they are not type-checked by the Haxe typer.
 
 ### Escaping & Safety
 - HEEx escaping rules apply; no alternative raw API is introduced. The compiler warns on unsafe patterns in `~H` (validator transforms).

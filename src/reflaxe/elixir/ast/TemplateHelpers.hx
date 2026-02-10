@@ -196,16 +196,26 @@ class TemplateHelpers {
                 combined;
                 
             case EIf(condition, thenBranch, elseBranch):
-                // Prefer inline-if when then/else are simple HTML strings (including HXX.block)
                 var condStr = renderExpr(condition);
                 if (StringTools.startsWith(condStr, "assigns.")) condStr = '@' + condStr.substr("assigns.".length);
-                // Try to extract simple HTML bodies from branches
+
+                // Attribute values must stay as a single Elixir expression; HEEx blocks like
+                // `<% else %>` are invalid inside `attr={...}`. When branches are simple text
+                // strings (not markup), keep a single-expression inline-if.
                 var thenSimple: Null<String> = extractSimpleHtml(thenBranch);
                 var elseSimple: Null<String> = (elseBranch != null) ? extractSimpleHtml(elseBranch) : "";
-                if (thenSimple != null && elseSimple != null) {
+
+                function looksLikeMarkup(s: Null<String>): Bool {
+                    if (s == null) return false;
+                    // Conservative: treat any `<` as markup-ish to avoid HTML-as-string injection.
+                    return s.indexOf("<") != -1 || s.indexOf("<%") != -1;
+                }
+
+                if (thenSimple != null && elseSimple != null && !looksLikeMarkup(thenSimple) && !looksLikeMarkup(elseSimple)) {
                     '<%= if ' + condStr + ', do: ' + toQuoted(thenSimple) + ', else: ' + toQuoted(elseSimple) + ' %>';
                 } else {
-                    // Fallback to block-if
+                    // Default: emit block-if so branches can contain real HEEx markup safely.
+                    // In HEEx, returning an HTML string from `<%= ... %>` will be escaped.
                     var thenStr = collectTemplateContent(thenBranch);
                     var elseStr = elseBranch != null ? collectTemplateContent(elseBranch) : "";
                     var parts = [];
@@ -263,6 +273,57 @@ class TemplateHelpers {
                 '<%= ' + callStr + ' %>';
 
             case ERemoteCall(module, func, args):
+                // Typed template helper: HeexTemplate.for_each(items, fn item -> ... end)
+                //
+                // WHY: in HEEx, injecting HTML via string output escapes tags.
+                // We lower to a real HEEx for-block so the body is parsed as markup.
+                function isHeexTemplateModule(m: ElixirAST): Bool {
+                    if (m == null) return false;
+                    return switch (m.def) {
+                        case EVar(name):
+                            name == "HeexTemplate" || StringTools.endsWith(name, ".HeexTemplate") || StringTools.endsWith(name, ".HXX2");
+                        case EField(_, fld):
+                            fld == "HeexTemplate" || fld == "HXX2";
+                        default:
+                            false;
+                    }
+                }
+
+                function printSimpleBinder(p: EPattern): Null<String> {
+                    return switch (p) {
+                        case PVar(name):
+                            var nm = name;
+                            if (nm != null && nm.indexOf("`") != -1) nm = nm.split("`").join("");
+                            (nm == null || StringTools.trim(nm).length == 0) ? "_" : nm;
+                        case PWildcard:
+                            "_";
+                        default:
+                            null;
+                    }
+                }
+
+                if (isHeexTemplateModule(module) && (func == "for_each" || func == "forEach") && args.length == 2) {
+                    var itemsExpr = renderExpr(args[0]);
+                    if (StringTools.startsWith(itemsExpr, "assigns.")) itemsExpr = '@' + itemsExpr.substr("assigns.".length);
+
+                    switch (args[1].def) {
+                        case EFn(clauses) if (clauses != null && clauses.length == 1):
+                            var clause = clauses[0];
+                            if (clause.args != null && clause.args.length == 1) {
+                                var binder = printSimpleBinder(clause.args[0]);
+                                if (binder != null) {
+                                    var body = collectTemplateContent(clause.body);
+                                    var parts = [];
+                                    parts.push('<%= for ' + binder + ' <- ' + itemsExpr + ' do %>');
+                                    parts.push(body);
+                                    parts.push('<% end %>');
+                                    return parts.join("");
+                                }
+                            }
+                        default:
+                    }
+                    // If we can't lower safely, fall back to a normal interpolation call.
+                }
                 // Render remote calls similarly to ECall, with arg block wrapping
                 var head = renderExpr(module) + "." + func;
                 function renderArg2(a: ElixirAST): String {

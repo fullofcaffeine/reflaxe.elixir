@@ -26,5 +26,27 @@ class HeexTemplate {
     public static function root(template: String): String {
         return template;
     }
-}
 
+    /**
+     * for_each/2 (template helper)
+     *
+     * WHAT
+     * - Typed helper for rendering repeating template content.
+     *
+     * WHY
+     * - Building HTML by concatenating strings inside `<%= ... %>` escapes tags in HEEx.
+     * - We want a TSX-like workflow where the loop binder is a real Haxe variable (typed),
+     *   but the output becomes a proper HEEx `<%= for ... do %> ... <% end %>` block.
+     *
+     * HOW
+     * - This is compile-time only: `TemplateHelpers.collectTemplateContent` recognizes calls
+     *   to `HeexTemplate.for_each(items, fn item -> ... end)` when they occur inside a template
+     *   producer (`HeexTemplate.root(...)` / inline markup) and lowers them into a HEEx `for` block.
+     *
+     * NOTE
+     * - This function is only valid inside templates. It is not emitted into runtime Elixir output.
+     */
+    public static function for_each<T>(items: Array<T>, render: T -> String): String {
+        return "";
+    }
+}

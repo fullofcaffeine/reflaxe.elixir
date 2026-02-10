@@ -11,7 +11,7 @@ Make HeexTemplate the default authoring story for Phoenix LiveView templates, so
 - Raw HEEx/EEx markers (`<% ... %>`) remain an explicit escape hatch only (`@:allow_heex`), not the default.
 - Reduce cognitive overhead from `-D` flags by preferring metadata defaults and localized opt-outs.
 
-Legacy HXX1 string templates remain supported for backward compatibility and as an escape hatch, but examples/docs should
+Legacy template-string templates (`hxx('...')` / `HXX.hxx('...')`) remain supported for backward compatibility and as an escape hatch, but examples/docs should
 push users toward HeexTemplate.
 
 ## Motivation (Why This Exists)
@@ -55,7 +55,7 @@ This is a compile-time-only, non-inline function. The compiler detects calls to 
 Haxe inline markup is represented in macro AST as:
 - `EMeta(name=":markup", innerExpr)` where `innerExpr` contains the markup payload.
 
-Today we rewrite it to `HXX.hxx(innerExpr)` and then the macro processes the template as a string, which prevents `{...}`
+Today we rewrite it to `HXX.hxx(innerExpr)` (template strings) which keeps many constructs as text, preventing `{...}`
 from being treated as a real Haxe expression.
 
 HeexTemplate’s rewrite instead:
@@ -113,7 +113,7 @@ Reconstruction:
 Opt-out / legacy:
 - Default should become “process Phoenix-facing modules” (same gating as current InlineMarkup, but without requiring `-D`).
 - Add `-D hxx_no_inline_markup` and `@:hxx_no_inline_markup` to opt out.
-- Add `@:hxx_legacy` to force old HXX1 rewrite behavior in a module (for migration).
+- Add `@:hxx_legacy` to force legacy template-string behavior in a module (for migration).
 
 Diagnostics:
 - Errors must point at the right position in the original inline markup payload.
@@ -167,7 +167,7 @@ Add/extend snapshots:
 - Negative: malformed `{` / `}` yields positional compile error.
 - Negative: raw `<% ... %>` markers remain disallowed unless `@:allow_heex`.
 
-Keep existing HXX1 snapshots passing; add new ones specifically keyed to the HeexTemplate entrypoint.
+Keep existing legacy template-string snapshots passing; add new ones specifically keyed to the HeexTemplate entrypoint.
 
 Verification:
 - `npm test`
@@ -177,4 +177,4 @@ Verification:
 
 - Start by supporting HeexTemplate lowering without changing existing `hxx('...')` authoring.
 - Once stable, update docs/examples to prefer inline markup + HeexTemplate patterns.
-- Keep HXX1 as fallback for at least one minor release cycle.
+- Keep legacy template strings as fallback for at least one minor release cycle.

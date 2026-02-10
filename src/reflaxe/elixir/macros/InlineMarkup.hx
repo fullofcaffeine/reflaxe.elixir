@@ -306,7 +306,12 @@ class InlineMarkup {
                     var rewrittenInner = rewriteExpr(inner, insideHxxArgs);
                     var payloadExpr = switch (rewrittenInner.expr) {
                         case EConst(CString(s, _)):
-                            parseInlineMarkupPayloadToTypedExpr(s, rewrittenInner.pos);
+                            // Parse `${ ... }` segments into real Haxe Expr nodes, then rewrite nested inline markup
+                            // inside those expressions as well (so `${ if (...) <div/> else <span/> }` works).
+                            //
+                            // IMPORTANT: treat nested markup as "inside template producer args" so we do not wrap
+                            // nested literals in `HeexTemplate.root(...)` again.
+                            rewriteExpr(parseInlineMarkupPayloadToTypedExpr(s, rewrittenInner.pos), true);
                         default:
                             Context.error("Inline markup: expected a constant string payload from the parser.", rewrittenInner.pos);
                     }
