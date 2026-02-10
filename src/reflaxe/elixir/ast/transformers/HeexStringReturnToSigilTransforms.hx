@@ -509,28 +509,10 @@ class HeexStringReturnToSigilTransforms {
     }
 
     static function isTemplateProducerCall(mod: Null<ElixirAST>, fnName: String): Bool {
-        if (fnName == null) return false;
-        if (mod == null) return false;
-
-        function isNamedModule(m: String, expectedSuffix: String): Bool {
-            if (m == expectedSuffix) return true;
-            // Accept fully qualified module names (depending on builder shape).
-            return StringTools.endsWith(m, "." + expectedSuffix);
-        }
-
-        return switch (mod.def) {
-            case EVar(m):
-                (fnName == "hxx" && isNamedModule(m, "HXX"))
-                    || (fnName == "root" && isNamedModule(m, "HXX2"));
-            case EField(_, fld):
-                (fnName == "hxx" && fld == "HXX")
-                    || (fnName == "root" && fld == "HXX2");
-            default:
-                false;
-        }
+        return reflaxe.elixir.ast.TemplateEntryPoints.isTemplateProducerCall(mod, fnName);
     }
 
-    // Convert final HXX.hxx("...") or HXX2.root("...") call into ESigil("H", ...) when encountered
+    // Convert final HXX.hxx("...") or HeexTemplate.root("...") call into ESigil("H", ...) when encountered
     static function tryConvertHxxCallToHeex(node: ElixirAST): Null<ElixirAST> {
         switch (node.def) {
             case ECall(mod, fnName, args) if (args != null && args.length >= 1):
