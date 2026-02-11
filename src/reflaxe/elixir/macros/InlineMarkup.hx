@@ -5,6 +5,7 @@ package reflaxe.elixir.macros;
 import haxe.macro.Context;
 import haxe.macro.Compiler;
 import haxe.macro.Expr;
+import reflaxe.elixir.macros.heex_tsx.HeexTsxParser;
 
 /**
  * InlineMarkup
@@ -166,7 +167,7 @@ class InlineMarkup {
     static function isHeexTemplateRootCallee(expr: Expr): Bool {
         if (expr == null || expr.expr == null) return false;
         return switch (expr.expr) {
-            case EField(owner, fieldName) if (fieldName == "root"):
+            case EField(owner, fieldName) if (fieldName == "root" || fieldName == "root_ast"):
                 switch (owner.expr) {
                     case EConst(CIdent("HeexTemplate")):
                         true;
@@ -323,7 +324,7 @@ class InlineMarkup {
         if (~/<\\s*if\\s*\\{/.match(payload) || ~/<\\s*for\\s*\\{/.match(payload)) {
             Context.error(
                 "Inline markup (tsx): HXX control tags (`<if { ... }>` / `<for { ... }>` ) are not allowed.\n" +
-                "Use Haxe control flow (e.g. `${if (...) <div/> else <span/>}`) and `HeexTemplate.for_each(...)`.",
+                "Use TSX control tags (`<if ${...}>`, `<for ${item in items}>`) or Haxe control flow inside `${ ... }`.",
                 payloadPos
             );
         }
@@ -362,26 +363,26 @@ class InlineMarkup {
                         mkHxxCall(strippedLegacy, expr.pos);
                     }
                 } else {
-                    // Default path: parse `${ ... }` segments into real Haxe expressions.
                     var rewrittenInner = rewriteExpr(inner, insideHxxArgs, mode, legacyRewrite);
-                    var payloadExpr = switch (rewrittenInner.expr) {
+                    switch (rewrittenInner.expr) {
                         case EConst(CString(s, _)):
-                            if (mode == HxxMode.Tsx) validateTsxInlineMarkupPayload(s, rewrittenInner.pos);
-                            // Parse `${ ... }` segments into real Haxe Expr nodes, then rewrite nested inline markup
-                            // inside those expressions as well (so `${ if (...) <div/> else <span/> }` works).
-                            //
-                            // IMPORTANT: treat nested markup as "inside template producer args" so we do not wrap
-                            // nested literals in `HeexTemplate.root(...)` again.
-                            rewriteExpr(parseInlineMarkupPayloadToTypedExpr(s, rewrittenInner.pos), true, mode, legacyRewrite);
+                            if (mode == HxxMode.Tsx) {
+                                validateTsxInlineMarkupPayload(s, rewrittenInner.pos);
+                                // TSX mode: parse the markup into a compile-time HEEx AST.
+                                var nodeExpr = HeexTsxParser.parseRoot(s, rewrittenInner.pos);
+                                // Rewrite nested inline markup inside spliced expressions.
+                                var rewrittenNode = rewriteExpr(nodeExpr, true, mode, legacyRewrite);
+                                if (insideHxxArgs) rewrittenNode else mkHeexTemplateRootAstCall(rewrittenNode, expr.pos);
+                            } else {
+                                // Balanced/metal: parse `${ ... }` segments into real Haxe expressions.
+                                //
+                                // IMPORTANT: treat nested markup as "inside template producer args" so we do not wrap
+                                // nested literals in `HeexTemplate.root(...)` again.
+                                var payloadExpr = rewriteExpr(parseInlineMarkupPayloadToTypedExpr(s, rewrittenInner.pos), true, mode, legacyRewrite);
+                                if (insideHxxArgs) payloadExpr else mkHeexTemplateRootCall(payloadExpr, expr.pos);
+                            }
                         default:
                             Context.error("Inline markup: expected a constant string payload from the parser.", rewrittenInner.pos);
-                    }
-
-                    // If we're already inside a template producer call, just strip `@:markup` and keep the argument expression.
-                    if (insideHxxArgs) {
-                        payloadExpr;
-                    } else {
-                        mkHeexTemplateRootCall(payloadExpr, expr.pos);
                     }
                 }
             case EMeta(meta, inner):
@@ -498,6 +499,12 @@ class InlineMarkup {
 
     static function mkHeexTemplateRootCall(arg: Expr, pos: Position): Expr {
         var call = macro phoenix.hxx.HeexTemplate.root($arg);
+        call.pos = pos;
+        return call;
+    }
+
+    static function mkHeexTemplateRootAstCall(arg: Expr, pos: Position): Expr {
+        var call = macro phoenix.hxx.HeexTemplate.root_ast($arg);
         call.pos = pos;
         return call;
     }

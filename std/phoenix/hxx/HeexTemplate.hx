@@ -28,6 +28,26 @@ class HeexTemplate {
     }
 
     /**
+     * root_ast/1 (TSX template entrypoint)
+     *
+     * WHAT
+     * - Stable call shape for fully-typed TSX-mode templates (macro-parsed template AST).
+     *
+     * WHY
+     * - Lets the backend emit HEEx directly from a structured AST, avoiding string-level heuristics.
+     *
+     * HOW
+     * - TSX template macros emit `HeexTemplate.root_ast(<HeexNode>)`.
+     * - The AST builder detects this call and lowers it to `~H"""..."""`.
+     *
+     * NOTE
+     * - Compile-time only; suppressed from runtime emission.
+     */
+    public static function root_ast(node: phoenix.hxx.ast.HeexNode): String {
+        return "";
+    }
+
+    /**
      * for_each/2 (template helper)
      *
      * WHAT

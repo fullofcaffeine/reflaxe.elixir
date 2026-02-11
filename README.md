@@ -103,9 +103,10 @@ The foundation for multi-target development:
 - **Phoenix Integration** - LiveView, controllers, templates, routers 100% supported
 - **HEEx Templates (typed-first)** - TSX-like inline markup + compile-time lowering to `~H` with optional strict checks for Phoenix/LiveView attributes
   - Inline markup (`return <div>...</div>`) is the recommended default: `${...}` splices are real Haxe expressions (parsed + type-checked) and are lowered into HEEx (`~H`) by the compiler pipeline.
-  - Typed loops: `phoenix.hxx.HeexTemplate.for_each(items, (item) -> <li>...</li>)` lowers to a HEEx `<%= for ... do %>` block so repeated markup is not HTML-escaped.
+  - TSX control tags are typed and compile to HEEx blocks: `<if ${cond}> ... <else> ... </else> </if>` and `<for ${item in items}> ... </for>`.
   - Template strings (`hxx('...')` / `HXX.hxx('...')`) remain supported for migration, but they are **string-rewritten + linted**, not fully Haxe-typed. Prefer inline markup for typed Haxe expressions.
   - Layered template modes: `@:hxx_mode("tsx")` enforces a fully-typed authoring style (no raw `<% ... %>`, no `#{...}`, no `<if { ... }>` / `<for { ... }>` markers). `@:hxx_mode("metal")` allows raw HEEx (discouraged).
+  - Short helper alias: `phoenix.hxx.H` mirrors `phoenix.hxx.HeexTemplate` (`H.root`, `H.root_ast`, `H.for_each`).
   - **Template Helper Metadata** ✨ NEW - Uses @:templateHelper metadata for extensible Phoenix function compilation
   - **Type-Safe Phoenix Abstractions** ✨ NEW - Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with operator overloading
 - **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations remain opt‑in/experimental** (`-D ecto_migrations_exs`)  
@@ -557,17 +558,21 @@ typedef CounterAssigns = { count: Int };
 
 Typed loops in templates
 
-Use `HeexTemplate.for_each/2` for typed, HEEx-safe loops (binders are real Haxe variables, and output is a HEEx `for` block):
+In TSX mode, use typed control tags directly:
 
 ```haxe
 typedef Item = { var name: String; };
 
 public static function render(assigns: { var items: Array<Item>; }): String {
   return <ul>
-    ${HeexTemplate.for_each(assigns.items, (item) -> <li>${item.name}</li>)}
+    <for ${item in assigns.items}>
+      <li>${item.name}</li>
+    </for>
   </ul>;
 }
 ```
+
+If you need expression-level composition in balanced mode, `HeexTemplate.for_each/2` (or `H.for_each/2`) remains available and lowers to the same HEEx `for` block.
 
 Notes:
 - Inline markup is enabled by default for Phoenix-facing modules; opt out with `-D hxx_no_inline_markup` or `@:hxx_no_inline_markup`.

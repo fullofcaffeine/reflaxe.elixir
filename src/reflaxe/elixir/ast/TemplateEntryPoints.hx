@@ -28,7 +28,7 @@ class TemplateEntryPoints {
 
     public static function isHeexTemplateRootStaticCall(cls: ClassType, methodName: String): Bool {
         if (cls == null) return false;
-        if (methodName != "root") return false;
+        if (methodName != "root" && methodName != "root_ast") return false;
         if (cls.pack == null) return false;
         if (cls.pack.join(".") != "phoenix.hxx") return false;
         return cls.name == "HeexTemplate" || cls.name == "HXX2";
@@ -50,10 +50,10 @@ class TemplateEntryPoints {
         return switch (mod.def) {
             case EVar(m):
                 (fnName == "hxx" && isNamedModule(m, "HXX"))
-                    || (fnName == "root" && (isNamedModule(m, "HeexTemplate") || isNamedModule(m, "HXX2")));
+                    || ((fnName == "root" || fnName == "root_ast") && (isNamedModule(m, "HeexTemplate") || isNamedModule(m, "HXX2")));
             case EField(_, fld):
                 (fnName == "hxx" && fld == "HXX")
-                    || (fnName == "root" && (fld == "HeexTemplate" || fld == "HXX2"));
+                    || ((fnName == "root" || fnName == "root_ast") && (fld == "HeexTemplate" || fld == "HXX2"));
             default:
                 false;
         }
@@ -61,4 +61,3 @@ class TemplateEntryPoints {
 }
 
 #end
-
