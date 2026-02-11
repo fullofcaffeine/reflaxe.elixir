@@ -80,6 +80,7 @@ class User {
 
 No manual `extern` is needed: `@:schema` auto-injects a typed
 `changeset<Params>(schema, params): Changeset<Schema, Params>` declaration.
+If you intentionally keep an explicit declaration for compatibility, it is still supported.
 
 Compiles to:
 

@@ -248,6 +248,14 @@ class User {
 `@:schema` auto-injects a typed `changeset<Params>(schema, params)` declaration when one is not present,
 so manual `extern` boilerplate is optional.
 
+Optional compatibility path:
+
+```haxe
+class User {
+    extern public static function changeset(user: User, params: UserParams): Changeset<User, UserParams>;
+}
+```
+
 **Generated Elixir**:
 ```elixir
 defmodule MyApp.User do

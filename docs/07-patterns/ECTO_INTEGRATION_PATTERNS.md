@@ -131,6 +131,14 @@ class Todo {
 }
 ```
 
+Optional compatibility path (not required for new code):
+
+```haxe
+class Todo {
+  extern public static function changeset(todo: Todo, params: TodoParams): ecto.Changeset<Todo, TodoParams>;
+}
+```
+
 Compiles to:
 
 ```elixir

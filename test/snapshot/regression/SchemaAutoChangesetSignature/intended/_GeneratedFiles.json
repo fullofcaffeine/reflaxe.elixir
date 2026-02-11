@@ -1,5 +1,6 @@
 {
   "filesGenerated": [
+  "user_explicit.ex",
   "user.ex",
   "type.ex",
   "string_buf.ex",

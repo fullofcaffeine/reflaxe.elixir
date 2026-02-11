@@ -677,6 +677,14 @@ class Users {
 }
 ```
 
+Optional compatibility path (usually unnecessary):
+```haxe
+class User {
+  // Keep this only when you intentionally want an explicit declaration.
+  extern public static function changeset(user: User, params: UserParams): Changeset<User, UserParams>;
+}
+```
+
 Compiles to:
 ```elixir
 defmodule MyApp.Accounts.User do
