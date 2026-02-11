@@ -1,18 +1,75 @@
-# PhoenixChat
+# 12 - Phoenix Chat (LiveView + Presence)
 
-To start your Phoenix server:
+Realtime chat example authored in Haxe and compiled to idiomatic Phoenix LiveView + Presence modules.
 
-  * Run `mix setup` to install and setup dependencies
-  * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+## What this example covers
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+- LiveView callbacks (`mount/3`, `handle_event/3`, `handle_info/2`)
+- Presence-backed online user list and count
+- PubSub message fanout for chat messages
+- Haxe->JS client boot hook (`AutoScroll`) for LiveView
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+## Run
 
-## Learn more
+```bash
+cd examples/12-phoenix-chat
+mix setup
+mix phx.server
+```
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+Open `http://localhost:4000`.
+
+## Key Haxe files
+
+- `examples/12-phoenix-chat/src_haxe/phoenix_chat_hx/live/AppLive.hx`
+- `examples/12-phoenix-chat/src_haxe/phoenix_chat_hx/live/AppLiveTypes.hx`
+- `examples/12-phoenix-chat/src_haxe/phoenix_chat_hx/presence/ChatPresence.hx`
+- `examples/12-phoenix-chat/src_haxe/client/Boot.hx`
+
+## Haxe -> generated Elixir examples
+
+Haxe Presence module:
+
+```haxe
+@:native("PhoenixChatWeb.Presence")
+@:presence
+class ChatPresence implements PresenceBehavior {}
+```
+
+Generated Elixir shape:
+
+```elixir
+defmodule PhoenixChatWeb.Presence do
+  use Phoenix.Presence, otp_app: :phoenix_chat
+end
+```
+
+Haxe LiveView render excerpt (typed TSX mode):
+
+```haxe
+@:hxx_mode("tsx")
+public static function render(assigns: AppLiveAssigns): String {
+  return <div class="panel">
+    <div class="badge">${assigns.online_user_count}</div>
+  </div>;
+}
+```
+
+Generated Elixir shape:
+
+```elixir
+def render(assigns) do
+  ~H"""
+  <div class="panel">
+    <div class="badge"><%= @online_user_count %></div>
+  </div>
+  """
+end
+```
+
+## Notes
+
+- This example now uses strict TSX mode in `AppLive.hx` (`@:hxx_mode("tsx")`).
+- Template expressions are real Haxe expressions (`${...}`), so syntax/type errors are caught by the Haxe typer.
+- For detailed template authoring guidance, see `docs/02-user-guide/INLINE_MARKUP.md` and `docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md`.
+- For the most complete end-to-end app (Ecto + tests + Playwright), see `examples/todo-app/README.md`.

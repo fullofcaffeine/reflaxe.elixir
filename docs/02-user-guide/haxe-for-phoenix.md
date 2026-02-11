@@ -16,33 +16,32 @@ This page focuses on what exists in Reflaxe.Elixir **today** (v1.x): how to buil
 
 In Elixir, LiveView state lives in `socket.assigns` and is keyed by atoms. In Haxe, you model assigns as a `typedef` and update them through `phoenix.LiveSocket`, which validates fields at compile time and emits atom keys in Elixir.
 
-	```haxe
-	import elixir.types.Term;
-	import phoenix.LiveSocket;
-	import phoenix.Phoenix.HandleEventResult;
-	import phoenix.Phoenix.MountResult;
-	import phoenix.Phoenix.Socket;
+```haxe
+import elixir.types.Term;
+import phoenix.LiveSocket;
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Socket;
 
 typedef CounterAssigns = { count: Int };
 
-	@:native("MyAppWeb.CounterLive")
-	@:liveview
-	class CounterLive {
-	  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
-	    var ls: LiveSocket<CounterAssigns> = socket;
-	    return MountResult.Ok(ls.assign(_.count, 0));
-	  }
+@:native("MyAppWeb.CounterLive")
+@:liveview
+class CounterLive {
+  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+    var ls: LiveSocket<CounterAssigns> = socket;
+    return Ok(ls.assign(_.count, 0));
+  }
 
-	  @:native("handle_event")
-	  public static function handle_event(event: String, _params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
-	    var ls: LiveSocket<CounterAssigns> = socket;
-
+  @:native("handle_event")
+  public static function handle_event(event: String, _params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
+    var ls: LiveSocket<CounterAssigns> = socket;
     return switch (event) {
       case "increment":
         var nextCount = ls.assigns.count + 1;
-        HandleEventResult.NoReply(ls.assign(_.count, nextCount));
+        NoReply(ls.assign(_.count, nextCount));
       case _:
-        HandleEventResult.NoReply(ls);
+        NoReply(ls);
     }
   }
 }
@@ -59,6 +58,48 @@ See:
 ### 3) Ecto schemas + changesets with typed Haxe
 
 Reflaxe.Elixir provides Ecto externs and compiler support for generating idiomatic schemas and changesets.
+
+```haxe
+import ecto.Changeset;
+
+typedef UserParams = {
+  ?name: String,
+  ?email: String
+}
+
+@:native("MyApp.Accounts.User")
+@:schema("users")
+@:timestamps
+@:changeset(["name", "email"], ["name", "email"])
+class User {
+  @:field @:primary_key public var id: Int;
+  @:field public var name: String;
+  @:field public var email: String;
+
+  extern public static function changeset(user: User, params: UserParams): Changeset<User, UserParams>;
+}
+```
+
+Compiles to:
+
+```elixir
+defmodule MyApp.Accounts.User do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "users" do
+    field :name, :string
+    field :email, :string
+    timestamps()
+  end
+
+  def changeset(user, params) do
+    user
+    |> cast(params, [:name, :email])
+    |> validate_required([:name, :email])
+  end
+end
+```
 
 See:
 - `docs/02-user-guide/ECTO_INTEGRATION_PATTERNS.md`

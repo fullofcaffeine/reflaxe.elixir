@@ -139,12 +139,27 @@ No compilation                →    Haxe compile-time validation
    //   phx-hook=${HookName.AutoFocus}
    ```
 
+   Compiles to HEEx usage shape:
+
+   ```elixir
+   <div phx-hook={"AutoFocus"}></div>
+   ```
+
 2. **Compile-time hook registry (Genes)**
    ```haxe
    // Client entrypoint (compiled via -lib genes)
    var hooks = HookRegistry.build({
      AutoFocus: { mounted: function(): Void { AutoFocusHook.mounted(hookContext()); } },
      ThemeToggle: { mounted: function(): Void { ThemeToggleHook.mounted(hookContext()); } }
+   });
+   ```
+
+   Compiles to JS shape:
+
+   ```javascript
+   window.Hooks = Object.assign(window.Hooks || {}, {
+     AutoFocus: { mounted() { /* ... */ } },
+     ThemeToggle: { mounted() { /* ... */ } }
    });
    ```
 

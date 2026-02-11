@@ -28,6 +28,21 @@ class TodoQueries {
 }
 ```
 
+Compiles to:
+
+```elixir
+defmodule TodoQueries do
+  def list_todos_for_user(user_id) do
+    query =
+      from t in Todo,
+        where: t.user_id == ^user_id,
+        order_by: [desc: t.inserted_at]
+
+    Repo.all(query)
+  end
+end
+```
+
 Notes:
 
 - Field names use your Haxe schema fields (e.g. `userId`, `insertedAt`); output is snake_cased to match Ecto fields.
@@ -117,6 +132,30 @@ class Todo {
 }
 ```
 
+Compiles to:
+
+```elixir
+defmodule Todo do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "todos" do
+    field :title, :string
+    field :description, :string
+    field :completed, :boolean
+    field :priority, :string
+    field :user_id, :integer
+    timestamps()
+  end
+
+  def changeset(todo, params) do
+    todo
+    |> cast(params, [:title, :description, :completed, :priority, :user_id])
+    |> validate_required([:title])
+  end
+end
+```
+
 Using it with a typed Repo surface:
 
 ```haxe
@@ -177,6 +216,28 @@ class CreateUsers extends Migration {
     dropTable("users");
   }
 }
+```
+
+Compiles to:
+
+```elixir
+defmodule Repo.Migrations.CreateUsers do
+  use Ecto.Migration
+
+  def up do
+    create table(:users) do
+      add :name, :string, null: false
+      add :email, :string, null: false
+      timestamps()
+    end
+
+    create unique_index(:users, [:email])
+  end
+
+  def down do
+    drop table(:users)
+  end
+end
 ```
 
 Compile migrations with a migration-only build (recommended), then run with standard Ecto tooling:

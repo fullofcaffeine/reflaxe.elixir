@@ -77,6 +77,28 @@ After `haxe build-migrations.hxml`, see:
 
 - `priv/repo/migrations/*_create_users.exs`
 
+Example generated shape:
+
+```elixir
+defmodule ReflaxeExample.Repo.Migrations.CreateUsers do
+  use Ecto.Migration
+
+  def up do
+    create table(:users) do
+      add :name, :string, null: false
+      add :email, :string, null: false
+      timestamps()
+    end
+
+    create unique_index(:users, [:email])
+  end
+
+  def down do
+    drop table(:users)
+  end
+end
+```
+
 ### Advanced Features
 
 **Foreign Keys:**

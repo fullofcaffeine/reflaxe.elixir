@@ -134,6 +134,12 @@ private function getCurrentAppName(): String {
 ### Result
 All PubSub calls now correctly use `TodoApp.PubSub` instead of hardcoded `App.PubSub`.
 
+Example emitted Elixir shape (from codegen using that define):
+
+```elixir
+Phoenix.PubSub.broadcast(TodoApp.PubSub, "todos:events", message)
+```
+
 ## Best Practices
 
 1. **Single Source of Truth**: Use compiler defines (`-D`) for configuration values

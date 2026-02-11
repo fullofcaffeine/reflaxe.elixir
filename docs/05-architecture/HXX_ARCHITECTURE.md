@@ -7,21 +7,32 @@ HXX is Reflaxe.Elixir’s **compile‑time** template system for generating Phoe
 
 There is **no runtime HXX engine**: the generated Elixir contains standard Phoenix code only.
 
-## The Entry Point: `HXX.hxx/1` and `HXX.block/1`
+## Entry Points (Typed-first)
 
-Reflaxe.Elixir ships a small, non‑inline stub in `std/HXX.hx`:
+Recommended template producers:
 
-- `HXX.hxx(templateStr: String): String` (commonly used as `hxx('...')` via `import HXX.*;`)
-- `HXX.block(content: String): String`
+- `phoenix.hxx.HeexTemplate.root/1` (and `root_ast/1` for TSX AST mode)
+- `phoenix.hxx.H.root/1` / `H.root_ast/1` (short aliases)
 
-These functions exist so user code can type‑check normally. The compiler **intercepts** calls to
-`HXX.hxx`/`HXX.block` in the typed AST and lowers them into `~H"""..."""` during compilation.
+Legacy migration producers (still supported):
+
+- `HXX.hxx/1`
+- `HXX.block/1`
+
+Reflaxe.Elixir ships compile-time-only stubs for these entrypoints:
+
+- `std/phoenix/hxx/HeexTemplate.hx`
+- `std/phoenix/hxx/H.hx`
+- `std/HXX.hx`
+
+These functions exist so user code can type-check normally. The compiler **intercepts** calls to
+template producers in the typed AST and lowers them into `~H"""..."""` during compilation.
 
 ## Build‑Time Lowering (TypedExpr → ElixirAST)
 
 During AST building, the compiler:
 
-1. Detects `HXX.hxx(...)` calls in the typed AST (including unqualified `hxx(...)` calls via `import HXX.*;`)
+1. Detects template producer calls in the typed AST (`HeexTemplate.root`, `H.root`, `HXX.hxx`, etc.)
 2. Collects the template string (including concatenation shapes created by Haxe interpolation)
 3. Converts HXX/HTML conventions into HEEx‑compatible content
 4. Emits an Elixir AST sigil node representing `~H"""..."""`
@@ -43,7 +54,7 @@ The printer renders the sigil AST node as standard Phoenix HEEx:
 
 No HXX module/function calls remain in the generated output.
 
-## Nested Fragments with `HXX.block/1`
+## Nested Fragments with `HXX.block/1` (Legacy)
 
 `HXX.block(...)` marks nested fragments that should be **inlined** inside an outer `HXX.hxx(...)`
 without introducing extra interpolation wrappers. This is useful for composing template helpers.
@@ -53,7 +64,7 @@ without introducing extra interpolation wrappers. This is useful for composing t
 Compile‑time‑only helper modules (including HXX helpers) are suppressed from emission when they
 would otherwise produce empty/no‑runtime `.ex` files. This keeps generated projects “pure Phoenix”.
 
-## Optional: Macro‑Validated HXX
+## Optional: Macro‑Validated HXX (Legacy path)
 
 There is also an optional macro implementation (`reflaxe.elixir.macros.HXX`) which can validate
 and pre‑process string literals, tagging them for the builder. The **recommended default** for

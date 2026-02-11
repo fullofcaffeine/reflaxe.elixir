@@ -1,72 +1,67 @@
-# 09 - Phoenix Router DSL
+# 09 - Phoenix Router DSL (`@:routes` + `@:route`)
 
-Phoenix Router DSL integration with automatic route generation from Haxe annotations.
+This example shows the current router authoring model in Reflaxe.Elixir:
 
-## Features Demonstrated
+- `@:routes([...])` on a `@:router` module (recommended)
+- `@:route(...)` on controller actions (legacy/manual-compatible metadata)
 
-### @:controller Annotation
-- Automatic Phoenix controller module generation
-- Controller action compilation with proper signatures
-- Integration with Phoenix.Controller behavior
+## What this example demonstrates
 
-### @:route Annotations
-- RESTful route definitions with HTTP methods
-- Route parameter extraction and validation
-- Path pattern matching (`:id`, `:product_id`)
-- Named routes with `as` option
+- Typed route declarations with `HttpMethod.*`
+- Typed controller/action references (`controller: UserController`, `action: UserController.index`)
+- Generated Phoenix router macros (`get`, `post`, `put`, `delete`)
+- Controller modules compiled from Haxe `@:controller` classes
 
-### @:resources Annotation
-- Automatic RESTful resource routes
-- Standard REST actions (index, show, create, update, delete)
-- Resource nesting support
+## Key Haxe files
 
-### @:router Configuration
-- Phoenix router module generation
-- Pipeline definitions (browser, api)
-- Route scoping and organization
-- Controller inclusion system
+- `examples/09-phoenix-router/src_haxe/AppRouter.hx`
+- `examples/09-phoenix-router/src_haxe/controllers/UserController.hx`
+- `examples/09-phoenix-router/src_haxe/controllers/ProductController.hx`
 
-## Generated Elixir Code
+## Compile and run
 
-The Haxe classes compile to Phoenix-compatible Elixir modules:
+```bash
+cd examples/09-phoenix-router
+mix deps.get
+mix compile
+mix phx.server
+```
+
+## Haxe -> generated Elixir (router)
+
+Haxe (`src_haxe/AppRouter.hx`):
+
+```haxe
+@:native("PhoenixRouterWeb.Router")
+@:router
+@:build(reflaxe.elixir.macros.RouterBuildMacro.generateRoutes())
+@:routes([
+  {name: "usersIndex", method: HttpMethod.GET, path: "/users", controller: UserController, action: UserController.index},
+  {name: "usersShow", method: HttpMethod.GET, path: "/users/:id", controller: UserController, action: UserController.show}
+])
+class AppRouter {}
+```
+
+Generated Elixir shape:
 
 ```elixir
-defmodule UserController do
-  use Phoenix.Controller
-  
-  def index(conn) do
-    conn
-    |> put_status(200)
-    |> json(%{message: "Action index executed"})
+defmodule PhoenixRouterWeb.Router do
+  use Phoenix.Router
+
+  scope "/", PhoenixRouterWeb do
+    pipe_through :browser
+    get "/users", UserController, :index
+    get "/users/:id", UserController, :show
   end
-  
-  def show(conn, id) do
-    conn
-    |> put_status(200) 
-    |> json(%{message: "Action show executed"})
-  end
-  
-  # ... more actions
 end
 ```
 
-## Usage
+## Why keep `@:route` in controllers?
 
-Compile the example:
+Controller-local `@:route` metadata is still supported for legacy/manual patterns and gradual migration.
+For new router definitions, prefer `@:routes` on the router module.
 
-```bash
-haxe build.hxml
-```
+## Related docs
 
-Generated files appear in `lib/` directory ready for Phoenix integration.
-
-## Integration with Phoenix
-
-The generated controllers integrate seamlessly with Phoenix applications:
-
-1. Controllers follow Phoenix.Controller conventions
-2. Route definitions work with Phoenix.Router macros
-3. Pipeline integration supports authorization and plugs
-4. Parameter validation ensures type safety
-
-This enables gradual migration from Elixir to Haxe while maintaining full Phoenix compatibility.
+- `docs/04-api-reference/ROUTER_DSL.md`
+- `docs/04-api-reference/ANNOTATIONS.md`

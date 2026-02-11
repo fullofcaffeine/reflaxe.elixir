@@ -1,112 +1,74 @@
-# Option<T> Patterns with ExUnit Testing
+# 10 - Option<T> Patterns
 
-This example demonstrates real-world usage of Option<T> for type-safe null handling in Elixir applications, with comprehensive ExUnit tests written in Haxe.
+This example demonstrates type-safe `Option<T>` and `Result<T, E>` usage in Haxe, compiled to idiomatic Elixir tuple patterns.
 
-## What This Example Shows
+## What this example demonstrates
 
-### 1. **Type-Safe Repository Pattern**
-- `UserRepository.hx` - Database operations that return `Option<User>` instead of null
-- Demonstrates safe database lookups with explicit handling of missing records
+- Repository APIs return `Option<T>` instead of nullable values.
+- Service-layer flows compose `Option` and `Result` safely.
+- ExUnit tests are authored in Haxe and compiled into Elixir tests.
 
-### 2. **Configuration Management**
-- `ConfigManager.hx` - Safe configuration access with defaults and validation
-- Shows how to chain Option operations for complex configuration logic
-
-### 3. **Service Layer Integration**
-- `NotificationService.hx` - Option types in business logic
-- Demonstrates how to compose Option and Result types for robust error handling
-
-### 4. **ExUnit Testing in Haxe**
-- Tests written in Haxe that compile to ExUnit test modules
-- Type-safe assertions that work with Option and Result types
-- Real test scenarios that verify the example code actually works
-
-## Key Benefits Demonstrated
-
-1. **No Null Pointer Exceptions** - Option<T> makes null handling explicit
-2. **Composable Operations** - Chain map/flatMap/filter operations safely
-3. **BEAM Integration** - Option compiles to `{:some, value}` / `:none` patterns
-4. **Type-Safe Testing** - Tests are type-checked at compile time
-5. **Real Working Code** - All examples have passing tests
-
-## Files Overview
-
-### Source Code (`src_haxe/`)
-- `models/User.hx` - User data model
-- `repositories/UserRepository.hx` - Database access with Option returns
-- `services/ConfigManager.hx` - Configuration management with Option
-- `services/NotificationService.hx` - Business logic with Option/Result
-- `Main.hx` - Example usage
-
-### Tests (`test_haxe/`)
-- `repositories/UserRepositoryTest.hx` - Repository testing with ExUnit
-- `services/ConfigManagerTest.hx` - Configuration testing
-- `services/NotificationServiceTest.hx` - Service layer testing
-
-### Generated Output (`lib/`)
-- All `.ex` files are generated from Haxe source
-- Includes both application code and ExUnit test modules
-
-## Running the Example
+## Run
 
 ```bash
-# Compile Haxe to Elixir
+cd examples/10-option-patterns
 haxe build.hxml
-
-# Run tests
 mix test
-
-# Run the example
-mix run -e "Main.main()"
 ```
 
-## Key Patterns Demonstrated
+## Key files
 
-### 1. Safe Database Access
+- Haxe sources:
+  - `examples/10-option-patterns/src_haxe/repositories/UserRepository.hx`
+  - `examples/10-option-patterns/src_haxe/services/ConfigManager.hx`
+  - `examples/10-option-patterns/src_haxe/services/NotificationService.hx`
+- Haxe-authored tests:
+  - `examples/10-option-patterns/test_haxe/repositories/UserRepositoryTest.hx`
+  - `examples/10-option-patterns/test_haxe/services/ConfigManagerTest.hx`
+  - `examples/10-option-patterns/test_haxe/services/NotificationServiceTest.hx`
+- Generated Elixir:
+  - `examples/10-option-patterns/lib/repositories/user_repository.ex`
+  - `examples/10-option-patterns/lib/services/config_manager.ex`
+  - `examples/10-option-patterns/lib/services/notification_service.ex`
+
+## Haxe -> generated Elixir (shape)
+
+Haxe (`UserRepository.find`):
+
 ```haxe
-// Returns Option instead of null
-var user: Option<User> = UserRepository.find(123);
-
-// Safe chaining with map
-var email = user
-    .map(u -> u.email)
-    .unwrap("no-email@example.com");
-```
-
-### 2. Configuration with Defaults
-```haxe
-// Get config with fallback
-var timeout = ConfigManager.getInt("timeout").unwrap(30);
-
-// Chain validation
-var result = ConfigManager.getRequired("database_url")
-    .toResult("Missing database URL")
-    .flatMap(url -> validateUrl(url));
-```
-
-### 3. Type-Safe Testing
-```haxe
-@:exunit
-class UserRepositoryTest extends TestCase {
-    @:test
-    function findReturnsOptionForValidId() {
-        var user = UserRepository.find(1);
-        Assert.isSome(user);
-        
-        switch(user) {
-            case Some(u): Assert.equals("Alice", u.name);
-            case None: Assert.fail("Expected user");
-        }
+public static function find(id: Int): Option<User> {
+    if (id <= 0) return None;
+    for (user in users) {
+        if (user.id == id) return Some(user);
     }
+    return None;
 }
 ```
 
-## Learning Points
+Generated Elixir shape:
 
-1. **Option vs Null** - Explicit absence handling prevents runtime errors
-2. **Functional Composition** - Chain operations safely without nested null checks
-3. **BEAM Patterns** - Generated code follows Elixir conventions
-4. **Test Coverage** - All code paths are tested and verified
-5. **Type Safety** - Compile-time guarantees prevent common mistakes
+```elixir
+def find(id) do
+  if id <= 0 do
+    {:none}
+  else
+    case Enum.reduce_while(users(), :__reflaxe_no_return__, fn user, _ ->
+      if user.id == id, do: {:halt, {:__reflaxe_return__, {:some, user}}}, else: {:cont, :__reflaxe_no_return__}
+    end) do
+      {:__reflaxe_return__, value} -> value
+      _ -> {:none}
+    end
+  end
+end
+```
 
-This example serves as both documentation and verification that Option<T> patterns work correctly in real Elixir applications.
+## Why this example exists
+
+- It validates that high-level Haxe null-safety patterns map cleanly to BEAM tuple conventions.
+- It gives a compact reference for teams adopting typed domain logic in Elixir without jumping directly into Phoenix complexity.
+
+## Next examples
+
+- `examples/11-domain-validation/README.md` - typed domain validation and business rules.
+- `examples/06-user-management/README.md` - Option/Result patterns in LiveView + Ecto app flow.
+- `examples/todo-app/README.md` - full app with Presence/PubSub/UI runtime checks.

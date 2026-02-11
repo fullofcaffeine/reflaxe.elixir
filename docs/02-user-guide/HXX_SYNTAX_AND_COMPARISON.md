@@ -22,9 +22,13 @@ See also:
 
 - Typed-first entrypoint: Haxe inline markup literals (`return <div>...</div>`) are rewritten into a canonical template entrypoint (`phoenix.hxx.HeexTemplate.root/1`), which the builder lowers to `~H`.
 - TSX control tags: `<if ${cond}>` / `<for ${item in items}>` are parsed at macro-time into a typed template AST and lowered to HEEx `if`/`for` blocks.
-- Typed loop helper: `phoenix.hxx.HeexTemplate.for_each(items, (item) -> <li>...</li>)` (or `phoenix.hxx.H.for_each`) remains available when expression-style composition is preferred.
+- Typed spread attrs: tag-position attrs expressions (e.g. `<section {assigns.attrs}>`) lower to HEEx spread attrs (`<section {@attrs}>`).
+- Typed loop helper: `phoenix.hxx.HeexTemplate.for_each(items, (item) -> <li>...</li>)` remains available when expression-style composition is preferred. Short alias: `phoenix.hxx.H.each(...)` (or `phoenix.hxx.H.for_each(...)`).
 - Template strings (legacy/migration): `hxx('...')` / `HXX.block('...')` are supported in **balanced** mode, but they are string-rewritten + linted (template-local markers are not Haxe-typed).
 - Layered modes: `@:hxx_mode("tsx"|"balanced"|"metal")` controls how strict the template authoring surface is. In TSX mode, legacy string templates and untyped markers are rejected.
+  - `tsx` is named after TypeScript JSX-style authoring: strict, typed expression embedding.
+  - `balanced` is migration-friendly and accepts legacy string-template forms.
+  - `metal` is intentionally close to raw HEEx and should be rare.
 
 Inline markup notes:
 - Root tag must be a valid XML name (Haxe lexer rule).
@@ -72,6 +76,7 @@ end
 - Inline markup (typed): `${haxeExpr}` splices are real Haxe expressions and lower to `<%= ... %>` (and `assigns.*` is mapped to `@*`).
 - Template strings (legacy): `#{expr}` and `${expr}` are string-level markers rewritten into HEEx; they are convenient for migration but are not Haxe-typed.
 - Attributes: `attr={expr}` stays as `attr={expr}` (HEEx attribute expressions). When written via `${...}`, HXX normalizes to `{...}`.
+- Spread attrs: `{assigns.attrs}` (or `{@assigns.attrs}`) in tag position lower to HEEx spread attrs `{@attrs}`.
 
 ### Raw HEEx Escape Hatch (Avoid)
 - Raw `<% ... %>` blocks inside `hxx('...')` / `HXX.hxx('...')` are **disallowed by default**.
@@ -165,11 +170,32 @@ In strict mode:
 Rejected in strict mode:
 - Fully dynamic event expressions (e.g. `phx-click={@event}`) are rejected because they cannot be validated.
 
+#### Opt-in: strict literal values for selected attributes
+
+If you want stricter TSX-like checks for known string-literal vocabularies, enable globally with `-D hxx_strict_attr_values` or locally with `@:hxx_strict_attr_values`:
+
+```bash
+-D hxx_strict_attr_values
+```
+
+In strict mode, constant string literals are validated for selected attributes:
+- `input[type]` (e.g. `text`, `email`, `number`, ...)
+- `button[type]` (`button|submit|reset`)
+- `form[method]` (`get|post`)
+- `textarea[wrap]` (`hard|soft`)
+- `phx-update` (`replace|stream|append|prepend|ignore`)
+
+Notes:
+- This check is intentionally conservative: only compile-time constant string literals are validated to avoid noisy false positives.
+- Dynamic values (e.g. interpolated assigns) are not rejected by this rule.
+
 ### Control Flow
 - Typed-first (recommended): use normal Haxe control flow inside `${ ... }` and typed helpers like `HeexTemplate.for_each/2`.
 - TSX mode also supports explicit control tags with typed headers:
   - `<if ${cond}> ... <else> ... </else> </if>`
   - `<for ${item in items}> ... </for>`
+- TSX mode also supports `:for` directive sugar on elements:
+  - `<li :for ${item in items}>...</li>` (lowered to a HEEx `for` block around the element, with typed binder scope).
 - Template strings (migration): block conditionals/loops can use HXX control tags (normalized to HEEx):
   - `<if {cond}> ... <else> ... </if>` → HEEx `if/else` block
   - `<for {pattern in expr}> ... </for>` → HEEx `for` block

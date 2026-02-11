@@ -52,96 +52,58 @@ Marks a class as a Phoenix controller for handling HTTP requests.
 **Basic Usage**:
 ```haxe
 import elixir.types.Term;
+import plug.Conn;
 
 @:controller
 class UserController {
-    @:route({method: "GET", path: "/users"})
-    public function index(): String {
-        return "List all users";
-    }
-    
-    @:route({method: "GET", path: "/users/:id"})
-    public function show(id: Int): String {
-        return "Show user " + id;
-    }
-    
-    @:route({method: "POST", path: "/users"})
-    public function create(user: Term): String {
-        return "Create user";
+    public static function index(conn: Conn<Term>, _params: Term): Conn<Term> {
+        return conn.json({ok: true});
     }
 }
 ```
 
-**Generated Elixir**:
-```elixir
-defmodule UserController do
-  use Phoenix.Controller
-  
-  def index(conn) do
-    conn
-    |> put_status(200)
-    |> json(%{message: "Action index executed"})
-  end
-  
-  def show(conn, id) do
-    conn
-    |> put_status(200)
-    |> json(%{message: "Action show executed"})
-  end
-  
-  def create(conn, user) do
-    conn
-    |> put_status(200)
-    |> json(%{message: "Action create executed"})
-  end
-end
-```
+`@:controller` defines controller modules and actions. Route wiring is usually done in a `@:router` module via `@:routes(...)`.
 
-**Route Annotations**:
-- `@:route({method: "GET", path: "/path"})` - Define route with HTTP method and path
-- `@:resources("resource_name")` - Generate RESTful resource routes
-- `@:pipe_through([pipelines])` - Specify pipeline for authorization/plugs
+`@:route(...)` still exists for legacy/manual router patterns (see below), but new code should prefer `@:routes`.
 
 ### @:router - Phoenix Router Configuration
 
 Marks a class as a Phoenix router for request routing.
 
-**Basic Usage**:
+**Recommended Usage (`@:routes`)**:
+```haxe
+import reflaxe.elixir.macros.HttpMethod;
+
+@:native("MyAppWeb.Router")
+@:router
+@:build(reflaxe.elixir.macros.RouterBuildMacro.generateRoutes())
+@:routes([
+  {
+    name: "usersIndex",
+    method: HttpMethod.GET,
+    path: "/users",
+    controller: controllers.UserController,
+    action: controllers.UserController.index
+  }
+])
+class AppRouter {}
+```
+
+**Legacy Manual Usage (`@:route`)**:
 ```haxe
 @:router
-class AppRouter {
-    @:pipeline("browser", ["fetch_session", "protect_from_forgery"])
-    @:pipeline("api", ["accept_json"])
-    
-    @:include_controller("UserController")
-    @:include_controller("ProductController")
+class LegacyRouter {
+  @:route({method: "GET", path: "/users", controller: "controllers.UserController", action: "index"})
+  public static function usersIndex(): String {
+    return "/users";
+  }
 }
 ```
 
-**Generated Elixir**:
-```elixir
-defmodule AppRouter do
-  use Phoenix.Router
-  
-  pipeline :browser do
-    plug :accepts, ["html"]
-    plug :fetch_session
-    plug :protect_from_forgery
-    plug :put_secure_browser_headers
-  end
-  
-  pipeline :api do
-    plug :accepts, ["json"]
-  end
-  
-  scope "/", AppRouter do
-    pipe_through :browser
-    
-    resources "/users", UserController
-    resources "/products", ProductController
-  end
-end
-```
+Use `@:routes` for new code. It supports typed controller/action refs and keeps route definitions declarative.
+Use `@:route` only for manual/legacy router glue where string literals are acceptable.
+
+See the full guide: `docs/04-api-reference/ROUTER_DSL.md`.
 
 ### @:schema - Ecto Schema Generation
 
@@ -286,6 +248,26 @@ class User {
 }
 ```
 
+**Generated Elixir**:
+```elixir
+defmodule MyApp.User do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "users" do
+    field :name, :string
+    field :email, :string
+    timestamps()
+  end
+
+  def changeset(user, params) do
+    user
+    |> cast(params, [:name, :email])
+    |> validate_required([:name, :email])
+  end
+end
+```
+
 **Validation Annotations**:
 - `@:validate_required([fields])` - Required field validation
 - `@:validate_format(field, pattern)` - Format validation
@@ -390,7 +372,7 @@ class MyLive {
 Modes:
 
 - `@:hxx_mode("balanced")` (default): normal behavior; inline markup is recommended, but legacy template strings are allowed. Raw `<% ... %>` requires `@:allow_heex` (or `-D hxx_allow_raw_heex` during migration).
-- `@:hxx_mode("tsx")`: strict typed authoring. Disallows raw `<% ... %>` escape hatches, disallows legacy string-template markers (`#{...}`, `<if { ... }>` / `<for { ... }>`), and rejects `hxx('...')` / `HXX.block('...')` usage in that scope. Supports typed TSX control tags (`<if ${...}>`, `<for ${item in items}>`).
+- `@:hxx_mode("tsx")`: strict typed authoring. Disallows raw `<% ... %>` escape hatches, disallows legacy string-template markers (`#{...}`, `<if { ... }>` / `<for { ... }>`), and rejects `hxx('...')` / `HXX.block('...')` usage in that scope. Supports typed TSX control tags (`<if ${...}>`, `<for ${item in items}>`) and typed spread attrs in tag position (`{assigns.attrs}` / `{@assigns.attrs}`).
 - `@:hxx_mode("metal")`: allows raw `<% ... %>` without `@:allow_heex` (discouraged; emits warnings).
 
 Precedence:
@@ -419,6 +401,7 @@ Available strictness annotations:
 - `@:hxx_strict_html` (global: `-D hxx_strict_html`)
 - `@:hxx_strict_phx_hook` (global: `-D hxx_strict_phx_hook`)
 - `@:hxx_strict_phx_events` (global: `-D hxx_strict_phx_events`)
+- `@:hxx_strict_attr_values` (global: `-D hxx_strict_attr_values`)
 - `@:hxx_allow_string_fallback` (global: `-D hxx_allow_string_fallback`)
 
 ### @:presence - Phoenix Presence

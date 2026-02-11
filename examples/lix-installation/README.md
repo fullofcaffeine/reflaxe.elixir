@@ -69,6 +69,24 @@ Main
 
 This will generate Elixir files in the `lib/` directory that you can use in your Elixir/Phoenix projects.
 
+Haxe -> generated Elixir shape:
+
+```haxe
+class Main {
+  public static function main() {
+    trace("Hello from Haxe to Elixir!");
+  }
+}
+```
+
+```elixir
+defmodule Main do
+  def main do
+    IO.inspect("Hello from Haxe to Elixir!")
+  end
+end
+```
+
 ## Integration with Phoenix
 
 To use the generated Elixir modules in a Phoenix project:

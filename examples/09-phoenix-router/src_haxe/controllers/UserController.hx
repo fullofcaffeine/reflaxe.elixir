@@ -6,31 +6,32 @@ import elixir.types.Term;
  * Phoenix controller with @:route annotations
  * Demonstrates RESTful route generation and parameter handling
  */
+@:native("PhoenixRouterWeb.UserController")
 @:controller
 class UserController {
     
     @:route({method: "GET", path: "/users"})
-    public function index(): String {
+    public static function index(): String {
         return "List all users";
     }
     
     @:route({method: "GET", path: "/users/:id"})
-    public function show(id: Int): String {
+    public static function show(id: Int): String {
         return "Show user " + id;
     }
     
     @:route({method: "POST", path: "/users"})
-    public function create(user: Term): String {
+    public static function create(user: Term): String {
         return "Create new user";
     }
     
     @:route({method: "PUT", path: "/users/:id"})
-    public function update(id: Int, user: Term): String {
+    public static function update(id: Int, user: Term): String {
         return "Update user " + id;
     }
     
     @:route({method: "DELETE", path: "/users/:id"})
-    public function delete(id: Int): String {
+    public static function delete(id: Int): String {
         return "Delete user " + id;
     }
     

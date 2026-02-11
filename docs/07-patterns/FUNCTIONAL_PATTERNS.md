@@ -24,6 +24,8 @@ while (condition) {
 }
 ```
 
+Compiles to:
+
 ```elixir
 # Generated Elixir
 (fn loop_fn ->
@@ -50,6 +52,8 @@ while (i < str.length && isSpace(str, i)) {
 }
 ```
 
+Compiles to:
+
 ```elixir
 # Elixir: Recursive function with accumulator
 i = 0
@@ -72,6 +76,8 @@ do {
     body;
 } while (condition);
 ```
+
+Compiles to:
 
 ```elixir
 # Generated Elixir

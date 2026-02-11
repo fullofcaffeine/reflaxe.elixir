@@ -439,7 +439,13 @@ typedef EGenerator = {
  */
 typedef EAttribute = {
     name: String,
-    value: ElixirAST
+    value: ElixirAST,
+    // HEEx attribute name span in the parent ~H content (analysis only, exclusive end)
+    ?nameSpanStart: Int,
+    ?nameSpanEnd: Int,
+    // HEEx attribute value span in the parent ~H content (analysis only, exclusive end)
+    ?valueSpanStart: Int,
+    ?valueSpanEnd: Int
 }
 
 /**
@@ -928,7 +934,14 @@ typedef ElixirMetadata = {
     // HOW: Set by HeexFragmentBuilder while parsing ~H content; ignored by printer/emitter.
     // NOTE: `heexAttrValueSpanEnd` is exclusive (like String.substr end).
     ?heexAttrValueSpanStart: Int,
-    ?heexAttrValueSpanEnd: Int
+    ?heexAttrValueSpanEnd: Int,
+
+    // HEEx tag name span (analysis only)
+    // WHAT: Absolute character offsets for the fragment tag name in ~H content.
+    // WHY: Enables precise lint diagnostics for unknown/invalid tags instead of whole-template positions.
+    // HOW: Set by HeexFragmentBuilder on EFragment nodes; ignored by printer/emitter.
+    ?heexTagNameSpanStart: Int,
+    ?heexTagNameSpanEnd: Int
 }
 
 /**

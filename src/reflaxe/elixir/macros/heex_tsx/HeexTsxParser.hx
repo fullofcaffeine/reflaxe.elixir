@@ -182,7 +182,11 @@ private class Parser {
         if (!allowEmpty && StringTools.trim(exprText).length == 0) {
             Context.error("Expected expression", makeSubPos(startOffset, innerEnd));
         }
-        var pos = makeSubPos(innerStart, innerEnd);
+        return parseInlineExpr(exprText, innerStart, innerEnd);
+    }
+
+    function parseInlineExpr(exprText: String, startOffset: Int, endOffset: Int): Expr {
+        var pos = makeSubPos(startOffset, endOffset);
         try {
             return Context.parseInlineString(exprText, pos);
         } catch (e: haxe.macro.Error) {
@@ -238,6 +242,10 @@ private class Parser {
         return macro @:pos(pos) phoenix.hxx.ast.HeexAttr.Expr($v{name}, $value);
     }
 
+    function mkAttrSpread(value: Expr, pos: Position): Expr {
+        return macro @:pos(pos) phoenix.hxx.ast.HeexAttr.Spread($value);
+    }
+
     inline function mkConstStringExpr(s: String, pos: Position): Expr {
         return { expr: EConst(CString(s, null)), pos: pos };
     }
@@ -250,6 +258,68 @@ private class Parser {
             acc = { expr: EBinop(OpAdd, acc, parts[idx]), pos: pos };
         }
         return acc;
+    }
+
+    function parseForDirectiveBinding(rawHead: String, rawPos: Position): { binder: String, itemsSource: String } {
+        var text = StringTools.trim(rawHead == null ? "" : rawHead);
+        if (text.length == 0) {
+            Context.error('TSX :for directive expects "binder in iterable" (or "binder <- iterable")', rawPos);
+        }
+
+        var binder = "";
+        var items = "";
+        var inArrow = text.indexOf("<-");
+        if (inArrow >= 0) {
+            binder = StringTools.trim(text.substr(0, inArrow));
+            items = StringTools.trim(text.substr(inArrow + 2));
+        } else {
+            var inMatch = ~/^([A-Za-z_][A-Za-z0-9_]*)\s+in\s+([\s\S]+)$/;
+            if (!inMatch.match(text)) {
+                Context.error('TSX :for directive expects "binder in iterable" (or "binder <- iterable")', rawPos);
+            }
+            binder = StringTools.trim(inMatch.matched(1));
+            items = StringTools.trim(inMatch.matched(2));
+        }
+
+        var ident = ~/^[A-Za-z_][A-Za-z0-9_]*$/;
+        if (!ident.match(binder)) {
+            Context.error('TSX :for directive binder must be an identifier, got "' + binder + '"', rawPos);
+        }
+        if (items.length == 0) {
+            Context.error('TSX :for directive iterable expression is empty for binder "' + binder + '"', rawPos);
+        }
+        return { binder: binder, itemsSource: items };
+    }
+
+    function parseForDirective(attrStart: Int): { binder: String, itemsExpr: Expr, pos: Position } {
+        var exprStart = i;
+        var innerStart = -1;
+        var innerEnd = -1;
+        var rawHead = "";
+        if (startsWith("${")) {
+            i += 2;
+            innerStart = i;
+            var balanced = readCurlyContent();
+            rawHead = balanced.text;
+            innerEnd = balanced.end;
+        } else if (startsWith("{")) {
+            i += 1;
+            innerStart = i;
+            var balanced2 = readCurlyContent();
+            rawHead = balanced2.text;
+            innerEnd = balanced2.end;
+        } else {
+            Context.error("TSX :for directive expects ${...} or {...}", makeSubPos(attrStart, exprStart + 1));
+        }
+
+        var rawPos = makeSubPos(attrStart, i);
+        var parsed = parseForDirectiveBinding(rawHead, rawPos);
+        var itemsExpr = parseInlineExpr(parsed.itemsSource, innerStart, innerEnd);
+        return {
+            binder: parsed.binder,
+            itemsExpr: itemsExpr,
+            pos: makeSubPos(attrStart, i),
+        };
     }
 
     function parseTextNodesUntilTag(): Array<Expr> {
@@ -429,6 +499,7 @@ private class Parser {
 
         // Regular element: attributes + children
         var attrs: Array<Expr> = [];
+        var forDirective: Null<{ binder: String, itemsExpr: Expr, pos: Position }> = null;
         var selfClosing = false;
         while (!eof()) {
             skipWs();
@@ -441,13 +512,42 @@ private class Parser {
                 i += 1;
                 break;
             }
+            if (startsWith("{...") || startsWith("{@")) {
+                var spreadAttrStart = i;
+                if (startsWith("{...")) {
+                    i += 4; // consume "{..."
+                } else {
+                    i += 2; // consume "{@"
+                }
+                var spreadExprStart = i;
+                var spreadBalanced = readCurlyContent();
+                var spreadExprText = StringTools.trim(spreadBalanced.text);
+                if (spreadExprText.length == 0) {
+                    Context.error("TSX spread attrs require an expression", makeSubPos(spreadAttrStart, spreadBalanced.end));
+                }
+                var spreadExpr = parseInlineExpr(spreadExprText, spreadExprStart, spreadBalanced.end);
+                attrs.push(mkAttrSpread(spreadExpr, makeSubPos(spreadAttrStart, i)));
+                continue;
+            }
+            if (startsWith("{")) {
+                var spreadExprStart2 = i;
+                var spreadExpr2 = parseExprInBraces(false);
+                attrs.push(mkAttrSpread(spreadExpr2, makeSubPos(spreadExprStart2, i)));
+                continue;
+            }
             var attrStart = i;
             var attrName = readName();
             skipWs();
             if (startsWith("=")) {
                 i++;
                 skipWs();
-                if (startsWith("\"") || startsWith("'")) {
+                if (attrName == ":for" && (startsWith("${") || startsWith("{"))) {
+                    var parsedFor = parseForDirective(attrStart);
+                    if (forDirective != null) {
+                        Context.error("TSX template: duplicate :for directive on the same element", parsedFor.pos);
+                    }
+                    forDirective = parsedFor;
+                } else if (startsWith("\"") || startsWith("'")) {
                     var quote = ch(i);
                     i++;
                     var valueStart = i;
@@ -490,16 +590,38 @@ private class Parser {
                     attrs.push(mkAttrStatic(attrName, token, makeSubPos(attrStart, i)));
                 }
             } else {
-                attrs.push(mkAttrBool(attrName, makeSubPos(attrStart, i)));
+                // Optional directive sugar without `=`:
+                // - :for ${item in assigns.items}
+                // - :if ${assigns.show}
+                // - :let ${row}
+                if ((attrName == ":for" || attrName == ":if" || attrName == ":let") && (startsWith("${") || startsWith("{"))) {
+                    if (attrName == ":for") {
+                        var parsedFor = parseForDirective(attrStart);
+                        if (forDirective != null) {
+                            Context.error("TSX template: duplicate :for directive on the same element", parsedFor.pos);
+                        }
+                        forDirective = parsedFor;
+                    } else {
+                        var directiveExpr = parseExprInBraces(false);
+                        attrs.push(mkAttrExpr(attrName, directiveExpr, makeSubPos(attrStart, i)));
+                    }
+                } else {
+                    attrs.push(mkAttrBool(attrName, makeSubPos(attrStart, i)));
+                }
             }
         }
 
+        function wrapForDirectiveIfPresent(node: Expr): Expr {
+            if (forDirective == null) return node;
+            return mkFor(forDirective.itemsExpr, forDirective.binder, node, makeSubPos(tagStart, i));
+        }
+
         if (selfClosing) {
-            return mkElement(name, attrs, [], makeSubPos(tagStart, i));
+            return wrapForDirectiveIfPresent(mkElement(name, attrs, [], makeSubPos(tagStart, i)));
         }
 
         var children = parseNodesUntil(name);
-        return mkElement(name, attrs, children, makeSubPos(tagStart, i));
+        return wrapForDirectiveIfPresent(mkElement(name, attrs, children, makeSubPos(tagStart, i)));
     }
 }
 

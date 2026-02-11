@@ -29,6 +29,17 @@ extern class Crypto {
 }
 ```
 
+Compiles to call sites like:
+
+```elixir
+bytes = :crypto.strong_rand_bytes(size)
+digest = :crypto.hash(type, data)
+```
+
+Notes:
+- `extern` declarations are compile-time only and do not emit Elixir modules.
+- `@:native(":crypto")` maps directly to Erlang module calls.
+
 Notes
 - Return values from external libraries are often *polymorphic* (different shapes depending on options). Use `elixir.types.Term` for those boundaries.
 
@@ -43,6 +54,13 @@ extern class ElixirEnum {
     @:native("filter")
     public static function filter<T>(enumerable: Array<T>, fn: T -> Bool): Array<T>;
 }
+```
+
+Compiles to call sites like:
+
+```elixir
+Enum.map(enumerable, fn item -> ... end)
+Enum.filter(enumerable, fn item -> ... end)
 ```
 
 ## 2) Use `Term` as the explicit boundary type (never `Dynamic`)
@@ -80,6 +98,16 @@ function getQuery(params: Term): String {
 }
 ```
 
+Compiles to shape:
+
+```elixir
+case TermDecoder.fetch_string_key(params, "query")
+     |> Result.flat_map(&TermDecoder.as_string/1) do
+  {:ok, query} -> query
+  {:error, _reason} -> ""
+end
+```
+
 ## 3) Don’t use `untyped` / `__elixir__()` in applications
 
 `untyped __elixir__()` is reserved for:
@@ -103,6 +131,12 @@ Use the provided extern:
 import elixir.DateTime.DateTime;
 
 var now = DateTime.utcNow();
+```
+
+Compiles to:
+
+```elixir
+now = DateTime.utc_now()
 ```
 
 ## 4) Common patterns

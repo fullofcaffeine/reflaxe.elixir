@@ -4993,7 +4993,14 @@ class ElixirASTTransformer {
                 makeASTWithMeta(
                     EFragment(
                         tag,
-                        attributes != null ? attributes.map(a -> { name: a.name, value: transformNode(a.value, transformer) }) : [],
+                        attributes != null ? attributes.map(a -> {
+                            name: a.name,
+                            value: transformNode(a.value, transformer),
+                            nameSpanStart: a.nameSpanStart,
+                            nameSpanEnd: a.nameSpanEnd,
+                            valueSpanStart: a.valueSpanStart,
+                            valueSpanEnd: a.valueSpanEnd
+                        }) : [],
                         children != null ? children.map(c -> transformNode(c, transformer)) : []
                     ),
                     ast.metadata,

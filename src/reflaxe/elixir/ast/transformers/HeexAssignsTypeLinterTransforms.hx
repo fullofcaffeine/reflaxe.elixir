@@ -128,6 +128,7 @@ private typedef StrictMeta = {
     var strictHtml: Bool;
     var strictPhxHook: Bool;
     var strictPhxEvents: Bool;
+    var strictAttrValues: Bool;
     var allowStringFallback: Bool;
 };
 #end
@@ -146,6 +147,7 @@ class HeexAssignsTypeLinterTransforms {
     static var activeStrictHtml: Bool = false;
     static var activeStrictPhxHook: Bool = false;
     static var activeStrictPhxEvents: Bool = false;
+    static var activeStrictAttrValues: Bool = false;
     static var activeAllowStringFallback: Bool = false;
     #end
     static var fileContentCache: Map<String, Null<String>> = new Map();
@@ -248,6 +250,48 @@ class HeexAssignsTypeLinterTransforms {
         if (ctx != null) ctx.error(msg, pos); else throw msg;
     }
 
+    static function makeSpanPos(basePos: haxe.macro.Expr.Position, spanStart: Null<Int>, spanEnd: Null<Int>): haxe.macro.Expr.Position {
+        if (basePos == null || spanStart == null || spanEnd == null) return basePos;
+        #if macro
+        try {
+            var info = Context.getPosInfos(basePos);
+            var start = info.min + spanStart;
+            var end = info.min + spanEnd;
+            if (start < info.min) start = info.min;
+            if (end > info.max) end = info.max;
+            if (end <= start) end = (start + 1 <= info.max) ? (start + 1) : info.max;
+            return Context.makePosition({ file: info.file, min: start, max: end });
+        } catch (_:Dynamic) {
+            return basePos;
+        }
+        #else
+        return basePos;
+        #end
+    }
+
+    static function fragmentTagPos(fragment: ElixirAST, fallbackPos: haxe.macro.Expr.Position): haxe.macro.Expr.Position {
+        if (fragment == null || fragment.metadata == null) return fallbackPos;
+        return makeSpanPos(fallbackPos, fragment.metadata.heexTagNameSpanStart, fragment.metadata.heexTagNameSpanEnd);
+    }
+
+    static function attributeNamePos(attr: EAttribute, fallbackPos: haxe.macro.Expr.Position): haxe.macro.Expr.Position {
+        if (attr == null) return fallbackPos;
+        return makeSpanPos(fallbackPos, attr.nameSpanStart, attr.nameSpanEnd);
+    }
+
+    static function attributeValuePos(attr: EAttribute, fallbackPos: haxe.macro.Expr.Position): haxe.macro.Expr.Position {
+        if (attr == null) return fallbackPos;
+        var start = attr.valueSpanStart;
+        var end = attr.valueSpanEnd;
+        if (start == null || end == null) {
+            if (attr.value != null && attr.value.metadata != null) {
+                start = attr.value.metadata.heexAttrValueSpanStart;
+                end = attr.value.metadata.heexAttrValueSpanEnd;
+            }
+        }
+        return makeSpanPos(fallbackPos, start, end);
+    }
+
     static function lint(ast: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>): ElixirAST {
         // Lint any template-producing function in project files; skip compiler/vendor/std paths.
         ASTUtils.walk(ast, function(n: ElixirAST): Void {
@@ -331,6 +375,7 @@ class HeexAssignsTypeLinterTransforms {
         var previousStrictHtml = activeStrictHtml;
         var previousStrictPhxHook = activeStrictPhxHook;
         var previousStrictPhxEvents = activeStrictPhxEvents;
+        var previousStrictAttrValues = activeStrictAttrValues;
         var previousAllowStringFallback = activeAllowStringFallback;
         #end
 
@@ -348,6 +393,7 @@ class HeexAssignsTypeLinterTransforms {
         activeStrictHtml = strictMeta.strictHtml;
         activeStrictPhxHook = strictMeta.strictPhxHook;
         activeStrictPhxEvents = strictMeta.strictPhxEvents;
+        activeStrictAttrValues = strictMeta.strictAttrValues;
         activeAllowStringFallback = strictMeta.allowStringFallback;
         #if debug_assigns_linter
         trace('[assigns_linter] strictMeta fn=' + functionName
@@ -356,6 +402,7 @@ class HeexAssignsTypeLinterTransforms {
             + ' strictSlots=' + strictMeta.strictSlots
             + ' strictPhxHook=' + strictMeta.strictPhxHook
             + ' strictPhxEvents=' + strictMeta.strictPhxEvents
+            + ' strictAttrValues=' + strictMeta.strictAttrValues
             + ' allowStringFallback=' + strictMeta.allowStringFallback
             + ' nearLine=' + (nearLine == null ? 'null' : Std.string(nearLine)));
         #end
@@ -411,6 +458,7 @@ class HeexAssignsTypeLinterTransforms {
         activeStrictHtml = previousStrictHtml;
         activeStrictPhxHook = previousStrictPhxHook;
         activeStrictPhxEvents = previousStrictPhxEvents;
+        activeStrictAttrValues = previousStrictAttrValues;
         activeAllowStringFallback = previousAllowStringFallback;
         #end
     }
@@ -553,12 +601,13 @@ class HeexAssignsTypeLinterTransforms {
 	    static function validateNode(n: ElixirAST, parentTag: Null<String>, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool, letScopes: Array<HeexLetBindingScope>): Void {
 	        switch (n.def) {
 	            case EFragment(tag, attributes, children):
-	                validateHtmlTagName(tag, ctx, pos);
-	                validateSlotTag(tag, parentTag, ctx, pos);
+                    var tagPos = fragmentTagPos(n, pos);
+	                validateHtmlTagName(tag, ctx, tagPos);
+	                validateSlotTag(tag, parentTag, ctx, tagPos);
 	
 	                var nextLetScopes = extendLetScopesForNode(tag, attributes, parentTag, letScopes);
 
-                validateFragment(tag, attributes, children, parentTag, fields, typeName, ctx, pos, enableAssignsChecks, nextLetScopes);
+                validateFragment(tag, attributes, children, parentTag, fields, typeName, ctx, pos, tagPos, enableAssignsChecks, nextLetScopes);
 
                 for (c in children) {
                     if (c == null || c.def == null) continue;
@@ -590,17 +639,20 @@ class HeexAssignsTypeLinterTransforms {
         fields: Map<String,String>,
         typeName: String,
         ctx: Null<reflaxe.elixir.CompilationContext>,
-        pos: haxe.macro.Expr.Position,
+        fallbackPos: haxe.macro.Expr.Position,
+        tagPos: haxe.macro.Expr.Position,
         enableAssignsChecks: Bool,
         letScopes: Array<HeexLetBindingScope>
     ): Void {
         for (attr in attributes) {
-            validateAttribute(tag, parentTag, attr, fields, typeName, ctx, pos, enableAssignsChecks, letScopes);
+            var attrNameErrPos = attributeNamePos(attr, fallbackPos);
+            var attrValueErrPos = attributeValuePos(attr, attrNameErrPos);
+            validateAttribute(tag, parentTag, attr, fields, typeName, ctx, attrNameErrPos, attrValueErrPos, enableAssignsChecks, letScopes);
         }
-        validatePhxHookRequiresId(tag, attributes, ctx, pos);
-        validateSlotInvocation(tag, parentTag, attributes, children, fields, ctx, pos);
+        validatePhxHookRequiresId(tag, attributes, ctx, tagPos);
+        validateSlotInvocation(tag, parentTag, attributes, children, fields, ctx, tagPos);
         // Component-level checks (requires full attribute set + children)
-        validateComponentInvocation(tag, attributes, children, fields, ctx, pos);
+        validateComponentInvocation(tag, attributes, children, fields, ctx, tagPos);
     }
 
     static function validatePhxHookRequiresId(tag: String, attributes: Array<EAttribute>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
@@ -632,35 +684,35 @@ class HeexAssignsTypeLinterTransforms {
         }
     }
 
-    static function validateAttribute(tag: String, parentTag: Null<String>, attr: EAttribute, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool, letScopes: Array<HeexLetBindingScope>): Void {
+    static function validateAttribute(tag: String, parentTag: Null<String>, attr: EAttribute, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, attrNamePosValue: haxe.macro.Expr.Position, attrValuePosValue: haxe.macro.Expr.Position, enableAssignsChecks: Bool, letScopes: Array<HeexLetBindingScope>): Void {
         if (attr != null && attr.name == ":let") {
-            validateLetDirective(tag, parentTag, attr.value, ctx, pos);
+            validateLetDirective(tag, parentTag, attr.value, ctx, attrValuePosValue);
             // NOTE: :let is a binding pattern, not an expression; do not run assigns lints on it.
             return;
         }
 
         if (isSlotTag(tag)) {
-            validateSlotAttributeName(tag, parentTag, attr.name, ctx, pos);
-            validateSlotPropValueKind(tag, parentTag, attr, fields, ctx, pos);
+            validateSlotAttributeName(tag, parentTag, attr.name, ctx, attrNamePosValue);
+            validateSlotPropValueKind(tag, parentTag, attr, fields, ctx, attrValuePosValue);
         } else {
             // 1) Name validation (only for known HTML elements; allow HEEx directive attrs)
-            validateAttributeName(tag, attr.name, ctx, pos);
+            validateAttributeName(tag, attr.name, ctx, attrNamePosValue);
 
             // 2) Obvious kind validation for select attributes (bool-ish attrs, phx-hook, etc.)
-            validateAttributeValueKind(attr.name, attr.value, fields, ctx, pos);
+            validateAttributeValueKind(tag, attr.name, attr.value, fields, ctx, attrValuePosValue);
 
             // 2b) Component prop kind validation (when the component + prop is resolvable)
-            validateComponentPropValueKind(tag, attr, fields, ctx, pos);
+            validateComponentPropValueKind(tag, attr, fields, ctx, attrValuePosValue);
 
             // 2c) Custom HTML tag attribute typing (registered via @:hxxHtmlTags).
-            validateCustomHtmlTagAttributeValueKind(tag, attr, fields, ctx, pos);
+            validateCustomHtmlTagAttributeValueKind(tag, attr, fields, ctx, attrValuePosValue);
         }
 
         // 3) Assigns field usage within `{ ... }` attribute expressions
-        validateExprForAssigns(attr.value, fields, typeName, ctx, pos, enableAssignsChecks);
+        validateExprForAssigns(attr.value, fields, typeName, ctx, attrValuePosValue, enableAssignsChecks);
 
         // 4) Slot :let binder field usage within attribute expressions (when a typed let scope is present)
-        validateExprForLetScopes(attr.value, letScopes, ctx, pos);
+        validateExprForLetScopes(attr.value, letScopes, ctx, attrValuePosValue);
     }
 
     static var allowedHtmlAttributeCache: Map<String, Map<String, Bool>> = new Map();
@@ -1242,6 +1294,118 @@ class HeexAssignsTypeLinterTransforms {
         return true;
     }
 
+    static function suggestionSuffixForAttribute(input: String, candidates: Array<String>): String {
+        var suggestions = findClosestAttributeSuggestions(input, candidates, 3);
+        if (suggestions.length == 0) return "";
+        return ' Did you mean: "' + suggestions.join('", "') + '"?';
+    }
+
+    static function allowedMapSuggestionCandidates(allowed: Map<String, Bool>): Array<String> {
+        var unique = new Map<String, Bool>();
+        if (allowed == null) return [];
+        for (name in allowed.keys()) {
+            if (name == null || name.length == 0) continue;
+            if (name.indexOf("*") != -1 || name.startsWith(":")) continue;
+            var normalized = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(name));
+            var candidate = (normalized != null && normalized.length > 0) ? normalized : name;
+            unique.set(candidate, true);
+        }
+        var out = [for (k in unique.keys()) k];
+        out.sort((a, b) -> a < b ? -1 : (a > b ? 1 : 0));
+        return out;
+    }
+
+    static function componentPropSuggestionCandidates(def: ComponentDefinition): Array<String> {
+        if (def == null || def.props == null) return [];
+        var unique = new Map<String, Bool>();
+        for (key in def.props.keys()) {
+            if (key == null || key.length == 0) continue;
+            if (key == "inner_content") continue;
+            unique.set(key, true);
+            unique.set(key.split("_").join("-"), true);
+        }
+        var out = [for (k in unique.keys()) k];
+        out.sort((a, b) -> a < b ? -1 : (a > b ? 1 : 0));
+        return out;
+    }
+
+    static function normalizeForSuggestion(name: String): String {
+        if (name == null) return "";
+        var normalized = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(name));
+        return (normalized != null ? normalized : name).toLowerCase();
+    }
+
+    static function findClosestAttributeSuggestions(input: String, candidates: Array<String>, maxCount: Int): Array<String> {
+        if (input == null || input.length == 0 || candidates == null || candidates.length == 0) return [];
+
+        var normalizedInput = normalizeForSuggestion(input);
+        var threshold = normalizedInput.length <= 4 ? 1 : (normalizedInput.length <= 7 ? 2 : 3);
+        var scored: Array<{ name: String, score: Int }> = [];
+
+        for (candidate in candidates) {
+            if (candidate == null || candidate.length == 0) continue;
+            var normalizedCandidate = normalizeForSuggestion(candidate);
+            if (normalizedCandidate == normalizedInput) continue;
+
+            var distance = levenshteinDistance(normalizedInput, normalizedCandidate);
+            var starts = StringTools.startsWith(normalizedCandidate, normalizedInput) || StringTools.startsWith(normalizedInput, normalizedCandidate);
+            var contains = normalizedCandidate.indexOf(normalizedInput) != -1 || normalizedInput.indexOf(normalizedCandidate) != -1;
+            if (starts) distance -= 1;
+            if (contains) distance -= 1;
+
+            if (distance <= threshold || starts || contains) {
+                scored.push({ name: candidate, score: distance < 0 ? 0 : distance });
+            }
+        }
+
+        scored.sort((a, b) -> {
+            if (a.score < b.score) return -1;
+            if (a.score > b.score) return 1;
+            return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0);
+        });
+
+        var out: Array<String> = [];
+        var seen = new Map<String, Bool>();
+        for (item in scored) {
+            if (seen.exists(item.name)) continue;
+            seen.set(item.name, true);
+            out.push(item.name);
+            if (out.length >= maxCount) break;
+        }
+        return out;
+    }
+
+    static function levenshteinDistance(a: String, b: String): Int {
+        if (a == null) a = "";
+        if (b == null) b = "";
+        if (a == b) return 0;
+        if (a.length == 0) return b.length;
+        if (b.length == 0) return a.length;
+
+        var previous = [for (_ in 0...b.length + 1) 0];
+        var current = [for (_ in 0...b.length + 1) 0];
+        for (j in 0...b.length + 1) previous[j] = j;
+
+        for (i in 1...a.length + 1) {
+            current[0] = i;
+            var aChar = a.charAt(i - 1);
+            for (j in 1...b.length + 1) {
+                var bChar = b.charAt(j - 1);
+                var cost = aChar == bChar ? 0 : 1;
+                var deletion = previous[j] + 1;
+                var insertion = current[j - 1] + 1;
+                var substitution = previous[j - 1] + cost;
+                var best = deletion < insertion ? deletion : insertion;
+                if (substitution < best) best = substitution;
+                current[j] = best;
+            }
+            var tmp = previous;
+            previous = current;
+            current = tmp;
+        }
+        return previous[b.length];
+    }
+
     static function validateAttributeName(tag: String, attributeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
         if (attributeName == null || attributeName.length == 0) return;
         // HEEx directive attrs like :if/:for/:let are valid on any tag.
@@ -1277,7 +1441,8 @@ class HeexAssignsTypeLinterTransforms {
         var allowed = getAllowedHtmlAttributesForTag(tag);
         if (allowed.exists(attributeName) || allowed.exists(canonical) || (htmlName != null && allowed.exists(htmlName))) return;
 
-        error(ctx, 'HEEx attribute error: <' + tag + '> does not allow attribute "' + attributeName + '"', pos);
+        var suffix = suggestionSuffixForAttribute(attributeName, allowedMapSuggestionCandidates(allowed));
+        error(ctx, 'HEEx attribute error: <' + tag + '> does not allow attribute "' + attributeName + '"' + suffix, pos);
     }
 
     static function validatePhoenixCoreComponentAttributeName(componentTag: String, attributeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
@@ -1292,7 +1457,8 @@ class HeexAssignsTypeLinterTransforms {
 
         if (allowed.exists(attributeName) || allowed.exists(canonical) || (htmlName != null && allowed.exists(htmlName))) return;
 
-        error(ctx, 'HEEx component attribute error: <' + componentTag + '> does not allow attribute "' + attributeName + '"', pos);
+        var suffix = suggestionSuffixForAttribute(attributeName, allowedMapSuggestionCandidates(allowed));
+        error(ctx, 'HEEx component attribute error: <' + componentTag + '> does not allow attribute "' + attributeName + '"' + suffix, pos);
     }
 
     static function validateUserComponentAttributeName(componentTag: String, attributeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
@@ -1310,7 +1476,8 @@ class HeexAssignsTypeLinterTransforms {
         var key = componentAssignKeyFromAttributeName(attributeName);
         if (def.props.exists(key)) return;
 
-        error(ctx, 'HEEx component prop error: <' + componentTag + '> does not allow attribute "' + attributeName + '"', pos);
+        var suffix = suggestionSuffixForAttribute(attributeName, componentPropSuggestionCandidates(def));
+        error(ctx, 'HEEx component prop error: <' + componentTag + '> does not allow attribute "' + attributeName + '"' + suffix, pos);
     }
 
     static function componentAssignKeyFromAttributeName(attributeName: String): String {
@@ -1476,6 +1643,14 @@ class HeexAssignsTypeLinterTransforms {
 	        #end
 	    }
 
+	    static function strictAttributeValueTypingEnabled(): Bool {
+	        #if macro
+	        return Context.defined("hxx_strict_attr_values") || activeStrictAttrValues;
+	        #else
+	        return false;
+	        #end
+	    }
+
 	    static function allowHeexStringFallbackEnabled(): Bool {
 	        #if macro
 	        return Context.defined("hxx_allow_string_fallback") || activeAllowStringFallback;
@@ -1494,6 +1669,7 @@ class HeexAssignsTypeLinterTransforms {
 	                strictHtml: false,
 	                strictPhxHook: false,
 	                strictPhxEvents: false,
+                    strictAttrValues: false,
 	                allowStringFallback: false,
 	            };
 	        }
@@ -1571,6 +1747,7 @@ class HeexAssignsTypeLinterTransforms {
             strictHtml: hasMeta("hxx_strict_html"),
             strictPhxHook: hasMeta("hxx_strict_phx_hook"),
             strictPhxEvents: hasMeta("hxx_strict_phx_events"),
+            strictAttrValues: hasMeta("hxx_strict_attr_values"),
             allowStringFallback: hasMeta("hxx_allow_string_fallback"),
         };
     }
@@ -2313,7 +2490,7 @@ class HeexAssignsTypeLinterTransforms {
         return allowed;
     }
 
-    static function validateAttributeValueKind(attributeName: String, value: ElixirAST, fields: Map<String,String>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+    static function validateAttributeValueKind(tag: String, attributeName: String, value: ElixirAST, fields: Map<String,String>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
         if (attributeName == null || attributeName.length == 0) return;
         if (attributeName.startsWith(":")) return; // directive attrs: do not validate here
 
@@ -2330,6 +2507,8 @@ class HeexAssignsTypeLinterTransforms {
             validatePhxEventName(canonical, value, ctx, pos);
             validateStrictPhxEventValue(canonical, value, ctx, pos);
         }
+
+        validateStrictAttributeLiteralValue(tag, canonical, value, ctx, pos);
 
         var expected = expectedKindForAttribute(canonical);
         if (expected == null) return;
@@ -2435,6 +2614,68 @@ class HeexAssignsTypeLinterTransforms {
             default:
                 false;
         };
+    }
+
+    static function validateStrictAttributeLiteralValue(tag: String, canonicalAttr: String, value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
+        if (!strictAttributeValueTypingEnabled()) return;
+        if (canonicalAttr == null || canonicalAttr.length == 0) return;
+        if (value == null) return;
+
+        var allowed = expectedLiteralValuesForAttribute(tag, canonicalAttr);
+        if (allowed == null || allowed.length == 0) return;
+
+        // Keep this conservative to avoid false positives: only validate static string literals.
+        var literal = extractConstStringFromHeexExpr(value);
+        if (literal == null) return;
+
+        var normalized = literal.trim().toLowerCase();
+        if (normalized.length == 0) return;
+
+        if (!isAllowedLiteralValue(normalized, allowed)) {
+            error(
+                ctx,
+                'HEEx attribute value error: under -D hxx_strict_attr_values, "' + canonicalAttr + '" on <' + (tag == null ? "?" : tag) + '> must be one of [' + allowed.join(", ") + '], got "' + literal + '"',
+                pos
+            );
+        }
+    }
+
+    static function expectedLiteralValuesForAttribute(tag: String, canonicalAttr: String): Null<Array<String>> {
+        if (canonicalAttr == null) return null;
+        var normalizedTag = tag == null ? "" : tag.trim().toLowerCase();
+
+        return switch (canonicalAttr) {
+            case "type":
+                switch (normalizedTag) {
+                    case "input":
+                        [
+                            "button", "checkbox", "color", "date", "datetime-local",
+                            "email", "file", "hidden", "image", "month", "number",
+                            "password", "radio", "range", "reset", "search", "submit",
+                            "tel", "text", "time", "url", "week"
+                        ];
+                    case "button":
+                        ["button", "submit", "reset"];
+                    default:
+                        null;
+                };
+            case "method":
+                normalizedTag == "form" ? ["get", "post"] : null;
+            case "wrap":
+                normalizedTag == "textarea" ? ["hard", "soft"] : null;
+            case "phx-update":
+                ["replace", "stream", "append", "prepend", "ignore"];
+            default:
+                null;
+        };
+    }
+
+    static function isAllowedLiteralValue(value: String, allowed: Array<String>): Bool {
+        if (allowed == null || allowed.length == 0) return true;
+        for (candidate in allowed) {
+            if (candidate == value) return true;
+        }
+        return false;
     }
 
     static function validatePhxEventName(canonicalAttr: String, value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
