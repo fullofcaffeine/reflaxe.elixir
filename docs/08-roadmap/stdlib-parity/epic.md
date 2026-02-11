@@ -29,6 +29,7 @@ Related (ongoing) work:
 
 - Module-level gap report: `docs/08-roadmap/stdlib-parity/gap-report.json`
 - Regeneration script: `scripts/stdlib-parity-report.sh`
+- CI drift guard (local-state consistency): `npm run guard:stdlib-parity`
 - Reference repo: `../haxe.elixir.reference`
 
 ## Current status (rolling)
