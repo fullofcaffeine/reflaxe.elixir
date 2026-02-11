@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.16.0...v1.17.0) (2026-02-11)
+
+
+### Features
+
+* **hxx:** tsx diagnostics spans+suggestions, docs/examples alignment, and regression snapshots ([0ebc18d](https://github.com/fullofcaffeine/reflaxe.elixir/commit/0ebc18d84941d8895ab8dee2b649bfc073b2d6ec))
+
 # [1.16.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.15.0...v1.16.0) (2026-02-11)
 
 
