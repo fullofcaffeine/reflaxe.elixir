@@ -312,9 +312,13 @@ class TemplateHelpers {
                     if (m == null) return false;
                     return switch (m.def) {
                         case EVar(name):
-                            name == "HeexTemplate" || StringTools.endsWith(name, ".HeexTemplate") || StringTools.endsWith(name, ".HXX2");
+                            name == "HeexTemplate"
+                                || name == "H"
+                                || StringTools.endsWith(name, ".HeexTemplate")
+                                || StringTools.endsWith(name, ".HXX2")
+                                || StringTools.endsWith(name, ".H");
                         case EField(_, fld):
-                            fld == "HeexTemplate" || fld == "HXX2";
+                            fld == "HeexTemplate" || fld == "HXX2" || fld == "H";
                         default:
                             false;
                     }
@@ -333,7 +337,7 @@ class TemplateHelpers {
                     }
                 }
 
-                if (isHeexTemplateModule(module) && (func == "for_each" || func == "forEach") && args.length == 2) {
+                if (isHeexTemplateModule(module) && (func == "for_each" || func == "forEach" || func == "each") && args.length == 2) {
                     var itemsExpr = renderExpr(args[0]);
                     if (StringTools.startsWith(itemsExpr, "assigns.")) itemsExpr = '@' + itemsExpr.substr("assigns.".length);
 

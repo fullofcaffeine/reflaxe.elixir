@@ -87,8 +87,9 @@ private class Parser {
         if (!consume('<')) return null;
         // Closing tag -> caller should handle
         if (peek() == '/') { i = start; return null; }
-        var tag = parseTagName();
-        if (tag == null) { i = start; return null; }
+        var tagInfo = parseTagNameInfo();
+        if (tagInfo == null) { i = start; return null; }
+        var tag = tagInfo.name;
         var attrs = parseAttributes();
         skipWs();
         var selfClosing = false;
@@ -102,7 +103,7 @@ private class Parser {
                 if (peek() == '<' && peek2() == '/') {
                     // </tag>
                     advance(2);
-                    var close = parseTagName();
+                    parseTagNameInfo();
                     skipWs();
                     consume('>');
                     break;
@@ -124,7 +125,10 @@ private class Parser {
                 }
             }
         }
-        return makeAST(EFragment(tag, attrs, children));
+        var node = makeAST(EFragment(tag, attrs, children));
+        node.metadata.heexTagNameSpanStart = tagInfo.start;
+        node.metadata.heexTagNameSpanEnd = tagInfo.end;
+        return node;
     }
 
     // <%= ... %> / <% ... %> blocks (analysis-only)
@@ -147,14 +151,19 @@ private class Parser {
         return makeAST(ERaw(code));
     }
 
-    function parseTagName(): Null<String> {
+    function parseTagNameInfo(): Null<{ name: String, start: Int, end: Int }> {
         skipWs();
         var start = i;
         while (!eof()) {
             var ch = peek();
             if (isTagChar(ch)) advance(1) else break;
         }
-        return i > start ? s.substr(start, i - start) : null;
+        if (i <= start) return null;
+        return {
+            name: s.substr(start, i - start),
+            start: start,
+            end: i
+        };
     }
 
     function isTagChar(ch: String): Bool {
@@ -171,10 +180,12 @@ private class Parser {
             skipWs();
             var c = peek();
             if (c == '>' || c == '/' || c == null) break;
-            var name = parseAttrName();
-            if (name == null) break;
+            var nameInfo = parseAttrNameInfo();
+            if (nameInfo == null) break;
             skipWs();
             var valueAst: ElixirAST = null;
+            var valueSpanStart: Null<Int> = null;
+            var valueSpanEnd: Null<Int> = null;
             if (consume('=')) {
                 skipWs();
                 var q = peek();
@@ -182,8 +193,10 @@ private class Parser {
                     var valueStart = i + 1; // after opening quote
                     valueAst = makeAST(EString(parseQuotedString()));
                     valueAst.metadata.heexAttrIsDynamic = false;
-                    valueAst.metadata.heexAttrValueSpanStart = valueStart;
-                    valueAst.metadata.heexAttrValueSpanEnd = valueStart + (switch (valueAst.def) { case EString(s): s != null ? s.length : 0; default: 0; });
+                    valueSpanStart = valueStart;
+                    valueSpanEnd = valueStart + (switch (valueAst.def) { case EString(s): s != null ? s.length : 0; default: 0; });
+                    valueAst.metadata.heexAttrValueSpanStart = valueSpanStart;
+                    valueAst.metadata.heexAttrValueSpanEnd = valueSpanEnd;
                 } else if (q == '{') {
                     advance(1); // consume {
                     var exprStart = i;
@@ -197,35 +210,51 @@ private class Parser {
                     valueAst.metadata.heexAttrIsDynamic = true;
                     // Track the absolute span of the expression *inside* the surrounding braces.
                     // End is exclusive (the index of the closing `}`).
-                    valueAst.metadata.heexAttrValueSpanStart = exprStart;
-                    valueAst.metadata.heexAttrValueSpanEnd = i - 1;
+                    valueSpanStart = exprStart;
+                    valueSpanEnd = i - 1;
+                    valueAst.metadata.heexAttrValueSpanStart = valueSpanStart;
+                    valueAst.metadata.heexAttrValueSpanEnd = valueSpanEnd;
                 } else {
                     // Bareword value until ws or tag end
                     var vs = i;
                     while (!eof()) { var ch2 = peek(); if (isWs(ch2) || ch2 == '>' || ch2 == '/') break; advance(1); }
                     valueAst = makeAST(EString(s.substr(vs, i - vs)));
                     valueAst.metadata.heexAttrIsDynamic = false;
-                    valueAst.metadata.heexAttrValueSpanStart = vs;
-                    valueAst.metadata.heexAttrValueSpanEnd = i;
+                    valueSpanStart = vs;
+                    valueSpanEnd = i;
+                    valueAst.metadata.heexAttrValueSpanStart = valueSpanStart;
+                    valueAst.metadata.heexAttrValueSpanEnd = valueSpanEnd;
                 }
             } else {
                 // Boolean attribute
                 valueAst = makeAST(EBoolean(true));
                 valueAst.metadata.heexAttrIsDynamic = false;
             }
-            attrs.push({name: name, value: valueAst});
+            attrs.push({
+                name: nameInfo.name,
+                value: valueAst,
+                nameSpanStart: nameInfo.start,
+                nameSpanEnd: nameInfo.end,
+                valueSpanStart: valueSpanStart,
+                valueSpanEnd: valueSpanEnd
+            });
         }
         return attrs;
     }
 
-    function parseAttrName(): Null<String> {
+    function parseAttrNameInfo(): Null<{ name: String, start: Int, end: Int }> {
         skipWs();
         var start = i;
         while (!eof()) {
             var ch = peek();
             if (isIdentChar(ch) || ch == ':' || ch == '-' ) advance(1); else break;
         }
-        return i > start ? s.substr(start, i - start) : null;
+        if (i <= start) return null;
+        return {
+            name: s.substr(start, i - start),
+            start: start,
+            end: i
+        };
     }
 
     // ---------------- Expression parsing (attribute { ... }) -----------------

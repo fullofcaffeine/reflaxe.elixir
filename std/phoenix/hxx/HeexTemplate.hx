@@ -44,7 +44,7 @@ class HeexTemplate {
      * - Compile-time only; suppressed from runtime emission.
      */
     public static function root_ast(node: phoenix.hxx.ast.HeexNode): String {
-        return "";
+        throw "HeexTemplate.root_ast is compile-time only and must be lowered by the compiler pipeline";
     }
 
     /**
@@ -67,6 +67,26 @@ class HeexTemplate {
      * - This function is only valid inside templates. It is not emitted into runtime Elixir output.
      */
     public static function for_each<T>(items: Array<T>, render: T -> String): String {
-        return "";
+        throw "HeexTemplate.for_each is compile-time only and must be lowered inside template collection";
+    }
+
+    /**
+     * each/2 (short alias)
+     *
+     * WHAT
+     * - Short alias for `for_each/2`.
+     *
+     * WHY
+     * - Reduces verbosity for expression-level template composition while preserving the same
+     *   compile-time lowering semantics.
+     *
+     * HOW
+     * - Recognized by `TemplateHelpers.collectTemplateContent` exactly like `for_each/2`.
+     *
+     * NOTE
+     * - Compile-time only; suppressed from runtime emission.
+     */
+    public static function each<T>(items: Array<T>, render: T -> String): String {
+        throw "HeexTemplate.each is compile-time only and must be lowered inside template collection";
     }
 }

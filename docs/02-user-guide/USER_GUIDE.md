@@ -44,36 +44,52 @@ function parseIntSafe(s: String): Result<Int, String> {
 
 LiveView state lives in assigns. In Haxe you model assigns as a `typedef`, then use `phoenix.LiveSocket` to update assigns with compile-time field validation.
 
-	```haxe
-	import elixir.types.Term;
-	import phoenix.LiveSocket;
-	import phoenix.Phoenix.HandleEventResult;
-	import phoenix.Phoenix.MountResult;
-	import phoenix.Phoenix.Socket;
+```haxe
+import elixir.types.Term;
+import phoenix.LiveSocket;
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Socket;
 
 typedef CounterAssigns = { count: Int };
 
-	@:native("MyAppWeb.CounterLive")
-	@:liveview
-	class CounterLive {
-	  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
-	    var ls: LiveSocket<CounterAssigns> = socket;
-	    return MountResult.Ok(ls.assign(_.count, 0));
-	  }
+@:native("MyAppWeb.CounterLive")
+@:liveview
+class CounterLive {
+  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+    var ls: LiveSocket<CounterAssigns> = socket;
+    return Ok(ls.assign(_.count, 0));
+  }
 
-	  @:native("handle_event")
-	  public static function handle_event(event: String, _params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
-	    var ls: LiveSocket<CounterAssigns> = socket;
-
+  @:native("handle_event")
+  public static function handle_event(event: String, _params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
+    var ls: LiveSocket<CounterAssigns> = socket;
     return switch (event) {
       case "increment":
         var nextCount = ls.assigns.count + 1;
-        HandleEventResult.NoReply(ls.assign(_.count, nextCount));
+        NoReply(ls.assign(_.count, nextCount));
       case _:
-        HandleEventResult.NoReply(ls);
+        NoReply(ls);
     }
   }
 }
+```
+
+Compiles to:
+
+```elixir
+defmodule CounterLive do
+  use Phoenix.LiveView
+
+  def mount(_params, _session, socket), do: {:ok, assign(socket, :count, 0)}
+
+  def handle_event("increment", _params, socket) do
+    next_count = socket.assigns.count + 1
+    {:noreply, assign(socket, :count, next_count)}
+  end
+
+  def handle_event(_, _params, socket), do: {:noreply, socket}
+end
 ```
 
 See also: `docs/02-user-guide/haxe-for-phoenix.md`.
@@ -85,6 +101,14 @@ HXX compiles Haxe-authored templates into standard `~H""" ... """` output.
 Start here:
 - `examples/todo-app/README.md`
 - `std/phoenix/types/HXXTypes.hx`
+- `docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md`
+
+Recommended strict profile for new Phoenix apps (defaults remain permissive for adoption):
+- `-D hxx_strict_phx_hook`
+- `-D hxx_strict_phx_events`
+- `-D hxx_strict_components`
+- `-D hxx_strict_slots`
+- `-D hxx_strict_attr_values`
 
 ### Ecto integration
 

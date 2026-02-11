@@ -286,13 +286,57 @@ class Todo {
 }
 ```
 
+Generated Elixir shape:
+
+```elixir
+defmodule TodoApp.Todo do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "todos" do
+    field :title, :string
+    field :completed, :boolean, default: false
+    field :priority, :string, default: "medium"
+    field :due_date, :naive_datetime
+    field :tags, {:array, :string}
+    timestamps()
+  end
+
+  def changeset(todo, params) do
+    todo
+    |> cast(params, [:title, :completed, :priority, :due_date, :tags])
+    |> validate_required([:title])
+  end
+end
+```
+
 ### LiveView Component (Haxe)
 ```haxe
 @:liveview
 class TodoLive {
     // Full implementation: examples/todo-app/src_haxe/server/live/TodoLive.hx
     // Demonstrates typed assigns, typed event params, PubSub broadcasts, and handle_info updates.
+
+    public static function render(assigns: TodoAssigns): String {
+        return <section>
+            <h1>${assigns.page_title}</h1>
+            <span data-testid="online-count">${assigns.online_user_count}</span>
+        </section>;
+    }
 }
+```
+
+Generated Elixir shape:
+
+```elixir
+def render(assigns) do
+  ~H"""
+  <section>
+    <h1><%= @page_title %></h1>
+    <span data-testid="online-count"><%= @online_user_count %></span>
+  </section>
+  """
+end
 ```
 
 ### Client-Side Enhancement (Haxe → JavaScript)

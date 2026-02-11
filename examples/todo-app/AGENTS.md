@@ -725,7 +725,7 @@ class TodoLive {
     }
 
     public static function render(_assigns: Assigns): String {
-        return hxx('<div class="todo-container"></div>');
+        return <div class="todo-container"></div>;
     }
 }
 ```
@@ -734,11 +734,31 @@ class TodoLive {
 
 ```haxe
 // src_haxe/server/TodoAppRouter.hx
+import reflaxe.elixir.macros.HttpMethod;
+
 @:router
 @:routes([
-    {name: "root", method: "LIVE", path: "/", controller: "TodoLive", action: "index"},
-    {name: "todos", method: "LIVE", path: "/todos", controller: "TodoLive"},
-    {name: "userDashboard", method: "LIVE", path: "/users/:id", controller: "UserLive", action: "show"}
+    {
+        name: "root",
+        method: HttpMethod.LIVE,
+        path: "/",
+        controller: server.live.TodoLive,
+        action: server.live.TodoLive.index
+    },
+    {
+        name: "todos",
+        method: HttpMethod.LIVE,
+        path: "/todos",
+        controller: server.live.TodoLive,
+        action: server.live.TodoLive.index
+    },
+    {
+        name: "profile",
+        method: HttpMethod.LIVE,
+        path: "/profile",
+        controller: server.live.ProfileLive,
+        action: server.live.ProfileLive.show
+    }
 ])
 class TodoAppRouter {
     // Routes are auto-generated from @:routes annotation

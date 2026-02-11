@@ -30,10 +30,22 @@ In LiveView modules, take a typed socket and update assigns via `LiveSocket.assi
 	  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
 	    var liveSocket: LiveSocket<CounterAssigns> = socket;
 	    liveSocket = liveSocket.assign(_.count, 0);
-	    return MountResult.Ok(liveSocket);
+	    return Ok(liveSocket);
 	  }
 	}
 	```
+
+Compiles to:
+
+```elixir
+defmodule CounterLive do
+  use Phoenix.LiveView
+
+  def mount(_params, _session, socket) do
+    {:ok, assign(socket, :count, 0)}
+  end
+end
+```
 
 In `render/1`, prefer a typed assigns parameter:
 

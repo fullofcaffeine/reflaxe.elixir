@@ -180,6 +180,12 @@ class InlineMarkup {
                     // Allow the fully-qualified type path to appear as an identifier (depends on AST shape).
                     case EConst(CIdent("phoenix.hxx.HXX2")):
                         true;
+                    // Short alias.
+                    case EConst(CIdent("H")):
+                        true;
+                    // Allow the fully-qualified type path to appear as an identifier (depends on AST shape).
+                    case EConst(CIdent("phoenix.hxx.H")):
+                        true;
                     default:
                         false;
                 }

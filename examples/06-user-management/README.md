@@ -1,15 +1,19 @@
-# Example 06: User Management (Phoenix LiveView)
+# 06 - User Management (LiveView + Ecto)
 
-This example is a small Phoenix app written in Haxe that demonstrates:
-- `@:schema` / `@:field` (Ecto schema generation)
-- `@:changeset` (changeset generation/bridging at the framework boundary via `elixir.types.Term`)
-- `@:liveview` (typed LiveView callbacks + HXX templates)
-- Type-safe params/assigns patterns (no `Dynamic`, no `untyped` in app code)
+This example demonstrates typed Phoenix app code in Haxe for a small CRUD-style user flow.
 
-## Key Files
-- `examples/06-user-management/src_haxe/contexts/Users.hx` — `User` schema + context helpers
-- `examples/06-user-management/src_haxe/live/UserLive.hx` — LiveView module + HXX templates
-- `examples/06-user-management/src_haxe/services/UserGenServer.hx` — GenServer skeleton (service patterns)
+## What it demonstrates
+
+- `@:schema` / `@:field` for Ecto schema generation
+- `@:changeset` for changeset pipeline shaping
+- `@:liveview` callbacks with typed assigns
+- HXX templates in LiveView render paths
+
+## Key files
+
+- `examples/06-user-management/src_haxe/contexts/Users.hx`
+- `examples/06-user-management/src_haxe/live/UserLive.hx`
+- `examples/06-user-management/src_haxe/services/UserGenServer.hx`
 
 ## Run
 
@@ -20,8 +24,58 @@ mix compile
 mix phx.server
 ```
 
-Then open `http://localhost:4000`.
+Open `http://localhost:4000`.
+
+## Haxe -> generated Elixir examples
+
+Haxe schema excerpt:
+
+```haxe
+@:schema("users")
+class User {
+  @:primary_key public var id: Int;
+  @:field({type: "string", nullable: false}) public var name: String;
+  @:field({type: "string", nullable: false}) public var email: String;
+}
+```
+
+Generated Elixir shape:
+
+```elixir
+schema "users" do
+  field :name, :string
+  field :email, :string
+  timestamps()
+end
+```
+
+Haxe LiveView render path excerpt:
+
+```haxe
+public static function render(assigns: UserLiveAssigns): String {
+  return hxx('
+    <div class="user-management">
+      ${renderUserList(assigns)}
+      ${renderUserForm(assigns)}
+    </div>
+  ');
+}
+```
+
+Generated Elixir shape:
+
+```elixir
+def render(assigns) do
+  ~H"""
+  <div class="user-management">
+    ...
+  </div>
+  """
+end
+```
 
 ## Notes
-- This example focuses on demonstrating compiler + stdlib patterns; some context functions are intentionally minimal.
-- For a fully end-to-end app (Ecto + PubSub + Presence + Playwright E2E), see `examples/todo-app/README.md`.
+
+- This example is intentionally compact and focuses on compiler surfaces, not full production UX.
+- Templates currently use balanced-mode `hxx('...')` composition for compactness; this is valid, but TSX inline markup is the recommended default for new code.
+- For end-to-end Presence, PubSub, richer tests, and E2E smoke, see `examples/todo-app/README.md`.

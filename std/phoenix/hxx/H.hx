@@ -10,22 +10,26 @@ package phoenix.hxx;
  * - `phoenix.hxx.HeexTemplate.*` is descriptive but long.
  *
  * HOW
- * - Delegates to `HeexTemplate` entrypoints.
+ * - Exposes compile-time-only entrypoints that are intercepted directly by the
+ *   template lowering pipeline (same behavior as `HeexTemplate`).
  *
  * NOTE
- * - Compile-time only; `HeexTemplate` itself is suppressed from emission.
+ * - Compile-time only; this module is suppressed from runtime emission.
  */
 class H {
-    public static inline function root(template: String): String {
-        return HeexTemplate.root(template);
+    public static function root(template: String): String {
+        return template;
     }
 
-    public static inline function root_ast(node: phoenix.hxx.ast.HeexNode): String {
-        return HeexTemplate.root_ast(node);
+    public static function root_ast(node: phoenix.hxx.ast.HeexNode): String {
+        throw "H.root_ast is compile-time only and must be lowered by the compiler pipeline";
     }
 
-    public static inline function for_each<T>(items: Array<T>, render: T -> String): String {
-        return HeexTemplate.for_each(items, render);
+    public static function for_each<T>(items: Array<T>, render: T -> String): String {
+        throw "H.for_each is compile-time only and must be lowered inside template collection";
+    }
+
+    public static function each<T>(items: Array<T>, render: T -> String): String {
+        throw "H.each is compile-time only and must be lowered inside template collection";
     }
 }
-

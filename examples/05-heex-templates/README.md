@@ -1,147 +1,73 @@
-# HEEx Templates from Haxe
+# 05 - HEEx Templates from Haxe
 
-This example demonstrates how to write Phoenix HEEx templates using Haxe with type-safe template compilation.
+This example focuses on HXX template authoring and Phoenix component-style markup.
 
-## Features
+## Important context
 
-- **Type-Safe Templates**: Compile-time validation of template structure and data
-- **HEEx Syntax**: Full support for Phoenix's HEEx template syntax  
-- **Component Integration**: Works with Phoenix.Component and LiveView
-- **Form Helpers**: Integration with Phoenix.HTML.Form helpers
-- **Template Functions**: Reusable template components and partials
+- This example uses legacy string template style (`hxx('...')`) for migration compatibility demos.
+- It therefore targets the default `@:hxx_mode("balanced")` workflow (typed inline markup available, legacy strings still allowed).
+- Recommended default for new code is inline TSX-like markup (`return <div>...</div>`) in `@:hxx_mode("tsx")`.
+- See `docs/02-user-guide/INLINE_MARKUP.md` and `docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md`.
 
-## Quick Start
+## Run
 
 ```bash
 cd examples/05-heex-templates
-
-# Compile Haxe templates to HEEx
 haxe build.hxml
 ```
 
-## Template Examples
+## Key files
 
-### User Profile Template
+- `examples/05-heex-templates/src_haxe/templates/UserProfile.hx`
+- `examples/05-heex-templates/src_haxe/templates/FormComponents.hx`
 
-**Haxe Source:**
+## Haxe -> generated HEEx (shape)
+
+Haxe template excerpt:
+
 ```haxe
-@:template("user_profile.html.heex")
-class UserProfile {
-    public static function render(assigns: UserAssigns): String {
-        return hxx('
-        <div class="user-profile">
-            <h1>Welcome, ${assigns.user.name}!</h1>
-            <span class="${assigns.user.active ? "online" : "offline"}">
-                ${assigns.user.active ? "Online" : "Offline"}
-            </span>
-        </div>
-        ');
-    }
-}
+return hxx('
+  <div class="user-profile">
+    <h1>Welcome, ${assigns.user.name}!</h1>
+  </div>
+');
 ```
 
-**Generated HEEx:**
-```heex
+Generated HEEx shape:
+
+```elixir
+~H"""
 <div class="user-profile">
   <h1>Welcome, <%= @user.name %>!</h1>
-  <span class={@user.active && "online" || "offline"}>
-    <%= if @user.active, do: "Online", else: "Offline" %>
-  </span>
 </div>
+"""
 ```
 
-### Form Components
+## Why this example exists
 
-**Phoenix Form Integration:**
+- Demonstrates compatibility for existing string-template workflows.
+- Shows component usage patterns (`<.button>`, `<.input>`) in Haxe-authored templates.
+- Serves as a migration bridge while TSX-style inline markup becomes the default authoring path.
+
+## For strict typed TSX authoring
+
+Use inline markup with `@:hxx_mode("tsx")`, for example:
+
 ```haxe
-<.form for={@changeset} phx-submit="save">
-  <.input field={@changeset[:name]} type="text" required />
-  <.error field={@changeset[:name]} />
-  
-  <.button type="submit" disabled={!@changeset.valid?}>
-    Save Changes  
-  </.button>
-</.form>
-```
-
-## Type Safety Features
-
-### Compile-Time Validation
-```haxe
-typedef UserAssigns = {
-    user: User,
-    posts: Array<Post>
-}
-
-// Compile error if template tries to access non-existent fields
-assigns.user.invalidField // ❌ Compilation error
-assigns.user.name        // ✅ Type-safe access
-```
-
-### Template Functions
-```haxe
-static function renderPost(post: Post): String {
-    return hxx('<div class="post">${post.title}</div>');
-}
-
-// Reusable across multiple templates
-${posts.map(renderPost).join("")}
-```
-
-## Integration Patterns  
-
-### With LiveView
-```haxe
-import phoenix.types.Assigns;
-
-@:liveview
-class UserLive {
-    public static function render(assigns: Assigns<UserAssigns>): String {
-        return UserProfile.render(assigns);
-    }
+@:hxx_mode("tsx")
+public static function render(assigns: { var count:Int; }): String {
+  return <div><h1>${assigns.count}</h1></div>;
 }
 ```
 
-### With Phoenix Controllers
+That path provides real Haxe expression typing for `${...}` and TSX control tags (`<if ${...}>`, `<for ${...}>`).
+
+Generated Elixir shape:
+
 ```elixir
-def show(conn, %{"id" => id}) do
-  user = Users.get_user!(id)
-  assigns = %{user: user, posts: user.posts}
-  
-  render(conn, "show.html", assigns)
+def render(assigns) do
+  ~H"""
+  <div><h1><%= @count %></h1></div>
+  """
 end
-```
-
-## Benefits
-
-- **Type Safety**: Catch template errors at compile time
-- **Code Reuse**: Share template logic across projects
-- **Performance**: Compiled templates with minimal runtime overhead
-- **Developer Experience**: IDE support with autocompletion and error highlighting
-
-## Advanced Features
-
-### Conditional Rendering
-```haxe
-${user.active ? renderActiveUser(user) : renderInactiveUser(user)}
-```
-
-### Component Composition
-```haxe
-static function userCard(user: User): String {
-    return hxx('
-    <div class="user-card">
-        ${UserProfile.render({user: user, posts: []})}
-        ${renderUserActions(user)}
-    </div>
-    ');
-}
-```
-
-### Form Validation
-```haxe
-<.input field={@changeset[:email]} type="email" required />
-<.error field={@changeset[:email]} />
-
-// Generates proper Phoenix form helpers with validation
 ```

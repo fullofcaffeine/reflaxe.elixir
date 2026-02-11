@@ -11,8 +11,6 @@ import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.HandleInfoResult;
 import phoenix.LiveSocket;
 
-import HXX.*;
-
 import elixir.Atom;
 import elixir.ElixirMap;
 import elixir.Tuple;
@@ -32,6 +30,7 @@ import phoenix_chat_hx.live.AppLiveTypes.OnlineUserView;
  */
 @:native("PhoenixChatWeb.AppLive")
 @:liveview
+@:hxx_mode("tsx")
 class AppLive {
     public static function mount(_params: MountParams, _session: Session, socket: Socket<AppLiveAssigns>): MountResult<AppLiveAssigns> {
         var connected = socket.transport_pid != null;
@@ -94,97 +93,96 @@ class AppLive {
     }
 
     public static function render(assigns: AppLiveAssigns): String {
-        return hxx('
-          <div class="chat-shell min-h-[calc(100vh-4rem)] p-4 md:p-8">
+        return <div class="chat-shell min-h-[calc(100vh-4rem)] p-4 md:p-8">
             <div class="chat-frame mx-auto grid max-w-6xl grid-cols-1 gap-4 md:grid-cols-12">
-              <aside class="md:col-span-4">
-                <div class="panel">
-	                  <div class="panel-h">
-	                    <div>
-	                      <div class="kicker">Presence</div>
-	                      <div class="title">Online</div>
-	                    </div>
-	                    <div class="badge" title="online users" data-testid="online-count">
-	                      #{@online_user_count}
-	                    </div>
-	                  </div>
-
-	                  <div class="panel-b">
-	                    <div class="online-list" data-testid="online-list">
-	                      <if {@online_user_count == 0}>
-	                        <div class="muted">No one is online yet.</div>
-	                      <else>
-	                        <for {u in @online_user_views}>
-	                          <div class=#{u.row_class} data-testid="online-row">
-	                            <div class="dot" aria-hidden="true"></div>
-	                            <div class="name">#{u.name}</div>
-	                            <if {u.is_me}>
-	                              <div class="me">you</div>
-	                            </if>
-                          </div>
-                        </for>
-                      </if>
-                    </div>
-
-                    <div class="meta">
-                      <div class="label">room</div>
-                      <div class="value">#{@room}</div>
-                    </div>
-                  </div>
-                </div>
-              </aside>
-
-              <main class="md:col-span-8">
-                <div class="panel">
-                  <div class="panel-h">
-                    <div>
-                      <div class="kicker">PhoenixChat</div>
-                      <div class="title">Lobby</div>
-                    </div>
-                    <div class="who">
-                      <div class="who-label">as</div>
-                      <div class="who-name">#{@current_user_name}</div>
-                    </div>
-                  </div>
-
-                  <div class="panel-b">
-                    <div id="chat-messages" phx-hook="AutoScroll" class="messages">
-                      <if {length(@messages) == 0}>
-                        <div class="muted">Say something. It will broadcast to everyone in the room.</div>
-                      </if>
-                      <for {m in @messages}>
-                        <div class=#{m.row_class}>
-                          <div class="msg-h">
-                            <div class="msg-user">#{m.user_name}</div>
-                            <div class="msg-id">##{m.id}</div>
-                          </div>
-                          <div class="msg-b">#{m.body}</div>
+                <aside class="md:col-span-4">
+                    <div class="panel">
+                        <div class="panel-h">
+                            <div>
+                                <div class="kicker">Presence</div>
+                                <div class="title">Online</div>
+                            </div>
+                            <div class="badge" title="online users" data-testid="online-count">
+                                ${assigns.online_user_count}
+                            </div>
                         </div>
-                      </for>
+
+                        <div class="panel-b">
+                            <div class="online-list" data-testid="online-list">
+                                <if ${assigns.online_user_count == 0}>
+                                    <div class="muted">No one is online yet.</div>
+                                <else>
+                                    <for ${u in assigns.online_user_views}>
+                                        <div class=${u.row_class} data-testid="online-row">
+                                            <div class="dot" aria-hidden="true"></div>
+                                            <div class="name">${u.name}</div>
+                                            <if ${u.is_me}>
+                                                <div class="me">you</div>
+                                            </if>
+                                        </div>
+                                    </for>
+                                </else>
+                                </if>
+                            </div>
+
+                            <div class="meta">
+                                <div class="label">room</div>
+                                <div class="value">${assigns.room}</div>
+                            </div>
+                        </div>
                     </div>
+                </aside>
 
-                    <form phx-submit="send_message" class="composer">
-                      <input
-                        type="text"
-                        name="message"
-                        value={@message_input}
-                        placeholder="Message the room..."
-                        autocomplete="off"
-                        class="composer-input"
-                        phx-change="update_input"
-                      />
-                      <button type="submit" class="composer-btn">Send</button>
-                    </form>
+                <main class="md:col-span-8">
+                    <div class="panel">
+                        <div class="panel-h">
+                            <div>
+                                <div class="kicker">PhoenixChat</div>
+                                <div class="title">Lobby</div>
+                            </div>
+                            <div class="who">
+                                <div class="who-label">as</div>
+                                <div class="who-name">${assigns.current_user_name}</div>
+                            </div>
+                        </div>
 
-                    <if {@status != nil}>
-                      <div class="status">#{@status}</div>
-                    </if>
-                  </div>
-                </div>
-              </main>
+                        <div class="panel-b">
+                            <div id="chat-messages" phx-hook="AutoScroll" class="messages">
+                                <if ${assigns.messages.length == 0}>
+                                    <div class="muted">Say something. It will broadcast to everyone in the room.</div>
+                                </if>
+                                <for ${m in assigns.messages}>
+                                    <div class=${m.row_class}>
+                                        <div class="msg-h">
+                                            <div class="msg-user">${m.user_name}</div>
+                                            <div class="msg-id">#${m.id}</div>
+                                        </div>
+                                        <div class="msg-b">${m.body}</div>
+                                    </div>
+                                </for>
+                            </div>
+
+                            <form phx-submit="send_message" class="composer">
+                                <input
+                                    type="text"
+                                    name="message"
+                                    value=${assigns.message_input}
+                                    placeholder="Message the room..."
+                                    autocomplete="off"
+                                    class="composer-input"
+                                    phx-change="update_input"
+                                />
+                                <button type="submit" class="composer-btn">Send</button>
+                            </form>
+
+                            <if ${assigns.status != null}>
+                                <div class="status">${assigns.status}</div>
+                            </if>
+                        </div>
+                    </div>
+                </main>
             </div>
-          </div>
-        ');
+        </div>;
     }
 
     public static function handleInfo(msg: Term, socket: Socket<AppLiveAssigns>): HandleInfoResult<AppLiveAssigns> {

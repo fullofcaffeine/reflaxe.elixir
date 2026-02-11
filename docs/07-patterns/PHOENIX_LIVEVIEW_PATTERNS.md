@@ -8,7 +8,7 @@ If you see older content using `@:event(...)`, `jsx(...)`, or custom return type
 
 Reflaxe.Elixir generates idiomatic LiveView modules:
 - Implement `mount/3`, `handle_event/3`, `handle_info/2`, and `render/1`.
-- Return values stay Phoenix-native (`{:ok, socket}`, `{:noreply, socket}`, …) but are authored as typed Haxe enums (`MountResult.*`, `HandleEventResult.*`, …).
+- Return values stay Phoenix-native (`{:ok, socket}`, `{:noreply, socket}`, …) but are authored as typed Haxe enums (`Ok(...)`, `NoReply(...)`, …). Prefer unqualified constructors when unambiguous.
 - Keep application code free of `untyped __elixir__(...)`. If a Phoenix helper is missing, add a typed extern/shim under `std/phoenix/**`.
 
 ## Pattern: Typed Assigns + `LiveSocket.assign`
@@ -27,12 +27,12 @@ typedef CounterAssigns = { count: Int };
 
 	@:native("MyAppWeb.CounterLive")
 	@:liveview
-	class CounterLive {
-	  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
-	    var liveSocket: LiveSocket<CounterAssigns> = socket;
-	    liveSocket = liveSocket.assign(_.count, 0);
-	    return MountResult.Ok(liveSocket);
-	  }
+class CounterLive {
+  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+    var liveSocket: LiveSocket<CounterAssigns> = socket;
+    liveSocket = liveSocket.assign(_.count, 0);
+    return Ok(liveSocket);
+  }
 
 	  @:native("handle_event")
 	  public static function handle_event(event: String, _params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
@@ -41,9 +41,9 @@ typedef CounterAssigns = { count: Int };
     return switch (event) {
       case "increment":
         var nextCount = liveSocket.assigns.count + 1;
-        HandleEventResult.NoReply(liveSocket.assign(_.count, nextCount));
+        NoReply(liveSocket.assign(_.count, nextCount));
       case _:
-        HandleEventResult.NoReply(liveSocket);
+        NoReply(liveSocket);
     }
   }
 
@@ -56,6 +56,34 @@ typedef CounterAssigns = { count: Int };
 	    ');
 	  }
 }
+```
+
+Compiles to:
+
+```elixir
+defmodule CounterLive do
+  use Phoenix.LiveView
+
+  def mount(_params, _session, socket) do
+    {:ok, assign(socket, :count, 0)}
+  end
+
+  def handle_event("increment", _params, socket) do
+    next_count = socket.assigns.count + 1
+    {:noreply, assign(socket, :count, next_count)}
+  end
+
+  def handle_event(_, _params, socket), do: {:noreply, socket}
+
+  def render(assigns) do
+    ~H"""
+    <div class="counter">
+      <h1><%= @count %></h1>
+      <button phx-click="increment">+</button>
+    </div>
+    """
+  end
+end
 ```
 
 Notes:
@@ -91,7 +119,7 @@ Then:
 ```haxe
 case "create_todo":
   var title = Params.getString(_params, "title");
-  if (title == null) return HandleEventResult.NoReply(liveSocket);
+  if (title == null) return NoReply(liveSocket);
   // ...call typed domain code...
 ```
 

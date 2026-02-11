@@ -31,7 +31,7 @@ class TemplateEntryPoints {
         if (methodName != "root" && methodName != "root_ast") return false;
         if (cls.pack == null) return false;
         if (cls.pack.join(".") != "phoenix.hxx") return false;
-        return cls.name == "HeexTemplate" || cls.name == "HXX2";
+        return cls.name == "HeexTemplate" || cls.name == "HXX2" || cls.name == "H";
     }
 
     public static function isTemplateProducerStaticCall(cls: ClassType, methodName: String): Bool {
@@ -50,10 +50,10 @@ class TemplateEntryPoints {
         return switch (mod.def) {
             case EVar(m):
                 (fnName == "hxx" && isNamedModule(m, "HXX"))
-                    || ((fnName == "root" || fnName == "root_ast") && (isNamedModule(m, "HeexTemplate") || isNamedModule(m, "HXX2")));
+                    || ((fnName == "root" || fnName == "root_ast") && (isNamedModule(m, "HeexTemplate") || isNamedModule(m, "HXX2") || isNamedModule(m, "H")));
             case EField(_, fld):
                 (fnName == "hxx" && fld == "HXX")
-                    || ((fnName == "root" || fnName == "root_ast") && (fld == "HeexTemplate" || fld == "HXX2"));
+                    || ((fnName == "root" || fnName == "root_ast") && (fld == "HeexTemplate" || fld == "HXX2" || fld == "H"));
             default:
                 false;
         }

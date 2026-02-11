@@ -17,7 +17,7 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 ### 3. [03-phoenix-app](./03-phoenix-app/)
 **Difficulty**: Intermediate  
 **Features**: Phoenix endpoint/router/controller authored in Haxe, JSON responses  
-**Use Case**: Minimal Phoenix web app with Haxe→Elixir compilation
+**Use Case**: Minimal Phoenix web app with typed `@:routes` and controller actions
 
 ### 4. [04-ecto-migrations](./04-ecto-migrations/)
 **Difficulty**: Intermediate  
@@ -26,13 +26,13 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 
 ### 5. [05-heex-templates](./05-heex-templates/)
 **Difficulty**: Intermediate  
-**Features**: @:template annotation, HEEx syntax, form components  
-**Use Case**: Type-safe Phoenix templates and components
+**Features**: HXX template authoring, HEEx lowering, component-style markup (legacy/balanced mode focus)  
+**Use Case**: Template migration patterns and HXX authoring
 
 ### 6. [06-user-management](./06-user-management/)
 **Difficulty**: Advanced  
-**Features**: Complete CRUD, LiveView, GenServer, Ecto schemas, changesets  
-**Use Case**: Full-featured Phoenix application example
+**Features**: CRUD-style flow, LiveView, GenServer skeleton, Ecto schemas/changesets (balanced templates)  
+**Use Case**: Typed Phoenix app patterns in one compact example
 
 ### 7. [07-protocols](./07-protocols/)
 **Difficulty**: Intermediate  
@@ -61,7 +61,7 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 
 ### 12. [12-phoenix-chat](./12-phoenix-chat/)
 **Difficulty**: Intermediate  
-**Features**: LiveView + PubSub + Presence, tiny client hook (Genes)  
+**Features**: LiveView + PubSub + Presence, tiny client hook (Genes), strict TSX templates  
 **Use Case**: Real-time chat patterns in a small, focused Phoenix example
 
 ### 13. [todo-app](./todo-app/)
@@ -109,8 +109,8 @@ mix phx.server
 
 1. **Start**: 01-simple-modules - Basic compilation
 2. **Learn**: 02-mix-project - Mix integration  
-3. **Build**: 03-phoenix-app - Phoenix LiveView
-4. **Extend**: 04-ecto-migrations, 05-heex-templates
+3. **Build**: 03-phoenix-app - Minimal Phoenix server + typed router
+4. **Extend**: 04-ecto-migrations, 05-heex-templates, 09-phoenix-router
 5. **Master**: 06-user-management - Everything integrated
 
 ## 🧪 Running Examples
@@ -165,7 +165,7 @@ Notes:
 - `@:liveview` - Generate Phoenix LiveView modules
 - `@:genserver` - Create OTP GenServer modules
 - `@:migration` - Define database migrations (experimental)
-- `@:template` - Compile HEEx templates
+- `@:router` / `@:routes` - Define typed Phoenix routes
 - `@:query` - Build type-safe Ecto queries
 
 ### Compilation

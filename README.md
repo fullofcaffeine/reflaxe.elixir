@@ -85,7 +85,7 @@ The foundation for multi-target development:
 | | Reflaxe.Elixir | Gleam | Pure Elixir | TypeScript |
 |---|---|---|---|---|
 | **Type Safety** | ✅ Compile-time | ✅ Compile-time | ❌ Runtime | ✅ Compile-time |
-| **BEAM Integration** | ✅ Full Phoenix/OTP | ✅ Native | ✅ Native | ❌ None |
+| **BEAM Integration** | ✅ Phoenix/OTP integration | ✅ Native | ✅ Native | ❌ None |
 | **Phoenix LiveView** | ✅ Native support | ⚠️ Via externals (tradeoffs) | ✅ Native | ❌ None |
 | **Multi-target Potential** | ✅ Haxe foundation | ✅ BEAM + JS | ❌ BEAM only | ⚠️ JS only |
 | **Ecosystem Maturity** | ✅ Since 2005 | ⚠️ New | ✅ Mature | ✅ Mature |
@@ -100,13 +100,18 @@ The foundation for multi-target development:
 ## Current Status & Roadmap
 
 ### ✅ Stable (v1.1)
-- **Phoenix Integration** - LiveView, controllers, templates, routers 100% supported
+- **Phoenix Integration** - LiveView/controllers/templates/routers are supported for the documented subset (see examples + user guides)
 - **HEEx Templates (typed-first)** - TSX-like inline markup + compile-time lowering to `~H` with optional strict checks for Phoenix/LiveView attributes
   - Inline markup (`return <div>...</div>`) is the recommended default: `${...}` splices are real Haxe expressions (parsed + type-checked) and are lowered into HEEx (`~H`) by the compiler pipeline.
   - TSX control tags are typed and compile to HEEx blocks: `<if ${cond}> ... <else> ... </else> </if>` and `<for ${item in items}> ... </for>`.
+  - TSX spread attrs are typed and lower to HEEx spread attrs: `<section {assigns.attrs}>` (or `<section {@assigns.attrs}>`) compiles to `<section {@attrs}>`.
   - Template strings (`hxx('...')` / `HXX.hxx('...')`) remain supported for migration, but they are **string-rewritten + linted**, not fully Haxe-typed. Prefer inline markup for typed Haxe expressions.
-  - Layered template modes: `@:hxx_mode("tsx")` enforces a fully-typed authoring style (no raw `<% ... %>`, no `#{...}`, no `<if { ... }>` / `<for { ... }>` markers). `@:hxx_mode("metal")` allows raw HEEx (discouraged).
-  - Short helper alias: `phoenix.hxx.H` mirrors `phoenix.hxx.HeexTemplate` (`H.root`, `H.root_ast`, `H.for_each`).
+  - Layered template modes:
+    - `@:hxx_mode("tsx")`: strict typed authoring (recommended for new code).
+    - `@:hxx_mode("balanced")`: default migration-friendly mode (typed inline markup + legacy string templates).
+    - `@:hxx_mode("metal")`: raw HEEx-leaning mode (discouraged).
+  - Raw HEEx escape hatch is explicit: use `@:allow_heex` (or migration-only `-D hxx_allow_raw_heex`).
+  - Short helper alias: `phoenix.hxx.H` mirrors `phoenix.hxx.HeexTemplate` (`H.root`, `H.root_ast`, `H.for_each`, `H.each`).
   - **Template Helper Metadata** ✨ NEW - Uses @:templateHelper metadata for extensible Phoenix function compilation
   - **Type-Safe Phoenix Abstractions** ✨ NEW - Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with operator overloading
 - **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations remain opt‑in/experimental** (`-D ecto_migrations_exs`)  
@@ -412,7 +417,7 @@ Start at **[docs/README.md](docs/README.md)** for the curated documentation inde
 
 ### Examples
 
-Each example includes its own `README.md` with compile/run steps:
+Each example includes its own `README.md` with compile/run steps and Haxe -> generated Elixir mapping snippets:
 
 - `examples/01-simple-modules/README.md`
 - `examples/02-mix-project/README.md`
@@ -425,6 +430,7 @@ Each example includes its own `README.md` with compile/run steps:
 - `examples/09-phoenix-router/README.md`
 - `examples/10-option-patterns/README.md`
 - `examples/11-domain-validation/README.md`
+- `examples/12-phoenix-chat/README.md`
 - `examples/test-integration/README.md`
 - `examples/todo-app/README.md`
 
@@ -510,55 +516,50 @@ Reflaxe.Elixir uses a **dual-ecosystem architecture**:
 
 ### Source Mapping (Experimental)
 
-Reflaxe.Elixir has early scaffolding for Haxe→Elixir source mapping, but it is not yet fully wired end‑to‑end (map emission + runtime lookup).
+Reflaxe.Elixir source mapping is implemented but experimental: `.ex.map` emission and `mix haxe.source_map` lookup are available, with best-effort column granularity.
 
 See `docs/04-api-reference/SOURCE_MAPPING.md` for current status and how to experiment.
 
 ### Phoenix LiveView
 ```haxe
-	import elixir.types.Term;
-	import phoenix.LiveSocket;
-	import phoenix.Phoenix.HandleEventResult;
-	import phoenix.Phoenix.MountResult;
-	import phoenix.Phoenix.Socket;
-	import phoenix.hxx.HeexTemplate;
+import elixir.types.Term;
+import phoenix.LiveSocket;
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Socket;
 
 typedef CounterAssigns = { count: Int };
 
-	@:native("MyAppWeb.CounterLive")
-	@:liveview
-	class CounterLive {
-	    public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
-	        var liveSocket: LiveSocket<CounterAssigns> = socket;
-	        liveSocket = liveSocket.assign(_.count, 0);
-	        return MountResult.Ok(liveSocket);
-	    }
+@:native("MyAppWeb.CounterLive")
+@:liveview
+@:hxx_mode("tsx")
+class CounterLive {
+  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+    var liveSocket: LiveSocket<CounterAssigns> = socket;
+    return Ok(liveSocket.assign(_.count, 0));
+  }
 
-	    @:native("handle_event")
-	    public static function handle_event(event: String, _params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
-	        var liveSocket: LiveSocket<CounterAssigns> = socket;
+  @:native("handle_event")
+  public static function handle_event(event: String, _params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
+    var liveSocket: LiveSocket<CounterAssigns> = socket;
+    return switch (event) {
+      case "increment":
+        NoReply(liveSocket.assign(_.count, liveSocket.assigns.count + 1));
+      case _:
+        NoReply(liveSocket);
+    };
+  }
 
-        return switch (event) {
-            case "increment":
-                var nextCount = liveSocket.assigns.count + 1;
-                HandleEventResult.NoReply(liveSocket.assign(_.count, nextCount));
-            case _:
-                HandleEventResult.NoReply(liveSocket);
-        }
-	    }
+  public static function render(assigns: CounterAssigns): String {
+    return <div class="counter">
+      <h1>${assigns.count}</h1>
+      <button phx-click="increment">+</button>
+    </div>;
+  }
+}
+```
 
-	    public static function render(assigns: CounterAssigns): String {
-	        return <div class="counter">
-	            <h1>${assigns.count}</h1>
-	            <button phx-click="increment">+</button>
-	        </div>;
-	    }
-	}
-	```
-
-Typed loops in templates
-
-In TSX mode, use typed control tags directly:
+Template control flow in TSX mode:
 
 ```haxe
 typedef Item = { var name: String; };
@@ -572,15 +573,50 @@ public static function render(assigns: { var items: Array<Item>; }): String {
 }
 ```
 
-If you need expression-level composition in balanced mode, `HeexTemplate.for_each/2` (or `H.for_each/2`) remains available and lowers to the same HEEx `for` block.
+TSX also supports `:for` directive sugar on elements:
+
+```haxe
+return <ul>
+  <li :for ${item in assigns.items}>${item.name}</li>
+</ul>;
+```
+
+This lowers to a HEEx `for` block around the element so `item` stays Haxe-typed in the body.
+
+If you need expression-level composition in balanced mode, `phoenix.hxx.HeexTemplate.for_each/2`
+(or `phoenix.hxx.H.each/2` / `phoenix.hxx.H.for_each/2`) lowers to the same HEEx `for` block.
+
+Typed spread attrs in TSX mode:
+
+```haxe
+return <section {assigns.attrs} data-testid="users"></section>;
+```
+
+Compiles to HEEx spread attrs:
+
+```elixir
+<section {@attrs} data-testid="users"></section>
+```
 
 Notes:
 - Inline markup is enabled by default for Phoenix-facing modules; opt out with `-D hxx_no_inline_markup` or `@:hxx_no_inline_markup`.
-- Legacy escape hatch: `@:hxx_legacy` (forces legacy inline-markup rewrite behavior for that module).
+- Modes (TSX is named after TypeScript JSX to signal strict, expression-typed template authoring):
+  - `@:hxx_mode("tsx")` (recommended): strict typed template authoring, no legacy string markers, no raw HEEx escapes.
+  - `@:hxx_mode("balanced")` (default): typed inline markup plus legacy template-string support for migration.
+  - `@:hxx_mode("metal")` (discouraged): closest to raw HEEx; useful only for edge escape-hatch scenarios.
+- Recommended strict profile for new apps (compiler defaults remain permissive):
+  - `-D hxx_strict_phx_hook`
+  - `-D hxx_strict_phx_events`
+  - `-D hxx_strict_components`
+  - `-D hxx_strict_slots`
+  - `-D hxx_strict_attr_values`
+- Raw HEEx escape hatch: `@:allow_heex` (or migration-only `-D hxx_allow_raw_heex`).
+- Legacy inline-markup rewrite escape hatch: `@:hxx_legacy`.
 - Haxe inline markup requires a valid XML root tag name. Phoenix dot-components like `<.form>` cannot be the root; wrap them in a normal element (e.g. `<div>...</div>`).
 - Haxe inline markup does not support fragment roots (`<> ... </>`).
 
 More: `docs/02-user-guide/INLINE_MARKUP.md`
+Modes and comparison: `docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md`
 
 Compiles to:
 ```elixir  
@@ -596,30 +632,81 @@ defmodule CounterLive do
     {:noreply, assign(socket, :count, count)}
   end
   
-	  def render(assigns) do
-	    ~H"""
-	    <div class="counter">
-	      <h1><%= @count %></h1>
-	      <button phx-click="increment">+</button>
-	    </div>
-	    """
-	  end
-	end
+  def render(assigns) do
+    ~H"""
+    <div class="counter">
+      <h1><%= @count %></h1>
+      <button phx-click="increment">+</button>
+    </div>
+    """
+  end
+end
 ```
 
-Note: the Haxe return values are enums (`MountResult.Ok(...)`, `HandleEventResult.NoReply(...)`), which compile to the standard Elixir atom-tagged tuples (`{:ok, ...}`, `{:noreply, ...}`).
+Note: prefer unqualified enum constructors when unambiguous (`Ok(...)`, `NoReply(...)`); they compile to standard Elixir atom-tagged tuples (`{:ok, ...}`, `{:noreply, ...}`).
 
 ### Ecto Changesets
 ```haxe
-@:changeset  
-class UserChangeset {
-    @:validate_required(["name", "email"])
-    @:validate_format("email", ~r/\S+@\S+\.\S+/)
-    static function changeset(user, attrs) {
-        // Compiled to proper Ecto.Changeset pipeline
-    }
+import ecto.Changeset;
+
+// 1) Typed params accepted by the changeset boundary.
+typedef UserParams = {
+  ?name: String,
+  ?email: String
+}
+
+// 2) Schema metadata drives generated Ecto schema + changeset pipeline.
+@:native("MyApp.Accounts.User")
+@:schema("users")
+@:timestamps
+@:changeset(["name", "email"], ["name", "email"])
+class User {
+  // 3) Fields compile to Ecto schema fields.
+  @:field @:primary_key public var id: Int;
+  @:field public var name: String;
+  @:field public var email: String;
+
+  // 4) Declare generated function so Haxe can call it with full typing.
+  extern public static function changeset(user: User, params: UserParams): Changeset<User, UserParams>;
+}
+
+class Users {
+  // 5) App code uses typed changesets and typed Result flow.
+  public static function create(params: UserParams): haxe.functional.Result<User, Changeset<User, UserParams>> {
+    var changeset = User.changeset(new User(), params);
+    return MyApp.Repo.insert(changeset);
+  }
 }
 ```
+
+Compiles to:
+```elixir
+defmodule MyApp.Accounts.User do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "users" do
+    field :name, :string
+    field :email, :string
+    timestamps()
+  end
+
+  def changeset(user, params) do
+    user
+    |> cast(params, [:name, :email])
+    |> validate_required([:name, :email])
+  end
+end
+
+defmodule Users do
+  def create(params) do
+    changeset = MyApp.Accounts.User.changeset(%MyApp.Accounts.User{}, params)
+    MyApp.Repo.insert(changeset)
+  end
+end
+```
+
+More: `docs/07-patterns/ECTO_INTEGRATION_PATTERNS.md`
 
 ### OTP GenServer
 ```haxe
@@ -636,19 +723,39 @@ enum abstract CounterCall(Atom) to Atom {
 @:genserver
 class CounterServer {
     public static function init(initial: Int): InitResult<Int> {
-        return InitResult.Ok(initial);
+        return Ok(initial);
     }
 
     @:native("handle_call")
     public static function handle_call(request: CounterCall, _from: Term, state: Int): HandleCallResult<Int, Int> {
         return switch (request) {
             case Get:
-                HandleCallResult.Reply(state, state);
+                Reply(state, state);
             case Increment:
-                HandleCallResult.Reply(state + 1, state + 1);
+                Reply(state + 1, state + 1);
         }
     }
 }
+```
+
+Compiles to:
+```elixir
+defmodule CounterServer do
+  use GenServer
+
+  def init(initial) do
+    {:ok, initial}
+  end
+
+  def handle_call(:get, _from, state) do
+    {:reply, state, state}
+  end
+
+  def handle_call(:increment, _from, state) do
+    next_state = state + 1
+    {:reply, next_state, next_state}
+  end
+end
 ```
 
 ## Development

@@ -24,6 +24,12 @@ import reflaxe.elixir.ast.ElixirAST;
  *   `lowerRoot/3` on the typed enum constructor tree.
  * - Embedded expressions are compiled through the normal TypedExpr -> ElixirAST path and
  *   injected via `<%= ... %>` or `{...}` attribute expressions.
+ *
+ * EXAMPLES
+ * - Haxe TSX node:
+ *   `HeexNode.Element("section", [HeexAttr.Spread(assigns.attrs)], [...])`
+ * - Generated HEEx:
+ *   `<section {@attrs}>...</section>`
  */
 class HeexTsxAstLowerer {
     public static function lowerRoot(
@@ -258,84 +264,78 @@ class HeexTsxAstLowerer {
         switch (a.expr) {
             case TCall(fn, params):
                 var callTarget = unwrap(fn);
+                var ctor: Null<String> = null;
                 switch (callTarget.expr) {
                     case TField(_, fa):
                         switch (fa) {
                             case FEnum(enumRef, fieldRef):
                                 var enumName = enumRef.get().name;
-                                var ctor = fieldRef.name;
                                 if (enumName == "HeexAttr") {
-                                    return switch (ctor) {
-                                        case "Static":
-                                            if (params == null || params.length != 2) {
-                                                context.error("TSX template: HeexAttr.Static expects 2 args", context.getCurrentPosition());
-                                                throw "tsx_heex_attr_static_arity";
-                                            }
-                                            var name = expectStringConst(params[0], context);
-                                            var value = expectStringConst(params[1], context);
-                                            " " + name + "=\"" + value + "\"";
-                                        case "Bool":
-                                            if (params == null || params.length != 1) {
-                                                context.error("TSX template: HeexAttr.Bool expects 1 arg", context.getCurrentPosition());
-                                                throw "tsx_heex_attr_bool_arity";
-                                            }
-                                            var name = expectStringConst(params[0], context);
-                                            " " + name;
-                                        case "Expr":
-                                            if (params == null || params.length != 2) {
-                                                context.error("TSX template: HeexAttr.Expr expects 2 args", context.getCurrentPosition());
-                                                throw "tsx_heex_attr_expr_arity";
-                                            }
-                                            var name = expectStringConst(params[0], context);
-                                            var exprStr = exprToInjectionString(params[1], buildExpression);
-                                            " " + name + "={" + exprStr + "}";
-                                        default:
-                                            context.error('TSX template: unsupported HeexAttr ctor "' + ctor + '"', context.getCurrentPosition());
-                                            throw "tsx_heex_attr_unsupported_ctor";
-                                    }
+                                    ctor = fieldRef.name;
                                 }
                             case FStatic(classRef, cf):
                                 var cls = classRef.get();
                                 if (cls != null && cls.name == "HeexAttr" && cls.pack != null && cls.pack.join(".") == "phoenix.hxx.ast") {
-                                    var ctor = cf.get().name;
-                                    return switch (ctor) {
-                                        case "Static":
-                                            if (params == null || params.length != 2) {
-                                                context.error("TSX template: HeexAttr.Static expects 2 args", context.getCurrentPosition());
-                                                throw "tsx_heex_attr_static_arity";
-                                            }
-                                            var name = expectStringConst(params[0], context);
-                                            var value = expectStringConst(params[1], context);
-                                            " " + name + "=\"" + value + "\"";
-                                        case "Bool":
-                                            if (params == null || params.length != 1) {
-                                                context.error("TSX template: HeexAttr.Bool expects 1 arg", context.getCurrentPosition());
-                                                throw "tsx_heex_attr_bool_arity";
-                                            }
-                                            var name = expectStringConst(params[0], context);
-                                            " " + name;
-                                        case "Expr":
-                                            if (params == null || params.length != 2) {
-                                                context.error("TSX template: HeexAttr.Expr expects 2 args", context.getCurrentPosition());
-                                                throw "tsx_heex_attr_expr_arity";
-                                            }
-                                            var name = expectStringConst(params[0], context);
-                                            var exprStr = exprToInjectionString(params[1], buildExpression);
-                                            " " + name + "={" + exprStr + "}";
-                                        default:
-                                            context.error('TSX template: unsupported HeexAttr ctor "' + ctor + '"', context.getCurrentPosition());
-                                            throw "tsx_heex_attr_unsupported_ctor";
-                                    }
+                                    ctor = cf.get().name;
                                 }
                             default:
                         }
                     default:
+                }
+                if (ctor != null) {
+                    return lowerHeexAttrCtor(ctor, params, buildExpression, context);
                 }
             default:
         }
 
         context.error("TSX template: expected a phoenix.hxx.ast.HeexAttr constructor expression", context.getCurrentPosition());
         throw "tsx_heex_attr_unexpected_expr";
+    }
+
+    static function lowerHeexAttrCtor(
+        ctor: String,
+        params: Array<TypedExpr>,
+        buildExpression: (TypedExpr) -> ElixirAST,
+        context: CompilationContext
+    ): String {
+        return switch (ctor) {
+            case "Static":
+                if (params == null || params.length != 2) {
+                    context.error("TSX template: HeexAttr.Static expects 2 args", context.getCurrentPosition());
+                    throw "tsx_heex_attr_static_arity";
+                }
+                var name = expectStringConst(params[0], context);
+                var value = expectStringConst(params[1], context);
+                " " + name + "=\"" + value + "\"";
+            case "Bool":
+                if (params == null || params.length != 1) {
+                    context.error("TSX template: HeexAttr.Bool expects 1 arg", context.getCurrentPosition());
+                    throw "tsx_heex_attr_bool_arity";
+                }
+                var name = expectStringConst(params[0], context);
+                " " + name;
+            case "Expr":
+                if (params == null || params.length != 2) {
+                    context.error("TSX template: HeexAttr.Expr expects 2 args", context.getCurrentPosition());
+                    throw "tsx_heex_attr_expr_arity";
+                }
+                var name = expectStringConst(params[0], context);
+                var exprStr = exprToInjectionString(params[1], buildExpression);
+                " " + name + "={" + exprStr + "}";
+            case "Spread":
+                if (params == null || params.length != 1) {
+                    context.error("TSX template: HeexAttr.Spread expects 1 arg", context.getCurrentPosition());
+                    throw "tsx_heex_attr_spread_arity";
+                }
+                var spreadExpr = StringTools.trim(exprToInjectionString(params[0], buildExpression));
+                if (!StringTools.startsWith(spreadExpr, "@")) {
+                    spreadExpr = "@" + spreadExpr;
+                }
+                " {" + spreadExpr + "}";
+            default:
+                context.error('TSX template: unsupported HeexAttr ctor "' + ctor + '"', context.getCurrentPosition());
+                throw "tsx_heex_attr_unsupported_ctor";
+        };
     }
 
     static function expectArrayExpr(e: TypedExpr, context: CompilationContext): Array<TypedExpr> {

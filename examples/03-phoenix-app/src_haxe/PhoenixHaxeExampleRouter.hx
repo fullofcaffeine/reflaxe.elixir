@@ -13,9 +13,8 @@ import reflaxe.elixir.macros.HttpMethod;
         name: "home",
         method: HttpMethod.GET,
         path: "/",
-        controller: "controllers.PageController",
-        action: "home"
+        controller: controllers.PageController,
+        action: controllers.PageController.home
     }
 ])
 class PhoenixHaxeExampleRouter {}
-

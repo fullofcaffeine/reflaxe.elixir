@@ -1,217 +1,85 @@
-# Mix Project Integration Example
+# 02 - Mix Project Integration
 
-This directory demonstrates how to integrate Haxe→Elixir compilation into a Mix project with proper directory structure, dependencies, and build workflows.
+This example shows the minimal, production-style wiring for compiling Haxe modules into a normal Mix project.
 
-**Prerequisites**: [01-simple-modules](../01-simple-modules/) completed  
-**Difficulty**: 🟢 Beginner  
-**Time**: 30 minutes
+## What this example demonstrates
 
-## Learning Objectives
+- `mix.exs` compilers pipeline includes `:haxe` so `mix compile` runs Haxe first.
+- `build.hxml` compiles Haxe modules from `src_haxe/` into Elixir files under `lib/`.
+- Generated Elixir stays callable from regular Elixir code and tests.
 
-- Understand Mix project structure for Haxe→Elixir integration
-- Learn how to configure `mix.exs` for Haxe compilation
-- Master the build workflow combining Haxe and Elixir code
-- See testing patterns for mixed Haxe/Elixir projects
-- Configure professional development workflows
+## Run
 
-## Project Structure
-
-```
-02-mix-project/
-├── lib/                     # Compiled Elixir output
-├── src_haxe/               # Haxe source files
-│   ├── services/           # Business logic modules
-│   └── utils/              # Helper utilities
-├── test/                   # ExUnit tests
-├── config/                 # Application configuration
-├── mix.exs                 # Project definition
-├── build.hxml              # Haxe compilation config
-└── README.md               # This file
-```
-
-## Key Features Demonstrated
-
-### 1. Mix Integration
-- Custom `:haxe` compiler in `mix.exs`
-- Automated Haxe compilation during `mix compile`
-- Proper dependency management between Haxe and Elixir code
-
-### 2. Build Workflow
-- `build.hxml` configuration for project compilation
-- Source mapping from `src_haxe/` to `lib/`
-- Development vs production build configurations
-
-### 3. Testing Integration
-- ExUnit tests for Haxe-compiled modules
-- Mixed testing strategies (unit and integration)
-- Test helpers for common patterns
-
-### 4. Configuration Management
-- Environment-specific settings in `config/`
-- Runtime configuration for Haxe modules
-- Development vs production optimization
-
-## Running the Example
-
-### Setup
 ```bash
 cd examples/02-mix-project
 mix deps.get
-```
-
-### Compilation
-```bash
-# Compile all (Haxe + Elixir)
 mix compile
-
-# Force Haxe recompilation
-mix compile.haxe --force
-
-# Verbose compilation output
-mix compile.haxe --verbose
-```
-
-### Testing
-```bash
-# Run all tests
 mix test
-
-# Run specific test file
-mix test test/user_service_test.exs
-
-# Run tests with coverage
-mix test --cover
 ```
 
-### Development
-```bash
-# Start interactive shell with compiled modules
-iex -S mix
+## Key files
 
-# Format code
-mix format
+- Haxe sources:
+  - `examples/02-mix-project/src_haxe/services/UserService.hx`
+  - `examples/02-mix-project/src_haxe/utils/StringUtils.hx`
+  - `examples/02-mix-project/src_haxe/utils/MathHelper.hx`
+  - `examples/02-mix-project/src_haxe/utils/ValidationHelper.hx`
+- Build config:
+  - `examples/02-mix-project/build.hxml`
+  - `examples/02-mix-project/mix.exs`
+- Generated Elixir:
+  - `examples/02-mix-project/lib/services/user_service.ex`
+  - `examples/02-mix-project/lib/utils/string_utils.ex`
+  - `examples/02-mix-project/lib/utils/math_helper.ex`
 
-# Run linter (if configured)
-mix credo
+## Haxe -> generated Elixir (shape)
+
+Haxe (`UserService.createUser`):
+
+```haxe
+public static function createUser(userData: NewUserInput): Result<User, String> {
+    if (!isValidUserData(userData)) {
+        return Error("Invalid user data provided");
+    }
+    var user: User = {
+        id: generateUserId(),
+        name: formatName(userData.name),
+        email: normalizeEmail(userData.email),
+        age: userData.age != null ? userData.age : 0,
+        createdAt: getCurrentTimestamp(),
+        status: "active"
+    };
+    return Ok(user);
+}
 ```
 
-## Example Modules
+Generated Elixir shape:
 
-### UserService (Haxe → Elixir)
-**Source**: `src_haxe/services/UserService.hx`  
-**Compiled to**: `lib/services/user_service.ex`  
-**Features**: CRUD operations, validation, error handling
-
-### StringUtils (Haxe → Elixir)  
-**Source**: `src_haxe/utils/StringUtils.hx`  
-**Compiled to**: `lib/utils/string_utils.ex`  
-**Features**: String processing, formatting utilities
-
-### MathHelper (Haxe → Elixir)
-**Source**: `src_haxe/utils/MathHelper.hx`  
-**Compiled to**: `lib/utils/math_helper.ex`  
-**Features**: Mathematical computations, validation
-
-## Configuration Examples
-
-### mix.exs Integration
 ```elixir
-def project do
-  [
-    app: :mix_project_example,
-    version: "0.1.0",
-    elixir: "~> 1.14",
-    compilers: [:haxe] ++ Mix.compilers(),
-    deps: deps(),
-    haxe_compiler: [
-      hxml_file: "build.hxml",
-      source_dir: "src_haxe",
-      target_dir: "lib",
-      verbose: false
-    ]
-  ]
+def create_user(user_data) do
+  if not is_valid_user_data(user_data) do
+    {:error, "Invalid user data provided"}
+  else
+    user = %{
+      id: generate_user_id(),
+      name: format_name(user_data.name),
+      email: normalize_email(user_data.email),
+      age: if(not is_nil(user_data.age), do: user_data.age, else: 0),
+      created_at: get_current_timestamp(),
+      status: "active"
+    }
+    {:ok, user}
+  end
 end
 ```
 
-### build.hxml Configuration
-```hxml
-# Source paths
--cp src_haxe
--cp ../../../src
--cp ../../../std
+## Why this example exists
 
-# Compilation target and flags  
--D reflaxe_runtime
---no-output
+- It is the simplest reference for "Mix + Haxe compiler wiring" without Phoenix-specific complexity.
+- It validates module/codegen conventions (`snake_case`, tagged tuples, maps, helpers) in an ordinary Elixir app.
 
-# Main classes to compile
--main services.UserService
---next
--main utils.StringUtils
---next  
--main utils.MathHelper
-```
+## Next examples
 
-## Best Practices Demonstrated
-
-### Project Organization
-- Clear separation between Haxe source and Elixir output
-- Logical module grouping (services, utils, etc.)
-- Consistent naming conventions
-
-### Build Management
-- Incremental compilation support
-- Manifest tracking for efficiency
-- Error handling and reporting
-
-### Testing Strategy
-- Unit tests for individual modules
-- Integration tests for cross-module functionality
-- Test helpers for common patterns
-
-### Development Workflow
-- Hot code reloading during development
-- Proper error messages and debugging
-- Performance monitoring and profiling
-
-## Troubleshooting
-
-### Common Issues
-
-**Compilation Errors**
-```bash
-# Clean and rebuild
-mix clean
-mix compile
-
-# Check Haxe source syntax
-haxe build.hxml
-```
-
-**Missing Dependencies**
-```bash
-# Update dependencies
-mix deps.get
-mix deps.compile
-```
-
-**Test Failures**
-```bash
-# Run tests with detailed output
-mix test --trace
-mix test --verbose
-```
-
-## Next Steps
-
-After mastering Mix integration, continue to:
-- [03-phoenix-controllers](../03-phoenix-controllers/) - Web request handling
-- [04-phoenix-liveview](../04-phoenix-liveview/) - Real-time interactivity
-- [05-ecto-integration](../05-ecto-integration/) - Database operations
-
-## Performance Notes
-
-- **Compilation Time**: ~50-200ms for typical projects
-- **Memory Usage**: Minimal overhead during compilation
-- **Runtime Performance**: Identical to hand-written Elixir
-- **Development Speed**: Hot reloading supported via `--force` flag
+- `examples/03-phoenix-app/README.md` - Router + controller generation in Phoenix.
+- `examples/06-user-management/README.md` - LiveView + Ecto typed app patterns.
+- `examples/todo-app/README.md` - End-to-end app (LiveView, Ecto, Presence, Playwright).

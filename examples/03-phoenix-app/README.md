@@ -1,17 +1,15 @@
-# Phoenix Application Integration (Haxe → Elixir)
+# 03 - Minimal Phoenix App (Haxe -> Elixir)
 
-This example is a minimal Phoenix application whose server-side modules are authored in Haxe and compiled to Elixir with Reflaxe.Elixir.
+This example is the smallest Phoenix server authored in Haxe and compiled to Elixir.
 
-**Prerequisites**: [02-mix-project](../02-mix-project/) completed  
-**Difficulty**: 🟡 Intermediate
+## What it covers
 
-## What You'll Learn
+- `@:application` supervision entrypoint
+- `@:router` with `@:routes` typed route metadata
+- `@:controller` action authored in Haxe
+- Mix integration (`mix compile` runs Haxe compilation)
 
-- Phoenix application + endpoint/router generation from Haxe
-- Mix compiler integration (`mix compile` runs the Haxe compiler)
-- A minimal JSON controller written in Haxe
-
-## Quick Start
+## Run
 
 ```bash
 cd examples/03-phoenix-app
@@ -20,16 +18,54 @@ mix compile
 mix phx.server
 ```
 
-Then visit `http://localhost:4000/` to see a JSON response.
+Then open `http://localhost:4000/`.
 
-## Where the Haxe Code Lives
+## Haxe source map
 
-- `examples/03-phoenix-app/src_haxe/PhoenixHaxeExample.hx` — OTP application supervision tree (`@:application`)
-- `examples/03-phoenix-app/src_haxe/PhoenixHaxeExampleRouter.hx` — router DSL (`@:router`)
-- `examples/03-phoenix-app/src_haxe/controllers/PageController.hx` — minimal JSON controller (`@:controller`)
-- `examples/03-phoenix-app/src_haxe/server/infrastructure/*` — `@:endpoint`, `@:phoenixWebModule`, and error renderers
+- `examples/03-phoenix-app/src_haxe/PhoenixHaxeExample.hx` - OTP app module (`@:application`)
+- `examples/03-phoenix-app/src_haxe/PhoenixHaxeExampleRouter.hx` - router (`@:router`, `@:routes`)
+- `examples/03-phoenix-app/src_haxe/controllers/PageController.hx` - controller (`@:controller`)
+- `examples/03-phoenix-app/src_haxe/server/infrastructure/*` - endpoint/web helpers
+
+## Haxe -> generated Elixir (route + controller)
+
+Haxe router:
+
+```haxe
+@:routes([
+  {
+    name: "home",
+    method: HttpMethod.GET,
+    path: "/",
+    controller: controllers.PageController,
+    action: controllers.PageController.home
+  }
+])
+class PhoenixHaxeExampleRouter {}
+```
+
+Haxe controller:
+
+```haxe
+@:controller
+class PageController {
+  public static function home(conn: Conn<EmptyParams>, params: EmptyParams): Conn<EmptyParams> {
+    return conn.json({message: "Hello from Haxe -> Elixir!"});
+  }
+}
+```
+
+Generated Elixir shape:
+
+```elixir
+get "/", PageController, :home
+
+def home(conn, _params) do
+  json(conn, %{message: "Hello from Haxe -> Elixir!"})
+end
+```
 
 ## Notes
 
-- Generated Elixir output is written to `examples/03-phoenix-app/lib/` and is intentionally not committed.
-- For a full LiveView example, see `examples/todo-app/`.
+- Generated Elixir is written under `examples/03-phoenix-app/lib/` (not committed).
+- For a full LiveView + Ecto + Presence app, see `examples/todo-app/README.md`.

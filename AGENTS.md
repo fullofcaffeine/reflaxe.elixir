@@ -363,6 +363,12 @@ Examples
   - `var qualifiedModule = qualifyAppLocalModule(moduleName, appPrefix);`
   - `case ECall({def: EVar(moduleName)}, functionName, argumentList) …`
 
+### Phoenix Enum Constructor Style (Hard Rule)
+
+- In Haxe app/docs/examples, prefer unqualified enum constructors when unambiguous:
+  - `Ok(...)`, `NoReply(...)`, `Error(...)` instead of `MountResult.Ok(...)`, `HandleEventResult.NoReply(...)`, etc.
+- Keep qualification only when needed to avoid ambiguity (for example, both `HandleEventResult` and `HandleInfoResult` constructors in the same scope).
+
 ## 📚 Complete Documentation Index
 
 **All documentation is organized in [`docs/`](docs/) - Always check here first for comprehensive information.**

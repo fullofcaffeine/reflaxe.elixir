@@ -15,10 +15,10 @@ class HXX {
     // If these are inlined away, the call site disappears and templates fall back to
     // plain string generation (breaking HEEx control tags, assigns interpolation, etc.).
     public static function hxx(templateStr: String): String {
-        return templateStr;
+        throw "HXX.hxx is compile-time only and must be lowered by the compiler pipeline";
     }
 
     public static function block(content: String): String {
-        return content;
+        throw "HXX.block is compile-time only and must be lowered by the compiler pipeline";
     }
 }

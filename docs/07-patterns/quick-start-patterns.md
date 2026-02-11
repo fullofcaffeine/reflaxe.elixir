@@ -68,6 +68,29 @@ class ProductLive {
 }
 ```
 
+Compiles to:
+
+```elixir
+defmodule ProductLive do
+  use Phoenix.LiveView
+
+  def mount(_params, _session, socket) do
+    {:ok, assign(socket, %{products: [], query: "", selected_id: nil})}
+  end
+
+  def handle_event("search", params, socket) do
+    query = Map.get(params, "query", "")
+    {:noreply, assign(socket, %{query: query})}
+  end
+
+  def handle_event("select", params, socket) do
+    {:noreply, assign(socket, %{selected_id: Map.get(params, "id")})}
+  end
+
+  def handle_event(_, _params, socket), do: {:noreply, socket}
+end
+```
+
 Notes
 - Use `Socket<TAssigns>` in callback signatures (what Phoenix expects).
 - Cast to `LiveSocket<TAssigns>` to use ergonomic, type‑safe helpers.
@@ -118,6 +141,29 @@ class User {
 }
 ```
 
+Compiles to:
+
+```elixir
+defmodule MyApp.User do
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  schema "users" do
+    field :email, :string
+    field :name, :string
+    field :role, :string
+    field :active, :boolean, default: true
+    timestamps()
+  end
+
+  def changeset(user, params) do
+    user
+    |> cast(params, [:email, :name, :role, :active])
+    |> validate_required([:email, :name])
+  end
+end
+```
+
 ## 3) Repo module (`@:repo` config + typed results)
 
 ```haxe
@@ -160,6 +206,19 @@ var q = from(u in User)
     .orderBy(u -> u.name, :asc);
 
 var users = Repo.all(q);
+```
+
+Compiles to:
+
+```elixir
+pattern = "%" <> query <> "%"
+
+q =
+  from u in User,
+    where: ilike(u.email, ^pattern),
+    order_by: [asc: u.name]
+
+users = Repo.all(q)
 ```
 
 ## 5) HEEx templates in Haxe (HXX)

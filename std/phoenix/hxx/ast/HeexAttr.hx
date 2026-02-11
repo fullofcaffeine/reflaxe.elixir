@@ -24,5 +24,5 @@ enum HeexAttr {
     Static(name: String, value: String);
     Bool(name: String);
     Expr<T>(name: String, value: T);
+    Spread<T>(attrs: T);
 }
-

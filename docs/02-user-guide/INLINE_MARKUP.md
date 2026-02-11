@@ -8,6 +8,16 @@ return <div class="counter">
 </div>;
 ```
 
+Compiles to:
+
+```elixir
+~H"""
+<div class="counter">
+  <h1><%= @count %></h1>
+</div>
+"""
+```
+
 In Reflaxe.Elixir, inline markup is syntax sugar over a compiler-intercepted template entrypoint:
 
 - Inline markup becomes `@:markup "<div ...>...</div>"` (a string constant with metadata).
@@ -57,6 +67,24 @@ return <ul>
 
 This lowers to a HEEx `for` block and keeps binder expressions fully Haxe-typed.
 
+Compiles to:
+
+```elixir
+<%= for item <- @items do %>
+  <li><%= item.name %></li>
+<% end %>
+```
+
+TSX also supports `:for` directive sugar on elements:
+
+```haxe
+return <ul>
+  <li :for ${item in assigns.items}>${item.name}</li>
+</ul>;
+```
+
+This lowers to the same HEEx `for` block shape (wrapped around the element), so binder usage remains typed.
+
 In balanced mode, if you need expression-level composition, use `phoenix.hxx.HeexTemplate.for_each/2` (or `phoenix.hxx.H.for_each/2`):
 
 ```haxe
@@ -70,6 +98,46 @@ return <ul>
 ```
 
 This lowers to a HEEx `for` block so the body is parsed as markup, not an escaped string.
+
+Compiles to:
+
+```elixir
+<%= for item <- @items do %>
+  <li><%= item.name %></li>
+<% end %>
+```
+
+Short alias (recommended when you prefer concise callsites):
+
+```haxe
+import phoenix.hxx.H;
+
+return <ul>
+  ${H.each(assigns.items, (item) -> <li>${item.name}</li>)}
+</ul>;
+```
+
+### Spread attributes (TSX mode)
+
+Use a typed attrs expression directly in tag position:
+
+```haxe
+typedef Assigns = { var attrs: Map<String, String>; };
+
+public static function render(assigns: Assigns): String {
+  return <section {assigns.attrs} data-testid="users"></section>;
+}
+```
+
+Generated HEEx:
+
+```elixir
+<section {@attrs} data-testid="users"></section>
+```
+
+Notes:
+- `{@assigns.attrs}` is also accepted in TSX markup and lowers to the same output.
+- Prefer `{assigns.attrs}` for Haxe-native authoring readability.
 
 ## Defaults and Opt-Out
 
@@ -146,6 +214,16 @@ class MyLive {
 ```
 
 In TSX mode, raw `<% ... %>` blocks and string-level markers are rejected.
+
+Compiles to:
+
+```elixir
+def render(assigns) do
+  ~H"<div><%= @count %></div>"
+end
+```
+
+`tsx` is named after the TypeScript JSX authoring model: expressions inside template splices are real typed host-language expressions, not string-rewritten mini-languages.
 
 TSX-mode control tags:
 

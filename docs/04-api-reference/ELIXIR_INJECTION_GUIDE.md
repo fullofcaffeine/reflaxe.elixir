@@ -39,6 +39,14 @@ var atom = untyped __elixir__(":ok");
 var tuple = untyped __elixir__("{:error, \"reason\"}");
 ```
 
+Generated Elixir shape:
+
+```elixir
+now = DateTime.utc_now()
+atom = :ok
+tuple = {:error, "reason"}
+```
+
 ### ⚠️ CRITICAL: Correct Placeholder Syntax Required
 
 The `__elixir__()` function requires specific placeholder syntax to work correctly:
@@ -72,6 +80,14 @@ var result = untyped __elixir__("User.create(%{name: {0}, age: {1}})", name, age
 
 // Generated Elixir:
 // result = User.create(%{name: "Alice", age: 30})
+```
+
+Generated Elixir shape:
+
+```elixir
+name = "Alice"
+age = 30
+result = User.create(%{name: "Alice", age: 30})
 ```
 
 ### Complex Expressions

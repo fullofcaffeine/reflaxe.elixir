@@ -3,40 +3,39 @@ package controllers;
 import elixir.types.Term;
 
 /**
- * Product controller with resource routing
- * Demonstrates @:resources annotation and nested routes
+ * Product controller with nested review routes.
  */
+@:native("PhoenixRouterWeb.ProductController")
 @:controller
-@:resources("products")
 class ProductController {
     
-    public function index(): String {
+    public static function index(): String {
         return "List all products";
     }
     
-    public function show(id: Int): String {
+    public static function show(id: Int): String {
         return "Show product " + id;
     }
     
     @:route({method: "GET", path: "/products/:product_id/reviews", as: "product_reviews"})
-    public function reviews(product_id: Int): String {
+    public static function reviews(product_id: Int): String {
         return "Reviews for product " + product_id;
     }
     
     @:route({method: "POST", path: "/products/:product_id/reviews"})
-    public function create_review(product_id: Int, review: Term): String {
+    public static function create_review(product_id: Int, review: Term): String {
         return "Create review for product " + product_id;
     }
     
-    public function create(product: Term): String {
+    public static function create(product: Term): String {
         return "Create new product";
     }
     
-    public function update(id: Int, product: Term): String {
+    public static function update(id: Int, product: Term): String {
         return "Update product " + id;
     }
     
-    public function delete(id: Int): String {
+    public static function delete(id: Int): String {
         return "Delete product " + id;
     }
 }

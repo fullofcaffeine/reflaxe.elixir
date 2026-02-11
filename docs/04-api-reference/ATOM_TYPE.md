@@ -24,6 +24,13 @@ var ok: Atom = "ok";        // generates :ok
 var error: Atom = "error";  // generates :error
 ```
 
+Compiles to:
+
+```elixir
+ok = :ok
+error = :error
+```
+
 ## Enum Abstract Pattern
 
 Prefer an `enum abstract` over `Atom` when the API takes a fixed set of atoms.
@@ -38,9 +45,16 @@ enum abstract TimeUnit(Atom) to Atom {
 }
 ```
 
+Compiles to atom values consumed by Elixir APIs, for example:
+
+```elixir
+:second
+:millisecond
+:microsecond
+```
+
 ## Safety Notes (Important)
 
 - Atoms are not garbage-collected on the BEAM.
 - Do not create atoms from untrusted or unbounded user input.
 - Prefer strings for user-provided keys and values, and only use `Atom` for **known, finite** sets.
-
