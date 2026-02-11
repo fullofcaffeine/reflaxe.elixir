@@ -85,7 +85,7 @@ def group_by_prefix(modules: set[str]) -> dict[str, int]:
     return counts
 
 
-def extract_md_int(markdown: str, pattern: str) -> int | None:
+def extract_md_int(markdown: str, pattern: str):
     match = re.search(pattern, markdown)
     if not match:
         return None
