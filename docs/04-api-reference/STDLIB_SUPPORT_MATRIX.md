@@ -23,6 +23,12 @@ The canonical local audit command is:
 scripts/stdlib-parity-report.sh --reference /path/to/haxe/std
 ```
 
+CI parity drift guard (no external reference checkout required):
+
+```bash
+npm run guard:stdlib-parity
+```
+
 ## Implemented/overridden by Reflaxe.Elixir (core set)
 
 These modules are implemented/overridden in this repo (and covered by snapshot tests where relevant):
