@@ -1,13 +1,13 @@
 # Stdlib Parity Gap Report (Module-Level)
 
-Generated: 2026-02-03
+Generated: 2026-02-11
 
 This report compares this repo’s Elixir-target stdlib overrides against the reference repository.
 
 Local roots considered:
-- `/REDACTED_LOCAL_PATH`
-- `/REDACTED_LOCAL_PATH`
-- `/REDACTED_LOCAL_PATH`
+- `/REDACTED_TMP_PATH`
+- `/REDACTED_TMP_PATH`
+- `/REDACTED_TMP_PATH`
 
 To regenerate:
 
@@ -19,7 +19,7 @@ scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --markdown 
 ## Summary
 
 - Reference std modules: **204**
-- Local std modules present: **66** (candidates scanned: 71)
+- Local std modules present: **66** (candidates scanned: 69)
 - Intersection (local provides): **57**
 - Missing locally (reference-only): **147**
 - Local-only: **9**

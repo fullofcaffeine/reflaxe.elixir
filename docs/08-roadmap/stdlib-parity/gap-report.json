@@ -237,12 +237,10 @@
     },
     "nonstdlib_modules_under_std_dir": [
       "ArrayTools",
-      "ChangesetShim",
       "DateConverter",
       "HXX",
       "MapTools",
-      "Process",
-      "TodoAppChangeset"
+      "Process"
     ],
     "runtime_overrides": {
       "counted_as_present": [
@@ -257,11 +255,11 @@
       ]
     },
     "stdlib_roots_considered": [
-      "/REDACTED_LOCAL_PATH",
-      "/REDACTED_LOCAL_PATH",
-      "/REDACTED_LOCAL_PATH"
+      "/REDACTED_TMP_PATH",
+      "/REDACTED_TMP_PATH",
+      "/REDACTED_TMP_PATH"
     ],
-    "total_candidates": 71,
+    "total_candidates": 69,
     "total_std_modules": 66
   },
   "reference": {
@@ -270,7 +268,7 @@
       "haxe": 146,
       "sys": 34
     },
-    "std_root": "../haxe.elixir.reference/haxe/std",
+    "std_root": "/REDACTED_LOCAL_PATH",
     "total_modules": 204
   }
 }
