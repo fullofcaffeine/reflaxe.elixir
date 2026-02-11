@@ -49,17 +49,17 @@ class StdHaxeRuntimeOverrideTransforms {
                     else n;
                 case EModule(name, attrs, body):
                     if (name == "ArrayIterator" && !hasRequiredFunctionsInBody(body, REQUIRED_ITERATOR_FUNCTIONS)) {
-                        var blk = arrayIteratorBlock(n.metadata, n.pos);
-                        makeASTWithMeta(EModule(name, attrs, [blk]), n.metadata, n.pos);
+                        var arrayIteratorBlockNode = arrayIteratorBlock(n.metadata, n.pos);
+                        makeASTWithMeta(EModule(name, attrs, [arrayIteratorBlockNode]), n.metadata, n.pos);
                     } else if (name == "MapKeyValueIterator" && !hasRequiredFunctionsInBody(body, REQUIRED_ITERATOR_FUNCTIONS)) {
-                        var blk0 = mapKeyValueIteratorBlock(n.metadata, n.pos);
-                        makeASTWithMeta(EModule(name, attrs, [blk0]), n.metadata, n.pos);
+                        var mapKeyValueIteratorBlockNode = mapKeyValueIteratorBlock(n.metadata, n.pos);
+                        makeASTWithMeta(EModule(name, attrs, [mapKeyValueIteratorBlockNode]), n.metadata, n.pos);
                     } else if (name == "PosException") {
-                        var blk2 = posExceptionBlock(n.metadata, n.pos);
-                        makeASTWithMeta(EModule(name, attrs, [blk2]), n.metadata, n.pos);
+                        var posExceptionBlockNode = posExceptionBlock(n.metadata, n.pos);
+                        makeASTWithMeta(EModule(name, attrs, [posExceptionBlockNode]), n.metadata, n.pos);
                     } else if (name == "EReg") {
-                        var blk3 = eRegBlock(n.metadata, n.pos);
-                        makeASTWithMeta(EModule(name, attrs, [blk3]), n.metadata, n.pos);
+                        var eRegBlockNode = eRegBlock(n.metadata, n.pos);
+                        makeASTWithMeta(EModule(name, attrs, [eRegBlockNode]), n.metadata, n.pos);
                     } else n;
                 default:
                     n;
