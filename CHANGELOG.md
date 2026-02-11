@@ -1,3 +1,10 @@
+# [1.16.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.15.0...v1.16.0) (2026-02-11)
+
+
+### Features
+
+* **hxx:** add typed TSX root_ast pipeline ([7a10c5d](https://github.com/fullofcaffeine/reflaxe.elixir/commit/7a10c5dcc4b7bece032ebb9eac45574f93ca390c))
+
 # [1.15.0](https://github.com/fullofcaffeine/reflaxe.elixir/compare/v1.14.1...v1.15.0) (2026-02-08)
 
 
