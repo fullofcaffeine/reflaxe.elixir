@@ -83,7 +83,8 @@ Top-level:
 - `sys.io.FileSeek`
 
 Notes:
-- Some of these are “type compatibility shims” (e.g. iterators) that are optimized away by the AST pipeline.
+- Iterator modules (`haxe.iterators.ArrayIterator`, `haxe.iterators.MapKeyValueIterator`) now have canonical Elixir-target runtime implementations under `std/haxe/iterators/*.cross.hx` and are no longer transformer-only runtime stubs.
+- The AST pipeline still optimizes most loop patterns to idiomatic `Enum.*`; runtime iterators are primarily for manual iterator usage and stdlib/runtime compatibility.
 - Some exist to avoid invalid Elixir from upstream inline patterns (notably parts of `haxe.io`).
 
 ## Additional modules shipped under `std/` (not part of upstream std)

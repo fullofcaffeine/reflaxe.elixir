@@ -22,8 +22,10 @@ In practice, this means:
 
 This is why we treat “Map parity” as a first-class workstream: it is the highest leverage way to remove gotchas while still generating idiomatic Elixir.
 
-Related (ongoing) work:
-- Iterator + `IMap` runtime canonicalization: BD `haxe.elixir-hm47.23` (removes remaining “map wrapper shape” ambiguity and moves iterator runtime into stdlib as source of truth).
+Related work:
+- Iterator + `IMap` runtime canonicalization (BD `haxe.elixir-hm47.23`):
+  - canonical iterator runtime now lives in `std/haxe/iterators/ArrayIterator.cross.hx` and `std/haxe/iterators/MapKeyValueIterator.cross.hx`
+  - transformer fallback is narrowed to incomplete iterator module output only
 
 ## Inputs
 

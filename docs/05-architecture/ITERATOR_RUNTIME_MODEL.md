@@ -26,7 +26,12 @@ Therefore, the Elixir target must preserve the calling convention:
 
 ## Current runtime strategy
 
-We implement stateful advancement by storing the “current index” in the **process dictionary**, keyed by a unique reference created at iterator construction time:
+The canonical iterator runtime is implemented in:
+
+- `std/haxe/iterators/ArrayIterator.cross.hx`
+- `std/haxe/iterators/MapKeyValueIterator.cross.hx`
+
+Both iterators preserve stateful Haxe semantics by storing the current index in the **process dictionary**, keyed by a unique reference created at iterator construction time:
 
 - `ref = make_ref()`
 - state key: `{__MODULE__, ref}`
@@ -44,24 +49,22 @@ This keeps iterator semantics correct without changing the call sites.
   - Relies on process-local state (not purely functional).
   - Iterator state is tied to the process executing it (which is acceptable for iterator usage patterns).
 
-## Canonical IMap representation (planned)
+## Canonical IMap representation
 
 `haxe.iterators.MapKeyValueIterator` takes `haxe.Constraints.IMap<K,V>`. Depending on where the value originates, the runtime may see:
 
 - a plain Elixir map (`%{}`) (common for boundary terms like Phoenix params/payloads)
 - a Haxe map implementation (e.g. `BalancedTree`) represented as a struct/map with `__reflaxe_class__` dispatch
 
-To avoid “shape sniffing” (checking arbitrary internal fields), the canonical direction is:
+To avoid brittle internal-shape coupling, `MapKeyValueIterator.new/1` supports exactly:
 
-- `MapKeyValueIterator.new/1` accepts either:
-  - a plain Elixir map (`%{}`), or
-  - a list of `{k,v}` pairs
-- Non-map `IMap` implementations (tree-backed, custom, etc.) should *produce* pairs and call `new(pairs)` from their own runtime implementation.
+- a plain Elixir map (`%{}`), or
+- a list of `{k,v}` pairs (or key/value maps) for pre-normalized iterables.
 
-Tracking:
-- BD task: `haxe.elixir-hm47.23` (child of stdlib parity epic)
+Non-map `IMap` implementations should produce key/value pairs before constructing the iterator.
 
 ## Source-of-truth locations
 
-- Short-term CI safety net: `src/reflaxe/elixir/ast/transformers/StdHaxeRuntimeOverrideTransforms.hx`
-- Long-term target: real stdlib/runtime modules under `std/` / `std/_std/` with upstream-matching signatures and runtime tests.
+- Canonical runtime: `std/haxe/iterators/*.cross.hx`
+- CI safety-net fallback (narrowed): `src/reflaxe/elixir/ast/transformers/StdHaxeRuntimeOverrideTransforms.hx`
+  - fallback only applies when generated iterator modules are incomplete (missing `new/has_next/next`).

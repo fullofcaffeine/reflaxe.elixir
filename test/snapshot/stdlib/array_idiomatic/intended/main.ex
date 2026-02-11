@@ -84,10 +84,10 @@ defmodule Main do
     numbers = [1, 2, 3]
     _g = 0
     _ = Enum.each(numbers, fn _ -> nil end)
-    iter_array = numbers
+    iter = ArrayIterator.new(numbers)
     _ = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), :ok, fn _, acc ->
   try do
-    if (iter_current < length(iter_array)), do: {:cont, acc}, else: {:halt, acc}
+    if (apply(Map.get(iter, :__reflaxe_class__) || Map.get(iter, :__struct__), :has_next, [iter])), do: {:cont, acc}, else: {:halt, acc}
   catch
     :throw, {:break, break_state} ->
       {:halt, break_state}

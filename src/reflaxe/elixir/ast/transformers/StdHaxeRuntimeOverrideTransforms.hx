@@ -12,70 +12,46 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * StdHaxeRuntimeOverrideTransforms
  *
  * WHAT
- * - Provides minimal, target-native overrides for select Haxe std runtime modules
- *   whose direct compilation leads to binder/usage mismatches (_struct vs struct).
- *   Current overrides: ArrayIterator, MapKeyValueIterator, PosException, EReg.
+ * - Provides minimal target-native fallbacks for select Haxe std runtime modules.
+ * - Primary runtime source-of-truth for iterators now lives in `std/haxe/iterators/*.cross.hx`.
+ * - This pass keeps a narrow fallback for iterator modules only when generated output is
+ *   incomplete (docs-only/no `new|has_next|next` functions).
+ * - Always overrides `PosException` and `EReg` with known-safe runtime blocks.
  *
  * WHY
- * - Ensure warnings-as-errors compliance and eliminate undefined-variable errors
- *   in generated stdlib by emitting idiomatic, binder-consistent Elixir.
- *   This follows the stdlib philosophy of pragmatic native implementations.
- * - Some generated stdlib modules (notably `haxe.ds.BalancedTree`) call `*.new/arity` for
- *   iterator helpers. If those modules are emitted as docs-only stubs, WAE fails with
- *   `undefined or private` warnings.
- *
- *   These iterator overrides intentionally trade *perfect purity* for *correct API shape*:
- *   the Haxe iterator API is stateful (`next()` advances). In Elixir, most iterator usage is
- *   rewritten to `Enum.*` by the AST pipeline, but when iterators do execute at runtime (e.g.,
- *   manual `while (it.hasNext()) it.next()` patterns), we still need a safe, deterministic
- *   implementation.
- *
- *   To preserve the calling convention (`next(it)` with no returned updated iterator),
- *   we store advancement state in the current process dictionary, keyed by a unique `ref`.
+ * - Keep WAE (`--warnings-as-errors`) stable in CI even if an iterator module regresses to a stub.
+ * - Avoid brittle, always-on iterator replacement now that stdlib modules provide canonical runtime.
+ * - Preserve backward compatibility while narrowing transformer scope to true safety-net behavior.
  *
  * HOW
- * - Detect EDefmodule/EModule names and replace bodies with ERaw definitions
- *   that use consistent parameter names and minimal logic matching Haxe intent.
- * - `ArrayIterator`:
- *   - `new/1` builds a struct and seeds a unique `ref`.
- *   - `has_next/1` and `next/1` read/update the current index via `Process.get/put`.
- * - `MapKeyValueIterator`:
- *   - Accepts `IMap<K,V>` at runtime as either:
- *     - a plain Elixir map (`%{}`), or
- *     - a list of `{k, v}` pairs (recommended for non-map `IMap` implementations).
- *   - Normalizes to a `pairs = Map.to_list(...)` list once at construction, then iterates
- *     deterministically over that list.
- *
- *   Note: The `IMap` unwrapping is intentionally shape-based (keys/fields), not
- *   app-specific (no domain naming heuristics).
+ * - For `ArrayIterator` and `MapKeyValueIterator`, inspect the module AST and verify that
+ *   `new/1`, `has_next/1`, and `next/1` are present.
+ * - If missing, inject fallback runtime blocks (same semantics as previous override).
+ * - For `PosException` and `EReg`, replace module bodies with stable runtime implementations.
  *
  * See also: `docs/05-architecture/ITERATOR_RUNTIME_MODEL.md`.
  *
  * EXAMPLES
- * Before (generated):
- *   def has_next(_struct) do struct.current < length(struct.array) end
- * After (override):
- *   def has_next(struct), do: struct.current < length(struct.array)
- *
- * Elixir (MapKeyValueIterator, shape-normalized):
- *   it = MapKeyValueIterator.new(map_like)
- *   if MapKeyValueIterator.has_next(it), do: MapKeyValueIterator.next(it)
+ * - Generated module has `new/has_next/next`: keep as-is.
+ * - Generated module is docs-only: inject fallback runtime so CI and runtime remain valid.
  */
 class StdHaxeRuntimeOverrideTransforms {
+    static final REQUIRED_ITERATOR_FUNCTIONS = ["new", "has_next", "next"];
+
     public static function transformPass(ast: ElixirAST): ElixirAST {
         return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
             return switch (n.def) {
-                case EDefmodule(name, _):
-                    if (name == "ArrayIterator") arrayIteratorDef(n)
-                    else if (name == "MapKeyValueIterator") mapKeyValueIteratorDef(n)
+                case EDefmodule(name, doBlock):
+                    if (name == "ArrayIterator" && !hasRequiredFunctions(doBlock, REQUIRED_ITERATOR_FUNCTIONS)) arrayIteratorDef(n)
+                    else if (name == "MapKeyValueIterator" && !hasRequiredFunctions(doBlock, REQUIRED_ITERATOR_FUNCTIONS)) mapKeyValueIteratorDef(n)
                     else if (name == "PosException") posExceptionDef(n)
                     else if (name == "EReg") eRegDef(n)
                     else n;
-                case EModule(name, attrs, _):
-                    if (name == "ArrayIterator") {
+                case EModule(name, attrs, body):
+                    if (name == "ArrayIterator" && !hasRequiredFunctionsInBody(body, REQUIRED_ITERATOR_FUNCTIONS)) {
                         var blk = arrayIteratorBlock(n.metadata, n.pos);
                         makeASTWithMeta(EModule(name, attrs, [blk]), n.metadata, n.pos);
-                    } else if (name == "MapKeyValueIterator") {
+                    } else if (name == "MapKeyValueIterator" && !hasRequiredFunctionsInBody(body, REQUIRED_ITERATOR_FUNCTIONS)) {
                         var blk0 = mapKeyValueIteratorBlock(n.metadata, n.pos);
                         makeASTWithMeta(EModule(name, attrs, [blk0]), n.metadata, n.pos);
                     } else if (name == "PosException") {
@@ -89,6 +65,33 @@ class StdHaxeRuntimeOverrideTransforms {
                     n;
             }
         });
+    }
+
+    static function hasRequiredFunctions(moduleAst: ElixirAST, requiredNames: Array<String>): Bool {
+        var found = new Map<String, Bool>();
+        for (requiredName in requiredNames) found.set(requiredName, false);
+
+        ElixirASTTransformer.transformNode(moduleAst, function(n: ElixirAST): ElixirAST {
+            return switch (n.def) {
+                case EDef(name, _, _, _):
+                    if (found.exists(name)) found.set(name, true);
+                    n;
+                case EDefp(name, _, _, _):
+                    if (found.exists(name)) found.set(name, true);
+                    n;
+                default:
+                    n;
+            }
+        });
+
+        for (requiredName in requiredNames) {
+            if (found.get(requiredName) != true) return false;
+        }
+        return true;
+    }
+
+    static function hasRequiredFunctionsInBody(body: Array<ElixirAST>, requiredNames: Array<String>): Bool {
+        return hasRequiredFunctions(makeAST(EBlock(body)), requiredNames);
     }
 
     static inline function arrayIteratorDef(orig: ElixirAST): ElixirAST {

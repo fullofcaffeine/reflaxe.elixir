@@ -5,6 +5,7 @@ import haxe.Int64;
 import haxe.DynamicAccess;
 import haxe.Json;
 import haxe.crypto.Md5;
+import haxe.iterators.MapKeyValueIterator;
 import haxe.test.ExUnit.TestCase;
 import haxe.test.Assert;
 
@@ -18,6 +19,76 @@ import haxe.test.Assert;
  */
 @:exunit
 class StdlibParityTest extends TestCase {
+    static function pairToString<K, V>(pair: {key: K, value: V}): String {
+        var keyString: String = cast untyped __elixir__('Kernel.to_string({0})', pair.key);
+        var valueString: String = cast untyped __elixir__('Kernel.to_string({0})', pair.value);
+        return keyString + ":" + valueString;
+    }
+
+    @:describe("haxe.iterators.ArrayIterator runtime semantics")
+    @:test
+    function testArrayIteratorManualLoop(): Void {
+        var iterator = [1, 2, 3].iterator();
+        Assert.isTrue(iterator.hasNext());
+        Assert.equals(1, iterator.next());
+        Assert.isTrue(iterator.hasNext());
+        Assert.equals(2, iterator.next());
+        Assert.isTrue(iterator.hasNext());
+        Assert.equals(3, iterator.next());
+        Assert.isFalse(iterator.hasNext());
+    }
+
+    @:describe("haxe.iterators.MapKeyValueIterator runtime semantics")
+    @:test
+    function testMapKeyValueIteratorWithHaxeMapWrapper(): Void {
+        var wrappedMap: Map<String, Int> = new Map();
+        wrappedMap.set("alpha", 1);
+        wrappedMap.set("beta", 2);
+
+        var iterator = new MapKeyValueIterator<String, Int>(cast wrappedMap);
+        Assert.isTrue(iterator.hasNext());
+        var first = pairToString(iterator.next());
+        Assert.isTrue(iterator.hasNext());
+        var second = pairToString(iterator.next());
+        Assert.isFalse(iterator.hasNext());
+        var seenPairs = [first, second];
+        Assert.equals(2, seenPairs.length);
+        Assert.contains(seenPairs, "alpha:1");
+        Assert.contains(seenPairs, "beta:2");
+    }
+
+    @:describe("haxe.iterators.MapKeyValueIterator runtime semantics")
+    @:test
+    function testMapKeyValueIteratorWithPairListInput(): Void {
+        var pairList: haxe.Constraints.IMap<String, Int> = cast untyped __elixir__('[{"left", 10}, {"right", 20}]');
+        var iterator = new MapKeyValueIterator<String, Int>(pairList);
+        Assert.isTrue(iterator.hasNext());
+        var first = pairToString(iterator.next());
+        Assert.isTrue(iterator.hasNext());
+        var second = pairToString(iterator.next());
+        Assert.isFalse(iterator.hasNext());
+        var seenPairs = [first, second];
+        Assert.equals(2, seenPairs.length);
+        Assert.contains(seenPairs, "left:10");
+        Assert.contains(seenPairs, "right:20");
+    }
+
+    @:describe("haxe.iterators.MapKeyValueIterator runtime semantics")
+    @:test
+    function testMapKeyValueIteratorWithPlainElixirMap(): Void {
+        var nativeMap: haxe.Constraints.IMap<String, Int> = cast untyped __elixir__('%{"alpha" => 1, "beta" => 2}');
+        var iterator = new MapKeyValueIterator<String, Int>(nativeMap);
+        Assert.isTrue(iterator.hasNext());
+        var first = pairToString(iterator.next());
+        Assert.isTrue(iterator.hasNext());
+        var second = pairToString(iterator.next());
+        Assert.isFalse(iterator.hasNext());
+        var seenPairs = [first, second];
+        Assert.equals(2, seenPairs.length);
+        Assert.contains(seenPairs, "alpha:1");
+        Assert.contains(seenPairs, "beta:2");
+    }
+
     @:describe("haxe.Int64")
     @:test
     function testInt64WrapOverflow(): Void {
