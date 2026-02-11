@@ -139,6 +139,7 @@ class User {
 
 No manual `extern` is required here: `@:schema` auto-injects a typed
 `changeset<Params>(schema, params): Changeset<Schema, Params>` declaration for Haxe calls.
+An explicit `extern` declaration is still accepted as an optional compatibility path.
 
 Compiles to:
 
