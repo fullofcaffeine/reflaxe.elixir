@@ -75,10 +75,11 @@ class User {
   @:field @:primary_key public var id: Int;
   @:field public var name: String;
   @:field public var email: String;
-
-  extern public static function changeset(user: User, params: UserParams): Changeset<User, UserParams>;
 }
 ```
+
+No manual `extern` is needed: `@:schema` auto-injects a typed
+`changeset<Params>(schema, params): Changeset<Schema, Params>` declaration.
 
 Compiles to:
 

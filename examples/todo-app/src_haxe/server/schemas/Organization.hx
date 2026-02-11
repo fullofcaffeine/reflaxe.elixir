@@ -1,7 +1,5 @@
 package server.schemas;
 
-import ecto.Changeset;
-
 typedef OrganizationParams = {
     ?slug: String,
     ?name: String
@@ -31,6 +29,4 @@ class Organization {
     @:field public var name: String;
 
     public function new() {}
-
-    extern public static function changeset(org: Organization, params: OrganizationParams): Changeset<Organization, OrganizationParams>;
 }

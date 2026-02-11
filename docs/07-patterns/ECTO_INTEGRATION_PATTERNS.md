@@ -107,7 +107,8 @@ Reflaxe.Elixir supports two complementary approaches:
 
 ### 1) Schema-driven changesets (`@:changeset`)
 
-Annotate your schema with `@:changeset(...)` and declare an `extern` for the generated function.
+Annotate your schema with `@:changeset(...)`. The schema macro auto-injects a typed Haxe declaration for
+`changeset<Params>(schema, params)` when one is not explicitly defined.
 
 Example (from the todo-app pattern):
 
@@ -127,8 +128,6 @@ class Todo {
   @:field public var title: String;
   @:field public var completed: Bool;
   @:field public var userId: Int;
-
-  extern public static function changeset(todo: Todo, params: TodoParams): ecto.Changeset.Changeset<Todo, TodoParams>;
 }
 ```
 
