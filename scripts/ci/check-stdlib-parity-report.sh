@@ -37,8 +37,8 @@ def module_id_from_relpath(rel: Path) -> str:
     return name.replace("/", ".")
 
 
-def collect_std_modules(std_root: Path, allow_cross: bool) -> set[str]:
-    modules: set[str] = set()
+def collect_std_modules(std_root: Path, allow_cross: bool):
+    modules = set()
     suffixes = [".hx"] + ([".cross.hx"] if allow_cross else [])
 
     for file in std_root.rglob("*"):
@@ -55,8 +55,8 @@ def collect_std_modules(std_root: Path, allow_cross: bool) -> set[str]:
     return modules
 
 
-def collect_prefixed_modules(prefix: str, source_root: Path, allow_cross: bool) -> set[str]:
-    modules: set[str] = set()
+def collect_prefixed_modules(prefix: str, source_root: Path, allow_cross: bool):
+    modules = set()
     if not source_root.exists():
         return modules
 
@@ -71,8 +71,8 @@ def collect_prefixed_modules(prefix: str, source_root: Path, allow_cross: bool) 
     return modules
 
 
-def group_by_prefix(modules: set[str]) -> dict[str, int]:
-    counts: dict[str, int] = {"<top-level>": 0, "haxe": 0, "sys": 0}
+def group_by_prefix(modules):
+    counts = {"<top-level>": 0, "haxe": 0, "sys": 0}
     for module in modules:
         if "." not in module:
             counts["<top-level>"] += 1
@@ -130,7 +130,7 @@ intersection = sorted(reference_modules & local_std_modules)
 reference_only = sorted(reference_modules - local_std_modules)
 local_only = sorted(local_std_modules - reference_modules)
 
-errors: list[str] = []
+errors = []
 
 if intersection != expected_intersection:
     errors.append("`diff.intersection.modules` is stale.")
