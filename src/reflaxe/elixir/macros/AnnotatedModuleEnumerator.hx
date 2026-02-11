@@ -77,6 +77,9 @@ class AnnotatedModuleEnumerator {
             validateSchemaTableNameIfKnown(cls);
             maybeInjectManyToManyJoinThrough(cls, fields);
             EctoSchemaAssociationValidator.ensureAfterTypingHook();
+            if (meta.has(":changeset")) {
+                maybeInjectSchemaChangesetDeclaration(cls, fields);
+            }
             for (field in fields) {
                 if (isSchemaField(field)) ensureSchemaFieldKept(field);
             }
@@ -747,6 +750,67 @@ class AnnotatedModuleEnumerator {
                 default:
             }
         }
+    }
+
+    /**
+     * Inject a typed static `changeset/2` declaration for `@:schema` modules when missing.
+     *
+     * WHY:
+     * - The Elixir backend can auto-generate `def changeset/2` from schema metadata.
+     * - Without a Haxe declaration, app code cannot call `User.changeset(...)` with type-checking
+     *   unless users add manual `extern` boilerplate.
+     *
+     * HOW:
+     * - If no field named `changeset` exists, inject:
+     *   `extern public static function changeset<Attrs>(record: ThisSchema, attrs: Attrs): Changeset<ThisSchema, Attrs>;`
+     * - This keeps user-defined changesets untouched and removes boilerplate for generated ones.
+     */
+    static function maybeInjectSchemaChangesetDeclaration(cls: haxe.macro.Type.ClassType, fields: Array<Field>): Void {
+        for (field in fields) {
+            if (field != null && field.name == "changeset") {
+                return;
+            }
+        }
+
+        final schemaType: ComplexType = TPath({
+            pack: cls.pack.copy(),
+            name: cls.name
+        });
+
+        final attrsType: ComplexType = TPath({
+            pack: [],
+            name: "Attrs"
+        });
+
+        final changesetType: ComplexType = TPath({
+            pack: ["ecto"],
+            name: "Changeset",
+            params: [
+                TPType(schemaType),
+                TPType(attrsType)
+            ]
+        });
+
+        fields.push({
+            name: "changeset",
+            pos: cls.pos,
+            access: [APublic, AStatic, AExtern],
+            kind: FFun({
+                params: [
+                    {name: "Attrs"}
+                ],
+                args: [
+                    {name: "record", type: schemaType},
+                    {name: "attrs", type: attrsType}
+                ],
+                ret: changesetType,
+                expr: null
+            }),
+            meta: [
+                {name: ":generated", params: [macro "schema_changeset_signature"], pos: cls.pos}
+            ],
+            doc: "Auto-generated typed declaration for schema changeset/2."
+        });
     }
 
     static function extractSchemaTableName(cls: haxe.macro.Type.ClassType): Null<String> {

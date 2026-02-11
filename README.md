@@ -665,13 +665,11 @@ class User {
   @:field @:primary_key public var id: Int;
   @:field public var name: String;
   @:field public var email: String;
-
-  // 4) Declare generated function so Haxe can call it with full typing.
-  extern public static function changeset(user: User, params: UserParams): Changeset<User, UserParams>;
 }
 
 class Users {
-  // 5) App code uses typed changesets and typed Result flow.
+  // 4) App code uses typed changesets and typed Result flow.
+  // `@:schema` auto-injects a typed `changeset<Params>(schema, params)` declaration.
   public static function create(params: UserParams): haxe.functional.Result<User, Changeset<User, UserParams>> {
     var changeset = User.changeset(new User(), params);
     return MyApp.Repo.insert(changeset);

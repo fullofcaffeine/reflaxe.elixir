@@ -1,6 +1,4 @@
 package server.schemas;
-
-import ecto.Changeset;
 import elixir.DateTime.NaiveDateTime;
 
 typedef OrganizationInviteParams = {
@@ -39,6 +37,4 @@ class OrganizationInvite {
     @:field public var acceptedByUserId: Null<Int>;
 
     public function new() {}
-
-    extern public static function changeset(invite: OrganizationInvite, params: OrganizationInviteParams): Changeset<OrganizationInvite, OrganizationInviteParams>;
 }
