@@ -1085,6 +1085,17 @@ bd lint --json                   # Advisory lint (missing recommended sections)
 
 **Agent Integration**: Use `bd ready` to find unblocked work. Create issues when discovering new work during development. Dependencies prevent duplicate effort across agents.
 
+### Beads Status Hygiene (Hard Rule)
+
+- Never leave an issue open after implementation is complete.
+- Before final response, reconcile implementation vs tracking:
+  - if done: `bd close <id> -r "<what shipped>"`
+  - if partially done: `bd update <id> --notes "<what is done + what remains>"`
+  - if scope changed: split/create follow-up tasks and add dependencies immediately.
+- If code landed but no issue existed, create and close a backfill issue in the same session so history stays accurate.
+- If an epic’s acceptance criteria are met, close the epic and move residual work into new child tasks; do not keep “implemented” epics open.
+- Session sanity check (required): `bd ready` should not show work that was just shipped in the same session.
+
 ### Plans (Decision Records)
 
 This repo uses a small `plans/` directory to store decision records that are larger than a single task.
