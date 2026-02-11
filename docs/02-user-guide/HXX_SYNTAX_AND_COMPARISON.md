@@ -21,7 +21,8 @@ See also:
 ## Authoring Model
 
 - Typed-first entrypoint: Haxe inline markup literals (`return <div>...</div>`) are rewritten into a canonical template entrypoint (`phoenix.hxx.HeexTemplate.root/1`), which the builder lowers to `~H`.
-- Typed loops: `phoenix.hxx.HeexTemplate.for_each(items, (item) -> <li>...</li>)` lowers to a HEEx `<%= for ... do %>` block so repeated markup is not HTML-escaped.
+- TSX control tags: `<if ${cond}>` / `<for ${item in items}>` are parsed at macro-time into a typed template AST and lowered to HEEx `if`/`for` blocks.
+- Typed loop helper: `phoenix.hxx.HeexTemplate.for_each(items, (item) -> <li>...</li>)` (or `phoenix.hxx.H.for_each`) remains available when expression-style composition is preferred.
 - Template strings (legacy/migration): `hxx('...')` / `HXX.block('...')` are supported in **balanced** mode, but they are string-rewritten + linted (template-local markers are not Haxe-typed).
 - Layered modes: `@:hxx_mode("tsx"|"balanced"|"metal")` controls how strict the template authoring surface is. In TSX mode, legacy string templates and untyped markers are rejected.
 
@@ -166,6 +167,9 @@ Rejected in strict mode:
 
 ### Control Flow
 - Typed-first (recommended): use normal Haxe control flow inside `${ ... }` and typed helpers like `HeexTemplate.for_each/2`.
+- TSX mode also supports explicit control tags with typed headers:
+  - `<if ${cond}> ... <else> ... </else> </if>`
+  - `<for ${item in items}> ... </for>`
 - Template strings (migration): block conditionals/loops can use HXX control tags (normalized to HEEx):
   - `<if {cond}> ... <else> ... </if>` → HEEx `if/else` block
   - `<for {pattern in expr}> ... </for>` → HEEx `for` block

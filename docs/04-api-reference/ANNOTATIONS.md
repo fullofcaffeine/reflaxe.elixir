@@ -390,7 +390,7 @@ class MyLive {
 Modes:
 
 - `@:hxx_mode("balanced")` (default): normal behavior; inline markup is recommended, but legacy template strings are allowed. Raw `<% ... %>` requires `@:allow_heex` (or `-D hxx_allow_raw_heex` during migration).
-- `@:hxx_mode("tsx")`: strict typed authoring. Disallows raw `<% ... %>` escape hatches, disallows legacy string-template markers (`#{...}`, `<if { ... }>` / `<for { ... }>`), and rejects `hxx('...')` / `HXX.block('...')` usage in that scope.
+- `@:hxx_mode("tsx")`: strict typed authoring. Disallows raw `<% ... %>` escape hatches, disallows legacy string-template markers (`#{...}`, `<if { ... }>` / `<for { ... }>`), and rejects `hxx('...')` / `HXX.block('...')` usage in that scope. Supports typed TSX control tags (`<if ${...}>`, `<for ${item in items}>`).
 - `@:hxx_mode("metal")`: allows raw `<% ... %>` without `@:allow_heex` (discouraged; emits warnings).
 
 Precedence:

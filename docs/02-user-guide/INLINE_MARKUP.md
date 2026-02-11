@@ -43,11 +43,21 @@ This lowers to a real HEEx block:
 <% end %>
 ```
 
-### Loops (avoid HTML-as-string)
+### Loops
 
-In HEEx, returning an HTML string from `<%= ... %>` escapes tags, so you should not build markup by `Enum.join(...)`.
+In `@:hxx_mode("tsx")`, use typed control tags directly:
 
-Use `phoenix.hxx.HeexTemplate.for_each/2` instead:
+```haxe
+return <ul>
+  <for ${item in assigns.items}>
+    <li>${item.name}</li>
+  </for>
+</ul>;
+```
+
+This lowers to a HEEx `for` block and keeps binder expressions fully Haxe-typed.
+
+In balanced mode, if you need expression-level composition, use `phoenix.hxx.HeexTemplate.for_each/2` (or `phoenix.hxx.H.for_each/2`):
 
 ```haxe
 import phoenix.hxx.HeexTemplate;
@@ -136,6 +146,13 @@ class MyLive {
 ```
 
 In TSX mode, raw `<% ... %>` blocks and string-level markers are rejected.
+
+TSX-mode control tags:
+
+- `<if ${cond}> ... <else> ... </else> </if>`
+- `<for ${item in items}> ... </for>`
+
+Legacy marker headers with braces (`<if { ... }>` / `<for { ... }>` ) are rejected in TSX mode.
 
 If you truly need raw HEEx, use `@:hxx_mode("metal")` (discouraged; emits warnings), or the explicit escape hatch `@:allow_heex`.
 

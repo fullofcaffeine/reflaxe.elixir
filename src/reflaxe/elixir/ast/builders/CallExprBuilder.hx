@@ -14,6 +14,7 @@ import reflaxe.elixir.helpers.PatternDetector;
 import reflaxe.elixir.ast.builders.VariableBuilder;
 import reflaxe.elixir.ast.TypeUtils;
 import reflaxe.elixir.ast.naming.ElixirNaming;
+import reflaxe.elixir.ast.heex.HeexTsxAstLowerer;
 import reflaxe.elixir.macros.HxxMode;
 import reflaxe.elixir.macros.HxxModeResolver;
 
@@ -444,21 +445,26 @@ class CallExprBuilder {
 	                                    if (currentClass != null && currentClass.meta != null && (currentClass.meta.has(":allow_heex") || currentClass.meta.has("allow_heex"))) return true;
 	                                    return false;
 	                                }
-		                                var allowHeexMeta = allowHeexRequestedByMeta();
-		                                if (mode == HxxMode.Tsx && allowHeexMeta) {
-		                                    var pos = context != null ? context.getCurrentPosition() : null;
-		                                    context.error(
+			                                var allowHeexMeta = allowHeexRequestedByMeta();
+			                                if (mode == HxxMode.Tsx && allowHeexMeta) {
+			                                    var pos = context != null ? context.getCurrentPosition() : null;
+			                                    context.error(
 		                                        "HXX: @:allow_heex is not permitted when @:hxx_mode(\"tsx\") is active.\n" +
 		                                        "Remove @:allow_heex and keep templates fully typed (no raw `<% ... %>` blocks).",
 		                                        pos
 		                                    );
-		                                    throw "HXX allow_heex disallowed in tsx mode";
-		                                }
+			                                    throw "HXX allow_heex disallowed in tsx mode";
+			                                }
 
-		                                var allowRawHeex = HxxModeResolver.allowRawHeexMarkers(mode, allowHeexMeta, Context.defined("hxx_allow_raw_heex"));
+			                                if (methodName == "root_ast") {
+			                                    var content = HeexTsxAstLowerer.lowerRoot(args[0], buildExpression, context);
+			                                    return ESigil("H", content, "");
+			                                }
 
-	                                // Build inner argument AST
-	                                var innerAst = buildExpression(args[0]);
+			                                var allowRawHeex = HxxModeResolver.allowRawHeexMarkers(mode, allowHeexMeta, Context.defined("hxx_allow_raw_heex"));
+
+		                                // Build inner argument AST
+		                                var innerAst = buildExpression(args[0]);
 
 	                                if (mode == HxxMode.Tsx && reflaxe.elixir.ast.TemplateHelpers.hxxSourceContainsUntypedTemplateMarkers(innerAst)) {
 	                                    var pos = context != null ? context.getCurrentPosition() : null;
