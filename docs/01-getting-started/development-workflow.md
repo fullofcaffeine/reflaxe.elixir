@@ -31,6 +31,13 @@ mix haxe.watch
 # Perfect for iterative development
 ```
 
+### Pre-commit Local Path Guard
+- The pre-commit hook blocks staged **absolute local paths** (for example `/Users/...`, `/home/...`, `/var/folders/...`, `C:\Users\...`).
+- Dot-relative path references (`./...`, `../...`) require explicit confirmation (`y/n`) during commit.
+- For non-interactive commits, you can bypass only the relative-path prompt with:
+  - `ALLOW_RELATIVE_PATH_REFERENCES=1 git commit ...`
+- This guard is enforced from `scripts/hooks/pre-commit` via `scripts/lint/local_path_guard_staged.sh`.
+
 ## Dual-Ecosystem Architecture
 
 Reflaxe.Elixir coordinates two development ecosystems for complete validation:

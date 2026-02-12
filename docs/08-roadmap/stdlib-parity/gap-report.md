@@ -19,7 +19,7 @@ scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --markdown 
 ## Summary
 
 - Reference std modules: **204**
-- Local std modules present: **66** (candidates scanned: 71)
+- Local std modules present: **66** (candidates scanned: 69)
 - Intersection (local provides): **57**
 - Missing locally (reference-only): **147**
 - Local-only: **9**
