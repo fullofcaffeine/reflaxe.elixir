@@ -121,6 +121,9 @@ WAE=1
 # Optional E2E
 RUN_PLAYWRIGHT=0
 E2E_WORKERS=1
+# Default browser install scope for Playwright; keeps CI download surface small.
+# Set PLAYWRIGHT_BROWSERS=all to install all browsers.
+PLAYWRIGHT_BROWSERS="${PLAYWRIGHT_BROWSERS:-chromium}"
 # Optional migrations compilation (ecto_migrations_exs)
 COMPILE_MIGRATIONS=0
 MIGRATIONS_HXML="build-migrations.hxml"
@@ -374,7 +377,8 @@ if [[ "${ASYNC}" -eq 1 && "${ASYNC_CHILD:-0}" -eq 0 ]]; then
   if command -v setsid >/dev/null 2>&1; then
     setsid env ASYNC_CHILD=1 E2E_SPEC="$E2E_SPEC" E2E_WORKERS="$E2E_WORKERS" QA_SKIP_HAXE="${QA_SKIP_HAXE:-}" BUILD_TIMEOUT="$BUILD_TIMEOUT" DEPS_TIMEOUT="$DEPS_TIMEOUT" COMPILE_TIMEOUT="$COMPILE_TIMEOUT" READY_PROBES="$READY_PROBES" PROGRESS_INTERVAL="$PROGRESS_INTERVAL" PORT="$PORT" APP_DIR="$APP_DIR" KEEP_ALIVE="$KEEP_ALIVE" VERBOSE="$VERBOSE" NO_HEARTBEAT="$NO_HEARTBEAT" QUIET="$QUIET" "${CHILD_CMD[@]}" </dev/null >"$LOG_MAIN" 2>&1 &
   elif command -v python3 >/dev/null 2>&1; then
-    PY_LAUNCHER="$(mktemp /tmp/qa-sentinel-launcher.XXXXXX.py)"
+    PY_LAUNCHER="$(mktemp /tmp/qa-sentinel-launcher.XXXXXX)"
+    PY_LAUNCHER="${PY_LAUNCHER}.py"
     cat >"$PY_LAUNCHER" <<'PY'
 import os
 import subprocess
@@ -508,7 +512,7 @@ log "[QA]  4) Start Phoenix (background, non-blocking)"
 log "[QA]  5) Readiness probe (READY_PROBES=$READY_PROBES, 0.5s interval)"
 log "[QA]  6) GET /, scan logs, teardown (unless --keep-alive)"
 if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
-  log "[QA]  7) Run Playwright E2E (spec: ${E2E_SPEC:-e2e}, workers: ${E2E_WORKERS})"
+  log "[QA]  7) Run Playwright E2E (spec: ${E2E_SPEC:-e2e}, workers: ${E2E_WORKERS}, browsers: ${PLAYWRIGHT_BROWSERS})"
 fi
 log "[QA] Config: PORT=$PORT ENV=$ENV_NAME KEEP_ALIVE=$KEEP_ALIVE VERBOSE=$VERBOSE WAE=$WAE"
 
@@ -896,9 +900,24 @@ fi
 # Optional: run Playwright tests after readiness
 if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
   log "[QA] Step 7: Running Playwright tests (${E2E_SPEC:-e2e}, workers: ${E2E_WORKERS})"
-  # Install dependencies and browsers for Playwright in the app dir
-  run_step_with_log "Playwright npm install" 180s /tmp/qa-playwright-install.log "npm -C . install --no-audit --no-fund" || { cleanup || true; exit 1; }
-  run_step_with_log "Playwright browsers install" 600s /tmp/qa-playwright-browsers.log "npx -C . playwright install" || { cleanup || true; exit 1; }
+  # Install dependencies and browsers for Playwright in the app dir.
+  # Use lockfile-aware install to reduce network variability in CI.
+  PLAYWRIGHT_NPM_CMD="npm -C . install --no-audit --no-fund"
+  if [[ -f package-lock.json ]]; then
+    PLAYWRIGHT_NPM_CMD="npm -C . ci --prefer-offline --no-audit --no-fund"
+  fi
+  if ! run_step_with_log "Playwright npm install" 180s /tmp/qa-playwright-install.log "$PLAYWRIGHT_NPM_CMD"; then
+    log "[QA] Playwright npm install failed; retrying once..."
+    run_step_with_log "Playwright npm install (retry)" 180s /tmp/qa-playwright-install.log "$PLAYWRIGHT_NPM_CMD" || { cleanup || true; exit 1; }
+  fi
+  PLAYWRIGHT_INSTALL_CMD="npx -C . playwright install"
+  if [[ "${PLAYWRIGHT_BROWSERS}" != "all" ]]; then
+    PLAYWRIGHT_INSTALL_CMD="npx -C . playwright install ${PLAYWRIGHT_BROWSERS}"
+  fi
+  if ! run_step_with_log "Playwright browsers install" 600s /tmp/qa-playwright-browsers.log "$PLAYWRIGHT_INSTALL_CMD"; then
+    log "[QA] Playwright browsers install failed; retrying once..."
+    run_step_with_log "Playwright browsers install (retry)" 600s /tmp/qa-playwright-browsers.log "$PLAYWRIGHT_INSTALL_CMD" || { cleanup || true; exit 1; }
+  fi
   # Important: do NOT quote the spec so that shell globs expand (e.g., e2e/*.spec.ts)
   SPEC_ARG=${E2E_SPEC:-e2e}
   if ! run_step_with_log "Playwright tests" 300s /tmp/qa-playwright-run.log "BASE_URL=\"http://localhost:$PORT\" npx -C . playwright test ${SPEC_ARG} --workers=${E2E_WORKERS}"; then

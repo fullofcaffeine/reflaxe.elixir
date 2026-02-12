@@ -824,7 +824,7 @@ class TodoLive {
 			user: {
 				id: 1,
 				name: "Demo User",
-				email: "demo@example.com",
+				email: "demoassigns.example.com",
 				bio: null,
 				role: "user",
 				organizationId: 0,
@@ -1348,7 +1348,7 @@ class TodoLive {
 	 */
 	public static function render(assigns:TodoLiveRenderAssigns):String {
 		// Phoenix warns when templates access locals defined outside ~H (it disables change tracking).
-		// Compute derived flash strings into tracked assigns, then reference @flash_info/@flash_error in HEEx.
+		// Compute derived flash strings into tracked assigns, then reference assigns.flash_info/assigns.flash_error in HEEx.
 		var renderAssigns:Assigns<TodoLiveRenderAssigns> = assigns;
 		renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
 		renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
@@ -1363,18 +1363,17 @@ class TodoLive {
 		renderAssigns = Component.assign(renderAssigns, "header_avatar_style", headerAvatarStyle);
 		assigns = renderAssigns;
 
-		return hxx('
-			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
+		return (<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
 				<div id="root" class="container mx-auto px-4 py-8 max-w-6xl" phx-hook=${HookName.Ping}>
 						<!-- Flash messages (info/error) -->
-							<if {@flash_info}>
+							<if {assigns.flash_info != null}>
 								<div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
-									#{@flash_info}
+									${assigns.flash_info != null}
 								</div>
 							</if>
-							<if {@flash_error}>
+							<if {assigns.flash_error != null}>
 								<div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-									#{@flash_error}
+									${assigns.flash_error != null}
 								</div>
 							</if>
 					
@@ -1386,11 +1385,11 @@ class TodoLive {
 									📝 Todo Manager
 									</h1>
 										<div class="text-gray-600 dark:text-gray-400">
-										<div>Welcome, #{@current_user.name}!</div>
+										<div>Welcome, ${assigns.current_user.name}!</div>
 										<div class="text-xs text-gray-500 dark:text-gray-400">
 											Org:
 											<a data-testid="nav-org" href="/org" class="text-blue-700 dark:text-blue-300 hover:underline">
-												<span data-testid="org-slug">#{@organization_slug}</span>
+												<span data-testid="org-slug">${assigns.organization_slug}</span>
 											</a>
 										</div>
 										<div class="mt-2 flex items-center gap-3 text-sm">
@@ -1403,8 +1402,8 @@ class TodoLive {
 												<span aria-hidden="true">🌓</span>
 												<span data-theme-label class="text-xs font-medium">Theme</span>
 											</button>
-												<if {@signed_in}>
-													<if {@current_user.role == "admin"}>
+												<if {assigns.signed_in}>
+													<if {assigns.current_user.role == "admin"}>
 														<a data-testid="nav-admin" href="/admin" class="text-blue-700 dark:text-blue-300 hover:underline">
 															Admin
 														</a>
@@ -1413,8 +1412,8 @@ class TodoLive {
 															Users
 														</a>
 														<a data-testid="nav-profile" href="/profile" class="inline-flex items-center gap-2 text-blue-700 dark:text-blue-300 hover:underline">
-															<div data-testid="nav-profile-avatar" class={@header_avatar_class} style={@header_avatar_style}>
-															#{@header_avatar_initials}
+															<div data-testid="nav-profile-avatar" class={assigns.header_avatar_class} style={assigns.header_avatar_style}>
+															${assigns.header_avatar_initials}
 														</div>
 														<span>Profile</span>
 													</a>
@@ -1425,7 +1424,7 @@ class TodoLive {
 														</button>
 												</form>
 											</if>
-												<if {!@signed_in}>
+												<if {!assigns.signed_in}>
 													<span class="text-gray-500 dark:text-gray-400">Demo mode</span>
 													<a data-testid="nav-users" href="/users" class="text-blue-700 dark:text-blue-300 hover:underline">
 														Users
@@ -1442,19 +1441,19 @@ class TodoLive {
 							<div class="flex space-x-6">
 									<div class="text-center">
 										<div class="text-3xl font-bold text-blue-600 dark:text-blue-400">
-											#{@total_todos}
+											${assigns.total_todos}
 										</div>
 										<div class="text-sm text-gray-600 dark:text-gray-400">Total</div>
 									</div>
 									<div class="text-center">
 										<div class="text-3xl font-bold text-green-600 dark:text-green-400">
-											#{@completed_todos}
+											${assigns.completed_todos}
 										</div>
 										<div class="text-sm text-gray-600 dark:text-gray-400">Completed</div>
 									</div>
 									<div class="text-center">
 										<div class="text-3xl font-bold text-amber-600 dark:text-amber-400">
-											#{@pending_todos}
+											${assigns.pending_todos}
 										</div>
 										<div class="text-sm text-gray-600 dark:text-gray-400">Pending</div>
 									</div>
@@ -1463,24 +1462,12 @@ class TodoLive {
 						
 						<!-- Add Todo Button -->
 								<button phx-click=${EventName.ToggleForm} data-testid="btn-new-todo" class="w-full py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-md">
-									#{@toggle_form_label}
+									${assigns.toggle_form_label}
 								</button>
 							</div>
-
-							<!-- Typed slots demo: <.card> :let + <:action ...> -->
-							<.card :let={card} title={@organization_slug} className="mb-8">
-								<:action label="Organization" navigate="/org" />
-								<:action label="Users" navigate="/users" />
-								<div data-testid="demo-card" data-org={card.title} class="text-sm text-gray-700 dark:text-gray-200">
-									<div class="font-medium">Typed slot yield</div>
-									<div class="text-xs text-gray-500 dark:text-gray-400">
-										org slug: #{card.title}
-									</div>
-								</div>
-							</.card>
 							
 							<!-- New Todo Form -->
-							<if {@show_form}>
+							<if {assigns.show_form}>
 							<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8 border-l-4 border-blue-500">
 								<form phx-submit=${EventName.CreateTodo} class="space-y-4">
 								<div>
@@ -1547,7 +1534,7 @@ class TodoLive {
 							<!-- Search -->
 							<div class="flex-1 min-w-[300px]">
 	                            <form phx-change=${EventName.SearchTodos} class="relative">
-										<input type="search" name="query" value={@search_query} phx-debounce="300"
+										<input type="search" name="query" value={assigns.search_query} phx-debounce="300"
 											class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
 											placeholder="Search todos..." />
 										<span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
@@ -1557,17 +1544,17 @@ class TodoLive {
 	                        <!-- Filter Buttons -->
 		                        <div class="flex space-x-2">
 		                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="all" data-testid="btn-filter-all"
-		                                class={@filter_btn_all_class}>All</button>
+		                                class={assigns.filter_btn_all_class}>All</button>
 		                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="active" data-testid="btn-filter-active"
-		                                class={@filter_btn_active_class}>Active</button>
+		                                class={assigns.filter_btn_active_class}>Active</button>
 		                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="completed" data-testid="btn-filter-completed"
-		                                class={@filter_btn_completed_class}>Completed</button>
+		                                class={assigns.filter_btn_completed_class}>Completed</button>
 		                        </div>
 		                        <div class="flex flex-wrap gap-2" data-testid="available-tags">
-		                            <for {tagView in @available_tags}>
-		                                <button type="button" phx-click=${EventName.ToggleTag} phx-value-tag={tagView.tag} data-testid="tag-chip" data-tag={tagView.tag}
-		                                    class={tagView.chip_class}>
-		                                    #{tagView.tag}
+		                            <for {tag_view in assigns.available_tags}>
+		                                <button type="button" phx-click=${EventName.ToggleTag} phx-value-tag={tag_view.tag} data-testid="tag-chip" data-tag={tag_view.tag}
+		                                    class={tag_view.chip_class}>
+		                                    ${tag_view.tag}
 		                                </button>
 		                            </for>
 								</div>
@@ -1577,9 +1564,9 @@ class TodoLive {
                             <form phx-change=${EventName.SortTodos}>
 	                                <select name="sort_by"
 	                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-	                                    <option value="created" selected={@sort_selected_created}>Sort by Date</option>
-	                                    <option value="priority" selected={@sort_selected_priority}>Sort by Priority</option>
-	                                    <option value="due_date" selected={@sort_selected_due_date}>Sort by Due Date</option>
+	                                    <option value="created" selected={assigns.sort_selected_created}>Sort by Date</option>
+	                                    <option value="priority" selected={assigns.sort_selected_priority}>Sort by Priority</option>
+	                                    <option value="due_date" selected={assigns.sort_selected_due_date}>Sort by Due Date</option>
 	                                </select>
 	                            </form>
 							</div>
@@ -1591,26 +1578,26 @@ class TodoLive {
 							<div class="flex items-center justify-between gap-4">
 								<div class="font-semibold text-gray-800 dark:text-white">Online</div>
 								<div class="text-sm text-gray-600 dark:text-gray-300">
-									<span data-testid="online-count">#{@online_user_count}</span>
+									<span data-testid="online-count">${assigns.online_user_count}</span>
 								</div>
 							</div>
 
 							<div class="mt-3 flex flex-wrap gap-2">
-								<for {u in @online_user_views}>
+								<for {u in assigns.online_user_views}>
 									<div data-testid="online-user" data-key={u.key} class={u.chip_class}>
 										<div data-testid="online-avatar"
 											class={u.avatar_class}
 											style={u.avatar_style}>
-											#{u.avatar_initials}
+											${u.avatar_initials}
 										</div>
-										<span>#{u.display_name}</span>
-										<if {u.sublabel}>
-											<span class="opacity-75">#{u.sublabel}</span>
+										<span>${u.display_name}</span>
+										<if {u.sublabel != null && u.sublabel != ""}>
+											<span class="opacity-75">${u.sublabel}</span>
 										</if>
 									</div>
 								</for>
 
-									<if {@online_is_empty}>
+									<if {assigns.online_is_empty}>
 										<div class="text-sm text-gray-500 dark:text-gray-400">
 											No users online yet.
 										</div>
@@ -1623,22 +1610,22 @@ class TodoLive {
 								<div class="flex items-center justify-between gap-4">
 									<div class="font-semibold text-gray-800 dark:text-white">Activity</div>
 									<div class="text-sm text-gray-600 dark:text-gray-300">
-										<span data-testid="activity-count">#{@activity_count}</span>
+										<span data-testid="activity-count">${assigns.activity_count}</span>
 									</div>
 								</div>
 
 								<div class="mt-3 space-y-2">
-									<for {a in @activity_items}>
+									<for {a in assigns.activity_items}>
 										<div data-testid="activity-item" data-id={a.id} class={a.row_class}>
 											<div class="flex items-center gap-2">
-												<span class="text-base">#{a.icon}</span>
-												<span class="text-sm text-gray-800 dark:text-gray-200">#{a.message}</span>
+												<span class="text-base">${a.icon}</span>
+												<span class="text-sm text-gray-800 dark:text-gray-200">${a.message}</span>
 											</div>
-											<div class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">#{a.time_display}</div>
+											<div class="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">${a.time_display}</div>
 										</div>
 									</for>
 
-									<if {@activity_is_empty}>
+									<if {assigns.activity_is_empty}>
 										<div class="text-sm text-gray-500 dark:text-gray-400">
 											No activity yet. Open another browser to see real-time updates.
 										</div>
@@ -1650,7 +1637,7 @@ class TodoLive {
 		                    <!-- Bulk Actions (typed HXX) -->
 		                    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center">
 	                        <div class="text-sm text-gray-600 dark:text-gray-400">
-	                            Showing #{@visible_count} of #{@total_todos} todos
+	                            Showing ${assigns.visible_count} of ${assigns.total_todos} todos
 	                        </div>
 	                        <div class="flex flex-wrap items-center gap-2">
 	                            <button type="button" phx-click=${EventName.BulkComplete}
@@ -1686,7 +1673,7 @@ class TodoLive {
 					
 					<!-- Todo List -->
 	                    <div id="todo-list" class="space-y-4">
-	                        <for {v in @visible_todos}>
+	                        <for {v in assigns.visible_todos}>
 	                            <if {v.is_editing}>
 	                                <div id={v.dom_id} data-testid="todo-card" data-completed={v.completed_str}
 	                                    class={v.container_class}>
@@ -1694,7 +1681,7 @@ class TodoLive {
 	                                        <input type="text" name="title" value={v.title} required data-testid="input-title"
 	                                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white" />
                                         <textarea name="description" rows="2"
-                                            class="w-full px-4 py-2 border border-gray-300 dark-border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">#{v.description}</textarea>
+                                            class="w-full px-4 py-2 border border-gray-300 dark-border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">${v.description}</textarea>
                                         <div class="flex space-x-2">
                                             <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Save</button>
                                             <button type="button" phx-click=${EventName.CancelEdit} class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
@@ -1716,34 +1703,34 @@ class TodoLive {
 	                                        <!-- Content -->
 		                                        <div class="flex-1">
 		                                            <h3 class={v.title_class}>
-		                                                #{v.title}
+		                                                ${v.title}
 		                                            </h3>
-		                                            <if {v.editing_badge}>
+		                                            <if {v.editing_badge != null && v.editing_badge != ""}>
 		                                                <div data-testid="editing-badge" class="mt-2 inline-flex items-center px-2 py-1 rounded bg-purple-50 text-purple-700 border border-purple-200 text-xs dark:bg-purple-900/30 dark:text-purple-200 dark:border-purple-800">
-		                                                    #{v.editing_badge}
+		                                                    ${v.editing_badge}
 		                                                </div>
 		                                            </if>
 		                                            <if {v.has_description}>
 		                                                <p class={v.desc_class}>
-		                                                    #{v.description}
+		                                                    ${v.description}
 		                                                </p>
 		                                            </if>
 
                                             <!-- Meta info -->
                                             <div class="flex flex-wrap gap-2 mt-3">
                                                 <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
-                                                    Priority: #{v.priority}
+                                                    Priority: ${v.priority}
                                                 </span>
                                                 <if {v.has_due}>
                                                     <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs">
-                                                        Due: #{v.due_display}
+                                                        Due: ${v.due_display}
                                                     </span>
 	                                                </if>
 		                                                <if {v.has_tags}>
-		                                                    <for {tagView in v.tags}>
-		                                                        <button type="button" phx-click=${EventName.ToggleTag} phx-value-tag={tagView.tag} data-testid="todo-tag" data-tag={tagView.tag}
-		                                                            class={tagView.chip_class}>
-		                                                            #{tagView.tag}
+		                                                    <for {tag_view in v.tags}>
+		                                                        <button type="button" phx-click=${EventName.ToggleTag} phx-value-tag={tag_view.tag} data-testid="todo-tag" data-tag={tag_view.tag}
+		                                                            class={tag_view.chip_class}>
+		                                                            ${tag_view.tag}
 		                                                        </button>
 		                                                    </for>
 		                                                </if>
@@ -1763,8 +1750,7 @@ class TodoLive {
                         </for>
                     </div>
                 </div>
-            </div>
-        ');
+            </div>);
 	}
 
 	public static function renderBulkActions(assigns:TodoLiveAssigns):String {

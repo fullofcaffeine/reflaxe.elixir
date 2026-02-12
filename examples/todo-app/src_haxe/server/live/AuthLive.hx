@@ -97,8 +97,7 @@ class AuthLive {
 		renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
 		assigns = renderAssigns;
 
-		return hxx('
-            <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
+		return (<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-10 max-w-3xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
                         <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Sign in</h1>
@@ -106,22 +105,22 @@ class AuthLive {
                             Optional demo login. No passwords — just pick a name + email and we’ll create a user.
                         </p>
 
-                        <if {@flash_info}>
+                        <if {assigns.flash_info != null}>
                             <div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4">
-                                #{@flash_info}
+                                ${assigns.flash_info != null}
                             </div>
                         </if>
-                        <if {@flash_error}>
+                        <if {assigns.flash_error != null}>
                             <div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                                #{@flash_error}
+                                ${assigns.flash_error != null}
                             </div>
                         </if>
 
-                        <if {@signed_in}>
+                        <if {assigns.signed_in}>
                             <div class="border border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800 rounded-lg p-4 mb-6">
                                 <div class="font-semibold text-green-800 dark:text-green-200">Signed in</div>
                                 <div class="text-green-700 dark:text-green-200">
-                                    #{@current_user.name} &lt;#{@current_user.email}&gt;
+                                    ${assigns.current_user.name} &lt;${assigns.current_user.email}&gt;
                                 </div>
                                 <form action="/auth/logout" method="post" class="mt-4">
                                     <input type="hidden" name="_csrf_token" value=${CSRFProtection.get_csrf_token()}/>
@@ -136,14 +135,14 @@ class AuthLive {
 		                        <div class="grid grid-cols-1 gap-6">
 		                            <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-5">
 		                                <div class="font-semibold text-gray-800 dark:text-white mb-3">Sign in / create user</div>
-		                                <if {@mock_oauth_enabled}>
+		                                <if {assigns.mock_oauth_enabled}>
 		                                    <a data-testid="btn-mock-oauth"
 		                                        href="/auth/mock"
 		                                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-all duration-200 shadow-md mb-4">
 		                                        Continue with Mock OAuth (E2E)
 		                                    </a>
 		                                </if>
-		                                <if {@github_oauth_enabled}>
+		                                <if {assigns.github_oauth_enabled}>
 		                                    <a data-testid="btn-github-oauth"
 		                                        href="/auth/github"
 		                                        class="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200 shadow-md mb-4">
@@ -151,14 +150,14 @@ class AuthLive {
 		                                        Continue with GitHub
 		                                    </a>
 		                                </if>
-		                                <if {@oauth_enabled}>
+		                                <if {assigns.oauth_enabled}>
 		                                    <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400 mb-4">
 		                                        <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
 		                                        <div>or</div>
 		                                        <div class="h-px flex-1 bg-gray-200 dark:bg-gray-700"></div>
 		                                    </div>
 		                                </if>
-		                                <if {!@oauth_enabled}>
+		                                <if {!assigns.oauth_enabled}>
 		                                    <div data-testid="github-oauth-disabled" class="text-xs text-gray-500 dark:text-gray-400 mb-4">
 		                                        GitHub OAuth is disabled (set <code>GITHUB_CLIENT_ID</code> and <code>GITHUB_CLIENT_SECRET</code> to enable).
 		                                    </div>
@@ -196,11 +195,11 @@ class AuthLive {
                                     Choose an existing user from the database:
                                 </p>
                                 <div class="space-y-3">
-                                    <for {u in @users}>
+                                    <for {u in assigns.users}>
                                         <div class="flex items-center justify-between gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
                                             <div class="min-w-0">
-                                                <div class="font-medium text-gray-900 dark:text-white truncate">#{u.name}</div>
-                                                <div class="text-sm text-gray-600 dark:text-gray-300 truncate">#{u.email}</div>
+                                                <div class="font-medium text-gray-900 dark:text-white truncate">${u.name}</div>
+                                                <div class="text-sm text-gray-600 dark:text-gray-300 truncate">${u.email}</div>
                                             </div>
                                             <form action="/auth/login" method="post" class="shrink-0">
                                                 <input type="hidden" name="_csrf_token" value=${CSRFProtection.get_csrf_token()}/>
@@ -217,7 +216,6 @@ class AuthLive {
                         </div>
                     </div>
                 </div>
-            </div>
-        ');
+            </div>);
 	}
 }

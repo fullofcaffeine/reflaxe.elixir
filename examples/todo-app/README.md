@@ -495,3 +495,8 @@ GPL-3.0 - See LICENSE file in project root
 ---
 
 **Built with Reflaxe.Elixir v1.1.x** - Write once in Haxe, run everywhere! 🚀
+
+## Template Mode
+
+- `build-server.hxml` enables strict TSX HXX mode with `-D hxx_mode=tsx`.
+- Server templates in `src_haxe/server/` use inline markup authoring (no legacy `hxx('...')` wrappers).

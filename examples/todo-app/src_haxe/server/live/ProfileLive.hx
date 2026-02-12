@@ -172,8 +172,7 @@ class ProfileLive {
 		renderAssigns = Component.assign(renderAssigns, "avatar_style", avatarStyle);
 		assigns = renderAssigns;
 
-		return hxx('
-            <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
+		return (<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-10 max-w-3xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
                         <div class="flex items-start justify-between gap-4 mb-6">
@@ -195,18 +194,18 @@ class ProfileLive {
                             </div>
                         </div>
 
-                        <if {@flash_info}>
+                        <if {assigns.flash_info != null}>
                             <div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4">
-                                #{@flash_info}
+                                ${assigns.flash_info != null}
                             </div>
                         </if>
-                        <if {@flash_error}>
+                        <if {assigns.flash_error != null}>
                             <div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                                #{@flash_error}
+                                ${assigns.flash_error != null}
                             </div>
                         </if>
 
-                        <if {!@signed_in}>
+                        <if {!assigns.signed_in}>
                             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
                                 <div class="font-semibold text-gray-900 dark:text-white mb-2">Not signed in</div>
                                 <p class="text-gray-600 dark:text-gray-300 mb-4">
@@ -218,23 +217,23 @@ class ProfileLive {
                             </div>
                         </if>
 
-                        <if {@signed_in}>
+                        <if {assigns.signed_in}>
                             <div class="space-y-4">
                                 <div class="flex items-center gap-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl">
-                                    <div data-testid="profile-avatar" class={@avatar_class} style={@avatar_style}>
-                                        #{@avatar_initials}
+                                    <div data-testid="profile-avatar" class={assigns.avatar_class} style={assigns.avatar_style}>
+                                        ${assigns.avatar_initials}
                                     </div>
                                     <div class="flex-1">
                                         <div class="text-lg font-semibold text-gray-900 dark:text-white">
-                                            #{@name}
+                                            ${assigns.name}
                                         </div>
                                         <div class="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-2">
-                                            <span data-testid="profile-email-display">#{@email}</span>
+                                            <span data-testid="profile-email-display">${assigns.email}</span>
                                             <button data-testid="btn-copy-email"
                                                 id="btn-copy-email"
                                                 type="button"
                                                 phx-hook=${HookName.CopyToClipboard}
-                                                data-copy-text={@email}
+                                                data-copy-text={assigns.email}
                                                 data-copied-event="clipboard_copied"
                                                 data-copied-message="Email copied."
                                                 class="px-2 py-1 rounded-md bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
@@ -242,7 +241,7 @@ class ProfileLive {
                                             </button>
                                         </div>
                                         <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                            Org: <span data-testid="profile-org-slug">#{@organization_slug}</span>
+                                            Org: <span data-testid="profile-org-slug">${assigns.organization_slug}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -255,7 +254,7 @@ class ProfileLive {
                                             type="text"
                                             required
                                             minlength="2"
-                                            value={@name}
+                                            value={assigns.name}
                                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
                                     </div>
 
@@ -268,7 +267,7 @@ class ProfileLive {
                                             rows="4"
                                             maxlength="280"
                                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                            placeholder="A short bio (max 280 characters)">#{@bio}</textarea>
+                                            placeholder="A short bio (max 280 characters)">${assigns.bio}</textarea>
                                     </div>
 
                                     <div class="pt-2">
@@ -290,7 +289,6 @@ class ProfileLive {
                         </if>
                     </div>
                 </div>
-            </div>
-        ');
+            </div>);
 	}
 }

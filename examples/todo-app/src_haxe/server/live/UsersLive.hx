@@ -292,8 +292,7 @@ class UsersLive {
 		renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
 		assigns = renderAssigns;
 
-		return hxx('
-            <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
+		return (<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-10 max-w-5xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
                         <div class="flex items-start justify-between gap-4 mb-6">
@@ -306,46 +305,46 @@ class UsersLive {
                             <a href="/todos" class="text-blue-700 hover:underline">Back to todos</a>
                         </div>
 
-                        <if {@flash_info}>
+                        <if {assigns.flash_info != null}>
                             <div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4">
-                                #{@flash_info}
+                                ${assigns.flash_info != null}
                             </div>
                         </if>
-                        <if {@flash_error}>
+                        <if {assigns.flash_error != null}>
                             <div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                                #{@flash_error}
+                                ${assigns.flash_error != null}
                             </div>
                         </if>
 
                         <div class="grid grid-cols-3 gap-4 mb-6">
                             <div class="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                                 <div class="text-sm text-gray-600 dark:text-gray-300">Total</div>
-                                <div data-testid="users-total" class="text-2xl font-bold text-gray-900 dark:text-white">#{@total_users}</div>
+                                <div data-testid="users-total" class="text-2xl font-bold text-gray-900 dark:text-white">${assigns.total_users}</div>
                             </div>
                             <div class="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                                 <div class="text-sm text-gray-600 dark:text-gray-300">Active</div>
-                                <div data-testid="users-active" class="text-2xl font-bold text-green-700 dark:text-green-200">#{@active_users}</div>
+                                <div data-testid="users-active" class="text-2xl font-bold text-green-700 dark:text-green-200">${assigns.active_users}</div>
                             </div>
                             <div class="bg-gray-50 dark:bg-gray-900/20 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                                 <div class="text-sm text-gray-600 dark:text-gray-300">Inactive</div>
-                                <div data-testid="users-inactive" class="text-2xl font-bold text-gray-700 dark:text-gray-200">#{@inactive_users}</div>
+                                <div data-testid="users-inactive" class="text-2xl font-bold text-gray-700 dark:text-gray-200">${assigns.inactive_users}</div>
                             </div>
                         </div>
 
                         <form phx-change=${EventName.FilterUsers} class="flex flex-col md:flex-row gap-3 mb-6">
-                            <input data-testid="users-search" name="query" type="text" value={@search_query} placeholder="Search name or email…"
+                            <input data-testid="users-search" name="query" type="text" value={assigns.search_query} placeholder="Search name or email…"
                                 phx-debounce="250"
                                 class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
 
                             <select data-testid="users-status" name="status"
                                 class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                <option value="all" selected={@status_filter == "all"}>All statuses</option>
-                                <option value="active" selected={@status_filter == "active"}>Active</option>
-                                <option value="inactive" selected={@status_filter == "inactive"}>Inactive</option>
+                                <option value="all" selected={assigns.status_filter == "all"}>All statuses</option>
+                                <option value="active" selected={assigns.status_filter == "active"}>Active</option>
+                                <option value="inactive" selected={assigns.status_filter == "inactive"}>Inactive</option>
                             </select>
                         </form>
 
-                        <if {!@signed_in}>
+                        <if {!assigns.signed_in}>
                             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-5 mb-6">
                                 <div class="font-semibold text-gray-900 dark:text-white mb-1">Demo mode</div>
                                 <p class="text-gray-600 dark:text-gray-300">
@@ -367,27 +366,27 @@ class UsersLive {
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                    <for {u in @visible_users}>
+                                    <for {u in assigns.visible_users}>
                                         <tr data-testid="users-row" data-id={u.id} class="text-gray-900 dark:text-gray-100">
                                             <td class="px-4 py-3">
                                                 <div class="flex items-center gap-3">
                                                     <div data-testid="user-avatar"
                                                         class={u.avatar_class}
                                                         style={u.avatar_style}>
-                                                        #{u.avatar_initials}
+                                                        ${u.avatar_initials}
                                                     </div>
-                                                    <span class="font-medium">#{u.name}</span>
+                                                    <span class="font-medium">${u.name}</span>
                                                 </div>
                                             </td>
-                                            <td class="px-4 py-3 text-gray-700 dark:text-gray-200">#{u.email}</td>
+                                            <td class="px-4 py-3 text-gray-700 dark:text-gray-200">${u.email}</td>
                                             <td class="px-4 py-3">
-                                                <span class={u.status_class}>#{u.status_label}</span>
+                                                <span class={u.status_class}>${u.status_label}</span>
                                             </td>
-                                            <td class="px-4 py-3 text-gray-700 dark:text-gray-200">#{u.last_login_label}</td>
+                                            <td class="px-4 py-3 text-gray-700 dark:text-gray-200">${u.last_login_label}</td>
                                             <td class="px-4 py-3 text-right">
                                                 <button type="button" phx-click=${EventName.ToggleActive} phx-value-id={u.id} data-testid="users-toggle-active"
                                                     class={u.toggle_class}>
-                                                    #{u.toggle_label}
+                                                    ${u.toggle_label}
                                                 </button>
                                             </td>
                                         </tr>
@@ -396,14 +395,13 @@ class UsersLive {
                             </table>
                         </div>
 
-                        <if {@visible_users.length == 0}>
+                        <if {assigns.visible_users.length == 0}>
                             <div class="text-center text-gray-600 dark:text-gray-300 mt-6">
                                 No users match your filters.
                             </div>
                         </if>
                     </div>
                 </div>
-            </div>
-        ');
+            </div>);
 	}
 }

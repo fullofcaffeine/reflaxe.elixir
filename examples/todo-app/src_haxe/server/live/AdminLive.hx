@@ -141,15 +141,14 @@ class AdminLive {
 		renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
 		assigns = renderAssigns;
 
-		return hxx('
-            <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
+		return (<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-10 max-w-4xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
                         <div class="flex items-start justify-between gap-4 mb-6">
 	                            <div>
 	                                <h1 data-testid="admin-title" class="text-3xl font-bold text-gray-900 dark:text-white">Admin dashboard</h1>
 	                                <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-	                                    Org: <span data-testid="admin-org-slug">#{@organization_slug}</span>
+	                                    Org: <span data-testid="admin-org-slug">${assigns.organization_slug}</span>
 	                                </div>
 	                                <p class="text-gray-600 dark:text-gray-300">Role-based access control showcase.</p>
 	                            </div>
@@ -166,7 +165,7 @@ class AdminLive {
                                 </button>
                                 <a data-testid="admin-audit-link" href="/admin/audit" class="text-blue-700 hover:underline">Audit log</a>
                                 <a href="/todos" class="text-blue-700 hover:underline">Back to todos</a>
-                                <if {@signed_in}>
+                                <if {assigns.signed_in}>
                                     <form action="/auth/logout" method="post" class="inline">
                                         <input type="hidden" name="_csrf_token" value=${CSRFProtection.get_csrf_token()}/>
                                         <button data-testid="admin-sign-out" type="submit" class="text-gray-700 dark:text-gray-200 hover:underline">
@@ -177,18 +176,18 @@ class AdminLive {
                             </div>
                         </div>
 
-                        <if {@flash_info}>
+                        <if {assigns.flash_info != null}>
                             <div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4">
-                                #{@flash_info}
+                                ${assigns.flash_info != null}
                             </div>
                         </if>
-                        <if {@flash_error}>
+                        <if {assigns.flash_error != null}>
                             <div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                                #{@flash_error}
+                                ${assigns.flash_error != null}
                             </div>
                         </if>
 
-                        <if {!@is_admin}>
+                        <if {!assigns.is_admin}>
                             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
                                 <div class="font-semibold text-gray-900 dark:text-white mb-2">Not authorized</div>
                                 <p class="text-gray-600 dark:text-gray-300">
@@ -197,33 +196,33 @@ class AdminLive {
                             </div>
                         </if>
 
-                        <if {@is_admin}>
+                        <if {assigns.is_admin}>
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                                     <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Users</div>
-                                    <div data-testid="admin-stat-total-users" class="text-2xl font-bold text-gray-900 dark:text-white">#{@total_users}</div>
+                                    <div data-testid="admin-stat-total-users" class="text-2xl font-bold text-gray-900 dark:text-white">${assigns.total_users}</div>
                                 </div>
                                 <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                                     <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Admins</div>
-                                    <div data-testid="admin-stat-admins" class="text-2xl font-bold text-gray-900 dark:text-white">#{@admin_users}</div>
+                                    <div data-testid="admin-stat-admins" class="text-2xl font-bold text-gray-900 dark:text-white">${assigns.admin_users}</div>
                                 </div>
                                 <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                                     <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Regular users</div>
-                                    <div data-testid="admin-stat-regular" class="text-2xl font-bold text-gray-900 dark:text-white">#{@regular_users}</div>
+                                    <div data-testid="admin-stat-regular" class="text-2xl font-bold text-gray-900 dark:text-white">${assigns.regular_users}</div>
                                 </div>
                             </div>
 
                             <div class="mt-8">
                                 <div class="font-semibold text-gray-900 dark:text-white mb-3">All users</div>
                                 <div class="space-y-2">
-                                    <for {u in @users}>
+                                    <for {u in assigns.users}>
                                         <div data-testid="admin-user-row" class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                                             <div class="min-w-0">
-                                                <div class="font-medium text-gray-900 dark:text-white truncate">#{u.name}</div>
-                                                <div class="text-sm text-gray-600 dark:text-gray-300 truncate">#{u.email}</div>
+                                                <div class="font-medium text-gray-900 dark:text-white truncate">${u.name}</div>
+                                                <div class="text-sm text-gray-600 dark:text-gray-300 truncate">${u.email}</div>
                                             </div>
                                             <div data-testid="admin-user-role" class="shrink-0 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 text-xs font-semibold text-gray-800 dark:text-white">
-                                                #{u.role}
+                                                ${u.role}
                                             </div>
                                         </div>
                                     </for>
@@ -232,7 +231,6 @@ class AdminLive {
                         </if>
                     </div>
                 </div>
-            </div>
-        ');
+            </div>);
 	}
 }

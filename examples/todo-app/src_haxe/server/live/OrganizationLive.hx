@@ -499,8 +499,7 @@ class OrganizationLive {
 		renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
 		assigns = renderAssigns;
 
-		return hxx('
-            <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
+		return (<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-10 max-w-3xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
                         <div class="flex items-start justify-between gap-4 mb-6">
@@ -511,18 +510,18 @@ class OrganizationLive {
                             <a data-testid="org-back" href="/todos" class="text-blue-700 dark:text-blue-300 hover:underline">Back to todos</a>
                         </div>
 
-                        <if {@flash_info}>
+                        <if {assigns.flash_info != null}>
                             <div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4">
-                                #{@flash_info}
+                                ${assigns.flash_info != null}
                             </div>
                         </if>
-                        <if {@flash_error}>
+                        <if {assigns.flash_error != null}>
                             <div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                                #{@flash_error}
+                                ${assigns.flash_error != null}
                             </div>
                         </if>
 
-                        <if {!@signed_in}>
+                        <if {!assigns.signed_in}>
                             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
                                 <div class="font-semibold text-gray-900 dark:text-white mb-2">Not signed in</div>
                                 <p class="text-gray-600 dark:text-gray-300">
@@ -534,18 +533,18 @@ class OrganizationLive {
                             </div>
                         </if>
 
-                        <if {@signed_in}>
+                        <if {assigns.signed_in}>
                             <div class="rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                                 <div class="text-sm text-gray-600 dark:text-gray-300">
                                     Current org:
-                                    <span data-testid="org-current-slug" class="font-semibold text-gray-900 dark:text-white">#{@current_org_slug}</span>
+                                    <span data-testid="org-current-slug" class="font-semibold text-gray-900 dark:text-white">${assigns.current_org_slug}</span>
                                 </div>
 
                                 <form phx-submit=${EventName.SwitchOrg} class="mt-4 flex flex-col sm:flex-row gap-3">
                                     <input data-testid="org-input-slug"
                                         type="text"
                                         name="slug"
-                                        value={@slug_input}
+                                        value={assigns.slug_input}
                                         placeholder="org slug (e.g. demo)"
                                         class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
                                     <button data-testid="btn-switch-org"
@@ -558,11 +557,11 @@ class OrganizationLive {
                                 <div class="mt-6">
                                     <div class="font-semibold text-gray-900 dark:text-white mb-2">Known organizations</div>
                                     <div class="space-y-2">
-                                        <for {o in @org_rows}>
+                                        <for {o in assigns.org_rows}>
                                             <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                                                 <div class="min-w-0">
-                                                    <div class="font-medium text-gray-900 dark:text-white truncate">#{o.slug}</div>
-                                                    <div class="text-sm text-gray-600 dark:text-gray-300 truncate">#{o.name}</div>
+                                                    <div class="font-medium text-gray-900 dark:text-white truncate">${o.slug}</div>
+                                                    <div class="text-sm text-gray-600 dark:text-gray-300 truncate">${o.name}</div>
                                                 </div>
                                                 <if {o.is_current}>
                                                     <span data-testid="org-current-badge" class="shrink-0 inline-flex items-center rounded-full bg-green-100 dark:bg-green-900/30 px-3 py-1 text-xs font-semibold text-green-800 dark:text-green-200">
@@ -584,7 +583,7 @@ class OrganizationLive {
                                 </div>
                             </div>
 
-                            <if {@is_admin}>
+                            <if {assigns.is_admin}>
                                 <div class="mt-6 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                                     <div class="flex items-start justify-between gap-4">
                                         <div>
@@ -597,14 +596,14 @@ class OrganizationLive {
                                         <input data-testid="invite-email"
                                             type="email"
                                             name="email"
-                                            value={@invite_email_input}
-                                            placeholder="user@example.com"
+                                            value={assigns.invite_email_input}
+                                            placeholder="userassigns.example.com"
                                             class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
                                         <select data-testid="invite-role"
                                             name="role"
                                             class="px-4 py-2 border border-gray-300 rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                            <option value="user" selected={@invite_role_input == "user"}>User</option>
-                                            <option value="admin" selected={@invite_role_input == "admin"}>Admin</option>
+                                            <option value="user" selected={assigns.invite_role_input == "user"}>User</option>
+                                            <option value="admin" selected={assigns.invite_role_input == "admin"}>Admin</option>
                                         </select>
                                         <button data-testid="btn-invite"
                                             type="submit"
@@ -616,14 +615,14 @@ class OrganizationLive {
                                     <div class="mt-6">
                                         <div class="font-semibold text-gray-900 dark:text-white mb-2">Invitations</div>
                                         <div class="space-y-2">
-                                            <for {i in @invite_rows}>
+                                            <for {i in assigns.invite_rows}>
                                                 <div class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                                                     <div class="min-w-0">
-                                                        <div class="font-medium text-gray-900 dark:text-white truncate">#{i.email}</div>
-                                                        <div class="text-sm text-gray-600 dark:text-gray-300 truncate">Role: #{i.role}</div>
+                                                        <div class="font-medium text-gray-900 dark:text-white truncate">${i.email}</div>
+                                                        <div class="text-sm text-gray-600 dark:text-gray-300 truncate">Role: ${i.role}</div>
                                                     </div>
                                                     <span class="shrink-0 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200">
-                                                        #{i.status_label}
+                                                        ${i.status_label}
                                                     </span>
                                                     <if {!i.is_accepted}>
                                                         <button data-testid="btn-revoke-invite"
@@ -650,20 +649,20 @@ class OrganizationLive {
                                 </div>
 
                                 <div class="mt-6 space-y-2">
-                                    <for {m in @member_rows}>
+                                    <for {m in assigns.member_rows}>
                                         <div data-testid="member-row" class="flex items-center justify-between gap-4 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
                                             <div class="min-w-0">
                                                 <div class="font-medium text-gray-900 dark:text-white truncate">
-                                                    #{m.name}
+                                                    ${m.name}
                                                     <if {m.is_self}>
                                                         <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">(you)</span>
                                                     </if>
                                                 </div>
-                                                <div data-testid="member-email" class="text-sm text-gray-600 dark:text-gray-300 truncate">#{m.email}</div>
+                                                <div data-testid="member-email" class="text-sm text-gray-600 dark:text-gray-300 truncate">${m.email}</div>
                                             </div>
 
 	                                            <div data-testid="member-role" class="shrink-0 inline-flex items-center rounded-full bg-gray-100 dark:bg-gray-700 px-3 py-1 text-xs font-semibold text-gray-800 dark:text-gray-200">
-	                                                #{m.role}
+	                                                ${m.role}
 	                                            </div>
 	                                            <if {m.is_last_admin}>
 	                                                <span data-testid="last-admin-badge" class="shrink-0 inline-flex items-center rounded-full bg-amber-100 dark:bg-amber-900/30 px-3 py-1 text-xs font-semibold text-amber-800 dark:text-amber-200">
@@ -671,7 +670,7 @@ class OrganizationLive {
 	                                                </span>
 	                                            </if>
 
-	                                            <if {@is_admin}>
+	                                            <if {assigns.is_admin}>
 	                                                <form phx-submit=${EventName.SetUserRole} class="shrink-0 flex items-center gap-2">
 	                                                    <input type="hidden" name="member_id" value={m.id}/>
 	                                                    <select data-testid="member-role-select"
@@ -696,7 +695,6 @@ class OrganizationLive {
                         </if>
                     </div>
                 </div>
-            </div>
-        ');
+            </div>);
 	}
 }

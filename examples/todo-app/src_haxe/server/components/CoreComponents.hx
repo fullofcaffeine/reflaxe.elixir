@@ -139,16 +139,23 @@ class CoreComponents {
 		return className != null ? "icon icon-" + name + " " + className : "icon icon-" + name;
 	}
 
+	static inline function fieldErrors(errors:Null<Array<String>>):Array<String> {
+		return errors != null ? errors : [];
+	}
+
+	static inline function cellValue(row:TableRowData, key:String):String {
+		var value = row.get(key);
+		return value != null ? value : "";
+	}
+
 	/**
 	 * Renders a modal dialog
 	 */
 	@:component
 	public static function modal(assigns:ModalAssigns):String {
-		return hxx('
-            <div id=${assigns.id} class="modal" phx-show=${assigns.show}>
+		return (<div id=${assigns.id} class="modal" phx-show=${assigns.show}>
                 ${assigns.inner_content != null ? assigns.inner_content : ""}
-            </div>
-        ');
+            </div>);
 	}
 
 	/**
@@ -175,8 +182,7 @@ class CoreComponents {
 	 */
 	@:component
 	public static function input(assigns:InputAssigns):String {
-		return hxx('
-            <div class="form-group">
+		return (<div class="form-group">
                 <label for=${assigns.field.id}>${assigns.label}</label>
                 <input
                     type=${assigns.type != null ? assigns.type : "text"}
@@ -189,11 +195,10 @@ class CoreComponents {
                 />
                 <if {assigns.field.errors != null && assigns.field.errors.length > 0}>
                     <span class="error">
-                        ${Enum.join(assigns.field.errors != null ? assigns.field.errors : [], ", ")}
+                        ${Enum.join(fieldErrors(assigns.field.errors), ", ")}
                     </span>
                 </if>
-            </div>
-        ');
+            </div>);
 	}
 
 	/**
@@ -201,13 +206,11 @@ class CoreComponents {
 	 */
 	@:component
 	public static function error(assigns:ErrorAssigns):String {
-		return hxx('
-            <if {assigns.field.errors != null && assigns.field.errors.length > 0}>
+		return (<if {assigns.field.errors != null && assigns.field.errors.length > 0}>
                 <div class="error-message">
-                    ${Enum.join(assigns.field.errors != null ? assigns.field.errors : [], ", ")}
+                    ${Enum.join(fieldErrors(assigns.field.errors), ", ")}
                 </div>
-            </if>
-        ');
+            </if>);
 	}
 
 	/**
@@ -215,11 +218,9 @@ class CoreComponents {
 	 */
 	@:component
 	public static function simple_form(assigns:FormAssigns):String {
-		return hxx('
-            <.form :let={f} for=${assigns.formFor} action=${assigns.action} method=${assigns.method != null ? assigns.method : "post"}>
-                ${assigns.inner_content}
-            </.form>
-        ');
+		return <form action=${assigns.action} method=${assigns.method != null ? assigns.method : "post"}>
+			${assigns.inner_content}
+		</form>;
 	}
 
 	/**
@@ -227,45 +228,37 @@ class CoreComponents {
 	 */
 	@:component
 	public static function header(assigns:HeaderAssigns):String {
-		return hxx('
-            <header class="header">
+		return (<header class="header">
                 <h1>${assigns.title}</h1>
-                <if {assigns.actions}>
+                <if {assigns.actions != null}>
                     <div class="actions">
                         ${assigns.actions != null ? assigns.actions : ""}
                     </div>
                 </if>
-            </header>
-        ');
+            </header>);
 	}
 
 	/**
 	 * Renders a reusable card surface with typed slots.
 	 *
-	 * - `:let` on <.card> binds to the value passed from `render_slot(@inner_block, value)`
+	 * - `:let` on <.card> binds to the value passed from `render_slot(assigns.inner_block, value)`
 	 * - `<:action .../>` slot tags are type-checked against CardActionAssigns
 	 */
 	@:component
 	public static function card(assigns:CardAssigns):String {
-		return hxx('
-	            <section class={["bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden", @className]}>
+		return (<section class={["bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden", assigns.className]}>
 	                <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-	                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">#{@title}</h2>
-	                    <if {assigns.action != null && assigns.action.length > 0}>
-	                        <div class="flex items-center gap-2">
-	                            <for {a in assigns.action}>
-                                <.link navigate={a.navigate} class="text-sm text-blue-700 dark:text-blue-300 hover:underline">
-                                    #{a.label}
-                                </.link>
-                            </for>
-                        </div>
-                    </if>
+	                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">${assigns.title}</h2>
+	                    <if {assigns.action != null}>
+								<div class="flex items-center gap-2">
+									${Component.render_slot(cast assigns.action)}
+								</div>
+							</if>
 	                </div>
 	                <div class="px-6 py-4">
-	                    #{render_slot(@inner_block, %{title: @title})}
+	                    ${Component.render_slot(assigns.inner_block, {title: assigns.title})}
 	                </div>
-	            </section>
-	        ');
+	            </section>);
 	}
 
 	/**
@@ -273,12 +266,11 @@ class CoreComponents {
 	 */
 	@:component
 	public static function table(assigns:TableAssigns):String {
-		return hxx('
-            <table class="table">
+		return (<table class="table">
                 <thead>
                     <tr>
                         <for {col in assigns.columns}>
-                            <th>#{col.label}</th>
+                            <th>${col.label}</th>
                         </for>
                     </tr>
                 </thead>
@@ -286,13 +278,12 @@ class CoreComponents {
                     <for {row in assigns.rows}>
                         <tr>
                             <for {col in assigns.columns}>
-                                <td>#{Map.get(row, col.field)}</td>
+                                <td>${cellValue(row, col.field)}</td>
                             </for>
                         </tr>
                     </for>
                 </tbody>
-            </table>
-        ');
+            </table>);
 	}
 
 	/**
@@ -300,13 +291,11 @@ class CoreComponents {
 	 */
 	@:component
 	public static function list(assigns:ListAssigns):String {
-		return hxx('
-            <ul class="list">
+		return (<ul class="list">
                 <for {item in assigns.items}>
-                    <li>#{item}</li>
+                    <li>${item}</li>
                 </for>
-            </ul>
-        ');
+            </ul>);
 	}
 
 	/**
@@ -314,13 +303,11 @@ class CoreComponents {
 	 */
 	@:component
 	public static function back(assigns:BackAssigns):String {
-		return hxx('
-            <div class="back-link">
+		return (<div class="back-link">
                 <.link navigate=${assigns.navigate}>
                     ← Back
                 </.link>
-            </div>
-        ');
+            </div>);
 	}
 
 	/**
@@ -328,9 +315,7 @@ class CoreComponents {
 	 */
 	@:component
 	public static function icon(assigns:IconAssigns):String {
-		return hxx('
-            <span class=${iconClass(assigns.name, assigns.className)}></span>
-        ');
+		return (<span class=${iconClass(assigns.name, assigns.className)}></span>);
 	}
 
 	/**
@@ -338,10 +323,8 @@ class CoreComponents {
 	 */
 	@:component
 	public static function label(assigns:LabelAssigns):String {
-		return hxx('
-            <label for=${assigns.htmlFor} class=${assigns.className}>
+		return (<label for=${assigns.htmlFor} class=${assigns.className}>
                 ${assigns.inner_content}
-            </label>
-        ');
+            </label>);
 	}
 }

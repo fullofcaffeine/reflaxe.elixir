@@ -66,6 +66,9 @@
 # -D debug_success_unifier
 # -D debug_presence
 
+# Strict typed HXX authoring mode (TSX) for todo-app templates
+-D hxx_mode=tsx
+
 # Enable deterministic render string → ~H conversion
 -D hxx_string_to_sigil
 

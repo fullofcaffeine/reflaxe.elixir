@@ -23,32 +23,29 @@ class Layouts {
 	 *
 	 * HOW
 	 * - Return a real HEEx root document that includes tracked static assets
-	 *   and yields `@inner_content`. This mirrors Phoenix 1.7 defaults and
+	 *   and yields `assigns.inner_content`. This mirrors Phoenix 1.7 defaults and
 	 *   lets our HEEx transformer convert this string into a `~H` sigil.
 	 */
 	@:component public static function root(assigns:Assigns<LayoutAssigns<User, TodoLiveAssigns>>):String {
-		return hxx('
-            <!DOCTYPE html>
-            <html lang="en" class="h-full">
-                <head>
-                    <meta charset="utf-8"/>
-                    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
-                    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-                    <title>Todo App</title>
-                    <meta name="csrf-token" content=${CSRFProtection.get_csrf_token()}/>
-                    
-                    <!-- Static assets (served by Phoenix Endpoint) -->
-                    <link phx-track-static rel="stylesheet" href="/assets/app.css"/>
-                    <!-- Bundle that bootstraps LiveSocket and loads Haxe hooks -->
-                    <script defer phx-track-static type="text/javascript" src="/assets/phoenix_app.js"></script>
-                </head>
-                <body class="h-full bg-gray-50 dark:bg-gray-900 font-inter antialiased">
-                    <main id="main-content" class="h-full">
-                        ${assigns.inner_content}
-                    </main>
-                </body>
-            </html>
-        ');
+		return <html lang="en" class="h-full">
+			<head>
+				<meta charset="utf-8" />
+				<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+				<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+				<title>Todo App</title>
+				<meta name="csrf-token" content=${CSRFProtection.get_csrf_token()} />
+
+				<!-- Static assets (served by Phoenix Endpoint) -->
+				<link phx-track-static rel="stylesheet" href="/assets/app.css" />
+				<!-- Bundle that bootstraps LiveSocket and loads Haxe hooks -->
+				<script defer phx-track-static type="text/javascript" src="/assets/phoenix_app.js"></script>
+			</head>
+			<body class="h-full bg-gray-50 dark:bg-gray-900 font-inter antialiased">
+				<main id="main-content" class="h-full">
+					${assigns.inner_content}
+				</main>
+			</body>
+		</html>;
 	}
 
 	/**
@@ -56,12 +53,10 @@ class Layouts {
 	 * - Wraps content in a responsive container and basic page chrome.
 	 */
 	@:component public static function app(assigns:Assigns<LayoutAssigns<User, TodoLiveAssigns>>):String {
-		return hxx('
-            <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
-                <div class="container mx-auto px-4 py-8 max-w-6xl">
-                    ${assigns.inner_content}
-                </div>
-            </div>
-        ');
+		return <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
+			<div class="container mx-auto px-4 py-8 max-w-6xl">
+				${assigns.inner_content}
+			</div>
+		</div>;
 	}
 }

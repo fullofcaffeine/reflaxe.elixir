@@ -254,15 +254,14 @@ class AuditLogLive {
 		renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
 		assigns = renderAssigns;
 
-		return hxx('
-            <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
+		return (<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-10 max-w-6xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
                         <div class="flex items-start justify-between gap-4 mb-6">
                             <div>
                                 <h1 data-testid="audit-title" class="text-3xl font-bold text-gray-900 dark:text-white">Audit log</h1>
                                 <div class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    Org: <span data-testid="audit-org-slug">#{@organization_slug}</span>
+                                    Org: <span data-testid="audit-org-slug">${assigns.organization_slug}</span>
                                 </div>
                                 <p class="text-gray-600 dark:text-gray-300">Who did what, and when.</p>
                             </div>
@@ -272,18 +271,18 @@ class AuditLogLive {
                             </div>
                         </div>
 
-                        <if {@flash_info}>
+                        <if {assigns.flash_info != null}>
                             <div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4">
-                                #{@flash_info}
+                                ${assigns.flash_info != null}
                             </div>
                         </if>
-                        <if {@flash_error}>
+                        <if {assigns.flash_error != null}>
                             <div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                                #{@flash_error}
+                                ${assigns.flash_error != null}
                             </div>
                         </if>
 
-                        <if {!@is_admin}>
+                        <if {!assigns.is_admin}>
                             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-6">
                                 <div class="font-semibold text-gray-900 dark:text-white mb-2">Not authorized</div>
                                 <p class="text-gray-600 dark:text-gray-300">
@@ -292,39 +291,39 @@ class AuditLogLive {
                             </div>
                         </if>
 
-                        <if {@is_admin}>
+                        <if {assigns.is_admin}>
                             <div class="flex items-center justify-between gap-4 mb-4">
                                 <div class="text-sm text-gray-600 dark:text-gray-300">
-                                    Entries: <span data-testid="audit-count" class="font-semibold text-gray-900 dark:text-white">#{@audit_count}</span>
+                                    Entries: <span data-testid="audit-count" class="font-semibold text-gray-900 dark:text-white">${assigns.audit_count}</span>
                                 </div>
                             </div>
 
                             <form phx-change=${EventName.FilterAudit} class="flex flex-col md:flex-row gap-3 mb-6">
 	                                <select data-testid="audit-filter-action" name="action"
 	                                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-	                                    <option value="all" selected={@action_filter == "all"}>All actions</option>
-	                                    <option value="org.invite_created" selected={@action_filter == "org.invite_created"}>Invite created</option>
-	                                    <option value="org.invite_accepted" selected={@action_filter == "org.invite_accepted"}>Invite accepted</option>
-	                                    <option value="org.invite_revoked" selected={@action_filter == "org.invite_revoked"}>Invite revoked</option>
-	                                    <option value="user.role_updated" selected={@action_filter == "user.role_updated"}>User role updated</option>
+	                                    <option value="all" selected={assigns.action_filter == "all"}>All actions</option>
+	                                    <option value="org.invite_created" selected={assigns.action_filter == "org.invite_created"}>Invite created</option>
+	                                    <option value="org.invite_accepted" selected={assigns.action_filter == "org.invite_accepted"}>Invite accepted</option>
+	                                    <option value="org.invite_revoked" selected={assigns.action_filter == "org.invite_revoked"}>Invite revoked</option>
+	                                    <option value="user.role_updated" selected={assigns.action_filter == "user.role_updated"}>User role updated</option>
 	                                </select>
 
                                 <select data-testid="audit-filter-entity" name="entity"
                                     class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                    <option value="all" selected={@entity_filter == "all"}>All entities</option>
-                                    <option value="organization_invite" selected={@entity_filter == "organization_invite"}>Organization invite</option>
-                                    <option value="user" selected={@entity_filter == "user"}>User</option>
+                                    <option value="all" selected={assigns.entity_filter == "all"}>All entities</option>
+                                    <option value="organization_invite" selected={assigns.entity_filter == "organization_invite"}>Organization invite</option>
+                                    <option value="user" selected={assigns.entity_filter == "user"}>User</option>
                                 </select>
 
-                                <input data-testid="audit-filter-actor-id" name="actor_id" type="number" value={@actor_id_filter} placeholder="Actor id…"
+                                <input data-testid="audit-filter-actor-id" name="actor_id" type="number" value={assigns.actor_id_filter} placeholder="Actor id…"
                                     phx-debounce="250"
                                     class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white"/>
 
                                 <select data-testid="audit-filter-limit" name="limit"
                                     class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                    <option value="25" selected={@limit_filter == "25"}>25</option>
-                                    <option value="50" selected={@limit_filter == "50"}>50</option>
-                                    <option value="100" selected={@limit_filter == "100"}>100</option>
+                                    <option value="25" selected={assigns.limit_filter == "25"}>25</option>
+                                    <option value="50" selected={assigns.limit_filter == "50"}>50</option>
+                                    <option value="100" selected={assigns.limit_filter == "100"}>100</option>
                                 </select>
                             </form>
 
@@ -341,15 +340,15 @@ class AuditLogLive {
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-                                        <for {row in @audit_rows}>
+                                        <for {row in assigns.audit_rows}>
                                             <tr data-testid="audit-row" data-id={row.id} class="text-gray-900 dark:text-gray-100">
-                                                <td class="px-4 py-3 text-xs text-gray-700 dark:text-gray-200 whitespace-nowrap">#{row.inserted_at_label}</td>
-                                                <td class="px-4 py-3 font-medium whitespace-nowrap">#{row.action}</td>
-                                                <td class="px-4 py-3 whitespace-nowrap">#{row.entity}</td>
-                                                <td class="px-4 py-3 whitespace-nowrap">#{row.actor_id}</td>
-                                                <td class="px-4 py-3 whitespace-nowrap">#{row.entity_id}</td>
+                                                <td class="px-4 py-3 text-xs text-gray-700 dark:text-gray-200 whitespace-nowrap">${row.inserted_at_label}</td>
+                                                <td class="px-4 py-3 font-medium whitespace-nowrap">${row.action}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">${row.entity}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">${row.actor_id}</td>
+                                                <td class="px-4 py-3 whitespace-nowrap">${row.entity_id}</td>
                                                 <td class="px-4 py-3 text-gray-700 dark:text-gray-200">
-                                                    <code class="text-xs break-all">#{row.metadata_label}</code>
+                                                    <code class="text-xs break-all">${row.metadata_label}</code>
                                                 </td>
                                             </tr>
                                         </for>
@@ -357,7 +356,7 @@ class AuditLogLive {
                                 </table>
                             </div>
 
-                            <if {@audit_count == 0}>
+                            <if {assigns.audit_count == 0}>
                                 <div class="text-center text-gray-600 dark:text-gray-300 mt-6">
                                     No audit entries match your filters.
                                 </div>
@@ -365,7 +364,6 @@ class AuditLogLive {
                         </if>
                     </div>
                 </div>
-            </div>
-        ');
+            </div>);
 	}
 }
