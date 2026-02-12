@@ -11,7 +11,6 @@ import phoenix.Phoenix.MountParams;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Session;
 import phoenix.Phoenix.Socket;
-// Import HXX function for template processing
 import HXX.*;
 
 private typedef UserLiveAssigns = {
@@ -63,6 +62,7 @@ private typedef ErrorAssigns = {
  * Demonstrates real-time user CRUD operations
  */
 @:liveview
+@:hxx_mode("tsx")
 class UserLive {
 	public static function mount(_params:MountParams, _session:Session, socket:Socket<UserLiveAssigns>):MountResult<UserLiveAssigns> {
 		var users = Users.list_users();
@@ -188,35 +188,32 @@ class UserLive {
 	}
 
 	public static function render(assigns:UserLiveAssigns):String {
-		return hxx('
-        <div class="user-management">
+		return <div class="user-management">
             <div class="header">
                 <h1>User Management</h1>
                 <.button phx-click="new_user" class="btn-primary">
                     <.icon name="plus" /> New User
                 </.button>
             </div>
-            
+
             <div class="search-bar">
-                <.form for={%{}} phx-change="search">
-                    <.input 
-                        name="search" 
-                        value={@searchTerm}
+                <.form for=${emptyFormTarget()} phx-change="search">
+                    <.input
+                        name="search"
+                        value=${assigns.searchTerm}
                         placeholder="Search users..."
                         type="search"
                     />
                 </.form>
             </div>
-            
+
             ${renderUserList(assigns)}
             ${renderUserForm(assigns)}
-        </div>
-        ');
+        </div>;
 	}
 
 	private static function renderUserList(assigns:UserLiveAssigns):String {
-		return hxx('
-        <div class="users-list">
+		return <div class="users-list">
             <table class="table">
                 <thead>
                     <tr>
@@ -231,28 +228,26 @@ class UserLive {
                     ${assigns.users.map(renderUserRow).join("")}
                 </tbody>
             </table>
-        </div>
-        ');
+        </div>;
 	}
 
 	private static function renderUserRow(user:User):String {
-		return hxx('
-        <tr>
+		return <tr>
             <td>${user.name}</td>
             <td>${user.email}</td>
             <td>${user.age}</td>
             <td>
-                <span class="status ${user.active ? "active" : "inactive"}">
+                <span class=${"status " + (user.active ? "active" : "inactive")}>
                     ${user.active ? "Active" : "Inactive"}
                 </span>
             </td>
             <td class="actions">
-                <.button phx-click="edit_user" phx-value-id="${user.id}" size="sm">
+                <.button phx-click="edit_user" phx-value-id=${user.id} size="sm">
                     Edit
                 </.button>
-                <.button 
-                    phx-click="delete_user" 
-                    phx-value-id="${user.id}" 
+                <.button
+                    phx-click="delete_user"
+                    phx-value-id=${user.id}
                     data-confirm="Are you sure?"
                     variant="danger"
                     size="sm"
@@ -260,49 +255,47 @@ class UserLive {
                     Delete
                 </.button>
             </td>
-        </tr>
-        ');
+        </tr>;
 	}
 
 	private static function renderUserForm(assigns:UserLiveAssigns):String {
 		if (!assigns.showForm)
 			return "";
 
-		return hxx('
-        <div class="modal">
+		return <div class="modal">
             <div class="modal-content">
                 <div class="modal-header">
                     <h2>${assigns.selectedUser == null ? "New User" : "Edit User"}</h2>
                     <button phx-click="cancel" class="close">&times;</button>
                 </div>
-                
-                <.form for={@changeset} phx-submit="save_user">
+
+                <.form for=${assigns.changeset} phx-submit="save_user">
                     <div class="form-group">
                         <.label for="name">Name</.label>
-                        <.input field={@changeset[:name]} type="text" required />
-                        <.error field={@changeset[:name]} />
+                        <.input name="user[name]" type="text" required />
+                        <.error />
                     </div>
-                    
+
                     <div class="form-group">
                         <.label for="email">Email</.label>
-                        <.input field={@changeset[:email]} type="email" required />
-                        <.error field={@changeset[:email]} />
+                        <.input name="user[email]" type="email" required />
+                        <.error />
                     </div>
-                    
+
                     <div class="form-group">
                         <.label for="age">Age</.label>
-                        <.input field={@changeset[:age]} type="number" />
-                        <.error field={@changeset[:age]} />
+                        <.input name="user[age]" type="number" />
+                        <.error />
                     </div>
-                    
+
                     <div class="form-group">
-                        <.input 
-                            field={@changeset[:active]} 
-                            type="checkbox" 
+                        <.input
+                            name="user[active]"
+                            type="checkbox"
                             label="Active"
                         />
                     </div>
-                    
+
                     <div class="form-actions">
                         <.button type="submit">
                             ${assigns.selectedUser == null ? "Create" : "Update"} User
@@ -313,8 +306,11 @@ class UserLive {
                     </div>
                 </.form>
             </div>
-        </div>
-        ');
+        </div>;
+	}
+
+	private static inline function emptyFormTarget():Term {
+		return cast {};
 	}
 
 	private static function getStringParam(params:Term, key:String):Null<String> {
@@ -330,45 +326,37 @@ class UserLive {
 	}
 
 	public static function button(assigns:ButtonAssigns):String {
-		return hxx('
-        <button
-            type=#{@type != nil ? @type : "button"}
-            disabled={@disabled}
+		return <button
+            type=${assigns.type != null ? assigns.type : "button"}
+            disabled=${assigns.disabled}
         >
-            #{@inner_content}
-        </button>
-        ');
+            ${assigns.inner_content}
+        </button>;
 	}
 
 	public static function icon(assigns:IconAssigns):String {
-		return hxx('
-        <span class="icon icon-#{@name}"></span>
-        ');
+		return <span class=${"icon icon-" + assigns.name}></span>;
 	}
 
 	public static function input(assigns:InputAssigns):String {
-		return hxx('
-        <input
-            type=#{@type != nil ? @type : "text"}
-            name={@name}
-            value={@value}
-            placeholder={@placeholder}
-            required={@required}
-        />
-        ');
+		return <input
+            type=${assigns.type != null ? assigns.type : "text"}
+            name=${assigns.name}
+            value=${assigns.value}
+            placeholder=${assigns.placeholder}
+            required=${assigns.required}
+        ></input>;
 	}
 
 	public static function label(assigns:LabelAssigns):String {
-		return hxx('
-        <label>
-            #{@inner_content}
-        </label>
-        ');
+		return <label>
+            ${assigns.inner_content}
+        </label>;
 	}
 
 	public static function error(assigns:ErrorAssigns):String {
 		// Keep minimal to avoid coupling to Ecto.Changeset error formatting here.
-		return hxx('<span class="error"></span>');
+		return <span class="error"></span>;
 	}
 
 	public static function main():Void {

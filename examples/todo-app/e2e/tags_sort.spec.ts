@@ -31,10 +31,10 @@ test('tags filter + search-by-tag + sort works', async ({ page }) => {
   await createTodo(aTitle, { tags: [tagWork], dueDate: '2024-12-31', priority: 'low' })
   await createTodo(bTitle, { tags: [tagHome], dueDate: '2025-01-01', priority: 'high' })
 
-  // Available tag chips should include our tags (dynamic, not hard-coded)
-  const tagsRegion = page.getByTestId('available-tags')
-  await expect(tagsRegion.locator(`[data-testid="tag-chip"][data-tag="${tagWork}"]`)).toBeVisible({ timeout: 15000 })
-  await expect(tagsRegion.locator(`[data-testid="tag-chip"][data-tag="${tagHome}"]`)).toBeVisible({ timeout: 15000 })
+  const cardA = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: aTitle }) }).first()
+  const cardB = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: bTitle }) }).first()
+  await expect(cardA).toBeVisible({ timeout: 15000 })
+  await expect(cardB).toBeVisible({ timeout: 15000 })
 
   // Search should match tags as well as titles/descriptions
   const search = page.getByPlaceholder('Search todos...')
@@ -46,20 +46,24 @@ test('tags filter + search-by-tag + sort works', async ({ page }) => {
   await search.fill('')
   await expect(page.locator('[data-testid="todo-card"] h3', { hasText: bTitle })).toBeVisible({ timeout: 15000 })
 
-  const workChip = tagsRegion.locator(`[data-testid="tag-chip"][data-tag="${tagWork}"]`).first()
-  await workChip.click()
+  const workTodoTag = cardA.locator(`[data-testid="todo-tag"][data-tag="${tagWork}"]`).first()
+  await expect(workTodoTag).toBeVisible({ timeout: 15000 })
+  await workTodoTag.click()
+
+  const selectedTags = page.getByTestId('selected-tags')
+  await expect(selectedTags).toBeVisible({ timeout: 15000 })
+  const workChip = selectedTags.locator(`[data-testid="tag-chip"][data-tag="${tagWork}"]`).first()
   await expect(page.locator('[data-testid="todo-card"] h3', { hasText: aTitle })).toBeVisible({ timeout: 15000 })
   await expect(page.locator('[data-testid="todo-card"] h3', { hasText: bTitle })).toHaveCount(0)
 
   // Clicking a tag on the todo card should also toggle the filter
   await workChip.click()
-  const bCard = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: bTitle }) }).first()
-  await bCard.locator(`[data-testid="todo-tag"][data-tag="${tagHome}"]`).click()
+  await cardB.locator(`[data-testid="todo-tag"][data-tag="${tagHome}"]`).click()
   await expect(page.locator('[data-testid="todo-card"] h3', { hasText: bTitle })).toBeVisible({ timeout: 15000 })
   await expect(page.locator('[data-testid="todo-card"] h3', { hasText: aTitle })).toHaveCount(0)
 
   // Reset filters and scope list down to our items for stable sort assertions
-  await bCard.locator(`[data-testid="todo-tag"][data-tag="${tagHome}"]`).click()
+  await cardB.locator(`[data-testid="todo-tag"][data-tag="${tagHome}"]`).click()
   await search.fill(runId)
   await expect(page.locator('[data-testid="todo-card"] h3', { hasText: aTitle })).toBeVisible({ timeout: 15000 })
   await expect(page.locator('[data-testid="todo-card"] h3', { hasText: bTitle })).toBeVisible({ timeout: 15000 })

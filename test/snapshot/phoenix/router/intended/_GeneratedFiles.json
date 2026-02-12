@@ -1,6 +1,8 @@
 {
   "filesGenerated": [
+  "user_controller.ex",
   "type.ex",
+  "todo_live.ex",
   "string_buf.ex",
   "std.ex",
   "reflaxe/exception.ex",

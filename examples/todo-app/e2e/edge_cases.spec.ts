@@ -23,12 +23,15 @@ test('edge: tag parsing trims and drops empty entries', async ({ page }) => {
   await expect(card.locator(`[data-testid="todo-tag"][data-tag="${tagB}"]`)).toBeVisible({ timeout: 20000 })
   await expect(card.locator('[data-testid="todo-tag"][data-tag=""]')).toHaveCount(0)
 
-  // Available tag chips are derived from current todos and should include trimmed tags.
-  await expect(page.locator(`[data-testid="tag-chip"][data-tag="${tagA}"]`).first()).toBeVisible({ timeout: 20000 })
-  await expect(page.locator(`[data-testid="tag-chip"][data-tag="${tagB}"]`).first()).toBeVisible({ timeout: 20000 })
+  // No selected-tag row should appear until a tag is actively selected.
+  await expect(page.getByTestId('selected-tags')).toHaveCount(0)
+  await card.locator(`[data-testid="todo-tag"][data-tag="${tagA}"]`).click()
+  const selectedTags = page.getByTestId('selected-tags')
+  await expect(selectedTags).toBeVisible({ timeout: 20000 })
+  await expect(selectedTags.locator(`[data-testid="tag-chip"][data-tag="${tagA}"]`)).toBeVisible({ timeout: 20000 })
 })
 
-test('edge: multi-tag selection uses OR semantics and composes with search', async ({ page }) => {
+test('edge: selected tags use OR semantics and compose with search', async ({ page }) => {
   const base = process.env.BASE_URL || 'http://localhost:4001'
   await page.goto(base + '/todos')
   await page.waitForFunction('window.liveSocket && window.liveSocket.isConnected()', { timeout: 20000 })
@@ -39,13 +42,14 @@ test('edge: multi-tag selection uses OR semantics and composes with search', asy
   const titleA = `SelA ${Date.now()}`
   const titleB = `SelB ${Date.now()}`
   const titleC = `SelC ${Date.now()}`
+  const titleAB = `SelAB ${Date.now()}`
 
-  const mk = async (title: string, tag: string) => {
+  const mk = async (title: string, tags: string) => {
     await page.getByTestId('btn-new-todo').click()
     const form = page.locator('form[phx-submit="create_todo"]').first()
     await expect(form).toBeVisible({ timeout: 20000 })
     await page.getByTestId('input-title').fill(title)
-    await form.locator('input[name="tags"]').fill(tag)
+    await form.locator('input[name="tags"]').fill(tags)
     await page.getByTestId('btn-create-todo').click()
     await expect(page.locator('[data-testid="todo-card"] h3', { hasText: title })).toBeVisible({ timeout: 20000 })
   }
@@ -53,35 +57,38 @@ test('edge: multi-tag selection uses OR semantics and composes with search', asy
   await mk(titleA, tagA)
   await mk(titleB, tagB)
   await mk(titleC, tagC)
+  await mk(titleAB, `${tagA}, ${tagB}`)
 
-  const chipA = page.locator(`[data-testid="tag-chip"][data-tag="${tagA}"]`).first()
-  const chipB = page.locator(`[data-testid="tag-chip"][data-tag="${tagB}"]`).first()
-  await expect(chipA).toBeVisible({ timeout: 20000 })
-  await expect(chipB).toBeVisible({ timeout: 20000 })
+  const cardAB = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: titleAB }) }).first()
+  const tagBtnA = cardAB.locator(`[data-testid="todo-tag"][data-tag="${tagA}"]`).first()
+  const tagBtnB = cardAB.locator(`[data-testid="todo-tag"][data-tag="${tagB}"]`).first()
+  await expect(tagBtnA).toBeVisible({ timeout: 20000 })
+  await expect(tagBtnB).toBeVisible({ timeout: 20000 })
 
-  // Select A: only A visible (among our three)
-  await chipA.click()
+  // Select A: A and AB visible, B/C hidden.
+  await tagBtnA.click()
   await expect(page.locator('h3', { hasText: titleA })).toBeVisible({ timeout: 20000 })
   await expect(page.locator('h3', { hasText: titleB })).toHaveCount(0)
   await expect(page.locator('h3', { hasText: titleC })).toHaveCount(0)
+  await expect(page.locator('h3', { hasText: titleAB })).toBeVisible({ timeout: 20000 })
 
-  // Select B too: OR semantics → A and B visible, C hidden
-  await chipB.click()
+  // Select B too from the AB card: OR semantics keeps A and B results.
+  await tagBtnB.click()
   await expect(page.locator('h3', { hasText: titleA })).toBeVisible({ timeout: 20000 })
   await expect(page.locator('h3', { hasText: titleB })).toBeVisible({ timeout: 20000 })
   await expect(page.locator('h3', { hasText: titleC })).toHaveCount(0)
+  await expect(page.locator('h3', { hasText: titleAB })).toBeVisible({ timeout: 20000 })
 
-  // Compose with search + tags: searching for tagC while only A/B are selected should show none.
+  // Compose with search + selected tags: searching tagC while A/B are selected yields no C-only rows.
   const search = page.getByPlaceholder('Search todos...')
   await search.fill(tagC)
   await expect(page.locator('h3', { hasText: titleA })).toHaveCount(0)
   await expect(page.locator('h3', { hasText: titleB })).toHaveCount(0)
   await expect(page.locator('h3', { hasText: titleC })).toHaveCount(0)
 
-  // Selecting C should allow the C result to appear under the same search.
-  const chipC = page.locator(`[data-testid="tag-chip"][data-tag="${tagC}"]`).first()
-  await expect(chipC).toBeVisible({ timeout: 20000 })
-  await chipC.click()
+  // Clear selected tags and confirm the same search now reveals the C-only row.
+  await page.getByTestId('btn-clear-tags').click()
+  await expect(page.getByTestId('selected-tags')).toHaveCount(0)
   await expect(page.locator('h3', { hasText: titleC })).toBeVisible({ timeout: 20000 })
 })
 

@@ -3,3 +3,4 @@
 # Use build-server.hxml for Elixir compilation (default)
 
 --next build-server.hxml
+-D hxx_mode=tsx

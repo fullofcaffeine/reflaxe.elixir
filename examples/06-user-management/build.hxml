@@ -13,6 +13,7 @@
 # Required for Reflaxe targets
 -D reflaxe_runtime
 -D reflaxe_elixir_strict_examples
+-D hxx_mode=tsx
 
 # Main classes to compile
 live.UserLive

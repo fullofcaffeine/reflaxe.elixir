@@ -7,7 +7,7 @@ This example demonstrates typed Phoenix app code in Haxe for a small CRUD-style 
 - `@:schema` / `@:field` for Ecto schema generation
 - `@:changeset` for changeset pipeline shaping
 - `@:liveview` callbacks with typed assigns
-- HXX templates in LiveView render paths
+- Strict TSX HXX authoring (`@:hxx_mode("tsx")`) in LiveView render paths
 
 ## Key files
 
@@ -49,16 +49,15 @@ schema "users" do
 end
 ```
 
-Haxe LiveView render path excerpt:
+Haxe LiveView render path excerpt (strict TSX):
 
 ```haxe
+@:hxx_mode("tsx")
 public static function render(assigns: UserLiveAssigns): String {
-  return hxx('
-    <div class="user-management">
-      ${renderUserList(assigns)}
-      ${renderUserForm(assigns)}
-    </div>
-  ');
+  return <div class="user-management">
+    ${renderUserList(assigns)}
+    ${renderUserForm(assigns)}
+  </div>;
 }
 ```
 
@@ -77,5 +76,6 @@ end
 ## Notes
 
 - This example is intentionally compact and focuses on compiler surfaces, not full production UX.
-- Templates currently use balanced-mode `hxx('...')` composition for compactness; this is valid, but TSX inline markup is the recommended default for new code.
+- The default build path is strict TSX (`build.hxml` includes `-D hxx_mode=tsx`).
+- For the intentional legacy/balanced migration demo, see `examples/05-heex-templates/README.md`.
 - For end-to-end Presence, PubSub, richer tests, and E2E smoke, see `examples/todo-app/README.md`.

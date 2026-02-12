@@ -26,12 +26,12 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 
 ### 5. [05-heex-templates](./05-heex-templates/)
 **Difficulty**: Intermediate  
-**Features**: HXX template authoring, HEEx lowering, component-style markup (legacy/balanced mode focus)  
+**Features**: HXX template authoring, HEEx lowering, component-style markup (intentional legacy/balanced migration demo)  
 **Use Case**: Template migration patterns and HXX authoring
 
 ### 6. [06-user-management](./06-user-management/)
 **Difficulty**: Advanced  
-**Features**: CRUD-style flow, LiveView, GenServer skeleton, Ecto schemas/changesets (balanced templates)  
+**Features**: CRUD-style flow, LiveView, GenServer skeleton, Ecto schemas/changesets, strict TSX templates  
 **Use Case**: Typed Phoenix app patterns in one compact example
 
 ### 7. [07-protocols](./07-protocols/)
@@ -73,6 +73,13 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 **Difficulty**: Intermediate  
 **Features**: Mix compiler task testing, build pipeline validation  
 **Use Case**: Testing Haxe→Elixir compilation in Mix projects
+
+## 🧩 HXX Mode Policy
+
+- Default for examples: strict TSX mode (`-D hxx_mode=tsx`) and inline markup authoring.
+- Legacy `hxx('...')` templates are only allowed in explicitly labeled migration demos.
+- Current intentional non-TSX demo: `examples/05-heex-templates/` (see its README rationale).
+- CI guardrail: `npm run guard:examples-hxx-mode` prevents legacy marker regressions outside demo paths.
 
 ## 🚀 Quick Start
 

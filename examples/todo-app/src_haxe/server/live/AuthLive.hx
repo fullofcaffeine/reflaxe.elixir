@@ -105,16 +105,16 @@ class AuthLive {
                             Optional demo login. No passwords — just pick a name + email and we’ll create a user.
                         </p>
 
-                        <if {assigns.flash_info != null}>
-                            <div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4">
-                                ${assigns.flash_info != null}
-                            </div>
-                        </if>
-                        <if {assigns.flash_error != null}>
-                            <div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                                ${assigns.flash_error != null}
-                            </div>
-                        </if>
+	                        <if {assigns.flash_info != null}>
+	                            <div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4">
+	                                ${assigns.flash_info}
+	                            </div>
+	                        </if>
+	                        <if {assigns.flash_error != null}>
+	                            <div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+	                                ${assigns.flash_error}
+	                            </div>
+	                        </if>
 
                         <if {assigns.signed_in}>
                             <div class="border border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800 rounded-lg p-4 mb-6">

@@ -237,10 +237,12 @@
     },
     "nonstdlib_modules_under_std_dir": [
       "ArrayTools",
+      "ChangesetShim",
       "DateConverter",
       "HXX",
       "MapTools",
-      "Process"
+      "Process",
+      "TodoAppChangeset"
     ],
     "runtime_overrides": {
       "counted_as_present": [
@@ -259,7 +261,7 @@
       "std/_std",
       "src/haxe"
     ],
-    "total_candidates": 69,
+    "total_candidates": 71,
     "total_std_modules": 66
   },
   "reference": {

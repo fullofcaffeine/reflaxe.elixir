@@ -32,6 +32,7 @@ enum abstract EventName(String) from String to String {
 	var SearchTodos = "search_todos";
 	var SortTodos = "sort_todos";
 	var ToggleTag = "toggle_tag";
+	var ClearTags = "clear_tags";
 	var SetPriority = "set_priority";
 
 	var BulkComplete = "bulk_complete";

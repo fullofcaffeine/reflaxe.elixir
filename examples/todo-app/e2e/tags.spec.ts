@@ -28,10 +28,16 @@ test('clicking a tag chip filters by tags', async ({ page }) => {
   await expect(stats).toBeVisible()
   const beforeText = await stats.first().innerText()
 
-  // Click tag chip in the tag row (dynamic, derived from todos)
-  const chip = page.locator(`[data-testid="tag-chip"][data-tag="${tagA}"]`).first()
-  await expect(chip).toBeVisible({ timeout: 20000 })
-  await chip.click()
+  // Select a tag from a todo card, which creates the selected-tag row.
+  const cardA = page.locator('[data-testid="todo-card"]', { has: page.locator('h3', { hasText: titleA }) }).first()
+  await expect(cardA).toBeVisible({ timeout: 20000 })
+  const tagBtn = cardA.locator(`[data-testid="todo-tag"][data-tag="${tagA}"]`).first()
+  await expect(tagBtn).toBeVisible({ timeout: 20000 })
+  await tagBtn.click()
+
+  const selectedTags = page.getByTestId('selected-tags')
+  await expect(selectedTags).toBeVisible({ timeout: 20000 })
+  await expect(selectedTags.locator(`[data-testid="tag-chip"][data-tag="${tagA}"]`)).toBeVisible({ timeout: 20000 })
 
   // Confirm filtering: tagA todo visible, tagB todo hidden
   await expect(page.locator('h3', { hasText: titleA })).toBeVisible({ timeout: 20000 })

@@ -271,16 +271,16 @@ class AuditLogLive {
                             </div>
                         </div>
 
-                        <if {assigns.flash_info != null}>
-                            <div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4">
-                                ${assigns.flash_info != null}
-                            </div>
-                        </if>
-                        <if {assigns.flash_error != null}>
-                            <div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                                ${assigns.flash_error != null}
-                            </div>
-                        </if>
+	                        <if {assigns.flash_info != null}>
+	                            <div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-4">
+	                                ${assigns.flash_info}
+	                            </div>
+	                        </if>
+	                        <if {assigns.flash_error != null}>
+	                            <div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
+	                                ${assigns.flash_error}
+	                            </div>
+	                        </if>
 
                         <if {!assigns.is_admin}>
                             <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-6">

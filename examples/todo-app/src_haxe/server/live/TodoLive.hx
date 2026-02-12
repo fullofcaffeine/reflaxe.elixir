@@ -355,29 +355,31 @@ class TodoLive {
 		} else if (event == EventName.SortTodos) {
 			var sortBy:Null<String> = cast Reflect.field(params, "sort_by");
 			recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy != null ? sortBy : "created"));
-		} else if (event == EventName.SearchTodos) {
-			var query:Null<String> = cast Reflect.field(params, "query");
-			var withQuery = SafeAssigns.setSearchQuery(socket, query != null ? query : "");
-			// Ensure tag-selection state composes with search changes.
-			recomputeVisible(SafeAssigns.setSelectedTags(withQuery, socket.assigns.selected_tags));
-		} else if (event == EventName.ToggleTag) {
-			var tagValue:Null<String> = Reflect.field(params, "tag");
-			if (tagValue == null) {
-				socket;
-			} else {
-				var tag:String = tagValue;
-				var current = socket.assigns.selected_tags;
-				var updated = if (current.contains(tag)) {
-					current.filter(function(t) return t != tag);
+			} else if (event == EventName.SearchTodos) {
+				var query:Null<String> = cast Reflect.field(params, "query");
+				var withQuery = SafeAssigns.setSearchQuery(socket, query != null ? query : "");
+				// Ensure tag-selection state composes with search changes.
+				recomputeVisible(SafeAssigns.setSelectedTags(withQuery, socket.assigns.selected_tags));
+			} else if (event == EventName.ToggleTag) {
+				var tagValue:Null<String> = Reflect.field(params, "tag");
+				if (tagValue == null) {
+					socket;
 				} else {
-					List.insertAt(current, 0, tag);
-				};
-				recomputeVisible(SafeAssigns.setSelectedTags(socket, updated));
-			}
-		} else if (event == EventName.SetPriority) {
-			var priority:Null<String> = cast Reflect.field(params, "priority");
-			update_todo_priority(extract_id(params), priority != null ? priority : "medium", socket);
-		} else if (event == EventName.ToggleForm) {
+					var tag:String = tagValue;
+					var current = socket.assigns.selected_tags;
+					var updated = if (current.contains(tag)) {
+						current.filter(function(t) return t != tag);
+					} else {
+						List.insertAt(current, 0, tag);
+					};
+					recomputeVisible(SafeAssigns.setSelectedTags(socket, updated));
+				}
+			} else if (event == EventName.ClearTags) {
+				recomputeVisible(SafeAssigns.setSelectedTags(socket, []));
+			} else if (event == EventName.SetPriority) {
+				var priority:Null<String> = cast Reflect.field(params, "priority");
+				update_todo_priority(extract_id(params), priority != null ? priority : "medium", socket);
+			} else if (event == EventName.ToggleForm) {
 			recomputeVisible(SafeAssigns.setShowForm(socket, !socket.assigns.show_form));
 		} else if (event == EventName.BulkComplete) {
 			complete_all_todos(socket);
@@ -1201,9 +1203,10 @@ class TodoLive {
 
 	// Typed UI helpers (no inline HEEx ops in HXX)
 	static inline function filterBtnClass(current:shared.TodoTypes.TodoFilter, expect:shared.TodoTypes.TodoFilter):String {
-		// Build final class without intermediate locals to avoid underscore/rename hygiene issues
-		return "px-4 py-2 rounded-lg font-medium transition-colors"
-			+ (current == expect ? " bg-blue-500 text-white" : " bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300");
+		return "h-11 px-5 rounded-lg inline-flex items-center justify-center whitespace-nowrap text-sm font-semibold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+			+ (current == expect
+				? " bg-blue-500 border-blue-500 text-white shadow-sm hover:bg-blue-600"
+				: " bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600");
 	}
 
 	static inline function sortSelected(current:shared.TodoTypes.TodoSort, expect:shared.TodoTypes.TodoSort):Bool {
@@ -1365,17 +1368,17 @@ class TodoLive {
 
 		return (<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
 				<div id="root" class="container mx-auto px-4 py-8 max-w-6xl" phx-hook=${HookName.Ping}>
-						<!-- Flash messages (info/error) -->
-							<if {assigns.flash_info != null}>
-								<div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
-									${assigns.flash_info != null}
-								</div>
-							</if>
-							<if {assigns.flash_error != null}>
-								<div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-									${assigns.flash_error != null}
-								</div>
-							</if>
+							<!-- Flash messages (info/error) -->
+								<if {assigns.flash_info != null}>
+									<div data-testid="flash-info" class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
+										${assigns.flash_info}
+									</div>
+								</if>
+								<if {assigns.flash_error != null}>
+									<div data-testid="flash-error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+										${assigns.flash_error}
+									</div>
+								</if>
 					
 					<!-- Header -->
 					<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 mb-8">
@@ -1392,47 +1395,53 @@ class TodoLive {
 												<span data-testid="org-slug">${assigns.organization_slug}</span>
 											</a>
 										</div>
-										<div class="mt-2 flex items-center gap-3 text-sm">
-											<button data-testid="nav-theme-toggle"
-												id="nav-theme-toggle"
-												type="button"
-												phx-hook=${HookName.ThemeToggle}
-												aria-label="Toggle theme"
-												class="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 bg-gray-100 text-gray-800 hover:bg-gray-200 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
-												<span aria-hidden="true">🌓</span>
-												<span data-theme-label class="text-xs font-medium">Theme</span>
-											</button>
-												<if {assigns.signed_in}>
-													<if {assigns.current_user.role == "admin"}>
-														<a data-testid="nav-admin" href="/admin" class="text-blue-700 dark:text-blue-300 hover:underline">
-															Admin
-														</a>
+											<div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
+													<button data-testid="nav-theme-toggle"
+														id="nav-theme-toggle"
+														type="button"
+														phx-hook=${HookName.ThemeToggle}
+														aria-label="Toggle theme"
+														class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-800 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+														<span aria-hidden="true">🌓</span>
+														<span data-theme-label class="text-xs font-medium">Theme</span>
+													</button>
+														<if {assigns.signed_in}>
+															<if {assigns.current_user.role == "admin"}>
+																<a data-testid="nav-admin" href="/admin"
+																	class="inline-flex h-9 items-center rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+																	Admin
+																</a>
+															</if>
+																<a data-testid="nav-users" href="/users"
+																	class="inline-flex h-9 items-center rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+																	Users
+																</a>
+																<a data-testid="nav-profile" href="/profile"
+																	class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+																	<div data-testid="nav-profile-avatar" class={assigns.header_avatar_class} style={assigns.header_avatar_style}>
+																	${assigns.header_avatar_initials}
+																</div>
+																<span>Profile</span>
+															</a>
+															<form action="/auth/logout" method="post" class="inline-flex items-center">
+																<input type="hidden" name="_csrf_token" value=${CSRFProtection.get_csrf_token()}/>
+																<button data-testid="nav-sign-out" type="submit"
+																	class="inline-flex h-9 items-center rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+																	Sign out
+																</button>
+														</form>
 													</if>
-														<a data-testid="nav-users" href="/users" class="text-blue-700 dark:text-blue-300 hover:underline">
-															Users
-														</a>
-														<a data-testid="nav-profile" href="/profile" class="inline-flex items-center gap-2 text-blue-700 dark:text-blue-300 hover:underline">
-															<div data-testid="nav-profile-avatar" class={assigns.header_avatar_class} style={assigns.header_avatar_style}>
-															${assigns.header_avatar_initials}
-														</div>
-														<span>Profile</span>
-													</a>
-													<form action="/auth/logout" method="post" class="inline">
-														<input type="hidden" name="_csrf_token" value=${CSRFProtection.get_csrf_token()}/>
-														<button data-testid="nav-sign-out" type="submit" class="text-gray-700 dark:text-gray-200 hover:underline">
-															Sign out
-														</button>
-												</form>
-											</if>
-												<if {!assigns.signed_in}>
-													<span class="text-gray-500 dark:text-gray-400">Demo mode</span>
-													<a data-testid="nav-users" href="/users" class="text-blue-700 dark:text-blue-300 hover:underline">
-														Users
-													</a>
-													<a data-testid="nav-sign-in" href="/login" class="text-blue-700 dark:text-blue-300 hover:underline">
-														Sign in
-													</a>
-												</if>
+														<if {!assigns.signed_in}>
+															<span class="text-gray-500 dark:text-gray-400">Demo mode</span>
+															<a data-testid="nav-users" href="/users"
+																class="inline-flex h-9 items-center rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+																Users
+															</a>
+															<a data-testid="nav-sign-in" href="/login"
+																class="inline-flex h-9 items-center rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+																Sign in
+															</a>
+														</if>
 											</div>
 										</div>
 									</div>
@@ -1528,50 +1537,59 @@ class TodoLive {
 						</div>
 					</if>
 					
-					<!-- Filters and Search -->
-					<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
-						<div class="flex flex-wrap gap-4">
-							<!-- Search -->
-							<div class="flex-1 min-w-[300px]">
-	                            <form phx-change=${EventName.SearchTodos} class="relative">
-										<input type="search" name="query" value={assigns.search_query} phx-debounce="300"
-											class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-											placeholder="Search todos..." />
-										<span class="absolute left-3 top-2.5 text-gray-400">🔍</span>
-									</form>
-							</div>
-							
-	                        <!-- Filter Buttons -->
-		                        <div class="flex space-x-2">
-		                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="all" data-testid="btn-filter-all"
-		                                class={assigns.filter_btn_all_class}>All</button>
-		                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="active" data-testid="btn-filter-active"
-		                                class={assigns.filter_btn_active_class}>Active</button>
-		                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="completed" data-testid="btn-filter-completed"
-		                                class={assigns.filter_btn_completed_class}>Completed</button>
-		                        </div>
-		                        <div class="flex flex-wrap gap-2" data-testid="available-tags">
-		                            <for {tag_view in assigns.available_tags}>
-		                                <button type="button" phx-click=${EventName.ToggleTag} phx-value-tag={tag_view.tag} data-testid="tag-chip" data-tag={tag_view.tag}
-		                                    class={tag_view.chip_class}>
-		                                    ${tag_view.tag}
-		                                </button>
-		                            </for>
+							<!-- Filters and Search -->
+							<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+								<div class="flex flex-wrap items-start gap-3">
+									<!-- Search -->
+									<div class="flex-1 min-w-[280px]">
+			                            <form phx-change=${EventName.SearchTodos} class="relative h-11">
+												<input type="search" name="query" value={assigns.search_query} phx-debounce="300"
+													class="block h-11 w-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+													placeholder="Search todos..." />
+												<span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+											</form>
+									</div>
+									
+			                        <!-- Filter Buttons -->
+				                        <div class="flex h-11 items-stretch gap-2 self-start">
+				                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="all" data-testid="btn-filter-all"
+				                                class={assigns.filter_btn_all_class}>All</button>
+				                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="active" data-testid="btn-filter-active"
+				                                class={assigns.filter_btn_active_class}>Active</button>
+				                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="completed" data-testid="btn-filter-completed"
+				                                class={assigns.filter_btn_completed_class}>Completed</button>
+				                        </div>
+									
+									<!-- Sort Dropdown -->
+									<div class="min-w-[210px]">
+			                            <form phx-change=${EventName.SortTodos} class="h-11">
+				                                <select name="sort_by"
+				                                    class="block h-11 w-full px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+				                                    <option value="created" selected={assigns.sort_selected_created}>Sort by Date</option>
+				                                    <option value="priority" selected={assigns.sort_selected_priority}>Sort by Priority</option>
+				                                    <option value="due_date" selected={assigns.sort_selected_due_date}>Sort by Due Date</option>
+				                                </select>
+				                            </form>
+									</div>
 								</div>
-							
-							<!-- Sort Dropdown -->
-							<div>
-                            <form phx-change=${EventName.SortTodos}>
-	                                <select name="sort_by"
-	                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
-	                                    <option value="created" selected={assigns.sort_selected_created}>Sort by Date</option>
-	                                    <option value="priority" selected={assigns.sort_selected_priority}>Sort by Priority</option>
-	                                    <option value="due_date" selected={assigns.sort_selected_due_date}>Sort by Due Date</option>
-	                                </select>
-	                            </form>
-							</div>
-						</div>
-						</div>
+								<if {assigns.selected_tags.length > 0}>
+									<div class="mt-3 border-t border-gray-200 pt-3 dark:border-gray-700" data-testid="selected-tags">
+										<div class="flex flex-wrap items-center gap-2">
+											<span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Tag filters</span>
+											<for {selected_tag in assigns.selected_tags}>
+												<button type="button" phx-click=${EventName.ToggleTag} phx-value-tag={selected_tag} data-testid="tag-chip" data-tag={selected_tag}
+													class="inline-flex h-8 items-center rounded-md border border-blue-500 bg-blue-500 px-3 text-xs font-semibold text-white shadow-sm hover:bg-blue-600">
+													${selected_tag}
+												</button>
+											</for>
+											<button type="button" phx-click=${EventName.ClearTags} data-testid="btn-clear-tags"
+												class="inline-flex h-8 items-center rounded-md border border-gray-300 px-3 text-xs font-semibold text-gray-700 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700">
+												Clear all
+											</button>
+										</div>
+									</div>
+								</if>
+								</div>
 						
 						<!-- Online Users Panel -->
 						<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6">

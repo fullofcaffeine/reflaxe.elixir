@@ -3662,6 +3662,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			return null;
 		}
 
+		var strictTypedRouteControllerRefs = Context.defined("router_strict_typed_refs");
+
 		function extractDotPath(expr:Expr):Null<String> {
 			return switch (expr.expr) {
 				case EConst(CIdent(ident)):
@@ -3727,6 +3729,23 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			};
 		}
 
+		function isStringLiteral(expr:Expr):Bool {
+			return switch (expr.expr) {
+				case EConst(CString(_, _)): true;
+				default: false;
+			};
+		}
+
+		function emitLegacyControllerLiteralDiagnostic(routeName:Null<String>, pos:haxe.macro.Expr.Position):Void {
+			var resolvedRouteName = (routeName != null && routeName != "") ? routeName : "<unnamed>";
+			var recommendation = 'Route "${resolvedRouteName}" in @:routes uses a legacy string literal for controller. Prefer a typed controller reference (for example controllers.UserController).';
+			if (strictTypedRouteControllerRefs) {
+				Context.error(recommendation + " Use @:route for intentionally legacy/manual string routing.", pos);
+			} else {
+				Context.warning(recommendation + " Pass -D router_strict_typed_refs to enforce this as an error.", pos);
+			}
+		}
+
 		function parseRoute(routeExpr:Expr):Null<RouterRouteMeta> {
 			return switch (routeExpr.expr) {
 				case EObjectDecl(fields):
@@ -3736,6 +3755,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					var controller:Null<String> = null;
 					var action:Null<String> = null;
 					var pipeline:Null<String> = null;
+					var controllerWasStringLiteral = false;
+					var controllerPos = routeExpr.pos;
 
 					for (f in fields) {
 						switch (f.field) {
@@ -3746,6 +3767,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 							case "path":
 								path = extractStringValue(f.expr, "path", f.expr.pos);
 							case "controller":
+								controllerWasStringLiteral = isStringLiteral(f.expr);
+								controllerPos = f.expr.pos;
 								controller = extractControllerValue(f.expr, "controller", f.expr.pos);
 							case "action":
 								action = extractActionValue(f.expr, "action", f.expr.pos);
@@ -3769,6 +3792,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 							Context.error('Route "${name}" is missing controller', routeExpr.pos);
 						if (action == null)
 							Context.error('Route "${name}" is missing action', routeExpr.pos);
+					}
+
+					if (controllerWasStringLiteral && controller != null && controller != "") {
+						emitLegacyControllerLiteralDiagnostic(name, controllerPos);
 					}
 
 					return {

@@ -96,8 +96,37 @@ String refs are still supported for interop/migration only:
 
 Choose strings only when the target is intentionally outside the typed Haxe surface (for example, external Elixir modules you do not model in Haxe).
 
+### Diagnostics for string controller refs in `@:routes`
+
+- Default behavior: `controller: "..."` inside `@:routes` emits a compiler warning.
+- Strict behavior: pass `-D router_strict_typed_refs` to make the same case a compile error.
+- Intentional legacy/manual route glue should use `@:route` (see below) instead of string controller literals inside `@:routes`.
+
+The strict check applies to `@:routes` controller fields only, so migration can be done incrementally.
+
 Note: use fully-qualified type paths in `controller`/`action` references (for example
 `controllers.UserController`), not imported short names, so macro-time controller/action validation can resolve them reliably.
+
+## Migration from string refs to typed refs
+
+If you currently have:
+
+```haxe
+{ controller: "controllers.UserController", action: "index" }
+```
+
+Migrate to:
+
+```haxe
+{ controller: controllers.UserController, action: controllers.UserController.index }
+```
+
+Migration checklist:
+
+1. Convert `controller` to a type reference.
+2. Convert `action` to a method reference when possible.
+3. Run with warnings first (default behavior) and clean all route warnings.
+4. Enable `-D router_strict_typed_refs` in CI to prevent regressions.
 
 ## Legacy/manual style: `@:route`
 

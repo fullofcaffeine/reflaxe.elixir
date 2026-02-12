@@ -103,6 +103,9 @@ class LegacyRouter {
 Use `@:routes` for new code. It supports typed controller/action refs and keeps route definitions declarative.
 Use `@:route` only for manual/legacy router glue where string literals are acceptable.
 
+`@:routes` controller string literals (`controller: "..."`) now emit warnings by default.
+Set `-D router_strict_typed_refs` to treat them as compile errors and enforce typed refs in CI.
+
 See the full guide: `docs/04-api-reference/ROUTER_DSL.md`.
 
 ### @:schema - Ecto Schema Generation

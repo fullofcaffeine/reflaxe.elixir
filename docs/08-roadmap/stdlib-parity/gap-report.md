@@ -20,7 +20,7 @@ scripts/stdlib-parity-report.sh --markdown > docs/08-roadmap/stdlib-parity/gap-r
 ## Summary
 
 - Reference std modules: **204**
-- Local std modules present: **66** (candidates scanned: 69)
+- Local std modules present: **66** (candidates scanned: 71)
 - Intersection (local provides): **57**
 - Missing locally (reference-only): **147**
 - Local-only: **9**

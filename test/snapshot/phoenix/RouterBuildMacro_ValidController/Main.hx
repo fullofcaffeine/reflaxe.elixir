@@ -31,24 +31,24 @@ class UserController {
 		name: "userIndex",
 		method: HttpMethod.GET,
 		path: "/users",
-		controller: "UserController",
-		action: "index"
+		controller: Main.UserController,
+		action: Main.UserController.index
 	},
 	// Another valid route
 	{
 		name: "userShow",
 		method: HttpMethod.GET,
 		path: "/users/:id",
-		controller: "UserController",
-		action: "show"
+		controller: Main.UserController,
+		action: Main.UserController.show
 	},
 	// Valid POST route
 	{
 		name: "userCreate",
 		method: HttpMethod.POST,
 		path: "/users",
-		controller: "UserController",
-		action: "create"
+		controller: Main.UserController,
+		action: Main.UserController.create
 	}
 ])
 class ValidRouterTest {

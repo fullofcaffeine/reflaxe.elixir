@@ -22,6 +22,7 @@ enum TodoLiveEvent {
 	SortTodos(sortBy:String);
 	SearchTodos(query:String);
 	ToggleTag(tag:String);
+	ClearTags;
 
 	// Priority management
 	SetPriority(id:Int, priority:String);
