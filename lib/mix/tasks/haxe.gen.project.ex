@@ -238,7 +238,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     # Enable dead code elimination to remove unused functions and reduce output noise
     -dce full
 
-    #{if config.phoenix, do: "# Convert HXX render strings to `~H` sigils (recommended for LiveView)\n-D hxx_string_to_sigil\n", else: ""}
+    #{if config.phoenix, do: "# Convert HXX render strings to `~H` sigils (recommended for LiveView)\n-D hxx_string_to_sigil\n# New Phoenix/LiveView scaffolds default to strict typed HXX authoring\n-D hxx_mode=tsx\n", else: ""}
     #{modules_section}
     """
   end

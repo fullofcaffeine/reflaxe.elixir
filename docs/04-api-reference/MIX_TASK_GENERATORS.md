@@ -135,6 +135,7 @@ Output (defaults; configurable via flags):
   - `-D app_name=<ModuleName>`
   - `-dce full`
   - `-D hxx_string_to_sigil` (when `--phoenix` is enabled)
+  - `-D hxx_mode=tsx` (when `--phoenix` is enabled; strict typed HXX for new scaffolds)
 - `package.json` + `.haxerc` (unless `--skip-npm`)
 - `mix.exs` updated to include `compilers: [:haxe] ++ Mix.compilers()` and a `haxe: [...]` config block
 - `.gitignore` updated to ignore generated output dir by default
