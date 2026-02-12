@@ -135,10 +135,13 @@ BUILD_TIMEOUT=${BUILD_TIMEOUT:-300s}
 # Optional prewarm to reduce first-build times using the Haxe compilation server
 PREWARM_TIMEOUT=${PREWARM_TIMEOUT:-0}
 DEPS_TIMEOUT=${DEPS_TIMEOUT:-300s}
+DEPS_COMPILE_TIMEOUT=${DEPS_COMPILE_TIMEOUT:-420s}
 COMPILE_TIMEOUT=${COMPILE_TIMEOUT:-300s}
 READY_PROBES=${READY_PROBES:-60}
 # Heartbeat interval while long steps run (seconds)
 PROGRESS_INTERVAL=${PROGRESS_INTERVAL:-10}
+OVERALL_WATCHDOG_PID=""
+OVERALL_WATCHDOG_LOG=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -483,6 +486,12 @@ on_exit() {
     fi
   fi
 
+  # Stop synchronous deadline watchdog to avoid lingering children/open pipes after success.
+  if [[ -n "${OVERALL_WATCHDOG_PID:-}" ]] && kill -0 "$OVERALL_WATCHDOG_PID" 2>/dev/null; then
+    kill "$OVERALL_WATCHDOG_PID" 2>/dev/null || true
+    wait "$OVERALL_WATCHDOG_PID" 2>/dev/null || true
+  fi
+
   # If Phoenix was started and KEEP_ALIVE isn't requested, tear it down.
   # `cleanup` is defined only after Phoenix is launched, so guard its presence
   # to keep early-failure paths safe.
@@ -519,6 +528,8 @@ log "[QA] Config: PORT=$PORT ENV=$ENV_NAME KEEP_ALIVE=$KEEP_ALIVE VERBOSE=$VERBO
 # Optional overall deadline for synchronous mode too
 if [[ -n "${DEADLINE}" && "${ASYNC}" -eq 0 ]]; then
   log "[QA] Overall deadline enabled: ${DEADLINE} (synchronous watchdog)"
+  OVERALL_WATCHDOG_LOG=/tmp/qa-overall-watchdog.log
+  : > "$OVERALL_WATCHDOG_LOG"
   (
     # Use a subshell watchdog to terminate this script if deadline elapses
     sleep "${DEADLINE}" || true
@@ -531,10 +542,8 @@ if [[ -n "${DEADLINE}" && "${ASYNC}" -eq 0 ]]; then
     done
     # Send TERM to the main shell to trigger cleanup trap
     kill -TERM $$ >/dev/null 2>&1 || true
-  ) &
+  ) >>"$OVERALL_WATCHDOG_LOG" 2>&1 &
   OVERALL_WATCHDOG_PID=$!
-  # Don’t keep a disowned child that shells may whine about
-  { disown "$OVERALL_WATCHDOG_PID" 2>/dev/null || true; } >/dev/null 2>&1
 fi
 pushd "$APP_DIR" >/dev/null
 
@@ -688,7 +697,7 @@ else
     fi
   fi
   if [[ -n "$HTTP_ADAPTER" ]]; then
-    run_step_best_effort "Step 2.1: deps precompile (${HTTP_ADAPTER})" 180s /tmp/qa-deps-precompile.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile ${HTTP_ADAPTER} --force'"
+    run_step_best_effort "Step 2.1: deps precompile (${HTTP_ADAPTER})" 180s /tmp/qa-deps-precompile.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile ${HTTP_ADAPTER}'"
   else
     log "[QA] Step 2.1: deps precompile skipped (no known HTTP adapter dep detected)"
   fi
@@ -696,7 +705,7 @@ else
   # Prepare database and runtime after compile. Robust deps compile to avoid
   # rebar include_lib issues under per-run MIX_BUILD_ROOT.
   # Always compile deps in the default root (unset MIX_BUILD_ROOT), then mirror to per-run root.
-  run_step_with_log "Step 2.1: deps compile (default root)" 240s /tmp/qa-deps-compile-default.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile --force'" || exit 1
+  run_step_with_log "Step 2.1: deps compile (default root)" "$DEPS_COMPILE_TIMEOUT" /tmp/qa-deps-compile-default.log "bash -lc 'unset MIX_BUILD_ROOT; MIX_ENV=$ENV_NAME mix deps.compile'" || exit 1
   # Mirror artifacts with symlink dereference so priv/include are real files in MIX_BUILD_ROOT
   run_step_with_log "Step 2.2: mirror deps to MIX_BUILD_ROOT" 60s /tmp/qa-deps-mirror.log "bash -lc 'mkdir -p \"$QA_BUILD_ROOT/$ENV_NAME/lib\" && rsync -aL --delete \"_build/$ENV_NAME/lib/\" \"$QA_BUILD_ROOT/$ENV_NAME/lib/\"'" || exit 1
 fi
