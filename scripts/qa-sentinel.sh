@@ -901,34 +901,58 @@ fi
 if [[ "$RUN_PLAYWRIGHT" -eq 1 ]]; then
   log "[QA] Step 7: Running Playwright tests (${E2E_SPEC:-e2e}, workers: ${E2E_WORKERS})"
   # Install dependencies and browsers for Playwright in the app dir.
-  # Use lockfile-aware install to reduce network variability in CI.
-  PLAYWRIGHT_NPM_CMD="npm -C . install --no-audit --no-fund"
-  if [[ -f package-lock.json ]]; then
-    PLAYWRIGHT_NPM_CMD="npm -C . ci --prefer-offline --no-audit --no-fund"
+  # Use lockfile-aware install to reduce network variability in CI, but skip
+  # redundant installs when an existing setup is already present.
+  PLAYWRIGHT_NPM_INSTALLED=0
+  if [[ -x node_modules/.bin/playwright ]] || [[ -d node_modules/@playwright/test ]]; then
+    PLAYWRIGHT_NPM_INSTALLED=1
+    log "[QA] Playwright npm install skipped (dependencies already present)"
   fi
-  if ! run_step_with_log "Playwright npm install" 180s /tmp/qa-playwright-install.log "$PLAYWRIGHT_NPM_CMD"; then
-    log "[QA] Playwright npm install failed; retrying once..."
-    run_step_with_log "Playwright npm install (retry)" 180s /tmp/qa-playwright-install.log "$PLAYWRIGHT_NPM_CMD" || { cleanup || true; exit 1; }
+
+  if [[ "$PLAYWRIGHT_NPM_INSTALLED" -eq 0 ]]; then
+    PLAYWRIGHT_NPM_CMD="npm -C . install --no-audit --no-fund"
+    if [[ -f package-lock.json ]]; then
+      PLAYWRIGHT_NPM_CMD="npm -C . ci --prefer-offline --no-audit --no-fund"
+    fi
+    if ! run_step_with_log "Playwright npm install" 180s /tmp/qa-playwright-install.log "$PLAYWRIGHT_NPM_CMD"; then
+      log "[QA] Playwright npm install failed; retrying once..."
+      run_step_with_log "Playwright npm install (retry)" 180s /tmp/qa-playwright-install.log "$PLAYWRIGHT_NPM_CMD" || { cleanup || true; exit 1; }
+    fi
   fi
-  PLAYWRIGHT_INSTALL_CMD="npx -C . playwright install"
-  if [[ "${PLAYWRIGHT_BROWSERS}" != "all" ]]; then
-    PLAYWRIGHT_INSTALL_CMD="npx -C . playwright install ${PLAYWRIGHT_BROWSERS}"
+
+  PLAYWRIGHT_BROWSER_INSTALLED=0
+  if [[ "${PLAYWRIGHT_BROWSERS}" == "chromium" ]]; then
+    if compgen -G "${HOME}/.cache/ms-playwright/chromium-*" >/dev/null; then
+      PLAYWRIGHT_BROWSER_INSTALLED=1
+      log "[QA] Playwright browser install skipped (chromium cache present)"
+    fi
   fi
-  if ! run_step_with_log "Playwright browsers install" 600s /tmp/qa-playwright-browsers.log "$PLAYWRIGHT_INSTALL_CMD"; then
-    log "[QA] Playwright browsers install failed; retrying once..."
-    run_step_with_log "Playwright browsers install (retry)" 600s /tmp/qa-playwright-browsers.log "$PLAYWRIGHT_INSTALL_CMD" || { cleanup || true; exit 1; }
+
+  if [[ "$PLAYWRIGHT_BROWSER_INSTALLED" -eq 0 ]]; then
+    PLAYWRIGHT_INSTALL_CMD="npx -C . playwright install"
+    if [[ "${PLAYWRIGHT_BROWSERS}" != "all" ]]; then
+      PLAYWRIGHT_INSTALL_CMD="npx -C . playwright install ${PLAYWRIGHT_BROWSERS}"
+    fi
+    if ! run_step_with_log "Playwright browsers install" 600s /tmp/qa-playwright-browsers.log "$PLAYWRIGHT_INSTALL_CMD"; then
+      log "[QA] Playwright browsers install failed; retrying once..."
+      run_step_with_log "Playwright browsers install (retry)" 600s /tmp/qa-playwright-browsers.log "$PLAYWRIGHT_INSTALL_CMD" || { cleanup || true; exit 1; }
+    fi
   fi
+
   # Important: do NOT quote the spec so that shell globs expand (e.g., e2e/*.spec.ts)
   SPEC_ARG=${E2E_SPEC:-e2e}
-  if ! run_step_with_log "Playwright tests" 300s /tmp/qa-playwright-run.log "BASE_URL=\"http://localhost:$PORT\" npx -C . playwright test ${SPEC_ARG} --workers=${E2E_WORKERS}"; then
-    log "[QA] ❌ Playwright tests failed. Last 120 lines:"
-    tail -n 120 /tmp/qa-playwright-run.log || true
-    cleanup || true
-    exit 1
+  PLAYWRIGHT_TEST_CMD="BASE_URL=\"http://localhost:$PORT\" npx -C . playwright test ${SPEC_ARG} --workers=${E2E_WORKERS}"
+  if ! run_step_with_log "Playwright tests" 300s /tmp/qa-playwright-run.log "$PLAYWRIGHT_TEST_CMD"; then
+    log "[QA] Playwright tests failed; retrying once..."
+    if ! run_step_with_log "Playwright tests (retry)" 300s /tmp/qa-playwright-run.log "$PLAYWRIGHT_TEST_CMD"; then
+      log "[QA] ❌ Playwright tests failed. Last 120 lines:"
+      tail -n 120 /tmp/qa-playwright-run.log || true
+      cleanup || true
+      exit 1
+    fi
   fi
   log "[QA] ✅ Playwright tests passed"
 fi
-
 if [[ "$KEEP_ALIVE" -eq 1 ]]; then
   log "[QA] KEEP-ALIVE enabled. Phoenix continues running."
   echo "PHX_PID=$PHX_PID"
