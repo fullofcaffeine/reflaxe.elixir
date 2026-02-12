@@ -1395,7 +1395,7 @@ class TodoLive {
 												<span data-testid="org-slug">${assigns.organization_slug}</span>
 											</a>
 										</div>
-											<div class="mt-3 flex flex-wrap items-center gap-2 text-sm">
+											<div data-testid="todo-nav-auth-row" class="mt-3 flex flex-wrap items-center gap-2 text-sm">
 													<button data-testid="nav-theme-toggle"
 														id="nav-theme-toggle"
 														type="button"
@@ -1538,8 +1538,8 @@ class TodoLive {
 					</if>
 					
 							<!-- Filters and Search -->
-							<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
-								<div class="flex flex-wrap items-start gap-3">
+								<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+									<div data-testid="todo-controls-row" class="flex flex-wrap items-start gap-3">
 									<!-- Search -->
 									<div class="flex-1 min-w-[280px]">
 			                            <form phx-change=${EventName.SearchTodos} class="relative h-11">

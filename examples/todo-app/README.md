@@ -133,6 +133,48 @@ Tips
 - Prefer fixing transforms/Haxe source over editing generated Elixir. If you patch generated files for triage, follow up with proper fixes in the AST pipeline.
 - If custom Postgrex `types:` config causes local TypeManager errors, either define the types module or remove the option for local debugging.
 
+## Visual Regression (Local Pre-Commit Gate)
+
+### Why this exists
+
+`theme.spec.ts` now focuses on behavior (theme toggle + persistence).  
+Visual details (layout, spacing, color treatment) are covered separately with a tiny screenshot-based guard so visual regressions are caught early without turning all e2e tests into style assertions.
+
+### What is covered
+
+`examples/todo-app/e2e/ui_visual.spec.ts` captures only stable, high-signal regions:
+- `todo-controls-row` (search + filters + sort controls)
+- `todo-nav-auth-row` in dark theme (theme/users/sign-in chip row)
+
+Baselines are committed in:
+- `examples/todo-app/e2e/ui_visual.spec.ts-snapshots/`
+
+### How it runs
+
+The repo pre-commit hook runs this visual test as a local blocker only when staged files touch the todo-app UI surface (LiveView UI, client UI code, CSS, or visual test/snapshots).
+
+Manual run:
+
+```bash
+scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec e2e/ui_visual.spec.ts --async --deadline 600 --verbose
+```
+
+### Updating baselines intentionally
+
+1. Start app in background (keep alive):
+
+```bash
+scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --keep-alive --async --deadline 600 --verbose
+```
+
+2. Update screenshots:
+
+```bash
+scripts/with-timeout.sh --secs 240 --cwd examples/todo-app -- env BASE_URL=http://localhost:4001 npx playwright test e2e/ui_visual.spec.ts --update-snapshots
+```
+
+3. Review diffs and commit only intentional baseline changes.
+
 ## 🏗️ Architecture
 
 ### Project Structure

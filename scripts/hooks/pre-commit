@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"
+VISUAL_TRIGGER_PATTERN='^(examples/todo-app/src_haxe/server/live/.*\.hx|examples/todo-app/assets/css/.*|examples/todo-app/src_haxe/client/.*|examples/todo-app/e2e/ui_visual\.spec\.ts|examples/todo-app/e2e/ui_visual\.spec\.ts-snapshots/.*)$'
 
 echo "[pre-commit] Running local path guard on staged changes..."
 "$ROOT_DIR/scripts/lint/local_path_guard_staged.sh"
@@ -54,5 +55,21 @@ echo "[pre-commit] Running name-heuristics guard..."
 
 echo "[pre-commit] Running numeric-suffix guard..."
 "$ROOT_DIR/scripts/lint/numeric_suffix_guard.sh"
+
+if git diff --cached --name-only --diff-filter=ACMR | rg -q "$VISUAL_TRIGGER_PATTERN"; then
+  echo "[pre-commit] Running todo-app visual regression gate..."
+  "$ROOT_DIR/scripts/with-timeout.sh" \
+    --secs 900 \
+    --cwd "$ROOT_DIR" \
+    -- \
+    bash scripts/qa-sentinel.sh \
+      --app examples/todo-app \
+      --env e2e \
+      --port 4001 \
+      --playwright \
+      --e2e-spec e2e/ui_visual.spec.ts \
+      --deadline 600 \
+      --verbose
+fi
 
 echo "[pre-commit] OK"

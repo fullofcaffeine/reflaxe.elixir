@@ -10,6 +10,20 @@
   - `scripts/with-timeout.sh --secs 120 --grace 2 --cwd examples/todo-app -- env BASE_URL=http://localhost:4011 npx playwright test e2e/*.spec.ts`
 - If a step exceeds its cap, treat it as a failure: abort, surface the last logs, and rerun narrowly with diagnostics — never wait indefinitely.
 
+## 👁️ Visual Regression Policy (Todo UI)
+
+- Keep behavioral assertions in `e2e/theme.spec.ts` (state toggle + persistence).
+- Keep visual assertions in `e2e/ui_visual.spec.ts` only (small scoped screenshots).
+- Snapshot scope is intentionally narrow and stable:
+  - `data-testid="todo-controls-row"`
+  - `data-testid="todo-nav-auth-row"`
+- Baselines live in `e2e/ui_visual.spec.ts-snapshots/` and are committed.
+- Pre-commit runs the visual spec as a local blocker when staged files touch todo-app UI surface (LiveView UI Haxe, client UI, CSS, visual spec/snapshots).
+- When visuals change intentionally:
+  1) Start keep-alive server with QA sentinel.
+  2) Run `npx playwright test e2e/ui_visual.spec.ts --update-snapshots` (bounded via `scripts/with-timeout.sh`).
+  3) Review image diffs before commit.
+
 # AI Development Instructions for todo-app
 
 > **Parent Context**: See [/AGENTS.md](/AGENTS.md) for project-wide conventions, architecture, and core development principles
