@@ -33,8 +33,9 @@ mix haxe.watch
 
 ### Pre-commit Local Path Guard
 - The pre-commit hook blocks staged **absolute local paths** (for example `/Users/...`, `/home/...`, `/var/folders/...`, `C:\Users\...`).
-- Dot-relative path references (`./...`, `../...`) require explicit confirmation (`y/n`) during commit.
-- For non-interactive commits, you can bypass only the relative-path prompt with:
+- Dot-relative path references (`./...`, `../...`) are allowed when they resolve inside the repo root.
+- Dot-relative references that escape repo root are blocked by default.
+- To bypass relative-path blocking for an intentional case:
   - `ALLOW_RELATIVE_PATH_REFERENCES=1 git commit ...`
 - This guard is enforced from `scripts/hooks/pre-commit` via `scripts/lint/local_path_guard_staged.sh`.
 
