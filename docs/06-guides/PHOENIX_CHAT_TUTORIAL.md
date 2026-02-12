@@ -13,6 +13,7 @@ Reference implementation: `examples/12-phoenix-chat/`.
 - Write “normal Haxe” (imperative is fine).
 - Let the compiler lower it into the functional Elixir shapes Phoenix expects.
 - Keep the generated Elixir readable and framework-faithful.
+- Use typed LiveView/Presence/PubSub surfaces so common shape mistakes fail at compile time.
 
 ## Prereqs
 
@@ -132,6 +133,41 @@ Key behaviors:
 
 See: `examples/12-phoenix-chat/src_haxe/phoenix_chat_hx/live/AppLive.hx`.
 
+Typed abstractions used here:
+
+- `Socket<AppLiveAssigns>` and `LiveSocket<AppLiveAssigns>` keep assigns shape-checked.
+- `MountParams` / `Session` typedefs avoid “stringly typed map” access in callbacks.
+- `PresenceEntry<PresenceMeta>` keeps presence metadata typed when computing online views.
+
+These prevent common mistakes like assigning unknown keys, reading missing params, or treating Presence meta as untyped blobs.
+
+Haxe callback shape:
+
+```haxe
+public static function mount(_params:MountParams, _session:Session, socket:Socket<AppLiveAssigns>):MountResult<AppLiveAssigns> {
+  var live:LiveSocket<AppLiveAssigns> = LiveView.assignMultiple(socket, {
+    room: "lobby",
+    messages: [],
+    online_user_count: 0
+  });
+  return Ok(live);
+}
+```
+
+Generated Elixir shape:
+
+```elixir
+def mount(_params, _session, socket) do
+  live =
+    socket
+    |> assign(:room, "lobby")
+    |> assign(:messages, [])
+    |> assign(:online_user_count, 0)
+
+  {:ok, live}
+end
+```
+
 ## 6) Client hook (auto-scroll)
 
 Implement a tiny LiveView hook in Haxe client code:
@@ -158,6 +194,42 @@ Manual test checklist:
 4. The other window should receive it immediately (PubSub).
 5. Close one window: the online count should decrement (Presence).
 
+## 8) Functional style variant (same feature)
+
+You can write the same logic in a more functional Haxe style (pure helper + explicit rebinding), which still compiles to idiomatic Elixir:
+
+```haxe
+static function appendMessage(messages:Array<ChatMessage>, msg:ChatMessage):Array<ChatMessage> {
+  var next = messages.copy();
+  next.push(msg);
+  return next;
+}
+
+static function applyIncoming(socket:LiveSocket<AppLiveAssigns>, msg:ChatMessage):LiveSocket<AppLiveAssigns> {
+  return socket.assign(_.messages, appendMessage(socket.assigns.messages, msg));
+}
+```
+
+This maps cleanly to data-in/data-out updates in generated Elixir and avoids hidden mutation pitfalls.
+
+## 9) QA + E2E smoke (2 sessions)
+
+`examples/12-phoenix-chat` already includes Playwright coverage at `examples/12-phoenix-chat/e2e/presence.spec.ts`.
+
+Run with sentinel-managed lifecycle:
+
+```bash
+scripts/qa-sentinel.sh --app examples/12-phoenix-chat --port 4012 --playwright --e2e-spec "e2e/presence.spec.ts" --async --deadline 600 -v
+```
+
+Then bounded log follow:
+
+```bash
+scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120
+```
+
+This validates two browser sessions (online count + message fanout) without foreground server blocking.
+
 ## Troubleshooting
 
 - `Could not resolve "./hx_app.js"` under esbuild watch:
@@ -167,4 +239,3 @@ Manual test checklist:
   - Ensure `Phoenix.PubSub` is started in the supervision tree.
   - Ensure your Presence module uses the correct `otp_app` + `pubsub_server` for your Phoenix app.
   - Ensure `build.hxml` uses `-D app_name=<YourAppModule>` (not a custom suffix).
-

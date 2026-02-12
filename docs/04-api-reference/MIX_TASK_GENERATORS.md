@@ -109,6 +109,7 @@ Notes:
 - This generator is intended to keep app code away from untyped `__elixir__()` strings.
 - The generated extern uses `elixir.types.Term` at the boundary by default (safe, generic).
 - Functions with multiple arities are generated using Haxe overloads.
+- Canonical usage workflow (extern + wrapper + tests): `docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md`.
 
 ### `mix haxe.gen.project`
 

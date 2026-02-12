@@ -245,6 +245,7 @@ integration when you want Elixir-native APIs and shapes (structs/atoms/tagged tu
 
 - `docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md`
 - `docs/02-user-guide/ESCAPE_HATCHES.md`
+- Canonical extern workflow: `docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md`
 - Opt-in discipline for app code: `docs/06-guides/STRICT_MODE.md`
 
 ## Quick Start
