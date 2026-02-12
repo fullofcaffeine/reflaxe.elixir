@@ -3,6 +3,9 @@ set -euo pipefail
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 
+echo "[pre-commit] Running local path guard on staged changes..."
+"$ROOT_DIR/scripts/lint/local_path_guard_staged.sh"
+
 if ! command -v gitleaks >/dev/null 2>&1; then
   echo "[pre-commit] ERROR: gitleaks is required but not installed."
   echo "[pre-commit] Install: https://github.com/gitleaks/gitleaks#installing"
