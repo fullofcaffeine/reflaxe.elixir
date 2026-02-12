@@ -80,6 +80,7 @@ defmodule PhoenixChat.MixProject do
         # END reflaxe_elixir haxe_compile_client_alias
 
       setup: ["deps.get", "assets.setup", "assets.build"],
+      test: ["haxe.compile.tests", "test"],
       "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
       "assets.build": [
 
@@ -95,7 +96,8 @@ defmodule PhoenixChat.MixProject do
         "tailwind phoenix_chat --minify",
         "esbuild phoenix_chat --minify",
         "phx.digest"
-      ]
+      ],
+      "haxe.compile.tests": ["cmd haxe build-tests.hxml"]
     ]
   end
 end

@@ -19,6 +19,19 @@ mix phx.server
 
 Open `http://localhost:4000`.
 
+## Tests
+
+Compile Haxe-authored ExUnit tests and run:
+
+```bash
+cd examples/12-phoenix-chat
+mix test
+```
+
+The example includes a Haxe-authored ExUnit test:
+
+- `examples/12-phoenix-chat/src_haxe/test/live/ChatStateTest.hx`
+
 ## Key Haxe files
 
 - `examples/12-phoenix-chat/src_haxe/phoenix_chat_hx/live/AppLive.hx`
@@ -73,3 +86,4 @@ end
 - Template expressions are real Haxe expressions (`${...}`), so syntax/type errors are caught by the Haxe typer.
 - For detailed template authoring guidance, see `docs/02-user-guide/INLINE_MARKUP.md` and `docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md`.
 - For the most complete end-to-end app (Ecto + tests + Playwright), see `examples/todo-app/README.md`.
+- Playwright smoke for two-session presence is at `examples/12-phoenix-chat/e2e/presence.spec.ts`.

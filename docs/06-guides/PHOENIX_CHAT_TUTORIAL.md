@@ -214,6 +214,15 @@ This maps cleanly to data-in/data-out updates in generated Elixir and avoids hid
 
 ## 9) QA + E2E smoke (2 sessions)
 
+Haxe-authored ExUnit unit coverage is included:
+
+```bash
+cd examples/12-phoenix-chat
+mix test
+```
+
+Example test: `examples/12-phoenix-chat/src_haxe/test/live/ChatStateTest.hx`.
+
 `examples/12-phoenix-chat` already includes Playwright coverage at `examples/12-phoenix-chat/e2e/presence.spec.ts`.
 
 Run with sentinel-managed lifecycle:
