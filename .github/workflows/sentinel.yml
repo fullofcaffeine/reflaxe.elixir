@@ -134,3 +134,86 @@ jobs:
           path: |
             /tmp/qa-*.log
             qa-run.log
+
+  smoke-phoenix-chat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            examples/12-phoenix-chat/package-lock.json
+
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27.2'
+          elixir-version: '1.18.3'
+
+      - name: Cache mix deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.mix
+            ~/.hex
+            examples/12-phoenix-chat/deps
+            examples/12-phoenix-chat/_build
+          key: ${{ runner.os }}-mix-phoenix-chat-${{ hashFiles('examples/12-phoenix-chat/mix.lock') }}
+
+      - name: Cache Haxe toolchain (lix)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/haxe
+          key: ${{ runner.os }}-lix-haxe-4.3.7-${{ hashFiles('.haxerc', 'haxe_libraries/*.hxml', 'package-lock.json', 'examples/12-phoenix-chat/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-lix-haxe-4.3.7-
+
+      - name: Install root dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install Haxe (pinned via lix)
+        run: |
+          set -euo pipefail
+          npx lix download
+          npx lix download haxe "4.3.7"
+          npx lix use haxe "4.3.7"
+          echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
+          haxe -version
+
+      - name: Download Haxe libraries (lix)
+        run: npx lix download
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-phoenix-chat-${{ hashFiles('examples/12-phoenix-chat/package-lock.json') }}
+
+      - name: Install Playwright browsers (cached)
+        run: |
+          npm -C examples/12-phoenix-chat ci --prefer-offline --no-audit --no-fund
+          npx -C examples/12-phoenix-chat playwright install chromium
+
+      - name: Run Phoenix chat QA Sentinel smoke (bounded)
+        run: |
+          set -euo pipefail
+          scripts/qa-sentinel.sh --app examples/12-phoenix-chat --port 4012 --playwright --e2e-spec "e2e/presence.spec.ts" --e2e-workers 1 --deadline 900 --verbose | tee qa-chat-run.log
+
+      - name: Upload Phoenix chat QA logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-logs-phoenix-chat
+          path: |
+            /tmp/qa-*.log
+            qa-chat-run.log
