@@ -660,7 +660,7 @@ typedef UserParams = {
 @:native("MyApp.Accounts.User")
 @:schema("users")
 @:timestamps
-@:changeset(["name", "email"], ["name", "email"])
+@:changeset(cast(["name", "email"]), validate(["name", "email"]))
 class User {
   // 3) Fields compile to Ecto schema fields.
   @:field @:primary_key public var id: Int;
@@ -676,6 +676,11 @@ class Users {
     return MyApp.Repo.insert(changeset);
   }
 }
+```
+
+Legacy compatibility form (still supported):
+```haxe
+@:changeset(["name", "email"], ["name", "email"])
 ```
 
 Optional compatibility path (usually unnecessary):

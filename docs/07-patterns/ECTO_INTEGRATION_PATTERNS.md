@@ -107,7 +107,9 @@ Reflaxe.Elixir supports two complementary approaches:
 
 ### 1) Schema-driven changesets (`@:changeset`)
 
-Annotate your schema with `@:changeset(...)`. The schema macro auto-injects a typed Haxe declaration for
+Annotate your schema with `@:changeset(...)`. Named config is recommended:
+`@:changeset(cast([...]), validate([...]))`.
+The schema macro auto-injects a typed Haxe declaration for
 `changeset<Params>(schema, params)` when one is not explicitly defined.
 
 Example (from the todo-app pattern):
@@ -122,7 +124,7 @@ typedef TodoParams = {
 }
 
 @:schema("todos")
-@:changeset(["title", "description", "completed", "priority", "userId"], ["title"])
+@:changeset(cast(["title", "description", "completed", "priority", "userId"]), validate(["title"]))
 class Todo {
   @:field public var id: Int;
   @:field public var title: String;
@@ -138,6 +140,8 @@ class Todo {
   extern public static function changeset(todo: Todo, params: TodoParams): ecto.Changeset<Todo, TodoParams>;
 }
 ```
+
+Legacy positional form remains supported: `@:changeset(["title", ...], ["title"])`.
 
 Compiles to:
 

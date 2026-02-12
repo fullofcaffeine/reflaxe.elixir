@@ -98,7 +98,7 @@ Notes
 
 ## 2) Ecto schema + generated changeset (recommended default)
 
-Use `@:changeset([...permitted], [...required])` for the common case (cast + validate_required).
+Use named `@:changeset(cast([...]), validate([...]))` for the common case (cast + validate_required).
 
 ```haxe
 package schemas;
@@ -127,7 +127,7 @@ typedef UserChangesetParams = {
 @:native("MyApp.User")
 @:schema("users")
 @:timestamps
-@:changeset(["email", "name", "role", "active"], ["email", "name"])
+@:changeset(cast(["email", "name", "role", "active"]), validate(["email", "name"]))
 class User {
     @:field @:primary_key public var id: Int;
     @:field public var email: String;
@@ -140,6 +140,7 @@ class User {
 No manual `extern` is required here: `@:schema` auto-injects a typed
 `changeset<Params>(schema, params): Changeset<Schema, Params>` declaration for Haxe calls.
 An explicit `extern` declaration is still accepted as an optional compatibility path.
+Legacy positional form remains supported: `@:changeset(["email", ...], ["email", ...])`.
 
 Compiles to:
 

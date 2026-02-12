@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Type;
 import haxe.macro.Type.TypedExpr;
 import haxe.macro.Expr.Position;
@@ -29,7 +28,6 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
  *
  * @see docs/03-compiler-development/INTERMEDIATE_AST_REFACTORING_PRD.md
  */
-
 // ============================================================================
 // Variable Origin Tracking (January 2025)
 // ============================================================================
@@ -45,17 +43,17 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
  * HOW: Set during ElixirASTBuilder phase, consulted during transformation and printing
  */
 enum VarOrigin {
-    /** Variable introduced by a user pattern (e.g., r, g, b in RGB pattern) */
-    PatternBinder;
+	/** Variable introduced by a user pattern (e.g., r, g, b in RGB pattern) */
+	PatternBinder;
 
-    /** Temporary variable generated for TEnumParameter extraction (g, g1, g2) */
-    ExtractionTemp;
+	/** Temporary variable generated for TEnumParameter extraction (g, g1, g2) */
+	ExtractionTemp;
 
-    /** Other compiler-synthesized locals */
-    Synthesized;
+	/** Other compiler-synthesized locals */
+	Synthesized;
 
-    /** User-defined variable from source code */
-    UserDefined;
+	/** User-defined variable from source code */
+	UserDefined;
 }
 
 // ============================================================================
@@ -66,262 +64,260 @@ enum VarOrigin {
  * Main AST node enum containing all Elixir language constructs
  */
 enum ElixirASTDef {
-    // ========================================================================
-    // Modules and Structure
-    // ========================================================================
-    
-    /** Elixir module definition with attributes and body */
-    EModule(name: String, attributes: Array<EAttribute>, body: Array<ElixirAST>);
-    
-    /** Defmodule block */
-    EDefmodule(name: String, doBlock: ElixirAST);
-    
-    // ========================================================================
-    // Functions
-    // ========================================================================
-    
-    /** Public function definition */
-    EDef(name: String, args: Array<EPattern>, guards: Null<ElixirAST>, body: ElixirAST);
-    
-    /** Private function definition */
-    EDefp(name: String, args: Array<EPattern>, guards: Null<ElixirAST>, body: ElixirAST);
-    
-    /** Macro definition */
-    EDefmacro(name: String, args: Array<EPattern>, guards: Null<ElixirAST>, body: ElixirAST);
-    
-    /** Private macro definition */
-    EDefmacrop(name: String, args: Array<EPattern>, guards: Null<ElixirAST>, body: ElixirAST);
-    
-    // ========================================================================
-    // Pattern Matching
-    // ========================================================================
-    
-    /** Case expression with pattern matching */
-    ECase(expr: ElixirAST, clauses: Array<ECaseClause>);
-    
-    /** Cond expression for condition chains */
-    ECond(clauses: Array<ECondClause>);
-    
-    /** Pattern match (=) operator */
-    EMatch(pattern: EPattern, expr: ElixirAST);
-    
-    /** With expression for chained pattern matching */
-    EWith(clauses: Array<EWithClause>, doBlock: ElixirAST, elseBlock: Null<ElixirAST>);
-    
-    // ========================================================================
-    // Control Flow
-    // ========================================================================
-    
-    /** If expression */
-    EIf(condition: ElixirAST, thenBranch: ElixirAST, elseBranch: Null<ElixirAST>);
-    
-    /** Unless expression (negative if) */
-    EUnless(condition: ElixirAST, body: ElixirAST, elseBranch: Null<ElixirAST>);
-    
-    /** Try-rescue-catch-after expression */
-    ETry(body: ElixirAST, rescue: Array<ERescueClause>, catchClauses: Array<ECatchClause>, 
-         afterBlock: Null<ElixirAST>, elseBlock: Null<ElixirAST>);
-    
-    /** Raise exception */
-    ERaise(exception: ElixirAST, attributes: Null<ElixirAST>);
-    
-    /** Throw expression */
-    EThrow(value: ElixirAST);
-    
-    // ========================================================================
-    // Data Structures
-    // ========================================================================
-    
-    /** List literal [] */
-    EList(elements: Array<ElixirAST>);
-    
-    /** Tuple literal {} */
-    ETuple(elements: Array<ElixirAST>);
-    
-    /** Map literal %{} */
-    EMap(pairs: Array<EMapPair>);
-    
-    /** Struct literal %Module{} */
-    EStruct(module: String, fields: Array<EStructField>);
-    
-    /** Struct update %{struct | field: value} */
-    EStructUpdate(struct: ElixirAST, fields: Array<EStructField>);
-    
-    /** Keyword list [key: value] */
-    EKeywordList(pairs: Array<EKeywordPair>);
-    
-    /** Binary/Bitstring <<>> */
-    EBitstring(segments: Array<EBinarySegment>);
-    
-    // ========================================================================
-    // Expressions
-    // ========================================================================
-    
-    /** Function call */
-    ECall(target: Null<ElixirAST>, funcName: String, args: Array<ElixirAST>);
-    
-    /** Macro call with do-block (like schema, defmodule, etc.) */
-    EMacroCall(macroName: String, args: Array<ElixirAST>, doBlock: ElixirAST);
-    
-    /** Remote call Module.function() */
-    ERemoteCall(module: ElixirAST, funcName: String, args: Array<ElixirAST>);
-    
-    /** Pipe operator |> */
-    EPipe(left: ElixirAST, right: ElixirAST);
-    
-    /** Binary operator */
-    EBinary(op: EBinaryOp, left: ElixirAST, right: ElixirAST);
-    
-    /** Unary operator */
-    EUnary(op: EUnaryOp, expr: ElixirAST);
-    
-    /** Dot access for maps/structs */
-    EField(target: ElixirAST, field: String);
-    
-    /** Bracket access [] */
-    EAccess(target: ElixirAST, key: ElixirAST);
-    
-    /** Range operator .. or ... with optional step (..//step) */
-    ERange(start: ElixirAST, end: ElixirAST, exclusive: Bool, ?step: ElixirAST);
-    
-    // ========================================================================
-    // Literals
-    // ========================================================================
-    
-    /** Atom literal */
-    EAtom(value: ElixirAtom);
-    
-    /** String literal */
-    EString(value: String);
-    
-    /** Integer literal */
-    EInteger(value: Int);
-    
-    /** Float literal */
-    EFloat(value: Float);
-    
-    /** Boolean literal */
-    EBoolean(value: Bool);
-    
-    /** Nil literal */
-    ENil;
-    
-    /** Charlist literal */
-    ECharlist(value: String);
-    
-    // ========================================================================
-    // Variables and Binding
-    // ========================================================================
-    
-    /** Variable reference */
-    EVar(name: String);
-    
-    /** Pin operator ^ */
-    EPin(expr: ElixirAST);
-    
-    /** Underscore pattern _ */
-    EUnderscore;
-    
-    // ========================================================================
-    // Comprehensions
-    // ========================================================================
-    
-    /** For comprehension */
-    EFor(generators: Array<EGenerator>, filters: Array<ElixirAST>, 
-         body: ElixirAST, into: Null<ElixirAST>, uniq: Bool);
-    
-    // ========================================================================
-    // Anonymous Functions
-    // ========================================================================
-    
-    /** Anonymous function fn -> end */
-    EFn(clauses: Array<EFnClause>);
-    
-    /** Capture operator & with optional arity for function references */
-    ECapture(expr: ElixirAST, ?arity: Int);
-    
-    // ========================================================================
-    // Module Directives
-    // ========================================================================
-    
-    /** Alias directive */
-    EAlias(module: String, as: Null<String>);
-    
-    /** Import directive */
-    EImport(module: String, only: Null<Array<EImportOption>>, except: Null<Array<EImportOption>>, ?warn: Null<Bool>);
-    
-    /** Use macro */
-    EUse(module: String, options: Array<ElixirAST>);
-    
-    /** Require directive */
-    ERequire(module: String, as: Null<String>);
-    
-    // ========================================================================
-    // Special Forms
-    // ========================================================================
-    
-    /** Quote expression */
-    EQuote(options: Array<ElixirAST>, expr: ElixirAST);
-    
-    /** Unquote expression */
-    EUnquote(expr: ElixirAST);
-    
-    /** Unquote splicing */
-    EUnquoteSplicing(expr: ElixirAST);
-    
-    /** Receive block for message passing */
-    EReceive(clauses: Array<ECaseClause>, after: Null<EAfterClause>);
-    
-    /** Send message */
-    ESend(target: ElixirAST, message: ElixirAST);
-    
-    // ========================================================================
-    // Blocks and Grouping
-    // ========================================================================
-    
-    /** Block of expressions */
-    EBlock(expressions: Array<ElixirAST>);
-    
-    /** Parenthesized expression */
-    EParen(expr: ElixirAST);
-    
-    /** Do-end block */
-    EDo(body: Array<ElixirAST>);
-    
-    // ========================================================================
-    // Documentation & Module Attributes
-    // ========================================================================
-    
-    /** Module attribute (e.g., @my_constant "value") */
-    EModuleAttribute(name: String, value: ElixirAST);
-    
-    /** @moduledoc documentation */
-    EModuledoc(content: String);
-    
-    /** @doc documentation */
-    EDoc(content: String);
-    
-    /** @spec type specification */
-    ESpec(signature: String);
-    
-    /** @type type definition */
-    ETypeDef(name: String, definition: String);
-    
-    // ========================================================================
-    // Phoenix/Framework Specific (for transformation phase)
-    // ========================================================================
-    
-    /** Sigil (like ~H for HEEx templates) */
-    ESigil(type: String, content: String, modifiers: String);
-    
-    /** Raw Elixir code injection (for __elixir__ calls) */
-    ERaw(code: String);
-    
-    /** Attribute @ (for assigns in templates) */
-    EAssign(name: String);
-    
-    /** Fragment for template composition */
-    EFragment(tag: String, attributes: Array<EAttribute>, children: Array<ElixirAST>);
+	// ========================================================================
+	// Modules and Structure
+	// ========================================================================
+
+	/** Elixir module definition with attributes and body */
+	EModule(name:String, attributes:Array<EAttribute>, body:Array<ElixirAST>);
+
+	/** Defmodule block */
+	EDefmodule(name:String, doBlock:ElixirAST);
+
+	// ========================================================================
+	// Functions
+	// ========================================================================
+
+	/** Public function definition */
+	EDef(name:String, args:Array<EPattern>, guards:Null<ElixirAST>, body:ElixirAST);
+
+	/** Private function definition */
+	EDefp(name:String, args:Array<EPattern>, guards:Null<ElixirAST>, body:ElixirAST);
+
+	/** Macro definition */
+	EDefmacro(name:String, args:Array<EPattern>, guards:Null<ElixirAST>, body:ElixirAST);
+
+	/** Private macro definition */
+	EDefmacrop(name:String, args:Array<EPattern>, guards:Null<ElixirAST>, body:ElixirAST);
+
+	// ========================================================================
+	// Pattern Matching
+	// ========================================================================
+
+	/** Case expression with pattern matching */
+	ECase(expr:ElixirAST, clauses:Array<ECaseClause>);
+
+	/** Cond expression for condition chains */
+	ECond(clauses:Array<ECondClause>);
+
+	/** Pattern match (=) operator */
+	EMatch(pattern:EPattern, expr:ElixirAST);
+
+	/** With expression for chained pattern matching */
+	EWith(clauses:Array<EWithClause>, doBlock:ElixirAST, elseBlock:Null<ElixirAST>);
+
+	// ========================================================================
+	// Control Flow
+	// ========================================================================
+
+	/** If expression */
+	EIf(condition:ElixirAST, thenBranch:ElixirAST, elseBranch:Null<ElixirAST>);
+
+	/** Unless expression (negative if) */
+	EUnless(condition:ElixirAST, body:ElixirAST, elseBranch:Null<ElixirAST>);
+
+	/** Try-rescue-catch-after expression */
+	ETry(body:ElixirAST, rescue:Array<ERescueClause>, catchClauses:Array<ECatchClause>, afterBlock:Null<ElixirAST>, elseBlock:Null<ElixirAST>);
+
+	/** Raise exception */
+	ERaise(exception:ElixirAST, attributes:Null<ElixirAST>);
+
+	/** Throw expression */
+	EThrow(value:ElixirAST);
+
+	// ========================================================================
+	// Data Structures
+	// ========================================================================
+
+	/** List literal [] */
+	EList(elements:Array<ElixirAST>);
+
+	/** Tuple literal {} */
+	ETuple(elements:Array<ElixirAST>);
+
+	/** Map literal %{} */
+	EMap(pairs:Array<EMapPair>);
+
+	/** Struct literal %Module{} */
+	EStruct(module:String, fields:Array<EStructField>);
+
+	/** Struct update %{struct | field: value} */
+	EStructUpdate(struct:ElixirAST, fields:Array<EStructField>);
+
+	/** Keyword list [key: value] */
+	EKeywordList(pairs:Array<EKeywordPair>);
+
+	/** Binary/Bitstring <<>> */
+	EBitstring(segments:Array<EBinarySegment>);
+
+	// ========================================================================
+	// Expressions
+	// ========================================================================
+
+	/** Function call */
+	ECall(target:Null<ElixirAST>, funcName:String, args:Array<ElixirAST>);
+
+	/** Macro call with do-block (like schema, defmodule, etc.) */
+	EMacroCall(macroName:String, args:Array<ElixirAST>, doBlock:ElixirAST);
+
+	/** Remote call Module.function() */
+	ERemoteCall(module:ElixirAST, funcName:String, args:Array<ElixirAST>);
+
+	/** Pipe operator |> */
+	EPipe(left:ElixirAST, right:ElixirAST);
+
+	/** Binary operator */
+	EBinary(op:EBinaryOp, left:ElixirAST, right:ElixirAST);
+
+	/** Unary operator */
+	EUnary(op:EUnaryOp, expr:ElixirAST);
+
+	/** Dot access for maps/structs */
+	EField(target:ElixirAST, field:String);
+
+	/** Bracket access [] */
+	EAccess(target:ElixirAST, key:ElixirAST);
+
+	/** Range operator .. or ... with optional step (..//step) */
+	ERange(start:ElixirAST, end:ElixirAST, exclusive:Bool, ?step:ElixirAST);
+
+	// ========================================================================
+	// Literals
+	// ========================================================================
+
+	/** Atom literal */
+	EAtom(value:ElixirAtom);
+
+	/** String literal */
+	EString(value:String);
+
+	/** Integer literal */
+	EInteger(value:Int);
+
+	/** Float literal */
+	EFloat(value:Float);
+
+	/** Boolean literal */
+	EBoolean(value:Bool);
+
+	/** Nil literal */
+	ENil;
+
+	/** Charlist literal */
+	ECharlist(value:String);
+
+	// ========================================================================
+	// Variables and Binding
+	// ========================================================================
+
+	/** Variable reference */
+	EVar(name:String);
+
+	/** Pin operator ^ */
+	EPin(expr:ElixirAST);
+
+	/** Underscore pattern _ */
+	EUnderscore;
+
+	// ========================================================================
+	// Comprehensions
+	// ========================================================================
+
+	/** For comprehension */
+	EFor(generators:Array<EGenerator>, filters:Array<ElixirAST>, body:ElixirAST, into:Null<ElixirAST>, uniq:Bool);
+
+	// ========================================================================
+	// Anonymous Functions
+	// ========================================================================
+
+	/** Anonymous function fn -> end */
+	EFn(clauses:Array<EFnClause>);
+
+	/** Capture operator & with optional arity for function references */
+	ECapture(expr:ElixirAST, ?arity:Int);
+
+	// ========================================================================
+	// Module Directives
+	// ========================================================================
+
+	/** Alias directive */
+	EAlias(module:String, as:Null<String>);
+
+	/** Import directive */
+	EImport(module:String, only:Null<Array<EImportOption>>, except:Null<Array<EImportOption>>, ?warn:Null<Bool>);
+
+	/** Use macro */
+	EUse(module:String, options:Array<ElixirAST>);
+
+	/** Require directive */
+	ERequire(module:String, as:Null<String>);
+
+	// ========================================================================
+	// Special Forms
+	// ========================================================================
+
+	/** Quote expression */
+	EQuote(options:Array<ElixirAST>, expr:ElixirAST);
+
+	/** Unquote expression */
+	EUnquote(expr:ElixirAST);
+
+	/** Unquote splicing */
+	EUnquoteSplicing(expr:ElixirAST);
+
+	/** Receive block for message passing */
+	EReceive(clauses:Array<ECaseClause>, after:Null<EAfterClause>);
+
+	/** Send message */
+	ESend(target:ElixirAST, message:ElixirAST);
+
+	// ========================================================================
+	// Blocks and Grouping
+	// ========================================================================
+
+	/** Block of expressions */
+	EBlock(expressions:Array<ElixirAST>);
+
+	/** Parenthesized expression */
+	EParen(expr:ElixirAST);
+
+	/** Do-end block */
+	EDo(body:Array<ElixirAST>);
+
+	// ========================================================================
+	// Documentation & Module Attributes
+	// ========================================================================
+
+	/** Module attribute (e.g., @my_constant "value") */
+	EModuleAttribute(name:String, value:ElixirAST);
+
+	/** @moduledoc documentation */
+	EModuledoc(content:String);
+
+	/** @doc documentation */
+	EDoc(content:String);
+
+	/** @spec type specification */
+	ESpec(signature:String);
+
+	/** @type type definition */
+	ETypeDef(name:String, definition:String);
+
+	// ========================================================================
+	// Phoenix/Framework Specific (for transformation phase)
+	// ========================================================================
+
+	/** Sigil (like ~H for HEEx templates) */
+	ESigil(type:String, content:String, modifiers:String);
+
+	/** Raw Elixir code injection (for __elixir__ calls) */
+	ERaw(code:String);
+
+	/** Attribute @ (for assigns in templates) */
+	EAssign(name:String);
+
+	/** Fragment for template composition */
+	EFragment(tag:String, attributes:Array<EAttribute>, children:Array<ElixirAST>);
 }
 
 // ============================================================================
@@ -332,172 +328,172 @@ enum ElixirASTDef {
  * Pattern types for pattern matching contexts
  */
 enum EPattern {
-    /** Variable pattern */
-    PVar(name: String);
-    
-    /** Literal pattern */
-    PLiteral(value: ElixirAST);
-    
-    /** Tuple pattern */
-    PTuple(elements: Array<EPattern>);
-    
-    /** List pattern */
-    PList(elements: Array<EPattern>);
-    
-    /** Cons pattern [head | tail] */
-    PCons(head: EPattern, tail: EPattern);
-    
-    /** Map pattern */
-    PMap(pairs: Array<{key: ElixirAST, value: EPattern}>);
-    
-    /** Struct pattern */
-    PStruct(module: String, fields: Array<{key: String, value: EPattern}>);
-    
-    /** Pin pattern ^variable */
-    PPin(pattern: EPattern);
-    
-    /** Underscore/wildcard pattern */
-    PWildcard;
-    
-    /** Alias pattern (var = pattern) */
-    PAlias(varName: String, pattern: EPattern);
-    
-    /** Binary pattern */
-    PBinary(segments: Array<PBinarySegment>);
+	/** Variable pattern */
+	PVar(name:String);
+
+	/** Literal pattern */
+	PLiteral(value:ElixirAST);
+
+	/** Tuple pattern */
+	PTuple(elements:Array<EPattern>);
+
+	/** List pattern */
+	PList(elements:Array<EPattern>);
+
+	/** Cons pattern [head | tail] */
+	PCons(head:EPattern, tail:EPattern);
+
+	/** Map pattern */
+	PMap(pairs:Array<{key:ElixirAST, value:EPattern}>);
+
+	/** Struct pattern */
+	PStruct(module:String, fields:Array<{key:String, value:EPattern}>);
+
+	/** Pin pattern ^variable */
+	PPin(pattern:EPattern);
+
+	/** Underscore/wildcard pattern */
+	PWildcard;
+
+	/** Alias pattern (var = pattern) */
+	PAlias(varName:String, pattern:EPattern);
+
+	/** Binary pattern */
+	PBinary(segments:Array<PBinarySegment>);
 }
 
 /**
  * Case clause for case/receive expressions
  */
 typedef ECaseClause = {
-    pattern: EPattern,
-    ?guard: ElixirAST,
-    body: ElixirAST
+	pattern:EPattern,
+	?guard:ElixirAST,
+	body:ElixirAST
 }
 
 /**
  * Cond clause for cond expressions
  */
 typedef ECondClause = {
-    condition: ElixirAST,
-    body: ElixirAST
+	condition:ElixirAST,
+	body:ElixirAST
 }
 
 /**
  * With clause for with expressions
  */
 typedef EWithClause = {
-    pattern: EPattern,
-    expr: ElixirAST
+	pattern:EPattern,
+	expr:ElixirAST
 }
 
 /**
  * Function clause for anonymous functions
  */
 typedef EFnClause = {
-    args: Array<EPattern>,
-    ?guard: ElixirAST,
-    body: ElixirAST
+	args:Array<EPattern>,
+	?guard:ElixirAST,
+	body:ElixirAST
 }
 
 /**
  * Rescue clause for try expressions
  */
 typedef ERescueClause = {
-    pattern: EPattern,
-    ?varName: String,
-    body: ElixirAST
+	pattern:EPattern,
+	?varName:String,
+	body:ElixirAST
 }
 
 /**
  * Catch clause for try expressions
  */
 typedef ECatchClause = {
-    kind: ECatchKind,
-    pattern: EPattern,
-    body: ElixirAST
+	kind:ECatchKind,
+	pattern:EPattern,
+	body:ElixirAST
 }
 
 /**
  * After clause for receive expressions
  */
 typedef EAfterClause = {
-    timeout: ElixirAST,
-    body: ElixirAST
+	timeout:ElixirAST,
+	body:ElixirAST
 }
 
 /**
  * Generator for comprehensions
  */
 typedef EGenerator = {
-    pattern: EPattern,
-    expr: ElixirAST
+	pattern:EPattern,
+	expr:ElixirAST
 }
 
 /**
  * Module attribute
  */
 typedef EAttribute = {
-    name: String,
-    value: ElixirAST,
-    // HEEx attribute name span in the parent ~H content (analysis only, exclusive end)
-    ?nameSpanStart: Int,
-    ?nameSpanEnd: Int,
-    // HEEx attribute value span in the parent ~H content (analysis only, exclusive end)
-    ?valueSpanStart: Int,
-    ?valueSpanEnd: Int
+	name:String,
+	value:ElixirAST,
+	// HEEx attribute name span in the parent ~H content (analysis only, exclusive end)
+	?nameSpanStart:Int,
+	?nameSpanEnd:Int,
+	// HEEx attribute value span in the parent ~H content (analysis only, exclusive end)
+	?valueSpanStart:Int,
+	?valueSpanEnd:Int
 }
 
 /**
  * Map pair
  */
 typedef EMapPair = {
-    key: ElixirAST,
-    value: ElixirAST
+	key:ElixirAST,
+	value:ElixirAST
 }
 
 /**
  * Struct field
  */
 typedef EStructField = {
-    key: String,
-    value: ElixirAST
+	key:String,
+	value:ElixirAST
 }
 
 /**
  * Keyword pair
  */
 typedef EKeywordPair = {
-    key: String,
-    value: ElixirAST
+	key:String,
+	value:ElixirAST
 }
 
 /**
  * Binary segment for binary patterns
  */
 typedef EBinarySegment = {
-    value: ElixirAST,
-    ?size: ElixirAST,
-    ?type: String,
-    ?modifiers: Array<String>
+	value:ElixirAST,
+	?size:ElixirAST,
+	?type:String,
+	?modifiers:Array<String>
 }
 
 /**
  * Binary pattern segment
  */
 typedef PBinarySegment = {
-    pattern: EPattern,
-    ?size: ElixirAST,
-    ?type: String,
-    ?modifiers: Array<String>
+	pattern:EPattern,
+	?size:ElixirAST,
+	?type:String,
+	?modifiers:Array<String>
 }
 
 /**
  * Import option for import directive
  */
 typedef EImportOption = {
-    name: String,
-    arity: Int
+	name:String,
+	arity:Int
 }
 
 /**
@@ -505,11 +501,11 @@ typedef EImportOption = {
  * Represents a single guard condition with its associated body
  */
 typedef GuardBranch = {
-    pattern: EPattern,          // The pattern being matched (e.g., RGB(r, g, b))
-    guard: ElixirAST,           // The guard condition (e.g., r > 200)
-    body: ElixirAST,            // The expression body when guard matches
-    ?originalIfElse: ElixirAST, // Optional: Original if-else for debugging
-    ?depth: Int                 // Optional: Nesting depth for debugging
+	pattern:EPattern, // The pattern being matched (e.g., RGB(r, g, b))
+	guard:ElixirAST, // The guard condition (e.g., r > 200)
+	body:ElixirAST, // The expression body when guard matches
+	?originalIfElse:ElixirAST, // Optional: Original if-else for debugging
+	?depth:Int // Optional: Nesting depth for debugging
 }
 
 /**
@@ -517,83 +513,83 @@ typedef GuardBranch = {
  * Used by GuardGroupValidator to report groupability status
  */
 typedef ValidationResult = {
-    canGroup: Bool,             // Whether conditions can be grouped in a cond
-    reason: String,             // Explanation of decision
-    groupKey: String,           // Pattern signature for grouping (e.g., "RGB(r,g,b)")
-    patterns: Array<String>     // All patterns found in this group
+	canGroup:Bool, // Whether conditions can be grouped in a cond
+	reason:String, // Explanation of decision
+	groupKey:String, // Pattern signature for grouping (e.g., "RGB(r,g,b)")
+	patterns:Array<String> // All patterns found in this group
 }
 
 /**
  * Binary operators
  */
 enum EBinaryOp {
-    // Arithmetic
-    Add;        // +
-    Subtract;   // -
-    Multiply;   // *
-    Divide;     // /
-    Remainder;  // rem
-    Power;      // **
-    
-    // Comparison
-    Equal;      // ==
-    NotEqual;   // !=
-    StrictEqual;    // ===
-    StrictNotEqual; // !==
-    Less;       // <
-    Greater;    // >
-    LessEqual;  // <=
-    GreaterEqual; // >=
-    
-    // Logical
-    And;        // and
-    Or;         // or
-    AndAlso;    // &&
-    OrElse;     // ||
-    
-    // Binary
-    BitwiseAnd; // &&&
-    BitwiseOr;  // |||
-    BitwiseXor; // ^^^
-    ShiftLeft;  // <<<
-    ShiftRight; // >>>
-    
-    // List
-    Concat;     // ++
-    ListSubtract;   // --
-    
-    // String
-    StringConcat;   // <>
-    
-    // Membership
-    In;         // in
-    
-    // Other
-    Match;      // =
-    Pipe;       // |>
-    TypeCheck;  // ::
-    When;       // when (guards)
+	// Arithmetic
+	Add; // +
+	Subtract; // -
+	Multiply; // *
+	Divide; // /
+	Remainder; // rem
+	Power; // **
+
+	// Comparison
+	Equal; // ==
+	NotEqual; // !=
+	StrictEqual; // ===
+	StrictNotEqual; // !==
+	Less; // <
+	Greater; // >
+	LessEqual; // <=
+	GreaterEqual; // >=
+
+	// Logical
+	And; // and
+	Or; // or
+	AndAlso; // &&
+	OrElse; // ||
+
+	// Binary
+	BitwiseAnd; // &&&
+	BitwiseOr; // |||
+	BitwiseXor; // ^^^
+	ShiftLeft; // <<<
+	ShiftRight; // >>>
+
+	// List
+	Concat; // ++
+	ListSubtract; // --
+
+	// String
+	StringConcat; // <>
+
+	// Membership
+	In; // in
+
+	// Other
+	Match; // =
+	Pipe; // |>
+	TypeCheck; // ::
+	When; // when (guards)
 }
 
 /**
  * Unary operators
  */
 enum EUnaryOp {
-    Not;        // not
-    Negate;     // -
-    Positive;   // +
-    BitwiseNot; // ~~~
-    Bang;       // !
+	Not; // not
+	Negate; // -
+	Positive; // +
+	BitwiseNot; // ~~~
+	Bang; // !
 }
 
 /**
  * Catch kinds for try-catch
  */
 enum ECatchKind {
-    Error;
-    Exit;
-    Throw;
-    Any;
+	Error;
+	Exit;
+	Throw;
+	Any;
 }
 
 // ============================================================================
@@ -604,67 +600,67 @@ enum ECatchKind {
  * Phoenix-specific context for LiveView, Router, etc.
  */
 enum PhoenixContext {
-    LiveView;
-    LiveComponent;
-    Controller;
-    Router;
-    Channel;
-    Endpoint;
-    None;
+	LiveView;
+	LiveComponent;
+	Controller;
+	Router;
+	Channel;
+	Endpoint;
+	None;
 }
 
 /**
  * Router route metadata parsed from @:routes on @:router modules.
  */
 typedef RouterRouteMeta = {
-    var name: String;
-    var method: String;
-    var path: String;
-    @:optional var controller: String;
-    @:optional var action: String;
-    @:optional var pipeline: String;
+	var name:String;
+	var method:String;
+	var path:String;
+	@:optional var controller:String;
+	@:optional var action:String;
+	@:optional var pipeline:String;
 }
 
 /**
  * Socket channel metadata parsed from @:socketChannels on @:socket modules.
  */
 typedef SocketChannelMeta = {
-    var topic: String;
-    // Fully-qualified Elixir module name (resolved at compile time, respects @:native).
-    var channel: String;
+	var topic:String;
+	// Fully-qualified Elixir module name (resolved at compile time, respects @:native).
+	var channel:String;
 }
 
 /**
  * Endpoint socket metadata parsed from @:endpointSockets on @:endpoint modules.
  */
 typedef EndpointSocketMeta = {
-    var path: String;
-    // Fully-qualified Elixir module name (resolved at compile time, respects @:native).
-    var socket: String;
-    @:optional var session: Bool;
+	var path:String;
+	// Fully-qualified Elixir module name (resolved at compile time, respects @:native).
+	var socket:String;
+	@:optional var session:Bool;
 }
 
 /**
  * Ecto-specific context for schemas, queries, etc.
  */
 enum EctoContext {
-    Schema;
-    Query;
-    Changeset;
-    Repo;
-    Migration;
-    None;
+	Schema;
+	Query;
+	Changeset;
+	Repo;
+	Migration;
+	None;
 }
 
 /**
  * Access pattern hints for optimization
  */
 enum AccessPattern {
-    Sequential;
-    Random;
-    WriteOnly;
-    ReadOnly;
-    ReadWrite;
+	Sequential;
+	Random;
+	WriteOnly;
+	ReadOnly;
+	ReadWrite;
 }
 
 // ============================================================================
@@ -675,14 +671,14 @@ enum AccessPattern {
  * AST node with metadata for context and optimization
  */
 typedef ElixirAST = {
-    /** The actual AST node */
-    def: ElixirASTDef,
-    
-    /** Rich metadata for transformation and optimization */
-    metadata: ElixirMetadata,
-    
-    /** Source position for error reporting */
-    ?pos: Position
+	/** The actual AST node */
+	def:ElixirASTDef,
+
+	/** Rich metadata for transformation and optimization */
+	metadata:ElixirMetadata,
+
+	/** Source position for error reporting */
+	?pos:Position
 }
 
 /**
@@ -705,243 +701,244 @@ typedef ElixirAST = {
  * transformation passes, allowing late-stage restoration of variable names.
  */
 typedef LoopContext = {
-    var variableName: String;         // Original loop variable name from Haxe source (i, j, k)
-    var rangeMin: Int;               // Start of range (0 in "0...5") - used to identify which literals to replace
-    var rangeMax: Int;               // End of range (4 in "0...5") - helps detect loop-generated values
-    var depth: Int;                  // Nesting level (0=outermost, 1=first nested) - handles nested loops
-    var iteratorExpr: String;        // Original iterator expression - for debugging and complex cases
+	var variableName:String; // Original loop variable name from Haxe source (i, j, k)
+	var rangeMin:Int; // Start of range (0 in "0...5") - used to identify which literals to replace
+	var rangeMax:Int; // End of range (4 in "0...5") - helps detect loop-generated values
+	var depth:Int; // Nesting level (0=outermost, 1=first nested) - handles nested loops
+	var iteratorExpr:String; // Original iterator expression - for debugging and complex cases
 }
 
 typedef ElixirMetadata = {
-    // Source Information
-    ?sourceExpr: haxe.macro.Type.TypedExpr,        // Original Haxe expression
-    ?sourceLine: Int,               // Line number in Haxe source
-    ?sourceFile: String,            // Source file path
-    ?sourceVarId: Int,             // Original TVar.id for variable resolution
-    
-    // Type Information
-    ?type: Type,                   // Haxe type information
-    ?elixirType: String,           // Inferred Elixir type
-    
-    // Semantic Information
-    ?purity: Bool,                 // Is expression pure?
-    ?tailPosition: Bool,           // Is in tail position?
-    ?fromReturn: Bool,             // Node originates from a Haxe `return` statement (for early-return reconstruction)
-    ?async: Bool,                  // Is async operation?
-    
-    // Transformation Hints
-    ?requiresReturn: Bool,         // Needs explicit return value
-    ?requiresTempVar: Bool,        // Needs temporary variable
-    ?inPipeline: Bool,            // Part of pipe chain
-    ?inComprehension: Bool,       // Inside for comprehension
-    ?inGuard: Bool,               // Inside guard clause
-    ?redundantEnumExtraction: Bool, // Marks redundant enum extraction for removal
-    ?noIifeWrap: Bool,            // Printer hint: do not wrap expression in an IIFE when used as an argument
+	// Source Information
+	?sourceExpr:haxe.macro.Type.TypedExpr, // Original Haxe expression
+	?sourceLine:Int, // Line number in Haxe source
+	?sourceFile:String, // Source file path
+	?sourceVarId:Int, // Original TVar.id for variable resolution
 
-    // Payload binder canonicalization locks (Phoenix/LiveView transforms)
-    ?lockPayloadBinder: Bool,       // Prevent later passes from rewriting payload binder names
-    ?canonicalPayloadValue: Bool,   // Marks payload value as already canonicalized
+	// Type Information
+	?type:Type, // Haxe type information
+	?elixirType:String, // Inferred Elixir type
 
-    // Emission control (module/file output)
-    ?forceEmit: Bool,               // Force emitting even if structurally empty
-    ?suppressEmission: Bool,        // Suppress emitting this module/file
-    ?instanceFields: Array<String>, // Snake_case instance fields for module-level lowering (class -> struct/map)
+	// Semantic Information
+	?purity:Bool, // Is expression pure?
+	?tailPosition:Bool, // Is in tail position?
+	?fromReturn:Bool, // Node originates from a Haxe `return` statement (for early-return reconstruction)
+	?async:Bool, // Is async operation?
 
-    // Array Comprehension Reconstruction
-    ?isUnrolledComprehension: Bool, // Block contains unrolled array comprehension
-    ?comprehensionElements: Int,    // Number of elements in unrolled comprehension
-    
-    // Variable Resolution
-    ?varIdToName: Map<Int, String>, // Clause-local variable renaming mappings
-    ?requiresIdiomaticTransform: Bool,  // Enum needs idiomatic compilation
-    
-    // Inheritance Information
-    ?parentModule: String,         // Parent class module name for inheritance
-    ?isException: Bool,            // Whether this class extends haxe.Exception
-    ?idiomaticEnumType: String,   // Name of the idiomatic enum type
-    ?hasEnumBindingPlan: Bool,    // M0.5: Case has proper enum parameter mappings
-    ?enumBindingPlanId: String,   // Unique ID linking to EnumBindingPlan in context
-    ?parentHasBindingPlan: Bool,  // Propagated flag from parent ECase
+	// Transformation Hints
+	?requiresReturn:Bool, // Needs explicit return value
+	?requiresTempVar:Bool, // Needs temporary variable
+	?inPipeline:Bool, // Part of pipe chain
+	?inComprehension:Bool, // Inside for comprehension
+	?inGuard:Bool, // Inside guard clause
+	?redundantEnumExtraction:Bool, // Marks redundant enum extraction for removal
+	?noIifeWrap:Bool, // Printer hint: do not wrap expression in an IIFE when used as an argument
 
-    // Variable Origin Tracking (January 2025)
-    ?varOrigin: VarOrigin,         // Where this variable came from
-    ?varId: Int,                   // Unique Haxe TVar ID for identity tracking
-    ?tempToBinderMap: Map<Int, Int>, // Maps extraction temp var IDs to pattern binder IDs
-    ?isUnused: Bool,               // Whether this variable is actually used in the code
+	// Payload binder canonicalization locks (Phoenix/LiveView transforms)
+	?lockPayloadBinder:Bool, // Prevent later passes from rewriting payload binder names
+	?canonicalPayloadValue:Bool, // Marks payload value as already canonicalized
 
-    // Loop semantics
-    ?loopContainsReturn: Bool,      // Loop body contains a non-local `return` (used to preserve Haxe semantics when lowered to Enum.each)
+	// Emission control (module/file output)
+	?forceEmit:Bool, // Force emitting even if structurally empty
+	?suppressEmission:Bool, // Suppress emitting this module/file
+	?instanceFields:Array<String>, // Snake_case instance fields for module-level lowering (class -> struct/map)
 
-    // Case/switch helpers
-    ?primaryCaseBinder: String,     // Selected binder name for primary enum payload (used for nested-case repair)
-    ?usedLocalsFromTyped: Array<String>, // Lower-case locals used in a TypedExpr body (for binder alignment passes)
-    ?infraTempVarToBinderName: Map<String, String>, // Maps infra temps (g/_g/_g1/...) to the clause's final binder names
+	// Array Comprehension Reconstruction
+	?isUnrolledComprehension:Bool, // Block contains unrolled array comprehension
+	?comprehensionElements:Int, // Number of elements in unrolled comprehension
 
-    // Phoenix/Framework Specific
-    ?phoenixContext: PhoenixContext,  // LiveView, Router, etc.
-    ?ectoContext: EctoContext,        // Schema, Query, etc.
-    
-    // Ecto-specific hints
-    ?ectoPinnedNilGuard: Bool,     // Marks Kernel.is_nil(^var) guard injected for Ecto != semantics
-    
-    // Annotation-based Module Types
-    ?isEndpoint: Bool,            // @:endpoint Phoenix.Endpoint
-    ?isLiveView: Bool,            // @:liveview Phoenix.LiveView
-    ?isSchema: Bool,              // @:schema Ecto.Schema
-    ?isRepo: Bool,                // @:repo Ecto.Repo
-    ?isSupervisor: Bool,          // @:supervisor OTP Supervisor
-    ?isKeep: Bool,                // @:keep - Prevent dead code elimination
-    ?isPostgrexTypes: Bool,       // @:postgrexTypes Postgrex precompiled types module (sugar)
-    ?isDbTypes: Bool,             // @:dbTypes generic DB types module
-    ?dbAdapter: String,           // Adapter name (e.g., "postgrex")
-    ?extensions: Array<String>,   // Optional extensions for types define
-    ?isApplication: Bool,         // @:application OTP Application
-    ?isGenServer: Bool,           // @:genserver GenServer behavior
-    ?isRouter: Bool,              // @:router Phoenix.Router
-    ?routerRoutes: Array<RouterRouteMeta>, // Parsed @:routes metadata for Router emission
-    ?isController: Bool,          // @:controller Phoenix.Controller
-    ?isPresence: Bool,            // @:presence Phoenix.Presence
-    ?isPhoenixWeb: Bool,          // @:phoenixWeb AppNameWeb module with macros
-    ?isSocket: Bool,             // @:socket Phoenix.Socket module
-    ?socketChannels: Array<SocketChannelMeta>, // Parsed @:socketChannels metadata for Socket emission
-    ?endpointSockets: Array<EndpointSocketMeta>, // Parsed @:endpointSockets metadata for Endpoint emission
-    ?isExunit: Bool,              // @:exunit ExUnit.Case test module
-    ?isTest: Bool,                // @:test on a method in ExUnit module
-    ?isSetup: Bool,               // @:setup on a method in ExUnit module
-    ?isSetupAll: Bool,            // @:setupAll on a method in ExUnit module
-    ?isTeardown: Bool,            // @:teardown on a method in ExUnit module
-    ?isTeardownAll: Bool,         // @:teardownAll on a method in ExUnit module
-    ?describeBlock: String,       // @:describe block name for grouping tests
-    ?isAsync: Bool,               // @:async for async ExUnit tests
-    ?testTags: Array<String>,     // @:tag values for test tagging
-    ?appName: String,             // Application name for OTP/Phoenix
-    ?tableName: String,           // Table name for Ecto schemas
-    ?jsonModule: String,          // JSON library module name for Postgrex.Types.define
-    ?poolSize: Int,               // Connection pool size for Repo
-    ?needsPostgrexTypes: Bool,    // Whether to generate companion PostgrexTypes module
+	// Variable Resolution
+	?varIdToName:Map<Int, String>, // Clause-local variable renaming mappings
+	?requiresIdiomaticTransform:Bool, // Enum needs idiomatic compilation
 
-    // HEEx/HXX annotation (experimental; analysis only)
-    ?heexFragments: Array<HeexFragmentMeta>, // Parsed fragments from ~H content for analysis (not used for emission)
+	// Inheritance Information
+	?parentModule:String, // Parent class module name for inheritance
+	?isException:Bool, // Whether this class extends haxe.Exception
+	?idiomaticEnumType:String, // Name of the idiomatic enum type
+	?hasEnumBindingPlan:Bool, // M0.5: Case has proper enum parameter mappings
+	?enumBindingPlanId:String, // Unique ID linking to EnumBindingPlan in context
+	?parentHasBindingPlan:Bool, // Propagated flag from parent ECase
 
-    // Schema metadata (for @:schema)
-    // haxeFqcn: Fully Qualified Class Name of the original Haxe type that produced this module.
-    // Why string: metadata travels outside macro-only phases; we resolve it later when needed.
-    // Example: "server.schemas.Todo". Transformers can use this to locate schema info deterministically.
-    ?haxeFqcn: String,
-    // schemaFields: pre-extracted field list from the Haxe class, used by transformers to emit Ecto fields.
-    // Each entry contains the original Haxe field name and a normalized type hint (String, Int, Bool, Date, etc.).
-    // Transformers apply name conversion (snake_case) and map types to Ecto atoms (e.g., Int -> :integer).
-    ?schemaFields: Array<{ name: String, type: String }>,
-    // schemaAssociations: pre-extracted association list from the Haxe class, used by transformers to emit Ecto associations.
-    // Each entry contains the association kind (belongs_to/has_many/has_one/many_to_many), association name, target module,
-    // and optional association-specific options (e.g., join_through for many_to_many).
-    ?schemaAssociations: Array<SchemaAssociationMeta>,
-    // Whether the original Haxe class had @:timestamps annotation
-    ?hasTimestamps: Bool,
-    // Whether the user defined their own changeset function (prevents auto-generation)
-    // WHY: User-defined changesets using __elixir__() generate ERaw nodes that can't be detected
-    //      by structure alone in transformers. Setting this flag at compile time when we have
-    //      access to funcFields allows clean detection without string matching.
-    ?hasUserChangeset: Bool,
-    // @:changeset annotation parameters - fields to cast and required fields
-    // WHY: Allows users to specify exactly which fields to cast and which are required
-    // WHAT: Extracted from @:changeset([castFields], [requiredFields]) annotation
-    // HOW: Used by AnnotationTransforms to generate proper Ecto changeset function
-    ?changesetCastFields: Array<String>,
-    ?changesetRequiredFields: Array<String>,
-    
-    // Loop Expression Preservation (Critical for idiomatic Elixir generation)
-    // WHY: Haxe's optimizer replaces loop variables with literals BEFORE our compiler runs
-    // WHAT: These fields preserve loop information from the original TypedExpr
-    // RELATES TO: Loop variable substitution bug (see LOOP_VARIABLE_FIX_PRD.md)
-    
-    ?originalLoopExpression: String,  // Captures loop body expression before optimization ("i * 2 + 1" not "0 * 2 + 1")
-                                     // USED BY: String reconstruction in transformer passes
-    
-    ?loopVariableName: String,        // Preserves original variable name ("i", "j", "k")
-                                     // USED BY: Legacy compatibility with existing restorer code
-    
-    ?loopContextStack: Array<LoopContext>, // Stack of all enclosing loop contexts for nested loops
-                                          // WHY: Nested loops need access to all parent loop variables
-                                          // USED BY: LoopVariableRestorer to handle multi-level nesting
-    
-    ?isWithinLoop: Bool,              // Marks nodes that are inside a loop body
-                                     // WHY: Only restore variables in loop contexts, not everywhere
-                                     // USED BY: Transformation passes to enable/disable restoration
-    
-    ?parentLoopVar: String,           // Direct parent loop variable for simple nested detection
-                                     // WHY: Quick check for immediate parent without full stack traversal
-                                     // USED BY: Optimization passes for common two-level nesting
-    
-    // Optimization Hints
-    ?canInline: Bool,             // Can be inlined
-    ?keepInlineInAssignment: Bool, // Keep inline when assigned (e.g., null coalescing)
-    ?isConstant: Bool,            // Compile-time constant
-    ?accessPattern: AccessPattern, // How value is accessed
-    ?sideEffects: Bool,           // Has side effects
-    
-    // User Annotations
-    ?annotations: Array<String>,   // @:native, @:inline, etc.
-    ?documentation: String,        // Doc comments
-    
-    // Variable Context
-    ?variableScope: String,        // Current scope identifier
-    ?capturedVars: Array<String>, // Variables captured by closure
-    
-    // Error Handling
-    ?canRaise: Bool,              // Can raise exceptions
-    ?errorContext: String,        // Error handling context
-    
-    // Static Extern Method Handling (Added 2025-09-05)
-    ?isStaticExternMethod: Bool,  // Marks a static method on an extern class
-    ?nativeModule: String,        // The full module path from @:native annotation
-    ?methodName: String,          // The method name being called
-    
-    // Function Reference Handling (Added 2025-09-05)
-    ?isFunctionReference: Bool,   // Marks a function being passed as a reference
-    ?arity: Int,                  // Function arity for capture operator
-    
-    // Fluent API Detection (Added 2025-09-10)
-    ?isFluentMethod: Bool,         // Method returns 'this' for chaining
-    ?mutatesFields: Array<String>, // Fields mutated in this method (e.g., ["columns", "indexes"])
-    ?fieldMutations: Array<{field: String, expr: ElixirAST}>, // Field mutation operations
-    ?returnsThis: Bool,           // Method returns 'this' for fluent chaining
+	// Variable Origin Tracking (January 2025)
+	?varOrigin:VarOrigin, // Where this variable came from
+	?varId:Int, // Unique Haxe TVar ID for identity tracking
+	?tempToBinderMap:Map<Int, Int>, // Maps extraction temp var IDs to pattern binder IDs
+	?isUnused:Bool, // Whether this variable is actually used in the code
 
-    // Guard Condition Grouping (Added January 2025)
-    ?patternKey: String,          // Normalized pattern signature for grouping (e.g., "tuple:rgb:3")
-    ?boundVars: Array<String>,    // Variables bound by this pattern (e.g., ["r", "g", "b"])
-    ?hasGuard: Bool,              // Whether this clause has a guard condition
+	// Loop semantics
+	?loopContainsReturn:Bool, // Loop body contains a non-local `return` (used to preserve Haxe semantics when lowered to Enum.each)
 
-    // HEEx typed AST (Builder-attached; analysis only)
-    // WHAT: Typed EFragment/EAssign-based AST parsed from ~H content.
-    // WHY: Enable attribute-level static analysis (e.g., assigns lints) without relying on
-    //      brittle string scanning. Keeps final emission as ~H while providing structured shape.
-    // HOW: ElixirASTBuilder parses ESigil("H", ...) content using HeexFragmentBuilder and
-    //      attaches the resulting top-level nodes here. Printer ignores this; transformers/linters
-    //      may prefer it over heexFragments when present.
-    ?heexAST: Array<ElixirAST>,
+	// Case/switch helpers
+	?primaryCaseBinder:String, // Selected binder name for primary enum payload (used for nested-case repair)
+	?usedLocalsFromTyped:Array<String>, // Lower-case locals used in a TypedExpr body (for binder alignment passes)
+	?infraTempVarToBinderName:Map<String, String>, // Maps infra temps (g/_g/_g1/...) to the clause's final binder names
 
-    // HEEx attribute value form (analysis only)
-    // WHAT: Marks whether an attribute value originated from `{expr}` (dynamic) vs `"literal"` (static).
-    // WHY: Enables opt-in strict validation (e.g., requiring typed registries for `phx-hook` values).
-    // HOW: Set by HeexFragmentBuilder while parsing ~H content; ignored by printer/emitter.
-    ?heexAttrIsDynamic: Bool,
+	// Phoenix/Framework Specific
+	?phoenixContext:PhoenixContext, // LiveView, Router, etc.
+	?ectoContext:EctoContext, // Schema, Query, etc.
 
-    // HEEx attribute value span (analysis only)
-    // WHAT: Absolute character offsets for the attribute value *inside* quotes/braces.
-    // WHY: Enables precise, scoped rewrites of attribute values (e.g., unused `:let` binder hygiene)
-    //      without brittle regexes over the entire `~H` string.
-    // HOW: Set by HeexFragmentBuilder while parsing ~H content; ignored by printer/emitter.
-    // NOTE: `heexAttrValueSpanEnd` is exclusive (like String.substr end).
-    ?heexAttrValueSpanStart: Int,
-    ?heexAttrValueSpanEnd: Int,
+	// Ecto-specific hints
+	?ectoPinnedNilGuard:Bool, // Marks Kernel.is_nil(^var) guard injected for Ecto != semantics
 
-    // HEEx tag name span (analysis only)
-    // WHAT: Absolute character offsets for the fragment tag name in ~H content.
-    // WHY: Enables precise lint diagnostics for unknown/invalid tags instead of whole-template positions.
-    // HOW: Set by HeexFragmentBuilder on EFragment nodes; ignored by printer/emitter.
-    ?heexTagNameSpanStart: Int,
-    ?heexTagNameSpanEnd: Int
+	// Annotation-based Module Types
+	?isEndpoint:Bool, // @:endpoint Phoenix.Endpoint
+	?isLiveView:Bool, // @:liveview Phoenix.LiveView
+	?isSchema:Bool, // @:schema Ecto.Schema
+	?isRepo:Bool, // @:repo Ecto.Repo
+	?isSupervisor:Bool, // @:supervisor OTP Supervisor
+	?isKeep:Bool, // @:keep - Prevent dead code elimination
+	?isPostgrexTypes:Bool, // @:postgrexTypes Postgrex precompiled types module (sugar)
+	?isDbTypes:Bool, // @:dbTypes generic DB types module
+	?dbAdapter:String, // Adapter name (e.g., "postgrex")
+	?extensions:Array<String>, // Optional extensions for types define
+	?isApplication:Bool, // @:application OTP Application
+	?isGenServer:Bool, // @:genserver GenServer behavior
+	?isRouter:Bool, // @:router Phoenix.Router
+	?routerRoutes:Array<RouterRouteMeta>, // Parsed @:routes metadata for Router emission
+	?isController:Bool, // @:controller Phoenix.Controller
+	?isPresence:Bool, // @:presence Phoenix.Presence
+	?isPhoenixWeb:Bool, // @:phoenixWeb AppNameWeb module with macros
+	?isSocket:Bool, // @:socket Phoenix.Socket module
+	?socketChannels:Array<SocketChannelMeta>, // Parsed @:socketChannels metadata for Socket emission
+	?endpointSockets:Array<EndpointSocketMeta>, // Parsed @:endpointSockets metadata for Endpoint emission
+	?isExunit:Bool, // @:exunit ExUnit.Case test module
+	?isTest:Bool, // @:test on a method in ExUnit module
+	?isSetup:Bool, // @:setup on a method in ExUnit module
+	?isSetupAll:Bool, // @:setupAll on a method in ExUnit module
+	?isTeardown:Bool, // @:teardown on a method in ExUnit module
+	?isTeardownAll:Bool, // @:teardownAll on a method in ExUnit module
+	?describeBlock:String, // @:describe block name for grouping tests
+	?isAsync:Bool, // @:async for async ExUnit tests
+	?testTags:Array<String>, // @:tag values for test tagging
+	?appName:String, // Application name for OTP/Phoenix
+	?tableName:String, // Table name for Ecto schemas
+	?jsonModule:String, // JSON library module name for Postgrex.Types.define
+	?poolSize:Int, // Connection pool size for Repo
+	?needsPostgrexTypes:Bool, // Whether to generate companion PostgrexTypes module
+
+	// HEEx/HXX annotation (experimental; analysis only)
+	?heexFragments:Array<HeexFragmentMeta>, // Parsed fragments from ~H content for analysis (not used for emission)
+
+	// Schema metadata (for @:schema)
+	// haxeFqcn: Fully Qualified Class Name of the original Haxe type that produced this module.
+	// Why string: metadata travels outside macro-only phases; we resolve it later when needed.
+	// Example: "server.schemas.Todo". Transformers can use this to locate schema info deterministically.
+	?haxeFqcn:String,
+	// schemaFields: pre-extracted field list from the Haxe class, used by transformers to emit Ecto fields.
+	// Each entry contains the original Haxe field name and a normalized type hint (String, Int, Bool, Date, etc.).
+	// Transformers apply name conversion (snake_case) and map types to Ecto atoms (e.g., Int -> :integer).
+	?schemaFields:Array<{name:String, type:String}>,
+	// schemaAssociations: pre-extracted association list from the Haxe class, used by transformers to emit Ecto associations.
+	// Each entry contains the association kind (belongs_to/has_many/has_one/many_to_many), association name, target module,
+	// and optional association-specific options (e.g., join_through for many_to_many).
+	?schemaAssociations:Array<SchemaAssociationMeta>,
+	// Whether the original Haxe class had @:timestamps annotation
+	?hasTimestamps:Bool,
+	// Whether the user defined their own changeset function (prevents auto-generation)
+	// WHY: User-defined changesets using __elixir__() generate ERaw nodes that can't be detected
+	//      by structure alone in transformers. Setting this flag at compile time when we have
+	//      access to funcFields allows clean detection without string matching.
+	?hasUserChangeset:Bool,
+	// @:changeset annotation parameters - fields to cast and required fields
+	// WHY: Allows users to specify exactly which fields to cast and which are required
+	// WHAT: Extracted from either:
+	//   - @:changeset([castFields], [requiredFields]) (legacy positional), or
+	//   - @:changeset(cast([...]), validate([...])) (named, recommended)
+	// HOW: Used by AnnotationTransforms to generate proper Ecto changeset function
+	?changesetCastFields:Array<String>,
+	?changesetRequiredFields:Array<String>,
+
+	// Loop Expression Preservation (Critical for idiomatic Elixir generation)
+	// WHY: Haxe's optimizer replaces loop variables with literals BEFORE our compiler runs
+	// WHAT: These fields preserve loop information from the original TypedExpr
+	// RELATES TO: Loop variable substitution bug (see LOOP_VARIABLE_FIX_PRD.md)
+	?originalLoopExpression:String, // Captures loop body expression before optimization ("i * 2 + 1" not "0 * 2 + 1")
+
+	// USED BY: String reconstruction in transformer passes
+	?loopVariableName:String, // Preserves original variable name ("i", "j", "k")
+
+	// USED BY: Legacy compatibility with existing restorer code
+	?loopContextStack:Array<LoopContext>, // Stack of all enclosing loop contexts for nested loops
+
+	// WHY: Nested loops need access to all parent loop variables
+	// USED BY: LoopVariableRestorer to handle multi-level nesting
+	?isWithinLoop:Bool, // Marks nodes that are inside a loop body
+
+	// WHY: Only restore variables in loop contexts, not everywhere
+	// USED BY: Transformation passes to enable/disable restoration
+	?parentLoopVar:String, // Direct parent loop variable for simple nested detection
+
+	// WHY: Quick check for immediate parent without full stack traversal
+	// USED BY: Optimization passes for common two-level nesting
+	// Optimization Hints
+	?canInline:Bool, // Can be inlined
+	?keepInlineInAssignment:Bool, // Keep inline when assigned (e.g., null coalescing)
+	?isConstant:Bool, // Compile-time constant
+	?accessPattern:AccessPattern, // How value is accessed
+	?sideEffects:Bool, // Has side effects
+
+	// User Annotations
+	?annotations:Array<String>, // @:native, @:inline, etc.
+	?documentation:String, // Doc comments
+
+	// Variable Context
+	?variableScope:String, // Current scope identifier
+	?capturedVars:Array<String>, // Variables captured by closure
+
+	// Error Handling
+	?canRaise:Bool, // Can raise exceptions
+	?errorContext:String, // Error handling context
+
+	// Static Extern Method Handling (Added 2025-09-05)
+	?isStaticExternMethod:Bool, // Marks a static method on an extern class
+	?nativeModule:String, // The full module path from @:native annotation
+	?methodName:String, // The method name being called
+
+	// Function Reference Handling (Added 2025-09-05)
+	?isFunctionReference:Bool, // Marks a function being passed as a reference
+	?arity:Int, // Function arity for capture operator
+
+	// Fluent API Detection (Added 2025-09-10)
+	?isFluentMethod:Bool, // Method returns 'this' for chaining
+	?mutatesFields:Array<String>, // Fields mutated in this method (e.g., ["columns", "indexes"])
+	?fieldMutations:Array<{field:String, expr:ElixirAST}>, // Field mutation operations
+	?returnsThis:Bool, // Method returns 'this' for fluent chaining
+
+	// Guard Condition Grouping (Added January 2025)
+	?patternKey:String, // Normalized pattern signature for grouping (e.g., "tuple:rgb:3")
+	?boundVars:Array<String>, // Variables bound by this pattern (e.g., ["r", "g", "b"])
+	?hasGuard:Bool, // Whether this clause has a guard condition
+
+	// HEEx typed AST (Builder-attached; analysis only)
+	// WHAT: Typed EFragment/EAssign-based AST parsed from ~H content.
+	// WHY: Enable attribute-level static analysis (e.g., assigns lints) without relying on
+	//      brittle string scanning. Keeps final emission as ~H while providing structured shape.
+	// HOW: ElixirASTBuilder parses ESigil("H", ...) content using HeexFragmentBuilder and
+	//      attaches the resulting top-level nodes here. Printer ignores this; transformers/linters
+	//      may prefer it over heexFragments when present.
+	?heexAST:Array<ElixirAST>,
+
+	// HEEx attribute value form (analysis only)
+	// WHAT: Marks whether an attribute value originated from `{expr}` (dynamic) vs `"literal"` (static).
+	// WHY: Enables opt-in strict validation (e.g., requiring typed registries for `phx-hook` values).
+	// HOW: Set by HeexFragmentBuilder while parsing ~H content; ignored by printer/emitter.
+	?heexAttrIsDynamic:Bool,
+
+	// HEEx attribute value span (analysis only)
+	// WHAT: Absolute character offsets for the attribute value *inside* quotes/braces.
+	// WHY: Enables precise, scoped rewrites of attribute values (e.g., unused `:let` binder hygiene)
+	//      without brittle regexes over the entire `~H` string.
+	// HOW: Set by HeexFragmentBuilder while parsing ~H content; ignored by printer/emitter.
+	// NOTE: `heexAttrValueSpanEnd` is exclusive (like String.substr end).
+	?heexAttrValueSpanStart:Int,
+	?heexAttrValueSpanEnd:Int,
+
+	// HEEx tag name span (analysis only)
+	// WHAT: Absolute character offsets for the fragment tag name in ~H content.
+	// WHY: Enables precise lint diagnostics for unknown/invalid tags instead of whole-template positions.
+	// HOW: Set by HeexFragmentBuilder on EFragment nodes; ignored by printer/emitter.
+	?heexTagNameSpanStart:Int,
+	?heexTagNameSpanEnd:Int
 }
 
 /**
@@ -950,10 +947,10 @@ typedef ElixirMetadata = {
  * These map directly to Ecto.Schema macros.
  */
 enum abstract SchemaAssociationKind(String) from String to String {
-    var BelongsTo = "belongs_to";
-    var HasMany = "has_many";
-    var HasOne = "has_one";
-    var ManyToMany = "many_to_many";
+	var BelongsTo = "belongs_to";
+	var HasMany = "has_many";
+	var HasOne = "has_one";
+	var ManyToMany = "many_to_many";
 }
 
 /**
@@ -962,23 +959,23 @@ enum abstract SchemaAssociationKind(String) from String to String {
  * Kept minimal and strongly typed because this travels outside macro-only phases.
  */
 typedef SchemaAssociationMeta = {
-    kind: SchemaAssociationKind,
-    name: String,
-    module: String,
-    ?joinThrough: String,
+	kind:SchemaAssociationKind,
+	name:String,
+	module:String,
+	?joinThrough:String,
 }
 
 /** Minimal HEEx fragment metadata for analysis (not used for emission) */
 typedef HeexFragmentMeta = {
-    tag: String,
-    attributes: Array<HeexAttributeMeta>,
-    childrenText: String
+	tag:String,
+	attributes:Array<HeexAttributeMeta>,
+	childrenText:String
 }
 
 typedef HeexAttributeMeta = {
-    name: String,
-    valueExpr: String,
-    isDynamic: Bool
+	name:String,
+	valueExpr:String,
+	isDynamic:Bool
 }
 
 // ============================================================================
@@ -988,30 +985,30 @@ typedef HeexAttributeMeta = {
 /**
  * Create an empty metadata object
  */
-inline function emptyMetadata(): ElixirMetadata {
-    return {};
+inline function emptyMetadata():ElixirMetadata {
+	return {};
 }
 
 /**
  * Create an AST node with empty metadata
  */
-inline function makeAST(def: ElixirASTDef, ?pos: Position): ElixirAST {
-    return {
-        def: def,
-        metadata: emptyMetadata(),
-        pos: pos
-    };
+inline function makeAST(def:ElixirASTDef, ?pos:Position):ElixirAST {
+	return {
+		def: def,
+		metadata: emptyMetadata(),
+		pos: pos
+	};
 }
 
 /**
  * Create an AST node with specific metadata
  */
-inline function makeASTWithMeta(def: ElixirASTDef, meta: ElixirMetadata, ?pos: Position): ElixirAST {
-    return {
-        def: def,
-        metadata: meta,
-        pos: pos
-    };
+inline function makeASTWithMeta(def:ElixirASTDef, meta:ElixirMetadata, ?pos:Position):ElixirAST {
+	return {
+		def: def,
+		metadata: meta,
+		pos: pos
+	};
 }
 
 // ============================================================================
@@ -1036,144 +1033,145 @@ inline function makeASTWithMeta(def: ElixirASTDef, meta: ElixirMetadata, ?pos: P
  * @param node The AST node to potentially transform
  * @return Transformed node or original if no transformation applies
  */
-function applyIdiomaticEnumTransformation(node: ElixirAST): ElixirAST {
-    // Only transform tuples that are enum constructors
-    var elements = switch(node.def) {
-        case ETuple(els): els;
-        default: return node; // Not a tuple, no transformation
-    };
-    
-    if (elements.length == 0) return node;
-    
-    // First element should be the constructor tag (atom)
-    var tag = switch(elements[0].def) {
-        case EAtom(name): name; // name is now ElixirAtom
-        default: return node; // Not an enum constructor pattern
-    };
-    
-    // Extract constructor arguments (everything after the tag)
-    var args = elements.slice(1);
-    var argCount = args.length;
+function applyIdiomaticEnumTransformation(node:ElixirAST):ElixirAST {
+	// Only transform tuples that are enum constructors
+	var elements = switch (node.def) {
+		case ETuple(els): els;
+		default: return node; // Not a tuple, no transformation
+	};
 
-    // NOTE: Do NOT apply broad arity-based rewrites here.
-    //
-    // WHY:
-    // - Many `@:elixirIdiomatic` enums (Option/Result/user enums) rely on stable tagged-tuple
-    //   representations for runtime values and pattern matching (e.g., `{:some, v}`, `{:ok, v}`).
-    // - Blanket "1 arg → unwrap" breaks semantics (values no longer match their patterns) and
-    //   can incorrectly treat regular strings (e.g., "Alice") as module aliases.
-    //
-    // Instead, apply **explicit, framework-level** rewrites for the OTP child spec wrapper
-    // constructors in `elixir.otp.ChildSpecFormat`.
-    var tagName: String = tag;
+	if (elements.length == 0)
+		return node;
 
-    // ChildSpecFormat.ModuleRef(module: String) → ModuleRef("MyApp.Repo") → MyApp.Repo (or keep string if not a module name)
-    if (tagName == "module_ref" && argCount == 1) {
-        var moduleArg = switch (args[0].def) {
-            case EString(s) if (isModuleName(s)):
-                makeAST(EVar(s), args[0].pos);
-            default:
-                args[0];
-        };
-        return makeASTWithMeta(moduleArg.def, node.metadata, node.pos);
-    }
+	// First element should be the constructor tag (atom)
+	var tag = switch (elements[0].def) {
+		case EAtom(name): name; // name is now ElixirAtom
+		default: return node; // Not an enum constructor pattern
+	};
 
-    // ChildSpecFormat.FullSpec(spec: ChildSpec) → unwrap the spec map/struct
-    if (tagName == "full_spec" && argCount == 1) {
-        return makeASTWithMeta(args[0].def, node.metadata, node.pos);
-    }
+	// Extract constructor arguments (everything after the tag)
+	var args = elements.slice(1);
+	var argCount = args.length;
 
-    // ChildSpecFormat.ModuleWithArgs(module: String, args: Array<Term>) → {MyApp.Mod, args}
-    if (tagName == "module_with_args" && argCount == 2) {
-        var moduleArg = switch (args[0].def) {
-            case EString(s) if (isModuleName(s)):
-                makeAST(EVar(s), args[0].pos);
-            default:
-                args[0];
-        };
-        return makeASTWithMeta(ETuple([moduleArg, args[1]]), node.metadata, node.pos);
-    }
+	// NOTE: Do NOT apply broad arity-based rewrites here.
+	//
+	// WHY:
+	// - Many `@:elixirIdiomatic` enums (Option/Result/user enums) rely on stable tagged-tuple
+	//   representations for runtime values and pattern matching (e.g., `{:some, v}`, `{:ok, v}`).
+	// - Blanket "1 arg → unwrap" breaks semantics (values no longer match their patterns) and
+	//   can incorrectly treat regular strings (e.g., "Alice") as module aliases.
+	//
+	// Instead, apply **explicit, framework-level** rewrites for the OTP child spec wrapper
+	// constructors in `elixir.otp.ChildSpecFormat`.
+	var tagName:String = tag;
 
-    // ChildSpecFormat.ModuleWithConfig(module: String, config: [{key, value}]) → {MyApp.Mod, [kw...]}
-    if (tagName == "module_with_config" && argCount == 2) {
-        var moduleArg = switch(args[0].def) {
-            case EString(s) if (isModuleName(s)):
-                makeAST(EVar(s), args[0].pos);
-            default:
-                args[0];
-        };
+	// ChildSpecFormat.ModuleRef(module: String) → ModuleRef("MyApp.Repo") → MyApp.Repo (or keep string if not a module name)
+	if (tagName == "module_ref" && argCount == 1) {
+		var moduleArg = switch (args[0].def) {
+			case EString(s) if (isModuleName(s)):
+				makeAST(EVar(s), args[0].pos);
+			default:
+				args[0];
+		};
+		return makeASTWithMeta(moduleArg.def, node.metadata, node.pos);
+	}
 
-        var configArg = switch(args[1].def) {
-            case EKeywordList(_):
-                args[1];
+	// ChildSpecFormat.FullSpec(spec: ChildSpec) → unwrap the spec map/struct
+	if (tagName == "full_spec" && argCount == 1) {
+		return makeASTWithMeta(args[0].def, node.metadata, node.pos);
+	}
 
-            case EList(elements):
-                var keywordPairs: Array<EKeywordPair> = [];
-                var isKeyValueConfig = true;
+	// ChildSpecFormat.ModuleWithArgs(module: String, args: Array<Term>) → {MyApp.Mod, args}
+	if (tagName == "module_with_args" && argCount == 2) {
+		var moduleArg = switch (args[0].def) {
+			case EString(s) if (isModuleName(s)):
+				makeAST(EVar(s), args[0].pos);
+			default:
+				args[0];
+		};
+		return makeASTWithMeta(ETuple([moduleArg, args[1]]), node.metadata, node.pos);
+	}
 
-                for (elem in elements) {
-                    switch(elem.def) {
-                        case EMap(pairs):
-                            var keyName: String = null;
-                            var keyValue: ElixirAST = null;
+	// ChildSpecFormat.ModuleWithConfig(module: String, config: [{key, value}]) → {MyApp.Mod, [kw...]}
+	if (tagName == "module_with_config" && argCount == 2) {
+		var moduleArg = switch (args[0].def) {
+			case EString(s) if (isModuleName(s)):
+				makeAST(EVar(s), args[0].pos);
+			default:
+				args[0];
+		};
 
-                            for (pair in pairs) {
-                                switch(pair.key.def) {
-                                    case EAtom(atom) if (atom == "key"):
-                                        switch(pair.value.def) {
-                                            case EString(s): keyName = s;
-                                            default: isKeyValueConfig = false;
-                                        }
-                                    case EAtom(atom) if (atom == "value"):
-                                        keyValue = pair.value;
-                                    default:
-                                        isKeyValueConfig = false;
-                                }
-                            }
+		var configArg = switch (args[1].def) {
+			case EKeywordList(_):
+				args[1];
 
-                            if (keyName != null && keyValue != null) {
-                                var finalValue = if (keyName == "name") {
-                                    switch(keyValue.def) {
-                                        case EString(s) if (isModuleName(s)):
-                                            makeAST(EVar(s), keyValue.pos);
-                                        default:
-                                            keyValue;
-                                    }
-                                } else if (keyName == "keys") {
-                                    switch(keyValue.def) {
-                                        case EString(s) if (s == "unique" || s == "duplicate"):
-                                            makeAST(EAtom(ElixirAtom.raw(s)), keyValue.pos);
-                                        default:
-                                            keyValue;
-                                    }
-                                } else {
-                                    keyValue;
-                                };
-                                keywordPairs.push({key: keyName, value: finalValue});
-                            } else {
-                                isKeyValueConfig = false;
-                            }
+			case EList(elements):
+				var keywordPairs:Array<EKeywordPair> = [];
+				var isKeyValueConfig = true;
 
-                        default:
-                            isKeyValueConfig = false;
-                    }
-                }
+				for (elem in elements) {
+					switch (elem.def) {
+						case EMap(pairs):
+							var keyName:String = null;
+							var keyValue:ElixirAST = null;
 
-                if (isKeyValueConfig && keywordPairs.length > 0) {
-                    makeAST(EKeywordList(keywordPairs), args[1].pos);
-                } else {
-                    args[1];
-                }
+							for (pair in pairs) {
+								switch (pair.key.def) {
+									case EAtom(atom) if (atom == "key"):
+										switch (pair.value.def) {
+											case EString(s): keyName = s;
+											default: isKeyValueConfig = false;
+										}
+									case EAtom(atom) if (atom == "value"):
+										keyValue = pair.value;
+									default:
+										isKeyValueConfig = false;
+								}
+							}
 
-            default:
-                args[1];
-        };
+							if (keyName != null && keyValue != null) {
+								var finalValue = if (keyName == "name") {
+									switch (keyValue.def) {
+										case EString(s) if (isModuleName(s)):
+											makeAST(EVar(s), keyValue.pos);
+										default:
+											keyValue;
+									}
+								} else if (keyName == "keys") {
+									switch (keyValue.def) {
+										case EString(s) if (s == "unique" || s == "duplicate"):
+											makeAST(EAtom(ElixirAtom.raw(s)), keyValue.pos);
+										default:
+											keyValue;
+									}
+								} else {
+									keyValue;
+								};
+								keywordPairs.push({key: keyName, value: finalValue});
+							} else {
+								isKeyValueConfig = false;
+							}
 
-        return makeASTWithMeta(ETuple([moduleArg, configArg]), node.metadata, node.pos);
-    }
+						default:
+							isKeyValueConfig = false;
+					}
+				}
 
-    // No transform matched, return original.
-    return node;
+				if (isKeyValueConfig && keywordPairs.length > 0) {
+					makeAST(EKeywordList(keywordPairs), args[1].pos);
+				} else {
+					args[1];
+				}
+
+			default:
+				args[1];
+		};
+
+		return makeASTWithMeta(ETuple([moduleArg, configArg]), node.metadata, node.pos);
+	}
+
+	// No transform matched, return original.
+	return node;
 }
 
 /**
@@ -1182,34 +1180,35 @@ function applyIdiomaticEnumTransformation(node: ElixirAST): ElixirAST {
  * @param s String to check
  * @return True if it matches module naming pattern
  */
-function isModuleName(s: String): Bool {
-    // Module names start with uppercase and can contain dots
-    // Examples: "Phoenix.PubSub", "MyApp.Repo", "Task.Supervisor"
-    if (s.length == 0) return false;
-    
-    var firstChar = s.charAt(0);
-    if (firstChar != firstChar.toUpperCase()) return false;
-    
-    // Check if it's a valid module name pattern
-    // Allow dots for nested modules, alphanumeric and underscores
-    for (i in 0...s.length) {
-        var char = s.charAt(i);
-        if (!isAlphaNumeric(char) && char != "." && char != "_") {
-            return false;
-        }
-    }
-    
-    return true;
+function isModuleName(s:String):Bool {
+	// Module names start with uppercase and can contain dots
+	// Examples: "Phoenix.PubSub", "MyApp.Repo", "Task.Supervisor"
+	if (s.length == 0)
+		return false;
+
+	var firstChar = s.charAt(0);
+	if (firstChar != firstChar.toUpperCase())
+		return false;
+
+	// Check if it's a valid module name pattern
+	// Allow dots for nested modules, alphanumeric and underscores
+	for (i in 0...s.length) {
+		var char = s.charAt(i);
+		if (!isAlphaNumeric(char) && char != "." && char != "_") {
+			return false;
+		}
+	}
+
+	return true;
 }
 
 /**
  * Helper to check if a character is alphanumeric
  */
-function isAlphaNumeric(char: String): Bool {
-    var code = char.charCodeAt(0);
-    return (code >= 48 && code <= 57) ||  // 0-9
-           (code >= 65 && code <= 90) ||  // A-Z
-           (code >= 97 && code <= 122);   // a-z
+function isAlphaNumeric(char:String):Bool {
+	var code = char.charCodeAt(0);
+	return (code >= 48 && code <= 57) || // 0-9
+		(code >= 65 && code <= 90) || // A-Z
+		(code >= 97 && code <= 122); // a-z
 }
-
 #end

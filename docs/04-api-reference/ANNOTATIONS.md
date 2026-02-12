@@ -237,7 +237,7 @@ typedef UserParams = {
 @:native("MyApp.User")
 @:schema("users")
 @:timestamps
-@:changeset(["name", "email"], ["name", "email"])
+@:changeset(cast(["name", "email"]), validate(["name", "email"]))
 class User {
     @:field @:primary_key public var id: Int;
     @:field public var name: String;
@@ -274,6 +274,13 @@ defmodule MyApp.User do
     |> validate_required([:name, :email])
   end
 end
+```
+
+Named `@:changeset` config is the recommended form for readability.
+
+Legacy positional form remains supported:
+```haxe
+@:changeset(["name", "email"], ["name", "email"])
 ```
 
 **Validation Annotations**:

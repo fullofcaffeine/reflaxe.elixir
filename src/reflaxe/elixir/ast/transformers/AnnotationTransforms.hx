@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import haxe.macro.Context;
 import reflaxe.elixir.ast.ASTUtils;
@@ -73,2679 +72,2446 @@ import reflaxe.elixir.ast.NameUtils;
  */
 @:nullSafety(Off)
 class AnnotationTransforms {
-    
-    /**
-     * Transform @:endpoint modules into Phoenix.Endpoint structure
-     * 
-     * WHY: Phoenix endpoints require specific structure with use statement, plugs, and sockets
-     * WHAT: Replaces minimal module body with complete endpoint configuration
-     * HOW: Detects isEndpoint metadata and builds proper Phoenix.Endpoint AST.
-     *      Also supports additional sockets via `@:endpointSockets([...])`.
-     */
-    public static function endpointTransformPass(ast: ElixirAST): ElixirAST {
-        #if debug_annotation_transforms
-        if (ast.metadata?.isEndpoint == true) {
-        }
-        #end
-        
-        // Check the top-level node first for Endpoint modules
-        switch(ast.def) {
-            case EModule(name, attrs, exprs) if (ast.metadata?.isEndpoint == true):
-                #if debug_annotation_transforms
-                #end
-                
-                var appName = (ast.metadata != null && ast.metadata.appName != null) ? ast.metadata.appName : extractAppName(name);
-                var endpointBody = buildEndpointBody(name, appName, ast.metadata);
-                // EModule expects Array<ElixirAST> body; unwrap block to statements
-                var stmts = switch (endpointBody.def) {
-                    case EBlock(s): s;
-                    default: [endpointBody];
-                };
-                return makeASTWithMeta(EModule(name, attrs, stmts), ast.metadata, ast.pos);
-                
-            case EDefmodule(name, body) if (ast.metadata?.isEndpoint == true):
-                #if debug_annotation_transforms
-                #end
-                
-                var appName = (ast.metadata != null && ast.metadata.appName != null) ? ast.metadata.appName : extractAppName(name);
-                var endpointBody = buildEndpointBody(name, appName, ast.metadata);
-                
-                // Create new module with endpoint body, preserving metadata
-                return makeASTWithMeta(
-                    EDefmodule(name, endpointBody),
-                    ast.metadata,
-                    ast.pos
-                );
-                
-            default:
-                // Not an Endpoint module, just pass through
-                return ast;
-        }
-    }
-    
-    /**
-     * Build complete Phoenix.Endpoint module body as array of statements
-     */
-    static function buildEndpointBodyStatements(moduleName: String, appName: String): Array<ElixirAST> {
-        var statements = [];
-        
-        // use Phoenix.Endpoint, otp_app: :app_name
-        var useOptions = makeAST(EKeywordList([
-            {key: "otp_app", value: makeAST(EAtom(appName))}
-        ]));
-        statements.push(makeAST(EUse("Phoenix.Endpoint", [useOptions])));
-        
-        // The rest of the endpoint configuration continues in buildEndpointBody
-        // For now, just add the use statement which is most critical
-        
-        return statements;
-    }
-    
-    /**
-     * Build complete Phoenix.Endpoint module body
-     */
-    static function buildEndpointBody(moduleName: String, appName: String, metadata: ElixirMetadata): ElixirAST {
-        var statements = [];
-        
-        // use Phoenix.Endpoint, otp_app: :app_name
-        var useOptions = makeAST(EKeywordList([
-            {key: "otp_app", value: makeAST(EAtom(appName))}
-        ]));
-        statements.push(makeAST(EUse("Phoenix.Endpoint", [useOptions])));
-        
-        // @session_options configuration
-        var sessionOptions = makeAST(EKeywordList([
-            {key: "store", value: makeAST(EAtom(ElixirAtom.raw("cookie")))},
-            {key: "key", value: makeAST(EString('_${appName}_key'))},
-            // NOTE: Must be stable across builds; generating this randomly causes session cookies
-            // (and therefore LiveView user tokens) to become invalid on every compile/run.
-            // Phoenix salts are not secrets (secret_key_base is); keep it deterministic per app.
-            {key: "signing_salt", value: makeAST(EString('${appName}_signing_salt'))},
-            {key: "same_site", value: makeAST(EString("Lax"))}
-        ]));
-        // Module attribute for session options
-        statements.push(makeAST(EModuleAttribute("session_options", sessionOptions)));
-        
-        // socket "/live", Phoenix.LiveView.Socket configuration
-        var socketOptions = makeAST(EKeywordList([
-            {key: "websocket", value: makeAST(EKeywordList([
-                {key: "connect_info", value: makeAST(EKeywordList([
-                    {key: "session", value: makeAST(EVar("@session_options"))}
-                ]))}
-            ]))}
-        ]));
-        statements.push(makeAST(ECall(null, "socket", [
-            makeAST(EString("/live")),
-            makeAST(EVar("Phoenix.LiveView.Socket")),
-            socketOptions
-        ])));
+	/**
+	 * Transform @:endpoint modules into Phoenix.Endpoint structure
+	 * 
+	 * WHY: Phoenix endpoints require specific structure with use statement, plugs, and sockets
+	 * WHAT: Replaces minimal module body with complete endpoint configuration
+	 * HOW: Detects isEndpoint metadata and builds proper Phoenix.Endpoint AST.
+	 *      Also supports additional sockets via `@:endpointSockets([...])`.
+	 */
+	public static function endpointTransformPass(ast:ElixirAST):ElixirAST {
+		#if debug_annotation_transforms
+		if (ast.metadata?.isEndpoint == true) {}
+		#end
 
-        // Optional additional sockets (channels, etc.) via @:endpointSockets([...]).
-        var extraSockets = metadata != null ? metadata.endpointSockets : null;
-        if (extraSockets != null) {
-            for (socketMeta in extraSockets) {
-                if (socketMeta == null || socketMeta.path == null || socketMeta.socket == null) continue;
-                var socketModuleName = socketMeta.socket;
+		// Check the top-level node first for Endpoint modules
+		switch (ast.def) {
+			case EModule(name, attrs, exprs) if (ast.metadata?.isEndpoint == true):
+				#if debug_annotation_transforms
+				#end
 
-                // Default: enable websocket, disable longpoll.
-                var sessionEnabled = socketMeta.session == true;
-                var wsValue: ElixirAST = sessionEnabled
-                    ? makeAST(EKeywordList([
-                        {key: "connect_info", value: makeAST(EKeywordList([
-                            {key: "session", value: makeAST(EVar("@session_options"))}
-                        ]))}
-                    ]))
-                    : makeAST(EBoolean(true));
+				var appName = (ast.metadata != null && ast.metadata.appName != null) ? ast.metadata.appName : extractAppName(name);
+				var endpointBody = buildEndpointBody(name, appName, ast.metadata);
+				// EModule expects Array<ElixirAST> body; unwrap block to statements
+				var stmts = switch (endpointBody.def) {
+					case EBlock(s): s;
+					default: [endpointBody];
+				};
+				return makeASTWithMeta(EModule(name, attrs, stmts), ast.metadata, ast.pos);
 
-                var opts = makeAST(EKeywordList([
-                    {key: "websocket", value: wsValue},
-                    {key: "longpoll", value: makeAST(EBoolean(false))}
-                ]));
+			case EDefmodule(name, body) if (ast.metadata?.isEndpoint == true):
+				#if debug_annotation_transforms
+				#end
 
-                statements.push(makeAST(ECall(null, "socket", [
-                    makeAST(EString(socketMeta.path)),
-                    makeAST(EVar(socketModuleName)),
-                    opts
-                ])));
-            }
-        }
-        
-        // plug Plug.Static configuration
-        // Use the sigil directly for the only option instead of calling a function
-        var staticOptions = makeAST(EKeywordList([
-            {key: "at", value: makeAST(EString("/"))},
-            {key: "from", value: makeAST(EAtom(appName))},
-            {key: "gzip", value: makeAST(EBoolean(false))},
-            // Use a list of strings instead of ~w sigil (heredoc printing issue)
-            {key: "only", value: makeAST(EList([
-                makeAST(EString("assets")),
-                makeAST(EString("fonts")),
-                makeAST(EString("images")),
-                makeAST(EString("favicon.ico")),
-                makeAST(EString("robots.txt"))
-            ]))}
-        ]));
-        statements.push(makeAST(ECall(null, "plug", [
-            makeAST(EVar("Plug.Static")),
-            staticOptions
-        ])));
-        
-        // if code_reloading? do plug Phoenix.CodeReloader end
-        // Note: code_reloading? is imported by use Phoenix.Endpoint but might need explicit reference
-        var codeReloadingBlock = makeAST(EIf(
-            makeAST(ECall(null, "Code.ensure_loaded?", [makeAST(EVar("Phoenix.CodeReloader"))])),
-            makeAST(ECall(null, "plug", [
-                makeAST(EVar("Phoenix.CodeReloader"))
-            ])),
-            null
-        ));
-        statements.push(codeReloadingBlock);
-        
-        // Request pipeline plugs
-        statements.push(makeAST(ECall(null, "plug", [
-            makeAST(EVar("Plug.RequestId"))
-        ])));
-        
-        var telemetryOptions = makeAST(EKeywordList([
-            {key: "event_prefix", value: makeAST(EList([
-                makeAST(EAtom(ElixirAtom.raw("phoenix"))),
-                makeAST(EAtom(ElixirAtom.raw("endpoint")))
-            ]))}
-        ]));
-        statements.push(makeAST(ECall(null, "plug", [
-            makeAST(EVar("Plug.Telemetry")),
-            telemetryOptions
-        ])));
-        
-        // plug Plug.Parsers
-        var parsersOptions = makeAST(EKeywordList([
-            {key: "parsers", value: makeAST(EList([
-                makeAST(EAtom(ElixirAtom.raw("urlencoded"))),
-                makeAST(EAtom(ElixirAtom.raw("multipart"))),
-                makeAST(EAtom(ElixirAtom.raw("json")))
-            ]))},
-            {key: "pass", value: makeAST(EList([makeAST(EString("*/*"))]))},
-            {key: "json_decoder", value: makeAST(ERemoteCall(
-                makeAST(EVar("Phoenix")),
-                "json_library",
-                []
-            ))}
-        ]));
-        statements.push(makeAST(ECall(null, "plug", [
-            makeAST(EVar("Plug.Parsers")),
-            parsersOptions
-        ])));
-        
-        // Other standard plugs
-        statements.push(makeAST(ECall(null, "plug", [
-            makeAST(EVar("Plug.MethodOverride"))
-        ])));
-        
-        statements.push(makeAST(ECall(null, "plug", [
-            makeAST(EVar("Plug.Head"))
-        ])));
-        
-        statements.push(makeAST(ECall(null, "plug", [
-            makeAST(EVar("Plug.Session")),
-            makeAST(EVar("@session_options"))
-        ])));
-        
-        // Router plug (assumes Web module pattern)
-        var routerModule = StringTools.replace(moduleName, ".Endpoint", ".Router");
-        statements.push(makeAST(ECall(null, "plug", [
-            makeAST(EVar(routerModule))
-        ])));
-        
-        
-        return makeAST(EBlock(statements));
-    }
+				var appName = (ast.metadata != null && ast.metadata.appName != null) ? ast.metadata.appName : extractAppName(name);
+				var endpointBody = buildEndpointBody(name, appName, ast.metadata);
 
-    /**
-     * Transform @:socket modules into Phoenix.Socket structure
-     *
-     * WHAT
-     * - Emits a Phoenix socket module (`use Phoenix.Socket`) with `channel/2` routes.
-     * - Ensures `connect/3` and `id/1` exist (adds safe defaults if missing).
-     *
-     * WHY
-     * - Channels require a socket module (typically `<App>Web.UserSocket`) that declares
-     *   `channel "topic:*", MyChannel` routes. Haxe class bodies cannot contain Elixir
-     *   module-level directives, so we generate them from `@:socket` + metadata.
-     *
-     * HOW
-     * - When `metadata.isSocket == true`:
-     *   - Prepend `use Phoenix.Socket`.
-     *   - Emit one `channel "<topic>", <ChannelModule>` call per `metadata.socketChannels`.
-     *   - Append existing defs.
-     *   - If `connect/3` missing, emit `def connect(_params, socket, _connect_info), do: {:ok, socket}`.
-     *   - If `id/1` missing, emit `def id(_socket), do: nil`.
-     *
-     * EXAMPLES
-     * Haxe:
-     *   @:native("MyAppWeb.UserSocket")
-     *   @:socket
-     *   @:socketChannels([{topic: "typed:*", channel: server.channels.PingChannel}])
-     *   class UserSocket {}
-     *
-     * Elixir (generated):
-     *   defmodule MyAppWeb.UserSocket do
-     *     use Phoenix.Socket
-     *     channel "typed:*", MyAppWeb.PingChannel
-     *     def connect(_params, socket, _connect_info), do: {:ok, socket}
-     *     def id(_socket), do: nil
-     *   end
-     */
-    public static function socketTransformPass(ast: ElixirAST): ElixirAST {
-        if (ast == null || ast.metadata == null || ast.metadata.isSocket != true) return ast;
+				// Create new module with endpoint body, preserving metadata
+				return makeASTWithMeta(EDefmodule(name, endpointBody), ast.metadata, ast.pos);
 
-        function buildSocketStatements(existingBody: ElixirAST, metadata: ElixirMetadata): Array<ElixirAST> {
-            var statements: Array<ElixirAST> = [makeAST(EUse("Phoenix.Socket", []))];
+			default:
+				// Not an Endpoint module, just pass through
+				return ast;
+		}
+	}
 
-            var existingDefinitions: Map<String, Bool> = new Map();
-            switch (existingBody.def) {
-                case EBlock(stmts):
-                    for (s in stmts) switch (s.def) {
-                        case EDef(name, args, _, _) if (name != null): existingDefinitions.set('${name}/${args != null ? args.length : 0}', true);
-                        case EDefp(name, args, _, _) if (name != null): existingDefinitions.set('${name}/${args != null ? args.length : 0}', true);
-                        default:
-                    }
-                default:
-            }
+	/**
+	 * Build complete Phoenix.Endpoint module body as array of statements
+	 */
+	static function buildEndpointBodyStatements(moduleName:String, appName:String):Array<ElixirAST> {
+		var statements = [];
 
-            var channels = metadata != null ? metadata.socketChannels : null;
-            if (channels != null) {
-                for (c in channels) {
-                    if (c == null || c.topic == null || c.channel == null) continue;
-                    var channelModuleName = c.channel;
-                    statements.push(makeAST(ECall(null, "channel", [
-                        makeAST(EString(c.topic)),
-                        makeAST(EVar(channelModuleName))
-                    ])));
-                }
-            }
+		// use Phoenix.Endpoint, otp_app: :app_name
+		var useOptions = makeAST(EKeywordList([{key: "otp_app", value: makeAST(EAtom(appName))}]));
+		statements.push(makeAST(EUse("Phoenix.Endpoint", [useOptions])));
 
-            if (!existingDefinitions.exists("connect/3")) {
-                statements.push(makeAST(EDef(
-                    "connect",
-                    [EPattern.PVar("_params"), EPattern.PVar("socket"), EPattern.PVar("_connect_info")],
-                    null,
-                    makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("ok"))), makeAST(EVar("socket"))]))
-                )));
-            }
+		// The rest of the endpoint configuration continues in buildEndpointBody
+		// For now, just add the use statement which is most critical
 
-            if (!existingDefinitions.exists("id/1")) {
-                statements.push(makeAST(EDef(
-                    "id",
-                    [EPattern.PVar("_socket")],
-                    null,
-                    makeAST(ENil)
-                )));
-            }
+		return statements;
+	}
 
-            switch (existingBody.def) {
-                case EBlock(stmts2):
-                    statements = statements.concat(stmts2);
-                default:
-                    statements.push(existingBody);
-            }
+	/**
+	 * Build complete Phoenix.Endpoint module body
+	 */
+	static function buildEndpointBody(moduleName:String, appName:String, metadata:ElixirMetadata):ElixirAST {
+		var statements = [];
 
-            return statements;
-        }
+		// use Phoenix.Endpoint, otp_app: :app_name
+		var useOptions = makeAST(EKeywordList([{key: "otp_app", value: makeAST(EAtom(appName))}]));
+		statements.push(makeAST(EUse("Phoenix.Endpoint", [useOptions])));
 
-        return switch (ast.def) {
-            case EDefmodule(name, body):
-                makeASTWithMeta(EModule(name, [], buildSocketStatements(body, ast.metadata)), ast.metadata, ast.pos);
-            case EModule(name, attrs, stmts):
-                makeASTWithMeta(EModule(name, attrs, buildSocketStatements(makeAST(EBlock(stmts)), ast.metadata)), ast.metadata, ast.pos);
-            default:
-                ast;
-        }
-    }
-    
-    /**
-     * Transform @:liveview modules into Phoenix.LiveView structure
-     * 
-     * WHY: LiveView modules need specific callbacks and use statement
-     * WHAT: Adds use Phoenix.LiveView and ensures proper callback structure
-     * HOW: Detects isLiveView metadata and transforms module body
-     */
-    public static function liveViewTransformPass(ast: ElixirAST): ElixirAST {
-        // Check the top-level node first for LiveView modules
-        switch(ast.def) {
-            case EDefmodule(name, body) if (ast.metadata?.isLiveView == true):
-                #if debug_annotation_transforms
-                #end
-                
-                var liveViewBody = buildLiveViewBody(name, body);
-                
-                return makeASTWithMeta(
-                    EDefmodule(name, liveViewBody),
-                    ast.metadata,
-                    ast.pos
-                );
-	            case EModule(name, attrs, body) if (ast.metadata?.isLiveView == true):
-	                // Shape-matched LiveView module using direct Phoenix.LiveView use
-	                var webIndex = name.indexOf("Web");
-	                var appWebModule = if (webIndex > 0) name.substring(0, webIndex + "Web".length) else name;
-	                var usesDotComponents = false;
-	                for (stmt in body) if (!usesDotComponents) {
-	                    ASTUtils.walk(stmt, function(n: ElixirAST): Void {
-	                        if (usesDotComponents || n == null || n.def == null) return;
-	                        switch (n.def) {
-	                            case ESigil(type, content, _mods) if (type == "H"):
-	                                if (content != null && content.indexOf("<.") != -1) usesDotComponents = true;
-	                            default:
-	                        }
-	                    });
-	                }
-	                var liveViewOptions = makeAST(EKeywordList([
-	                    {
-	                        key: "layout",
-	                        value: makeAST(ETuple([
-	                            makeAST(EVar(appWebModule + ".Layouts")),
-	                            makeAST(EAtom(ElixirAtom.raw("app")))
-	                        ]))
-	                    }
-	                ]));
-	                var newBody: Array<ElixirAST> = [];
-	                newBody.push(makeAST(EUse("Phoenix.LiveView", [liveViewOptions])));
-	                if (usesDotComponents && appWebModule != name) {
-	                    newBody.push(makeAST(EImport(appWebModule + ".CoreComponents", null, null)));
-	                }
-	                for (stmt in body) newBody.push(stmt);
-	                return makeASTWithMeta(EModule(name, attrs, newBody), ast.metadata, ast.pos);
-	            default:
-	                // Not a LiveView module, just pass through
-	                return ast;
-        }
-    }
+		// @session_options configuration
+		var sessionOptions = makeAST(EKeywordList([
+			{key: "store", value: makeAST(EAtom(ElixirAtom.raw("cookie")))},
+			{key: "key", value: makeAST(EString('_${appName}_key'))},
+			// NOTE: Must be stable across builds; generating this randomly causes session cookies
+			// (and therefore LiveView user tokens) to become invalid on every compile/run.
+			// Phoenix salts are not secrets (secret_key_base is); keep it deterministic per app.
+			{key: "signing_salt", value: makeAST(EString('${appName}_signing_salt'))},
+			{key: "same_site", value: makeAST(EString("Lax"))}
+		]));
+		// Module attribute for session options
+		statements.push(makeAST(EModuleAttribute("session_options", sessionOptions)));
 
-    /**
-     * Transform channel modules into Phoenix.Channel structure
-     *
-     * WHAT
-     * - Adds `use <App>Web, :channel` to modules shaped like Phoenix channels.
-     *
-     * WHY
-     * - Ensure idiomatic Phoenix channel setup without app-specific name heuristics.
-     *   We rely on the framework naming convention "<App>Web.*Channel".
-     *
-     * HOW
-     * - For EDefmodule/EModule whose name contains "Web." and "Channel",
-     *   prepend use <App>Web, :channel and preserve existing body.
-     */
-    public static function channelTransformPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EDefmodule(name, body) if (name != null && name.indexOf("Web.") > 0 && name.indexOf("Channel") > 0):
-                    var webIndex = name.indexOf("Web");
-                    var appNamePart = if (webIndex > 0) name.substring(0, webIndex) else name;
-                    var useStmt = makeAST(EUse(appNamePart + "Web", [ makeAST(EAtom(ElixirAtom.raw("channel"))) ]));
-                    var newBody = switch (body.def) {
-                        case EBlock(stmts): makeAST(EBlock([useStmt].concat(stmts)));
-                        case EDo(stmts2): makeAST(EDo([useStmt].concat(stmts2)));
-                        default: makeAST(EBlock([useStmt, body]));
-                    };
-                    makeASTWithMeta(EDefmodule(name, newBody), n.metadata, n.pos);
-                case EModule(name, attrs, stmts) if (name != null && name.indexOf("Web.") > 0 && name.indexOf("Channel") > 0):
-                    var webIndex2 = name.indexOf("Web");
-                    var appNamePart2 = if (webIndex2 > 0) name.substring(0, webIndex2) else name;
-                    var useStmt2 = makeAST(EUse(appNamePart2 + "Web", [ makeAST(EAtom(ElixirAtom.raw("channel"))) ]));
-                    makeASTWithMeta(EModule(name, attrs, [useStmt2].concat(stmts)), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        });
-    }
-    
-    /**
-     * Build LiveView module body
-     *
-     * WHAT
-     * - Emits idiomatic LiveView modules that depend only on `Phoenix.LiveView`
-     *   rather than `AppWeb` macros for core behavior.
-     *
-     * WHY
-     * - `use AppWeb, :live_view` is the Phoenix generator default, but it
-     *   introduces a compile‑time dependency on the web hub module being
-     *   compiled and loaded first. In isolated build roots (e.g. QA sentinel
-     *   using per‑run MIX_BUILD_ROOT), this can surface as
-     *   “module <App>Web is not loaded and could not be found” even though the
-     *   generated AppWeb module exists as a normal .ex file.
-     *
-     * - Using `Phoenix.LiveView` directly keeps the generated code fully
-     *   idiomatic while avoiding fragile compile ordering between the web hub
-     *   and individual LiveViews. The hub module (`<App>Web`) is still
-     *   generated for controllers, HTML helpers, etc., but LiveViews no longer
-     *   require it during compilation.
-     *
-     * HOW
-     * - Derives the `<App>Web` prefix from the LiveView module name
-     *   (e.g. `TodoAppWeb.TodoLive` → `TodoAppWeb`) and uses it only to build
-     *   the layout module name for options.
-     * - Emits:
-     *
-     *   use Phoenix.LiveView, layout: {AppWeb.Layouts, :app}
-     *
-     * - Then appends the existing function body so that HXX/HXX‑generated
-     *   render functions are preserved unchanged.
-     *
-     * EXAMPLES
-     * Haxe:
-     *   @:liveview @:native("TodoAppWeb.TodoLive")
-     *   class TodoLive { ... }
-     *
-     * Elixir (before):
-     *   defmodule TodoAppWeb.TodoLive do
-     *     use TodoAppWeb, :live_view
-     *     ...
-     *   end
-     *
-     * Elixir (after):
-     *   defmodule TodoAppWeb.TodoLive do
-     *     use Phoenix.LiveView, layout: {TodoAppWeb.Layouts, :app}
-     *     ...
-     *   end
-     */
-    static function buildLiveViewBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
-        var statements = [];
+		// socket "/live", Phoenix.LiveView.Socket configuration
+		var socketOptions = makeAST(EKeywordList([
+			{
+				key: "websocket",
+				value: makeAST(EKeywordList([
+					{
+						key: "connect_info",
+						value: makeAST(EKeywordList([{key: "session", value: makeAST(EVar("@session_options"))}]))
+					}
+				]))
+			}
+		]));
+		statements.push(makeAST(ECall(null, "socket", [
+			makeAST(EString("/live")),
+			makeAST(EVar("Phoenix.LiveView.Socket")),
+			socketOptions
+		])));
 
-        // Extract AppWeb module name from module name (e.g., TodoAppWeb.TodoLive -> TodoAppWeb)
-        var webIndex = moduleName.indexOf("Web");
-        var appWebModule = if (webIndex > 0) moduleName.substring(0, webIndex + "Web".length) else moduleName;
-        var usesDotComponents = false;
-        ASTUtils.walk(existingBody, function(n: ElixirAST): Void {
-            if (usesDotComponents || n == null || n.def == null) return;
-            switch (n.def) {
-                case ESigil(type, content, _mods) if (type == "H"):
-                    if (content != null && content.indexOf("<.") != -1) usesDotComponents = true;
-                default:
-            }
-        });
+		// Optional additional sockets (channels, etc.) via @:endpointSockets([...]).
+		var extraSockets = metadata != null ? metadata.endpointSockets : null;
+		if (extraSockets != null) {
+			for (socketMeta in extraSockets) {
+				if (socketMeta == null || socketMeta.path == null || socketMeta.socket == null)
+					continue;
+				var socketModuleName = socketMeta.socket;
 
-	        // use Phoenix.LiveView, layout: {AppWeb.Layouts, :app}
-	        var liveViewOptions = makeAST(EKeywordList([
-	            {
-	                key: "layout",
-	                value: makeAST(ETuple([
-	                    makeAST(EVar(appWebModule + ".Layouts")),
-	                    makeAST(EAtom(ElixirAtom.raw("app")))
-	                ]))
-	            }
-	        ]));
-	        statements.push(makeAST(EUse("Phoenix.LiveView", [liveViewOptions])));
-	
-	        // Phoenix dot-components (e.g. <.card>) resolve via importing the app's CoreComponents.
-	        // We derive the `<App>Web` prefix from the LiveView module name to keep this generic.
-	        if (usesDotComponents && appWebModule != moduleName) {
-	            statements.push(makeAST(EImport(appWebModule + ".CoreComponents", null, null)));
-	        }
-	        
-	        // Add existing functions from the body
-	        switch(existingBody.def) {
-	            case EBlock(stmts):
-	                for (stmt in stmts) {
-                    // Skip empty statements
-                    switch(stmt.def) {
-                        case ENil:
-                            // Skip
-                        default:
-                            statements.push(stmt);
-                    }
-                }
-            default:
-                statements.push(existingBody);
-        }
-        
-        return makeAST(EBlock(statements));
-    }
-    
-    /**
-     * Transform @:presence modules into Phoenix.Presence structure
-     * 
-     * WHY: Phoenix Presence modules need use Phoenix.Presence with otp_app configuration
-     * WHAT: Adds use statement to enable track/update/list functions
-     * HOW: Detects isPresence metadata and adds Phoenix.Presence use statement
-     */
-    public static function presenceTransformPass(ast: ElixirAST): ElixirAST {
-        // Use transformNode for recursive transformation
-        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
-            switch(node.def) {
-                case EDefmodule(name, body):
-                    var looksLikePresence = node.metadata?.isPresence == true || (name != null && name.indexOf("Web.Presence") > 0);
-                    if (looksLikePresence) {
-                        var presenceBody = buildPresenceBody(name, body);
-                        return makeASTWithMeta(EDefmodule(name, presenceBody), node.metadata, node.pos);
-                    }
-                    return node;
-                case EModule(name, attrs, bodyExprs):
-                    var looksLikePresence2 = node.metadata?.isPresence == true || (name != null && name.indexOf("Web.Presence") > 0);
-                    if (looksLikePresence2) {
-                        var presenceBody2 = buildPresenceBody(name, makeAST(EBlock(bodyExprs)));
-                        return makeASTWithMeta(EDefmodule(name, presenceBody2), node.metadata, node.pos);
-                    }
-                    return node;
-                default:
-                    return node;
-            }
-        });
-    }
-    
-    /**
-     * Build Phoenix Presence module body with use statement
-     */
-    static function buildPresenceBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
-        var statements = [];
-        
-        // Extract app name from module name (e.g., TodoAppWeb.Presence -> todo_app)
-        var appName = extractAppName(moduleName);
-        var appModule = extractAppModule(moduleName);
-        
-        // use Phoenix.Presence, otp_app: :todo_app
-        var useStatement = makeAST(EUse("Phoenix.Presence", [
-            makeAST(EKeywordList([
-                {key: "otp_app", value: makeAST(EAtom(appName))},
-                {key: "pubsub_server", value: makeAST(EVar(appModule + ".PubSub"))}
-            ]))
-        ]));
-        statements.push(useStatement);
-        
-        // Add existing functions from the body
-        switch(existingBody.def) {
-            case EBlock(stmts):
-                for (stmt in stmts) {
-                    // Skip empty statements
-                    switch(stmt.def) {
-                        case ENil:
-                            // Skip
-                        default:
-                            statements.push(stmt);
-                    }
-                }
-            default:
-                statements.push(existingBody);
-        }
-        
-        return makeAST(EBlock(statements));
-    }
-    
-    /**
-     * Transform @:router modules into Phoenix.Router structure
-     * 
-     * WHY: Phoenix routers require specific structure with use statement, pipelines, and scopes
-     * WHAT: Replaces generated stub functions with complete Phoenix router setup
-     * HOW: Detects isRouter metadata and builds proper Phoenix.Router AST
-     */
-    public static function routerTransformPass(ast: ElixirAST): ElixirAST {
-        #if debug_annotation_transforms
-        #end
-        
-        switch(ast.def) {
-            case EDefmodule(name, body) if (ast.metadata?.isRouter == true):
-                #if debug_annotation_transforms
-                #end
-                
-                var routerBody = buildRouterBody(name, body, ast.metadata);
-                return makeASTWithMeta(EDefmodule(name, routerBody), ast.metadata, ast.pos);
-	            case EModule(name, attrs, body) if (ast.metadata?.isRouter == true):
-	                #if debug_annotation_transforms
-	                #end
-	                var routerBodyFromModule = buildRouterBody(name, makeAST(EBlock(body)), ast.metadata);
-	                return makeASTWithMeta(EDefmodule(name, routerBodyFromModule), ast.metadata, ast.pos);
-	                
-	            default:
-	                return ast;
-	        }
-	    }
-    
-    /**
-     * Build Phoenix router body with pipelines and routes
-     */
-    static function buildRouterBody(moduleName: String, existingBody: ElixirAST, metadata: ElixirMetadata): ElixirAST {
-        var statements = [];
-        
-        // Add use Phoenix.Router
-        statements.push(makeAST(EUse("Phoenix.Router", [])));
-        
-        // Import LiveView router helpers
-        statements.push(makeAST(EImport("Phoenix.LiveView.Router", null, null)));
+				// Default: enable websocket, disable longpoll.
+				var sessionEnabled = socketMeta.session == true;
+				var wsValue:ElixirAST = sessionEnabled ? makeAST(EKeywordList([
+					{
+						key: "connect_info",
+						value: makeAST(EKeywordList([{key: "session", value: makeAST(EVar("@session_options"))}]))
+					}
+				])) : makeAST(EBoolean(true));
 
-        var webModuleName = StringTools.endsWith(moduleName, ".Router")
-            ? moduleName.substr(0, moduleName.length - ".Router".length)
-            : moduleName;
+				var opts = makeAST(EKeywordList([
+					{key: "websocket", value: wsValue},
+					{key: "longpoll", value: makeAST(EBoolean(false))}
+				]));
 
-        // pipeline :browser do ... end
-        var browserPlugs = [
-            makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("accepts"))), makeAST(EList([makeAST(EString("html"))]))])),
-            makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("fetch_session")))])),
-            makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("fetch_live_flash")))])),
-            makeAST(ECall(null, "plug", [
-                makeAST(EAtom(ElixirAtom.raw("put_root_layout"))),
-                makeAST(ETuple([
-                    makeAST(EVar(webModuleName + ".Layouts")),
-                    makeAST(EAtom(ElixirAtom.raw("root")))
-                ]))
-            ])),
-            makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("protect_from_forgery")))])),
-            makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("put_secure_browser_headers")))]))
-        ];
-        statements.push(makeAST(EMacroCall("pipeline", [makeAST(EAtom(ElixirAtom.raw("browser")))], makeAST(EBlock(browserPlugs)))));
+				statements.push(makeAST(ECall(null, "socket", [makeAST(EString(socketMeta.path)), makeAST(EVar(socketModuleName)), opts])));
+			}
+		}
 
-        var routes = metadata != null ? metadata.routerRoutes : null;
-        var browserHttpRouteCalls: Array<ElixirAST> = [];
-        var browserLiveRouteCalls: Array<ElixirAST> = [];
-        var apiRouteCalls: Array<ElixirAST> = [];
-        var dashboardRoutes: Array<{scopePath: String, routePath: String}> = [];
-        var mailboxRoutes: Array<{scopePath: String, routePath: String}> = [];
+		// plug Plug.Static configuration
+		// Use the sigil directly for the only option instead of calling a function
+		var staticOptions = makeAST(EKeywordList([
+			{key: "at", value: makeAST(EString("/"))},
+			{key: "from", value: makeAST(EAtom(appName))},
+			{key: "gzip", value: makeAST(EBoolean(false))},
+			// Use a list of strings instead of ~w sigil (heredoc printing issue)
+			{
+				key: "only",
+				value: makeAST(EList([
+					makeAST(EString("assets")),
+					makeAST(EString("fonts")),
+					makeAST(EString("images")),
+					makeAST(EString("favicon.ico")),
+					makeAST(EString("robots.txt"))
+				]))
+			}
+		]));
+		statements.push(makeAST(ECall(null, "plug", [makeAST(EVar("Plug.Static")), staticOptions])));
 
-        if (routes != null) {
-            for (route in routes) {
-                var method = route.method != null ? route.method.toUpperCase() : "";
-                var path = route.path;
-                if (path == null) continue;
+		// if code_reloading? do plug Phoenix.CodeReloader end
+		// Note: code_reloading? is imported by use Phoenix.Endpoint but might need explicit reference
+		var codeReloadingBlock = makeAST(EIf(makeAST(ECall(null, "Code.ensure_loaded?", [makeAST(EVar("Phoenix.CodeReloader"))])),
+			makeAST(ECall(null, "plug", [makeAST(EVar("Phoenix.CodeReloader"))])), null));
+		statements.push(codeReloadingBlock);
 
-                if (method == "LIVE_DASHBOARD") {
-                    // Split "/dev/dashboard" -> scope "/dev", route "/dashboard"
-                    var lastSlash = path.lastIndexOf("/");
-                    var scopePath = (lastSlash > 0) ? path.substr(0, lastSlash) : "/";
-                    var routePath = (lastSlash > 0) ? path.substr(lastSlash) : path;
-                    dashboardRoutes.push({scopePath: scopePath, routePath: routePath});
-                    continue;
-                }
-                if (method == "MAILBOX") {
-                    // Split "/dev/mailbox" -> scope "/dev", route "/mailbox"
-                    var lastSlash = path.lastIndexOf("/");
-                    var scopePath = (lastSlash > 0) ? path.substr(0, lastSlash) : "/";
-                    var routePath = (lastSlash > 0) ? path.substr(lastSlash) : path;
-                    mailboxRoutes.push({scopePath: scopePath, routePath: routePath});
-                    continue;
-                }
+		// Request pipeline plugs
+		statements.push(makeAST(ECall(null, "plug", [makeAST(EVar("Plug.RequestId"))])));
 
-                var pipeline = route.pipeline != null ? route.pipeline : (StringTools.startsWith(path, "/api") ? "api" : "browser");
+		var telemetryOptions = makeAST(EKeywordList([
+			{
+				key: "event_prefix",
+				value: makeAST(EList([
+					makeAST(EAtom(ElixirAtom.raw("phoenix"))),
+					makeAST(EAtom(ElixirAtom.raw("endpoint")))
+				]))
+			}
+		]));
+		statements.push(makeAST(ECall(null, "plug", [makeAST(EVar("Plug.Telemetry")), telemetryOptions])));
 
-                var controllerName = route.controller != null ? NameUtils.getElixirModuleName(route.controller) : null;
-                var actionName = route.action;
-                if (controllerName == null || actionName == null) {
-                    continue;
-                }
-                if (StringTools.startsWith(actionName, ":")) actionName = actionName.substr(1);
-                actionName = NameUtils.toSnakeCase(actionName);
+		// plug Plug.Parsers
+		var parsersOptions = makeAST(EKeywordList([
+			{
+				key: "parsers",
+				value: makeAST(EList([
+					makeAST(EAtom(ElixirAtom.raw("urlencoded"))),
+					makeAST(EAtom(ElixirAtom.raw("multipart"))),
+					makeAST(EAtom(ElixirAtom.raw("json")))
+				]))
+			},
+			{key: "pass", value: makeAST(EList([makeAST(EString("*/*"))]))},
+			{
+				key: "json_decoder",
+				value: makeAST(ERemoteCall(makeAST(EVar("Phoenix")), "json_library", []))
+			}
+		]));
+		statements.push(makeAST(ECall(null, "plug", [makeAST(EVar("Plug.Parsers")), parsersOptions])));
 
-                var routeMacro = switch (method) {
-                    case "LIVE": "live";
-                    case "GET": "get";
-                    case "POST": "post";
-                    case "PUT": "put";
-                    case "PATCH": "patch";
-                    case "DELETE": "delete";
-                    default: null;
-                };
-                if (routeMacro == null) continue;
+		// Other standard plugs
+		statements.push(makeAST(ECall(null, "plug", [makeAST(EVar("Plug.MethodOverride"))])));
 
-                var routePathFinal = (pipeline == "api" && StringTools.startsWith(path, "/api"))
-                    ? path.substr("/api".length)
-                    : path;
-                if (routePathFinal == "") routePathFinal = "/";
+		statements.push(makeAST(ECall(null, "plug", [makeAST(EVar("Plug.Head"))])));
 
-                var routeCall = makeAST(ECall(null, routeMacro, [
-                    makeAST(EString(routePathFinal)),
-                    makeAST(EVar(controllerName)),
-                    makeAST(EAtom(ElixirAtom.raw(actionName)))
-                ]));
+		statements.push(makeAST(ECall(null, "plug", [makeAST(EVar("Plug.Session")), makeAST(EVar("@session_options"))])));
 
-                if (pipeline == "api") {
-                    apiRouteCalls.push(routeCall);
-                } else if (routeMacro == "live") {
-                    browserLiveRouteCalls.push(routeCall);
-                } else {
-                    browserHttpRouteCalls.push(routeCall);
-                }
-            }
-        }
+		// Router plug (assumes Web module pattern)
+		var routerModule = StringTools.replace(moduleName, ".Endpoint", ".Router");
+		statements.push(makeAST(ECall(null, "plug", [makeAST(EVar(routerModule))])));
 
-	        // pipeline :api do ... end (only if needed)
-	        if (apiRouteCalls.length > 0) {
-	            var apiPlugs = [
-	                makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("accepts"))), makeAST(EList([makeAST(EString("json"))]))])),
-	                // Enable cookie/session-backed API auth in controllers (used by the todo-app showcase).
-	                makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("fetch_session")))]))
-	            ];
-	            statements.push(makeAST(EMacroCall("pipeline", [makeAST(EAtom(ElixirAtom.raw("api")))], makeAST(EBlock(apiPlugs)))));
-	        }
+		return makeAST(EBlock(statements));
+	}
 
-        // scope "/", WebModule do ... end (browser)
-        if (browserHttpRouteCalls.length > 0 || browserLiveRouteCalls.length > 0) {
-            var scopeBody: Array<ElixirAST> = [
-                makeAST(ECall(null, "pipe_through", [makeAST(EAtom(ElixirAtom.raw("browser")))]))
-            ];
-            scopeBody = scopeBody.concat(browserHttpRouteCalls);
+	/**
+	 * Transform @:socket modules into Phoenix.Socket structure
+	 *
+	 * WHAT
+	 * - Emits a Phoenix socket module (`use Phoenix.Socket`) with `channel/2` routes.
+	 * - Ensures `connect/3` and `id/1` exist (adds safe defaults if missing).
+	 *
+	 * WHY
+	 * - Channels require a socket module (typically `<App>Web.UserSocket`) that declares
+	 *   `channel "topic:*", MyChannel` routes. Haxe class bodies cannot contain Elixir
+	 *   module-level directives, so we generate them from `@:socket` + metadata.
+	 *
+	 * HOW
+	 * - When `metadata.isSocket == true`:
+	 *   - Prepend `use Phoenix.Socket`.
+	 *   - Emit one `channel "<topic>", <ChannelModule>` call per `metadata.socketChannels`.
+	 *   - Append existing defs.
+	 *   - If `connect/3` missing, emit `def connect(_params, socket, _connect_info), do: {:ok, socket}`.
+	 *   - If `id/1` missing, emit `def id(_socket), do: nil`.
+	 *
+	 * EXAMPLES
+	 * Haxe:
+	 *   @:native("MyAppWeb.UserSocket")
+	 *   @:socket
+	 *   @:socketChannels([{topic: "typed:*", channel: server.channels.PingChannel}])
+	 *   class UserSocket {}
+	 *
+	 * Elixir (generated):
+	 *   defmodule MyAppWeb.UserSocket do
+	 *     use Phoenix.Socket
+	 *     channel "typed:*", MyAppWeb.PingChannel
+	 *     def connect(_params, socket, _connect_info), do: {:ok, socket}
+	 *     def id(_socket), do: nil
+	 *   end
+	 */
+	public static function socketTransformPass(ast:ElixirAST):ElixirAST {
+		if (ast == null || ast.metadata == null || ast.metadata.isSocket != true)
+			return ast;
 
-            if (browserLiveRouteCalls.length > 0) {
-                var sessionMfa = makeAST(ETuple([
-                    makeAST(EVar(webModuleName)),
-                    makeAST(EAtom(ElixirAtom.raw("live_session"))),
-                    makeAST(EList([]))
-                ]));
-                var liveSessionOpts = makeAST(EKeywordList([{key: "session", value: sessionMfa}]));
-                scopeBody.push(makeAST(EMacroCall(
-                    "live_session",
-                    [makeAST(EAtom(ElixirAtom.raw("default"))), liveSessionOpts],
-                    makeAST(EBlock(browserLiveRouteCalls))
-                )));
-            }
+		function buildSocketStatements(existingBody:ElixirAST, metadata:ElixirMetadata):Array<ElixirAST> {
+			var statements:Array<ElixirAST> = [makeAST(EUse("Phoenix.Socket", []))];
 
-            statements.push(makeAST(EMacroCall("scope", [makeAST(EString("/")), makeAST(EVar(webModuleName))], makeAST(EBlock(scopeBody)))));
-        }
+			var existingDefinitions:Map<String, Bool> = new Map();
+			switch (existingBody.def) {
+				case EBlock(stmts):
+					for (s in stmts)
+						switch (s.def) {
+							case EDef(name, args, _, _) if (name != null): existingDefinitions.set('${name}/${args != null ? args.length : 0}', true);
+							case EDefp(name, args, _, _) if (name != null): existingDefinitions.set('${name}/${args != null ? args.length : 0}', true);
+							default:
+						}
+				default:
+			}
 
-        // scope "/api", WebModule do ... end (api)
-        if (apiRouteCalls.length > 0) {
-            var scopeBodyApi = [makeAST(ECall(null, "pipe_through", [makeAST(EAtom(ElixirAtom.raw("api")))]))].concat(apiRouteCalls);
-            statements.push(makeAST(EMacroCall("scope", [makeAST(EString("/api")), makeAST(EVar(webModuleName))], makeAST(EBlock(scopeBodyApi)))));
-        }
+			var channels = metadata != null ? metadata.socketChannels : null;
+			if (channels != null) {
+				for (c in channels) {
+					if (c == null || c.topic == null || c.channel == null)
+						continue;
+					var channelModuleName = c.channel;
+					statements.push(makeAST(ECall(null, "channel", [makeAST(EString(c.topic)), makeAST(EVar(channelModuleName))])));
+				}
+			}
 
-        // Dev-only routes (LiveDashboard, Swoosh mailbox preview)
-        if (dashboardRoutes.length > 0 || mailboxRoutes.length > 0) {
-            var thenStmts: Array<ElixirAST> = [];
-            if (dashboardRoutes.length > 0) {
-                thenStmts.push(makeAST(EImport("Phoenix.LiveDashboard.Router", null, null)));
-            }
+			if (!existingDefinitions.exists("connect/3")) {
+				statements.push(makeAST(EDef("connect", [
+					EPattern.PVar("_params"),
+					EPattern.PVar("socket"),
+					EPattern.PVar("_connect_info")
+				], null,
+					makeAST(ETuple([makeAST(EAtom(ElixirAtom.raw("ok"))), makeAST(EVar("socket"))])))));
+			}
 
-            // Group all dev routes by scope path
-            var scopeCalls: Map<String, Array<ElixirAST>> = new Map();
+			if (!existingDefinitions.exists("id/1")) {
+				statements.push(makeAST(EDef("id", [EPattern.PVar("_socket")], null, makeAST(ENil))));
+			}
 
-            function getOrInitCalls(scopePath: String): Array<ElixirAST> {
-                if (scopeCalls.exists(scopePath)) return scopeCalls.get(scopePath);
-                var calls: Array<ElixirAST> = [makeAST(ECall(null, "pipe_through", [makeAST(EAtom(ElixirAtom.raw("browser")))]))];
-                scopeCalls.set(scopePath, calls);
-                return calls;
-            }
+			switch (existingBody.def) {
+				case EBlock(stmts2):
+					statements = statements.concat(stmts2);
+				default:
+					statements.push(existingBody);
+			}
 
-            for (d in dashboardRoutes) {
-                var calls = getOrInitCalls(d.scopePath);
-                calls.push(makeAST(ECall(null, "live_dashboard", [
-                    makeAST(EString(d.routePath)),
-                    makeAST(EKeywordList([{key: "metrics", value: makeAST(EVar(webModuleName + ".Telemetry"))}]))
-                ])));
-            }
+			return statements;
+		}
 
-            for (m in mailboxRoutes) {
-                var calls = getOrInitCalls(m.scopePath);
-                calls.push(makeAST(ECall(null, "forward", [
-                    makeAST(EString(m.routePath)),
-                    makeAST(EVar("Plug.Swoosh.MailboxPreview"))
-                ])));
-            }
+		return switch (ast.def) {
+			case EDefmodule(name, body):
+				makeASTWithMeta(EModule(name, [], buildSocketStatements(body, ast.metadata)), ast.metadata, ast.pos);
+			case EModule(name, attrs, stmts):
+				makeASTWithMeta(EModule(name, attrs, buildSocketStatements(makeAST(EBlock(stmts)), ast.metadata)), ast.metadata, ast.pos);
+			default:
+				ast;
+		}
+	}
 
-            for (scopePath => calls in scopeCalls) {
-                thenStmts.push(makeAST(EMacroCall("scope", [makeAST(EString(scopePath))], makeAST(EBlock(calls)))));
-            }
+	/**
+	 * Transform @:liveview modules into Phoenix.LiveView structure
+	 * 
+	 * WHY: LiveView modules need specific callbacks and use statement
+	 * WHAT: Adds use Phoenix.LiveView and ensures proper callback structure
+	 * HOW: Detects isLiveView metadata and transforms module body
+	 */
+	public static function liveViewTransformPass(ast:ElixirAST):ElixirAST {
+		// Check the top-level node first for LiveView modules
+		switch (ast.def) {
+			case EDefmodule(name, body) if (ast.metadata?.isLiveView == true):
+				#if debug_annotation_transforms
+				#end
 
-            var envCall = makeAST(ERemoteCall(makeAST(EVar("Mix")), "env", []));
-            var condition = makeAST(EBinary(In, envCall, makeAST(EList([
-                makeAST(EAtom(ElixirAtom.raw("dev"))),
-                makeAST(EAtom(ElixirAtom.raw("test"))),
-                makeAST(EAtom(ElixirAtom.raw("e2e")))
-            ]))));
-            statements.push(makeAST(EIf(condition, makeAST(EBlock(thenStmts)), null)));
-        }
+				var liveViewBody = buildLiveViewBody(name, body);
 
-        // Preserve any user-defined/generated defs after router DSL.
-        switch (existingBody.def) {
-            case EBlock(existingStmts):
-                statements = statements.concat(existingStmts);
-            default:
-                statements.push(existingBody);
-        }
+				return makeASTWithMeta(EDefmodule(name, liveViewBody), ast.metadata, ast.pos);
+			case EModule(name, attrs, body) if (ast.metadata?.isLiveView == true):
+				// Shape-matched LiveView module using direct Phoenix.LiveView use
+				var webIndex = name.indexOf("Web");
+				var appWebModule = if (webIndex > 0) name.substring(0, webIndex + "Web".length) else name;
+				var usesDotComponents = false;
+				for (stmt in body)
+					if (!usesDotComponents) {
+						ASTUtils.walk(stmt, function(n:ElixirAST):Void {
+							if (usesDotComponents || n == null || n.def == null)
+								return;
+							switch (n.def) {
+								case ESigil(type, content, _mods) if (type == "H"):
+									if (content != null && content.indexOf("<.") != -1)
+										usesDotComponents = true;
+								default:
+							}
+						});
+					}
+				var liveViewOptions = makeAST(EKeywordList([
+					{
+						key: "layout",
+						value: makeAST(ETuple([makeAST(EVar(appWebModule + ".Layouts")), makeAST(EAtom(ElixirAtom.raw("app")))]))
+					}
+				]));
+				var newBody:Array<ElixirAST> = [];
+				newBody.push(makeAST(EUse("Phoenix.LiveView", [liveViewOptions])));
+				if (usesDotComponents && appWebModule != name) {
+					newBody.push(makeAST(EImport(appWebModule + ".CoreComponents", null, null)));
+				}
+				for (stmt in body)
+					newBody.push(stmt);
+				return makeASTWithMeta(EModule(name, attrs, newBody), ast.metadata, ast.pos);
+			default:
+				// Not a LiveView module, just pass through
+				return ast;
+		}
+	}
 
-        return makeAST(EBlock(statements));
-    }
-    
-    /**
-     * Transform @:controller modules into Phoenix.Controller structure
-     * 
-     * WHY: Phoenix controllers need the use statement for controller functionality
-     * WHAT: Adds use AppNameWeb, :controller at the beginning of the module
-     * HOW: Detects isController metadata and adds the use statement
-     */
-    public static function controllerTransformPass(ast: ElixirAST): ElixirAST {
-        // Check the top-level node first for Controller modules
-        switch(ast.def) {
-            case EDefmodule(name, body) if (ast.metadata?.isController == true || (name != null && name.indexOf("Web.") > 0 && name.indexOf("Controller") > 0)):
-                #if debug_annotation_transforms
-                #end
-                
-                var appName = ast.metadata.appName ?? "app";
-                var controllerBody = buildControllerBody(name, appName, body);
-                
-                return makeASTWithMeta(
-                    EDefmodule(name, controllerBody),
-                    ast.metadata,
-                    ast.pos
-                );
-            case EModule(name, attrs, exprs) if (ast.metadata?.isController == true || (name != null && name.indexOf("Web.") > 0 && name.indexOf("Controller") > 0)):
-                var appName2 = ast.metadata.appName ?? "app";
-                var controllerBody2 = buildControllerBody(name, appName2, makeAST(EBlock(exprs)));
-                return makeASTWithMeta(EDefmodule(name, controllerBody2), ast.metadata, ast.pos);
-            default:
-                // Not a Controller module, just pass through
-                return ast;
-        }
-    }
-    
-    /**
-     * Build Phoenix Controller module body with use statement
-     */
-    static function buildControllerBody(moduleName: String, appName: String, existingBody: ElixirAST): ElixirAST {
-        var statements = [];
-        
-        // Extract app module name (e.g., "TodoApp" from "TodoAppWeb.UserController")
-        var parts = moduleName.split(".");
-        var webModuleName = parts.length > 0 ? parts[0] : '${capitalize(appName)}Web';
-        
-        // Add: use AppNameWeb, :controller
-        statements.push(makeAST(EUse(
-            webModuleName,
-            [makeAST(EAtom(ElixirAtom.raw("controller")))]
-        )));
-        
-        // Add the existing body
-        switch(existingBody.def) {
-            case EBlock(bodyStatements):
-                statements = statements.concat(bodyStatements);
-            default:
-                statements.push(existingBody);
-        }
-        
-        return makeAST(EBlock(statements));
-    }
-    
-    /**
-     * Helper to capitalize first letter
-     */
-    static function capitalize(s: String): String {
-        if (s.length == 0) return s;
-        return s.charAt(0).toUpperCase() + s.substr(1);
-    }
-    
-    /**
-     * Transform @:schema modules into Ecto.Schema structure
-     * 
-     * WHY: Ecto schemas need specific structure with schema block and changeset
-     * WHAT: Adds use Ecto.Schema, schema block with fields, and changeset function
-     * HOW: Detects isSchema metadata and transforms module body
-     */
-    public static function schemaTransformPass(ast: ElixirAST): ElixirAST {
-        #if debug_annotation_transforms
-        if (ast.metadata != null && ast.metadata.isSchema == true) {
-        }
-        #end
-        
-        // Check the top-level node first for Schema modules
-        switch(ast.def) {
-            case EDefmodule(name, body) if (ast.metadata?.isSchema == true):
-                #if debug_annotation_transforms
-                #end
-                
-                var tableName = ast.metadata.tableName ?? "items";
-                var lookupName = ast.metadata?.haxeFqcn != null ? ast.metadata.haxeFqcn : name;
-                var schemaBody = buildSchemaBody(name, tableName, body, lookupName, ast.metadata);
-                
-                return makeASTWithMeta(
-                    EDefmodule(name, schemaBody),
-                    ast.metadata,
-                    ast.pos
-                );
-            
-            case EModule(name, attrs, exprs) if (ast.metadata?.isSchema == true):
-                #if debug_annotation_transforms
-                #end
-                
-                var tableName = ast.metadata.tableName ?? "items";
-                var lookupName = ast.metadata?.haxeFqcn != null ? ast.metadata.haxeFqcn : name;
-                
-                // Build the schema body with existing expressions
-                var bodyStatements = [];
-                
-                // Add use Ecto.Schema and import Ecto.Changeset
-                bodyStatements.push(makeAST(EUse("Ecto.Schema", [])));
-                bodyStatements.push(makeAST(EImport("Ecto.Changeset", null, null)));
-                
-                // Build and add the schema block
-                var schemaFieldStatements = [];
-                if (ast.metadata != null && ast.metadata.schemaFields != null) {
-                    for (f in ast.metadata.schemaFields) {
-                        // Skip primary key id (Ecto adds by default)
-                        if (f.name == "id") continue;
-                        var elixirFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(f.name);
-                        var atomFieldName = makeAST(EAtom(elixirFieldName));
-                        var fieldTypeAST = mapHaxeTypeToEctoFieldType(f.type);
-                        schemaFieldStatements.push(makeAST(ECall(null, "field", [
-                            atomFieldName,
-                            fieldTypeAST
-                        ])));
-                    }
-                }
+	/**
+	 * Transform channel modules into Phoenix.Channel structure
+	 *
+	 * WHAT
+	 * - Adds `use <App>Web, :channel` to modules shaped like Phoenix channels.
+	 *
+	 * WHY
+	 * - Ensure idiomatic Phoenix channel setup without app-specific name heuristics.
+	 *   We rely on the framework naming convention "<App>Web.*Channel".
+	 *
+	 * HOW
+	 * - For EDefmodule/EModule whose name contains "Web." and "Channel",
+	 *   prepend use <App>Web, :channel and preserve existing body.
+	 */
+	public static function channelTransformPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EDefmodule(name, body) if (name != null && name.indexOf("Web.") > 0 && name.indexOf("Channel") > 0):
+					var webIndex = name.indexOf("Web");
+					var appNamePart = if (webIndex > 0) name.substring(0, webIndex) else name;
+					var useStmt = makeAST(EUse(appNamePart + "Web", [makeAST(EAtom(ElixirAtom.raw("channel")))]));
+					var newBody = switch (body.def) {
+						case EBlock(stmts): makeAST(EBlock([useStmt].concat(stmts)));
+						case EDo(stmts2): makeAST(EDo([useStmt].concat(stmts2)));
+						default: makeAST(EBlock([useStmt, body]));
+					};
+					makeASTWithMeta(EDefmodule(name, newBody), n.metadata, n.pos);
+				case EModule(name, attrs, stmts) if (name != null && name.indexOf("Web.") > 0 && name.indexOf("Channel") > 0):
+					var webIndex2 = name.indexOf("Web");
+					var appNamePart2 = if (webIndex2 > 0) name.substring(0, webIndex2) else name;
+					var useStmt2 = makeAST(EUse(appNamePart2 + "Web", [makeAST(EAtom(ElixirAtom.raw("channel")))]));
+					makeASTWithMeta(EModule(name, attrs, [useStmt2].concat(stmts)), n.metadata, n.pos);
+				default:
+					n;
+			}
+		});
+	}
 
-                // Add associations if specified (belongs_to/has_many/has_one/many_to_many)
-                if (ast.metadata != null && ast.metadata.schemaAssociations != null) {
-                    for (a in ast.metadata.schemaAssociations) {
-                        var assocName = reflaxe.elixir.ast.NameUtils.toSnakeCase(a.name);
-                        var assocAtom = makeAST(EAtom(assocName));
-                        var assocModule = makeAST(EVar(a.module));
-                        var args: Array<ElixirAST> = [assocAtom, assocModule];
-                        if (a.kind == SchemaAssociationKind.ManyToMany && a.joinThrough != null) {
-                            args.push(makeAST(EKeywordList([{
-                                key: "join_through",
-                                value: makeAST(EString(a.joinThrough))
-                            }])));
-                        }
-                        schemaFieldStatements.push(makeAST(ECall(null, Std.string(a.kind), args)));
-                    }
-                }
-                
-                // Add timestamps if specified
-                if (ast.metadata?.hasTimestamps == true) {
-                    schemaFieldStatements.push(makeAST(ECall(null, "timestamps", [])));
-                }
-                
-                var schemaFields = makeAST(EBlock(schemaFieldStatements));
-                var schemaBlock = makeAST(EMacroCall(
-                    "schema",
-                    [makeAST(EString(tableName))],
-                    schemaFields
-                ));
-                bodyStatements.push(schemaBlock);
+	/**
+	 * Build LiveView module body
+	 *
+	 * WHAT
+	 * - Emits idiomatic LiveView modules that depend only on `Phoenix.LiveView`
+	 *   rather than `AppWeb` macros for core behavior.
+	 *
+	 * WHY
+	 * - `use AppWeb, :live_view` is the Phoenix generator default, but it
+	 *   introduces a compile‑time dependency on the web hub module being
+	 *   compiled and loaded first. In isolated build roots (e.g. QA sentinel
+	 *   using per‑run MIX_BUILD_ROOT), this can surface as
+	 *   “module <App>Web is not loaded and could not be found” even though the
+	 *   generated AppWeb module exists as a normal .ex file.
+	 *
+	 * - Using `Phoenix.LiveView` directly keeps the generated code fully
+	 *   idiomatic while avoiding fragile compile ordering between the web hub
+	 *   and individual LiveViews. The hub module (`<App>Web`) is still
+	 *   generated for controllers, HTML helpers, etc., but LiveViews no longer
+	 *   require it during compilation.
+	 *
+	 * HOW
+	 * - Derives the `<App>Web` prefix from the LiveView module name
+	 *   (e.g. `TodoAppWeb.TodoLive` → `TodoAppWeb`) and uses it only to build
+	 *   the layout module name for options.
+	 * - Emits:
+	 *
+	 *   use Phoenix.LiveView, layout: {AppWeb.Layouts, :app}
+	 *
+	 * - Then appends the existing function body so that HXX/HXX‑generated
+	 *   render functions are preserved unchanged.
+	 *
+	 * EXAMPLES
+	 * Haxe:
+	 *   @:liveview @:native("TodoAppWeb.TodoLive")
+	 *   class TodoLive { ... }
+	 *
+	 * Elixir (before):
+	 *   defmodule TodoAppWeb.TodoLive do
+	 *     use TodoAppWeb, :live_view
+	 *     ...
+	 *   end
+	 *
+	 * Elixir (after):
+	 *   defmodule TodoAppWeb.TodoLive do
+	 *     use Phoenix.LiveView, layout: {TodoAppWeb.Layouts, :app}
+	 *     ...
+	 *   end
+	 */
+	static function buildLiveViewBody(moduleName:String, existingBody:ElixirAST):ElixirAST {
+		var statements = [];
 
-                // Add the existing functions
-                for (expr in exprs) {
-                    bodyStatements.push(expr);
-                }
+		// Extract AppWeb module name from module name (e.g., TodoAppWeb.TodoLive -> TodoAppWeb)
+		var webIndex = moduleName.indexOf("Web");
+		var appWebModule = if (webIndex > 0) moduleName.substring(0, webIndex + "Web".length) else moduleName;
+		var usesDotComponents = false;
+		ASTUtils.walk(existingBody, function(n:ElixirAST):Void {
+			if (usesDotComponents || n == null || n.def == null)
+				return;
+			switch (n.def) {
+				case ESigil(type, content, _mods) if (type == "H"):
+					if (content != null && content.indexOf("<.") != -1)
+						usesDotComponents = true;
+				default:
+			}
+		});
 
-                // Generate changeset function if user didn't provide one
-                // Check metadata for user-defined changeset (hasUserChangeset flag)
-                var hasChangeset = ast.metadata?.hasUserChangeset == true;
+		// use Phoenix.LiveView, layout: {AppWeb.Layouts, :app}
+		var liveViewOptions = makeAST(EKeywordList([
+			{
+				key: "layout",
+				value: makeAST(ETuple([makeAST(EVar(appWebModule + ".Layouts")), makeAST(EAtom(ElixirAtom.raw("app")))]))
+			}
+		]));
+		statements.push(makeAST(EUse("Phoenix.LiveView", [liveViewOptions])));
 
-                if (!hasChangeset) {
-                    var castFields:Array<String> = [];
-                    var requiredFields:Array<String> = [];
+		// Phoenix dot-components (e.g. <.card>) resolve via importing the app's CoreComponents.
+		// We derive the `<App>Web` prefix from the LiveView module name to keep this generic.
+		if (usesDotComponents && appWebModule != moduleName) {
+			statements.push(makeAST(EImport(appWebModule + ".CoreComponents", null, null)));
+		}
 
-                    // PRIORITY 1: Use explicit @:changeset annotation if present
-                    if (ast.metadata?.changesetCastFields != null && ast.metadata.changesetCastFields.length > 0) {
-                        for (field in ast.metadata.changesetCastFields) {
-                            var snakeField = reflaxe.elixir.ast.NameUtils.toSnakeCase(field);
-                            castFields.push(':$snakeField');
-                        }
-                        if (ast.metadata?.changesetRequiredFields != null) {
-                            for (field in ast.metadata.changesetRequiredFields) {
-                                var snakeField = reflaxe.elixir.ast.NameUtils.toSnakeCase(field);
-                                requiredFields.push(snakeField);
-                            }
-                        }
-                    }
-                    // PRIORITY 2: Fall back to schema field inference
-                    else if (ast.metadata?.schemaFields != null) {
-                        for (field in ast.metadata.schemaFields) {
-                            if (field.name != "id" && field.name != "insertedAt" && field.name != "updatedAt") {
-                                var snakeField = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
-                                castFields.push(':$snakeField');
-                                if (field.type != null && field.type.indexOf("Null") == -1 && field.type.indexOf("array") == -1) {
-                                    requiredFields.push(snakeField);
-                                }
-                            }
-                        }
-                    }
+		// Add existing functions from the body
+		switch (existingBody.def) {
+			case EBlock(stmts):
+				for (stmt in stmts) {
+					// Skip empty statements
+					switch (stmt.def) {
+						case ENil:
+							// Skip
+						default:
+							statements.push(stmt);
+					}
+				}
+			default:
+				statements.push(existingBody);
+		}
 
-                    // Generate changeset function if we have fields to cast
-                    if (castFields.length > 0) {
-                        var castFieldsStr = castFields.join(", ");
-                        var requiredFieldsStr = requiredFields.map(f -> ':$f').join(", ");
-                        var paramName = name.toLowerCase();
-                        // Extract just the last part for param name (e.g., "TodoApp.Todo" -> "todo")
-                        var lastDot = paramName.lastIndexOf(".");
-                        if (lastDot != -1) {
-                            paramName = paramName.substr(lastDot + 1);
-                        }
+		return makeAST(EBlock(statements));
+	}
 
-                        var changesetCode = '
+	/**
+	 * Transform @:presence modules into Phoenix.Presence structure
+	 * 
+	 * WHY: Phoenix Presence modules need use Phoenix.Presence with otp_app configuration
+	 * WHAT: Adds use statement to enable track/update/list functions
+	 * HOW: Detects isPresence metadata and adds Phoenix.Presence use statement
+	 */
+	public static function presenceTransformPass(ast:ElixirAST):ElixirAST {
+		// Use transformNode for recursive transformation
+		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
+			switch (node.def) {
+				case EDefmodule(name, body):
+					var looksLikePresence = node.metadata?.isPresence == true || (name != null && name.indexOf("Web.Presence") > 0);
+					if (looksLikePresence) {
+						var presenceBody = buildPresenceBody(name, body);
+						return makeASTWithMeta(EDefmodule(name, presenceBody), node.metadata, node.pos);
+					}
+					return node;
+				case EModule(name, attrs, bodyExprs):
+					var looksLikePresence2 = node.metadata?.isPresence == true || (name != null && name.indexOf("Web.Presence") > 0);
+					if (looksLikePresence2) {
+						var presenceBody2 = buildPresenceBody(name, makeAST(EBlock(bodyExprs)));
+						return makeASTWithMeta(EDefmodule(name, presenceBody2), node.metadata, node.pos);
+					}
+					return node;
+				default:
+					return node;
+			}
+		});
+	}
+
+	/**
+	 * Build Phoenix Presence module body with use statement
+	 */
+	static function buildPresenceBody(moduleName:String, existingBody:ElixirAST):ElixirAST {
+		var statements = [];
+
+		// Extract app name from module name (e.g., TodoAppWeb.Presence -> todo_app)
+		var appName = extractAppName(moduleName);
+		var appModule = extractAppModule(moduleName);
+
+		// use Phoenix.Presence, otp_app: :todo_app
+		var useStatement = makeAST(EUse("Phoenix.Presence", [
+			makeAST(EKeywordList([
+				{key: "otp_app", value: makeAST(EAtom(appName))},
+				{key: "pubsub_server", value: makeAST(EVar(appModule + ".PubSub"))}
+			]))
+		]));
+		statements.push(useStatement);
+
+		// Add existing functions from the body
+		switch (existingBody.def) {
+			case EBlock(stmts):
+				for (stmt in stmts) {
+					// Skip empty statements
+					switch (stmt.def) {
+						case ENil:
+							// Skip
+						default:
+							statements.push(stmt);
+					}
+				}
+			default:
+				statements.push(existingBody);
+		}
+
+		return makeAST(EBlock(statements));
+	}
+
+	/**
+	 * Transform @:router modules into Phoenix.Router structure
+	 * 
+	 * WHY: Phoenix routers require specific structure with use statement, pipelines, and scopes
+	 * WHAT: Replaces generated stub functions with complete Phoenix router setup
+	 * HOW: Detects isRouter metadata and builds proper Phoenix.Router AST
+	 */
+	public static function routerTransformPass(ast:ElixirAST):ElixirAST {
+		#if debug_annotation_transforms
+		#end
+
+		switch (ast.def) {
+			case EDefmodule(name, body) if (ast.metadata?.isRouter == true):
+				#if debug_annotation_transforms
+				#end
+
+				var routerBody = buildRouterBody(name, body, ast.metadata);
+				return makeASTWithMeta(EDefmodule(name, routerBody), ast.metadata, ast.pos);
+			case EModule(name, attrs, body) if (ast.metadata?.isRouter == true):
+				#if debug_annotation_transforms
+				#end
+				var routerBodyFromModule = buildRouterBody(name, makeAST(EBlock(body)), ast.metadata);
+				return makeASTWithMeta(EDefmodule(name, routerBodyFromModule), ast.metadata, ast.pos);
+
+			default:
+				return ast;
+		}
+	}
+
+	/**
+	 * Build Phoenix router body with pipelines and routes
+	 */
+	static function buildRouterBody(moduleName:String, existingBody:ElixirAST, metadata:ElixirMetadata):ElixirAST {
+		var statements = [];
+
+		// Add use Phoenix.Router
+		statements.push(makeAST(EUse("Phoenix.Router", [])));
+
+		// Import LiveView router helpers
+		statements.push(makeAST(EImport("Phoenix.LiveView.Router", null, null)));
+
+		var webModuleName = StringTools.endsWith(moduleName, ".Router") ? moduleName.substr(0, moduleName.length - ".Router".length) : moduleName;
+
+		// pipeline :browser do ... end
+		var browserPlugs = [
+			makeAST(ECall(null, "plug",
+				[
+					makeAST(EAtom(ElixirAtom.raw("accepts"))),
+					makeAST(EList([makeAST(EString("html"))]))
+				])),
+			makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("fetch_session")))])),
+			makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("fetch_live_flash")))])),
+			makeAST(ECall(null, "plug",
+				[
+					makeAST(EAtom(ElixirAtom.raw("put_root_layout"))),
+					makeAST(ETuple([
+						makeAST(EVar(webModuleName + ".Layouts")),
+						makeAST(EAtom(ElixirAtom.raw("root")))
+					]))
+				])),
+			makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("protect_from_forgery")))])),
+			makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("put_secure_browser_headers")))]))
+		];
+		statements.push(makeAST(EMacroCall("pipeline", [makeAST(EAtom(ElixirAtom.raw("browser")))], makeAST(EBlock(browserPlugs)))));
+
+		var routes = metadata != null ? metadata.routerRoutes : null;
+		var browserHttpRouteCalls:Array<ElixirAST> = [];
+		var browserLiveRouteCalls:Array<ElixirAST> = [];
+		var apiRouteCalls:Array<ElixirAST> = [];
+		var dashboardRoutes:Array<{scopePath:String, routePath:String}> = [];
+		var mailboxRoutes:Array<{scopePath:String, routePath:String}> = [];
+
+		if (routes != null) {
+			for (route in routes) {
+				var method = route.method != null ? route.method.toUpperCase() : "";
+				var path = route.path;
+				if (path == null)
+					continue;
+
+				if (method == "LIVE_DASHBOARD") {
+					// Split "/dev/dashboard" -> scope "/dev", route "/dashboard"
+					var lastSlash = path.lastIndexOf("/");
+					var scopePath = (lastSlash > 0) ? path.substr(0, lastSlash) : "/";
+					var routePath = (lastSlash > 0) ? path.substr(lastSlash) : path;
+					dashboardRoutes.push({scopePath: scopePath, routePath: routePath});
+					continue;
+				}
+				if (method == "MAILBOX") {
+					// Split "/dev/mailbox" -> scope "/dev", route "/mailbox"
+					var lastSlash = path.lastIndexOf("/");
+					var scopePath = (lastSlash > 0) ? path.substr(0, lastSlash) : "/";
+					var routePath = (lastSlash > 0) ? path.substr(lastSlash) : path;
+					mailboxRoutes.push({scopePath: scopePath, routePath: routePath});
+					continue;
+				}
+
+				var pipeline = route.pipeline != null ? route.pipeline : (StringTools.startsWith(path, "/api") ? "api" : "browser");
+
+				var controllerName = route.controller != null ? NameUtils.getElixirModuleName(route.controller) : null;
+				var actionName = route.action;
+				if (controllerName == null || actionName == null) {
+					continue;
+				}
+				if (StringTools.startsWith(actionName, ":"))
+					actionName = actionName.substr(1);
+				actionName = NameUtils.toSnakeCase(actionName);
+
+				var routeMacro = switch (method) {
+					case "LIVE": "live";
+					case "GET": "get";
+					case "POST": "post";
+					case "PUT": "put";
+					case "PATCH": "patch";
+					case "DELETE": "delete";
+					default: null;
+				};
+				if (routeMacro == null)
+					continue;
+
+				var routePathFinal = (pipeline == "api" && StringTools.startsWith(path, "/api")) ? path.substr("/api".length) : path;
+				if (routePathFinal == "")
+					routePathFinal = "/";
+
+				var routeCall = makeAST(ECall(null, routeMacro, [
+					makeAST(EString(routePathFinal)),
+					makeAST(EVar(controllerName)),
+					makeAST(EAtom(ElixirAtom.raw(actionName)))
+				]));
+
+				if (pipeline == "api") {
+					apiRouteCalls.push(routeCall);
+				} else if (routeMacro == "live") {
+					browserLiveRouteCalls.push(routeCall);
+				} else {
+					browserHttpRouteCalls.push(routeCall);
+				}
+			}
+		}
+
+		// pipeline :api do ... end (only if needed)
+		if (apiRouteCalls.length > 0) {
+			var apiPlugs = [
+				makeAST(ECall(null, "plug", [
+					makeAST(EAtom(ElixirAtom.raw("accepts"))),
+					makeAST(EList([makeAST(EString("json"))]))
+				])),
+				// Enable cookie/session-backed API auth in controllers (used by the todo-app showcase).
+				makeAST(ECall(null, "plug", [makeAST(EAtom(ElixirAtom.raw("fetch_session")))]))
+			];
+			statements.push(makeAST(EMacroCall("pipeline", [makeAST(EAtom(ElixirAtom.raw("api")))], makeAST(EBlock(apiPlugs)))));
+		}
+
+		// scope "/", WebModule do ... end (browser)
+		if (browserHttpRouteCalls.length > 0 || browserLiveRouteCalls.length > 0) {
+			var scopeBody:Array<ElixirAST> = [
+				makeAST(ECall(null, "pipe_through", [makeAST(EAtom(ElixirAtom.raw("browser")))]))
+			];
+			scopeBody = scopeBody.concat(browserHttpRouteCalls);
+
+			if (browserLiveRouteCalls.length > 0) {
+				var sessionMfa = makeAST(ETuple([
+					makeAST(EVar(webModuleName)),
+					makeAST(EAtom(ElixirAtom.raw("live_session"))),
+					makeAST(EList([]))
+				]));
+				var liveSessionOpts = makeAST(EKeywordList([{key: "session", value: sessionMfa}]));
+				scopeBody.push(makeAST(EMacroCall("live_session", [makeAST(EAtom(ElixirAtom.raw("default"))), liveSessionOpts],
+					makeAST(EBlock(browserLiveRouteCalls)))));
+			}
+
+			statements.push(makeAST(EMacroCall("scope", [makeAST(EString("/")), makeAST(EVar(webModuleName))], makeAST(EBlock(scopeBody)))));
+		}
+
+		// scope "/api", WebModule do ... end (api)
+		if (apiRouteCalls.length > 0) {
+			var scopeBodyApi = [makeAST(ECall(null, "pipe_through", [makeAST(EAtom(ElixirAtom.raw("api")))]))].concat(apiRouteCalls);
+			statements.push(makeAST(EMacroCall("scope", [makeAST(EString("/api")), makeAST(EVar(webModuleName))], makeAST(EBlock(scopeBodyApi)))));
+		}
+
+		// Dev-only routes (LiveDashboard, Swoosh mailbox preview)
+		if (dashboardRoutes.length > 0 || mailboxRoutes.length > 0) {
+			var thenStmts:Array<ElixirAST> = [];
+			if (dashboardRoutes.length > 0) {
+				thenStmts.push(makeAST(EImport("Phoenix.LiveDashboard.Router", null, null)));
+			}
+
+			// Group all dev routes by scope path
+			var scopeCalls:Map<String, Array<ElixirAST>> = new Map();
+
+			function getOrInitCalls(scopePath:String):Array<ElixirAST> {
+				if (scopeCalls.exists(scopePath))
+					return scopeCalls.get(scopePath);
+				var calls:Array<ElixirAST> = [
+					makeAST(ECall(null, "pipe_through", [makeAST(EAtom(ElixirAtom.raw("browser")))]))
+				];
+				scopeCalls.set(scopePath, calls);
+				return calls;
+			}
+
+			for (d in dashboardRoutes) {
+				var calls = getOrInitCalls(d.scopePath);
+				calls.push(makeAST(ECall(null, "live_dashboard", [
+					makeAST(EString(d.routePath)),
+					makeAST(EKeywordList([{key: "metrics", value: makeAST(EVar(webModuleName + ".Telemetry"))}]))
+				])));
+			}
+
+			for (m in mailboxRoutes) {
+				var calls = getOrInitCalls(m.scopePath);
+				calls.push(makeAST(ECall(null, "forward", [makeAST(EString(m.routePath)), makeAST(EVar("Plug.Swoosh.MailboxPreview"))])));
+			}
+
+			for (scopePath => calls in scopeCalls) {
+				thenStmts.push(makeAST(EMacroCall("scope", [makeAST(EString(scopePath))], makeAST(EBlock(calls)))));
+			}
+
+			var envCall = makeAST(ERemoteCall(makeAST(EVar("Mix")), "env", []));
+			var condition = makeAST(EBinary(In, envCall, makeAST(EList([
+				makeAST(EAtom(ElixirAtom.raw("dev"))),
+				makeAST(EAtom(ElixirAtom.raw("test"))),
+				makeAST(EAtom(ElixirAtom.raw("e2e")))
+			]))));
+			statements.push(makeAST(EIf(condition, makeAST(EBlock(thenStmts)), null)));
+		}
+
+		// Preserve any user-defined/generated defs after router DSL.
+		switch (existingBody.def) {
+			case EBlock(existingStmts):
+				statements = statements.concat(existingStmts);
+			default:
+				statements.push(existingBody);
+		}
+
+		return makeAST(EBlock(statements));
+	}
+
+	/**
+	 * Transform @:controller modules into Phoenix.Controller structure
+	 * 
+	 * WHY: Phoenix controllers need the use statement for controller functionality
+	 * WHAT: Adds use AppNameWeb, :controller at the beginning of the module
+	 * HOW: Detects isController metadata and adds the use statement
+	 */
+	public static function controllerTransformPass(ast:ElixirAST):ElixirAST {
+		// Check the top-level node first for Controller modules
+		switch (ast.def) {
+			case EDefmodule(name, body) if (ast.metadata?.isController == true
+				|| (name != null && name.indexOf("Web.") > 0 && name.indexOf("Controller") > 0)):
+				#if debug_annotation_transforms
+				#end
+
+				var appName = ast.metadata.appName ?? "app";
+				var controllerBody = buildControllerBody(name, appName, body);
+
+				return makeASTWithMeta(EDefmodule(name, controllerBody), ast.metadata, ast.pos);
+			case EModule(name, attrs, exprs)
+				if (ast.metadata?.isController == true || (name != null && name.indexOf("Web.") > 0 && name.indexOf("Controller") > 0)):
+				var appName2 = ast.metadata.appName ?? "app";
+				var controllerBody2 = buildControllerBody(name, appName2, makeAST(EBlock(exprs)));
+				return makeASTWithMeta(EDefmodule(name, controllerBody2), ast.metadata, ast.pos);
+			default:
+				// Not a Controller module, just pass through
+				return ast;
+		}
+	}
+
+	/**
+	 * Build Phoenix Controller module body with use statement
+	 */
+	static function buildControllerBody(moduleName:String, appName:String, existingBody:ElixirAST):ElixirAST {
+		var statements = [];
+
+		// Extract app module name (e.g., "TodoApp" from "TodoAppWeb.UserController")
+		var parts = moduleName.split(".");
+		var webModuleName = parts.length > 0 ? parts[0] : '${capitalize(appName)}Web';
+
+		// Add: use AppNameWeb, :controller
+		statements.push(makeAST(EUse(webModuleName, [makeAST(EAtom(ElixirAtom.raw("controller")))])));
+
+		// Add the existing body
+		switch (existingBody.def) {
+			case EBlock(bodyStatements):
+				statements = statements.concat(bodyStatements);
+			default:
+				statements.push(existingBody);
+		}
+
+		return makeAST(EBlock(statements));
+	}
+
+	/**
+	 * Helper to capitalize first letter
+	 */
+	static function capitalize(s:String):String {
+		if (s.length == 0)
+			return s;
+		return s.charAt(0).toUpperCase() + s.substr(1);
+	}
+
+	/**
+	 * Transform @:schema modules into Ecto.Schema structure
+	 * 
+	 * WHY: Ecto schemas need specific structure with schema block and changeset
+	 * WHAT: Adds use Ecto.Schema, schema block with fields, and changeset function
+	 * HOW: Detects isSchema metadata and transforms module body
+	 */
+	public static function schemaTransformPass(ast:ElixirAST):ElixirAST {
+		#if debug_annotation_transforms
+		if (ast.metadata != null && ast.metadata.isSchema == true) {}
+		#end
+
+		// Check the top-level node first for Schema modules
+		switch (ast.def) {
+			case EDefmodule(name, body) if (ast.metadata?.isSchema == true):
+				#if debug_annotation_transforms
+				#end
+
+				var tableName = ast.metadata.tableName ?? "items";
+				var lookupName = ast.metadata?.haxeFqcn != null ? ast.metadata.haxeFqcn : name;
+				var schemaBody = buildSchemaBody(name, tableName, body, lookupName, ast.metadata);
+
+				return makeASTWithMeta(EDefmodule(name, schemaBody), ast.metadata, ast.pos);
+
+			case EModule(name, attrs, exprs) if (ast.metadata?.isSchema == true):
+				#if debug_annotation_transforms
+				#end
+
+				var tableName = ast.metadata.tableName ?? "items";
+				var lookupName = ast.metadata?.haxeFqcn != null ? ast.metadata.haxeFqcn : name;
+
+				// Build the schema body with existing expressions
+				var bodyStatements = [];
+
+				// Add use Ecto.Schema and import Ecto.Changeset
+				bodyStatements.push(makeAST(EUse("Ecto.Schema", [])));
+				bodyStatements.push(makeAST(EImport("Ecto.Changeset", null, null)));
+
+				// Build and add the schema block
+				var schemaFieldStatements = [];
+				if (ast.metadata != null && ast.metadata.schemaFields != null) {
+					for (f in ast.metadata.schemaFields) {
+						// Skip primary key id (Ecto adds by default)
+						if (f.name == "id")
+							continue;
+						var elixirFieldName = reflaxe.elixir.ast.NameUtils.toSnakeCase(f.name);
+						var atomFieldName = makeAST(EAtom(elixirFieldName));
+						var fieldTypeAST = mapHaxeTypeToEctoFieldType(f.type);
+						schemaFieldStatements.push(makeAST(ECall(null, "field", [atomFieldName, fieldTypeAST])));
+					}
+				}
+
+				// Add associations if specified (belongs_to/has_many/has_one/many_to_many)
+				if (ast.metadata != null && ast.metadata.schemaAssociations != null) {
+					for (a in ast.metadata.schemaAssociations) {
+						var assocName = reflaxe.elixir.ast.NameUtils.toSnakeCase(a.name);
+						var assocAtom = makeAST(EAtom(assocName));
+						var assocModule = makeAST(EVar(a.module));
+						var args:Array<ElixirAST> = [assocAtom, assocModule];
+						if (a.kind == SchemaAssociationKind.ManyToMany && a.joinThrough != null) {
+							args.push(makeAST(EKeywordList([
+								{
+									key: "join_through",
+									value: makeAST(EString(a.joinThrough))
+								}
+							])));
+						}
+						schemaFieldStatements.push(makeAST(ECall(null, Std.string(a.kind), args)));
+					}
+				}
+
+				// Add timestamps if specified
+				if (ast.metadata?.hasTimestamps == true) {
+					schemaFieldStatements.push(makeAST(ECall(null, "timestamps", [])));
+				}
+
+				var schemaFields = makeAST(EBlock(schemaFieldStatements));
+				var schemaBlock = makeAST(EMacroCall("schema", [makeAST(EString(tableName))], schemaFields));
+				bodyStatements.push(schemaBlock);
+
+				// Add the existing functions
+				for (expr in exprs) {
+					bodyStatements.push(expr);
+				}
+
+				// Generate changeset function if user didn't provide one
+				// Check metadata for user-defined changeset (hasUserChangeset flag)
+				var hasChangeset = ast.metadata?.hasUserChangeset == true;
+
+				if (!hasChangeset) {
+					var castFields:Array<String> = [];
+					var requiredFields:Array<String> = [];
+
+					// PRIORITY 1: Use explicit @:changeset annotation if present.
+					// Supports legacy positional and named config forms.
+					if (ast.metadata?.changesetCastFields != null && ast.metadata.changesetCastFields.length > 0) {
+						for (field in ast.metadata.changesetCastFields) {
+							var snakeField = reflaxe.elixir.ast.NameUtils.toSnakeCase(field);
+							castFields.push(':$snakeField');
+						}
+						if (ast.metadata?.changesetRequiredFields != null) {
+							for (field in ast.metadata.changesetRequiredFields) {
+								var snakeField = reflaxe.elixir.ast.NameUtils.toSnakeCase(field);
+								requiredFields.push(snakeField);
+							}
+						}
+					}
+					// PRIORITY 2: Fall back to schema field inference
+					else if (ast.metadata?.schemaFields != null) {
+						for (field in ast.metadata.schemaFields) {
+							if (field.name != "id" && field.name != "insertedAt" && field.name != "updatedAt") {
+								var snakeField = reflaxe.elixir.ast.NameUtils.toSnakeCase(field.name);
+								castFields.push(':$snakeField');
+								if (field.type != null && field.type.indexOf("Null") == -1 && field.type.indexOf("array") == -1) {
+									requiredFields.push(snakeField);
+								}
+							}
+						}
+					}
+
+					// Generate changeset function if we have fields to cast
+					if (castFields.length > 0) {
+						var castFieldsStr = castFields.join(", ");
+						var requiredFieldsStr = requiredFields.map(f -> ':$f').join(", ");
+						var paramName = name.toLowerCase();
+						// Extract just the last part for param name (e.g., "TodoApp.Todo" -> "todo")
+						var lastDot = paramName.lastIndexOf(".");
+						if (lastDot != -1) {
+							paramName = paramName.substr(lastDot + 1);
+						}
+
+						var changesetCode = '
   def changeset($paramName, attrs) do
     $paramName
-    |> Ecto.Changeset.cast(attrs, [$castFieldsStr])' +
-    (requiredFields.length > 0 ? '\n    |> Ecto.Changeset.validate_required([$requiredFieldsStr])' : '') + '
+    |> Ecto.Changeset.cast(attrs, [$castFieldsStr])'
+							+ (requiredFields.length > 0 ? '\n    |> Ecto.Changeset.validate_required([$requiredFieldsStr])' : '')
+							+ '
   end';
-                        bodyStatements.push(makeAST(ERaw(changesetCode)));
-                    }
-                }
+						bodyStatements.push(makeAST(ERaw(changesetCode)));
+					}
+				}
 
-                // Return the transformed module
-                return makeASTWithMeta(
-                    EModule(name, attrs, bodyStatements),
-                    ast.metadata,
-                    ast.pos
-                );
-                
-            default:
-                // Not a Schema module, just pass through
-                return ast;
-        }
-    }
-    
-    /**
-     * mapHaxeTypeToEctoFieldType
-     *
-     * WHAT
-     * - Maps a Haxe field type string (captured in schema metadata) to an Ecto schema `field/2` type.
-     *
-     * WHY
-     * - The schema transformer emits Ecto `schema "table"` field definitions from Haxe types.
-     * - Without correct mapping, runtime inserts/loads can crash due to schema/DB type mismatch
-     *   (e.g. inserting `%{}` into a field generated as `:string`).
-     *
-     * HOW
-     * - Normalize wrapper types like `Null<T>` and then map:
-     *   - primitives to atoms (`:string`, `:integer`, `:boolean`, ...)
-     *   - arrays to tuples (`{:array, :string}`)
-     *   - JSON-ish/raw Elixir terms (`Term`) to `:map` (jsonb)
-     *
-     * EXAMPLES
-     * Haxe:
-     *   @:field public var tags: Null<Array<String>>;
-     * Elixir:
-     *   field :tags, {:array, :string}
-     *
-     * Haxe:
-     *   @:field public var metadata: Null<Term>;
-     * Elixir:
-     *   field :metadata, :map
-     */
-    static function mapHaxeTypeToEctoFieldType(haxeType: String): ElixirAST {
-        var normalized = haxeType;
-        if (normalized == null) return makeAST(EAtom("string"));
+				// Return the transformed module
+				return makeASTWithMeta(EModule(name, attrs, bodyStatements), ast.metadata, ast.pos);
 
-        // Normalize `Null<T>` wrappers used for nullable schema fields.
-        // NOTE: nullability is handled by the DB column's `null:` option; the Ecto field type
-        // is based on the inner type.
-        while (StringTools.startsWith(normalized, "Null<") && StringTools.endsWith(normalized, ">")) {
-            normalized = normalized.substr(5, normalized.length - 6);
-        }
+			default:
+				// Not a Schema module, just pass through
+				return ast;
+		}
+	}
 
-        // Treat raw Elixir terms as JSON-ish maps by default in schema fields.
-        // WHY: `Term` is an opaque Elixir term at the type level; for Ecto storage the
-        // most practical default is `:map` (jsonb) rather than `:string`.
-        if (normalized == "Term" || StringTools.endsWith(normalized, ".Term")) {
-            return makeAST(EAtom("map"));
-        }
+	/**
+	 * mapHaxeTypeToEctoFieldType
+	 *
+	 * WHAT
+	 * - Maps a Haxe field type string (captured in schema metadata) to an Ecto schema `field/2` type.
+	 *
+	 * WHY
+	 * - The schema transformer emits Ecto `schema "table"` field definitions from Haxe types.
+	 * - Without correct mapping, runtime inserts/loads can crash due to schema/DB type mismatch
+	 *   (e.g. inserting `%{}` into a field generated as `:string`).
+	 *
+	 * HOW
+	 * - Normalize wrapper types like `Null<T>` and then map:
+	 *   - primitives to atoms (`:string`, `:integer`, `:boolean`, ...)
+	 *   - arrays to tuples (`{:array, :string}`)
+	 *   - JSON-ish/raw Elixir terms (`Term`) to `:map` (jsonb)
+	 *
+	 * EXAMPLES
+	 * Haxe:
+	 *   @:field public var tags: Null<Array<String>>;
+	 * Elixir:
+	 *   field :tags, {:array, :string}
+	 *
+	 * Haxe:
+	 *   @:field public var metadata: Null<Term>;
+	 * Elixir:
+	 *   field :metadata, :map
+	 */
+	static function mapHaxeTypeToEctoFieldType(haxeType:String):ElixirAST {
+		var normalized = haxeType;
+		if (normalized == null)
+			return makeAST(EAtom("string"));
 
-        // Map-like Haxe types should become Ecto `:map` (jsonb).
-        if (StringTools.startsWith(normalized, "Map<") || StringTools.endsWith(normalized, "Map")) {
-            return makeAST(EAtom("map"));
-        }
+		// Normalize `Null<T>` wrappers used for nullable schema fields.
+		// NOTE: nullability is handled by the DB column's `null:` option; the Ecto field type
+		// is based on the inner type.
+		while (StringTools.startsWith(normalized, "Null<") && StringTools.endsWith(normalized, ">")) {
+			normalized = normalized.substr(5, normalized.length - 6);
+		}
 
-        switch(normalized) {
-            case "String": return makeAST(EAtom("string"));
-            case "Int": return makeAST(EAtom("integer"));
-            case "Float": return makeAST(EAtom("float"));
-            case "Bool": return makeAST(EAtom("boolean"));
-            case "DateTime": return makeAST(EAtom("utc_datetime"));
-            case "Date" | "NaiveDateTime": return makeAST(EAtom("naive_datetime"));
-            case _:
-                // Detect Array<...>
-                if (StringTools.startsWith(normalized, "Array<") && StringTools.endsWith(normalized, ">")) {
-                    var inner = normalized.substr(6, normalized.length - 7);
-                    var innerAtom = switch (inner) {
-                        case "String": "string";
-                        case "Int": "integer";
-                        case "Float": "float";
-                        case "Bool": "boolean";
-                        case "DateTime": "utc_datetime";
-                        case "Date" | "NaiveDateTime": "naive_datetime";
-                        case _: "string";
-                    };
-                    return makeAST(ETuple([
-                        makeAST(EAtom("array")),
-                        makeAST(EAtom(innerAtom))
-                    ]));
-                }
-                // Fallback to string
-                return makeAST(EAtom("string"));
-        }
-    }
-    
-    /**
-     * Build Ecto.Schema module body
-     */
-    static function buildSchemaBody(moduleName: String, tableName: String, existingBody: ElixirAST, lookupName: String, meta: ElixirMetadata): ElixirAST {
-        var statements = [];
-        
-        // use Ecto.Schema
-        statements.push(makeAST(EUse("Ecto.Schema", [])));
-        
-        // import Ecto.Changeset
-        statements.push(makeAST(EImport("Ecto.Changeset", null, null)));
-        
-        // Extract schema fields from metadata (populated by ModuleBuilder)
-        var schemaFieldStatements = [];
-        var hasTimestamps: Bool = meta != null && meta.hasTimestamps == true;
-        
-        // Look for field metadata that might have been passed along
-        // For now, we'll generate basic fields and rely on the functions being added below
-        // The actual field extraction would require accessing the ClassType data
-        // which would need to be passed through metadata
-        
-        // Use schemaFields provided in metadata. General, app-agnostic.
-        if (meta != null && meta.schemaFields != null) {
-            for (f in meta.schemaFields) {
-                // Skip primary key id (Ecto adds by default)
-                if (f.name == "id") continue;
-                var elixirFieldName = NameUtils.toSnakeCase(f.name);
-                schemaFieldStatements.push(makeAST(ECall(null, "field", [
-                    makeAST(EAtom(elixirFieldName)),
-                    mapHaxeTypeToEctoFieldType(f.type)
-                ])));
-            }
-        }
+		// Treat raw Elixir terms as JSON-ish maps by default in schema fields.
+		// WHY: `Term` is an opaque Elixir term at the type level; for Ecto storage the
+		// most practical default is `:map` (jsonb) rather than `:string`.
+		if (normalized == "Term" || StringTools.endsWith(normalized, ".Term")) {
+			return makeAST(EAtom("map"));
+		}
 
-        // Associations (belongs_to/has_many/has_one/many_to_many)
-        if (meta != null && meta.schemaAssociations != null) {
-            for (a in meta.schemaAssociations) {
-                var assocName = NameUtils.toSnakeCase(a.name);
-                var assocAtom = makeAST(EAtom(assocName));
-                var assocModule = makeAST(EVar(a.module));
-                var args: Array<ElixirAST> = [assocAtom, assocModule];
-                if (a.kind == SchemaAssociationKind.ManyToMany && a.joinThrough != null) {
-                    args.push(makeAST(EKeywordList([{
-                        key: "join_through",
-                        value: makeAST(EString(a.joinThrough))
-                    }])));
-                }
-                schemaFieldStatements.push(makeAST(ECall(null, Std.string(a.kind), args)));
-            }
-        }
-        
-        // Add timestamps only if class had @:timestamps
-        if (hasTimestamps) schemaFieldStatements.push(makeAST(ECall(null, "timestamps", [])));
-        
-        var schemaFields = makeAST(EBlock(schemaFieldStatements));
-        
-        var schemaBlock = makeAST(EMacroCall(
-            "schema",
-            [makeAST(EString(tableName))],
-            schemaFields
-        ));
-        statements.push(schemaBlock);
-        
-        // Add existing functions (including changeset functions)
-        switch(existingBody.def) {
-            case EBlock(stmts):
-                for (stmt in stmts) {
-                    switch(stmt.def) {
-                        case ENil:
-                            // Skip empty statements
-                        default:
-                            statements.push(stmt);
-                    }
-                }
-            default:
-                // Add the body if it's not empty
-                if (existingBody.def != ENil) {
-                    statements.push(existingBody);
-                }
-        }
-        
-        // Check if user defined their own changeset function via metadata
-        // WHY: This is the clean, metadata-driven approach. The hasUserChangeset flag is set at compile time
-        //      in ElixirCompiler.hx when funcFields are available, so we don't need to do string matching
-        //      on ERaw nodes here. This follows the "metadata first" architectural principle.
-        // WHAT: If hasUserChangeset is true, skip auto-generation; user's changeset will be preserved
-        // HOW: Simple metadata check - no AST traversal needed at transform time
-        var hasChangeset = meta?.hasUserChangeset == true;
+		// Map-like Haxe types should become Ecto `:map` (jsonb).
+		if (StringTools.startsWith(normalized, "Map<") || StringTools.endsWith(normalized, "Map")) {
+			return makeAST(EAtom("map"));
+		}
 
-        // If no changeset function was found, add a basic one
-        // This ensures schemas always have a changeset function for Ecto compatibility
-        if (!hasChangeset) {
-            var castFields:Array<String> = [];
-            var requiredFields:Array<String> = [];
+		switch (normalized) {
+			case "String":
+				return makeAST(EAtom("string"));
+			case "Int":
+				return makeAST(EAtom("integer"));
+			case "Float":
+				return makeAST(EAtom("float"));
+			case "Bool":
+				return makeAST(EAtom("boolean"));
+			case "DateTime":
+				return makeAST(EAtom("utc_datetime"));
+			case "Date" | "NaiveDateTime":
+				return makeAST(EAtom("naive_datetime"));
+			case _:
+				// Detect Array<...>
+				if (StringTools.startsWith(normalized, "Array<") && StringTools.endsWith(normalized, ">")) {
+					var inner = normalized.substr(6, normalized.length - 7);
+					var innerAtom = switch (inner) {
+						case "String": "string";
+						case "Int": "integer";
+						case "Float": "float";
+						case "Bool": "boolean";
+						case "DateTime": "utc_datetime";
+						case "Date" | "NaiveDateTime": "naive_datetime";
+						case _: "string";
+					};
+					return makeAST(ETuple([makeAST(EAtom("array")), makeAST(EAtom(innerAtom))]));
+				}
+				// Fallback to string
+				return makeAST(EAtom("string"));
+		}
+	}
 
-            // PRIORITY 1: Use explicit @:changeset annotation if present
-            // Format: @:changeset(["field1", "field2"], ["required1"])
-            if (meta?.changesetCastFields != null && meta.changesetCastFields.length > 0) {
-                // Use fields from @:changeset annotation - convert to snake_case atoms
-                for (field in meta.changesetCastFields) {
-                    var snakeField = NameUtils.toSnakeCase(field);
-                    castFields.push(':$snakeField');
-                }
-                // Required fields from annotation
-                if (meta?.changesetRequiredFields != null) {
-                    for (field in meta.changesetRequiredFields) {
-                        var snakeField = NameUtils.toSnakeCase(field);
-                        requiredFields.push(snakeField);
-                    }
-                }
-            }
-            // PRIORITY 2: Fall back to schema field inference
-            else if (meta?.schemaFields != null) {
-                for (field in meta.schemaFields) {
-                    if (field.name != "id" && field.name != "insertedAt" && field.name != "updatedAt") {
-                        var snakeField = NameUtils.toSnakeCase(field.name);
-                        castFields.push(':$snakeField');
-                        // Make some fields required based on type
-                        if (field.type != null && field.type.indexOf("Null") == -1 && field.type.indexOf("array") == -1) {
-                            requiredFields.push(snakeField);
-                        }
-                    }
-                }
-            }
+	/**
+	 * Build Ecto.Schema module body
+	 */
+	static function buildSchemaBody(moduleName:String, tableName:String, existingBody:ElixirAST, lookupName:String, meta:ElixirMetadata):ElixirAST {
+		var statements = [];
 
-            // Generate changeset function if we have fields to cast
-            if (castFields.length > 0) {
-                var castFieldsStr = castFields.join(", ");
-                var requiredFieldsStr = requiredFields.map(f -> ':$f').join(", ");
-                var paramName = moduleName.toLowerCase();
+		// use Ecto.Schema
+		statements.push(makeAST(EUse("Ecto.Schema", [])));
 
-                var changesetCode = '
+		// import Ecto.Changeset
+		statements.push(makeAST(EImport("Ecto.Changeset", null, null)));
+
+		// Extract schema fields from metadata (populated by ModuleBuilder)
+		var schemaFieldStatements = [];
+		var hasTimestamps:Bool = meta != null && meta.hasTimestamps == true;
+
+		// Look for field metadata that might have been passed along
+		// For now, we'll generate basic fields and rely on the functions being added below
+		// The actual field extraction would require accessing the ClassType data
+		// which would need to be passed through metadata
+
+		// Use schemaFields provided in metadata. General, app-agnostic.
+		if (meta != null && meta.schemaFields != null) {
+			for (f in meta.schemaFields) {
+				// Skip primary key id (Ecto adds by default)
+				if (f.name == "id")
+					continue;
+				var elixirFieldName = NameUtils.toSnakeCase(f.name);
+				schemaFieldStatements.push(makeAST(ECall(null, "field", [makeAST(EAtom(elixirFieldName)), mapHaxeTypeToEctoFieldType(f.type)])));
+			}
+		}
+
+		// Associations (belongs_to/has_many/has_one/many_to_many)
+		if (meta != null && meta.schemaAssociations != null) {
+			for (a in meta.schemaAssociations) {
+				var assocName = NameUtils.toSnakeCase(a.name);
+				var assocAtom = makeAST(EAtom(assocName));
+				var assocModule = makeAST(EVar(a.module));
+				var args:Array<ElixirAST> = [assocAtom, assocModule];
+				if (a.kind == SchemaAssociationKind.ManyToMany && a.joinThrough != null) {
+					args.push(makeAST(EKeywordList([
+						{
+							key: "join_through",
+							value: makeAST(EString(a.joinThrough))
+						}
+					])));
+				}
+				schemaFieldStatements.push(makeAST(ECall(null, Std.string(a.kind), args)));
+			}
+		}
+
+		// Add timestamps only if class had @:timestamps
+		if (hasTimestamps)
+			schemaFieldStatements.push(makeAST(ECall(null, "timestamps", [])));
+
+		var schemaFields = makeAST(EBlock(schemaFieldStatements));
+
+		var schemaBlock = makeAST(EMacroCall("schema", [makeAST(EString(tableName))], schemaFields));
+		statements.push(schemaBlock);
+
+		// Add existing functions (including changeset functions)
+		switch (existingBody.def) {
+			case EBlock(stmts):
+				for (stmt in stmts) {
+					switch (stmt.def) {
+						case ENil:
+							// Skip empty statements
+						default:
+							statements.push(stmt);
+					}
+				}
+			default:
+				// Add the body if it's not empty
+				if (existingBody.def != ENil) {
+					statements.push(existingBody);
+				}
+		}
+
+		// Check if user defined their own changeset function via metadata
+		// WHY: This is the clean, metadata-driven approach. The hasUserChangeset flag is set at compile time
+		//      in ElixirCompiler.hx when funcFields are available, so we don't need to do string matching
+		//      on ERaw nodes here. This follows the "metadata first" architectural principle.
+		// WHAT: If hasUserChangeset is true, skip auto-generation; user's changeset will be preserved
+		// HOW: Simple metadata check - no AST traversal needed at transform time
+		var hasChangeset = meta?.hasUserChangeset == true;
+
+		// If no changeset function was found, add a basic one
+		// This ensures schemas always have a changeset function for Ecto compatibility
+		if (!hasChangeset) {
+			var castFields:Array<String> = [];
+			var requiredFields:Array<String> = [];
+
+			// PRIORITY 1: Use explicit @:changeset annotation if present.
+			// Supported metadata formats:
+			// - @:changeset(["field1", "field2"], ["required1"])             (legacy positional)
+			// - @:changeset(cast(["field1"]), validate(["required1"]))       (named, recommended)
+			if (meta?.changesetCastFields != null && meta.changesetCastFields.length > 0) {
+				// Use fields from @:changeset annotation - convert to snake_case atoms
+				for (field in meta.changesetCastFields) {
+					var snakeField = NameUtils.toSnakeCase(field);
+					castFields.push(':$snakeField');
+				}
+				// Required fields from annotation
+				if (meta?.changesetRequiredFields != null) {
+					for (field in meta.changesetRequiredFields) {
+						var snakeField = NameUtils.toSnakeCase(field);
+						requiredFields.push(snakeField);
+					}
+				}
+			}
+			// PRIORITY 2: Fall back to schema field inference
+			else if (meta?.schemaFields != null) {
+				for (field in meta.schemaFields) {
+					if (field.name != "id" && field.name != "insertedAt" && field.name != "updatedAt") {
+						var snakeField = NameUtils.toSnakeCase(field.name);
+						castFields.push(':$snakeField');
+						// Make some fields required based on type
+						if (field.type != null && field.type.indexOf("Null") == -1 && field.type.indexOf("array") == -1) {
+							requiredFields.push(snakeField);
+						}
+					}
+				}
+			}
+
+			// Generate changeset function if we have fields to cast
+			if (castFields.length > 0) {
+				var castFieldsStr = castFields.join(", ");
+				var requiredFieldsStr = requiredFields.map(f -> ':$f').join(", ");
+				var paramName = moduleName.toLowerCase();
+
+				var changesetCode = '
   def changeset($paramName, attrs) do
     $paramName
-    |> cast(attrs, [$castFieldsStr])' +
-    (requiredFields.length > 0 ? '\n    |> validate_required([$requiredFieldsStr])' : '') + '
+    |> cast(attrs, [$castFieldsStr])'
+					+ (requiredFields.length > 0 ? '\n    |> validate_required([$requiredFieldsStr])' : '')
+					+ '
   end';
-                statements.push(makeAST(ERaw(changesetCode)));
-            }
-        }
-        
-        return makeAST(EBlock(statements));
-    }
-    
-    /**
-     * Transform @:repo modules into Ecto.Repo structure
-     * 
-     * WHY: Ecto repositories need use Ecto.Repo with otp_app and adapter configuration
-     * WHAT: Adds use statement to enable database access functions (all/2, get/3, insert/2, etc.)
-     * HOW: Detects isRepo metadata and adds Ecto.Repo use statement with configuration
-     */
-    public static function repoTransformPass(ast: ElixirAST): ElixirAST {
-        #if debug_annotation_transforms
-        if (ast.metadata?.isRepo == true) {
-        }
-        #end
-        
-        // Check the top-level node first for Repo modules
-        switch(ast.def) {
-            case EModule(name, attributes, body) if (ast.metadata?.isRepo == true):
-                #if debug_annotation_transforms
-                #end
-                
-                var appName = extractAppName(name);
-                var repoBodyAST = buildRepoBody(name, appName);
-                
-                // EModule expects Array<ElixirAST> for body, so extract statements from EBlock
-                var repoStatements = switch(repoBodyAST.def) {
-                    case EBlock(stmts): stmts;
-                    default: [repoBodyAST];
-                };
-                
-                return makeASTWithMeta(
-                    EModule(name, attributes, repoStatements),
-                    ast.metadata,
-                    ast.pos
-                );
-                
-            case EDefmodule(name, body) if (ast.metadata?.isRepo == true):
-                #if debug_annotation_transforms
-                #end
-                
-                var appName = extractAppName(name);
-                var repoBody = buildRepoBody(name, appName);
-                
-                return makeASTWithMeta(
-                    EDefmodule(name, repoBody),
-                    ast.metadata,
-                    ast.pos
-                );
-                
-            default:
-                // Not a Repo module, just pass through
-                return ast;
-        }
-    }
+				statements.push(makeAST(ERaw(changesetCode)));
+			}
+		}
 
-    /**
-     * Transform @:postgrexTypes modules into a precompiled Postgrex types module
-     *
-     * WHY: Avoid runtime TypeManager races and allow custom JSON codecs
-     * WHAT: Adds a module-level call to Postgrex.Types.define(__MODULE__, [], json: <jsonModule>)
-     * HOW: Detects isPostgrexTypes metadata and builds a minimal module body
-     */
-    public static function postgrexTypesTransformPass(ast: ElixirAST): ElixirAST {
-        switch (ast.def) {
-            case EDefmodule(name, body) if (ast.metadata?.isPostgrexTypes == true):
-                var jsonLib = ast.metadata.jsonModule != null ? ast.metadata.jsonModule : "Jason";
-                var typesBody = buildDbTypesBody(name, "postgrex", jsonLib, []);
-                return makeASTWithMeta(
-                    EDefmodule(name, typesBody),
-                    ast.metadata,
-                    ast.pos
-                );
-            default:
-                return ast;
-        }
-    }
+		return makeAST(EBlock(statements));
+	}
 
-    /** Generic DB types transformer */
-    public static function dbTypesTransformPass(ast: ElixirAST): ElixirAST {
-        switch (ast.def) {
-            case EDefmodule(name, body) if (ast.metadata?.isDbTypes == true):
-                var adapter = ast.metadata.dbAdapter != null ? ast.metadata.dbAdapter : "postgrex";
-                var jsonLib = ast.metadata.jsonModule != null ? ast.metadata.jsonModule : "Jason";
-                var exts = ast.metadata.extensions != null ? ast.metadata.extensions : [];
-                
-                // For Postgrex, the Types.define macro creates the module itself
-                // So we return just the macro call without the defmodule wrapper
-                switch(adapter.toLowerCase()) {
-                    case "postgrex":
-                        var opts = 'json: ' + jsonLib;
-                        if (exts != null && exts.length > 0) {
-                            var extList = '[' + exts.join(", ") + ']';
-                            opts = opts + ', extensions: ' + extList;
-                        }
-                        // Generate the macro call with the module name directly
-                        var line = 'Postgrex.Types.define(' + name + ', [], ' + opts + ')';
-                        return makeAST(ERaw(line));
-                    default:
-                        // For other adapters, keep the module wrapper (they might need it)
-                        var typesBody = buildDbTypesBody(name, adapter, jsonLib, exts);
-                        return makeASTWithMeta(
-                            EDefmodule(name, typesBody),
-                            ast.metadata,
-                            ast.pos
-                        );
-                }
-            default:
-                return ast;
-        }
-    }
+	/**
+	 * Transform @:repo modules into Ecto.Repo structure
+	 * 
+	 * WHY: Ecto repositories need use Ecto.Repo with otp_app and adapter configuration
+	 * WHAT: Adds use statement to enable database access functions (all/2, get/3, insert/2, etc.)
+	 * HOW: Detects isRepo metadata and adds Ecto.Repo use statement with configuration
+	 */
+	public static function repoTransformPass(ast:ElixirAST):ElixirAST {
+		#if debug_annotation_transforms
+		if (ast.metadata?.isRepo == true) {}
+		#end
 
-    static function buildDbTypesBody(moduleName: String, adapter: String, jsonLib: String, extensions: Array<String>): ElixirAST {
-        var statements = [];
-        switch(adapter.toLowerCase()) {
-            case "postgrex":
-                // This case is now handled above, but keep for completeness
-                var opts = 'json: ' + jsonLib;
-                if (extensions != null && extensions.length > 0) {
-                    var extList = '[' + extensions.join(", ") + ']';
-                    opts = opts + ', extensions: ' + extList;
-                }
-                var line = 'Postgrex.Types.define(__MODULE__, [], ' + opts + ')';
-                statements.push(makeAST(ERaw(line)));
-            default:
-                // Unknown adapter → emit a compile error as a clear message
-                var err = 'raise("Unsupported DB adapter for @:dbTypes: ' + adapter + '")';
-                statements.push(makeAST(ERaw(err)));
-        }
-        return makeAST(EBlock(statements));
-    }
-    
-    /**
-     * Build Ecto.Repo module body
-     * 
-     * WHY: Ecto repositories need use statement to inject database functions
-     * WHAT: Creates minimal module with use Ecto.Repo and configuration
-     * HOW: Generates use statement with otp_app and adapter options
-     */
-    static function buildRepoBody(moduleName: String, appName: String): ElixirAST {
-        var statements = [];
-        
-        // use Ecto.Repo, otp_app: :app_name, adapter: Ecto.Adapters.Postgres
-        var useOptions = makeAST(EKeywordList([
-            {key: "otp_app", value: makeAST(EAtom(appName))},
-            {key: "adapter", value: makeAST(EField(
-                makeAST(EField(makeAST(EVar("Ecto")), "Adapters")),
-                "Postgres"
-            ))}
-        ]));
-        
-        // EUse expects an array of options, with the keyword list as one element
-        statements.push(makeAST(EUse("Ecto.Repo", [useOptions])));
-        
-        return makeAST(EBlock(statements));
-    }
-    
-    /**
-     * Transform @:application modules into OTP Application structure
-     * 
-     * WHY: OTP applications need specific callbacks and supervision tree
-     * WHAT: Adds use Application and start/2 callback
-     * HOW: Detects isApplication metadata and transforms module body
-     */
-    public static function applicationTransformPass(ast: ElixirAST): ElixirAST {
-        #if debug_annotation_transforms
-        if (ast.metadata != null && ast.metadata.isApplication == true) {
-        }
-        #end
-        
-        // Check the top-level node first for Application modules
-        switch(ast.def) {
-            case EModule(name, attributes, body) if (ast.metadata?.isApplication == true):
-                #if debug_annotation_transforms
-                #end
-                
-                // For EModule, body is Array<ElixirAST>, need to handle differently
-                var appBody = buildApplicationBodyFromArray(name, body);
-                
-                return makeASTWithMeta(
-                    EModule(name, attributes, appBody),
-                    ast.metadata,
-                    ast.pos
-                );
-                
-            case EDefmodule(name, body) if (ast.metadata?.isApplication == true):
-                #if debug_annotation_transforms
-                #end
-                
-                var appBody = buildApplicationBody(name, body);
-                
-                return makeASTWithMeta(
-                    EDefmodule(name, appBody),
-                    ast.metadata,
-                    ast.pos
-                );
-                
-            default:
-                // Not an Application module, just pass through
-                return ast;
-        }
-    }
-    
-    /**
-     * Build OTP Application module body for Array<ElixirAST> (from EModule)
-     */
-    static function buildApplicationBodyFromArray(moduleName: String, existingBody: Array<ElixirAST>): Array<ElixirAST> {
-        var result = [];
-        
-        #if debug_annotation_transforms
-        #end
-        
-        // Add use Application
-        result.push(makeAST(EUse("Application", [])));
-        
-        // Add existing functions
-        for (func in existingBody) {
-            #if debug_annotation_transforms
-            if (func.def != null) {
-            }
-            #end
-            result.push(func);
-        }
-        
-        return result;
-    }
-    
-    /**
-     * Build OTP Application module body for ElixirAST (from EDefmodule)
-     */
-    static function buildApplicationBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
-        var statements = [];
-        
-        // use Application
-        statements.push(makeAST(EUse("Application", [])));
-        
-        // Add existing functions or create default start/2
-        var hasStart = false;
-        switch(existingBody.def) {
-            case EBlock(stmts):
-                for (stmt in stmts) {
-                    switch(stmt.def) {
-                        case EDef(name, _, _, _) if (name == "start"):
-                            hasStart = true;
-                            statements.push(stmt);
-                        case ENil:
-                            // Skip
-                        default:
-                            statements.push(stmt);
-                    }
-                }
-            default:
-                // Add the body if it's not empty
-        }
-        
-        // Add default start/2 if not present
-        if (!hasStart) {
-            var startBody = makeAST(EBlock([
-                // children = []
-                makeAST(EMatch(
-                    EPattern.PVar("children"),
-                    makeAST(EList([]))
-                )),
-                // opts = [strategy: :one_for_one, name: Module.Supervisor]
-                makeAST(EMatch(
-                    EPattern.PVar("opts"),
-                    makeAST(EKeywordList([
-                        {key: "strategy", value: makeAST(EAtom(ElixirAtom.raw("one_for_one")))},
-                        {key: "name", value: makeAST(EVar(moduleName + ".Supervisor"))}
-                    ]))
-                )),
-                // Supervisor.start_link(children, opts)
-                makeAST(ERemoteCall(
-                    makeAST(EVar("Supervisor")),
-                    "start_link",
-                    [
-                        makeAST(EVar("children")),
-                        makeAST(EVar("opts"))
-                    ]
-                ))
-            ]));
-            
-            statements.push(makeAST(EDef(
-                "start",
-                [EPattern.PVar("_type"), EPattern.PVar("_args")],
-                null,
-                startBody
-            )));
-        }
-        
-        return makeAST(EBlock(statements));
-    }
-    
-    /**
-     * Transform @:phoenixWeb modules into Phoenix Web helper module
-     * 
-     * WHY: Phoenix Web modules need specific macro definitions for router, controller, etc.
-     * WHAT: Adds defmacro definitions that Phoenix expects for 'use TodoAppWeb, :router'
-     * HOW: Detects isPhoenixWeb metadata and transforms module body
-     */
-    public static function phoenixWebTransformPass(ast: ElixirAST): ElixirAST {
-        #if debug_annotation_transforms
-        #end
-        
-        // Check the top-level node first for PhoenixWeb modules
-        switch(ast.def) {
-            case EDefmodule(name, body) if (ast.metadata?.isPhoenixWeb == true || (name != null && (StringTools.endsWith(name, "Web") && name.indexOf(".") == -1))):
-                var phoenixWebBody = buildPhoenixWebBody(name, body);
-                // Extract statements from EBlock
-                var stmts:Array<ElixirAST> = switch (phoenixWebBody.def) { case EBlock(es): es; default: [phoenixWebBody]; };
-                // Inject @compile {:nowarn_unused_function, [html_helpers: 0]}
-                var compileAttr:EAttribute = {
-                    name: "compile",
-                    value: makeAST(ETuple([
-                        makeAST(EAtom("nowarn_unused_function")),
-                        makeAST(EKeywordList([{key: "html_helpers", value: makeAST(EInteger(0))}]))
-                    ]))
-                };
-                return makeASTWithMeta(EModule(name, [compileAttr], stmts), ast.metadata, ast.pos);
-            case EModule(name, attrs, exprs) if (ast.metadata?.isPhoenixWeb == true || (name != null && (StringTools.endsWith(name, "Web") && name.indexOf(".") == -1))):
-                var phoenixWebBody2 = buildPhoenixWebBody(name, makeAST(EBlock(exprs)));
-                var stmts2:Array<ElixirAST> = switch (phoenixWebBody2.def) { case EBlock(es): es; default: [phoenixWebBody2]; };
-                var compileAttr2:EAttribute = {
-                    name: "compile",
-                    value: makeAST(ETuple([
-                        makeAST(EAtom("nowarn_unused_function")),
-                        makeAST(EKeywordList([{key: "html_helpers", value: makeAST(EInteger(0))}]))
-                    ]))
-                };
-                return makeASTWithMeta(EModule(name, [compileAttr2], stmts2), ast.metadata, ast.pos);
-            default:
-                // Not a PhoenixWeb module, just pass through
-                return ast;
-        }
-    }
-    
-    /**
-     * Build Phoenix Web module body with macro definitions
-     */
-    static function buildPhoenixWebBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
-        var statements = [];
-        var existingDefinitions = new Map<String, Bool>();
+		// Check the top-level node first for Repo modules
+		switch (ast.def) {
+			case EModule(name, attributes, body) if (ast.metadata?.isRepo == true):
+				#if debug_annotation_transforms
+				#end
 
-        function recordDefinition(statement: ElixirAST): Void {
-            switch (statement.def) {
-                case EDef(name, args, _, _):
-                    existingDefinitions.set(name + "/" + args.length, true);
-                case EDefp(name, args, _, _):
-                    existingDefinitions.set(name + "/" + args.length, true);
-                case EDefmacro(name, args, _, _):
-                    existingDefinitions.set(name + "/" + args.length, true);
-                case _:
-            }
-        }
-        
-        // Add existing functions first (like static_paths)
-        switch(existingBody.def) {
-            case EBlock(stmts):
-                for (stmt in stmts) {
-                    switch(stmt.def) {
-                        case ENil:
-                            // Skip
-                        default:
-                            statements.push(stmt);
-                            recordDefinition(stmt);
-                    }
-                }
-            default:
-                if (existingBody.def != ENil) {
-                    statements.push(existingBody);
-                    recordDefinition(existingBody);
-                }
-        }
-        
-        // defmacro __using__(which) when is_atom(which) do
-        if (!existingDefinitions.exists("__using__/1")) {
-            var usingMacroBody = makeAST(ECall(null, "apply", [
-                makeAST(EVar("__MODULE__")),
-                makeAST(EVar("which")),
-                makeAST(EList([]))
-            ]));
-            
-            statements.push(makeAST(EDefmacro(
-                "__using__",
-                [EPattern.PVar("which")],
-                makeAST(ECall(null, "is_atom", [makeAST(EVar("which"))])),
-                usingMacroBody
-            )));
-        }
-        
-        // Extract base app name from module name (e.g., "TodoAppWeb" -> "TodoApp")
-        var appBaseName = StringTools.replace(moduleName, "Web", "");
-        
-        // def router do
-        var routerBody = makeAST(EQuote([], makeAST(EBlock([
-            makeAST(EUse("Phoenix.Router", [])),
-            makeAST(EImport("Phoenix.LiveView.Router", null, null)),
-            makeAST(EImport(moduleName, null, [
-                {name: "controller", arity: 0},
-                {name: "live_view", arity: 0}, 
-                {name: "live_component", arity: 0}
-            ])),
-            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
-        ]))));
-        
-        if (!existingDefinitions.exists("router/0")) {
-            statements.push(makeAST(EDef(
-                "router",
-                [],
-                null,
-                routerBody
-            )));
-        }
-        
-        // def controller do
-        var controllerBody = makeAST(EQuote([], makeAST(EBlock([
-            makeAST(EUse("Phoenix.Controller", [
-                makeAST(EKeywordList([
-                    {key: "formats", value: makeAST(EList([makeAST(EAtom(ElixirAtom.raw("html"))), makeAST(EAtom(ElixirAtom.raw("json")))]))},
-                    {key: "layouts", value: makeAST(EKeywordList([
-                        {key: "html", value: makeAST(ETuple([
-                            makeAST(EVar(moduleName + ".Layouts")),
-                            makeAST(EAtom(ElixirAtom.raw("app")))
-                        ]))}
-                    ]))}
-                ]))
-            ])),
-            makeAST(EImport("Plug.Conn", null, null)),
-            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
-        ]))));
-        
-        if (!existingDefinitions.exists("controller/0")) {
-            statements.push(makeAST(EDef(
-                "controller",
-                [],
-                null,
-                controllerBody
-            )));
-        }
-        
-        // def live_view do
-        var liveViewBody = makeAST(EQuote([], makeAST(EBlock([
-            makeAST(EUse("Phoenix.LiveView", [
-                makeAST(EKeywordList([
-                    {key: "layout", value: makeAST(ETuple([
-                        makeAST(EVar(moduleName + ".Layouts")),
-                        makeAST(EAtom(ElixirAtom.raw("app")))
-                    ]))}
-                ]))
-            ])),
-            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))]))
-        ]))));
-        
-        if (!existingDefinitions.exists("live_view/0")) {
-            statements.push(makeAST(EDef(
-                "live_view",
-                [],
-                null,
-                liveViewBody
-            )));
-        }
-        
-        // def live_component do
-        var liveComponentBody = makeAST(EQuote([], makeAST(EBlock([
-            makeAST(EUse("Phoenix.LiveComponent", [])),
-            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))]))
-        ]))));
-        
-        if (!existingDefinitions.exists("live_component/0")) {
-            statements.push(makeAST(EDef(
-                "live_component",
-                [],
-                null,
-                liveComponentBody
-            )));
-        }
-        
-        // def html do
-        var htmlBody = makeAST(EQuote([], makeAST(EBlock([
-            makeAST(EUse("Phoenix.Component", [])),
-            makeAST(EImport(moduleName + ".CoreComponents", null, null)),
-            makeAST(EImport(moduleName + ".Gettext", null, null)),
-            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))])),
-            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
-        ]))));
-        
-        if (!existingDefinitions.exists("html/0")) {
-            statements.push(makeAST(EDef(
-                "html",
-                [],
-                null,
-                htmlBody
-            )));
-        }
-        
-	        // defp html_helpers do
-	        var htmlHelpersBody = makeAST(EQuote([], makeAST(EBlock([
-	            makeAST(EImport("Phoenix.HTML", null, null)),
-	            makeAST(EImport("Phoenix.HTML.Form", null, null)),
-	            makeAST(EAlias("Phoenix.HTML.Form", "Form")),
-	            // Bring CoreComponents + Gettext into LiveViews/components so dot-components
-	            // like <.card> resolve via `use AppWeb, :live_view`.
-	            makeAST(EImport(moduleName + ".CoreComponents", null, null)),
-	            makeAST(EImport(moduleName + ".Gettext", null, null)),
-	            makeAST(EAlias("Phoenix.LiveView.JS", "JS")),
-	            makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
-	        ]))));
-        
-        if (!existingDefinitions.exists("html_helpers/0")) {
-            statements.push(makeAST(EDefp(
-                "html_helpers",
-                [],
-                null,
-                htmlHelpersBody
-            )));
-        }
-        
-        // def verified_routes do
-        var verifiedRoutesBody = makeAST(EQuote([], makeAST(EBlock([
-            makeAST(EUse("Phoenix.VerifiedRoutes", [
-                makeAST(EKeywordList([
-                    {key: "endpoint", value: makeAST(EVar(moduleName + ".Endpoint"))},
-                    {key: "router", value: makeAST(EVar(moduleName + ".Router"))},
-                    {key: "statics", value: makeAST(ERemoteCall(
-                        makeAST(EVar(moduleName)),
-                        "static_paths",
-                        []
-                    ))}
-                ]))
-            ]))
-        ]))));
-        
-        if (!existingDefinitions.exists("verified_routes/0")) {
-            statements.push(makeAST(EDef(
-                "verified_routes",
-                [],
-                null,
-                verifiedRoutesBody
-            )));
-        }
-        
-        // def channel do
-        var channelBody = makeAST(EQuote([], makeAST(EBlock([
-            makeAST(EUse("Phoenix.Channel", [])),
-            makeAST(EImport(moduleName + ".Gettext", null, null))
-        ]))));
-        
-        if (!existingDefinitions.exists("channel/0")) {
-            statements.push(makeAST(EDef(
-                "channel",
-                [],
-                null,
-                channelBody
-            )));
-        }
-        
-        // def static_paths do
-        // This function is expected by Phoenix.VerifiedRoutes
-        if (!existingDefinitions.exists("static_paths/0")) {
-            statements.push(makeAST(EDef(
-                "static_paths",
-                [],
-                null,
-                makeAST(EList([
-                    makeAST(EString("assets")),
-                    makeAST(EString("fonts")),
-                    makeAST(EString("images")),
-                    makeAST(EString("favicon.ico")),
-                    makeAST(EString("robots.txt"))
-                ]))
-            )));
-        }
+				var appName = extractAppName(name);
+				var repoBodyAST = buildRepoBody(name, appName);
 
-        // def live_session(_conn) do %{} end
-        // Used by router-generated `live_session` blocks to add extra LiveView session assigns.
-        if (!existingDefinitions.exists("live_session/1")) {
-            statements.push(makeAST(EDef(
-                "live_session",
-                [EPattern.PVar("_conn")],
-                null,
-                makeAST(EMap([]))
-            )));
-        }
-        
-        return makeAST(EBlock(statements));
-    }
-    
-    /**
-     * Extract app name from module name
-     * 
-     * Examples:
-     * - TodoAppWeb.Presence -> todo_app
-     * - MyApp.Presence -> my_app
-     * - SomeModuleWeb.Presence -> some_module
-     */
-    static function extractAppName(moduleName: String): String {
-        // Remove Web suffix if present
-        var name = moduleName;
-        var webIndex = name.indexOf("Web.");
-        if (webIndex > 0) {
-            name = name.substring(0, webIndex);
-        }
-        
-        // Remove module path after last dot
-        var lastDotIndex = name.lastIndexOf(".");
-        if (lastDotIndex > 0) {
-            name = name.substring(0, lastDotIndex);
-        }
-        
-        // Convert CamelCase to snake_case
-        var result = "";
-        for (i in 0...name.length) {
-            var char = name.charAt(i);
-            if (i > 0 && char == char.toUpperCase() && char != char.toLowerCase()) {
-                result += "_";
-            }
-            result += char.toLowerCase();
-        }
-        
-        return result;
-    }
+				// EModule expects Array<ElixirAST> for body, so extract statements from EBlock
+				var repoStatements = switch (repoBodyAST.def) {
+					case EBlock(stmts): stmts;
+					default: [repoBodyAST];
+				};
 
-    /**
-     * Extract app module prefix from module name
-     *
-     * Examples:
-     * - TodoAppWeb.Presence -> TodoApp
-     * - MyApp.Presence -> MyApp
-     * - SomeModuleWeb.Presence -> SomeModule
-     */
-    static function extractAppModule(moduleName: String): String {
-        var name = moduleName;
-        var webIndex = name.indexOf("Web.");
-        if (webIndex > 0) {
-            name = name.substring(0, webIndex);
-        }
-        var lastDotIndex = name.lastIndexOf(".");
-        if (lastDotIndex > 0) {
-            name = name.substring(0, lastDotIndex);
-        }
-        return name;
-    }
-    
-    /**
-     * Transform @:exunit modules into ExUnit.Case test modules
-     * 
-     * WHY: ExUnit tests require specific structure with use statement and test macros
-     * WHAT: Transforms classes marked with @:exunit into proper ExUnit test modules
-     * HOW: Detects isExunit metadata and transforms methods with @:test into test blocks
-     */
-    public static function exunitTransformPass(ast: ElixirAST): ElixirAST {
-        #if debug_annotation_transforms
-        if (ast.metadata != null) {
-        } else {
-        }
-        #end
-        
-        // Check the top-level node first for ExUnit modules
-        switch(ast.def) {
-            case EModule(name, attributes, bodyExprs):
-                #if debug_annotation_transforms
-                if (ast.metadata != null) {
-                } else {
-                }
-                #end
+				return makeASTWithMeta(EModule(name, attributes, repoStatements), ast.metadata, ast.pos);
 
-                // Check if metadata indicates ExUnit module
-                var isExunit = ast.metadata?.isExunit == true;
+			case EDefmodule(name, body) if (ast.metadata?.isRepo == true):
+				#if debug_annotation_transforms
+				#end
 
-                if (isExunit) {
-                    #if debug_annotation_transforms
-                    #end
+				var appName = extractAppName(name);
+				var repoBody = buildRepoBody(name, appName);
 
-                    // Create a block from the body expressions
-                    var bodyBlock = makeAST(EBlock(bodyExprs));
-                    var exunitBody = buildExUnitBody(name, bodyBlock);
+				return makeASTWithMeta(EDefmodule(name, repoBody), ast.metadata, ast.pos);
 
-                    // Convert EModule to EDefmodule for ExUnit output
-                    return makeASTWithMeta(
-                        EDefmodule(name, exunitBody),
-                        ast.metadata,
-                        ast.pos
-                    );
-                }
-                // Not an ExUnit module, return as-is
-                return ast;
+			default:
+				// Not a Repo module, just pass through
+				return ast;
+		}
+	}
 
-            case EDefmodule(name, body):
-                #if debug_annotation_transforms
-                if (ast.metadata != null) {
-                } else {
-                }
-                #end
+	/**
+	 * Transform @:postgrexTypes modules into a precompiled Postgrex types module
+	 *
+	 * WHY: Avoid runtime TypeManager races and allow custom JSON codecs
+	 * WHAT: Adds a module-level call to Postgrex.Types.define(__MODULE__, [], json: <jsonModule>)
+	 * HOW: Detects isPostgrexTypes metadata and builds a minimal module body
+	 */
+	public static function postgrexTypesTransformPass(ast:ElixirAST):ElixirAST {
+		switch (ast.def) {
+			case EDefmodule(name, body) if (ast.metadata?.isPostgrexTypes == true):
+				var jsonLib = ast.metadata.jsonModule != null ? ast.metadata.jsonModule : "Jason";
+				var typesBody = buildDbTypesBody(name, "postgrex", jsonLib, []);
+				return makeASTWithMeta(EDefmodule(name, typesBody), ast.metadata, ast.pos);
+			default:
+				return ast;
+		}
+	}
 
-                // Check if metadata indicates ExUnit module
-                var isExunit = ast.metadata?.isExunit == true;
-                
-                // WORKAROUND: If metadata is missing, detect ExUnit module by checking for test functions
-                if (!isExunit) {
-                    switch(body.def) {
-                        case EBlock(exprs):
-                            for (expr in exprs) {
-                                if (expr.metadata?.isTest == true || 
-                                    expr.metadata?.isSetup == true || 
-                                    expr.metadata?.isSetupAll == true ||
-                                    expr.metadata?.isTeardown == true ||
-                                    expr.metadata?.isTeardownAll == true) {
-                                    #if debug_annotation_transforms
-                                    #end
-                                    isExunit = true;
-                                    break;
-                                }
-                            }
-                        default:
-                    }
-                }
-                
-                if (isExunit) {
-                    #if debug_annotation_transforms
-                    #end
-                    
-                    var exunitBody = buildExUnitBody(name, body);
-                    
-                    return makeASTWithMeta(
-                        EDefmodule(name, exunitBody),
-                        ast.metadata,
-                        ast.pos
-                    );
-                }
-                // Not an ExUnit module, return as-is
-                return ast;
-                
-            default:
-                // Not a module, just pass through
-                return ast;
-        }
-    }
-    
-    /**
-     * Build ExUnit.Case module body
-     * 
-     * WHAT
-     * - Converts `@:exunit` classes into idiomatic `use ExUnit.Case` modules.
-     * - Rewrites `@:test` functions into `test "..."`
-     * - Drops Haxe constructors (`new`) from the output module.
-     *
-     * WHY
-     * - ExUnit test modules are not instantiated. Keeping Haxe constructors produces unused `def new/0`
-     *   functions that call `super.new()` and can trigger Elixir warnings (or errors) if the base class
-     *   isn't emitted/aliased the way a normal runtime class would be.
-     *
-     * HOW
-     * - Always inject `use ExUnit.Case` (and Phoenix test helpers when referenced).
-     * - Transform `@:test` functions into `test` macro calls.
-     * - Filter out `def new` / `defp new` when copying non-test helpers into the module body.
-     *
-     * EXAMPLES
-     * Haxe:
-     *   @:exunit class MyTest extends TestCase { @:test function works() {} }
-     * Elixir:
-     *   defmodule MyTest do
-     *     use ExUnit.Case
-     *     test "works" do ... end
-     *   end
-     */
-    static function buildExUnitBody(moduleName: String, existingBody: ElixirAST): ElixirAST {
-        var statements = [];
-        
-        // Check if module should be async by scanning for any async tests
-        var hasAsyncTests = false;
-        switch(existingBody.def) {
-            case EBlock(exprs):
-                for (expr in exprs) {
-                    if (expr.metadata?.isAsync == true) {
-                        hasAsyncTests = true;
-                        break;
-                    }
-                }
-            default:
-        }
-        
-        // use ExUnit.Case with async option if needed
-        if (hasAsyncTests) {
-            // Create keyword list [async: true] for ExUnit.Case options
-            statements.push(makeAST(EUse("ExUnit.Case", [
-                makeAST(EKeywordList([
-                    {key: "async", value: makeAST(EAtom(ElixirAtom.true_()))}
-                ]))
-            ])));
-        } else {
-            statements.push(makeAST(EUse("ExUnit.Case", [])));
-        }
+	/** Generic DB types transformer */
+	public static function dbTypesTransformPass(ast:ElixirAST):ElixirAST {
+		switch (ast.def) {
+			case EDefmodule(name, body) if (ast.metadata?.isDbTypes == true):
+				var adapter = ast.metadata.dbAdapter != null ? ast.metadata.dbAdapter : "postgrex";
+				var jsonLib = ast.metadata.jsonModule != null ? ast.metadata.jsonModule : "Jason";
+				var exts = ast.metadata.extensions != null ? ast.metadata.extensions : [];
 
-        // Optional Phoenix test helpers: inject only when the test body references them.
-        // (Avoid unused import warnings in plain ExUnit-only tests.)
-        var needsLiveViewHelpers = usesLiveViewHelpers(existingBody);
-        var needsConnTestHelpers = usesConnTestHelpers(existingBody);
-        if (needsConnTestHelpers || needsLiveViewHelpers) {
-            // Phoenix.ConnTest request macros expect @endpoint to be set in the test module.
-            // We infer the app module from the test module name instead of depending on `-D app_name`,
-            // so ExUnit tests work out-of-the-box for Phoenix apps.
-            var appModule = extractAppModule(moduleName);
-            var endpointModule = appModule + "Web.Endpoint";
-            statements.push(makeAST(EModuleAttribute("endpoint", makeAST(EVar(endpointModule)))));
+				// For Postgrex, the Types.define macro creates the module itself
+				// So we return just the macro call without the defmodule wrapper
+				switch (adapter.toLowerCase()) {
+					case "postgrex":
+						var opts = 'json: ' + jsonLib;
+						if (exts != null && exts.length > 0) {
+							var extList = '[' + exts.join(", ") + ']';
+							opts = opts + ', extensions: ' + extList;
+						}
+						// Generate the macro call with the module name directly
+						var line = 'Postgrex.Types.define(' + name + ', [], ' + opts + ')';
+						return makeAST(ERaw(line));
+					default:
+						// For other adapters, keep the module wrapper (they might need it)
+						var typesBody = buildDbTypesBody(name, adapter, jsonLib, exts);
+						return makeASTWithMeta(EDefmodule(name, typesBody), ast.metadata, ast.pos);
+				}
+			default:
+				return ast;
+		}
+	}
 
-            // Phoenix.ConnTest HTTP helpers are macros (get/post/...), and Haxe emits fully-qualified
-            // calls like `Phoenix.ConnTest.get(conn, "/")`, so we must `require` the module.
-            if (needsConnTestHelpers) {
-                statements.push(makeAST(ERequire("Phoenix.ConnTest", null)));
-            }
+	static function buildDbTypesBody(moduleName:String, adapter:String, jsonLib:String, extensions:Array<String>):ElixirAST {
+		var statements = [];
+		switch (adapter.toLowerCase()) {
+			case "postgrex":
+				// This case is now handled above, but keep for completeness
+				var opts = 'json: ' + jsonLib;
+				if (extensions != null && extensions.length > 0) {
+					var extList = '[' + extensions.join(", ") + ']';
+					opts = opts + ', extensions: ' + extList;
+				}
+				var line = 'Postgrex.Types.define(__MODULE__, [], ' + opts + ')';
+				statements.push(makeAST(ERaw(line)));
+			default:
+				// Unknown adapter → emit a compile error as a clear message
+				var err = 'raise("Unsupported DB adapter for @:dbTypes: ' + adapter + '")';
+				statements.push(makeAST(ERaw(err)));
+		}
+		return makeAST(EBlock(statements));
+	}
 
-            if (needsLiveViewHelpers) {
-                // Phoenix.LiveViewTest.live/2 expands to `get(conn, path)`, so Phoenix.ConnTest must be imported.
-                statements.push(makeAST(EImport("Phoenix.ConnTest", null, null)));
-                // LiveViewTest helpers are macros and are emitted as fully-qualified calls.
-                statements.push(makeAST(ERequire("Phoenix.LiveViewTest", null)));
-            }
-        }
-        
-        // Group tests by describe blocks
-        var testsWithoutDescribe = [];
-        var describeGroups = new Map<String, Array<ElixirAST>>();
-        
-        // Process existing body to transform test methods
-        switch(existingBody.def) {
-            case EBlock(exprs):
-                for (expr in exprs) {
-                    switch(expr.def) {
-                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isTest == true):
-                            // Transform function into test block
-                            var testName = name;
-                            // Remove "test" prefix if present
-                            if (StringTools.startsWith(testName, "test_")) {
-                                testName = testName.substring(5);
-                            } else if (StringTools.startsWith(testName, "test")) {
-                                testName = testName.substring(4);
-                            }
-                            // Convert to readable name (snake_case to spaces)
-                            testName = StringTools.replace(testName, "_", " ");
-                            
-                            // Check for tags
-                            var testTags = expr.metadata?.testTags;
-                            var taggedTestName = testName;
-                            if (testTags != null && testTags.length > 0) {
-                                // Add tags as @tag annotations before the test
-                                for (tag in testTags) {
-                                    taggedTestName = '@tag $tag\n  $taggedTestName';
-                                }
-                            }
-                            
-                            var testBlock = makeAST(
-                                EMacroCall(
-                                    "test",
-                                    [makeAST(EString(testName))],
-                                    body
-                                )
-                            );
-                            
-                            // Check if this test belongs to a describe block
-                            var describeBlock = expr.metadata?.describeBlock;
-                            if (describeBlock != null) {
-                                if (!describeGroups.exists(describeBlock)) {
-                                    describeGroups.set(describeBlock, []);
-                                }
-                                describeGroups.get(describeBlock).push(testBlock);
-                            } else {
-                                testsWithoutDescribe.push(testBlock);
-                            }
-                            
-                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isSetup == true):
-                            // Transform @:setup function into ExUnit setup callback
-                            var setupBlock = makeAST(
-                                EMacroCall(
-                                    "setup",
-                                    [makeAST(EVar("context"))],
-                                    body
-                                )
-                            );
-                            statements.push(setupBlock);
-                            
-                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isSetupAll == true):
-                            // Transform @:setupAll function into ExUnit setup_all callback
-                            var setupAllBlock = makeAST(
-                                EMacroCall(
-                                    "setup_all",
-                                    [makeAST(EVar("context"))],
-                                    body
-                                )
-                            );
-                            statements.push(setupAllBlock);
-                            
-                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isTeardown == true):
-                            // Transform @:teardown function into ExUnit on_exit callback
-                            var teardownBody = makeAST(
-                                EBlock([
-                                    makeAST(
-                                        ECall(
-                                            null,  // No target needed for on_exit
-                                            "on_exit",
-                                            [makeAST(EFn([{args: [], guard: null, body: body}]))]
-                                        )
-                                    ),
-                                    makeAST(EAtom(ElixirAtom.ok()))
-                                ])
-                            );
-                            var teardownBlock = makeAST(
-                                EMacroCall(
-                                    "setup",
-                                    [makeAST(EVar("context"))],
-                                    teardownBody
-                                )
-                            );
-                            statements.push(teardownBlock);
-                            
-                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isTeardownAll == true):
-                            // Transform @:teardownAll function into ExUnit on_exit callback in setup_all
-                            var teardownAllBody = makeAST(
-                                EBlock([
-                                    makeAST(
-                                        ECall(
-                                            null,  // No target needed for on_exit
-                                            "on_exit",
-                                            [makeAST(EFn([{args: [], guard: null, body: body}]))]
-                                        )
-                                    ),
-                                    makeAST(EAtom(ElixirAtom.ok()))
-                                ])
-                            );
-                            var teardownAllBlock = makeAST(
-                                EMacroCall(
-                                    "setup_all",
-                                    [makeAST(EVar("context"))],
-                                    teardownAllBody
-                                )
-                            );
-                            statements.push(teardownAllBlock);
-                            
-                        case EDef(name, _, _, _) if (name == "setup" || name == "setupAll"):
-                            // Keep setup functions as-is for backward compatibility
-                            statements.push(expr);
-                            
-                        case EDefp(name, _, _, _) if (name == "setup" || name == "setupAll"):
-                            // Keep private setup functions as-is for backward compatibility
-                            statements.push(expr);
-                            
-                        default:
-                            // Keep other expressions (but not in main statements yet)
-                            // They'll be added after describe blocks
-                    }
-                }
-                
-                // First add setup/teardown blocks
-                for (expr in exprs) {
-                    switch(expr.def) {
-                        case EDef(name, _, _, _) | EDefp(name, _, _, _) if (name == "new"):
-                            // Haxe constructor - ExUnit modules should not emit constructors.
-                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isSetup == true || 
-                                                                                                       expr.metadata?.isSetupAll == true ||
-                                                                                                       expr.metadata?.isTeardown == true ||
-                                                                                                       expr.metadata?.isTeardownAll == true):
-                            // Already processed above, skip
-                        case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isTest == true):
-                            // Already processed above, skip
-                        default:
-                            // Keep other expressions
-                            statements.push(expr);
-                    }
-                }
-                
-                // Add tests without describe blocks
-                for (test in testsWithoutDescribe) {
-                    statements.push(test);
-                }
-                
-                // Add describe blocks with their grouped tests
-                for (describeName in describeGroups.keys()) {
-                    var tests = describeGroups.get(describeName);
-                    if (tests.length > 0) {
-                        // Create describe block containing all tests in this group
-                        var describeBlock = makeAST(
-                            EMacroCall(
-                                "describe",
-                                [makeAST(EString(describeName))],
-                                makeAST(EBlock(tests))
-                            )
-                        );
-                        statements.push(describeBlock);
-                    }
-                }
-                
-            default:
-                // Single expression body
-                statements.push(existingBody);
-        }
-        
-        return makeAST(EBlock(statements));
-    }
+	/**
+	 * Build Ecto.Repo module body
+	 * 
+	 * WHY: Ecto repositories need use statement to inject database functions
+	 * WHAT: Creates minimal module with use Ecto.Repo and configuration
+	 * HOW: Generates use statement with otp_app and adapter options
+	 */
+	static function buildRepoBody(moduleName:String, appName:String):ElixirAST {
+		var statements = [];
 
-    /**
-     * Detect whether an ExUnit module body references Phoenix.LiveViewTest helpers.
-     *
-     * WHAT: Walks the existing body AST to find any use/import/alias of LiveViewTest (or LiveView).
-     * WHY: Avoid injecting unused imports/aliases/@endpoint into tests that don't exercise LiveView,
-     *      which produces Elixir compiler warnings and slows test runs.
-     * HOW: Shallow recursive traversal of the ElixirAST node tree with early exit once a match is found.
-     */
-    static function usesLiveViewHelpers(ast: ElixirAST): Bool {
-        if (ast == null || ast.def == null) return false;
+		// use Ecto.Repo, otp_app: :app_name, adapter: Ecto.Adapters.Postgres
+		var useOptions = makeAST(EKeywordList([
+			{key: "otp_app", value: makeAST(EAtom(appName))},
+			{
+				key: "adapter",
+				value: makeAST(EField(makeAST(EField(makeAST(EVar("Ecto")), "Adapters")), "Postgres"))
+			}
+		]));
 
-        var found = false;
+		// EUse expects an array of options, with the keyword list as one element
+		statements.push(makeAST(EUse("Ecto.Repo", [useOptions])));
 
-        function dottedName(expr: ElixirAST): Null<String> {
-            if (expr == null || expr.def == null) return null;
-            return switch (expr.def) {
-                case EVar(name):
-                    name;
-                case EField(target, field):
-                    var base = dottedName(target);
-                    base == null ? null : base + "." + field;
-                default:
-                    null;
-            }
-        }
+		return makeAST(EBlock(statements));
+	}
 
-        ASTUtils.walk(ast, (node) -> {
-            if (found || node == null || node.def == null) return;
-            switch (node.def) {
-                case EVar(name):
-                    if (name == "LiveViewTest" || name == "Phoenix.LiveViewTest" || name == "LiveView") {
-                        found = true;
-                    }
-                case EImport(moduleName, _, _, _):
-                    if (moduleName == "Phoenix.LiveViewTest") found = true;
-                case EAlias(moduleName, aliasName):
-                    if (moduleName == "Phoenix.LiveViewTest" || aliasName == "LiveViewTest") found = true;
-                case ERequire(moduleName, _):
-                    if (moduleName == "Phoenix.LiveViewTest") found = true;
-                case ERemoteCall(moduleExpr, funcName, _):
-                    var modulePath = dottedName(moduleExpr);
-                    var fullName = modulePath == null ? funcName : modulePath + "." + funcName;
-                    if (fullName.indexOf("Phoenix.LiveViewTest") != -1) found = true;
-                default:
-            }
-        });
+	/**
+	 * Transform @:application modules into OTP Application structure
+	 * 
+	 * WHY: OTP applications need specific callbacks and supervision tree
+	 * WHAT: Adds use Application and start/2 callback
+	 * HOW: Detects isApplication metadata and transforms module body
+	 */
+	public static function applicationTransformPass(ast:ElixirAST):ElixirAST {
+		#if debug_annotation_transforms
+		if (ast.metadata != null && ast.metadata.isApplication == true) {}
+		#end
 
-        return found;
-    }
+		// Check the top-level node first for Application modules
+		switch (ast.def) {
+			case EModule(name, attributes, body) if (ast.metadata?.isApplication == true):
+				#if debug_annotation_transforms
+				#end
 
-    /**
-     * Detect whether an ExUnit module body references Phoenix.ConnTest helpers.
-     *
-     * WHY: Phoenix.ConnTest expects @endpoint to be set when using request helpers.
-     *      We only inject @endpoint when tests actually reference ConnTest/LiveViewTest.
-     * HOW: Shallow recursive traversal of the ElixirAST node tree with early exit once a match is found.
-     */
-    static function usesConnTestHelpers(ast: ElixirAST): Bool {
-        if (ast == null || ast.def == null) return false;
+				// For EModule, body is Array<ElixirAST>, need to handle differently
+				var appBody = buildApplicationBodyFromArray(name, body);
 
-        var found = false;
+				return makeASTWithMeta(EModule(name, attributes, appBody), ast.metadata, ast.pos);
 
-        function dottedName(expr: ElixirAST): Null<String> {
-            if (expr == null || expr.def == null) return null;
-            return switch (expr.def) {
-                case EVar(name):
-                    name;
-                case EField(target, field):
-                    var base = dottedName(target);
-                    base == null ? null : base + "." + field;
-                default:
-                    null;
-            }
-        }
+			case EDefmodule(name, body) if (ast.metadata?.isApplication == true):
+				#if debug_annotation_transforms
+				#end
 
-        ASTUtils.walk(ast, (node) -> {
-            if (found || node == null || node.def == null) return;
-            switch (node.def) {
-                case EVar(name):
-                    if (name == "ConnTest" || name == "Phoenix.ConnTest") {
-                        found = true;
-                    }
-                case EImport(moduleName, _, _, _):
-                    if (moduleName == "Phoenix.ConnTest") found = true;
-                case EAlias(moduleName, aliasName):
-                    if (moduleName == "Phoenix.ConnTest" || aliasName == "ConnTest") found = true;
-                case ERequire(moduleName, _):
-                    if (moduleName == "Phoenix.ConnTest") found = true;
-                case ERemoteCall(moduleExpr, funcName, _):
-                    var modulePath = dottedName(moduleExpr);
-                    var fullName = modulePath == null ? funcName : modulePath + "." + funcName;
-                    if (fullName.indexOf("Phoenix.ConnTest") != -1) found = true;
-                default:
-            }
-        });
+				var appBody = buildApplicationBody(name, body);
 
-        return found;
-    }
-    
-    /**
-     * supervisorTransformPass: Preserve supervisor functions from dead code elimination
-     * 
-     * WHY: Phoenix/OTP calls child_spec/1 and start_link/1 at runtime via supervision tree
-     * WHAT: Ensures these functions are marked with @:keep metadata to prevent DCE
-     * HOW: Detects isSupervisor metadata and marks critical functions for preservation
-     * 
-     * BACKGROUND: Haxe's Dead Code Elimination (DCE) removes "unused" functions. But
-     * supervisor child_spec and start_link are called by the OTP framework at runtime,
-     * not from our Haxe code. Without @:keep, they get deleted and Phoenix crashes.
-     */
-    public static function supervisorTransformPass(ast: ElixirAST): ElixirAST {
-        #if debug_annotation_transforms
-        if (ast.metadata?.isSupervisor == true) {
-        }
-        #end
-        
-        // Check if this is a supervisor module
-        var isSupervisor = ast.metadata?.isSupervisor == true;
-        if (!isSupervisor) {
-            // Not a supervisor, pass through unchanged
-            return ast;
-        }
-        
-        // Process the module to ensure critical functions are preserved
-        switch(ast.def) {
-            case EModule(name, attributes, body):
-                #if debug_annotation_transforms
-                #end
-                
-                // Transform the body array to preserve supervisor functions
-                var transformedBody = preserveSupervisorFunctionsInArray(body, name, ast.metadata);
-                
-                // Return the module with transformed body
-                return makeASTWithMeta(
-                    EModule(name, attributes, transformedBody),
-                    ast.metadata,
-                    ast.pos
-                );
-                
-            case EDefmodule(name, body):
-                #if debug_annotation_transforms
-                #end
-                
-                // Transform the body to preserve supervisor functions
-                var transformedBody = preserveSupervisorFunctionsInAST(body, name, ast.metadata);
-                
-                // Return the module with transformed body
-                return makeASTWithMeta(
-                    EDefmodule(name, transformedBody),
-                    ast.metadata,
-                    ast.pos
-                );
-                
-            default:
-                // Not a module definition, pass through
-                return ast;
-        }
-    }
-    
-    /**
-     * Helper to preserve supervisor functions from DCE in Array body (EModule)
-     */
-    static function preserveSupervisorFunctionsInArray(body: Array<ElixirAST>, moduleName: String, metadata: ElixirMetadata): Array<ElixirAST> {
-        var statements = [];
-        var hasChildSpec = false;
-        var hasStartLink = false;
-        
-        // Process each statement in the array
-        for (expr in body) {
-            switch(expr.def) {
-                case EDef(name, params, guards, fnBody) | EDefp(name, params, guards, fnBody):
-                    if (name == "child_spec") {
-                        hasChildSpec = true;
-                        // Mark with keep metadata
-                        var newMetadata = if (expr.metadata != null) {
-                            var meta = Reflect.copy(expr.metadata);
-                            meta.isKeep = true;
-                            meta;
-                        } else {
-                            {isKeep: true};
-                        };
-                        
-                        var preservedFunc = makeASTWithMeta(
-                            expr.def,
-                            newMetadata,
-                            expr.pos
-                        );
-                        statements.push(preservedFunc);
-                        #if debug_annotation_transforms
-                        #end
-                    } else if (name == "start_link") {
-                        hasStartLink = true;
-                        // Mark with keep metadata
-                        var newMetadata = if (expr.metadata != null) {
-                            var meta = Reflect.copy(expr.metadata);
-                            meta.isKeep = true;
-                            meta;
-                        } else {
-                            {isKeep: true};
-                        };
-                        
-                        var preservedFunc = makeASTWithMeta(
-                            expr.def,
-                            newMetadata,
-                            expr.pos
-                        );
-                        statements.push(preservedFunc);
-                        #if debug_annotation_transforms
-                        #end
-                    } else {
-                        // Keep other functions as-is
-                        statements.push(expr);
-                    }
-                default:
-                    // Keep other expressions
-                    statements.push(expr);
-            }
-        }
-        
-        // If supervisor module needs use Supervisor statement, add it
-        var needsUseSupervisor = metadata?.isSupervisor == true && 
-                                 metadata?.isEndpoint != true && 
-                                 metadata?.isApplication != true;
-        
-        if (needsUseSupervisor) {
-            // Check if we already have use Supervisor and init/1
-            var hasUseSupervisor = false;
-            var hasInit = false;
-            
-            for (stmt in statements) {
-                switch(stmt.def) {
-                    case EUse("Supervisor", _):
-                        hasUseSupervisor = true;
-                    case EDef("init", _, _, _):
-                        hasInit = true;
-                    default:
-                }
-            }
-            
-            if (!hasUseSupervisor) {
-                // Add use Supervisor at the beginning
-                statements.insert(0, makeAST(EUse("Supervisor", [])));
-                #if debug_annotation_transforms
-                #end
-            }
-            
-            if (!hasInit) {
-                // Add default init/1 callback that delegates to start_link
-                var initBody = makeAST(
-                    ETuple([
-                        makeAST(EAtom("ok")),
-                        makeAST(ETuple([
-                            makeAST(EList([])),  // Empty children list
-                            makeAST(EKeywordList([
-                                {key: "strategy", value: makeAST(EAtom("one_for_one"))},
-                                {key: "max_restarts", value: makeAST(EInteger(3))},
-                                {key: "max_seconds", value: makeAST(EInteger(5))}
-                            ]))
-                        ]))
-                    ])
-                );
-                
-                var initFunc = makeAST(
-                    EDef("init", [PVar("_args")], null, initBody)
-                );
-                
-                statements.push(initFunc);
-                #if debug_annotation_transforms
-                #end
-            }
-        }
-        
-        return statements;
-    }
-    
-    /**
-     * Helper to preserve supervisor functions from DCE in AST body (EDefmodule)
-     */
-    static function preserveSupervisorFunctionsInAST(body: ElixirAST, moduleName: String, metadata: ElixirMetadata): ElixirAST {
-        var statements = [];
-        var hasChildSpec = false;
-        var hasStartLink = false;
-        
-        // First, check what functions exist and mark them for preservation
-        switch(body.def) {
-            case EBlock(exprs):
-                for (expr in exprs) {
-                    switch(expr.def) {
-                        case EDef(name, params, guards, fnBody) | EDefp(name, params, guards, fnBody):
-                            if (name == "child_spec") {
-                                hasChildSpec = true;
-                                // Mark with keep metadata
-                                var newMetadata = if (expr.metadata != null) {
-                                    var meta = Reflect.copy(expr.metadata);
-                                    meta.isKeep = true;
-                                    meta;
-                                } else {
-                                    {isKeep: true};
-                                };
-                                
-                                var preservedFunc = makeASTWithMeta(
-                                    expr.def,
-                                    newMetadata,
-                                    expr.pos
-                                );
-                                statements.push(preservedFunc);
-                                #if debug_annotation_transforms
-                                #end
-                            } else if (name == "start_link") {
-                                hasStartLink = true;
-                                // Mark with keep metadata
-                                var newMetadata = if (expr.metadata != null) {
-                                    var meta = Reflect.copy(expr.metadata);
-                                    meta.isKeep = true;
-                                    meta;
-                                } else {
-                                    {isKeep: true};
-                                };
-                                
-                                var preservedFunc = makeASTWithMeta(
-                                    expr.def,
-                                    newMetadata,
-                                    expr.pos
-                                );
-                                statements.push(preservedFunc);
-                                #if debug_annotation_transforms
-                                #end
-                            } else {
-                                // Keep other functions as-is
-                                statements.push(expr);
-                            }
-                        default:
-                            // Keep other expressions
-                            statements.push(expr);
-                    }
-                }
-            default:
-                // Single expression body
-                return body;
-        }
-        
-        // If supervisor module needs use Supervisor statement, add it
-        // (This would typically be done in a separate pass, but we can ensure it here)
-        var needsUseSupervisor = metadata?.isSupervisor == true && 
-                                 metadata?.isEndpoint != true && 
-                                 metadata?.isApplication != true;
-        
-        if (needsUseSupervisor) {
-            // Check if we already have use Supervisor and init/1
-            var hasUseSupervisor = false;
-            var hasInit = false;
-            
-            for (stmt in statements) {
-                switch(stmt.def) {
-                    case EUse("Supervisor", _):
-                        hasUseSupervisor = true;
-                    case EDef("init", _, _, _):
-                        hasInit = true;
-                    default:
-                }
-            }
-            
-            if (!hasUseSupervisor) {
-                // Add use Supervisor at the beginning
-                statements.insert(0, makeAST(EUse("Supervisor", [])));
-                #if debug_annotation_transforms
-                #end
-            }
-            
-            if (!hasInit) {
-                // Add default init/1 callback that delegates to start_link
-                var initBody = makeAST(
-                    ETuple([
-                        makeAST(EAtom("ok")),
-                        makeAST(ETuple([
-                            makeAST(EList([])),  // Empty children list
-                            makeAST(EKeywordList([
-                                {key: "strategy", value: makeAST(EAtom("one_for_one"))},
-                                {key: "max_restarts", value: makeAST(EInteger(3))},
-                                {key: "max_seconds", value: makeAST(EInteger(5))}
-                            ]))
-                        ]))
-                    ])
-                );
-                
-                var initFunc = makeAST(
-                    EDef("init", [PVar("_args")], null, initBody)
-                );
-                
-                statements.push(initFunc);
-                #if debug_annotation_transforms
-                #end
-            }
-        }
-        
-        return makeAST(EBlock(statements));
-    }
+				return makeASTWithMeta(EDefmodule(name, appBody), ast.metadata, ast.pos);
+
+			default:
+				// Not an Application module, just pass through
+				return ast;
+		}
+	}
+
+	/**
+	 * Build OTP Application module body for Array<ElixirAST> (from EModule)
+	 */
+	static function buildApplicationBodyFromArray(moduleName:String, existingBody:Array<ElixirAST>):Array<ElixirAST> {
+		var result = [];
+
+		#if debug_annotation_transforms
+		#end
+
+		// Add use Application
+		result.push(makeAST(EUse("Application", [])));
+
+		// Add existing functions
+		for (func in existingBody) {
+			#if debug_annotation_transforms
+			if (func.def != null) {}
+			#end
+			result.push(func);
+		}
+
+		return result;
+	}
+
+	/**
+	 * Build OTP Application module body for ElixirAST (from EDefmodule)
+	 */
+	static function buildApplicationBody(moduleName:String, existingBody:ElixirAST):ElixirAST {
+		var statements = [];
+
+		// use Application
+		statements.push(makeAST(EUse("Application", [])));
+
+		// Add existing functions or create default start/2
+		var hasStart = false;
+		switch (existingBody.def) {
+			case EBlock(stmts):
+				for (stmt in stmts) {
+					switch (stmt.def) {
+						case EDef(name, _, _, _) if (name == "start"):
+							hasStart = true;
+							statements.push(stmt);
+						case ENil:
+							// Skip
+						default:
+							statements.push(stmt);
+					}
+				}
+			default:
+				// Add the body if it's not empty
+		}
+
+		// Add default start/2 if not present
+		if (!hasStart) {
+			var startBody = makeAST(EBlock([
+				// children = []
+				makeAST(EMatch(EPattern.PVar("children"), makeAST(EList([])))),
+				// opts = [strategy: :one_for_one, name: Module.Supervisor]
+				makeAST(EMatch(EPattern.PVar("opts"), makeAST(EKeywordList([
+					{key: "strategy", value: makeAST(EAtom(ElixirAtom.raw("one_for_one")))},
+					{key: "name", value: makeAST(EVar(moduleName + ".Supervisor"))}
+				])))),
+				// Supervisor.start_link(children, opts)
+				makeAST(ERemoteCall(makeAST(EVar("Supervisor")), "start_link", [makeAST(EVar("children")), makeAST(EVar("opts"))]))
+			]));
+
+			statements.push(makeAST(EDef("start", [EPattern.PVar("_type"), EPattern.PVar("_args")], null, startBody)));
+		}
+
+		return makeAST(EBlock(statements));
+	}
+
+	/**
+	 * Transform @:phoenixWeb modules into Phoenix Web helper module
+	 * 
+	 * WHY: Phoenix Web modules need specific macro definitions for router, controller, etc.
+	 * WHAT: Adds defmacro definitions that Phoenix expects for 'use TodoAppWeb, :router'
+	 * HOW: Detects isPhoenixWeb metadata and transforms module body
+	 */
+	public static function phoenixWebTransformPass(ast:ElixirAST):ElixirAST {
+		#if debug_annotation_transforms
+		#end
+
+		// Check the top-level node first for PhoenixWeb modules
+		switch (ast.def) {
+			case EDefmodule(name, body)
+				if (ast.metadata?.isPhoenixWeb == true
+					|| (name != null && (StringTools.endsWith(name, "Web") && name.indexOf(".") == -1))):
+				var phoenixWebBody = buildPhoenixWebBody(name, body);
+				// Extract statements from EBlock
+				var stmts:Array<ElixirAST> = switch (phoenixWebBody.def) {
+					case EBlock(es): es;
+					default: [phoenixWebBody];
+				};
+				// Inject @compile {:nowarn_unused_function, [html_helpers: 0]}
+				var compileAttr:EAttribute = {
+					name: "compile",
+					value: makeAST(ETuple([
+						makeAST(EAtom("nowarn_unused_function")),
+						makeAST(EKeywordList([{key: "html_helpers", value: makeAST(EInteger(0))}]))
+					]))
+				};
+				return makeASTWithMeta(EModule(name, [compileAttr], stmts), ast.metadata, ast.pos);
+			case EModule(name, attrs, exprs)
+				if (ast.metadata?.isPhoenixWeb == true
+					|| (name != null && (StringTools.endsWith(name, "Web") && name.indexOf(".") == -1))):
+				var phoenixWebBody2 = buildPhoenixWebBody(name, makeAST(EBlock(exprs)));
+				var stmts2:Array<ElixirAST> = switch (phoenixWebBody2.def) {
+					case EBlock(es): es;
+					default: [phoenixWebBody2];
+				};
+				var compileAttr2:EAttribute = {
+					name: "compile",
+					value: makeAST(ETuple([
+						makeAST(EAtom("nowarn_unused_function")),
+						makeAST(EKeywordList([{key: "html_helpers", value: makeAST(EInteger(0))}]))
+					]))
+				};
+				return makeASTWithMeta(EModule(name, [compileAttr2], stmts2), ast.metadata, ast.pos);
+			default:
+				// Not a PhoenixWeb module, just pass through
+				return ast;
+		}
+	}
+
+	/**
+	 * Build Phoenix Web module body with macro definitions
+	 */
+	static function buildPhoenixWebBody(moduleName:String, existingBody:ElixirAST):ElixirAST {
+		var statements = [];
+		var existingDefinitions = new Map<String, Bool>();
+
+		function recordDefinition(statement:ElixirAST):Void {
+			switch (statement.def) {
+				case EDef(name, args, _, _):
+					existingDefinitions.set(name + "/" + args.length, true);
+				case EDefp(name, args, _, _):
+					existingDefinitions.set(name + "/" + args.length, true);
+				case EDefmacro(name, args, _, _):
+					existingDefinitions.set(name + "/" + args.length, true);
+				case _:
+			}
+		}
+
+		// Add existing functions first (like static_paths)
+		switch (existingBody.def) {
+			case EBlock(stmts):
+				for (stmt in stmts) {
+					switch (stmt.def) {
+						case ENil:
+							// Skip
+						default:
+							statements.push(stmt);
+							recordDefinition(stmt);
+					}
+				}
+			default:
+				if (existingBody.def != ENil) {
+					statements.push(existingBody);
+					recordDefinition(existingBody);
+				}
+		}
+
+		// defmacro __using__(which) when is_atom(which) do
+		if (!existingDefinitions.exists("__using__/1")) {
+			var usingMacroBody = makeAST(ECall(null, "apply", [makeAST(EVar("__MODULE__")), makeAST(EVar("which")), makeAST(EList([]))]));
+
+			statements.push(makeAST(EDefmacro("__using__", [EPattern.PVar("which")], makeAST(ECall(null, "is_atom", [makeAST(EVar("which"))])),
+				usingMacroBody)));
+		}
+
+		// Extract base app name from module name (e.g., "TodoAppWeb" -> "TodoApp")
+		var appBaseName = StringTools.replace(moduleName, "Web", "");
+
+		// def router do
+		var routerBody = makeAST(EQuote([], makeAST(EBlock([
+			makeAST(EUse("Phoenix.Router", [])),
+			makeAST(EImport("Phoenix.LiveView.Router", null, null)),
+			makeAST(EImport(moduleName, null, [
+				{
+					name: "controller",
+					arity: 0
+				},
+				{name: "live_view", arity: 0},
+				{name: "live_component", arity: 0}
+			])),
+			makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
+		]))));
+
+		if (!existingDefinitions.exists("router/0")) {
+			statements.push(makeAST(EDef("router", [], null, routerBody)));
+		}
+
+		// def controller do
+		var controllerBody = makeAST(EQuote([], makeAST(EBlock([
+			makeAST(EUse("Phoenix.Controller", [
+				makeAST(EKeywordList([
+					{key: "formats", value: makeAST(EList([makeAST(EAtom(ElixirAtom.raw("html"))), makeAST(EAtom(ElixirAtom.raw("json")))]))},
+					{
+						key: "layouts",
+						value: makeAST(EKeywordList([
+							{
+								key: "html",
+								value: makeAST(ETuple([makeAST(EVar(moduleName + ".Layouts")), makeAST(EAtom(ElixirAtom.raw("app")))]))
+							}
+						]))
+					}
+				]))
+			])),
+			makeAST(EImport("Plug.Conn", null, null)),
+			makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
+		]))));
+
+		if (!existingDefinitions.exists("controller/0")) {
+			statements.push(makeAST(EDef("controller", [], null, controllerBody)));
+		}
+
+		// def live_view do
+		var liveViewBody = makeAST(EQuote([], makeAST(EBlock([
+			makeAST(EUse("Phoenix.LiveView", [
+				makeAST(EKeywordList([
+					{
+						key: "layout",
+						value: makeAST(ETuple([makeAST(EVar(moduleName + ".Layouts")), makeAST(EAtom(ElixirAtom.raw("app")))]))
+					}
+				]))
+			])),
+			makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))]))
+		]))));
+
+		if (!existingDefinitions.exists("live_view/0")) {
+			statements.push(makeAST(EDef("live_view", [], null, liveViewBody)));
+		}
+
+		// def live_component do
+		var liveComponentBody = makeAST(EQuote([], makeAST(EBlock([
+			makeAST(EUse("Phoenix.LiveComponent", [])),
+			makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))]))
+		]))));
+
+		if (!existingDefinitions.exists("live_component/0")) {
+			statements.push(makeAST(EDef("live_component", [], null, liveComponentBody)));
+		}
+
+		// def html do
+		var htmlBody = makeAST(EQuote([], makeAST(EBlock([
+			makeAST(EUse("Phoenix.Component", [])),
+			makeAST(EImport(moduleName + ".CoreComponents", null, null)),
+			makeAST(EImport(moduleName + ".Gettext", null, null)),
+			makeAST(ECall(null, "unquote", [makeAST(ECall(null, "html_helpers", []))])),
+			makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
+		]))));
+
+		if (!existingDefinitions.exists("html/0")) {
+			statements.push(makeAST(EDef("html", [], null, htmlBody)));
+		}
+
+		// defp html_helpers do
+		var htmlHelpersBody = makeAST(EQuote([], makeAST(EBlock([
+			makeAST(EImport("Phoenix.HTML", null, null)),
+			makeAST(EImport("Phoenix.HTML.Form", null, null)),
+			makeAST(EAlias("Phoenix.HTML.Form", "Form")),
+			// Bring CoreComponents + Gettext into LiveViews/components so dot-components
+			// like <.card> resolve via `use AppWeb, :live_view`.
+			makeAST(EImport(moduleName + ".CoreComponents", null, null)),
+			makeAST(EImport(moduleName + ".Gettext", null, null)),
+			makeAST(EAlias("Phoenix.LiveView.JS", "JS")),
+			makeAST(ECall(null, "unquote", [makeAST(ECall(null, "verified_routes", []))]))
+		]))));
+
+		if (!existingDefinitions.exists("html_helpers/0")) {
+			statements.push(makeAST(EDefp("html_helpers", [], null, htmlHelpersBody)));
+		}
+
+		// def verified_routes do
+		var verifiedRoutesBody = makeAST(EQuote([], makeAST(EBlock([
+			makeAST(EUse("Phoenix.VerifiedRoutes", [
+				makeAST(EKeywordList([
+					{key: "endpoint", value: makeAST(EVar(moduleName + ".Endpoint"))},
+					{key: "router", value: makeAST(EVar(moduleName + ".Router"))},
+					{
+						key: "statics",
+						value: makeAST(ERemoteCall(makeAST(EVar(moduleName)), "static_paths", []))
+					}
+				]))
+			]))
+		]))));
+
+		if (!existingDefinitions.exists("verified_routes/0")) {
+			statements.push(makeAST(EDef("verified_routes", [], null, verifiedRoutesBody)));
+		}
+
+		// def channel do
+		var channelBody = makeAST(EQuote([], makeAST(EBlock([
+			makeAST(EUse("Phoenix.Channel", [])),
+			makeAST(EImport(moduleName + ".Gettext", null, null))
+		]))));
+
+		if (!existingDefinitions.exists("channel/0")) {
+			statements.push(makeAST(EDef("channel", [], null, channelBody)));
+		}
+
+		// def static_paths do
+		// This function is expected by Phoenix.VerifiedRoutes
+		if (!existingDefinitions.exists("static_paths/0")) {
+			statements.push(makeAST(EDef("static_paths", [], null, makeAST(EList([
+				makeAST(EString("assets")),
+				makeAST(EString("fonts")),
+				makeAST(EString("images")),
+				makeAST(EString("favicon.ico")),
+				makeAST(EString("robots.txt"))
+			])))));
+		}
+
+		// def live_session(_conn) do %{} end
+		// Used by router-generated `live_session` blocks to add extra LiveView session assigns.
+		if (!existingDefinitions.exists("live_session/1")) {
+			statements.push(makeAST(EDef("live_session", [EPattern.PVar("_conn")], null, makeAST(EMap([])))));
+		}
+
+		return makeAST(EBlock(statements));
+	}
+
+	/**
+	 * Extract app name from module name
+	 * 
+	 * Examples:
+	 * - TodoAppWeb.Presence -> todo_app
+	 * - MyApp.Presence -> my_app
+	 * - SomeModuleWeb.Presence -> some_module
+	 */
+	static function extractAppName(moduleName:String):String {
+		// Remove Web suffix if present
+		var name = moduleName;
+		var webIndex = name.indexOf("Web.");
+		if (webIndex > 0) {
+			name = name.substring(0, webIndex);
+		}
+
+		// Remove module path after last dot
+		var lastDotIndex = name.lastIndexOf(".");
+		if (lastDotIndex > 0) {
+			name = name.substring(0, lastDotIndex);
+		}
+
+		// Convert CamelCase to snake_case
+		var result = "";
+		for (i in 0...name.length) {
+			var char = name.charAt(i);
+			if (i > 0 && char == char.toUpperCase() && char != char.toLowerCase()) {
+				result += "_";
+			}
+			result += char.toLowerCase();
+		}
+
+		return result;
+	}
+
+	/**
+	 * Extract app module prefix from module name
+	 *
+	 * Examples:
+	 * - TodoAppWeb.Presence -> TodoApp
+	 * - MyApp.Presence -> MyApp
+	 * - SomeModuleWeb.Presence -> SomeModule
+	 */
+	static function extractAppModule(moduleName:String):String {
+		var name = moduleName;
+		var webIndex = name.indexOf("Web.");
+		if (webIndex > 0) {
+			name = name.substring(0, webIndex);
+		}
+		var lastDotIndex = name.lastIndexOf(".");
+		if (lastDotIndex > 0) {
+			name = name.substring(0, lastDotIndex);
+		}
+		return name;
+	}
+
+	/**
+	 * Transform @:exunit modules into ExUnit.Case test modules
+	 * 
+	 * WHY: ExUnit tests require specific structure with use statement and test macros
+	 * WHAT: Transforms classes marked with @:exunit into proper ExUnit test modules
+	 * HOW: Detects isExunit metadata and transforms methods with @:test into test blocks
+	 */
+	public static function exunitTransformPass(ast:ElixirAST):ElixirAST {
+		#if debug_annotation_transforms
+		if (ast.metadata != null) {} else {}
+		#end
+
+		// Check the top-level node first for ExUnit modules
+		switch (ast.def) {
+			case EModule(name, attributes, bodyExprs):
+				#if debug_annotation_transforms
+				if (ast.metadata != null) {} else {}
+				#end
+
+				// Check if metadata indicates ExUnit module
+				var isExunit = ast.metadata?.isExunit == true;
+
+				if (isExunit) {
+					#if debug_annotation_transforms
+					#end
+
+					// Create a block from the body expressions
+					var bodyBlock = makeAST(EBlock(bodyExprs));
+					var exunitBody = buildExUnitBody(name, bodyBlock);
+
+					// Convert EModule to EDefmodule for ExUnit output
+					return makeASTWithMeta(EDefmodule(name, exunitBody), ast.metadata, ast.pos);
+				}
+				// Not an ExUnit module, return as-is
+				return ast;
+
+			case EDefmodule(name, body):
+				#if debug_annotation_transforms
+				if (ast.metadata != null) {} else {}
+				#end
+
+				// Check if metadata indicates ExUnit module
+				var isExunit = ast.metadata?.isExunit == true;
+
+				// WORKAROUND: If metadata is missing, detect ExUnit module by checking for test functions
+				if (!isExunit) {
+					switch (body.def) {
+						case EBlock(exprs):
+							for (expr in exprs) {
+								if (expr.metadata?.isTest == true || expr.metadata?.isSetup == true || expr.metadata?.isSetupAll == true
+									|| expr.metadata?.isTeardown == true || expr.metadata?.isTeardownAll == true) {
+									#if debug_annotation_transforms
+									#end
+									isExunit = true;
+									break;
+								}
+							}
+						default:
+					}
+				}
+
+				if (isExunit) {
+					#if debug_annotation_transforms
+					#end
+
+					var exunitBody = buildExUnitBody(name, body);
+
+					return makeASTWithMeta(EDefmodule(name, exunitBody), ast.metadata, ast.pos);
+				}
+				// Not an ExUnit module, return as-is
+				return ast;
+
+			default:
+				// Not a module, just pass through
+				return ast;
+		}
+	}
+
+	/**
+	 * Build ExUnit.Case module body
+	 * 
+	 * WHAT
+	 * - Converts `@:exunit` classes into idiomatic `use ExUnit.Case` modules.
+	 * - Rewrites `@:test` functions into `test "..."`
+	 * - Drops Haxe constructors (`new`) from the output module.
+	 *
+	 * WHY
+	 * - ExUnit test modules are not instantiated. Keeping Haxe constructors produces unused `def new/0`
+	 *   functions that call `super.new()` and can trigger Elixir warnings (or errors) if the base class
+	 *   isn't emitted/aliased the way a normal runtime class would be.
+	 *
+	 * HOW
+	 * - Always inject `use ExUnit.Case` (and Phoenix test helpers when referenced).
+	 * - Transform `@:test` functions into `test` macro calls.
+	 * - Filter out `def new` / `defp new` when copying non-test helpers into the module body.
+	 *
+	 * EXAMPLES
+	 * Haxe:
+	 *   @:exunit class MyTest extends TestCase { @:test function works() {} }
+	 * Elixir:
+	 *   defmodule MyTest do
+	 *     use ExUnit.Case
+	 *     test "works" do ... end
+	 *   end
+	 */
+	static function buildExUnitBody(moduleName:String, existingBody:ElixirAST):ElixirAST {
+		var statements = [];
+
+		// Check if module should be async by scanning for any async tests
+		var hasAsyncTests = false;
+		switch (existingBody.def) {
+			case EBlock(exprs):
+				for (expr in exprs) {
+					if (expr.metadata?.isAsync == true) {
+						hasAsyncTests = true;
+						break;
+					}
+				}
+			default:
+		}
+
+		// use ExUnit.Case with async option if needed
+		if (hasAsyncTests) {
+			// Create keyword list [async: true] for ExUnit.Case options
+			statements.push(makeAST(EUse("ExUnit.Case", [
+				makeAST(EKeywordList([{key: "async", value: makeAST(EAtom(ElixirAtom.true_()))}]))
+			])));
+		} else {
+			statements.push(makeAST(EUse("ExUnit.Case", [])));
+		}
+
+		// Optional Phoenix test helpers: inject only when the test body references them.
+		// (Avoid unused import warnings in plain ExUnit-only tests.)
+		var needsLiveViewHelpers = usesLiveViewHelpers(existingBody);
+		var needsConnTestHelpers = usesConnTestHelpers(existingBody);
+		if (needsConnTestHelpers || needsLiveViewHelpers) {
+			// Phoenix.ConnTest request macros expect @endpoint to be set in the test module.
+			// We infer the app module from the test module name instead of depending on `-D app_name`,
+			// so ExUnit tests work out-of-the-box for Phoenix apps.
+			var appModule = extractAppModule(moduleName);
+			var endpointModule = appModule + "Web.Endpoint";
+			statements.push(makeAST(EModuleAttribute("endpoint", makeAST(EVar(endpointModule)))));
+
+			// Phoenix.ConnTest HTTP helpers are macros (get/post/...), and Haxe emits fully-qualified
+			// calls like `Phoenix.ConnTest.get(conn, "/")`, so we must `require` the module.
+			if (needsConnTestHelpers) {
+				statements.push(makeAST(ERequire("Phoenix.ConnTest", null)));
+			}
+
+			if (needsLiveViewHelpers) {
+				// Phoenix.LiveViewTest.live/2 expands to `get(conn, path)`, so Phoenix.ConnTest must be imported.
+				statements.push(makeAST(EImport("Phoenix.ConnTest", null, null)));
+				// LiveViewTest helpers are macros and are emitted as fully-qualified calls.
+				statements.push(makeAST(ERequire("Phoenix.LiveViewTest", null)));
+			}
+		}
+
+		// Group tests by describe blocks
+		var testsWithoutDescribe = [];
+		var describeGroups = new Map<String, Array<ElixirAST>>();
+
+		// Process existing body to transform test methods
+		switch (existingBody.def) {
+			case EBlock(exprs):
+				for (expr in exprs) {
+					switch (expr.def) {
+						case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isTest == true):
+							// Transform function into test block
+							var testName = name;
+							// Remove "test" prefix if present
+							if (StringTools.startsWith(testName, "test_")) {
+								testName = testName.substring(5);
+							} else if (StringTools.startsWith(testName, "test")) {
+								testName = testName.substring(4);
+							}
+							// Convert to readable name (snake_case to spaces)
+							testName = StringTools.replace(testName, "_", " ");
+
+							// Check for tags
+							var testTags = expr.metadata?.testTags;
+							var taggedTestName = testName;
+							if (testTags != null && testTags.length > 0) {
+								// Add tags as @tag annotations before the test
+								for (tag in testTags) {
+									taggedTestName = '@tag $tag\n  $taggedTestName';
+								}
+							}
+
+							var testBlock = makeAST(EMacroCall("test", [makeAST(EString(testName))], body));
+
+							// Check if this test belongs to a describe block
+							var describeBlock = expr.metadata?.describeBlock;
+							if (describeBlock != null) {
+								if (!describeGroups.exists(describeBlock)) {
+									describeGroups.set(describeBlock, []);
+								}
+								describeGroups.get(describeBlock).push(testBlock);
+							} else {
+								testsWithoutDescribe.push(testBlock);
+							}
+
+						case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isSetup == true):
+							// Transform @:setup function into ExUnit setup callback
+							var setupBlock = makeAST(EMacroCall("setup", [makeAST(EVar("context"))], body));
+							statements.push(setupBlock);
+
+						case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isSetupAll == true):
+							// Transform @:setupAll function into ExUnit setup_all callback
+							var setupAllBlock = makeAST(EMacroCall("setup_all", [makeAST(EVar("context"))], body));
+							statements.push(setupAllBlock);
+
+						case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isTeardown == true):
+							// Transform @:teardown function into ExUnit on_exit callback
+							var teardownBody = makeAST(EBlock([
+								makeAST(ECall(null, // No target needed for on_exit
+									"on_exit", [makeAST(EFn([{args: [], guard: null, body: body}]))])),
+								makeAST(EAtom(ElixirAtom.ok()))
+							]));
+							var teardownBlock = makeAST(EMacroCall("setup", [makeAST(EVar("context"))], teardownBody));
+							statements.push(teardownBlock);
+
+						case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isTeardownAll == true):
+							// Transform @:teardownAll function into ExUnit on_exit callback in setup_all
+							var teardownAllBody = makeAST(EBlock([
+								makeAST(ECall(null, // No target needed for on_exit
+									"on_exit", [makeAST(EFn([{args: [], guard: null, body: body}]))])),
+								makeAST(EAtom(ElixirAtom.ok()))
+							]));
+							var teardownAllBlock = makeAST(EMacroCall("setup_all", [makeAST(EVar("context"))], teardownAllBody));
+							statements.push(teardownAllBlock);
+
+						case EDef(name, _, _, _) if (name == "setup" || name == "setupAll"):
+							// Keep setup functions as-is for backward compatibility
+							statements.push(expr);
+
+						case EDefp(name, _, _, _) if (name == "setup" || name == "setupAll"):
+							// Keep private setup functions as-is for backward compatibility
+							statements.push(expr);
+
+						default:
+							// Keep other expressions (but not in main statements yet)
+							// They'll be added after describe blocks
+					}
+				}
+
+				// First add setup/teardown blocks
+				for (expr in exprs) {
+					switch (expr.def) {
+						case EDef(name, _, _, _) | EDefp(name, _, _, _) if (name == "new"):
+							// Haxe constructor - ExUnit modules should not emit constructors.
+						case EDef(name, params, guards, body) | EDefp(name, params, guards, body)
+							if (expr.metadata?.isSetup == true || expr.metadata?.isSetupAll == true || expr.metadata?.isTeardown == true
+								|| expr.metadata?.isTeardownAll == true):
+							// Already processed above, skip
+						case EDef(name, params, guards, body) | EDefp(name, params, guards, body) if (expr.metadata?.isTest == true):
+							// Already processed above, skip
+						default:
+							// Keep other expressions
+							statements.push(expr);
+					}
+				}
+
+				// Add tests without describe blocks
+				for (test in testsWithoutDescribe) {
+					statements.push(test);
+				}
+
+				// Add describe blocks with their grouped tests
+				for (describeName in describeGroups.keys()) {
+					var tests = describeGroups.get(describeName);
+					if (tests.length > 0) {
+						// Create describe block containing all tests in this group
+						var describeBlock = makeAST(EMacroCall("describe", [makeAST(EString(describeName))], makeAST(EBlock(tests))));
+						statements.push(describeBlock);
+					}
+				}
+
+			default:
+				// Single expression body
+				statements.push(existingBody);
+		}
+
+		return makeAST(EBlock(statements));
+	}
+
+	/**
+	 * Detect whether an ExUnit module body references Phoenix.LiveViewTest helpers.
+	 *
+	 * WHAT: Walks the existing body AST to find any use/import/alias of LiveViewTest (or LiveView).
+	 * WHY: Avoid injecting unused imports/aliases/@endpoint into tests that don't exercise LiveView,
+	 *      which produces Elixir compiler warnings and slows test runs.
+	 * HOW: Shallow recursive traversal of the ElixirAST node tree with early exit once a match is found.
+	 */
+	static function usesLiveViewHelpers(ast:ElixirAST):Bool {
+		if (ast == null || ast.def == null)
+			return false;
+
+		var found = false;
+
+		function dottedName(expr:ElixirAST):Null<String> {
+			if (expr == null || expr.def == null)
+				return null;
+			return switch (expr.def) {
+				case EVar(name):
+					name;
+				case EField(target, field):
+					var base = dottedName(target);
+					base == null ? null : base + "." + field;
+				default:
+					null;
+			}
+		}
+
+		ASTUtils.walk(ast, (node) -> {
+			if (found || node == null || node.def == null)
+				return;
+			switch (node.def) {
+				case EVar(name):
+					if (name == "LiveViewTest" || name == "Phoenix.LiveViewTest" || name == "LiveView") {
+						found = true;
+					}
+				case EImport(moduleName, _, _, _):
+					if (moduleName == "Phoenix.LiveViewTest") found = true;
+				case EAlias(moduleName, aliasName):
+					if (moduleName == "Phoenix.LiveViewTest" || aliasName == "LiveViewTest") found = true;
+				case ERequire(moduleName, _):
+					if (moduleName == "Phoenix.LiveViewTest") found = true;
+				case ERemoteCall(moduleExpr, funcName, _):
+					var modulePath = dottedName(moduleExpr);
+					var fullName = modulePath == null ? funcName : modulePath + "." + funcName;
+					if (fullName.indexOf("Phoenix.LiveViewTest") != -1) found = true;
+				default:
+			}
+		});
+
+		return found;
+	}
+
+	/**
+	 * Detect whether an ExUnit module body references Phoenix.ConnTest helpers.
+	 *
+	 * WHY: Phoenix.ConnTest expects @endpoint to be set when using request helpers.
+	 *      We only inject @endpoint when tests actually reference ConnTest/LiveViewTest.
+	 * HOW: Shallow recursive traversal of the ElixirAST node tree with early exit once a match is found.
+	 */
+	static function usesConnTestHelpers(ast:ElixirAST):Bool {
+		if (ast == null || ast.def == null)
+			return false;
+
+		var found = false;
+
+		function dottedName(expr:ElixirAST):Null<String> {
+			if (expr == null || expr.def == null)
+				return null;
+			return switch (expr.def) {
+				case EVar(name):
+					name;
+				case EField(target, field):
+					var base = dottedName(target);
+					base == null ? null : base + "." + field;
+				default:
+					null;
+			}
+		}
+
+		ASTUtils.walk(ast, (node) -> {
+			if (found || node == null || node.def == null)
+				return;
+			switch (node.def) {
+				case EVar(name):
+					if (name == "ConnTest" || name == "Phoenix.ConnTest") {
+						found = true;
+					}
+				case EImport(moduleName, _, _, _):
+					if (moduleName == "Phoenix.ConnTest") found = true;
+				case EAlias(moduleName, aliasName):
+					if (moduleName == "Phoenix.ConnTest" || aliasName == "ConnTest") found = true;
+				case ERequire(moduleName, _):
+					if (moduleName == "Phoenix.ConnTest") found = true;
+				case ERemoteCall(moduleExpr, funcName, _):
+					var modulePath = dottedName(moduleExpr);
+					var fullName = modulePath == null ? funcName : modulePath + "." + funcName;
+					if (fullName.indexOf("Phoenix.ConnTest") != -1) found = true;
+				default:
+			}
+		});
+
+		return found;
+	}
+
+	/**
+	 * supervisorTransformPass: Preserve supervisor functions from dead code elimination
+	 * 
+	 * WHY: Phoenix/OTP calls child_spec/1 and start_link/1 at runtime via supervision tree
+	 * WHAT: Ensures these functions are marked with @:keep metadata to prevent DCE
+	 * HOW: Detects isSupervisor metadata and marks critical functions for preservation
+	 * 
+	 * BACKGROUND: Haxe's Dead Code Elimination (DCE) removes "unused" functions. But
+	 * supervisor child_spec and start_link are called by the OTP framework at runtime,
+	 * not from our Haxe code. Without @:keep, they get deleted and Phoenix crashes.
+	 */
+	public static function supervisorTransformPass(ast:ElixirAST):ElixirAST {
+		#if debug_annotation_transforms
+		if (ast.metadata?.isSupervisor == true) {}
+		#end
+
+		// Check if this is a supervisor module
+		var isSupervisor = ast.metadata?.isSupervisor == true;
+		if (!isSupervisor) {
+			// Not a supervisor, pass through unchanged
+			return ast;
+		}
+
+		// Process the module to ensure critical functions are preserved
+		switch (ast.def) {
+			case EModule(name, attributes, body):
+				#if debug_annotation_transforms
+				#end
+
+				// Transform the body array to preserve supervisor functions
+				var transformedBody = preserveSupervisorFunctionsInArray(body, name, ast.metadata);
+
+				// Return the module with transformed body
+				return makeASTWithMeta(EModule(name, attributes, transformedBody), ast.metadata, ast.pos);
+
+			case EDefmodule(name, body):
+				#if debug_annotation_transforms
+				#end
+
+				// Transform the body to preserve supervisor functions
+				var transformedBody = preserveSupervisorFunctionsInAST(body, name, ast.metadata);
+
+				// Return the module with transformed body
+				return makeASTWithMeta(EDefmodule(name, transformedBody), ast.metadata, ast.pos);
+
+			default:
+				// Not a module definition, pass through
+				return ast;
+		}
+	}
+
+	/**
+	 * Helper to preserve supervisor functions from DCE in Array body (EModule)
+	 */
+	static function preserveSupervisorFunctionsInArray(body:Array<ElixirAST>, moduleName:String, metadata:ElixirMetadata):Array<ElixirAST> {
+		var statements = [];
+		var hasChildSpec = false;
+		var hasStartLink = false;
+
+		// Process each statement in the array
+		for (expr in body) {
+			switch (expr.def) {
+				case EDef(name, params, guards, fnBody) | EDefp(name, params, guards, fnBody):
+					if (name == "child_spec") {
+						hasChildSpec = true;
+						// Mark with keep metadata
+						var newMetadata = if (expr.metadata != null) {
+							var meta = Reflect.copy(expr.metadata);
+							meta.isKeep = true;
+							meta;
+						} else {
+							{isKeep: true};
+						};
+
+						var preservedFunc = makeASTWithMeta(expr.def, newMetadata, expr.pos);
+						statements.push(preservedFunc);
+						#if debug_annotation_transforms
+						#end
+					} else if (name == "start_link") {
+						hasStartLink = true;
+						// Mark with keep metadata
+						var newMetadata = if (expr.metadata != null) {
+							var meta = Reflect.copy(expr.metadata);
+							meta.isKeep = true;
+							meta;
+						} else {
+							{isKeep: true};
+						};
+
+						var preservedFunc = makeASTWithMeta(expr.def, newMetadata, expr.pos);
+						statements.push(preservedFunc);
+						#if debug_annotation_transforms
+						#end
+					} else {
+						// Keep other functions as-is
+						statements.push(expr);
+					}
+				default:
+					// Keep other expressions
+					statements.push(expr);
+			}
+		}
+
+		// If supervisor module needs use Supervisor statement, add it
+		var needsUseSupervisor = metadata?.isSupervisor == true && metadata?.isEndpoint != true && metadata?.isApplication != true;
+
+		if (needsUseSupervisor) {
+			// Check if we already have use Supervisor and init/1
+			var hasUseSupervisor = false;
+			var hasInit = false;
+
+			for (stmt in statements) {
+				switch (stmt.def) {
+					case EUse("Supervisor", _):
+						hasUseSupervisor = true;
+					case EDef("init", _, _, _):
+						hasInit = true;
+					default:
+				}
+			}
+
+			if (!hasUseSupervisor) {
+				// Add use Supervisor at the beginning
+				statements.insert(0, makeAST(EUse("Supervisor", [])));
+				#if debug_annotation_transforms
+				#end
+			}
+
+			if (!hasInit) {
+				// Add default init/1 callback that delegates to start_link
+				var initBody = makeAST(ETuple([
+					makeAST(EAtom("ok")),
+					makeAST(ETuple([
+						makeAST(EList([])), // Empty children list
+						makeAST(EKeywordList([
+							{key: "strategy", value: makeAST(EAtom("one_for_one"))},
+							{key: "max_restarts", value: makeAST(EInteger(3))},
+							{key: "max_seconds", value: makeAST(EInteger(5))}
+						]))
+					]))
+				]));
+
+				var initFunc = makeAST(EDef("init", [PVar("_args")], null, initBody));
+
+				statements.push(initFunc);
+				#if debug_annotation_transforms
+				#end
+			}
+		}
+
+		return statements;
+	}
+
+	/**
+	 * Helper to preserve supervisor functions from DCE in AST body (EDefmodule)
+	 */
+	static function preserveSupervisorFunctionsInAST(body:ElixirAST, moduleName:String, metadata:ElixirMetadata):ElixirAST {
+		var statements = [];
+		var hasChildSpec = false;
+		var hasStartLink = false;
+
+		// First, check what functions exist and mark them for preservation
+		switch (body.def) {
+			case EBlock(exprs):
+				for (expr in exprs) {
+					switch (expr.def) {
+						case EDef(name, params, guards, fnBody) | EDefp(name, params, guards, fnBody):
+							if (name == "child_spec") {
+								hasChildSpec = true;
+								// Mark with keep metadata
+								var newMetadata = if (expr.metadata != null) {
+									var meta = Reflect.copy(expr.metadata);
+									meta.isKeep = true;
+									meta;
+								} else {
+									{isKeep: true};
+								};
+
+								var preservedFunc = makeASTWithMeta(expr.def, newMetadata, expr.pos);
+								statements.push(preservedFunc);
+								#if debug_annotation_transforms
+								#end
+							} else if (name == "start_link") {
+								hasStartLink = true;
+								// Mark with keep metadata
+								var newMetadata = if (expr.metadata != null) {
+									var meta = Reflect.copy(expr.metadata);
+									meta.isKeep = true;
+									meta;
+								} else {
+									{isKeep: true};
+								};
+
+								var preservedFunc = makeASTWithMeta(expr.def, newMetadata, expr.pos);
+								statements.push(preservedFunc);
+								#if debug_annotation_transforms
+								#end
+							} else {
+								// Keep other functions as-is
+								statements.push(expr);
+							}
+						default:
+							// Keep other expressions
+							statements.push(expr);
+					}
+				}
+			default:
+				// Single expression body
+				return body;
+		}
+
+		// If supervisor module needs use Supervisor statement, add it
+		// (This would typically be done in a separate pass, but we can ensure it here)
+		var needsUseSupervisor = metadata?.isSupervisor == true && metadata?.isEndpoint != true && metadata?.isApplication != true;
+
+		if (needsUseSupervisor) {
+			// Check if we already have use Supervisor and init/1
+			var hasUseSupervisor = false;
+			var hasInit = false;
+
+			for (stmt in statements) {
+				switch (stmt.def) {
+					case EUse("Supervisor", _):
+						hasUseSupervisor = true;
+					case EDef("init", _, _, _):
+						hasInit = true;
+					default:
+				}
+			}
+
+			if (!hasUseSupervisor) {
+				// Add use Supervisor at the beginning
+				statements.insert(0, makeAST(EUse("Supervisor", [])));
+				#if debug_annotation_transforms
+				#end
+			}
+
+			if (!hasInit) {
+				// Add default init/1 callback that delegates to start_link
+				var initBody = makeAST(ETuple([
+					makeAST(EAtom("ok")),
+					makeAST(ETuple([
+						makeAST(EList([])), // Empty children list
+						makeAST(EKeywordList([
+							{key: "strategy", value: makeAST(EAtom("one_for_one"))},
+							{key: "max_restarts", value: makeAST(EInteger(3))},
+							{key: "max_seconds", value: makeAST(EInteger(5))}
+						]))
+					]))
+				]));
+
+				var initFunc = makeAST(EDef("init", [PVar("_args")], null, initBody));
+
+				statements.push(initFunc);
+				#if debug_annotation_transforms
+				#end
+			}
+		}
+
+		return makeAST(EBlock(statements));
+	}
 }
-
 #end
