@@ -73,6 +73,7 @@ import os
 import sys
 import datetime
 from pathlib import Path
+from typing import Dict, List, Set
 
 root_dir = Path(sys.argv[1])
 reference_input = Path(sys.argv[2])
@@ -107,8 +108,8 @@ def module_id_from_relpath(rel: Path) -> str:
     raise ValueError(f"Unexpected path (not .hx/.cross.hx): {rel}")
   return name.replace("/", ".")
 
-def collect_std_modules(std_root: Path, allow_cross: bool) -> set[str]:
-  modules: set[str] = set()
+def collect_std_modules(std_root: Path, allow_cross: bool) -> Set[str]:
+  modules: Set[str] = set()
   suffixes = [".hx"] + ([".cross.hx"] if allow_cross else [])
 
   for file in std_root.rglob("*"):
@@ -125,7 +126,7 @@ def collect_std_modules(std_root: Path, allow_cross: bool) -> set[str]:
 
   return modules
 
-def collect_prefixed_modules(prefix: str, root: Path, allow_cross: bool) -> set[str]:
+def collect_prefixed_modules(prefix: str, root: Path, allow_cross: bool) -> Set[str]:
   """
   Collect modules from a subtree that is *not* laid out like std/ itself.
 
@@ -135,7 +136,7 @@ def collect_prefixed_modules(prefix: str, root: Path, allow_cross: bool) -> set[
   This is needed because consumer installs always have the library `src/` classpath
   immediately, while `std/` is injected later via bootstrap macros.
   """
-  modules: set[str] = set()
+  modules: Set[str] = set()
   if not root.exists():
     return modules
 
@@ -191,8 +192,8 @@ intersection = sorted(reference_modules & local_std_modules)
 reference_only = sorted(reference_modules - local_std_modules)
 local_only = sorted(local_std_modules - reference_modules)
 
-def group_by_prefix(modules: list[str]) -> dict[str, int]:
-  counts: dict[str, int] = {"<top-level>": 0, "haxe": 0, "sys": 0}
+def group_by_prefix(modules: List[str]) -> Dict[str, int]:
+  counts: Dict[str, int] = {"<top-level>": 0, "haxe": 0, "sys": 0}
   for module in modules:
     if "." not in module:
       counts["<top-level>"] += 1
@@ -272,7 +273,7 @@ elif markdown_mode:
   haxe_mods = [m for m in missing if m.startswith('haxe.')]
   sys_mods = [m for m in missing if m.startswith('sys.')]
 
-  def highlight(modules: list[str], candidates: list[str]) -> list[str]:
+  def highlight(modules: List[str], candidates: List[str]) -> List[str]:
     return [m for m in candidates if m in modules]
   if top:
     print(f"Top-level ({len(top)}): `" + "`, `".join(top) + "`")
