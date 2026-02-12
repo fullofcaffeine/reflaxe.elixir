@@ -801,7 +801,7 @@ export PORT="$PORT"
 # For one-shot validation runs, disable endpoint watchers. Watchers are helpful
 # for interactive dev, but can leak long-lived processes (e.g. `haxe --wait`)
 # after the server is torn down.
-PHX_ENV_PREFIX="MIX_ENV=$ENV_NAME"
+PHX_ENV_PREFIX="MIX_ENV=$ENV_NAME MIX_BUILD_ROOT=$QA_BUILD_ROOT"
 if [[ "$KEEP_ALIVE" -eq 0 ]]; then
   PHX_ENV_PREFIX="DISABLE_WATCHERS=1 HAXE_NO_COMPILE=1 HAXE_NO_SERVER=1 ${PHX_ENV_PREFIX}"
 fi
