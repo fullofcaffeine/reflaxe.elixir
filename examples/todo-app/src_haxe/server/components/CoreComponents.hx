@@ -246,7 +246,8 @@ class CoreComponents {
 	 */
 	@:component
 	public static function card(assigns:CardAssigns):String {
-		return (<section class={["bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden", assigns.className]}>
+		return
+			(<section class={["bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden", assigns.className]}>
 	                <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
 	                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">${assigns.title}</h2>
 	                    <if {assigns.action != null}>
