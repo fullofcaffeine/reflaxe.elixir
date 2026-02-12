@@ -243,6 +243,9 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     """
   end
 
+  @doc false
+  def build_hxml_content_for_test(config), do: build_hxml_content(config)
+
   # Create package.json for npm dependencies
   defp create_package_json(config) do
     package_content = package_json_content(config)
