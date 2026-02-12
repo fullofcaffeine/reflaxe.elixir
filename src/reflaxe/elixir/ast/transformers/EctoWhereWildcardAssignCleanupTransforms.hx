@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -39,45 +38,46 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   else
  *     query
  *   end
-  */
+ */
 class EctoWhereWildcardAssignCleanupTransforms {
-    static inline function isEctoWhereCall(e: ElixirAST): Bool {
-        return switch (e.def) {
-            case ERemoteCall(mod, func, _):
-                if (func != "where") return false;
-                switch (mod.def) {
-                    case EVar(m) if (m == "Ecto.Query"): true;
-                    default: false;
-                }
-            default: false;
-        };
-    }
+	static inline function isEctoWhereCall(e:ElixirAST):Bool {
+		return switch (e.def) {
+			case ERemoteCall(mod, func, _):
+				if (func != "where")
+					return false;
+				switch (mod.def) {
+					case EVar(m) if (m == "Ecto.Query"): true;
+					default: false;
+				}
+			default: false;
+		};
+	}
 
-    public static function transformPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EIf(cond, thenBr, elseBr):
-                    // Some synthetic/partial ifs may not carry a then-branch yet; skip safely.
-                    if (thenBr == null) return n;
-                    var newThen = switch (thenBr.def) {
-                        case EMatch(_, rhs) if (isEctoWhereCall(rhs)): rhs;
-                        case EBinary(Match, left, rhs2):
-                            var isWild = switch (left.def) {
-                                case EVar(v) if (v == "_"): true;
-                                case EUnderscore: true;
-                                default: false;
-                            };
-                            (isWild && isEctoWhereCall(rhs2)) ? rhs2 : thenBr;
-                        default: thenBr;
-                    };
-                    if (newThen != thenBr) {
-                        makeASTWithMeta(EIf(cond, newThen, elseBr), n.metadata, n.pos);
-                    } else n;
-                default:
-                    n;
-            }
-        });
-    }
+	public static function transformPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EIf(cond, thenBr, elseBr):
+					// Some synthetic/partial ifs may not carry a then-branch yet; skip safely.
+					if (thenBr == null)
+						return n;
+					var newThen = switch (thenBr.def) {
+						case EMatch(_, rhs) if (isEctoWhereCall(rhs)): rhs;
+						case EBinary(Match, left, rhs2):
+							var isWild = switch (left.def) {
+								case EVar(v) if (v == "_"): true;
+								case EUnderscore: true;
+								default: false;
+							};
+							(isWild && isEctoWhereCall(rhs2)) ? rhs2 : thenBr;
+						default: thenBr;
+					};
+					if (newThen != thenBr) {
+						makeASTWithMeta(EIf(cond, newThen, elseBr), n.metadata, n.pos);
+					} else n;
+				default:
+					n;
+			}
+		});
+	}
 }
-
 #end

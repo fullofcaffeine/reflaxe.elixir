@@ -12,4 +12,3 @@ import phoenix.PresenceBehavior;
 @:native("MyAppWeb.Presence")
 @:presence
 class Presence implements PresenceBehavior {}
-

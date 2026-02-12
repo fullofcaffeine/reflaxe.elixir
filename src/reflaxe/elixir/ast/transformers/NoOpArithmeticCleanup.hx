@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -38,23 +37,23 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   }
  */
 class NoOpArithmeticCleanup {
-    public static function cleanupPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EBlock(stmts):
-                    var filtered: Array<ElixirAST> = [];
-                    for (s in stmts) switch (s.def) {
-                        case EBinary(Add, {def: EInteger(_)} | {def: EFloat(_)}, {def: EInteger(_)} | {def: EFloat(_)}):
-                            // drop numeric constant-only arithmetic
-                        default:
-                            filtered.push(s);
-                    }
-                    makeASTWithMeta(EBlock(filtered), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        });
-    }
+	public static function cleanupPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EBlock(stmts):
+					var filtered:Array<ElixirAST> = [];
+					for (s in stmts)
+						switch (s.def) {
+							case EBinary(Add, {def: EInteger(_)} | {def: EFloat(_)}, {def: EInteger(_)} | {def: EFloat(_)}):
+								// drop numeric constant-only arithmetic
+							default:
+								filtered.push(s);
+						}
+					makeASTWithMeta(EBlock(filtered), n.metadata, n.pos);
+				default:
+					n;
+			}
+		});
+	}
 }
-
 #end

@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -36,111 +35,116 @@ import reflaxe.elixir.ast.analyzers.OptimizedVarUseAnalyzer;
  *   Enum.concat(acc, [render(elem)])
  */
 class EFnBinderReferenceAlignTransforms {
-    public static function fixPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EFn(clauses):
-                    var newClauses = [];
-                    for (cl in clauses) {
-                        // Collect binder bases and current names
-                        var binders:Array<{orig:String, base:String, pat:EPattern}> = [];
-                        var used = OptimizedVarUseAnalyzer.referencedVarsExact(cl.body);
-                        var newArgs:Array<EPattern> = [];
-                        for (a in cl.args) {
-                            switch (a) {
-                                case PVar(name):
-                                    var base = (name != null && name.length > 1 && name.charAt(0) == '_') ? name.substr(1) : name;
-                                    var newName = name;
-                                    // If body references either base or _base, normalize binder to base
-                                    if (base != null && (used.exists(base) || used.exists('_' + base))) newName = base;
-                                    binders.push({orig: name, base: base, pat: PVar(newName)});
-                                    newArgs.push(PVar(newName));
-                                case PAlias(name, pat):
-                                    var base2 = (name != null && name.length > 1 && name.charAt(0) == '_') ? name.substr(1) : name;
-                                    var newName2 = name;
-                                    if (base2 != null && (used.exists(base2) || used.exists('_' + base2))) newName2 = base2;
-                                    binders.push({orig: name, base: base2, pat: PAlias(newName2, pat)});
-                                    newArgs.push(PAlias(newName2, pat));
-                                default:
-                                    newArgs.push(a);
-                            }
-                        }
-                        // Rewrite underscored body refs _base -> base when base is a binder
-                        var newBody = cl.body;
-                        for (b in binders) {
-                            var underscored = (b.base != null && b.base.length > 0) ? ("_" + b.base) : null;
-                            if (underscored != null) {
-                                newBody = renameVarInNode(newBody, underscored, b.base);
-                            }
-                        }
-                        // Also fix ERaw tokens: replace _base with base with token boundaries
-                        newBody = renameUnderscoredTokensInERaw(newBody, [for (b in binders) b.base]);
-                        newClauses.push({args: newArgs, guard: cl.guard, body: newBody});
-                    }
-                    makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        });
-    }
+	public static function fixPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EFn(clauses):
+					var newClauses = [];
+					for (cl in clauses) {
+						// Collect binder bases and current names
+						var binders:Array<{orig:String, base:String, pat:EPattern}> = [];
+						var used = OptimizedVarUseAnalyzer.referencedVarsExact(cl.body);
+						var newArgs:Array<EPattern> = [];
+						for (a in cl.args) {
+							switch (a) {
+								case PVar(name):
+									var base = (name != null && name.length > 1 && name.charAt(0) == '_') ? name.substr(1) : name;
+									var newName = name;
+									// If body references either base or _base, normalize binder to base
+									if (base != null && (used.exists(base) || used.exists('_' + base)))
+										newName = base;
+									binders.push({orig: name, base: base, pat: PVar(newName)});
+									newArgs.push(PVar(newName));
+								case PAlias(name, pat):
+									var base2 = (name != null && name.length > 1 && name.charAt(0) == '_') ? name.substr(1) : name;
+									var newName2 = name;
+									if (base2 != null && (used.exists(base2) || used.exists('_' + base2)))
+										newName2 = base2;
+									binders.push({orig: name, base: base2, pat: PAlias(newName2, pat)});
+									newArgs.push(PAlias(newName2, pat));
+								default:
+									newArgs.push(a);
+							}
+						}
+						// Rewrite underscored body refs _base -> base when base is a binder
+						var newBody = cl.body;
+						for (b in binders) {
+							var underscored = (b.base != null && b.base.length > 0) ? ("_" + b.base) : null;
+							if (underscored != null) {
+								newBody = renameVarInNode(newBody, underscored, b.base);
+							}
+						}
+						// Also fix ERaw tokens: replace _base with base with token boundaries
+						newBody = renameUnderscoredTokensInERaw(newBody, [for (b in binders) b.base]);
+						newClauses.push({args: newArgs, guard: cl.guard, body: newBody});
+					}
+					makeASTWithMeta(EFn(newClauses), n.metadata, n.pos);
+				default:
+					n;
+			}
+		});
+	}
 
-    static function renameVarInNode(node: ElixirAST, from: String, to: String): ElixirAST {
-        return ElixirASTTransformer.transformNode(node, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EVar(name) if (name == from): makeASTWithMeta(EVar(to), n.metadata, n.pos);
-                case ERaw(_): n; // do not touch raw strings/HEEx
-                default: n;
-            }
-        });
-    }
+	static function renameVarInNode(node:ElixirAST, from:String, to:String):ElixirAST {
+		return ElixirASTTransformer.transformNode(node, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EVar(name) if (name == from): makeASTWithMeta(EVar(to), n.metadata, n.pos);
+				case ERaw(_): n; // do not touch raw strings/HEEx
+				default: n;
+			}
+		});
+	}
 
-    static function renameUnderscoredTokensInERaw(node: ElixirAST, bases: Array<String>): ElixirAST {
-        inline function isIdentChar(c: String): Bool {
-            if (c == null || c.length == 0) return false;
-            var ch = c.charCodeAt(0);
-            return (ch >= '0'.code && ch <= '9'.code) || (ch >= 'A'.code && ch <= 'Z'.code) || (ch >= 'a'.code && ch <= 'z'.code) || c == "_" || c == ".";
-        }
-        return ElixirASTTransformer.transformNode(node, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case ERaw(code):
-                    if (code == null || bases == null || bases.length == 0) return n;
-                    var out = code;
-                    for (b in bases) {
-                        if (b == null || b.length == 0) continue;
-                        var needle = "_" + b;
-                        var start = 0;
-                        var sb = new StringBuf();
-                        var changed = false;
-                        while (start < out.length) {
-                            var i = out.indexOf(needle, start);
-                            if (i == -1) {
-                                sb.add(out.substr(start));
-                                break;
-                            }
-                            var before = i > 0 ? out.substr(i - 1, 1) : null;
-                            var afterIdx = i + needle.length;
-                            var after = afterIdx < out.length ? out.substr(afterIdx, 1) : null;
-                            if (!isIdentChar(before) && !isIdentChar(after)) {
-                                // boundary-ok replacement
-                                sb.add(out.substr(start, i - start));
-                                sb.add(b);
-                                start = i + needle.length;
-                                changed = true;
-                            } else {
-                                // not a standalone token; keep and continue
-                                sb.add(out.substr(start, (i - start) + 1));
-                                start = i + 1;
-                            }
-                        }
-                        if (changed) out = sb.toString();
-                    }
-                    // Only update ERaw if actual change happened
-                    if (out != code) makeASTWithMeta(ERaw(out), n.metadata, n.pos) else n;
-                default:
-                    n;
-            }
-        });
-    }
+	static function renameUnderscoredTokensInERaw(node:ElixirAST, bases:Array<String>):ElixirAST {
+		inline function isIdentChar(c:String):Bool {
+			if (c == null || c.length == 0)
+				return false;
+			var ch = c.charCodeAt(0);
+			return (ch >= '0'.code && ch <= '9'.code) || (ch >= 'A'.code && ch <= 'Z'.code) || (ch >= 'a'.code && ch <= 'z'.code) || c == "_" || c == ".";
+		}
+		return ElixirASTTransformer.transformNode(node, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case ERaw(code):
+					if (code == null || bases == null || bases.length == 0)
+						return n;
+					var out = code;
+					for (b in bases) {
+						if (b == null || b.length == 0)
+							continue;
+						var needle = "_" + b;
+						var start = 0;
+						var sb = new StringBuf();
+						var changed = false;
+						while (start < out.length) {
+							var i = out.indexOf(needle, start);
+							if (i == -1) {
+								sb.add(out.substr(start));
+								break;
+							}
+							var before = i > 0 ? out.substr(i - 1, 1) : null;
+							var afterIdx = i + needle.length;
+							var after = afterIdx < out.length ? out.substr(afterIdx, 1) : null;
+							if (!isIdentChar(before) && !isIdentChar(after)) {
+								// boundary-ok replacement
+								sb.add(out.substr(start, i - start));
+								sb.add(b);
+								start = i + needle.length;
+								changed = true;
+							} else {
+								// not a standalone token; keep and continue
+								sb.add(out.substr(start, (i - start) + 1));
+								start = i + 1;
+							}
+						}
+						if (changed)
+							out = sb.toString();
+					}
+					// Only update ERaw if actual change happened
+					if (out != code) makeASTWithMeta(ERaw(out), n.metadata, n.pos) else n;
+				default:
+					n;
+			}
+		});
+	}
 }
-
 #end

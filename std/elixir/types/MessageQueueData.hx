@@ -34,36 +34,35 @@ package elixir.types;
  * @see ProcessFlag for other process flags
  */
 abstract MessageQueueData(String) from String to String {
-    
-    /**
-     * Store messages on the process heap (default behavior).
-     * Messages are garbage collected with the rest of the heap.
-     * Best for processes with short-lived or few messages.
-     */
-    public static inline function onHeap(): MessageQueueData {
-        return new MessageQueueData("on_heap");
-    }
-    
-    /**
-     * Store messages off the process heap in separate memory.
-     * Reduces garbage collection pressure for the process heap.
-     * Best for processes that accumulate many messages.
-     */
-    public static inline function offHeap(): MessageQueueData {
-        return new MessageQueueData("off_heap");
-    }
-    
-    @:from
-    private static inline function fromString(s: String): MessageQueueData {
-        return new MessageQueueData(s);
-    }
-    
-    @:to
-    private inline function toString(): String {
-        return this;
-    }
-    
-    private inline function new(location: String) {
-        this = location;
-    }
+	/**
+	 * Store messages on the process heap (default behavior).
+	 * Messages are garbage collected with the rest of the heap.
+	 * Best for processes with short-lived or few messages.
+	 */
+	public static inline function onHeap():MessageQueueData {
+		return new MessageQueueData("on_heap");
+	}
+
+	/**
+	 * Store messages off the process heap in separate memory.
+	 * Reduces garbage collection pressure for the process heap.
+	 * Best for processes that accumulate many messages.
+	 */
+	public static inline function offHeap():MessageQueueData {
+		return new MessageQueueData("off_heap");
+	}
+
+	@:from
+	private static inline function fromString(s:String):MessageQueueData {
+		return new MessageQueueData(s);
+	}
+
+	@:to
+	private inline function toString():String {
+		return this;
+	}
+
+	private inline function new(location:String) {
+		this = location;
+	}
 }

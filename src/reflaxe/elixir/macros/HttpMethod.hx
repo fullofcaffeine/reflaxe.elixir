@@ -7,27 +7,27 @@ package reflaxe.elixir.macros;
  * instead of error-prone string literals.
  */
 enum HttpMethod {
-    /** Standard HTTP GET request */
-    GET;
-    
-    /** Standard HTTP POST request */
-    POST;
-    
-    /** Standard HTTP PUT request */
-    PUT;
-    
-    /** Standard HTTP DELETE request */
-    DELETE;
-    
-    /** Standard HTTP PATCH request */
-    PATCH;
-    
-    /** Phoenix LiveView route */
-    LIVE;
-    
-    /** Phoenix LiveDashboard route (special handling) */
-    LIVE_DASHBOARD;
+	/** Standard HTTP GET request */
+	GET;
 
-    /** Swoosh mailbox preview route (special handling; dev-only) */
-    MAILBOX;
+	/** Standard HTTP POST request */
+	POST;
+
+	/** Standard HTTP PUT request */
+	PUT;
+
+	/** Standard HTTP DELETE request */
+	DELETE;
+
+	/** Standard HTTP PATCH request */
+	PATCH;
+
+	/** Phoenix LiveView route */
+	LIVE;
+
+	/** Phoenix LiveDashboard route (special handling) */
+	LIVE_DASHBOARD;
+
+	/** Swoosh mailbox preview route (special handling; dev-only) */
+	MAILBOX;
 }

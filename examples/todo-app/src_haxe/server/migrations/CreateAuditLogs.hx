@@ -22,24 +22,22 @@ import ecto.Migration.ColumnType;
  */
 @:migration({timestamp: "20260102120000"})
 class CreateAuditLogs extends Migration {
-    public function up(): Void {
-        createTable("audit_logs")
-            .addColumn("organization_id", ColumnType.Integer, {nullable: false})
-            .addColumn("actor_id", ColumnType.Integer, {nullable: false})
-            .addColumn("action", ColumnType.String(), {nullable: false})
-            .addColumn("entity", ColumnType.String(), {nullable: false})
-            .addColumn("entity_id", ColumnType.Integer)
-            .addColumn("metadata", ColumnType.Json)
-            .addTimestamps()
-            .addIndex(["organization_id"])
-            .addIndex(["actor_id"])
-            .addIndex(["action"])
-            .addIndex(["entity"])
-            .addIndex(["inserted_at"]);
-    }
+	public function up():Void {
+		createTable("audit_logs").addColumn("organization_id", ColumnType.Integer, {nullable: false})
+			.addColumn("actor_id", ColumnType.Integer, {nullable: false})
+			.addColumn("action", ColumnType.String(), {nullable: false})
+			.addColumn("entity", ColumnType.String(), {nullable: false})
+			.addColumn("entity_id", ColumnType.Integer)
+			.addColumn("metadata", ColumnType.Json)
+			.addTimestamps()
+			.addIndex(["organization_id"])
+			.addIndex(["actor_id"])
+			.addIndex(["action"])
+			.addIndex(["entity"])
+			.addIndex(["inserted_at"]);
+	}
 
-    public function down(): Void {
-        dropTable("audit_logs");
-    }
+	public function down():Void {
+		dropTable("audit_logs");
+	}
 }
-

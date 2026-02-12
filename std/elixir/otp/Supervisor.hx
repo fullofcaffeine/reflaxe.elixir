@@ -17,7 +17,6 @@ import elixir.types.Term;
  * SupervisorExtern.start_link(children, SupervisorOptions.defaults());
  * ```
  */
-
 /**
  * Child specification formats accepted by Supervisor.start_link
  * 
@@ -33,40 +32,40 @@ import elixir.types.Term;
  */
 @:elixirIdiomatic
 enum ChildSpecFormat {
-    /**
-     * Simple module reference
-     * Compiles to: MyModule
-     */
-    ModuleRef(module: String);
-    
-    /**
-     * Module with arguments
-     * Compiles to: {MyModule, args}
-     */
-    ModuleWithArgs(module: String, args: Array<Term>);
-    
-    /**
-     * Module with keyword list config
-     * Compiles to: {MyModule, [name: "foo", pool_size: 10]}
-     */
-    ModuleWithConfig(module: String, config: Array<{key: String, value: Term}>);
-    
-    /**
-     * Full child specification map
-     */
-    FullSpec(spec: ChildSpec);
+	/**
+	 * Simple module reference
+	 * Compiles to: MyModule
+	 */
+	ModuleRef(module:String);
+
+	/**
+	 * Module with arguments
+	 * Compiles to: {MyModule, args}
+	 */
+	ModuleWithArgs(module:String, args:Array<Term>);
+
+	/**
+	 * Module with keyword list config
+	 * Compiles to: {MyModule, [name: "foo", pool_size: 10]}
+	 */
+	ModuleWithConfig(module:String, config:Array<{key:String, value:Term}>);
+
+	/**
+	 * Full child specification map
+	 */
+	FullSpec(spec:ChildSpec);
 }
 
 /**
  * Supervisor child specification
  */
 typedef ChildSpec = {
-    id: String,
-    start: {module: String, func: String, args: Array<Term>},
-    ?restart: RestartType,
-    ?shutdown: ShutdownType,
-    ?type: ChildType,
-    ?modules: Array<String>
+	id:String,
+	start:{module:String, func:String, args:Array<Term>},
+	?restart:RestartType,
+	?shutdown:ShutdownType,
+	?type:ChildType,
+	?modules:Array<String>
 }
 
 /**
@@ -88,9 +87,9 @@ typedef ChildSpec = {
  */
 @:elixirIdiomatic
 enum RestartType {
-    Permanent;    // Always restart
-    Temporary;    // Never restart
-    Transient;    // Restart only if abnormal exit
+	Permanent; // Always restart
+	Temporary; // Never restart
+	Transient; // Restart only if abnormal exit
 }
 
 /**
@@ -109,9 +108,9 @@ enum RestartType {
  */
 @:elixirIdiomatic
 enum ShutdownType {
-    Brutal;       // Kill immediately
-    Timeout(ms: Int);  // Wait up to N milliseconds
-    Infinity;     // Wait indefinitely
+	Brutal; // Kill immediately
+	Timeout(ms:Int); // Wait up to N milliseconds
+	Infinity; // Wait indefinitely
 }
 
 /**
@@ -128,17 +127,17 @@ enum ShutdownType {
  */
 @:elixirIdiomatic
 enum ChildType {
-    Worker;
-    Supervisor;
+	Worker;
+	Supervisor;
 }
 
 /**
  * Supervisor options
  */
 typedef SupervisorOptions = {
-    ?strategy: SupervisorStrategy,
-    ?max_restarts: Int,
-    ?max_seconds: Int
+	?strategy:SupervisorStrategy,
+	?max_restarts:Int,
+	?max_seconds:Int
 }
 
 /**
@@ -149,90 +148,90 @@ typedef SupervisorOptions = {
  */
 @:elixirIdiomatic
 enum SupervisorStrategy {
-    OneForOne;    // Restart only failed child → :one_for_one
-    OneForAll;    // Restart all children → :one_for_all
-    RestForOne;   // Restart failed child and later siblings → :rest_for_one
-    SimpleOneForOne;  // Dynamic children → :simple_one_for_one
+	OneForOne; // Restart only failed child → :one_for_one
+	OneForAll; // Restart all children → :one_for_all
+	RestForOne; // Restart failed child and later siblings → :rest_for_one
+	SimpleOneForOne; // Dynamic children → :simple_one_for_one
 }
 
 /**
  * Helper class for creating child specifications
  */
 class ChildSpecBuilder {
-    /**
-     * Create a worker child spec
-     */
-    public static function worker(module: String, args: Array<Term>, ?id: String): ChildSpec {
-        return {
-            id: id != null ? id : module,
-            start: {module: module, func: "start_link", args: args},
-            restart: Permanent,
-            shutdown: Timeout(5000),
-            type: Worker,
-            modules: [module]
-        };
-    }
-    
-    /**
-     * Create a supervisor child spec
-     */
-    public static function supervisor(module: String, args: Array<Term>, ?id: String): ChildSpec {
-        return {
-            id: id != null ? id : module,
-            start: {module: module, func: "start_link", args: args},
-            restart: Permanent,
-            shutdown: Infinity,
-            type: Supervisor,
-            modules: [module]
-        };
-    }
-    
-    /**
-     * Create a temporary worker (won't be restarted)
-     */
-    public static function tempWorker(module: String, args: Array<Term>, ?id: String): ChildSpec {
-        var spec = worker(module, args, id);
-        spec.restart = Temporary;
-        return spec;
-    }
+	/**
+	 * Create a worker child spec
+	 */
+	public static function worker(module:String, args:Array<Term>, ?id:String):ChildSpec {
+		return {
+			id: id != null ? id : module,
+			start: {module: module, func: "start_link", args: args},
+			restart: Permanent,
+			shutdown: Timeout(5000),
+			type: Worker,
+			modules: [module]
+		};
+	}
+
+	/**
+	 * Create a supervisor child spec
+	 */
+	public static function supervisor(module:String, args:Array<Term>, ?id:String):ChildSpec {
+		return {
+			id: id != null ? id : module,
+			start: {module: module, func: "start_link", args: args},
+			restart: Permanent,
+			shutdown: Infinity,
+			type: Supervisor,
+			modules: [module]
+		};
+	}
+
+	/**
+	 * Create a temporary worker (won't be restarted)
+	 */
+	public static function tempWorker(module:String, args:Array<Term>, ?id:String):ChildSpec {
+		var spec = worker(module, args, id);
+		spec.restart = Temporary;
+		return spec;
+	}
 }
 
 /**
  * Helper class for supervisor options
  */
 class SupervisorOptionsBuilder {
-    /**
-     * Default supervisor options
-     */
-    public static function defaults(): SupervisorOptions {
-        return {
-            strategy: OneForOne,
-            max_restarts: 3,
-            max_seconds: 5
-        };
-    }
-    
-    /**
-     * Create supervisor options with custom strategy
-     */
-    public static function withStrategy(strategy: SupervisorStrategy): SupervisorOptions {
-        return {
-            strategy: strategy,
-            max_restarts: 3,
-            max_seconds: 5
-        };
-    }
-    
-    /**
-     * Create supervisor options with custom restart limits
-     */
-    public static function withLimits(maxRestarts: Int, maxSeconds: Int): SupervisorOptions {
-        return {
-            strategy: OneForOne,
-            max_restarts: maxRestarts,
-            max_seconds: maxSeconds
-        };
-    }
+	/**
+	 * Default supervisor options
+	 */
+	public static function defaults():SupervisorOptions {
+		return {
+			strategy: OneForOne,
+			max_restarts: 3,
+			max_seconds: 5
+		};
+	}
+
+	/**
+	 * Create supervisor options with custom strategy
+	 */
+	public static function withStrategy(strategy:SupervisorStrategy):SupervisorOptions {
+		return {
+			strategy: strategy,
+			max_restarts: 3,
+			max_seconds: 5
+		};
+	}
+
+	/**
+	 * Create supervisor options with custom restart limits
+	 */
+	public static function withLimits(maxRestarts:Int, maxSeconds:Int):SupervisorOptions {
+		return {
+			strategy: OneForOne,
+			max_restarts: maxRestarts,
+			max_seconds: maxSeconds
+		};
+	}
 }
 
 /**
@@ -240,60 +239,60 @@ class SupervisorOptionsBuilder {
  */
 @:native("Supervisor")
 extern class SupervisorExtern {
-    /**
-     * Start a supervisor
-     * 
-     * @param children Array of child specifications in any accepted format
-     * @param options Supervisor options
-     */
-    @:native("start_link")
-    static function startLink(children: Array<ChildSpecFormat>, options: SupervisorOptions): Term;
-    
-    /**
-     * Start a child dynamically
-     */
-    @:native("start_child")
-    static function startChild(supervisor: Term, child_spec: ChildSpec): Term;
+	/**
+	 * Start a supervisor
+	 * 
+	 * @param children Array of child specifications in any accepted format
+	 * @param options Supervisor options
+	 */
+	@:native("start_link")
+	static function startLink(children:Array<ChildSpecFormat>, options:SupervisorOptions):Term;
 
-    /**
-     * Initialize supervisor flags and children (use inside init/1 callbacks)
-     */
-    @:native("init")
-    static function init(children: Array<ChildSpecFormat>, options: SupervisorOptions): Term;
-    
-    /**
-     * Terminate a child
-     */
-    @:native("terminate_child")
-    static function terminateChild(supervisor: Term, child_id: String): Term;
-    
-    /**
-     * Delete a child specification
-     */
-    @:native("delete_child")
-    static function deleteChild(supervisor: Term, child_id: String): Term;
-    
-    /**
-     * Restart a child
-     */
-    @:native("restart_child")
-    static function restartChild(supervisor: Term, child_id: String): Term;
-    
-    /**
-     * Get child specification
-     */
-    @:native("get_childspec")
-    static function getChildspec(supervisor: Term, child_id: String): Term;
-    
-    /**
-     * Count children
-     */
-    @:native("count_children")
-    static function countChildren(supervisor: Term): Term;
-    
-    /**
-     * List children
-     */
-    @:native("which_children")
-    static function whichChildren(supervisor: Term): Array<Term>;
+	/**
+	 * Start a child dynamically
+	 */
+	@:native("start_child")
+	static function startChild(supervisor:Term, child_spec:ChildSpec):Term;
+
+	/**
+	 * Initialize supervisor flags and children (use inside init/1 callbacks)
+	 */
+	@:native("init")
+	static function init(children:Array<ChildSpecFormat>, options:SupervisorOptions):Term;
+
+	/**
+	 * Terminate a child
+	 */
+	@:native("terminate_child")
+	static function terminateChild(supervisor:Term, child_id:String):Term;
+
+	/**
+	 * Delete a child specification
+	 */
+	@:native("delete_child")
+	static function deleteChild(supervisor:Term, child_id:String):Term;
+
+	/**
+	 * Restart a child
+	 */
+	@:native("restart_child")
+	static function restartChild(supervisor:Term, child_id:String):Term;
+
+	/**
+	 * Get child specification
+	 */
+	@:native("get_childspec")
+	static function getChildspec(supervisor:Term, child_id:String):Term;
+
+	/**
+	 * Count children
+	 */
+	@:native("count_children")
+	static function countChildren(supervisor:Term):Term;
+
+	/**
+	 * List children
+	 */
+	@:native("which_children")
+	static function whichChildren(supervisor:Term):Array<Term>;
 }

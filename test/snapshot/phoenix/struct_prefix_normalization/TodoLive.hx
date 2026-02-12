@@ -6,10 +6,10 @@
  */
 @:native("TodoAppWeb.TodoLive")
 class TodoLive {
-    public static function build(): Dynamic {
-        var todo = new Todo(); // Should render as %TodoApp.Todo{}
-        return todo;
-    }
+	public static function build():Dynamic {
+		var todo = new Todo(); // Should render as %TodoApp.Todo{}
+		return todo;
+	}
 }
 
 /**
@@ -17,6 +17,5 @@ class TodoLive {
  */
 @:schema("todos")
 class Todo {
-    public function new() {}
+	public function new() {}
 }
-

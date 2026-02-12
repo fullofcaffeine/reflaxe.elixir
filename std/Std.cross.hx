@@ -16,168 +16,168 @@ package;
  * @see https://api.haxe.org/Std.html - Official Haxe Std documentation
  */
 class Std {
-    /**
-     * Convert any value to its string representation.
-     *
-     * WHY: Universal string conversion is needed for debugging, logging, and display.
-     * WHAT: Converts any Elixir value to its string representation using inspect/1.
-     * HOW: CallExprBuilder.handleSpecialCall() intercepts Std.string() calls.
-     *
-     * IMPLEMENTATION: The body is not used during compilation. CallExprBuilder
-     * detects Std.string(value) calls and generates inspect(value) directly.
-     * This approach is cleaner than @:native because the compiler handles it
-     * explicitly in handleSpecialCall() where other Std methods are processed.
-     *
-     * @param value The value to convert to string (any type)
-     * @return String representation of the value
-     */
-    public static function string<T>(value: T): String {
-        // This body is never compiled - CallExprBuilder intercepts the call
-        // But we provide a proper implementation for clarity
-        return untyped __elixir__('inspect({0})', value);
-    }
-    
-    /**
-     * Parse a string to an integer.
-     * 
-     * WHY: String-to-integer conversion is common in input processing.
-     * WHAT: Attempts to parse a string as an integer.
-     * HOW: The compiler will optimize this to Integer.parse/1.
-     * 
-     * @param str The string to parse
-     * @return The parsed integer or null if parsing fails
-     */
-    public static function parseInt(str: String): Null<Int> {
-        // Use native Elixir Integer.parse
-        return untyped __elixir__('
+	/**
+	 * Convert any value to its string representation.
+	 *
+	 * WHY: Universal string conversion is needed for debugging, logging, and display.
+	 * WHAT: Converts any Elixir value to its string representation using inspect/1.
+	 * HOW: CallExprBuilder.handleSpecialCall() intercepts Std.string() calls.
+	 *
+	 * IMPLEMENTATION: The body is not used during compilation. CallExprBuilder
+	 * detects Std.string(value) calls and generates inspect(value) directly.
+	 * This approach is cleaner than @:native because the compiler handles it
+	 * explicitly in handleSpecialCall() where other Std methods are processed.
+	 *
+	 * @param value The value to convert to string (any type)
+	 * @return String representation of the value
+	 */
+	public static function string<T>(value:T):String {
+		// This body is never compiled - CallExprBuilder intercepts the call
+		// But we provide a proper implementation for clarity
+		return untyped __elixir__('inspect({0})', value);
+	}
+
+	/**
+	 * Parse a string to an integer.
+	 * 
+	 * WHY: String-to-integer conversion is common in input processing.
+	 * WHAT: Attempts to parse a string as an integer.
+	 * HOW: The compiler will optimize this to Integer.parse/1.
+	 * 
+	 * @param str The string to parse
+	 * @return The parsed integer or null if parsing fails
+	 */
+	public static function parseInt(str:String):Null<Int> {
+		// Use native Elixir Integer.parse
+		return untyped __elixir__('
             case Integer.parse({0}) do
                 {num, _} -> num
                 :error -> nil
             end
         ', str);
-    }
-    
-    /**
-     * Parse a string to a float.
-     * 
-     * WHY: String-to-float conversion is needed for numeric input processing.
-     * WHAT: Attempts to parse a string as a floating point number.
-     * HOW: The compiler will optimize this to Float.parse/1.
-     * 
-     * @param str The string to parse
-     * @return The parsed float or null if parsing fails
-     */
-    public static function parseFloat(str: String): Null<Float> {
-        // Use native Elixir Float.parse
-        return untyped __elixir__('
+	}
+
+	/**
+	 * Parse a string to a float.
+	 * 
+	 * WHY: String-to-float conversion is needed for numeric input processing.
+	 * WHAT: Attempts to parse a string as a floating point number.
+	 * HOW: The compiler will optimize this to Float.parse/1.
+	 * 
+	 * @param str The string to parse
+	 * @return The parsed float or null if parsing fails
+	 */
+	public static function parseFloat(str:String):Null<Float> {
+		// Use native Elixir Float.parse
+		return untyped __elixir__('
             case Float.parse({0}) do
                 {num, _} -> num
                 :error -> nil
             end
         ', str);
-    }
-    
-    /**
-     * Check if a value is of a specific type at runtime.
-     * 
-     * ## WHY
-     * Runtime type checking is necessary for safe casts, validation, and handling dynamic data
-     * from external sources (JSON, user input, etc.) where compile-time type safety isn't available.
-     * 
-     * ## WHAT
-     * Checks if a value matches a given type at runtime using Elixir's guard clauses and
-     * pattern matching. Handles basic types, user-defined structs, and enum variants.
-     * 
-     * ## HOW IT WORKS
-     * 
-     * ### Basic Types
-     * - `String` → `is_binary/1` (Elixir strings are binaries)
-     * - `Int` → `is_integer/1`
-     * - `Float` → `is_float/1`
-     * - `Bool` → `is_boolean/1`
-     * - `Array` → `is_list/1` (Haxe arrays compile to Elixir lists)
-     * - `Map` → `is_map/1`
-     * 
-     * ### User-Defined Types
-     * - **Structs**: Checks the `__struct__` field for type matching
-     * - **Enums**: Checks tagged tuples where first element is the constructor atom
-     * - **Classes**: Compares against the module atom for struct types
-     * 
-     * ## LIMITATIONS & PITFALLS
-     * 
-     * ### 1. Type Erasure
-     * Generic type parameters are erased at runtime:
-     * ```haxe
-     * Std.is([1, 2, 3], Array<Int>);    // ❌ Can't check element types
-     * Std.is([1, 2, 3], Array);         // ✅ Can only check it's an array
-     * ```
-     * 
-     * ### 2. Interface Checking
-     * Interfaces don't exist at runtime in Elixir, so interface checks won't work:
-     * ```haxe
-     * interface ISerializable { }
-     * Std.is(obj, ISerializable);       // ❌ Will always return false
-     * ```
-     * 
-     * ### 3. Abstract Types
-     * Abstract types are compile-time only and don't exist at runtime:
-     * ```haxe
-     * abstract UserId(Int) {}
-     * Std.is(42, UserId);               // ❌ Will check for Int, not UserId
-     * ```
-     * 
-     * ### 4. Null Handling
-     * `null` (nil in Elixir) will return false for all type checks except:
-     * ```haxe
-     * Std.is(null, Null<T>);            // Implementation-dependent
-     * ```
-     * 
-     * ### 5. Dynamic Type
-     * Everything matches Dynamic since it represents "any type":
-     * ```haxe
-     * Std.is(anything, Dynamic);        // Always true (not implemented here)
-     * ```
-     * 
-     * ### 6. Enum Limitations
-     * Only checks constructor, not parameter types:
-     * ```haxe
-     * enum Option<T> { Some(v: T); None; }
-     * Std.is(Some("hello"), Option);    // ✅ Works
-     * Std.is(Some("hello"), Some);      // ⚠️ Checks for :Some atom
-     * ```
-     * 
-     * ### 7. Anonymous Structures
-     * Anonymous structures compile to maps, so specific field checking isn't done:
-     * ```haxe
-     * typedef Point = { x: Int, y: Int }
-     * Std.is({x: 1, y: 2}, Point);      // ❌ Just checks if it's a map
-     * ```
-     * 
-     * ## EDGE CASES
-     * - Empty arrays/maps will match their respective types
-     * - Atoms are not directly checkable from Haxe types
-     * - Tuples without atom tags won't match enum patterns
-     * - Recursive type checking is not performed on container contents
-     * 
-     * ## RECOMMENDED USAGE
-     * Best used for:
-     * - Checking basic types from dynamic sources
-     * - Validating struct types before casting
-     * - Simple enum constructor checking
-     * 
-     * Avoid for:
-     * - Generic type parameter validation
-     * - Interface implementation checking
-     * - Complex nested type validation
-     * 
-     * @param value The value to check (can be null)
-     * @param type The type class to check against
-     * @return True if the value is of the specified type, false otherwise
-     */
-    public static function is(value: Dynamic, type: Dynamic): Bool {
-        // Runtime type checking for Elixir types
-        // Handles basic types, structs, and enums (as tagged tuples)
-        return untyped __elixir__('
+	}
+
+	/**
+	 * Check if a value is of a specific type at runtime.
+	 * 
+	 * ## WHY
+	 * Runtime type checking is necessary for safe casts, validation, and handling dynamic data
+	 * from external sources (JSON, user input, etc.) where compile-time type safety isn't available.
+	 * 
+	 * ## WHAT
+	 * Checks if a value matches a given type at runtime using Elixir's guard clauses and
+	 * pattern matching. Handles basic types, user-defined structs, and enum variants.
+	 * 
+	 * ## HOW IT WORKS
+	 * 
+	 * ### Basic Types
+	 * - `String` → `is_binary/1` (Elixir strings are binaries)
+	 * - `Int` → `is_integer/1`
+	 * - `Float` → `is_float/1`
+	 * - `Bool` → `is_boolean/1`
+	 * - `Array` → `is_list/1` (Haxe arrays compile to Elixir lists)
+	 * - `Map` → `is_map/1`
+	 * 
+	 * ### User-Defined Types
+	 * - **Structs**: Checks the `__struct__` field for type matching
+	 * - **Enums**: Checks tagged tuples where first element is the constructor atom
+	 * - **Classes**: Compares against the module atom for struct types
+	 * 
+	 * ## LIMITATIONS & PITFALLS
+	 * 
+	 * ### 1. Type Erasure
+	 * Generic type parameters are erased at runtime:
+	 * ```haxe
+	 * Std.is([1, 2, 3], Array<Int>);    // ❌ Can't check element types
+	 * Std.is([1, 2, 3], Array);         // ✅ Can only check it's an array
+	 * ```
+	 * 
+	 * ### 2. Interface Checking
+	 * Interfaces don't exist at runtime in Elixir, so interface checks won't work:
+	 * ```haxe
+	 * interface ISerializable { }
+	 * Std.is(obj, ISerializable);       // ❌ Will always return false
+	 * ```
+	 * 
+	 * ### 3. Abstract Types
+	 * Abstract types are compile-time only and don't exist at runtime:
+	 * ```haxe
+	 * abstract UserId(Int) {}
+	 * Std.is(42, UserId);               // ❌ Will check for Int, not UserId
+	 * ```
+	 * 
+	 * ### 4. Null Handling
+	 * `null` (nil in Elixir) will return false for all type checks except:
+	 * ```haxe
+	 * Std.is(null, Null<T>);            // Implementation-dependent
+	 * ```
+	 * 
+	 * ### 5. Dynamic Type
+	 * Everything matches Dynamic since it represents "any type":
+	 * ```haxe
+	 * Std.is(anything, Dynamic);        // Always true (not implemented here)
+	 * ```
+	 * 
+	 * ### 6. Enum Limitations
+	 * Only checks constructor, not parameter types:
+	 * ```haxe
+	 * enum Option<T> { Some(v: T); None; }
+	 * Std.is(Some("hello"), Option);    // ✅ Works
+	 * Std.is(Some("hello"), Some);      // ⚠️ Checks for :Some atom
+	 * ```
+	 * 
+	 * ### 7. Anonymous Structures
+	 * Anonymous structures compile to maps, so specific field checking isn't done:
+	 * ```haxe
+	 * typedef Point = { x: Int, y: Int }
+	 * Std.is({x: 1, y: 2}, Point);      // ❌ Just checks if it's a map
+	 * ```
+	 * 
+	 * ## EDGE CASES
+	 * - Empty arrays/maps will match their respective types
+	 * - Atoms are not directly checkable from Haxe types
+	 * - Tuples without atom tags won't match enum patterns
+	 * - Recursive type checking is not performed on container contents
+	 * 
+	 * ## RECOMMENDED USAGE
+	 * Best used for:
+	 * - Checking basic types from dynamic sources
+	 * - Validating struct types before casting
+	 * - Simple enum constructor checking
+	 * 
+	 * Avoid for:
+	 * - Generic type parameter validation
+	 * - Interface implementation checking
+	 * - Complex nested type validation
+	 * 
+	 * @param value The value to check (can be null)
+	 * @param type The type class to check against
+	 * @return True if the value is of the specified type, false otherwise
+	 */
+	public static function is(value:Dynamic, type:Dynamic):Bool {
+		// Runtime type checking for Elixir types
+		// Handles basic types, structs, and enums (as tagged tuples)
+		return untyped __elixir__('
             # Convert type to string for comparison
             type_str = to_string({1})
             
@@ -200,51 +200,51 @@ class Std {
                     end
             end
         ', value, type);
-    }
-    
-    /**
-     * Check if a value is of a specific type (newer API).
-     * 
-     * WHY: Type checking with more descriptive naming.
-     * WHAT: Checks if a value is an instance of the specified type.
-     * HOW: Delegates to is() with same implementation.
-     * 
-     * @param value The value to check
-     * @param type The type class to check against
-     * @return True if the value is of the specified type
-     */
-    public static inline function isOfType(value: Dynamic, type: Dynamic): Bool {
-        return is(value, type);
-    }
-    
-    /**
-     * Get a random integer between 0 (inclusive) and `max` (exclusive).
-     *
-     * WHY: Haxe's Std.random(max) is widely used for ID generation, sampling, and tests.
-     * WHAT: Returns an integer in the range `[0, max)`. If `max <= 0`, returns `0`.
-     * HOW: CallExprBuilder.handleSpecialCall() intercepts Std.random(max) and emits
-     * idiomatic Elixir `:rand.uniform(max) - 1` guarded for `max <= 0`.
-     *
-     * @param max Upper bound (exclusive)
-     * @return Random integer between 0 and max-1 (or 0 if max <= 0)
-     */
-    public static function random(max: Int): Int {
-        // Prefer the compiler's special-call lowering. Keep a correct fallback body.
-        return untyped __elixir__('if {0} <= 0, do: 0, else: (:rand.uniform({0}) - 1)', max);
-    }
-    
-    /**
-     * Convert a float to an integer (truncates decimal part).
-     * 
-     * WHY: Float-to-integer conversion with truncation is a common operation.
-     * WHAT: Truncates the decimal part of a float to get an integer.
-     * HOW: The compiler will optimize this to trunc/1.
-     * 
-     * @param value The float to convert
-     * @return Integer representation (truncated, not rounded)
-     */
-    public static function int(value: Float): Int {
-        // Use Elixir's trunc to convert float to integer (truncates decimal part)
-        return untyped __elixir__('trunc({0})', value);
-    }
+	}
+
+	/**
+	 * Check if a value is of a specific type (newer API).
+	 * 
+	 * WHY: Type checking with more descriptive naming.
+	 * WHAT: Checks if a value is an instance of the specified type.
+	 * HOW: Delegates to is() with same implementation.
+	 * 
+	 * @param value The value to check
+	 * @param type The type class to check against
+	 * @return True if the value is of the specified type
+	 */
+	public static inline function isOfType(value:Dynamic, type:Dynamic):Bool {
+		return is(value, type);
+	}
+
+	/**
+	 * Get a random integer between 0 (inclusive) and `max` (exclusive).
+	 *
+	 * WHY: Haxe's Std.random(max) is widely used for ID generation, sampling, and tests.
+	 * WHAT: Returns an integer in the range `[0, max)`. If `max <= 0`, returns `0`.
+	 * HOW: CallExprBuilder.handleSpecialCall() intercepts Std.random(max) and emits
+	 * idiomatic Elixir `:rand.uniform(max) - 1` guarded for `max <= 0`.
+	 *
+	 * @param max Upper bound (exclusive)
+	 * @return Random integer between 0 and max-1 (or 0 if max <= 0)
+	 */
+	public static function random(max:Int):Int {
+		// Prefer the compiler's special-call lowering. Keep a correct fallback body.
+		return untyped __elixir__('if {0} <= 0, do: 0, else: (:rand.uniform({0}) - 1)', max);
+	}
+
+	/**
+	 * Convert a float to an integer (truncates decimal part).
+	 * 
+	 * WHY: Float-to-integer conversion with truncation is a common operation.
+	 * WHAT: Truncates the decimal part of a float to get an integer.
+	 * HOW: The compiler will optimize this to trunc/1.
+	 * 
+	 * @param value The float to convert
+	 * @return Integer representation (truncated, not rounded)
+	 */
+	public static function int(value:Float):Int {
+		// Use Elixir's trunc to convert float to integer (truncates decimal part)
+		return untyped __elixir__('trunc({0})', value);
+	}
 }

@@ -57,103 +57,104 @@
  */
 @:coreApi
 class StringBuf {
-    // Internal iolist representation for Elixir
-    // Using Array<String> which will naturally compile to Elixir lists
-    // The compiler will handle the conversion to proper iolist structure
-    private var parts: Array<String>;
-    
-    /**
-     * Creates a new StringBuf instance.
-     * In Elixir, initializes an empty iolist.
-     */
-    public function new() {
-        // Initialize as empty array which compiles to Elixir list
-        this.parts = [];
-    }
-    
-    /**
-     * Returns the length of `this` StringBuf in characters.
-     * 
-     * Note: This requires converting iolist to binary and measuring.
-     * For performance-critical code, avoid calling this frequently.
-     */
-    public var length(get, never): Int;
-    
-    private function get_length(): Int {
-        // Convert iolist to binary and get byte size
-        // Join all parts and measure the string length
-        var joined = parts.join("");
-        return joined.length;
-    }
-    
-    /**
-     * Appends the representation of `x` to `this` StringBuf.
-     * 
-     * The exact representation of `x` may vary per platform.
-     * 
-     * If `x` is null, the String "null" is appended.
-     */
-    public function add<T>(x: T): Void {
-        var str = if (x == null) "null" else Std.string(x);
-        // Append to array - this compiles to list append in Elixir
-        this.parts.push(str);
-    }
-    
-    /**
-     * Appends the character identified by `c` to `this` StringBuf.
-     * 
-     * If `c` is negative or has another invalid value, the result is unspecified.
-     */
-    public function addChar(c: Int): Void {
-        // Convert character code to string and add
-        this.parts.push(String.fromCharCode(c));
-    }
-    
-    /**
-     * Appends a substring of `s` to `this` StringBuf.
-     * 
-     * This function appends `len` characters of `s`, starting at position `pos`,
-     * to `this` StringBuf.
-     * 
-     * If `len` is omitted, `s` is appended from `pos` to its end.
-     * 
-     * If `pos` or `len` are negative or exceed the boundaries of `s`, the result
-     * is unspecified.
-     */
-    public function addSub(s: String, pos: Int, ?len: Int): Void {
-        if (s == null) return;
-        
-        // Extract substring and add to array
-        var substr = if (len == null) {
-            s.substr(pos);
-        } else {
-            s.substr(pos, len);
-        };
-        
-        this.parts.push(substr);
-    }
+	// Internal iolist representation for Elixir
+	// Using Array<String> which will naturally compile to Elixir lists
+	// The compiler will handle the conversion to proper iolist structure
+	private var parts:Array<String>;
 
-    #if (haxe_ver >= 5.0)
-    /**
-     * Clears the buffer.
-     *
-     * Haxe 5 added `clear()` to the std `StringBuf` core API. For Elixir,
-     * this resets the underlying iolist parts to an empty list.
-     */
-    public function clear(): Void {
-        this.parts = [];
-    }
-    #end
-    
-    /**
-     * Returns the content of `this` StringBuf as a String.
-     * 
-     * For Elixir, this efficiently converts the iolist to a binary string.
-     */
-    public function toString(): String {
-        // For optimal Elixir generation, we use __elixir__ to generate idiomatic iolist code
-        // The parts array will be compiled as a list, and IO.iodata_to_binary is the
-        // most efficient way to convert it to a binary string in Elixir
-        return untyped __elixir__('IO.iodata_to_binary({0})', this.parts);
-    }
+	/**
+	 * Creates a new StringBuf instance.
+	 * In Elixir, initializes an empty iolist.
+	 */
+	public function new() {
+		// Initialize as empty array which compiles to Elixir list
+		this.parts = [];
+	}
+
+	/**
+	 * Returns the length of `this` StringBuf in characters.
+	 * 
+	 * Note: This requires converting iolist to binary and measuring.
+	 * For performance-critical code, avoid calling this frequently.
+	 */
+	public var length(get, never):Int;
+
+	private function get_length():Int {
+		// Convert iolist to binary and get byte size
+		// Join all parts and measure the string length
+		var joined = parts.join("");
+		return joined.length;
+	}
+
+	/**
+	 * Appends the representation of `x` to `this` StringBuf.
+	 * 
+	 * The exact representation of `x` may vary per platform.
+	 * 
+	 * If `x` is null, the String "null" is appended.
+	 */
+	public function add<T>(x:T):Void {
+		var str = if (x == null) "null" else Std.string(x);
+		// Append to array - this compiles to list append in Elixir
+		this.parts.push(str);
+	}
+
+	/**
+	 * Appends the character identified by `c` to `this` StringBuf.
+	 * 
+	 * If `c` is negative or has another invalid value, the result is unspecified.
+	 */
+	public function addChar(c:Int):Void {
+		// Convert character code to string and add
+		this.parts.push(String.fromCharCode(c));
+	}
+
+	/**
+	 * Appends a substring of `s` to `this` StringBuf.
+	 * 
+	 * This function appends `len` characters of `s`, starting at position `pos`,
+	 * to `this` StringBuf.
+	 * 
+	 * If `len` is omitted, `s` is appended from `pos` to its end.
+	 * 
+	 * If `pos` or `len` are negative or exceed the boundaries of `s`, the result
+	 * is unspecified.
+	 */
+	public function addSub(s:String, pos:Int, ?len:Int):Void {
+		if (s == null)
+			return;
+
+		// Extract substring and add to array
+		var substr = if (len == null) {
+			s.substr(pos);
+		} else {
+			s.substr(pos, len);
+		};
+
+		this.parts.push(substr);
+	}
+
+	#if (haxe_ver >= 5.0)
+	/**
+	 * Clears the buffer.
+	 *
+	 * Haxe 5 added `clear()` to the std `StringBuf` core API. For Elixir,
+	 * this resets the underlying iolist parts to an empty list.
+	 */
+	public function clear():Void {
+		this.parts = [];
+	}
+	#end
+
+	/**
+	 * Returns the content of `this` StringBuf as a String.
+	 * 
+	 * For Elixir, this efficiently converts the iolist to a binary string.
+	 */
+	public function toString():String {
+		// For optimal Elixir generation, we use __elixir__ to generate idiomatic iolist code
+		// The parts array will be compiled as a list, and IO.iodata_to_binary is the
+		// most efficient way to convert it to a binary string in Elixir
+		return untyped __elixir__('IO.iodata_to_binary({0})', this.parts);
+	}
 }

@@ -17,32 +17,32 @@ import plug.Conn;
 @:phoenixWebModule
 @:native("TodoAppWeb")
 class TodoAppWeb {
-    /**
-     * Returns the static paths for the application.
-     * This is used by Phoenix for serving static assets.
-     */
-    public static function static_paths(): Array<String> {
-        return ["assets", "fonts", "images", "favicon.ico", "robots.txt"];
-    }
+	/**
+	 * Returns the static paths for the application.
+	 * This is used by Phoenix for serving static assets.
+	 */
+	public static function static_paths():Array<String> {
+		return ["assets", "fonts", "images", "favicon.ico", "robots.txt"];
+	}
 
-    /**
-     * live_session hook for LiveView routes.
-     *
-     * WHAT
-     * - Supplies additional session data (string-keyed map) to all LiveViews declared
-     *   inside the router-generated `live_session :default` block.
-     *
-     * WHY
-     * - Phoenix.LiveView mount receives the "LiveView session" (a string-keyed map),
-     *   not the Plug session. To make authentication state available in LiveViews,
-     *   we derive a minimal session payload from `Plug.Conn.get_session/2`.
-     *
-     * HOW
-     * - Read `:user_id` from the Plug session and return `%{"user_id" => user_id}` when present.
-     */
-    public static function live_session(conn: Conn<{}>): Term {
-        var userId: Term = conn.getSession("user_id");
-        var sessionMap: Term = {};
-        return userId != null ? ElixirMap.put(sessionMap, "user_id", userId) : sessionMap;
-    }
+	/**
+	 * live_session hook for LiveView routes.
+	 *
+	 * WHAT
+	 * - Supplies additional session data (string-keyed map) to all LiveViews declared
+	 *   inside the router-generated `live_session :default` block.
+	 *
+	 * WHY
+	 * - Phoenix.LiveView mount receives the "LiveView session" (a string-keyed map),
+	 *   not the Plug session. To make authentication state available in LiveViews,
+	 *   we derive a minimal session payload from `Plug.Conn.get_session/2`.
+	 *
+	 * HOW
+	 * - Read `:user_id` from the Plug session and return `%{"user_id" => user_id}` when present.
+	 */
+	public static function live_session(conn:Conn<{}>):Term {
+		var userId:Term = conn.getSession("user_id");
+		var sessionMap:Term = {};
+		return userId != null ? ElixirMap.put(sessionMap, "user_id", userId) : sessionMap;
+	}
 }

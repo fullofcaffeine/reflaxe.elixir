@@ -20,18 +20,19 @@ import server.types.Types.MountParams;
 import server.types.Types.Session;
 
 typedef AuthLiveAssigns = {
-    var signed_in: Bool;
-    var current_user: Null<server.schemas.User>;
-    var users: Array<server.schemas.User>;
-    var github_oauth_enabled: Bool;
-    var mock_oauth_enabled: Bool;
-    var oauth_enabled: Bool;
+	var signed_in:Bool;
+	var current_user:Null<server.schemas.User>;
+	var users:Array<server.schemas.User>;
+	var github_oauth_enabled:Bool;
+	var mock_oauth_enabled:Bool;
+	var oauth_enabled:Bool;
 }
 
-typedef AuthLiveRenderAssigns = {> AuthLiveAssigns,
-    var flash: FlashMap;
-    var flash_info: Null<String>;
-    var flash_error: Null<String>;
+typedef AuthLiveRenderAssigns = {
+	> AuthLiveAssigns,
+	var flash:FlashMap;
+	var flash_info:Null<String>;
+	var flash_error:Null<String>;
 }
 
 /**
@@ -52,50 +53,51 @@ typedef AuthLiveRenderAssigns = {> AuthLiveAssigns,
 @:native("TodoAppWeb.AuthLive")
 @:liveview
 class AuthLive {
-    public static function mount(params: MountParams, session: Session, socket: Socket<AuthLiveAssigns>): MountResult<AuthLiveAssigns> {
-        var sock: LiveSocket<AuthLiveAssigns> = socket;
+	public static function mount(params:MountParams, session:Session, socket:Socket<AuthLiveAssigns>):MountResult<AuthLiveAssigns> {
+		var sock:LiveSocket<AuthLiveAssigns> = socket;
 
-        var maybeUserId = sessionUserId(session);
-        var signedIn = maybeUserId != null;
-        var currentUser: Null<server.schemas.User> = signedIn ? Repo.get(server.schemas.User, cast maybeUserId) : null;
-        if (currentUser == null) signedIn = false;
+		var maybeUserId = sessionUserId(session);
+		var signedIn = maybeUserId != null;
+		var currentUser:Null<server.schemas.User> = signedIn ? Repo.get(server.schemas.User, cast maybeUserId) : null;
+		if (currentUser == null)
+			signedIn = false;
 
-        var users = Users.listUsers(null);
-        var githubOAuthEnabled = Sys.getEnv("GITHUB_CLIENT_ID") != null && Sys.getEnv("GITHUB_CLIENT_SECRET") != null;
-        var mockOAuthEnabled = MockOAuth.isEnabled();
-        sock = sock.merge({
-            signed_in: signedIn,
-            current_user: currentUser,
-            users: users,
-            github_oauth_enabled: githubOAuthEnabled,
-            mock_oauth_enabled: mockOAuthEnabled,
-            oauth_enabled: githubOAuthEnabled || mockOAuthEnabled
-        });
-        return Ok(sock);
-    }
+		var users = Users.listUsers(null);
+		var githubOAuthEnabled = Sys.getEnv("GITHUB_CLIENT_ID") != null && Sys.getEnv("GITHUB_CLIENT_SECRET") != null;
+		var mockOAuthEnabled = MockOAuth.isEnabled();
+		sock = sock.merge({
+			signed_in: signedIn,
+			current_user: currentUser,
+			users: users,
+			github_oauth_enabled: githubOAuthEnabled,
+			mock_oauth_enabled: mockOAuthEnabled,
+			oauth_enabled: githubOAuthEnabled || mockOAuthEnabled});
+		return Ok(sock);
+	}
 
-    static function sessionUserId(session: Session): Null<Int> {
-        if (session == null) return null;
-        var sessionTerm: Term = cast session;
-        var primary: Term = ElixirMap.get(sessionTerm, "user_id");
-        var chosen: Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
-        return chosen != null ? cast chosen : null;
-    }
+	static function sessionUserId(session:Session):Null<Int> {
+		if (session == null)
+			return null;
+		var sessionTerm:Term = cast session;
+		var primary:Term = ElixirMap.get(sessionTerm, "user_id");
+		var chosen:Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
+		return chosen != null ? cast chosen : null;
+	}
 
-    /**
-     * Router action handler (placeholder to satisfy route validation).
-     */
-    public static function index(): String {
-        return "index";
-    }
+	/**
+	 * Router action handler (placeholder to satisfy route validation).
+	 */
+	public static function index():String {
+		return "index";
+	}
 
-    public static function render(assigns: AuthLiveRenderAssigns): String {
-        var renderAssigns: Assigns<AuthLiveRenderAssigns> = assigns;
-        renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
-        renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
-        assigns = renderAssigns;
+	public static function render(assigns:AuthLiveRenderAssigns):String {
+		var renderAssigns:Assigns<AuthLiveRenderAssigns> = assigns;
+		renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
+		renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
+		assigns = renderAssigns;
 
-        return hxx('
+		return hxx('
             <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-10 max-w-3xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
@@ -217,5 +219,5 @@ class AuthLive {
                 </div>
             </div>
         ');
-    }
+	}
 }

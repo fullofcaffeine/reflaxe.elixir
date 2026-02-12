@@ -44,6 +44,13 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - Mix tests (fast): `npm run test:mix-fast`
 - Todo-app runtime smoke (non-blocking): `npm run qa:sentinel` then `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`
 
+## 🧼 Path Hygiene (Required)
+
+- Never commit machine-local absolute paths in tracked files (docs, JSON reports, snapshots, generated metadata, scripts output).
+- Use workspace-relative paths instead (e.g., `std`, `std/_std`, `src/haxe`) so artifacts are portable across machines and CI.
+- Before pushing, scan for leaked local paths and scrub them:
+  - `rg -n "/REDACTED_LOCAL_PATH]:\\\\Users\\\\" docs scripts test examples src std`
+
 ## 🎨 Frontend/UI Work (Required)
 
 - When making changes to **frontend/UI/UX** (HTML/CSS/JS, LiveView templates, hooks, layouts), use the `$frontend-design` skill to keep output production-grade and intentional.

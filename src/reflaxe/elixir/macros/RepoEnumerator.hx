@@ -1,7 +1,6 @@
 package reflaxe.elixir.macros;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Context;
 import haxe.macro.Expr;
 
@@ -23,22 +22,22 @@ import haxe.macro.Expr;
  *   is preserved and passed to the Elixir compiler. No code generation occurs here.
  */
 class RepoEnumerator {
-    public static function ensureRepoKept(): Null<Array<Field>> {
-        #if eval
-        final clsRef = Context.getLocalClass();
-        if (clsRef != null) {
-            final cls = clsRef.get();
-            final meta = cls.meta;
-            if (meta != null && meta.has(":repo")) {
-                // Ensure the class is preserved by Haxe DCE
-                meta.add(":keep", [], cls.pos);
-                // Hint that it's intentionally used (helps some tools/pipelines)
-                if (!meta.has(":used")) meta.add(":used", [], cls.pos);
-            }
-        }
-        #end
-        return null;
-    }
+	public static function ensureRepoKept():Null<Array<Field>> {
+		#if eval
+		final clsRef = Context.getLocalClass();
+		if (clsRef != null) {
+			final cls = clsRef.get();
+			final meta = cls.meta;
+			if (meta != null && meta.has(":repo")) {
+				// Ensure the class is preserved by Haxe DCE
+				meta.add(":keep", [], cls.pos);
+				// Hint that it's intentionally used (helps some tools/pipelines)
+				if (!meta.has(":used"))
+					meta.add(":used", [], cls.pos);
+			}
+		}
+		#end
+		return null;
+	}
 }
-
 #end

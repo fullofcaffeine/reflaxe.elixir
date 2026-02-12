@@ -19,13 +19,13 @@ import elixir.types.Term;
  * - Derive a stable status code from template name (e.g. `"404.json"`).
  */
 extern class DefaultErrorJSON {
-    /**
-     * Render a conventional JSON error payload for the given template.
-     *
-     * Implemented as an extern inline to avoid emitting a runtime module in user apps.
-     */
-    extern inline public static function render(template: String, _assigns: Term): ErrorPayload {
-        return cast untyped __elixir__('
+	/**
+	 * Render a conventional JSON error payload for the given template.
+	 *
+	 * Implemented as an extern inline to avoid emitting a runtime module in user apps.
+	 */
+	extern inline public static function render(template:String, _assigns:Term):ErrorPayload {
+		return cast untyped __elixir__('
           _ = {1}
           t = to_string({0})
           base =
@@ -46,13 +46,13 @@ extern class DefaultErrorJSON {
 
           %{errors: %{detail: msg}}
         ', template, _assigns);
-    }
+	}
 }
 
 typedef ErrorPayload = {
-    var errors: ErrorDetail;
+	var errors:ErrorDetail;
 }
 
 typedef ErrorDetail = {
-    var detail: String;
+	var detail:String;
 }

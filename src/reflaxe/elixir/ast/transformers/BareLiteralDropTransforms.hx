@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -31,46 +30,46 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * Elixir (after):
  *   payload = Map.put(payload, "y", 7)
  */
-	class BareLiteralDropTransforms {
-	    public static function pass(ast: ElixirAST): ElixirAST {
-	        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-	            return switch (n.def) {
-	                case EBlock(stmts):
-	                    makeASTWithMeta(EBlock(filterNonFinalLiterals(stmts)), n.metadata, n.pos);
-	                case EDo(stmts2):
-	                    makeASTWithMeta(EDo(filterNonFinalLiterals(stmts2)), n.metadata, n.pos);
-	                default:
-	                    n;
-	            }
-	        });
-	    }
-
-    static function filterNonFinalLiterals(stmts: Array<ElixirAST>): Array<ElixirAST> {
-        if (stmts == null || stmts.length <= 1) return stmts;
-        var out: Array<ElixirAST> = [];
-        for (i in 0...stmts.length) {
-            var s = stmts[i];
-            if (i < stmts.length - 1 && isPureLiteral(s)) {
-                continue;
-            }
-            out.push(s);
-        }
-        return out;
-    }
-
-	    static function isPureLiteral(ast: ElixirAST): Bool {
-	        if (ast == null) return false;
-	        return switch (ast.def) {
-	            case EParen(inner):
-	                isPureLiteral(inner);
-	            case EBlock(exprs):
-	                exprs != null && exprs.length == 1 && isPureLiteral(exprs[0]);
-	            case EAtom(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_):
-	                true;
-	            default:
-	                false;
-	        }
-	    }
+class BareLiteralDropTransforms {
+	public static function pass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EBlock(stmts):
+					makeASTWithMeta(EBlock(filterNonFinalLiterals(stmts)), n.metadata, n.pos);
+				case EDo(stmts2):
+					makeASTWithMeta(EDo(filterNonFinalLiterals(stmts2)), n.metadata, n.pos);
+				default:
+					n;
+			}
+		});
 	}
 
+	static function filterNonFinalLiterals(stmts:Array<ElixirAST>):Array<ElixirAST> {
+		if (stmts == null || stmts.length <= 1)
+			return stmts;
+		var out:Array<ElixirAST> = [];
+		for (i in 0...stmts.length) {
+			var s = stmts[i];
+			if (i < stmts.length - 1 && isPureLiteral(s)) {
+				continue;
+			}
+			out.push(s);
+		}
+		return out;
+	}
+
+	static function isPureLiteral(ast:ElixirAST):Bool {
+		if (ast == null)
+			return false;
+		return switch (ast.def) {
+			case EParen(inner):
+				isPureLiteral(inner);
+			case EBlock(exprs): exprs != null && exprs.length == 1 && isPureLiteral(exprs[0]);
+			case EAtom(_) | EString(_) | EInteger(_) | EFloat(_) | EBoolean(_) | ENil | ECharlist(_):
+				true;
+			default:
+				false;
+		}
+	}
+}
 #end

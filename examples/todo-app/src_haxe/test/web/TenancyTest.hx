@@ -23,30 +23,29 @@ import elixir.types.Term;
  */
 @:exunit
 class TenancyTest extends TestCase {
-    @:test
-    public function testTodosAreScopedToOrganization(): Void {
-        var runId = Std.string(Std.int(Date.now().getTime()));
-        var orgA = 'org-a-${runId}.example.com';
-        var orgB = 'org-b-${runId}.example.com';
-        var title = 'Tenancy ${runId}';
+	@:test
+	public function testTodosAreScopedToOrganization():Void {
+		var runId = Std.string(Std.int(Date.now().getTime()));
+		var orgA = 'org-a-${runId}.example.com';
+		var orgB = 'org-b-${runId}.example.com';
+		var title = 'Tenancy ${runId}';
 
-        var connA = ConnTest.build_conn();
-        connA = ConnTest.post(connA, "/auth/login", {name: "Org A User", email: 'a@${orgA}'});
+		var connA = ConnTest.build_conn();
+		connA = ConnTest.post(connA, "/auth/login", {name: "Org A User", email: 'a@${orgA}'});
 
-        var lvTupleA: Term = LiveViewTest.live(connA, "/todos");
-        var lvA: LiveView = LiveViewTest.view(lvTupleA);
-        LiveViewTest.render_click(LiveViewTest.element(lvA, "button[phx-click='toggle_form']"));
-        LiveViewTest.render_submit(LiveViewTest.element(lvA, "form[phx-submit='create_todo']"), {title: title});
-        var htmlA = LiveViewTest.render(lvA);
-        assertTrue(htmlA.indexOf(title) != -1);
+		var lvTupleA:Term = LiveViewTest.live(connA, "/todos");
+		var lvA:LiveView = LiveViewTest.view(lvTupleA);
+		LiveViewTest.render_click(LiveViewTest.element(lvA, "button[phx-click='toggle_form']"));
+		LiveViewTest.render_submit(LiveViewTest.element(lvA, "form[phx-submit='create_todo']"), {title: title});
+		var htmlA = LiveViewTest.render(lvA);
+		assertTrue(htmlA.indexOf(title) != -1);
 
-        var connB = ConnTest.build_conn();
-        connB = ConnTest.post(connB, "/auth/login", {name: "Org B User", email: 'b@${orgB}'});
+		var connB = ConnTest.build_conn();
+		connB = ConnTest.post(connB, "/auth/login", {name: "Org B User", email: 'b@${orgB}'});
 
-        var lvTupleB: Term = LiveViewTest.live(connB, "/todos");
-        var lvB: LiveView = LiveViewTest.view(lvTupleB);
-        var htmlB = LiveViewTest.render(lvB);
-        assertTrue(htmlB.indexOf(title) == -1);
-    }
+		var lvTupleB:Term = LiveViewTest.live(connB, "/todos");
+		var lvB:LiveView = LiveViewTest.view(lvTupleB);
+		var htmlB = LiveViewTest.render(lvB);
+		assertTrue(htmlB.indexOf(title) == -1);
+	}
 }
-

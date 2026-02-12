@@ -6,7 +6,7 @@ package;
 @:phoenixWebModule
 @:native("PhoenixRouterWeb")
 class PhoenixRouterWeb {
-    public static function static_paths(): Array<String> {
-        return ["assets", "fonts", "images", "favicon.ico", "robots.txt"];
-    }
+	public static function static_paths():Array<String> {
+		return ["assets", "fonts", "images", "favicon.ico", "robots.txt"];
+	}
 }

@@ -32,13 +32,13 @@ import elixir.types.Term;
  *   end
  */
 extern class DefaultErrorHTML {
-    /**
-     * Render an error message for the given template.
-     *
-     * Implemented as an extern inline to avoid emitting a runtime module in user apps.
-     */
-    extern inline public static function render(template: String, _assigns: Term): String {
-        return untyped __elixir__('
+	/**
+	 * Render an error message for the given template.
+	 *
+	 * Implemented as an extern inline to avoid emitting a runtime module in user apps.
+	 */
+	extern inline public static function render(template:String, _assigns:Term):String {
+		return untyped __elixir__('
           _ = {1}
           t = to_string({0})
           base =
@@ -56,5 +56,5 @@ extern class DefaultErrorHTML {
             _ -> "Error"
           end
         ', template, _assigns);
-    }
+	}
 }

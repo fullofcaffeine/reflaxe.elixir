@@ -9,35 +9,34 @@ import phoenix.Phoenix.LiveView;
 import elixir.types.Term;
 
 typedef DerivedAssigns = {
-    var count: Int;
+	var count:Int;
 }
 
 @:liveview
 class CounterLiveDerivedEventsIf {
-    @:native("handle_event")
-    public static function handle_event(event: String, _params: Term, socket: Socket<DerivedAssigns>): HandleEventResult<DerivedAssigns> {
-        if (event == "increment") {
-            var nextCount = socket.assigns.count + 1;
-            return NoReply(LiveView.assign(socket, "count", nextCount));
-        }
-        if (event == "decrement") {
-            var nextCount = socket.assigns.count - 1;
-            return NoReply(LiveView.assign(socket, "count", nextCount));
-        }
-        return NoReply(socket);
-    }
+	@:native("handle_event")
+	public static function handle_event(event:String, _params:Term, socket:Socket<DerivedAssigns>):HandleEventResult<DerivedAssigns> {
+		if (event == "increment") {
+			var nextCount = socket.assigns.count + 1;
+			return NoReply(LiveView.assign(socket, "count", nextCount));
+		}
+		if (event == "decrement") {
+			var nextCount = socket.assigns.count - 1;
+			return NoReply(LiveView.assign(socket, "count", nextCount));
+		}
+		return NoReply(socket);
+	}
 
-    public function mount(params: Term, session: Term, socket: Socket<DerivedAssigns>): MountResult<DerivedAssigns> {
-        socket = LiveView.assign(socket, "count", 0);
-        return Ok(socket);
-    }
+	public function mount(params:Term, session:Term, socket:Socket<DerivedAssigns>):MountResult<DerivedAssigns> {
+		socket = LiveView.assign(socket, "count", 0);
+		return Ok(socket);
+	}
 
-    public function render(assigns: DerivedAssigns): String {
-        return HXX.hxx('<div>
+	public function render(assigns:DerivedAssigns):String {
+		return HXX.hxx('<div>
           <h1>Counter: ${assigns.count}</h1>
           <button phx-click="increment">+</button>
           <button phx-click="decrement">-</button>
         </div>');
-    }
+	}
 }
-

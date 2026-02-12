@@ -1,21 +1,21 @@
 package;
 
 typedef Item = {
-    var name: String;
+	var name:String;
 }
 
 typedef Assigns = {
-    var count: Int;
-    var items: Array<Item>;
-    var show: Bool;
-    var klass: String;
+	var count:Int;
+	var items:Array<Item>;
+	var show:Bool;
+	var klass:String;
 }
 
 @:liveview
 @:hxx_mode("tsx")
 class Main {
-    public static function render(assigns: Assigns): String {
-        return <div class="wrap ${assigns.klass}">
+	public static function render(assigns:Assigns):String {
+		return <div class="wrap ${assigns.klass}">
             <h1>${assigns.count}</h1>
 
             <if ${assigns.show}>
@@ -31,7 +31,7 @@ class Main {
                 </for>
             </ul>
         </div>;
-    }
+	}
 
-    public static function main() {}
+	public static function main() {}
 }

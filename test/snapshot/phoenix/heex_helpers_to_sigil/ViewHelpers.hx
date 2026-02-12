@@ -8,8 +8,7 @@ package;
  *   no Phoenix.HTML.raw wrapper is applied.
  */
 class ViewHelpers {
-    public static function panel(assigns: Dynamic): String {
-        return "<div class=\"panel\"><h1>Static</h1></div>";
-    }
+	public static function panel(assigns:Dynamic):String {
+		return "<div class=\"panel\"><h1>Static</h1></div>";
+	}
 }
-

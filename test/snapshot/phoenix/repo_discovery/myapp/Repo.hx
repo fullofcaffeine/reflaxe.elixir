@@ -10,10 +10,9 @@ import ecto.DatabaseAdapter.*;
  */
 @:native("MyApp.Repo")
 @:repo({
-    adapter: Postgres,
-    json: Jason,
-    extensions: [],
-    poolSize: 10
+	adapter: Postgres,
+	json: Jason,
+	extensions: [],
+	poolSize: 10
 })
 extern class Repo {}
-

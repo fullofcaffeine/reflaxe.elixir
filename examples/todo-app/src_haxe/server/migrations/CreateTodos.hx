@@ -11,22 +11,20 @@ import ecto.Migration.ColumnType;
  */
 @:migration({timestamp: "20250813170314"})
 class CreateTodos extends Migration {
-    
-    public function up(): Void {
-        createTable("todos")
-            .addColumn("title", ColumnType.String(), {nullable: false})
-            .addColumn("description", ColumnType.Text)
-            .addColumn("completed", ColumnType.Boolean, {defaultValue: false})
-            .addColumn("priority", ColumnType.String())
-            .addColumn("due_date", ColumnType.DateTime)
-            .addColumn("tags", ColumnType.Json)
-            .addColumn("user_id", ColumnType.Integer)
-            .addTimestamps()
-            .addIndex(["user_id"])
-            .addIndex(["completed"]);
-    }
-    
-    public function down(): Void {
-        dropTable("todos");
-    }
+	public function up():Void {
+		createTable("todos").addColumn("title", ColumnType.String(), {nullable: false})
+			.addColumn("description", ColumnType.Text)
+			.addColumn("completed", ColumnType.Boolean, {defaultValue: false})
+			.addColumn("priority", ColumnType.String())
+			.addColumn("due_date", ColumnType.DateTime)
+			.addColumn("tags", ColumnType.Json)
+			.addColumn("user_id", ColumnType.Integer)
+			.addTimestamps()
+			.addIndex(["user_id"])
+			.addIndex(["completed"]);
+	}
+
+	public function down():Void {
+		dropTable("todos");
+	}
 }

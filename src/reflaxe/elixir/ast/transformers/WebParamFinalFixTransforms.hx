@@ -1,349 +1,605 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
 
 /**
- * WebParamFinalFixTransforms
- *
- * WHAT
- * - Ultra-late safety pass for Web/Live modules that ensures def/defp heads and
- *   anonymous function binders do not use underscored names when the body uses
- *   the base variant (id/user_id/todo/t/etc.). Also recognizes pinned usages.
- *
- * WHY
- * - Some earlier passes may introduce or preserve `_name` binders while body uses
- *   `name`, causing undefined variable errors and underscore warnings. This pass
- *   guarantees binder/body agreement right before printing.
- *
- * HOW
- * - For each EDef/EDefp in Web/Live modules:
- *   - Promote `_param` → `param` when `param` is referenced in body (including pins ^param)
- *     and no `param` binder exists.
- *   - Rewrite body `_param` → `param` when necessary.
- * - For each EFn clause:
- *   - Rename `_x` → `x` when body references `x` or `_x`.
+	* WebParamFinalFixTransforms
+	*
+	* WHAT
+	* - Ultra-late safety pass for Web/Live modules that ensures def/defp heads and
+	*   anonymous function binders do not use underscored names when the body uses
+	*   the base variant (id/user_id/todo/t/etc.). Also recognizes pinned usages.
+	*
+	* WHY
+	* - Some earlier passes may introduce or preserve `_name` binders while body uses
+	*   `name`, causing undefined variable errors and underscore warnings. This pass
+	*   guarantees binder/body agreement right before printing.
+	*
+	* HOW
+	* - For each EDef/EDefp in Web/Live modules:
+	*   - Promote `_param` → `param` when `param` is referenced in body (including pins ^param)
+	*     and no `param` binder exists.
+	*   - Rewrite body `_param` → `param` when necessary.
+	* - For each EFn clause:
+	*   - Rename `_x` → `x` when body references `x` or `_x`.
 
- *
- * EXAMPLES
- * - Covered by snapshot tests under `test/snapshot/**`.
+	*
+	* EXAMPLES
+	* - Covered by snapshot tests under `test/snapshot/**`.
  */
 class WebParamFinalFixTransforms {
-    static inline function looksLikeDoubleQuotedStringLiteral(code: String): Bool {
-        if (code == null) return false;
-        var trimmed = StringTools.trim(code);
-        return trimmed.length >= 2 && StringTools.startsWith(trimmed, "\"") && StringTools.endsWith(trimmed, "\"");
-    }
+	static inline function looksLikeDoubleQuotedStringLiteral(code:String):Bool {
+		if (code == null)
+			return false;
+		var trimmed = StringTools.trim(code);
+		return trimmed.length >= 2 && StringTools.startsWith(trimmed, "\"") && StringTools.endsWith(trimmed, "\"");
+	}
 
-    static inline function stripOuterQuotes(code: String): String {
-        var trimmed = StringTools.trim(code);
-        if (looksLikeDoubleQuotedStringLiteral(trimmed)) {
-            return trimmed.substr(1, trimmed.length - 2);
-        }
-        return trimmed;
-    }
+	static inline function stripOuterQuotes(code:String):String {
+		var trimmed = StringTools.trim(code);
+		if (looksLikeDoubleQuotedStringLiteral(trimmed)) {
+			return trimmed.substr(1, trimmed.length - 2);
+		}
+		return trimmed;
+	}
 
-    public static function transformPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EModule(name, attrs, body) if (isWebOrLive(name)):
-                    #if debug_web_binder
-                    #end
-                    var newBody = [for (b in body) fixNode(b)];
-                    makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
-                case EDefmodule(name2, doBlock) if (isWebOrLive(name2)):
-                    #if debug_web_binder
-                    #end
-                    makeASTWithMeta(EDefmodule(name2, fixNode(doBlock)), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        });
-    }
+	public static function transformPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EModule(name, attrs, body) if (isWebOrLive(name)):
+					#if debug_web_binder
+					#end
+					var newBody = [for (b in body) fixNode(b)];
+					makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
+				case EDefmodule(name2, doBlock) if (isWebOrLive(name2)):
+					#if debug_web_binder
+					#end
+					makeASTWithMeta(EDefmodule(name2, fixNode(doBlock)), n.metadata, n.pos);
+				default:
+					n;
+			}
+		});
+	}
 
-    static inline function isWebOrLive(name:String):Bool {
-        if (name == null) return false;
-        return name.indexOf("Web.") != -1 || StringTools.endsWith(name, "Live") || name.indexOf("Controller") != -1;
-    }
+	static inline function isWebOrLive(name:String):Bool {
+		if (name == null)
+			return false;
+		return name.indexOf("Web.") != -1 || StringTools.endsWith(name, "Live") || name.indexOf("Controller") != -1;
+	}
 
-    static function fixNode(node: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(node, function(x: ElixirAST): ElixirAST {
-            return switch (x.def) {
-                case EDef(fname, args, guards, body):
-                    var rename = computeParamPromotions(args, body);
-                    var newArgs = renameParams(args, rename);
-                    var newBody = renameBody(body, rename);
-                    #if debug_web_binder
-                    if (Lambda.count(rename) > 0) {
-                        inline function patList(cs:Array<EPattern>):String return [for (p in cs) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                    } else {
-                        inline function patList(cs2:Array<EPattern>):String return [for (p in cs2) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                    }
-                    #end
-                    makeASTWithMeta(EDef(fname, newArgs, guards, newBody), x.metadata, x.pos);
-                case EDefp(fname2, args2, guards2, body2):
-                    #if debug_web_binder
-                    inline function patListDbg(cs:Array<EPattern>):String return [for (p in cs) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                    var usesEditing = VariableUsageCollector.usedInFunctionScope(body2, "editing_todo");
-                    var usesUserId = VariableUsageCollector.usedInFunctionScope(body2, "user_id") || pinUsesName(body2, "user_id") || erawUsesName(body2, "user_id");
-                    #end
-                    var rename2 = computeParamPromotions(args2, body2);
-                    var newArgs2 = renameParams(args2, rename2);
-                    var newBody2 = renameBody(body2, rename2);
-                    #if debug_web_binder
-                    if (Lambda.count(rename2) > 0) {
-                        inline function patListArgs(cs:Array<EPattern>):String return [for (p in cs) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                    } else {
-                        inline function patListArgsDbg(cs3:Array<EPattern>):String return [for (p in cs3) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                    }
-                    #end
-                    makeASTWithMeta(EDefp(fname2, newArgs2, guards2, newBody2), x.metadata, x.pos);
-                case EFn(clauses):
-                    var newClauses = [];
-                    for (cl in clauses) {
-                        // used: all variable identifiers seen in body (not closure-aware)
-                        var used = collectUsedVars(cl.body);
-                        var newBodyClause = cl.body;
-                        #if debug_web_binder
-                        // Debug: list used vars and current args
-                        var usedList = [];
-                        for (k in used.keys()) usedList.push(k);
-                        inline function patListDbg(cs:Array<EPattern>):String return [for (p in cs) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                        #end
-                        var outArgs:Array<EPattern> = [];
-                        for (a in cl.args) switch (a) {
-                            case PVar(n) if (n != null && n.length > 1 && n.charAt(0) == '_'):
-                                var base = n.substr(1);
-                                if (used.exists(n) || used.exists(base)) outArgs.push(PVar(base)) else outArgs.push(a);
-                            default:
-                                outArgs.push(a);
-                        }
+	static function fixNode(node:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(node, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				case EDef(fname, args, guards, body):
+					var rename = computeParamPromotions(args, body);
+					var newArgs = renameParams(args, rename);
+					var newBody = renameBody(body, rename);
+					#if debug_web_binder
+					if (Lambda.count(rename) > 0) {
+						inline function patList(cs:Array<EPattern>):String
+							return [
+								for (p in cs)
+									switch (p) {
+										case PVar(n):
+											n;
+										default:
+											Std.string(p);
+									}
+							].join(',');
+					} else {
+						inline function patList(cs2:Array<EPattern>):String
+							return [
+								for (p in cs2)
+									switch (p) {
+										case PVar(n):
+											n;
+										default:
+											Std.string(p);
+									}
+							].join(',');
+					}
+					#end
+					makeASTWithMeta(EDef(fname, newArgs, guards, newBody), x.metadata, x.pos);
+				case EDefp(fname2, args2, guards2, body2):
+					#if debug_web_binder
+					inline function patListDbg(cs:Array<EPattern>):String
+						return [
+							for (p in cs)
+								switch (p) {
+									case PVar(n):
+										n;
+									default:
+										Std.string(p);
+								}
+						].join(',');
+					var usesEditing = VariableUsageCollector.usedInFunctionScope(body2, "editing_todo");
+					var usesUserId = VariableUsageCollector.usedInFunctionScope(body2, "user_id")
+						|| pinUsesName(body2, "user_id")
+						|| erawUsesName(body2, "user_id");
+					#end
+					var rename2 = computeParamPromotions(args2, body2);
+					var newArgs2 = renameParams(args2, rename2);
+					var newBody2 = renameBody(body2, rename2);
+					#if debug_web_binder
+					if (Lambda.count(rename2) > 0) {
+						inline function patListArgs(cs:Array<EPattern>):String
+							return [
+								for (p in cs)
+									switch (p) {
+										case PVar(n):
+											n;
+										default:
+											Std.string(p);
+									}
+							].join(',');
+					} else {
+						inline function patListArgsDbg(cs3:Array<EPattern>):String
+							return [
+								for (p in cs3)
+									switch (p) {
+										case PVar(n):
+											n;
+										default:
+											Std.string(p);
+									}
+							].join(',');
+					}
+					#end
+					makeASTWithMeta(EDefp(fname2, newArgs2, guards2, newBody2), x.metadata, x.pos);
+				case EFn(clauses):
+					var newClauses = [];
+					for (cl in clauses) {
+						// used: all variable identifiers seen in body (not closure-aware)
+						var used = collectUsedVars(cl.body);
+						var newBodyClause = cl.body;
+						#if debug_web_binder
+						// Debug: list used vars and current args
+						var usedList = [];
+						for (k in used.keys())
+							usedList.push(k);
+						inline function patListDbg(cs:Array<EPattern>):String
+							return [
+								for (p in cs)
+									switch (p) {
+										case PVar(n):
+											n;
+										default:
+											Std.string(p);
+									}
+							].join(',');
+						#end
+						var outArgs:Array<EPattern> = [];
+						for (a in cl.args)
+							switch (a) {
+								case PVar(n) if (n != null && n.length > 1 && n.charAt(0) == '_'):
+									var base = n.substr(1);
+									if (used.exists(n) || used.exists(base)) outArgs.push(PVar(base)) else outArgs.push(a);
+								default:
+									outArgs.push(a);
+							}
 
-                        // Collect arg binder names after any underscore promotion above.
-                        var argBases = new Map<String,Bool>();
-                        for (a in outArgs) switch (a) {
-                            case PVar(nm) if (nm != null): argBases.set(nm, true);
-                            case PAlias(nm, _) if (nm != null): argBases.set(nm, true);
-                            default:
-                        }
+						// Collect arg binder names after any underscore promotion above.
+						var argBases = new Map<String, Bool>();
+						for (a in outArgs)
+							switch (a) {
+								case PVar(nm) if (nm != null): argBases.set(nm, true);
+								case PAlias(nm, _) if (nm != null): argBases.set(nm, true);
+								default:
+							}
 
-	                        var renamePairs = new Map<String,String>();
-	                        for (a in cl.args) switch (a) {
-	                            case PVar(nm) if (nm != null && nm.length > 1 && nm.charAt(0) == '_'):
-	                                var baseName = nm.substr(1);
-	                                if (used.exists(nm)) renamePairs.set(nm, baseName);
-	                            case PAlias(aliasName, _) if (aliasName != null && aliasName.length > 1 && aliasName.charAt(0) == '_'):
-	                                var aliasBaseName = aliasName.substr(1);
-	                                if (used.exists(aliasName)) renamePairs.set(aliasName, aliasBaseName);
-	                            default:
-	                        }
-                        if (Lambda.count(renamePairs) > 0) newBodyClause = ElixirASTTransformer.transformNode(newBodyClause, function(n2: ElixirAST): ElixirAST {
-                            return switch (n2.def) { case EVar(v) if (renamePairs.exists(v)): makeASTWithMeta(EVar(renamePairs.get(v)), n2.metadata, n2.pos); default: n2; }
-                        });
-                        // Also rewrite body occurrences of _arg -> arg when arg exists as binder
-                        if (Lambda.count(argBases) > 0) newBodyClause = ElixirASTTransformer.transformNode(newBodyClause, function(n3: ElixirAST): ElixirAST {
-                            return switch (n3.def) {
-                                case EVar(v) if (v != null && v.length > 1 && v.charAt(0) == '_' && argBases.exists(v.substr(1))):
-                                    makeASTWithMeta(EVar(v.substr(1)), n3.metadata, n3.pos);
-                                default:
-                                    n3;
-                            }
-                        });
-                        #if debug_web_binder
-                        inline function patList(cs:Array<EPattern>):String return [for (p in cs) switch(p){ case PVar(n): n; default: Std.string(p);}].join(',');
-                        if (patList(cl.args) != patList(outArgs)) trace('[WebParamFinalFix] EFn args ' + patList(cl.args) + ' -> ' + patList(outArgs));
-                        #end
-                        newClauses.push({args: outArgs, guard: cl.guard, body: newBodyClause});
-                    }
-                    makeASTWithMeta(EFn(newClauses), x.metadata, x.pos);
-                default:
-                    x;
-            }
-        });
-    }
+						var renamePairs = new Map<String, String>();
+						for (a in cl.args)
+							switch (a) {
+								case PVar(nm) if (nm != null && nm.length > 1 && nm.charAt(0) == '_'):
+									var baseName = nm.substr(1);
+									if (used.exists(nm)) renamePairs.set(nm, baseName);
+								case PAlias(aliasName, _) if (aliasName != null && aliasName.length > 1 && aliasName.charAt(0) == '_'):
+									var aliasBaseName = aliasName.substr(1);
+									if (used.exists(aliasName)) renamePairs.set(aliasName, aliasBaseName);
+								default:
+							}
+						if (Lambda.count(renamePairs) > 0)
+							newBodyClause = ElixirASTTransformer.transformNode(newBodyClause, function(n2:ElixirAST):ElixirAST {
+								return switch (n2.def) {
+									case EVar(v) if (renamePairs.exists(v)): makeASTWithMeta(EVar(renamePairs.get(v)), n2.metadata, n2.pos);
+									default: n2;
+								}
+							});
+						// Also rewrite body occurrences of _arg -> arg when arg exists as binder
+						if (Lambda.count(argBases) > 0)
+							newBodyClause = ElixirASTTransformer.transformNode(newBodyClause, function(n3:ElixirAST):ElixirAST {
+								return switch (n3.def) {
+									case EVar(v) if (v != null && v.length > 1 && v.charAt(0) == '_' && argBases.exists(v.substr(1))):
+										makeASTWithMeta(EVar(v.substr(1)), n3.metadata, n3.pos);
+									default:
+										n3;
+								}
+							});
+						#if debug_web_binder
+						inline function patList(cs:Array<EPattern>):String
+							return [
+								for (p in cs)
+									switch (p) {
+										case PVar(n):
+											n;
+										default:
+											Std.string(p);
+									}
+							].join(',');
+						if (patList(cl.args) != patList(outArgs))
+							trace('[WebParamFinalFix] EFn args ' + patList(cl.args) + ' -> ' + patList(outArgs));
+						#end
+						newClauses.push({args: outArgs, guard: cl.guard, body: newBodyClause});
+					}
+					makeASTWithMeta(EFn(newClauses), x.metadata, x.pos);
+				default:
+					x;
+			}
+		});
+	}
 
-    static function computeParamPromotions(args:Array<EPattern>, body:ElixirAST):Map<String,String> {
-        var have = new Map<String,Bool>();
-        var rename = new Map<String,String>();
-        if (args != null) for (a in args) switch (a) { case PVar(n) if (n != null): have.set(n,true); default: }
-        if (args != null) for (a in args) switch (a) {
-            case PVar(n) if (n != null && n.length > 1 && n.charAt(0) == '_'):
-                var base = n.substr(1);
-                var used = VariableUsageCollector.usedInFunctionScope(body, base) || pinUsesName(body, base) || erawUsesName(body, base) || containsVarName(body, base);
-                if (!have.exists(base) && used) rename.set(n, base);
-            default:
-        }
-        return rename;
-    }
+	static function computeParamPromotions(args:Array<EPattern>, body:ElixirAST):Map<String, String> {
+		var have = new Map<String, Bool>();
+		var rename = new Map<String, String>();
+		if (args != null)
+			for (a in args)
+				switch (a) {
+					case PVar(n) if (n != null):
+						have.set(n, true);
+					default:
+				}
+		if (args != null)
+			for (a in args)
+				switch (a) {
+					case PVar(n) if (n != null && n.length > 1 && n.charAt(0) == '_'):
+						var base = n.substr(1);
+						var used = VariableUsageCollector.usedInFunctionScope(body, base)
+							|| pinUsesName(body, base)
+							|| erawUsesName(body, base)
+							|| containsVarName(body, base);
+						if (!have.exists(base) && used)
+							rename.set(n, base);
+					default:
+				}
+		return rename;
+	}
 
-    static function erawUsesName(body: ElixirAST, name: String): Bool {
-        var found = false;
-        inline function isIdentChar(c: String): Bool {
-            if (c == null || c.length == 0) return false;
-            var ch = c.charCodeAt(0);
-            return (ch >= '0'.code && ch <= '9'.code) || (ch >= 'A'.code && ch <= 'Z'.code) || (ch >= 'a'.code && ch <= 'z'.code) || c == "_" || c == ".";
-        }
-        inline function scanInterpolationInner(inner: String, needle: String): Void {
-            if (inner == null || needle == null || needle.length == 0) return;
-            var start = 0;
-            while (!found) {
-                var i = inner.indexOf(needle, start);
-                if (i == -1) break;
-                var before = i > 0 ? inner.substr(i - 1, 1) : null;
-                var afterIdx = i + needle.length;
-                var after = afterIdx < inner.length ? inner.substr(afterIdx, 1) : null;
-                if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
-                start = i + needle.length;
-            }
-        }
-        function walk(n: ElixirAST): Void {
-            if (n == null || n.def == null || found) return;
-            switch (n.def) {
-                case ERaw(code):
-                    if (code != null && name != null && name.length > 0 && name.charAt(0) != '_') {
-                        if (looksLikeDoubleQuotedStringLiteral(code)) {
-                            var str = stripOuterQuotes(code);
-                            var cursor = 0;
-                            while (!found && str != null && cursor < str.length) {
-                                var open = str.indexOf("#{", cursor);
-                                if (open == -1) break;
-                                var close = str.indexOf("}", open + 2);
-                                if (close == -1) break;
-                                var inner = str.substr(open + 2, close - (open + 2));
-                                scanInterpolationInner(inner, name);
-                                cursor = close + 1;
-                            }
-                        } else {
-                            var start = 0;
-                            while (!found) {
-                                var i = code.indexOf(name, start);
-                                if (i == -1) break;
-                                var before = i > 0 ? code.substr(i - 1, 1) : null;
-                                var afterIdx = i + name.length;
-                                var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
-                                if (!isIdentChar(before) && !isIdentChar(after)) { found = true; break; }
-                                start = i + name.length;
-                            }
-                        }
-                    }
-                case EBlock(ss): for (s in ss) walk(s);
-                case EDo(ss2): for (s in ss2) walk(s);
-                case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
-                case ECase(expr, clauses): walk(expr); for (c in clauses) { if (c.guard != null) walk(c.guard); walk(c.body); }
-                case EWith(clauses, doBlock, elseBlock): for (wc in clauses) walk(wc.expr); walk(doBlock); if (elseBlock != null) walk(elseBlock);
-                case ECall(t,_,as): if (t != null) walk(t); if (as != null) for (a in as) walk(a);
-                case ERemoteCall(t2,_,as2): walk(t2); if (as2 != null) for (a2 in as2) walk(a2);
-                case EField(obj,_): walk(obj);
-                case EAccess(obj2,key): walk(obj2); walk(key);
-                case EKeywordList(pairs): for (p in pairs) walk(p.value);
-                case EMap(pairs): for (p in pairs) { walk(p.key); walk(p.value); }
-                case EStructUpdate(base,fs): walk(base); for (f in fs) walk(f.value);
-                case ETuple(es) | EList(es): for (e in es) walk(e);
-                case EFn(clauses): for (cl in clauses) { if (cl.guard != null) walk(cl.guard); walk(cl.body); }
-                default:
-            }
-        }
-        walk(body);
-        return found;
-    }
+	static function erawUsesName(body:ElixirAST, name:String):Bool {
+		var found = false;
+		inline function isIdentChar(c:String):Bool {
+			if (c == null || c.length == 0)
+				return false;
+			var ch = c.charCodeAt(0);
+			return (ch >= '0'.code && ch <= '9'.code) || (ch >= 'A'.code && ch <= 'Z'.code) || (ch >= 'a'.code && ch <= 'z'.code) || c == "_" || c == ".";
+		}
+		inline function scanInterpolationInner(inner:String, needle:String):Void {
+			if (inner == null || needle == null || needle.length == 0)
+				return;
+			var start = 0;
+			while (!found) {
+				var i = inner.indexOf(needle, start);
+				if (i == -1)
+					break;
+				var before = i > 0 ? inner.substr(i - 1, 1) : null;
+				var afterIdx = i + needle.length;
+				var after = afterIdx < inner.length ? inner.substr(afterIdx, 1) : null;
+				if (!isIdentChar(before) && !isIdentChar(after)) {
+					found = true;
+					break;
+				}
+				start = i + needle.length;
+			}
+		}
+		function walk(n:ElixirAST):Void {
+			if (n == null || n.def == null || found)
+				return;
+			switch (n.def) {
+				case ERaw(code):
+					if (code != null && name != null && name.length > 0 && name.charAt(0) != '_') {
+						if (looksLikeDoubleQuotedStringLiteral(code)) {
+							var str = stripOuterQuotes(code);
+							var cursor = 0;
+							while (!found && str != null && cursor < str.length) {
+								var open = str.indexOf("#{", cursor);
+								if (open == -1)
+									break;
+								var close = str.indexOf("}", open + 2);
+								if (close == -1)
+									break;
+								var inner = str.substr(open + 2, close - (open + 2));
+								scanInterpolationInner(inner, name);
+								cursor = close + 1;
+							}
+						} else {
+							var start = 0;
+							while (!found) {
+								var i = code.indexOf(name, start);
+								if (i == -1)
+									break;
+								var before = i > 0 ? code.substr(i - 1, 1) : null;
+								var afterIdx = i + name.length;
+								var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
+								if (!isIdentChar(before) && !isIdentChar(after)) {
+									found = true;
+									break;
+								}
+								start = i + name.length;
+							}
+						}
+					}
+				case EBlock(ss):
+					for (s in ss)
+						walk(s);
+				case EDo(ss2):
+					for (s in ss2)
+						walk(s);
+				case EIf(c, t, e):
+					walk(c);
+					walk(t);
+					if (e != null)
+						walk(e);
+				case ECase(expr, clauses):
+					walk(expr);
+					for (c in clauses) {
+						if (c.guard != null)
+							walk(c.guard);
+						walk(c.body);
+					}
+				case EWith(clauses, doBlock, elseBlock):
+					for (wc in clauses)
+						walk(wc.expr);
+					walk(doBlock);
+					if (elseBlock != null)
+						walk(elseBlock);
+				case ECall(t, _, as):
+					if (t != null)
+						walk(t);
+					if (as != null)
+						for (a in as)
+							walk(a);
+				case ERemoteCall(t2, _, as2):
+					walk(t2);
+					if (as2 != null)
+						for (a2 in as2)
+							walk(a2);
+				case EField(obj, _):
+					walk(obj);
+				case EAccess(obj2, key):
+					walk(obj2);
+					walk(key);
+				case EKeywordList(pairs):
+					for (p in pairs)
+						walk(p.value);
+				case EMap(pairs):
+					for (p in pairs) {
+						walk(p.key);
+						walk(p.value);
+					}
+				case EStructUpdate(base, fs):
+					walk(base);
+					for (f in fs)
+						walk(f.value);
+				case ETuple(es) | EList(es):
+					for (e in es)
+						walk(e);
+				case EFn(clauses):
+					for (cl in clauses) {
+						if (cl.guard != null)
+							walk(cl.guard);
+						walk(cl.body);
+					}
+				default:
+			}
+		}
+		walk(body);
+		return found;
+	}
 
-    static function containsVarName(body: ElixirAST, name: String): Bool {
-        var found = false;
-        function walk(n: ElixirAST): Void {
-            if (n == null || n.def == null || found) return;
-            switch (n.def) {
-                case EVar(v) if (v == name):
-                    found = true;
-                case EPin(inner):
-                    walk(inner);
-                case EParen(e):
-                    walk(e);
-                case EBinary(_, l, r):
-                    walk(l); walk(r);
-                case EMatch(_, rhs):
-                    walk(rhs);
-                case EBlock(ss): for (s in ss) walk(s);
-                case EDo(ss2): for (s in ss2) walk(s);
-                case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
-                case ECase(expr, clauses): walk(expr); for (c in clauses) { if (c.guard != null) walk(c.guard); walk(c.body); }
-                case EWith(clauses, doBlock, elseBlock): for (wc in clauses) walk(wc.expr); walk(doBlock); if (elseBlock != null) walk(elseBlock);
-                case ECall(t,_,as): if (t != null) walk(t); if (as != null) for (a in as) walk(a);
-                case ERemoteCall(t2,_,as2): walk(t2); if (as2 != null) for (a2 in as2) walk(a2);
-                case EField(obj,_): walk(obj);
-                case EAccess(obj2,key): walk(obj2); walk(key);
-                case EKeywordList(pairs): for (p in pairs) walk(p.value);
-                case EMap(pairs): for (p in pairs) { walk(p.key); walk(p.value); }
-                case EStructUpdate(base, fs): walk(base); for (f in fs) walk(f.value);
-                case ETuple(es) | EList(es): for (e in es) walk(e);
-                case EFn(clauses): for (cl in clauses) { if (cl.guard != null) walk(cl.guard); walk(cl.body); }
-                default:
-            }
-        }
-        walk(body);
-        return found;
-    }
+	static function containsVarName(body:ElixirAST, name:String):Bool {
+		var found = false;
+		function walk(n:ElixirAST):Void {
+			if (n == null || n.def == null || found)
+				return;
+			switch (n.def) {
+				case EVar(v) if (v == name):
+					found = true;
+				case EPin(inner):
+					walk(inner);
+				case EParen(e):
+					walk(e);
+				case EBinary(_, l, r):
+					walk(l);
+					walk(r);
+				case EMatch(_, rhs):
+					walk(rhs);
+				case EBlock(ss):
+					for (s in ss)
+						walk(s);
+				case EDo(ss2):
+					for (s in ss2)
+						walk(s);
+				case EIf(c, t, e):
+					walk(c);
+					walk(t);
+					if (e != null)
+						walk(e);
+				case ECase(expr, clauses):
+					walk(expr);
+					for (c in clauses) {
+						if (c.guard != null)
+							walk(c.guard);
+						walk(c.body);
+					}
+				case EWith(clauses, doBlock, elseBlock):
+					for (wc in clauses)
+						walk(wc.expr);
+					walk(doBlock);
+					if (elseBlock != null)
+						walk(elseBlock);
+				case ECall(t, _, as):
+					if (t != null)
+						walk(t);
+					if (as != null)
+						for (a in as)
+							walk(a);
+				case ERemoteCall(t2, _, as2):
+					walk(t2);
+					if (as2 != null)
+						for (a2 in as2)
+							walk(a2);
+				case EField(obj, _):
+					walk(obj);
+				case EAccess(obj2, key):
+					walk(obj2);
+					walk(key);
+				case EKeywordList(pairs):
+					for (p in pairs)
+						walk(p.value);
+				case EMap(pairs):
+					for (p in pairs) {
+						walk(p.key);
+						walk(p.value);
+					}
+				case EStructUpdate(base, fs):
+					walk(base);
+					for (f in fs)
+						walk(f.value);
+				case ETuple(es) | EList(es):
+					for (e in es)
+						walk(e);
+				case EFn(clauses):
+					for (cl in clauses) {
+						if (cl.guard != null)
+							walk(cl.guard);
+						walk(cl.body);
+					}
+				default:
+			}
+		}
+		walk(body);
+		return found;
+	}
 
-    static function renameParams(args:Array<EPattern>, rename:Map<String,String>):Array<EPattern> {
-        if (args == null || Lambda.count(rename) == 0) return args;
-        var out:Array<EPattern> = [];
-        for (a in args) switch (a) { case PVar(n) if (rename.exists(n)): out.push(PVar(rename.get(n))); default: out.push(a); }
-        return out;
-    }
+	static function renameParams(args:Array<EPattern>, rename:Map<String, String>):Array<EPattern> {
+		if (args == null || Lambda.count(rename) == 0)
+			return args;
+		var out:Array<EPattern> = [];
+		for (a in args)
+			switch (a) {
+				case PVar(n) if (rename.exists(n)):
+					out.push(PVar(rename.get(n)));
+				default:
+					out.push(a);
+			}
+		return out;
+	}
 
-    static function renameBody(body:ElixirAST, rename:Map<String,String>):ElixirAST {
-        if (Lambda.count(rename) == 0) return body;
-        return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) { case EVar(v) if (rename.exists(v)): makeASTWithMeta(EVar(rename.get(v)), n.metadata, n.pos); default: n; }
-        });
-    }
+	static function renameBody(body:ElixirAST, rename:Map<String, String>):ElixirAST {
+		if (Lambda.count(rename) == 0)
+			return body;
+		return ElixirASTTransformer.transformNode(body, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EVar(v) if (rename.exists(v)): makeASTWithMeta(EVar(rename.get(v)), n.metadata, n.pos);
+				default: n;
+			}
+		});
+	}
 
-    static function collectUsedVars(node: ElixirAST): Map<String,Bool> {
-        // NOTE: Intentionally ignores ERaw/HEEx bodies because we cannot safely
-        // rename variables inside raw strings.
-        return VariableUsageCollector.referencedInFunctionScope(node);
-    }
+	static function collectUsedVars(node:ElixirAST):Map<String, Bool> {
+		// NOTE: Intentionally ignores ERaw/HEEx bodies because we cannot safely
+		// rename variables inside raw strings.
+		return VariableUsageCollector.referencedInFunctionScope(node);
+	}
 
-    static function pinUsesName(body: ElixirAST, name: String): Bool {
-        var found = false;
-        function walk(n: ElixirAST): Void {
-            if (n == null || n.def == null || found) return;
-            switch (n.def) {
-                case EPin(inner):
-                    // Walk inner to handle parentheses or nested nodes
-                    switch (inner.def) {
-                        case EVar(v) if (v == name): found = true;
-                        default: walk(inner);
-                    }
-                case EParen(e):
-                    walk(e);
-                case EBinary(_, l, r):
-                    walk(l); walk(r);
-                case EMatch(_, rhs):
-                    walk(rhs);
-                case EBlock(ss): for (s in ss) walk(s);
-                case EDo(ss2): for (s in ss2) walk(s);
-                case EIf(c,t,e): walk(c); walk(t); if (e != null) walk(e);
-                case ECase(expr, clauses): walk(expr); for (c in clauses) { if (c.guard != null) walk(c.guard); walk(c.body); }
-                case EWith(clauses, doBlock, elseBlock): for (wc in clauses) walk(wc.expr); walk(doBlock); if (elseBlock != null) walk(elseBlock);
-                case ECall(t,_,as): if (t != null) walk(t); if (as != null) for (a in as) walk(a);
-                case ERemoteCall(t2,_,as2): walk(t2); if (as2 != null) for (a2 in as2) walk(a2);
-                case EField(obj,_): walk(obj);
-                case EAccess(obj2,key): walk(obj2); walk(key);
-                case EKeywordList(pairs): for (p in pairs) walk(p.value);
-                case EMap(pairs): for (p in pairs) { walk(p.key); walk(p.value); }
-                case EStructUpdate(base, fs): walk(base); for (f in fs) walk(f.value);
-                case ETuple(es) | EList(es): for (e in es) walk(e);
-                case EFn(clauses): for (cl in clauses) { if (cl.guard != null) walk(cl.guard); walk(cl.body); }
-                default:
-            }
-        }
-        walk(body);
-        return found;
-    }
+	static function pinUsesName(body:ElixirAST, name:String):Bool {
+		var found = false;
+		function walk(n:ElixirAST):Void {
+			if (n == null || n.def == null || found)
+				return;
+			switch (n.def) {
+				case EPin(inner):
+					// Walk inner to handle parentheses or nested nodes
+					switch (inner.def) {
+						case EVar(v) if (v == name): found = true;
+						default: walk(inner);
+					}
+				case EParen(e):
+					walk(e);
+				case EBinary(_, l, r):
+					walk(l);
+					walk(r);
+				case EMatch(_, rhs):
+					walk(rhs);
+				case EBlock(ss):
+					for (s in ss)
+						walk(s);
+				case EDo(ss2):
+					for (s in ss2)
+						walk(s);
+				case EIf(c, t, e):
+					walk(c);
+					walk(t);
+					if (e != null)
+						walk(e);
+				case ECase(expr, clauses):
+					walk(expr);
+					for (c in clauses) {
+						if (c.guard != null)
+							walk(c.guard);
+						walk(c.body);
+					}
+				case EWith(clauses, doBlock, elseBlock):
+					for (wc in clauses)
+						walk(wc.expr);
+					walk(doBlock);
+					if (elseBlock != null)
+						walk(elseBlock);
+				case ECall(t, _, as):
+					if (t != null)
+						walk(t);
+					if (as != null)
+						for (a in as)
+							walk(a);
+				case ERemoteCall(t2, _, as2):
+					walk(t2);
+					if (as2 != null)
+						for (a2 in as2)
+							walk(a2);
+				case EField(obj, _):
+					walk(obj);
+				case EAccess(obj2, key):
+					walk(obj2);
+					walk(key);
+				case EKeywordList(pairs):
+					for (p in pairs)
+						walk(p.value);
+				case EMap(pairs):
+					for (p in pairs) {
+						walk(p.key);
+						walk(p.value);
+					}
+				case EStructUpdate(base, fs):
+					walk(base);
+					for (f in fs)
+						walk(f.value);
+				case ETuple(es) | EList(es):
+					for (e in es)
+						walk(e);
+				case EFn(clauses):
+					for (cl in clauses) {
+						if (cl.guard != null)
+							walk(cl.guard);
+						walk(cl.body);
+					}
+				default:
+			}
+		}
+		walk(body);
+		return found;
+	}
 }
-
 #end

@@ -19,15 +19,15 @@ package haxe.functional;
  */
 @:elixirIdiomatic
 enum Result<T, E = String> {
-    /**
-     * Successful result containing a value of type T
-     * @param value The successful result value
-     */
-    Ok(value: T);
-    
-    /**
-     * Error result containing an error of type E
-     * @param error The error information
-     */
-    Error(error: E);
+	/**
+	 * Successful result containing a value of type T
+	 * @param value The successful result value
+	 */
+	Ok(value:T);
+
+	/**
+	 * Error result containing an error of type E
+	 * @param error The error information
+	 */
+	Error(error:E);
 }

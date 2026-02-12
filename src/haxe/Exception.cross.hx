@@ -43,91 +43,95 @@ package haxe;
 #if elixir_output
 @:native("Reflaxe.Exception")
 class Exception {
-    /**
-     * Exception message.
-     */
-    public var message(get, never): String;
-    private function get_message(): String {
-        return untyped __elixir__('Map.get({0}, :message)', this);
-    }
+	/**
+	 * Exception message.
+	 */
+	public var message(get, never):String;
 
-    /**
-     * The call stack at the moment of the exception creation.
-     *
-     * NOTE: We currently store stack as an opaque value (default `[]`) to keep the
-     * shape stable without depending on `haxe.NativeStackTrace` parity yet.
-     */
-    public var stack(get, never): CallStack;
-    private function get_stack(): CallStack {
-        return cast untyped __elixir__('Map.get({0}, :stack, [])', this);
-    }
+	private function get_message():String {
+		return untyped __elixir__('Map.get({0}, :message)', this);
+	}
 
-    /**
-     * Contains an exception, which was passed to `previous` constructor argument.
-     */
-    public var previous(get, never): Null<Exception>;
-    private function get_previous(): Null<Exception> {
-        return cast untyped __elixir__('Map.get({0}, :previous)', this);
-    }
+	/**
+	 * The call stack at the moment of the exception creation.
+	 *
+	 * NOTE: We currently store stack as an opaque value (default `[]`) to keep the
+	 * shape stable without depending on `haxe.NativeStackTrace` parity yet.
+	 */
+	public var stack(get, never):CallStack;
 
-    /**
-     * Native exception, which caused this exception.
-     */
-    public var native(get, never): Any;
-    public function get_native(): Any {
-        return untyped __elixir__('Map.get({0}, :native)', this);
-    }
+	private function get_stack():CallStack {
+		return cast untyped __elixir__('Map.get({0}, :stack, [])', this);
+	}
 
-    /**
-     * Used internally for wildcard catches like `catch(e:Exception)`.
-     *
-     * For this target, we treat the caught value as an exception if it is a struct
-     * and otherwise wrap it in a `haxe.Exception`.
-     */
-    static private function caught(value: Any): Exception {
-        return if (Std.isOfType(value, Exception)) {
-            cast value;
-        } else {
-            new Exception(Std.string(value), null, value);
-        }
-    }
+	/**
+	 * Contains an exception, which was passed to `previous` constructor argument.
+	 */
+	public var previous(get, never):Null<Exception>;
 
-    /**
-     * Used internally for wrapping non-throwable values for `throw` expressions.
-     *
-     * For this target, we preserve native exceptions and otherwise return the value.
-     */
-    static private function thrown(value: Any): Any {
-        return if (Std.isOfType(value, Exception)) {
-            var exception: Exception = cast value;
-            var nativeException = exception.native;
-            nativeException != null ? nativeException : exception;
-        } else {
-            value;
-        }
-    }
+	private function get_previous():Null<Exception> {
+		return cast untyped __elixir__('Map.get({0}, :previous)', this);
+	}
 
-    public function new(message: String, ?previous: Exception, ?native: Any) {
-        // Haxe core type exposes read-only properties (get,never). For the Elixir backend, the
-        // constructor lowers to `new/3` and we mutate the constructor-local `struct` variable.
-        untyped __elixir__('{0} = %{ {0} | message: {1} }', this, message);
-        untyped __elixir__('{0} = %{ {0} | previous: {1} }', this, previous);
-        untyped __elixir__('{0} = %{ {0} | native: {1} }', this, native);
-        untyped __elixir__('{0} = %{ {0} | stack: [] }', this);
-    }
+	/**
+	 * Native exception, which caused this exception.
+	 */
+	public var native(get, never):Any;
 
-    private function unwrap(): Any {
-        var n = native;
-        return n != null ? n : this;
-    }
+	public function get_native():Any {
+		return untyped __elixir__('Map.get({0}, :native)', this);
+	}
 
-    public function toString(): String {
-        return message;
-    }
+	/**
+	 * Used internally for wildcard catches like `catch(e:Exception)`.
+	 *
+	 * For this target, we treat the caught value as an exception if it is a struct
+	 * and otherwise wrap it in a `haxe.Exception`.
+	 */
+	static private function caught(value:Any):Exception {
+		return if (Std.isOfType(value, Exception)) {
+			cast value;
+		} else {
+			new Exception(Std.string(value), null, value);
+		}
+	}
 
-    public function details(): String {
-        // Avoid generating Haxe loop infrastructure in the always-emitted base exception module.
-        return untyped __elixir__('
+	/**
+	 * Used internally for wrapping non-throwable values for `throw` expressions.
+	 *
+	 * For this target, we preserve native exceptions and otherwise return the value.
+	 */
+	static private function thrown(value:Any):Any {
+		return if (Std.isOfType(value, Exception)) {
+			var exception:Exception = cast value;
+			var nativeException = exception.native;
+			nativeException != null ? nativeException : exception;
+		} else {
+			value;
+		}
+	}
+
+	public function new(message:String, ?previous:Exception, ?native:Any) {
+		// Haxe core type exposes read-only properties (get,never). For the Elixir backend, the
+		// constructor lowers to `new/3` and we mutate the constructor-local `struct` variable.
+		untyped __elixir__('{0} = %{ {0} | message: {1} }', this, message);
+		untyped __elixir__('{0} = %{ {0} | previous: {1} }', this, previous);
+		untyped __elixir__('{0} = %{ {0} | native: {1} }', this, native);
+		untyped __elixir__('{0} = %{ {0} | stack: [] }', this);
+	}
+
+	private function unwrap():Any {
+		var n = native;
+		return n != null ? n : this;
+	}
+
+	public function toString():String {
+		return message;
+	}
+
+	public function details():String {
+		// Avoid generating Haxe loop infrastructure in the always-emitted base exception module.
+		return untyped __elixir__('
 build = fn build, ex, acc ->
   if Kernel.is_nil(ex) do
     acc
@@ -140,47 +144,51 @@ build = fn build, ex, acc ->
 end
 build.(build, {0}, "")
 ', this);
-    }
+	}
 }
 #else
 extern class Exception {
-    /**
-     * Exception message.
-     */
-    public var message(get, never):String;
-    private function get_message():String;
+	/**
+	 * Exception message.
+	 */
+	public var message(get, never):String;
 
-    /**
-     * The call stack at the moment of the exception creation.
-     */
-    public var stack(get, never):CallStack;
-    private function get_stack():CallStack;
+	private function get_message():String;
 
-    /**
-     * Contains an exception, which was passed to `previous` constructor argument.
-     */
-    public var previous(get, never):Null<Exception>;
-    private function get_previous():Null<Exception>;
+	/**
+	 * The call stack at the moment of the exception creation.
+	 */
+	public var stack(get, never):CallStack;
 
-    /**
-     * Native exception, which caused this exception.
-     */
-    public var native(get, never):Any;
-    final private function get_native():Any;
+	private function get_stack():CallStack;
 
-    /**
-     * Used internally for wildcard catches like `catch(e:Exception)`.
-     */
-    static private function caught(value:Any):Exception;
+	/**
+	 * Contains an exception, which was passed to `previous` constructor argument.
+	 */
+	public var previous(get, never):Null<Exception>;
 
-    /**
-     * Used internally for wrapping non-throwable values for `throw` expressions.
-     */
-    static private function thrown(value:Any):Any;
+	private function get_previous():Null<Exception>;
 
-    public function new(message:String, ?previous:Exception, ?native:Any):Void;
-    private function unwrap():Any;
-    public function toString():String;
-    public function details():String;
+	/**
+	 * Native exception, which caused this exception.
+	 */
+	public var native(get, never):Any;
+
+	final private function get_native():Any;
+
+	/**
+	 * Used internally for wildcard catches like `catch(e:Exception)`.
+	 */
+	static private function caught(value:Any):Exception;
+
+	/**
+	 * Used internally for wrapping non-throwable values for `throw` expressions.
+	 */
+	static private function thrown(value:Any):Any;
+
+	public function new(message:String, ?previous:Exception, ?native:Any):Void;
+	private function unwrap():Any;
+	public function toString():String;
+	public function details():String;
 }
 #end

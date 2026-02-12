@@ -1,20 +1,20 @@
 package;
 
 typedef User = {
-    var name: String;
+	var name:String;
 }
 
 typedef Assigns = {
-    var attrs: Map<String, String>;
-    var users: Array<User>;
-    var title: String;
+	var attrs:Map<String, String>;
+	var users:Array<User>;
+	var title:String;
 }
 
 @:liveview
 @:hxx_mode("tsx")
 class Main {
-    public static function render(assigns: Assigns): String {
-        return <section {assigns.attrs} data-testid="users">
+	public static function render(assigns:Assigns):String {
+		return <section {assigns.attrs} data-testid="users">
             <.panel title={assigns.title}>
                 <:actions>
                     <.button class="btn">New</.button>
@@ -29,7 +29,7 @@ class Main {
 
             <Main.Components.badge {@assigns.attrs} />
         </section>;
-    }
+	}
 
-    public static function main() {}
+	public static function main() {}
 }

@@ -18,7 +18,7 @@ import elixir.types.Term;
  */
 @:native("TodoAppWeb.ErrorJSON")
 class ErrorJSON {
-    public static function render(template: String, assigns: Term): phoenix.errors.DefaultErrorJSON.ErrorPayload {
-        return phoenix.errors.DefaultErrorJSON.render(template, assigns);
-    }
+	public static function render(template:String, assigns:Term):phoenix.errors.DefaultErrorJSON.ErrorPayload {
+		return phoenix.errors.DefaultErrorJSON.render(template, assigns);
+	}
 }

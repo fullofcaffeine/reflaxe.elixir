@@ -3,7 +3,7 @@ package;
 import HXX;
 
 typedef Assigns = {
-    var ok: Bool;
+	var ok:Bool;
 }
 
 /**
@@ -12,12 +12,11 @@ typedef Assigns = {
  *   so slot existence/props can be type-checked.
  */
 class Main {
-    public static function render(assigns: Assigns): String {
-        return HXX.hxx('<.unknown>
+	public static function render(assigns:Assigns):String {
+		return HXX.hxx('<.unknown>
           <:header>Hi</:header>
         </.unknown>');
-    }
+	}
 
-    public static function main() {}
+	public static function main() {}
 }
-

@@ -25,39 +25,41 @@ import server.types.Types.MountParams;
 import server.types.Types.Session;
 import shared.liveview.EventName;
 import StringTools;
+
 using reflaxe.elixir.macros.TypedQueryLambda;
 
 typedef AuditLogRowView = {
-    var id: String;
-    var inserted_at_label: String;
-    var actor_id: String;
-    var action: String;
-    var entity: String;
-    var entity_id: String;
-    var metadata_label: String;
+	var id:String;
+	var inserted_at_label:String;
+	var actor_id:String;
+	var action:String;
+	var entity:String;
+	var entity_id:String;
+	var metadata_label:String;
 }
 
 typedef AuditLogLiveAssigns = {
-    var signed_in: Bool;
-    var is_admin: Bool;
-    var current_user: Null<User>;
-    // Tenant/organization metadata (zero-logic HXX)
-    var organization_slug: String;
-    var organization_name: String;
+	var signed_in:Bool;
+	var is_admin:Bool;
+	var current_user:Null<User>;
+	// Tenant/organization metadata (zero-logic HXX)
+	var organization_slug:String;
+	var organization_name:String;
 
-    var action_filter: String;
-    var entity_filter: String;
-    var actor_id_filter: String;
-    var limit_filter: String;
+	var action_filter:String;
+	var entity_filter:String;
+	var actor_id_filter:String;
+	var limit_filter:String;
 
-    var audit_rows: Array<AuditLogRowView>;
-    var audit_count: Int;
+	var audit_rows:Array<AuditLogRowView>;
+	var audit_count:Int;
 }
 
-typedef AuditLogLiveRenderAssigns = {> AuditLogLiveAssigns,
-    var flash: FlashMap;
-    var flash_info: Null<String>;
-    var flash_error: Null<String>;
+typedef AuditLogLiveRenderAssigns = {
+	> AuditLogLiveAssigns,
+	var flash:FlashMap;
+	var flash_info:Null<String>;
+	var flash_error:Null<String>;
 }
 
 /**
@@ -79,179 +81,180 @@ typedef AuditLogLiveRenderAssigns = {> AuditLogLiveAssigns,
 @:native("TodoAppWeb.AuditLogLive")
 @:liveview
 class AuditLogLive {
-    static inline var DEFAULT_LIMIT = 50;
+	static inline var DEFAULT_LIMIT = 50;
 
-    public static function mount(params: MountParams, session: Session, socket: Socket<AuditLogLiveAssigns>): MountResult<AuditLogLiveAssigns> {
-        var sock: LiveSocket<AuditLogLiveAssigns> = socket;
+	public static function mount(params:MountParams, session:Session, socket:Socket<AuditLogLiveAssigns>):MountResult<AuditLogLiveAssigns> {
+		var sock:LiveSocket<AuditLogLiveAssigns> = socket;
 
-        var userId = sessionUserId(session);
-        var currentUser: Null<User> = userId != null ? Repo.get(User, userId) : null;
+		var userId = sessionUserId(session);
+		var currentUser:Null<User> = userId != null ? Repo.get(User, userId) : null;
 
-        if (userId != null && currentUser == null) {
-            sock = LiveView.putFlash(sock, FlashType.Error, "Your session is invalid. Please sign in again.");
-            sock = LiveView.pushNavigate(sock, {to: "/login"});
-        }
+		if (userId != null && currentUser == null) {
+			sock = LiveView.putFlash(sock, FlashType.Error, "Your session is invalid. Please sign in again.");
+			sock = LiveView.pushNavigate(sock, {to: "/login"});
+		}
 
-        if (currentUser == null) {
-            sock = LiveView.putFlash(sock, FlashType.Error, "Sign in to access the audit log.");
-            sock = LiveView.pushNavigate(sock, {to: "/login"});
-        } else if (currentUser.role != "admin") {
-            sock = LiveView.putFlash(sock, FlashType.Error, "Admins only.");
-            sock = LiveView.pushNavigate(sock, {to: "/todos"});
-        }
+		if (currentUser == null) {
+			sock = LiveView.putFlash(sock, FlashType.Error, "Sign in to access the audit log.");
+			sock = LiveView.pushNavigate(sock, {to: "/login"});
+		} else if (currentUser.role != "admin") {
+			sock = LiveView.putFlash(sock, FlashType.Error, "Admins only.");
+			sock = LiveView.pushNavigate(sock, {to: "/todos"});
+		}
 
-        var signedIn = currentUser != null;
-        var isAdmin = signedIn && currentUser.role == "admin";
-        var orgInfo = signedIn ? OrganizationTools.infoForId(currentUser.organizationId) : OrganizationTools.infoForId(OrganizationTools.DEMO_ORG_ID);
+		var signedIn = currentUser != null;
+		var isAdmin = signedIn && currentUser.role == "admin";
+		var orgInfo = signedIn ? OrganizationTools.infoForId(currentUser.organizationId) : OrganizationTools.infoForId(OrganizationTools.DEMO_ORG_ID);
 
-        var actionFilter = "all";
-        var entityFilter = "all";
-        var actorIdFilter = "";
-        var limitFilter = "50";
-        var rows = isAdmin ? loadRowsForOrg(currentUser.organizationId, actionFilter, entityFilter, null, parseLimit(limitFilter)) : [];
+		var actionFilter = "all";
+		var entityFilter = "all";
+		var actorIdFilter = "";
+		var limitFilter = "50";
+		var rows = isAdmin ? loadRowsForOrg(currentUser.organizationId, actionFilter, entityFilter, null, parseLimit(limitFilter)) : [];
 
-        sock = sock.merge({
-            signed_in: signedIn,
-            is_admin: isAdmin,
-            current_user: currentUser,
-            organization_slug: orgInfo.slug,
-            organization_name: orgInfo.name,
-            action_filter: actionFilter,
-            entity_filter: entityFilter,
-            actor_id_filter: actorIdFilter,
-            limit_filter: limitFilter,
-            audit_rows: rows,
-            audit_count: rows.length
-        });
+		sock = sock.merge({
+			signed_in: signedIn,
+			is_admin: isAdmin,
+			current_user: currentUser,
+			organization_slug: orgInfo.slug,
+			organization_name: orgInfo.name,
+			action_filter: actionFilter,
+			entity_filter: entityFilter,
+			actor_id_filter: actorIdFilter,
+			limit_filter: limitFilter,
+			audit_rows: rows,
+			audit_count: rows.length
+		});
 
-        return Ok(sock);
-    }
+		return Ok(sock);
+	}
 
-    /**
-     * Router action handler (placeholder to satisfy route validation).
-     */
-    public static function index(): String {
-        return "index";
-    }
+	/**
+	 * Router action handler (placeholder to satisfy route validation).
+	 */
+	public static function index():String {
+		return "index";
+	}
 
-    static function sessionUserId(session: Session): Null<Int> {
-        if (session == null) return null;
-        var sessionTerm: Term = cast session;
-        var primary: Term = ElixirMap.get(sessionTerm, "user_id");
-        var chosen: Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
-        return chosen != null ? cast chosen : null;
-    }
+	static function sessionUserId(session:Session):Null<Int> {
+		if (session == null)
+			return null;
+		var sessionTerm:Term = cast session;
+		var primary:Term = ElixirMap.get(sessionTerm, "user_id");
+		var chosen:Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
+		return chosen != null ? cast chosen : null;
+	}
 
-    public static function handle_event(event: String, params: Term, socket: Socket<AuditLogLiveAssigns>): HandleEventResult<AuditLogLiveAssigns> {
-        var sock: LiveSocket<AuditLogLiveAssigns> = socket;
-        return switch (event) {
-            case EventName.FilterAudit:
-                NoReply(applyFilters(params, sock));
-            case _:
-                NoReply(sock);
-        };
-    }
+	public static function handle_event(event:String, params:Term, socket:Socket<AuditLogLiveAssigns>):HandleEventResult<AuditLogLiveAssigns> {
+		var sock:LiveSocket<AuditLogLiveAssigns> = socket;
+		return switch (event) {
+			case EventName.FilterAudit:
+				NoReply(applyFilters(params, sock));
+			case _:
+				NoReply(sock);
+		};
+	}
 
-    static function parseOptionalInt(value: Term): Null<Int> {
-        if (value == null) return null;
-        if (elixir.Kernel.isInteger(value)) return cast value;
-        if (elixir.Kernel.isFloat(value)) return elixir.Kernel.trunc(value);
-        if (elixir.Kernel.isBinary(value)) return Std.parseInt(cast value);
-        return null;
-    }
+	static function parseOptionalInt(value:Term):Null<Int> {
+		if (value == null)
+			return null;
+		if (elixir.Kernel.isInteger(value))
+			return cast value;
+		if (elixir.Kernel.isFloat(value))
+			return elixir.Kernel.trunc(value);
+		if (elixir.Kernel.isBinary(value))
+			return Std.parseInt(cast value);
+		return null;
+	}
 
-    static function parseLimit(rawLimit: String): Int {
-        var parsed = Std.parseInt(rawLimit);
-        if (parsed != null && parsed > 0) return parsed;
-        return DEFAULT_LIMIT;
-    }
+	static function parseLimit(rawLimit:String):Int {
+		var parsed = Std.parseInt(rawLimit);
+		if (parsed != null && parsed > 0)
+			return parsed;
+		return DEFAULT_LIMIT;
+	}
 
-    static function loadRowsForOrg(
-        organizationId: Int,
-        actionFilter: String,
-        entityFilter: String,
-        actorId: Null<Int>,
-        limit: Int
-    ): Array<AuditLogRowView> {
-        var baseQuery = TypedQuery.from(AuditLog).where(a -> a.organizationId == organizationId);
+	static function loadRowsForOrg(organizationId:Int, actionFilter:String, entityFilter:String, actorId:Null<Int>, limit:Int):Array<AuditLogRowView> {
+		var baseQuery = TypedQuery.from(AuditLog).where(a -> a.organizationId == organizationId);
 
-        var actorFilteredQuery = (actorId != null && actorId > 0)
-            ? baseQuery.where(a -> a.actorId == actorId)
-            : baseQuery;
+		var actorFilteredQuery = (actorId != null && actorId > 0) ? baseQuery.where(a -> a.actorId == actorId) : baseQuery;
 
-        var normalizedAction = StringTools.trim(actionFilter);
-        var actionFilteredQuery = (normalizedAction != "" && normalizedAction != "all")
-            ? actorFilteredQuery.where(a -> a.action == normalizedAction)
-            : actorFilteredQuery;
+		var normalizedAction = StringTools.trim(actionFilter);
+		var actionFilteredQuery = (normalizedAction != "" && normalizedAction != "all") ? actorFilteredQuery.where(a ->
+			a.action == normalizedAction) : actorFilteredQuery;
 
-        var normalizedEntity = StringTools.trim(entityFilter);
-        var entityFilteredQuery = (normalizedEntity != "" && normalizedEntity != "all")
-            ? actionFilteredQuery.where(a -> a.entity == normalizedEntity)
-            : actionFilteredQuery;
+		var normalizedEntity = StringTools.trim(entityFilter);
+		var entityFilteredQuery = (normalizedEntity != "" && normalizedEntity != "all") ? actionFilteredQuery.where(a ->
+			a.entity == normalizedEntity) : actionFilteredQuery;
 
-        var finalQuery = entityFilteredQuery.orderBy(a -> [{field: a.id, direction: SortDirection.Desc}]).limit(limit);
+		var finalQuery = entityFilteredQuery.orderBy(a -> [{field: a.id, direction: SortDirection.Desc}]).limit(limit);
 
-        var entries = Repo.all(finalQuery);
-        return entries.map(toRowView);
-    }
+		var entries = Repo.all(finalQuery);
+		return entries.map(toRowView);
+	}
 
-    static function toRowView(entry: AuditLog): AuditLogRowView {
-        var insertedAtTerm: Term = ElixirMap.get(cast entry, Atom.create("inserted_at"));
-        var insertedAtLabel = insertedAtTerm != null ? Std.string(insertedAtTerm) : "";
+	static function toRowView(entry:AuditLog):AuditLogRowView {
+		var insertedAtTerm:Term = ElixirMap.get(cast entry, Atom.create("inserted_at"));
+		var insertedAtLabel = insertedAtTerm != null ? Std.string(insertedAtTerm) : "";
 
-        var metadataLabel = entry.metadata != null ? Std.string(entry.metadata) : "";
-        var entityIdLabel = entry.entityId != null ? Std.string(entry.entityId) : "";
+		var metadataLabel = entry.metadata != null ? Std.string(entry.metadata) : "";
+		var entityIdLabel = entry.entityId != null ? Std.string(entry.entityId) : "";
 
-        return {
-            id: Std.string(entry.id),
-            inserted_at_label: insertedAtLabel,
-            actor_id: Std.string(entry.actorId),
-            action: entry.action,
-            entity: entry.entity,
-            entity_id: entityIdLabel,
-            metadata_label: metadataLabel
-        };
-    }
+		return {
+			id: Std.string(entry.id),
+			inserted_at_label: insertedAtLabel,
+			actor_id: Std.string(entry.actorId),
+			action: entry.action,
+			entity: entry.entity,
+			entity_id: entityIdLabel,
+			metadata_label: metadataLabel
+		};
+	}
 
-    static function applyFilters(params: Term, socket: LiveSocket<AuditLogLiveAssigns>): LiveSocket<AuditLogLiveAssigns> {
-        if (!socket.assigns.is_admin) return socket;
-        if (socket.assigns.current_user == null) return socket;
+	static function applyFilters(params:Term, socket:LiveSocket<AuditLogLiveAssigns>):LiveSocket<AuditLogLiveAssigns> {
+		if (!socket.assigns.is_admin)
+			return socket;
+		if (socket.assigns.current_user == null)
+			return socket;
 
-        var actionTerm: Term = ElixirMap.get(params, "action");
-        var entityTerm: Term = ElixirMap.get(params, "entity");
-        var actorIdTerm: Term = ElixirMap.get(params, "actor_id");
-        var limitTerm: Term = ElixirMap.get(params, "limit");
+		var actionTerm:Term = ElixirMap.get(params, "action");
+		var entityTerm:Term = ElixirMap.get(params, "entity");
+		var actorIdTerm:Term = ElixirMap.get(params, "actor_id");
+		var limitTerm:Term = ElixirMap.get(params, "limit");
 
-        var actionFilter = actionTerm != null ? StringTools.trim(cast actionTerm) : socket.assigns.action_filter;
-        if (actionFilter == "") actionFilter = "all";
+		var actionFilter = actionTerm != null ? StringTools.trim(cast actionTerm) : socket.assigns.action_filter;
+		if (actionFilter == "")
+			actionFilter = "all";
 
-        var entityFilter = entityTerm != null ? StringTools.trim(cast entityTerm) : socket.assigns.entity_filter;
-        if (entityFilter == "") entityFilter = "all";
+		var entityFilter = entityTerm != null ? StringTools.trim(cast entityTerm) : socket.assigns.entity_filter;
+		if (entityFilter == "")
+			entityFilter = "all";
 
-        var actorIdFilter = actorIdTerm != null ? StringTools.trim(cast actorIdTerm) : socket.assigns.actor_id_filter;
-        var actorId = StringTools.trim(actorIdFilter) != "" ? Std.parseInt(actorIdFilter) : null;
+		var actorIdFilter = actorIdTerm != null ? StringTools.trim(cast actorIdTerm) : socket.assigns.actor_id_filter;
+		var actorId = StringTools.trim(actorIdFilter) != "" ? Std.parseInt(actorIdFilter) : null;
 
-        var limitFilter = limitTerm != null ? StringTools.trim(cast limitTerm) : socket.assigns.limit_filter;
-        if (limitFilter == "") limitFilter = "50";
+		var limitFilter = limitTerm != null ? StringTools.trim(cast limitTerm) : socket.assigns.limit_filter;
+		if (limitFilter == "")
+			limitFilter = "50";
 
-        var rows = loadRowsForOrg(socket.assigns.current_user.organizationId, actionFilter, entityFilter, actorId, parseLimit(limitFilter));
-        return socket.merge({
-            action_filter: actionFilter,
-            entity_filter: entityFilter,
-            actor_id_filter: actorIdFilter,
-            limit_filter: limitFilter,
-            audit_rows: rows,
-            audit_count: rows.length
-        });
-    }
+		var rows = loadRowsForOrg(socket.assigns.current_user.organizationId, actionFilter, entityFilter, actorId, parseLimit(limitFilter));
+		return socket.merge({
+			action_filter: actionFilter,
+			entity_filter: entityFilter,
+			actor_id_filter: actorIdFilter,
+			limit_filter: limitFilter,
+			audit_rows: rows,
+			audit_count: rows.length
+		});
+	}
 
-    public static function render(assigns: AuditLogLiveRenderAssigns): String {
-        var renderAssigns: Assigns<AuditLogLiveRenderAssigns> = assigns;
-        renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
-        renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
-        assigns = renderAssigns;
+	public static function render(assigns:AuditLogLiveRenderAssigns):String {
+		var renderAssigns:Assigns<AuditLogLiveRenderAssigns> = assigns;
+		renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
+		renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
+		assigns = renderAssigns;
 
-        return hxx('
+		return hxx('
             <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-10 max-w-6xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
@@ -364,5 +367,5 @@ class AuditLogLive {
                 </div>
             </div>
         ');
-    }
+	}
 }

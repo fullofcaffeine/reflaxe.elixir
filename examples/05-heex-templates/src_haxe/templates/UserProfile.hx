@@ -8,12 +8,11 @@ import HXX.*;
  */
 @:template("user_profile.html.heex")
 class UserProfile {
-    
-    /**
-     * Main template render function
-     */
-    public static function render(assigns: UserAssigns): String {
-        return hxx('
+	/**
+	 * Main template render function
+	 */
+	public static function render(assigns:UserAssigns):String {
+		return hxx('
         <div class="user-profile">
             <div class="header">
                 <h1>Welcome, ${assigns.user.name}!</h1>
@@ -47,17 +46,17 @@ class UserProfile {
             </div>
         </div>
         ');
-    }
-    
-    /**
-     * Sub-template for rendering user posts
-     */
-    static function renderPosts(posts: Array<Post>): String {
-        if (posts.length == 0) {
-            return hxx('<div class="no-posts">No posts yet!</div>');
-        }
-        
-        return hxx('
+	}
+
+	/**
+	 * Sub-template for rendering user posts
+	 */
+	static function renderPosts(posts:Array<Post>):String {
+		if (posts.length == 0) {
+			return hxx('<div class="no-posts">No posts yet!</div>');
+		}
+
+		return hxx('
         <div class="posts-section">
             <h3>Recent Posts (${posts.length})</h3>
             <div class="posts-list">
@@ -65,13 +64,13 @@ class UserProfile {
             </div>
         </div>
         ');
-    }
-    
-    /**
-     * Individual post template
-     */
-    static function renderPost(post: Post): String {
-        return hxx('
+	}
+
+	/**
+	 * Individual post template
+	 */
+	static function renderPost(post:Post):String {
+		return hxx('
         <div class="post">
             <h4>${post.title}</h4>
             <p class="content">${truncate(post.content, 100)}</p>
@@ -81,25 +80,25 @@ class UserProfile {
             </div>
         </div>
         ');
-    }
-    
-    // Helper functions
-    static function formatDate(date: String): String {
-        return date; // Would format date properly
-    }
-    
-    static function truncate(text: String, length: Int): String {
-        return text.length > length ? text.substr(0, length) + "..." : text;
-    }
+	}
 
-    /**
-     * Minimal local component stub so this example compiles standalone.
-     *
-     * In real Phoenix apps this is typically provided by your `CoreComponents` module.
-     */
-    @:component
-    public static function button(assigns: UserProfileButtonAssigns): String {
-        return hxx('
+	// Helper functions
+	static function formatDate(date:String):String {
+		return date; // Would format date properly
+	}
+
+	static function truncate(text:String, length:Int):String {
+		return text.length > length ? text.substr(0, length) + "..." : text;
+	}
+
+	/**
+	 * Minimal local component stub so this example compiles standalone.
+	 *
+	 * In real Phoenix apps this is typically provided by your `CoreComponents` module.
+	 */
+	@:component
+	public static function button(assigns:UserProfileButtonAssigns):String {
+		return hxx('
         <button
             type=${assigns.type != null ? assigns.type : "button"}
             disabled=${assigns.disabled}
@@ -107,36 +106,36 @@ class UserProfile {
             ${assigns.inner_content}
         </button>
         ');
-    }
-    
-    // Main function for compilation
-    public static function main(): Void {
-        trace("UserProfile template compiled successfully!");
-    }
+	}
+
+	// Main function for compilation
+	public static function main():Void {
+		trace("UserProfile template compiled successfully!");
+	}
 }
 
 // Type definitions
 typedef UserAssigns = {
-    user: User,
-    posts: Array<Post>
+	user:User,
+	posts:Array<Post>
 }
 
 typedef User = {
-    name: String,
-    email: String, 
-    active: Bool,
-    insertedAt: String
+	name:String,
+	email:String,
+	active:Bool,
+	insertedAt:String
 }
 
 typedef Post = {
-    title: String,
-    content: String,
-    viewCount: Int,
-    insertedAt: String
+	title:String,
+	content:String,
+	viewCount:Int,
+	insertedAt:String
 }
 
 typedef UserProfileButtonAssigns = {
-    ?type: String,
-    ?disabled: Bool,
-    inner_content: String
+	?type:String,
+	?disabled:Bool,
+	inner_content:String
 }

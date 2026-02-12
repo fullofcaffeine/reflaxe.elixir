@@ -27,143 +27,143 @@ import elixir.types.Term;
  */
 @:native("Phoenix.ConnTest")
 extern class ConnTest {
-    /**
-     * Build a test connection.
-     * Overloads mirror Phoenix.ConnTest.build_conn/0|2|3.
-     */
-    @:overload(function(): Conn {})
-    @:overload(function(method: String, path: String, params: Term): Conn {})
-    public static function build_conn(method: String, path: String): Conn;
-    
-    /**
-     * Make a GET request with parameters.
-     */
-    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
-    public static function get(conn: Conn, path: String): Conn;
-    
-    /**
-     * Make a POST request.
-     */
-    /**
-     * Make a POST request with parameters.
-     */
-    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
-    public static function post(conn: Conn, path: String): Conn;
-    
-    /**
-     * Make a PUT request.
-     */
-    /**
-     * Make a PUT request with parameters.
-     */
-    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
-    public static function put(conn: Conn, path: String): Conn;
-    
-    /**
-     * Make a PATCH request.
-     */
-    /**
-     * Make a PATCH request with parameters.
-     */
-    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
-    public static function patch(conn: Conn, path: String): Conn;
-    
-    /**
-     * Make a DELETE request.
-     */
-    /**
-     * Make a DELETE request with parameters.
-     */
-    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
-    public static function delete(conn: Conn, path: String): Conn;
-    
-    /**
-     * Make a HEAD request.
-     */
-    /**
-     * Make a HEAD request with parameters.
-     */
-    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
-    public static function head(conn: Conn, path: String): Conn;
-    
-    /**
-     * Make an OPTIONS request.
-     */
-    /**
-     * Make an OPTIONS request with parameters.
-     */
-    @:overload(function(conn: Conn, path: String, params: Term): Conn {})
-    public static function options(conn: Conn, path: String): Conn;
-    
-    /**
-     * Initialize test session for the connection.
-     */
-    public static function init_test_session(conn: Conn, session: Map<String, Term>): Conn;
-    
-    /**
-     * Clear the session data.
-     */
-    public static function clear_session(conn: Conn): Conn;
-    
-    /**
-     * Add flash message to the connection.
-     */
-    public static function put_flash(conn: Conn, key: String, message: String): Conn;
-    
-    /**
-     * Set request headers.
-     */
-    public static function put_req_header(conn: Conn, key: String, value: String): Conn;
-    
-    /**
-     * Delete request header.
-     */
-    public static function delete_req_header(conn: Conn, key: String): Conn;
-    
-    /**
-     * Set request cookie.
-     */
-    public static function put_req_cookie(conn: Conn, key: String, value: String): Conn;
-    
-    /**
-     * Delete request cookie.
-     */
-    public static function delete_req_cookie(conn: Conn, key: String): Conn;
-    
-    /**
-     * Fetch query parameters from the connection.
-     */
-    public static function fetch_query_params(conn: Conn): Conn;
-    
-    /**
-     * Fetch session data from the connection.
-     */
-    public static function fetch_session(conn: Conn): Conn;
-    
-    /**
-     * Fetch flash messages from the connection.
-     */
-    public static function fetch_flash(conn: Conn): Conn;
-    
-    /**
-     * Bypass Phoenix router for direct controller testing.
-     * Overloads mirror Phoenix.ConnTest.bypass_through/2|3.
-     */
-    @:overload(function(conn: Conn, router: String, action: String): Conn {})
-    public static function bypass_through(conn: Conn, router: String): Conn;
-    
-    /**
-     * Dispatch the connection through the router.
-     */
-    public static function dispatch(conn: Conn, endpoint: String, method: String, path: String): Conn;
-    
-    /**
-     * Recycle the connection for reuse in tests.
-     */
-    public static function recycle(conn: Conn): Conn;
-    
-    /**
-     * Ensure the connection has been sent.
-     */
-    public static function ensure_sent(conn: Conn): Conn;
+	/**
+	 * Build a test connection.
+	 * Overloads mirror Phoenix.ConnTest.build_conn/0|2|3.
+	 */
+	@:overload(function():Conn {})
+	@:overload(function(method:String, path:String, params:Term):Conn {})
+	public static function build_conn(method:String, path:String):Conn;
+
+	/**
+	 * Make a GET request with parameters.
+	 */
+	@:overload(function(conn:Conn, path:String, params:Term):Conn {})
+	public static function get(conn:Conn, path:String):Conn;
+
+	/**
+	 * Make a POST request.
+	 */
+	/**
+	 * Make a POST request with parameters.
+	 */
+	@:overload(function(conn:Conn, path:String, params:Term):Conn {})
+	public static function post(conn:Conn, path:String):Conn;
+
+	/**
+	 * Make a PUT request.
+	 */
+	/**
+	 * Make a PUT request with parameters.
+	 */
+	@:overload(function(conn:Conn, path:String, params:Term):Conn {})
+	public static function put(conn:Conn, path:String):Conn;
+
+	/**
+	 * Make a PATCH request.
+	 */
+	/**
+	 * Make a PATCH request with parameters.
+	 */
+	@:overload(function(conn:Conn, path:String, params:Term):Conn {})
+	public static function patch(conn:Conn, path:String):Conn;
+
+	/**
+	 * Make a DELETE request.
+	 */
+	/**
+	 * Make a DELETE request with parameters.
+	 */
+	@:overload(function(conn:Conn, path:String, params:Term):Conn {})
+	public static function delete(conn:Conn, path:String):Conn;
+
+	/**
+	 * Make a HEAD request.
+	 */
+	/**
+	 * Make a HEAD request with parameters.
+	 */
+	@:overload(function(conn:Conn, path:String, params:Term):Conn {})
+	public static function head(conn:Conn, path:String):Conn;
+
+	/**
+	 * Make an OPTIONS request.
+	 */
+	/**
+	 * Make an OPTIONS request with parameters.
+	 */
+	@:overload(function(conn:Conn, path:String, params:Term):Conn {})
+	public static function options(conn:Conn, path:String):Conn;
+
+	/**
+	 * Initialize test session for the connection.
+	 */
+	public static function init_test_session(conn:Conn, session:Map<String, Term>):Conn;
+
+	/**
+	 * Clear the session data.
+	 */
+	public static function clear_session(conn:Conn):Conn;
+
+	/**
+	 * Add flash message to the connection.
+	 */
+	public static function put_flash(conn:Conn, key:String, message:String):Conn;
+
+	/**
+	 * Set request headers.
+	 */
+	public static function put_req_header(conn:Conn, key:String, value:String):Conn;
+
+	/**
+	 * Delete request header.
+	 */
+	public static function delete_req_header(conn:Conn, key:String):Conn;
+
+	/**
+	 * Set request cookie.
+	 */
+	public static function put_req_cookie(conn:Conn, key:String, value:String):Conn;
+
+	/**
+	 * Delete request cookie.
+	 */
+	public static function delete_req_cookie(conn:Conn, key:String):Conn;
+
+	/**
+	 * Fetch query parameters from the connection.
+	 */
+	public static function fetch_query_params(conn:Conn):Conn;
+
+	/**
+	 * Fetch session data from the connection.
+	 */
+	public static function fetch_session(conn:Conn):Conn;
+
+	/**
+	 * Fetch flash messages from the connection.
+	 */
+	public static function fetch_flash(conn:Conn):Conn;
+
+	/**
+	 * Bypass Phoenix router for direct controller testing.
+	 * Overloads mirror Phoenix.ConnTest.bypass_through/2|3.
+	 */
+	@:overload(function(conn:Conn, router:String, action:String):Conn {})
+	public static function bypass_through(conn:Conn, router:String):Conn;
+
+	/**
+	 * Dispatch the connection through the router.
+	 */
+	public static function dispatch(conn:Conn, endpoint:String, method:String, path:String):Conn;
+
+	/**
+	 * Recycle the connection for reuse in tests.
+	 */
+	public static function recycle(conn:Conn):Conn;
+
+	/**
+	 * Ensure the connection has been sent.
+	 */
+	public static function ensure_sent(conn:Conn):Conn;
 }

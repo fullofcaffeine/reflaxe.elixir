@@ -31,7 +31,6 @@ import elixir.types.Term;
  * end
  * ```
  */
-
 /**
  * Application start type - normal, temporary, or permanent
  *
@@ -61,22 +60,22 @@ import elixir.types.Term;
  */
 @:elixirIdiomatic
 enum ApplicationStartType {
-    Normal;
-    Temporary;
-    Permanent;
+	Normal;
+	Temporary;
+	Permanent;
 }
 
 /**
  * Application arguments passed to start function
  */
 abstract ApplicationArgs(Term) from Term to Term {
-    public static function fromDynamic(value: Term): ApplicationArgs {
-        return cast value;
-    }
-    
-    public function toDynamic(): Term {
-        return this;
-    }
+	public static function fromDynamic(value:Term):ApplicationArgs {
+		return cast value;
+	}
+
+	public function toDynamic():Term {
+		return this;
+	}
 }
 
 /**
@@ -106,35 +105,35 @@ abstract ApplicationArgs(Term) from Term to Term {
  */
 @:elixirIdiomatic
 enum ApplicationResult {
-    Ok(state: Term);
-    Error(reason: String);
-    Ignore;
+	Ok(state:Term);
+	Error(reason:String);
+	Ignore;
 }
 
 /**
  * Helper class for Application result construction
  */
 class ApplicationResultTools {
-    /**
-     * Create a successful application start result
-     */
-    public static function ok<T>(state: T): ApplicationResult {
-        return Ok(cast state);
-    }
-    
-    /**
-     * Create an error application start result
-     */
-    public static function error(reason: String): ApplicationResult {
-        return Error(reason);
-    }
-    
-    /**
-     * Create an ignore application start result
-     */
-    public static function ignore(): ApplicationResult {
-        return Ignore;
-    }
+	/**
+	 * Create a successful application start result
+	 */
+	public static function ok<T>(state:T):ApplicationResult {
+		return Ok(cast state);
+	}
+
+	/**
+	 * Create an error application start result
+	 */
+	public static function error(reason:String):ApplicationResult {
+		return Error(reason);
+	}
+
+	/**
+	 * Create an ignore application start result
+	 */
+	public static function ignore():ApplicationResult {
+		return Ignore;
+	}
 }
 
 /**
@@ -142,43 +141,43 @@ class ApplicationResultTools {
  */
 @:native("Application")
 extern class ApplicationExtern {
-    /**
-     * Start an application
-     */
-    static function start(app: String, ?type: String): Term;
-    
-    /**
-     * Stop an application
-     */
-    static function stop(app: String): Term;
-    
-    /**
-     * Get application environment
-     */
-    static function get_env(app: String, key: String, ?default_value: Term): Term;
-    
-    /**
-     * Put application environment
-     */
-    static function put_env(app: String, key: String, value: Term): Void;
-    
-    /**
-     * Get all application environment
-     */
-    static function get_all_env(app: String): Term;
-    
-    /**
-     * Load an application
-     */
-    static function load(app: String): Term;
-    
-    /**
-     * Ensure an application is started
-     */
-    static function ensure_started(app: String, ?type: String): Term;
-    
-    /**
-     * Ensure all applications are started
-     */
-    static function ensure_all_started(app: String, ?type: String): Term;
+	/**
+	 * Start an application
+	 */
+	static function start(app:String, ?type:String):Term;
+
+	/**
+	 * Stop an application
+	 */
+	static function stop(app:String):Term;
+
+	/**
+	 * Get application environment
+	 */
+	static function get_env(app:String, key:String, ?default_value:Term):Term;
+
+	/**
+	 * Put application environment
+	 */
+	static function put_env(app:String, key:String, value:Term):Void;
+
+	/**
+	 * Get all application environment
+	 */
+	static function get_all_env(app:String):Term;
+
+	/**
+	 * Load an application
+	 */
+	static function load(app:String):Term;
+
+	/**
+	 * Ensure an application is started
+	 */
+	static function ensure_started(app:String, ?type:String):Term;
+
+	/**
+	 * Ensure all applications are started
+	 */
+	static function ensure_all_started(app:String, ?type:String):Term;
 }

@@ -20,15 +20,14 @@ package phoenix.hxx.ast;
  * - This module is compile-time only and is suppressed from emission in Elixir outputs.
  */
 enum HeexNode {
-    Text(value: String);
-    ExprText<T>(value: T);
+	Text(value:String);
+	ExprText<T>(value:T);
 
-    Fragment(children: Array<HeexNode>);
+	Fragment(children:Array<HeexNode>);
 
-    Element(name: String, attrs: Array<HeexAttr>, children: Array<HeexNode>);
+	Element(name:String, attrs:Array<HeexAttr>, children:Array<HeexNode>);
 
-    If(cond: Bool, thenBranch: HeexNode, elseBranch: Null<HeexNode>);
+	If(cond:Bool, thenBranch:HeexNode, elseBranch:Null<HeexNode>);
 
-    For<T>(items: Iterable<T>, render: T -> HeexNode);
+	For<T>(items:Iterable<T>, render:T->HeexNode);
 }
-

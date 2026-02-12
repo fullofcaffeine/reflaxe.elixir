@@ -15,15 +15,15 @@ import phoenix.Presence.PresenceEntry;
  * 
  * All methods should be properly typed with generic parameters T and M.
  */
-
 // Test metadata type
 typedef TestMeta = {
-	onlineAt: Float,
-	userName: String,
-	status: String
+	onlineAt:Float,
+	userName:String,
+	status:String
 }
 
 // Test presence module implementing PresenceBehavior
+
 @:native("TestApp.Presence")
 @:presence
 class TestPresence implements PresenceBehavior {
@@ -31,8 +31,8 @@ class TestPresence implements PresenceBehavior {
 	static inline var TOPIC = "presence:test";
 
 	// Custom method that uses the generated internal methods
-	public static function trackTestUser(socket: Socket<PresenceAssigns>, userId: String, name: String): Socket<PresenceAssigns> {
-		var meta: TestMeta = {
+	public static function trackTestUser(socket:Socket<PresenceAssigns>, userId:String, name:String):Socket<PresenceAssigns> {
+		var meta:TestMeta = {
 			onlineAt: Date.now().getTime(),
 			userName: name,
 			status: "active"
@@ -44,15 +44,15 @@ class TestPresence implements PresenceBehavior {
 	}
 
 	// Custom method that uses the generated update method
-	public static function updateStatus(socket: Socket<PresenceAssigns>, userId: String, newStatus: String): Socket<PresenceAssigns> {
-            // Get current metadata using macro-generated wrapper
-            var presences = TestPresence.list(TOPIC);
+	public static function updateStatus(socket:Socket<PresenceAssigns>, userId:String, newStatus:String):Socket<PresenceAssigns> {
+		// Get current metadata using macro-generated wrapper
+		var presences = TestPresence.list(TOPIC);
 
 		if (Reflect.hasField(presences, userId)) {
-			var entry: PresenceEntry<TestMeta> = Reflect.field(presences, userId);
+			var entry:PresenceEntry<TestMeta> = Reflect.field(presences, userId);
 			if (entry.metas.length > 0) {
 				var currentMeta = entry.metas[0];
-				var updatedMeta: TestMeta = {
+				var updatedMeta:TestMeta = {
 					onlineAt: currentMeta.onlineAt,
 					userName: currentMeta.userName,
 					status: newStatus
@@ -67,7 +67,7 @@ class TestPresence implements PresenceBehavior {
 	}
 
 	// Custom method that uses the generated untrack method
-	public static function removeUser(socket: Socket<PresenceAssigns>, userId: String): Socket<PresenceAssigns> {
+	public static function removeUser(socket:Socket<PresenceAssigns>, userId:String):Socket<PresenceAssigns> {
 		// This should use the macro-generated untrackInternal method
 		untrackInternal(TOPIC, userId);
 		return socket;
@@ -78,9 +78,9 @@ class TestPresence implements PresenceBehavior {
 class ExternalCaller {
 	static inline var TOPIC = "presence:test";
 
-	public static function callFromOutside(socket: Socket<PresenceAssigns>): Void {
+	public static function callFromOutside(socket:Socket<PresenceAssigns>):Void {
 		// These should use the macro-generated external methods that call Phoenix.Presence
-		var meta: TestMeta = {
+		var meta:TestMeta = {
 			onlineAt: Date.now().getTime(),
 			userName: "External User",
 			status: "online"
@@ -95,13 +95,13 @@ class ExternalCaller {
 		// External untrack (should call Phoenix.Presence.untrack)
 		TestPresence.untrack(TOPIC, "external_user");
 
-            // List and getByKey should work externally too
-            var allPresences = TestPresence.list(TOPIC);
-            var userPresence: Null<PresenceEntry<TestMeta>> = TestPresence.getByKey(TOPIC, "external_user");
+		// List and getByKey should work externally too
+		var allPresences = TestPresence.list(TOPIC);
+		var userPresence:Null<PresenceEntry<TestMeta>> = TestPresence.getByKey(TOPIC, "external_user");
 
 		// Type safety check - should be able to access typed metadata
 		if (userPresence != null && userPresence.metas.length > 0) {
-			var typedMeta: TestMeta = userPresence.metas[0];
+			var typedMeta:TestMeta = userPresence.metas[0];
 			trace("User status: " + typedMeta.status);
 			trace("User name: " + typedMeta.userName);
 		}
@@ -111,16 +111,16 @@ class ExternalCaller {
 class Main {
 	static function main() {
 		// Create a mock socket for testing
-		var socket: Socket<PresenceAssigns> = null;
-		
+		var socket:Socket<PresenceAssigns> = null;
+
 		// Test internal methods via custom functions
 		TestPresence.trackTestUser(socket, "user_1", "Alice");
 		TestPresence.updateStatus(socket, "user_1", "busy");
 		TestPresence.removeUser(socket, "user_1");
-		
+
 		// Test external methods
 		ExternalCaller.callFromOutside(socket);
-		
+
 		trace("PresenceMacro test completed successfully");
 	}
 }

@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.analyzers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import StringTools;
 
@@ -29,58 +28,91 @@ import StringTools;
  *   side of caution and only asserts struct-ness when a variable is a field/index receiver.
  */
 class ValueShapeAnalyzer {
-    public static function classify(body: ElixirAST): Map<String, String> {
-        var shape = new Map<String, String>();
+	public static function classify(body:ElixirAST):Map<String, String> {
+		var shape = new Map<String, String>();
 
-        inline function markIdLike(name: String): Void {
-            if (name == null) return;
-            var base = (name.length > 0 && name.charAt(0) == '_') ? name.substr(1) : name;
-            if (base == 'id' || StringTools.endsWith(base, '_id')) {
-                if (!shape.exists(name)) shape.set(name, 'id_like');
-            }
-        }
+		inline function markIdLike(name:String):Void {
+			if (name == null)
+				return;
+			var base = (name.length > 0 && name.charAt(0) == '_') ? name.substr(1) : name;
+			if (base == 'id' || StringTools.endsWith(base, '_id')) {
+				if (!shape.exists(name))
+					shape.set(name, 'id_like');
+			}
+		}
 
-        function visit(e: ElixirAST): Void {
-            if (e == null || e.def == null) return;
-            switch (e.def) {
-                case EVar(nm):
-                    markIdLike(nm);
-                case EField(target, _):
-                    switch (target.def) {
-                        case EVar(nm): shape.set(nm, 'struct');
-                        default:
-                    }
-                    visit(target);
-                case EAccess(target, key):
-                    switch (target.def) {
-                        case EVar(nm): shape.set(nm, 'struct');
-                        default:
-                    }
-                    visit(target); visit(key);
-                case EBlock(ss): for (s in ss) visit(s);
-                case EIf(c,t,el): visit(c); visit(t); if (el != null) visit(el);
-                case ECase(expr, cs): visit(expr); for (c in cs) { if (c.guard != null) visit(c.guard); visit(c.body); }
-                case ECall(t, _, as): if (t != null) visit(t); if (as != null) for (a in as) visit(a);
-                case ERemoteCall(targetExpr, _, argsList): visit(targetExpr); if (argsList != null) for (a in argsList) visit(a);
-                case EList(els): for (el in els) visit(el);
-                case ETuple(els): for (el in els) visit(el);
-                case EMap(pairs): for (p in pairs) { visit(p.key); visit(p.value); }
-                default:
-            }
-        }
-        visit(body);
-        return shape;
-    }
+		function visit(e:ElixirAST):Void {
+			if (e == null || e.def == null)
+				return;
+			switch (e.def) {
+				case EVar(nm):
+					markIdLike(nm);
+				case EField(target, _):
+					switch (target.def) {
+						case EVar(nm): shape.set(nm, 'struct');
+						default:
+					}
+					visit(target);
+				case EAccess(target, key):
+					switch (target.def) {
+						case EVar(nm): shape.set(nm, 'struct');
+						default:
+					}
+					visit(target);
+					visit(key);
+				case EBlock(ss):
+					for (s in ss)
+						visit(s);
+				case EIf(c, t, el):
+					visit(c);
+					visit(t);
+					if (el != null)
+						visit(el);
+				case ECase(expr, cs):
+					visit(expr);
+					for (c in cs) {
+						if (c.guard != null)
+							visit(c.guard);
+						visit(c.body);
+					}
+				case ECall(t, _, as):
+					if (t != null)
+						visit(t);
+					if (as != null)
+						for (a in as)
+							visit(a);
+				case ERemoteCall(targetExpr, _, argsList):
+					visit(targetExpr);
+					if (argsList != null)
+						for (a in argsList)
+							visit(a);
+				case EList(els):
+					for (el in els)
+						visit(el);
+				case ETuple(els):
+					for (el in els)
+						visit(el);
+				case EMap(pairs):
+					for (p in pairs) {
+						visit(p.key);
+						visit(p.value);
+					}
+				default:
+			}
+		}
+		visit(body);
+		return shape;
+	}
 
-    public static inline function isIdLike(name: String, shapes: Map<String, String>): Bool {
-        if (name == null) return false;
-        var base = (name.length > 0 && name.charAt(0) == '_') ? name.substr(1) : name;
-        return (base == 'id' || StringTools.endsWith(base, '_id')) || (shapes.exists(name) && shapes.get(name) == 'id_like');
-    }
+	public static inline function isIdLike(name:String, shapes:Map<String, String>):Bool {
+		if (name == null)
+			return false;
+		var base = (name.length > 0 && name.charAt(0) == '_') ? name.substr(1) : name;
+		return (base == 'id' || StringTools.endsWith(base, '_id')) || (shapes.exists(name) && shapes.get(name) == 'id_like');
+	}
 
-    public static inline function isStructLike(name: String, shapes: Map<String, String>): Bool {
-        return name != null && shapes.exists(name) && shapes.get(name) == 'struct';
-    }
+	public static inline function isStructLike(name:String, shapes:Map<String, String>):Bool {
+		return name != null && shapes.exists(name) && shapes.get(name) == 'struct';
+	}
 }
-
 #end

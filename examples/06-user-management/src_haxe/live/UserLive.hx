@@ -11,16 +11,15 @@ import phoenix.Phoenix.MountParams;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Session;
 import phoenix.Phoenix.Socket;
-
 // Import HXX function for template processing
 import HXX.*;
 
 private typedef UserLiveAssigns = {
-    users: Array<User>,
-    selectedUser: Null<User>,
-    changeset: Term,
-    searchTerm: String,
-    showForm: Bool
+	users:Array<User>,
+	selectedUser:Null<User>,
+	changeset:Term,
+	searchTerm:String,
+	showForm:Bool
 }
 
 // ---------------------------------------------------------------------
@@ -32,31 +31,31 @@ private typedef UserLiveAssigns = {
 // ---------------------------------------------------------------------
 
 private typedef ButtonAssigns = {
-    ?type: String,
-    ?disabled: Bool,
-    inner_content: String
+	?type:String,
+	?disabled:Bool,
+	inner_content:String
 };
 
 private typedef IconAssigns = {
-    name: String
+	name:String
 };
 
 private typedef InputAssigns = {
-    ?type: String,
-    ?name: String,
-    ?value: String,
-    ?placeholder: String,
-    ?required: Bool,
-    ?label: String,
-    ?field: Term
+	?type:String,
+	?name:String,
+	?value:String,
+	?placeholder:String,
+	?required:Bool,
+	?label:String,
+	?field:Term
 };
 
 private typedef LabelAssigns = {
-    inner_content: String
+	inner_content:String
 };
 
 private typedef ErrorAssigns = {
-    ?field: Term
+	?field:Term
 };
 
 /**
@@ -65,132 +64,131 @@ private typedef ErrorAssigns = {
  */
 @:liveview
 class UserLive {
-    public static function mount(_params: MountParams, _session: Session, socket: Socket<UserLiveAssigns>): MountResult<UserLiveAssigns> {
-        var users = Users.list_users();
+	public static function mount(_params:MountParams, _session:Session, socket:Socket<UserLiveAssigns>):MountResult<UserLiveAssigns> {
+		var users = Users.list_users();
 
-        var assigns: UserLiveAssigns = {
-            users: users,
-            selectedUser: null,
-            changeset: Users.change_user(null),
-            searchTerm: "",
-            showForm: false
-        };
+		var assigns:UserLiveAssigns = {
+			users: users,
+			selectedUser: null,
+			changeset: Users.change_user(null),
+			searchTerm: "",
+			showForm: false
+		};
 
-        return Ok(LiveView.assignMultiple(socket, assigns));
-    }
+		return Ok(LiveView.assignMultiple(socket, assigns));
+	}
 
-    public static function handle_event(event: String, params: EventParams, socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
-        return switch (event) {
-            case "new_user":
-                handleNewUser(socket);
+	public static function handle_event(event:String, params:EventParams, socket:Socket<UserLiveAssigns>):HandleEventResult<UserLiveAssigns> {
+		return switch (event) {
+			case "new_user":
+				handleNewUser(socket);
 
-            case "edit_user":
-                handleEditUser(params, socket);
+			case "edit_user":
+				handleEditUser(params, socket);
 
-            case "save_user":
-                handleSaveUser(params, socket);
+			case "save_user":
+				handleSaveUser(params, socket);
 
-            case "delete_user":
-                handleDeleteUser(params, socket);
+			case "delete_user":
+				handleDeleteUser(params, socket);
 
-            case "search":
-                handleSearch(params, socket);
+			case "search":
+				handleSearch(params, socket);
 
-            case "cancel":
-                handleCancel(socket);
+			case "cancel":
+				handleCancel(socket);
 
-            default:
-                NoReply(socket);
-        };
-    }
+			default:
+				NoReply(socket);
+		};
+	}
 
-    private static function handleNewUser(socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
-        var updated = LiveView.assignMultiple(socket, {
-            changeset: Users.change_user(null),
-            selectedUser: null,
-            showForm: true
-        });
-        return NoReply(updated);
-    }
+	private static function handleNewUser(socket:Socket<UserLiveAssigns>):HandleEventResult<UserLiveAssigns> {
+		var updated = LiveView.assignMultiple(socket, {
+			changeset: Users.change_user(null),
+			selectedUser: null,
+			showForm: true
+		});
+		return NoReply(updated);
+	}
 
-    private static function handleEditUser(params: EventParams, socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
-        var userId = getIntParam(params, "id");
-        if (userId == null) return NoReply(socket);
+	private static function handleEditUser(params:EventParams, socket:Socket<UserLiveAssigns>):HandleEventResult<UserLiveAssigns> {
+		var userId = getIntParam(params, "id");
+		if (userId == null)
+			return NoReply(socket);
 
-        var selectedUser = Users.get_user(userId);
-        var updated = LiveView.assignMultiple(socket, {
-            selectedUser: selectedUser,
-            changeset: Users.change_user(selectedUser),
-            showForm: true
-        });
-        return NoReply(updated);
-    }
+		var selectedUser = Users.get_user(userId);
+		var updated = LiveView.assignMultiple(socket, {
+			selectedUser: selectedUser,
+			changeset: Users.change_user(selectedUser),
+			showForm: true
+		});
+		return NoReply(updated);
+	}
 
-    private static function handleSaveUser(params: EventParams, socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
-        var userParams: Term = ElixirMap.get(params, "user");
-        var result = socket.assigns.selectedUser == null
-            ? Users.create_user(userParams)
-            : Users.update_user(socket.assigns.selectedUser, userParams);
+	private static function handleSaveUser(params:EventParams, socket:Socket<UserLiveAssigns>):HandleEventResult<UserLiveAssigns> {
+		var userParams:Term = ElixirMap.get(params, "user");
+		var result = socket.assigns.selectedUser == null ? Users.create_user(userParams) : Users.update_user(socket.assigns.selectedUser, userParams);
 
-        return switch (result.status) {
-            case "ok":
-                var users = Users.list_users();
-                var updated = LiveView.assignMultiple(socket, {
-                    users: users,
-                    showForm: false,
-                    selectedUser: null,
-                    changeset: Users.change_user(null)
-                });
-                NoReply(updated);
+		return switch (result.status) {
+			case "ok":
+				var users = Users.list_users();
+				var updated = LiveView.assignMultiple(socket, {
+					users: users,
+					showForm: false,
+					selectedUser: null,
+					changeset: Users.change_user(null)
+				});
+				NoReply(updated);
 
-            case "error":
-                var updated = LiveView.assignMultiple(socket, {changeset: result.changeset});
-                NoReply(updated);
+			case "error":
+				var updated = LiveView.assignMultiple(socket, {changeset: result.changeset});
+				NoReply(updated);
 
-            default:
-                NoReply(socket);
-        }
-    }
+			default:
+				NoReply(socket);
+		}
+	}
 
-    private static function handleDeleteUser(params: EventParams, socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
-        var userId = getIntParam(params, "id");
-        if (userId == null) return NoReply(socket);
+	private static function handleDeleteUser(params:EventParams, socket:Socket<UserLiveAssigns>):HandleEventResult<UserLiveAssigns> {
+		var userId = getIntParam(params, "id");
+		if (userId == null)
+			return NoReply(socket);
 
-        var user = Users.get_user(userId);
-        var result = Users.delete_user(user);
+		var user = Users.get_user(userId);
+		var result = Users.delete_user(user);
 
-        if (result.status == "ok") {
-            var users = Users.list_users();
-            var updated = LiveView.assignMultiple(socket, {users: users});
-            return NoReply(updated);
-        }
+		if (result.status == "ok") {
+			var users = Users.list_users();
+			var updated = LiveView.assignMultiple(socket, {users: users});
+			return NoReply(updated);
+		}
 
-        return NoReply(socket);
-    }
+		return NoReply(socket);
+	}
 
-    private static function handleSearch(params: EventParams, socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
-        var searchTerm = getStringParam(params, "search");
-        if (searchTerm == null) searchTerm = "";
+	private static function handleSearch(params:EventParams, socket:Socket<UserLiveAssigns>):HandleEventResult<UserLiveAssigns> {
+		var searchTerm = getStringParam(params, "search");
+		if (searchTerm == null)
+			searchTerm = "";
 
-        var users = searchTerm.length > 0
-            ? Users.search_users(searchTerm)
-            : Users.list_users();
+		var users = searchTerm.length > 0 ? Users.search_users(searchTerm) : Users.list_users();
 
-        var updated = LiveView.assignMultiple(socket, {users: users, searchTerm: searchTerm});
-        return NoReply(updated);
-    }
+		var updated = LiveView.assignMultiple(socket, {users: users, searchTerm: searchTerm});
+		return NoReply(updated);
+	}
 
-    private static function handleCancel(socket: Socket<UserLiveAssigns>): HandleEventResult<UserLiveAssigns> {
-        var updated = LiveView.assignMultiple(socket, {
-            showForm: false,
-            selectedUser: null,
-            changeset: Users.change_user(null)
-        });
-        return NoReply(updated);
-    }
+	private static function handleCancel(socket:Socket<UserLiveAssigns>):HandleEventResult<UserLiveAssigns> {
+		var updated = LiveView.assignMultiple(socket, {
+			showForm: false,
+			selectedUser: null,
+			changeset: Users.change_user(null)
+		});
+		return NoReply(updated);
+	}
 
-    public static function render(assigns: UserLiveAssigns): String {
-        return hxx('
+	public static function render(assigns:UserLiveAssigns):String {
+		return hxx('
         <div class="user-management">
             <div class="header">
                 <h1>User Management</h1>
@@ -214,10 +212,10 @@ class UserLive {
             ${renderUserForm(assigns)}
         </div>
         ');
-    }
+	}
 
-    private static function renderUserList(assigns: UserLiveAssigns): String {
-        return hxx('
+	private static function renderUserList(assigns:UserLiveAssigns):String {
+		return hxx('
         <div class="users-list">
             <table class="table">
                 <thead>
@@ -235,10 +233,10 @@ class UserLive {
             </table>
         </div>
         ');
-    }
+	}
 
-    private static function renderUserRow(user: User): String {
-        return hxx('
+	private static function renderUserRow(user:User):String {
+		return hxx('
         <tr>
             <td>${user.name}</td>
             <td>${user.email}</td>
@@ -264,12 +262,13 @@ class UserLive {
             </td>
         </tr>
         ');
-    }
+	}
 
-    private static function renderUserForm(assigns: UserLiveAssigns): String {
-        if (!assigns.showForm) return "";
+	private static function renderUserForm(assigns:UserLiveAssigns):String {
+		if (!assigns.showForm)
+			return "";
 
-        return hxx('
+		return hxx('
         <div class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -316,21 +315,22 @@ class UserLive {
             </div>
         </div>
         ');
-    }
+	}
 
-    private static function getStringParam(params: Term, key: String): Null<String> {
-        var value: Term = ElixirMap.get(params, key);
-        return value == null ? null : Std.string(value);
-    }
+	private static function getStringParam(params:Term, key:String):Null<String> {
+		var value:Term = ElixirMap.get(params, key);
+		return value == null ? null : Std.string(value);
+	}
 
-    private static function getIntParam(params: Term, key: String): Null<Int> {
-        var value = getStringParam(params, key);
-        if (value == null) return null;
-        return Std.parseInt(value);
-    }
+	private static function getIntParam(params:Term, key:String):Null<Int> {
+		var value = getStringParam(params, key);
+		if (value == null)
+			return null;
+		return Std.parseInt(value);
+	}
 
-    public static function button(assigns: ButtonAssigns): String {
-        return hxx('
+	public static function button(assigns:ButtonAssigns):String {
+		return hxx('
         <button
             type=#{@type != nil ? @type : "button"}
             disabled={@disabled}
@@ -338,16 +338,16 @@ class UserLive {
             #{@inner_content}
         </button>
         ');
-    }
+	}
 
-    public static function icon(assigns: IconAssigns): String {
-        return hxx('
+	public static function icon(assigns:IconAssigns):String {
+		return hxx('
         <span class="icon icon-#{@name}"></span>
         ');
-    }
+	}
 
-    public static function input(assigns: InputAssigns): String {
-        return hxx('
+	public static function input(assigns:InputAssigns):String {
+		return hxx('
         <input
             type=#{@type != nil ? @type : "text"}
             name={@name}
@@ -356,22 +356,22 @@ class UserLive {
             required={@required}
         />
         ');
-    }
+	}
 
-    public static function label(assigns: LabelAssigns): String {
-        return hxx('
+	public static function label(assigns:LabelAssigns):String {
+		return hxx('
         <label>
             #{@inner_content}
         </label>
         ');
-    }
+	}
 
-    public static function error(assigns: ErrorAssigns): String {
-        // Keep minimal to avoid coupling to Ecto.Changeset error formatting here.
-        return hxx('<span class="error"></span>');
-    }
+	public static function error(assigns:ErrorAssigns):String {
+		// Keep minimal to avoid coupling to Ecto.Changeset error formatting here.
+		return hxx('<span class="error"></span>');
+	}
 
-    public static function main(): Void {
-        trace("UserLive with @:liveview annotation compiled successfully!");
-    }
+	public static function main():Void {
+		trace("UserLive with @:liveview annotation compiled successfully!");
+	}
 }

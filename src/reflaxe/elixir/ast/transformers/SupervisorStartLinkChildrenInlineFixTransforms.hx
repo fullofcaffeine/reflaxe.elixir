@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
@@ -51,49 +50,48 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   Supervisor.start_link([], strategy: :one_for_one)
  */
 class SupervisorStartLinkChildrenInlineFixTransforms {
-    public static function pass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EModule(name, attrs, body) if (name != null && StringTools.endsWith(name, ".Telemetry")):
-                    var newBody = body.map(rewriteCalls);
-                    makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
-                case EDefmodule(name, doBlock) if (name != null && StringTools.endsWith(name, ".Telemetry")):
-                    makeASTWithMeta(EDefmodule(name, rewriteCalls(doBlock)), n.metadata, n.pos);
-                default:
-                    n;
-            };
-        });
-    }
+	public static function pass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EModule(name, attrs, body) if (name != null && StringTools.endsWith(name, ".Telemetry")):
+					var newBody = body.map(rewriteCalls);
+					makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
+				case EDefmodule(name, doBlock) if (name != null && StringTools.endsWith(name, ".Telemetry")):
+					makeASTWithMeta(EDefmodule(name, rewriteCalls(doBlock)), n.metadata, n.pos);
+				default:
+					n;
+			};
+		});
+	}
 
-    /**
-     * rewriteCalls
-     *
-     * WHAT
-     * - Rewrites `Supervisor.start_link(children, opts)` → `Supervisor.start_link([], opts)`.
-     *
-     * WHY INLINE ARGUMENT
-     * - We inline `[]` directly instead of relying on any local binding to avoid
-     *   WAE failures when that binding is dropped by late hygiene passes. The
-     *   telemetry children list is intentionally empty at boot time.
-     */
-    static function rewriteCalls(node: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(node, function(e: ElixirAST): ElixirAST {
-            return switch (e.def) {
-                case ERemoteCall({def: EVar(mod)}, "start_link", args) if (mod == "Supervisor" && args.length >= 2):
-                    var first = args[0];
-                    switch (first.def) {
-                        case EVar(v) if (v == "children"):
-                            var newArgs = args.copy();
-                            newArgs[0] = makeAST(ElixirASTDef.EList([]));
-                            makeASTWithMeta(ERemoteCall(makeAST(EVar("Supervisor")), "start_link", newArgs), e.metadata, e.pos);
-                        default:
-                            e;
-                    }
-                default:
-                    e;
-            }
-        });
-    }
+	/**
+	 * rewriteCalls
+	 *
+	 * WHAT
+	 * - Rewrites `Supervisor.start_link(children, opts)` → `Supervisor.start_link([], opts)`.
+	 *
+	 * WHY INLINE ARGUMENT
+	 * - We inline `[]` directly instead of relying on any local binding to avoid
+	 *   WAE failures when that binding is dropped by late hygiene passes. The
+	 *   telemetry children list is intentionally empty at boot time.
+	 */
+	static function rewriteCalls(node:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(node, function(e:ElixirAST):ElixirAST {
+			return switch (e.def) {
+				case ERemoteCall({def: EVar(mod)}, "start_link", args) if (mod == "Supervisor" && args.length >= 2):
+					var first = args[0];
+					switch (first.def) {
+						case EVar(v) if (v == "children"):
+							var newArgs = args.copy();
+							newArgs[0] = makeAST(ElixirASTDef.EList([]));
+							makeASTWithMeta(ERemoteCall(makeAST(EVar("Supervisor")), "start_link", newArgs), e.metadata, e.pos);
+						default:
+							e;
+					}
+				default:
+					e;
+			}
+		});
+	}
 }
-
 #end

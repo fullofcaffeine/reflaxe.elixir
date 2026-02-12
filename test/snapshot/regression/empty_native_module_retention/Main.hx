@@ -8,6 +8,5 @@ package;
  * then asserts the module is still emitted under `-dce full`.
  */
 class Main {
-    static function main() {}
+	static function main() {}
 }
-

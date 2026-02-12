@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.optimizers;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Type;
 import haxe.macro.TypedExprTools;
 import reflaxe.elixir.ast.ElixirAST;
@@ -48,7 +47,6 @@ import reflaxe.elixir.ast.intent.LoopIntent.*;
  * @see LoopIntent For semantic loop representation
  */
 class LoopOptimizer {
-	
 	/**
 	 * Analyze loop body to detect common patterns
 	 * 
@@ -61,14 +59,14 @@ class LoopOptimizer {
 	 * HOW: Recursively traverses the loop body AST looking for characteristic
 	 * patterns like array.push(), conditional pushes, and transformations.
 	 */
-	public static function analyzeLoopBody(ebody: TypedExpr): {
-		hasMapPattern: Bool,
-		hasFilterPattern: Bool,
-		hasPushPattern: Bool,
-		hasReducePattern: Bool,
-		arrayVar: Null<String>,
-		transformExpr: Null<TypedExpr>,
-		loopVar: Null<TVar>
+	public static function analyzeLoopBody(ebody:TypedExpr):{
+		hasMapPattern:Bool,
+		hasFilterPattern:Bool,
+		hasPushPattern:Bool,
+		hasReducePattern:Bool,
+		arrayVar:Null<String>,
+		transformExpr:Null<TypedExpr>,
+		loopVar:Null<TVar>
 	} {
 		var result = {
 			hasMapPattern: false,
@@ -79,14 +77,14 @@ class LoopOptimizer {
 			transformExpr: null,
 			loopVar: null
 		};
-		
-		function analyze(expr: TypedExpr): Void {
-			switch(expr.expr) {
+
+		function analyze(expr:TypedExpr):Void {
+			switch (expr.expr) {
 				case TCall(arrAccess, [pushArg]):
-					switch(arrAccess.expr) {
+					switch (arrAccess.expr) {
 						case TField(arr, FInstance(_, _, cf)) if (cf.get().name == "push"):
 							result.hasPushPattern = true;
-							switch(arr.expr) {
+							switch (arr.expr) {
 								case TLocal(v):
 									result.arrayVar = v.name;
 								default:
@@ -94,7 +92,7 @@ class LoopOptimizer {
 							result.transformExpr = pushArg;
 						default:
 					}
-				
+
 				case TIf(cond, thenExpr, elseExpr):
 					// Check for filter pattern (conditional push)
 					analyze(thenExpr);
@@ -104,27 +102,27 @@ class LoopOptimizer {
 					if (elseExpr != null) {
 						analyze(elseExpr);
 					}
-				
+
 				case TBlock(exprs):
 					for (e in exprs) {
 						analyze(e);
 					}
-				
+
 				default:
 					TypedExprTools.iter(expr, analyze);
 			}
 		}
-		
+
 		analyze(ebody);
-		
+
 		// If we have push but no filter, it's a map pattern
 		if (result.hasPushPattern && !result.hasFilterPattern) {
 			result.hasMapPattern = true;
 		}
-		
+
 		return result;
 	}
-	
+
 	/**
 	 * Detect array iteration patterns in loop conditions
 	 * 
@@ -136,19 +134,19 @@ class LoopOptimizer {
 	 * HOW: Pattern matches on the condition expression to find array
 	 * length comparisons with index variables.
 	 */
-	public static function detectArrayIterationPattern(econd: TypedExpr): Null<{arrayExpr: TypedExpr, indexVar: String}> {
-		return switch(econd.expr) {
-			case TBinop(OpLt, {expr: TLocal(indexVar)}, {expr: TField(arrayExpr, FInstance(_, _, cf))}) if (cf.get().name == "length") :
+	public static function detectArrayIterationPattern(econd:TypedExpr):Null<{arrayExpr:TypedExpr, indexVar:String}> {
+		return switch (econd.expr) {
+			case TBinop(OpLt, {expr: TLocal(indexVar)}, {expr: TField(arrayExpr, FInstance(_, _, cf))}) if (cf.get().name == "length"):
 				{arrayExpr: arrayExpr, indexVar: indexVar.name};
-			case TBinop(OpLt, {expr: TLocal(indexVar)}, {expr: TField(arrayExpr, FAnon(cf))}) if (cf.get().name == "length") :
+			case TBinop(OpLt, {expr: TLocal(indexVar)}, {expr: TField(arrayExpr, FAnon(cf))}) if (cf.get().name == "length"):
 				{arrayExpr: arrayExpr, indexVar: indexVar.name};
-			case TBinop(OpLt, {expr: TLocal(indexVar)}, {expr: TField(arrayExpr, FDynamic("length"))}) :
+			case TBinop(OpLt, {expr: TLocal(indexVar)}, {expr: TField(arrayExpr, FDynamic("length"))}):
 				{arrayExpr: arrayExpr, indexVar: indexVar.name};
 			default:
 				null;
 		};
 	}
-	
+
 	/**
 	 * Detect array operation patterns in loop body
 	 * 
@@ -161,38 +159,39 @@ class LoopOptimizer {
 	 * HOW: Analyzes the loop body structure to identify push operations,
 	 * conditionals, and transformations that match functional patterns.
 	 */
-	public static function detectArrayOperationPattern(body: TypedExpr): Null<String> {
+	public static function detectArrayOperationPattern(body:TypedExpr):Null<String> {
 		// Look for the characteristic patterns in the loop body
-		function detectPattern(expr: TypedExpr): Null<String> {
-			switch(expr.expr) {
+		function detectPattern(expr:TypedExpr):Null<String> {
+			switch (expr.expr) {
 				case TBlock(exprs) if (exprs.length > 0):
 					// Check each expression in the block
 					for (e in exprs) {
 						var pattern = detectPattern(e);
-						if (pattern != null) return pattern;
+						if (pattern != null)
+							return pattern;
 					}
-					
+
 				case TIf(cond, thenBranch, elseBranch):
 					// Check for filter pattern
 					var thenPattern = detectPattern(thenBranch);
 					if (thenPattern == "map") {
 						return "filter"; // Conditional map = filter
 					}
-					
+
 				case TCall({expr: TField(_, FInstance(_, _, cf))}, _) if (cf.get().name == "push"):
 					return "map"; // Direct push = map operation
-					
+
 				case TBinop(OpAssignOp(OpAdd), _, _):
 					return "reduce"; // Accumulation = reduce operation
-					
+
 				default:
 			}
 			return null;
 		}
-		
+
 		return detectPattern(body);
 	}
-	
+
 	/**
 	 * Extract map transformation from loop body
 	 * 
@@ -205,44 +204,46 @@ class LoopOptimizer {
 	 * HOW: Traverses the loop body to find the expression that's being
 	 * pushed to the result array, with variable substitution.
 	 */
-	public static function extractMapTransformation(ebody: TypedExpr, loopVar: Null<TVar>): ElixirAST {
+	public static function extractMapTransformation(ebody:TypedExpr, loopVar:Null<TVar>):ElixirAST {
 		// Default case - build the entire body
-		function extractTransform(expr: TypedExpr): ElixirAST {
-			switch(expr.expr) {
+		function extractTransform(expr:TypedExpr):ElixirAST {
+			switch (expr.expr) {
 				case TCall(arrAccess, [pushArg]):
-					switch(arrAccess.expr) {
+					switch (arrAccess.expr) {
 						case TField(_, FInstance(_, _, cf)) if (cf.get().name == "push"):
 							// Found the push - extract the transformation
 							return buildFromTypedExprWithSubstitution(pushArg, loopVar);
 						default:
 					}
-					
+
 				case TBlock(exprs):
 					// Look for push in block
 					for (e in exprs) {
 						var result = extractTransform(e);
-						if (result != null) return result;
+						if (result != null)
+							return result;
 					}
-					
+
 				case TIf(cond, thenBranch, elseBranch):
 					// Check then branch for push
 					var result = extractTransform(thenBranch);
-					if (result != null) return result;
-					
+					if (result != null)
+						return result;
+
 				default:
 			}
 			return null;
 		}
-		
+
 		var transform = extractTransform(ebody);
 		if (transform != null) {
 			return transform;
 		}
-		
+
 		// Fallback: build the entire body
 		return buildFromTypedExprWithSubstitution(ebody, loopVar);
 	}
-	
+
 	/**
 	 * Extract filter condition from loop body
 	 * 
@@ -252,11 +253,11 @@ class LoopOptimizer {
 	 * 
 	 * HOW: Looks for TIf patterns and extracts the condition expression.
 	 */
-	public static function extractFilterCondition(ebody: TypedExpr): ElixirAST {
-		switch(ebody.expr) {
+	public static function extractFilterCondition(ebody:TypedExpr):ElixirAST {
+		switch (ebody.expr) {
 			case TBlock(exprs):
 				for (expr in exprs) {
-					switch(expr.expr) {
+					switch (expr.expr) {
 						case TIf(cond, _, _):
 							// Found condition, convert to ElixirAST
 							return buildFromTypedExpr(cond);
@@ -270,7 +271,7 @@ class LoopOptimizer {
 		// Default to true if no condition found
 		return {def: EAtom("true"), metadata: {}, pos: ebody.pos};
 	}
-	
+
 	/**
 	 * Build AST from TypedExpr  
 	 * 
@@ -280,12 +281,12 @@ class LoopOptimizer {
 	 * 
 	 * HOW: Delegates to the main builder (placeholder for now).
 	 */
-	static function buildFromTypedExpr(expr: TypedExpr): ElixirAST {
+	static function buildFromTypedExpr(expr:TypedExpr):ElixirAST {
 		// This is a placeholder - in real implementation this would
 		// delegate to the main ElixirASTBuilder
 		return {def: EVar("_condition_placeholder"), metadata: {}, pos: expr.pos};
 	}
-	
+
 	/**
 	 * Build AST from TypedExpr with variable substitution
 	 * 
@@ -296,19 +297,19 @@ class LoopOptimizer {
 	 * HOW: During AST building, replaces references to the loop variable
 	 * with a standardized name for cleaner output.
 	 */
-    static function buildFromTypedExprWithSubstitution(expr: TypedExpr, loopVar: Null<TVar>): ElixirAST {
-        // Preserve original loop variable name (idiomatic, avoids drift).
-        // When encountering references to the loop var, emit its snake_case name.
-        switch(expr.expr) {
-            case TLocal(v) if (loopVar != null && v.id == loopVar.id):
-                var name = reflaxe.elixir.ast.ElixirASTHelpers.toElixirVarName(loopVar.name);
-                return {def: EVar(name), metadata: {}, pos: expr.pos};
-            default:
-                // Fallback placeholder retained for non-loop-var nodes in this stub path
-                return {def: EVar("_placeholder"), metadata: {}, pos: expr.pos};
-        }
-    }
-	
+	static function buildFromTypedExprWithSubstitution(expr:TypedExpr, loopVar:Null<TVar>):ElixirAST {
+		// Preserve original loop variable name (idiomatic, avoids drift).
+		// When encountering references to the loop var, emit its snake_case name.
+		switch (expr.expr) {
+			case TLocal(v) if (loopVar != null && v.id == loopVar.id):
+				var name = reflaxe.elixir.ast.ElixirASTHelpers.toElixirVarName(loopVar.name);
+				return {def: EVar(name), metadata: {}, pos: expr.pos};
+			default:
+				// Fallback placeholder retained for non-loop-var nodes in this stub path
+				return {def: EVar("_placeholder"), metadata: {}, pos: expr.pos};
+		}
+	}
+
 	/**
 	 * Transform variable references in AST
 	 * 
@@ -319,61 +320,66 @@ class LoopOptimizer {
 	 * HOW: Traverses the AST and replaces EVar nodes according to the
 	 * provided variable name mapping.
 	 */
-	public static function transformVariableReferences(ast: ElixirAST, varMapping: Map<String, String>): ElixirAST {
+	public static function transformVariableReferences(ast:ElixirAST, varMapping:Map<String, String>):ElixirAST {
 		if (varMapping == null || varMapping.keys().hasNext() == false) {
 			return ast;
 		}
-		
-		function transform(node: ElixirAST): ElixirAST {
-			switch(node.def) {
+
+		function transform(node:ElixirAST):ElixirAST {
+			switch (node.def) {
 				case EVar(name):
 					if (varMapping.exists(name)) {
 						return {def: EVar(varMapping.get(name)), metadata: node.metadata, pos: node.pos};
 					}
-					
+
 				case EBlock(exprs):
 					return {def: EBlock(exprs.map(transform)), metadata: node.metadata, pos: node.pos};
-					
+
 				case ECall(target, funcName, args):
 					return {def: ECall(target != null ? transform(target) : null, funcName, args.map(transform)), metadata: node.metadata, pos: node.pos};
-					
+
 				case EBinary(op, left, right):
 					return {def: EBinary(op, transform(left), transform(right)), metadata: node.metadata, pos: node.pos};
-					
+
 				case EIf(cond, thenBranch, elseBranch):
-					return {def: EIf(
-						transform(cond),
-						transform(thenBranch),
-						elseBranch != null ? transform(elseBranch) : null
-					), metadata: node.metadata, pos: node.pos};
-					
+					return {
+						def: EIf(transform(cond), transform(thenBranch), elseBranch != null ? transform(elseBranch) : null),
+						metadata: node.metadata,
+						pos: node.pos
+					};
+
 				case EFn(clauses):
-					return {def: EFn(clauses.map(c -> {
-						args: c.args,
-						guard: c.guard != null ? transform(c.guard) : null,
-						body: transform(c.body)
-					})), metadata: node.metadata, pos: node.pos};
-					
+					return {
+						def: EFn(clauses.map(c -> {
+							args: c.args,
+							guard: c.guard != null ? transform(c.guard) : null,
+							body: transform(c.body)
+						})),
+						metadata: node.metadata,
+						pos: node.pos
+					};
+
 				case ECase(expr, clauses):
-					return {def: ECase(
-						transform(expr),
-						clauses.map(c -> {
+					return {
+						def: ECase(transform(expr), clauses.map(c -> {
 							pattern: c.pattern,
 							guard: c.guard != null ? transform(c.guard) : null,
 							body: transform(c.body)
-						})
-					), metadata: node.metadata, pos: node.pos};
-					
+						})),
+						metadata: node.metadata,
+						pos: node.pos
+					};
+
 				default:
 					// For other node types, return as-is
 					// In a complete implementation, all node types would be handled
 			}
 			return node;
 		}
-		
+
 		return transform(ast);
 	}
-	
+
 	/**
 	 * Check for early returns in AST
 	 * 
@@ -384,35 +390,39 @@ class LoopOptimizer {
 	 * 
 	 * HOW: Recursively traverses the AST looking for EReturn nodes.
 	 */
-	public static function checkForEarlyReturns(ast: ElixirAST): Bool {
-		function check(node: ElixirAST): Bool {
-			switch(node.def) {
+	public static function checkForEarlyReturns(ast:ElixirAST):Bool {
+		function check(node:ElixirAST):Bool {
+			switch (node.def) {
 				case EThrow(_):
 					return true;
-					
+
 				case EBlock(exprs):
 					for (e in exprs) {
-						if (check(e)) return true;
+						if (check(e))
+							return true;
 					}
-					
+
 				case EIf(_, thenBranch, elseBranch):
-					if (check(thenBranch)) return true;
-					if (elseBranch != null && check(elseBranch)) return true;
-					
+					if (check(thenBranch))
+						return true;
+					if (elseBranch != null && check(elseBranch))
+						return true;
+
 				case ECase(_, clauses):
 					for (clause in clauses) {
-						if (check(clause.body)) return true;
+						if (check(clause.body))
+							return true;
 					}
-					
+
 				default:
 					// Continue checking other node types
 			}
 			return false;
 		}
-		
+
 		return check(ast);
 	}
-	
+
 	/**
 	 * Transform returns to halts for reduce_while
 	 * 
@@ -424,16 +434,17 @@ class LoopOptimizer {
 	 * HOW: Recursively replaces return statements with halt tuples
 	 * while preserving the accumulator for non-return paths.
 	 */
-	public static function transformReturnsToHalts(body: ElixirAST, accumulator: ElixirAST): ElixirAST {
-		function transform(node: ElixirAST): ElixirAST {
-			switch(node.def) {
+	public static function transformReturnsToHalts(body:ElixirAST, accumulator:ElixirAST):ElixirAST {
+		function transform(node:ElixirAST):ElixirAST {
+			switch (node.def) {
 				case EThrow(value):
 					// Transform throw to {:halt, value}
-					return {def: ETuple([
-						{def: EAtom("halt"), metadata: {}, pos: node.pos},
-						value
-					]), metadata: {}, pos: node.pos};
-					
+					return {
+						def: ETuple([{def: EAtom("halt"), metadata: {}, pos: node.pos}, value]),
+						metadata: {},
+						pos: node.pos
+					};
+
 				case EBlock(exprs):
 					var transformed = exprs.map(transform);
 					// Ensure last expression continues if not a return
@@ -444,22 +455,22 @@ class LoopOptimizer {
 						}
 					}
 					return {def: EBlock(transformed), metadata: node.metadata, pos: node.pos};
-					
+
 				case EIf(cond, thenBranch, elseBranch):
-					return {def: EIf(
-						cond,
-						transform(thenBranch),
-						elseBranch != null ? transform(elseBranch) : ensureContinue(accumulator, accumulator)
-					), metadata: node.metadata, pos: node.pos};
-					
+					return {
+						def: EIf(cond, transform(thenBranch), elseBranch != null ? transform(elseBranch) : ensureContinue(accumulator, accumulator)),
+						metadata: node.metadata,
+						pos: node.pos
+					};
+
 				default:
 					return node;
 			}
 		}
-		
+
 		return transform(body);
 	}
-	
+
 	/**
 	 * Process a LoopIntent and generate corresponding ElixirAST
 	 * 
@@ -473,38 +484,38 @@ class LoopOptimizer {
 	 * HOW: Pattern matches on LoopIntent variants and delegates to appropriate
 	 * generation strategies, applying optimizations where possible.
 	 */
-	public static function processLoopIntent(intent: LoopIntent, metadata: LoopIntentMetadata, context: BuildContext): ElixirAST {
+	public static function processLoopIntent(intent:LoopIntent, metadata:LoopIntentMetadata, context:BuildContext):ElixirAST {
 		#if debug_loop_optimizer
 		#end
-		
-		switch(intent) {
+
+		switch (intent) {
 			case RangeLoop(varName, start, end, body, isInclusive):
 				// Generate Enum.each for range loops
 				var range = generateRange(start, end, isInclusive, context);
 				var lambda = generateLambda(varName, body, context);
 				return generateEnumCall("each", range, lambda);
-				
+
 			case CollectionLoop(varName, collection, body):
 				// Generate Enum.each for collection iteration
 				var buildExpression = context.getExpressionBuilder();
 				var collectionAST = buildExpression(collection);
 				var lambda = generateLambda(varName, body, context);
 				return generateEnumCall("each", collectionAST, lambda);
-				
+
 			case MapLoop(varName, collection, transform):
 				// Generate Enum.map for transformation
 				var buildExpression = context.getExpressionBuilder();
 				var collectionAST = buildExpression(collection);
 				var lambda = generateLambda(varName, transform, context);
 				return generateEnumCall("map", collectionAST, lambda);
-				
+
 			case FilterLoop(varName, collection, predicate):
 				// Generate Enum.filter for filtering
 				var buildExpression = context.getExpressionBuilder();
 				var collectionAST = buildExpression(collection);
 				var lambda = generateLambda(varName, predicate, context);
 				return generateEnumCall("filter", collectionAST, lambda);
-				
+
 			case ReduceLoop(varName, collection, accumulator, init, combine):
 				// Generate Enum.reduce for accumulation
 				var buildExpression = context.getExpressionBuilder();
@@ -512,19 +523,19 @@ class LoopOptimizer {
 				var initAST = buildExpression(init);
 				var lambda = generateReduceLambda(varName, accumulator, combine, context);
 				return generateEnumReduce(collectionAST, initAST, lambda);
-				
+
 			case WhileLoop(condition, body, counterVar):
 				// Generate a recursive function for proper while semantics
 				return generateRecursiveWhile(condition, body, counterVar, context);
-				
+
 			case ComprehensionLoop(varName, collection, transform, filter, accumulator):
 				// Generate a comprehension
 				return generateComprehension(varName, collection, transform, filter, context);
-				
+
 			case DoWhileLoop(body, condition):
 				// Generate recursive function that executes body at least once
 				return generateDoWhile(body, condition, context);
-				
+
 			default:
 				#if debug_loop_optimizer
 				#end
@@ -532,7 +543,7 @@ class LoopOptimizer {
 				return {def: EBlock([]), metadata: {}, pos: null};
 		}
 	}
-	
+
 	/**
 	 * Detect fluent API patterns in function bodies
 	 * 
@@ -544,40 +555,40 @@ class LoopOptimizer {
 	 * HOW: Analyzes the function body for field mutations and checks
 	 * if the return value is 'this'.
 	 */
-	public static function detectFluentAPIPattern(func: TFunc): {returnsThis: Bool, fieldMutations: Array<{field: String, expr: TypedExpr}>} {
+	public static function detectFluentAPIPattern(func:TFunc):{returnsThis:Bool, fieldMutations:Array<{field:String, expr:TypedExpr}>} {
 		var result = {
 			returnsThis: false,
 			fieldMutations: []
 		};
-		
-		function analyze(expr: TypedExpr): Void {
-			switch(expr.expr) {
+
+		function analyze(expr:TypedExpr):Void {
+			switch (expr.expr) {
 				case TBinop(OpAssign, {expr: TField({expr: TConst(TThis)}, FInstance(_, _, fieldRef))}, value):
 					result.fieldMutations.push({field: fieldRef.get().name, expr: value});
-					
+
 				case TReturn(e) if (e != null && e.expr.match(TConst(TThis))):
 					result.returnsThis = true;
-					
+
 				case TConst(TThis) if (func.expr != null):
 					// Check if this is the last expression (implicit return)
-					switch(func.expr.expr) {
+					switch (func.expr.expr) {
 						case TBlock(exprs) if (exprs.length > 0 && exprs[exprs.length - 1] == expr):
 							result.returnsThis = true;
 						default:
 					}
-					
+
 				default:
 					TypedExprTools.iter(expr, analyze);
 			}
 		}
-		
+
 		if (func.expr != null) {
 			analyze(func.expr);
 		}
-		
+
 		return result;
 	}
-	
+
 	/**
 	 * Detect Map iteration patterns
 	 * 
@@ -590,25 +601,26 @@ class LoopOptimizer {
 	 * HOW: Pattern matches on the characteristic sequence of expressions
 	 * generated by Haxe's Map iteration desugaring.
 	 */
-	public static function detectMapIterationPattern(expressions: Array<TypedExpr>): Null<MapIterationPattern> {
-		if (expressions.length < 2) return null;
-		
+	public static function detectMapIterationPattern(expressions:Array<TypedExpr>):Null<MapIterationPattern> {
+		if (expressions.length < 2)
+			return null;
+
 		// Look for the pattern: iterator = map.keyValueIterator()
 		for (i in 0...expressions.length) {
-			switch(expressions[i].expr) {
+			switch (expressions[i].expr) {
 				case TVar(iterVar, init) if (init != null && init.expr.match(TCall(_, []))):
 					// Found iterator initialization, now look for the while loop
-					for (j in (i+1)...expressions.length) {
-						switch(expressions[j].expr) {
+					for (j in (i + 1)...expressions.length) {
+						switch (expressions[j].expr) {
 							case TWhile(condition, body, _):
 								// Analyze the body to extract key and value variables
 								var keyVar = null, valueVar = null;
-								
-								function findKeyValueVars(expr: TypedExpr): Void {
-									switch(expr.expr) {
+
+								function findKeyValueVars(expr:TypedExpr):Void {
+									switch (expr.expr) {
 										case TVar(v, init) if (init != null):
 											// Look for patterns like key = pair.key or value = pair.value
-											switch(init.expr) {
+											switch (init.expr) {
 												case TField(_, FInstance(_, _, cfRef)) if (cfRef.get().name == "key"):
 													keyVar = v.name;
 												case TField(_, FInstance(_, _, cfRef)) if (cfRef.get().name == "value"):
@@ -623,15 +635,15 @@ class LoopOptimizer {
 											TypedExprTools.iter(expr, findKeyValueVars);
 									}
 								}
-								
+
 								findKeyValueVars(body);
-								
+
 								if (keyVar != null && valueVar != null) {
 									var mapExpr = getMapExpression(init);
 									if (mapExpr != null) {
 										// Return pattern compatible with MapIterationPattern.
 										// We keep the iterator variable name for downstream transforms/debugging.
-										var pattern: MapIterationPattern = {
+										var pattern:MapIterationPattern = {
 											iteratorVar: iterVar.name,
 											keyVar: keyVar,
 											valueVar: valueVar,
@@ -647,177 +659,191 @@ class LoopOptimizer {
 				default:
 			}
 		}
-		
+
 		return null;
 	}
-	
+
 	// Helper functions for code generation
-	
-	static function generateRange(start: TypedExpr, end: TypedExpr, isInclusive: Bool, context: BuildContext): ElixirAST {
+
+	static function generateRange(start:TypedExpr, end:TypedExpr, isInclusive:Bool, context:BuildContext):ElixirAST {
 		var buildExpression = context.getExpressionBuilder();
 		var startAST = buildExpression(start);
 		var endAST = buildExpression(end);
-		
+
 		// Adjust for inclusive/exclusive range
 		if (!isInclusive) {
 			// For exclusive range (start...end), subtract 1 from end
 			endAST = {def: EBinary(Subtract, endAST, {def: EInteger(1), metadata: {}, pos: end.pos}), metadata: {}, pos: end.pos};
 		}
-		
+
 		return {def: ERange(startAST, endAST, !isInclusive), metadata: {}, pos: start.pos};
 	}
-	
-	static function generateLambda(paramName: String, body: TypedExpr, context: BuildContext): ElixirAST {
+
+	static function generateLambda(paramName:String, body:TypedExpr, context:BuildContext):ElixirAST {
 		var buildExpression = context.getExpressionBuilder();
 		var bodyAST = buildExpression(body);
 		// Create EFn with a single clause
-		var clause: EFnClause = {
+		var clause:EFnClause = {
 			args: [PVar(paramName)],
 			body: bodyAST
 		};
 		return {def: EFn([clause]), metadata: {}, pos: body.pos};
 	}
-	
-	static function generateReduceLambda(itemVar: String, accVar: String, combine: TypedExpr, context: BuildContext): ElixirAST {
+
+	static function generateReduceLambda(itemVar:String, accVar:String, combine:TypedExpr, context:BuildContext):ElixirAST {
 		var buildExpression = context.getExpressionBuilder();
 		var combineAST = buildExpression(combine);
-		var clause: EFnClause = {
+		var clause:EFnClause = {
 			args: [PVar(itemVar), PVar(accVar)],
 			body: combineAST
 		};
 		return {def: EFn([clause]), metadata: {}, pos: combine.pos};
 	}
-	
-	static function generateEnumCall(method: String, collection: ElixirAST, lambda: ElixirAST): ElixirAST {
-		return {def: ERemoteCall(
-			{def: EVar("Enum"), metadata: {}, pos: null},
-			method,
-			[collection, lambda]
-		), metadata: {}, pos: null};
+
+	static function generateEnumCall(method:String, collection:ElixirAST, lambda:ElixirAST):ElixirAST {
+		return {
+			def: ERemoteCall({def: EVar("Enum"), metadata: {}, pos: null}, method, [collection, lambda]),
+			metadata: {},
+			pos: null
+		};
 	}
-	
-	static function generateEnumReduce(collection: ElixirAST, init: ElixirAST, lambda: ElixirAST): ElixirAST {
-		return {def: ERemoteCall(
-			{def: EVar("Enum"), metadata: {}, pos: null},
-			"reduce",
-			[collection, init, lambda]
-		), metadata: {}, pos: null};
+
+	static function generateEnumReduce(collection:ElixirAST, init:ElixirAST, lambda:ElixirAST):ElixirAST {
+		return {
+			def: ERemoteCall({def: EVar("Enum"), metadata: {}, pos: null}, "reduce", [collection, init, lambda]),
+			metadata: {},
+			pos: null
+		};
 	}
-	
-	static function generateRecursiveWhile(condition: TypedExpr, body: TypedExpr, counterVar: Null<String>, context: BuildContext): ElixirAST {
+
+	static function generateRecursiveWhile(condition:TypedExpr, body:TypedExpr, counterVar:Null<String>, context:BuildContext):ElixirAST {
 		// Generate a recursive function for while loop semantics
 		var buildExpression = context.getExpressionBuilder();
 		var condAST = buildExpression(condition);
 		var bodyAST = buildExpression(body);
-		
+
 		// Create recursive function with proper termination
 		var funcName = "_while_loop";
 		var recursiveCall = {def: ECall({def: EVar(funcName), metadata: {}, pos: null}, funcName, []), metadata: {}, pos: null};
-		
-		var ifExpr = {def: EIf(
-			condAST,
-			{def: EBlock([bodyAST, recursiveCall]), metadata: {}, pos: null},
-			{def: EAtom("ok"), metadata: {}, pos: null}
-		), metadata: {}, pos: null};
-		
+
+		var ifExpr = {
+			def: EIf(condAST, {def: EBlock([bodyAST, recursiveCall]), metadata: {}, pos: null}, {def: EAtom("ok"), metadata: {}, pos: null}),
+			metadata: {},
+			pos: null
+		};
+
 		// Create a proper function definition using EFn
-		var fnClause: EFnClause = {
+		var fnClause:EFnClause = {
 			args: [],
 			body: ifExpr
 		};
 		var funcDef = {def: EFn([fnClause]), metadata: {}, pos: null};
-		
-		return {def: EBlock([
-			{def: EBinary(Match, {def: EVar(funcName), metadata: {}, pos: null}, funcDef), metadata: {}, pos: null},
-			{def: ECall({def: EVar(funcName), metadata: {}, pos: null}, funcName, []), metadata: {}, pos: null}
-		]), metadata: {}, pos: null};
+
+		return {
+			def: EBlock([
+				{def: EBinary(Match, {def: EVar(funcName), metadata: {}, pos: null}, funcDef), metadata: {}, pos: null},
+				{def: ECall({def: EVar(funcName), metadata: {}, pos: null}, funcName, []), metadata: {}, pos: null}
+			]),
+			metadata: {},
+			pos: null
+		};
 	}
-	
-	static function generateComprehension(varName: String, collection: TypedExpr, transform: TypedExpr, filter: Null<TypedExpr>, context: BuildContext): ElixirAST {
+
+	static function generateComprehension(varName:String, collection:TypedExpr, transform:TypedExpr, filter:Null<TypedExpr>, context:BuildContext):ElixirAST {
 		var buildExpression = context.getExpressionBuilder();
 		var collectionAST = buildExpression(collection);
 		var transformAST = buildExpression(transform);
-		
-		var generators: Array<EGenerator> = [{
-			pattern: PVar(varName),
-			expr: collectionAST
-		}];
-		
+
+		var generators:Array<EGenerator> = [
+			{
+				pattern: PVar(varName),
+				expr: collectionAST
+			}
+		];
+
 		var filters = [];
 		if (filter != null) {
 			filters.push(buildExpression(filter));
 		}
-		
+
 		return {def: EFor(generators, filters, transformAST, null, false), metadata: {}, pos: null};
 	}
-	
-	static function generateDoWhile(body: TypedExpr, condition: TypedExpr, context: BuildContext): ElixirAST {
+
+	static function generateDoWhile(body:TypedExpr, condition:TypedExpr, context:BuildContext):ElixirAST {
 		// Generate a recursive function that executes body at least once
 		var buildExpression = context.getExpressionBuilder();
 		var bodyAST = buildExpression(body);
 		var condAST = buildExpression(condition);
-		
+
 		var funcName = "_do_while";
 		var recursiveCall = {def: ECall({def: EVar(funcName), metadata: {}, pos: null}, funcName, []), metadata: {}, pos: null};
-		
-		var funcBody = {def: EBlock([
-			bodyAST,
-			{def: EIf(condAST, recursiveCall, {def: EAtom("ok"), metadata: {}, pos: null}), metadata: {}, pos: null}
-		]), metadata: {}, pos: null};
-		
+
+		var funcBody = {
+			def: EBlock([
+				bodyAST,
+				{def: EIf(condAST, recursiveCall, {def: EAtom("ok"), metadata: {}, pos: null}), metadata: {}, pos: null}
+			]),
+			metadata: {},
+			pos: null
+		};
+
 		// Create a proper function definition using EFn
-		var fnClause: EFnClause = {
+		var fnClause:EFnClause = {
 			args: [],
 			body: funcBody
 		};
 		var funcDef = {def: EFn([fnClause]), metadata: {}, pos: null};
-		
-		return {def: EBlock([
-			{def: EVar(funcName), metadata: {}, pos: null},
-			{def: EBinary(Match, {def: EVar(funcName), metadata: {}, pos: null}, funcDef), metadata: {}, pos: null},
-			{def: ECall({def: EVar(funcName), metadata: {}, pos: null}, funcName, []), metadata: {}, pos: null}
-		]), metadata: {}, pos: null};
+
+		return {
+			def: EBlock([
+				{def: EVar(funcName), metadata: {}, pos: null},
+				{def: EBinary(Match, {def: EVar(funcName), metadata: {}, pos: null}, funcDef), metadata: {}, pos: null},
+				{def: ECall({def: EVar(funcName), metadata: {}, pos: null}, funcName, []), metadata: {}, pos: null}
+			]),
+			metadata: {},
+			pos: null
+		};
 	}
-	
-	static function getMapExpression(keyValueIterator: TypedExpr): Null<TypedExpr> {
+
+	static function getMapExpression(keyValueIterator:TypedExpr):Null<TypedExpr> {
 		// Extract the map expression from map.keyValueIterator() call
-		switch(keyValueIterator.expr) {
+		switch (keyValueIterator.expr) {
 			case TField(mapExpr, _):
 				return mapExpr;
 			default:
 				return null;
 		}
 	}
-	
-	static function isHaltTuple(ast: ElixirAST): Bool {
-		switch(ast.def) {
+
+	static function isHaltTuple(ast:ElixirAST):Bool {
+		switch (ast.def) {
 			case ETuple([{def: EAtom(a)}, _]) if (a == "halt"):
 				return true;
 			default:
 				return false;
 		}
 	}
-	
-	static function ensureContinue(ast: ElixirAST, accumulator: ElixirAST): ElixirAST {
+
+	static function ensureContinue(ast:ElixirAST, accumulator:ElixirAST):ElixirAST {
 		// Wrap in {:cont, accumulator} if not already a control tuple
 		if (isHaltTuple(ast)) {
 			return ast;
 		}
-		
-		return {def: ETuple([
-			{def: EAtom("cont"), metadata: {}, pos: ast.pos},
-			accumulator
-		]), metadata: {}, pos: ast.pos};
+
+		return {
+			def: ETuple([{def: EAtom("cont"), metadata: {}, pos: ast.pos}, accumulator]),
+			metadata: {},
+			pos: ast.pos
+		};
 	}
 }
 
 // Type definition for Map iteration pattern detection
 typedef MapIterationPattern = {
-	var iteratorVar: String;
-	var keyVar: String;
-	var valueVar: String;
-	var mapExpr: TypedExpr;
-	var body: TypedExpr;  // Changed from loopBody to body to match ElixirASTBuilder
+	var iteratorVar:String;
+	var keyVar:String;
+	var valueVar:String;
+	var mapExpr:TypedExpr;
+	var body:TypedExpr; // Changed from loopBody to body to match ElixirASTBuilder
 }
-
 #end

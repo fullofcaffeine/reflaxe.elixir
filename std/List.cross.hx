@@ -5,4 +5,3 @@
  * We mirror that here so the module exists under the Elixir-target std overrides.
  */
 typedef List<T> = haxe.ds.List<T>;
-

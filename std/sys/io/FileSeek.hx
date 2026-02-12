@@ -14,8 +14,7 @@ package sys.io;
  *   with `{:bof, offset}` / `{:cur, offset}` / `{:eof, offset}`.
  */
 enum FileSeek {
-    SeekBegin;
-    SeekCur;
-    SeekEnd;
+	SeekBegin;
+	SeekCur;
+	SeekEnd;
 }
-

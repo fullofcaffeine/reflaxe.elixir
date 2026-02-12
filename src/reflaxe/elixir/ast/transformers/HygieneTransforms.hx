@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 /**
  * HygieneTransforms
  *
@@ -24,77 +23,77 @@ package reflaxe.elixir.ast.transformers;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.ElixirASTHelpers.*;
+
 using StringTools;
 
 /**
  * Scope-aware variable tracking for hygiene transformations
  */
-
 // Binding context for variable traversal
 enum BindingContext {
-    Expr;      // Expression context (reads variables)
-    Pattern;   // Pattern context (binds variables)  
-    Pinned;    // Pinned context (reads in patterns)
+	Expr; // Expression context (reads variables)
+	Pattern; // Pattern context (binds variables)
+	Pinned; // Pinned context (reads in patterns)
 }
 
 // Container context for bindings
 enum ContainerContext {
-    DefParam;      // Function definition parameter
-    FnParam;       // Anonymous function parameter
-    CaseClause;    // Case clause pattern
-    ReceiveClause; // Receive clause pattern
-    WithClause;    // With clause pattern
-    MatchLHS;      // Match left-hand side
+	DefParam; // Function definition parameter
+	FnParam; // Anonymous function parameter
+	CaseClause; // Case clause pattern
+	ReceiveClause; // Receive clause pattern
+	WithClause; // With clause pattern
+	MatchLHS; // Match left-hand side
 }
 
 // Variable binding information with precise locator
 typedef Binding = {
-    name: String,
-    used: Bool,
-    kind: BindingKind,
-    containerId: Int,          // AST ID of the container node
-    context: ContainerContext, // Type of container
-    slotIndex: Int,           // Which param/clause/side
-    path: Array<Int>          // Path to PVar within pattern
+	name:String,
+	used:Bool,
+	kind:BindingKind,
+	containerId:Int, // AST ID of the container node
+	context:ContainerContext, // Type of container
+	slotIndex:Int, // Which param/clause/side
+	path:Array<Int> // Path to PVar within pattern
 }
 
 // Kind of binding
 enum BindingKind {
-    Param;         // Function parameter
-    PatternVar;    // Pattern match variable
-    MatchLhs;      // Left-hand side of = match
-    CompGen;       // Comprehension generator
-    WithGen;       // With clause generator
-    RescueVar;     // Rescue clause variable
+	Param; // Function parameter
+	PatternVar; // Pattern match variable
+	MatchLhs; // Left-hand side of = match
+	CompGen; // Comprehension generator
+	WithGen; // With clause generator
+	RescueVar; // Rescue clause variable
 }
 
 // Scope frame in the scope stack
 typedef ScopeFrame = {
-    bindings: Map<String, Array<Binding>>,  // Stack of bindings per name
-    kind: ScopeKind,
-    parent: Null<ScopeFrame>
+	bindings:Map<String, Array<Binding>>, // Stack of bindings per name
+	kind:ScopeKind,
+	parent:Null<ScopeFrame>
 }
 
 // Kind of scope
 enum ScopeKind {
-    Module;
-    Function;
-    Clause;
-    Block;
-    CompGen;       // Comprehension generator scope
-    CompFilter;    // Comprehension filter scope
-    Rescue;
-    Receive;
-    With;
+	Module;
+	Function;
+	Clause;
+	Block;
+	CompGen; // Comprehension generator scope
+	CompFilter; // Comprehension filter scope
+	Rescue;
+	Receive;
+	With;
 }
 
 // Hygiene analysis state carried through traversal
 typedef HygieneState = {
-    scopeStack: Array<ScopeFrame>,
-    currentContext: BindingContext,
-    aliases: Map<String, Bool>,        // Track alias usage
-    imports: Map<String, Bool>,        // Track import usage
-    requires: Map<String, Bool>        // Track require usage
+	scopeStack:Array<ScopeFrame>,
+	currentContext:BindingContext,
+	aliases:Map<String, Bool>, // Track alias usage
+	imports:Map<String, Bool>, // Track import usage
+	requires:Map<String, Bool> // Track require usage
 }
 
 /**
@@ -215,1112 +214,1114 @@ typedef HygieneState = {
  * @see Codex architectural consultation transcripts for design rationale
  */
 class HygieneTransforms {
-    
-    /**
-     * Create initial hygiene state
-     */
-    static function createInitialState(): HygieneState {
-        return {
-            scopeStack: [{
-                bindings: new Map(),
-                kind: Module,
-                parent: null
-            }],
-            currentContext: Expr,
-            aliases: new Map(),
-            imports: new Map(),
-            requires: new Map()
-        };
-    }
-    
-    /**
-     * Enter a new scope
-     */
-    static function enterScope(state: HygieneState, kind: ScopeKind): Void {
-        var newFrame: ScopeFrame = {
-            bindings: new Map(),
-            kind: kind,
-            parent: state.scopeStack[state.scopeStack.length - 1]
-        };
-        state.scopeStack.push(newFrame);
-        
-        #if debug_hygiene
-        #end
-    }
-    
-    /**
-     * Exit current scope
-     */
-    static function exitScope(state: HygieneState): Void {
-        if (state.scopeStack.length > 1) {
-            var exitingScope = state.scopeStack.pop();
-            
-            #if debug_hygiene
-            #end
-        }
-    }
-    
-    /**
-     * Assign unique IDs to all AST nodes
-     */
-    static function assignAstIds(ast: ElixirAST): ElixirAST {
-        var idCounter = 0;
-        
-        return ElixirASTTransformer.transformNode(ast, function(node) {
-            // Assign unique ID to this node via metadata
-            if (node.metadata == null) {
-                node.metadata = {};
-            }
-            Reflect.setField(node.metadata, "astId", ++idCounter);
-            return node;
-        });
-    }
-    
-    /**
-     * Bind a variable in current scope with precise locator
-     */
-    static function bindVariable(state: HygieneState, name: String, kind: BindingKind, 
-                                 containerId: Int, context: ContainerContext, 
-                                 slotIndex: Int, path: Array<Int>): Binding {
-        var currentFrame = state.scopeStack[state.scopeStack.length - 1];
-        
-        var binding: Binding = {
-            name: name,
-            used: false,
-            kind: kind,
-            containerId: containerId,
-            context: context,
-            slotIndex: slotIndex,
-            path: path.copy()  // Copy the path array
-        };
-        
-        // Add to binding stack for this name
-        if (!currentFrame.bindings.exists(name)) {
-            currentFrame.bindings.set(name, []);
-        }
-        currentFrame.bindings.get(name).push(binding);
-        
-        #if debug_hygiene
-        #end
-        
-        return binding;
-    }
-    
-    /**
-     * Resolve a variable read to nearest binding
-     */
-    static function resolveVariable(state: HygieneState, name: String): Null<Binding> {
-        // Walk scope stack from innermost to outermost
-        var i = state.scopeStack.length - 1;
-        while (i >= 0) {
-            var frame = state.scopeStack[i];
-            if (frame.bindings.exists(name)) {
-                var bindings = frame.bindings.get(name);
-                if (bindings.length > 0) {
-                    var binding = bindings[bindings.length - 1];  // Most recent binding
-                    binding.used = true;
-                    
-                    #if debug_hygiene
-                    #end
-                    
-                    return binding;
-                }
-            }
-            i--;
-        }
-        
-        #if debug_hygiene
-        #end
-        
-        return null;
-    }
-    
-    /**
-     * Enhanced Usage Analysis Pass with Scope-Aware Tracking
-     * 
-     * WHY: Detect and mark unused variables for underscore prefixing
-     * WHAT: Analyze variable usage with proper bind/read context distinction
-     * HOW: Three-phase approach:
-     *      0. Assign unique IDs to all AST nodes
-     *      1. Collect all bindings and track usage with scope awareness
-     *      2. Rename unused bindings to underscore prefix using precise locators
-     */
-    /**
-     * Usage analysis pass (stateless variant)
-     *
-     * WHY: Maintains backward compatibility for non-contextual transform() calls
-     * WHAT: Creates local nameMapping, does not integrate with compiler context
-     * HOW: Standalone analysis and renaming using internal state
-     *
-     * NOTE: This is the fallback variant. Prefer usageAnalysisPassWithContext when context available.
-     */
-    public static function usageAnalysisPass(ast: ElixirAST): ElixirAST {
-        #if debug_hygiene
-        #end
-
-        // Phase 0: Assign unique IDs to all AST nodes
-        var astWithIds = assignAstIds(ast);
-
-        // Phase 1: Collect bindings and track usage
-        var state = createInitialState();
-        var allBindings: Array<Binding> = [];
-
-        // First pass: collect all bindings and mark usage
-        collectBindingsAndUsage(astWithIds, state, allBindings);
-
-        #if debug_hygiene
-        var unusedCount = 0;
-        for (binding in allBindings) {
-            if (!binding.used) unusedCount++;
-        }
-        #end
-
-        // Phase 2: Apply renaming transformations using collected bindings (local mapping)
-        return renameUnusedBindings(astWithIds, allBindings);
-    }
-
-    /**
-     * Usage analysis pass (contextual variant)
-     *
-     * WHY: Enables consistent variable naming across compilation phases
-     * WHAT: Uses context.tempVarRenameMap instead of local nameMapping
-     * HOW: Registers renames in shared context, applies from authoritative source
-     *
-     * ARCHITECTURE:
-     * - Reads existing renames from context.tempVarRenameMap (builder phase decisions)
-     * - Adds new renames for unused variables discovered in this pass
-     * - Applies renames from the single source of truth (context)
-     * - Ensures declarations and references use consistent names
-     *
-     * BENEFITS:
-     * - Fixes variable naming consistency bugs (e.g., _changeset vs changeset)
-     * - Coordinates with builder phase variable decisions
-     * - Eliminates duplicate mapping systems
-     * - Single authoritative source for all variable renames
-     *
-     * @param ast The AST to analyze
-     * @param context Compilation context with shared tempVarRenameMap
-     * @return Transformed AST with consistent variable naming
-     */
-    public static function usageAnalysisPassWithContext(ast: ElixirAST, context: reflaxe.elixir.CompilationContext): ElixirAST {
-        #if debug_hygiene
-        if (context != null) {
-        }
-        #end
-
-        // Phase 0: Assign unique IDs to all AST nodes
-        var astWithIds = assignAstIds(ast);
-
-        // Phase 1: Collect bindings and track usage
-        var state = createInitialState();
-        var allBindings: Array<Binding> = [];
-
-        // First pass: collect all bindings and mark usage
-        collectBindingsAndUsage(astWithIds, state, allBindings);
-
-        #if debug_hygiene
-        var unusedCount = 0;
-        for (binding in allBindings) {
-            if (!binding.used) unusedCount++;
-        }
-        #end
-
-        // Phase 2: Apply renaming transformations using context's shared mapping
-        return renameUnusedBindingsWithContext(astWithIds, allBindings, context);
-    }
-    
-    /**
-     * Collect all bindings and track their usage
-     */
-    static function collectBindingsAndUsage(ast: ElixirAST, state: HygieneState, allBindings: Array<Binding>): Void {
-        traverseWithContext(ast, state, allBindings);
-    }
-    
-    /**
-     * Traverse AST with binding context awareness
-     */
-    static function traverseWithContext(node: ElixirAST, state: HygieneState, allBindings: Array<Binding>): Void {
-        if (node == null) return;
-
-        // Get container ID from metadata
-        var containerId = node.metadata != null ? Reflect.field(node.metadata, "astId") : 0;
-
-        switch(node.def) {
-            case EDef(name, params, guards, body) | EDefp(name, params, guards, body):
-                // Enter function scope
-                enterScope(state, Function);
-                
-                // Process parameters in pattern context with locators
-                state.currentContext = Pattern;
-                for (i in 0...params.length) {
-                    processPatternWithLocator(params[i], state, allBindings, 
-                                            containerId, DefParam, i, []);
-                }
-                
-                // Process guards in expression context
-                if (guards != null) {
-                    state.currentContext = Expr;
-                    traverseWithContext(guards, state, allBindings);
-                }
-                
-                // Process body in expression context
-                state.currentContext = Expr;
-                traverseWithContext(body, state, allBindings);
-                
-                // Exit function scope
-                exitScope(state);
-                
-            case EMatch(pattern, expr):
-                // Process RHS in expression context FIRST to mark variable usage
-                state.currentContext = Expr;
-                traverseWithContext(expr, state, allBindings);
-
-                // Process LHS pattern AFTER RHS so reads resolve to the prior binding.
-                //
-                // IMPORTANT: Even though `=` is rebinding in Elixir, it still establishes the
-                // "current" value for subsequent reads in the same scope. Hygiene analysis must
-                // model this so later statements resolve to the rebinding rather than the stale
-                // previous binding.
-                state.currentContext = Pattern;
-                processPatternWithLocator(pattern, state, allBindings, containerId, MatchLHS, 0, []);
-                state.currentContext = Expr;
-                
-            case ECase(expr, clauses):
-                // Process scrutinee in expression context
-                state.currentContext = Expr;
-                traverseWithContext(expr, state, allBindings);
-                
-                // Process each clause
-                for (clause in clauses) {
-                    enterScope(state, Clause);
-                    
-                    // Pattern in pattern context with locator for case clause
-                    state.currentContext = Pattern;
-                    var clauseIndex = clauses.indexOf(clause);
-                    processPatternWithLocator(clause.pattern, state, allBindings,
-                                            containerId, CaseClause, clauseIndex, []);
-                    
-                    // Guard in expression context (singular, not plural)
-                    if (clause.guard != null) {
-                        state.currentContext = Expr;
-                        traverseWithContext(clause.guard, state, allBindings);
-                    }
-                    
-                    // Body in expression context
-                    state.currentContext = Expr;
-                    traverseWithContext(clause.body, state, allBindings);
-                    
-                    exitScope(state);
-                }
-                
-            case EVar(name):
-                // Variable reference - resolve if in expression context
-                if (state.currentContext == Expr || state.currentContext == Pinned) {
-                    resolveVariable(state, name);
-                }
-                
-            case ECall(target, funcName, args):
-                // All arguments are in expression context
-                state.currentContext = Expr;
-                if (target != null) {
-                    traverseWithContext(target, state, allBindings);
-                }
-                for (arg in args) {
-                    #if debug_hygiene
-                    // Debug: Check what type of argument we're traversing
-                    var argType = switch(arg.def) {
-                        case ERaw(_): "ERaw (STRING INTERPOLATION!)";
-                        case EString(_): "EString";
-                        case EVar(_): "EVar";
-                        default: reflaxe.elixir.util.EnumReflection.enumConstructor(arg.def);
-                    };
-                    #end
-                    // Each argument needs to be properly traversed to mark variables as used
-                    traverseWithContext(arg, state, allBindings);
-                }
-
-            case ERemoteCall(module, funcName, args):
-                // Remote call: Module.function(args) — traverse module and args in expression context
-                state.currentContext = Expr;
-                if (module != null) traverseWithContext(module, state, allBindings);
-                if (args != null) for (arg in args) traverseWithContext(arg, state, allBindings);
-                
-            case EBlock(statements):
-                // Enter block scope
-                enterScope(state, Block);
-                state.currentContext = Expr;
-                for (stmt in statements) {
-                    traverseWithContext(stmt, state, allBindings);
-                }
-                exitScope(state);
-                
-            case ETuple(elements) | EList(elements):
-                // Process elements based on current context
-                for (elem in elements) {
-                    traverseWithContext(elem, state, allBindings);
-                }
-                
-            case EBinary(op, left, right):
-                // Both operands in expression context
-                state.currentContext = Expr;
-                traverseWithContext(left, state, allBindings);
-                traverseWithContext(right, state, allBindings);
-                
-            case EIf(cond, thenBranch, elseBranch):
-                // All parts in expression context
-                state.currentContext = Expr;
-                traverseWithContext(cond, state, allBindings);
-                traverseWithContext(thenBranch, state, allBindings);
-                if (elseBranch != null) {
-                    traverseWithContext(elseBranch, state, allBindings);
-                }
-
-            case ERaw(code):
-                // Raw Elixir code from __elixir__() injection
-                // Parse string interpolations #{variable} to detect variable usage
-                #if debug_hygiene
-                #end
-
-                // Use regex to find all #{variable_name} patterns (including camelCase)
-                var interpolationPattern = ~/\\#\\{([a-zA-Z_][a-zA-Z0-9_\.]*)\\}/g;
-                var pos = 0;
-                var matchCount = 0;
-                while (interpolationPattern.matchSub(code, pos)) {
-                    matchCount++;
-                    var varName = interpolationPattern.matched(1);
-                    #if debug_hygiene
-                    #end
-
-                    // Mark variable as used by resolving it in expression context
-                    state.currentContext = Expr;
-                    resolveVariable(state, varName);
-
-                    pos = interpolationPattern.matchedPos().pos + interpolationPattern.matchedPos().len;
-                }
-
-                /**
-                 * CRITICAL: Variables referenced in ERaw outside of string interpolation
-                 *
-                 * WHAT
-                 * - Detect bare token usages of variables (e.g., `payload`, `topic_string`)
-                 *   inside ERaw code produced by __elixir__() expansion.
-                 *
-                 * WHY
-                 * - The ERaw node contains plain Elixir code where placeholders have been
-                 *   substituted with printed AST (variable names). Since ERaw holds a raw string,
-                 *   downstream usage analysis cannot see these references and may incorrectly
-                 *   mark parameters as unused, leading to underscore-prefix renames and
-                 *   undefined-variable errors in generated code.
-                 *
-                 * HOW
-                 * - Gather currently-bound variable names from the nearest Function scope.
-                 * - For each name, scan the ERaw code for identifier-bounded occurrences
-                 *   (i.e., not part of a larger identifier). When found, resolve the variable
-                 *   as used in expression context to prevent renaming.
-                 */
-                var functionScopeBindings: Array<String> = [];
-                // Walk scope stack from innermost to outermost until we reach the current Function scope
-                var idx = state.scopeStack.length - 1;
-                while (idx >= 0) {
-                    var frame = state.scopeStack[idx];
-                    // Collect names from this frame
-                    for (name in frame.bindings.keys()) {
-                        functionScopeBindings.push(name);
-                    }
-                    if (frame.kind == Function) {
-                        break; // Stop at the function boundary
-                    }
-                    idx--;
-                }
-
-                // Helper: check if a char is an identifier character
-                inline function isIdentChar(c: String): Bool {
-                    if (c == null || c.length == 0) return false;
-                    var ch = c.charCodeAt(0);
-                    // 0-9, A-Z, a-z, underscore
-                    return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_";
-                }
-
-                // For each binding name, scan ERaw code for token-bounded occurrences
-                for (name in functionScopeBindings) {
-                    if (name == null || name.length == 0) continue;
-                    // IMPORTANT: Do not skip underscore-prefixed names.
-                    // Haxe inline expansion regularly introduces underscore temps like `_this`,
-                    // and `__elixir__()` templates may reference them directly (e.g. `String.downcase(_this)`).
-                    // If we skip them here, later cleanup passes can incorrectly drop the assignment,
-                    // leaving an *undefined variable* in the emitted Elixir.
-
-                    var start = 0;
-                    var found = false;
-                    while (!found) {
-                        var i = code.indexOf(name, start);
-                        if (i == -1) break;
-                        var before = i > 0 ? code.substr(i - 1, 1) : null;
-                        var afterIdx = i + name.length;
-                        var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
-
-                        var beforeIsIdent = isIdentChar(before);
-                        var afterIsIdent = isIdentChar(after);
-
-                        if (!beforeIsIdent && !afterIsIdent) {
-                            // Treat as a real token usage of the variable
-                            state.currentContext = Expr;
-                            resolveVariable(state, name);
-                            found = true; // no need to mark multiple times
-                        } else {
-                            start = i + name.length; // continue searching
-                        }
-                    }
-                }
-
-                // Additionally, honor builder-provided explicit references in metadata (rawVarRefs)
-                if (node.metadata != null) {
-                    var provided:Array<String> = cast Reflect.field(node.metadata, "rawVarRefs");
-                    if (provided != null) {
-                        for (n in provided) {
-                            if (n != null && n.length > 0) {
-                                state.currentContext = Expr;
-                                resolveVariable(state, n);
-                            }
-                        }
-                    }
-                }
-
-                #if debug_hygiene
-                #end
-
-            default:
-                // For other node types, traverse children if they exist
-                // This is a simplified catch-all
-        }
-    }
-    
-    /**
-     * Process a pattern with precise locator tracking
-     */
-    static function processPatternWithLocator(pattern: EPattern, state: HygieneState, allBindings: Array<Binding>,
-                                             containerId: Int, context: ContainerContext, 
-                                             slotIndex: Int, path: Array<Int>): Void {
-        if (pattern == null) return;
-        
-        var bindingKind: BindingKind = switch (context) {
-            case DefParam | FnParam:
-                Param;
-            case CaseClause | ReceiveClause:
-                PatternVar;
-            case WithClause:
-                WithGen;
-            case MatchLHS:
-                MatchLhs;
-        };
-
-        switch(pattern) {
-            case PVar(name):
-                // Create binding with precise locator
-                var binding = bindVariable(state, name, bindingKind, 
-                                         containerId, context, slotIndex, path);
-                allBindings.push(binding);
-                
-            case PTuple(patterns):
-                for (i in 0...patterns.length) {
-                    var childPath = path.copy();
-                    childPath.push(i);
-                    processPatternWithLocator(patterns[i], state, allBindings,
-                                            containerId, context, slotIndex, childPath);
-                }
-                
-            case PList(patterns):
-                for (i in 0...patterns.length) {
-                    var childPath = path.copy();
-                    childPath.push(i);
-                    processPatternWithLocator(patterns[i], state, allBindings,
-                                            containerId, context, slotIndex, childPath);
-                }
-                
-            case PMap(pairs):
-                for (i in 0...pairs.length) {
-                    var childPath = path.copy();
-                    childPath.push(i);
-                    childPath.push(1); // Value is at index 1 in the pair
-                    processPatternWithLocator(pairs[i].value, state, allBindings,
-                                            containerId, context, slotIndex, childPath);
-                }
-                
-            default:
-                // Literals and other patterns don't bind variables
-        }
-    }
-    
-    /**
-     * Apply renaming to unused bindings using precise locators
-     */
-    static function renameUnusedBindings(ast: ElixirAST, allBindings: Array<Binding>): ElixirAST {
-        // Build index: Map<(containerId, context, slotIndex), Array<{path, oldName, newName}>>
-        var renameIndex = new Map<String, Array<{path: Array<Int>, oldName: String, newName: String}>>();
-
-        // ALSO build a simple name mapping for EVar renaming
-        var nameMapping = new Map<String, String>();
-
-        for (binding in allBindings) {
-            // CRITICAL FIX: Pattern variables should NEVER be renamed with underscore prefix
-            // Pattern-bound variables (like 'value' in {:ok, value}) are ALWAYS available in the case body
-            // by definition - they're bound by the pattern match, not declared as unused locals.
-            // Renaming them breaks the pattern→body coordination.
-            if (!binding.used && !binding.name.startsWith("_") && binding.kind != PatternVar) {
-                var key = '${binding.containerId}:${binding.context}:${binding.slotIndex}';
-                if (!renameIndex.exists(key)) {
-                    renameIndex.set(key, []);
-                }
-                renameIndex.get(key).push({
-                    path: binding.path,
-                    oldName: binding.name,
-                    newName: "_" + binding.name
-                });
-
-                // Add to name mapping (oldName -> newName)
-                nameMapping.set(binding.name, "_" + binding.name);
-            }
-        }
-
-        #if debug_hygiene
-        for (oldName in nameMapping.keys()) {
-        }
-        #end
-
-        // Apply renaming using the index
-        return ElixirASTTransformer.transformNode(ast, function(node) {
-            if (node.metadata == null) return node;
-            
-            var containerId = Reflect.field(node.metadata, "astId");
-            if (containerId == null) return node;
-            
-            switch(node.def) {
-                case EDef(name, params, guards, body) | EDefp(name, params, guards, body):
-                    // Check if we have renames for this container's parameters
-                    var hasRenames = false;
-                    var newParams = [];
-                    
-                    for (i in 0...params.length) {
-                        var key = '$containerId:DefParam:$i';
-                        var renames = renameIndex.get(key);
-                        
-                        if (renames != null && renames.length > 0) {
-                            hasRenames = true;
-                            newParams.push(renamePatternWithLocators(params[i], renames, []));
-                        } else {
-                            newParams.push(params[i]);
-                        }
-                    }
-                    
-                    if (hasRenames) {
-                        var newDef = switch(node.def) {
-                            case EDef(n, _, g, b): EDef(n, newParams, g, b);
-                            case EDefp(n, _, g, b): EDefp(n, newParams, g, b);
-                            default: node.def;
-                        };
-                        return make(newDef, node.metadata);
-                    }
-                    return node;
-                    
-                case ECase(expr, clauses):
-                    // Handle case clause patterns
-                    var hasRenames = false;
-                    var newClauses = [];
-                    
-                    for (i in 0...clauses.length) {
-                        var key = '$containerId:CaseClause:$i';
-                        var renames = renameIndex.get(key);
-                        
-                        if (renames != null && renames.length > 0) {
-                            hasRenames = true;
-                            var newPattern = renamePatternWithLocators(clauses[i].pattern, renames, []);
-                            newClauses.push({
-                                pattern: newPattern,
-                                guard: clauses[i].guard,
-                                body: clauses[i].body
-                            });
-                        } else {
-                            newClauses.push(clauses[i]);
-                        }
-                    }
-                    
-                    if (hasRenames) {
-                        return make(ECase(expr, newClauses), node.metadata);
-                    }
-                    return node;
-
-                case EVar(name):
-                    // Rename variable references to match renamed bindings
-                    if (nameMapping.exists(name)) {
-                        var newName = nameMapping.get(name);
-                        #if debug_hygiene
-                        #end
-                        return make(EVar(newName), node.metadata);
-                    }
-                    return node;
-
-                default:
-                    return node;
-            }
-        });
-    }
-
-    /**
-     * Apply renaming to unused bindings using context's shared mapping
-     *
-     * WHY: Use single source of truth for variable renames across all phases
-     * WHAT: Registers renames in context.tempVarRenameMap, applies from that map
-     * HOW: Same algorithm as renameUnusedBindings but uses context instead of local map
-     *
-     * KEY DIFFERENCE:
-     * - Original: Creates local nameMapping = new Map()
-     * - This: Uses context.tempVarRenameMap
-     * - Result: Builder and transformer phases coordinate on variable names
-     */
-    static function renameUnusedBindingsWithContext(ast: ElixirAST, allBindings: Array<Binding>,
-                                                    context: reflaxe.elixir.CompilationContext): ElixirAST {
-        // Build index: Map<(containerId, context, slotIndex), Array<{path, oldName, newName}>>
-        var renameIndex = new Map<String, Array<{path: Array<Int>, oldName: String, newName: String}>>();
-
-        // CRITICAL FIX: Initialize from context to preserve builder phase decisions
-        // Previously created empty map (new Map()), losing all upstream rename information
-        // from the builder phase. This caused undefined variable errors when EVar references
-        // tried to use names that the builder had detected as unused and renamed.
-        //
-        // Now follows the cumulative context pattern from mature Reflaxe compilers:
-        // - Builder phase: DETECTS unused variables, sets dual-key mappings (ID + name)
-        // - Transformer phase: APPLIES renames using builder's decisions
-        // - Context: PRESERVES decisions between phases (not lost!)
-        //
-        // The helper extracts ONLY name-based keys from context (filters out numeric IDs)
-        // so EVar reference renaming works correctly.
-        var nameMapping = initializeNameMappingFromContext(context);
-
-        #if debug_hygiene
-        for (key in nameMapping.keys()) {
-        }
-        #end
-
-        for (binding in allBindings) {
-            // CRITICAL FIX: Pattern variables should NEVER be renamed with underscore prefix
-            // Pattern-bound variables (like 'value' in {:ok, value}) are ALWAYS available in the case body
-            // by definition - they're bound by the pattern match, not declared as unused locals.
-            // Renaming them breaks the pattern→body coordination.
-            if (!binding.used && !binding.name.startsWith("_") && binding.kind != PatternVar) {
-                var key = '${binding.containerId}:${binding.context}:${binding.slotIndex}';
-                if (!renameIndex.exists(key)) {
-                    renameIndex.set(key, []);
-                }
-                renameIndex.get(key).push({
-                    path: binding.path,
-                    oldName: binding.name,
-                    newName: "_" + binding.name
-                });
-
-                // Register rename in SHARED context mapping (not local)
-                nameMapping.set(binding.name, "_" + binding.name);
-
-                #if debug_hygiene
-                #end
-            }
-        }
-
-        #if debug_hygiene
-        for (oldName in nameMapping.keys()) {
-        }
-        #end
-
-        // Apply renaming using the shared context mapping
-        return ElixirASTTransformer.transformNode(ast, function(node) {
-            if (node.metadata == null) return node;
-
-            var containerId = Reflect.field(node.metadata, "astId");
-            if (containerId == null) return node;
-
-            switch(node.def) {
-                case EDef(name, params, guards, body) | EDefp(name, params, guards, body):
-                    // Check if we have renames for this container's parameters
-                    var hasRenames = false;
-                    var newParams = [];
-
-                    for (i in 0...params.length) {
-                        var key = '$containerId:DefParam:$i';
-                        var renames = renameIndex.get(key);
-
-                        if (renames != null && renames.length > 0) {
-                            hasRenames = true;
-                            newParams.push(renamePatternWithLocators(params[i], renames, []));
-                        } else {
-                            newParams.push(params[i]);
-                        }
-                    }
-
-                    if (hasRenames) {
-                        var newDef = switch(node.def) {
-                            case EDef(n, _, g, b): EDef(n, newParams, g, b);
-                            case EDefp(n, _, g, b): EDefp(n, newParams, g, b);
-                            default: node.def;
-                        };
-                        return make(newDef, node.metadata);
-                    }
-                    return node;
-
-                case ECase(expr, clauses):
-                    // Handle case clause patterns
-                    var hasRenames = false;
-                    var newClauses = [];
-
-                    for (i in 0...clauses.length) {
-                        var key = '$containerId:CaseClause:$i';
-                        var renames = renameIndex.get(key);
-
-                        if (renames != null && renames.length > 0) {
-                            hasRenames = true;
-                            var newPattern = renamePatternWithLocators(clauses[i].pattern, renames, []);
-                            newClauses.push({
-                                pattern: newPattern,
-                                guard: clauses[i].guard,
-                                body: clauses[i].body
-                            });
-                        } else {
-                            newClauses.push(clauses[i]);
-                        }
-                    }
-
-                    if (hasRenames) {
-                        return make(ECase(expr, newClauses), node.metadata);
-                    }
-                    return node;
-
-                case EVar(name):
-                    // Rename variable references to match renamed bindings
-                    // Reading from SHARED context mapping ensures consistency
-                    if (nameMapping.exists(name)) {
-                        var newName = nameMapping.get(name);
-                        #if debug_hygiene
-                        #end
-                        return make(EVar(newName), node.metadata);
-                    }
-                    return node;
-
-                default:
-                    return node;
-            }
-        });
-    }
-
-    /**
-     * HELPER: isNumericId - Detect AST Node ID Strings
-     *
-     * WHY: Need to filter numeric AST node IDs from variable names in context
-     *
-     * During compilation, the builder phase registers variables using BOTH:
-     * - ID-based keys: Std.string(v.id) → "57694" (numeric AST node ID)
-     * - Name-based keys: v.name → "changeset" (actual variable name)
-     *
-     * When extracting name-based keys from context for transformer phase, we must
-     * filter out the numeric ID strings to avoid treating them as variable names.
-     *
-     * WHAT: Detects strings that are purely numeric (AST node IDs)
-     *
-     * Returns true for strings like:
-     * - "57694" (AST node ID) → true
-     * - "123" (numeric ID) → true
-     * - "changeset" (variable name) → false
-     * - "user_id" (variable name) → false
-     * - "_unused" (prefixed variable) → false
-     *
-     * HOW: Regex pattern matches one or more digits
-     *
-     * Pattern: ~/^[0-9]+$/
-     * - ^ : Start of string
-     * - [0-9]+ : One or more digits (0-9)
-     * - $ : End of string
-     *
-     * This ensures ONLY purely numeric strings match, avoiding false positives
-     * like "user123" (contains digits but not purely numeric).
-     *
-     * @param str String to test for numeric ID pattern
-     * @return true if string is purely numeric (AST node ID), false otherwise
-     */
-    static function isNumericId(str: String): Bool {
-        return ~/^[0-9]+$/.match(str);
-    }
-
-    /**
-     * HELPER: initializeNameMappingFromContext - Extract Name-Based Variable Renames
-     *
-     * WHY: Bridge builder phase decisions to transformer phase
-     *
-     * ARCHITECTURAL CONTEXT:
-     * The root cause of the hygiene bug is that line 795 creates a fresh local Map,
-     * losing ALL builder phase rename decisions. This breaks the cumulative context
-     * pattern used by mature Reflaxe compilers where:
-     * - Builder phase: DETECTS unused variables and registers renames
-     * - Transformer phase: APPLIES renames based on builder decisions
-     * - Context: SHARED state preserving decisions between phases
-     *
-     * The builder phase registers variables using DUAL-KEY storage:
-     * - ID-based keys: Std.string(v.id) → "57694" (for pattern matching)
-     * - Name-based keys: v.name → "changeset" (for EVar reference renaming)
-     *
-     * This function extracts ONLY the name-based keys from context, enabling the
-     * transformer to apply renames that the builder phase detected.
-     *
-     * WHAT: Extracts name-based variable rename mappings from compilation context
-     *
-     * Filters context.tempVarRenameMap to extract only name-based entries:
-     * - KEEP: "changeset" → "_changeset" (variable name)
-     * - KEEP: "user" → "_user" (variable name)
-     * - SKIP: "57694" → "_temp" (numeric AST node ID)
-     * - SKIP: "_unused" → "_unused" (already prefixed)
-     *
-     * Returns a Map ready for use in the transformer phase, containing only the
-     * variable name → renamed variable mappings that EVar references can use.
-     *
-     * HOW: Defensive iteration with filtering logic
-     *
-     * Algorithm:
-     * 1. Create empty mapping Map
-     * 2. Defensive null check on context.tempVarRenameMap
-     * 3. Iterate all keys in context map
-     * 4. For each key-value pair:
-     *    - Skip if key is numeric ID (isNumericId check)
-     *    - Skip if key already has underscore prefix
-     *    - Add to mapping for name-based keys
-     * 5. Debug trace each loaded rename (XRay pattern)
-     * 6. Return filtered mapping
-     *
-     * PERFORMANCE: O(n) where n = number of entries in context map
-     * Typical n < 100, so negligible overhead
-     *
-     * @param context CompilationContext containing builder phase rename decisions
-     * @return Map<String, String> with name-based variable renames only
-     */
-    static function initializeNameMappingFromContext(context: reflaxe.elixir.CompilationContext): Map<String, String> {
-        var mapping = new Map<String, String>();
-
-        // Defensive: context.tempVarRenameMap may be null in early compilation phases
-        if (context.tempVarRenameMap == null) {
-            #if debug_hygiene
-            #end
-            return mapping;
-        }
-
-        #if debug_hygiene
-        #end
-
-        // Extract name-based keys, filtering out numeric IDs and already-prefixed names
-        for (key in context.tempVarRenameMap.keys()) {
-            var value = context.tempVarRenameMap.get(key);
-
-            // Filter 1: Skip numeric AST node IDs (e.g., "57694")
-            if (isNumericId(key)) {
-                #if debug_hygiene
-                #end
-                continue;
-            }
-
-            // Filter 2: Skip already-prefixed names (e.g., "_unused")
-            if (key.startsWith("_")) {
-                #if debug_hygiene
-                #end
-                continue;
-            }
-
-            // This is a name-based key - preserve it for transformer phase
-            mapping.set(key, value);
-
-            #if debug_hygiene
-            #end
-        }
-
-        #if debug_hygiene
-        #end
-
-        return mapping;
-    }
-
-    /**
-     * Rename variables in a pattern using locators
-     */
-    static function renamePatternWithLocators(pattern: EPattern, renames: Array<{path: Array<Int>, oldName: String, newName: String}>, 
-                                             currentPath: Array<Int>): EPattern {
-        switch(pattern) {
-            case PVar(name):
-                // Check if current path matches any rename entry
-                for (rename in renames) {
-                    if (pathsEqual(currentPath, rename.path) && name == rename.oldName) {
-                        #if debug_hygiene
-                        #end
-                        return PVar(rename.newName);
-                    }
-                }
-                return pattern;
-                
-            case PTuple(patterns):
-                var newPatterns = [];
-                for (i in 0...patterns.length) {
-                    var childPath = currentPath.copy();
-                    childPath.push(i);
-                    newPatterns.push(renamePatternWithLocators(patterns[i], renames, childPath));
-                }
-                return PTuple(newPatterns);
-                
-            case PList(patterns):
-                var newPatterns = [];
-                for (i in 0...patterns.length) {
-                    var childPath = currentPath.copy();
-                    childPath.push(i);
-                    newPatterns.push(renamePatternWithLocators(patterns[i], renames, childPath));
-                }
-                return PList(newPatterns);
-                
-            case PMap(pairs):
-                var newPairs = [];
-                for (i in 0...pairs.length) {
-                    var childPath = currentPath.copy();
-                    childPath.push(i);
-                    childPath.push(1); // Value is at index 1
-                    newPairs.push({
-                        key: pairs[i].key,
-                        value: renamePatternWithLocators(pairs[i].value, renames, childPath)
-                    });
-                }
-                return PMap(newPairs);
-                
-            default:
-                return pattern;
-        }
-    }
-    
-    /**
-     * Check if two paths are equal
-     */
-    static function pathsEqual(path1: Array<Int>, path2: Array<Int>): Bool {
-        if (path1.length != path2.length) return false;
-        for (i in 0...path1.length) {
-            if (path1[i] != path2[i]) return false;
-        }
-        return true;
-    }
-    
-    /**
-     * Check if a pattern is used in the given body and prefix with underscore if not
-     */
-    static function prefixUnusedPattern(pattern: EPattern, body: ElixirAST): EPattern {
-        switch(pattern) {
-            case PVar(name):
-                // Don't touch already underscored variables
-                if (name.charAt(0) == "_") return pattern;
-                
-                #if debug_hygiene
-                #end
-                
-                // Check if variable is used in body
-                var isUsed = isVariableUsedInBody(name, body);
-                
-                #if debug_hygiene
-                #end
-                
-                if (!isUsed) {
-                    #if debug_hygiene
-                    #end
-                    return PVar("_" + name);
-                }
-                return pattern;
-                
-            default:
-                return pattern;
-        }
-    }
-    
-    /**
-     * Check if a variable name is referenced in the body
-     * 
-     * COMPREHENSIVE TRAVERSAL: Must check ALL node types to find nested variable usage
-     * Example: `Std.int(t)` - the `t` is nested inside a call argument
-     * 
-     * The transformNode function handles recursion, but we must ensure we're
-     * checking for EVar in all positions where it could appear.
-     */
-    static function isVariableUsedInBody(varName: String, body: ElixirAST): Bool {
-        var used = false;
-        var nodeCount = 0;
-        var depth = 0;
-        
-        // Use transformer to search for variable usage recursively
-        // CRITICAL: transformNode DOES traverse all children automatically
-        // We just need to check for EVar nodes at any depth
-        ElixirASTTransformer.transformNode(body, function(node) {
-            nodeCount++;
-            
-            #if debug_hygiene_verbose
-            var indent = [for (i in 0...depth) "  "].join("");
-            #end
-            
-            // Check if this node is a variable reference
-            switch(node.def) {
-                case EVar(name):
-                    #if debug_hygiene
-                    #end
-                    if (name == varName) {
-                        #if debug_hygiene
-                        #end
-                        used = true;
-                    }
-                    
-                // Log other node types for debugging but don't need special handling
-                // since transformNode will recurse into them automatically
-                case ECall(target, funcName, args):
-                    #if debug_hygiene_verbose
-                    #end
-                    
-                case EBinary(op, left, right):
-                    #if debug_hygiene_verbose
-                    #end
-                    
-                case ETuple(elements):
-                    #if debug_hygiene_verbose
-                    #end
-                    
-                case EList(elements):
-                    #if debug_hygiene_verbose
-                    #end
-                    
-                case EBlock(statements):
-                    #if debug_hygiene_verbose
-                    depth++;
-                    #end
-                    
-                case EIf(cond, thenBranch, elseBranch):
-                    #if debug_hygiene_verbose
-                    #end
-                    
-                case ECase(expr, clauses):
-                    #if debug_hygiene_verbose
-                    #end
-                    
-                default:
-                    // transformNode handles all other cases automatically
-                    #if debug_hygiene_verbose
-                    if (nodeCount < 20) { // Limit verbose output
-                    }
-                    #end
-            }
-            
-            // Return node unchanged - we're just searching, not transforming
-            return node;
-        });
-        
-        #if debug_hygiene
-        if (!used) {
-        } else {
-        }
-        #end
-        
-        return used;
-    }
+	/**
+	 * Create initial hygiene state
+	 */
+	static function createInitialState():HygieneState {
+		return {
+			scopeStack: [
+				{
+					bindings: new Map(),
+					kind: Module,
+					parent: null
+				}
+			],
+			currentContext: Expr,
+			aliases: new Map(),
+			imports: new Map(),
+			requires: new Map()
+		};
+	}
+
+	/**
+	 * Enter a new scope
+	 */
+	static function enterScope(state:HygieneState, kind:ScopeKind):Void {
+		var newFrame:ScopeFrame = {
+			bindings: new Map(),
+			kind: kind,
+			parent: state.scopeStack[state.scopeStack.length - 1]
+		};
+		state.scopeStack.push(newFrame);
+
+		#if debug_hygiene
+		#end
+	}
+
+	/**
+	 * Exit current scope
+	 */
+	static function exitScope(state:HygieneState):Void {
+		if (state.scopeStack.length > 1) {
+			var exitingScope = state.scopeStack.pop();
+
+			#if debug_hygiene
+			#end
+		}
+	}
+
+	/**
+	 * Assign unique IDs to all AST nodes
+	 */
+	static function assignAstIds(ast:ElixirAST):ElixirAST {
+		var idCounter = 0;
+
+		return ElixirASTTransformer.transformNode(ast, function(node) {
+			// Assign unique ID to this node via metadata
+			if (node.metadata == null) {
+				node.metadata = {};
+			}
+			Reflect.setField(node.metadata, "astId", ++idCounter);
+			return node;
+		});
+	}
+
+	/**
+	 * Bind a variable in current scope with precise locator
+	 */
+	static function bindVariable(state:HygieneState, name:String, kind:BindingKind, containerId:Int, context:ContainerContext, slotIndex:Int,
+			path:Array<Int>):Binding {
+		var currentFrame = state.scopeStack[state.scopeStack.length - 1];
+
+		var binding:Binding = {
+			name: name,
+			used: false,
+			kind: kind,
+			containerId: containerId,
+			context: context,
+			slotIndex: slotIndex,
+			path: path.copy() // Copy the path array
+		};
+
+		// Add to binding stack for this name
+		if (!currentFrame.bindings.exists(name)) {
+			currentFrame.bindings.set(name, []);
+		}
+		currentFrame.bindings.get(name).push(binding);
+
+		#if debug_hygiene
+		#end
+
+		return binding;
+	}
+
+	/**
+	 * Resolve a variable read to nearest binding
+	 */
+	static function resolveVariable(state:HygieneState, name:String):Null<Binding> {
+		// Walk scope stack from innermost to outermost
+		var i = state.scopeStack.length - 1;
+		while (i >= 0) {
+			var frame = state.scopeStack[i];
+			if (frame.bindings.exists(name)) {
+				var bindings = frame.bindings.get(name);
+				if (bindings.length > 0) {
+					var binding = bindings[bindings.length - 1]; // Most recent binding
+					binding.used = true;
+
+					#if debug_hygiene
+					#end
+
+					return binding;
+				}
+			}
+			i--;
+		}
+
+		#if debug_hygiene
+		#end
+
+		return null;
+	}
+
+	/**
+	 * Enhanced Usage Analysis Pass with Scope-Aware Tracking
+	 * 
+	 * WHY: Detect and mark unused variables for underscore prefixing
+	 * WHAT: Analyze variable usage with proper bind/read context distinction
+	 * HOW: Three-phase approach:
+	 *      0. Assign unique IDs to all AST nodes
+	 *      1. Collect all bindings and track usage with scope awareness
+	 *      2. Rename unused bindings to underscore prefix using precise locators
+	 */
+	/**
+	 * Usage analysis pass (stateless variant)
+	 *
+	 * WHY: Maintains backward compatibility for non-contextual transform() calls
+	 * WHAT: Creates local nameMapping, does not integrate with compiler context
+	 * HOW: Standalone analysis and renaming using internal state
+	 *
+	 * NOTE: This is the fallback variant. Prefer usageAnalysisPassWithContext when context available.
+	 */
+	public static function usageAnalysisPass(ast:ElixirAST):ElixirAST {
+		#if debug_hygiene
+		#end
+
+		// Phase 0: Assign unique IDs to all AST nodes
+		var astWithIds = assignAstIds(ast);
+
+		// Phase 1: Collect bindings and track usage
+		var state = createInitialState();
+		var allBindings:Array<Binding> = [];
+
+		// First pass: collect all bindings and mark usage
+		collectBindingsAndUsage(astWithIds, state, allBindings);
+
+		#if debug_hygiene
+		var unusedCount = 0;
+		for (binding in allBindings) {
+			if (!binding.used)
+				unusedCount++;
+		}
+		#end
+
+		// Phase 2: Apply renaming transformations using collected bindings (local mapping)
+		return renameUnusedBindings(astWithIds, allBindings);
+	}
+
+	/**
+	 * Usage analysis pass (contextual variant)
+	 *
+	 * WHY: Enables consistent variable naming across compilation phases
+	 * WHAT: Uses context.tempVarRenameMap instead of local nameMapping
+	 * HOW: Registers renames in shared context, applies from authoritative source
+	 *
+	 * ARCHITECTURE:
+	 * - Reads existing renames from context.tempVarRenameMap (builder phase decisions)
+	 * - Adds new renames for unused variables discovered in this pass
+	 * - Applies renames from the single source of truth (context)
+	 * - Ensures declarations and references use consistent names
+	 *
+	 * BENEFITS:
+	 * - Fixes variable naming consistency bugs (e.g., _changeset vs changeset)
+	 * - Coordinates with builder phase variable decisions
+	 * - Eliminates duplicate mapping systems
+	 * - Single authoritative source for all variable renames
+	 *
+	 * @param ast The AST to analyze
+	 * @param context Compilation context with shared tempVarRenameMap
+	 * @return Transformed AST with consistent variable naming
+	 */
+	public static function usageAnalysisPassWithContext(ast:ElixirAST, context:reflaxe.elixir.CompilationContext):ElixirAST {
+		#if debug_hygiene
+		if (context != null) {}
+		#end
+
+		// Phase 0: Assign unique IDs to all AST nodes
+		var astWithIds = assignAstIds(ast);
+
+		// Phase 1: Collect bindings and track usage
+		var state = createInitialState();
+		var allBindings:Array<Binding> = [];
+
+		// First pass: collect all bindings and mark usage
+		collectBindingsAndUsage(astWithIds, state, allBindings);
+
+		#if debug_hygiene
+		var unusedCount = 0;
+		for (binding in allBindings) {
+			if (!binding.used)
+				unusedCount++;
+		}
+		#end
+
+		// Phase 2: Apply renaming transformations using context's shared mapping
+		return renameUnusedBindingsWithContext(astWithIds, allBindings, context);
+	}
+
+	/**
+	 * Collect all bindings and track their usage
+	 */
+	static function collectBindingsAndUsage(ast:ElixirAST, state:HygieneState, allBindings:Array<Binding>):Void {
+		traverseWithContext(ast, state, allBindings);
+	}
+
+	/**
+	 * Traverse AST with binding context awareness
+	 */
+	static function traverseWithContext(node:ElixirAST, state:HygieneState, allBindings:Array<Binding>):Void {
+		if (node == null)
+			return;
+
+		// Get container ID from metadata
+		var containerId = node.metadata != null ? Reflect.field(node.metadata, "astId") : 0;
+
+		switch (node.def) {
+			case EDef(name, params, guards, body) | EDefp(name, params, guards, body):
+				// Enter function scope
+				enterScope(state, Function);
+
+				// Process parameters in pattern context with locators
+				state.currentContext = Pattern;
+				for (i in 0...params.length) {
+					processPatternWithLocator(params[i], state, allBindings, containerId, DefParam, i, []);
+				}
+
+				// Process guards in expression context
+				if (guards != null) {
+					state.currentContext = Expr;
+					traverseWithContext(guards, state, allBindings);
+				}
+
+				// Process body in expression context
+				state.currentContext = Expr;
+				traverseWithContext(body, state, allBindings);
+
+				// Exit function scope
+				exitScope(state);
+
+			case EMatch(pattern, expr):
+				// Process RHS in expression context FIRST to mark variable usage
+				state.currentContext = Expr;
+				traverseWithContext(expr, state, allBindings);
+
+				// Process LHS pattern AFTER RHS so reads resolve to the prior binding.
+				//
+				// IMPORTANT: Even though `=` is rebinding in Elixir, it still establishes the
+				// "current" value for subsequent reads in the same scope. Hygiene analysis must
+				// model this so later statements resolve to the rebinding rather than the stale
+				// previous binding.
+				state.currentContext = Pattern;
+				processPatternWithLocator(pattern, state, allBindings, containerId, MatchLHS, 0, []);
+				state.currentContext = Expr;
+
+			case ECase(expr, clauses):
+				// Process scrutinee in expression context
+				state.currentContext = Expr;
+				traverseWithContext(expr, state, allBindings);
+
+				// Process each clause
+				for (clause in clauses) {
+					enterScope(state, Clause);
+
+					// Pattern in pattern context with locator for case clause
+					state.currentContext = Pattern;
+					var clauseIndex = clauses.indexOf(clause);
+					processPatternWithLocator(clause.pattern, state, allBindings, containerId, CaseClause, clauseIndex, []);
+
+					// Guard in expression context (singular, not plural)
+					if (clause.guard != null) {
+						state.currentContext = Expr;
+						traverseWithContext(clause.guard, state, allBindings);
+					}
+
+					// Body in expression context
+					state.currentContext = Expr;
+					traverseWithContext(clause.body, state, allBindings);
+
+					exitScope(state);
+				}
+
+			case EVar(name):
+				// Variable reference - resolve if in expression context
+				if (state.currentContext == Expr || state.currentContext == Pinned) {
+					resolveVariable(state, name);
+				}
+
+			case ECall(target, funcName, args):
+				// All arguments are in expression context
+				state.currentContext = Expr;
+				if (target != null) {
+					traverseWithContext(target, state, allBindings);
+				}
+				for (arg in args) {
+					#if debug_hygiene
+					// Debug: Check what type of argument we're traversing
+					var argType = switch (arg.def) {
+						case ERaw(_): "ERaw (STRING INTERPOLATION!)";
+						case EString(_): "EString";
+						case EVar(_): "EVar";
+						default: reflaxe.elixir.util.EnumReflection.enumConstructor(arg.def);
+					};
+					#end
+					// Each argument needs to be properly traversed to mark variables as used
+					traverseWithContext(arg, state, allBindings);
+				}
+
+			case ERemoteCall(module, funcName, args):
+				// Remote call: Module.function(args) — traverse module and args in expression context
+				state.currentContext = Expr;
+				if (module != null)
+					traverseWithContext(module, state, allBindings);
+				if (args != null)
+					for (arg in args)
+						traverseWithContext(arg, state, allBindings);
+
+			case EBlock(statements):
+				// Enter block scope
+				enterScope(state, Block);
+				state.currentContext = Expr;
+				for (stmt in statements) {
+					traverseWithContext(stmt, state, allBindings);
+				}
+				exitScope(state);
+
+			case ETuple(elements) | EList(elements):
+				// Process elements based on current context
+				for (elem in elements) {
+					traverseWithContext(elem, state, allBindings);
+				}
+
+			case EBinary(op, left, right):
+				// Both operands in expression context
+				state.currentContext = Expr;
+				traverseWithContext(left, state, allBindings);
+				traverseWithContext(right, state, allBindings);
+
+			case EIf(cond, thenBranch, elseBranch):
+				// All parts in expression context
+				state.currentContext = Expr;
+				traverseWithContext(cond, state, allBindings);
+				traverseWithContext(thenBranch, state, allBindings);
+				if (elseBranch != null) {
+					traverseWithContext(elseBranch, state, allBindings);
+				}
+
+			case ERaw(code):
+				// Raw Elixir code from __elixir__() injection
+				// Parse string interpolations #{variable} to detect variable usage
+				#if debug_hygiene
+				#end
+
+				// Use regex to find all #{variable_name} patterns (including camelCase)
+				var interpolationPattern = ~/\\#\\{([a-zA-Z_][a-zA-Z0-9_\.]*)\\}/g;
+				var pos = 0;
+				var matchCount = 0;
+				while (interpolationPattern.matchSub(code, pos)) {
+					matchCount++;
+					var varName = interpolationPattern.matched(1);
+					#if debug_hygiene
+					#end
+
+					// Mark variable as used by resolving it in expression context
+					state.currentContext = Expr;
+					resolveVariable(state, varName);
+
+					pos = interpolationPattern.matchedPos().pos + interpolationPattern.matchedPos().len;
+				}
+
+				/**
+				 * CRITICAL: Variables referenced in ERaw outside of string interpolation
+				 *
+				 * WHAT
+				 * - Detect bare token usages of variables (e.g., `payload`, `topic_string`)
+				 *   inside ERaw code produced by __elixir__() expansion.
+				 *
+				 * WHY
+				 * - The ERaw node contains plain Elixir code where placeholders have been
+				 *   substituted with printed AST (variable names). Since ERaw holds a raw string,
+				 *   downstream usage analysis cannot see these references and may incorrectly
+				 *   mark parameters as unused, leading to underscore-prefix renames and
+				 *   undefined-variable errors in generated code.
+				 *
+				 * HOW
+				 * - Gather currently-bound variable names from the nearest Function scope.
+				 * - For each name, scan the ERaw code for identifier-bounded occurrences
+				 *   (i.e., not part of a larger identifier). When found, resolve the variable
+				 *   as used in expression context to prevent renaming.
+				 */
+				var functionScopeBindings:Array<String> = [];
+				// Walk scope stack from innermost to outermost until we reach the current Function scope
+				var idx = state.scopeStack.length - 1;
+				while (idx >= 0) {
+					var frame = state.scopeStack[idx];
+					// Collect names from this frame
+					for (name in frame.bindings.keys()) {
+						functionScopeBindings.push(name);
+					}
+					if (frame.kind == Function) {
+						break; // Stop at the function boundary
+					}
+					idx--;
+				}
+
+				// Helper: check if a char is an identifier character
+				inline function isIdentChar(c:String):Bool {
+					if (c == null || c.length == 0)
+						return false;
+					var ch = c.charCodeAt(0);
+					// 0-9, A-Z, a-z, underscore
+					return (ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || c == "_";
+				}
+
+				// For each binding name, scan ERaw code for token-bounded occurrences
+				for (name in functionScopeBindings) {
+					if (name == null || name.length == 0)
+						continue;
+					// IMPORTANT: Do not skip underscore-prefixed names.
+					// Haxe inline expansion regularly introduces underscore temps like `_this`,
+					// and `__elixir__()` templates may reference them directly (e.g. `String.downcase(_this)`).
+					// If we skip them here, later cleanup passes can incorrectly drop the assignment,
+					// leaving an *undefined variable* in the emitted Elixir.
+
+					var start = 0;
+					var found = false;
+					while (!found) {
+						var i = code.indexOf(name, start);
+						if (i == -1)
+							break;
+						var before = i > 0 ? code.substr(i - 1, 1) : null;
+						var afterIdx = i + name.length;
+						var after = afterIdx < code.length ? code.substr(afterIdx, 1) : null;
+
+						var beforeIsIdent = isIdentChar(before);
+						var afterIsIdent = isIdentChar(after);
+
+						if (!beforeIsIdent && !afterIsIdent) {
+							// Treat as a real token usage of the variable
+							state.currentContext = Expr;
+							resolveVariable(state, name);
+							found = true; // no need to mark multiple times
+						} else {
+							start = i + name.length; // continue searching
+						}
+					}
+				}
+
+				// Additionally, honor builder-provided explicit references in metadata (rawVarRefs)
+				if (node.metadata != null) {
+					var provided:Array<String> = cast Reflect.field(node.metadata, "rawVarRefs");
+					if (provided != null) {
+						for (n in provided) {
+							if (n != null && n.length > 0) {
+								state.currentContext = Expr;
+								resolveVariable(state, n);
+							}
+						}
+					}
+				}
+
+				#if debug_hygiene
+				#end
+
+			default:
+				// For other node types, traverse children if they exist
+				// This is a simplified catch-all
+		}
+	}
+
+	/**
+	 * Process a pattern with precise locator tracking
+	 */
+	static function processPatternWithLocator(pattern:EPattern, state:HygieneState, allBindings:Array<Binding>, containerId:Int, context:ContainerContext,
+			slotIndex:Int, path:Array<Int>):Void {
+		if (pattern == null)
+			return;
+
+		var bindingKind:BindingKind = switch (context) {
+			case DefParam | FnParam:
+				Param;
+			case CaseClause | ReceiveClause:
+				PatternVar;
+			case WithClause:
+				WithGen;
+			case MatchLHS:
+				MatchLhs;
+		};
+
+		switch (pattern) {
+			case PVar(name):
+				// Create binding with precise locator
+				var binding = bindVariable(state, name, bindingKind, containerId, context, slotIndex, path);
+				allBindings.push(binding);
+
+			case PTuple(patterns):
+				for (i in 0...patterns.length) {
+					var childPath = path.copy();
+					childPath.push(i);
+					processPatternWithLocator(patterns[i], state, allBindings, containerId, context, slotIndex, childPath);
+				}
+
+			case PList(patterns):
+				for (i in 0...patterns.length) {
+					var childPath = path.copy();
+					childPath.push(i);
+					processPatternWithLocator(patterns[i], state, allBindings, containerId, context, slotIndex, childPath);
+				}
+
+			case PMap(pairs):
+				for (i in 0...pairs.length) {
+					var childPath = path.copy();
+					childPath.push(i);
+					childPath.push(1); // Value is at index 1 in the pair
+					processPatternWithLocator(pairs[i].value, state, allBindings, containerId, context, slotIndex, childPath);
+				}
+
+			default:
+				// Literals and other patterns don't bind variables
+		}
+	}
+
+	/**
+	 * Apply renaming to unused bindings using precise locators
+	 */
+	static function renameUnusedBindings(ast:ElixirAST, allBindings:Array<Binding>):ElixirAST {
+		// Build index: Map<(containerId, context, slotIndex), Array<{path, oldName, newName}>>
+		var renameIndex = new Map<String, Array<{path:Array<Int>, oldName:String, newName:String}>>();
+
+		// ALSO build a simple name mapping for EVar renaming
+		var nameMapping = new Map<String, String>();
+
+		for (binding in allBindings) {
+			// CRITICAL FIX: Pattern variables should NEVER be renamed with underscore prefix
+			// Pattern-bound variables (like 'value' in {:ok, value}) are ALWAYS available in the case body
+			// by definition - they're bound by the pattern match, not declared as unused locals.
+			// Renaming them breaks the pattern→body coordination.
+			if (!binding.used && !binding.name.startsWith("_") && binding.kind != PatternVar) {
+				var key = '${binding.containerId}:${binding.context}:${binding.slotIndex}';
+				if (!renameIndex.exists(key)) {
+					renameIndex.set(key, []);
+				}
+				renameIndex.get(key).push({
+					path: binding.path,
+					oldName: binding.name,
+					newName: "_" + binding.name
+				});
+
+				// Add to name mapping (oldName -> newName)
+				nameMapping.set(binding.name, "_" + binding.name);
+			}
+		}
+
+		#if debug_hygiene
+		for (oldName in nameMapping.keys()) {}
+		#end
+
+		// Apply renaming using the index
+		return ElixirASTTransformer.transformNode(ast, function(node) {
+			if (node.metadata == null)
+				return node;
+
+			var containerId = Reflect.field(node.metadata, "astId");
+			if (containerId == null)
+				return node;
+
+			switch (node.def) {
+				case EDef(name, params, guards, body) | EDefp(name, params, guards, body):
+					// Check if we have renames for this container's parameters
+					var hasRenames = false;
+					var newParams = [];
+
+					for (i in 0...params.length) {
+						var key = '$containerId:DefParam:$i';
+						var renames = renameIndex.get(key);
+
+						if (renames != null && renames.length > 0) {
+							hasRenames = true;
+							newParams.push(renamePatternWithLocators(params[i], renames, []));
+						} else {
+							newParams.push(params[i]);
+						}
+					}
+
+					if (hasRenames) {
+						var newDef = switch (node.def) {
+							case EDef(n, _, g, b): EDef(n, newParams, g, b);
+							case EDefp(n, _, g, b): EDefp(n, newParams, g, b);
+							default: node.def;
+						};
+						return make(newDef, node.metadata);
+					}
+					return node;
+
+				case ECase(expr, clauses):
+					// Handle case clause patterns
+					var hasRenames = false;
+					var newClauses = [];
+
+					for (i in 0...clauses.length) {
+						var key = '$containerId:CaseClause:$i';
+						var renames = renameIndex.get(key);
+
+						if (renames != null && renames.length > 0) {
+							hasRenames = true;
+							var newPattern = renamePatternWithLocators(clauses[i].pattern, renames, []);
+							newClauses.push({
+								pattern: newPattern,
+								guard: clauses[i].guard,
+								body: clauses[i].body
+							});
+						} else {
+							newClauses.push(clauses[i]);
+						}
+					}
+
+					if (hasRenames) {
+						return make(ECase(expr, newClauses), node.metadata);
+					}
+					return node;
+
+				case EVar(name):
+					// Rename variable references to match renamed bindings
+					if (nameMapping.exists(name)) {
+						var newName = nameMapping.get(name);
+						#if debug_hygiene
+						#end
+						return make(EVar(newName), node.metadata);
+					}
+					return node;
+
+				default:
+					return node;
+			}
+		});
+	}
+
+	/**
+	 * Apply renaming to unused bindings using context's shared mapping
+	 *
+	 * WHY: Use single source of truth for variable renames across all phases
+	 * WHAT: Registers renames in context.tempVarRenameMap, applies from that map
+	 * HOW: Same algorithm as renameUnusedBindings but uses context instead of local map
+	 *
+	 * KEY DIFFERENCE:
+	 * - Original: Creates local nameMapping = new Map()
+	 * - This: Uses context.tempVarRenameMap
+	 * - Result: Builder and transformer phases coordinate on variable names
+	 */
+	static function renameUnusedBindingsWithContext(ast:ElixirAST, allBindings:Array<Binding>, context:reflaxe.elixir.CompilationContext):ElixirAST {
+		// Build index: Map<(containerId, context, slotIndex), Array<{path, oldName, newName}>>
+		var renameIndex = new Map<String, Array<{path:Array<Int>, oldName:String, newName:String}>>();
+
+		// CRITICAL FIX: Initialize from context to preserve builder phase decisions
+		// Previously created empty map (new Map()), losing all upstream rename information
+		// from the builder phase. This caused undefined variable errors when EVar references
+		// tried to use names that the builder had detected as unused and renamed.
+		//
+		// Now follows the cumulative context pattern from mature Reflaxe compilers:
+		// - Builder phase: DETECTS unused variables, sets dual-key mappings (ID + name)
+		// - Transformer phase: APPLIES renames using builder's decisions
+		// - Context: PRESERVES decisions between phases (not lost!)
+		//
+		// The helper extracts ONLY name-based keys from context (filters out numeric IDs)
+		// so EVar reference renaming works correctly.
+		var nameMapping = initializeNameMappingFromContext(context);
+
+		#if debug_hygiene
+		for (key in nameMapping.keys()) {}
+		#end
+
+		for (binding in allBindings) {
+			// CRITICAL FIX: Pattern variables should NEVER be renamed with underscore prefix
+			// Pattern-bound variables (like 'value' in {:ok, value}) are ALWAYS available in the case body
+			// by definition - they're bound by the pattern match, not declared as unused locals.
+			// Renaming them breaks the pattern→body coordination.
+			if (!binding.used && !binding.name.startsWith("_") && binding.kind != PatternVar) {
+				var key = '${binding.containerId}:${binding.context}:${binding.slotIndex}';
+				if (!renameIndex.exists(key)) {
+					renameIndex.set(key, []);
+				}
+				renameIndex.get(key).push({
+					path: binding.path,
+					oldName: binding.name,
+					newName: "_" + binding.name
+				});
+
+				// Register rename in SHARED context mapping (not local)
+				nameMapping.set(binding.name, "_" + binding.name);
+
+				#if debug_hygiene
+				#end
+			}
+		}
+
+		#if debug_hygiene
+		for (oldName in nameMapping.keys()) {}
+		#end
+
+		// Apply renaming using the shared context mapping
+		return ElixirASTTransformer.transformNode(ast, function(node) {
+			if (node.metadata == null)
+				return node;
+
+			var containerId = Reflect.field(node.metadata, "astId");
+			if (containerId == null)
+				return node;
+
+			switch (node.def) {
+				case EDef(name, params, guards, body) | EDefp(name, params, guards, body):
+					// Check if we have renames for this container's parameters
+					var hasRenames = false;
+					var newParams = [];
+
+					for (i in 0...params.length) {
+						var key = '$containerId:DefParam:$i';
+						var renames = renameIndex.get(key);
+
+						if (renames != null && renames.length > 0) {
+							hasRenames = true;
+							newParams.push(renamePatternWithLocators(params[i], renames, []));
+						} else {
+							newParams.push(params[i]);
+						}
+					}
+
+					if (hasRenames) {
+						var newDef = switch (node.def) {
+							case EDef(n, _, g, b): EDef(n, newParams, g, b);
+							case EDefp(n, _, g, b): EDefp(n, newParams, g, b);
+							default: node.def;
+						};
+						return make(newDef, node.metadata);
+					}
+					return node;
+
+				case ECase(expr, clauses):
+					// Handle case clause patterns
+					var hasRenames = false;
+					var newClauses = [];
+
+					for (i in 0...clauses.length) {
+						var key = '$containerId:CaseClause:$i';
+						var renames = renameIndex.get(key);
+
+						if (renames != null && renames.length > 0) {
+							hasRenames = true;
+							var newPattern = renamePatternWithLocators(clauses[i].pattern, renames, []);
+							newClauses.push({
+								pattern: newPattern,
+								guard: clauses[i].guard,
+								body: clauses[i].body
+							});
+						} else {
+							newClauses.push(clauses[i]);
+						}
+					}
+
+					if (hasRenames) {
+						return make(ECase(expr, newClauses), node.metadata);
+					}
+					return node;
+
+				case EVar(name):
+					// Rename variable references to match renamed bindings
+					// Reading from SHARED context mapping ensures consistency
+					if (nameMapping.exists(name)) {
+						var newName = nameMapping.get(name);
+						#if debug_hygiene
+						#end
+						return make(EVar(newName), node.metadata);
+					}
+					return node;
+
+				default:
+					return node;
+			}
+		});
+	}
+
+	/**
+	 * HELPER: isNumericId - Detect AST Node ID Strings
+	 *
+	 * WHY: Need to filter numeric AST node IDs from variable names in context
+	 *
+	 * During compilation, the builder phase registers variables using BOTH:
+	 * - ID-based keys: Std.string(v.id) → "57694" (numeric AST node ID)
+	 * - Name-based keys: v.name → "changeset" (actual variable name)
+	 *
+	 * When extracting name-based keys from context for transformer phase, we must
+	 * filter out the numeric ID strings to avoid treating them as variable names.
+	 *
+	 * WHAT: Detects strings that are purely numeric (AST node IDs)
+	 *
+	 * Returns true for strings like:
+	 * - "57694" (AST node ID) → true
+	 * - "123" (numeric ID) → true
+	 * - "changeset" (variable name) → false
+	 * - "user_id" (variable name) → false
+	 * - "_unused" (prefixed variable) → false
+	 *
+	 * HOW: Regex pattern matches one or more digits
+	 *
+	 * Pattern: ~/^[0-9]+$/
+	 * - ^ : Start of string
+	 * - [0-9]+ : One or more digits (0-9)
+	 * - $ : End of string
+	 *
+	 * This ensures ONLY purely numeric strings match, avoiding false positives
+	 * like "user123" (contains digits but not purely numeric).
+	 *
+	 * @param str String to test for numeric ID pattern
+	 * @return true if string is purely numeric (AST node ID), false otherwise
+	 */
+	static function isNumericId(str:String):Bool {
+		return ~/^[0-9]+$/.match(str);
+	}
+
+	/**
+	 * HELPER: initializeNameMappingFromContext - Extract Name-Based Variable Renames
+	 *
+	 * WHY: Bridge builder phase decisions to transformer phase
+	 *
+	 * ARCHITECTURAL CONTEXT:
+	 * The root cause of the hygiene bug is that line 795 creates a fresh local Map,
+	 * losing ALL builder phase rename decisions. This breaks the cumulative context
+	 * pattern used by mature Reflaxe compilers where:
+	 * - Builder phase: DETECTS unused variables and registers renames
+	 * - Transformer phase: APPLIES renames based on builder decisions
+	 * - Context: SHARED state preserving decisions between phases
+	 *
+	 * The builder phase registers variables using DUAL-KEY storage:
+	 * - ID-based keys: Std.string(v.id) → "57694" (for pattern matching)
+	 * - Name-based keys: v.name → "changeset" (for EVar reference renaming)
+	 *
+	 * This function extracts ONLY the name-based keys from context, enabling the
+	 * transformer to apply renames that the builder phase detected.
+	 *
+	 * WHAT: Extracts name-based variable rename mappings from compilation context
+	 *
+	 * Filters context.tempVarRenameMap to extract only name-based entries:
+	 * - KEEP: "changeset" → "_changeset" (variable name)
+	 * - KEEP: "user" → "_user" (variable name)
+	 * - SKIP: "57694" → "_temp" (numeric AST node ID)
+	 * - SKIP: "_unused" → "_unused" (already prefixed)
+	 *
+	 * Returns a Map ready for use in the transformer phase, containing only the
+	 * variable name → renamed variable mappings that EVar references can use.
+	 *
+	 * HOW: Defensive iteration with filtering logic
+	 *
+	 * Algorithm:
+	 * 1. Create empty mapping Map
+	 * 2. Defensive null check on context.tempVarRenameMap
+	 * 3. Iterate all keys in context map
+	 * 4. For each key-value pair:
+	 *    - Skip if key is numeric ID (isNumericId check)
+	 *    - Skip if key already has underscore prefix
+	 *    - Add to mapping for name-based keys
+	 * 5. Debug trace each loaded rename (XRay pattern)
+	 * 6. Return filtered mapping
+	 *
+	 * PERFORMANCE: O(n) where n = number of entries in context map
+	 * Typical n < 100, so negligible overhead
+	 *
+	 * @param context CompilationContext containing builder phase rename decisions
+	 * @return Map<String, String> with name-based variable renames only
+	 */
+	static function initializeNameMappingFromContext(context:reflaxe.elixir.CompilationContext):Map<String, String> {
+		var mapping = new Map<String, String>();
+
+		// Defensive: context.tempVarRenameMap may be null in early compilation phases
+		if (context.tempVarRenameMap == null) {
+			#if debug_hygiene
+			#end
+			return mapping;
+		}
+
+		#if debug_hygiene
+		#end
+
+		// Extract name-based keys, filtering out numeric IDs and already-prefixed names
+		for (key in context.tempVarRenameMap.keys()) {
+			var value = context.tempVarRenameMap.get(key);
+
+			// Filter 1: Skip numeric AST node IDs (e.g., "57694")
+			if (isNumericId(key)) {
+				#if debug_hygiene
+				#end
+				continue;
+			}
+
+			// Filter 2: Skip already-prefixed names (e.g., "_unused")
+			if (key.startsWith("_")) {
+				#if debug_hygiene
+				#end
+				continue;
+			}
+
+			// This is a name-based key - preserve it for transformer phase
+			mapping.set(key, value);
+
+			#if debug_hygiene
+			#end
+		}
+
+		#if debug_hygiene
+		#end
+
+		return mapping;
+	}
+
+	/**
+	 * Rename variables in a pattern using locators
+	 */
+	static function renamePatternWithLocators(pattern:EPattern, renames:Array<{path:Array<Int>, oldName:String, newName:String}>,
+			currentPath:Array<Int>):EPattern {
+		switch (pattern) {
+			case PVar(name):
+				// Check if current path matches any rename entry
+				for (rename in renames) {
+					if (pathsEqual(currentPath, rename.path) && name == rename.oldName) {
+						#if debug_hygiene
+						#end
+						return PVar(rename.newName);
+					}
+				}
+				return pattern;
+
+			case PTuple(patterns):
+				var newPatterns = [];
+				for (i in 0...patterns.length) {
+					var childPath = currentPath.copy();
+					childPath.push(i);
+					newPatterns.push(renamePatternWithLocators(patterns[i], renames, childPath));
+				}
+				return PTuple(newPatterns);
+
+			case PList(patterns):
+				var newPatterns = [];
+				for (i in 0...patterns.length) {
+					var childPath = currentPath.copy();
+					childPath.push(i);
+					newPatterns.push(renamePatternWithLocators(patterns[i], renames, childPath));
+				}
+				return PList(newPatterns);
+
+			case PMap(pairs):
+				var newPairs = [];
+				for (i in 0...pairs.length) {
+					var childPath = currentPath.copy();
+					childPath.push(i);
+					childPath.push(1); // Value is at index 1
+					newPairs.push({
+						key: pairs[i].key,
+						value: renamePatternWithLocators(pairs[i].value, renames, childPath)
+					});
+				}
+				return PMap(newPairs);
+
+			default:
+				return pattern;
+		}
+	}
+
+	/**
+	 * Check if two paths are equal
+	 */
+	static function pathsEqual(path1:Array<Int>, path2:Array<Int>):Bool {
+		if (path1.length != path2.length)
+			return false;
+		for (i in 0...path1.length) {
+			if (path1[i] != path2[i])
+				return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Check if a pattern is used in the given body and prefix with underscore if not
+	 */
+	static function prefixUnusedPattern(pattern:EPattern, body:ElixirAST):EPattern {
+		switch (pattern) {
+			case PVar(name):
+				// Don't touch already underscored variables
+				if (name.charAt(0) == "_")
+					return pattern;
+
+				#if debug_hygiene
+				#end
+
+				// Check if variable is used in body
+				var isUsed = isVariableUsedInBody(name, body);
+
+				#if debug_hygiene
+				#end
+
+				if (!isUsed) {
+					#if debug_hygiene
+					#end
+					return PVar("_" + name);
+				}
+				return pattern;
+
+			default:
+				return pattern;
+		}
+	}
+
+	/**
+	 * Check if a variable name is referenced in the body
+	 * 
+	 * COMPREHENSIVE TRAVERSAL: Must check ALL node types to find nested variable usage
+	 * Example: `Std.int(t)` - the `t` is nested inside a call argument
+	 * 
+	 * The transformNode function handles recursion, but we must ensure we're
+	 * checking for EVar in all positions where it could appear.
+	 */
+	static function isVariableUsedInBody(varName:String, body:ElixirAST):Bool {
+		var used = false;
+		var nodeCount = 0;
+		var depth = 0;
+
+		// Use transformer to search for variable usage recursively
+		// CRITICAL: transformNode DOES traverse all children automatically
+		// We just need to check for EVar nodes at any depth
+		ElixirASTTransformer.transformNode(body, function(node) {
+			nodeCount++;
+
+			#if debug_hygiene_verbose
+			var indent = [for (i in 0...depth) "  "].join("");
+			#end
+
+			// Check if this node is a variable reference
+			switch (node.def) {
+				case EVar(name):
+					#if debug_hygiene
+					#end
+					if (name == varName) {
+						#if debug_hygiene
+						#end
+						used = true;
+					}
+
+				// Log other node types for debugging but don't need special handling
+				// since transformNode will recurse into them automatically
+				case ECall(target, funcName, args):
+					#if debug_hygiene_verbose
+					#end
+
+				case EBinary(op, left, right):
+					#if debug_hygiene_verbose
+					#end
+
+				case ETuple(elements):
+					#if debug_hygiene_verbose
+					#end
+
+				case EList(elements):
+					#if debug_hygiene_verbose
+					#end
+
+				case EBlock(statements):
+					#if debug_hygiene_verbose
+					depth++;
+					#end
+
+				case EIf(cond, thenBranch, elseBranch):
+					#if debug_hygiene_verbose
+					#end
+
+				case ECase(expr, clauses):
+					#if debug_hygiene_verbose
+					#end
+
+				default:
+					// transformNode handles all other cases automatically
+					#if debug_hygiene_verbose
+					if (nodeCount < 20) { // Limit verbose output
+					}
+					#end
+			}
+
+			// Return node unchanged - we're just searching, not transforming
+			return node;
+		});
+
+		#if debug_hygiene
+		if (!used) {} else {}
+		#end
+
+		return used;
+	}
 }
-
 #end

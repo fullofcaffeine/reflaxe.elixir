@@ -9,8 +9,7 @@ package server.infrastructure;
 @:phoenixWebModule
 @:native("PhoenixHaxeExampleWeb")
 class PhoenixHaxeExampleWeb {
-    public static function static_paths(): Array<String> {
-        return ["assets", "fonts", "images", "favicon.ico", "robots.txt"];
-    }
+	public static function static_paths():Array<String> {
+		return ["assets", "fonts", "images", "favicon.ico", "robots.txt"];
+	}
 }
-

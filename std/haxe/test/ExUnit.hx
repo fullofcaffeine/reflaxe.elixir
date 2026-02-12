@@ -29,7 +29,6 @@ package haxe.test;
  * end
  * ```
  */
-
 /**
  * Base class for ExUnit test cases.
  * 
@@ -44,17 +43,17 @@ class TestCase {}
  * or entire test modules.
  */
 typedef TestOptions = {
-    /** Whether tests can run asynchronously (default: false) */
-    ?async: Bool,
-    
-    /** Test timeout in milliseconds (default: 60000) */
-    ?timeout: Int,
-    
-    /** Test tags for filtering (e.g., "slow", "integration") */
-    ?tags: Array<String>,
-    
-    /** Test description (overrides method name) */
-    ?description: String
+	/** Whether tests can run asynchronously (default: false) */
+	?async:Bool,
+
+	/** Test timeout in milliseconds (default: 60000) */
+	?timeout:Int,
+
+	/** Test tags for filtering (e.g., "slow", "integration") */
+	?tags:Array<String>,
+
+	/** Test description (overrides method name) */
+	?description:String
 }
 
 /**

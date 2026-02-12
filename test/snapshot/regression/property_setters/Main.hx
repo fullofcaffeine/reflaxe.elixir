@@ -10,44 +10,44 @@
  * the value.
  */
 class PropertySetterTest {
-    public var value(default, set): Int;
-    public var name(default, set): String;
-    
-    function set_value(v: Int): Int {
-        // In Elixir, we just return the value
-        // The compiler will handle struct updates
-        return v;
-    }
-    
-    function set_name(n: String): String {
-        // Simple setter that returns the value
-        return n;
-    }
-    
-    public function new() {
-        this.value = 0;
-        this.name = "";
-    }
+	public var value(default, set):Int;
+	public var name(default, set):String;
+
+	function set_value(v:Int):Int {
+		// In Elixir, we just return the value
+		// The compiler will handle struct updates
+		return v;
+	}
+
+	function set_name(n:String):String {
+		// Simple setter that returns the value
+		return n;
+	}
+
+	public function new() {
+		this.value = 0;
+		this.name = "";
+	}
 }
 
 class Main {
-    static function main() {
-        // Test property setters
-        var test = new PropertySetterTest();
-        test.value = 42;
-        test.name = "Test";
-        
-        // Test that values are set correctly
-        if (test.value == 42 && test.name == "Test") {
-            trace("Property setters work correctly");
-        }
-        
-        // Test chained setters
-        test.value = 100;
-        test.name = "Updated";
-        
-        if (test.value == 100 && test.name == "Updated") {
-            trace("Chained property setters work");
-        }
-    }
+	static function main() {
+		// Test property setters
+		var test = new PropertySetterTest();
+		test.value = 42;
+		test.name = "Test";
+
+		// Test that values are set correctly
+		if (test.value == 42 && test.name == "Test") {
+			trace("Property setters work correctly");
+		}
+
+		// Test chained setters
+		test.value = 100;
+		test.name = "Updated";
+
+		if (test.value == 100 && test.name == "Updated") {
+			trace("Chained property setters work");
+		}
+	}
 }

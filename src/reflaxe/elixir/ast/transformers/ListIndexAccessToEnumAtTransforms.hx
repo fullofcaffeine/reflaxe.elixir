@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Type;
 import haxe.macro.TypeTools;
 import reflaxe.elixir.ast.ElixirAST;
@@ -10,34 +9,33 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 
 /**
- * ListIndexAccessToEnumAtTransforms
- *
- * WHAT
- * - Rewrites Haxe-style array index access on values typed as `Array<T>` to `Enum.at/2`.
- *   Example: arr[idx] -> Enum.at(arr, idx)
- *
- * WHY
- * - Elixir's Access protocol does not support indexing lists by number with []
- *   (it raises). Haxe-style array indexing lowers to EAccess; we must emit
- *   Enum.at(list, index) for list values.
- *
- * HOW
- * - Prefer a type-driven rewrite using Haxe type metadata:
- *   - If the target is typed as `Array<...>` and the key is typed `Int`, rewrite to `Enum.at/2`.
- * - Keep a narrow structural fallback for legacy/no-metadata cases:
- *   - entry.metas[0] -> Enum.at(entry.metas, 0)
+	* ListIndexAccessToEnumAtTransforms
+	*
+	* WHAT
+	* - Rewrites Haxe-style array index access on values typed as `Array<T>` to `Enum.at/2`.
+	*   Example: arr[idx] -> Enum.at(arr, idx)
+	*
+	* WHY
+	* - Elixir's Access protocol does not support indexing lists by number with []
+	*   (it raises). Haxe-style array indexing lowers to EAccess; we must emit
+	*   Enum.at(list, index) for list values.
+	*
+	* HOW
+	* - Prefer a type-driven rewrite using Haxe type metadata:
+	*   - If the target is typed as `Array<...>` and the key is typed `Int`, rewrite to `Enum.at/2`.
+	* - Keep a narrow structural fallback for legacy/no-metadata cases:
+	*   - entry.metas[0] -> Enum.at(entry.metas, 0)
 
- *
- * EXAMPLES
- * - Covered by snapshot tests under `test/snapshot/**`.
+	*
+	* EXAMPLES
+	* - Covered by snapshot tests under `test/snapshot/**`.
  */
 class ListIndexAccessToEnumAtTransforms {
-	static function isHaxeArrayType(t: Null<Type>): Bool {
-		if (t == null) return false;
+	static function isHaxeArrayType(t:Null<Type>):Bool {
+		if (t == null)
+			return false;
 		return switch (TypeTools.follow(t)) {
-			case TInst(ref, _):
-				var cls = ref.get();
-				cls.name == "Array" && cls.pack.length == 0;
+			case TInst(ref, _): var cls = ref.get(); cls.name == "Array" && cls.pack.length == 0;
 			case TLazy(f):
 				isHaxeArrayType(f());
 			case TType(td, _):
@@ -47,8 +45,9 @@ class ListIndexAccessToEnumAtTransforms {
 		};
 	}
 
-	static function isIntType(t: Null<Type>): Bool {
-		if (t == null) return false;
+	static function isIntType(t:Null<Type>):Bool {
+		if (t == null)
+			return false;
 		return switch (TypeTools.follow(t)) {
 			case TAbstract(ref, params):
 				var a = ref.get();
@@ -68,8 +67,8 @@ class ListIndexAccessToEnumAtTransforms {
 		};
 	}
 
-	public static function transformPass(ast: ElixirAST): ElixirAST {
-		return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+	public static function transformPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
 				case EAccess(target, key):
 					var targetType = target != null && target.metadata != null ? target.metadata.type : null;
@@ -99,5 +98,4 @@ class ListIndexAccessToEnumAtTransforms {
 		});
 	}
 }
-
 #end

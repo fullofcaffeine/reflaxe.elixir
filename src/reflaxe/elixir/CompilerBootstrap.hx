@@ -1,7 +1,6 @@
 package reflaxe.elixir;
 
 #if macro
-
 import haxe.io.Path;
 import haxe.macro.Compiler;
 import haxe.macro.Context;
@@ -41,76 +40,89 @@ import sys.io.File;
  *   --macro reflaxe.elixir.CompilerInit.Start()
  */
 class CompilerBootstrap {
-	static var bootstrapped: Bool = false;
+	static var bootstrapped:Bool = false;
 
-	static function argsContainDefine(args: Array<String>, defineName: String): Bool {
+	static function argsContainDefine(args:Array<String>, defineName:String):Bool {
 		var i = 0;
 		while (i < args.length) {
 			var arg = args[i];
 			if (arg == "-D" || arg == "--define") {
 				if (i + 1 < args.length) {
 					var defineArg = args[i + 1];
-					if (defineArg == defineName || StringTools.startsWith(defineArg, defineName + "=")) return true;
+					if (defineArg == defineName || StringTools.startsWith(defineArg, defineName + "="))
+						return true;
 				}
 				i += 2;
 				continue;
 			}
 
-			if (StringTools.startsWith(arg, "-D" + defineName)) return true;
+			if (StringTools.startsWith(arg, "-D" + defineName))
+				return true;
 			i += 1;
 		}
 
 		return false;
 	}
 
-	static function hxmlContainsDefine(hxmlPath: String, defineName: String, seen: Map<String, Bool>): Bool {
+	static function hxmlContainsDefine(hxmlPath:String, defineName:String, seen:Map<String, Bool>):Bool {
 		var normalizedPath = Path.normalize(hxmlPath);
-		if (seen.exists(normalizedPath)) return false;
+		if (seen.exists(normalizedPath))
+			return false;
 		seen.set(normalizedPath, true);
 
-		if (!FileSystem.exists(normalizedPath)) return false;
+		if (!FileSystem.exists(normalizedPath))
+			return false;
 
 		var content = File.getContent(normalizedPath);
-		var args: Array<String> = [];
+		var args:Array<String> = [];
 		for (line in content.split("\n")) {
 			var raw = StringTools.trim(line);
-			if (raw.length == 0) continue;
-			if (StringTools.startsWith(raw, "#")) continue;
+			if (raw.length == 0)
+				continue;
+			if (StringTools.startsWith(raw, "#"))
+				continue;
 
 			var commentIndex = raw.indexOf("#");
-			if (commentIndex >= 0) raw = StringTools.trim(raw.substr(0, commentIndex));
-			if (raw.length == 0) continue;
+			if (commentIndex >= 0)
+				raw = StringTools.trim(raw.substr(0, commentIndex));
+			if (raw.length == 0)
+				continue;
 
 			for (token in raw.split(" ")) {
 				var t = StringTools.trim(token);
-				if (t.length > 0) args.push(t);
+				if (t.length > 0)
+					args.push(t);
 			}
 		}
 
-		if (argsContainDefine(args, defineName)) return true;
+		if (argsContainDefine(args, defineName))
+			return true;
 
 		// Handle nested hxml includes (e.g. `@other.hxml`) if present.
 		for (arg in args) {
 			if (StringTools.startsWith(arg, "@")) {
 				var nested = arg.substr(1);
-				if (hxmlContainsDefine(nested, defineName, seen)) return true;
+				if (hxmlContainsDefine(nested, defineName, seen))
+					return true;
 			}
 		}
 
 		return false;
 	}
 
-	static function injectClassPathsFirst(paths: Array<String>): Void {
-		if (paths == null || paths.length == 0) return;
+	static function injectClassPathsFirst(paths:Array<String>):Void {
+		if (paths == null || paths.length == 0)
+			return;
 
 		var config = Compiler.getConfiguration();
 		if (config == null) {
-			for (p in paths) Compiler.addClassPath(p);
+			for (p in paths)
+				Compiler.addClassPath(p);
 			return;
 		}
 
 		var classPathField = "classPath";
-		var existingDynamic: Dynamic = null;
+		var existingDynamic:Dynamic = null;
 		if (Reflect.hasField(config, "classPath")) {
 			existingDynamic = Reflect.field(config, "classPath");
 		} else if (Reflect.hasField(config, "classPaths")) {
@@ -120,7 +132,8 @@ class CompilerBootstrap {
 
 		if (existingDynamic == null || !Std.isOfType(existingDynamic, Array)) {
 			// Fall back to append behavior if we can't introspect/replace the classpath list.
-			for (p in paths) Compiler.addClassPath(p);
+			for (p in paths)
+				Compiler.addClassPath(p);
 			return;
 		}
 
@@ -129,44 +142,52 @@ class CompilerBootstrap {
 		// `Compiler.addClassPath` appends, which is too late to shadow the built-in stdlib paths.
 		// That can cause CI-only drift under WAE where canonical stdlib modules (e.g. `haxe.ds.*`)
 		// are compiled to Elixir and emit warnings.
-		var existing: Array<String> = cast existingDynamic;
+		var existing:Array<String> = cast existingDynamic;
 		var normalized = new Map<String, Bool>();
-		var keep: Array<String> = [];
+		var keep:Array<String> = [];
 
-		for (p in paths) normalized.set(Path.normalize(p), true);
+		for (p in paths)
+			normalized.set(Path.normalize(p), true);
 		for (p in existing) {
-			if (!normalized.exists(Path.normalize(p))) keep.push(p);
+			if (!normalized.exists(Path.normalize(p)))
+				keep.push(p);
 		}
 
 		Reflect.setField(config, classPathField, paths.concat(keep));
 	}
 
-	static function hasDefineInArgs(defineName: String): Bool {
+	static function hasDefineInArgs(defineName:String):Bool {
 		var config = Compiler.getConfiguration();
-		if (config == null) return false;
+		if (config == null)
+			return false;
 
 		var args = config.args;
-		if (argsContainDefine(args, defineName)) return true;
+		if (argsContainDefine(args, defineName))
+			return true;
 
 		// In some invocations (notably `haxe build.hxml`), `config.args` may contain only the
 		// hxml file path at macro time, *before* its `-D ...` lines are expanded into args.
 		// Parse the referenced hxml files directly so bootstrap gating remains deterministic.
 		var seen = new Map<String, Bool>();
 		for (arg in args) {
-			if (StringTools.endsWith(arg, ".hxml") && hxmlContainsDefine(arg, defineName, seen)) return true;
+			if (StringTools.endsWith(arg, ".hxml") && hxmlContainsDefine(arg, defineName, seen))
+				return true;
 			if (StringTools.startsWith(arg, "@")) {
 				var nested = arg.substr(1);
-				if (hxmlContainsDefine(nested, defineName, seen)) return true;
+				if (hxmlContainsDefine(nested, defineName, seen))
+					return true;
 			}
 		}
 
 		return false;
 	}
 
-	static function isElixirBuild(): Bool {
+	static function isElixirBuild():Bool {
 		var targetName = Context.definedValue("target.name");
-		if (targetName == "elixir") return true;
-		if (Context.defined("elixir_output")) return true;
+		if (targetName == "elixir")
+			return true;
+		if (Context.defined("elixir_output"))
+			return true;
 
 		// Haxe 4 Reflaxe targets compile under the `cross` platform. This is available
 		// early (before downstream `-D elixir_output=...` defines may be observed by
@@ -189,7 +210,8 @@ class CompilerBootstrap {
 	}
 
 	public static function Start() {
-		if (bootstrapped) return;
+		if (bootstrapped)
+			return;
 		bootstrapped = true;
 
 		var shouldInjectStd = isElixirBuild();
@@ -197,9 +219,9 @@ class CompilerBootstrap {
 		try {
 			var bootstrapPath = Context.resolvePath("reflaxe/elixir/CompilerBootstrap.hx");
 			var elixirDir = Path.directory(bootstrapPath); // .../src/reflaxe/elixir
-			var reflaxeDir = Path.directory(elixirDir);     // .../src/reflaxe
-			var srcDir = Path.directory(reflaxeDir);        // .../src
-			var libraryRoot = Path.directory(srcDir);       // .../
+			var reflaxeDir = Path.directory(elixirDir); // .../src/reflaxe
+			var srcDir = Path.directory(reflaxeDir); // .../src
+			var libraryRoot = Path.directory(srcDir); // .../
 
 			var vendoredReflaxe = Path.normalize(Path.join([libraryRoot, "vendor", "reflaxe", "src"]));
 
@@ -219,10 +241,9 @@ class CompilerBootstrap {
 			// canonical Haxe stdlib implementations (which can generate Elixir warnings under WAE).
 			var stagedStd = Path.normalize(Path.join([libraryRoot, "std/_std"]));
 			injectClassPathsFirst([stagedStd, standardLibrary, vendoredReflaxe]);
-		} catch (e: haxe.Exception) {
+		} catch (e:haxe.Exception) {
 			// If resolvePath fails in certain contexts, skip silently (non-Elixir targets)
 		}
 	}
 }
-
 #end

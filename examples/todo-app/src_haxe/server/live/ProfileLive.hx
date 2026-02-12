@@ -30,23 +30,24 @@ import server.types.Types.Session;
 import StringTools;
 
 typedef ProfileLiveAssigns = {
-    var signed_in: Bool;
-    var user: Null<server.schemas.User>;
-    var name: String;
-    var email: String;
-    var bio: String;
-    // Tenant/organization metadata (zero-logic HXX)
-    var organization_slug: String;
-    var organization_name: String;
+	var signed_in:Bool;
+	var user:Null<server.schemas.User>;
+	var name:String;
+	var email:String;
+	var bio:String;
+	// Tenant/organization metadata (zero-logic HXX)
+	var organization_slug:String;
+	var organization_name:String;
 }
 
-typedef ProfileLiveRenderAssigns = {> ProfileLiveAssigns,
-    var flash: FlashMap;
-    var flash_info: Null<String>;
-    var flash_error: Null<String>;
-    var avatar_initials: String;
-    var avatar_class: String;
-    var avatar_style: String;
+typedef ProfileLiveRenderAssigns = {
+	> ProfileLiveAssigns,
+	var flash:FlashMap;
+	var flash_info:Null<String>;
+	var flash_error:Null<String>;
+	var avatar_initials:String;
+	var avatar_class:String;
+	var avatar_style:String;
 }
 
 /**
@@ -66,111 +67,112 @@ typedef ProfileLiveRenderAssigns = {> ProfileLiveAssigns,
 @:native("TodoAppWeb.ProfileLive")
 @:liveview
 class ProfileLive {
-    public static function mount(params: MountParams, session: Session, socket: Socket<ProfileLiveAssigns>): MountResult<ProfileLiveAssigns> {
-        var sock: LiveSocket<ProfileLiveAssigns> = socket;
+	public static function mount(params:MountParams, session:Session, socket:Socket<ProfileLiveAssigns>):MountResult<ProfileLiveAssigns> {
+		var sock:LiveSocket<ProfileLiveAssigns> = socket;
 
-        var userId = sessionUserId(session);
-        var user: Null<server.schemas.User> = userId != null ? Repo.get(server.schemas.User, userId) : null;
-        if (userId != null && user == null) {
-            sock = LiveView.putFlash(sock, FlashType.Error, "Your session is invalid. Please sign in again.");
-            sock = LiveView.pushNavigate(sock, {to: "/login"});
-        }
+		var userId = sessionUserId(session);
+		var user:Null<server.schemas.User> = userId != null ? Repo.get(server.schemas.User, userId) : null;
+		if (userId != null && user == null) {
+			sock = LiveView.putFlash(sock, FlashType.Error, "Your session is invalid. Please sign in again.");
+			sock = LiveView.pushNavigate(sock, {to: "/login"});
+		}
 
-        var signedIn = user != null;
-        var orgInfo = signedIn ? OrganizationTools.infoForId(user.organizationId) : OrganizationTools.infoForId(OrganizationTools.DEMO_ORG_ID);
-        sock = sock.merge({
-            signed_in: signedIn,
-            user: user,
-            name: signedIn ? user.name : "",
-            email: signedIn ? user.email : "",
-            bio: signedIn ? (user.bio != null ? user.bio : "") : "",
-            organization_slug: orgInfo.slug,
-            organization_name: orgInfo.name
-        });
-        return Ok(sock);
-    }
+		var signedIn = user != null;
+		var orgInfo = signedIn ? OrganizationTools.infoForId(user.organizationId) : OrganizationTools.infoForId(OrganizationTools.DEMO_ORG_ID);
+		sock = sock.merge({
+			signed_in: signedIn,
+			user: user,
+			name: signedIn ? user.name : "",
+			email: signedIn ? user.email : "",
+			bio: signedIn ? (user.bio != null ? user.bio : "") : "",
+			organization_slug: orgInfo.slug,
+			organization_name: orgInfo.name
+		});
+		return Ok(sock);
+	}
 
-    static function sessionUserId(session: Session): Null<Int> {
-        if (session == null) return null;
-        var sessionTerm: Term = cast session;
-        var primary: Term = ElixirMap.get(sessionTerm, "user_id");
-        var chosen: Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
-        return chosen != null ? cast chosen : null;
-    }
+	static function sessionUserId(session:Session):Null<Int> {
+		if (session == null)
+			return null;
+		var sessionTerm:Term = cast session;
+		var primary:Term = ElixirMap.get(sessionTerm, "user_id");
+		var chosen:Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
+		return chosen != null ? cast chosen : null;
+	}
 
-    /**
-     * Router action handler (placeholder to satisfy route validation).
-     */
-    public static function show(): String {
-        return "show";
-    }
+	/**
+	 * Router action handler (placeholder to satisfy route validation).
+	 */
+	public static function show():String {
+		return "show";
+	}
 
-    public static function handle_event(event: String, params: EventParams, socket: Socket<ProfileLiveAssigns>): HandleEventResult<ProfileLiveAssigns> {
-        var sock: LiveSocket<ProfileLiveAssigns> = socket;
-        return switch (event) {
-            case EventName.SaveProfile:
-                NoReply(saveProfile(params, sock));
-            case "clipboard_copied":
-                var paramsTerm: Term = cast params;
-                var messageTerm: Term = ElixirMap.get(paramsTerm, "message");
-                var message: String = messageTerm != null ? cast messageTerm : "Copied.";
-                NoReply(LiveView.putFlash(sock, FlashType.Info, message));
-            case _:
-                NoReply(sock);
-        };
-    }
+	public static function handle_event(event:String, params:EventParams, socket:Socket<ProfileLiveAssigns>):HandleEventResult<ProfileLiveAssigns> {
+		var sock:LiveSocket<ProfileLiveAssigns> = socket;
+		return switch (event) {
+			case EventName.SaveProfile:
+				NoReply(saveProfile(params, sock));
+			case "clipboard_copied":
+				var paramsTerm:Term = cast params;
+				var messageTerm:Term = ElixirMap.get(paramsTerm, "message");
+				var message:String = messageTerm != null ? cast messageTerm : "Copied.";
+				NoReply(LiveView.putFlash(sock, FlashType.Info, message));
+			case _:
+				NoReply(sock);
+		};
+	}
 
-    static function saveProfile(params: EventParams, socket: LiveSocket<ProfileLiveAssigns>): LiveSocket<ProfileLiveAssigns> {
-        if (!socket.assigns.signed_in || socket.assigns.user == null) {
-            return LiveView.putFlash(socket, FlashType.Error, "You must sign in to update your profile.");
-        }
+	static function saveProfile(params:EventParams, socket:LiveSocket<ProfileLiveAssigns>):LiveSocket<ProfileLiveAssigns> {
+		if (!socket.assigns.signed_in || socket.assigns.user == null) {
+			return LiveView.putFlash(socket, FlashType.Error, "You must sign in to update your profile.");
+		}
 
-        var paramsTerm: Term = cast params;
-        var nameTerm: Term = ElixirMap.get(paramsTerm, "name");
-        var bioTerm: Term = ElixirMap.get(paramsTerm, "bio");
+		var paramsTerm:Term = cast params;
+		var nameTerm:Term = ElixirMap.get(paramsTerm, "name");
+		var bioTerm:Term = ElixirMap.get(paramsTerm, "bio");
 
-        var name = nameTerm != null ? StringTools.trim(cast nameTerm) : "";
-        var bio = bioTerm != null ? StringTools.trim(cast bioTerm) : "";
-        var bioValue: Null<String> = bio != "" ? bio : null;
-        var updateParams: Term = {name: name, bio: bioValue};
+		var name = nameTerm != null ? StringTools.trim(cast nameTerm) : "";
+		var bio = bioTerm != null ? StringTools.trim(cast bioTerm) : "";
+		var bioValue:Null<String> = bio != "" ? bio : null;
+		var updateParams:Term = {name: name, bio: bioValue};
 
-        var user: server.schemas.User = socket.assigns.user;
-        var changeset = server.schemas.User.changeset(user, updateParams);
+		var user:server.schemas.User = socket.assigns.user;
+		var changeset = server.schemas.User.changeset(user, updateParams);
 
-        return switch (Repo.update(changeset)) {
-            case Ok(updated):
-                var updatedSocket = socket.merge({
-                    user: updated,
-                    name: updated.name,
-                    email: updated.email,
-                    bio: updated.bio != null ? updated.bio : ""
-                });
-                TodoPubSub.broadcast(UserActivity, UserProfileUpdated({
-                    user_id: updated.id,
-                    name: updated.name,
-                    email: updated.email,
-                    bio: updated.bio
-                }), updated.organizationId);
-                LiveView.putFlash(updatedSocket, FlashType.Info, "Profile updated.");
-            case Error(_changeset):
-                LiveView.putFlash(socket, FlashType.Error, "Could not update profile. Please try again.");
-        };
-    }
+		return switch (Repo.update(changeset)) {
+			case Ok(updated):
+				var updatedSocket = socket.merge({
+					user: updated,
+					name: updated.name,
+					email: updated.email,
+					bio: updated.bio != null ? updated.bio : ""
+				});
+				TodoPubSub.broadcast(UserActivity, UserProfileUpdated({
+					user_id: updated.id,
+					name: updated.name,
+					email: updated.email,
+					bio: updated.bio
+				}), updated.organizationId);
+				LiveView.putFlash(updatedSocket, FlashType.Info, "Profile updated.");
+			case Error(_changeset):
+				LiveView.putFlash(socket, FlashType.Error, "Could not update profile. Please try again.");
+		};
+	}
 
-    public static function render(assigns: ProfileLiveRenderAssigns): String {
-        var renderAssigns: Assigns<ProfileLiveRenderAssigns> = assigns;
-        renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
-        renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
-        var avatarInitials = AvatarTools.initials(assigns.name, assigns.email);
-        var avatarBgClass = AvatarTools.avatarBgClass(assigns.name, assigns.email);
-        var avatarStyle = AvatarTools.avatarStyle(assigns.name, assigns.email, 96);
-        var avatarClass = "w-20 h-20 rounded-full flex items-center justify-center text-white font-semibold text-2xl shadow-sm " + avatarBgClass;
-        renderAssigns = Component.assign(renderAssigns, "avatar_initials", avatarInitials);
-        renderAssigns = Component.assign(renderAssigns, "avatar_class", avatarClass);
-        renderAssigns = Component.assign(renderAssigns, "avatar_style", avatarStyle);
-        assigns = renderAssigns;
+	public static function render(assigns:ProfileLiveRenderAssigns):String {
+		var renderAssigns:Assigns<ProfileLiveRenderAssigns> = assigns;
+		renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
+		renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
+		var avatarInitials = AvatarTools.initials(assigns.name, assigns.email);
+		var avatarBgClass = AvatarTools.avatarBgClass(assigns.name, assigns.email);
+		var avatarStyle = AvatarTools.avatarStyle(assigns.name, assigns.email, 96);
+		var avatarClass = "w-20 h-20 rounded-full flex items-center justify-center text-white font-semibold text-2xl shadow-sm " + avatarBgClass;
+		renderAssigns = Component.assign(renderAssigns, "avatar_initials", avatarInitials);
+		renderAssigns = Component.assign(renderAssigns, "avatar_class", avatarClass);
+		renderAssigns = Component.assign(renderAssigns, "avatar_style", avatarStyle);
+		assigns = renderAssigns;
 
-        return hxx('
+		return hxx('
             <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-10 max-w-3xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
@@ -290,5 +292,5 @@ class ProfileLive {
                 </div>
             </div>
         ');
-    }
+	}
 }

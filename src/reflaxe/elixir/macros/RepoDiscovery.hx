@@ -1,12 +1,12 @@
 package reflaxe.elixir.macros;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Context;
 import haxe.crypto.Md5;
 import haxe.io.Path;
 import haxe.io.Eof;
 import haxe.Json;
+
 using StringTools;
 
 /**
@@ -41,360 +41,407 @@ using StringTools;
  * - RepoDiscovery forces typing of `myapp.Repo` so the repoTransformPass can emit `MyApp.Repo`.
  */
 class RepoDiscovery {
-    static var discovered: Array<String> = [];
-    static var hasRun: Bool = false;
-    static var afterInitScheduled: Bool = false;
-    static var pendingTypePaths: Array<String> = [];
+	static var discovered:Array<String> = [];
+	static var hasRun:Bool = false;
+	static var afterInitScheduled:Bool = false;
+	static var pendingTypePaths:Array<String> = [];
 
-    static final metaTokens: Array<String> = [
-        "@:repo",
-        "@:presence",
-        "@:endpoint",
-        "@:router",
-        "@:phoenixWeb",
-        "@:phoenixWebModule",
-        "@:component",
-        "@:hxxHtmlTags",
-        "@:phxHookNames",
-        "@:phxEventNames",
-        "@:controller",
-        "@:channel",
-        "@:socket",
-        "@:liveview",
-        "@:application",
-        "@:supervisor",
-        "@:genserver"
-    ];
+	static final metaTokens:Array<String> = [
+		"@:repo",
+		"@:presence",
+		"@:endpoint",
+		"@:router",
+		"@:phoenixWeb",
+		"@:phoenixWebModule",
+		"@:component",
+		"@:hxxHtmlTags",
+		"@:phxHookNames",
+		"@:phxEventNames",
+		"@:controller",
+		"@:channel",
+		"@:socket",
+		"@:liveview",
+		"@:application",
+		"@:supervisor",
+		"@:genserver"
+	];
 
-    public static function run(): Void {
-        if (hasRun) return;
-        hasRun = true;
+	public static function run():Void {
+		if (hasRun)
+			return;
+		hasRun = true;
 
-        var classPaths: Array<String> = [];
-        try classPaths = Context.getClassPath() catch (_) return;
+		var classPaths:Array<String> = [];
+		try
+			classPaths = Context.getClassPath()
+		catch (_)
+			return;
 
-        var scanRoots: Array<String> = [];
-        for (classPath in classPaths) {
-            if (!shouldScanClassPath(classPath)) continue;
-            scanRoots.push(classPath);
-        }
+		var scanRoots:Array<String> = [];
+		for (classPath in classPaths) {
+			if (!shouldScanClassPath(classPath))
+				continue;
+			scanRoots.push(classPath);
+		}
 
-        var fastBoot = Context.defined("fast_boot");
-        if (fastBoot) {
-            var cached = loadCache(scanRoots);
-            if (cached != null) {
-                for (typePath in cached) {
-                    forceType(typePath);
-                }
-                #if (haxe_ver < 5)
-                flushPendingTypes();
-                #end
-                return;
-            }
-        }
+		var fastBoot = Context.defined("fast_boot");
+		if (fastBoot) {
+			var cached = loadCache(scanRoots);
+			if (cached != null) {
+				for (typePath in cached) {
+					forceType(typePath);
+				}
+				#if (haxe_ver < 5)
+				flushPendingTypes();
+				#end
+				return;
+			}
+		}
 
-        for (classPath in scanRoots) {
-            try walkDir(classPath) catch (_) {}
-        }
+		for (classPath in scanRoots) {
+			try
+				walkDir(classPath)
+			catch (_) {}
+		}
 
-        if (fastBoot) {
-            saveCache(scanRoots, discovered);
-        }
+		if (fastBoot) {
+			saveCache(scanRoots, discovered);
+		}
 
-        #if (haxe_ver < 5)
-        flushPendingTypes();
-        #end
-    }
+		#if (haxe_ver < 5)
+		flushPendingTypes();
+		#end
+	}
 
-    public static function getDiscovered(): Array<String> {
-        return discovered;
-    }
+	public static function getDiscovered():Array<String> {
+		return discovered;
+	}
 
-    static function shouldScanClassPath(classPath: String): Bool {
-        if (classPath == null || classPath.length == 0) return false;
+	static function shouldScanClassPath(classPath:String):Bool {
+		if (classPath == null || classPath.length == 0)
+			return false;
 
-        try {
-            if (!sys.FileSystem.isDirectory(classPath)) return false;
-        } catch (_) {
-            return false;
-        }
+		try {
+			if (!sys.FileSystem.isDirectory(classPath))
+				return false;
+		} catch (_) {
+			return false;
+		}
 
-        var normalized = normalizePath(classPath);
-        // Skip common dependency/cache roots
-        if (normalized.indexOf("/node_modules") != -1) return false;
-        if (normalized.indexOf("/haxe_libraries") != -1) return false;
-        if (normalized.indexOf("/.haxelib") != -1) return false;
+		var normalized = normalizePath(classPath);
+		// Skip common dependency/cache roots
+		if (normalized.indexOf("/node_modules") != -1)
+			return false;
+		if (normalized.indexOf("/haxe_libraries") != -1)
+			return false;
+		if (normalized.indexOf("/.haxelib") != -1)
+			return false;
 
-        // Skip this compiler's own source roots (prevents scanning thousands of library files).
-        // This is library-specific (safe), not app-specific.
-        if (looksLikeCompilerSourceRoot(classPath)) return false;
-        if (looksLikeCompilerStdRoot(classPath)) return false;
+		// Skip this compiler's own source roots (prevents scanning thousands of library files).
+		// This is library-specific (safe), not app-specific.
+		if (looksLikeCompilerSourceRoot(classPath))
+			return false;
+		if (looksLikeCompilerStdRoot(classPath))
+			return false;
 
-        return true;
-    }
+		return true;
+	}
 
-    static function normalizePath(path: String): String {
-        if (path == null) return "";
-        return path.split("\\").join("/").toLowerCase();
-    }
+	static function normalizePath(path:String):String {
+		if (path == null)
+			return "";
+		return path.split("\\").join("/").toLowerCase();
+	}
 
-    static function looksLikeCompilerSourceRoot(classPath: String): Bool {
-        return sys.FileSystem.exists(Path.join([classPath, "reflaxe", "elixir", "CompilerInit.hx"]));
-    }
+	static function looksLikeCompilerSourceRoot(classPath:String):Bool {
+		return sys.FileSystem.exists(Path.join([classPath, "reflaxe", "elixir", "CompilerInit.hx"]));
+	}
 
-    static function looksLikeCompilerStdRoot(classPath: String): Bool {
-        return sys.FileSystem.exists(Path.join([classPath, "elixir", "otp", "TypeSafeChildSpec.hx"]));
-    }
+	static function looksLikeCompilerStdRoot(classPath:String):Bool {
+		return sys.FileSystem.exists(Path.join([classPath, "elixir", "otp", "TypeSafeChildSpec.hx"]));
+	}
 
-    static function shouldSkipDirName(name: String): Bool {
-        if (name == null) return true;
-        return name == ".git" || name == "node_modules" || name == "_build" || name == "deps" || name == ".haxelib" || name == "haxe_libraries";
-    }
+	static function shouldSkipDirName(name:String):Bool {
+		if (name == null)
+			return true;
+		return name == ".git" || name == "node_modules" || name == "_build" || name == "deps" || name == ".haxelib" || name == "haxe_libraries";
+	}
 
-    static function walkDir(dir: String): Void {
-        try {
-            for (entry in sys.FileSystem.readDirectory(dir)) {
-                var path = Path.join([dir, entry]);
-                if (sys.FileSystem.isDirectory(path)) {
-                    if (shouldSkipDirName(entry)) continue;
-                    walkDir(path);
-                } else if (StringTools.endsWith(entry, '.hx')) {
-                    processHxFile(path);
-                }
-            }
-        } catch (_) {}
-    }
+	static function walkDir(dir:String):Void {
+		try {
+			for (entry in sys.FileSystem.readDirectory(dir)) {
+				var path = Path.join([dir, entry]);
+				if (sys.FileSystem.isDirectory(path)) {
+					if (shouldSkipDirName(entry))
+						continue;
+					walkDir(path);
+				} else if (StringTools.endsWith(entry, '.hx')) {
+					processHxFile(path);
+				}
+			}
+		} catch (_) {}
+	}
 
-    static function processHxFile(filePath: String): Void {
-        var file: Null<sys.io.FileInput> = null;
-        try {
-            file = sys.io.File.read(filePath, false);
+	static function processHxFile(filePath:String):Void {
+		var file:Null<sys.io.FileInput> = null;
+		try {
+			file = sys.io.File.read(filePath, false);
 
-            var inBlock = false;
-            var hasRelevantMeta = false;
-            var pkg = "";
-            var typeName: Null<String> = null;
-            var classRe = ~/^(?:extern\s+)?class\s+([A-Za-z0-9_]+)/;
-            var enumAbstractRe = ~/^enum\s+abstract\s+([A-Za-z0-9_]+)/;
-            var enumRe = ~/^enum\s+([A-Za-z0-9_]+)/;
-            var abstractRe = ~/^abstract\s+([A-Za-z0-9_]+)/;
+			var inBlock = false;
+			var hasRelevantMeta = false;
+			var pkg = "";
+			var typeName:Null<String> = null;
+			var classRe = ~/^(?:extern\s+)?class\s+([A-Za-z0-9_]+)/;
+			var enumAbstractRe = ~/^enum\s+abstract\s+([A-Za-z0-9_]+)/;
+			var enumRe = ~/^enum\s+([A-Za-z0-9_]+)/;
+			var abstractRe = ~/^abstract\s+([A-Za-z0-9_]+)/;
 
-            while (true) {
-                var line = file.readLine();
-                var t = StringTools.trim(line);
+			while (true) {
+				var line = file.readLine();
+				var t = StringTools.trim(line);
 
-                if (t.length == 0) continue;
+				if (t.length == 0)
+					continue;
 
-                if (inBlock) {
-                    if (t.indexOf("*/") != -1) inBlock = false;
-                    continue;
-                }
-                if (t.startsWith("/*")) {
-                    if (t.indexOf("*/") == -1) inBlock = true;
-                    continue;
-                }
-                if (t.startsWith("//")) continue;
+				if (inBlock) {
+					if (t.indexOf("*/") != -1)
+						inBlock = false;
+					continue;
+				}
+				if (t.startsWith("/*")) {
+					if (t.indexOf("*/") == -1)
+						inBlock = true;
+					continue;
+				}
+				if (t.startsWith("//"))
+					continue;
 
-                if (pkg.length == 0 && t.startsWith("package ")) {
-                    var rest = t.substr("package ".length);
-                    var semi = rest.indexOf(";");
-                    if (semi != -1) rest = rest.substr(0, semi);
-                    pkg = StringTools.trim(rest);
-                }
+				if (pkg.length == 0 && t.startsWith("package ")) {
+					var rest = t.substr("package ".length);
+					var semi = rest.indexOf(";");
+					if (semi != -1)
+						rest = rest.substr(0, semi);
+					pkg = StringTools.trim(rest);
+				}
 
-                if (!hasRelevantMeta && hasRelevantMetadataToken(t)) {
-                    hasRelevantMeta = true;
-                }
+				if (!hasRelevantMeta && hasRelevantMetadataToken(t)) {
+					hasRelevantMeta = true;
+				}
 
-                if (typeName == null) {
-                    if (classRe.match(t)) {
-                        typeName = classRe.matched(1);
-                    } else if (enumAbstractRe.match(t)) {
-                        typeName = enumAbstractRe.matched(1);
-                    } else if (enumRe.match(t)) {
-                        typeName = enumRe.matched(1);
-                    } else if (abstractRe.match(t)) {
-                        typeName = abstractRe.matched(1);
-                    }
-                }
+				if (typeName == null) {
+					if (classRe.match(t)) {
+						typeName = classRe.matched(1);
+					} else if (enumAbstractRe.match(t)) {
+						typeName = enumAbstractRe.matched(1);
+					} else if (enumRe.match(t)) {
+						typeName = enumRe.matched(1);
+					} else if (abstractRe.match(t)) {
+						typeName = abstractRe.matched(1);
+					}
+				}
 
-                if (hasRelevantMeta && typeName != null) break;
-            }
+				if (hasRelevantMeta && typeName != null)
+					break;
+			}
 
-            if (!hasRelevantMeta || typeName == null) return;
+			if (!hasRelevantMeta || typeName == null)
+				return;
 
-            // Haxe modules are named after the file. If a file contains multiple top-level types,
-            // additional types are addressed as Module.Type (e.g., Main.CustomTags).
-            var moduleName = Path.withoutExtension(Path.withoutDirectory(filePath));
-            if (moduleName == null || moduleName.length == 0) moduleName = typeName;
+			// Haxe modules are named after the file. If a file contains multiple top-level types,
+			// additional types are addressed as Module.Type (e.g., Main.CustomTags).
+			var moduleName = Path.withoutExtension(Path.withoutDirectory(filePath));
+			if (moduleName == null || moduleName.length == 0)
+				moduleName = typeName;
 
-            var modBase = (pkg.length > 0) ? (pkg + "." + moduleName) : moduleName;
-            var mod = (typeName != moduleName) ? (modBase + "." + typeName) : modBase;
-            forceType(mod);
-        } catch (e: Eof) {
-            // EOF
-        } catch (_) {}
-        try if (file != null) file.close() catch (_) {}
-    }
+			var modBase = (pkg.length > 0) ? (pkg + "." + moduleName) : moduleName;
+			var mod = (typeName != moduleName) ? (modBase + "." + typeName) : modBase;
+			forceType(mod);
+		} catch (e:Eof) {
+			// EOF
+		} catch (_) {}
+		try
+			if (file != null)
+				file.close()
+		catch (_) {}
+	}
 
-    static function hasRelevantMetadataToken(line: String): Bool {
-        // Migration-only `.exs` build: avoid force-typing non-migration Phoenix modules.
-        // This keeps `priv/repo/migrations/` clean (Ecto loads every `.exs` there).
-        if (Context.defined("ecto_migrations_exs")) {
-            return line.indexOf("@:migration") != -1;
-        }
+	static function hasRelevantMetadataToken(line:String):Bool {
+		// Migration-only `.exs` build: avoid force-typing non-migration Phoenix modules.
+		// This keeps `priv/repo/migrations/` clean (Ecto loads every `.exs` there).
+		if (Context.defined("ecto_migrations_exs")) {
+			return line.indexOf("@:migration") != -1;
+		}
 
-        for (token in metaTokens) {
-            if (containsExactMetaToken(line, token)) return true;
-        }
-        // Phoenix generator convention: Telemetry module is often referenced only via strings.
-        if (line.indexOf("@:native(") != -1 && line.indexOf("Web.Telemetry") != -1) return true;
-        return false;
-    }
+		for (token in metaTokens) {
+			if (containsExactMetaToken(line, token))
+				return true;
+		}
+		// Phoenix generator convention: Telemetry module is often referenced only via strings.
+		if (line.indexOf("@:native(") != -1 && line.indexOf("Web.Telemetry") != -1)
+			return true;
+		return false;
+	}
 
-    static function containsExactMetaToken(line: String, token: String): Bool {
-        if (line == null || token == null) return false;
+	static function containsExactMetaToken(line:String, token:String):Bool {
+		if (line == null || token == null)
+			return false;
 
-        var start = 0;
-        while (true) {
-            var idx = line.indexOf(token, start);
-            if (idx == -1) return false;
+		var start = 0;
+		while (true) {
+			var idx = line.indexOf(token, start);
+			if (idx == -1)
+				return false;
 
-            var after = idx + token.length;
-            if (after >= line.length) return true;
+			var after = idx + token.length;
+			if (after >= line.length)
+				return true;
 
-            var next = line.charCodeAt(after);
-            // Match only when the token ends at an identifier boundary.
-            // This prevents accidental matches like "@:repo" matching "@:repository".
-            if (!isIdentChar(next)) return true;
+			var next = line.charCodeAt(after);
+			// Match only when the token ends at an identifier boundary.
+			// This prevents accidental matches like "@:repo" matching "@:repository".
+			if (!isIdentChar(next))
+				return true;
 
-            start = after;
-        }
-    }
+			start = after;
+		}
+	}
 
-    static inline function isIdentChar(code: Int): Bool {
-        return (code >= "A".code && code <= "Z".code)
-            || (code >= "a".code && code <= "z".code)
-            || (code >= "0".code && code <= "9".code)
-            || code == "_".code;
-    }
+	static inline function isIdentChar(code:Int):Bool {
+		return (code >= "A".code && code <= "Z".code)
+			|| (code >= "a".code && code <= "z".code)
+			|| (code >= "0".code && code <= "9".code)
+			|| code == "_".code;
+	}
 
-    static function forceType(typePath: String): Void {
-        if (typePath == null || typePath.length == 0) return;
-        if (discovered.indexOf(typePath) != -1) return;
-        discovered.push(typePath);
-        #if debug_repo_discovery
-        trace('[RepoDiscovery] discovered ' + typePath);
-        #end
-        #if (haxe_ver >= 5)
-        // Haxe 5 forbids `Context.getType` in initialization macros. We stage the
-        // discovered types and force typing once init macros complete.
-        pendingTypePaths.push(typePath);
+	static function forceType(typePath:String):Void {
+		if (typePath == null || typePath.length == 0)
+			return;
+		if (discovered.indexOf(typePath) != -1)
+			return;
+		discovered.push(typePath);
+		#if debug_repo_discovery
+		trace('[RepoDiscovery] discovered ' + typePath);
+		#end
+		#if (haxe_ver >= 5)
+		// Haxe 5 forbids `Context.getType` in initialization macros. We stage the
+		// discovered types and force typing once init macros complete.
+		pendingTypePaths.push(typePath);
 
-        if (!afterInitScheduled) {
-            afterInitScheduled = true;
-            Context.onAfterInitMacros(function() {
-                for (pendingTypePath in pendingTypePaths) {
-                    try {
-                        Context.getType(pendingTypePath);
-                    } catch (e) {
-                        #if debug_repo_discovery
-                        trace('[RepoDiscovery] failed to type ' + pendingTypePath + ': ' + Std.string(e));
-                        #end
-                    }
-                }
-            });
-        }
-        #else
-        // Defer Context.getType until after the directory scan completes. Calling getType while
-        // scanning can re-enter typing for other discovered modules and cause "Type is not ready"
-        // failures for modules that are already being typed as dependencies.
-        pendingTypePaths.push(typePath);
-        #end
-    }
+		if (!afterInitScheduled) {
+			afterInitScheduled = true;
+			Context.onAfterInitMacros(function() {
+				for (pendingTypePath in pendingTypePaths) {
+					try {
+						Context.getType(pendingTypePath);
+					} catch (e) {
+						#if debug_repo_discovery
+						trace('[RepoDiscovery] failed to type ' + pendingTypePath + ': ' + Std.string(e));
+						#end
+					}
+				}
+			});
+		}
+		#else
+		// Defer Context.getType until after the directory scan completes. Calling getType while
+		// scanning can re-enter typing for other discovered modules and cause "Type is not ready"
+		// failures for modules that are already being typed as dependencies.
+		pendingTypePaths.push(typePath);
+		#end
+	}
 
-    static function flushPendingTypes(): Void {
-        if (pendingTypePaths.length == 0) return;
+	static function flushPendingTypes():Void {
+		if (pendingTypePaths.length == 0)
+			return;
 
-        var queued = pendingTypePaths;
-        pendingTypePaths = [];
+		var queued = pendingTypePaths;
+		pendingTypePaths = [];
 
-        for (typePath in queued) {
-            try {
-                Context.getType(typePath);
-            } catch (e) {
-                #if debug_repo_discovery
-                trace('[RepoDiscovery] failed to type ' + typePath + ': ' + Std.string(e));
-                #end
-            }
-        }
-    }
+		for (typePath in queued) {
+			try {
+				Context.getType(typePath);
+			} catch (e) {
+				#if debug_repo_discovery
+				trace('[RepoDiscovery] failed to type ' + typePath + ': ' + Std.string(e));
+				#end
+			}
+		}
+	}
 
-    static function loadCache(scanRoots: Array<String>): Null<Array<String>> {
-        var cacheFile = cacheFilePath(scanRoots);
-        if (cacheFile == null) return null;
-        try {
-            if (!sys.FileSystem.exists(cacheFile)) return null;
-        } catch (_) {
-            return null;
-        }
+	static function loadCache(scanRoots:Array<String>):Null<Array<String>> {
+		var cacheFile = cacheFilePath(scanRoots);
+		if (cacheFile == null)
+			return null;
+		try {
+			if (!sys.FileSystem.exists(cacheFile))
+				return null;
+		} catch (_) {
+			return null;
+		}
 
-        try {
-            var parsed: Dynamic = Json.parse(sys.io.File.getContent(cacheFile));
-            if (parsed == null || parsed.types == null) return null;
+		try {
+			var parsed:Dynamic = Json.parse(sys.io.File.getContent(cacheFile));
+			if (parsed == null || parsed.types == null)
+				return null;
 
-            var types: Array<String> = [];
-            for (entry in (cast parsed.types : Array<Dynamic>)) {
-                if (entry == null) continue;
-                types.push(Std.string(entry));
-            }
+			var types:Array<String> = [];
+			for (entry in (cast parsed.types : Array<Dynamic>)) {
+				if (entry == null)
+					continue;
+				types.push(Std.string(entry));
+			}
 
-            return types.length > 0 ? types : null;
-        } catch (_) {
-            return null;
-        }
-    }
+			return types.length > 0 ? types : null;
+		} catch (_) {
+			return null;
+		}
+	}
 
-    static function saveCache(scanRoots: Array<String>, types: Array<String>): Void {
-        var cacheFile = cacheFilePath(scanRoots);
-        if (cacheFile == null) return;
+	static function saveCache(scanRoots:Array<String>, types:Array<String>):Void {
+		var cacheFile = cacheFilePath(scanRoots);
+		if (cacheFile == null)
+			return;
 
-        try {
-            var payload = {
-                version: 1,
-                roots: scanRoots,
-                types: types
-            };
-            sys.io.File.saveContent(cacheFile, Json.stringify(payload));
-        } catch (_) {}
-    }
+		try {
+			var payload = {
+				version: 1,
+				roots: scanRoots,
+				types: types
+			};
+			sys.io.File.saveContent(cacheFile, Json.stringify(payload));
+		} catch (_) {}
+	}
 
-    static function cacheFilePath(scanRoots: Array<String>): Null<String> {
-        var cacheDir = cacheDirPath();
-        if (cacheDir == null) return null;
+	static function cacheFilePath(scanRoots:Array<String>):Null<String> {
+		var cacheDir = cacheDirPath();
+		if (cacheDir == null)
+			return null;
 
-        try {
-            if (!sys.FileSystem.exists(cacheDir)) sys.FileSystem.createDirectory(cacheDir);
-        } catch (_) {
-            return null;
-        }
+		try {
+			if (!sys.FileSystem.exists(cacheDir))
+				sys.FileSystem.createDirectory(cacheDir);
+		} catch (_) {
+			return null;
+		}
 
-        var normalizedRoots = scanRoots.map(normalizePath);
-        normalizedRoots.sort(Reflect.compare);
-        var keySource = normalizedRoots.join("|") + "##" + metaTokens.join(",");
-        var hash = Md5.encode(keySource);
-        return Path.join([cacheDir, 'repo_discovery_${hash}.json']);
-    }
+		var normalizedRoots = scanRoots.map(normalizePath);
+		normalizedRoots.sort(Reflect.compare);
+		var keySource = normalizedRoots.join("|") + "##" + metaTokens.join(",");
+		var hash = Md5.encode(keySource);
+		return Path.join([cacheDir, 'repo_discovery_${hash}.json']);
+	}
 
-    static function cacheDirPath(): Null<String> {
-        var tmp = Sys.getEnv("TMPDIR");
-        if (tmp == null || tmp.length == 0) tmp = Sys.getEnv("TEMP");
-        if (tmp == null || tmp.length == 0) tmp = Sys.getEnv("TMP");
-        if (tmp == null || tmp.length == 0) tmp = "/tmp";
+	static function cacheDirPath():Null<String> {
+		var tmp = Sys.getEnv("TMPDIR");
+		if (tmp == null || tmp.length == 0)
+			tmp = Sys.getEnv("TEMP");
+		if (tmp == null || tmp.length == 0)
+			tmp = Sys.getEnv("TMP");
+		if (tmp == null || tmp.length == 0)
+			tmp = "/tmp";
 
-        if (tmp == null || tmp.length == 0) return null;
-        return Path.join([tmp, "reflaxe_elixir_cache"]);
-    }
+		if (tmp == null || tmp.length == 0)
+			return null;
+		return Path.join([tmp, "reflaxe_elixir_cache"]);
+	}
 }
-
 #end

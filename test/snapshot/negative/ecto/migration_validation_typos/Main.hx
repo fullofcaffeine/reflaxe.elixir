@@ -8,25 +8,19 @@ import ecto.Migration.ColumnType;
  */
 @:migration
 class BadMigration extends Migration {
-    public function up(): Void {
-        createTable("users")
-            .addColumn("email", ColumnType.String(), {nullable: false})
-            .addTimestamps()
-            .addIndex(["email"], {unique: true});
+	public function up():Void {
+		createTable("users").addColumn("email", ColumnType.String(), {nullable: false}).addTimestamps().addIndex(["email"], {unique: true});
 
-        createTable("posts")
-            .addColumn("author_id", ColumnType.Integer)
-            // Typo: should be "users"
-            .addForeignKey("author_id", "userz");
-    }
+		createTable("posts").addColumn("author_id", ColumnType.Integer) // Typo: should be "users"
+			.addForeignKey("author_id", "userz");
+	}
 
-    public function down(): Void {
-        dropTable("posts");
-        dropTable("users");
-    }
+	public function down():Void {
+		dropTable("posts");
+		dropTable("users");
+	}
 }
 
 class Main {
-    static function main() {}
+	static function main() {}
 }
-

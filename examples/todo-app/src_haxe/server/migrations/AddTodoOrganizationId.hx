@@ -17,14 +17,11 @@ import ecto.Migration.ColumnType;
  */
 @:migration({timestamp: "20260101004032"})
 class AddTodoOrganizationId extends Migration {
-    public function up(): Void {
-        alterTable("todos")
-            .addColumn("organization_id", ColumnType.Integer, {nullable: false, defaultValue: 0});
-    }
+	public function up():Void {
+		alterTable("todos").addColumn("organization_id", ColumnType.Integer, {nullable: false, defaultValue: 0});
+	}
 
-    public function down(): Void {
-        alterTable("todos")
-            .removeColumn("organization_id");
-    }
+	public function down():Void {
+		alterTable("todos").removeColumn("organization_id");
+	}
 }
-

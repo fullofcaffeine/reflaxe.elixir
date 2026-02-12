@@ -50,7 +50,6 @@ import elixir.types.Term;
  * 
  * See `/docs/02-user-guide/PUBSUB_MACRO_ROADMAP.md` for complete enhancement roadmap.
  */
-
 /**
  * Base interface for application-specific PubSub topics
  * 
@@ -58,10 +57,10 @@ import elixir.types.Term;
  * a topicToString conversion function.
  */
 interface PubSubTopicProvider<T> {
-    /**
-     * Convert topic enum to string for Elixir compatibility
-     */
-    function topicToString(topic: T): String;
+	/**
+	 * Convert topic enum to string for Elixir compatibility
+	 */
+	function topicToString(topic:T):String;
 }
 
 /**
@@ -71,16 +70,16 @@ interface PubSubTopicProvider<T> {
  * parsing functions for incoming messages.
  */
 interface PubSubMessageProvider<M> {
-    /**
-     * Parse incoming message term to typed enum
-     * Returns None for unknown or malformed messages
-     */
-    function parseMessage(msg: Term): Option<M>;
-    
-    /**
-     * Convert typed message to a term for Elixir compatibility
-     */
-    function messageToElixir(message: M): Term;
+	/**
+	 * Parse incoming message term to typed enum
+	 * Returns None for unknown or malformed messages
+	 */
+	function parseMessage(msg:Term):Option<M>;
+
+	/**
+	 * Convert typed message to a term for Elixir compatibility
+	 */
+	function messageToElixir(message:M):Term;
 }
 
 /**
@@ -93,48 +92,44 @@ interface PubSubMessageProvider<M> {
  */
 @:native("Phoenix.SafePubSub")
 class SafePubSub {
+	/**
+	 * Type-safe subscribe to a topic
+	 *
+	 * @param topicString Topic string to subscribe to
+	 * @return Result indicating success or failure
+	 */
+	public static function subscribeTopic(topicString:String):Result<Void, String> {
+		var pubsubMod = getPubSubModule();
+		if (pubsubMod == null) {
+			return Error("SafePubSub could not determine the PubSub server module (no Phoenix Endpoint detected).");
+		}
 
-    /**
-     * Type-safe subscribe to a topic
-     *
-     * @param topicString Topic string to subscribe to
-     * @return Result indicating success or failure
-     */
-    public static function subscribeTopic(topicString: String): Result<Void, String> {
-        var pubsubMod = getPubSubModule();
-        if (pubsubMod == null) {
-            return Error("SafePubSub could not determine the PubSub server module (no Phoenix Endpoint detected).");
-        }
-
-        return untyped __elixir__('
+		return untyped __elixir__('
           case Phoenix.PubSub.subscribe({0}, {1}) do
             :ok -> {:ok, nil}
             {:error, reason} -> {:error, to_string(reason)}
           end
         ', pubsubMod, topicString);
-    }
+	}
 
-    public static inline function subscribeWithConverter<T>(
-        topic: T,
-        topicConverter: T -> String
-    ): Result<Void, String> {
-        return subscribeTopic(topicConverter(topic));
-    }
+	public static inline function subscribeWithConverter<T>(topic:T, topicConverter:T->String):Result<Void, String> {
+		return subscribeTopic(topicConverter(topic));
+	}
 
-    /**
-     * Type-safe broadcast with topic and payload
-     *
-     * @param topicString Topic string to broadcast to
-     * @param payload Message payload
-     * @return Result indicating success or failure
-     */
-    public static function broadcastTopicPayload(topicString: String, payload: Term): Result<Void, String> {
-        var pubsubMod = getPubSubModule();
-        if (pubsubMod == null) {
-            return Error("SafePubSub could not determine the PubSub server module (no Phoenix Endpoint detected).");
-        }
+	/**
+	 * Type-safe broadcast with topic and payload
+	 *
+	 * @param topicString Topic string to broadcast to
+	 * @param payload Message payload
+	 * @return Result indicating success or failure
+	 */
+	public static function broadcastTopicPayload(topicString:String, payload:Term):Result<Void, String> {
+		var pubsubMod = getPubSubModule();
+		if (pubsubMod == null) {
+			return Error("SafePubSub could not determine the PubSub server module (no Phoenix Endpoint detected).");
+		}
 
-        return untyped __elixir__('
+		return untyped __elixir__('
           normalized = if is_map({2}) do
             Enum.reduce(Map.keys({2}), {2}, fn k, acc ->
               cond do
@@ -152,26 +147,18 @@ class SafePubSub {
             {:error, reason} -> {:error, to_string(reason)}
           end
         ', pubsubMod, topicString, payload);
-    }
+	}
 
-    public static inline function broadcastWithConverters<T, M>(
-        topic: T,
-        message: M,
-        topicConverter: T -> String,
-        messageConverter: M -> Term
-    ): Result<Void, String> {
-        return broadcastTopicPayload(topicConverter(topic), messageConverter(message));
-    }
+	public static inline function broadcastWithConverters<T, M>(topic:T, message:M, topicConverter:T->String, messageConverter:M->Term):Result<Void, String> {
+		return broadcastTopicPayload(topicConverter(topic), messageConverter(message));
+	}
 
-    /**
-     * Parse incoming PubSub message with application-specific parser
-     */
-    @:native("parse_with_converter")
-    public static function parseWithConverter<M>(
-        msg: Term,
-        messageParser: Term -> Option<M>
-    ): Option<M> {
-        return untyped __elixir__('
+	/**
+	 * Parse incoming PubSub message with application-specific parser
+	 */
+	@:native("parse_with_converter")
+	public static function parseWithConverter<M>(msg:Term, messageParser:Term->Option<M>):Option<M> {
+		return untyped __elixir__('
           res = cond do
             is_function({1}, 1) -> {1}.({0})
             is_atom({1}) ->
@@ -197,34 +184,34 @@ class SafePubSub {
             other -> other
           end
         ', msg, messageParser);
-    }
+	}
 
-    /**
-     * Add timestamp to message payload
-     */
-    public static inline function addTimestamp(payload: Term): Term {
-        return untyped __elixir__('Map.put({0} || %{}, :timestamp, System.system_time(:millisecond))', payload);
-    }
+	/**
+	 * Add timestamp to message payload
+	 */
+	public static inline function addTimestamp(payload:Term):Term {
+		return untyped __elixir__('Map.put({0} || %{}, :timestamp, System.system_time(:millisecond))', payload);
+	}
 
-    /**
-     * Validate message structure
-     */
-    public static inline function isValidMessage(msg: Term): Bool {
-        return untyped __elixir__('is_map({0}) and Map.has_key?({0}, :type) and not is_nil(Map.get({0}, :type))', msg);
-    }
+	/**
+	 * Validate message structure
+	 */
+	public static inline function isValidMessage(msg:Term):Bool {
+		return untyped __elixir__('is_map({0}) and Map.has_key?({0}, :type) and not is_nil(Map.get({0}, :type))', msg);
+	}
 
-    /**
-     * Create error message for unknown message types
-     */
-    public static inline function createUnknownMessageError(messageType: String): String {
-        return 'Unknown PubSub message type: "$messageType". Check your message enum definitions.';
-    }
+	/**
+	 * Create error message for unknown message types
+	 */
+	public static inline function createUnknownMessageError(messageType:String):String {
+		return 'Unknown PubSub message type: "$messageType". Check your message enum definitions.';
+	}
 
-    /**
-     * Create error message for malformed messages
-     */
-    public static inline function createMalformedMessageError(msg: Term): String {
-        return untyped __elixir__('
+	/**
+	 * Create error message for malformed messages
+	 */
+	public static inline function createMalformedMessageError(msg:Term):String {
+		return untyped __elixir__('
           msg_str = try do
             Jason.encode!({0})
           rescue
@@ -232,15 +219,15 @@ class SafePubSub {
           end
           ~s(Malformed PubSub message: #{msg_str}. Expected message with "type" field.)
         ', msg);
-    }
+	}
 
-    /**
-     * Get PubSub module dynamically from endpoint configuration.
-     * Returns `null` when no Phoenix Endpoint can be discovered.
-     */
-    @:native("get_pub_sub_module")
-    public static function getPubSubModule(): Term {
-        return untyped __elixir__('
+	/**
+	 * Get PubSub module dynamically from endpoint configuration.
+	 * Returns `null` when no Phoenix Endpoint can be discovered.
+	 */
+	@:native("get_pub_sub_module")
+	public static function getPubSubModule():Term {
+		return untyped __elixir__('
           key = {__MODULE__, :cached_pubsub_module}
           case :persistent_term.get(key, :undefined) do
             :undefined ->
@@ -280,5 +267,5 @@ class SafePubSub {
               cached
           end
         ');
-    }
+	}
 }

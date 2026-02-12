@@ -1,4 +1,5 @@
 package server.schemas;
+
 import elixir.DateTime.NaiveDateTime;
 import ecto.Changeset;
 import elixir.types.Term;
@@ -13,14 +14,14 @@ import elixir.types.Term;
  * The annotation generates proper cast/3 and validate_required/2 calls.
  */
 typedef TodoParams = {
-    ?title: String,
-    ?description: String,
-    ?completed: Bool,
-    ?priority: String,
-    ?dueDate: NaiveDateTime,
-    ?tags: Array<String>,
-    ?userId: Int,
-    ?organizationId: Int
+	?title:String,
+	?description:String,
+	?completed:Bool,
+	?priority:String,
+	?dueDate:NaiveDateTime,
+	?tags:Array<String>,
+	?userId:Int,
+	?organizationId:Int
 }
 
 /**
@@ -39,71 +40,80 @@ typedef TodoParams = {
  *   (tags can be a list or a comma-separated string, etc.).
  */
 typedef TodoChangesetParams = {
-    ?title: String,
-    ?description: String,
-    ?completed: Bool,
-    ?priority: String,
-    // Can be provided as a NaiveDateTime (typed) or as a raw form string (snake key).
-    ?dueDate: Null<NaiveDateTime>,
-    ?due_date: String,
-    // Can be provided as Array<String> or a comma-separated string.
-    ?tags: Term,
-    ?userId: Int,
-    ?user_id: Int,
-    ?organizationId: Int,
-    ?organization_id: Int
+	?title:String,
+	?description:String,
+	?completed:Bool,
+	?priority:String,
+	// Can be provided as a NaiveDateTime (typed) or as a raw form string (snake key).
+	?dueDate:Null<NaiveDateTime>,
+	?due_date:String,
+	// Can be provided as Array<String> or a comma-separated string.
+	?tags:Term,
+	?userId:Int,
+	?user_id:Int,
+	?organizationId:Int,
+	?organization_id:Int
 }
 
 @:native("TodoApp.Todo")
 @:schema("todos")
 @:timestamps
-@:changeset(["title", "description", "completed", "priority", "dueDate", "tags", "userId", "organizationId"], ["title"])
+@:changeset([
+	"title",
+	"description",
+	"completed",
+	"priority",
+	"dueDate",
+	"tags",
+	"userId",
+	"organizationId"
+], ["title"])
 class Todo {
-    @:field @:primary_key public var id: Int;
-    @:field public var title: String;
-    @:field public var description: String;
-    @:field public var completed: Bool = false;
-    @:field public var priority: String = "medium";
-    @:field public var dueDate: Null<NaiveDateTime>;
-    @:field public var tags: Null<Array<String>>;
-    @:field public var userId: Int;
-    @:field public var organizationId: Int;
+	@:field @:primary_key public var id:Int;
+	@:field public var title:String;
+	@:field public var description:String;
+	@:field public var completed:Bool = false;
+	@:field public var priority:String = "medium";
+	@:field public var dueDate:Null<NaiveDateTime>;
+	@:field public var tags:Null<Array<String>>;
+	@:field public var userId:Int;
+	@:field public var organizationId:Int;
 
-    public function new() {
-        this.completed = false;
-        this.priority = "medium";
-    }
+	public function new() {
+		this.completed = false;
+		this.priority = "medium";
+	}
 
-    /**
-     * Toggle the completed status of a todo.
-     * Returns a changeset with the toggled completed value.
-     */
-    public static function toggleCompleted(todo: Todo): Changeset<Todo, {completed: Bool}> {
-        var newCompleted = !todo.completed;
-        return ecto.Changeset.change(todo, {completed: newCompleted});
-    }
+	/**
+	 * Toggle the completed status of a todo.
+	 * Returns a changeset with the toggled completed value.
+	 */
+	public static function toggleCompleted(todo:Todo):Changeset<Todo, {completed:Bool}> {
+		var newCompleted = !todo.completed;
+		return ecto.Changeset.change(todo, {completed: newCompleted});
+	}
 
-    /**
-     * Update the priority of a todo.
-     * Returns a changeset with the new priority.
-     */
-    public static function updatePriority(todo: Todo, priority: String): Changeset<Todo, {priority: String}> {
-        return ecto.Changeset.change(todo, {priority: priority});
-    }
+	/**
+	 * Update the priority of a todo.
+	 * Returns a changeset with the new priority.
+	 */
+	public static function updatePriority(todo:Todo, priority:String):Changeset<Todo, {priority:String}> {
+		return ecto.Changeset.change(todo, {priority: priority});
+	}
 
-    /**
-     * Create a new todo with default values
-     */
-    public static function createNew(title: String, ?userId: Int): TodoParams {
-        return {
-            title: title,
-            description: "",
-            completed: false,
-            priority: "medium",
-            dueDate: null,
-            tags: [],
-            userId: userId,
-            organizationId: null
-        };
-    }
+	/**
+	 * Create a new todo with default values
+	 */
+	public static function createNew(title:String, ?userId:Int):TodoParams {
+		return {
+			title: title,
+			description: "",
+			completed: false,
+			priority: "medium",
+			dueDate: null,
+			tags: [],
+			userId: userId,
+			organizationId: null
+		};
+	}
 }

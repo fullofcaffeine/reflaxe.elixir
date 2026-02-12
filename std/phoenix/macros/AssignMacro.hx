@@ -4,6 +4,7 @@ package phoenix.macros;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
+
 using haxe.macro.Tools;
 using StringTools;
 #end
@@ -33,7 +34,6 @@ using StringTools;
 @:nullSafety(Off)
 class AssignMacro {
 	#if macro
-	
 	/**
 	 * Process a single assign operation.
 	 * 
@@ -45,25 +45,25 @@ class AssignMacro {
 	 * @param value The value to assign
 	 * @return Updated LiveSocket expression
 	 */
-	public static function processAssign(socketExpr: Expr, fieldExpr: Expr, value: Expr): Expr {
+	public static function processAssign(socketExpr:Expr, fieldExpr:Expr, value:Expr):Expr {
 		var fieldName = extractFieldName(fieldExpr);
 		if (fieldName == null) {
 			Context.error("Expected field access expression like _.fieldName", fieldExpr.pos);
 		}
-		
+
 		// Validate field exists in assigns type
 		var assignsType = extractAssignsType(socketExpr);
 		validateFieldExists(assignsType, fieldName, fieldExpr.pos);
-		
+
 		// Convert camelCase to snake_case
 		var snakeCaseName = camelToSnake(fieldName);
-		
-        // Generate Phoenix.Component.assign call with an atom key.
-        // We model the atom via `elixir.types.Atom` so this stays AST-based (no ERaw).
-        var atomKeyExpr: Expr = macro (($v{snakeCaseName} : elixir.types.Atom));
-        return macro phoenix.Component.assign($socketExpr, $e{atomKeyExpr}, $value);
+
+		// Generate Phoenix.Component.assign call with an atom key.
+		// We model the atom via `elixir.types.Atom` so this stays AST-based (no ERaw).
+		var atomKeyExpr:Expr = macro(($v{snakeCaseName} : elixir.types.Atom));
+		return macro phoenix.Component.assign($socketExpr, $e{atomKeyExpr}, $value);
 	}
-	
+
 	/**
 	 * Process a batch merge operation.
 	 * 
@@ -74,7 +74,7 @@ class AssignMacro {
 	 * @param updates Object with fields to update
 	 * @return Updated LiveSocket expression
 	 */
-	public static function processMerge(socketExpr: Expr, updates: Expr): Expr {
+	public static function processMerge(socketExpr:Expr, updates:Expr):Expr {
 		switch (updates.expr) {
 			case EObjectDecl(fields):
 				var assignsType = extractAssignsType(socketExpr);
@@ -92,18 +92,18 @@ class AssignMacro {
 					});
 				}
 
-					// Build an object literal with snake_case field names; the compiler emits
-					// `%{...}` with atom keys in Elixir. This keeps references visible in the AST
-					// so later hygiene passes cannot accidentally drop required binders.
-					var mapExpr: Expr = { expr: EObjectDecl(transformedFields), pos: updates.pos };
-					return macro phoenix.Component.assign($socketExpr, $e{mapExpr});
+				// Build an object literal with snake_case field names; the compiler emits
+				// `%{...}` with atom keys in Elixir. This keeps references visible in the AST
+				// so later hygiene passes cannot accidentally drop required binders.
+				var mapExpr:Expr = {expr: EObjectDecl(transformedFields), pos: updates.pos};
+				return macro phoenix.Component.assign($socketExpr, $e{mapExpr});
 
-				case _:
-					Context.error("Expected object literal with fields to merge", updates.pos);
-					return null;
-			}
+			case _:
+				Context.error("Expected object literal with fields to merge", updates.pos);
+				return null;
+		}
 	}
-	
+
 	/**
 	 * Process an assign_new operation.
 	 * 
@@ -115,7 +115,7 @@ class AssignMacro {
 	 * @param defaultFn Function that returns the default value
 	 * @return Updated LiveSocket expression
 	 */
-	public static function processAssignNew(socketExpr: Expr, fieldExpr: Expr, defaultFn: Expr): Expr {
+	public static function processAssignNew(socketExpr:Expr, fieldExpr:Expr, defaultFn:Expr):Expr {
 		var fieldName = extractFieldName(fieldExpr);
 		if (fieldName == null) {
 			Context.error("Expected field access expression like _.fieldName", fieldExpr.pos);
@@ -129,10 +129,10 @@ class AssignMacro {
 		var snakeCaseName = camelToSnake(fieldName);
 
 		// Generate Phoenix.Component.assign_new/3 call with an atom key.
-		var atomKeyExpr: Expr = macro (($v{snakeCaseName} : elixir.types.Atom));
+		var atomKeyExpr:Expr = macro(($v{snakeCaseName} : elixir.types.Atom));
 		return macro phoenix.Component.assignNew($socketExpr, $e{atomKeyExpr}, $defaultFn);
 	}
-	
+
 	/**
 	 * Process an update operation.
 	 * 
@@ -144,7 +144,7 @@ class AssignMacro {
 	 * @param updater Function that transforms the current value
 	 * @return Updated LiveSocket expression
 	 */
-	public static function processUpdate(socketExpr: Expr, fieldExpr: Expr, updater: Expr): Expr {
+	public static function processUpdate(socketExpr:Expr, fieldExpr:Expr, updater:Expr):Expr {
 		var fieldName = extractFieldName(fieldExpr);
 		if (fieldName == null) {
 			Context.error("Expected field access expression like _.fieldName", fieldExpr.pos);
@@ -158,16 +158,16 @@ class AssignMacro {
 		var snakeCaseName = camelToSnake(fieldName);
 
 		// Generate Phoenix.Component.update/3 call with an atom key.
-		var atomKeyExpr: Expr = macro (($v{snakeCaseName} : elixir.types.Atom));
+		var atomKeyExpr:Expr = macro(($v{snakeCaseName} : elixir.types.Atom));
 		return macro phoenix.Component.update($socketExpr, $e{atomKeyExpr}, $updater);
 	}
-	
+
 	/**
 	 * Extract field name from underscore expression.
 	 * 
 	 * Handles: _.fieldName, _["fieldName"], etc.
 	 */
-	private static function extractFieldName(expr: Expr): Null<String> {
+	private static function extractFieldName(expr:Expr):Null<String> {
 		switch (expr.expr) {
 			case EField({expr: EConst(CIdent("_"))}, field):
 				return field;
@@ -177,13 +177,13 @@ class AssignMacro {
 				return null;
 		}
 	}
-	
+
 	/**
 	 * Extract the assigns type T from LiveSocket<T>.
 	 */
-	private static function extractAssignsType(socketExpr: Expr): Type {
+	private static function extractAssignsType(socketExpr:Expr):Type {
 		var socketType = Context.typeof(socketExpr);
-		
+
 		// Unwrap the LiveSocket abstract to get the type parameter
 		switch (socketType) {
 			case TAbstract(ref, params) if (ref.get().name == "LiveSocket" && params.length > 0):
@@ -195,34 +195,34 @@ class AssignMacro {
 				return null;
 		}
 	}
-	
+
 	/**
 	 * Validate that a field exists in the assigns type.
 	 */
-	private static function validateFieldExists(assignsType: Type, fieldName: String, pos: Position): Void {
+	private static function validateFieldExists(assignsType:Type, fieldName:String, pos:Position):Void {
 		var fields = getTypeFields(assignsType);
-		
+
 		if (!fields.exists(fieldName)) {
 			var availableFields = [for (name in fields.keys()) name];
 			availableFields.sort((a, b) -> Reflect.compare(a, b));
-			
+
 			var message = 'Field "$fieldName" does not exist in assigns type.\n';
 			if (availableFields.length > 0) {
 				message += 'Available fields: ${availableFields.join(", ")}';
 			} else {
 				message += 'The assigns type has no fields.';
 			}
-			
+
 			Context.error(message, pos);
 		}
 	}
-	
+
 	/**
 	 * Get all fields from a type.
 	 */
-	private static function getTypeFields(type: Type): Map<String, Bool> {
+	private static function getTypeFields(type:Type):Map<String, Bool> {
 		var fields = new Map<String, Bool>();
-		
+
 		switch (type.follow()) {
 			case TAnonymous(ref):
 				for (field in ref.get().fields) {
@@ -239,10 +239,10 @@ class AssignMacro {
 			case _:
 				// For other types, we might not be able to extract fields
 		}
-		
+
 		return fields;
 	}
-	
+
 	/**
 	 * Convert camelCase to snake_case.
 	 * 
@@ -251,26 +251,26 @@ class AssignMacro {
 	 * - showForm → show_form
 	 * - currentUserID → current_user_id
 	 */
-	private static function camelToSnake(name: String): String {
-		if (name.length == 0) return name;
-		
+	private static function camelToSnake(name:String):String {
+		if (name.length == 0)
+			return name;
+
 		var result = new StringBuf();
 		var prevWasUpper = false;
-		
+
 		for (i in 0...name.length) {
 			var char = name.charAt(i);
 			var isUpper = char == char.toUpperCase() && char != char.toLowerCase();
-			
+
 			if (i > 0 && isUpper && !prevWasUpper) {
 				result.add("_");
 			}
-			
+
 			result.add(char.toLowerCase());
 			prevWasUpper = isUpper;
 		}
-		
+
 		return result.toString();
 	}
-	
 	#end
 }

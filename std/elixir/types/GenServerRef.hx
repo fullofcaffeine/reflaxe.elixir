@@ -48,55 +48,55 @@ import elixir.types.Term;
  * - **IntelliSense support**: Full autocomplete for server operations
  */
 abstract GenServerRef(Term) from Term to Term {
-    /**
-     * Create a new GenServerRef from a dynamic value
-     * Usually not called directly - use implicit conversions
-     */
-    public inline function new(ref: Term) {
-        this = ref;
-    }
-    
-    /**
-     * Convert from a PID to GenServerRef
-     * Enables: `var ref: GenServerRef = pid;`
-     */
-    @:from
-    public static inline function fromPid(pid: Pid): GenServerRef {
-        return new GenServerRef(pid);
-    }
-    
-    /**
-     * Convert from a registered name (atom)
-     * Enables: `var ref: GenServerRef = "my_server";` (string literal inferred as Atom)
-     */
-    @:from
-    public static inline function fromName(name: Atom): GenServerRef {
-        return new GenServerRef(name);
-    }
-    
-    /**
-     * Convert from a via tuple for custom registries
-     * Example: `{:via, Registry, {MyRegistry, "key"}}`
-     */
-    @:from
-    public static inline function fromVia(via: {via: String, module: Term, name: Term}): GenServerRef {
-        return new GenServerRef(via);
-    }
-    
-    /**
-     * Create a global reference for cross-node communication
-     * @param name The globally registered name
-     */
-    public static inline function global(name: Atom): GenServerRef {
-        return new GenServerRef(untyped __elixir__('{:global, $name}'));
-    }
-    
-    /**
-     * Check if this server is alive
-     * Works for both local PIDs and registered names
-     */
-    public inline function isAlive(): Bool {
-        return untyped __elixir__('
+	/**
+	 * Create a new GenServerRef from a dynamic value
+	 * Usually not called directly - use implicit conversions
+	 */
+	public inline function new(ref:Term) {
+		this = ref;
+	}
+
+	/**
+	 * Convert from a PID to GenServerRef
+	 * Enables: `var ref: GenServerRef = pid;`
+	 */
+	@:from
+	public static inline function fromPid(pid:Pid):GenServerRef {
+		return new GenServerRef(pid);
+	}
+
+	/**
+	 * Convert from a registered name (atom)
+	 * Enables: `var ref: GenServerRef = "my_server";` (string literal inferred as Atom)
+	 */
+	@:from
+	public static inline function fromName(name:Atom):GenServerRef {
+		return new GenServerRef(name);
+	}
+
+	/**
+	 * Convert from a via tuple for custom registries
+	 * Example: `{:via, Registry, {MyRegistry, "key"}}`
+	 */
+	@:from
+	public static inline function fromVia(via:{via:String, module:Term, name:Term}):GenServerRef {
+		return new GenServerRef(via);
+	}
+
+	/**
+	 * Create a global reference for cross-node communication
+	 * @param name The globally registered name
+	 */
+	public static inline function global(name:Atom):GenServerRef {
+		return new GenServerRef(untyped __elixir__('{:global, $name}'));
+	}
+
+	/**
+	 * Check if this server is alive
+	 * Works for both local PIDs and registered names
+	 */
+	public inline function isAlive():Bool {
+		return untyped __elixir__('
             case $this do
                 pid when is_pid(pid) -> Process.alive?(pid)
                 name when is_atom(name) -> 
@@ -117,14 +117,14 @@ abstract GenServerRef(Term) from Term to Term {
                 _ -> false
             end
         ');
-    }
-    
-    /**
-     * Get the PID of this server reference
-     * Returns null if the server doesn't exist
-     */
-    public inline function whereis(): Null<Pid> {
-        return untyped __elixir__('
+	}
+
+	/**
+	 * Get the PID of this server reference
+	 * Returns null if the server doesn't exist
+	 */
+	public inline function whereis():Null<Pid> {
+		return untyped __elixir__('
             case $this do
                 pid when is_pid(pid) -> pid
                 name when is_atom(name) -> Process.whereis(name)
@@ -133,13 +133,13 @@ abstract GenServerRef(Term) from Term to Term {
                 _ -> nil
             end
         ');
-    }
-    
-    /**
-     * Convert to string representation for debugging
-     */
-    @:to
-    public inline function toString(): String {
-        return Kernel.inspect(this);
-    }
+	}
+
+	/**
+	 * Convert to string representation for debugging
+	 */
+	@:to
+	public inline function toString():String {
+		return Kernel.inspect(this);
+	}
 }

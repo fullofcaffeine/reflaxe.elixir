@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -28,35 +27,34 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   Phoenix.SafePubSub.broadcast(topic, msg)
  */
 class SafePubSubAliasFixTransforms {
-    public static function fixPass(ast: ElixirAST): ElixirAST {
-            return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-                return switch (n.def) {
-                case EVar(v) if (v == "SafePubSub"):
-                    makeASTWithMeta(EVar("Phoenix.SafePubSub"), n.metadata, n.pos);
-                case ERemoteCall(mod, func, args):
-                    switch (mod.def) {
-                        case EVar(m) if (m == "SafePubSub"):
-                            makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.SafePubSub")), func, args), n.metadata, n.pos);
-                        default:
-                            n;
-                    }
-                case ECall(tgt, func, args):
-                    if (tgt != null) switch (tgt.def) {
-                        case EVar(m) if (m == "SafePubSub"):
-                            makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.SafePubSub")), func, args), n.metadata, n.pos);
-                        default:
-                            n;
-                    } else n;
-                case ERaw(code):
-                    if (code != null && code.indexOf("SafePubSub.") != -1) {
-                        var out = code.split("SafePubSub.").join("Phoenix.SafePubSub.");
-                        makeASTWithMeta(ERaw(out), n.metadata, n.pos);
-                    } else n;
-                default:
-                    n;
-            }
-        });
-    }
+	public static function fixPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EVar(v) if (v == "SafePubSub"):
+					makeASTWithMeta(EVar("Phoenix.SafePubSub"), n.metadata, n.pos);
+				case ERemoteCall(mod, func, args):
+					switch (mod.def) {
+						case EVar(m) if (m == "SafePubSub"):
+							makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.SafePubSub")), func, args), n.metadata, n.pos);
+						default:
+							n;
+					}
+				case ECall(tgt, func, args):
+					if (tgt != null) switch (tgt.def) {
+						case EVar(m) if (m == "SafePubSub"):
+							makeASTWithMeta(ERemoteCall(makeAST(EVar("Phoenix.SafePubSub")), func, args), n.metadata, n.pos);
+						default:
+							n;
+					} else n;
+				case ERaw(code):
+					if (code != null && code.indexOf("SafePubSub.") != -1) {
+						var out = code.split("SafePubSub.").join("Phoenix.SafePubSub.");
+						makeASTWithMeta(ERaw(out), n.metadata, n.pos);
+					} else n;
+				default:
+					n;
+			}
+		});
+	}
 }
-
 #end

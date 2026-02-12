@@ -8,7 +8,7 @@ import elixir.types.Term;
 @:native("PhoenixHaxeExampleWeb.ErrorJSON")
 @:keep
 class ErrorJSON {
-    public static function render(template: String, _assigns: Term): Term {
-        return {errors: {detail: ErrorHTML.render(template, _assigns)}};
-    }
+	public static function render(template:String, _assigns:Term):Term {
+		return {errors: {detail: ErrorHTML.render(template, _assigns)}};
+	}
 }

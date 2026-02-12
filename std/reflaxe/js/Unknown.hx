@@ -16,18 +16,17 @@ package reflaxe.js;
  * - Safe helpers allow narrowing when appropriate.
  */
 abstract Unknown(Dynamic) from Dynamic to Dynamic {
-    /**
-     * Best-effort conversion for debugging/logging.
-     */
-    public inline function toDebugString(): String {
-        return Std.string(this);
-    }
+	/**
+	 * Best-effort conversion for debugging/logging.
+	 */
+	public inline function toDebugString():String {
+		return Std.string(this);
+	}
 
-    /**
-     * Narrow to `js.lib.Error` when the value is an Error; otherwise `null`.
-     */
-    public inline function asError(): Null<js.lib.Error> {
-        return Std.isOfType(this, js.lib.Error) ? cast this : null;
-    }
+	/**
+	 * Narrow to `js.lib.Error` when the value is an Error; otherwise `null`.
+	 */
+	public inline function asError():Null<js.lib.Error> {
+		return Std.isOfType(this, js.lib.Error) ? cast this : null;
+	}
 }
-

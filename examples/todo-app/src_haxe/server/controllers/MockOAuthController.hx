@@ -31,86 +31,70 @@ import server.services.MockOAuth;
 @:native("TodoAppWeb.MockOAuthController")
 @:controller
 class MockOAuthController {
-    static function disabled(conn: Conn<{}>): Conn<{}> {
-        return conn
-            .putFlash("error", "Mock OAuth is disabled.")
-            .redirect("/login");
-    }
+	static function disabled(conn:Conn<{}>):Conn<{}> {
+		return conn.putFlash("error", "Mock OAuth is disabled.").redirect("/login");
+	}
 
-    static function signIn(conn: Conn<{}>, email: String, name: String): Conn<{}> {
-        var loginResult = Accounts.getOrCreateUserForLogin(email, name);
-        return switch (loginResult) {
-            case Ok(userRecord):
-                conn
-                    .putSession("user_id", userRecord.id)
-                    .putFlash("info", 'Signed in with Mock OAuth as ${userRecord.name}.')
-                    .redirect("/todos");
-            case Error(_):
-                {
-                    conn
-                        .putFlash("error", "Could not sign in. Please try again.")
-                        .redirect("/login");
-                }
-        };
-    }
+	static function signIn(conn:Conn<{}>, email:String, name:String):Conn<{}> {
+		var loginResult = Accounts.getOrCreateUserForLogin(email, name);
+		return switch (loginResult) {
+			case Ok(userRecord):
+				conn.putSession("user_id", userRecord.id).putFlash("info", 'Signed in with Mock OAuth as ${userRecord.name}.').redirect("/todos");
+			case Error(_):
+				{
+					conn.putFlash("error", "Could not sign in. Please try again.").redirect("/login");
+				}
+		};
+	}
 
-    public static function mock(conn: Conn<{}>, params: Term): Conn<{}> {
-        if (!MockOAuth.isEnabled()) return disabled(conn);
+	public static function mock(conn:Conn<{}>, params:Term):Conn<{}> {
+		if (!MockOAuth.isEnabled())
+			return disabled(conn);
 
-        var state = CSRFProtection.get_csrf_token();
-        var identity = MockOAuth.identityFromParams(params);
+		var state = CSRFProtection.get_csrf_token();
+		var identity = MockOAuth.identityFromParams(params);
 
-        var withSession = conn
-            .putSession(MockOAuth.SESSION_STATE_KEY, state)
-            .putSession(MockOAuth.SESSION_IDENTITY_KEY, MockOAuth.identityToSessionValue(identity));
+		var withSession = conn.putSession(MockOAuth.SESSION_STATE_KEY, state)
+			.putSession(MockOAuth.SESSION_IDENTITY_KEY, MockOAuth.identityToSessionValue(identity));
 
-        return withSession.redirect(MockOAuth.callbackPath(state));
-    }
+		return withSession.redirect(MockOAuth.callbackPath(state));
+	}
 
-    public static function mock_callback(conn: Conn<{}>, params: Term): Conn<{}> {
-        if (!MockOAuth.isEnabled()) return disabled(conn);
+	public static function mock_callback(conn:Conn<{}>, params:Term):Conn<{}> {
+		if (!MockOAuth.isEnabled())
+			return disabled(conn);
 
-        var errorTerm: Term = params != null ? ElixirMap.get(params, "error") : null;
-        if (errorTerm != null) {
-            var msgTerm: Term = ElixirMap.get(params, "error_description");
-            var msg: String = msgTerm != null ? cast msgTerm : cast errorTerm;
-            return conn
-                .putFlash("error", "Mock OAuth failed: " + msg)
-                .redirect("/login");
-        }
+		var errorTerm:Term = params != null ? ElixirMap.get(params, "error") : null;
+		if (errorTerm != null) {
+			var msgTerm:Term = ElixirMap.get(params, "error_description");
+			var msg:String = msgTerm != null ? cast msgTerm : cast errorTerm;
+			return conn.putFlash("error", "Mock OAuth failed: " + msg).redirect("/login");
+		}
 
-        var codeTerm: Term = params != null ? ElixirMap.get(params, "code") : null;
-        var stateTerm: Term = params != null ? ElixirMap.get(params, "state") : null;
-        var code: String = codeTerm != null ? cast codeTerm : "";
-        var state: String = stateTerm != null ? cast stateTerm : "";
+		var codeTerm:Term = params != null ? ElixirMap.get(params, "code") : null;
+		var stateTerm:Term = params != null ? ElixirMap.get(params, "state") : null;
+		var code:String = codeTerm != null ? cast codeTerm : "";
+		var state:String = stateTerm != null ? cast stateTerm : "";
 
-        var storedStateTerm: Term = conn.getSession(MockOAuth.SESSION_STATE_KEY);
-        var storedState: String = storedStateTerm != null ? cast storedStateTerm : "";
-        var identityTerm: Term = conn.getSession(MockOAuth.SESSION_IDENTITY_KEY);
+		var storedStateTerm:Term = conn.getSession(MockOAuth.SESSION_STATE_KEY);
+		var storedState:String = storedStateTerm != null ? cast storedStateTerm : "";
+		var identityTerm:Term = conn.getSession(MockOAuth.SESSION_IDENTITY_KEY);
 
-        var cleaned = conn
-            .deleteSession(MockOAuth.SESSION_STATE_KEY)
-            .deleteSession(MockOAuth.SESSION_IDENTITY_KEY);
+		var cleaned = conn.deleteSession(MockOAuth.SESSION_STATE_KEY).deleteSession(MockOAuth.SESSION_IDENTITY_KEY);
 
-        if (storedState == "" || state == "" || storedState != state) {
-            return cleaned
-                .putFlash("error", "Mock OAuth failed: invalid state. Please try again.")
-                .redirect("/login");
-        }
+		if (storedState == "" || state == "" || storedState != state) {
+			return cleaned.putFlash("error", "Mock OAuth failed: invalid state. Please try again.").redirect("/login");
+		}
 
-        if (code == "") {
-            return cleaned
-                .putFlash("error", "Mock OAuth failed: missing code. Please try again.")
-                .redirect("/login");
-        }
+		if (code == "") {
+			return cleaned.putFlash("error", "Mock OAuth failed: missing code. Please try again.").redirect("/login");
+		}
 
-        var identity = MockOAuth.identityFromSessionValue(identityTerm);
-        if (identity == null) {
-            return cleaned
-                .putFlash("error", "Mock OAuth failed: missing identity. Please try again.")
-                .redirect("/login");
-        }
+		var identity = MockOAuth.identityFromSessionValue(identityTerm);
+		if (identity == null) {
+			return cleaned.putFlash("error", "Mock OAuth failed: missing identity. Please try again.").redirect("/login");
+		}
 
-        return signIn(cleaned, identity.email, identity.name);
-    }
+		return signIn(cleaned, identity.email, identity.name);
+	}
 }

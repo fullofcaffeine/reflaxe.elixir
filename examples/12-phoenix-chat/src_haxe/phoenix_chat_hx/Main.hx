@@ -6,12 +6,12 @@ package phoenix_chat_hx;
  */
 @:module
 class Main {
-    public static function main(): Void {
-        // Entry point for Haxe compilation
-        trace("PhoenixChatHx - Reflaxe.Elixir compilation successful!");
-    }
-    
-    public static function hello(name: String): String {
-        return 'Hello, $name! Welcome to Reflaxe.Elixir!';
-    }
+	public static function main():Void {
+		// Entry point for Haxe compilation
+		trace("PhoenixChatHx - Reflaxe.Elixir compilation successful!");
+	}
+
+	public static function hello(name:String):String {
+		return 'Hello, $name! Welcome to Reflaxe.Elixir!';
+	}
 }

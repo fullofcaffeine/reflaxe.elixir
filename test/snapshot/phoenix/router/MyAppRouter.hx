@@ -63,5 +63,4 @@ package;
 		path: "/dev/dashboard"
 	}
 ])
-class MyAppRouter {
-}
+class MyAppRouter {}

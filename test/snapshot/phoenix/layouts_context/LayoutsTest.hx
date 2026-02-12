@@ -9,8 +9,8 @@ package;
  */
 @:native("MyAppWeb.Layouts")
 class LayoutsTest {
-    public static function root(assigns:Dynamic):Dynamic {
-        return HXX.hxx('
+	public static function root(assigns:Dynamic):Dynamic {
+		return HXX.hxx('
             <!DOCTYPE html>
             <html>
             <head>
@@ -21,5 +21,5 @@ class LayoutsTest {
             </body>
             </html>
         ');
-    }
+	}
 }

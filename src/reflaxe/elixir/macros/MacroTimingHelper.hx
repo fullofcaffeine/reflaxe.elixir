@@ -14,16 +14,16 @@ package reflaxe.elixir.macros;
  * - Wrap a computation in `time("label", () -> { ... })`; prints `[MacroTiming] name=<label> elapsed_ms=<ms>`.
  */
 class MacroTimingHelper {
-    public static inline function time<T>(label: String, fn: () -> T): T {
-        var startSeconds = haxe.Timer.stamp();
-        var result = fn();
-        var elapsedMs = Std.int((haxe.Timer.stamp() - startSeconds) * 1000.0);
-        var parts = ["[MacroTiming] name=", label, " elapsed_ms=", Std.string(elapsedMs)];
-        #if sys
-        #else
-        haxe.macro.Context.info(parts.join(""), haxe.macro.Context.currentPos());
-        #end
-        return result;
-    }
+	public static inline function time<T>(label:String, fn:() -> T):T {
+		var startSeconds = haxe.Timer.stamp();
+		var result = fn();
+		var elapsedMs = Std.int((haxe.Timer.stamp() - startSeconds) * 1000.0);
+		var parts = ["[MacroTiming] name=", label, " elapsed_ms=", Std.string(elapsedMs)];
+		#if sys
+		#else
+		haxe.macro.Context.info(parts.join(""), haxe.macro.Context.currentPos());
+		#end
+		return result;
+	}
 }
 #end

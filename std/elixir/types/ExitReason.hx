@@ -33,72 +33,72 @@ import elixir.Kernel;
  * ```
  */
 abstract ExitReason(Term) from Term to Term {
-    /**
-     * Create a new ExitReason wrapper
-     */
-    public inline function new(reason: Term) {
-        this = reason;
-    }
-    
-    /**
-     * Normal exit reason
-     */
-    public static inline function normal(): ExitReason {
-        return new ExitReason(Atom.NORMAL);
-    }
-    
-    /**
-     * Kill exit reason (untrappable)
-     */
-    public static inline function kill(): ExitReason {
-        return new ExitReason(Atom.fromString("kill"));
-    }
-    
-    /**
-     * Shutdown exit reason
-     */
-    public static inline function shutdown(): ExitReason {
-        return new ExitReason(Atom.SHUTDOWN);
-    }
-    
-    /**
-     * Shutdown with additional info
-     */
-    public static inline function shutdownWith(info: Term): ExitReason {
-        return new ExitReason(untyped __elixir__('{:shutdown, $info}'));
-    }
-    
-    /**
-     * Custom exit reason
-     */
-    public static inline function custom(reason: Term): ExitReason {
-        return new ExitReason(reason);
-    }
-    
-    /**
-     * Convert exit reason to string representation
-     * 
-     * The `@:to` metadata makes this an implicit cast operator in Haxe.
-     * This means ExitReason values will automatically be converted to String
-     * when used in string contexts, such as:
-     * 
-     * - String concatenation: `"Exit: " + exitReason`
-     * - String interpolation: `'Process exited: $exitReason'`
-     * - Passing to functions expecting String: `trace(exitReason)`
-     * - Explicit casting: `var s: String = exitReason`
-     * 
-     * The implementation uses Elixir's inspect/1 function to produce
-     * a readable string representation of any exit reason term.
-     * 
-     * Examples:
-     * - `:normal` becomes "#atom<normal>"
-     * - `{:shutdown, "db"}` becomes "{:shutdown, \"db\"}"
-     * - Custom terms are inspected appropriately
-     * 
-     * @return String representation suitable for logging/debugging
-     */
-    @:to
-    public inline function toString(): String {
-        return Kernel.inspect(this);
-    }
+	/**
+	 * Create a new ExitReason wrapper
+	 */
+	public inline function new(reason:Term) {
+		this = reason;
+	}
+
+	/**
+	 * Normal exit reason
+	 */
+	public static inline function normal():ExitReason {
+		return new ExitReason(Atom.NORMAL);
+	}
+
+	/**
+	 * Kill exit reason (untrappable)
+	 */
+	public static inline function kill():ExitReason {
+		return new ExitReason(Atom.fromString("kill"));
+	}
+
+	/**
+	 * Shutdown exit reason
+	 */
+	public static inline function shutdown():ExitReason {
+		return new ExitReason(Atom.SHUTDOWN);
+	}
+
+	/**
+	 * Shutdown with additional info
+	 */
+	public static inline function shutdownWith(info:Term):ExitReason {
+		return new ExitReason(untyped __elixir__('{:shutdown, $info}'));
+	}
+
+	/**
+	 * Custom exit reason
+	 */
+	public static inline function custom(reason:Term):ExitReason {
+		return new ExitReason(reason);
+	}
+
+	/**
+	 * Convert exit reason to string representation
+	 * 
+	 * The `@:to` metadata makes this an implicit cast operator in Haxe.
+	 * This means ExitReason values will automatically be converted to String
+	 * when used in string contexts, such as:
+	 * 
+	 * - String concatenation: `"Exit: " + exitReason`
+	 * - String interpolation: `'Process exited: $exitReason'`
+	 * - Passing to functions expecting String: `trace(exitReason)`
+	 * - Explicit casting: `var s: String = exitReason`
+	 * 
+	 * The implementation uses Elixir's inspect/1 function to produce
+	 * a readable string representation of any exit reason term.
+	 * 
+	 * Examples:
+	 * - `:normal` becomes "#atom<normal>"
+	 * - `{:shutdown, "db"}` becomes "{:shutdown, \"db\"}"
+	 * - Custom terms are inspected appropriately
+	 * 
+	 * @return String representation suitable for logging/debugging
+	 */
+	@:to
+	public inline function toString():String {
+		return Kernel.inspect(this);
+	}
 }

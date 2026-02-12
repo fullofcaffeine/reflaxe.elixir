@@ -1,7 +1,6 @@
 package reflaxe.elixir.macros;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Compiler;
 import haxe.macro.Context;
 import haxe.macro.Expr;
@@ -38,90 +37,105 @@ import haxe.macro.Expr;
  *   end
  */
 class NativeModulePreserver {
-    public static function init(): Void {
-        try {
-            Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.NativeModulePreserver.ensureKept())");
-        } catch (_: haxe.Exception) {}
-    }
+	public static function init():Void {
+		try {
+			Compiler.addGlobalMetadata("", "@:build(reflaxe.elixir.macros.NativeModulePreserver.ensureKept())");
+		} catch (_:haxe.Exception) {}
+	}
 
-    public static function ensureKept(): Null<Array<Field>> {
-        #if eval
-        final classRef = Context.getLocalClass();
-        if (classRef == null) return null;
+	public static function ensureKept():Null<Array<Field>> {
+		#if eval
+		final classRef = Context.getLocalClass();
+		if (classRef == null)
+			return null;
 
-        final cls = classRef.get();
-        if (cls.isExtern) return null;
-        if (cls.meta == null || !cls.meta.has(":native")) return null;
+		final cls = classRef.get();
+		if (cls.isExtern)
+			return null;
+		if (cls.meta == null || !cls.meta.has(":native"))
+			return null;
 
-        final nativeName = extractNativeName(cls.meta);
-        if (nativeName == null || nativeName.indexOf(".") == -1) return null;
+		final nativeName = extractNativeName(cls.meta);
+		if (nativeName == null || nativeName.indexOf(".") == -1)
+			return null;
 
-        final fields = Context.getBuildFields();
-        if (fields.length > 0 && !looksLikeSmallStaticModule(fields)) return null;
+		final fields = Context.getBuildFields();
+		if (fields.length > 0 && !looksLikeSmallStaticModule(fields))
+			return null;
 
-        final typePath = (cls.pack.length > 0) ? (cls.pack.join(".") + "." + cls.name) : cls.name;
-        Compiler.keep(typePath);
+		final typePath = (cls.pack.length > 0) ? (cls.pack.join(".") + "." + cls.name) : cls.name;
+		Compiler.keep(typePath);
 
-        if (!cls.meta.has(":keep")) cls.meta.add(":keep", [], cls.pos);
-        if (!cls.meta.has(":used")) cls.meta.add(":used", [], cls.pos);
+		if (!cls.meta.has(":keep"))
+			cls.meta.add(":keep", [], cls.pos);
+		if (!cls.meta.has(":used"))
+			cls.meta.add(":used", [], cls.pos);
 
-        for (field in fields) {
-            ensureFieldKept(field);
-        }
-        return fields;
-        #end
-        return null;
-    }
+		for (field in fields) {
+			ensureFieldKept(field);
+		}
+		return fields;
+		#end
+		return null;
+	}
 
-    static function looksLikeSmallStaticModule(fields: Array<Field>): Bool {
-        // Avoid keeping large `@:native("AppWeb.SomeLive")` modules (LiveViews/components/etc.) wholesale:
-        // those should be preserved via their framework annotations, and we still want -dce full to
-        // eliminate unused helpers inside them.
-        if (fields.length > 3) return false;
+	static function looksLikeSmallStaticModule(fields:Array<Field>):Bool {
+		// Avoid keeping large `@:native("AppWeb.SomeLive")` modules (LiveViews/components/etc.) wholesale:
+		// those should be preserved via their framework annotations, and we still want -dce full to
+		// eliminate unused helpers inside them.
+		if (fields.length > 3)
+			return false;
 
-        for (field in fields) {
-            if (!isPublicStatic(field)) return false;
-        }
+		for (field in fields) {
+			if (!isPublicStatic(field))
+				return false;
+		}
 
-        return true;
-    }
+		return true;
+	}
 
-    static function isPublicStatic(field: Field): Bool {
-        if (field.access == null) return false;
-        var isStatic = false;
-        for (a in field.access) {
-            if (a == AStatic) isStatic = true;
-            if (a == APrivate) return false;
-        }
-        return isStatic;
-    }
+	static function isPublicStatic(field:Field):Bool {
+		if (field.access == null)
+			return false;
+		var isStatic = false;
+		for (a in field.access) {
+			if (a == AStatic)
+				isStatic = true;
+			if (a == APrivate)
+				return false;
+		}
+		return isStatic;
+	}
 
-    static function ensureFieldKept(field: Field): Void {
-        if (field.meta == null) field.meta = [];
-        if (!fieldMetaHas(field.meta, ":keep")) {
-            field.meta.push({ name: ":keep", params: [], pos: field.pos });
-        }
-    }
+	static function ensureFieldKept(field:Field):Void {
+		if (field.meta == null)
+			field.meta = [];
+		if (!fieldMetaHas(field.meta, ":keep")) {
+			field.meta.push({name: ":keep", params: [], pos: field.pos});
+		}
+	}
 
-    static function fieldMetaHas(meta: Array<MetadataEntry>, metaName: String): Bool {
-        for (m in meta) {
-            if (m.name == metaName) return true;
-        }
-        return false;
-    }
+	static function fieldMetaHas(meta:Array<MetadataEntry>, metaName:String):Bool {
+		for (m in meta) {
+			if (m.name == metaName)
+				return true;
+		}
+		return false;
+	}
 
-    static function extractNativeName(meta: haxe.macro.Type.MetaAccess): Null<String> {
-        final entries = meta.extract(":native");
-        if (entries == null || entries.length == 0) return null;
-        if (entries[0].params == null || entries[0].params.length == 0) return null;
+	static function extractNativeName(meta:haxe.macro.Type.MetaAccess):Null<String> {
+		final entries = meta.extract(":native");
+		if (entries == null || entries.length == 0)
+			return null;
+		if (entries[0].params == null || entries[0].params.length == 0)
+			return null;
 
-        return switch (entries[0].params[0].expr) {
-            case EConst(CString(value, _)):
-                value;
-            default:
-                null;
-        }
-    }
+		return switch (entries[0].params[0].expr) {
+			case EConst(CString(value, _)):
+				value;
+			default:
+				null;
+		}
+	}
 }
-
 #end

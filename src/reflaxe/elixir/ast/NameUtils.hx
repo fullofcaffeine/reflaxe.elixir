@@ -10,88 +10,89 @@ import reflaxe.elixir.ast.naming.ElixirNaming;
  * HOW: Simple regex-based transformations used across the compiler
  */
 class NameUtils {
-    /**
-     * Convert CamelCase to snake_case
-     * 
-     * Examples:
-     * - TodoApp → todo_app
-     * - HTTPServer → http_server
-     * - MyHTMLParser → my_html_parser
-     * - RGB → rgb (not r_g_b)
-     * - describeRGB → describe_rgb
-     */
-    public static function toSnakeCase(name: String): String {
-        if (name == null || name.length == 0) return name;
-        
-        // First, handle sequences of capitals followed by lowercase
-        // This converts "XMLParser" to "XML_Parser", "HTMLElement" to "HTML_Element"
-        var result = ~/([A-Z]+)([A-Z][a-z])/g.replace(name, "$1_$2");
-        
-        // Insert underscore between lowercase/digit and uppercase
-        // This converts "parseJSON" to "parse_JSON", "htmlElement" to "html_Element"
-        result = ~/([a-z\d])([A-Z])/g.replace(result, "$1_$2");
-        
-        // Now lowercase everything
-        // "XML_Parser" → "xml_parser", "parse_JSON" → "parse_json"
-        // "RGB" stays as "RGB" then becomes "rgb" (no underscores inserted)
-        return result.toLowerCase();
-    }
-    
-    /**
-     * Get Elixir module name from fully qualified type string
-     * 
-     * Examples:
-     * - com.example.MyClass → MyClass
-     * - MyClass → MyClass
-     */
-    public static function getElixirModuleName(typeName: String): String {
-        var parts = typeName.split(".");
-        return parts[parts.length - 1];
-    }
-    
-    /**
-     * Convert field/method name to Elixir convention
-     * Alias for toSnakeCase for clarity
-     */
-    public static inline function toElixirName(name: String): String {
-        return toSnakeCase(name);
-    }
-    
-    /**
-     * Check if a name is a reserved keyword in Elixir
-     * Delegates to ElixirNaming for complete and consistent keyword detection
-     */
-    public static inline function isElixirReserved(name: String): Bool {
-        return ElixirNaming.isReserved(name);
-    }
-    
-    /**
-     * Convert name to safe Elixir function name, handling reserved keywords
-     */
-    public static function toSafeElixirFunctionName(name: String): String {
-        var snakeName = toSnakeCase(name);
+	/**
+	 * Convert CamelCase to snake_case
+	 * 
+	 * Examples:
+	 * - TodoApp → todo_app
+	 * - HTTPServer → http_server
+	 * - MyHTMLParser → my_html_parser
+	 * - RGB → rgb (not r_g_b)
+	 * - describeRGB → describe_rgb
+	 */
+	public static function toSnakeCase(name:String):String {
+		if (name == null || name.length == 0)
+			return name;
 
-        // If it's a reserved keyword, prefix with underscore or suffix with _fn
-        if (isElixirReserved(snakeName)) {
-            return snakeName + "_fn";
-        }
+		// First, handle sequences of capitals followed by lowercase
+		// This converts "XMLParser" to "XML_Parser", "HTMLElement" to "HTML_Element"
+		var result = ~/([A-Z]+)([A-Z][a-z])/g.replace(name, "$1_$2");
 
-        return snakeName;
-    }
+		// Insert underscore between lowercase/digit and uppercase
+		// This converts "parseJSON" to "parse_JSON", "htmlElement" to "html_Element"
+		result = ~/([a-z\d])([A-Z])/g.replace(result, "$1_$2");
 
-    /**
-     * Convert name to safe Elixir parameter name, handling reserved keywords
-     * Parameters get _param suffix to avoid conflicts (matches FunctionBuilder pattern)
-     */
-    public static function toSafeElixirParameterName(name: String): String {
-        var snakeName = toSnakeCase(name);
+		// Now lowercase everything
+		// "XML_Parser" → "xml_parser", "parse_JSON" → "parse_json"
+		// "RGB" stays as "RGB" then becomes "rgb" (no underscores inserted)
+		return result.toLowerCase();
+	}
 
-        // If it's a reserved keyword, add _param suffix to make it safe
-        // This matches the pattern used in FunctionBuilder.hx for consistency
-        if (isElixirReserved(snakeName)) {
-            return snakeName + "_param";
-        }
+	/**
+	 * Get Elixir module name from fully qualified type string
+	 * 
+	 * Examples:
+	 * - com.example.MyClass → MyClass
+	 * - MyClass → MyClass
+	 */
+	public static function getElixirModuleName(typeName:String):String {
+		var parts = typeName.split(".");
+		return parts[parts.length - 1];
+	}
 
-        return snakeName;
-    }
+	/**
+	 * Convert field/method name to Elixir convention
+	 * Alias for toSnakeCase for clarity
+	 */
+	public static inline function toElixirName(name:String):String {
+		return toSnakeCase(name);
+	}
+
+	/**
+	 * Check if a name is a reserved keyword in Elixir
+	 * Delegates to ElixirNaming for complete and consistent keyword detection
+	 */
+	public static inline function isElixirReserved(name:String):Bool {
+		return ElixirNaming.isReserved(name);
+	}
+
+	/**
+	 * Convert name to safe Elixir function name, handling reserved keywords
+	 */
+	public static function toSafeElixirFunctionName(name:String):String {
+		var snakeName = toSnakeCase(name);
+
+		// If it's a reserved keyword, prefix with underscore or suffix with _fn
+		if (isElixirReserved(snakeName)) {
+			return snakeName + "_fn";
+		}
+
+		return snakeName;
+	}
+
+	/**
+	 * Convert name to safe Elixir parameter name, handling reserved keywords
+	 * Parameters get _param suffix to avoid conflicts (matches FunctionBuilder pattern)
+	 */
+	public static function toSafeElixirParameterName(name:String):String {
+		var snakeName = toSnakeCase(name);
+
+		// If it's a reserved keyword, add _param suffix to make it safe
+		// This matches the pattern used in FunctionBuilder.hx for consistency
+		if (isElixirReserved(snakeName)) {
+			return snakeName + "_param";
+		}
+
+		return snakeName;
+	}
 }

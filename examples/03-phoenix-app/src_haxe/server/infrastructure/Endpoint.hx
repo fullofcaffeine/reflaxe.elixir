@@ -7,8 +7,7 @@ package server.infrastructure;
 @:endpoint
 @:appName("phoenix_haxe_example")
 class Endpoint {
-    public static function static_paths(): Array<String> {
-        return ["assets", "fonts", "images", "favicon.ico", "robots.txt"];
-    }
+	public static function static_paths():Array<String> {
+		return ["assets", "fonts", "images", "favicon.ico", "robots.txt"];
+	}
 }
-

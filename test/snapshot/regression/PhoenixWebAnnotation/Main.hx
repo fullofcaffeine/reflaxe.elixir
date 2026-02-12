@@ -12,19 +12,20 @@ package;
 @:phoenixWeb
 @:native("TestAppWeb")
 class TestAppWeb {
-    /**
-     * Static paths for Phoenix asset serving
-     */
-    public static function static_paths(): Array<String> {
-        return ["assets", "fonts", "images", "favicon.ico", "robots.txt"];
-    }
+	/**
+	 * Static paths for Phoenix asset serving
+	 */
+	public static function static_paths():Array<String> {
+		return ["assets", "fonts", "images", "favicon.ico", "robots.txt"];
+	}
 }
 
 // Test that @:phoenixWebModule also works (alternative annotation)
+
 @:phoenixWebModule
 @:native("AlternateAppWeb")
 class AlternateAppWeb {
-    public static function static_paths(): Array<String> {
-        return ["css", "js", "img"];
-    }
+	public static function static_paths():Array<String> {
+		return ["css", "js", "img"];
+	}
 }

@@ -1,11 +1,9 @@
 package reflaxe.elixir.preprocessors;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
-
 import reflaxe.preprocessors.BasePreprocessor;
 import reflaxe.data.ClassFuncData;
 import reflaxe.BaseCompiler;
@@ -148,238 +146,238 @@ using reflaxe.helpers.NullHelper;
  * @see SWITCH_RETURN_COMPREHENSIVE_REPORT.md for research and alternatives
  */
 class PreserveSwitchReturnsImpl extends BasePreprocessor {
-    static var preservationCounter = 0;
+	static var preservationCounter = 0;
 
-    /**
-     * Process function data according to BasePreprocessor interface
-     * Transforms the function body to preserve switch-in-return patterns
-     */
-    public function process(data: ClassFuncData, compiler: BaseCompiler): Void {
-        #if debug_preprocessors
-        #end
-        // Transform the function body if it exists
-        if (data.expr != null) {
-            #if debug_preprocessors
-            #end
-            var transformed = transformExpression(data.expr);
-            if (transformed != data.expr) {
-                #if debug_preprocessors
-                #end
-                data.setExpr(transformed);
-            }
-        }
-    }
+	/**
+	 * Process function data according to BasePreprocessor interface
+	 * Transforms the function body to preserve switch-in-return patterns
+	 */
+	public function process(data:ClassFuncData, compiler:BaseCompiler):Void {
+		#if debug_preprocessors
+		#end
+		// Transform the function body if it exists
+		if (data.expr != null) {
+			#if debug_preprocessors
+			#end
+			var transformed = transformExpression(data.expr);
+			if (transformed != data.expr) {
+				#if debug_preprocessors
+				#end
+				data.setExpr(transformed);
+			}
+		}
+	}
 
-    public function new() {}
+	public function new() {}
 
-    /**
-     * Recursively transform expressions to preserve switch-in-return patterns
-     * Works on TypedExpr (what the compiler receives)
-     */
-    function transformExpression(expr: TypedExpr): TypedExpr {
-        if (expr == null) return null;
+	/**
+	 * Recursively transform expressions to preserve switch-in-return patterns
+	 * Works on TypedExpr (what the compiler receives)
+	 */
+	function transformExpression(expr:TypedExpr):TypedExpr {
+		if (expr == null)
+			return null;
 
-        return switch(expr.expr) {
-            // FOUND IT! Direct return of switch expression
-            case TReturn(e) if (e != null):
-                #if debug_preprocessors
-                #end
-                // Check if the return expression is a switch (may be wrapped in metadata)
-                var innerExpr = e;
+		return switch (expr.expr) {
+			// FOUND IT! Direct return of switch expression
+			case TReturn(e) if (e != null):
+				#if debug_preprocessors
+				#end
+				// Check if the return expression is a switch (may be wrapped in metadata)
+				var innerExpr = e;
 
-                // Unwrap TMeta if present (:ast metadata is added by Haxe)
-                switch(e.expr) {
-                    case TMeta(_, actualExpr):
-                        #if debug_preprocessors
-                        #end
-                        innerExpr = actualExpr;
-                    case _:
-                }
+				// Unwrap TMeta if present (:ast metadata is added by Haxe)
+				switch (e.expr) {
+					case TMeta(_, actualExpr):
+						#if debug_preprocessors
+						#end
+						innerExpr = actualExpr;
+					case _:
+				}
 
-                switch(innerExpr.expr) {
-                    case TSwitch(scrutinee, cases, defaultCase):
-                        #if debug_preprocessors
-                        #end
+				switch (innerExpr.expr) {
+					case TSwitch(scrutinee, cases, defaultCase):
+						#if debug_preprocessors
+						#end
 
-                        // Create a unique variable name
-                        var varName = "switch_result_" + (++preservationCounter);
+						// Create a unique variable name
+						var varName = "switch_result_" + (++preservationCounter);
 
-                        // Create a typed variable to hold the switch result
-                        var tvar: TVar = {
-                            id: -preservationCounter, // Unique negative ID
-                            name: varName,
-                            t: innerExpr.t, // Use the switch expression's type
-                            capture: false,
-                            isStatic: false,
-                            extra: null,
-                            meta: null
-                        };
+						// Create a typed variable to hold the switch result
+						var tvar:TVar = {
+							id: -preservationCounter, // Unique negative ID
+							name: varName,
+							t: innerExpr.t, // Use the switch expression's type
+							capture: false,
+							isStatic: false,
+							extra: null,
+							meta: null
+						};
 
-                        // Create variable declaration with switch as initializer
-                        var varDecl: TypedExpr = {
-                            expr: TVar(tvar, innerExpr), // The original switch expression (unwrapped)
-                            pos: innerExpr.pos,
-                            t: innerExpr.t
-                        };
+						// Create variable declaration with switch as initializer
+						var varDecl:TypedExpr = {
+							expr: TVar(tvar, innerExpr), // The original switch expression (unwrapped)
+							pos: innerExpr.pos,
+							t: innerExpr.t
+						};
 
-                        // Create reference to the variable
-                        var varRef: TypedExpr = {
-                            expr: TLocal(tvar),
-                            pos: expr.pos,
-                            t: innerExpr.t
-                        };
+						// Create reference to the variable
+						var varRef:TypedExpr = {
+							expr: TLocal(tvar),
+							pos: expr.pos,
+							t: innerExpr.t
+						};
 
-                        // Create return of the variable
-                        var returnVar: TypedExpr = {
-                            expr: TReturn(varRef),
-                            pos: expr.pos,
-                            t: expr.t
-                        };
+						// Create return of the variable
+						var returnVar:TypedExpr = {
+							expr: TReturn(varRef),
+							pos: expr.pos,
+							t: expr.t
+						};
 
-                        // Create a block with both statements
-                        var block: TypedExpr = {
-                            expr: TBlock([varDecl, returnVar]),
-                            pos: expr.pos,
-                            t: expr.t
-                        };
+						// Create a block with both statements
+						var block:TypedExpr = {
+							expr: TBlock([varDecl, returnVar]),
+							pos: expr.pos,
+							t: expr.t
+						};
 
-                        #if debug_preprocessors
-                        #end
+						#if debug_preprocessors
+						#end
 
-                        return block;
+						return block;
 
-                    case _:
-                        // Not a switch, but recursively process the return value
-                        var transformedReturn = transformExpression(e);
-                        if (transformedReturn != e) {
-                            return {
-                                expr: TReturn(transformedReturn),
-                                pos: expr.pos,
-                                t: expr.t
-                            };
-                        }
-                        return expr;
-                }
+					case _:
+						// Not a switch, but recursively process the return value
+						var transformedReturn = transformExpression(e);
+						if (transformedReturn != e) {
+							return {
+								expr: TReturn(transformedReturn),
+								pos: expr.pos,
+								t: expr.t
+							};
+						}
+						return expr;
+				}
 
-            // Block - process all sub-expressions
-            case TBlock(exprs):
-                var transformed = exprs.map(transformExpression);
-                var changed = false;
-                for (i in 0...exprs.length) {
-                    if (transformed[i] != exprs[i]) {
-                        changed = true;
-                        break;
-                    }
-                }
-                if (changed) {
-                    return {
-                        expr: TBlock(transformed),
-                        pos: expr.pos,
-                        t: expr.t
-                    };
-                }
-                return expr;
+			// Block - process all sub-expressions
+			case TBlock(exprs):
+				var transformed = exprs.map(transformExpression);
+				var changed = false;
+				for (i in 0...exprs.length) {
+					if (transformed[i] != exprs[i]) {
+						changed = true;
+						break;
+					}
+				}
+				if (changed) {
+					return {
+						expr: TBlock(transformed),
+						pos: expr.pos,
+						t: expr.t
+					};
+				}
+				return expr;
 
-            // If statement - process all branches
-            case TIf(cond, then, els):
-                var transformedCond = transformExpression(cond);
-                var transformedThen = transformExpression(then);
-                var transformedEls = els != null ? transformExpression(els) : null;
+			// If statement - process all branches
+			case TIf(cond, then, els):
+				var transformedCond = transformExpression(cond);
+				var transformedThen = transformExpression(then);
+				var transformedEls = els != null ? transformExpression(els) : null;
 
-                if (transformedCond != cond || transformedThen != then || transformedEls != els) {
-                    return {
-                        expr: TIf(transformedCond, transformedThen, transformedEls),
-                        pos: expr.pos,
-                        t: expr.t
-                    };
-                }
-                return expr;
+				if (transformedCond != cond || transformedThen != then || transformedEls != els) {
+					return {
+						expr: TIf(transformedCond, transformedThen, transformedEls),
+						pos: expr.pos,
+						t: expr.t
+					};
+				}
+				return expr;
 
-            // While loop - process condition and body
-            case TWhile(cond, body, normalWhile):
-                var transformedCond = transformExpression(cond);
-                var transformedBody = transformExpression(body);
+			// While loop - process condition and body
+			case TWhile(cond, body, normalWhile):
+				var transformedCond = transformExpression(cond);
+				var transformedBody = transformExpression(body);
 
-                if (transformedCond != cond || transformedBody != body) {
-                    return {
-                        expr: TWhile(transformedCond, transformedBody, normalWhile),
-                        pos: expr.pos,
-                        t: expr.t
-                    };
-                }
-                return expr;
+				if (transformedCond != cond || transformedBody != body) {
+					return {
+						expr: TWhile(transformedCond, transformedBody, normalWhile),
+						pos: expr.pos,
+						t: expr.t
+					};
+				}
+				return expr;
 
-            // For loop - process iterator and body
-            case TFor(v, iter, body):
-                var transformedIter = transformExpression(iter);
-                var transformedBody = transformExpression(body);
+			// For loop - process iterator and body
+			case TFor(v, iter, body):
+				var transformedIter = transformExpression(iter);
+				var transformedBody = transformExpression(body);
 
-                if (transformedIter != iter || transformedBody != body) {
-                    return {
-                        expr: TFor(v, transformedIter, transformedBody),
-                        pos: expr.pos,
-                        t: expr.t
-                    };
-                }
-                return expr;
+				if (transformedIter != iter || transformedBody != body) {
+					return {
+						expr: TFor(v, transformedIter, transformedBody),
+						pos: expr.pos,
+						t: expr.t
+					};
+				}
+				return expr;
 
-            // Try-catch - process try block and catch blocks
-            case TTry(e, catches):
-                var transformedTry = transformExpression(e);
-                var transformedCatches = catches.map(c -> {
-                    var transformedExpr = transformExpression(c.expr);
-                    if (transformedExpr != c.expr) {
-                        {v: c.v, expr: transformedExpr};
-                    } else {
-                        c;
-                    }
-                });
+			// Try-catch - process try block and catch blocks
+			case TTry(e, catches):
+				var transformedTry = transformExpression(e);
+				var transformedCatches = catches.map(c -> {
+					var transformedExpr = transformExpression(c.expr);
+					if (transformedExpr != c.expr) {
+						{v: c.v, expr: transformedExpr};
+					} else {
+						c;
+					}
+				});
 
-                var changed = transformedTry != e;
-                if (!changed) {
-                    for (i in 0...catches.length) {
-                        if (transformedCatches[i] != catches[i]) {
-                            changed = true;
-                            break;
-                        }
-                    }
-                }
+				var changed = transformedTry != e;
+				if (!changed) {
+					for (i in 0...catches.length) {
+						if (transformedCatches[i] != catches[i]) {
+							changed = true;
+							break;
+						}
+					}
+				}
 
-                if (changed) {
-                    return {
-                        expr: TTry(transformedTry, transformedCatches),
-                        pos: expr.pos,
-                        t: expr.t
-                    };
-                }
-                return expr;
+				if (changed) {
+					return {
+						expr: TTry(transformedTry, transformedCatches),
+						pos: expr.pos,
+						t: expr.t
+					};
+				}
+				return expr;
 
-            // Function - process body
-            case TFunction(tf):
-                if (tf.expr != null) {
-                    var transformedBody = transformExpression(tf.expr);
-                    if (transformedBody != tf.expr) {
-                        var newTf: TFunc = {
-                            args: tf.args,
-                            expr: transformedBody,
-                            t: tf.t
-                        };
-                        return {
-                            expr: TFunction(newTf),
-                            pos: expr.pos,
-                            t: expr.t
-                        };
-                    }
-                }
-                return expr;
+			// Function - process body
+			case TFunction(tf):
+				if (tf.expr != null) {
+					var transformedBody = transformExpression(tf.expr);
+					if (transformedBody != tf.expr) {
+						var newTf:TFunc = {
+							args: tf.args,
+							expr: transformedBody,
+							t: tf.t
+						};
+						return {
+							expr: TFunction(newTf),
+							pos: expr.pos,
+							t: expr.t
+						};
+					}
+				}
+				return expr;
 
-            // Default - for other expression types, return unchanged
-            case _:
-                // For other expression types that don't contain nested structures
-                // we need to process, just return unchanged
-                return expr;
-        }
-    }
+			// Default - for other expression types, return unchanged
+			case _:
+				// For other expression types that don't contain nested structures
+				// we need to process, just return unchanged
+				return expr;
+		}
+	}
 }
-
 #end

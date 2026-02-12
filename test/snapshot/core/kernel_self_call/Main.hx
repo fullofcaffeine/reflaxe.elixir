@@ -19,9 +19,9 @@
  * SafePubSub should generate self() like this test does.
  */
 class Main {
-    static function main() {
-        // Correct kernel function call - generates self() properly
-        var myPid = untyped __elixir__('self()');
-        trace('Current PID: ${myPid}');
-    }
+	static function main() {
+		// Correct kernel function call - generates self() properly
+		var myPid = untyped __elixir__('self()');
+		trace('Current PID: ${myPid}');
+	}
 }

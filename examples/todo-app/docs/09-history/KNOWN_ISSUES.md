@@ -40,10 +40,9 @@ This was a bug in **Reflaxe framework version 4.0.0-beta** where the framework a
    var sanitizedPath = path;
    if (StringTools.startsWith(path, "/") && path.length > 1) {
        // Check if this is a malformed relative path
-       var isRealAbsolutePath = StringTools.startsWith(path, "/Users/") || 
+       var isRealAbsolutePath = StringTools.startsWith(path, "/home/") ||
                                StringTools.startsWith(path, "/tmp/") || 
                                StringTools.startsWith(path, "/var/") || 
-                               StringTools.startsWith(path, "/home/") ||
                                StringTools.startsWith(path, "/opt/");
        if (!isRealAbsolutePath) {
            sanitizedPath = path.substring(1); // Remove leading slash

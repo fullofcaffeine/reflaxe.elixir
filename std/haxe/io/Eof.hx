@@ -8,15 +8,16 @@
  * 
  * HOW: Minimal implementation that satisfies the Input class requirements.
  */
+
 package haxe.io;
 
 /**
  * Exception thrown when reading past the end of a file or stream.
  */
 class Eof {
-    public function new() {}
-    
-    public function toString(): String {
-        return "Eof";
-    }
+	public function new() {}
+
+	public function toString():String {
+		return "Eof";
+	}
 }

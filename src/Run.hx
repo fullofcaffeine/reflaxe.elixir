@@ -5,6 +5,7 @@ import sys.io.File;
 import haxe.io.Path;
 import reflaxe.elixir.generator.ProjectGenerator;
 import reflaxe.elixir.generator.InteractiveCLI;
+
 using StringTools;
 
 /**
@@ -15,24 +16,24 @@ using StringTools;
  */
 class Run {
 	static final FALLBACK_VERSION = "unknown";
-	
+
 	public static function main() {
 		var args = Sys.args();
-		
+
 		// When run via haxelib/lix, the last argument is the working directory
 		var workingDir = "";
 		if (args.length > 0 && FileSystem.exists(args[args.length - 1])) {
 			workingDir = args.pop();
 			Sys.setCwd(workingDir);
 		}
-		
+
 		if (args.length == 0) {
 			showHelp();
 			return;
 		}
-		
+
 		var command = args[0];
-		
+
 		switch (command) {
 			case "create":
 				handleCreate(args.slice(1));
@@ -47,14 +48,14 @@ class Run {
 				Sys.exit(1);
 		}
 	}
-	
-	static function handleCreate(args: Array<String>) {
+
+	static function handleCreate(args:Array<String>) {
 		var projectName = "";
 		var projectType = "";
 		var interactive = true;
 		var skipInstall = false;
 		var verbose = false;
-		
+
 		// Parse arguments
 		var i = 0;
 		while (i < args.length) {
@@ -80,7 +81,7 @@ class Run {
 			}
 			i++;
 		}
-		
+
 		// Interactive mode if needed
 		if (interactive) {
 			var config = InteractiveCLI.promptProjectConfiguration(projectName, projectType);
@@ -92,12 +93,12 @@ class Run {
 			Sys.println("Usage: haxelib run reflaxe.elixir create <project-name> [options]");
 			Sys.exit(1);
 		}
-		
+
 		// Default project type
 		if (projectType == "") {
 			projectType = "basic";
 		}
-		
+
 		// Validate project type
 		var validTypes = ["basic", "phoenix", "liveview", "add-to-existing"];
 		if (!validTypes.contains(projectType)) {
@@ -105,14 +106,14 @@ class Run {
 			Sys.println('Valid types: ${validTypes.join(", ")}');
 			Sys.exit(1);
 		}
-		
+
 		// Generate the project
 		try {
 			Sys.println("");
 			Sys.println('🚀 Creating Reflaxe.Elixir project: $projectName');
 			Sys.println('   Type: $projectType');
 			Sys.println("");
-			
+
 			var generator = new ProjectGenerator();
 			var options = {
 				name: projectName,
@@ -122,35 +123,34 @@ class Run {
 				vscode: true, // Always include VS Code config
 				workingDir: Sys.getCwd()
 			};
-			
+
 			generator.generate(options);
-			
+
 			Sys.println("");
 			Sys.println('✨ Project created successfully!');
 			Sys.println("");
 			showNextSteps(projectName, projectType, skipInstall);
-			
-		} catch (e: haxe.Exception) {
+		} catch (e:haxe.Exception) {
 			Sys.println('Error: Failed to create project');
 			Sys.println('  $e');
 			Sys.exit(1);
 		}
 	}
-	
-	static function showNextSteps(projectName: String, projectType: String, skipInstall: Bool) {
+
+	static function showNextSteps(projectName:String, projectType:String, skipInstall:Bool) {
 		Sys.println("📝 Next steps:");
 		Sys.println("");
 		Sys.println('  cd $projectName');
-		
+
 		if (skipInstall) {
 			Sys.println('  npm install          # Install Haxe dependencies');
 			Sys.println('  mix deps.get         # Install Elixir dependencies');
 			Sys.println('  npm run setup:haxe   # Install Haxe libraries (per .haxerc)');
 		}
-		
+
 		Sys.println('  npm run compile       # Compile Haxe to Elixir');
 		Sys.println('  # or: ./node_modules/.bin/haxe build.hxml');
-		
+
 		if (projectType == "phoenix" || projectType == "liveview") {
 			Sys.println('  mix ecto.create      # Create database');
 			Sys.println('  mix phx.server       # Start Phoenix server');
@@ -159,14 +159,14 @@ class Run {
 		} else if (projectType == "basic") {
 			Sys.println('  mix run              # Run the application');
 		}
-		
+
 		Sys.println("");
 		Sys.println("📚 Documentation:");
 		Sys.println("  https://github.com/fullofcaffeine/reflaxe.elixir/blob/main/docs/01-getting-started/installation.md");
 		Sys.println("");
 		Sys.println("Happy coding! 🎉");
 	}
-	
+
 	static function showHelp() {
 		Sys.println("Reflaxe.Elixir - Haxe to Elixir Compiler");
 		Sys.println("");
@@ -188,10 +188,11 @@ class Run {
 		Sys.println("  https://github.com/fullofcaffeine/reflaxe.elixir");
 	}
 
-	static function detectVersion(): String {
+	static function detectVersion():String {
 		try {
 			var versionFromCwd = readVersionFrom(Path.join([Sys.getCwd(), "haxelib.json"]));
-			if (versionFromCwd != null) return versionFromCwd;
+			if (versionFromCwd != null)
+				return versionFromCwd;
 
 			// When installed via haxelib/lix, Sys.programPath() typically lives under the library dir.
 			// Walk upward a few levels looking for haxelib.json.
@@ -200,33 +201,35 @@ class Run {
 			while (currentDir != null && currentDir != "/" && steps < 8) {
 				var candidate = Path.join([currentDir, "haxelib.json"]);
 				var version = readVersionFrom(candidate);
-				if (version != null) return version;
+				if (version != null)
+					return version;
 
 				currentDir = Path.directory(currentDir);
 				steps++;
 			}
-		} catch (_: haxe.Exception) {}
+		} catch (_:haxe.Exception) {}
 
 		return FALLBACK_VERSION;
 	}
 
-	static function readVersionFrom(path: String): Null<String> {
-		if (!FileSystem.exists(path)) return null;
+	static function readVersionFrom(path:String):Null<String> {
+		if (!FileSystem.exists(path))
+			return null;
 
 		try {
 			var content = File.getContent(path);
 			var parsed = haxe.Json.parse(content);
-			var name: Null<String> = Reflect.field(parsed, "name");
-			var version: Null<String> = Reflect.field(parsed, "version");
+			var name:Null<String> = Reflect.field(parsed, "name");
+			var version:Null<String> = Reflect.field(parsed, "version");
 
 			if (name == "reflaxe.elixir" && version != null && version != "") {
 				return version;
 			}
-		} catch (_: haxe.Exception) {}
+		} catch (_:haxe.Exception) {}
 
 		return null;
 	}
-	
+
 	static function showCreateHelp() {
 		Sys.println("Create a new Reflaxe.Elixir project");
 		Sys.println("");

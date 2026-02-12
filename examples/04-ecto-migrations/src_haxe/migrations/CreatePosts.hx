@@ -9,23 +9,22 @@ import ecto.Migration.OnDeleteAction;
  */
 @:migration({timestamp: "20240102120000"})
 class CreatePosts extends Migration {
-    public function new() {}
+	public function new() {}
 
-    public function up(): Void {
-        createTable("posts")
-            .addId()
-            .addColumn("title", ColumnType.String(), {nullable: false})
-            .addColumn("content", ColumnType.Text)
-            .addColumn("published", ColumnType.Boolean, {defaultValue: false})
-            .addColumn("view_count", ColumnType.Integer, {defaultValue: 0})
-            .addReference("user_id", "users", {onDelete: OnDeleteAction.Cascade})
-            .addTimestamps()
-            .addIndex(["user_id"])
-            .addIndex(["published", "inserted_at"])
-            .addCheckConstraint("positive_view_count", "view_count >= 0");
-    }
+	public function up():Void {
+		createTable("posts").addId()
+			.addColumn("title", ColumnType.String(), {nullable: false})
+			.addColumn("content", ColumnType.Text)
+			.addColumn("published", ColumnType.Boolean, {defaultValue: false})
+			.addColumn("view_count", ColumnType.Integer, {defaultValue: 0})
+			.addReference("user_id", "users", {onDelete: OnDeleteAction.Cascade})
+			.addTimestamps()
+			.addIndex(["user_id"])
+			.addIndex(["published", "inserted_at"])
+			.addCheckConstraint("positive_view_count", "view_count >= 0");
+	}
 
-    public function down(): Void {
-        dropTable("posts");
-    }
+	public function down():Void {
+		dropTable("posts");
+	}
 }

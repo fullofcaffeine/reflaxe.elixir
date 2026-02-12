@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.context;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Type;
 import reflaxe.elixir.ast.ElixirAST;
 
@@ -9,7 +8,7 @@ import reflaxe.elixir.ast.ElixirAST;
  * Type alias for enum binding plan
  * Maps parameter indices to their final names and usage status
  */
-typedef EnumBindingPlan = Map<Int, {finalName: String, isUsed: Bool}>;
+typedef EnumBindingPlan = Map<Int, {finalName:String, isUsed:Bool}>;
 
 /**
  * ElixirASTContext: Shared compilation state and coordination for AST pipeline
@@ -51,679 +50,674 @@ typedef EnumBindingPlan = Map<Int, {finalName: String, isUsed: Bool}>;
  * @see ClauseContext for case-specific variable management
  */
 class ElixirASTContext {
-    // ===== Variable Mapping Systems =====
-
-    /**
-     * Global variable mapping: TVar.id -> Elixir name
-     * Used for top-level and function-level variables
-     */
-    public var globalVariableMap: Map<Int, String> = new Map();
-
-    /**
-     * Pattern variable registry: TVar.id -> pattern name
-     * Has highest priority - preserves user-specified names from patterns
-     */
-    public var patternVariableRegistry: Map<Int, String> = new Map();
-
-    /**
-     * Renamed variable tracking: TVar.id -> {original, renamed}
-     * Tracks when Haxe renames variables to avoid shadowing (e.g., options → options2)
-     * This allows us to detect and handle field references that use original names
-     * while the variable has been renamed
-     */
-    public var renamedVariableMap: Map<Int, {original: String, renamed: String}> = new Map();
-
-    /**
-     * Temp variable mappings: temp name -> actual name
-     * Maps generated temps (g, g1) to meaningful names
-     */
-    public var tempVariableMap: Map<String, String> = new Map();
-
-    /**
-     * Active clause contexts stack
-     * Push/pop as we enter/exit switch cases
-     */
-    public var clauseContextStack: Array<ClauseContext> = [];
-
-    // Node-level metadata is carried directly on ElixirAST.metadata.
-
-    /**
-     * Enum type information cache
-     * Avoids repeated lookups during compilation
-     */
-    public var enumTypeCache: Map<String, EnumType> = new Map();
-
-    /**
-     * Idiomatic enum markers
-     * Tracks which enums have @:elixirIdiomatic metadata
-     */
-    public var idiomaticEnums: Map<String, Bool> = new Map();
-
-    /**
-     * Pattern context flag
-     * True when building pattern matching expressions (case patterns)
-     */
-    public var isInPattern: Bool = false;
-    
-    /**
-     * Loop depth counter for nested loop tracking
-     * Incremented when entering a loop, decremented when exiting
-     * Used to generate proper loop context metadata
-     */
-    public var loopDepth: Int = 0;
-    
-    /**
-     * Current loop context stack for variable preservation
-     * Tracks loop variables at each nesting level
-     * Used to restore variables after Haxe's optimizer replaces them
-     */
-    public var loopContextStack: Array<LoopContext> = [];
-
-    /**
-     * Enum binding plans storage
-     * Maps unique IDs to EnumBindingPlan instances for cross-phase access
-     * This allows the binding plans to survive from builder to transformer phase
-     */
-    public var enumBindingPlans: Map<String, EnumBindingPlan> = new Map();
-
-    // ===== Test Progress Tracking =====
-
-    /**
-     * Current test being compiled
-     * Used for incremental test runner integration
-     */
-    public var currentTestPath: String = null;
-
-    /**
-     * Test compilation results
-     * Maps test path to success/failure status
-     */
-    public var testResults: Map<String, TestResult> = new Map();
-
-    // ===== Feature Flags System (Codex Recommendation - January 2025) =====
-
-    /**
-     * Feature flags for controlling compilation strategies and optimizations.
-     *
-     * Flags are initialized from build-time defines and can be overridden at runtime
-     * via setFeatureFlag() when the compiler chooses to expose a toggle.
-     */
-    public var featureFlags: Map<String, Bool> = new Map();
-
-    // ===== Lifecycle Management (Codex Recommendation - January 2025) =====
-
-    /**
-     * Compilation phase tracking
-     * Ensures proper initialization and cleanup
-     */
-    public var currentPhase: CompilationPhase = CompilationPhase.NotStarted;
-
-    /**
-     * Node ID counter for unique identification
-     * Reset at start of each compilation
-     */
-    private var nodeIdCounter: Int = 0;
-
-    // ===== Constructor =====
-
-    public function new() {
-        // Initialize with empty state
-        // Will be populated during compilation
-        initializeFeatureFlags();
-    }
-
-    /**
-     * Initialize feature flags from compiler definitions
-     *
-     * Feature flags control which compilation strategies and optimizations are active.
-     * They work at two levels:
-     *
-     * 1. **Builder Routing** (all disabled by default for safety):
-     *    - Controls which implementation handles AST building
-     *    - Allows gradual migration from monolithic to modular builders
-     *    - Default: Use legacy implementation until new builders proven stable
-     *
-     * 2. **Transformer Passes** (mix of enabled/disabled based on maturity):
-     *    - Controls which optimizations and idiomaticizations are applied
-     *    - Some enabled by default for better code quality
-     *    - Others disabled until thoroughly tested
-     *
-     * **Default Strategy**:
-     * - Idiomatic transforms: ENABLED - Generate readable Elixir by default
-     * - Experimental optimizations: DISABLED - Avoid surprises in production
-     *
-     * **Override Methods**:
-     * - Build-time: `haxe build.hxml -D enable_pipe_operator`
-     * - Runtime: `context.setFeatureFlag("enable_pipe_operator", true)`
-     *
-     * @see ElixirASTTransformer for transformation passes
-     */
-    private function initializeFeatureFlags(): Void {
-        // ================================================================================
-        // TRANSFORMER OPTIMIZATION FLAGS
-        // Mix of enabled/disabled based on stability and impact
-        // ================================================================================
-
-        /**
-         * Loop to comprehension transformation
-         * DEFAULT: ENABLED - Produces idiomatic Elixir code
-         *
-         * WHY USEFUL: Converts imperative loops to functional comprehensions
-         * - Transforms: `while(i<10) { array.push(i*2); i++; }`
-         * - Into: `for i <- 0..9, do: i * 2`
-         *
-         * WHEN TO DISABLE:
-         * - Debugging loop compilation issues
-         * - Preserving exact imperative semantics
-         * - Performance testing (rare cases where loops are faster)
-         *
-         * BENEFITS:
-         * - More readable Elixir code
-         * - Better BEAM optimization
-         * - Follows Elixir community conventions
-         */
-        #if enable_loop_to_comprehension
-        featureFlags.set("enable_loop_to_comprehension", true);
-        #else
-        featureFlags.set("enable_loop_to_comprehension", true); // Default enabled for idiomatic code
-        #end
-
-        /**
-         * Idiomatic enum pattern generation
-         * DEFAULT: ENABLED - Critical for readable pattern matching
-         *
-         * WHY USEFUL: Uses Elixir atoms instead of integer indices
-         * - Transforms: `case elem(result, 0) do 0 -> ...`
-         * - Into: `case result do {:ok, value} -> ...`
-         *
-         * WHEN TO DISABLE:
-         * - Debugging pattern matching issues
-         * - Comparing with Haxe's internal representation
-         * - Testing index-based optimizations
-         *
-         * BENEFITS:
-         * - Human-readable patterns
-         * - Elixir developer friendly
-         * - Better error messages
-         */
-        #if enable_idiomatic_enums
-        featureFlags.set("enable_idiomatic_enums", true);
-        #else
-        featureFlags.set("enable_idiomatic_enums", true); // Default enabled
-        #end
-
-        /**
-         * Skip redundant extraction in patterns
-         * DEFAULT: DISABLED - Safety first, optimization second
-         *
-         * WHY USEFUL: Removes unnecessary elem() calls after pattern matching
-         * - Removes: `{:ok, g} -> g = elem(result, 1)` (g already extracted)
-         * - Keeps just: `{:ok, g} ->`
-         *
-         * WHEN TO ENABLE:
-         * - Production builds for cleaner output
-         * - After thorough testing
-         * - When targeting Elixir developers reading generated code
-         *
-         * RISKS:
-         * - May break edge cases with complex patterns
-         * - Needs comprehensive test coverage
-         * - Could affect debugging visibility
-         */
-        #if disable_redundant_extraction
-        featureFlags.set("disable_redundant_extraction", true);
-        #else
-        featureFlags.set("disable_redundant_extraction", false); // Default keep for safety
-        #end
-
-        /**
-         * Pipe operator transformation
-         * DEFAULT: DISABLED - Experimental feature
-         *
-         * WHY USEFUL: Generates idiomatic Elixir pipelines
-         * - Transforms: `process(validate(transform(data)))`
-         * - Into: `data |> transform() |> validate() |> process()`
-         *
-         * WHEN TO ENABLE:
-         * - Targeting Elixir-first codebases
-         * - After validating transformation correctness
-         * - For better code readability
-         *
-         * CHALLENGES:
-         * - Complex to detect safe transformation points
-         * - Must preserve evaluation order
-         * - Needs to handle error cases
-         */
-        #if enable_pipe_operator
-        featureFlags.set("enable_pipe_operator", true);
-        #else
-        featureFlags.set("enable_pipe_operator", false); // Default off until stable
-        #end
-
-        /**
-         * Preserve integer indices in pattern matching
-         * DEFAULT: DISABLED - Atoms are more idiomatic
-         *
-         * WHY USEFUL: Maintains Haxe's internal representation
-         * - Keeps: `case elem(enum, 0) do 0 -> ...`
-         * - Instead of: `case enum do {:constructor, ...} -> ...`
-         *
-         * WHEN TO ENABLE:
-         * - Debugging enum compilation
-         * - Performance critical code (marginal benefit)
-         * - Interfacing with integer-based external systems
-         *
-         * TRADE-OFFS:
-         * - Less readable code
-         * - Harder to debug
-         * - Not idiomatic Elixir
-         */
-        #if preserve_integer_indices
-        featureFlags.set("preserve_integer_indices", true);
-        #else
-        featureFlags.set("preserve_integer_indices", false); // Default use atoms
-        #end
-
-        #if debug_ast_builder
-        var enabledFlags = [];
-        for (flag in featureFlags.keys()) {
-            if (featureFlags.get(flag)) {
-                enabledFlags.push(flag);
-            }
-        }
-        if (enabledFlags.length > 0) {
-        } else {
-        }
-        #end
-    }
-
-    // ===== Variable Resolution (Priority Hierarchy) =====
-
-    /**
-     * Resolve variable name with priority hierarchy
-     *
-     * Priority order:
-     * 1. Pattern variable registry (user-specified names)
-     * 2. Current clause context (case-specific mappings)
-     * 3. Global variable map (function/module level)
-     * 4. Default variable name (fallback)
-     *
-     * @param tvarId Variable ID from TypedExpr
-     * @param defaultName Default name if no mapping found
-     * @return Resolved Elixir variable name
-     */
-    public function resolveVariable(tvarId: Int, defaultName: String): String {
-        // Priority 1: Pattern variables have highest priority
-        if (patternVariableRegistry.exists(tvarId)) {
-            return patternVariableRegistry.get(tvarId);
-        }
-
-        // Priority 2: Check current clause context
-        var currentClause = getCurrentClauseContext();
-        if (currentClause != null && currentClause.localToName.exists(tvarId)) {
-            return currentClause.localToName.get(tvarId);
-        }
-
-        // Priority 3: Global variable map
-        if (globalVariableMap.exists(tvarId)) {
-            return globalVariableMap.get(tvarId);
-        }
-
-        // Priority 4: Default name
-        return defaultName;
-    }
-
-    /**
-     * Register a pattern variable extraction
-     * These have highest priority in resolution
-     */
-    public function registerPatternVariable(tvarId: Int, patternName: String): Void {
-        patternVariableRegistry.set(tvarId, patternName);
-    }
-
-    /**
-     * Register a temp variable mapping
-     * Maps generated names (g, g1) to meaningful names
-     */
-    public function registerTempMapping(tempName: String, actualName: String): Void {
-        tempVariableMap.set(tempName, actualName);
-    }
-
-    /**
-     * Register a renamed variable
-     * Called when Haxe renames a variable to avoid shadowing
-     * @param tvarId The variable ID
-     * @param originalName The original variable name (e.g., "options")
-     * @param renamedName The renamed variable name (e.g., "options2")
-     */
-    public function registerRenamedVariable(tvarId: Int, originalName: String, renamedName: String): Void {
-        renamedVariableMap.set(tvarId, {original: originalName, renamed: renamedName});
-        // Also update the global variable map to use the renamed name
-        globalVariableMap.set(tvarId, renamedName);
-
-        #if debug_variable_renaming
-        #end
-    }
-
-    /**
-     * Get the renamed mapping for a variable
-     * @param tvarId The variable ID
-     * @return The mapping or null if not renamed
-     */
-    public function getRenamedMapping(tvarId: Int): Null<{original: String, renamed: String}> {
-        return renamedVariableMap.get(tvarId);
-    }
-
-    /**
-     * Check if a variable name is the original name of a renamed variable
-     * Used to detect field references that still use the original name
-     * @param name The field name to check
-     * @return The renamed variable ID if found, null otherwise
-     */
-    public function findRenamedVariableByOriginalName(name: String): Null<Int> {
-        for (id in renamedVariableMap.keys()) {
-            var mapping = renamedVariableMap.get(id);
-            if (mapping != null && mapping.original == name) {
-                return id;
-            }
-        }
-        return null;
-    }
-
-    // ===== Clause Context Management =====
-
-    /**
-     * Push a new clause context onto the stack
-     * Called when entering a switch case
-     */
-    public function pushClauseContext(context: ClauseContext): Void {
-        clauseContextStack.push(context);
-    }
-
-    /**
-     * Pop the current clause context
-     * Called when exiting a switch case
-     */
-    public function popClauseContext(): ClauseContext {
-        return clauseContextStack.pop();
-    }
-
-    /**
-     * Get the current active clause context
-     * Returns null if not in a switch case
-     */
-    public function getCurrentClauseContext(): Null<ClauseContext> {
-        return clauseContextStack.length > 0 ? clauseContextStack[clauseContextStack.length - 1] : null;
-    }
-
-    /**
-     * Check if an enum is idiomatic
-     * Caches the result for performance
-     */
-    public function isIdiomaticEnum(enumName: String, enumType: EnumType): Bool {
-        if (!idiomaticEnums.exists(enumName)) {
-            var isIdiomatic = enumType != null && enumType.meta.has(":elixirIdiomatic");
-            idiomaticEnums.set(enumName, isIdiomatic);
-        }
-        return idiomaticEnums.get(enumName);
-    }
-
-    /**
-     * Store an enum binding plan for later retrieval
-     * Used to pass binding plans from builder to transformer phase
-     *
-     * @param id Unique identifier for this binding plan
-     * @param plan The EnumBindingPlan to store
-     */
-    public function storeEnumBindingPlan(id: String, plan: EnumBindingPlan): Void {
-        #if debug_enum_binding_collision
-        // Check for collision - same ID being reused
-        if (enumBindingPlans.exists(id)) {
-            var existingPlan = enumBindingPlans.get(id);
-
-            // Check if plans are different
-            var isDifferent = false;
-            for (key in plan.keys()) {
-                if (!existingPlan.exists(key) ||
-                    existingPlan.get(key).finalName != plan.get(key).finalName) {
-                    isDifferent = true;
-                    break;
-                }
-            }
-            if (isDifferent) {
-            }
-        }
-
-        // Log plan creation details
-        #end
-
-        enumBindingPlans.set(id, plan);
-
-        #if debug_enum_extraction
-        #end
-    }
-
-    /**
-     * Retrieve an enum binding plan by its ID
-     * Returns null if no plan exists with the given ID
-     *
-     * @param id The unique identifier of the binding plan
-     * @return The stored EnumBindingPlan or null
-     */
-    // Track lookup frequency to detect loops
-    private var lookupFrequency: Map<String, Int> = new Map();
-
-    public function getEnumBindingPlan(id: String): Null<EnumBindingPlan> {
-        #if debug_enum_binding_collision
-        // Track lookup frequency
-        var frequency = lookupFrequency.get(id);
-        if (frequency == null) frequency = 0;
-        frequency++;
-        lookupFrequency.set(id, frequency);
-
-        // Warn about excessive lookups (possible loop)
-        if (frequency > 100) {
-        }
-        if (frequency % 50 == 0 && frequency > 0) {
-        }
-        #end
-
-        var plan = enumBindingPlans.get(id);
-
-        #if debug_enum_extraction
-        if (plan != null) {
-        } else {
-        }
-        #end
-
-        return plan;
-    }
-
-    // ===== Test Progress Integration =====
-
-    /**
-     * Mark a test as started
-     */
-    public function startTest(testPath: String): Void {
-        currentTestPath = testPath;
-        testResults.set(testPath, TestResult.InProgress);
-    }
-
-    /**
-     * Mark a test as completed
-     */
-    public function completeTest(success: Bool): Void {
-        if (currentTestPath != null) {
-            testResults.set(currentTestPath, success ? TestResult.Success : TestResult.Failure);
-            currentTestPath = null;
-        }
-    }
-
-    /**
-     * Get test results for reporting
-     */
-    public function getTestResults(): Map<String, TestResult> {
-        return testResults.copy();
-    }
-
-    // ===== Feature Flag Management =====
-
-    /**
-     * Check if a feature flag is enabled
-     *
-     * @param flag Feature flag name
-     * @return True if enabled, false otherwise
-     */
-    public function isFeatureEnabled(flag: String): Bool {
-        return featureFlags.exists(flag) && featureFlags.get(flag);
-    }
-
-    /**
-     * Set a feature flag value
-     *
-     * @param flag Feature flag name
-     * @param enabled Whether to enable or disable
-     */
-    public function setFeatureFlag(flag: String, enabled: Bool): Void {
-        featureFlags.set(flag, enabled);
-
-        #if debug_ast_builder
-        #end
-    }
-
-    // ===== Lifecycle Management =====
-
-    /**
-     * Initialize context for a new compilation run
-     * Clears transient state while preserving configuration
-     *
-     * WHY: Codex identified that state from previous compilations
-     * can leak and cause issues. This ensures clean slate.
-     */
-    public function beginCompilation(): Void {
-        // Clear transient state
-        globalVariableMap.clear();
-        patternVariableRegistry.clear();
-        tempVariableMap.clear();
-        renamedVariableMap.clear();
-        clauseContextStack = [];
-        // No nodeMetadata side map.
-        testResults.clear();
-        enumBindingPlans.clear();
-
-        // Keep cached transformations and feature flags
-        // featureFlags persist across runs
-
-        // Reset counters
-        nodeIdCounter = 0;
-        currentTestPath = null;
-
-        // Update phase
-        currentPhase = CompilationPhase.Building;
-
-        #if debug_ast_builder
-        #end
-    }
-
-    /**
-     * Transition to transformation phase
-     * Validates state and prepares for transformations
-     */
-    public function beginTransformation(): Void {
-        if (currentPhase != CompilationPhase.Building) {
-            throw 'Invalid phase transition: ${currentPhase} -> Transformation';
-        }
-
-        currentPhase = CompilationPhase.Transforming;
-
-        #if debug_ast_builder
-        #end
-    }
-
-    /**
-     * Transition to printing phase
-     * Final phase before output generation
-     */
-    public function beginPrinting(): Void {
-        if (currentPhase != CompilationPhase.Transforming) {
-            throw 'Invalid phase transition: ${currentPhase} -> Printing';
-        }
-
-        currentPhase = CompilationPhase.Printing;
-
-        #if debug_ast_builder
-        #end
-    }
-
-    /**
-     * Complete compilation and cleanup
-     * Marks end of compilation run
-     */
-    public function endCompilation(): Void {
-        currentPhase = CompilationPhase.Completed;
-
-        #if debug_ast_builder
-        if (Lambda.count(testResults) > 0) {
-            var successful = 0;
-            var failed = 0;
-            for (result in testResults) {
-                switch (result) {
-                    case Success: successful++;
-                    case Failure: failed++;
-                    case InProgress: // Shouldn't happen
-                }
-            }
-        }
-        #end
-    }
-
-    /**
-     * Generate a unique node ID
-     * Used for metadata tracking across phases
-     *
-     * @return Unique identifier for this compilation run
-     */
-    public function generateNodeId(): String {
-        return 'node_${nodeIdCounter++}';
-    }
-
-    /**
-     * Reset context to initial state
-     * Emergency reset for error recovery
-     */
-    public function reset(): Void {
-        // Clear everything
-        globalVariableMap.clear();
-        patternVariableRegistry.clear();
-        tempVariableMap.clear();
-        renamedVariableMap.clear();
-        clauseContextStack = [];
-        // No nodeMetadata side map.
-        enumTypeCache.clear();
-        idiomaticEnums.clear();
-        testResults.clear();
-        enumBindingPlans.clear();
-
-        // Reset to defaults
-        nodeIdCounter = 0;
-        currentTestPath = null;
-        currentPhase = CompilationPhase.NotStarted;
-
-        // Reinitialize
-        initializeFeatureFlags();
-
-        #if debug_ast_builder
-        #end
-    }
+	// ===== Variable Mapping Systems =====
+
+	/**
+	 * Global variable mapping: TVar.id -> Elixir name
+	 * Used for top-level and function-level variables
+	 */
+	public var globalVariableMap:Map<Int, String> = new Map();
+
+	/**
+	 * Pattern variable registry: TVar.id -> pattern name
+	 * Has highest priority - preserves user-specified names from patterns
+	 */
+	public var patternVariableRegistry:Map<Int, String> = new Map();
+
+	/**
+	 * Renamed variable tracking: TVar.id -> {original, renamed}
+	 * Tracks when Haxe renames variables to avoid shadowing (e.g., options → options2)
+	 * This allows us to detect and handle field references that use original names
+	 * while the variable has been renamed
+	 */
+	public var renamedVariableMap:Map<Int, {original:String, renamed:String}> = new Map();
+
+	/**
+	 * Temp variable mappings: temp name -> actual name
+	 * Maps generated temps (g, g1) to meaningful names
+	 */
+	public var tempVariableMap:Map<String, String> = new Map();
+
+	/**
+	 * Active clause contexts stack
+	 * Push/pop as we enter/exit switch cases
+	 */
+	public var clauseContextStack:Array<ClauseContext> = [];
+
+	// Node-level metadata is carried directly on ElixirAST.metadata.
+
+	/**
+	 * Enum type information cache
+	 * Avoids repeated lookups during compilation
+	 */
+	public var enumTypeCache:Map<String, EnumType> = new Map();
+
+	/**
+	 * Idiomatic enum markers
+	 * Tracks which enums have @:elixirIdiomatic metadata
+	 */
+	public var idiomaticEnums:Map<String, Bool> = new Map();
+
+	/**
+	 * Pattern context flag
+	 * True when building pattern matching expressions (case patterns)
+	 */
+	public var isInPattern:Bool = false;
+
+	/**
+	 * Loop depth counter for nested loop tracking
+	 * Incremented when entering a loop, decremented when exiting
+	 * Used to generate proper loop context metadata
+	 */
+	public var loopDepth:Int = 0;
+
+	/**
+	 * Current loop context stack for variable preservation
+	 * Tracks loop variables at each nesting level
+	 * Used to restore variables after Haxe's optimizer replaces them
+	 */
+	public var loopContextStack:Array<LoopContext> = [];
+
+	/**
+	 * Enum binding plans storage
+	 * Maps unique IDs to EnumBindingPlan instances for cross-phase access
+	 * This allows the binding plans to survive from builder to transformer phase
+	 */
+	public var enumBindingPlans:Map<String, EnumBindingPlan> = new Map();
+
+	// ===== Test Progress Tracking =====
+
+	/**
+	 * Current test being compiled
+	 * Used for incremental test runner integration
+	 */
+	public var currentTestPath:String = null;
+
+	/**
+	 * Test compilation results
+	 * Maps test path to success/failure status
+	 */
+	public var testResults:Map<String, TestResult> = new Map();
+
+	// ===== Feature Flags System (Codex Recommendation - January 2025) =====
+
+	/**
+	 * Feature flags for controlling compilation strategies and optimizations.
+	 *
+	 * Flags are initialized from build-time defines and can be overridden at runtime
+	 * via setFeatureFlag() when the compiler chooses to expose a toggle.
+	 */
+	public var featureFlags:Map<String, Bool> = new Map();
+
+	// ===== Lifecycle Management (Codex Recommendation - January 2025) =====
+
+	/**
+	 * Compilation phase tracking
+	 * Ensures proper initialization and cleanup
+	 */
+	public var currentPhase:CompilationPhase = CompilationPhase.NotStarted;
+
+	/**
+	 * Node ID counter for unique identification
+	 * Reset at start of each compilation
+	 */
+	private var nodeIdCounter:Int = 0;
+
+	// ===== Constructor =====
+
+	public function new() {
+		// Initialize with empty state
+		// Will be populated during compilation
+		initializeFeatureFlags();
+	}
+
+	/**
+	 * Initialize feature flags from compiler definitions
+	 *
+	 * Feature flags control which compilation strategies and optimizations are active.
+	 * They work at two levels:
+	 *
+	 * 1. **Builder Routing** (all disabled by default for safety):
+	 *    - Controls which implementation handles AST building
+	 *    - Allows gradual migration from monolithic to modular builders
+	 *    - Default: Use legacy implementation until new builders proven stable
+	 *
+	 * 2. **Transformer Passes** (mix of enabled/disabled based on maturity):
+	 *    - Controls which optimizations and idiomaticizations are applied
+	 *    - Some enabled by default for better code quality
+	 *    - Others disabled until thoroughly tested
+	 *
+	 * **Default Strategy**:
+	 * - Idiomatic transforms: ENABLED - Generate readable Elixir by default
+	 * - Experimental optimizations: DISABLED - Avoid surprises in production
+	 *
+	 * **Override Methods**:
+	 * - Build-time: `haxe build.hxml -D enable_pipe_operator`
+	 * - Runtime: `context.setFeatureFlag("enable_pipe_operator", true)`
+	 *
+	 * @see ElixirASTTransformer for transformation passes
+	 */
+	private function initializeFeatureFlags():Void {
+		// ================================================================================
+		// TRANSFORMER OPTIMIZATION FLAGS
+		// Mix of enabled/disabled based on stability and impact
+		// ================================================================================
+
+		/**
+		 * Loop to comprehension transformation
+		 * DEFAULT: ENABLED - Produces idiomatic Elixir code
+		 *
+		 * WHY USEFUL: Converts imperative loops to functional comprehensions
+		 * - Transforms: `while(i<10) { array.push(i*2); i++; }`
+		 * - Into: `for i <- 0..9, do: i * 2`
+		 *
+		 * WHEN TO DISABLE:
+		 * - Debugging loop compilation issues
+		 * - Preserving exact imperative semantics
+		 * - Performance testing (rare cases where loops are faster)
+		 *
+		 * BENEFITS:
+		 * - More readable Elixir code
+		 * - Better BEAM optimization
+		 * - Follows Elixir community conventions
+		 */
+		#if enable_loop_to_comprehension
+		featureFlags.set("enable_loop_to_comprehension", true);
+		#else
+		featureFlags.set("enable_loop_to_comprehension", true); // Default enabled for idiomatic code
+		#end
+
+		/**
+		 * Idiomatic enum pattern generation
+		 * DEFAULT: ENABLED - Critical for readable pattern matching
+		 *
+		 * WHY USEFUL: Uses Elixir atoms instead of integer indices
+		 * - Transforms: `case elem(result, 0) do 0 -> ...`
+		 * - Into: `case result do {:ok, value} -> ...`
+		 *
+		 * WHEN TO DISABLE:
+		 * - Debugging pattern matching issues
+		 * - Comparing with Haxe's internal representation
+		 * - Testing index-based optimizations
+		 *
+		 * BENEFITS:
+		 * - Human-readable patterns
+		 * - Elixir developer friendly
+		 * - Better error messages
+		 */
+		#if enable_idiomatic_enums
+		featureFlags.set("enable_idiomatic_enums", true);
+		#else
+		featureFlags.set("enable_idiomatic_enums", true); // Default enabled
+		#end
+
+		/**
+		 * Skip redundant extraction in patterns
+		 * DEFAULT: DISABLED - Safety first, optimization second
+		 *
+		 * WHY USEFUL: Removes unnecessary elem() calls after pattern matching
+		 * - Removes: `{:ok, g} -> g = elem(result, 1)` (g already extracted)
+		 * - Keeps just: `{:ok, g} ->`
+		 *
+		 * WHEN TO ENABLE:
+		 * - Production builds for cleaner output
+		 * - After thorough testing
+		 * - When targeting Elixir developers reading generated code
+		 *
+		 * RISKS:
+		 * - May break edge cases with complex patterns
+		 * - Needs comprehensive test coverage
+		 * - Could affect debugging visibility
+		 */
+		#if disable_redundant_extraction
+		featureFlags.set("disable_redundant_extraction", true);
+		#else
+		featureFlags.set("disable_redundant_extraction", false); // Default keep for safety
+		#end
+
+		/**
+		 * Pipe operator transformation
+		 * DEFAULT: DISABLED - Experimental feature
+		 *
+		 * WHY USEFUL: Generates idiomatic Elixir pipelines
+		 * - Transforms: `process(validate(transform(data)))`
+		 * - Into: `data |> transform() |> validate() |> process()`
+		 *
+		 * WHEN TO ENABLE:
+		 * - Targeting Elixir-first codebases
+		 * - After validating transformation correctness
+		 * - For better code readability
+		 *
+		 * CHALLENGES:
+		 * - Complex to detect safe transformation points
+		 * - Must preserve evaluation order
+		 * - Needs to handle error cases
+		 */
+		#if enable_pipe_operator
+		featureFlags.set("enable_pipe_operator", true);
+		#else
+		featureFlags.set("enable_pipe_operator", false); // Default off until stable
+		#end
+
+		/**
+		 * Preserve integer indices in pattern matching
+		 * DEFAULT: DISABLED - Atoms are more idiomatic
+		 *
+		 * WHY USEFUL: Maintains Haxe's internal representation
+		 * - Keeps: `case elem(enum, 0) do 0 -> ...`
+		 * - Instead of: `case enum do {:constructor, ...} -> ...`
+		 *
+		 * WHEN TO ENABLE:
+		 * - Debugging enum compilation
+		 * - Performance critical code (marginal benefit)
+		 * - Interfacing with integer-based external systems
+		 *
+		 * TRADE-OFFS:
+		 * - Less readable code
+		 * - Harder to debug
+		 * - Not idiomatic Elixir
+		 */
+		#if preserve_integer_indices
+		featureFlags.set("preserve_integer_indices", true);
+		#else
+		featureFlags.set("preserve_integer_indices", false); // Default use atoms
+		#end
+
+		#if debug_ast_builder
+		var enabledFlags = [];
+		for (flag in featureFlags.keys()) {
+			if (featureFlags.get(flag)) {
+				enabledFlags.push(flag);
+			}
+		}
+		if (enabledFlags.length > 0) {} else {}
+		#end
+	}
+
+	// ===== Variable Resolution (Priority Hierarchy) =====
+
+	/**
+	 * Resolve variable name with priority hierarchy
+	 *
+	 * Priority order:
+	 * 1. Pattern variable registry (user-specified names)
+	 * 2. Current clause context (case-specific mappings)
+	 * 3. Global variable map (function/module level)
+	 * 4. Default variable name (fallback)
+	 *
+	 * @param tvarId Variable ID from TypedExpr
+	 * @param defaultName Default name if no mapping found
+	 * @return Resolved Elixir variable name
+	 */
+	public function resolveVariable(tvarId:Int, defaultName:String):String {
+		// Priority 1: Pattern variables have highest priority
+		if (patternVariableRegistry.exists(tvarId)) {
+			return patternVariableRegistry.get(tvarId);
+		}
+
+		// Priority 2: Check current clause context
+		var currentClause = getCurrentClauseContext();
+		if (currentClause != null && currentClause.localToName.exists(tvarId)) {
+			return currentClause.localToName.get(tvarId);
+		}
+
+		// Priority 3: Global variable map
+		if (globalVariableMap.exists(tvarId)) {
+			return globalVariableMap.get(tvarId);
+		}
+
+		// Priority 4: Default name
+		return defaultName;
+	}
+
+	/**
+	 * Register a pattern variable extraction
+	 * These have highest priority in resolution
+	 */
+	public function registerPatternVariable(tvarId:Int, patternName:String):Void {
+		patternVariableRegistry.set(tvarId, patternName);
+	}
+
+	/**
+	 * Register a temp variable mapping
+	 * Maps generated names (g, g1) to meaningful names
+	 */
+	public function registerTempMapping(tempName:String, actualName:String):Void {
+		tempVariableMap.set(tempName, actualName);
+	}
+
+	/**
+	 * Register a renamed variable
+	 * Called when Haxe renames a variable to avoid shadowing
+	 * @param tvarId The variable ID
+	 * @param originalName The original variable name (e.g., "options")
+	 * @param renamedName The renamed variable name (e.g., "options2")
+	 */
+	public function registerRenamedVariable(tvarId:Int, originalName:String, renamedName:String):Void {
+		renamedVariableMap.set(tvarId, {original: originalName, renamed: renamedName});
+		// Also update the global variable map to use the renamed name
+		globalVariableMap.set(tvarId, renamedName);
+
+		#if debug_variable_renaming
+		#end
+	}
+
+	/**
+	 * Get the renamed mapping for a variable
+	 * @param tvarId The variable ID
+	 * @return The mapping or null if not renamed
+	 */
+	public function getRenamedMapping(tvarId:Int):Null<{original:String, renamed:String}> {
+		return renamedVariableMap.get(tvarId);
+	}
+
+	/**
+	 * Check if a variable name is the original name of a renamed variable
+	 * Used to detect field references that still use the original name
+	 * @param name The field name to check
+	 * @return The renamed variable ID if found, null otherwise
+	 */
+	public function findRenamedVariableByOriginalName(name:String):Null<Int> {
+		for (id in renamedVariableMap.keys()) {
+			var mapping = renamedVariableMap.get(id);
+			if (mapping != null && mapping.original == name) {
+				return id;
+			}
+		}
+		return null;
+	}
+
+	// ===== Clause Context Management =====
+
+	/**
+	 * Push a new clause context onto the stack
+	 * Called when entering a switch case
+	 */
+	public function pushClauseContext(context:ClauseContext):Void {
+		clauseContextStack.push(context);
+	}
+
+	/**
+	 * Pop the current clause context
+	 * Called when exiting a switch case
+	 */
+	public function popClauseContext():ClauseContext {
+		return clauseContextStack.pop();
+	}
+
+	/**
+	 * Get the current active clause context
+	 * Returns null if not in a switch case
+	 */
+	public function getCurrentClauseContext():Null<ClauseContext> {
+		return clauseContextStack.length > 0 ? clauseContextStack[clauseContextStack.length - 1] : null;
+	}
+
+	/**
+	 * Check if an enum is idiomatic
+	 * Caches the result for performance
+	 */
+	public function isIdiomaticEnum(enumName:String, enumType:EnumType):Bool {
+		if (!idiomaticEnums.exists(enumName)) {
+			var isIdiomatic = enumType != null && enumType.meta.has(":elixirIdiomatic");
+			idiomaticEnums.set(enumName, isIdiomatic);
+		}
+		return idiomaticEnums.get(enumName);
+	}
+
+	/**
+	 * Store an enum binding plan for later retrieval
+	 * Used to pass binding plans from builder to transformer phase
+	 *
+	 * @param id Unique identifier for this binding plan
+	 * @param plan The EnumBindingPlan to store
+	 */
+	public function storeEnumBindingPlan(id:String, plan:EnumBindingPlan):Void {
+		#if debug_enum_binding_collision
+		// Check for collision - same ID being reused
+		if (enumBindingPlans.exists(id)) {
+			var existingPlan = enumBindingPlans.get(id);
+
+			// Check if plans are different
+			var isDifferent = false;
+			for (key in plan.keys()) {
+				if (!existingPlan.exists(key) || existingPlan.get(key).finalName != plan.get(key).finalName) {
+					isDifferent = true;
+					break;
+				}
+			}
+			if (isDifferent) {}
+		}
+
+		// Log plan creation details
+		#end
+
+		enumBindingPlans.set(id, plan);
+
+		#if debug_enum_extraction
+		#end
+	}
+
+	/**
+	 * Retrieve an enum binding plan by its ID
+	 * Returns null if no plan exists with the given ID
+	 *
+	 * @param id The unique identifier of the binding plan
+	 * @return The stored EnumBindingPlan or null
+	 */
+	// Track lookup frequency to detect loops
+	private var lookupFrequency:Map<String, Int> = new Map();
+
+	public function getEnumBindingPlan(id:String):Null<EnumBindingPlan> {
+		#if debug_enum_binding_collision
+		// Track lookup frequency
+		var frequency = lookupFrequency.get(id);
+		if (frequency == null)
+			frequency = 0;
+		frequency++;
+		lookupFrequency.set(id, frequency);
+
+		// Warn about excessive lookups (possible loop)
+		if (frequency > 100) {}
+		if (frequency % 50 == 0 && frequency > 0) {}
+		#end
+
+		var plan = enumBindingPlans.get(id);
+
+		#if debug_enum_extraction
+		if (plan != null) {} else {}
+		#end
+
+		return plan;
+	}
+
+	// ===== Test Progress Integration =====
+
+	/**
+	 * Mark a test as started
+	 */
+	public function startTest(testPath:String):Void {
+		currentTestPath = testPath;
+		testResults.set(testPath, TestResult.InProgress);
+	}
+
+	/**
+	 * Mark a test as completed
+	 */
+	public function completeTest(success:Bool):Void {
+		if (currentTestPath != null) {
+			testResults.set(currentTestPath, success ? TestResult.Success : TestResult.Failure);
+			currentTestPath = null;
+		}
+	}
+
+	/**
+	 * Get test results for reporting
+	 */
+	public function getTestResults():Map<String, TestResult> {
+		return testResults.copy();
+	}
+
+	// ===== Feature Flag Management =====
+
+	/**
+	 * Check if a feature flag is enabled
+	 *
+	 * @param flag Feature flag name
+	 * @return True if enabled, false otherwise
+	 */
+	public function isFeatureEnabled(flag:String):Bool {
+		return featureFlags.exists(flag) && featureFlags.get(flag);
+	}
+
+	/**
+	 * Set a feature flag value
+	 *
+	 * @param flag Feature flag name
+	 * @param enabled Whether to enable or disable
+	 */
+	public function setFeatureFlag(flag:String, enabled:Bool):Void {
+		featureFlags.set(flag, enabled);
+
+		#if debug_ast_builder
+		#end
+	}
+
+	// ===== Lifecycle Management =====
+
+	/**
+	 * Initialize context for a new compilation run
+	 * Clears transient state while preserving configuration
+	 *
+	 * WHY: Codex identified that state from previous compilations
+	 * can leak and cause issues. This ensures clean slate.
+	 */
+	public function beginCompilation():Void {
+		// Clear transient state
+		globalVariableMap.clear();
+		patternVariableRegistry.clear();
+		tempVariableMap.clear();
+		renamedVariableMap.clear();
+		clauseContextStack = [];
+		// No nodeMetadata side map.
+		testResults.clear();
+		enumBindingPlans.clear();
+
+		// Keep cached transformations and feature flags
+		// featureFlags persist across runs
+
+		// Reset counters
+		nodeIdCounter = 0;
+		currentTestPath = null;
+
+		// Update phase
+		currentPhase = CompilationPhase.Building;
+
+		#if debug_ast_builder
+		#end
+	}
+
+	/**
+	 * Transition to transformation phase
+	 * Validates state and prepares for transformations
+	 */
+	public function beginTransformation():Void {
+		if (currentPhase != CompilationPhase.Building) {
+			throw 'Invalid phase transition: ${currentPhase} -> Transformation';
+		}
+
+		currentPhase = CompilationPhase.Transforming;
+
+		#if debug_ast_builder
+		#end
+	}
+
+	/**
+	 * Transition to printing phase
+	 * Final phase before output generation
+	 */
+	public function beginPrinting():Void {
+		if (currentPhase != CompilationPhase.Transforming) {
+			throw 'Invalid phase transition: ${currentPhase} -> Printing';
+		}
+
+		currentPhase = CompilationPhase.Printing;
+
+		#if debug_ast_builder
+		#end
+	}
+
+	/**
+	 * Complete compilation and cleanup
+	 * Marks end of compilation run
+	 */
+	public function endCompilation():Void {
+		currentPhase = CompilationPhase.Completed;
+
+		#if debug_ast_builder
+		if (Lambda.count(testResults) > 0) {
+			var successful = 0;
+			var failed = 0;
+			for (result in testResults) {
+				switch (result) {
+					case Success:
+						successful++;
+					case Failure:
+						failed++;
+					case InProgress: // Shouldn't happen
+				}
+			}
+		}
+		#end
+	}
+
+	/**
+	 * Generate a unique node ID
+	 * Used for metadata tracking across phases
+	 *
+	 * @return Unique identifier for this compilation run
+	 */
+	public function generateNodeId():String {
+		return 'node_${nodeIdCounter++}';
+	}
+
+	/**
+	 * Reset context to initial state
+	 * Emergency reset for error recovery
+	 */
+	public function reset():Void {
+		// Clear everything
+		globalVariableMap.clear();
+		patternVariableRegistry.clear();
+		tempVariableMap.clear();
+		renamedVariableMap.clear();
+		clauseContextStack = [];
+		// No nodeMetadata side map.
+		enumTypeCache.clear();
+		idiomaticEnums.clear();
+		testResults.clear();
+		enumBindingPlans.clear();
+
+		// Reset to defaults
+		nodeIdCounter = 0;
+		currentTestPath = null;
+		currentPhase = CompilationPhase.NotStarted;
+
+		// Reinitialize
+		initializeFeatureFlags();
+
+		#if debug_ast_builder
+		#end
+	}
 }
 
 /**
  * Test result enumeration for progress tracking
  */
 enum TestResult {
-    InProgress;
-    Success;
-    Failure;
+	InProgress;
+	Success;
+	Failure;
 }
 
 /**
@@ -731,11 +725,10 @@ enum TestResult {
  * Ensures proper lifecycle management
  */
 enum CompilationPhase {
-    NotStarted;
-    Building;
-    Transforming;
-    Printing;
-    Completed;
+	NotStarted;
+	Building;
+	Transforming;
+	Printing;
+	Completed;
 }
-
 #end

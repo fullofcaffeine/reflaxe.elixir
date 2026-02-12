@@ -16,7 +16,6 @@ package plug;
  */
 @:native("Plug.CSRFProtection")
 extern class CSRFProtection {
-    @:native("get_csrf_token")
-    static function get_csrf_token(): String;
+	@:native("get_csrf_token")
+	static function get_csrf_token():String;
 }
-

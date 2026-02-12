@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
@@ -47,121 +46,126 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   end
  */
 class EarlyReturnIfElseTransforms {
-    public static function pass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
-            return switch (node.def) {
-                case EBlock(stmts):
-                    rewriteSequenceAsSameKind(stmts, function(exprs) return makeASTWithMeta(EBlock(exprs), node.metadata, node.pos));
-                case EDo(stmts):
-                    rewriteSequenceAsSameKind(stmts, function(exprs) return makeASTWithMeta(EDo(exprs), node.metadata, node.pos));
-                default:
-                    node;
-            }
-        });
-    }
+	public static function pass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
+			return switch (node.def) {
+				case EBlock(stmts):
+					rewriteSequenceAsSameKind(stmts, function(exprs) return makeASTWithMeta(EBlock(exprs), node.metadata, node.pos));
+				case EDo(stmts):
+					rewriteSequenceAsSameKind(stmts, function(exprs) return makeASTWithMeta(EDo(exprs), node.metadata, node.pos));
+				default:
+					node;
+			}
+		});
+	}
 
-    static inline function isFromReturn(n: ElixirAST): Bool {
-        if (n == null) return false;
-        if (n.metadata != null && n.metadata.fromReturn == true) return true;
-        return switch (n.def) {
-            case EBlock(stmts) | EDo(stmts):
-                stmts != null && stmts.length > 0 && isFromReturn(stmts[stmts.length - 1]);
-            case EParen(inner):
-                isFromReturn(inner);
-            default:
-                false;
-        };
-    }
+	static inline function isFromReturn(n:ElixirAST):Bool {
+		if (n == null)
+			return false;
+		if (n.metadata != null && n.metadata.fromReturn == true)
+			return true;
+		return switch (n.def) {
+			case EBlock(stmts) | EDo(stmts): stmts != null && stmts.length > 0 && isFromReturn(stmts[stmts.length - 1]);
+			case EParen(inner):
+				isFromReturn(inner);
+			default:
+				false;
+		};
+	}
 
-    static function containsFromReturn(n: ElixirAST): Bool {
-        if (n == null || n.def == null) return false;
+	static function containsFromReturn(n:ElixirAST):Bool {
+		if (n == null || n.def == null)
+			return false;
 
-        var found = false;
+		var found = false;
 
-        function scan(node: ElixirAST): Void {
-            if (found || node == null || node.def == null) return;
-            if (node.metadata != null && node.metadata.fromReturn == true) {
-                found = true;
-                return;
-            }
-            ElixirASTTransformer.iterateAST(node, scan);
-        }
+		function scan(node:ElixirAST):Void {
+			if (found || node == null || node.def == null)
+				return;
+			if (node.metadata != null && node.metadata.fromReturn == true) {
+				found = true;
+				return;
+			}
+			ElixirASTTransformer.iterateAST(node, scan);
+		}
 
-        scan(n);
-        return found;
-    }
+		scan(n);
+		return found;
+	}
 
-    static function appendContinuation(branch: ElixirAST, continuation: ElixirAST): ElixirAST {
-        if (branch == null || branch.def == null) return branch;
-        if (continuation == null || continuation.def == null) return branch;
+	static function appendContinuation(branch:ElixirAST, continuation:ElixirAST):ElixirAST {
+		if (branch == null || branch.def == null)
+			return branch;
+		if (continuation == null || continuation.def == null)
+			return branch;
 
-        return switch (branch.def) {
-            case EBlock(stmts):
-                var combined = (stmts != null ? stmts : []).concat([continuation]);
-                rewriteSequenceAsSameKind(combined, function(exprs) return makeASTWithMeta(EBlock(exprs), branch.metadata, branch.pos));
+		return switch (branch.def) {
+			case EBlock(stmts):
+				var combined = (stmts != null ? stmts : []).concat([continuation]);
+				rewriteSequenceAsSameKind(combined, function(exprs) return makeASTWithMeta(EBlock(exprs), branch.metadata, branch.pos));
 
-            case EDo(stmts):
-                var combined = (stmts != null ? stmts : []).concat([continuation]);
-                rewriteSequenceAsSameKind(combined, function(exprs) return makeASTWithMeta(EDo(exprs), branch.metadata, branch.pos));
+			case EDo(stmts):
+				var combined = (stmts != null ? stmts : []).concat([continuation]);
+				rewriteSequenceAsSameKind(combined, function(exprs) return makeASTWithMeta(EDo(exprs), branch.metadata, branch.pos));
 
-            case EParen(inner):
-                makeASTWithMeta(EParen(appendContinuation(inner, continuation)), branch.metadata, branch.pos);
+			case EParen(inner):
+				makeASTWithMeta(EParen(appendContinuation(inner, continuation)), branch.metadata, branch.pos);
 
-            default:
-                var combined = [branch, continuation];
-                var rewritten = rewriteSequenceAsSameKind(combined, function(exprs) return makeASTWithMeta(EBlock(exprs), branch.metadata, branch.pos));
-                switch (rewritten.def) {
-                    case EBlock(exprs) if (exprs != null && exprs.length == 1):
-                        exprs[0];
-                    default:
-                        rewritten;
-                }
-        };
-    }
+			default:
+				var combined = [branch, continuation];
+				var rewritten = rewriteSequenceAsSameKind(combined, function(exprs) return makeASTWithMeta(EBlock(exprs), branch.metadata, branch.pos));
+				switch (rewritten.def) {
+					case EBlock(exprs) if (exprs != null && exprs.length == 1):
+						exprs[0];
+					default:
+						rewritten;
+				}
+		};
+	}
 
-    static function rewriteSequenceAsSameKind(stmts: Array<ElixirAST>, wrap: Array<ElixirAST> -> ElixirAST): ElixirAST {
-        if (stmts == null || stmts.length == 0) return wrap([]);
+	static function rewriteSequenceAsSameKind(stmts:Array<ElixirAST>, wrap:Array<ElixirAST>->ElixirAST):ElixirAST {
+		if (stmts == null || stmts.length == 0)
+			return wrap([]);
 
-        var out: Array<ElixirAST> = [];
-        var i = 0;
-        while (i < stmts.length) {
-            var stmt = stmts[i];
+		var out:Array<ElixirAST> = [];
+		var i = 0;
+		while (i < stmts.length) {
+			var stmt = stmts[i];
 
-            switch (stmt.def) {
-                case EIf(condition, thenBranch, null) if (containsFromReturn(thenBranch) && i < stmts.length - 1):
-                    var rest = stmts.slice(i + 1);
-                    var elseExpr = buildRestExpr(rest, stmt.metadata, stmt.pos);
-                    var thenWithContinuation = isFromReturn(thenBranch) ? thenBranch : appendContinuation(thenBranch, elseExpr);
-                    out.push(makeASTWithMeta(EIf(condition, thenWithContinuation, elseExpr), stmt.metadata, stmt.pos));
-                    return wrap(out);
+			switch (stmt.def) {
+				case EIf(condition, thenBranch, null) if (containsFromReturn(thenBranch) && i < stmts.length - 1):
+					var rest = stmts.slice(i + 1);
+					var elseExpr = buildRestExpr(rest, stmt.metadata, stmt.pos);
+					var thenWithContinuation = isFromReturn(thenBranch) ? thenBranch : appendContinuation(thenBranch, elseExpr);
+					out.push(makeASTWithMeta(EIf(condition, thenWithContinuation, elseExpr), stmt.metadata, stmt.pos));
+					return wrap(out);
 
-                case EUnless(condition, body, null) if (containsFromReturn(body) && i < stmts.length - 1):
-                    var restUnless = stmts.slice(i + 1);
-                    var elseExprUnless = buildRestExpr(restUnless, stmt.metadata, stmt.pos);
-                    var bodyWithContinuation = isFromReturn(body) ? body : appendContinuation(body, elseExprUnless);
-                    out.push(makeASTWithMeta(EUnless(condition, bodyWithContinuation, elseExprUnless), stmt.metadata, stmt.pos));
-                    return wrap(out);
+				case EUnless(condition, body, null) if (containsFromReturn(body) && i < stmts.length - 1):
+					var restUnless = stmts.slice(i + 1);
+					var elseExprUnless = buildRestExpr(restUnless, stmt.metadata, stmt.pos);
+					var bodyWithContinuation = isFromReturn(body) ? body : appendContinuation(body, elseExprUnless);
+					out.push(makeASTWithMeta(EUnless(condition, bodyWithContinuation, elseExprUnless), stmt.metadata, stmt.pos));
+					return wrap(out);
 
-                default:
-                    out.push(stmt);
-                    i++;
-            }
-        }
+				default:
+					out.push(stmt);
+					i++;
+			}
+		}
 
-        return wrap(out);
-    }
+		return wrap(out);
+	}
 
-    static function buildRestExpr(rest: Array<ElixirAST>, meta: ElixirMetadata, pos: haxe.macro.Expr.Position): ElixirAST {
-        // Recursively rewrite early-return patterns within the remainder.
-        var rewritten = rewriteSequenceAsSameKind(rest, function(exprs) return makeASTWithMeta(EBlock(exprs), meta, pos));
-        return switch (rewritten.def) {
-            case EBlock(exprs) if (exprs != null && exprs.length == 1):
-                // Prefer a single expression over a 1-element block in branches.
-                exprs[0];
-            default:
-                rewritten;
-        };
-    }
+	static function buildRestExpr(rest:Array<ElixirAST>, meta:ElixirMetadata, pos:haxe.macro.Expr.Position):ElixirAST {
+		// Recursively rewrite early-return patterns within the remainder.
+		var rewritten = rewriteSequenceAsSameKind(rest, function(exprs) return makeASTWithMeta(EBlock(exprs), meta, pos));
+		return switch (rewritten.def) {
+			case EBlock(exprs) if (exprs != null && exprs.length == 1):
+				// Prefer a single expression over a 1-element block in branches.
+				exprs[0];
+			default:
+				rewritten;
+		};
+	}
 }
-
 #end

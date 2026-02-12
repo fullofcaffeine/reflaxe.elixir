@@ -11,28 +11,26 @@
  * - Method calls properly converted to module function calls
  */
 class Main {
-    static function main() {
-        // Test 1: Array methods - map
-        var numbers = [1, 2, 3, 4, 5];
-        var doubled = numbers.map(x -> x * 2);
-        trace(doubled);
+	static function main() {
+		// Test 1: Array methods - map
+		var numbers = [1, 2, 3, 4, 5];
+		var doubled = numbers.map(x -> x * 2);
+		trace(doubled);
 
-        // Test 2: Array methods - filter
-        var evens = numbers.filter(n -> n % 2 == 0);
-        trace(evens);
+		// Test 2: Array methods - filter
+		var evens = numbers.filter(n -> n % 2 == 0);
+		trace(evens);
 
-        // Test 3: Method chaining
-        var result = numbers
-            .filter(n -> n > 2)
-            .map(n -> n * 3);
-        trace(result);
+		// Test 3: Method chaining
+		var result = numbers.filter(n -> n > 2).map(n -> n * 3);
+		trace(result);
 
-        // Test 4: Array join
-        var joined = ["a", "b", "c"].join(", ");
-        trace(joined);
+		// Test 4: Array join
+		var joined = ["a", "b", "c"].join(", ");
+		trace(joined);
 
-        // Test 5: Array length
-        var len = numbers.length;
-        trace(len);
-    }
+		// Test 5: Array length
+		var len = numbers.length;
+		trace(len);
+	}
 }

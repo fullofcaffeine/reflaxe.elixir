@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.ds.StringMap;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
@@ -61,159 +60,163 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   end
  */
 class NilGuardFieldAccessCaseNarrowTransforms {
-    public static function pass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EIf(condition, thenBranch, elseBranch) if (elseBranch != null):
-                    var rewritten = rewriteIf(condition, thenBranch, elseBranch, n);
-                    rewritten != null ? rewritten : n;
-                default:
-                    n;
-            }
-        });
-    }
+	public static function pass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EIf(condition, thenBranch, elseBranch) if (elseBranch != null):
+					var rewritten = rewriteIf(condition, thenBranch, elseBranch, n);
+					rewritten != null ? rewritten : n;
+				default:
+					n;
+			}
+		});
+	}
 
-    static function rewriteIf(condition: ElixirAST, thenBranch: ElixirAST, elseBranch: ElixirAST, original: ElixirAST): Null<ElixirAST> {
-        var condUnwrapped = unwrapParen(condition);
-        var nilInfo = extractNilGuardOr(condUnwrapped);
-        if (nilInfo == null) return null;
+	static function rewriteIf(condition:ElixirAST, thenBranch:ElixirAST, elseBranch:ElixirAST, original:ElixirAST):Null<ElixirAST> {
+		var condUnwrapped = unwrapParen(condition);
+		var nilInfo = extractNilGuardOr(condUnwrapped);
+		if (nilInfo == null)
+			return null;
 
-        var varName = nilInfo.varName;
-        var otherCond = nilInfo.otherCond;
+		var varName = nilInfo.varName;
+		var otherCond = nilInfo.otherCond;
 
-        var fieldNames = collectDirectFieldAccesses(elseBranch, varName);
-        if (fieldNames.length == 0) return null;
+		var fieldNames = collectDirectFieldAccesses(elseBranch, varName);
+		if (fieldNames.length == 0)
+			return null;
 
-        var fieldToBinder = new StringMap<String>();
-        for (f in fieldNames) fieldToBinder.set(f, varName + "_" + f);
+		var fieldToBinder = new StringMap<String>();
+		for (f in fieldNames)
+			fieldToBinder.set(f, varName + "_" + f);
 
-        var narrowedElse = replaceFieldAccesses(elseBranch, varName, fieldToBinder);
+		var narrowedElse = replaceFieldAccesses(elseBranch, varName, fieldToBinder);
 
-        var mapPairs: Array<{key: ElixirAST, value: EPattern}> = [];
-        for (fieldName in fieldNames) {
-            mapPairs.push({key: makeAST(EAtom(fieldName)), value: PVar(fieldToBinder.get(fieldName))});
-        }
+		var mapPairs:Array<{key:ElixirAST, value:EPattern}> = [];
+		for (fieldName in fieldNames) {
+			mapPairs.push({key: makeAST(EAtom(fieldName)), value: PVar(fieldToBinder.get(fieldName))});
+		}
 
-        var caseExpr = makeASTWithMeta(
-            ECase(makeAST(EVar(varName)), [
-                {
-                    pattern: PLiteral(makeAST(ENil)),
-                    guard: null,
-                    body: thenBranch
-                },
-                {
-                    pattern: PMap(mapPairs),
-                    guard: null,
-                    body: narrowedElse
-                }
-            ]),
-            original.metadata,
-            original.pos
-        );
+		var caseExpr = makeASTWithMeta(ECase(makeAST(EVar(varName)), [
+			{
+				pattern: PLiteral(makeAST(ENil)),
+				guard: null,
+				body: thenBranch
+			},
+			{
+				pattern: PMap(mapPairs),
+				guard: null,
+				body: narrowedElse
+			}
+		]), original.metadata, original.pos);
 
-        return makeASTWithMeta(EIf(otherCond, thenBranch, caseExpr), original.metadata, original.pos);
-    }
+		return makeASTWithMeta(EIf(otherCond, thenBranch, caseExpr), original.metadata, original.pos);
+	}
 
-    static function unwrapParen(e: ElixirAST): ElixirAST {
-        return switch (e.def) {
-            case EParen(inner): unwrapParen(inner);
-            default: e;
-        };
-    }
+	static function unwrapParen(e:ElixirAST):ElixirAST {
+		return switch (e.def) {
+			case EParen(inner): unwrapParen(inner);
+			default: e;
+		};
+	}
 
-    static function extractNilGuardOr(cond: ElixirAST): Null<{ varName: String, otherCond: ElixirAST }> {
-        if (cond == null || cond.def == null) return null;
-        return switch (cond.def) {
-            case EBinary(Or, left, right):
-                var leftVar = extractIsNilVar(left);
-                if (leftVar != null) {
-                    { varName: leftVar, otherCond: right };
-                } else {
-                    var rightVar = extractIsNilVar(right);
-                    rightVar != null ? { varName: rightVar, otherCond: left } : null;
-                }
-            default:
-                null;
-        };
-    }
+	static function extractNilGuardOr(cond:ElixirAST):Null<{varName:String, otherCond:ElixirAST}> {
+		if (cond == null || cond.def == null)
+			return null;
+		return switch (cond.def) {
+			case EBinary(Or, left, right):
+				var leftVar = extractIsNilVar(left);
+				if (leftVar != null) {
+					{varName: leftVar, otherCond: right};
+				} else {
+					var rightVar = extractIsNilVar(right);
+					rightVar != null ? {varName: rightVar, otherCond: left} : null;
+				}
+			default:
+				null;
+		};
+	}
 
-    static function extractIsNilVar(expr: ElixirAST): Null<String> {
-        var e = unwrapParen(expr);
-        if (e == null || e.def == null) return null;
-        var arg: Null<ElixirAST> = null;
+	static function extractIsNilVar(expr:ElixirAST):Null<String> {
+		var e = unwrapParen(expr);
+		if (e == null || e.def == null)
+			return null;
+		var arg:Null<ElixirAST> = null;
 
-        switch (e.def) {
-            case ERemoteCall(mod, "is_nil", args) if (args != null && args.length == 1 && isKernel(mod)):
-                arg = args[0];
-            case ECall(target, "is_nil", args) if (args != null && args.length == 1 && target != null && isKernel(target)):
-                arg = args[0];
-            case ECall(null, "is_nil", args) if (args != null && args.length == 1):
-                // Imported Kernel.is_nil/1
-                arg = args[0];
-            default:
-        }
+		switch (e.def) {
+			case ERemoteCall(mod, "is_nil", args) if (args != null && args.length == 1 && isKernel(mod)):
+				arg = args[0];
+			case ECall(target, "is_nil", args) if (args != null && args.length == 1 && target != null && isKernel(target)):
+				arg = args[0];
+			case ECall(null, "is_nil", args) if (args != null && args.length == 1):
+				// Imported Kernel.is_nil/1
+				arg = args[0];
+			default:
+		}
 
-        if (arg == null) return null;
-        return switch (unwrapParen(arg).def) {
-            case EVar(v): v;
-            default: null;
-        };
-    }
+		if (arg == null)
+			return null;
+		return switch (unwrapParen(arg).def) {
+			case EVar(v): v;
+			default: null;
+		};
+	}
 
-    static function isKernel(mod: ElixirAST): Bool {
-        if (mod == null || mod.def == null) return false;
-        return switch (unwrapParen(mod).def) {
-            case EVar("Kernel"): true;
-            case EAtom(a):
-                var s: String = a;
-                s == "Kernel" || s == ":Kernel";
-            default:
-                false;
-        };
-    }
+	static function isKernel(mod:ElixirAST):Bool {
+		if (mod == null || mod.def == null)
+			return false;
+		return switch (unwrapParen(mod).def) {
+			case EVar("Kernel"): true;
+			case EAtom(a): var s:String = a; s == "Kernel" || s == ":Kernel";
+			default:
+				false;
+		};
+	}
 
-    static function collectDirectFieldAccesses(expr: ElixirAST, varName: String): Array<String> {
-        var seen = new StringMap<Bool>();
-        if (expr == null || expr.def == null) return [];
+	static function collectDirectFieldAccesses(expr:ElixirAST, varName:String):Array<String> {
+		var seen = new StringMap<Bool>();
+		if (expr == null || expr.def == null)
+			return [];
 
-        ElixirASTTransformer.transformNode(expr, function(n: ElixirAST): ElixirAST {
-            if (n == null || n.def == null) return n;
-            switch (n.def) {
-                case EField(target, fieldName):
-                    var t = unwrapParen(target);
-                    switch (t.def) {
-                        case EVar(v) if (v == varName):
-                            if (!seen.exists(fieldName)) seen.set(fieldName, true);
-                        default:
-                    }
-                default:
-            }
-            return n;
-        });
+		ElixirASTTransformer.transformNode(expr, function(n:ElixirAST):ElixirAST {
+			if (n == null || n.def == null)
+				return n;
+			switch (n.def) {
+				case EField(target, fieldName):
+					var t = unwrapParen(target);
+					switch (t.def) {
+						case EVar(v) if (v == varName):
+							if (!seen.exists(fieldName)) seen.set(fieldName, true);
+						default:
+					}
+				default:
+			}
+			return n;
+		});
 
-        var out: Array<String> = [];
-        for (k in seen.keys()) out.push(k);
-        out.sort(Reflect.compare);
-        return out;
-    }
+		var out:Array<String> = [];
+		for (k in seen.keys())
+			out.push(k);
+		out.sort(Reflect.compare);
+		return out;
+	}
 
-    static function replaceFieldAccesses(expr: ElixirAST, varName: String, fieldToBinder: StringMap<String>): ElixirAST {
-        return ElixirASTTransformer.transformNode(expr, function(n: ElixirAST): ElixirAST {
-            if (n == null || n.def == null) return n;
-            return switch (n.def) {
-                case EField(target, fieldName):
-                    var t = unwrapParen(target);
-                    switch (t.def) {
-                        case EVar(v) if (v == varName && fieldToBinder.exists(fieldName)):
-                            makeASTWithMeta(EVar(fieldToBinder.get(fieldName)), n.metadata, n.pos);
-                        default:
-                            n;
-                    }
-                default:
-                    n;
-            };
-        });
-    }
+	static function replaceFieldAccesses(expr:ElixirAST, varName:String, fieldToBinder:StringMap<String>):ElixirAST {
+		return ElixirASTTransformer.transformNode(expr, function(n:ElixirAST):ElixirAST {
+			if (n == null || n.def == null)
+				return n;
+			return switch (n.def) {
+				case EField(target, fieldName):
+					var t = unwrapParen(target);
+					switch (t.def) {
+						case EVar(v) if (v == varName && fieldToBinder.exists(fieldName)):
+							makeASTWithMeta(EVar(fieldToBinder.get(fieldName)), n.metadata, n.pos);
+						default:
+							n;
+					}
+				default:
+					n;
+			};
+		});
+	}
 }
-
 #end

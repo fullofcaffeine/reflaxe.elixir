@@ -3,24 +3,21 @@
  *
  * Expected: compilation fails with an association validation error.
  */
-
 @:schema("users")
 class User {
-    public var id: Int;
-    public var name: String;
+	public var id:Int;
+	public var name:String;
 }
 
 @:schema("posts")
 class Post {
-    public var id: Int;
+	public var id:Int;
 
-    @:belongs_to("user")
-    public var user: User;
-
-    // Missing: user_id / userId
+	@:belongs_to("user")
+	public var user:User;
+	// Missing: user_id / userId
 }
 
 class Main {
-    static function main() {}
+	static function main() {}
 }
-

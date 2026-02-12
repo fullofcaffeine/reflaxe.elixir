@@ -18,16 +18,16 @@ import elixir.types.Term;
  */
 @:exunit
 class TodoLiveDueDateTest extends TestCase {
-    @:test
-    public function testCreateTodoWithDueDateRenders(): Void {
-        var conn = ConnTest.build_conn();
-        var lvTuple: Term = LiveViewTest.live(conn, "/todos");
-        var lv: LiveView = LiveViewTest.view(lvTuple);
-        LiveViewTest.render_click(LiveViewTest.element(lv, "button[phx-click='toggle_form']"));
-        var data: Term = {title: "DueEarly", due_date: "2025-11-01"};
-        var formEl: Term = LiveViewTest.element(lv, "form[phx-submit='create_todo']");
-        LiveViewTest.render_submit(formEl, data);
-        var html = LiveViewTest.render(lv);
-        assertTrue(html.indexOf("DueEarly") != -1);
-    }
+	@:test
+	public function testCreateTodoWithDueDateRenders():Void {
+		var conn = ConnTest.build_conn();
+		var lvTuple:Term = LiveViewTest.live(conn, "/todos");
+		var lv:LiveView = LiveViewTest.view(lvTuple);
+		LiveViewTest.render_click(LiveViewTest.element(lv, "button[phx-click='toggle_form']"));
+		var data:Term = {title: "DueEarly", due_date: "2025-11-01"};
+		var formEl:Term = LiveViewTest.element(lv, "form[phx-submit='create_todo']");
+		LiveViewTest.render_submit(formEl, data);
+		var html = LiveViewTest.render(lv);
+		assertTrue(html.indexOf("DueEarly") != -1);
+	}
 }

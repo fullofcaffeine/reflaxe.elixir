@@ -213,9 +213,14 @@ report = {
   },
   "local": {
     "stdlib_roots_considered": [
-      str(p)
-      for p in [local_std_root, local_std_shadow_root, local_src_haxe_root, local_src_sys_root]
-      if p.exists()
+      rel
+      for rel, path in [
+        ("std", local_std_root),
+        ("std/_std", local_std_shadow_root),
+        ("src/haxe", local_src_haxe_root),
+        ("src/sys", local_src_sys_root),
+      ]
+      if path.exists()
     ],
     "total_candidates": len(local_candidates),
     "total_std_modules": len(local_std_modules),

@@ -1,7 +1,6 @@
 package ecto;
 
 #if (elixir || reflaxe_runtime)
-
 import elixir.types.Term;
 
 /**
@@ -24,9 +23,8 @@ import elixir.types.Term;
  *   3) Coerces strings to integers/booleans/NaiveDateTime as appropriate
  */
 class Params {
-    public static inline function normalizeFor<T>(data: T, params: Term): Term {
-        return untyped __elixir__(
-            '
+	public static inline function normalizeFor<T>(data:T, params:Term):Term {
+		return untyped __elixir__('
             (fn data, params ->
                snake_params = for {k, v} <- Map.to_list(params), into: %{} do
                  key = if is_atom(k), do: k, else: String.to_atom(Macro.underscore(to_string(k)))
@@ -64,7 +62,6 @@ class Params {
                normalized_params
             end).({0}, {1})
             ', data, params);
-    }
+	}
 }
-
 #end

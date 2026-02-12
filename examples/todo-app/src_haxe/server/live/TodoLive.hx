@@ -6,35 +6,35 @@ import ecto.Query; // Import Ecto Query from the correct location
 import elixir.types.Term;
 import haxe.Constraints.Function;
 import haxe.ds.Option;
-	import elixir.Atom;
-	import elixir.ElixirMap;
-	import elixir.Task; // Background work via Task.start
-	import elixir.List;
-			import elixir.DateTime.NaiveDateTime;
-			import elixir.Enum;
-			import haxe.functional.Result; // Import Result type properly
-	import phoenix.LiveSocket; // Type-safe socket wrapper
-	import phoenix.Component;
-	import phoenix.types.Assigns;
-	import phoenix.types.Flash.FlashType;
-	import phoenix.PhoenixFlash;
-	import phoenix.Phoenix.HandleEventResult;
-	import phoenix.Phoenix.HandleInfoResult;
-	import phoenix.Phoenix.LiveView; // Use the comprehensive Phoenix module version
-	import phoenix.Phoenix.MountResult;
-	import phoenix.Phoenix.Socket;
-	import phoenix.Presence; // Import Presence module for PresenceEntry typedef
-	import server.infrastructure.Repo; // Import the TodoApp.Repo module
-	import server.live.SafeAssigns;
+import elixir.Atom;
+import elixir.ElixirMap;
+import elixir.Task; // Background work via Task.start
+import elixir.List;
+import elixir.DateTime.NaiveDateTime;
+import elixir.Enum;
+import haxe.functional.Result; // Import Result type properly
+import phoenix.LiveSocket; // Type-safe socket wrapper
+import phoenix.Component;
+import phoenix.types.Assigns;
+import phoenix.types.Flash.FlashType;
+import phoenix.PhoenixFlash;
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.HandleInfoResult;
+import phoenix.Phoenix.LiveView; // Use the comprehensive Phoenix module version
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Socket;
+import phoenix.Presence; // Import Presence module for PresenceEntry typedef
+import server.infrastructure.Repo; // Import the TodoApp.Repo module
+import server.live.SafeAssigns;
 import plug.CSRFProtection;
 import server.live.TodoLiveTypes.TodoLiveAssigns;
 import server.live.TodoLiveTypes.TodoLiveRenderAssigns;
 import server.live.TodoLiveTypes.TodoLiveEvent;
-	import server.live.TodoLiveTypes.TodoView;
-	import server.live.TodoLiveTypes.TagView;
-	import server.live.TodoLiveTypes.OnlineUserView;
-	import server.live.TodoLiveTypes.ActivityView;
-	import server.presence.TodoPresence;
+import server.live.TodoLiveTypes.TodoView;
+import server.live.TodoLiveTypes.TagView;
+import server.live.TodoLiveTypes.OnlineUserView;
+import server.live.TodoLiveTypes.ActivityView;
+import server.presence.TodoPresence;
 import server.presence.TodoPresence.PresenceMeta;
 import server.pubsub.TodoPubSub.TodoPubSubMessage;
 import server.pubsub.TodoPubSub.TodoPubSubTopic;
@@ -42,810 +42,805 @@ import phoenix.PubSubShim;
 import server.support.OrganizationTools;
 import server.types.Types.PresenceTopic;
 import server.types.Types.PresenceTopics;
-	import server.pubsub.TodoPubSub;
-	import server.schemas.Todo;
-	import server.types.Types.BulkOperationType;
-	import server.types.Types.TodoPriority;
-	import server.types.Types.EventParams;
-	import server.types.Types.MountParams;
-	import server.types.Types.PubSubMessage;
-	import server.types.Types.Session;
-	import server.types.Types.User;
-	import server.types.Types.AlertLevel;
-	import shared.AvatarTools;
-	import shared.liveview.EventName;
-	import shared.liveview.HookName;
-		import StringTools;
-		using reflaxe.elixir.macros.TypedQueryLambda;
+import server.pubsub.TodoPubSub;
+import server.schemas.Todo;
+import server.types.Types.BulkOperationType;
+import server.types.Types.TodoPriority;
+import server.types.Types.EventParams;
+import server.types.Types.MountParams;
+import server.types.Types.PubSubMessage;
+import server.types.Types.Session;
+import server.types.Types.User;
+import server.types.Types.AlertLevel;
+import shared.AvatarTools;
+import shared.liveview.EventName;
+import shared.liveview.HookName;
+import StringTools;
+
+using reflaxe.elixir.macros.TypedQueryLambda;
 
 enum ActivityKind {
-    PresenceJoin;
-    PresenceLeave;
-    EditStart;
-    EditStop;
-    TodoCreate;
-    TodoUpdate;
-    TodoDelete;
-    BulkCompleteAll;
-    BulkDeleteCompleted;
-    BulkSetPriority;
+	PresenceJoin;
+	PresenceLeave;
+	EditStart;
+	EditStop;
+	TodoCreate;
+	TodoUpdate;
+	TodoDelete;
+	BulkCompleteAll;
+	BulkDeleteCompleted;
+	BulkSetPriority;
 }
 
+/**
+ * LiveView component for todo management with real-time updates
+ */
+@:native("TodoAppWeb.TodoLive")
+@:liveview
+class TodoLive {
+	// All socket state is now defined in TodoLiveAssigns typedef for type safety
+	static inline function presenceUsersTopic(organizationId:Int):String {
+		return "org:" + Std.string(organizationId) + ":" + PresenceTopics.toString(PresenceTopic.Users);
+	}
+
+	static function buildPresenceMeta(user:User, presenceOnlineAt:Float, editingTodoId:Null<Int>, editingStartedAt:Null<Float>):PresenceMeta {
+		return {
+			onlineAt: presenceOnlineAt,
+			userName: user.name,
+			userEmail: user.email,
+			avatar: null,
+			editingTodoId: editingTodoId,
+			editingStartedAt: editingStartedAt
+		};
+	}
+
+	static function updatePresenceEditing(socket:Socket<TodoLiveAssigns>, editingTodoId:Null<Int>):LiveSocket<TodoLiveAssigns> {
+		var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+		if (socket.transport_pid == null)
+			return liveSocket;
+
+		var topic = presenceUsersTopic(socket.assigns.current_user.organizationId);
+		var key = Std.string(socket.assigns.current_user.id);
+		var startedAt:Null<Float> = editingTodoId != null ? Date.now().getTime() : null;
+		var meta = buildPresenceMeta(socket.assigns.current_user, socket.assigns.presence_online_at, editingTodoId, startedAt);
+		return TodoPresence.updateWithSocket(liveSocket, topic, key, meta);
+	}
+
+	static inline function clearPresenceEditing(socket:Socket<TodoLiveAssigns>):LiveSocket<TodoLiveAssigns> {
+		return updatePresenceEditing(socket, null);
+	}
+
+	static inline var MAX_ACTIVITY = 25;
+
+	static function nowTimeDisplay():String {
+		var now = Date.now();
+		var hh = StringTools.lpad(Std.string(now.getHours()), "0", 2);
+		var mm = StringTools.lpad(Std.string(now.getMinutes()), "0", 2);
+		var ss = StringTools.lpad(Std.string(now.getSeconds()), "0", 2);
+		return hh + ":" + mm + ":" + ss;
+	}
+
+	static function activityIcon(kind:ActivityKind):String {
+		return switch (kind) {
+			case PresenceJoin: "🟢";
+			case PresenceLeave: "⚪";
+			case EditStart: "✏️";
+			case EditStop: "⏹️";
+			case TodoCreate: "➕";
+			case TodoUpdate: "✏️";
+			case TodoDelete: "🗑️";
+			case BulkCompleteAll: "✅";
+			case BulkDeleteCompleted: "🧹";
+			case BulkSetPriority: "🎚️";
+		};
+	}
+
+	static function activityRowClass(kind:ActivityKind):String {
+		var base = "flex items-start justify-between gap-3 px-3 py-2 rounded-lg border";
+		var style = switch (kind) {
+			case PresenceJoin:
+				"bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800";
+			case PresenceLeave:
+				"bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-700";
+			case EditStart:
+				"bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800";
+			case EditStop:
+				"bg-slate-50 border-slate-200 dark:bg-slate-900/20 dark:border-slate-700";
+			case TodoCreate:
+				"bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800";
+			case TodoUpdate:
+				"bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800";
+			case TodoDelete:
+				"bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800";
+			case BulkCompleteAll:
+				"bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800";
+			case BulkDeleteCompleted:
+				"bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800";
+			case BulkSetPriority:
+				"bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800";
+		};
+		return base + " " + style;
+	}
+
+	static function pushActivity(socket:LiveSocket<TodoLiveAssigns>, kind:ActivityKind, message:String):LiveSocket<TodoLiveAssigns> {
+		var item:ActivityView = {
+			id: socket.assigns.activity_next_id,
+			icon: activityIcon(kind),
+			message: message,
+			time_display: nowTimeDisplay(),
+			row_class: activityRowClass(kind)
+		};
+
+		var nextItems = [item].concat(socket.assigns.activity_items);
+		var capped = nextItems.length > MAX_ACTIVITY ? Enum.take(nextItems, MAX_ACTIVITY) : nextItems;
+
+		return socket.merge({
+			activity_items: capped,
+			activity_next_id: socket.assigns.activity_next_id + 1
+		});
+	}
+
+	static function presenceEntryMeta(entry:Null<phoenix.Presence.PresenceEntry<PresenceMeta>>):Null<PresenceMeta> {
+		if (entry == null || entry.metas == null || entry.metas.length == 0)
+			return null;
+		return Enum.at(entry.metas, 0);
+	}
+
+	static function presenceDisplayName(entry:Null<phoenix.Presence.PresenceEntry<PresenceMeta>>, presenceKey:String, currentUserKey:String):String {
+		var meta = presenceEntryMeta(entry);
+		var base = (meta != null && meta.userName != null && meta.userName != "") ? meta.userName : presenceKey;
+		return presenceKey == currentUserKey ? (base + " (you)") : base;
+	}
+
+	static function presenceEditingTodoId(entry:Null<phoenix.Presence.PresenceEntry<PresenceMeta>>):Null<Int> {
+		var meta = presenceEntryMeta(entry);
+		return meta != null ? meta.editingTodoId : null;
+	}
+
+	static function recordPresenceDiffActivity(socket:LiveSocket<TodoLiveAssigns>, prevUsers:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>>,
+			newUsers:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>>):LiveSocket<TodoLiveAssigns> {
+		var prevKeys:Array<String> = cast ElixirMap.keys(prevUsers);
+		var newKeys:Array<String> = cast ElixirMap.keys(newUsers);
+
+		var currentUserKey = Std.string(socket.assigns.current_user.id);
+
+		var updated = socket;
+
+		function containsKey(keys:Array<String>, key:String):Bool {
+			var found = false;
+			for (k in keys) {
+				if (k == key)
+					found = true;
+			}
+			return found;
+		}
+
+		// Join/leave messages
+		for (key in newKeys) {
+			if (!containsKey(prevKeys, key)) {
+				var name = presenceDisplayName(ElixirMap.getWithDefault(newUsers, key, null), key, currentUserKey);
+				updated = pushActivity(updated, PresenceJoin, name + " joined");
+			}
+		}
+		for (key in prevKeys) {
+			if (!containsKey(newKeys, key)) {
+				var name = presenceDisplayName(ElixirMap.getWithDefault(prevUsers, key, null), key, currentUserKey);
+				updated = pushActivity(updated, PresenceLeave, name + " left");
+			}
+		}
+
+		// Editing transitions (start/stop)
+		for (key in newKeys) {
+			if (containsKey(prevKeys, key)) {
+				var before = presenceEditingTodoId(ElixirMap.getWithDefault(prevUsers, key, null));
+				var after = presenceEditingTodoId(ElixirMap.getWithDefault(newUsers, key, null));
+				if (before != after) {
+					var name = presenceDisplayName(ElixirMap.getWithDefault(newUsers, key, null), key, currentUserKey);
+					if (after != null) {
+						updated = pushActivity(updated, EditStart, name + " started editing #" + Std.string(after));
+					} else {
+						updated = pushActivity(updated, EditStop, name + " stopped editing");
+					}
+				}
+			}
+		}
+
+		return updated;
+	}
+
 	/**
-	 * LiveView component for todo management with real-time updates
-	 */
-		@:native("TodoAppWeb.TodoLive")
-		@:liveview
-		class TodoLive {
-			// All socket state is now defined in TodoLiveAssigns typedef for type safety
-
-	    static inline function presenceUsersTopic(organizationId: Int): String {
-	        return "org:" + Std.string(organizationId) + ":" + PresenceTopics.toString(PresenceTopic.Users);
-	    }
-
-	    static function buildPresenceMeta(
-	        user: User,
-	        presenceOnlineAt: Float,
-	        editingTodoId: Null<Int>,
-	        editingStartedAt: Null<Float>
-	    ): PresenceMeta {
-	        return {
-	            onlineAt: presenceOnlineAt,
-	            userName: user.name,
-	            userEmail: user.email,
-	            avatar: null,
-	            editingTodoId: editingTodoId,
-	            editingStartedAt: editingStartedAt
-	        };
-	    }
-
-	    static function updatePresenceEditing(socket: Socket<TodoLiveAssigns>, editingTodoId: Null<Int>): LiveSocket<TodoLiveAssigns> {
-	        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-	        if (socket.transport_pid == null) return liveSocket;
-
-	        var topic = presenceUsersTopic(socket.assigns.current_user.organizationId);
-	        var key = Std.string(socket.assigns.current_user.id);
-	        var startedAt: Null<Float> = editingTodoId != null ? Date.now().getTime() : null;
-	        var meta = buildPresenceMeta(socket.assigns.current_user, socket.assigns.presence_online_at, editingTodoId, startedAt);
-	        return TodoPresence.updateWithSocket(liveSocket, topic, key, meta);
-	    }
-
-		    static inline function clearPresenceEditing(socket: Socket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
-		        return updatePresenceEditing(socket, null);
-		    }
-
-		    static inline var MAX_ACTIVITY = 25;
-
-		    static function nowTimeDisplay(): String {
-		        var now = Date.now();
-		        var hh = StringTools.lpad(Std.string(now.getHours()), "0", 2);
-		        var mm = StringTools.lpad(Std.string(now.getMinutes()), "0", 2);
-		        var ss = StringTools.lpad(Std.string(now.getSeconds()), "0", 2);
-		        return hh + ":" + mm + ":" + ss;
-		    }
-
-		    static function activityIcon(kind: ActivityKind): String {
-		        return switch (kind) {
-		            case PresenceJoin: "🟢";
-		            case PresenceLeave: "⚪";
-		            case EditStart: "✏️";
-		            case EditStop: "⏹️";
-		            case TodoCreate: "➕";
-		            case TodoUpdate: "✏️";
-		            case TodoDelete: "🗑️";
-		            case BulkCompleteAll: "✅";
-		            case BulkDeleteCompleted: "🧹";
-		            case BulkSetPriority: "🎚️";
-		        };
-		    }
-
-		    static function activityRowClass(kind: ActivityKind): String {
-		        var base = "flex items-start justify-between gap-3 px-3 py-2 rounded-lg border";
-		        var style = switch (kind) {
-		            case PresenceJoin:
-		                "bg-emerald-50 border-emerald-200 dark:bg-emerald-900/20 dark:border-emerald-800";
-		            case PresenceLeave:
-		                "bg-gray-50 border-gray-200 dark:bg-gray-900/20 dark:border-gray-700";
-		            case EditStart:
-		                "bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800";
-		            case EditStop:
-		                "bg-slate-50 border-slate-200 dark:bg-slate-900/20 dark:border-slate-700";
-		            case TodoCreate:
-		                "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800";
-		            case TodoUpdate:
-		                "bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-800";
-		            case TodoDelete:
-		                "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800";
-		            case BulkCompleteAll:
-		                "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800";
-		            case BulkDeleteCompleted:
-		                "bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800";
-		            case BulkSetPriority:
-		                "bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20 dark:border-indigo-800";
-		        };
-		        return base + " " + style;
-		    }
-
-		    static function pushActivity(socket: LiveSocket<TodoLiveAssigns>, kind: ActivityKind, message: String): LiveSocket<TodoLiveAssigns> {
-		        var item: ActivityView = {
-		            id: socket.assigns.activity_next_id,
-		            icon: activityIcon(kind),
-		            message: message,
-		            time_display: nowTimeDisplay(),
-		            row_class: activityRowClass(kind)
-		        };
-
-		        var nextItems = [item].concat(socket.assigns.activity_items);
-		        var capped = nextItems.length > MAX_ACTIVITY ? Enum.take(nextItems, MAX_ACTIVITY) : nextItems;
-
-		        return socket.merge({
-		            activity_items: capped,
-		            activity_next_id: socket.assigns.activity_next_id + 1
-		        });
-		    }
-
-		    static function presenceEntryMeta(entry: Null<phoenix.Presence.PresenceEntry<PresenceMeta>>): Null<PresenceMeta> {
-		        if (entry == null || entry.metas == null || entry.metas.length == 0) return null;
-		        return Enum.at(entry.metas, 0);
-		    }
-
-		    static function presenceDisplayName(
-		        entry: Null<phoenix.Presence.PresenceEntry<PresenceMeta>>,
-		        presenceKey: String,
-		        currentUserKey: String
-		    ): String {
-		        var meta = presenceEntryMeta(entry);
-		        var base = (meta != null && meta.userName != null && meta.userName != "") ? meta.userName : presenceKey;
-		        return presenceKey == currentUserKey ? (base + " (you)") : base;
-		    }
-
-		    static function presenceEditingTodoId(entry: Null<phoenix.Presence.PresenceEntry<PresenceMeta>>): Null<Int> {
-		        var meta = presenceEntryMeta(entry);
-		        return meta != null ? meta.editingTodoId : null;
-		    }
-
-		    static function recordPresenceDiffActivity(
-		        socket: LiveSocket<TodoLiveAssigns>,
-		        prevUsers: Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>>,
-		        newUsers: Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>>
-		    ): LiveSocket<TodoLiveAssigns> {
-		        var prevKeys: Array<String> = cast ElixirMap.keys(prevUsers);
-		        var newKeys: Array<String> = cast ElixirMap.keys(newUsers);
-
-		        var currentUserKey = Std.string(socket.assigns.current_user.id);
-
-		        var updated = socket;
-
-			        function containsKey(keys: Array<String>, key: String): Bool {
-			            var found = false;
-			            for (k in keys) {
-			                if (k == key) found = true;
-			            }
-			            return found;
-			        }
-
-		        // Join/leave messages
-		        for (key in newKeys) {
-		            if (!containsKey(prevKeys, key)) {
-		                var name = presenceDisplayName(ElixirMap.getWithDefault(newUsers, key, null), key, currentUserKey);
-		                updated = pushActivity(updated, PresenceJoin, name + " joined");
-		            }
-		        }
-		        for (key in prevKeys) {
-		            if (!containsKey(newKeys, key)) {
-		                var name = presenceDisplayName(ElixirMap.getWithDefault(prevUsers, key, null), key, currentUserKey);
-		                updated = pushActivity(updated, PresenceLeave, name + " left");
-		            }
-		        }
-
-		        // Editing transitions (start/stop)
-		        for (key in newKeys) {
-		            if (containsKey(prevKeys, key)) {
-		                var before = presenceEditingTodoId(ElixirMap.getWithDefault(prevUsers, key, null));
-		                var after = presenceEditingTodoId(ElixirMap.getWithDefault(newUsers, key, null));
-		                if (before != after) {
-		                    var name = presenceDisplayName(ElixirMap.getWithDefault(newUsers, key, null), key, currentUserKey);
-		                    if (after != null) {
-		                        updated = pushActivity(updated, EditStart, name + " started editing #" + Std.string(after));
-		                    } else {
-		                        updated = pushActivity(updated, EditStop, name + " stopped editing");
-		                    }
-		                }
-		            }
-		        }
-
-		        return updated;
-		    }
-			
-			/**
-			 * Mount callback with type-safe assigns
-			 * 
+	 			 * Mount callback with type-safe assigns
+	 			 * 
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
-			    public static function mount(params: MountParams, session: Session, socket: phoenix.Phoenix.Socket<TodoLiveAssigns>): MountResult<TodoLiveAssigns> {
-			        // Prepare LiveSocket wrapper
-			        var sock: LiveSocket<TodoLiveAssigns> = socket;
+	public static function mount(params:MountParams, session:Session, socket:phoenix.Phoenix.Socket<TodoLiveAssigns>):MountResult<TodoLiveAssigns> {
+		// Prepare LiveSocket wrapper
+		var sock:LiveSocket<TodoLiveAssigns> = socket;
 
-		        var auth = getUserFromSession(session);
-		        var currentUser = auth.user;
-		        var orgInfo = OrganizationTools.infoForId(currentUser.organizationId);
-			        var todos = loadTodos(currentUser.organizationId);
+		var auth = getUserFromSession(session);
+		var currentUser = auth.user;
+		var orgInfo = OrganizationTools.infoForId(currentUser.organizationId);
+		var todos = loadTodos(currentUser.organizationId);
 
-		        var connected = socket.transport_pid != null;
-		        var presenceTopic = presenceUsersTopic(currentUser.organizationId);
+		var connected = socket.transport_pid != null;
+		var presenceTopic = presenceUsersTopic(currentUser.organizationId);
 
-		        // Subscribe only on the connected mount (the initial static render is disconnected).
-		        // This enables cross-session real-time updates via Phoenix.PubSub + Phoenix.Presence.
-			        if (connected) {
-			            TodoPubSub.subscribe(TodoUpdates, currentUser.organizationId);
-			            TodoPubSub.subscribe(UserActivity, currentUser.organizationId);
-			            PubSubShim.subscribe(Atom.fromString("Elixir.TodoApp.PubSub"), presenceTopic);
-			        }
+		// Subscribe only on the connected mount (the initial static render is disconnected).
+		// This enables cross-session real-time updates via Phoenix.PubSub + Phoenix.Presence.
+		if (connected) {
+			TodoPubSub.subscribe(TodoUpdates, currentUser.organizationId);
+			TodoPubSub.subscribe(UserActivity, currentUser.organizationId);
+			PubSubShim.subscribe(Atom.fromString("Elixir.TodoApp.PubSub"), presenceTopic);
+		}
 
-		        var presenceOnlineAt = Date.now().getTime();
+		var presenceOnlineAt = Date.now().getTime();
 
-			        var assigns: TodoLiveAssigns = {
-			            todos: todos,
-			            filter: shared.TodoTypes.TodoFilter.All,
-			            sort_by: shared.TodoTypes.TodoSort.Created,
-		            current_user: currentUser,
-		            signed_in: auth.signed_in,
-		            organization_id: orgInfo.id,
-		            organization_slug: orgInfo.slug,
-		            organization_name: orgInfo.name,
-		            editing_todo: null,
-		            show_form: false,
-		            search_query: "",
-		            selected_tags: [],
-		            available_tags: computeAvailableTags(todos, []),
-		            optimistic_toggle_ids: [],
-		            visible_todos: [],
-		            visible_count: 0,
-		            filter_btn_all_class: filterBtnClass(shared.TodoTypes.TodoFilter.All, shared.TodoTypes.TodoFilter.All),
-	            filter_btn_active_class: filterBtnClass(shared.TodoTypes.TodoFilter.All, shared.TodoTypes.TodoFilter.Active),
-	            filter_btn_completed_class: filterBtnClass(shared.TodoTypes.TodoFilter.All, shared.TodoTypes.TodoFilter.Completed),
-	            sort_selected_created: sortSelected(shared.TodoTypes.TodoSort.Created, shared.TodoTypes.TodoSort.Created),
-	            sort_selected_priority: sortSelected(shared.TodoTypes.TodoSort.Created, shared.TodoTypes.TodoSort.Priority),
-	            sort_selected_due_date: sortSelected(shared.TodoTypes.TodoSort.Created, shared.TodoTypes.TodoSort.DueDate),
-			            total_todos: todos.length,
-			            completed_todos: countCompleted(todos),
-			            pending_todos: countPending(todos),
-			            presence_online_at: presenceOnlineAt,
-			            presence_initialized: false,
-			            online_users: new Map(),
-			            online_user_count: 0,
-			            online_is_empty: true,
-			            online_user_views: [],
-			            activity_items: [],
-			            activity_count: 0,
-			            activity_is_empty: true,
-			            activity_next_id: 1
-			        };
+		var assigns:TodoLiveAssigns = {
+			todos: todos,
+			filter: shared.TodoTypes.TodoFilter.All,
+			sort_by: shared.TodoTypes.TodoSort.Created,
+			current_user: currentUser,
+			signed_in: auth.signed_in,
+			organization_id: orgInfo.id,
+			organization_slug: orgInfo.slug,
+			organization_name: orgInfo.name,
+			editing_todo: null,
+			show_form: false,
+			search_query: "",
+			selected_tags: [],
+			available_tags: computeAvailableTags(todos, []),
+			optimistic_toggle_ids: [],
+			visible_todos: [],
+			visible_count: 0,
+			filter_btn_all_class: filterBtnClass(shared.TodoTypes.TodoFilter.All, shared.TodoTypes.TodoFilter.All),
+			filter_btn_active_class: filterBtnClass(shared.TodoTypes.TodoFilter.All, shared.TodoTypes.TodoFilter.Active),
+			filter_btn_completed_class: filterBtnClass(shared.TodoTypes.TodoFilter.All, shared.TodoTypes.TodoFilter.Completed),
+			sort_selected_created: sortSelected(shared.TodoTypes.TodoSort.Created, shared.TodoTypes.TodoSort.Created),
+			sort_selected_priority: sortSelected(shared.TodoTypes.TodoSort.Created, shared.TodoTypes.TodoSort.Priority),
+			sort_selected_due_date: sortSelected(shared.TodoTypes.TodoSort.Created, shared.TodoTypes.TodoSort.DueDate),
+			total_todos: todos.length,
+			completed_todos: countCompleted(todos),
+			pending_todos: countPending(todos),
+			presence_online_at: presenceOnlineAt,
+			presence_initialized: false,
+			online_users: new Map(),
+			online_user_count: 0,
+			online_is_empty: true,
+			online_user_views: [],
+			activity_items: [],
+			activity_count: 0,
+			activity_is_empty: true,
+			activity_next_id: 1
+		};
 
-	        sock = LiveView.assignMultiple(sock, assigns);
+		sock = LiveView.assignMultiple(sock, assigns);
 
-	        if (connected) {
-	            var presenceKey = Std.string(currentUser.id);
-	            sock = TodoPresence.trackWithSocket(
-	                sock,
-	                presenceTopic,
-	                presenceKey,
-	                buildPresenceMeta(currentUser, presenceOnlineAt, null, null)
-	            );
+		if (connected) {
+			var presenceKey = Std.string(currentUser.id);
+			sock = TodoPresence.trackWithSocket(sock, presenceTopic, presenceKey, buildPresenceMeta(currentUser, presenceOnlineAt, null, null));
 
-		            var list: Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = cast TodoPresence.list(presenceTopic);
-		            sock = sock.assign(_.online_users, list);
-		            sock = sock.assign(_.presence_initialized, true);
-		        }
+			var list:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = cast TodoPresence.list(presenceTopic);
+			sock = sock.assign(_.online_users, list);
+			sock = sock.assign(_.presence_initialized, true);
+		}
 
-	        var ls: LiveSocket<TodoLiveAssigns> = recomputeVisible(sock);
-	        return Ok(ls);
-	    }
-	
+		var ls:LiveSocket<TodoLiveAssigns> = recomputeVisible(sock);
+		return Ok(ls);
+	}
+
 	/**
 	 * Handle events with fully typed event system.
 	 * 
 	 * No more string matching or raw params!
 	 * Each event carries its own typed parameters.
 	 */
-		    @:native("handle_event")
-			    public static function handle_event(event: String, params: Term, socket: Socket<TodoLiveAssigns>): HandleEventResult<TodoLiveAssigns> {
-		        var nextSocket: Socket<TodoLiveAssigns> =
-		            if (event == EventName.CreateTodo) {
-		                create_todo(params, socket);
-		            } else if (event == EventName.ToggleTodo) {
-		                toggle_todo_status(extract_id(params), socket);
-		            } else if (event == EventName.DeleteTodo) {
-		                delete_todo(extract_id(params), socket);
-		            } else if (event == EventName.EditTodo) {
-	                start_editing(extract_id(params), socket);
-		            } else if (event == EventName.SaveTodo) {
-		                save_edited_todo_typed(params, socket);
-		            } else if (event == EventName.CancelEdit) {
-		                var clearedPresence = clearPresenceEditing(socket);
-		                recomputeVisible(SafeAssigns.setEditingTodo(clearedPresence, null));
-		            } else if (event == EventName.FilterTodos) {
-		                var filterValue: Null<String> = cast Reflect.field(params, "filter");
-		                recomputeVisible(SafeAssigns.setFilter(socket, filterValue != null ? filterValue : "all"));
-		            } else if (event == EventName.SortTodos) {
-	                var sortBy: Null<String> = cast Reflect.field(params, "sort_by");
-	                recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy != null ? sortBy : "created"));
-			            } else if (event == EventName.SearchTodos) {
-			                var query: Null<String> = cast Reflect.field(params, "query");
-			                var withQuery = SafeAssigns.setSearchQuery(socket, query != null ? query : "");
-			                // Ensure tag-selection state composes with search changes.
-			                recomputeVisible(SafeAssigns.setSelectedTags(withQuery, socket.assigns.selected_tags));
-		            } else if (event == EventName.ToggleTag) {
-		                var tagValue: Null<String> = Reflect.field(params, "tag");
-		                if (tagValue == null) {
-		                    socket;
-		                } else {
-			                    var tag: String = tagValue;
-			                    var current = socket.assigns.selected_tags;
-			                    var updated = if (current.contains(tag)) {
-			                        current.filter(function(t) return t != tag);
-			                    } else {
-			                        List.insertAt(current, 0, tag);
-			                    };
-			                    recomputeVisible(SafeAssigns.setSelectedTags(socket, updated));
-			                }
-		            } else if (event == EventName.SetPriority) {
-	                var priority: Null<String> = cast Reflect.field(params, "priority");
-	                update_todo_priority(extract_id(params), priority != null ? priority : "medium", socket);
-	            } else if (event == EventName.ToggleForm) {
-	                recomputeVisible(SafeAssigns.setShowForm(socket, !socket.assigns.show_form));
-		            } else if (event == EventName.BulkComplete) {
-		                complete_all_todos(socket);
-		            } else if (event == EventName.BulkDeleteCompleted) {
-		                delete_completed_todos(socket);
-		            } else if (event == EventName.BulkSetPriority) {
-		                var priorityValue: Null<String> = cast Reflect.field(params, "priority");
-		                bulk_set_priority(priorityValue != null ? priorityValue : "", socket);
-		            } else {
-		                socket;
-		            };
-	
-	        return NoReply(nextSocket);
-	    }
+	@:native("handle_event")
+	public static function handle_event(event:String, params:Term, socket:Socket<TodoLiveAssigns>):HandleEventResult<TodoLiveAssigns> {
+		var nextSocket:Socket<TodoLiveAssigns> = if (event == EventName.CreateTodo) {
+			create_todo(params, socket);
+		} else if (event == EventName.ToggleTodo) {
+			toggle_todo_status(extract_id(params), socket);
+		} else if (event == EventName.DeleteTodo) {
+			delete_todo(extract_id(params), socket);
+		} else if (event == EventName.EditTodo) {
+			start_editing(extract_id(params), socket);
+		} else if (event == EventName.SaveTodo) {
+			save_edited_todo_typed(params, socket);
+		} else if (event == EventName.CancelEdit) {
+			var clearedPresence = clearPresenceEditing(socket);
+			recomputeVisible(SafeAssigns.setEditingTodo(clearedPresence, null));
+		} else if (event == EventName.FilterTodos) {
+			var filterValue:Null<String> = cast Reflect.field(params, "filter");
+			recomputeVisible(SafeAssigns.setFilter(socket, filterValue != null ? filterValue : "all"));
+		} else if (event == EventName.SortTodos) {
+			var sortBy:Null<String> = cast Reflect.field(params, "sort_by");
+			recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy != null ? sortBy : "created"));
+		} else if (event == EventName.SearchTodos) {
+			var query:Null<String> = cast Reflect.field(params, "query");
+			var withQuery = SafeAssigns.setSearchQuery(socket, query != null ? query : "");
+			// Ensure tag-selection state composes with search changes.
+			recomputeVisible(SafeAssigns.setSelectedTags(withQuery, socket.assigns.selected_tags));
+		} else if (event == EventName.ToggleTag) {
+			var tagValue:Null<String> = Reflect.field(params, "tag");
+			if (tagValue == null) {
+				socket;
+			} else {
+				var tag:String = tagValue;
+				var current = socket.assigns.selected_tags;
+				var updated = if (current.contains(tag)) {
+					current.filter(function(t) return t != tag);
+				} else {
+					List.insertAt(current, 0, tag);
+				};
+				recomputeVisible(SafeAssigns.setSelectedTags(socket, updated));
+			}
+		} else if (event == EventName.SetPriority) {
+			var priority:Null<String> = cast Reflect.field(params, "priority");
+			update_todo_priority(extract_id(params), priority != null ? priority : "medium", socket);
+		} else if (event == EventName.ToggleForm) {
+			recomputeVisible(SafeAssigns.setShowForm(socket, !socket.assigns.show_form));
+		} else if (event == EventName.BulkComplete) {
+			complete_all_todos(socket);
+		} else if (event == EventName.BulkDeleteCompleted) {
+			delete_completed_todos(socket);
+		} else if (event == EventName.BulkSetPriority) {
+			var priorityValue:Null<String> = cast Reflect.field(params, "priority");
+			bulk_set_priority(priorityValue != null ? priorityValue : "", socket);
+		} else {
+			socket;
+		};
 
-	    public static function extract_id(params: Term): Int {
-        var direct: Term = Reflect.field(params, "id");
-        var todoObj: Term = Reflect.field(params, "todo");
-        var todoId: Term = (todoObj != null) ? Reflect.field(todoObj, "id") : null;
-        var candidate: Term = (direct != null) ? direct : todoId;
+		return NoReply(nextSocket);
+	}
 
-        if (candidate == null) return 0;
-        if (elixir.Kernel.isInteger(candidate)) return cast candidate;
-        else if (elixir.Kernel.isFloat(candidate)) return elixir.Kernel.trunc(candidate);
-        else if (elixir.Kernel.isBinary(candidate)) {
-            var parsed = Std.parseInt(cast candidate);
-            return parsed != null ? parsed : 0;
-        } else {
-            return 0;
-        }
-    }
-	
-	    /**
-	     * Handle real-time updates from other users with type-safe assigns
-	     * 
-	     * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
-	     */
-			    public static function handleInfo(msg: Term, socket: Socket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
-		        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-		        return handlePubSub(msg, liveSocket);
-		    }
+	public static function extract_id(params:Term):Int {
+		var direct:Term = Reflect.field(params, "id");
+		var todoObj:Term = Reflect.field(params, "todo");
+		var todoId:Term = (todoObj != null) ? Reflect.field(todoObj, "id") : null;
+		var candidate:Term = (direct != null) ? direct : todoId;
 
-			    static function isPresenceDiffBroadcast(msg: Term): Bool {
-		        if (!elixir.Kernel.isMap(msg)) return false;
-		        var msgTerm: Term = msg;
-		        var structTerm: Term = ElixirMap.get(msgTerm, Atom.create("__struct__"));
-		        if (structTerm == null) return false;
-	        if (structTerm != Atom.fromString("Elixir.Phoenix.Socket.Broadcast")) return false;
+		if (candidate == null)
+			return 0;
+		if (elixir.Kernel.isInteger(candidate))
+			return cast candidate;
+		else if (elixir.Kernel.isFloat(candidate))
+			return elixir.Kernel.trunc(candidate);
+		else if (elixir.Kernel.isBinary(candidate)) {
+			var parsed = Std.parseInt(cast candidate);
+			return parsed != null ? parsed : 0;
+		} else {
+			return 0;
+		}
+	}
 
-	        var eventTerm: Term = ElixirMap.get(msgTerm, Atom.create("event"));
-	        return eventTerm != null && cast eventTerm == "presence_diff";
-	    }
+	/**
+	 * Handle real-time updates from other users with type-safe assigns
+	 * 
+	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
+	 */
+	public static function handleInfo(msg:Term, socket:Socket<TodoLiveAssigns>):HandleInfoResult<TodoLiveAssigns> {
+		var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+		return handlePubSub(msg, liveSocket);
+	}
 
-				    static function handlePubSub(payload: Term, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
-			        // NOTE: Keep this function as a single expression to avoid Elixir codegen fallthrough.
-			        var result: HandleInfoResult<TodoLiveAssigns> = if (isPresenceDiffBroadcast(payload)) {
-			            // Phoenix.Presence broadcasts diffs as `%Phoenix.Socket.Broadcast{event: "presence_diff", ...}`.
-			            var topic = presenceUsersTopic(socket.assigns.current_user.organizationId);
-			            var updatedUsers: Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = cast TodoPresence.list(topic);
-			            if (!socket.assigns.presence_initialized) {
-			                NoReply(recomputeVisible(socket.merge({
-			                    online_users: updatedUsers,
-			                    presence_initialized: true
-			                })));
-			            } else {
-			                var withActivity = recordPresenceDiffActivity(socket, socket.assigns.online_users, updatedUsers);
-			                var updated = withActivity.assign(_.online_users, updatedUsers);
-			                NoReply(recomputeVisible(updated));
-			            }
-			        } else if (!elixir.Kernel.isTuple(payload)) {
-			            NoReply(socket);
-			        } else {
-			            switch (TodoPubSub.parseMessage(payload)) {
-			                case Some(message):
-			                    handleTodoMessage(message, socket);
-			                case None:
-			                    NoReply(socket);
-			            }
-			        };
+	static function isPresenceDiffBroadcast(msg:Term):Bool {
+		if (!elixir.Kernel.isMap(msg))
+			return false;
+		var msgTerm:Term = msg;
+		var structTerm:Term = ElixirMap.get(msgTerm, Atom.create("__struct__"));
+		if (structTerm == null)
+			return false;
+		if (structTerm != Atom.fromString("Elixir.Phoenix.Socket.Broadcast"))
+			return false;
 
-			        return result;
-		    }
+		var eventTerm:Term = ElixirMap.get(msgTerm, Atom.create("event"));
+		return eventTerm != null && cast eventTerm == "presence_diff";
+	}
 
-			    static function handleTodoMessage(payload: TodoPubSubMessage, socket: LiveSocket<TodoLiveAssigns>): HandleInfoResult<TodoLiveAssigns> {
-			        return switch (payload) {
-		            case TodoCreated(todo):
-		                var title = todo.title != null ? todo.title : "(untitled)";
-		                var withActivity = pushActivity(socket, TodoCreate, "Todo created: " + title);
-		                var merged = withActivity.merge({
-		                    todos: [todo].concat(withActivity.assigns.todos),
-		                    total_todos: withActivity.assigns.total_todos + 1,
-		                    pending_todos: withActivity.assigns.pending_todos + (todo.completed ? 0 : 1),
-		                    completed_todos: withActivity.assigns.completed_todos + (todo.completed ? 1 : 0)
-		                });
-		                NoReply(recomputeVisible(merged));
-		            case TodoUpdated(todo):
-		                var title = todo.title != null ? todo.title : ("#" + Std.string(todo.id));
-		                var withActivity = pushActivity(socket, TodoUpdate, "Todo updated: " + title);
-		                var clearedIds = withActivity.assigns.optimistic_toggle_ids.filter(function(x) return x != todo.id);
-		                var cleared = withActivity.assign(_.optimistic_toggle_ids, clearedIds);
-		                NoReply(recomputeVisible(updateTodoInList(todo, cleared)));
-		            case TodoDeleted(id):
-		                var existing = findTodo(id, socket.assigns.todos);
-		                var title = existing != null ? existing.title : ("#" + Std.string(id));
-		                var withActivity = pushActivity(socket, TodoDelete, "Todo deleted: " + title);
-		                NoReply(recomputeVisible(removeTodoFromList(id, withActivity)));
-			            case BulkUpdate(action):
-			                switch (action) {
-		                    case CompleteAll, DeleteCompleted:
-		                        var withActivity = switch (action) {
-		                            case CompleteAll:
-		                                pushActivity(socket, BulkCompleteAll, "Bulk action: completed all todos");
-		                            case DeleteCompleted:
-		                                pushActivity(socket, BulkDeleteCompleted, "Bulk action: deleted completed todos");
-		                            case _:
-		                                socket;
-		                        };
-		                        var refreshed = loadTodos(socket.assigns.current_user.organizationId);
-		                        var merged = withActivity.merge({
-		                            todos: refreshed,
-		                            total_todos: refreshed.length,
-		                            completed_todos: countCompleted(refreshed),
-		                            pending_todos: countPending(refreshed)
-		                        });
-		                        NoReply(recomputeVisible(merged));
-		                    case SetPriority(priorityValue):
-		                        var priorityLabel = switch (priorityValue) {
-		                            case Low: "low";
-		                            case Medium: "medium";
-		                            case High: "high";
-		                        };
-		                        var withActivity = pushActivity(socket, BulkSetPriority, "Bulk action: priority → " + priorityLabel);
-		                        var refreshed = loadTodos(socket.assigns.current_user.organizationId);
-		                        NoReply(recomputeVisible(SafeAssigns.updateTodosAndStats(withActivity, refreshed)));
-		                    case _:
-		                        NoReply(socket);
-			                }
-			            case UserProfileUpdated(profile):
-			                var currentUser = socket.assigns.current_user;
-			                if (profile.user_id != currentUser.id) {
-			                    NoReply(socket);
-			                } else {
-			                    var updatedUser: User = {
-			                        id: currentUser.id,
-			                        name: profile.name,
-			                        email: profile.email,
-			                        bio: profile.bio,
-			                        role: currentUser.role,
-			                        organizationId: currentUser.organizationId,
-			                        passwordHash: currentUser.passwordHash,
-			                        confirmedAt: currentUser.confirmedAt,
-			                        lastLoginAt: currentUser.lastLoginAt,
-			                        active: currentUser.active
-			                    };
+	static function handlePubSub(payload:Term, socket:LiveSocket<TodoLiveAssigns>):HandleInfoResult<TodoLiveAssigns> {
+		// NOTE: Keep this function as a single expression to avoid Elixir codegen fallthrough.
+		var result:HandleInfoResult<TodoLiveAssigns> = if (isPresenceDiffBroadcast(payload)) {
+			// Phoenix.Presence broadcasts diffs as `%Phoenix.Socket.Broadcast{event: "presence_diff", ...}`.
+			var topic = presenceUsersTopic(socket.assigns.current_user.organizationId);
+			var updatedUsers:Map<String, phoenix.Presence.PresenceEntry<PresenceMeta>> = cast TodoPresence.list(topic);
+			if (!socket.assigns.presence_initialized) {
+				NoReply(recomputeVisible(socket.merge({
+					online_users: updatedUsers,
+					presence_initialized: true
+				})));
+			} else {
+				var withActivity = recordPresenceDiffActivity(socket, socket.assigns.online_users, updatedUsers);
+				var updated = withActivity.assign(_.online_users, updatedUsers);
+				NoReply(recomputeVisible(updated));
+			}
+		} else if (!elixir.Kernel.isTuple(payload)) {
+			NoReply(socket);
+		} else {
+			switch (TodoPubSub.parseMessage(payload)) {
+				case Some(message):
+					handleTodoMessage(message, socket);
+				case None:
+					NoReply(socket);
+			}
+		};
 
-			                    var withUser = socket.assign(_.current_user, updatedUser);
-			                    if (withUser.transport_pid == null) {
-			                        NoReply(withUser);
-			                    } else {
-			                        var topic = presenceUsersTopic(updatedUser.organizationId);
-			                        var key = Std.string(updatedUser.id);
-			                        var editingTodoId: Null<Int> = withUser.assigns.editing_todo != null ? withUser.assigns.editing_todo.id : null;
-			                        var startedAt: Null<Float> = editingTodoId != null ? Date.now().getTime() : null;
-			                        var meta = buildPresenceMeta(updatedUser, withUser.assigns.presence_online_at, editingTodoId, startedAt);
-			                        NoReply(TodoPresence.updateWithSocket(withUser, topic, key, meta));
-			                    }
-			                }
-			            case UserOnline(_):
-			                NoReply(socket);
-			            case UserOffline(_):
-		                NoReply(socket);
-		            case _:
-		                NoReply(socket);
-		        };
-		    }
+		return result;
+	}
+
+	static function handleTodoMessage(payload:TodoPubSubMessage, socket:LiveSocket<TodoLiveAssigns>):HandleInfoResult<TodoLiveAssigns> {
+		return switch (payload) {
+			case TodoCreated(todo):
+				var title = todo.title != null ? todo.title : "(untitled)";
+				var withActivity = pushActivity(socket, TodoCreate, "Todo created: " + title);
+				var merged = withActivity.merge({
+					todos: [todo].concat(withActivity.assigns.todos),
+					total_todos: withActivity.assigns.total_todos + 1,
+					pending_todos: withActivity.assigns.pending_todos + (todo.completed ? 0 : 1),
+					completed_todos: withActivity.assigns.completed_todos + (todo.completed ? 1 : 0)
+				});
+				NoReply(recomputeVisible(merged));
+			case TodoUpdated(todo):
+				var title = todo.title != null ? todo.title : ("#" + Std.string(todo.id));
+				var withActivity = pushActivity(socket, TodoUpdate, "Todo updated: " + title);
+				var clearedIds = withActivity.assigns.optimistic_toggle_ids.filter(function(x) return x != todo.id);
+				var cleared = withActivity.assign(_.optimistic_toggle_ids, clearedIds);
+				NoReply(recomputeVisible(updateTodoInList(todo, cleared)));
+			case TodoDeleted(id):
+				var existing = findTodo(id, socket.assigns.todos);
+				var title = existing != null ? existing.title : ("#" + Std.string(id));
+				var withActivity = pushActivity(socket, TodoDelete, "Todo deleted: " + title);
+				NoReply(recomputeVisible(removeTodoFromList(id, withActivity)));
+			case BulkUpdate(action):
+				switch (action) {
+					case CompleteAll, DeleteCompleted:
+						var withActivity = switch (action) {
+							case CompleteAll:
+								pushActivity(socket, BulkCompleteAll, "Bulk action: completed all todos");
+							case DeleteCompleted:
+								pushActivity(socket, BulkDeleteCompleted, "Bulk action: deleted completed todos");
+							case _:
+								socket;
+						};
+						var refreshed = loadTodos(socket.assigns.current_user.organizationId);
+						var merged = withActivity.merge({
+							todos: refreshed,
+							total_todos: refreshed.length,
+							completed_todos: countCompleted(refreshed),
+							pending_todos: countPending(refreshed)
+						});
+						NoReply(recomputeVisible(merged));
+					case SetPriority(priorityValue):
+						var priorityLabel = switch (priorityValue) {
+							case Low: "low";
+							case Medium: "medium";
+							case High: "high";
+						};
+						var withActivity = pushActivity(socket, BulkSetPriority, "Bulk action: priority → " + priorityLabel);
+						var refreshed = loadTodos(socket.assigns.current_user.organizationId);
+						NoReply(recomputeVisible(SafeAssigns.updateTodosAndStats(withActivity, refreshed)));
+					case _:
+						NoReply(socket);
+				}
+			case UserProfileUpdated(profile):
+				var currentUser = socket.assigns.current_user;
+				if (profile.user_id != currentUser.id) {
+					NoReply(socket);
+				} else {
+					var updatedUser:User = {
+						id: currentUser.id,
+						name: profile.name,
+						email: profile.email,
+						bio: profile.bio,
+						role: currentUser.role,
+						organizationId: currentUser.organizationId,
+						passwordHash: currentUser.passwordHash,
+						confirmedAt: currentUser.confirmedAt,
+						lastLoginAt: currentUser.lastLoginAt,
+						active: currentUser.active
+					};
+
+					var withUser = socket.assign(_.current_user, updatedUser);
+					if (withUser.transport_pid == null) {
+						NoReply(withUser);
+					} else {
+						var topic = presenceUsersTopic(updatedUser.organizationId);
+						var key = Std.string(updatedUser.id);
+						var editingTodoId:Null<Int> = withUser.assigns.editing_todo != null ? withUser.assigns.editing_todo.id : null;
+						var startedAt:Null<Float> = editingTodoId != null ? Date.now().getTime() : null;
+						var meta = buildPresenceMeta(updatedUser, withUser.assigns.presence_online_at, editingTodoId, startedAt);
+						NoReply(TodoPresence.updateWithSocket(withUser, topic, key, meta));
+					}
+				}
+			case UserOnline(_):
+				NoReply(socket);
+			case UserOffline(_):
+				NoReply(socket);
+			case _:
+				NoReply(socket);
+		};
+	}
 
 	// Legacy function for backward compatibility - will be removed
-	static function createNewTodo(params: EventParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	static function createNewTodo(params:EventParams, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
 		// Convert EventParams (with String dates) to TodoParams (with Date type)
-		var todoParams: server.schemas.Todo.TodoParams = {
+		var todoParams:server.schemas.Todo.TodoParams = {
 			title: params.title,
 			description: params.description,
 			completed: false,
 			priority: params.priority != null ? params.priority : "medium",
 			dueDate: params.dueDate != null ? parseDueDate(params.dueDate) : null,
 			tags: params.tags != null ? parseTags(params.tags) : [],
-            userId: socket.assigns.current_user.id,
-            organizationId: socket.assigns.current_user.organizationId
+			userId: socket.assigns.current_user.id,
+			organizationId: socket.assigns.current_user.organizationId
 		};
-		
+
 		// Pass the properly typed TodoParams to changeset
 		var changeset = server.schemas.Todo.changeset(new server.schemas.Todo(), todoParams);
-		
+
 		// Use type-safe Repo operations
 		switch (Repo.insert(changeset)) {
 			case Ok(todo):
 				// Best-effort broadcast; ignore result
 				TodoPubSub.broadcast(TodoUpdates, TodoCreated(todo), socket.assigns.current_user.organizationId);
-				
+
 				var todos = [todo].concat(socket.assigns.todos);
 				// Use LiveSocket for type-safe assigns manipulation
-        var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+				var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
 				var updatedSocket = liveSocket.merge({
 					todos: todos,
 					show_form: false
 				});
-                    return LiveView.putFlash(updatedSocket, FlashType.Success, "Todo created successfully!");
-				
+				return LiveView.putFlash(updatedSocket, FlashType.Success, "Todo created successfully!");
+
 			case Error(_):
-					return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
+				return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
 		}
 	}
 
-	    /**
-	     * Create a new todo using typed TodoParams.
-	     */
-		    public static function create_todo(params: Term, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-	        // LiveView form params arrive as a map with string keys; extract safely.
-	        var rawTitle: Null<String> = Reflect.field(params, "title");
-	        var rawDesc: Null<String> = Reflect.field(params, "description");
-	        var rawPriority: Null<String> = Reflect.field(params, "priority");
-        var rawDue: Null<String> = Reflect.field(params, "due_date");
-        var rawTags: Null<String> = Reflect.field(params, "tags");
+	/**
+	 * Create a new todo using typed TodoParams.
+	 */
+	public static function create_todo(params:Term, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
+		// LiveView form params arrive as a map with string keys; extract safely.
+		var rawTitle:Null<String> = Reflect.field(params, "title");
+		var rawDesc:Null<String> = Reflect.field(params, "description");
+		var rawPriority:Null<String> = Reflect.field(params, "priority");
+		var rawDue:Null<String> = Reflect.field(params, "due_date");
+		var rawTags:Null<String> = Reflect.field(params, "tags");
 
-        // Normalize values and convert shapes
-        var title = (rawTitle != null) ? rawTitle : "";
-        var description = (rawDesc != null) ? rawDesc : "";
-        var priority = (rawPriority != null && rawPriority != "") ? rawPriority : "medium";
-        var tagsArr: Array<String> = (rawTags != null && rawTags != "") ? parseTags(rawTags) : [];
-        var dueDate = parseDueDate(rawDue);
+		// Normalize values and convert shapes
+		var title = (rawTitle != null) ? rawTitle : "";
+		var description = (rawDesc != null) ? rawDesc : "";
+		var priority = (rawPriority != null && rawPriority != "") ? rawPriority : "medium";
+		var tagsArr:Array<String> = (rawTags != null && rawTags != "") ? parseTags(rawTags) : [];
+		var dueDate = parseDueDate(rawDue);
 
-        // Build the todo struct for changeset
-        var todoStruct = new server.schemas.Todo();
-        var castParams: server.schemas.Todo.TodoChangesetParams = {
-            title: title,
-            description: description,
-            completed: false,
-            priority: priority,
-            dueDate: dueDate,
-            tags: tagsArr,
-            userId: socket.assigns.current_user.id,
-            organizationId: socket.assigns.current_user.organizationId
-        };
-        // Use the schema-generated changeset to keep casting/validation idiomatic
-        var cs = Todo.changeset(todoStruct, castParams);
-        switch (Repo.insert(cs)) {
-	            case Ok(value):
-	                // broadcast best-effort; ignore returned term
-	                var _broadcastResult = TodoPubSub.broadcast(TodoUpdates, TodoCreated(value), socket.assigns.current_user.organizationId);
-	                var todos = [value].concat(socket.assigns.todos);
-	                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-	                var updatedSocket: LiveSocket<TodoLiveAssigns> = liveSocket.merge({
-	                    todos: todos,
-	                    show_form: false,
-	                    total_todos: socket.assigns.total_todos + 1,
-	                    pending_todos: socket.assigns.pending_todos + (value.completed ? 0 : 1),
-	                    completed_todos: socket.assigns.completed_todos + (value.completed ? 1 : 0)
-	                });
-                var lsCreated: LiveSocket<TodoLiveAssigns> = recomputeVisible(updatedSocket);
-                return LiveView.putFlash(lsCreated, FlashType.Success, "Todo created successfully!");
-            case Error(_):
-                return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
-            case _:
-                return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
-        }
-    }
+		// Build the todo struct for changeset
+		var todoStruct = new server.schemas.Todo();
+		var castParams:server.schemas.Todo.TodoChangesetParams = {
+			title: title,
+			description: description,
+			completed: false,
+			priority: priority,
+			dueDate: dueDate,
+			tags: tagsArr,
+			userId: socket.assigns.current_user.id,
+			organizationId: socket.assigns.current_user.organizationId
+		};
+		// Use the schema-generated changeset to keep casting/validation idiomatic
+		var cs = Todo.changeset(todoStruct, castParams);
+		switch (Repo.insert(cs)) {
+			case Ok(value):
+				// broadcast best-effort; ignore returned term
+				var _broadcastResult = TodoPubSub.broadcast(TodoUpdates, TodoCreated(value), socket.assigns.current_user.organizationId);
+				var todos = [value].concat(socket.assigns.todos);
+				var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+				var updatedSocket:LiveSocket<TodoLiveAssigns> = liveSocket.merge({
+					todos: todos,
+					show_form: false,
+					total_todos: socket.assigns.total_todos + 1,
+					pending_todos: socket.assigns.pending_todos + (value.completed ? 0 : 1),
+					completed_todos: socket.assigns.completed_todos + (value.completed ? 1 : 0)
+				});
+				var lsCreated:LiveSocket<TodoLiveAssigns> = recomputeVisible(updatedSocket);
+				return LiveView.putFlash(lsCreated, FlashType.Success, "Todo created successfully!");
+			case Error(_):
+				return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
+			case _:
+				return LiveView.putFlash(socket, FlashType.Error, "Failed to create todo");
+		}
+	}
 
-/**
- * toggleTodoStatus
- *
- * WHAT
- * - Server-driven optimistic toggle with safe reconciliation.
- *
- * WHY
- * - Provide immediate user feedback while keeping LiveView authoritative.
- *
- * HOW
- * - Mark id as optimistic → flip local row → persist (Repo.update) → broadcast TodoUpdated.
- *   handle_info updates the list with the authoritative record; on error we broadcast the
- *   current DB row to revert.
- */
-		    public static function toggle_todo_status(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        var existingTodo = findTodo(id, socket.assigns.todos);
-        if (existingTodo == null) return socket;
+	/**
+	 * toggleTodoStatus
+	 *
+	 * WHAT
+	 * - Server-driven optimistic toggle with safe reconciliation.
+	 *
+	 * WHY
+	 * - Provide immediate user feedback while keeping LiveView authoritative.
+	 *
+	 * HOW
+	 * - Mark id as optimistic → flip local row → persist (Repo.update) → broadcast TodoUpdated.
+	 *   handle_info updates the list with the authoritative record; on error we broadcast the
+	 *   current DB row to revert.
+	 */
+	public static function toggle_todo_status(id:Int, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
+		var existingTodo = findTodo(id, socket.assigns.todos);
+		if (existingTodo == null)
+			return socket;
 
-	        var s: LiveSocket<TodoLiveAssigns> = socket;
-	        var toggledTodos = s.assigns.todos.map(function(todo) {
-	            if (todo.id == id) {
-	                return cast ElixirMap.put(todo, Atom.create("completed"), !todo.completed);
-	            }
-            return todo;
-        });
+		var s:LiveSocket<TodoLiveAssigns> = socket;
+		var toggledTodos = s.assigns.todos.map(function(todo) {
+			if (todo.id == id) {
+				return cast ElixirMap.put(todo, Atom.create("completed"), !todo.completed);
+			}
+			return todo;
+		});
 
-        var sOptimistic = recomputeVisible(s.merge({
-            optimistic_toggle_ids: [],
-            todos: toggledTodos,
-            completed_todos: countCompleted(toggledTodos),
-            pending_todos: countPending(toggledTodos)
-        }));
+		var sOptimistic = recomputeVisible(s.merge({
+			optimistic_toggle_ids: [],
+			todos: toggledTodos,
+			completed_todos: countCompleted(toggledTodos),
+			pending_todos: countPending(toggledTodos)
+		}));
 
-        switch (Repo.update(server.schemas.Todo.toggleCompleted(existingTodo))) {
-            case Ok(_):
-                var refreshed = Repo.get(server.schemas.Todo, id);
-                var finalTodo = (refreshed != null) ? refreshed : existingTodo;
-                var withTodo = updateTodoInList(finalTodo, sOptimistic);
-                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(finalTodo), socket.assigns.current_user.organizationId);
-                return recomputeVisible(withTodo);
-            case _:
-                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(existingTodo), socket.assigns.current_user.organizationId);
-                return LiveView.putFlash(sOptimistic, FlashType.Error, "Failed to toggle todo");
-        }
-    }
+		switch (Repo.update(server.schemas.Todo.toggleCompleted(existingTodo))) {
+			case Ok(_):
+				var refreshed = Repo.get(server.schemas.Todo, id);
+				var finalTodo = (refreshed != null) ? refreshed : existingTodo;
+				var withTodo = updateTodoInList(finalTodo, sOptimistic);
+				TodoPubSub.broadcast(TodoUpdates, TodoUpdated(finalTodo), socket.assigns.current_user.organizationId);
+				return recomputeVisible(withTodo);
+			case _:
+				TodoPubSub.broadcast(TodoUpdates, TodoUpdated(existingTodo), socket.assigns.current_user.organizationId);
+				return LiveView.putFlash(sOptimistic, FlashType.Error, "Failed to toggle todo");
+		}
+	}
 
-// Background reconcile for optimistic toggle
-// Handle in-process persistence request in handleInfo
-	
-	    public static function delete_todo(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        var todo = findTodo(id, socket.assigns.todos);
-        if (todo == null) return socket;
-        
-        // Perform delete. On error, show flash and exit; otherwise proceed.
-        switch (Repo.delete(todo)) {
-            case Ok(_):
-                // continue
-            case _:
-                return LiveView.putFlash(socket, FlashType.Error, "Failed to delete todo");
-        }
-        // Reflect locally, then broadcast best-effort to others
-        var updated = removeTodoFromList(id, socket);
-        TodoPubSub.broadcast(TodoUpdates, TodoDeleted(id), socket.assigns.current_user.organizationId);
-        return recomputeVisible(updated);
-    }
-	
-	    public static function update_todo_priority(id: Int, priority: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        var todo = findTodo(id, socket.assigns.todos);
-        if (todo == null) return socket;
-        switch (Repo.update(server.schemas.Todo.updatePriority(todo, priority))) {
-            case Ok(_):
-                // proceed to refresh below
-            case _:
-                return LiveView.putFlash(socket, FlashType.Error, "Failed to update priority");
-        }
-        var refreshed = Repo.get(server.schemas.Todo, id);
-        if (refreshed != null) {
-            TodoPubSub.broadcast(TodoUpdates, TodoUpdated(refreshed), socket.assigns.current_user.organizationId);
-            return recomputeVisible(updateTodoInList(refreshed, socket));
-        }
-        return socket;
-    }
-	
+	// Background reconcile for optimistic toggle
+	// Handle in-process persistence request in handleInfo
+
+	public static function delete_todo(id:Int, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
+		var todo = findTodo(id, socket.assigns.todos);
+		if (todo == null)
+			return socket;
+
+		// Perform delete. On error, show flash and exit; otherwise proceed.
+		switch (Repo.delete(todo)) {
+			case Ok(_):
+				// continue
+			case _:
+				return LiveView.putFlash(socket, FlashType.Error, "Failed to delete todo");
+		}
+		// Reflect locally, then broadcast best-effort to others
+		var updated = removeTodoFromList(id, socket);
+		TodoPubSub.broadcast(TodoUpdates, TodoDeleted(id), socket.assigns.current_user.organizationId);
+		return recomputeVisible(updated);
+	}
+
+	public static function update_todo_priority(id:Int, priority:String, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
+		var todo = findTodo(id, socket.assigns.todos);
+		if (todo == null)
+			return socket;
+		switch (Repo.update(server.schemas.Todo.updatePriority(todo, priority))) {
+			case Ok(_):
+				// proceed to refresh below
+			case _:
+				return LiveView.putFlash(socket, FlashType.Error, "Failed to update priority");
+		}
+		var refreshed = Repo.get(server.schemas.Todo, id);
+		if (refreshed != null) {
+			TodoPubSub.broadcast(TodoUpdates, TodoUpdated(refreshed), socket.assigns.current_user.organizationId);
+			return recomputeVisible(updateTodoInList(refreshed, socket));
+		}
+		return socket;
+	}
+
 	// List management helpers with type-safe socket handling
-	static function addTodoToList(todo: server.schemas.Todo, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	static function addTodoToList(todo:server.schemas.Todo, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
 		// Don't add if it's our own todo (already added)
 		if (todo.userId == socket.assigns.current_user.id) {
 			return socket;
 		}
-		
+
 		var todos = [todo].concat(socket.assigns.todos);
 		// Use LiveSocket for type-safe assigns manipulation
-		var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-		return liveSocket.merge({ todos: todos });
+		var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+		return liveSocket.merge({todos: todos});
 	}
-	
-	
-    static function loadTodos(organizationId: Int): Array<server.schemas.Todo> {
-        var query = ecto.TypedQuery.from(server.schemas.Todo).where(t -> t.organizationId == organizationId);
-        return Repo.all(query);
-    }
 
-	    static function findTodo(id: Int, todos: Array<server.schemas.Todo>): Null<server.schemas.Todo> {
+	static function loadTodos(organizationId:Int):Array<server.schemas.Todo> {
+		var query = ecto.TypedQuery.from(server.schemas.Todo).where(t -> t.organizationId == organizationId);
+		return Repo.all(query);
+	}
+
+	static function findTodo(id:Int, todos:Array<server.schemas.Todo>):Null<server.schemas.Todo> {
 		for (todo in todos) {
-			if (todo.id == id) return todo;
+			if (todo.id == id)
+				return todo;
 		}
 		return null;
 	}
-	
-    static function countCompleted(todos: Array<server.schemas.Todo>): Int {
-        // Prefer filter+length to enable Enum.count generation on Elixir
-        return todos.filter(function(t) return t.completed).length;
-    }
-	
-    static function countPending(todos: Array<server.schemas.Todo>): Int {
-        // Prefer filter+length to enable Enum.count generation on Elixir
-        return todos.filter(function(t) return !t.completed).length;
-    }
-	
-	    @:native("parse_tags")
-	    static function parseTags(tagsString: String): Array<String> {
-        return server.support.TagTools.parseTags(tagsString);
-    }
 
-    static inline function parseDueDate(rawDue: Null<String>): Null<NaiveDateTime> {
-        if (rawDue == null || rawDue == "") return null;
-        var iso = (rawDue.indexOf(":") == -1) ? (rawDue + " 00:00:00") : rawDue;
-        return switch (NaiveDateTime.from_iso8601(iso)) {
-            case Ok(dt): dt;
-            case Error(_): null;
-        };
-    }
-	
-	    static function getUserFromSession(session: Session): {user: User, signed_in: Bool} {
-        var userId: Null<Int> = switch (session) {
-            case null: null;
-            case _:
-                var sessionTerm: Term = cast session;
-                var primary: Term = elixir.ElixirMap.get(sessionTerm, "user_id");
-                var chosen: Term = primary != null ? primary : elixir.ElixirMap.get(sessionTerm, "userId");
-                chosen != null ? cast chosen : null;
-        };
+	static function countCompleted(todos:Array<server.schemas.Todo>):Int {
+		// Prefer filter+length to enable Enum.count generation on Elixir
+		return todos.filter(function(t) return t.completed).length;
+	}
 
-	        if (userId != null) {
-	            var dbUser = Repo.get(server.schemas.User, userId);
-	            if (dbUser != null) {
-	                return {
-	                    signed_in: true,
-	                    user: {
-	                        id: dbUser.id,
-	                        name: dbUser.name,
-	                        email: dbUser.email,
-	                        bio: dbUser.bio,
-	                        role: dbUser.role,
-	                        organizationId: dbUser.organizationId,
-	                        passwordHash: dbUser.passwordHash,
-	                        confirmedAt: dbUser.confirmedAt,
-	                        lastLoginAt: dbUser.lastLoginAt,
-	                        active: dbUser.active
-	                    }
-	                };
-	            }
-	        }
+	static function countPending(todos:Array<server.schemas.Todo>):Int {
+		// Prefer filter+length to enable Enum.count generation on Elixir
+		return todos.filter(function(t) return !t.completed).length;
+	}
 
-	        return {
-	            signed_in: false,
-	            user: {
-	                id: 1,
-	                name: "Demo User",
-	                email: "demo@example.com",
-	                bio: null,
-	                role: "user",
-	                organizationId: 0,
-	                passwordHash: "demo_password_hash",
-	                confirmedAt: null,
-	                lastLoginAt: null,
-	                active: true
-	            }
-	        };
-	    }
-	
+	@:native("parse_tags")
+	static function parseTags(tagsString:String):Array<String> {
+		return server.support.TagTools.parseTags(tagsString);
+	}
+
+	static inline function parseDueDate(rawDue:Null<String>):Null<NaiveDateTime> {
+		if (rawDue == null || rawDue == "")
+			return null;
+		var iso = (rawDue.indexOf(":") == -1) ? (rawDue + " 00:00:00") : rawDue;
+		return switch (NaiveDateTime.from_iso8601(iso)) {
+			case Ok(dt): dt;
+			case Error(_): null;
+		};
+	}
+
+	static function getUserFromSession(session:Session):{user:User, signed_in:Bool} {
+		var userId:Null<Int> = switch (session) {
+			case null: null;
+			case _:
+				var sessionTerm:Term = cast session;
+				var primary:Term = elixir.ElixirMap.get(sessionTerm, "user_id");
+				var chosen:Term = primary != null ? primary : elixir.ElixirMap.get(sessionTerm, "userId");
+				chosen != null ? cast chosen : null;
+		};
+
+		if (userId != null) {
+			var dbUser = Repo.get(server.schemas.User, userId);
+			if (dbUser != null) {
+				return {
+					signed_in: true,
+					user: {
+						id: dbUser.id,
+						name: dbUser.name,
+						email: dbUser.email,
+						bio: dbUser.bio,
+						role: dbUser.role,
+						organizationId: dbUser.organizationId,
+						passwordHash: dbUser.passwordHash,
+						confirmedAt: dbUser.confirmedAt,
+						lastLoginAt: dbUser.lastLoginAt,
+						active: dbUser.active
+					}
+				};
+			}
+		}
+
+		return {
+			signed_in: false,
+			user: {
+				id: 1,
+				name: "Demo User",
+				email: "demo@example.com",
+				bio: null,
+				role: "user",
+				organizationId: 0,
+				passwordHash: "demo_password_hash",
+				confirmedAt: null,
+				lastLoginAt: null,
+				active: true
+			}
+		};
+	}
+
 	// Missing helper functions
-	static function loadAndAssignTodos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	static function loadAndAssignTodos(socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
 		var todos = loadTodos(socket.assigns.current_user.organizationId);
 		// Use LiveSocket's merge for type-safe bulk updates
-		var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
+		var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
 		return liveSocket.merge({
 			todos: todos,
 			total_todos: todos.length,
@@ -853,392 +848,408 @@ enum ActivityKind {
 			pending_todos: countPending(todos)
 		});
 	}
-	
-    static function updateTodoInList(todo: server.schemas.Todo, socket: LiveSocket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
-        var newTodos = socket.assigns.todos.map(function(t) return t.id == todo.id ? todo : t);
-        var updated = socket.merge({
-            todos: newTodos,
-            total_todos: newTodos.length,
-            completed_todos: countCompleted(newTodos),
-            pending_todos: countPending(newTodos)
-        });
-        return updated;
-    }
 
-    static function buildTodoRow(
-        todoItem: server.schemas.Todo,
-        forceCompletedView: Bool,
-        editing: Null<server.schemas.Todo>,
-        selectedTags: Array<String>,
-        editingBadge: Null<String>
-    ): TodoView {
-        var completedFlag: Bool = if (forceCompletedView) {
-            true;
-        } else {
-            todoItem.completed;
-        }
-        var lineThrough = completedFlag ? " line-through" : "";
-        var border = borderForPriority(todoItem.priority);
-        var containerClass = "bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 "
-            + border
-            + (completedFlag ? " opacity-60" : "")
-            + " transition-all hover:shadow-xl";
-        var hasDue = (todoItem.dueDate != null);
-        var dueDisplay = hasDue ? format_due_date(todoItem.dueDate) : "";
-        var tagViews = buildTagViews((todoItem.tags != null ? todoItem.tags : []), selectedTags);
-        var hasTags = tagViews.length > 0;
-        var hasDescription = (todoItem.description != null && todoItem.description != "");
-        var isEditing = (editing != null && editing.id == todoItem.id);
-	        return {
-	            id: todoItem.id,
-	            title: todoItem.title,
-	            description: todoItem.description,
-	            completed_for_view: completedFlag,
-	            completed_str: completedFlag ? "true" : "false",
-	            dom_id: "todo-" + Std.string(todoItem.id),
-	            container_class: containerClass,
-	            title_class: "text-lg font-semibold text-gray-800 dark:text-white" + lineThrough,
-	            desc_class: "text-gray-600 dark:text-gray-400 mt-1" + lineThrough,
-	            priority: todoItem.priority,
-	            has_due: hasDue,
-	            due_display: dueDisplay,
-		            has_tags: hasTags,
-		            has_description: hasDescription,
-		            is_editing: isEditing,
-		            editing_badge: editingBadge,
-		            tags: tagViews
-		        };
-		    }
+	static function updateTodoInList(todo:server.schemas.Todo, socket:LiveSocket<TodoLiveAssigns>):LiveSocket<TodoLiveAssigns> {
+		var newTodos = socket.assigns.todos.map(function(t) return t.id == todo.id ? todo : t);
+		var updated = socket.merge({
+			todos: newTodos,
+			total_todos: newTodos.length,
+			completed_todos: countCompleted(newTodos),
+			pending_todos: countPending(newTodos)
+		});
+		return updated;
+	}
 
-    /**
-     * Build typed view rows for zero-logic HXX rendering.
-     */
-	    static function buildVisibleTodos(assigns: TodoLiveAssigns): Array<TodoView> {
-	        var base = filterAndSortTodos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query, assigns.selected_tags);
-	        var forceCompletedView = (assigns.filter == shared.TodoTypes.TodoFilter.Completed) && countCompleted(assigns.todos) == 0;
-	        var currentEdit = assigns.editing_todo;
-	        var selectedTags = assigns.selected_tags;
-	        var rows = elixir.Enum.map(base, function(rowSource: server.schemas.Todo): TodoView {
-	            var badge: Null<String> = computeEditingBadgeForTodo(assigns, rowSource.id);
-	            return buildTodoRow(rowSource, forceCompletedView, currentEdit, selectedTags, badge);
-	        });
-	        return rows;
-	    }
+	static function buildTodoRow(todoItem:server.schemas.Todo, forceCompletedView:Bool, editing:Null<server.schemas.Todo>, selectedTags:Array<String>,
+			editingBadge:Null<String>):TodoView {
+		var completedFlag:Bool = if (forceCompletedView) {
+			true;
+		} else {
+			todoItem.completed;
+		}
+		var lineThrough = completedFlag ? " line-through" : "";
+		var border = borderForPriority(todoItem.priority);
+		var containerClass = "bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 "
+			+ border
+			+ (completedFlag ? " opacity-60" : "")
+			+ " transition-all hover:shadow-xl";
+		var hasDue = (todoItem.dueDate != null);
+		var dueDisplay = hasDue ? format_due_date(todoItem.dueDate) : "";
+		var tagViews = buildTagViews((todoItem.tags != null ? todoItem.tags : []), selectedTags);
+		var hasTags = tagViews.length > 0;
+		var hasDescription = (todoItem.description != null && todoItem.description != "");
+		var isEditing = (editing != null && editing.id == todoItem.id);
+		return {
+			id: todoItem.id,
+			title: todoItem.title,
+			description: todoItem.description,
+			completed_for_view: completedFlag,
+			completed_str: completedFlag ? "true" : "false",
+			dom_id: "todo-" + Std.string(todoItem.id),
+			container_class: containerClass,
+			title_class: "text-lg font-semibold text-gray-800 dark:text-white" + lineThrough,
+			desc_class: "text-gray-600 dark:text-gray-400 mt-1" + lineThrough,
+			priority: todoItem.priority,
+			has_due: hasDue,
+			due_display: dueDisplay,
+			has_tags: hasTags,
+			has_description: hasDescription,
+			is_editing: isEditing,
+			editing_badge: editingBadge,
+			tags: tagViews
+		};
+	}
 
-	    static function computeEditingBadgeForTodo(assigns: TodoLiveAssigns, todoId: Int): Null<String> {
-	        var names: Array<String> = [];
-	        var currentUserKey = Std.string(assigns.current_user.id);
+	/**
+	 * Build typed view rows for zero-logic HXX rendering.
+	 */
+	static function buildVisibleTodos(assigns:TodoLiveAssigns):Array<TodoView> {
+		var base = filterAndSortTodos(assigns.todos, assigns.filter, assigns.sort_by, assigns.search_query, assigns.selected_tags);
+		var forceCompletedView = (assigns.filter == shared.TodoTypes.TodoFilter.Completed) && countCompleted(assigns.todos) == 0;
+		var currentEdit = assigns.editing_todo;
+		var selectedTags = assigns.selected_tags;
+		var rows = elixir.Enum.map(base, function(rowSource:server.schemas.Todo):TodoView {
+			var badge:Null<String> = computeEditingBadgeForTodo(assigns, rowSource.id);
+			return buildTodoRow(rowSource, forceCompletedView, currentEdit, selectedTags, badge);
+		});
+		return rows;
+	}
 
-	        for (presenceKey in assigns.online_users.keys()) {
-	            if (presenceKey != currentUserKey) {
-	                // NOTE: `TodoPresence.list/1` returns a native Elixir map (`%{}`).
-	                // On the Elixir target, Haxe `Map<K,V>` is represented as a native map too,
-	                // so `assigns.online_users.get/1` lowers to idiomatic `Map.get/2` safely.
-	                var entry = assigns.online_users.get(presenceKey);
-	                if (entry != null && entry.metas != null && entry.metas.length > 0) {
-	                    var meta: Null<PresenceMeta> = Enum.at(entry.metas, 0);
-	                    if (meta != null && meta.editingTodoId != null && meta.editingTodoId == todoId) {
-	                        var userName = (meta.userName != null && meta.userName != "") ? meta.userName : presenceKey;
-	                        names = names.concat([userName]);
-	                    }
-	                }
-	            }
-	        }
+	static function computeEditingBadgeForTodo(assigns:TodoLiveAssigns, todoId:Int):Null<String> {
+		var names:Array<String> = [];
+		var currentUserKey = Std.string(assigns.current_user.id);
 
-	        if (names.length == 0) return null;
-	        return "Editing: " + names.join(", ");
-	    }
+		for (presenceKey in assigns.online_users.keys()) {
+			if (presenceKey != currentUserKey) {
+				// NOTE: `TodoPresence.list/1` returns a native Elixir map (`%{}`).
+				// On the Elixir target, Haxe `Map<K,V>` is represented as a native map too,
+				// so `assigns.online_users.get/1` lowers to idiomatic `Map.get/2` safely.
+				var entry = assigns.online_users.get(presenceKey);
+				if (entry != null && entry.metas != null && entry.metas.length > 0) {
+					var meta:Null<PresenceMeta> = Enum.at(entry.metas, 0);
+					if (meta != null && meta.editingTodoId != null && meta.editingTodoId == todoId) {
+						var userName = (meta.userName != null && meta.userName != "") ? meta.userName : presenceKey;
+						names = names.concat([userName]);
+					}
+				}
+			}
+		}
 
-	    static function buildOnlineUserViews(assigns: TodoLiveAssigns): Array<OnlineUserView> {
-	        var views: Array<OnlineUserView> = [];
-	        var currentUserKey = Std.string(assigns.current_user.id);
+		if (names.length == 0)
+			return null;
+		return "Editing: " + names.join(", ");
+	}
 
-	        for (presenceKey in assigns.online_users.keys()) {
-	            var entry = assigns.online_users.get(presenceKey);
-	            if (entry != null && entry.metas != null && entry.metas.length > 0) {
-	                var meta: Null<PresenceMeta> = Enum.at(entry.metas, 0);
-	                if (meta != null) {
-	                    var isSelf = presenceKey == currentUserKey;
-	                    var isEditing = meta.editingTodoId != null;
+	static function buildOnlineUserViews(assigns:TodoLiveAssigns):Array<OnlineUserView> {
+		var views:Array<OnlineUserView> = [];
+		var currentUserKey = Std.string(assigns.current_user.id);
 
-	                    var baseLabel = (meta.userName != null && meta.userName != "") ? meta.userName : presenceKey;
-	                    var displayName = isSelf ? (baseLabel + " (you)") : baseLabel;
-	                    var avatarInitials = AvatarTools.initials(meta.userName, meta.userEmail);
-	                    var avatarBgClass = AvatarTools.avatarBgClass(meta.userName, meta.userEmail);
-	                    var avatarStyle = AvatarTools.avatarStyle(meta.userName, meta.userEmail, 48);
-	                    var avatarClass = "h-6 w-6 rounded-full flex items-center justify-center text-white font-semibold shadow-sm bg-cover bg-center " + avatarBgClass;
-	                    var sublabel = isEditing ? ("editing #" + Std.string(meta.editingTodoId)) : null;
-	                    var stateClass = if (isSelf) {
-	                        "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800";
-	                    } else if (isEditing) {
-	                        "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-200 dark:border-purple-800";
-	                    } else {
-	                        "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700";
-	                    };
-	                    var chipClass = "inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border " + stateClass;
+		for (presenceKey in assigns.online_users.keys()) {
+			var entry = assigns.online_users.get(presenceKey);
+			if (entry != null && entry.metas != null && entry.metas.length > 0) {
+				var meta:Null<PresenceMeta> = Enum.at(entry.metas, 0);
+				if (meta != null) {
+					var isSelf = presenceKey == currentUserKey;
+					var isEditing = meta.editingTodoId != null;
 
-	                    views.push({
-	                        key: presenceKey,
-	                        avatar_initials: avatarInitials,
-	                        avatar_class: avatarClass,
-	                        avatar_style: avatarStyle,
-	                        display_name: displayName,
-	                        sublabel: sublabel,
-	                        chip_class: chipClass
-	                    });
-	                }
-	            }
-	        }
+					var baseLabel = (meta.userName != null && meta.userName != "") ? meta.userName : presenceKey;
+					var displayName = isSelf ? (baseLabel + " (you)") : baseLabel;
+					var avatarInitials = AvatarTools.initials(meta.userName, meta.userEmail);
+					var avatarBgClass = AvatarTools.avatarBgClass(meta.userName, meta.userEmail);
+					var avatarStyle = AvatarTools.avatarStyle(meta.userName, meta.userEmail, 48);
+					var avatarClass = "h-6 w-6 rounded-full flex items-center justify-center text-white font-semibold shadow-sm bg-cover bg-center "
+						+ avatarBgClass;
+					var sublabel = isEditing ? ("editing #" + Std.string(meta.editingTodoId)) : null;
+					var stateClass = if (isSelf) {
+						"bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-800";
+					} else if (isEditing) {
+						"bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-200 dark:border-purple-800";
+					} else {
+						"bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700";
+					};
+					var chipClass = "inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border " + stateClass;
 
-	        views.sort(function(a, b) {
-	            var aName = a.display_name.toLowerCase();
-	            var bName = b.display_name.toLowerCase();
-            if (aName < bName) return -1;
-            if (aName > bName) return 1;
-            return 0;
-        });
+					views.push({
+						key: presenceKey,
+						avatar_initials: avatarInitials,
+						avatar_class: avatarClass,
+						avatar_style: avatarStyle,
+						display_name: displayName,
+						sublabel: sublabel,
+						chip_class: chipClass
+					});
+				}
+			}
+		}
 
-        return views;
-    }
+		views.sort(function(a, b) {
+			var aName = a.display_name.toLowerCase();
+			var bName = b.display_name.toLowerCase();
+			if (aName < bName)
+				return -1;
+			if (aName > bName)
+				return 1;
+			return 0;
+		});
 
-    /**
-     * Recompute and merge visible_todos into assigns; returns a typed LiveSocket.
-     */
-		    static function recomputeVisible(socket: Socket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
-		        var ls: LiveSocket<TodoLiveAssigns> = socket;
-		        var rows = buildVisibleTodos(ls.assigns);
-		        var onlineUserViews = buildOnlineUserViews(ls.assigns);
-		        // Precompute UI helpers
-		        var selected = ls.assigns.sort_by;
-		        var filter = ls.assigns.filter;
-			        var merged = ls.merge({
-			            visible_todos: rows,
-			            visible_count: rows.length,
-			            online_user_views: onlineUserViews,
-			            online_user_count: onlineUserViews.length,
-			            online_is_empty: onlineUserViews.length == 0,
-			            activity_count: ls.assigns.activity_items.length,
-			            activity_is_empty: ls.assigns.activity_items.length == 0,
-			            available_tags: computeAvailableTags(ls.assigns.todos, ls.assigns.selected_tags),
-			            filter_btn_all_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.All),
-			            filter_btn_active_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Active),
-			            filter_btn_completed_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Completed),
-		            sort_selected_created: sortSelected(selected, shared.TodoTypes.TodoSort.Created),
-            sort_selected_priority: sortSelected(selected, shared.TodoTypes.TodoSort.Priority),
-            sort_selected_due_date: sortSelected(selected, shared.TodoTypes.TodoSort.DueDate)
-        });
-        return merged;
-    }
-	
-    static function removeTodoFromList(id: Int, socket: LiveSocket<TodoLiveAssigns>): LiveSocket<TodoLiveAssigns> {
-        // Merge filtered list directly without intermediate locals
-        return socket.merge({
-            todos: socket.assigns.todos.filter(function(t) return t.id != id),
-            total_todos: socket.assigns.todos.filter(function(t) return t.id != id).length,
-            completed_todos: countCompleted(socket.assigns.todos.filter(function(t) return t.id != id)),
-            pending_todos: countPending(socket.assigns.todos.filter(function(t) return t.id != id))
-        });
-    }
-	
-	    public static function start_editing(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        // Update presence to show user is editing (idiomatic Phoenix pattern).
-        // Must call recomputeVisible to update visible_todos with is_editing flag.
-        var todo = findTodo(id, socket.assigns.todos);
-        if (todo == null) return socket;
+		return views;
+	}
 
-        var withPresence = updatePresenceEditing(socket, id);
-        return recomputeVisible(SafeAssigns.setEditingTodo(withPresence, todo));
-    }
-	
+	/**
+	 * Recompute and merge visible_todos into assigns; returns a typed LiveSocket.
+	 */
+	static function recomputeVisible(socket:Socket<TodoLiveAssigns>):LiveSocket<TodoLiveAssigns> {
+		var ls:LiveSocket<TodoLiveAssigns> = socket;
+		var rows = buildVisibleTodos(ls.assigns);
+		var onlineUserViews = buildOnlineUserViews(ls.assigns);
+		// Precompute UI helpers
+		var selected = ls.assigns.sort_by;
+		var filter = ls.assigns.filter;
+		var merged = ls.merge({
+			visible_todos: rows,
+			visible_count: rows.length,
+			online_user_views: onlineUserViews,
+			online_user_count: onlineUserViews.length,
+			online_is_empty: onlineUserViews.length == 0,
+			activity_count: ls.assigns.activity_items.length,
+			activity_is_empty: ls.assigns.activity_items.length == 0,
+			available_tags: computeAvailableTags(ls.assigns.todos, ls.assigns.selected_tags),
+			filter_btn_all_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.All),
+			filter_btn_active_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Active),
+			filter_btn_completed_class: filterBtnClass(filter, shared.TodoTypes.TodoFilter.Completed),
+			sort_selected_created: sortSelected(selected, shared.TodoTypes.TodoSort.Created),
+			sort_selected_priority: sortSelected(selected, shared.TodoTypes.TodoSort.Priority),
+			sort_selected_due_date: sortSelected(selected, shared.TodoTypes.TodoSort.DueDate)
+		});
+		return merged;
+	}
+
+	static function removeTodoFromList(id:Int, socket:LiveSocket<TodoLiveAssigns>):LiveSocket<TodoLiveAssigns> {
+		// Merge filtered list directly without intermediate locals
+		return socket.merge({
+			todos: socket.assigns.todos.filter(function(t) return t.id != id),
+			total_todos: socket.assigns.todos.filter(function(t) return t.id != id).length,
+			completed_todos: countCompleted(socket.assigns.todos.filter(function(t) return t.id != id)),
+			pending_todos: countPending(socket.assigns.todos.filter(function(t) return t.id != id))
+		});
+	}
+
+	public static function start_editing(id:Int, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
+		// Update presence to show user is editing (idiomatic Phoenix pattern).
+		// Must call recomputeVisible to update visible_todos with is_editing flag.
+		var todo = findTodo(id, socket.assigns.todos);
+		if (todo == null)
+			return socket;
+
+		var withPresence = updatePresenceEditing(socket, id);
+		return recomputeVisible(SafeAssigns.setEditingTodo(withPresence, todo));
+	}
+
 	// Bulk operations with type-safe socket handling
-		    public static function complete_all_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-	        elixir.Enum.each(socket.assigns.todos, function(item) {
-	            if (!item.completed) {
-	                var cs = server.schemas.Todo.toggleCompleted(item);
-	                Repo.update(cs);
-	            }
-	        });
-        // Broadcast (best-effort)
-        TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll), socket.assigns.current_user.organizationId);
-        // Reload todos and update assigns
-        var refreshedTodos = loadTodos(socket.assigns.current_user.organizationId);
-        var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, refreshedTodos));
-        updated = LiveView.clearFlash(updated);
-        return LiveView.putFlash(
-            updated,
-            FlashType.Info,
-	            "All todos marked as completed!"
-	        );
-	    }
+	public static function complete_all_todos(socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
+		elixir.Enum.each(socket.assigns.todos, function(item) {
+			if (!item.completed) {
+				var cs = server.schemas.Todo.toggleCompleted(item);
+				Repo.update(cs);
+			}
+		});
+		// Broadcast (best-effort)
+		TodoPubSub.broadcast(TodoUpdates, BulkUpdate(CompleteAll), socket.assigns.current_user.organizationId);
+		// Reload todos and update assigns
+		var refreshedTodos = loadTodos(socket.assigns.current_user.organizationId);
+		var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, refreshedTodos));
+		updated = LiveView.clearFlash(updated);
+		return LiveView.putFlash(updated, FlashType.Info, "All todos marked as completed!");
+	}
 
-		    public static function bulk_set_priority(priorityLabel: String, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-	        var normalized = StringTools.trim(priorityLabel).toLowerCase();
-	        if (normalized != "low" && normalized != "medium" && normalized != "high") {
-	            return LiveView.putFlash(socket, FlashType.Error, "Invalid priority.");
-	        }
+	public static function bulk_set_priority(priorityLabel:String, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
+		var normalized = StringTools.trim(priorityLabel).toLowerCase();
+		if (normalized != "low" && normalized != "medium" && normalized != "high") {
+			return LiveView.putFlash(socket, FlashType.Error, "Invalid priority.");
+		}
 
-	        var visible = filterAndSortTodos(socket.assigns.todos, socket.assigns.filter, socket.assigns.sort_by, socket.assigns.search_query, socket.assigns.selected_tags);
-	        var toUpdate = visible.filter(function(item) return item.priority != normalized);
-	        elixir.Enum.each(toUpdate, function(item) {
-	            var cs = server.schemas.Todo.updatePriority(item, normalized);
-	            Repo.update(cs);
-	        });
+		var visible = filterAndSortTodos(socket.assigns.todos, socket.assigns.filter, socket.assigns.sort_by, socket.assigns.search_query,
+			socket.assigns.selected_tags);
+		var toUpdate = visible.filter(function(item) return item.priority != normalized);
+		elixir.Enum.each(toUpdate, function(item) {
+			var cs = server.schemas.Todo.updatePriority(item, normalized);
+			Repo.update(cs);
+		});
 
-	        var priorityEnum: TodoPriority = switch (normalized) {
-	            case "low": Low;
-	            case "medium": Medium;
-	            case "high": High;
-	            case _: Medium;
-	        };
+		var priorityEnum:TodoPriority = switch (normalized) {
+			case "low": Low;
+			case "medium": Medium;
+			case "high": High;
+			case _: Medium;
+		};
 
-	        TodoPubSub.broadcast(TodoUpdates, BulkUpdate(SetPriority(priorityEnum)), socket.assigns.current_user.organizationId);
+		TodoPubSub.broadcast(TodoUpdates, BulkUpdate(SetPriority(priorityEnum)), socket.assigns.current_user.organizationId);
 
-	        var refreshedTodos = loadTodos(socket.assigns.current_user.organizationId);
-	        var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, refreshedTodos));
-	        updated = pushActivity(updated, BulkSetPriority, "Bulk action: priority → " + normalized + " (" + Std.string(toUpdate.length) + ")");
-	        updated = recomputeVisible(updated);
-	        updated = LiveView.clearFlash(updated);
-	        return LiveView.putFlash(updated, FlashType.Info, 'Updated priority for ${toUpdate.length} todo(s).');
-	    }
+		var refreshedTodos = loadTodos(socket.assigns.current_user.organizationId);
+		var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, refreshedTodos));
+		updated = pushActivity(updated, BulkSetPriority, "Bulk action: priority → " + normalized + " (" + Std.string(toUpdate.length) + ")");
+		updated = recomputeVisible(updated);
+		updated = LiveView.clearFlash(updated);
+		return LiveView.putFlash(updated, FlashType.Info, 'Updated priority for ${toUpdate.length} todo(s).');
+	}
 
-		    public static function delete_completed_todos(socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-	        elixir.Enum.each(socket.assigns.todos, function(item) {
-	            if (item.completed) Repo.delete(item);
-	        });
-        // Notify others (best-effort)
-        TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted), socket.assigns.current_user.organizationId);
-        // Reload fresh todos from DB and update assigns
-        var remaining = loadTodos(socket.assigns.current_user.organizationId);
-        var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, remaining));
-        updated = LiveView.clearFlash(updated);
-        return LiveView.putFlash(
-            updated,
-            FlashType.Info,
-            "Completed todos deleted!"
-        );
-    }
-	
+	public static function delete_completed_todos(socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
+		elixir.Enum.each(socket.assigns.todos, function(item) {
+			if (item.completed)
+				Repo.delete(item);
+		});
+		// Notify others (best-effort)
+		TodoPubSub.broadcast(TodoUpdates, BulkUpdate(DeleteCompleted), socket.assigns.current_user.organizationId);
+		// Reload fresh todos from DB and update assigns
+		var remaining = loadTodos(socket.assigns.current_user.organizationId);
+		var updated = recomputeVisible(SafeAssigns.updateTodosAndStats(socket, remaining));
+		updated = LiveView.clearFlash(updated);
+		return LiveView.putFlash(updated, FlashType.Info, "Completed todos deleted!");
+	}
+
 	// Additional helper functions with type-safe socket handling
-	static function startEditingOld(id: Int, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	static function startEditingOld(id:Int, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
 		var todo = findTodo(id, socket.assigns.todos);
 		return SafeAssigns.setEditingTodo(socket, todo);
 	}
-	
-    /**
-     * Save edited todo with typed parameters.
-     */
-	    public static function save_edited_todo_typed(params: Term, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-        if (socket.assigns.editing_todo == null) return socket;
-        var todo = socket.assigns.editing_todo;
-        // LiveView form params arrive as a map with string keys; extract safely.
-        var rawTitle: Null<String> = Reflect.field(params, "title");
-        var rawDesc: Null<String> = Reflect.field(params, "description");
-        var rawPriority: Null<String> = Reflect.field(params, "priority");
-        var rawDue: Null<String> = Reflect.field(params, "due_date");
-        var rawTags: Null<String> = Reflect.field(params, "tags");
 
-        // Inline computed fields into changeset map to avoid local-binder rename mismatches
-	        switch (Repo.update(server.schemas.Todo.changeset(todo, {
-	            title: (rawTitle != null) ? rawTitle : todo.title,
-	            description: (rawDesc != null) ? rawDesc : (todo.description != null ? todo.description : ""),
-	            priority: (rawPriority != null && rawPriority != "") ? rawPriority : todo.priority,
-            dueDate: (rawDue != null) ? parseDueDate(rawDue) : todo.dueDate,
-            tags: (rawTags != null) ? (rawTags != "" ? parseTags(rawTags) : []) : (todo.tags != null ? todo.tags : []),
-            completed: todo.completed,
-            userId: todo.userId,
-            organizationId: todo.organizationId
-        }))) {
-	            case Ok(value):
-	                // Best-effort broadcast
-	                TodoPubSub.broadcast(TodoUpdates, TodoUpdated(value), socket.assigns.current_user.organizationId);
-	                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-	                var ls: LiveSocket<TodoLiveAssigns> = updateTodoInList(value, liveSocket);
-	                ls = clearPresenceEditing(ls);
-	                ls = ls.assign(_.editing_todo, null);
-	                ls = recomputeVisible(ls);
-	                return ls;
-	        case _:
-	            return LiveView.putFlash(socket, FlashType.Error, "Failed to update todo");
-        }
-    }
-
-    // Local helpers to bridge typed enums ↔ UI strings
-    static inline function card_class_for2(todo: server.schemas.Todo): String {
-        var border = switch (todo.priority) {
-            case "high": "border-red-500";
-            case "low": "border-green-500";
-            case "medium": "border-yellow-500";
-            case _: "border-gray-300";
-        };
-        var base = "bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 "+ border;
-        if (todo.completed) base += " opacity-60";
-        return base + " transition-all hover:shadow-xl";
-    }
-
-    static inline function format_due_date(d: Null<NaiveDateTime>): String {
-        if (d == null) return "";
-        var iso = d.to_iso8601();
-        return iso.substr(0, 10);
-    }
-    static inline function encodeSort(s: shared.TodoTypes.TodoSort): String {
-        return switch (s) { case Created: "created"; case Priority: "priority"; case DueDate: "due_date"; };
-    }
-    static inline function encodeFilter(f: shared.TodoTypes.TodoFilter): String {
-        return switch (f) { case All: "all"; case Active: "active"; case Completed: "completed"; };
-    }
-    static inline function priorityRankForSort(priority: String): Int {
-        return switch (priority) {
-            // Higher priority first (ascending sort key)
-            case "high": 0;
-            case "medium": 1;
-            case "low": 2;
-            case _: 3;
-        };
-    }
-
-    // Typed UI helpers (no inline HEEx ops in HXX)
-    static inline function filterBtnClass(current: shared.TodoTypes.TodoFilter, expect: shared.TodoTypes.TodoFilter): String {
-        // Build final class without intermediate locals to avoid underscore/rename hygiene issues
-        return "px-4 py-2 rounded-lg font-medium transition-colors"
-            + (current == expect
-                ? " bg-blue-500 text-white"
-                : " bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300");
-    }
-    static inline function sortSelected(current: shared.TodoTypes.TodoSort, expect: shared.TodoTypes.TodoSort): Bool {
-        return current == expect;
-    }
-    static inline function boolToStr(b: Bool): String {
-        return b ? "true" : "false";
-    }
-
-    static inline function cardId(id: Int): String {
-        return "todo-" + Std.string(id);
-    }
-    static inline function borderForPriority(p: String): String {
-        return switch (p) { case "high": "border-red-500"; case "medium": "border-yellow-500"; case "low": "border-green-500"; default: "border-gray-300"; };
-    }
-    static inline function cardClassFor(todo: server.schemas.Todo): String {
-        return "bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 "
-            + borderForPriority(todo.priority)
-            + (todo.completed ? " opacity-60" : "")
-            + " transition-all hover:shadow-xl";
-    }
-    static inline function titleClass(completed: Bool): String {
-        return "text-lg font-semibold text-gray-800 dark:text-white"
-            + (completed ? " line-through" : "");
-    }
-    static inline function descClass(completed: Bool): String {
-        return "text-gray-600 dark:text-gray-400 mt-1"
-            + (completed ? " line-through" : "");
-    }
-	
-	// Legacy function for backward compatibility - will be removed
-	static function saveEditedTodo(params: EventParams, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
+	/**
+	 * Save edited todo with typed parameters.
+	 */
+	public static function save_edited_todo_typed(params:Term, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
+		if (socket.assigns.editing_todo == null)
+			return socket;
 		var todo = socket.assigns.editing_todo;
-		if (todo == null) return socket;
-		
+		// LiveView form params arrive as a map with string keys; extract safely.
+		var rawTitle:Null<String> = Reflect.field(params, "title");
+		var rawDesc:Null<String> = Reflect.field(params, "description");
+		var rawPriority:Null<String> = Reflect.field(params, "priority");
+		var rawDue:Null<String> = Reflect.field(params, "due_date");
+		var rawTags:Null<String> = Reflect.field(params, "tags");
+
+		// Inline computed fields into changeset map to avoid local-binder rename mismatches
+		switch (Repo.update(server.schemas.Todo.changeset(todo, {
+			title: (rawTitle != null) ? rawTitle : todo.title,
+			description: (rawDesc != null) ? rawDesc : (todo.description != null ? todo.description : ""),
+			priority: (rawPriority != null && rawPriority != "") ? rawPriority : todo.priority,
+			dueDate: (rawDue != null) ? parseDueDate(rawDue) : todo.dueDate,
+			tags: (rawTags != null) ? (rawTags != "" ? parseTags(rawTags) : []) : (todo.tags != null ? todo.tags : []),
+			completed: todo.completed,
+			userId: todo.userId,
+			organizationId: todo.organizationId
+		}))) {
+			case Ok(value):
+				// Best-effort broadcast
+				TodoPubSub.broadcast(TodoUpdates, TodoUpdated(value), socket.assigns.current_user.organizationId);
+				var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+				var ls:LiveSocket<TodoLiveAssigns> = updateTodoInList(value, liveSocket);
+				ls = clearPresenceEditing(ls);
+				ls = ls.assign(_.editing_todo, null);
+				ls = recomputeVisible(ls);
+				return ls;
+			case _:
+				return LiveView.putFlash(socket, FlashType.Error, "Failed to update todo");
+		}
+	}
+
+	// Local helpers to bridge typed enums ↔ UI strings
+	static inline function card_class_for2(todo:server.schemas.Todo):String {
+		var border = switch (todo.priority) {
+			case "high": "border-red-500";
+			case "low": "border-green-500";
+			case "medium": "border-yellow-500";
+			case _: "border-gray-300";
+		};
+		var base = "bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 " + border;
+		if (todo.completed)
+			base += " opacity-60";
+		return base + " transition-all hover:shadow-xl";
+	}
+
+	static inline function format_due_date(d:Null<NaiveDateTime>):String {
+		if (d == null)
+			return "";
+		var iso = d.to_iso8601();
+		return iso.substr(0, 10);
+	}
+
+	static inline function encodeSort(s:shared.TodoTypes.TodoSort):String {
+		return switch (s) {
+			case Created: "created";
+			case Priority: "priority";
+			case DueDate: "due_date";
+		};
+	}
+
+	static inline function encodeFilter(f:shared.TodoTypes.TodoFilter):String {
+		return switch (f) {
+			case All: "all";
+			case Active: "active";
+			case Completed: "completed";
+		};
+	}
+
+	static inline function priorityRankForSort(priority:String):Int {
+		return switch (priority) {
+			// Higher priority first (ascending sort key)
+			case "high": 0;
+			case "medium": 1;
+			case "low": 2;
+			case _: 3;
+		};
+	}
+
+	// Typed UI helpers (no inline HEEx ops in HXX)
+	static inline function filterBtnClass(current:shared.TodoTypes.TodoFilter, expect:shared.TodoTypes.TodoFilter):String {
+		// Build final class without intermediate locals to avoid underscore/rename hygiene issues
+		return "px-4 py-2 rounded-lg font-medium transition-colors"
+			+ (current == expect ? " bg-blue-500 text-white" : " bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300");
+	}
+
+	static inline function sortSelected(current:shared.TodoTypes.TodoSort, expect:shared.TodoTypes.TodoSort):Bool {
+		return current == expect;
+	}
+
+	static inline function boolToStr(b:Bool):String {
+		return b ? "true" : "false";
+	}
+
+	static inline function cardId(id:Int):String {
+		return "todo-" + Std.string(id);
+	}
+
+	static inline function borderForPriority(p:String):String {
+		return switch (p) {
+			case "high": "border-red-500";
+			case "medium": "border-yellow-500";
+			case "low": "border-green-500";
+			default: "border-gray-300";
+		};
+	}
+
+	static inline function cardClassFor(todo:server.schemas.Todo):String {
+		return "bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border-l-4 "
+			+ borderForPriority(todo.priority)
+			+ (todo.completed ? " opacity-60" : "")
+			+ " transition-all hover:shadow-xl";
+	}
+
+	static inline function titleClass(completed:Bool):String {
+		return "text-lg font-semibold text-gray-800 dark:text-white" + (completed ? " line-through" : "");
+	}
+
+	static inline function descClass(completed:Bool):String {
+		return "text-gray-600 dark:text-gray-400 mt-1" + (completed ? " line-through" : "");
+	}
+
+	// Legacy function for backward compatibility - will be removed
+	static function saveEditedTodo(params:EventParams, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
+		var todo = socket.assigns.editing_todo;
+		if (todo == null)
+			return socket;
+
 		// Convert EventParams (with String dates) to TodoParams (with Date type)
-		var todoParams: server.schemas.Todo.TodoParams = {
+		var todoParams:server.schemas.Todo.TodoParams = {
 			title: params.title,
 			description: params.description,
 			priority: params.priority,
@@ -1247,112 +1258,112 @@ enum ActivityKind {
 			completed: params.completed
 		};
 		var changeset = server.schemas.Todo.changeset(todo, todoParams);
-		
+
 		// Use type-safe Repo operations
 		switch (Repo.update(changeset)) {
 			case Ok(updatedTodo):
 				// Best-effort broadcast
 				TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo), socket.assigns.current_user.organizationId);
-				
+
 				var updatedSocket = updateTodoInList(updatedTodo, socket);
 				// Convert to LiveSocket to use assign for single field
-				var liveSocket: LiveSocket<TodoLiveAssigns> = updatedSocket;
+				var liveSocket:LiveSocket<TodoLiveAssigns> = updatedSocket;
 				return liveSocket.assign(_.editing_todo, null);
-				
+
 			case Error(reason):
 				return LiveView.putFlash(socket, FlashType.Error, "Failed to save todo");
 		}
 	}
-	
+
 	// Handle bulk update messages from PubSub with type-safe socket handling
-		static function handleBulkUpdate(action: BulkOperationType, socket: Socket<TodoLiveAssigns>): Socket<TodoLiveAssigns> {
-	        return switch (action) {
-	            case CompleteAll:
-	                // Reload todos once and apply in a single merge
-	                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-	                var refreshed = loadTodos(socket.assigns.current_user.organizationId);
-	                liveSocket.merge({
-	                    todos: refreshed,
-	                    total_todos: refreshed.length,
-	                    completed_todos: countCompleted(refreshed),
-	                    pending_todos: countPending(refreshed)
-	                });
-	            
-	            case DeleteCompleted:
-	                var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-	                var refreshed = loadTodos(socket.assigns.current_user.organizationId);
-	                liveSocket.merge({
-	                    todos: refreshed,
-	                    total_todos: refreshed.length,
-	                    completed_todos: countCompleted(refreshed),
-	                    pending_todos: countPending(refreshed)
-	                });
-			
+	static function handleBulkUpdate(action:BulkOperationType, socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
+		return switch (action) {
+			case CompleteAll:
+				// Reload todos once and apply in a single merge
+				var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+				var refreshed = loadTodos(socket.assigns.current_user.organizationId);
+				liveSocket.merge({
+					todos: refreshed,
+					total_todos: refreshed.length,
+					completed_todos: countCompleted(refreshed),
+					pending_todos: countPending(refreshed)
+				});
+
+			case DeleteCompleted:
+				var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+				var refreshed = loadTodos(socket.assigns.current_user.organizationId);
+				liveSocket.merge({
+					todos: refreshed,
+					total_todos: refreshed.length,
+					completed_todos: countCompleted(refreshed),
+					pending_todos: countPending(refreshed)
+				});
+
 			case SetPriority(priority):
 				// Could handle bulk priority changes in future
 				socket;
-			
+
 			case AddTag(tag):
 				// Could handle bulk tag addition in future
 				socket;
-			
+
 			case RemoveTag(tag):
 				// Could handle bulk tag removal in future
 				socket;
 		};
 	}
-	
+
 	/**
 	 * Router action handlers for LiveView routes
 	 * These are called when the router dispatches to specific actions
 	 */
-	
 	/**
 	 * Handle index route - main todo list view
 	 */
-	public static function index(): String {
+	public static function index():String {
 		// For LiveView routes, these actions are typically handled through mount()
 		// This is a placeholder implementation to satisfy the router validation
 		return "index";
 	}
-	
+
 	/**
 	 * Handle show route - display a specific todo
 	 */
-	public static function show(): String {
+	public static function show():String {
 		// Show specific todo - parameters would be passed through mount()
 		return "show";
 	}
-	
+
 	/**
 	 * Handle edit route - edit a specific todo
 	 */
-	public static function edit(): String {
+	public static function edit():String {
 		// Edit specific todo - editing state would be handled in mount()
 		return "edit";
 	}
-	
+
 	/**
 	 * Render function for the LiveView component
 	 * This generates the HTML template that gets sent to the browser
 	 */
-	    public static function render(assigns: TodoLiveRenderAssigns): String {
-        // Phoenix warns when templates access locals defined outside ~H (it disables change tracking).
-        // Compute derived flash strings into tracked assigns, then reference @flash_info/@flash_error in HEEx.
-		        var renderAssigns: Assigns<TodoLiveRenderAssigns> = assigns;
-		        renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
-		        renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
-		        renderAssigns = Component.assign(renderAssigns, "toggle_form_label", assigns.show_form ? "✖ Cancel" : "➕ Add New Todo");
-		        var headerAvatarInitials = AvatarTools.initials(assigns.current_user.name, assigns.current_user.email);
-		        var headerAvatarBgClass = AvatarTools.avatarBgClass(assigns.current_user.name, assigns.current_user.email);
-		        var headerAvatarStyle = AvatarTools.avatarStyle(assigns.current_user.name, assigns.current_user.email, 32);
-		        var headerAvatarClass = "inline-flex items-center justify-center w-8 h-8 rounded-full text-white font-semibold text-xs shadow-sm ring-2 ring-white dark:ring-gray-800 " + headerAvatarBgClass;
-		        renderAssigns = Component.assign(renderAssigns, "header_avatar_initials", headerAvatarInitials);
-		        renderAssigns = Component.assign(renderAssigns, "header_avatar_class", headerAvatarClass);
-		        renderAssigns = Component.assign(renderAssigns, "header_avatar_style", headerAvatarStyle);
-		        assigns = renderAssigns;
+	public static function render(assigns:TodoLiveRenderAssigns):String {
+		// Phoenix warns when templates access locals defined outside ~H (it disables change tracking).
+		// Compute derived flash strings into tracked assigns, then reference @flash_info/@flash_error in HEEx.
+		var renderAssigns:Assigns<TodoLiveRenderAssigns> = assigns;
+		renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
+		renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
+		renderAssigns = Component.assign(renderAssigns, "toggle_form_label", assigns.show_form ? "✖ Cancel" : "➕ Add New Todo");
+		var headerAvatarInitials = AvatarTools.initials(assigns.current_user.name, assigns.current_user.email);
+		var headerAvatarBgClass = AvatarTools.avatarBgClass(assigns.current_user.name, assigns.current_user.email);
+		var headerAvatarStyle = AvatarTools.avatarStyle(assigns.current_user.name, assigns.current_user.email, 32);
+		var headerAvatarClass = "inline-flex items-center justify-center w-8 h-8 rounded-full text-white font-semibold text-xs shadow-sm ring-2 ring-white dark:ring-gray-800 "
+			+ headerAvatarBgClass;
+		renderAssigns = Component.assign(renderAssigns, "header_avatar_initials", headerAvatarInitials);
+		renderAssigns = Component.assign(renderAssigns, "header_avatar_class", headerAvatarClass);
+		renderAssigns = Component.assign(renderAssigns, "header_avatar_style", headerAvatarStyle);
+		assigns = renderAssigns;
 
-        return hxx('
+		return hxx('
 			<div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
 				<div id="root" class="container mx-auto px-4 py-8 max-w-6xl" phx-hook=${HookName.Ping}>
 						<!-- Flash messages (info/error) -->
@@ -1754,15 +1765,15 @@ enum ActivityKind {
                 </div>
             </div>
         ');
-    }
-	
-    public static function renderBulkActions(assigns: TodoLiveAssigns): String {
+	}
+
+	public static function renderBulkActions(assigns:TodoLiveAssigns):String {
 		if (assigns.todos.length == 0) {
 			return "";
 		}
-		
+
 		var filteredCount = filterTodos(assigns.todos, assigns.filter, assigns.search_query).length;
-		
+
 		return '<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 mb-6 flex justify-between items-center">
 				<div class="text-sm text-gray-600 dark:text-gray-400">
 					Showing ${filteredCount} of ${assigns.total_todos} todos
@@ -1780,115 +1791,110 @@ enum ActivityKind {
 				</div>
 			</div>';
 	}
-	
-    /**
-     * Helper to filter todos based on filter and search query
-     * Pure Haxe implementation (no raw Elixir injection).
-        */
-	    static function filterTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, searchQuery: String): Array<server.schemas.Todo> {
-	        inline function lower(s:String):String {
-	            return s.toLowerCase();
-	        }
-	        var base = switch (filter) {
-	            case shared.TodoTypes.TodoFilter.Active: todos.filter(function(t) return !t.completed);
-	            case shared.TodoTypes.TodoFilter.Completed: todos.filter(function(t) return t.completed);
-	            case shared.TodoTypes.TodoFilter.All: todos;
-	        };
 
-	        var result = if (searchQuery == null || searchQuery == "") {
-	            base;
-	        } else {
-	            var ql = lower(searchQuery);
-	            base.filter(function(t) {
-	                var title = (t.title != null) ? lower(t.title) : "";
-	                var desc = (t.description != null) ? lower(t.description) : "";
-	                var matchesTag = (t.tags != null) && Enum.any(t.tags, function(tag) {
-	                    if (tag == null) return false;
-	                    var normalized = lower(tag);
-	                    return normalized != "" && normalized.indexOf(ql) != -1;
-	                });
-	                return title.indexOf(ql) != -1 || desc.indexOf(ql) != -1 || matchesTag;
-	            });
-	        }
-	        return result;
-	    }
+	/**
+	 * Helper to filter todos based on filter and search query
+	 * Pure Haxe implementation (no raw Elixir injection).
+	 */
+	static function filterTodos(todos:Array<server.schemas.Todo>, filter:shared.TodoTypes.TodoFilter, searchQuery:String):Array<server.schemas.Todo> {
+		inline function lower(s:String):String {
+			return s.toLowerCase();
+		}
+		var base = switch (filter) {
+			case shared.TodoTypes.TodoFilter.Active: todos.filter(function(t) return !t.completed);
+			case shared.TodoTypes.TodoFilter.Completed: todos.filter(function(t) return t.completed);
+			case shared.TodoTypes.TodoFilter.All: todos;
+		};
 
-	    static inline function tagChipClass(selected: Bool): String {
-	        var base = "px-2 py-1 rounded text-xs transition-colors ";
-	        return base + (selected
-	            ? "bg-blue-500 text-white hover:bg-blue-600"
-	            : "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-200");
-	    }
+		var result = if (searchQuery == null || searchQuery == "") {
+			base;
+		} else {
+			var ql = lower(searchQuery);
+			base.filter(function(t) {
+				var title = (t.title != null) ? lower(t.title) : "";
+				var desc = (t.description != null) ? lower(t.description) : "";
+				var matchesTag = (t.tags != null) && Enum.any(t.tags, function(tag) {
+					if (tag == null)
+						return false;
+					var normalized = lower(tag);
+					return normalized != "" && normalized.indexOf(ql) != -1;
+				});
+				return title.indexOf(ql) != -1 || desc.indexOf(ql) != -1 || matchesTag;
+			});
+		}
+		return result;
+	}
 
-	    static function buildTagViews(tagValues: Array<String>, selectedTags: Array<String>): Array<TagView> {
-	        if (tagValues == null || tagValues.length == 0) return [];
+	static inline function tagChipClass(selected:Bool):String {
+		var base = "px-2 py-1 rounded text-xs transition-colors ";
+		return base
+			+ (selected ? "bg-blue-500 text-white hover:bg-blue-600" : "bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400 hover:bg-blue-200");
+	}
 
-	        var trimmedValues = Enum.map(
-	            Enum.filter(tagValues, function(tag) return tag != null && StringTools.trim(tag) != ""),
-	            function(tag) return StringTools.trim(tag)
-	        );
+	static function buildTagViews(tagValues:Array<String>, selectedTags:Array<String>):Array<TagView> {
+		if (tagValues == null || tagValues.length == 0)
+			return [];
 
-	        return Enum.map(trimmedValues, function(tag): TagView {
-	            var selected = selectedTags != null && selectedTags.contains(tag);
-	            return {
-	                tag: tag,
-	                selected: selected,
-	                chip_class: tagChipClass(selected)
-	            };
-	        });
-	    }
+		var trimmedValues = Enum.map(Enum.filter(tagValues, function(tag) return tag != null && StringTools.trim(tag) != ""),
+			function(tag) return StringTools.trim(tag));
 
-	    static function computeAvailableTags(todos: Array<server.schemas.Todo>, selectedTags: Array<String>): Array<TagView> {
-	        // Use Enum.flat_map + Enum.uniq + Enum.sort to generate idiomatic Elixir and
-	        // avoid nested-loop binder hygiene issues in generated code.
-	        var allTags = Enum.flatMap(todos, function(todo) {
-	            return (todo.tags != null)
-	                ? Enum.map(
-	                    Enum.filter(todo.tags, function(tag) {
-	                        return tag != null && StringTools.trim(tag) != "";
-	                    }),
-	                    function(tag) return StringTools.trim(tag)
-	                )
-	                : [];
-	        });
+		return Enum.map(trimmedValues, function(tag):TagView {
+			var selected = selectedTags != null && selectedTags.contains(tag);
+			return {
+				tag: tag,
+				selected: selected,
+				chip_class: tagChipClass(selected)
+			};
+		});
+	}
 
-	        return buildTagViews(Enum.sort(Enum.uniq(allTags)), selectedTags);
-	    }
-	
-    /**
-     * Helper to filter and sort todos
-     *
-     * NOTE: This is intentionally implemented in pure Haxe (no `__elixir__()` in apps).
-     * We rely on faithful Enum externs so the compiler emits idiomatic Elixir.
-     */
-    public static function filterAndSortTodos(todos: Array<server.schemas.Todo>, filter: shared.TodoTypes.TodoFilter, sortBy: shared.TodoTypes.TodoSort, searchQuery: String, selectedTags: Array<String>): Array<server.schemas.Todo> {
-        // First, filter the todos in Haxe
-        var filtered = filterTodos(todos, filter, searchQuery);
-        // Then apply tag filtering if needed
-        if (selectedTags != null && selectedTags.length > 0) {
-            filtered = filtered.filter(function(t) {
-                var tags = (t.tags != null) ? t.tags : [];
-                return Enum.any(selectedTags, function(sel) return tags.indexOf(sel) != -1);
-            });
-        }
+	static function computeAvailableTags(todos:Array<server.schemas.Todo>, selectedTags:Array<String>):Array<TagView> {
+		// Use Enum.flat_map + Enum.uniq + Enum.sort to generate idiomatic Elixir and
+		// avoid nested-loop binder hygiene issues in generated code.
+		var allTags = Enum.flatMap(todos, function(todo) {
+			return (todo.tags != null) ? Enum.map(Enum.filter(todo.tags, function(tag) {
+				return tag != null && StringTools.trim(tag) != "";
+			}), function(tag) return StringTools.trim(tag)) : [];
+		});
 
-        // Use Enum.sort_by (via ElixirEnum) with lexicographic list keys.
-        // Arrays compile to Elixir lists and are comparable under term ordering.
-        return switch (sortBy) {
-            case Priority:
-                Enum.sortBy(filtered, function(t) return (cast ([priorityRankForSort(t.priority), -t.id] : Array<Term>)));
-            case DueDate:
-                // `NaiveDateTime` is a struct; relying on term ordering would compare fields in key order,
-                // which does not correspond to chronological ordering (e.g. day is compared before year).
-                // Sort by ISO8601 strings to guarantee stable chronological order without raw Elixir injection.
-                Enum.sortBy(filtered, function(t) {
-                    var isNilDue = elixir.Kernel.isNil(t.dueDate);
-                    var dueIso = isNilDue ? "" : t.dueDate.to_iso8601();
-                    return (cast ([isNilDue, dueIso, -t.id] : Array<Term>));
-                });
-            case Created:
-                // Newest first (stable): use id desc as a proxy for creation order.
-                Enum.sortBy(filtered, function(t) return (cast ([-t.id] : Array<Term>)));
-        };
-    }
+		return buildTagViews(Enum.sort(Enum.uniq(allTags)), selectedTags);
+	}
+
+	/**
+	 * Helper to filter and sort todos
+	 *
+	 * NOTE: This is intentionally implemented in pure Haxe (no `__elixir__()` in apps).
+	 * We rely on faithful Enum externs so the compiler emits idiomatic Elixir.
+	 */
+	public static function filterAndSortTodos(todos:Array<server.schemas.Todo>, filter:shared.TodoTypes.TodoFilter, sortBy:shared.TodoTypes.TodoSort,
+			searchQuery:String, selectedTags:Array<String>):Array<server.schemas.Todo> {
+		// First, filter the todos in Haxe
+		var filtered = filterTodos(todos, filter, searchQuery);
+		// Then apply tag filtering if needed
+		if (selectedTags != null && selectedTags.length > 0) {
+			filtered = filtered.filter(function(t) {
+				var tags = (t.tags != null) ? t.tags : [];
+				return Enum.any(selectedTags, function(sel) return tags.indexOf(sel) != -1);
+			});
+		}
+
+		// Use Enum.sort_by (via ElixirEnum) with lexicographic list keys.
+		// Arrays compile to Elixir lists and are comparable under term ordering.
+		return switch (sortBy) {
+			case Priority:
+				Enum.sortBy(filtered, function(t) return (cast([priorityRankForSort(t.priority), -t.id] : Array<Term>)));
+			case DueDate:
+				// `NaiveDateTime` is a struct; relying on term ordering would compare fields in key order,
+				// which does not correspond to chronological ordering (e.g. day is compared before year).
+				// Sort by ISO8601 strings to guarantee stable chronological order without raw Elixir injection.
+				Enum.sortBy(filtered, function(t) {
+					var isNilDue = elixir.Kernel.isNil(t.dueDate);
+					var dueIso = isNilDue ? "" : t.dueDate.to_iso8601();
+					return (cast([isNilDue, dueIso, -t.id] : Array<Term>));
+				});
+			case Created:
+				// Newest first (stable): use id desc as a proxy for creation order.
+				Enum.sortBy(filtered, function(t) return (cast([-t.id] : Array<Term>)));
+		};
+	}
 }

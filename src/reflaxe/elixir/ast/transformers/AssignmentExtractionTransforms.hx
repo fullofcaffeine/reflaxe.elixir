@@ -40,802 +40,709 @@ using reflaxe.elixir.ast.ElixirASTTransformer;
  */
 @:nullSafety(Off)
 class AssignmentExtractionTransforms {
-    
-    /**
-     * Counter for generating unique temporary variable names.
-     * 
-     * WHY: When extracting complex pattern matches (not just PVar), we need a temp variable
-     * to hold the value first before pattern matching, ensuring proper evaluation order.
-     * 
-     * HOW: Incremented each time we extract a complex pattern (e.g., PTuple, PArray)
-     * to generate names like _extracted_0, _extracted_1, etc. These temps are only used
-     * internally during the extraction process and don't conflict with user variables.
-     */
-    private static var extractionCounter: Int = 0;
-    
-    /**
-     * Main transformation pass for extracting assignments from expressions
-     * 
-     * WHY: Entry point for the assignment extraction transformation
-     * WHAT: Traverses the AST and extracts assignments from expression contexts
-     * HOW: Uses transformNode to visit each node and apply extraction logic
-     */
-    public static function assignmentExtractionPass(ast: ElixirAST): ElixirAST {
-        #if debug_assignment_extraction
-        #end
-        
-        return transformAssignments(ast);
-    }
-    
-    static function transformAssignments(node: ElixirAST): ElixirAST {
-        #if debug_assignment_extraction
-        var nodeType = reflaxe.elixir.util.EnumReflection.enumConstructor(node.def);
-        if (nodeType == "EMatch" || nodeType == "EBinary" || nodeType == "ECase") {
-        }
-        #end
-        
-        // Special handling for ECase - we need to control how its clauses are transformed
-        switch(node.def) {
-            case ECase(expr, clauses):
-                #if debug_assignment_extraction
-                #end
-                
-                // Transform the expression being matched
-                var transformedExpr = transformAssignments(expr);
-                
-                // Transform clauses but DON'T extract assignments from their bodies
-                var transformedClauses = [];
-                for (clause in clauses) {
-                    // Transform guard if present
-                    var transformedGuard = clause.guard != null ? transformAssignments(clause.guard) : null;
-                    
-                    // For the body, we just recursively transform but DON'T apply extraction
-                    // because case clause bodies are statement contexts
-                    var transformedBody = transformClauseBody(clause.body);
-                    
-                    transformedClauses.push({
-                        pattern: clause.pattern,
-                        guard: transformedGuard,
-                        body: transformedBody
-                    });
-                }
-                
-                return makeASTWithMeta(
-                    ECase(transformedExpr, transformedClauses),
-                    node.metadata,
-                    node.pos
-                );
-                
-            default:
-                // For all other nodes, use the standard recursive transformation
-        }
+	/**
+	 * Counter for generating unique temporary variable names.
+	 * 
+	 * WHY: When extracting complex pattern matches (not just PVar), we need a temp variable
+	 * to hold the value first before pattern matching, ensuring proper evaluation order.
+	 * 
+	 * HOW: Incremented each time we extract a complex pattern (e.g., PTuple, PArray)
+	 * to generate names like _extracted_0, _extracted_1, etc. These temps are only used
+	 * internally during the extraction process and don't conflict with user variables.
+	 */
+	private static var extractionCounter:Int = 0;
 
-        // For non-ECase nodes, first recurse into children, then check if this node needs transformation
-        // IMPORTANT: We don't pass transformAssignments to avoid infinite recursion
-        // Instead, we manually handle the recursion for the specific node types we care about
-        var transformedNode = node;
+	/**
+	 * Main transformation pass for extracting assignments from expressions
+	 * 
+	 * WHY: Entry point for the assignment extraction transformation
+	 * WHAT: Traverses the AST and extracts assignments from expression contexts
+	 * HOW: Uses transformNode to visit each node and apply extraction logic
+	 */
+	public static function assignmentExtractionPass(ast:ElixirAST):ElixirAST {
+		#if debug_assignment_extraction
+		#end
 
-        // Manually recurse for node types that can contain assignments
-        switch(node.def) {
-            case EBlock(expressions):
-                transformedNode = makeASTWithMeta(
-                    EBlock(expressions.map(transformAssignments)),
-                    node.metadata,
-                    node.pos
-                );
-            case EIf(cond, thenBranch, elseBranch):
-                transformedNode = makeASTWithMeta(
-                    EIf(
-                        transformAssignments(cond),
-                        transformAssignments(thenBranch),
-                        elseBranch != null ? transformAssignments(elseBranch) : null
-                    ),
-                    node.metadata,
-                    node.pos
-                );
-            case EBinary(op, left, right):
-                transformedNode = makeASTWithMeta(
-                    EBinary(op, transformAssignments(left), transformAssignments(right)),
-                    node.metadata,
-                    node.pos
-                );
-            default:
-                // For other node types, keep as-is
-                transformedNode = node;
-        }
+		return transformAssignments(ast);
+	}
 
-        // Handle null nodes (which can indicate removed nodes)
-        if (transformedNode == null) {
-            return null;
-        }
-        
-        // Then check if this node itself needs transformation
-        switch(transformedNode.def) {
-            // Look for assignments that are direct statements
-            case EMatch(pattern, value):
-                #if debug_assignment_extraction
-                if (value.metadata?.sourceFile != null) {
-                }
-                // Special check for chained assignments like c = index = s.cca(...)
-                switch(value.def) {
-                    case EMatch(innerPattern, innerValue):
-                    default:
-                }
-                #end
-                // Check if the value contains assignments in binary expressions
-                var result = extractAndTransformExpression(value);
-                if (result.hasExtracted) {
-                    #if debug_assignment_extraction
-                    #end
-                    // Create a block with extracted assignments followed by the main assignment
-                    var statements = result.extracted.copy();
-                    statements.push(makeASTWithMeta(
-                        EMatch(pattern, result.expression),
-                        transformedNode.metadata,
-                        transformedNode.pos
-                    ));
-                    return makeAST(EBlock(statements));
-                }
-                return transformedNode;
-                
-            // Binary operations might contain assignments that need extraction
-            case EBinary(op, left, right):
-                var result = extractAndTransformExpression(transformedNode);
-                if (result.hasExtracted) {
-                    // Create a block with extracted assignments followed by the expression
-                    var statements = result.extracted.copy();
-                    statements.push(result.expression);
-                    return makeAST(EBlock(statements));
-                }
-                return transformedNode;
-                
-            // Handle calls that might contain functions with assignments
-            case ECall(_, _, _):
-                var result = extractAndTransformExpression(transformedNode);
-                if (result.hasExtracted) {
-                    // Create a block with extracted assignments followed by the call
-                    var statements = result.extracted.copy();
-                    statements.push(result.expression);
-                    return makeAST(EBlock(statements));
-                }
-                return transformedNode;
-                
-            // Handle remote calls (like Enum.reduce_while) that might contain functions with assignments
-            case ERemoteCall(_, _, _):
-                #if debug_assignment_extraction
-                #end
-                var result = extractAndTransformExpression(transformedNode);
-                if (result.hasExtracted) {
-                    // Create a block with extracted assignments followed by the remote call
-                    var statements = result.extracted.copy();
-                    statements.push(result.expression);
-                    return makeAST(EBlock(statements));
-                }
-                return transformedNode;
-                
-            // Handle case expressions - need special handling for clause bodies
-            case ECase(expr, clauses):
-                #if debug_assignment_extraction
-                #end
-                
-                // Process the matched expression for any embedded assignments
-                var exprResult = extractAndTransformExpression(expr);
-                
-                // Process clauses but preserve variable declarations in their bodies
-                var processedClauses = [];
-                for (clause in clauses) {
-                    var transformedBody = transformClauseBody(clause.body);
-                    processedClauses.push({
-                        pattern: clause.pattern,
-                        guard: clause.guard,
-                        body: transformedBody
-                    });
-                }
-                
-                // If the expression had extractions, hoist them
-                if (exprResult.hasExtracted) {
-                    var statements = exprResult.extracted.copy();
-                    statements.push(makeASTWithMeta(
-                        ECase(exprResult.expression, processedClauses),
-                        transformedNode.metadata,
-                        transformedNode.pos
-                    ));
-                    return makeAST(EBlock(statements));
-                } else {
-                    // Return the ECase with original clause bodies 
-                    return transformedNode;
-                }
-                
-            // Handle if expressions that might contain assignments in conditions
-            case EIf(condition, thenBranch, elseBranch):
-                #if debug_assignment_extraction
-                #end
-                
-                // First check if the condition is a parenthesized expression
-                var actualCondition = switch(condition.def) {
-                    case EParen(inner): inner;
-                    default: condition;
-                };
-                
-                #if debug_assignment_extraction
-                #end
-                
-                // Extract assignments from the condition
-                var condResult = extractAndTransformExpression(actualCondition);
-                
-                if (condResult.hasExtracted) {
-                    #if debug_assignment_extraction
-                    #end
-                    // Create a block with extracted assignments followed by the if expression
-                    var statements = condResult.extracted.copy();
-                    
-                    // Re-wrap in parentheses if needed
-                    var newCondition = switch(condition.def) {
-                        case EParen(_): makeASTWithMeta(EParen(condResult.expression), condition.metadata, condition.pos);
-                        default: condResult.expression;
-                    };
-                    
-                    statements.push(makeASTWithMeta(
-                        EIf(newCondition, thenBranch, elseBranch),
-                        transformedNode.metadata,
-                        transformedNode.pos
-                    ));
-                    return makeAST(EBlock(statements));
-                }
-                return transformedNode;
-                
-            default:
-                // Return the already-transformed node
-                return transformedNode;
-        }
-    }
-    
-    /**
-     * Transform a case clause body recursively without extracting assignments
-     * 
-     * Case clause bodies are statement contexts where variable declarations
-     * should be preserved, not extracted.
-     */
-    static function transformClauseBody(body: ElixirAST): ElixirAST {
-        // Null safety check
-        if (body == null || body.def == null) {
-            return body;
-        }
+	static function transformAssignments(node:ElixirAST):ElixirAST {
+		#if debug_assignment_extraction
+		var nodeType = reflaxe.elixir.util.EnumReflection.enumConstructor(node.def);
+		if (nodeType == "EMatch" || nodeType == "EBinary" || nodeType == "ECase") {}
+		#end
 
-        #if debug_assignment_extraction
-        #end
+		// Special handling for ECase - we need to control how its clauses are transformed
+		switch (node.def) {
+			case ECase(expr, clauses):
+				#if debug_assignment_extraction
+				#end
 
-        // Simply recurse through the AST structure without extraction
-        switch(body.def) {
-            case EBlock(statements):
-                #if debug_assignment_extraction
-                #end
-                // Transform each statement recursively but keep them all
-                var transformedStatements = [];
-                for (stmt in statements) {
-                    var transformedStmt = transformClauseBody(stmt);
-                    if (shouldDropTempAssignment(transformedStmt)) {
-                        #if debug_assignment_extraction
-                        #end
-                        continue;
-                    }
-                    transformedStatements.push(transformedStmt);
-                }
-                return makeASTWithMeta(
-                    EBlock(transformedStatements),
-                    body.metadata,
-                    body.pos
-                );
-                
-            // For other node types, apply standard transformation
-            default:
-                return ElixirASTTransformer.transformAST(body, transformAssignments);
-        }
-    }
+				// Transform the expression being matched
+				var transformedExpr = transformAssignments(expr);
 
-    static function shouldDropTempAssignment(stmt: ElixirAST): Bool {
-        if (stmt == null || stmt.def == null) {
-            return false;
-        }
+				// Transform clauses but DON'T extract assignments from their bodies
+				var transformedClauses = [];
+				for (clause in clauses) {
+					// Transform guard if present
+					var transformedGuard = clause.guard != null ? transformAssignments(clause.guard) : null;
 
-        return switch(stmt.def) {
-            case EMatch(pattern, value):
-                switch pattern {
-                    case PVar(name):
-                        var valueVar = switch(value.def) {
-                            case EVar(varName): varName;
-                            default: null;
-                        };
+					// For the body, we just recursively transform but DON'T apply extraction
+					// because case clause bodies are statement contexts
+					var transformedBody = transformClauseBody(clause.body);
 
-                        if (ElixirASTBuilder.isTempPatternVarName(name)) {
-                            return true;
-                        }
+					transformedClauses.push({
+						pattern: clause.pattern,
+						guard: transformedGuard,
+						body: transformedBody
+					});
+				}
 
-                        if (valueVar != null) {
-                            if (valueVar == name) {
-                                return true;
-                            }
-                            if (ElixirASTBuilder.isTempPatternVarName(valueVar)) {
-                                return true;
-                            }
-                        }
-                        false;
-                    default:
-                        false;
-                };
-            default:
-                false;
-        };
-    }
-    
-    /**
-     * Extract assignments from an expression and return both extracted assignments and cleaned expression
-     * 
-     * Context-aware version: Builds a parent map first to understand context,
-     * then only extracts assignments when in expression contexts.
-     */
-    static function extractAndTransformExpression(expr: ElixirAST): {extracted: Array<ElixirAST>, expression: ElixirAST, hasExtracted: Bool} {
-        var extracted = [];
-        
-        // Phase 1: Build parent map to understand context
-        var parentOf = new haxe.ds.ObjectMap<ElixirAST, ElixirAST>();
-        
-        function buildParentMap(node: ElixirAST, parent: Null<ElixirAST>): Void {
-            // Skip null nodes
-            if (node == null || node.def == null) {
-                return;
-            }
+				return makeASTWithMeta(ECase(transformedExpr, transformedClauses), node.metadata, node.pos);
 
-            if (parent != null) {
-                parentOf.set(node, parent);
-            }
+			default:
+				// For all other nodes, use the standard recursive transformation
+		}
 
-            switch(node.def) {
-                case ECase(expr, clauses):
-                    buildParentMap(expr, node);
-                    if (clauses != null) {
-                        for (clause in clauses) {
-                            // The clause body's parent is the ECase, which is important for context
-                            if (clause != null && clause.body != null) {
-                                buildParentMap(clause.body, node);
-                            }
-                            if (clause != null && clause.guard != null) {
-                                buildParentMap(clause.guard, node);
-                            }
-                        }
-                    }
-                    
-                case EBlock(statements):
-                    if (statements != null) {
-                        for (stmt in statements) {
-                            if (stmt != null) {
-                                buildParentMap(stmt, node);
-                            }
-                        }
-                    }
-                    
-                case EIf(condition, thenBranch, elseBranch):
-                    buildParentMap(condition, node);
-                    buildParentMap(thenBranch, node);
-                    if (elseBranch != null) {
-                        buildParentMap(elseBranch, node);
-                    }
-                    
-                case EBinary(_, left, right):
-                    buildParentMap(left, node);
-                    buildParentMap(right, node);
-                    
-                case EUnary(_, operand):
-                    buildParentMap(operand, node);
-                    
-                case ECall(target, _, args):
-                    if (target != null) buildParentMap(target, node);
-                    for (arg in args) {
-                        buildParentMap(arg, node);
-                    }
-                    
-                case ERemoteCall(module, _, args):
-                    buildParentMap(module, node);
-                    for (arg in args) {
-                        buildParentMap(arg, node);
-                    }
-                    
-                case EFn(clauses):
-                    for (clause in clauses) {
-                        buildParentMap(clause.body, node);
-                        if (clause.guard != null) {
-                            buildParentMap(clause.guard, node);
-                        }
-                    }
-                    
-                case EParen(inner):
-                    buildParentMap(inner, node);
-                    
-                case EMatch(_, value):
-                    buildParentMap(value, node);
-                    
-                default:
-                    // Leaf nodes or nodes we don't need to traverse
-            }
-        }
-        
-        // Build the parent map
-        buildParentMap(expr, null);
-        
-        // Helper: Check if we're in a statement context (where variable declarations are allowed)
-        function isInStatementContext(node: ElixirAST): Bool {
-            var parent = parentOf.get(node);
-            if (parent == null) {
-                // Top level is a statement context
-                return true;
-            }
-            
-            switch(parent.def) {
-                case ECase(_, _):
-                    // Case clause bodies are statement contexts
-                    return true;
-                    
-                case EBlock(_):
-                    // Blocks can contain statements
-                    return true;
-                    
-                case EFn(_):
-                    // Function clause bodies are statement contexts
-                    return true;
-                    
-                default:
-                    // Check parent's parent
-                    return isInStatementContext(parent);
-            }
-        }
-        
-        // Phase 2: Extract assignments with context awareness
-        function extractFromExpr(e: ElixirAST): ElixirAST {
-            switch(e.def) {
-                case EMatch(pattern, value):
-                    #if debug_assignment_extraction
-                    #end
-                    
-                    // First extract any assignments from the value expression itself
-                    var cleanValue = extractFromExpr(value);
+		// For non-ECase nodes, first recurse into children, then check if this node needs transformation
+		// IMPORTANT: We don't pass transformAssignments to avoid infinite recursion
+		// Instead, we manually handle the recursion for the specific node types we care about
+		var transformedNode = node;
 
-                    // Skip extraction for temp pattern variables (g, g1, etc.)
-                    switch pattern {
-                        case PVar(name) if (ElixirASTBuilder.isTempPatternVarName(name)):
-                            #if debug_assignment_extraction
-                            #end
-                            return cleanValue;
-                        case PVar(name):
-                            switch(cleanValue.def) {
-                                case EVar(varName) if (varName == name):
-                                    #if debug_assignment_extraction
-                                    #end
-                                    return cleanValue;
-                                default:
-                            }
-                        default:
-                    }
-                    
-                    // Then extract this assignment
-                    extracted.push(makeASTWithMeta(
-                        EMatch(pattern, cleanValue),
-                        e.metadata,
-                        e.pos
-                    ));
-                    
-                    // Return variable reference
-                    switch(pattern) {
-                        case PVar(name):
-                            #if debug_assignment_extraction
-                            #end
-                            return makeAST(EVar(name));
-                        default:
-                            /**
-                             * Complex pattern handling (PTuple, PArray, PObject, etc.)
-                             * 
-                             * WHY: Complex patterns like {x, y} = func() need special handling
-                             * because we can't directly return a variable reference for them.
-                             * 
-                             * HOW: We use a two-step extraction:
-                             * 1. First assign the value to a temp variable: _extracted_0 = func()
-                             * 2. Then pattern match from the temp: {x, y} = _extracted_0
-                             * 3. Return the temp variable reference for use in expressions
-                             * 
-                             * This preserves both the pattern matching and proper evaluation order
-                             * while ensuring the extracted value can be used in the parent expression.
-                             */
-                            var tempVar = '_extracted_${extractionCounter++}';
-                            
-                            // Replace the last extraction (the full pattern match)
-                            // with a simple temp variable assignment
-                            extracted[extracted.length - 1] = makeASTWithMeta(
-                                EMatch(PVar(tempVar), cleanValue),
-                                e.metadata,
-                                e.pos
-                            );
-                            
-                            // Then add the actual pattern match from the temp variable
-                            // This ensures the pattern destructuring still happens
-                            extracted.push(makeASTWithMeta(
-                                EMatch(pattern, makeAST(EVar(tempVar))),
-                                e.metadata,
-                                e.pos
-                            ));
-                            
-                            // Return reference to the temp variable for use in parent expression
-                            return makeAST(EVar(tempVar));
-                    }
-                    
-                case EUnary(op, operand):
-                    #if debug_assignment_extraction
-                    #end
-                    
-                    // Special handling for EBlock inside unary operators
-                    switch(operand.def) {
-                        case EBlock(_):
-                            #if debug_assignment_extraction
-                            #end
-                            
-                            // Let extractFromExpr handle the block properly
-                            // It will extract assignments and return the cleaned expression
-                            var cleanOperand = extractFromExpr(operand);
-                            
-                            #if debug_assignment_extraction
-                            #end
-                            
-                            return makeASTWithMeta(
-                                EUnary(op, cleanOperand),
-                                e.metadata,
-                                e.pos
-                            );
-                            
-                        default:
-                            // Regular unary processing
-                            var cleanOperand = extractFromExpr(operand);
-                            
-                            return makeASTWithMeta(
-                                EUnary(op, cleanOperand),
-                                e.metadata,
-                                e.pos
-                            );
-                    }
-                    
-                case EBinary(op, left, right):
-                    #if debug_assignment_extraction
-                    
-                    // Check if left or right contains assignments
-                    var hasLeftAssignment = switch(left.def) {
-                        case EMatch(_, _): true;
-                        default: false;
-                    };
-                    var hasRightAssignment = switch(right.def) {
-                        case EMatch(_, _): true;
-                        default: false;
-                    };
-                    #end
-                    var cleanLeft = extractFromExpr(left);
-                    var cleanRight = extractFromExpr(right);
-                    
-                    return makeASTWithMeta(
-                        EBinary(op, cleanLeft, cleanRight),
-                        e.metadata,
-                        e.pos
-                    );
-                    
-                case ECall(target, funcName, args):
-                    #if debug_assignment_extraction
-                    if (funcName == "reduce_while") {
-                        for (i in 0...args.length) {
-                            switch(args[i].def) {
-                                case EMatch(_, _):
-                                case EFn(clauses):
-                                    if (clauses.length > 0) {
-                                    }
-                                default:
-                            }
-                        }
-                    }
-                    #end
-                    var cleanTarget = target != null ? extractFromExpr(target) : null;
-                    var cleanArgs = args.map(extractFromExpr);
-                    
-                    return makeASTWithMeta(
-                        ECall(cleanTarget, funcName, cleanArgs),
-                        e.metadata,
-                        e.pos
-                    );
-                    
-                case ERemoteCall(module, funcName, args):
-                    #if debug_assignment_extraction
-                    if (funcName == "reduce_while") {
-                        for (i in 0...args.length) {
-                        }
-                    }
-                    #end
-                    var cleanModule = extractFromExpr(module);
-                    var cleanArgs = args.map(extractFromExpr);
-                    
-                    return makeASTWithMeta(
-                        ERemoteCall(cleanModule, funcName, cleanArgs),
-                        e.metadata,
-                        e.pos
-                    );
-                    
-                case EIf(condition, thenBranch, elseBranch):
-                    #if debug_assignment_extraction
-                    #end
-                    
-                    // Extract assignments from the condition
-                    var cleanCondition = extractFromExpr(condition);
-                    var cleanThen = extractFromExpr(thenBranch);
-                    var cleanElse = elseBranch != null ? extractFromExpr(elseBranch) : null;
-                    
-                    return makeASTWithMeta(
-                        EIf(cleanCondition, cleanThen, cleanElse),
-                        e.metadata,
-                        e.pos
-                    );
-                    
-                case EParen(inner):
-                    // Parentheses are an explicit "expression boundary": if we extract assignments
-                    // from inside a parenthesized expression, keep them *inside* the parentheses
-                    // as a multi-expression block, instead of hoisting them to statement-level.
-                    //
-                    // This is important for constructs that rely on rebinding to persist in the
-                    // surrounding scope (parentheses do not introduce a new scope, unlike IIFEs).
-                    var before = extracted.length;
-                    var cleanInner = extractFromExpr(inner);
+		// Manually recurse for node types that can contain assignments
+		switch (node.def) {
+			case EBlock(expressions):
+				transformedNode = makeASTWithMeta(EBlock(expressions.map(transformAssignments)), node.metadata, node.pos);
+			case EIf(cond, thenBranch, elseBranch):
+				transformedNode = makeASTWithMeta(EIf(transformAssignments(cond), transformAssignments(thenBranch),
+					elseBranch != null ? transformAssignments(elseBranch) : null),
+					node.metadata, node.pos);
+			case EBinary(op, left, right):
+				transformedNode = makeASTWithMeta(EBinary(op, transformAssignments(left), transformAssignments(right)), node.metadata, node.pos);
+			default:
+				// For other node types, keep as-is
+				transformedNode = node;
+		}
 
-                    if (extracted.length > before) {
-                        var localExtracted = extracted.slice(before, extracted.length);
-                        extracted.splice(before, extracted.length - before);
+		// Handle null nodes (which can indicate removed nodes)
+		if (transformedNode == null) {
+			return null;
+		}
 
-                        var statements = localExtracted.copy();
-                        statements.push(cleanInner);
+		// Then check if this node itself needs transformation
+		switch (transformedNode.def) {
+			// Look for assignments that are direct statements
+			case EMatch(pattern, value):
+				#if debug_assignment_extraction
+				if (value.metadata?.sourceFile != null) {}
+				// Special check for chained assignments like c = index = s.cca(...)
+				switch (value.def) {
+					case EMatch(innerPattern, innerValue):
+					default:
+				}
+				#end
+				// Check if the value contains assignments in binary expressions
+				var result = extractAndTransformExpression(value);
+				if (result.hasExtracted) {
+					#if debug_assignment_extraction
+					#end
+					// Create a block with extracted assignments followed by the main assignment
+					var statements = result.extracted.copy();
+					statements.push(makeASTWithMeta(EMatch(pattern, result.expression), transformedNode.metadata, transformedNode.pos));
+					return makeAST(EBlock(statements));
+				}
+				return transformedNode;
 
-                        return makeASTWithMeta(
-                            EParen(makeAST(EBlock(statements))),
-                            e.metadata,
-                            e.pos
-                        );
-                    }
+			// Binary operations might contain assignments that need extraction
+			case EBinary(op, left, right):
+				var result = extractAndTransformExpression(transformedNode);
+				if (result.hasExtracted) {
+					// Create a block with extracted assignments followed by the expression
+					var statements = result.extracted.copy();
+					statements.push(result.expression);
+					return makeAST(EBlock(statements));
+				}
+				return transformedNode;
 
-                    return makeASTWithMeta(
-                        EParen(cleanInner),
-                        e.metadata,
-                        e.pos
-                    );
-                    
-                case EFn(clauses):
-                    #if debug_assignment_extraction
-                    #end
-                    
-                    // Process each clause body for assignments
-                    var cleanClauses = [];
-                    for (clause in clauses) {
-                        #if debug_assignment_extraction
-                        #end
-                        
-                        // Extract assignments from the clause body
-                        var result = extractAndTransformExpression(clause.body);
-                        
-                        if (result.hasExtracted) {
-                            #if debug_assignment_extraction
-                            #end
-                            
-                            // Create a block with extracted assignments followed by the cleaned expression
-                            var statements = result.extracted.copy();
-                            statements.push(result.expression);
-                            var cleanBody = makeAST(EBlock(statements));
-                            
-                            cleanClauses.push({
-                                args: clause.args,
-                                guard: clause.guard,
-                                body: cleanBody
-                            });
-                        } else {
-                            // Even if no top-level extractions, the body might have been cleaned internally
-                            cleanClauses.push({
-                                args: clause.args,
-                                guard: clause.guard,
-                                body: result.expression  // Use the cleaned expression
-                            });
-                        }
-                    }
-                    
-                    return makeASTWithMeta(
-                        EFn(cleanClauses),
-                        e.metadata,
-                        e.pos
-                    );
-                    
-                case EBlock(statements):
-                    #if debug_assignment_extraction
-                    for (i in 0...statements.length) {
-                    }
-                    var inStatementContext = isInStatementContext(e);
-                    #end
-                    
-                    // Only extract assignments if we're NOT in a statement context
-                    // In statement contexts (like case clause bodies), preserve the block as-is
-                    if (!isInStatementContext(e)) {
-                        // Special case: EBlock with assignments should have those assignments extracted
-                        // This happens when Haxe desugars complex expressions
-                        if (statements.length == 2) {
-                            switch(statements[0].def) {
-                                case EMatch(pattern, value):
-                                    #if debug_assignment_extraction
-                                    #end
-                                    // Extract the assignment
-                                    extracted.push(statements[0]);
-                                    // Return just the second statement (the actual expression)
-                                    return extractFromExpr(statements[1]);
-                                default:
-                            }
-                        }
-                    } else {
-                        #if debug_assignment_extraction
-                        #end
-                    }
-                    
-                    // General block processing
-                    var cleanStatements = [];
-                    for (i in 0...statements.length) {
-                        var stmt = statements[i];
-                        var isLast = (i == statements.length - 1);
-                        
-                        if (isLast) {
-                            // Last statement in block should be processed for extraction
-                            // but kept as the return value
-                            var cleanStmt = extractFromExpr(stmt);
-                            cleanStatements.push(cleanStmt);
-                        } else {
-                            // Non-last statements that are assignments should be extracted
-                            switch(stmt.def) {
-                                case EMatch(_, _):
-                                    // Extract assignment to outer scope
-                                    var cleanStmt = extractFromExpr(stmt);
-                                    // The extraction already added it to 'extracted' array
-                                    // Don't add to cleanStatements
-                                default:
-                                    // Keep other statements as-is
-                                    cleanStatements.push(extractFromExpr(stmt));
-                            }
-                        }
-                    }
-                    
-                    // If only one statement remains, unwrap the block
-                    if (cleanStatements.length == 1) {
-                        return cleanStatements[0];
-                    } else if (cleanStatements.length == 0) {
-                        // Empty block becomes nil
-                        return makeAST(ENil);
-                    } else {
-                        return makeASTWithMeta(
-                            EBlock(cleanStatements),
-                            e.metadata,
-                            e.pos
-                        );
-                    }
-                    
-                default:
-                    return e;
-            }
-        }
-        
-        var cleanExpr = extractFromExpr(expr);
-        
-        #if debug_assignment_extraction
-        if (extracted.length > 0) {
-            for (i in 0...extracted.length) {
-            }
-        }
-        #end
-        
-        return {
-            extracted: extracted,
-            expression: cleanExpr,
-            hasExtracted: extracted.length > 0
-        };
-    }
+			// Handle calls that might contain functions with assignments
+			case ECall(_, _, _):
+				var result = extractAndTransformExpression(transformedNode);
+				if (result.hasExtracted) {
+					// Create a block with extracted assignments followed by the call
+					var statements = result.extracted.copy();
+					statements.push(result.expression);
+					return makeAST(EBlock(statements));
+				}
+				return transformedNode;
+
+			// Handle remote calls (like Enum.reduce_while) that might contain functions with assignments
+			case ERemoteCall(_, _, _):
+				#if debug_assignment_extraction
+				#end
+				var result = extractAndTransformExpression(transformedNode);
+				if (result.hasExtracted) {
+					// Create a block with extracted assignments followed by the remote call
+					var statements = result.extracted.copy();
+					statements.push(result.expression);
+					return makeAST(EBlock(statements));
+				}
+				return transformedNode;
+
+			// Handle case expressions - need special handling for clause bodies
+			case ECase(expr, clauses):
+				#if debug_assignment_extraction
+				#end
+
+				// Process the matched expression for any embedded assignments
+				var exprResult = extractAndTransformExpression(expr);
+
+				// Process clauses but preserve variable declarations in their bodies
+				var processedClauses = [];
+				for (clause in clauses) {
+					var transformedBody = transformClauseBody(clause.body);
+					processedClauses.push({
+						pattern: clause.pattern,
+						guard: clause.guard,
+						body: transformedBody
+					});
+				}
+
+				// If the expression had extractions, hoist them
+				if (exprResult.hasExtracted) {
+					var statements = exprResult.extracted.copy();
+					statements.push(makeASTWithMeta(ECase(exprResult.expression, processedClauses), transformedNode.metadata, transformedNode.pos));
+					return makeAST(EBlock(statements));
+				} else {
+					// Return the ECase with original clause bodies
+					return transformedNode;
+				}
+
+			// Handle if expressions that might contain assignments in conditions
+			case EIf(condition, thenBranch, elseBranch):
+				#if debug_assignment_extraction
+				#end
+
+				// First check if the condition is a parenthesized expression
+				var actualCondition = switch (condition.def) {
+					case EParen(inner): inner;
+					default: condition;
+				};
+
+				#if debug_assignment_extraction
+				#end
+
+				// Extract assignments from the condition
+				var condResult = extractAndTransformExpression(actualCondition);
+
+				if (condResult.hasExtracted) {
+					#if debug_assignment_extraction
+					#end
+					// Create a block with extracted assignments followed by the if expression
+					var statements = condResult.extracted.copy();
+
+					// Re-wrap in parentheses if needed
+					var newCondition = switch (condition.def) {
+						case EParen(_): makeASTWithMeta(EParen(condResult.expression), condition.metadata, condition.pos);
+						default: condResult.expression;
+					};
+
+					statements.push(makeASTWithMeta(EIf(newCondition, thenBranch, elseBranch), transformedNode.metadata, transformedNode.pos));
+					return makeAST(EBlock(statements));
+				}
+				return transformedNode;
+
+			default:
+				// Return the already-transformed node
+				return transformedNode;
+		}
+	}
+
+	/**
+	 * Transform a case clause body recursively without extracting assignments
+	 * 
+	 * Case clause bodies are statement contexts where variable declarations
+	 * should be preserved, not extracted.
+	 */
+	static function transformClauseBody(body:ElixirAST):ElixirAST {
+		// Null safety check
+		if (body == null || body.def == null) {
+			return body;
+		}
+
+		#if debug_assignment_extraction
+		#end
+
+		// Simply recurse through the AST structure without extraction
+		switch (body.def) {
+			case EBlock(statements):
+				#if debug_assignment_extraction
+				#end
+				// Transform each statement recursively but keep them all
+				var transformedStatements = [];
+				for (stmt in statements) {
+					var transformedStmt = transformClauseBody(stmt);
+					if (shouldDropTempAssignment(transformedStmt)) {
+						#if debug_assignment_extraction
+						#end
+						continue;
+					}
+					transformedStatements.push(transformedStmt);
+				}
+				return makeASTWithMeta(EBlock(transformedStatements), body.metadata, body.pos);
+
+			// For other node types, apply standard transformation
+			default:
+				return ElixirASTTransformer.transformAST(body, transformAssignments);
+		}
+	}
+
+	static function shouldDropTempAssignment(stmt:ElixirAST):Bool {
+		if (stmt == null || stmt.def == null) {
+			return false;
+		}
+
+		return switch (stmt.def) {
+			case EMatch(pattern, value):
+				switch pattern {
+					case PVar(name):
+						var valueVar = switch (value.def) {
+							case EVar(varName): varName;
+							default: null;
+						};
+
+						if (ElixirASTBuilder.isTempPatternVarName(name)) {
+							return true;
+						}
+
+						if (valueVar != null) {
+							if (valueVar == name) {
+								return true;
+							}
+							if (ElixirASTBuilder.isTempPatternVarName(valueVar)) {
+								return true;
+							}
+						}
+						false;
+					default:
+						false;
+				};
+			default:
+				false;
+		};
+	}
+
+	/**
+	 * Extract assignments from an expression and return both extracted assignments and cleaned expression
+	 * 
+	 * Context-aware version: Builds a parent map first to understand context,
+	 * then only extracts assignments when in expression contexts.
+	 */
+	static function extractAndTransformExpression(expr:ElixirAST):{extracted:Array<ElixirAST>, expression:ElixirAST, hasExtracted:Bool} {
+		var extracted = [];
+
+		// Phase 1: Build parent map to understand context
+		var parentOf = new haxe.ds.ObjectMap<ElixirAST, ElixirAST>();
+
+		function buildParentMap(node:ElixirAST, parent:Null<ElixirAST>):Void {
+			// Skip null nodes
+			if (node == null || node.def == null) {
+				return;
+			}
+
+			if (parent != null) {
+				parentOf.set(node, parent);
+			}
+
+			switch (node.def) {
+				case ECase(expr, clauses):
+					buildParentMap(expr, node);
+					if (clauses != null) {
+						for (clause in clauses) {
+							// The clause body's parent is the ECase, which is important for context
+							if (clause != null && clause.body != null) {
+								buildParentMap(clause.body, node);
+							}
+							if (clause != null && clause.guard != null) {
+								buildParentMap(clause.guard, node);
+							}
+						}
+					}
+
+				case EBlock(statements):
+					if (statements != null) {
+						for (stmt in statements) {
+							if (stmt != null) {
+								buildParentMap(stmt, node);
+							}
+						}
+					}
+
+				case EIf(condition, thenBranch, elseBranch):
+					buildParentMap(condition, node);
+					buildParentMap(thenBranch, node);
+					if (elseBranch != null) {
+						buildParentMap(elseBranch, node);
+					}
+
+				case EBinary(_, left, right):
+					buildParentMap(left, node);
+					buildParentMap(right, node);
+
+				case EUnary(_, operand):
+					buildParentMap(operand, node);
+
+				case ECall(target, _, args):
+					if (target != null)
+						buildParentMap(target, node);
+					for (arg in args) {
+						buildParentMap(arg, node);
+					}
+
+				case ERemoteCall(module, _, args):
+					buildParentMap(module, node);
+					for (arg in args) {
+						buildParentMap(arg, node);
+					}
+
+				case EFn(clauses):
+					for (clause in clauses) {
+						buildParentMap(clause.body, node);
+						if (clause.guard != null) {
+							buildParentMap(clause.guard, node);
+						}
+					}
+
+				case EParen(inner):
+					buildParentMap(inner, node);
+
+				case EMatch(_, value):
+					buildParentMap(value, node);
+
+				default:
+					// Leaf nodes or nodes we don't need to traverse
+			}
+		}
+
+		// Build the parent map
+		buildParentMap(expr, null);
+
+		// Helper: Check if we're in a statement context (where variable declarations are allowed)
+		function isInStatementContext(node:ElixirAST):Bool {
+			var parent = parentOf.get(node);
+			if (parent == null) {
+				// Top level is a statement context
+				return true;
+			}
+
+			switch (parent.def) {
+				case ECase(_, _):
+					// Case clause bodies are statement contexts
+					return true;
+
+				case EBlock(_):
+					// Blocks can contain statements
+					return true;
+
+				case EFn(_):
+					// Function clause bodies are statement contexts
+					return true;
+
+				default:
+					// Check parent's parent
+					return isInStatementContext(parent);
+			}
+		}
+
+		// Phase 2: Extract assignments with context awareness
+		function extractFromExpr(e:ElixirAST):ElixirAST {
+			switch (e.def) {
+				case EMatch(pattern, value):
+					#if debug_assignment_extraction
+					#end
+
+					// First extract any assignments from the value expression itself
+					var cleanValue = extractFromExpr(value);
+
+					// Skip extraction for temp pattern variables (g, g1, etc.)
+					switch pattern {
+						case PVar(name) if (ElixirASTBuilder.isTempPatternVarName(name)):
+							#if debug_assignment_extraction
+							#end
+							return cleanValue;
+						case PVar(name):
+							switch (cleanValue.def) {
+								case EVar(varName) if (varName == name):
+									#if debug_assignment_extraction
+									#end
+									return cleanValue;
+								default:
+							}
+						default:
+					}
+
+					// Then extract this assignment
+					extracted.push(makeASTWithMeta(EMatch(pattern, cleanValue), e.metadata, e.pos));
+
+					// Return variable reference
+					switch (pattern) {
+						case PVar(name):
+							#if debug_assignment_extraction
+							#end
+							return makeAST(EVar(name));
+						default:
+							/**
+							 * Complex pattern handling (PTuple, PArray, PObject, etc.)
+							 * 
+							 * WHY: Complex patterns like {x, y} = func() need special handling
+							 * because we can't directly return a variable reference for them.
+							 * 
+							 * HOW: We use a two-step extraction:
+							 * 1. First assign the value to a temp variable: _extracted_0 = func()
+							 * 2. Then pattern match from the temp: {x, y} = _extracted_0
+							 * 3. Return the temp variable reference for use in expressions
+							 * 
+							 * This preserves both the pattern matching and proper evaluation order
+							 * while ensuring the extracted value can be used in the parent expression.
+							 */
+							var tempVar = '_extracted_${extractionCounter++}';
+
+							// Replace the last extraction (the full pattern match)
+							// with a simple temp variable assignment
+							extracted[extracted.length - 1] = makeASTWithMeta(EMatch(PVar(tempVar), cleanValue), e.metadata, e.pos);
+
+							// Then add the actual pattern match from the temp variable
+							// This ensures the pattern destructuring still happens
+							extracted.push(makeASTWithMeta(EMatch(pattern, makeAST(EVar(tempVar))), e.metadata, e.pos));
+
+							// Return reference to the temp variable for use in parent expression
+							return makeAST(EVar(tempVar));
+					}
+
+				case EUnary(op, operand):
+					#if debug_assignment_extraction
+					#end
+
+					// Special handling for EBlock inside unary operators
+					switch (operand.def) {
+						case EBlock(_):
+							#if debug_assignment_extraction
+							#end
+
+							// Let extractFromExpr handle the block properly
+							// It will extract assignments and return the cleaned expression
+							var cleanOperand = extractFromExpr(operand);
+
+							#if debug_assignment_extraction
+							#end
+
+							return makeASTWithMeta(EUnary(op, cleanOperand), e.metadata, e.pos);
+
+						default:
+							// Regular unary processing
+							var cleanOperand = extractFromExpr(operand);
+
+							return makeASTWithMeta(EUnary(op, cleanOperand), e.metadata, e.pos);
+					}
+
+				case EBinary(op, left, right):
+					#if debug_assignment_extraction
+					// Check if left or right contains assignments
+					var hasLeftAssignment = switch (left.def) {
+						case EMatch(_, _): true;
+						default: false;
+					};
+					var hasRightAssignment = switch (right.def) {
+						case EMatch(_, _): true;
+						default: false;
+					};
+					#end
+					var cleanLeft = extractFromExpr(left);
+					var cleanRight = extractFromExpr(right);
+
+					return makeASTWithMeta(EBinary(op, cleanLeft, cleanRight), e.metadata, e.pos);
+
+				case ECall(target, funcName, args):
+					#if debug_assignment_extraction
+					if (funcName == "reduce_while") {
+						for (i in 0...args.length) {
+							switch (args[i].def) {
+								case EMatch(_, _):
+								case EFn(clauses):
+									if (clauses.length > 0) {}
+								default:
+							}
+						}
+					}
+					#end
+					var cleanTarget = target != null ? extractFromExpr(target) : null;
+					var cleanArgs = args.map(extractFromExpr);
+
+					return makeASTWithMeta(ECall(cleanTarget, funcName, cleanArgs), e.metadata, e.pos);
+
+				case ERemoteCall(module, funcName, args):
+					#if debug_assignment_extraction
+					if (funcName == "reduce_while") {
+						for (i in 0...args.length) {}
+					}
+					#end
+					var cleanModule = extractFromExpr(module);
+					var cleanArgs = args.map(extractFromExpr);
+
+					return makeASTWithMeta(ERemoteCall(cleanModule, funcName, cleanArgs), e.metadata, e.pos);
+
+				case EIf(condition, thenBranch, elseBranch):
+					#if debug_assignment_extraction
+					#end
+
+					// Extract assignments from the condition
+					var cleanCondition = extractFromExpr(condition);
+					var cleanThen = extractFromExpr(thenBranch);
+					var cleanElse = elseBranch != null ? extractFromExpr(elseBranch) : null;
+
+					return makeASTWithMeta(EIf(cleanCondition, cleanThen, cleanElse), e.metadata, e.pos);
+
+				case EParen(inner):
+					// Parentheses are an explicit "expression boundary": if we extract assignments
+					// from inside a parenthesized expression, keep them *inside* the parentheses
+					// as a multi-expression block, instead of hoisting them to statement-level.
+					//
+					// This is important for constructs that rely on rebinding to persist in the
+					// surrounding scope (parentheses do not introduce a new scope, unlike IIFEs).
+					var before = extracted.length;
+					var cleanInner = extractFromExpr(inner);
+
+					if (extracted.length > before) {
+						var localExtracted = extracted.slice(before, extracted.length);
+						extracted.splice(before, extracted.length - before);
+
+						var statements = localExtracted.copy();
+						statements.push(cleanInner);
+
+						return makeASTWithMeta(EParen(makeAST(EBlock(statements))), e.metadata, e.pos);
+					}
+
+					return makeASTWithMeta(EParen(cleanInner), e.metadata, e.pos);
+
+				case EFn(clauses):
+					#if debug_assignment_extraction
+					#end
+
+					// Process each clause body for assignments
+					var cleanClauses = [];
+					for (clause in clauses) {
+						#if debug_assignment_extraction
+						#end
+
+						// Extract assignments from the clause body
+						var result = extractAndTransformExpression(clause.body);
+
+						if (result.hasExtracted) {
+							#if debug_assignment_extraction
+							#end
+
+							// Create a block with extracted assignments followed by the cleaned expression
+							var statements = result.extracted.copy();
+							statements.push(result.expression);
+							var cleanBody = makeAST(EBlock(statements));
+
+							cleanClauses.push({
+								args: clause.args,
+								guard: clause.guard,
+								body: cleanBody
+							});
+						} else {
+							// Even if no top-level extractions, the body might have been cleaned internally
+							cleanClauses.push({
+								args: clause.args,
+								guard: clause.guard,
+								body: result.expression // Use the cleaned expression
+							});
+						}
+					}
+
+					return makeASTWithMeta(EFn(cleanClauses), e.metadata, e.pos);
+
+				case EBlock(statements):
+					#if debug_assignment_extraction
+					for (i in 0...statements.length) {}
+					var inStatementContext = isInStatementContext(e);
+					#end
+
+					// Only extract assignments if we're NOT in a statement context
+					// In statement contexts (like case clause bodies), preserve the block as-is
+					if (!isInStatementContext(e)) {
+						// Special case: EBlock with assignments should have those assignments extracted
+						// This happens when Haxe desugars complex expressions
+						if (statements.length == 2) {
+							switch (statements[0].def) {
+								case EMatch(pattern, value):
+									#if debug_assignment_extraction
+									#end
+									// Extract the assignment
+									extracted.push(statements[0]);
+									// Return just the second statement (the actual expression)
+									return extractFromExpr(statements[1]);
+								default:
+							}
+						}
+					} else {
+						#if debug_assignment_extraction
+						#end
+					}
+
+					// General block processing
+					var cleanStatements = [];
+					for (i in 0...statements.length) {
+						var stmt = statements[i];
+						var isLast = (i == statements.length - 1);
+
+						if (isLast) {
+							// Last statement in block should be processed for extraction
+							// but kept as the return value
+							var cleanStmt = extractFromExpr(stmt);
+							cleanStatements.push(cleanStmt);
+						} else {
+							// Non-last statements that are assignments should be extracted
+							switch (stmt.def) {
+								case EMatch(_, _):
+									// Extract assignment to outer scope
+									var cleanStmt = extractFromExpr(stmt);
+								// The extraction already added it to 'extracted' array
+								// Don't add to cleanStatements
+								default:
+									// Keep other statements as-is
+									cleanStatements.push(extractFromExpr(stmt));
+							}
+						}
+					}
+
+					// If only one statement remains, unwrap the block
+					if (cleanStatements.length == 1) {
+						return cleanStatements[0];
+					} else if (cleanStatements.length == 0) {
+						// Empty block becomes nil
+						return makeAST(ENil);
+					} else {
+						return makeASTWithMeta(EBlock(cleanStatements), e.metadata, e.pos);
+					}
+
+				default:
+					return e;
+			}
+		}
+
+		var cleanExpr = extractFromExpr(expr);
+
+		#if debug_assignment_extraction
+		if (extracted.length > 0) {
+			for (i in 0...extracted.length) {}
+		}
+		#end
+
+		return {
+			extracted: extracted,
+			expression: cleanExpr,
+			hasExtracted: extracted.length > 0
+		};
+	}
 }

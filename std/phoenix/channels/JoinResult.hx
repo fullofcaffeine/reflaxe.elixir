@@ -1,7 +1,6 @@
 package phoenix.channels;
 
 #if (macro || reflaxe_runtime)
-
 import elixir.types.Term;
 import haxe.functional.Result;
 
@@ -20,6 +19,4 @@ import haxe.functional.Result;
  * - `Error(reason)` → `{:error, reason}`
  */
 typedef JoinResult<TSocket> = Result<TSocket, Term>;
-
 #end
-

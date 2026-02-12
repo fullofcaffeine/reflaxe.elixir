@@ -1,7 +1,6 @@
 package haxe;
 
 import haxe.format.JsonParser;
-
 #if (!macro && elixir_output)
 import elixir.Jason;
 #end
@@ -23,27 +22,27 @@ import elixir.Jason;
  */
 @:coreApi
 class Json {
-    /**
-     * Parses given JSON-encoded `text` and returns the resulting value.
-     *
-     * NOTE
-     * - We decode to Elixir terms (maps/lists) with **string keys** (Jason default).
-     * - Accessing decoded maps by field requires dynamic map lookup to support string keys.
-     */
-    public static inline function parse(text: String): Dynamic {
-        #if (!macro && elixir_output)
-        return cast Jason.decodeStrict(text);
-        #else
-        return JsonParser.parse(text);
-        #end
-    }
+	/**
+	 * Parses given JSON-encoded `text` and returns the resulting value.
+	 *
+	 * NOTE
+	 * - We decode to Elixir terms (maps/lists) with **string keys** (Jason default).
+	 * - Accessing decoded maps by field requires dynamic map lookup to support string keys.
+	 */
+	public static inline function parse(text:String):Dynamic {
+		#if (!macro && elixir_output)
+		return cast Jason.decodeStrict(text);
+		#else
+		return JsonParser.parse(text);
+		#end
+	}
 
-    /**
-     * Encodes the given `value` and returns the resulting JSON string.
-     *
-     * Supports `replacer` and `space` via `haxe.format.JsonPrinter`.
-     */
-    public static inline function stringify(value: Dynamic, ?replacer: (key: Dynamic, value: Dynamic) -> Dynamic, ?space: String): String {
-        return haxe.format.JsonPrinter.print(value, replacer, space);
-    }
+	/**
+	 * Encodes the given `value` and returns the resulting JSON string.
+	 *
+	 * Supports `replacer` and `space` via `haxe.format.JsonPrinter`.
+	 */
+	public static inline function stringify(value:Dynamic, ?replacer:(key:Dynamic, value:Dynamic) -> Dynamic, ?space:String):String {
+		return haxe.format.JsonPrinter.print(value, replacer, space);
+	}
 }

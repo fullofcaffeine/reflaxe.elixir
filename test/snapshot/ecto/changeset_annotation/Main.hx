@@ -1,9 +1,9 @@
 typedef ProductParams = {
-    ?title: String,
-    ?description: String,
-    ?price: Float,
-    ?stockCount: Int,
-    ?categoryId: Int
+	?title:String,
+	?description:String,
+	?price:Float,
+	?stockCount:Int,
+	?categoryId:Int
 }
 
 /**
@@ -28,29 +28,29 @@ typedef ProductParams = {
 @:timestamps
 @:changeset(["title", "description", "price", "stockCount", "categoryId"], ["title", "price"])
 class Product {
-    @:primary_key
-    public var id: Int;
+	@:primary_key
+	public var id:Int;
 
-    public var title: String;
-    public var description: String;
-    public var price: Float;
-    public var stockCount: Int;
-    public var categoryId: Int;
+	public var title:String;
+	public var description:String;
+	public var price:Float;
+	public var stockCount:Int;
+	public var categoryId:Int;
 
-    extern public static function changeset(product: Product, attrs: Dynamic): Dynamic;
+	extern public static function changeset(product:Product, attrs:Dynamic):Dynamic;
 }
 
 class Main {
-    public static function main() {
-        var attrs: ProductParams = {
-            title: "Widget",
-            description: "Useful",
-            price: 9.99,
-            stockCount: 5,
-            categoryId: 1
-        };
-        var changeset: Dynamic = Product.changeset(cast null, attrs);
-        trace(changeset);
-        trace("Product schema with changeset annotation compiled successfully");
-    }
+	public static function main() {
+		var attrs:ProductParams = {
+			title: "Widget",
+			description: "Useful",
+			price: 9.99,
+			stockCount: 5,
+			categoryId: 1
+		};
+		var changeset:Dynamic = Product.changeset(cast null, attrs);
+		trace(changeset);
+		trace("Product schema with changeset annotation compiled successfully");
+	}
 }

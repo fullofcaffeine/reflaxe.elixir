@@ -21,7 +21,7 @@ enum ValueType {
  */
 class Type {
 	/** Returns the runtime type of a value. */
-	public static function typeof(value: Dynamic): ValueType {
+	public static function typeof(value:Dynamic):ValueType {
 		return untyped __elixir__('
       case {0} do
         nil -> {:TNull}
@@ -37,7 +37,7 @@ class Type {
 	}
 
 	/** Returns the index of an enum value. */
-	public static function enumIndex(enumValue: Dynamic): Int {
+	public static function enumIndex(enumValue:Dynamic):Int {
 		return untyped __elixir__('
       case {0} do
         tuple when is_tuple(tuple) and tuple_size(tuple) > 0 -> :erlang.phash2(elem(tuple, 0))
@@ -48,7 +48,7 @@ class Type {
 	}
 
 	/** Returns the parameters of an enum value as an array. */
-	public static function enumParameters(enumValue: Dynamic): Array<Dynamic> {
+	public static function enumParameters(enumValue:Dynamic):Array<Dynamic> {
 		return untyped __elixir__('
       case {0} do
         tuple when is_tuple(tuple) and tuple_size(tuple) > 1 ->
@@ -59,7 +59,7 @@ class Type {
 	}
 
 	/** Returns the constructor name of an enum value. */
-	public static function enumConstructor(enumValue: Dynamic): String {
+	public static function enumConstructor(enumValue:Dynamic):String {
 		return untyped __elixir__('
       case {0} do
         tuple when is_tuple(tuple) and tuple_size(tuple) > 0 -> elem(tuple, 0) |> Atom.to_string()
@@ -70,48 +70,48 @@ class Type {
 	}
 
 	/** Checks if two enum values are equal. */
-	public static function enumEq<T>(a: T, b: T): Bool {
+	public static function enumEq<T>(a:T, b:T):Bool {
 		return a == b;
 	}
 
 	/** Gets the class/module of an instance. */
-	public static function getClass<T>(object: T): Class<T> {
+	public static function getClass<T>(object:T):Class<T> {
 		return untyped __elixir__('case {0} do %{__struct__: mod} -> mod; _ -> nil end', object);
 	}
 
 	/** Gets the superclass of a class (always nil in Elixir). */
-	public static function getSuperClass(c: Class<Dynamic>): Class<Dynamic> {
+	public static function getSuperClass(c:Class<Dynamic>):Class<Dynamic> {
 		var _ignore = c;
 		return null;
 	}
 
 	/** Gets the class name as a string. */
-	public static function getClassName(c: Class<Dynamic>): String {
+	public static function getClassName(c:Class<Dynamic>):String {
 		return untyped __elixir__('case {0} do mod when is_atom(mod) -> mod |> Module.split() |> Enum.join(\".\"); _ -> nil end', c);
 	}
 
 	/** Gets the enum name as a string. */
-	public static function getEnumName(e: Enum<Dynamic>): String {
+	public static function getEnumName(e:Enum<Dynamic>):String {
 		return untyped __elixir__('case {0} do mod when is_atom(mod) -> mod |> Module.split() |> Enum.join(\".\"); _ -> nil end', e);
 	}
 
 	/** Checks if an object is of a specific type. */
-	public static function isType(value: Dynamic, t: Dynamic): Bool {
+	public static function isType(value:Dynamic, t:Dynamic):Bool {
 		return untyped __elixir__('case {0} do %{__struct__: mod} -> mod == {1}; _ -> false end', value, t);
 	}
 
 	/** Creates an instance of a class with given arguments. */
-	public static function createInstance<T>(cl: Class<T>, args: Array<Dynamic>): T {
+	public static function createInstance<T>(cl:Class<T>, args:Array<Dynamic>):T {
 		return untyped __elixir__('apply({0}, :new, {1})', cl, args);
 	}
 
 	/** Creates an empty instance of a class without calling the constructor. */
-	public static function createEmptyInstance<T>(cl: Class<T>): T {
+	public static function createEmptyInstance<T>(cl:Class<T>):T {
 		return untyped __elixir__('struct({0})', cl);
 	}
 
 	/** Creates an enum value by name and parameters. */
-	public static function createEnum<T>(_enum: Enum<T>, constructor: String, ?params: Array<Dynamic>): T {
+	public static function createEnum<T>(_enum:Enum<T>, constructor:String, ?params:Array<Dynamic>):T {
 		var _ignoreEnum = _enum; // keep parameter used to avoid warnings when unused
 		return untyped __elixir__('
       tag = String.to_atom({0})
@@ -125,7 +125,7 @@ class Type {
 	}
 
 	/** Creates an enum value by index and parameters (unsupported). */
-	public static function createEnumIndex<T>(_enum: Enum<T>, index: Int, ?params: Array<Dynamic>): T {
+	public static function createEnumIndex<T>(_enum:Enum<T>, index:Int, ?params:Array<Dynamic>):T {
 		var _ignoreEnum = _enum;
 		var _ignoreI = index;
 		var _ignoreP = params;
@@ -133,13 +133,13 @@ class Type {
 	}
 
 	/** Returns all enum constructors (not available at runtime). */
-	public static function getEnumConstructs(_enum: Enum<Dynamic>): Array<String> {
+	public static function getEnumConstructs(_enum:Enum<Dynamic>):Array<String> {
 		var _ignoreEnum = _enum;
 		return [];
 	}
 
 	/** Returns all values of an enum that has no parameters (not available). */
-	public static function allEnums<T>(_enum: Enum<T>): Array<T> {
+	public static function allEnums<T>(_enum:Enum<T>):Array<T> {
 		var _ignoreEnum = _enum;
 		return [];
 	}

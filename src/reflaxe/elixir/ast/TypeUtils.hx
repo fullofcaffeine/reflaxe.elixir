@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Type;
 import haxe.macro.TypeTools;
 
@@ -33,32 +32,33 @@ import haxe.macro.TypeTools;
  */
 @:nullSafety(Off)
 class TypeUtils {
-    public static function isElixirAtomType(t: Null<Type>): Bool {
-        return isElixirAtomTypeInner(t, 0);
-    }
+	public static function isElixirAtomType(t:Null<Type>):Bool {
+		return isElixirAtomTypeInner(t, 0);
+	}
 
-    static function isElixirAtomTypeInner(t: Null<Type>, depth: Int): Bool {
-        if (t == null) return false;
-        if (depth > 20) return false;
+	static function isElixirAtomTypeInner(t:Null<Type>, depth:Int):Bool {
+		if (t == null)
+			return false;
+		if (depth > 20)
+			return false;
 
-        var followed = TypeTools.follow(t);
+		var followed = TypeTools.follow(t);
 
-        return switch (followed) {
-            case TAbstract(ref, _):
-                var at = ref.get();
-                if (at.pack.join(".") == "elixir.types" && at.name == "Atom") {
-                    true;
-                } else {
-                    isElixirAtomTypeInner(at.type, depth + 1);
-                }
-            case TType(td, _):
-                isElixirAtomTypeInner(td.get().type, depth + 1);
-            case TLazy(f):
-                isElixirAtomTypeInner(f(), depth + 1);
-            default:
-                false;
-        }
-    }
+		return switch (followed) {
+			case TAbstract(ref, _):
+				var at = ref.get();
+				if (at.pack.join(".") == "elixir.types" && at.name == "Atom") {
+					true;
+				} else {
+					isElixirAtomTypeInner(at.type, depth + 1);
+				}
+			case TType(td, _):
+				isElixirAtomTypeInner(td.get().type, depth + 1);
+			case TLazy(f):
+				isElixirAtomTypeInner(f(), depth + 1);
+			default:
+				false;
+		}
+	}
 }
-
 #end

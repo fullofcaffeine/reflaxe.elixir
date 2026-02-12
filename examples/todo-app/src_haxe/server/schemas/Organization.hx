@@ -1,8 +1,8 @@
 package server.schemas;
 
 typedef OrganizationParams = {
-    ?slug: String,
-    ?name: String
+	?slug:String,
+	?name:String
 }
 
 /**
@@ -24,9 +24,9 @@ typedef OrganizationParams = {
 @:timestamps
 @:changeset(["slug", "name"], ["slug", "name"])
 class Organization {
-    @:field @:primary_key public var id: Int;
-    @:field public var slug: String;
-    @:field public var name: String;
+	@:field @:primary_key public var id:Int;
+	@:field public var slug:String;
+	@:field public var name:String;
 
-    public function new() {}
+	public function new() {}
 }

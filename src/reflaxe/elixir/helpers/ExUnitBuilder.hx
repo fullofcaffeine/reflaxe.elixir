@@ -1,7 +1,6 @@
 package reflaxe.elixir.helpers;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Context;
 import haxe.macro.Expr;
 
@@ -32,55 +31,49 @@ import haxe.macro.Expr;
  * - `works()` is marked `@:keep` so it survives to the AST-based ExUnit transformer.
  */
 class ExUnitBuilder {
-    public static function build(): Array<Field> {
-        var fields = Context.getBuildFields();
+	public static function build():Array<Field> {
+		var fields = Context.getBuildFields();
 
-        for (field in fields) {
-            switch (field.kind) {
-                case FFun(_):
-                    var metas = field.meta != null ? field.meta : [];
-                    var hasMeta = function(name: String): Bool {
-                        for (meta in metas) {
-                            if (meta.name == name) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    };
+		for (field in fields) {
+			switch (field.kind) {
+				case FFun(_):
+					var metas = field.meta != null ? field.meta : [];
+					var hasMeta = function(name:String):Bool {
+						for (meta in metas) {
+							if (meta.name == name) {
+								return true;
+							}
+						}
+						return false;
+					};
 
-                    var isTestish =
-                        hasMeta("test") || hasMeta(":test")
-                        || hasMeta("setup") || hasMeta(":setup")
-                        || hasMeta("setupAll") || hasMeta(":setupAll")
-                        || hasMeta("teardown") || hasMeta(":teardown")
-                        || hasMeta("teardownAll") || hasMeta(":teardownAll");
+					var isTestish = hasMeta("test") || hasMeta(":test") || hasMeta("setup") || hasMeta(":setup") || hasMeta("setupAll")
+						|| hasMeta(":setupAll") || hasMeta("teardown") || hasMeta(":teardown") || hasMeta("teardownAll") || hasMeta(":teardownAll");
 
-                    if (!isTestish) {
-                        continue;
-                    }
+					if (!isTestish) {
+						continue;
+					}
 
-                    if (field.meta == null) {
-                        field.meta = [];
-                    }
+					if (field.meta == null) {
+						field.meta = [];
+					}
 
-                    var hasKeep = false;
-                    for (meta in field.meta) {
-                        if (meta.name == ":keep" || meta.name == "keep") {
-                            hasKeep = true;
-                            break;
-                        }
-                    }
+					var hasKeep = false;
+					for (meta in field.meta) {
+						if (meta.name == ":keep" || meta.name == "keep") {
+							hasKeep = true;
+							break;
+						}
+					}
 
-                    if (!hasKeep) {
-                        field.meta.push({ name: ":keep", params: [], pos: field.pos });
-                    }
-                default:
-            }
-        }
+					if (!hasKeep) {
+						field.meta.push({name: ":keep", params: [], pos: field.pos});
+					}
+				default:
+			}
+		}
 
-        return fields;
-    }
+		return fields;
+	}
 }
-
 #end
-

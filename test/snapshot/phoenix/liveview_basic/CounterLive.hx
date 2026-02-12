@@ -9,7 +9,7 @@ import phoenix.Phoenix.LiveView;
 import elixir.types.Term;
 
 typedef CounterAssigns = {
-	var count: Int;
+	var count:Int;
 }
 
 /**
@@ -18,30 +18,29 @@ typedef CounterAssigns = {
  */
 @:liveview
 class CounterLive {
-	
-	public function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+	public function mount(params:Term, session:Term, socket:Socket<CounterAssigns>):MountResult<CounterAssigns> {
 		// Use LiveView.assign like todo-app does
 		socket = LiveView.assign(socket, "count", 0);
 		return Ok(socket);
 	}
-	
-	public function handle_event_increment(params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
+
+	public function handle_event_increment(params:Term, socket:Socket<CounterAssigns>):HandleEventResult<CounterAssigns> {
 		var count = socket.assigns.count;
 		socket = LiveView.assign(socket, "count", count + 1);
 		return NoReply(socket);
 	}
-	
-	public function handle_event_decrement(params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
+
+	public function handle_event_decrement(params:Term, socket:Socket<CounterAssigns>):HandleEventResult<CounterAssigns> {
 		var count = socket.assigns.count;
 		socket = LiveView.assign(socket, "count", count - 1);
 		return NoReply(socket);
 	}
-	
-	    public function render(assigns: CounterAssigns): String {
-	        return HXX.hxx('<div>
+
+	public function render(assigns:CounterAssigns):String {
+		return HXX.hxx('<div>
 	          <h1>Counter: ${assigns.count}</h1>
 	          <button phx-click=${EventName.Increment}>+</button>
 	          <button phx-click=${EventName.Decrement}>-</button>
 	        </div>');
-	    }
+	}
 }

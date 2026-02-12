@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTHelpers.*;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -44,51 +43,50 @@ import reflaxe.elixir.ast.naming.ElixirAtom;
  *   def rtrim(s), do: String.trim_trailing(s)
  */
 class StringToolsNativeRewrite {
-    public static function rewriteTrimPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
-            return switch (node.def) {
-                case EModule(name, attrs, body) if (name == "StringTools"):
-                    var newBody: Array<ElixirAST> = [];
-                    for (b in body) newBody.push(rewriteDef(b));
-                    makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);
-                case EDefmodule(name, doBlock) if (name == "StringTools"):
-                    makeASTWithMeta(EDefmodule(name, rewriteDef(doBlock)), node.metadata, node.pos);
-                default:
-                    node;
-            }
-        });
-    }
+	public static function rewriteTrimPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
+			return switch (node.def) {
+				case EModule(name, attrs, body) if (name == "StringTools"):
+					var newBody:Array<ElixirAST> = [];
+					for (b in body)
+						newBody.push(rewriteDef(b));
+					makeASTWithMeta(EModule(name, attrs, newBody), node.metadata, node.pos);
+				case EDefmodule(name, doBlock) if (name == "StringTools"):
+					makeASTWithMeta(EDefmodule(name, rewriteDef(doBlock)), node.metadata, node.pos);
+				default:
+					node;
+			}
+		});
+	}
 
-    static function rewriteDef(n: ElixirAST): ElixirAST {
-        return switch (n.def) {
-            case EDef(fnName, params, guards, body) if (fnName == "ltrim" && params.length == 1):
-                var call = makeAST(ERemoteCall(makeAST(EVar("String")), "trim_leading", [paramVar(params[0])]));
-                makeASTWithMeta(EDef(fnName, params, guards, call), n.metadata, n.pos);
-            case EDef(fnName, params, guards, body) if (fnName == "rtrim" && params.length == 1):
-                var call = makeAST(ERemoteCall(makeAST(EVar("String")), "trim_trailing", [paramVar(params[0])]));
-                makeASTWithMeta(EDef(fnName, params, guards, call), n.metadata, n.pos);
-            case EDef(fnName, params, guards, body) if (fnName == "is_space" && params.length == 2):
-                // Normalize binders to s,pos to avoid underscore/body mismatches
-                var newParams:Array<EPattern> = [PVar("s"), PVar("pos")];
-                var sVar = makeAST(EVar("s"));
-                var posVar = makeAST(EVar("pos"));
-                var atCall = function() return makeAST(ERemoteCall(makeAST(EAtom(ElixirAtom.raw("binary"))), "at", [sVar, posVar]));
-                var cond = makeAST(EBinary(Or,
-                    makeAST(EBinary(And, makeAST(EBinary(Greater, atCall(), makeAST(EInteger(8)))), makeAST(EBinary(Less, atCall(), makeAST(EInteger(14)))))),
-                    makeAST(EBinary(Equal, atCall(), makeAST(EInteger(32))))
-                ));
-                makeASTWithMeta(EDef(fnName, newParams, guards, cond), n.metadata, n.pos);
-            default:
-                n;
-        }
-    }
+	static function rewriteDef(n:ElixirAST):ElixirAST {
+		return switch (n.def) {
+			case EDef(fnName, params, guards, body) if (fnName == "ltrim" && params.length == 1):
+				var call = makeAST(ERemoteCall(makeAST(EVar("String")), "trim_leading", [paramVar(params[0])]));
+				makeASTWithMeta(EDef(fnName, params, guards, call), n.metadata, n.pos);
+			case EDef(fnName, params, guards, body) if (fnName == "rtrim" && params.length == 1):
+				var call = makeAST(ERemoteCall(makeAST(EVar("String")), "trim_trailing", [paramVar(params[0])]));
+				makeASTWithMeta(EDef(fnName, params, guards, call), n.metadata, n.pos);
+			case EDef(fnName, params, guards, body) if (fnName == "is_space" && params.length == 2):
+				// Normalize binders to s,pos to avoid underscore/body mismatches
+				var newParams:Array<EPattern> = [PVar("s"), PVar("pos")];
+				var sVar = makeAST(EVar("s"));
+				var posVar = makeAST(EVar("pos"));
+				var atCall = function() return makeAST(ERemoteCall(makeAST(EAtom(ElixirAtom.raw("binary"))), "at", [sVar, posVar]));
+				var cond = makeAST(EBinary(Or,
+					makeAST(EBinary(And, makeAST(EBinary(Greater, atCall(), makeAST(EInteger(8)))), makeAST(EBinary(Less, atCall(), makeAST(EInteger(14)))))),
+					makeAST(EBinary(Equal, atCall(), makeAST(EInteger(32))))));
+				makeASTWithMeta(EDef(fnName, newParams, guards, cond), n.metadata, n.pos);
+			default:
+				n;
+		}
+	}
 
-    static inline function paramVar(p: EPattern): ElixirAST {
-        return switch (p) {
-            case PVar(name): makeAST(EVar(name));
-            default: makeAST(EVar("s"));
-        }
-    }
+	static inline function paramVar(p:EPattern):ElixirAST {
+		return switch (p) {
+			case PVar(name): makeAST(EVar(name));
+			default: makeAST(EVar("s"));
+		}
+	}
 }
-
 #end

@@ -22,46 +22,96 @@ package reflaxe.elixir.ast;
  *   isWhitelistedRoot("Repo")        -> false (Repo should qualify to <App>.Repo)
  */
 class StdModuleWhitelist {
-    static var ROOTS: Map<String, Bool> = (function() {
-        var m = new Map<String, Bool>();
-        // Core and stdlib
-        for (name in [
-            "Kernel","Enum","Map","List","Bitwise","String","Integer","Float","IO","File","Path","System",
-            "Process","Task","GenServer","Agent","Registry","Node","Application","Supervisor","DynamicSupervisor",
-            "Mix",
-            "Logger","Date","DateTime","NaiveDateTime","Time","Calendar","URI","Code","Stream","Range","Regex",
-            "Keyword","Access","Reflect","Type",
-            // PubSub is a Phoenix root module; keep unqualified
-            "PubSub",
-            // Haxe runtime shim modules that must remain top-level
-            // Prevent accidental qualification to <App>.StringBuf inside Web context
-            "StringBuf",
-            // Common helper modules generated at top-level (project-local utilities)
-            "StringTools","Log",
-            // Haxe stdlib helper modules commonly emitted as top-level Elixir modules
-            // (their on-disk path may be under lib/haxe/**, but the module names are unqualified).
-            "OptionTools","ResultTools","Assert","TestCase",
-            "Md5",
-            "Bytes","Input","Output","Sys","Eof",
-            "NotImplementedException","PosException","FPHelper",
-            // Common Haxe stdlib modules emitted as top-level Elixir modules
-            // (they live under lib/haxe/** on disk, but their Elixir module names are unqualified)
-            "ArrayIterator","MapKeyValueIterator","BalancedTree","EnumValueMap","TreeNode",
-            // Framework roots
-            "Ecto","Phoenix"
-        ]) m.set(name, true);
-        return m;
-    })();
+	static var ROOTS:Map<String, Bool> = (function() {
+		var m = new Map<String, Bool>();
+		// Core and stdlib
+		for (name in [
+			"Kernel",
+			"Enum",
+			"Map",
+			"List",
+			"Bitwise",
+			"String",
+			"Integer",
+			"Float",
+			"IO",
+			"File",
+			"Path",
+			"System",
+			"Process",
+			"Task",
+			"GenServer",
+			"Agent",
+			"Registry",
+			"Node",
+			"Application",
+			"Supervisor",
+			"DynamicSupervisor",
+			"Mix",
+			"Logger",
+			"Date",
+			"DateTime",
+			"NaiveDateTime",
+			"Time",
+			"Calendar",
+			"URI",
+			"Code",
+			"Stream",
+			"Range",
+			"Regex",
+			"Keyword",
+			"Access",
+			"Reflect",
+			"Type",
+			// PubSub is a Phoenix root module; keep unqualified
+			"PubSub",
+			// Haxe runtime shim modules that must remain top-level
+			// Prevent accidental qualification to <App>.StringBuf inside Web context
+			"StringBuf",
+			// Common helper modules generated at top-level (project-local utilities)
+			"StringTools",
+			"Log",
+			// Haxe stdlib helper modules commonly emitted as top-level Elixir modules
+			// (their on-disk path may be under lib/haxe/**, but the module names are unqualified).
+			"OptionTools",
+			"ResultTools",
+			"Assert",
+			"TestCase",
+			"Md5",
+			"Bytes",
+			"Input",
+			"Output",
+			"Sys",
+			"Eof",
+			"NotImplementedException",
+			"PosException",
+			"FPHelper",
+			// Common Haxe stdlib modules emitted as top-level Elixir modules
+			// (they live under lib/haxe/** on disk, but their Elixir module names are unqualified)
+			"ArrayIterator",
+			"MapKeyValueIterator",
+			"BalancedTree",
+			"EnumValueMap",
+			"TreeNode",
+			// Framework roots
+			"Ecto",
+			"Phoenix"
+		])
+			m.set(name, true);
+		return m;
+	})();
 
-    public static inline function isWhitelistedRoot(name: String): Bool {
-        return name != null && ROOTS.exists(name);
-    }
+	public static inline function isWhitelistedRoot(name:String):Bool {
+		return name != null && ROOTS.exists(name);
+	}
 
-    public static inline function isWhitelistedQualified(moduleName: String): Bool {
-        if (moduleName == null) return false;
-        var idx = moduleName.indexOf(".");
-        if (idx <= 0) return isWhitelistedRoot(moduleName);
-        var root = moduleName.substring(0, idx);
-        return isWhitelistedRoot(root);
-    }
+	public static inline function isWhitelistedQualified(moduleName:String):Bool {
+		if (moduleName == null)
+			return false;
+		var idx = moduleName.indexOf(".");
+		if (idx <= 0)
+			return isWhitelistedRoot(moduleName);
+		var root = moduleName.substring(0, idx);
+		return isWhitelistedRoot(root);
+	}
 }

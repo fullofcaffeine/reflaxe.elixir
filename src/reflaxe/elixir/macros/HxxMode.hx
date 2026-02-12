@@ -1,7 +1,6 @@
 package reflaxe.elixir.macros;
 
 #if (macro || reflaxe_runtime)
-
 /**
  * HxxMode
  *
@@ -12,10 +11,8 @@ package reflaxe.elixir.macros;
  * - `metal`: allow raw `<% ... %>` (discouraged; close to the metal).
  */
 enum abstract HxxMode(String) from String to String {
-    var Metal = "metal";
-    var Balanced = "balanced";
-    var Tsx = "tsx";
+	var Metal = "metal";
+	var Balanced = "balanced";
+	var Tsx = "tsx";
 }
-
 #end
-

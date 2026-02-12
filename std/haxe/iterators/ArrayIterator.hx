@@ -51,32 +51,32 @@ package haxe.iterators;
  */
 @:coreApi
 class ArrayIterator<T> {
-    final array: Array<T>;
-    var current: Int = 0;
-    
-    /**
-     * Create a new ArrayIterator.
-     * This constructor exists for type compatibility with code that
-     * manually creates iterators (like BalancedTree), but the actual
-     * iteration is transformed to Enum operations by the compiler.
-     */
-    public inline function new(array: Array<T>) {
-        this.array = array;
-    }
-    
-    /**
-     * Check if there are more elements.
-     * At runtime, this is transformed to Enum pattern matching.
-     */
-    public inline function hasNext(): Bool {
-        return current < array.length;
-    }
-    
-    /**
-     * Get the next element.
-     * At runtime, this is transformed to Enum iteration.
-     */
-    public inline function next(): T {
-        return array[current++];
-    }
+	final array:Array<T>;
+	var current:Int = 0;
+
+	/**
+	 * Create a new ArrayIterator.
+	 * This constructor exists for type compatibility with code that
+	 * manually creates iterators (like BalancedTree), but the actual
+	 * iteration is transformed to Enum operations by the compiler.
+	 */
+	public inline function new(array:Array<T>) {
+		this.array = array;
+	}
+
+	/**
+	 * Check if there are more elements.
+	 * At runtime, this is transformed to Enum pattern matching.
+	 */
+	public inline function hasNext():Bool {
+		return current < array.length;
+	}
+
+	/**
+	 * Get the next element.
+	 * At runtime, this is transformed to Enum iteration.
+	 */
+	public inline function next():T {
+		return array[current++];
+	}
 }

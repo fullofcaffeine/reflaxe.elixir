@@ -50,143 +50,149 @@ package elixir;
  */
 @:native(":math")
 extern class ErlangMath {
-    // Constants
-    /**
-     * Returns the value of π (pi).
-     * Generates: :math.pi()
-     */
-    static function pi(): Float;
-    
-    /**
-     * Returns the value of e (Euler's number).
-     * Generates: :math.exp(1)
-     */
-    @:native("exp")
-    static function e(): Float;
-    
-    // Trigonometric functions
-    /**
-     * Returns the sine of x (x in radians).
-     */
-    static function sin(x: Float): Float;
-    
-    /**
-     * Returns the cosine of x (x in radians).
-     */
-    static function cos(x: Float): Float;
-    
-    /**
-     * Returns the tangent of x (x in radians).
-     */
-    static function tan(x: Float): Float;
-    
-    /**
-     * Returns the arc sine of x (result in radians).
-     */
-    static function asin(x: Float): Float;
-    
-    /**
-     * Returns the arc cosine of x (result in radians).
-     */
-    static function acos(x: Float): Float;
-    
-    /**
-     * Returns the arc tangent of x (result in radians).
-     */
-    static function atan(x: Float): Float;
-    
-    /**
-     * Returns the arc tangent of y/x using the signs of both arguments to determine the quadrant.
-     */
-    static function atan2(y: Float, x: Float): Float;
-    
-    // Hyperbolic functions
-    /**
-     * Returns the hyperbolic sine of x.
-     */
-    static function sinh(x: Float): Float;
-    
-    /**
-     * Returns the hyperbolic cosine of x.
-     */
-    static function cosh(x: Float): Float;
-    
-    /**
-     * Returns the hyperbolic tangent of x.
-     */
-    static function tanh(x: Float): Float;
-    
-    /**
-     * Returns the inverse hyperbolic sine of x.
-     */
-    static function asinh(x: Float): Float;
-    
-    /**
-     * Returns the inverse hyperbolic cosine of x.
-     */
-    static function acosh(x: Float): Float;
-    
-    /**
-     * Returns the inverse hyperbolic tangent of x.
-     */
-    static function atanh(x: Float): Float;
-    
-    // Exponential and logarithmic functions
-    /**
-     * Returns e raised to the power of x.
-     */
-    static function exp(x: Float): Float;
-    
-    /**
-     * Returns the natural logarithm (base e) of x.
-     */
-    static function log(x: Float): Float;
-    
-    /**
-     * Returns the base 10 logarithm of x.
-     */
-    static function log10(x: Float): Float;
-    
-    /**
-     * Returns the base 2 logarithm of x.
-     */
-    static function log2(x: Float): Float;
-    
-    /**
-     * Returns x raised to the power of y.
-     */
-    static function pow(x: Float, y: Float): Float;
-    
-    /**
-     * Returns the square root of x.
-     */
-    static function sqrt(x: Float): Float;
-    
-    // Rounding and absolute value
-    /**
-     * Returns the smallest integer not less than x.
-     */
-    static function ceil(x: Float): Float;
-    
-    /**
-     * Returns the largest integer not greater than x.
-     */
-    static function floor(x: Float): Float;
-    
-    /**
-     * Returns the fractional part of x.
-     * The result has the same sign as x.
-     */
-    static function fmod(x: Float, y: Float): Float;
-    
-    // Error and gamma functions
-    /**
-     * Returns the error function of x.
-     */
-    static function erf(x: Float): Float;
-    
-    /**
-     * Returns the complementary error function of x.
-     */
-    static function erfc(x: Float): Float;
+	// Constants
+
+	/**
+	 * Returns the value of π (pi).
+	 * Generates: :math.pi()
+	 */
+	static function pi():Float;
+
+	/**
+	 * Returns the value of e (Euler's number).
+	 * Generates: :math.exp(1)
+	 */
+	@:native("exp")
+	static function e():Float;
+
+	// Trigonometric functions
+
+	/**
+	 * Returns the sine of x (x in radians).
+	 */
+	static function sin(x:Float):Float;
+
+	/**
+	 * Returns the cosine of x (x in radians).
+	 */
+	static function cos(x:Float):Float;
+
+	/**
+	 * Returns the tangent of x (x in radians).
+	 */
+	static function tan(x:Float):Float;
+
+	/**
+	 * Returns the arc sine of x (result in radians).
+	 */
+	static function asin(x:Float):Float;
+
+	/**
+	 * Returns the arc cosine of x (result in radians).
+	 */
+	static function acos(x:Float):Float;
+
+	/**
+	 * Returns the arc tangent of x (result in radians).
+	 */
+	static function atan(x:Float):Float;
+
+	/**
+	 * Returns the arc tangent of y/x using the signs of both arguments to determine the quadrant.
+	 */
+	static function atan2(y:Float, x:Float):Float;
+
+	// Hyperbolic functions
+
+	/**
+	 * Returns the hyperbolic sine of x.
+	 */
+	static function sinh(x:Float):Float;
+
+	/**
+	 * Returns the hyperbolic cosine of x.
+	 */
+	static function cosh(x:Float):Float;
+
+	/**
+	 * Returns the hyperbolic tangent of x.
+	 */
+	static function tanh(x:Float):Float;
+
+	/**
+	 * Returns the inverse hyperbolic sine of x.
+	 */
+	static function asinh(x:Float):Float;
+
+	/**
+	 * Returns the inverse hyperbolic cosine of x.
+	 */
+	static function acosh(x:Float):Float;
+
+	/**
+	 * Returns the inverse hyperbolic tangent of x.
+	 */
+	static function atanh(x:Float):Float;
+
+	// Exponential and logarithmic functions
+
+	/**
+	 * Returns e raised to the power of x.
+	 */
+	static function exp(x:Float):Float;
+
+	/**
+	 * Returns the natural logarithm (base e) of x.
+	 */
+	static function log(x:Float):Float;
+
+	/**
+	 * Returns the base 10 logarithm of x.
+	 */
+	static function log10(x:Float):Float;
+
+	/**
+	 * Returns the base 2 logarithm of x.
+	 */
+	static function log2(x:Float):Float;
+
+	/**
+	 * Returns x raised to the power of y.
+	 */
+	static function pow(x:Float, y:Float):Float;
+
+	/**
+	 * Returns the square root of x.
+	 */
+	static function sqrt(x:Float):Float;
+
+	// Rounding and absolute value
+
+	/**
+	 * Returns the smallest integer not less than x.
+	 */
+	static function ceil(x:Float):Float;
+
+	/**
+	 * Returns the largest integer not greater than x.
+	 */
+	static function floor(x:Float):Float;
+
+	/**
+	 * Returns the fractional part of x.
+	 * The result has the same sign as x.
+	 */
+	static function fmod(x:Float, y:Float):Float;
+
+	// Error and gamma functions
+
+	/**
+	 * Returns the error function of x.
+	 */
+	static function erf(x:Float):Float;
+
+	/**
+	 * Returns the complementary error function of x.
+	 */
+	static function erfc(x:Float):Float;
 }

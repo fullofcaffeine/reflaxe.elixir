@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirASTHelpers.*;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -31,31 +30,34 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   if l > 0, do: String.slice(s, 0, l)
  */
 class ReduceWhileResultBindingTransforms {
-    public static function bindReduceWhileResultPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
-            return switch (node.def) {
-                case ERemoteCall(mod, fn, args) if (isEnumReduceWhile(mod, fn, args)):
-                    var acc = args[1];
-                    switch (acc.def) {
-                        case ETuple(_):
-                            // Leave tuple accumulators as-is to preserve expected snapshot shapes
-                            node;
-                        case EVar(name):
-                            // Single-variable accumulator: v = Enum.reduce_while(...)
-                            makeASTWithMeta(EMatch(PVar(name), node), node.metadata, node.pos);
-                        default:
-                            node;
-                    }
-                default:
-                    node;
-            }
-        });
-    }
+	public static function bindReduceWhileResultPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
+			return switch (node.def) {
+				case ERemoteCall(mod, fn, args) if (isEnumReduceWhile(mod, fn, args)):
+					var acc = args[1];
+					switch (acc.def) {
+						case ETuple(_):
+							// Leave tuple accumulators as-is to preserve expected snapshot shapes
+							node;
+						case EVar(name):
+							// Single-variable accumulator: v = Enum.reduce_while(...)
+							makeASTWithMeta(EMatch(PVar(name), node), node.metadata, node.pos);
+						default:
+							node;
+					}
+				default:
+					node;
+			}
+		});
+	}
 
-    static inline function isEnumReduceWhile(mod: ElixirAST, fn: String, args: Array<ElixirAST>): Bool {
-        if (fn != "reduce_while" || args == null || args.length < 3) return false;
-        return switch (mod.def) { case EVar(m): m == "Enum"; default: false; };
-    }
+	static inline function isEnumReduceWhile(mod:ElixirAST, fn:String, args:Array<ElixirAST>):Bool {
+		if (fn != "reduce_while" || args == null || args.length < 3)
+			return false;
+		return switch (mod.def) {
+			case EVar(m): m == "Enum";
+			default: false;
+		};
+	}
 }
-
 #end

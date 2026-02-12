@@ -14,20 +14,20 @@ import server.types.Types.User;
 @:native("TodoAppWeb.Layouts")
 @:component
 class Layouts {
-    /**
-     * Root layout function
-     *
-     * WHY
-     * - Previously this returned only `inner_content`, so the page lacked the
-     *   required `<link>`/`<script>` tags and Tailwind never loaded.
-     *
-     * HOW
-     * - Return a real HEEx root document that includes tracked static assets
-     *   and yields `@inner_content`. This mirrors Phoenix 1.7 defaults and
-     *   lets our HEEx transformer convert this string into a `~H` sigil.
-     */
-    @:component public static function root(assigns: Assigns<LayoutAssigns<User, TodoLiveAssigns>>): String {
-        return hxx('
+	/**
+	 * Root layout function
+	 *
+	 * WHY
+	 * - Previously this returned only `inner_content`, so the page lacked the
+	 *   required `<link>`/`<script>` tags and Tailwind never loaded.
+	 *
+	 * HOW
+	 * - Return a real HEEx root document that includes tracked static assets
+	 *   and yields `@inner_content`. This mirrors Phoenix 1.7 defaults and
+	 *   lets our HEEx transformer convert this string into a `~H` sigil.
+	 */
+	@:component public static function root(assigns:Assigns<LayoutAssigns<User, TodoLiveAssigns>>):String {
+		return hxx('
             <!DOCTYPE html>
             <html lang="en" class="h-full">
                 <head>
@@ -49,19 +49,19 @@ class Layouts {
                 </body>
             </html>
         ');
-    }
+	}
 
-    /**
-     * Application layout function
-     * - Wraps content in a responsive container and basic page chrome.
-     */
-    @:component public static function app(assigns: Assigns<LayoutAssigns<User, TodoLiveAssigns>>): String {
-        return hxx('
+	/**
+	 * Application layout function
+	 * - Wraps content in a responsive container and basic page chrome.
+	 */
+	@:component public static function app(assigns:Assigns<LayoutAssigns<User, TodoLiveAssigns>>):String {
+		return hxx('
             <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-8 max-w-6xl">
                     ${assigns.inner_content}
                 </div>
             </div>
         ');
-    }
+	}
 }

@@ -11,15 +11,14 @@
  * The fix involved adding missing TypedExpr cases to the substituteVariable
  * function: TParenthesis, TMeta, TEnumIndex, and others.
  */
-
 // Mock PubSub for testing
 enum PubSubResult<T> {
-	Ok(value: T);
-	Error(reason: String);
+	Ok(value:T);
+	Error(reason:String);
 }
 
 class TestPubSub {
-	public static function subscribe(topic: String): PubSubResult<String> {
+	public static function subscribe(topic:String):PubSubResult<String> {
 		return Ok("subscribed to " + topic);
 	}
 }
@@ -29,7 +28,7 @@ class Main {
 		// Test case that reproduces the original bug
 		// The switch expression with parentheses would generate 'case (g) do'
 		// instead of 'case (TestPubSub.subscribe("notifications")) do'
-		var result = switch(TestPubSub.subscribe("notifications")) {
+		var result = switch (TestPubSub.subscribe("notifications")) {
 			case Error(reason):
 				"Failed: " + reason;
 			case Ok(value):

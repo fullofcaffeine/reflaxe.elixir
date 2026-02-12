@@ -11,26 +11,26 @@
  * This test ensures these patterns continue to compile correctly.
  */
 class Main {
-    static function main() {
-        trace("Testing unmatched TypedExpr patterns...");
+	static function main() {
+		trace("Testing unmatched TypedExpr patterns...");
 
-        // TMeta test - Metadata annotations (compile-time only)
-        @:meta("test_annotation") var x = 1;
-        trace("TMeta: x = " + x);
+		// TMeta test - Metadata annotations (compile-time only)
+		@:meta("test_annotation") var x = 1;
+		trace("TMeta: x = " + x);
 
-        // TParenthesis test - Parenthesized expressions for grouping
-        var y = (x + 1) * 2;
-        trace("TParenthesis: y = " + y);
+		// TParenthesis test - Parenthesized expressions for grouping
+		var y = (x + 1) * 2;
+		trace("TParenthesis: y = " + y);
 
-        // TCast test - Type casts (transparent in Elixir)
-        var z: elixir.types.Term = 42;
-        var num = cast(z, Int);
-        trace("TCast: num = " + num);
+		// TCast test - Type casts (transparent in Elixir)
+		var z:elixir.types.Term = 42;
+		var num = cast(z, Int);
+		trace("TCast: num = " + num);
 
-        // TTypeExpr test - Type/module references
-        var typeName = Type.getClassName(Main);
-        trace("TTypeExpr: typeName = " + typeName);
+		// TTypeExpr test - Type/module references
+		var typeName = Type.getClassName(Main);
+		trace("TTypeExpr: typeName = " + typeName);
 
-        trace("All patterns compiled successfully!");
-    }
+		trace("All patterns compiled successfully!");
+	}
 }

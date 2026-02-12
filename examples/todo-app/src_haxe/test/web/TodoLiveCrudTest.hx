@@ -9,15 +9,14 @@ import elixir.types.Term;
 
 @:exunit
 class TodoLiveCrudTest extends TestCase {
-    @:test
-    public function testMountTodos(): Void {
-        var conn = ConnTest.build_conn();
-        var lvTuple: Term = LiveViewTest.live(conn, "/todos");
-        var lv: LiveView = LiveViewTest.view(lvTuple);
-        assertTrue(lv != null);
-        var html: String = LiveViewTest.render(lv);
-        assertTrue(html != null);
-    }
-
-    // Keep additional CRUD steps in Playwright E2E for now; minimal LV mount here
+	@:test
+	public function testMountTodos():Void {
+		var conn = ConnTest.build_conn();
+		var lvTuple:Term = LiveViewTest.live(conn, "/todos");
+		var lv:LiveView = LiveViewTest.view(lvTuple);
+		assertTrue(lv != null);
+		var html:String = LiveViewTest.render(lv);
+		assertTrue(html != null);
+	}
+	// Keep additional CRUD steps in Playwright E2E for now; minimal LV mount here
 }

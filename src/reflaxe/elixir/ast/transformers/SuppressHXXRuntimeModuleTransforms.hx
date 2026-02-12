@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -24,37 +23,46 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  * - Covered by snapshot tests under `test/snapshot/**`.
  */
 class SuppressHXXRuntimeModuleTransforms {
-    static function isSuppressedTemplateModule(name: String): Bool {
-        if (name == null) return false;
-        if (name == "HXX") return true;
-        if (name == "HXX2" || name == "HeexTemplate") return true;
-        if (name == "H") return true;
-        if (name == "Phoenix.Hxx.Ast.HeexNode" || name == "Phoenix.Hxx.Ast.HeexAttr") return true;
-        // Accept fully qualified module names depending on printer/builder shape.
-        if (StringTools.endsWith(name, ".HXX2")) return true;
-        if (StringTools.endsWith(name, ".HeexTemplate")) return true;
-        if (StringTools.endsWith(name, ".H")) return true;
-        if (StringTools.endsWith(name, ".Phoenix.Hxx.Ast.HeexNode")) return true;
-        if (StringTools.endsWith(name, ".Phoenix.Hxx.Ast.HeexAttr")) return true;
-        return false;
-    }
+	static function isSuppressedTemplateModule(name:String):Bool {
+		if (name == null)
+			return false;
+		if (name == "HXX")
+			return true;
+		if (name == "HXX2" || name == "HeexTemplate")
+			return true;
+		if (name == "H")
+			return true;
+		if (name == "Phoenix.Hxx.Ast.HeexNode" || name == "Phoenix.Hxx.Ast.HeexAttr")
+			return true;
+		// Accept fully qualified module names depending on printer/builder shape.
+		if (StringTools.endsWith(name, ".HXX2"))
+			return true;
+		if (StringTools.endsWith(name, ".HeexTemplate"))
+			return true;
+		if (StringTools.endsWith(name, ".H"))
+			return true;
+		if (StringTools.endsWith(name, ".Phoenix.Hxx.Ast.HeexNode"))
+			return true;
+		if (StringTools.endsWith(name, ".Phoenix.Hxx.Ast.HeexAttr"))
+			return true;
+		return false;
+	}
 
-    public static function pass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EModule(name, attrs, body) if (isSuppressedTemplateModule(name)):
-                    var meta = n.metadata;
-                    meta.suppressEmission = true;
-                    makeASTWithMeta(EModule(name, attrs, body), meta, n.pos);
-                case EDefmodule(name, doBlock) if (isSuppressedTemplateModule(name)):
-                    var meta = n.metadata;
-                    meta.suppressEmission = true;
-                    makeASTWithMeta(EDefmodule(name, doBlock), meta, n.pos);
-                default:
-                    n;
-            }
-        });
-    }
+	public static function pass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EModule(name, attrs, body) if (isSuppressedTemplateModule(name)):
+					var meta = n.metadata;
+					meta.suppressEmission = true;
+					makeASTWithMeta(EModule(name, attrs, body), meta, n.pos);
+				case EDefmodule(name, doBlock) if (isSuppressedTemplateModule(name)):
+					var meta = n.metadata;
+					meta.suppressEmission = true;
+					makeASTWithMeta(EDefmodule(name, doBlock), meta, n.pos);
+				default:
+					n;
+			}
+		});
+	}
 }
-
 #end

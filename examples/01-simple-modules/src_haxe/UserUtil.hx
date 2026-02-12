@@ -1,11 +1,10 @@
-
 using StringTools;
 
 private typedef User = {
-    name: String,
-    email: String,
-    id: String,
-    createdAt: String
+	name:String,
+	email:String,
+	id:String,
+	createdAt:String
 }
 
 /**
@@ -17,190 +16,190 @@ private typedef User = {
  */
 @:module
 class UserUtil {
-    
-    /**
-     * Public function - creates a new user
-     * This will compile to "def create_user(name, email)"
-     * Uses private helper functions for validation and formatting
-     */
-    public static function createUser(name: String, email: String): User {
-        // Validate inputs using private functions
-        if (!isValidName(name)) {
-            throw "Invalid name provided";
-        }
-        
-        if (!isValidEmail(email)) {
-            throw "Invalid email provided";
-        }
-        
-        // Format and create user using private helpers
-        var formattedName = formatName(name);
-        var normalizedEmail = normalizeEmail(email);
-        
-        return {
-            name: formattedName,
-            email: normalizedEmail,
-            id: generateUserId(),
-            createdAt: getCurrentTimestamp()
-        };
-    }
-    
-    /**
-     * Public function - updates user information
-     * Demonstrates how public functions can call private helpers
-     */
-    public static function updateUser(user: User, newName: String, newEmail: String): User {
-        var updatedUser: User = {
-            name: user.name,
-            email: user.email,
-            id: user.id,
-            createdAt: user.createdAt
-        };
-        
-        if (newName != null && isValidName(newName)) {
-            updatedUser.name = formatName(newName);
-        }
-        
-        if (newEmail != null && isValidEmail(newEmail)) {
-            updatedUser.email = normalizeEmail(newEmail);
-        }
-        
-        return updatedUser;
-    }
-    
-    /**
-     * Public function - formats user for display
-     * Uses private formatting helpers
-     */
-    public static function formatUserForDisplay(user: User): String {
-        var displayName = formatDisplayName(user.name);
-        var maskedEmail = maskEmail(user.email);
-        
-        return displayName + " (" + maskedEmail + ")";
-    }
-    
-    // Private helper functions - these compile to "defp" in Elixir
-    
-    /**
-     * Private function - validates user name
-     * Compiles to: defp is_valid_name(name)
-     */
-    @:private
-    static function isValidName(name: String): Bool {
-        if (name == null || name.length == 0) {
-            return false;
-        }
-        
-        // Name must be between 1 and 50 characters
-        return name.length >= 1 && name.length <= 50;
-    }
-    
-    /**
-     * Private function - validates email format
-     * Basic email validation for demonstration
-     */
-    @:private
-    static function isValidEmail(email: String): Bool {
-        if (email == null || email.length == 0) {
-            return false;
-        }
-        
-        // Simple email validation - contains @ and .
-        return email.indexOf("@") > 0 && email.indexOf(".") > 0;
-    }
-    
-    /**
-     * Private function - formats name consistently
-     * Trims whitespace and capitalizes properly
-     */
-    @:private
-    static function formatName(name: String): String {
-        var trimmed = StringTools.trim(name);
-        var words = trimmed.split(" ");
-        var formatted = [];
-        
-        for (word in words) {
-            if (word.length > 0) {
-                var capitalized = word.charAt(0).toUpperCase() + word.substr(1).toLowerCase();
-                formatted.push(capitalized);
-            }
-        }
-        
-        return formatted.join(" ");
-    }
-    
-    /**
-     * Private function - normalizes email to lowercase
-     */
-    @:private
-    static function normalizeEmail(email: String): String {
-        return StringTools.trim(email).toLowerCase();
-    }
-    
-    /**
-     * Private function - generates unique user ID
-     * In real implementation, this would use proper UUID generation
-     */
-    @:private
-    static function generateUserId(): String {
-        return "user_" + Math.floor(Math.random() * 1000000);
-    }
-    
-    /**
-     * Private function - gets current timestamp
-     * In real implementation, this would use proper datetime functions
-     */
-    @:private
-    static function getCurrentTimestamp(): String {
-        return "2024-01-01T00:00:00Z";
-    }
-    
-    /**
-     * Private function - formats name for display
-     */
-    @:private
-    static function formatDisplayName(name: String): String {
-        // For display, we might want to show only first name + last initial
-        var parts = name.split(" ");
-        if (parts.length > 1) {
-            return parts[0] + " " + parts[parts.length - 1].charAt(0) + ".";
-        }
-        return name;
-    }
-    
-    /**
-     * Private function - masks email for privacy
-     */
-    @:private
-    static function maskEmail(email: String): String {
-        var parts = email.split("@");
-        if (parts.length != 2) return email;
-        
-        var username = parts[0];
-        var domain = parts[1];
-        
-        // Show first 2 characters, then stars, then @ and domain
-        if (username.length <= 2) {
-            return "**@" + domain;
-        }
-        
-        var visible = username.substr(0, 2);
-        var stars = "****";
-        return visible + stars + "@" + domain;
-    }
-    
-    /**
-     * Main function for compilation testing  
-     */
-    public static function main(): Void {
-        trace("UserUtil example compiled successfully!");
-        trace("This demonstrates public/private function patterns.");
-        trace("Public functions provide the API, private functions handle implementation details.");
+	/**
+	 * Public function - creates a new user
+	 * This will compile to "def create_user(name, email)"
+	 * Uses private helper functions for validation and formatting
+	 */
+	public static function createUser(name:String, email:String):User {
+		// Validate inputs using private functions
+		if (!isValidName(name)) {
+			throw "Invalid name provided";
+		}
 
-        // Ensure the public API is exercised so private helpers are not unused in Elixir output.
-        var user = createUser("marcelo", "demo@example.com");
-        var updated = updateUser(user, "Alice Smith", "alice@example.com");
-        var display = formatUserForDisplay(updated);
-        trace("Example output: " + display);
-    }
+		if (!isValidEmail(email)) {
+			throw "Invalid email provided";
+		}
+
+		// Format and create user using private helpers
+		var formattedName = formatName(name);
+		var normalizedEmail = normalizeEmail(email);
+
+		return {
+			name: formattedName,
+			email: normalizedEmail,
+			id: generateUserId(),
+			createdAt: getCurrentTimestamp()
+		};
+	}
+
+	/**
+	 * Public function - updates user information
+	 * Demonstrates how public functions can call private helpers
+	 */
+	public static function updateUser(user:User, newName:String, newEmail:String):User {
+		var updatedUser:User = {
+			name: user.name,
+			email: user.email,
+			id: user.id,
+			createdAt: user.createdAt
+		};
+
+		if (newName != null && isValidName(newName)) {
+			updatedUser.name = formatName(newName);
+		}
+
+		if (newEmail != null && isValidEmail(newEmail)) {
+			updatedUser.email = normalizeEmail(newEmail);
+		}
+
+		return updatedUser;
+	}
+
+	/**
+	 * Public function - formats user for display
+	 * Uses private formatting helpers
+	 */
+	public static function formatUserForDisplay(user:User):String {
+		var displayName = formatDisplayName(user.name);
+		var maskedEmail = maskEmail(user.email);
+
+		return displayName + " (" + maskedEmail + ")";
+	}
+
+	// Private helper functions - these compile to "defp" in Elixir
+
+	/**
+	 * Private function - validates user name
+	 * Compiles to: defp is_valid_name(name)
+	 */
+	@:private
+	static function isValidName(name:String):Bool {
+		if (name == null || name.length == 0) {
+			return false;
+		}
+
+		// Name must be between 1 and 50 characters
+		return name.length >= 1 && name.length <= 50;
+	}
+
+	/**
+	 * Private function - validates email format
+	 * Basic email validation for demonstration
+	 */
+	@:private
+	static function isValidEmail(email:String):Bool {
+		if (email == null || email.length == 0) {
+			return false;
+		}
+
+		// Simple email validation - contains @ and .
+		return email.indexOf("@") > 0 && email.indexOf(".") > 0;
+	}
+
+	/**
+	 * Private function - formats name consistently
+	 * Trims whitespace and capitalizes properly
+	 */
+	@:private
+	static function formatName(name:String):String {
+		var trimmed = StringTools.trim(name);
+		var words = trimmed.split(" ");
+		var formatted = [];
+
+		for (word in words) {
+			if (word.length > 0) {
+				var capitalized = word.charAt(0).toUpperCase() + word.substr(1).toLowerCase();
+				formatted.push(capitalized);
+			}
+		}
+
+		return formatted.join(" ");
+	}
+
+	/**
+	 * Private function - normalizes email to lowercase
+	 */
+	@:private
+	static function normalizeEmail(email:String):String {
+		return StringTools.trim(email).toLowerCase();
+	}
+
+	/**
+	 * Private function - generates unique user ID
+	 * In real implementation, this would use proper UUID generation
+	 */
+	@:private
+	static function generateUserId():String {
+		return "user_" + Math.floor(Math.random() * 1000000);
+	}
+
+	/**
+	 * Private function - gets current timestamp
+	 * In real implementation, this would use proper datetime functions
+	 */
+	@:private
+	static function getCurrentTimestamp():String {
+		return "2024-01-01T00:00:00Z";
+	}
+
+	/**
+	 * Private function - formats name for display
+	 */
+	@:private
+	static function formatDisplayName(name:String):String {
+		// For display, we might want to show only first name + last initial
+		var parts = name.split(" ");
+		if (parts.length > 1) {
+			return parts[0] + " " + parts[parts.length - 1].charAt(0) + ".";
+		}
+		return name;
+	}
+
+	/**
+	 * Private function - masks email for privacy
+	 */
+	@:private
+	static function maskEmail(email:String):String {
+		var parts = email.split("@");
+		if (parts.length != 2)
+			return email;
+
+		var username = parts[0];
+		var domain = parts[1];
+
+		// Show first 2 characters, then stars, then @ and domain
+		if (username.length <= 2) {
+			return "**@" + domain;
+		}
+
+		var visible = username.substr(0, 2);
+		var stars = "****";
+		return visible + stars + "@" + domain;
+	}
+
+	/**
+	 * Main function for compilation testing  
+	 */
+	public static function main():Void {
+		trace("UserUtil example compiled successfully!");
+		trace("This demonstrates public/private function patterns.");
+		trace("Public functions provide the API, private functions handle implementation details.");
+
+		// Ensure the public API is exercised so private helpers are not unused in Elixir output.
+		var user = createUser("marcelo", "demo@example.com");
+		var updated = updateUser(user, "Alice Smith", "alice@example.com");
+		var display = formatUserForDisplay(updated);
+		trace("Example output: " + display);
+	}
 }

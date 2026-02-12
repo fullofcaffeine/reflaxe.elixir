@@ -25,9 +25,9 @@
  * ```
  */
 class TestMinimal {
-    static function main() {
-        // This should trigger the exact unrolling pattern
-        var simple = [for (i in 0...2) [for (j in 0...2) j]];
-        trace(simple);
-    }
+	static function main() {
+		// This should trigger the exact unrolling pattern
+		var simple = [for (i in 0...2) [for (j in 0...2) j]];
+		trace(simple);
+	}
 }

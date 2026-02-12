@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.ds.StringMap;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
@@ -39,8 +38,8 @@ import StringTools;
  *   write_int32(struct, Bitwise.band(i64, 4294967295))
  */
 class FPHelperDoubleToI64FieldAccessRewriteTransforms {
-	public static function pass(ast: ElixirAST): ElixirAST {
-		return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+	public static function pass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
 				case EBlock(stmts):
 					var rewritten = rewriteStatementList(stmts);
@@ -54,11 +53,12 @@ class FPHelperDoubleToI64FieldAccessRewriteTransforms {
 		});
 	}
 
-	static function rewriteStatementList(stmts: Array<ElixirAST>): Array<ElixirAST> {
-		if (stmts == null || stmts.length == 0) return stmts;
+	static function rewriteStatementList(stmts:Array<ElixirAST>):Array<ElixirAST> {
+		if (stmts == null || stmts.length == 0)
+			return stmts;
 
-		var tracked: StringMap<Bool> = new StringMap();
-		var out: Array<ElixirAST> = [];
+		var tracked:StringMap<Bool> = new StringMap();
+		var out:Array<ElixirAST> = [];
 
 		for (stmt in stmts) {
 			// Update tracking first (so "var = FPHelper.double_to_i64(...)" doesn't rewrite itself).
@@ -69,49 +69,52 @@ class FPHelperDoubleToI64FieldAccessRewriteTransforms {
 		return out;
 	}
 
-	static function updateTracking(stmt: ElixirAST, tracked: StringMap<Bool>): Void {
-		if (stmt == null || stmt.def == null) return;
+	static function updateTracking(stmt:ElixirAST, tracked:StringMap<Bool>):Void {
+		if (stmt == null || stmt.def == null)
+			return;
 		switch (stmt.def) {
 			case EMatch(PVar(name), rhs):
-				if (isFPHelperDoubleToI64(unwrapParen(rhs))) tracked.set(name, true);
-				else tracked.remove(name);
+				if (isFPHelperDoubleToI64(unwrapParen(rhs)))
+					tracked.set(name, true);
+				else
+					tracked.remove(name);
 			case EBinary(Match, left, rhs):
 				switch (unwrapParen(left).def) {
 					case EVar(name):
-						if (isFPHelperDoubleToI64(unwrapParen(rhs))) tracked.set(name, true);
-						else tracked.remove(name);
+						if (isFPHelperDoubleToI64(unwrapParen(rhs))) tracked.set(name, true); else tracked.remove(name);
 					default:
 				}
 			default:
 		}
 	}
 
-	static function isFPHelperDoubleToI64(expr: ElixirAST): Bool {
-		if (expr == null || expr.def == null) return false;
+	static function isFPHelperDoubleToI64(expr:ElixirAST):Bool {
+		if (expr == null || expr.def == null)
+			return false;
 		return switch (expr.def) {
-			case ERemoteCall(moduleExpr, fnName, _args):
-				isFPHelperModule(moduleExpr) && (fnName == "double_to_i64" || fnName == "doubleToI64");
-			case ECall(targetExpr, fnName, _args):
-				isFPHelperModule(targetExpr) && (fnName == "double_to_i64" || fnName == "doubleToI64");
+			case ERemoteCall(moduleExpr, fnName, _args): isFPHelperModule(moduleExpr) && (fnName == "double_to_i64" || fnName == "doubleToI64");
+			case ECall(targetExpr, fnName, _args): isFPHelperModule(targetExpr) && (fnName == "double_to_i64" || fnName == "doubleToI64");
 			default: false;
 		};
 	}
 
-	static function isFPHelperModule(expr: ElixirAST): Bool {
-		if (expr == null || expr.def == null) return false;
+	static function isFPHelperModule(expr:ElixirAST):Bool {
+		if (expr == null || expr.def == null)
+			return false;
 		var unwrapped = unwrapParen(expr);
 		return switch (unwrapped.def) {
-			case EVar(name):
-				name == "FPHelper" || StringTools.endsWith(name, ".FPHelper");
+			case EVar(name): name == "FPHelper" || StringTools.endsWith(name, ".FPHelper");
 			default:
 				false;
 		};
 	}
 
-	static function rewriteFields(stmt: ElixirAST, tracked: StringMap<Bool>): ElixirAST {
-		if (stmt == null || stmt.def == null) return stmt;
-		function visit(node: ElixirAST): ElixirAST {
-			if (node == null || node.def == null) return node;
+	static function rewriteFields(stmt:ElixirAST, tracked:StringMap<Bool>):ElixirAST {
+		if (stmt == null || stmt.def == null)
+			return stmt;
+		function visit(node:ElixirAST):ElixirAST {
+			if (node == null || node.def == null)
+				return node;
 
 			// Prune nested closures: do not rewrite inside them.
 			switch (node.def) {
@@ -122,7 +125,8 @@ class FPHelperDoubleToI64FieldAccessRewriteTransforms {
 
 			// First recurse into children.
 			var withChildren = ElixirASTTransformer.transformAST(node, visit);
-			if (withChildren == null || withChildren.def == null) return withChildren;
+			if (withChildren == null || withChildren.def == null)
+				return withChildren;
 
 			// Then rewrite at this node.
 			return switch (withChildren.def) {
@@ -148,19 +152,18 @@ class FPHelperDoubleToI64FieldAccessRewriteTransforms {
 		return visit(stmt);
 	}
 
-	static function mask32Expr(): ElixirAST {
+	static function mask32Expr():ElixirAST {
 		// 0xFFFFFFFF as an expression that fits in Haxe Int: (1 <<< 32) - 1
 		var one = makeAST(EInteger(1));
 		var shift = makeAST(ERemoteCall(makeAST(EVar("Bitwise")), "bsl", [one, makeAST(EInteger(32))]));
 		return makeAST(EBinary(Subtract, shift, one));
 	}
 
-	static function unwrapParen(e: ElixirAST): ElixirAST {
+	static function unwrapParen(e:ElixirAST):ElixirAST {
 		return switch (e.def) {
 			case EParen(inner): unwrapParen(inner);
 			default: e;
 		};
 	}
 }
-
 #end

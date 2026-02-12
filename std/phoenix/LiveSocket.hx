@@ -126,15 +126,14 @@ using haxe.macro.Tools;
  */
 @:forward
 abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T> to phoenix.Phoenix.Socket<T> {
-	
 	/**
 	 * Create a new LiveSocket from a regular Socket.
 	 * This is typically called automatically through implicit conversion.
 	 */
-	public inline function new(socket: phoenix.Phoenix.Socket<T>) {
+	public inline function new(socket:phoenix.Phoenix.Socket<T>) {
 		this = socket;
 	}
-	
+
 	/**
 	 * Pipe operator for Phoenix-style chaining.
 	 * 
@@ -156,11 +155,11 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @return Updated LiveSocket with new assigns
 	 */
 	@:op(A | B)
-	public static inline function pipe<T>(socket: LiveSocket<T>, func: LiveSocket<T> -> LiveSocket<T>): LiveSocket<T> {
+	public static inline function pipe<T>(socket:LiveSocket<T>, func:LiveSocket<T>->LiveSocket<T>):LiveSocket<T> {
 		// Simple pipe operator implementation - just apply the function
 		return func(socket);
 	}
-	
+
 	/**
 	 * Assign a single value to the socket with compile-time field validation.
 	 * 
@@ -184,10 +183,10 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @param value The value to assign
 	 * @return Updated LiveSocket
 	 */
-	public macro function assign<T>(ethis: ExprOf<LiveSocket<T>>, fieldExpr: Expr, value: Expr): ExprOf<LiveSocket<T>> {
+	public macro function assign<T>(ethis:ExprOf<LiveSocket<T>>, fieldExpr:Expr, value:Expr):ExprOf<LiveSocket<T>> {
 		return phoenix.macros.AssignMacro.processAssign(ethis, fieldExpr, value);
 	}
-	
+
 	/**
 	 * Batch assign multiple values at once.
 	 * 
@@ -212,10 +211,10 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @param updates Object with fields to update (can be partial)
 	 * @return Updated LiveSocket
 	 */
-	public macro function merge<T>(ethis: ExprOf<LiveSocket<T>>, updates: Expr): ExprOf<LiveSocket<T>> {
+	public macro function merge<T>(ethis:ExprOf<LiveSocket<T>>, updates:Expr):ExprOf<LiveSocket<T>> {
 		return phoenix.macros.AssignMacro.processMerge(ethis, updates);
 	}
-	
+
 	/**
 	 * Conditionally assign a value only if the field is not already set.
 	 * 
@@ -237,10 +236,10 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @param defaultFn Function that returns the default value
 	 * @return Updated LiveSocket
 	 */
-	public macro function assignNew<T, V>(ethis: ExprOf<LiveSocket<T>>, fieldExpr: Expr, defaultFn: ExprOf<Void -> V>): ExprOf<LiveSocket<T>> {
+	public macro function assignNew<T, V>(ethis:ExprOf<LiveSocket<T>>, fieldExpr:Expr, defaultFn:ExprOf<Void->V>):ExprOf<LiveSocket<T>> {
 		return phoenix.macros.AssignMacro.processAssignNew(ethis, fieldExpr, defaultFn);
 	}
-	
+
 	/**
 	 * Update an existing assign value using a transformation function.
 	 * 
@@ -262,10 +261,10 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @param updater Function that transforms the current value
 	 * @return Updated LiveSocket
 	 */
-	public macro function update<T, V>(ethis: ExprOf<LiveSocket<T>>, fieldExpr: Expr, updater: ExprOf<V -> V>): ExprOf<LiveSocket<T>> {
+	public macro function update<T, V>(ethis:ExprOf<LiveSocket<T>>, fieldExpr:Expr, updater:ExprOf<V->V>):ExprOf<LiveSocket<T>> {
 		return phoenix.macros.AssignMacro.processUpdate(ethis, fieldExpr, updater);
 	}
-	
+
 	/**
 	 * Clear all flash messages from the socket.
 	 * 
@@ -305,10 +304,10 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * 
 	 * @return Updated LiveSocket
 	 */
-	extern inline public function clearFlash(): LiveSocket<T> {
+	extern inline public function clearFlash():LiveSocket<T> {
 		return untyped __elixir__('Phoenix.LiveView.clear_flash({0})', this);
 	}
-	
+
 	/**
 	 * Put a flash message on the socket.
 	 * 
@@ -320,10 +319,10 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @param message The message to display
 	 * @return Updated LiveSocket
 	 */
-    extern inline public function putFlash(type: phoenix.types.Flash.FlashType, message: String): LiveSocket<T> {
-        return cast phoenix.Phoenix.LiveView.putFlash(cast this, type, message);
-    }
-	
+	extern inline public function putFlash(type:phoenix.types.Flash.FlashType, message:String):LiveSocket<T> {
+		return cast phoenix.Phoenix.LiveView.putFlash(cast this, type, message);
+	}
+
 	/**
 	 * Push an event to client-side hooks.
 	 * 
@@ -335,7 +334,7 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	 * @param payload Event payload
 	 * @return Updated LiveSocket
 	 */
-	extern inline public function pushEvent<P>(event: String, payload: P): LiveSocket<T> {
+	extern inline public function pushEvent<P>(event:String, payload:P):LiveSocket<T> {
 		return untyped __elixir__('Phoenix.LiveView.push_event({0}, {1}, {2})', this, event, payload);
 	}
 }

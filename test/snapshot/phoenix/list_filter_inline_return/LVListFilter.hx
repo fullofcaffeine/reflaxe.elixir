@@ -11,12 +11,11 @@ import Lambda;
  *  - inline return of filtered list instead of returning original
  */
 class LVListFilter {
-    public static function adjust(selected: Array<String>, tag: String): Array<String> {
-        var ret = selected;
-        if (Lambda.has(selected, tag)) {
-            ret = Lambda.filter(ret, function(t) return t != t);
-        }
-        return ret;
-    }
+	public static function adjust(selected:Array<String>, tag:String):Array<String> {
+		var ret = selected;
+		if (Lambda.has(selected, tag)) {
+			ret = Lambda.filter(ret, function(t) return t != t);
+		}
+		return ret;
+	}
 }
-

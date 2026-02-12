@@ -1,17 +1,17 @@
 package;
 
 typedef Assigns = {
-    var count: Int;
+	var count:Int;
 }
 
 @:hxx_inline_markup
 class Main {
-    public static function render(assigns: Assigns): String {
-        return <div class="counter">
+	public static function render(assigns:Assigns):String {
+		return <div class="counter">
           <h1>${assigns.count}</h1>
           <button phx-click="increment">+</button>
         </div>;
-    }
+	}
 
-    public static function main() {}
+	public static function main() {}
 }

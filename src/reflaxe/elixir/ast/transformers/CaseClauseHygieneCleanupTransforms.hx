@@ -1,97 +1,108 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 
 /**
- * CaseClauseHygieneCleanupTransforms
- *
- * WHAT
- * - Cleans common hygiene artifacts inside case clause bodies:
- *   - Drops `nil = _var` lines
- *   - Rewrites `socket = Phoenix.LiveView.put_flash(socket, ...)` to `Phoenix.LiveView.put_flash(socket, ...)`
- *
- * WHY
- * - Avoids Phoenix warnings-as-errors while keeping semantics identical (both statements are no-ops).
+	* CaseClauseHygieneCleanupTransforms
+	*
+	* WHAT
+	* - Cleans common hygiene artifacts inside case clause bodies:
+	*   - Drops `nil = _var` lines
+	*   - Rewrites `socket = Phoenix.LiveView.put_flash(socket, ...)` to `Phoenix.LiveView.put_flash(socket, ...)`
+	*
+	* WHY
+	* - Avoids Phoenix warnings-as-errors while keeping semantics identical (both statements are no-ops).
 
- *
- * HOW
- * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+	*
+	* HOW
+	* - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
 
- *
- * EXAMPLES
- * - Covered by snapshot tests under `test/snapshot/**`.
+	*
+	* EXAMPLES
+	* - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CaseClauseHygieneCleanupTransforms {
-  public static function pass(ast: ElixirAST): ElixirAST {
-    return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-      return switch (n.def) {
-        case EDef(functionName, parameters, guards, body):
-          var newBody = rewrite(body);
-          makeASTWithMeta(EDef(functionName, parameters, guards, newBody), n.metadata, n.pos);
-        case EDefp(functionName, parameters, guards, body):
-          var newBody = rewrite(body);
-          makeASTWithMeta(EDefp(functionName, parameters, guards, newBody), n.metadata, n.pos);
-        default: n;
-      }
-    });
-  }
+	public static function pass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EDef(functionName, parameters, guards, body):
+					var newBody = rewrite(body);
+					makeASTWithMeta(EDef(functionName, parameters, guards, newBody), n.metadata, n.pos);
+				case EDefp(functionName, parameters, guards, body):
+					var newBody = rewrite(body);
+					makeASTWithMeta(EDefp(functionName, parameters, guards, newBody), n.metadata, n.pos);
+				default: n;
+			}
+		});
+	}
 
-  static function rewrite(body: ElixirAST): ElixirAST {
-    return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
-      return switch (x.def) {
-        case ECase(expr, clauses):
-          var newClauses = [];
-          for (c in clauses) newClauses.push({ pattern: c.pattern, guard: c.guard, body: clean(c.body) });
-          makeASTWithMeta(ECase(expr, newClauses), x.metadata, x.pos);
-        default: x;
-      }
-    });
-  }
+	static function rewrite(body:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(body, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				case ECase(expr, clauses):
+					var newClauses = [];
+					for (c in clauses)
+						newClauses.push({pattern: c.pattern, guard: c.guard, body: clean(c.body)});
+					makeASTWithMeta(ECase(expr, newClauses), x.metadata, x.pos);
+				default: x;
+			}
+		});
+	}
 
-  static function clean(b: ElixirAST): ElixirAST {
-    return switch (b.def) {
-      case EBlock(statements): makeASTWithMeta(EBlock(filter(statements)), b.metadata, b.pos);
-      case EDo(statements): makeASTWithMeta(EDo(filter(statements)), b.metadata, b.pos);
-      default: b;
-    }
-  }
+	static function clean(b:ElixirAST):ElixirAST {
+		return switch (b.def) {
+			case EBlock(statements): makeASTWithMeta(EBlock(filter(statements)), b.metadata, b.pos);
+			case EDo(statements): makeASTWithMeta(EDo(filter(statements)), b.metadata, b.pos);
+			default: b;
+		}
+	}
 
-  static function filter(stmts: Array<ElixirAST>): Array<ElixirAST> {
-    var out: Array<ElixirAST> = [];
-    for (s in stmts) switch (s.def) {
-      case EBinary(Match, left, right):
-        // Drop `nil = _var`
-        var isNil = switch (left.def) { case EVar(nm) if (nm == "nil"): true; case ENil: true; case EAtom(v) if (v == ":nil" || v == "nil"): true; default: false; };
-        var isUnderscored = switch (right.def) { case EVar(variableName) if (variableName != null && variableName.length > 0 && variableName.charAt(0) == '_'): true; default: false; };
-        if (!(isNil && isUnderscored)) {
-          // Rewrite `socket = Phoenix.LiveView.put_flash(socket, ...)`
-          var rewritten = switch (left.def) {
-            case EVar(v) if (v == "socket" && isPutFlashOnSocket(right)):
-              right;
-            default:
-              s;
-          };
-          out.push(rewritten);
-        }
-      default:
-        out.push(s);
-    }
-    return out;
-  }
+	static function filter(stmts:Array<ElixirAST>):Array<ElixirAST> {
+		var out:Array<ElixirAST> = [];
+		for (s in stmts)
+			switch (s.def) {
+				case EBinary(Match, left, right):
+					// Drop `nil = _var`
+					var isNil = switch (left.def) {
+						case EVar(nm) if (nm == "nil"): true;
+						case ENil: true;
+						case EAtom(v) if (v == ":nil" || v == "nil"): true;
+						default: false;
+					};
+					var isUnderscored = switch (right.def) {
+						case EVar(variableName) if (variableName != null && variableName.length > 0 && variableName.charAt(0) == '_'): true;
+						default: false;
+					};
+					if (!(isNil && isUnderscored)) {
+						// Rewrite `socket = Phoenix.LiveView.put_flash(socket, ...)`
+						var rewritten = switch (left.def) {
+							case EVar(v) if (v == "socket" && isPutFlashOnSocket(right)):
+								right;
+							default:
+								s;
+						};
+						out.push(rewritten);
+					}
+				default:
+					out.push(s);
+			}
+		return out;
+	}
 
-  static inline function isPutFlashOnSocket(e: ElixirAST): Bool {
-    return switch (e.def) {
-      case ERemoteCall(target, fnName, args) if (fnName == "put_flash" && args != null && args.length >= 2):
-        var isMod = switch (target.def) { case EVar(m) if (m == "Phoenix.LiveView"): true; default: false; };
-        var firstIsSocket = switch (args[0].def) { case EVar(n) if (n == "socket"): true; default: false; };
-        isMod && firstIsSocket;
-      default: false;
-    }
-  }
+	static inline function isPutFlashOnSocket(e:ElixirAST):Bool {
+		return switch (e.def) {
+			case ERemoteCall(target, fnName, args) if (fnName == "put_flash" && args != null && args.length >= 2): var isMod = switch (target.def) {
+					case EVar(m) if (m == "Phoenix.LiveView"): true;
+					default: false;
+				}; var firstIsSocket = switch (args[0].def) {
+					case EVar(n) if (n == "socket"): true;
+					default: false;
+				}; isMod && firstIsSocket;
+			default: false;
+		}
+	}
 }
-
 #end

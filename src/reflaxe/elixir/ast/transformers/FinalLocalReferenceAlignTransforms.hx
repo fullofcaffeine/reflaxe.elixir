@@ -1,13 +1,12 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 
- /**
-  * FinalLocalReferenceAlignTransforms
+/**
+ * FinalLocalReferenceAlignTransforms
  *
  * WHAT
  * - Absolute-final, conservative local reference alignment inside a function body.
@@ -37,267 +36,328 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
    *   case Repo.insert(cs) do
    *     {:ok, ok_value} -> broadcast(ok_value); Enum.concat(list, [ok_value])
    *   end
-   */
+ */
 class FinalLocalReferenceAlignTransforms {
-  public static function pass(ast: ElixirAST): ElixirAST {
-    return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-      return switch (n.def) {
-        case EDef(name, args, guards, body):
-          #if debug_ast_transformer
-          #end
-          var nb = alignInBody(body, args);
-          makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
-        case EDefp(name2, args2, guards2, body2):
-          var nb2 = alignInBody(body2, args2);
-          makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);
-        default: n;
-      }
-    });
-  }
+	public static function pass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EDef(name, args, guards, body):
+					#if debug_ast_transformer
+					#end
+					var nb = alignInBody(body, args);
+					makeASTWithMeta(EDef(name, args, guards, nb), n.metadata, n.pos);
+				case EDefp(name2, args2, guards2, body2):
+					var nb2 = alignInBody(body2, args2);
+					makeASTWithMeta(EDefp(name2, args2, guards2, nb2), n.metadata, n.pos);
+				default: n;
+			}
+		});
+	}
 
-  static function alignInBody(body: ElixirAST, args:Array<EPattern>): ElixirAST {
-    var declared = new Map<String,Bool>();
-    // Canonical index of declared names (snake + no underscores) -> unique declared name
-    var declaredCanonToName = new Map<String, String>();
-    // 1) Parameters
-    for (a in args) collectPatternNames(a, declared);
-    // 2) Patterns and match LHS in the body, including case clause patterns
-    ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
-      switch (x.def) {
-        case EMatch(p, _): collectPatternNames(p, declared);
-        case EBinary(Match, left, _): collectLhsVars(left, declared);
-        case ECase(_, clauses):
-          for (c in clauses) collectPatternNames(c.pattern, declared);
-        case EFn(clauses):
-          for (cl in clauses) for (a in cl.args) collectPatternNames(a, declared);
-        default:
-      }
-      return x;
-    });
+	static function alignInBody(body:ElixirAST, args:Array<EPattern>):ElixirAST {
+		var declared = new Map<String, Bool>();
+		// Canonical index of declared names (snake + no underscores) -> unique declared name
+		var declaredCanonToName = new Map<String, String>();
+		// 1) Parameters
+		for (a in args)
+			collectPatternNames(a, declared);
+		// 2) Patterns and match LHS in the body, including case clause patterns
+		ElixirASTTransformer.transformNode(body, function(x:ElixirAST):ElixirAST {
+			switch (x.def) {
+				case EMatch(p, _):
+					collectPatternNames(p, declared);
+				case EBinary(Match, left, _):
+					collectLhsVars(left, declared);
+				case ECase(_, clauses):
+					for (c in clauses)
+						collectPatternNames(c.pattern, declared);
+				case EFn(clauses):
+					for (cl in clauses)
+						for (a in cl.args)
+							collectPatternNames(a, declared);
+				default:
+			}
+			return x;
+		});
 
-    // Build canonical index with uniqueness guard
-    inline function canon(s:String):String {
-      if (s == null) return s;
-      var snake = toSnakeCase(s);
-      var buf = new StringBuf();
-      for (i in 0...snake.length) {
-        var ch = snake.charAt(i);
-        if (ch != "_") buf.add(ch);
-      }
-      return buf.toString();
-    }
-    var canonCounts = new Map<String, Int>();
-    #if debug_ast_transformer
-    // Debug declared names for insight in tricky cases
-    var dbg = [];
-    for (k in declared.keys()) dbg.push(k);
-    // DEBUG: Sys.println('[FinalLocalReferenceAlign] Declared={' + dbg.join(',') + '}');
-    #end
-    for (k in declared.keys()) {
-      var ck = canon(k);
-      canonCounts.set(ck, (canonCounts.exists(ck) ? canonCounts.get(ck) : 0) + 1);
-    }
-    for (k in declared.keys()) {
-      var ck = canon(k);
-      if (canonCounts.get(ck) == 1) declaredCanonToName.set(ck, k);
-    }
+		// Build canonical index with uniqueness guard
+		inline function canon(s:String):String {
+			if (s == null)
+				return s;
+			var snake = toSnakeCase(s);
+			var buf = new StringBuf();
+			for (i in 0...snake.length) {
+				var ch = snake.charAt(i);
+				if (ch != "_")
+					buf.add(ch);
+			}
+			return buf.toString();
+		}
+		var canonCounts = new Map<String, Int>();
+		#if debug_ast_transformer
+		// Debug declared names for insight in tricky cases
+		var dbg = [];
+		for (k in declared.keys())
+			dbg.push(k);
+		// DEBUG: Sys.println('[FinalLocalReferenceAlign] Declared={' + dbg.join(',') + '}');
+		#end
+		for (k in declared.keys()) {
+			var ck = canon(k);
+			canonCounts.set(ck, (canonCounts.exists(ck) ? canonCounts.get(ck) : 0) + 1);
+		}
+		for (k in declared.keys()) {
+			var ck = canon(k);
+			if (canonCounts.get(ck) == 1)
+				declaredCanonToName.set(ck, k);
+		}
 
-    // Precompute helpers
-    inline function has(name:String):Bool return declared.exists(name);
-    function findOkBinder(): Null<String> {
-      var found: Null<String> = null;
-      for (k in declared.keys()) {
-        if (StringTools.startsWith(k, "ok_")) {
-          if (found != null) return null; // not unique
-          found = k;
-        }
-      }
-      return found;
-    }
+		// Precompute helpers
+		inline function has(name:String):Bool
+			return declared.exists(name);
+		function findOkBinder():Null<String> {
+			var found:Null<String> = null;
+			for (k in declared.keys()) {
+				if (StringTools.startsWith(k, "ok_")) {
+					if (found != null)
+						return null; // not unique
+					found = k;
+				}
+			}
+			return found;
+		}
 
-    // 3) Rewrite references conservatively
-    return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
-      return switch (x.def) {
-        case EVar(v) if (v != null):
-          var target: Null<String> = null;
-          // Rule A0: _name -> name when base is declared and underscored is not
-          if (v.charAt(0) == '_' && v.length > 1) {
-            var base = v.substr(1);
-            if (has(base) && !has(v)) target = base;
-          }
-          // Rule A: name -> _name
-          if (target == null && !has(v) && has('_' + v)) target = '_' + v;
-          // Rule B: nameN -> name (numeric suffix)
-          if (target == null) {
-            var i = v.length - 1;
-            while (i >= 0 && v.charCodeAt(i) >= '0'.code && v.charCodeAt(i) <= '9'.code) i--;
-            if (i < v.length - 1) {
-              var base = v.substr(0, i + 1);
-              if (has(base) && !has(v)) target = base;
-            }
-          }
-          // Rule C: updated -> ok_* (single candidate) [softened: disabled to avoid ok_* leaks]
-          // if (target == null && v == "updated") {
-          //   var okb = findOkBinder();
-          //   if (okb != null) target = okb;
-          // }
-          // Rule D: camelCase -> snake_case when declared contains the snake name
-          if (target == null) {
-            var snake = toSnakeCase(v);
-            if (snake != v && has(snake) && !has(v)) target = snake;
-          }
-          // Rule D2: lowercase fallback -> when fully-lowercased name exists
-          if (target == null) {
-            var lower = v.toLowerCase();
-            if (lower != v && has(lower) && !has(v)) target = lower;
-          }
-          // Rule E: canonical remap (snake+no-underscore match to a unique declared name)
-          if (target == null && !has(v)) {
-            var cv = canon(v);
-            if (declaredCanonToName.exists(cv)) {
-              var unique = declaredCanonToName.get(cv);
-              // Avoid pointless self-map (shouldn't happen) and prefer declared
-              if (unique != null && unique != v) target = unique;
-            }
-          }
-          if (target != null) {
-            #if debug_ast_transformer
-            #end
-            makeASTWithMeta(EVar(target), x.metadata, x.pos);
-          } else {
-            x;
-          }
-        // Align variable names that appear inside string interpolations #{...}
-        case EString(s) if (s != null && s.indexOf("#{") != -1):
-          var rewritten = rewriteInterpolationVars(s, declared, declaredCanonToName);
-          if (rewritten != s) makeASTWithMeta(EString(rewritten), x.metadata, x.pos) else x;
-        case ERaw(code) if (code != null && code.indexOf("#{") != -1):
-          var rewritten2 = rewriteInterpolationVars(code, declared, declaredCanonToName);
-          if (rewritten2 != code) makeASTWithMeta(ERaw(rewritten2), x.metadata, x.pos) else x;
-        default: x;
-      }
-    });
-  }
+		// 3) Rewrite references conservatively
+		return ElixirASTTransformer.transformNode(body, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				case EVar(v) if (v != null):
+					var target:Null<String> = null;
+					// Rule A0: _name -> name when base is declared and underscored is not
+					if (v.charAt(0) == '_' && v.length > 1) {
+						var base = v.substr(1);
+						if (has(base) && !has(v))
+							target = base;
+					}
+					// Rule A: name -> _name
+					if (target == null && !has(v) && has('_' + v))
+						target = '_' + v;
+					// Rule B: nameN -> name (numeric suffix)
+					if (target == null) {
+						var i = v.length - 1;
+						while (i >= 0 && v.charCodeAt(i) >= '0'.code && v.charCodeAt(i) <= '9'.code)
+							i--;
+						if (i < v.length - 1) {
+							var base = v.substr(0, i + 1);
+							if (has(base) && !has(v))
+								target = base;
+						}
+					}
+					// Rule C: updated -> ok_* (single candidate) [softened: disabled to avoid ok_* leaks]
+					// if (target == null && v == "updated") {
+					//   var okb = findOkBinder();
+					//   if (okb != null) target = okb;
+					// }
+					// Rule D: camelCase -> snake_case when declared contains the snake name
+					if (target == null) {
+						var snake = toSnakeCase(v);
+						if (snake != v && has(snake) && !has(v))
+							target = snake;
+					}
+					// Rule D2: lowercase fallback -> when fully-lowercased name exists
+					if (target == null) {
+						var lower = v.toLowerCase();
+						if (lower != v && has(lower) && !has(v))
+							target = lower;
+					}
+					// Rule E: canonical remap (snake+no-underscore match to a unique declared name)
+					if (target == null && !has(v)) {
+						var cv = canon(v);
+						if (declaredCanonToName.exists(cv)) {
+							var unique = declaredCanonToName.get(cv);
+							// Avoid pointless self-map (shouldn't happen) and prefer declared
+							if (unique != null && unique != v)
+								target = unique;
+						}
+					}
+					if (target != null) {
+						#if debug_ast_transformer
+						#end
+						makeASTWithMeta(EVar(target), x.metadata, x.pos);
+					} else {
+						x;
+					}
+				// Align variable names that appear inside string interpolations #{...}
+				case EString(s) if (s != null && s.indexOf("#{") != -1):
+					var rewritten = rewriteInterpolationVars(s, declared, declaredCanonToName);
+					if (rewritten != s) makeASTWithMeta(EString(rewritten), x.metadata, x.pos) else x;
+				case ERaw(code) if (code != null && code.indexOf("#{") != -1):
+					var rewritten2 = rewriteInterpolationVars(code, declared, declaredCanonToName);
+					if (rewritten2 != code) makeASTWithMeta(ERaw(rewritten2), x.metadata, x.pos) else x;
+				default: x;
+			}
+		});
+	}
 
-  static inline function toSnakeCase(name:String):String {
-    if (name == null) return name;
-    var buf = new StringBuf();
-    for (i in 0...name.length) {
-      var ch = name.charAt(i);
-      var code = name.charCodeAt(i);
-      var isUpper = code >= 'A'.code && code <= 'Z'.code;
-      if (isUpper) {
-        if (i > 0) buf.add("_");
-        buf.add(ch.toLowerCase());
-      } else {
-        buf.add(ch);
-      }
-    }
-    return buf.toString();
-  }
+	static inline function toSnakeCase(name:String):String {
+		if (name == null)
+			return name;
+		var buf = new StringBuf();
+		for (i in 0...name.length) {
+			var ch = name.charAt(i);
+			var code = name.charCodeAt(i);
+			var isUpper = code >= 'A'.code && code <= 'Z'.code;
+			if (isUpper) {
+				if (i > 0)
+					buf.add("_");
+				buf.add(ch.toLowerCase());
+			} else {
+				buf.add(ch);
+			}
+		}
+		return buf.toString();
+	}
 
-  /**
-   * Rewrite variable tokens inside #{...} placeholders to their declared canonical names.
-   * - Maps camelCase → snake_case when the snake variant is a declared local and unique.
-   * - Uses canonical (snake without underscores) uniqueness map as a fallback.
-   * - Only rewrites identifier tokens that start with lowercase letter/underscore.
-   */
-  static function rewriteInterpolationVars(src:String, declared:Map<String,Bool>, declaredCanonToName:Map<String,String>):String {
-    if (src == null || src.indexOf("#{") == -1) return src;
-    inline function toSnake(name:String):String {
-      if (name == null) return name;
-      var buf = new StringBuf();
-      for (i in 0...name.length) {
-        var ch = name.charAt(i);
-        var up = ch.toUpperCase();
-        var low = ch.toLowerCase();
-        if (ch == up && ch != low) {
-          if (i > 0) buf.add("_");
-          buf.add(low);
-        } else buf.add(ch);
-      }
-      return buf.toString();
-    }
-    inline function canon(s:String):String {
-      if (s == null) return s;
-      var snake = toSnake(s);
-      var b = new StringBuf();
-      for (i in 0...snake.length) { var c = snake.charAt(i); if (c != "_") b.add(c); }
-      return b.toString();
-    }
+	/**
+	 * Rewrite variable tokens inside #{...} placeholders to their declared canonical names.
+	 * - Maps camelCase → snake_case when the snake variant is a declared local and unique.
+	 * - Uses canonical (snake without underscores) uniqueness map as a fallback.
+	 * - Only rewrites identifier tokens that start with lowercase letter/underscore.
+	 */
+	static function rewriteInterpolationVars(src:String, declared:Map<String, Bool>, declaredCanonToName:Map<String, String>):String {
+		if (src == null || src.indexOf("#{") == -1)
+			return src;
+		inline function toSnake(name:String):String {
+			if (name == null)
+				return name;
+			var buf = new StringBuf();
+			for (i in 0...name.length) {
+				var ch = name.charAt(i);
+				var up = ch.toUpperCase();
+				var low = ch.toLowerCase();
+				if (ch == up && ch != low) {
+					if (i > 0)
+						buf.add("_");
+					buf.add(low);
+				} else
+					buf.add(ch);
+			}
+			return buf.toString();
+		}
+		inline function canon(s:String):String {
+			if (s == null)
+				return s;
+			var snake = toSnake(s);
+			var b = new StringBuf();
+			for (i in 0...snake.length) {
+				var c = snake.charAt(i);
+				if (c != "_")
+					b.add(c);
+			}
+			return b.toString();
+		}
 
-    var out = new StringBuf();
-    var i = 0;
-    while (i < src.length) {
-      var o = src.indexOf("#{", i);
-      if (o == -1) { out.add(src.substr(i)); break; }
-      out.add(src.substr(i, o - i));
-      var k = o + 2; var dep = 1;
-      while (k < src.length && dep > 0) {
-        var ch = src.charAt(k);
-        if (ch == '{') dep++; else if (ch == '}') dep--; k++;
-      }
-      var inner = src.substr(o + 2, (k - 1) - (o + 2));
-      // Tokenize identifiers and apply rewrite rules
-      var buf = new StringBuf();
-      var j = 0;
-      while (j < inner.length) {
-        var c = inner.charAt(j);
-        var isIdStart = ~/^[a-z_]$/.match(c);
-        if (!isIdStart) { buf.add(c); j++; continue; }
-        // read identifier
-        var start = j;
-        j++;
-        while (j < inner.length) {
-          var c2 = inner.charAt(j);
-          if (!~/^[A-Za-z0-9_]$/.match(c2)) break;
-          j++;
-        }
-        var id = inner.substr(start, j - start);
-        // Skip function identifiers like inspect(...) — if next non-space char is '(' then keep as-is
-        var k2 = j;
-        while (k2 < inner.length && StringTools.isSpace(inner, k2)) k2++;
-        var isCall = (k2 < inner.length && inner.charAt(k2) == '(');
-        if (isCall) { buf.add(id); continue; }
-        var repl: Null<String> = null;
-        // Prefer direct snake-case match
-        var snake = toSnake(id);
-        if (snake != id && declared.exists(snake) && !declared.exists(id)) repl = snake;
-        // Fallback to canonical unique match
-        if (repl == null) {
-          var ck = canon(id);
-          if (declaredCanonToName.exists(ck)) {
-            var uniq = declaredCanonToName.get(ck);
-            if (uniq != null && uniq != id) repl = uniq;
-          }
-        }
-        buf.add(repl != null ? repl : id);
-      }
-      out.add("#{" + buf.toString() + "}");
-      i = k;
-    }
-    return out.toString();
-  }
+		var out = new StringBuf();
+		var i = 0;
+		while (i < src.length) {
+			var o = src.indexOf("#{", i);
+			if (o == -1) {
+				out.add(src.substr(i));
+				break;
+			}
+			out.add(src.substr(i, o - i));
+			var k = o + 2;
+			var dep = 1;
+			while (k < src.length && dep > 0) {
+				var ch = src.charAt(k);
+				if (ch == '{')
+					dep++;
+				else if (ch == '}')
+					dep--;
+				k++;
+			}
+			var inner = src.substr(o + 2, (k - 1) - (o + 2));
+			// Tokenize identifiers and apply rewrite rules
+			var buf = new StringBuf();
+			var j = 0;
+			while (j < inner.length) {
+				var c = inner.charAt(j);
+				var isIdStart = ~/^[a-z_]$/.match(c);
+				if (!isIdStart) {
+					buf.add(c);
+					j++;
+					continue;
+				}
+				// read identifier
+				var start = j;
+				j++;
+				while (j < inner.length) {
+					var c2 = inner.charAt(j);
+					if (!~/^[A-Za-z0-9_]$/.match(c2))
+						break;
+					j++;
+				}
+				var id = inner.substr(start, j - start);
+				// Skip function identifiers like inspect(...) — if next non-space char is '(' then keep as-is
+				var k2 = j;
+				while (k2 < inner.length && StringTools.isSpace(inner, k2))
+					k2++;
+				var isCall = (k2 < inner.length && inner.charAt(k2) == '(');
+				if (isCall) {
+					buf.add(id);
+					continue;
+				}
+				var repl:Null<String> = null;
+				// Prefer direct snake-case match
+				var snake = toSnake(id);
+				if (snake != id && declared.exists(snake) && !declared.exists(id))
+					repl = snake;
+				// Fallback to canonical unique match
+				if (repl == null) {
+					var ck = canon(id);
+					if (declaredCanonToName.exists(ck)) {
+						var uniq = declaredCanonToName.get(ck);
+						if (uniq != null && uniq != id)
+							repl = uniq;
+					}
+				}
+				buf.add(repl != null ? repl : id);
+			}
+			out.add("#{" + buf.toString() + "}");
+			i = k;
+		}
+		return out.toString();
+	}
 
-  static function collectPatternNames(p:EPattern, acc:Map<String,Bool>):Void {
-    switch (p) {
-      case PVar(nm) if (nm != null): acc.set(nm, true);
-      case PTuple(es) | PList(es): for (e in es) collectPatternNames(e, acc);
-      case PCons(h, t): collectPatternNames(h, acc); collectPatternNames(t, acc);
-      case PMap(kvs): for (kv in kvs) collectPatternNames(kv.value, acc);
-      case PStruct(_, fs): for (f in fs) collectPatternNames(f.value, acc);
-      case PPin(inner): collectPatternNames(inner, acc);
-      default:
-    }
-  }
+	static function collectPatternNames(p:EPattern, acc:Map<String, Bool>):Void {
+		switch (p) {
+			case PVar(nm) if (nm != null):
+				acc.set(nm, true);
+			case PTuple(es) | PList(es):
+				for (e in es)
+					collectPatternNames(e, acc);
+			case PCons(h, t):
+				collectPatternNames(h, acc);
+				collectPatternNames(t, acc);
+			case PMap(kvs):
+				for (kv in kvs)
+					collectPatternNames(kv.value, acc);
+			case PStruct(_, fs):
+				for (f in fs)
+					collectPatternNames(f.value, acc);
+			case PPin(inner):
+				collectPatternNames(inner, acc);
+			default:
+		}
+	}
 
-  static function collectLhsVars(lhs: ElixirAST, acc:Map<String,Bool>):Void {
-    switch (lhs.def) {
-      case EVar(nm) if (nm != null): acc.set(nm, true);
-      case EBinary(Match, l2, r2): collectLhsVars(l2, acc); collectLhsVars(r2, acc);
-      default:
-    }
-  }
+	static function collectLhsVars(lhs:ElixirAST, acc:Map<String, Bool>):Void {
+		switch (lhs.def) {
+			case EVar(nm) if (nm != null):
+				acc.set(nm, true);
+			case EBinary(Match, l2, r2):
+				collectLhsVars(l2, acc);
+				collectLhsVars(r2, acc);
+			default:
+		}
+	}
 }
-
 #end

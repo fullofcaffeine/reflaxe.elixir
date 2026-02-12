@@ -7,7 +7,6 @@ import elixir.types.Term;
 import elixir.types.Atom;
 import phoenix.types.Flash.FlashType;
 
-
 /**
  * Comprehensive Phoenix framework extern definitions with full type safety
  * 
@@ -48,71 +47,70 @@ import phoenix.types.Flash.FlashType;
  * }
  * ```
  */
-
 /**
  * Phoenix.Controller for handling HTTP requests with type-safe operations
  */
 @:native("Phoenix.Controller")
 extern class Controller {
-    /**
-     * Render a template with type-safe assigns
-     */
-    static function render<T>(conn: Conn, template: String, assigns: T): Conn;
-    
-    /**
-     * Redirect to a path or URL with proper options
-     */
-    static function redirect(conn: Conn, options: RedirectOptions): Conn;
-    
-    /**
-     * Send a JSON response with proper encoding
-     */
-    static function json<T>(conn: Conn, data: T): Conn;
-    
-    /**
-     * Send plain text response
-     */
-    static function text(conn: Conn, text: String): Conn;
-    
-    /**
-     * Send HTML response
-     */
-    static function html(conn: Conn, html: String): Conn;
-    
-    /**
-     * Put HTTP status code
-     */
-    @:native("put_status")
-    static function putStatus(conn: Conn, status: HttpStatus): Conn;
-    
-    /**
-     * Put response header with validation
-     */
-    @:native("put_resp_header")
-    static function putRespHeader(conn: Conn, key: String, value: String): Conn;
-    
-    /**
-     * Put flash message with type-safe message types
-     */
-    @:native("put_flash")
-    static function putFlash(conn: Conn, type: FlashType, message: String): Conn;
-    
-    /**
-     * Get flash message with optional type filter
-     */
-    @:native("get_flash")
-    static function getFlash(conn: Conn, ?type: FlashType): Option<String>;
-    
-    /**
-     * Assign values to the connection for templates
-     */
-    static function assign<T>(conn: Conn, key: Atom, value: T): Conn;
-    
-    /**
-     * Assign multiple values at once
-     */
-    @:native("assign")
-    static function assignMultiple<T>(conn: Conn, assigns: T): Conn;
+	/**
+	 * Render a template with type-safe assigns
+	 */
+	static function render<T>(conn:Conn, template:String, assigns:T):Conn;
+
+	/**
+	 * Redirect to a path or URL with proper options
+	 */
+	static function redirect(conn:Conn, options:RedirectOptions):Conn;
+
+	/**
+	 * Send a JSON response with proper encoding
+	 */
+	static function json<T>(conn:Conn, data:T):Conn;
+
+	/**
+	 * Send plain text response
+	 */
+	static function text(conn:Conn, text:String):Conn;
+
+	/**
+	 * Send HTML response
+	 */
+	static function html(conn:Conn, html:String):Conn;
+
+	/**
+	 * Put HTTP status code
+	 */
+	@:native("put_status")
+	static function putStatus(conn:Conn, status:HttpStatus):Conn;
+
+	/**
+	 * Put response header with validation
+	 */
+	@:native("put_resp_header")
+	static function putRespHeader(conn:Conn, key:String, value:String):Conn;
+
+	/**
+	 * Put flash message with type-safe message types
+	 */
+	@:native("put_flash")
+	static function putFlash(conn:Conn, type:FlashType, message:String):Conn;
+
+	/**
+	 * Get flash message with optional type filter
+	 */
+	@:native("get_flash")
+	static function getFlash(conn:Conn, ?type:FlashType):Option<String>;
+
+	/**
+	 * Assign values to the connection for templates
+	 */
+	static function assign<T>(conn:Conn, key:Atom, value:T):Conn;
+
+	/**
+	 * Assign multiple values at once
+	 */
+	@:native("assign")
+	static function assignMultiple<T>(conn:Conn, assigns:T):Conn;
 }
 
 /**
@@ -136,279 +134,252 @@ extern class Controller {
  */
 @:native("Phoenix.LiveView")
 extern class LiveView {
-    /**
-     * Mount callback - called when LiveView is first rendered
-     * 
-     * @param TAssigns The type of socket assigns structure for this mount operation
-     */
-    static function mount<TAssigns>(params: MountParams, session: Session, socket: Socket<TAssigns>): MountResult<TAssigns>;
-    
-    /**
-     * Handle event from client with type-safe event parameters
-     * 
-     * @param TAssigns The type of socket assigns structure for this event operation
-     */
-    static function handleEvent<TAssigns>(event: String, params: EventParams, socket: Socket<TAssigns>): HandleEventResult<TAssigns>;
-    
-    /**
-     * Handle info messages from processes
-     * 
-     * @param TAssigns The type of socket assigns structure for this info operation
-     */
-    static function handleInfo<TAssigns>(info: PubSubMessage, socket: Socket<TAssigns>): HandleInfoResult<TAssigns>;
-    
-    /**
-     * Render the LiveView template with typed assigns
-     */
-    static function render<T>(assigns: T): String;
-    
-    /**
-     * Assign single value to the socket
-     * 
-     * Phoenix.LiveView.assign/3 accepts any value for the given key.
-     *
-     * NOTE: Phoenix assigns keys are atoms in Elixir. This extern uses `elixir.types.Atom`
-     * so the compiler emits `:key` atoms rather than `"key"` strings.
-     * 
-     * Example:
-     * ```haxe
-     * // Atom is an abstract over String, so string literals are accepted
-     * // and compile to atoms in Elixir: :user, :count
-     * socket = LiveView.assign(socket, "user", currentUser);
-     * socket = LiveView.assign(socket, "count", 42);
-     * ```
-     * 
-     * @param TAssigns The type of socket assigns structure
-     * @param key The assign key (emits an atom in Elixir)
-     * @param value The value to assign (can be any type)
-     */
-    @:overload(function<TAssigns, TPartial>(socket: Socket<TAssigns>, assigns: TPartial): Socket<TAssigns> {})
-    static function assign<TAssigns, TValue>(socket: Socket<TAssigns>, key: Atom, value: TValue): Socket<TAssigns>;
-    
-    /**
-     * Assign multiple values to the socket using a map of assigns
-     * 
-     * IMPORTANT: Phoenix.LiveView doesn't have a direct assign/2 function.
-     * This function should use the socket's assign function internally.
-     * 
-     * In Phoenix LiveView, bulk assigns are done through the socket itself,
-     * not through the Phoenix.LiveView module. This is a helper that generates
-     * the proper socket.assign/2 call.
-     * 
-     * Example:
-     * ```haxe
-     * socket = LiveView.assignMultiple(socket, {
-     *     user: currentUser,
-     *     count: 42,
-     *     showForm: true
-     * });
-     * ```
-     * 
-     * Generates:
-     * ```elixir
-     * assign(socket, %{user: current_user, count: 42, show_form: true})
-     * ```
-     * 
-     * @param TAssigns The type of socket assigns structure
-     * @param assigns Partial assigns object (only fields being updated)
-     */
-    extern inline static function assignMultiple<TAssigns, TPartial>(socket: Socket<TAssigns>, assigns: TPartial): Socket<TAssigns> {
-        return assign(socket, assigns);
-    }
-    
-    /**
-     * Assign new values only if not already present
-     * 
-     * @param TAssigns The type of socket assigns structure
-     * @param TValue The type of the value being assigned
-     */
-    @:native("assign_new")
-    static function assignNew<TAssigns, TValue>(socket: Socket<TAssigns>, key: String, func: () -> TValue): Socket<TAssigns>;
-    
-    /**
-     * Update an assign value with a function
-     * 
-     * @param TAssigns The type of socket assigns structure  
-     * @param TValue The type of the specific field being updated
-     */
-    static function update<TAssigns, TValue>(socket: Socket<TAssigns>, key: String, updater: TValue -> TValue): Socket<TAssigns>;
-    
-    /**
-     * Push a patch to the client (live navigation)
-     * 
-     * @param TAssigns The type of socket assigns structure
-     */
-    extern inline static function pushPatch<TAssigns>(socket: Socket<TAssigns>, options: PatchOptions): Socket<TAssigns> {
-        var replace: Null<Bool> = cast untyped __elixir__('Map.get({0}, :replace)', options);
-        return if (replace != null) {
-            untyped __elixir__(
-                'Phoenix.LiveView.push_patch({0}, to: {1}, replace: {2})',
-                socket,
-                options.to,
-                replace
-            );
-        } else {
-            untyped __elixir__(
-                'Phoenix.LiveView.push_patch({0}, to: {1})',
-                socket,
-                options.to
-            );
-        }
-    }
-    
-    /**
-     * Push a redirect to the client
-     * 
-     * @param TAssigns The type of socket assigns structure
-     */
-    extern inline static function pushRedirect<TAssigns>(socket: Socket<TAssigns>, options: PatchOptions): Socket<TAssigns> {
-        var replace: Null<Bool> = cast untyped __elixir__('Map.get({0}, :replace)', options);
-        return if (replace != null) {
-            untyped __elixir__(
-                'Phoenix.LiveView.push_redirect({0}, to: {1}, replace: {2})',
-                socket,
-                options.to,
-                replace
-            );
-        } else {
-            untyped __elixir__(
-                'Phoenix.LiveView.push_redirect({0}, to: {1})',
-                socket,
-                options.to
-            );
-        }
-    }
+	/**
+	 * Mount callback - called when LiveView is first rendered
+	 * 
+	 * @param TAssigns The type of socket assigns structure for this mount operation
+	 */
+	static function mount<TAssigns>(params:MountParams, session:Session, socket:Socket<TAssigns>):MountResult<TAssigns>;
 
-    /**
-     * Push a full LiveView navigation to the client.
-     *
-     * NOTE
-     * - `push_redirect/2` is deprecated in Phoenix LiveView 0.20 in favor of `push_navigate/2`.
-     * - Use this for LiveView-to-LiveView navigation that mounts a new root LiveView.
-     */
-    extern inline static function pushNavigate<TAssigns>(socket: Socket<TAssigns>, options: PatchOptions): Socket<TAssigns> {
-        var replace: Null<Bool> = cast untyped __elixir__('Map.get({0}, :replace)', options);
-        return if (replace != null) {
-            untyped __elixir__(
-                'Phoenix.LiveView.push_navigate({0}, to: {1}, replace: {2})',
-                socket,
-                options.to,
-                replace
-            );
-        } else {
-            untyped __elixir__(
-                'Phoenix.LiveView.push_navigate({0}, to: {1})',
-                socket,
-                options.to
-            );
-        }
-    }
-    
-    /**
-     * Push an event to the client-side hooks
-     * 
-     * @param TAssigns The type of socket assigns structure
-     * @param TPayload The type of the event payload
-     */
-    @:native("push_event")
-    static function pushEvent<TAssigns, TPayload>(socket: Socket<TAssigns>, event: String, payload: TPayload): Socket<TAssigns>;
-    
-    /**
-     * Put flash message for LiveView
-     * 
-     * @param TAssigns The type of socket assigns structure
-     */
-    extern inline static function putFlash<TAssigns>(socket: Socket<TAssigns>, type: FlashType, message: String): Socket<TAssigns> {
-        return putFlashKey(socket, phoenix.types.Flash.FlashTypeTools.toPhoenixKey(type), message);
-    }
+	/**
+	 * Handle event from client with type-safe event parameters
+	 * 
+	 * @param TAssigns The type of socket assigns structure for this event operation
+	 */
+	static function handleEvent<TAssigns>(event:String, params:EventParams, socket:Socket<TAssigns>):HandleEventResult<TAssigns>;
 
-    @:native("put_flash")
-    static function putFlashKey<TAssigns>(socket: Socket<TAssigns>, type: Atom, message: String): Socket<TAssigns>;
-    
-    /**
-     * Put temporary flash (cleared after next render)
-     * 
-     * @param TAssigns The type of socket assigns structure
-     */
-    @:native("put_temp_flash")
-    static function putTempFlash<TAssigns>(socket: Socket<TAssigns>, type: FlashType, message: String): Socket<TAssigns>;
-    
-    /**
-     * Clear flash messages from the socket
-     * 
-     * ## Critical Naming Issue Resolution
-     * 
-     * **IMPORTANT**: This function is named `clearFlash` in Haxe but maps to `clear_flash` in Elixir.
-     * 
-     * ### The Problem (Fixed)
-     * Previously named `clear_flash` directly in Haxe, which caused compilation error:
-     * ```
-     * Field index for clear_flash not found on prototype Phoenix.LiveView
-     * ```
-     * 
-     * ### Root Cause
-     * Haxe's eval target (used during macro expansion) has issues resolving snake_case field names
-     * on extern classes. This is a known Haxe limitation when the eval target tries to access
-     * fields during compilation, particularly for extern classes with generic methods.
-     * 
-     * ### The Solution
-     * - Use camelCase naming in Haxe: `clearFlash`
-     * - Map to snake_case in Elixir via: `@:native("clear_flash")`
-     * - This follows Haxe conventions while generating correct Elixir code
-     * 
-     * ### General Pattern
-     * For all Phoenix.LiveView methods with snake_case names in Elixir:
-     * 1. Define with camelCase in Haxe extern
-     * 2. Use @:native("snake_case_name") to map to Elixir
-     * 3. This avoids eval target field resolution issues
-     * 
-     * @param TAssigns The type of socket assigns structure
-     * @param type Optional flash type to clear (Info, Error, etc.)
-     * @return Updated socket with flash messages cleared
-     * 
-     * @see https://github.com/HaxeFoundation/haxe/issues/11631 - Similar field index issues
-     */
-    @:native("clear_flash")
-    @:overload(function<TAssigns>(socket: Socket<TAssigns>): Socket<TAssigns> {})
-    static function clearFlash<TAssigns>(socket: Socket<TAssigns>, type: FlashType): Socket<TAssigns>;
-    
-    /**
-     * Check if socket is connected (not during initial render)
-     * 
-     * @param TAssigns The type of socket assigns structure
-     */
-    @:native("connected?")
-    static function connected<TAssigns>(socket: Socket<TAssigns>): Bool;
-    
-    /**
-     * Get assign value with type safety
-     * 
-     * @param TAssigns The type of socket assigns structure
-     * @param TValue The type of the specific field being retrieved
-     */
-    static function getAssign<TAssigns, TValue>(socket: Socket<TAssigns>, key: String): Option<TValue>;
+	/**
+	 * Handle info messages from processes
+	 * 
+	 * @param TAssigns The type of socket assigns structure for this info operation
+	 */
+	static function handleInfo<TAssigns>(info:PubSubMessage, socket:Socket<TAssigns>):HandleInfoResult<TAssigns>;
 
-    /**
-     * Streams API – declarative collection rendering helpers
-     * Mirrors Phoenix.LiveView.stream/3 and friends; options are left as raw terms for flexibility.
-     */
-    @:native("stream")
-    static function stream<TAssigns, TItem>(socket: Socket<TAssigns>, name: String, item: TItem, ?opts: Term): Socket<TAssigns>;
+	/**
+	 * Render the LiveView template with typed assigns
+	 */
+	static function render<T>(assigns:T):String;
 
-    @:native("stream_insert")
-    static function streamInsert<TAssigns, TItem>(socket: Socket<TAssigns>, name: String, item: TItem, ?opts: Term): Socket<TAssigns>;
+	/**
+	 * Assign single value to the socket
+	 * 
+	 * Phoenix.LiveView.assign/3 accepts any value for the given key.
+	 *
+	 * NOTE: Phoenix assigns keys are atoms in Elixir. This extern uses `elixir.types.Atom`
+	 * so the compiler emits `:key` atoms rather than `"key"` strings.
+	 * 
+	 * Example:
+	 * ```haxe
+	 * // Atom is an abstract over String, so string literals are accepted
+	 * // and compile to atoms in Elixir: :user, :count
+	 * socket = LiveView.assign(socket, "user", currentUser);
+	 * socket = LiveView.assign(socket, "count", 42);
+	 * ```
+	 * 
+	 * @param TAssigns The type of socket assigns structure
+	 * @param key The assign key (emits an atom in Elixir)
+	 * @param value The value to assign (can be any type)
+	 */
+	@:overload(function<TAssigns, TPartial>(socket:Socket<TAssigns>, assigns:TPartial):Socket<TAssigns> {})
+	static function assign<TAssigns, TValue>(socket:Socket<TAssigns>, key:Atom, value:TValue):Socket<TAssigns>;
 
-    @:native("stream_delete")
-    static function streamDelete<TAssigns, TItem>(socket: Socket<TAssigns>, name: String, item: TItem, ?opts: Term): Socket<TAssigns>;
+	/**
+	 * Assign multiple values to the socket using a map of assigns
+	 * 
+	 * IMPORTANT: Phoenix.LiveView doesn't have a direct assign/2 function.
+	 * This function should use the socket's assign function internally.
+	 * 
+	 * In Phoenix LiveView, bulk assigns are done through the socket itself,
+	 * not through the Phoenix.LiveView module. This is a helper that generates
+	 * the proper socket.assign/2 call.
+	 * 
+	 * Example:
+	 * ```haxe
+	 * socket = LiveView.assignMultiple(socket, {
+	 *     user: currentUser,
+	 *     count: 42,
+	 *     showForm: true
+	 * });
+	 * ```
+	 * 
+	 * Generates:
+	 * ```elixir
+	 * assign(socket, %{user: current_user, count: 42, show_form: true})
+	 * ```
+	 * 
+	 * @param TAssigns The type of socket assigns structure
+	 * @param assigns Partial assigns object (only fields being updated)
+	 */
+	extern inline static function assignMultiple<TAssigns, TPartial>(socket:Socket<TAssigns>, assigns:TPartial):Socket<TAssigns> {
+		return assign(socket, assigns);
+	}
 
-    /**
-     * Uploads API – allow and consume uploads
-     */
-    @:native("allow_upload")
-    static function allowUpload<TAssigns>(socket: Socket<TAssigns>, name: String, options: Term): Socket<TAssigns>;
+	/**
+	 * Assign new values only if not already present
+	 * 
+	 * @param TAssigns The type of socket assigns structure
+	 * @param TValue The type of the value being assigned
+	 */
+	@:native("assign_new")
+	static function assignNew<TAssigns, TValue>(socket:Socket<TAssigns>, key:String, func:() -> TValue):Socket<TAssigns>;
 
-    @:native("consume_uploaded_entries")
-    static function consumeUploadedEntries<TAssigns>(socket: Socket<TAssigns>, name: String, handler: Term): Array<Term>;
+	/**
+	 * Update an assign value with a function
+	 * 
+	 * @param TAssigns The type of socket assigns structure  
+	 * @param TValue The type of the specific field being updated
+	 */
+	static function update<TAssigns, TValue>(socket:Socket<TAssigns>, key:String, updater:TValue->TValue):Socket<TAssigns>;
+
+	/**
+	 * Push a patch to the client (live navigation)
+	 * 
+	 * @param TAssigns The type of socket assigns structure
+	 */
+	extern inline static function pushPatch<TAssigns>(socket:Socket<TAssigns>, options:PatchOptions):Socket<TAssigns> {
+		var replace:Null<Bool> = cast untyped __elixir__('Map.get({0}, :replace)', options);
+		return if (replace != null) {
+			untyped __elixir__('Phoenix.LiveView.push_patch({0}, to: {1}, replace: {2})', socket, options.to, replace);
+		} else {
+			untyped __elixir__('Phoenix.LiveView.push_patch({0}, to: {1})', socket, options.to);
+		}
+	}
+
+	/**
+	 * Push a redirect to the client
+	 * 
+	 * @param TAssigns The type of socket assigns structure
+	 */
+	extern inline static function pushRedirect<TAssigns>(socket:Socket<TAssigns>, options:PatchOptions):Socket<TAssigns> {
+		var replace:Null<Bool> = cast untyped __elixir__('Map.get({0}, :replace)', options);
+		return if (replace != null) {
+			untyped __elixir__('Phoenix.LiveView.push_redirect({0}, to: {1}, replace: {2})', socket, options.to, replace);
+		} else {
+			untyped __elixir__('Phoenix.LiveView.push_redirect({0}, to: {1})', socket, options.to);
+		}
+	}
+
+	/**
+	 * Push a full LiveView navigation to the client.
+	 *
+	 * NOTE
+	 * - `push_redirect/2` is deprecated in Phoenix LiveView 0.20 in favor of `push_navigate/2`.
+	 * - Use this for LiveView-to-LiveView navigation that mounts a new root LiveView.
+	 */
+	extern inline static function pushNavigate<TAssigns>(socket:Socket<TAssigns>, options:PatchOptions):Socket<TAssigns> {
+		var replace:Null<Bool> = cast untyped __elixir__('Map.get({0}, :replace)', options);
+		return if (replace != null) {
+			untyped __elixir__('Phoenix.LiveView.push_navigate({0}, to: {1}, replace: {2})', socket, options.to, replace);
+		} else {
+			untyped __elixir__('Phoenix.LiveView.push_navigate({0}, to: {1})', socket, options.to);
+		}
+	}
+
+	/**
+	 * Push an event to the client-side hooks
+	 * 
+	 * @param TAssigns The type of socket assigns structure
+	 * @param TPayload The type of the event payload
+	 */
+	@:native("push_event")
+	static function pushEvent<TAssigns, TPayload>(socket:Socket<TAssigns>, event:String, payload:TPayload):Socket<TAssigns>;
+
+	/**
+	 * Put flash message for LiveView
+	 * 
+	 * @param TAssigns The type of socket assigns structure
+	 */
+	extern inline static function putFlash<TAssigns>(socket:Socket<TAssigns>, type:FlashType, message:String):Socket<TAssigns> {
+		return putFlashKey(socket, phoenix.types.Flash.FlashTypeTools.toPhoenixKey(type), message);
+	}
+
+	@:native("put_flash")
+	static function putFlashKey<TAssigns>(socket:Socket<TAssigns>, type:Atom, message:String):Socket<TAssigns>;
+
+	/**
+	 * Put temporary flash (cleared after next render)
+	 * 
+	 * @param TAssigns The type of socket assigns structure
+	 */
+	@:native("put_temp_flash")
+	static function putTempFlash<TAssigns>(socket:Socket<TAssigns>, type:FlashType, message:String):Socket<TAssigns>;
+
+	/**
+	 * Clear flash messages from the socket
+	 * 
+	 * ## Critical Naming Issue Resolution
+	 * 
+	 * **IMPORTANT**: This function is named `clearFlash` in Haxe but maps to `clear_flash` in Elixir.
+	 * 
+	 * ### The Problem (Fixed)
+	 * Previously named `clear_flash` directly in Haxe, which caused compilation error:
+	 * ```
+	 * Field index for clear_flash not found on prototype Phoenix.LiveView
+	 * ```
+	 * 
+	 * ### Root Cause
+	 * Haxe's eval target (used during macro expansion) has issues resolving snake_case field names
+	 * on extern classes. This is a known Haxe limitation when the eval target tries to access
+	 * fields during compilation, particularly for extern classes with generic methods.
+	 * 
+	 * ### The Solution
+	 * - Use camelCase naming in Haxe: `clearFlash`
+	 * - Map to snake_case in Elixir via: `@:native("clear_flash")`
+	 * - This follows Haxe conventions while generating correct Elixir code
+	 * 
+	 * ### General Pattern
+	 * For all Phoenix.LiveView methods with snake_case names in Elixir:
+	 * 1. Define with camelCase in Haxe extern
+	 * 2. Use @:native("snake_case_name") to map to Elixir
+	 * 3. This avoids eval target field resolution issues
+	 * 
+	 * @param TAssigns The type of socket assigns structure
+	 * @param type Optional flash type to clear (Info, Error, etc.)
+	 * @return Updated socket with flash messages cleared
+	 * 
+	 * @see https://github.com/HaxeFoundation/haxe/issues/11631 - Similar field index issues
+	 */
+	@:native("clear_flash")
+	@:overload(function<TAssigns>(socket:Socket<TAssigns>):Socket<TAssigns> {})
+	static function clearFlash<TAssigns>(socket:Socket<TAssigns>, type:FlashType):Socket<TAssigns>;
+
+	/**
+	 * Check if socket is connected (not during initial render)
+	 * 
+	 * @param TAssigns The type of socket assigns structure
+	 */
+	@:native("connected?")
+	static function connected<TAssigns>(socket:Socket<TAssigns>):Bool;
+
+	/**
+	 * Get assign value with type safety
+	 * 
+	 * @param TAssigns The type of socket assigns structure
+	 * @param TValue The type of the specific field being retrieved
+	 */
+	static function getAssign<TAssigns, TValue>(socket:Socket<TAssigns>, key:String):Option<TValue>;
+
+	/**
+	 * Streams API – declarative collection rendering helpers
+	 * Mirrors Phoenix.LiveView.stream/3 and friends; options are left as raw terms for flexibility.
+	 */
+	@:native("stream")
+	static function stream<TAssigns, TItem>(socket:Socket<TAssigns>, name:String, item:TItem, ?opts:Term):Socket<TAssigns>;
+
+	@:native("stream_insert")
+	static function streamInsert<TAssigns, TItem>(socket:Socket<TAssigns>, name:String, item:TItem, ?opts:Term):Socket<TAssigns>;
+
+	@:native("stream_delete")
+	static function streamDelete<TAssigns, TItem>(socket:Socket<TAssigns>, name:String, item:TItem, ?opts:Term):Socket<TAssigns>;
+
+	/**
+	 * Uploads API – allow and consume uploads
+	 */
+	@:native("allow_upload")
+	static function allowUpload<TAssigns>(socket:Socket<TAssigns>, name:String, options:Term):Socket<TAssigns>;
+
+	@:native("consume_uploaded_entries")
+	static function consumeUploadedEntries<TAssigns>(socket:Socket<TAssigns>, name:String, handler:Term):Array<Term>;
 }
 
 /**
@@ -416,56 +387,58 @@ extern class LiveView {
  */
 @:native("Phoenix.HTML")
 extern class HTML {
-    /**
-     * Generate a type-safe link element
-     */
-    static function link(text: String, options: LinkOptions): String;
-    
-    /**
-     * Generate a form with changeset validation
-     */
-    #if (elixir || reflaxe_runtime)
-    static function formFor<T, P>(changeset: ecto.Changeset<T, P>, action: String, options: FormOptions, content: Form<T> -> String): String;
-    #else
-    static function formFor<T, P>(changeset: Term, action: String, options: FormOptions, content: Form<T> -> String): String;
-    #end
-    
-    /**
-     * Generate form inputs with proper typing
-     */
-    static function textInput<T>(form: Form<T>, field: String, options: InputOptions): String;
-    static function emailInput<T>(form: Form<T>, field: String, options: InputOptions): String;
-    static function passwordInput<T>(form: Form<T>, field: String, options: InputOptions): String;
-    static function textarea<T>(form: Form<T>, field: String, options: TextareaOptions): String;
-    static function select<T>(form: Form<T>, field: String, options: Array<SelectOption>, inputOptions: InputOptions): String;
-    static function checkbox<T>(form: Form<T>, field: String, options: CheckboxOptions): String;
-    static function hiddenInput<T>(form: Form<T>, field: String, options: InputOptions): String;
-    
-    /**
-     * Form labels and validation display
-     */
-    static function label<T>(form: Form<T>, field: String, options: LabelOptions): String;
-    static function errorTag<T>(form: Form<T>, field: String): String;
-    
-    /**
-     * Submit button with options
-     */
-    static function submit(text: String, options: SubmitOptions): String;
-    
-    /**
-     * Mark HTML as safe (use carefully!)
-     */
-    static function raw(html: String): SafeHTML;
-    
-    /**
-     * Escape HTML for security
-     */
-    static function htmlEscape(text: String): String;
-    
-    /**
-     * Generate CSRF token
-     */
-    static function csrfMetaTag(): String;
+	/**
+	 * Generate a type-safe link element
+	 */
+	static function link(text:String, options:LinkOptions):String;
+
+	/**
+	 * Generate a form with changeset validation
+	 */
+	#if (elixir || reflaxe_runtime)
+	static function formFor<T, P>(changeset:ecto.Changeset<T, P>, action:String, options:FormOptions, content:Form<T>->String):String;
+	#else
+	static function formFor<T, P>(changeset:Term, action:String, options:FormOptions, content:Form<T>->String):String;
+	#end
+
+	/**
+	 * Generate form inputs with proper typing
+	 */
+	static function textInput<T>(form:Form<T>, field:String, options:InputOptions):String;
+
+	static function emailInput<T>(form:Form<T>, field:String, options:InputOptions):String;
+	static function passwordInput<T>(form:Form<T>, field:String, options:InputOptions):String;
+	static function textarea<T>(form:Form<T>, field:String, options:TextareaOptions):String;
+	static function select<T>(form:Form<T>, field:String, options:Array<SelectOption>, inputOptions:InputOptions):String;
+	static function checkbox<T>(form:Form<T>, field:String, options:CheckboxOptions):String;
+	static function hiddenInput<T>(form:Form<T>, field:String, options:InputOptions):String;
+
+	/**
+	 * Form labels and validation display
+	 */
+	static function label<T>(form:Form<T>, field:String, options:LabelOptions):String;
+
+	static function errorTag<T>(form:Form<T>, field:String):String;
+
+	/**
+	 * Submit button with options
+	 */
+	static function submit(text:String, options:SubmitOptions):String;
+
+	/**
+	 * Mark HTML as safe (use carefully!)
+	 */
+	static function raw(html:String):SafeHTML;
+
+	/**
+	 * Escape HTML for security
+	 */
+	static function htmlEscape(text:String):String;
+
+	/**
+	 * Generate CSRF token
+	 */
+	static function csrfMetaTag():String;
 }
 
 /**
@@ -473,35 +446,35 @@ extern class HTML {
  */
 @:native("Phoenix.Router")
 extern class Router {
-    /**
-     * Generate a path for a route with parameters
-     */
-    static function path<T>(conn: Conn, route: RouteHelper, params: T): String;
-    
-    /**
-     * Generate a URL for a route with parameters
-     */
-    static function url<T>(conn: Conn, route: RouteHelper, params: T): String;
-    
-    /**
-     * Get current path from connection
-     */
-    static function currentPath(conn: Conn): String;
-    
-    /**
-     * Get current URL from connection
-     */
-    static function currentUrl(conn: Conn): String;
-    
-    /**
-     * Get current route from connection
-     */
-    static function currentRoute(conn: Conn): Option<String>;
-    
-    /**
-     * Check if current route matches pattern
-     */
-    static function routeMatches(conn: Conn, pattern: String): Bool;
+	/**
+	 * Generate a path for a route with parameters
+	 */
+	static function path<T>(conn:Conn, route:RouteHelper, params:T):String;
+
+	/**
+	 * Generate a URL for a route with parameters
+	 */
+	static function url<T>(conn:Conn, route:RouteHelper, params:T):String;
+
+	/**
+	 * Get current path from connection
+	 */
+	static function currentPath(conn:Conn):String;
+
+	/**
+	 * Get current URL from connection
+	 */
+	static function currentUrl(conn:Conn):String;
+
+	/**
+	 * Get current route from connection
+	 */
+	static function currentRoute(conn:Conn):Option<String>;
+
+	/**
+	 * Check if current route matches pattern
+	 */
+	static function routeMatches(conn:Conn, pattern:String):Bool;
 }
 
 /**
@@ -547,19 +520,19 @@ extern class Router {
  * @see LiveSocket For the type-safe wrapper with convenient methods
  * @see https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.Socket.html
  */
-	@:native("Phoenix.LiveView.Socket")
-	extern class Socket<T> {
-	    var assigns: T; // Type-safe assigns with application-specific structure
-	    var changed: Map<String, Bool>;
-	    var endpoint: String;
-	    var id: String;
-	    var parent_pid: ProcessId;
-	    var root_pid: ProcessId;
-    var router: String;
-    var transport_pid: ProcessId;
-    var view: String;
-    var fingerprints: Map<String, String>;
-    var _private: Map<String, Term>;
+@:native("Phoenix.LiveView.Socket")
+extern class Socket<T> {
+	var assigns:T; // Type-safe assigns with application-specific structure
+	var changed:Map<String, Bool>;
+	var endpoint:String;
+	var id:String;
+	var parent_pid:ProcessId;
+	var root_pid:ProcessId;
+	var router:String;
+	var transport_pid:ProcessId;
+	var view:String;
+	var fingerprints:Map<String, String>;
+	var _private:Map<String, Term>;
 }
 
 /**
@@ -571,69 +544,69 @@ extern class Router {
  */
 @:native("Phoenix.PubSub")
 extern class PubSub {
-    /**
-     * Subscribe to a topic for real-time updates
-     * 
-     * Maps to: Phoenix.PubSub.subscribe(pubsub, topic, opts \\ [])
-     * 
-     * @param pubsub PubSub server name (atom like TodoApp.PubSub)
-     * @param topic Topic string to subscribe to
-     * @return :ok on success, {:error, reason} on failure
-     */
-    static function subscribe(pubsub: Term, topic: String): Term;
-    
-    /**
-     * Subscribe to a topic with options
-     * 
-     * @param pubsub PubSub server name (atom like TodoApp.PubSub) 
-     * @param topic Topic string to subscribe to
-     * @param options Subscription options as keyword list
-     * @return :ok on success, {:error, reason} on failure
-     */
-    static function subscribeWithOptions(pubsub: PubSubServer, topic: String, options: PubSubOptions): Result<Void, String>;
-    
-    /**
-     * Broadcast a typed message to all subscribers  
-     * @param pubsub PubSub server instance (typically AppName.PubSub)
-     * @param topic Topic string to broadcast on
-     * @param message Message payload to broadcast
-     */
-    static function broadcast<T>(pubsub: Term, topic: String, message: T): Term;
-    
-    /**
-     * Broadcast with specific PubSub server
-     */
-    static function broadcastTo<T>(pubsub: PubSubServer, topic: String, message: T): Result<Void, String>;
-    
-    /**
-     * Broadcast from a specific process (excludes sender)
-     */
-    static function broadcastFrom<T>(from: ProcessId, topic: String, message: T): Result<Void, String>;
-    
-    /**
-     * Unsubscribe from a topic
-     */
-    static function unsubscribe(topic: String): Result<Void, String>;
-    
-    /**
-     * Unsubscribe with specific PubSub server
-     */
-    static function unsubscribeFrom(pubsub: PubSubServer, topic: String): Result<Void, String>;
-    
-    /**
-     * Get subscribers for a topic
-     */
-    static function subscribers(topic: String): Array<ProcessId>;
-    
-    /**
-     * Local broadcast (single node only)
-     */
-    static function localBroadcast<T>(topic: String, message: T): Result<Void, String>;
-    
-    /**
-     * Get subscription count for a topic
-     */
-    static function subscriptionCount(topic: String): Int;
+	/**
+	 * Subscribe to a topic for real-time updates
+	 * 
+	 * Maps to: Phoenix.PubSub.subscribe(pubsub, topic, opts \\ [])
+	 * 
+	 * @param pubsub PubSub server name (atom like TodoApp.PubSub)
+	 * @param topic Topic string to subscribe to
+	 * @return :ok on success, {:error, reason} on failure
+	 */
+	static function subscribe(pubsub:Term, topic:String):Term;
+
+	/**
+	 * Subscribe to a topic with options
+	 * 
+	 * @param pubsub PubSub server name (atom like TodoApp.PubSub) 
+	 * @param topic Topic string to subscribe to
+	 * @param options Subscription options as keyword list
+	 * @return :ok on success, {:error, reason} on failure
+	 */
+	static function subscribeWithOptions(pubsub:PubSubServer, topic:String, options:PubSubOptions):Result<Void, String>;
+
+	/**
+	 * Broadcast a typed message to all subscribers  
+	 * @param pubsub PubSub server instance (typically AppName.PubSub)
+	 * @param topic Topic string to broadcast on
+	 * @param message Message payload to broadcast
+	 */
+	static function broadcast<T>(pubsub:Term, topic:String, message:T):Term;
+
+	/**
+	 * Broadcast with specific PubSub server
+	 */
+	static function broadcastTo<T>(pubsub:PubSubServer, topic:String, message:T):Result<Void, String>;
+
+	/**
+	 * Broadcast from a specific process (excludes sender)
+	 */
+	static function broadcastFrom<T>(from:ProcessId, topic:String, message:T):Result<Void, String>;
+
+	/**
+	 * Unsubscribe from a topic
+	 */
+	static function unsubscribe(topic:String):Result<Void, String>;
+
+	/**
+	 * Unsubscribe with specific PubSub server
+	 */
+	static function unsubscribeFrom(pubsub:PubSubServer, topic:String):Result<Void, String>;
+
+	/**
+	 * Get subscribers for a topic
+	 */
+	static function subscribers(topic:String):Array<ProcessId>;
+
+	/**
+	 * Local broadcast (single node only)
+	 */
+	static function localBroadcast<T>(topic:String, message:T):Result<Void, String>;
+
+	/**
+	 * Get subscription count for a topic
+	 */
+	static function subscriptionCount(topic:String):Int;
 }
 
 // ============================================================================
@@ -644,61 +617,61 @@ extern class PubSub {
  * Plug.Conn structure for HTTP requests
  */
 typedef Conn = {
-    var method: HttpMethod;
-    var path_info: Array<String>;
-    var query_string: String;
-    var req_headers: Array<Header>;
-    var resp_headers: Array<Header>;
-    var status: Null<HttpStatus>;
-    var state: ConnState;
-    var params: Map<String, String>;
-    var assigns: Map<String, Term>;
-    var body_params: Map<String, Term>;
-    var query_params: Map<String, String>;
-    var path_params: Map<String, String>;
-    var cookies: Map<String, String>;
-    var halted: Bool;
-    var scheme: String;
-    var host: String;
-    var port: Int;
-    var script_name: Array<String>;
-    var request_path: String;
-    var remote_ip: IpAddress;
+	var method:HttpMethod;
+	var path_info:Array<String>;
+	var query_string:String;
+	var req_headers:Array<Header>;
+	var resp_headers:Array<Header>;
+	var status:Null<HttpStatus>;
+	var state:ConnState;
+	var params:Map<String, String>;
+	var assigns:Map<String, Term>;
+	var body_params:Map<String, Term>;
+	var query_params:Map<String, String>;
+	var path_params:Map<String, String>;
+	var cookies:Map<String, String>;
+	var halted:Bool;
+	var scheme:String;
+	var host:String;
+	var port:Int;
+	var script_name:Array<String>;
+	var request_path:String;
+	var remote_ip:IpAddress;
 }
 
 /**
  * HTTP methods enum
  */
 enum HttpMethod {
-    GET;
-    POST;
-    PUT;
-    PATCH;
-    DELETE;
-    HEAD;
-    OPTIONS;
+	GET;
+	POST;
+	PUT;
+	PATCH;
+	DELETE;
+	HEAD;
+	OPTIONS;
 }
 
 /**
  * HTTP status codes with semantic meaning
  */
 enum HttpStatus {
-    Ok; // 200
-    Created; // 201
-    NoContent; // 204
-    MovedPermanently; // 301
-    Found; // 302
-    NotModified; // 304
-    BadRequest; // 400
-    Unauthorized; // 401
-    Forbidden; // 403
-    NotFound; // 404
-    MethodNotAllowed; // 405
-    UnprocessableEntity; // 422
-    InternalServerError; // 500
-    BadGateway; // 502
-    ServiceUnavailable; // 503
-    Custom(code: Int);
+	Ok; // 200
+	Created; // 201
+	NoContent; // 204
+	MovedPermanently; // 301
+	Found; // 302
+	NotModified; // 304
+	BadRequest; // 400
+	Unauthorized; // 401
+	Forbidden; // 403
+	NotFound; // 404
+	MethodNotAllowed; // 405
+	UnprocessableEntity; // 422
+	InternalServerError; // 500
+	BadGateway; // 502
+	ServiceUnavailable; // 503
+	Custom(code:Int);
 }
 
 // Flash types are defined in phoenix.types.Flash.FlashType
@@ -707,101 +680,101 @@ enum HttpStatus {
  * Connection state
  */
 enum ConnState {
-    Unset;
-    Set;
-    Sent;
-    Chunked;
-    FileChunked;
+	Unset;
+	Set;
+	Sent;
+	Chunked;
+	FileChunked;
 }
 
 /**
  * Form input options
  */
 typedef InputOptions = {
-    var ?className: String;
-    var ?id: String;
-    var ?placeholder: String;
-    var ?required: Bool;
-    var ?disabled: Bool;
-    var ?readonly: Bool;
-    var ?maxlength: Int;
-    var ?minlength: Int;
-    var ?pattern: String;
-    var ?autocomplete: String;
-    var ?autofocus: Bool;
-    var ?value: String;
-    var ?name: String;
+	var ?className:String;
+	var ?id:String;
+	var ?placeholder:String;
+	var ?required:Bool;
+	var ?disabled:Bool;
+	var ?readonly:Bool;
+	var ?maxlength:Int;
+	var ?minlength:Int;
+	var ?pattern:String;
+	var ?autocomplete:String;
+	var ?autofocus:Bool;
+	var ?value:String;
+	var ?name:String;
 }
 
 /**
  * Textarea-specific options
  */
 typedef TextareaOptions = InputOptions & {
-    var ?rows: Int;
-    var ?cols: Int;
-    var ?wrap: String;
+	var ?rows:Int;
+	var ?cols:Int;
+	var ?wrap:String;
 }
 
 /**
  * Checkbox options
  */
 typedef CheckboxOptions = InputOptions & {
-    var ?checked: Bool;
-    var ?checked_value: String;
-    var ?unchecked_value: String;
-    var ?hidden_input: Bool;
+	var ?checked:Bool;
+	var ?checked_value:String;
+	var ?unchecked_value:String;
+	var ?hidden_input:Bool;
 }
 
 /**
  * Select option definition
  */
 typedef SelectOption = {
-    var label: String;
-    var value: String;
-    var ?selected: Bool;
-    var ?disabled: Bool;
+	var label:String;
+	var value:String;
+	var ?selected:Bool;
+	var ?disabled:Bool;
 }
 
 /**
  * Label options
  */
 typedef LabelOptions = {
-    var ?className: String;
-    var ?forAttr: String;
-    var ?text: String;
+	var ?className:String;
+	var ?forAttr:String;
+	var ?text:String;
 }
 
 /**
  * Submit button options
  */
 typedef SubmitOptions = {
-    var ?className: String;
-    var ?id: String;
-    var ?disabled: Bool;
-    var ?form: String;
-    var ?formaction: String;
-    var ?formmethod: String;
+	var ?className:String;
+	var ?id:String;
+	var ?disabled:Bool;
+	var ?form:String;
+	var ?formaction:String;
+	var ?formmethod:String;
 }
 
 /**
  * Link options
  */
 typedef LinkOptions = {
-    var to: String;
-    var ?className: String;
-    var ?id: String;
-    var ?method: HttpMethod;
-    var ?data: Map<String, String>;
-    var ?confirm: String;
-    var ?target: String;
+	var to:String;
+	var ?className:String;
+	var ?id:String;
+	var ?method:HttpMethod;
+	var ?data:Map<String, String>;
+	var ?confirm:String;
+	var ?target:String;
 }
 
 /**
  * Route helper identifier
  */
 enum RouteHelper {
-    Named(name: String);
-    Path(path: String);
+	Named(name:String);
+	Path(path:String);
 }
 
 /**
@@ -813,9 +786,9 @@ typedef PubSubServer = String;
  * PubSub subscription options
  */
 typedef PubSubOptions = {
-    var ?fastlane: Map<String, Term>;
-    var ?link: Bool;
-    var ?metadata: Map<String, Term>;
+	var ?fastlane:Map<String, Term>;
+	var ?link:Bool;
+	var ?metadata:Map<String, Term>;
 }
 
 /**
@@ -832,8 +805,8 @@ typedef IpAddress = String;
  * HTTP Header
  */
 typedef Header = {
-    var name: String;
-    var value: String;
+	var name:String;
+	var value:String;
 }
 
 /**
@@ -845,10 +818,10 @@ abstract SafeHTML(String) from String to String {}
  * Form options for Phoenix HTML forms
  */
 typedef FormOptions = {
-    var ?method: String;
-    var ?multipart: Bool;
-    var ?csrf_token: String;
-    var ?as: String;
+	var ?method:String;
+	var ?multipart:Bool;
+	var ?csrf_token:String;
+	var ?as:String;
 }
 
 /**
@@ -858,44 +831,44 @@ typedef FormOptions = {
  * the form structure doesn't need to know about the changeset's param type.
  */
 typedef Form<T> = {
-    #if (elixir || reflaxe_runtime)
-    var source: ecto.Changeset<T, {}>;
-    #else
-    var source: Term;
-    #end
-    var impl: String;
-    var id: String;
-    var name: String;
-    var data: T;
-    var params: Map<String, String>; // Form parameters as string map
-    var hidden: Array<FormField>;
-    var options: FormOptions;
-    var ?action: Term;
-    var ?errors: Array<Term>;
-    var ?index: Null<Int>;
+	#if (elixir || reflaxe_runtime)
+	var source:ecto.Changeset<T, {}>;
+	#else
+	var source:Term;
+	#end
+	var impl:String;
+	var id:String;
+	var name:String;
+	var data:T;
+	var params:Map<String, String>; // Form parameters as string map
+	var hidden:Array<FormField>;
+	var options:FormOptions;
+	var ?action:Term;
+	var ?errors:Array<Term>;
+	var ?index:Null<Int>;
 }
 
 /**
  * Form field value types for type-safe form handling
  */
 enum FormFieldValue {
-    StringValue(s: String);
-    IntValue(i: Int);
-    FloatValue(f: Float);
-    BoolValue(b: Bool);
-    ArrayValue(values: Array<FormFieldValue>);
+	StringValue(s:String);
+	IntValue(i:Int);
+	FloatValue(f:Float);
+	BoolValue(b:Bool);
+	ArrayValue(values:Array<FormFieldValue>);
 }
 
 /**
  * Form field metadata for HEEx templates
  */
 typedef FormField = {
-    var id: String;
-    var name: String;
-    var value: FormFieldValue; // Type-safe form field values
-    var errors: Array<String>;
-    var valid: Bool;
-    var data: FormFieldValue; // Type-safe field data
+	var id:String;
+	var name:String;
+	var value:FormFieldValue; // Type-safe form field values
+	var errors:Array<String>;
+	var valid:Bool;
+	var data:FormFieldValue; // Type-safe field data
 }
 
 // ============================================================================
@@ -933,9 +906,9 @@ typedef FormField = {
  * - **Framework compatibility**: Compiles to standard Phoenix LiveView patterns
  */
 enum MountResult<TAssigns> {
-    Ok(socket: Socket<TAssigns>);
-    OkWithTemporaryAssigns(socket: Socket<TAssigns>, temporary_assigns: Array<String>);
-    Error(reason: String);
+	Ok(socket:Socket<TAssigns>);
+	OkWithTemporaryAssigns(socket:Socket<TAssigns>, temporary_assigns:Array<String>);
+	Error(reason:String);
 }
 
 /**
@@ -972,9 +945,9 @@ enum MountResult<TAssigns> {
  * - **Compile-time validation**: Invalid socket operations caught early
  */
 enum HandleEventResult<TAssigns> {
-    NoReply(socket: Socket<TAssigns>);
-    Reply(reply: String, socket: Socket<TAssigns>); // Phoenix expects string replies
-    Error(reason: String, socket: Socket<TAssigns>);
+	NoReply(socket:Socket<TAssigns>);
+	Reply(reply:String, socket:Socket<TAssigns>); // Phoenix expects string replies
+	Error(reason:String, socket:Socket<TAssigns>);
 }
 
 /**
@@ -1013,8 +986,8 @@ enum HandleEventResult<TAssigns> {
  * - **Real-time validation**: PubSub message parsing errors caught at compile time
  */
 enum HandleInfoResult<TAssigns> {
-    NoReply(socket: Socket<TAssigns>);
-    Error(reason: String, socket: Socket<TAssigns>);
+	NoReply(socket:Socket<TAssigns>);
+	Error(reason:String, socket:Socket<TAssigns>);
 }
 
 // ============================================================================
@@ -1044,31 +1017,30 @@ typedef EventParams = Term;
  * PubSub message type for real-time communication
  */
 typedef PubSubMessage = {
-    var type: String;
-    var ?data: String; // JSON string payload for type-safe parsing
-    var ?metadata: Map<String, String>;
+	var type:String;
+	var ?data:String; // JSON string payload for type-safe parsing
+	var ?metadata:Map<String, String>;
 }
 
 /**
  * Redirect options for navigation
  */
 typedef RedirectOptions = {
-    var ?to: String;
-    var ?external: String;
+	var ?to:String;
+	var ?external:String;
 }
 
 /**
  * Patch options for live navigation  
  */
 typedef PatchOptions = {
-    var to: String;
-    var ?replace: Bool;
+	var to:String;
+	var ?replace:Bool;
 }
 
 // ============================================================================
 // Phoenix Presence for Real-Time User Tracking
 // ============================================================================
-
 /**
  * Phoenix.Presence for real-time user tracking and awareness
  * 
@@ -1077,5 +1049,4 @@ typedef PatchOptions = {
  */
 // Presence functionality has been moved to the dedicated phoenix/Presence.hx module
 // Import phoenix.Presence for Phoenix.Presence functionality
-
 // Prefer generics/enums/specific types over raw terms.

@@ -10,14 +10,14 @@
 import elixir.Enum;
 
 class Main {
-    static function main() {
-        var tags = ["a", "b", "c"];
-        var out = Enum.reduce(tags, [], function(tag: String, acc: Array<String>) {
-            var head = tags[0];
-            // keep accumulator unchanged in this simple case
-            return acc;
-        });
+	static function main() {
+		var tags = ["a", "b", "c"];
+		var out = Enum.reduce(tags, [], function(tag:String, acc:Array<String>) {
+			var head = tags[0];
+			// keep accumulator unchanged in this simple case
+			return acc;
+		});
 
-        trace(out.length);
-    }
+		trace(out.length);
+	}
 }

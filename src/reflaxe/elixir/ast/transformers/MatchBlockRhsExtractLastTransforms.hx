@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
@@ -39,109 +38,112 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   slug = StringTools.trim(s)
  */
 class MatchBlockRhsExtractLastTransforms {
-    public static function pass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EBlock(stmts):
-                    makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);
-                case EDo(doStatements):
-                    makeASTWithMeta(EDo(rewrite(doStatements)), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        });
-    }
+	public static function pass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EBlock(stmts):
+					makeASTWithMeta(EBlock(rewrite(stmts)), n.metadata, n.pos);
+				case EDo(doStatements):
+					makeASTWithMeta(EDo(rewrite(doStatements)), n.metadata, n.pos);
+				default:
+					n;
+			}
+		});
+	}
 
-    private static function rewrite(stmts: Array<ElixirAST>): Array<ElixirAST> {
-        if (stmts == null || stmts.length == 0) return stmts;
-        var out: Array<ElixirAST> = [];
-        for (s in stmts) {
-            var expanded = expandStatement(s);
-            if (expanded != null) {
-                for (e in expanded) out.push(e);
-            } else {
-                out.push(s);
-            }
-        }
-        return out;
-    }
+	private static function rewrite(stmts:Array<ElixirAST>):Array<ElixirAST> {
+		if (stmts == null || stmts.length == 0)
+			return stmts;
+		var out:Array<ElixirAST> = [];
+		for (s in stmts) {
+			var expanded = expandStatement(s);
+			if (expanded != null) {
+				for (e in expanded)
+					out.push(e);
+			} else {
+				out.push(s);
+			}
+		}
+		return out;
+	}
 
-    private static function expandStatement(stmt: ElixirAST): Null<Array<ElixirAST>> {
-        if (stmt == null || stmt.def == null) return null;
+	private static function expandStatement(stmt:ElixirAST):Null<Array<ElixirAST>> {
+		if (stmt == null || stmt.def == null)
+			return null;
 
-        // Match form: pat = <block>
-        switch (stmt.def) {
-            case EMatch(pat, rhs):
-                var blockStmts = extractBlockStatements(rhs);
-                if (blockStmts == null) return null;
-                return expandMatchLike(stmt, function(lastExpr) {
-                    return makeASTWithMeta(EMatch(pat, lastExpr), stmt.metadata, stmt.pos);
-                }, blockStmts);
+		// Match form: pat = <block>
+		switch (stmt.def) {
+			case EMatch(pat, rhs):
+				var blockStmts = extractBlockStatements(rhs);
+				if (blockStmts == null)
+					return null;
+				return expandMatchLike(stmt, function(lastExpr) {
+					return makeASTWithMeta(EMatch(pat, lastExpr), stmt.metadata, stmt.pos);
+				}, blockStmts);
 
-            // Binary match form: left = <block>
-            case EBinary(Match, left, rhs):
-                var blockStatements = extractBlockStatements(rhs);
-                if (blockStatements == null) return null;
-                return expandMatchLike(stmt, function(lastExpr) {
-                    return makeASTWithMeta(EBinary(Match, left, lastExpr), stmt.metadata, stmt.pos);
-                }, blockStatements);
+			// Binary match form: left = <block>
+			case EBinary(Match, left, rhs):
+				var blockStatements = extractBlockStatements(rhs);
+				if (blockStatements == null)
+					return null;
+				return expandMatchLike(stmt, function(lastExpr) {
+					return makeASTWithMeta(EBinary(Match, left, lastExpr), stmt.metadata, stmt.pos);
+				}, blockStatements);
 
-            default:
-                return null;
-        }
-    }
+			default:
+				return null;
+		}
+	}
 
-    private static function extractBlockStatements(rhs: ElixirAST): Null<Array<ElixirAST>> {
-        if (rhs == null || rhs.def == null) return null;
-        return switch (rhs.def) {
-            case EBlock(inner): inner;
-            case EDo(doStatements): doStatements;
-            case EParen(inner): extractBlockStatements(inner);
-            default: null;
-        }
-    }
+	private static function extractBlockStatements(rhs:ElixirAST):Null<Array<ElixirAST>> {
+		if (rhs == null || rhs.def == null)
+			return null;
+		return switch (rhs.def) {
+			case EBlock(inner): inner;
+			case EDo(doStatements): doStatements;
+			case EParen(inner): extractBlockStatements(inner);
+			default: null;
+		}
+	}
 
-    private static function expandMatchLike(
-        template: ElixirAST,
-        rebuild: ElixirAST -> ElixirAST,
-        innerStatements: Array<ElixirAST>
-    ): Array<ElixirAST> {
-        var result: Array<ElixirAST> = [];
-        if (innerStatements == null || innerStatements.length == 0) {
-            result.push(rebuild(makeAST(ENil)));
-            return result;
-        }
+	private static function expandMatchLike(template:ElixirAST, rebuild:ElixirAST->ElixirAST, innerStatements:Array<ElixirAST>):Array<ElixirAST> {
+		var result:Array<ElixirAST> = [];
+		if (innerStatements == null || innerStatements.length == 0) {
+			result.push(rebuild(makeAST(ENil)));
+			return result;
+		}
 
-        // Choose the last non-empty expression as the value.
-        // Some transformations may leave trailing empty blocks (EBlock([])/EDo([])) or nulls,
-        // which would print as nothing and produce invalid `var =` lines.
-        var lastIndex = innerStatements.length - 1;
-        while (lastIndex >= 0 && isEmptyExpr(innerStatements[lastIndex])) {
-            lastIndex--;
-        }
-        if (lastIndex < 0) {
-            result.push(rebuild(makeAST(ENil)));
-            return result;
-        }
+		// Choose the last non-empty expression as the value.
+		// Some transformations may leave trailing empty blocks (EBlock([])/EDo([])) or nulls,
+		// which would print as nothing and produce invalid `var =` lines.
+		var lastIndex = innerStatements.length - 1;
+		while (lastIndex >= 0 && isEmptyExpr(innerStatements[lastIndex])) {
+			lastIndex--;
+		}
+		if (lastIndex < 0) {
+			result.push(rebuild(makeAST(ENil)));
+			return result;
+		}
 
-        // Prefix statements keep their own metadata; drop trailing empties.
-        for (i in 0...lastIndex) {
-            if (!isEmptyExpr(innerStatements[i])) result.push(innerStatements[i]);
-        }
+		// Prefix statements keep their own metadata; drop trailing empties.
+		for (i in 0...lastIndex) {
+			if (!isEmptyExpr(innerStatements[i]))
+				result.push(innerStatements[i]);
+		}
 
-        var lastExpr = innerStatements[lastIndex];
-        result.push(rebuild(lastExpr));
-        return result;
-    }
+		var lastExpr = innerStatements[lastIndex];
+		result.push(rebuild(lastExpr));
+		return result;
+	}
 
-    private static function isEmptyExpr(expr: Null<ElixirAST>): Bool {
-        if (expr == null || expr.def == null) return true;
-        return switch (expr.def) {
-            case EBlock(stmts): stmts == null || stmts.length == 0;
-            case EDo(doStatements): doStatements == null || doStatements.length == 0;
-            default: false;
-        }
-    }
+	private static function isEmptyExpr(expr:Null<ElixirAST>):Bool {
+		if (expr == null || expr.def == null)
+			return true;
+		return switch (expr.def) {
+			case EBlock(stmts): stmts == null || stmts.length == 0;
+			case EDo(doStatements): doStatements == null || doStatements.length == 0;
+			default: false;
+		}
+	}
 }
-
 #end

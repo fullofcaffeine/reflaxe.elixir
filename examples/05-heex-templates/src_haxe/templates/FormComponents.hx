@@ -6,14 +6,13 @@ import HXX.*;
  * Phoenix form component examples with HEEx templates
  * Demonstrates form helpers and validation integration
  */
-@:template("form_components.html.heex") 
+@:template("form_components.html.heex")
 class FormComponents {
-    
-    /**
-     * User registration form
-     */
-    public static function userForm(assigns: FormAssigns): String {
-        return hxx('
+	/**
+	 * User registration form
+	 */
+	public static function userForm(assigns:FormAssigns):String {
+		return hxx('
         <div class="form-container">
             <h2>User Registration</h2>
             
@@ -71,13 +70,13 @@ class FormComponents {
             </.form>
         </div>
         ');
-    }
-    
-    /**
-     * Search form component
-     */
-    public static function searchForm(assigns: SearchAssigns): String {
-        return hxx('
+	}
+
+	/**
+	 * Search form component
+	 */
+	public static function searchForm(assigns:SearchAssigns):String {
+		return hxx('
         <form phx-change="search" phx-submit="search" class="search-form">
             <div class="search-group">
                 <.input 
@@ -102,15 +101,16 @@ class FormComponents {
             ${renderFilters(assigns.activeFilters)}
         </form>
         ');
-    }
-    
-    /**
-     * Active filters display
-     */
-    static function renderFilters(filters: Array<String>): String {
-        if (filters.length == 0) return "";
-        
-        return hxx('
+	}
+
+	/**
+	 * Active filters display
+	 */
+	static function renderFilters(filters:Array<String>):String {
+		if (filters.length == 0)
+			return "";
+
+		return hxx('
         <div class="active-filters">
             <span class="label">Active filters:</span>
             ${filters.map(renderFilterTag).join("")}
@@ -119,10 +119,10 @@ class FormComponents {
             </.button>
         </div>
         ');
-    }
-    
-    static function renderFilterTag(filter: String): String {
-        return hxx('
+	}
+
+	static function renderFilterTag(filter:String):String {
+		return hxx('
         <span class="filter-tag">
             ${filter}
             <button type="button" phx-click="remove_filter" phx-value-filter="${filter}">
@@ -130,16 +130,16 @@ class FormComponents {
             </button>
         </span>
         ');
-    }
+	}
 
-    /**
-     * Minimal local component stubs so this example compiles standalone.
-     *
-     * In real Phoenix apps these are typically provided by your `CoreComponents` module.
-     */
-    @:component
-    public static function button(assigns: ButtonAssigns): String {
-        return hxx('
+	/**
+	 * Minimal local component stubs so this example compiles standalone.
+	 *
+	 * In real Phoenix apps these are typically provided by your `CoreComponents` module.
+	 */
+	@:component
+	public static function button(assigns:ButtonAssigns):String {
+		return hxx('
         <button
             type=${assigns.type != null ? assigns.type : "button"}
             disabled=${assigns.disabled}
@@ -147,11 +147,11 @@ class FormComponents {
             ${assigns.inner_content}
         </button>
         ');
-    }
+	}
 
-    @:component
-    public static function input(assigns: InputAssigns): String {
-        return hxx('
+	@:component
+	public static function input(assigns:InputAssigns):String {
+		return hxx('
         <input
             name=${assigns.name}
             type=${assigns.type != null ? assigns.type : "text"}
@@ -163,79 +163,79 @@ class FormComponents {
             max=${assigns.max}
         />
         ');
-    }
+	}
 
-    @:component
-    public static function label(assigns: LabelAssigns): String {
-        return hxx('<label>${assigns.inner_content}</label>');
-    }
+	@:component
+	public static function label(assigns:LabelAssigns):String {
+		return hxx('<label>${assigns.inner_content}</label>');
+	}
 
-    @:component
-    public static function error(assigns: ErrorAssigns): String {
-        return hxx('<span class="error"></span>');
-    }
+	@:component
+	public static function error(assigns:ErrorAssigns):String {
+		return hxx('<span class="error"></span>');
+	}
 
-    @:component
-    public static function select(assigns: SelectAssigns): String {
-        return hxx('
+	@:component
+	public static function select(assigns:SelectAssigns):String {
+		return hxx('
         <select name=${assigns.name}>
             ${assigns.inner_content}
         </select>
         ');
-    }
+	}
 
-    @:component
-    public static function icon(assigns: IconAssigns): String {
-        return hxx('<span class="icon">${assigns.name}</span>');
-    }
-    
-    // Main function for compilation
-    public static function main(): Void {
-        trace("FormComponents template compiled successfully!");
-    }
+	@:component
+	public static function icon(assigns:IconAssigns):String {
+		return hxx('<span class="icon">${assigns.name}</span>');
+	}
+
+	// Main function for compilation
+	public static function main():Void {
+		trace("FormComponents template compiled successfully!");
+	}
 }
 
 // Type definitions
 typedef FormAssigns = {
-    changeset: ecto.Changeset<elixir.types.Term, elixir.types.Term>
+	changeset:ecto.Changeset<elixir.types.Term, elixir.types.Term>
 }
 
 typedef SearchAssigns = {
-    query: String,
-    filter: String,
-    activeFilters: Array<String>
+	query:String,
+	filter:String,
+	activeFilters:Array<String>
 }
 
 typedef ButtonAssigns = {
-    ?type: String,
-    ?disabled: Bool,
-    inner_content: String
+	?type:String,
+	?disabled:Bool,
+	inner_content:String
 }
 
 typedef InputAssigns = {
-    ?name: String,
-    ?type: String,
-    ?value: elixir.types.Term,
-    ?placeholder: String,
-    ?autocomplete: String,
-    ?required: Bool,
-    ?min: String,
-    ?max: String
+	?name:String,
+	?type:String,
+	?value:elixir.types.Term,
+	?placeholder:String,
+	?autocomplete:String,
+	?required:Bool,
+	?min:String,
+	?max:String
 }
 
 typedef LabelAssigns = {
-    inner_content: String
+	inner_content:String
 }
 
 typedef ErrorAssigns = {
-    ?field: elixir.types.Term
+	?field:elixir.types.Term
 }
 
 typedef SelectAssigns = {
-    ?name: String,
-    inner_content: String
+	?name:String,
+	inner_content:String
 }
 
 typedef IconAssigns = {
-    name: String
+	name:String
 }

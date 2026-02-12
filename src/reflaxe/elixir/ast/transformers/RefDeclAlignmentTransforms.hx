@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 /**
  * RefDeclAlignmentTransforms
  *
@@ -51,230 +50,290 @@ import reflaxe.elixir.ast.analyzers.VariableUsageCollector;
  *        choose plain `name` as canonical.
  *   4) Rewrite both declarations (patterns and LHS) and references (EVar) to
  *      the canonical spelling.
-    */
+ */
 class RefDeclAlignmentTransforms {
-    public static function alignLocalsPass(ast: ElixirAST): ElixirAST {
-        #if hxx_hygiene_trace
-        var alignmentStart = haxe.Timer.stamp();
-        #end
-        var result = ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
-            return switch (node.def) {
-                case EDef(name, params, guards, body):
-                    var newBody = align(body, params, name);
-                    makeASTWithMeta(EDef(name, params, guards, newBody), node.metadata, node.pos);
-                case EDefp(name, params, guards, body):
-                    var newBody = align(body, params, name);
-                    makeASTWithMeta(EDefp(name, params, guards, newBody), node.metadata, node.pos);
-                default:
-                    node;
-            }
-        });
-        #if hxx_hygiene_trace
-        var elapsedMs = Std.int((haxe.Timer.stamp() - alignmentStart) * 1000.0);
-        #end
-        return result;
-    }
+	public static function alignLocalsPass(ast:ElixirAST):ElixirAST {
+		#if hxx_hygiene_trace
+		var alignmentStart = haxe.Timer.stamp();
+		#end
+		var result = ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
+			return switch (node.def) {
+				case EDef(name, params, guards, body):
+					var newBody = align(body, params, name);
+					makeASTWithMeta(EDef(name, params, guards, newBody), node.metadata, node.pos);
+				case EDefp(name, params, guards, body):
+					var newBody = align(body, params, name);
+					makeASTWithMeta(EDefp(name, params, guards, newBody), node.metadata, node.pos);
+				default:
+					node;
+			}
+		});
+		#if hxx_hygiene_trace
+		var elapsedMs = Std.int((haxe.Timer.stamp() - alignmentStart) * 1000.0);
+		#end
+		return result;
+	}
 
-    static function align(body: ElixirAST, ?params:Array<EPattern>, ?functionName:String): ElixirAST {
-        var declared = new Map<String, Bool>();
-        var referenced = new Map<String, Bool>();
+	static function align(body:ElixirAST, ?params:Array<EPattern>, ?functionName:String):ElixirAST {
+		var declared = new Map<String, Bool>();
+		var referenced = new Map<String, Bool>();
 
-        #if hxx_hygiene_trace
-        var alignStart = haxe.Timer.stamp();
-        #end
+		#if hxx_hygiene_trace
+		var alignStart = haxe.Timer.stamp();
+		#end
 
-        // Collect declared from function parameters as well
-        if (params != null) {
-            for (p in params) collectPatternDecls(p, declared);
-        }
+		// Collect declared from function parameters as well
+		if (params != null) {
+			for (p in params)
+				collectPatternDecls(p, declared);
+		}
 
-        // Collect declarations (including EFn clause args)
-        ASTUtils.walk(body, function(n: ElixirAST) {
-            if (n == null || n.def == null) return;
-            switch (n.def) {
-                case EMatch(p, _): collectPatternDecls(p, declared);
-                case EBinary(Match, left, _): collectLhsDecls(left, declared);
-                case EFn(clauses):
-                    for (cl in clauses) for (a in cl.args) collectPatternDecls(a, declared);
-                default:
-            }
-        });
+		// Collect declarations (including EFn clause args)
+		ASTUtils.walk(body, function(n:ElixirAST) {
+			if (n == null || n.def == null)
+				return;
+			switch (n.def) {
+				case EMatch(p, _):
+					collectPatternDecls(p, declared);
+				case EBinary(Match, left, _):
+					collectLhsDecls(left, declared);
+				case EFn(clauses):
+					for (cl in clauses)
+						for (a in cl.args)
+							collectPatternDecls(a, declared);
+				default:
+			}
+		});
 
-        // Collect references (closure-aware)
-        referenced = VariableUsageCollector.referencedInFunctionScope(body);
-        // Augment references with identifiers found in string/ERaw interpolations
-        function allowIdent(id:String):Bool {
-            if (id == null || id.length == 0) return false;
-            // Exclude atoms, module names are not present here; keep simple lowercase names
-            var c = id.charAt(0);
-            return c.toLowerCase() == c && c != '_';
-        }
-        function collectTokensFromString(src:String, out:Map<String,Bool>):Void {
-            if (src == null || src.indexOf("#{") == -1) return;
-            var re = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
-            var pos = 0;
-            while (re.matchSub(src, pos)) {
-                var id = re.matched(0);
-                if (allowIdent(id)) out.set(id, true);
-                pos = re.matchedPos().pos + re.matchedPos().len;
-            }
-        }
-        function addStringRefs(n:ElixirAST):Void {
-            if (n == null || n.def == null) return;
-            switch (n.def) {
-                case EString(s):
-                    if (s != null) collectTokensFromString(s, referenced);
-                case ERaw(code):
-                    if (code != null) collectTokensFromString(code, referenced);
-                case EBlock(ss): for (e in ss) addStringRefs(e);
-                case EDo(ss2): for (e in ss2) addStringRefs(e);
-                case EIf(c,t,e): addStringRefs(c); addStringRefs(t); if (e != null) addStringRefs(e);
-                case ECase(expr, cs): addStringRefs(expr); for (c in cs) addStringRefs(c.body);
-                case ECall(tgt,_,args): if (tgt != null) addStringRefs(tgt); for (a in args) addStringRefs(a);
-                case ERemoteCall(tgt2,_,args2): addStringRefs(tgt2); for (a in args2) addStringRefs(a);
-                default:
-            }
-        }
-        addStringRefs(body);
+		// Collect references (closure-aware)
+		referenced = VariableUsageCollector.referencedInFunctionScope(body);
+		// Augment references with identifiers found in string/ERaw interpolations
+		function allowIdent(id:String):Bool {
+			if (id == null || id.length == 0)
+				return false;
+			// Exclude atoms, module names are not present here; keep simple lowercase names
+			var c = id.charAt(0);
+			return c.toLowerCase() == c && c != '_';
+		}
+		function collectTokensFromString(src:String, out:Map<String, Bool>):Void {
+			if (src == null || src.indexOf("#{") == -1)
+				return;
+			var re = new EReg("[A-Za-z_][A-Za-z0-9_]*", "g");
+			var pos = 0;
+			while (re.matchSub(src, pos)) {
+				var id = re.matched(0);
+				if (allowIdent(id))
+					out.set(id, true);
+				pos = re.matchedPos().pos + re.matchedPos().len;
+			}
+		}
+		function addStringRefs(n:ElixirAST):Void {
+			if (n == null || n.def == null)
+				return;
+			switch (n.def) {
+				case EString(s):
+					if (s != null)
+						collectTokensFromString(s, referenced);
+				case ERaw(code):
+					if (code != null)
+						collectTokensFromString(code, referenced);
+				case EBlock(ss):
+					for (e in ss)
+						addStringRefs(e);
+				case EDo(ss2):
+					for (e in ss2)
+						addStringRefs(e);
+				case EIf(c, t, e):
+					addStringRefs(c);
+					addStringRefs(t);
+					if (e != null)
+						addStringRefs(e);
+				case ECase(expr, cs):
+					addStringRefs(expr);
+					for (c in cs)
+						addStringRefs(c.body);
+				case ECall(tgt, _, args):
+					if (tgt != null)
+						addStringRefs(tgt);
+					for (a in args)
+						addStringRefs(a);
+				case ERemoteCall(tgt2, _, args2):
+					addStringRefs(tgt2);
+					for (a in args2)
+						addStringRefs(a);
+				default:
+			}
+		}
+		addStringRefs(body);
 
-        // Build groups by base name: base -> [declared variants]
-        var groups = new Map<String, Array<String>>();
-        for (k in declared.keys()) {
-            var info = splitBase(k);
-            var arr = groups.exists(info.base) ? groups.get(info.base) : [];
-            arr.push(k);
-            groups.set(info.base, arr);
-        }
+		// Build groups by base name: base -> [declared variants]
+		var groups = new Map<String, Array<String>>();
+		for (k in declared.keys()) {
+			var info = splitBase(k);
+			var arr = groups.exists(info.base) ? groups.get(info.base) : [];
+			arr.push(k);
+			groups.set(info.base, arr);
+		}
 
-        // Determine canonical name per base
-        var canonical = new Map<String, String>();
-        for (base in groups.keys()) {
-            var variants = groups.get(base);
-            var hasPlainRef = referenced.exists(base);
-            // Check underscore declaration explicitly
-            var hasUnderscoreDecl = false;
-            for (v in variants) if (v == "_" + base) { hasUnderscoreDecl = true; break; }
-            var numericDecls = variants.filter(v -> isNumericVariantOf(v, base));
-            var pick: String = null;
+		// Determine canonical name per base
+		var canonical = new Map<String, String>();
+		for (base in groups.keys()) {
+			var variants = groups.get(base);
+			var hasPlainRef = referenced.exists(base);
+			// Check underscore declaration explicitly
+			var hasUnderscoreDecl = false;
+			for (v in variants)
+				if (v == "_" + base) {
+					hasUnderscoreDecl = true;
+					break;
+				}
+			var numericDecls = variants.filter(v -> isNumericVariantOf(v, base));
+			var pick:String = null;
 
-            if (hasPlainRef) {
-                pick = base;
-            } else if (numericDecls.length == 1 && referenced.exists(base)) {
-                // Avoid promoting to numeric-suffixed locals (violates naming rules).
-                // Prefer plain base when referenced; fall back to underscore form otherwise.
-                pick = base;
-            } else if (hasUnderscoreDecl && (referenced.exists(base) || referenced.exists("_" + base))) {
-                pick = base;
-            }
+			if (hasPlainRef) {
+				pick = base;
+			} else if (numericDecls.length == 1 && referenced.exists(base)) {
+				// Avoid promoting to numeric-suffixed locals (violates naming rules).
+				// Prefer plain base when referenced; fall back to underscore form otherwise.
+				pick = base;
+			} else if (hasUnderscoreDecl && (referenced.exists(base) || referenced.exists("_" + base))) {
+				pick = base;
+			}
 
-            if (pick != null) canonical.set(base, pick);
-        }
+			if (pick != null)
+				canonical.set(base, pick);
+		}
 
-        if (Lambda.count(canonical) == 0) {
-            #if hxx_hygiene_trace
-            var elapsedNoop = Std.int((haxe.Timer.stamp() - alignStart) * 1000.0);
-            #end
-            return body;
-        }
+		if (Lambda.count(canonical) == 0) {
+			#if hxx_hygiene_trace
+			var elapsedNoop = Std.int((haxe.Timer.stamp() - alignStart) * 1000.0);
+			#end
+			return body;
+		}
 
-        // Apply canonicalization to declarations and references
-        function tx(n: ElixirAST): ElixirAST {
-            if (n == null || n.def == null) return n;
-            return switch (n.def) {
-                case EMatch(p, rhs):
-                    makeASTWithMeta(EMatch(renamePatternToCanonical(p, canonical), rhs), n.metadata, n.pos);
-                case EBinary(Match, left, rhs):
-                    makeASTWithMeta(EBinary(Match, renameLhsToCanonical(left, canonical), rhs), n.metadata, n.pos);
-                case EVar(v):
-                    var nb = splitBase(v).base;
-                    if (canonical.exists(nb)) {
-                        var target = canonical.get(nb);
-                        if (v != target) makeASTWithMeta(EVar(target), n.metadata, n.pos) else n;
-                    } else n;
-                default:
-                    n;
-            }
-        }
+		// Apply canonicalization to declarations and references
+		function tx(n:ElixirAST):ElixirAST {
+			if (n == null || n.def == null)
+				return n;
+			return switch (n.def) {
+				case EMatch(p, rhs):
+					makeASTWithMeta(EMatch(renamePatternToCanonical(p, canonical), rhs), n.metadata, n.pos);
+				case EBinary(Match, left, rhs):
+					makeASTWithMeta(EBinary(Match, renameLhsToCanonical(left, canonical), rhs), n.metadata, n.pos);
+				case EVar(v):
+					var nb = splitBase(v).base;
+					if (canonical.exists(nb)) {
+						var target = canonical.get(nb);
+						if (v != target)
+							makeASTWithMeta(EVar(target), n.metadata, n.pos)
+						else
+							n;
+					} else n;
+				default:
+					n;
+			}
+		}
 
-        var aligned = ElixirASTTransformer.transformNode(body, tx);
+		var aligned = ElixirASTTransformer.transformNode(body, tx);
 
-        #if hxx_hygiene_trace
-        var elapsedMs = Std.int((haxe.Timer.stamp() - alignStart) * 1000.0);
-        #end
+		#if hxx_hygiene_trace
+		var elapsedMs = Std.int((haxe.Timer.stamp() - alignStart) * 1000.0);
+		#end
 
-        return aligned;
-    }
+		return aligned;
+	}
 
-    static function splitBase(name: String): { base: String, kind: String } {
-        if (name == null || name.length == 0) return { base: name, kind: "plain" };
-        if (name.charAt(0) == "_") return { base: name.substr(1), kind: "underscored" };
-        // numeric suffix detection
-        var i = name.length - 1;
-        while (i >= 0 && name.charCodeAt(i) >= '0'.code && name.charCodeAt(i) <= '9'.code) i--;
-        var suffix = name.substr(i + 1);
-        if (suffix.length > 0) return { base: name.substr(0, i + 1), kind: "numeric" };
-        return { base: name, kind: "plain" };
-    }
+	static function splitBase(name:String):{base:String, kind:String} {
+		if (name == null || name.length == 0)
+			return {base: name, kind: "plain"};
+		if (name.charAt(0) == "_")
+			return {base: name.substr(1), kind: "underscored"};
+		// numeric suffix detection
+		var i = name.length - 1;
+		while (i >= 0 && name.charCodeAt(i) >= '0'.code && name.charCodeAt(i) <= '9'.code)
+			i--;
+		var suffix = name.substr(i + 1);
+		if (suffix.length > 0)
+			return {base: name.substr(0, i + 1), kind: "numeric"};
+		return {base: name, kind: "plain"};
+	}
 
-    static function isNumericVariantOf(name: String, base: String): Bool {
-        if (name == null || base == null) return false;
-        if (!StringTools.startsWith(name, base)) return false;
-        var rest = name.substr(base.length);
-        if (rest.length == 0) return false;
-        for (i in 0...rest.length) {
-            var c = rest.charCodeAt(i);
-            if (c < '0'.code || c > '9'.code) return false;
-        }
-        return true;
-    }
+	static function isNumericVariantOf(name:String, base:String):Bool {
+		if (name == null || base == null)
+			return false;
+		if (!StringTools.startsWith(name, base))
+			return false;
+		var rest = name.substr(base.length);
+		if (rest.length == 0)
+			return false;
+		for (i in 0...rest.length) {
+			var c = rest.charCodeAt(i);
+			if (c < '0'.code || c > '9'.code)
+				return false;
+		}
+		return true;
+	}
 
-    static function collectPatternDecls(p: EPattern, declared: Map<String, Bool>): Void {
-        switch (p) {
-            case PVar(n): declared.set(n, true);
-            case PTuple(es) | PList(es): for (e in es) collectPatternDecls(e, declared);
-            case PCons(h, t): collectPatternDecls(h, declared); collectPatternDecls(t, declared);
-            case PMap(kvs): for (kv in kvs) collectPatternDecls(kv.value, declared);
-            case PStruct(_, fs): for (f in fs) collectPatternDecls(f.value, declared);
-            case PPin(inner): collectPatternDecls(inner, declared);
-            default:
-        }
-    }
+	static function collectPatternDecls(p:EPattern, declared:Map<String, Bool>):Void {
+		switch (p) {
+			case PVar(n):
+				declared.set(n, true);
+			case PTuple(es) | PList(es):
+				for (e in es)
+					collectPatternDecls(e, declared);
+			case PCons(h, t):
+				collectPatternDecls(h, declared);
+				collectPatternDecls(t, declared);
+			case PMap(kvs):
+				for (kv in kvs)
+					collectPatternDecls(kv.value, declared);
+			case PStruct(_, fs):
+				for (f in fs)
+					collectPatternDecls(f.value, declared);
+			case PPin(inner):
+				collectPatternDecls(inner, declared);
+			default:
+		}
+	}
 
-    static function collectLhsDecls(lhs: ElixirAST, declared: Map<String, Bool>): Void {
-        switch (lhs.def) {
-            case EVar(n): declared.set(n, true);
-            case EBinary(Match, l2, r2):
-                collectLhsDecls(l2, declared);
-                collectLhsDecls(r2, declared);
-            default:
-        }
-    }
+	static function collectLhsDecls(lhs:ElixirAST, declared:Map<String, Bool>):Void {
+		switch (lhs.def) {
+			case EVar(n):
+				declared.set(n, true);
+			case EBinary(Match, l2, r2):
+				collectLhsDecls(l2, declared);
+				collectLhsDecls(r2, declared);
+			default:
+		}
+	}
 
-    static function renamePatternToCanonical(p: EPattern, canonical: Map<String, String>): EPattern {
-        return switch (p) {
-            case PVar(n):
-                var nb = splitBase(n).base;
-                if (canonical.exists(nb)) PVar(canonical.get(nb)) else p;
-            case PTuple(es): PTuple([for (e in es) renamePatternToCanonical(e, canonical)]);
-            case PList(es): PList([for (e in es) renamePatternToCanonical(e, canonical)]);
-            case PCons(h, t): PCons(renamePatternToCanonical(h, canonical), renamePatternToCanonical(t, canonical));
-            case PMap(kvs): PMap([for (kv in kvs) { key: kv.key, value: renamePatternToCanonical(kv.value, canonical) }]);
-            case PStruct(nm, fs): PStruct(nm, [for (f in fs) { key: f.key, value: renamePatternToCanonical(f.value, canonical) }]);
-            case PPin(inner): PPin(renamePatternToCanonical(inner, canonical));
-            default: p;
-        }
-    }
+	static function renamePatternToCanonical(p:EPattern, canonical:Map<String, String>):EPattern {
+		return switch (p) {
+			case PVar(n):
+				var nb = splitBase(n).base;
+				if (canonical.exists(nb)) PVar(canonical.get(nb)) else p;
+			case PTuple(es): PTuple([for (e in es) renamePatternToCanonical(e, canonical)]);
+			case PList(es): PList([for (e in es) renamePatternToCanonical(e, canonical)]);
+			case PCons(h, t): PCons(renamePatternToCanonical(h, canonical), renamePatternToCanonical(t, canonical));
+			case PMap(kvs): PMap([
+					for (kv in kvs)
+						{key: kv.key, value: renamePatternToCanonical(kv.value, canonical)}
+				]);
+			case PStruct(nm, fs): PStruct(nm, [for (f in fs) {key: f.key, value: renamePatternToCanonical(f.value, canonical)}]);
+			case PPin(inner): PPin(renamePatternToCanonical(inner, canonical));
+			default: p;
+		}
+	}
 
-    static function renameLhsToCanonical(lhs: ElixirAST, canonical: Map<String, String>): ElixirAST {
-        return switch (lhs.def) {
-            case EVar(v):
-                var nb = splitBase(v).base;
-                if (canonical.exists(nb)) makeASTWithMeta(EVar(canonical.get(nb)), lhs.metadata, lhs.pos) else lhs;
-            case EBinary(Match, l2, r2):
-                makeASTWithMeta(EBinary(Match, renameLhsToCanonical(l2, canonical), renameLhsToCanonical(r2, canonical)), lhs.metadata, lhs.pos);
-            default: lhs;
-        }
-    }
+	static function renameLhsToCanonical(lhs:ElixirAST, canonical:Map<String, String>):ElixirAST {
+		return switch (lhs.def) {
+			case EVar(v):
+				var nb = splitBase(v).base;
+				if (canonical.exists(nb)) makeASTWithMeta(EVar(canonical.get(nb)), lhs.metadata, lhs.pos) else lhs;
+			case EBinary(Match, l2, r2):
+				makeASTWithMeta(EBinary(Match, renameLhsToCanonical(l2, canonical), renameLhsToCanonical(r2, canonical)), lhs.metadata, lhs.pos);
+			default: lhs;
+		}
+	}
 }
-
 #end

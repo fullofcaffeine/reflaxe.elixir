@@ -12,16 +12,15 @@ package haxe.ds;
  */
 @:nativeGen
 extern class ObjectMap<K:{}, V> implements haxe.Constraints.IMap<K, V> {
-    public function new(): Void;
-    public function set(key: K, value: V): Void;
-    public function get(key: K): Null<V>;
-    public function exists(key: K): Bool;
-    public function remove(key: K): Bool;
-    public function keys(): Iterator<K>;
-    public function iterator(): Iterator<V>;
-    public function keyValueIterator(): KeyValueIterator<K, V>;
-    public function copy(): ObjectMap<K, V>;
-    public function toString(): String;
-    public function clear(): Void;
+	public function new():Void;
+	public function set(key:K, value:V):Void;
+	public function get(key:K):Null<V>;
+	public function exists(key:K):Bool;
+	public function remove(key:K):Bool;
+	public function keys():Iterator<K>;
+	public function iterator():Iterator<V>;
+	public function keyValueIterator():KeyValueIterator<K, V>;
+	public function copy():ObjectMap<K, V>;
+	public function toString():String;
+	public function clear():Void;
 }
-

@@ -24,18 +24,18 @@ import elixir.types.Atom;
  * ```
  */
 enum MonitorInfo {
-    /**
-     * Monitoring a process by PID
-     */
-    ProcessMonitor(pid: Pid);
-    
-    /**
-     * Monitoring a port
-     */
-    PortMonitor(port: Term);
-    
-    /**
-     * Monitoring a named process
-     */
-    NamedMonitor(name: Atom);
+	/**
+	 * Monitoring a process by PID
+	 */
+	ProcessMonitor(pid:Pid);
+
+	/**
+	 * Monitoring a port
+	 */
+	PortMonitor(port:Term);
+
+	/**
+	 * Monitoring a named process
+	 */
+	NamedMonitor(name:Atom);
 }

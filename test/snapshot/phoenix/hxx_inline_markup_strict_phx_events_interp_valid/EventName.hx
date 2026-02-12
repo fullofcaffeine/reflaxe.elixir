@@ -2,7 +2,6 @@ package;
 
 @:phxEventNames
 enum abstract EventName(String) from String to String {
-    var Save = "save";
-    var Delete = "delete";
+	var Save = "save";
+	var Delete = "delete";
 }
-

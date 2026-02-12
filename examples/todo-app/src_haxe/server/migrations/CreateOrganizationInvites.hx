@@ -20,21 +20,19 @@ import ecto.Migration.ColumnType;
  */
 @:migration({timestamp: "20260101170000"})
 class CreateOrganizationInvites extends Migration {
-    public function up(): Void {
-        createTable("organization_invites")
-            .addColumn("organization_id", ColumnType.Integer, {nullable: false})
-            .addColumn("email", ColumnType.String(), {nullable: false})
-            .addColumn("role", ColumnType.String(), {nullable: false, defaultValue: "user"})
-            .addColumn("accepted_at", ColumnType.DateTime)
-            .addColumn("accepted_by_user_id", ColumnType.Integer)
-            .addTimestamps()
-            .addIndex(["organization_id"])
-            .addIndex(["email"])
-            .addUniqueConstraint(["organization_id", "email"], "organization_invites_org_email_unique");
-    }
+	public function up():Void {
+		createTable("organization_invites").addColumn("organization_id", ColumnType.Integer, {nullable: false})
+			.addColumn("email", ColumnType.String(), {nullable: false})
+			.addColumn("role", ColumnType.String(), {nullable: false, defaultValue: "user"})
+			.addColumn("accepted_at", ColumnType.DateTime)
+			.addColumn("accepted_by_user_id", ColumnType.Integer)
+			.addTimestamps()
+			.addIndex(["organization_id"])
+			.addIndex(["email"])
+			.addUniqueConstraint(["organization_id", "email"], "organization_invites_org_email_unique");
+	}
 
-    public function down(): Void {
-        dropTable("organization_invites");
-    }
+	public function down():Void {
+		dropTable("organization_invites");
+	}
 }
-

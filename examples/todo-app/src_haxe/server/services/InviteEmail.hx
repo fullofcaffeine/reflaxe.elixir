@@ -7,12 +7,5 @@ package server.services;
  */
 @:native("TodoApp.InviteEmail")
 extern class InviteEmail {
-    public static function deliverInvite(
-        toEmail: String,
-        orgSlug: String,
-        orgName: String,
-        role: String,
-        inviterName: Null<String>
-    ): Bool;
+	public static function deliverInvite(toEmail:String, orgSlug:String, orgName:String, role:String, inviterName:Null<String>):Bool;
 }
-

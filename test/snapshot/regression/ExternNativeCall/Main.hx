@@ -11,13 +11,13 @@ import phoenix.Component;
  */
 @:nullSafety(Off)
 class Main {
-    static function main() {
-        var socket: Dynamic = null;
-        var assigns = {test: "value"};
+	static function main() {
+		var socket:Dynamic = null;
+		var assigns = {test: "value"};
 
-        // This should generate: Phoenix.Component.assign(socket, assigns)
-        var result = Component.assign(socket, assigns);
+		// This should generate: Phoenix.Component.assign(socket, assigns)
+		var result = Component.assign(socket, assigns);
 
-        trace("Test completed");
-    }
+		trace("Test completed");
+	}
 }

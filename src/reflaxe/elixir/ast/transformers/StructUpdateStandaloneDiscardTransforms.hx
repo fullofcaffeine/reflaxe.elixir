@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -40,30 +39,31 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   end
  */
 class StructUpdateStandaloneDiscardTransforms {
-    public static function transformPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EBlock(exprs) if (exprs != null && exprs.length > 1):
-                    var lastIndex = exprs.length - 1;
-                    var filtered = [];
-                    var i = 0;
-                    while (i < exprs.length) {
-                        var e = exprs[i];
-                        var isStructUpdate = switch (e.def) { case EStructUpdate(_, _): true; default: false; };
-                        if (i < lastIndex && isStructUpdate) {
-                            // Drop non-final struct updates
-                        } else {
-                            filtered.push(e);
-                        }
-                        i++;
-                    }
-                    makeASTWithMeta(EBlock(filtered), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        });
-    }
+	public static function transformPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EBlock(exprs) if (exprs != null && exprs.length > 1):
+					var lastIndex = exprs.length - 1;
+					var filtered = [];
+					var i = 0;
+					while (i < exprs.length) {
+						var e = exprs[i];
+						var isStructUpdate = switch (e.def) {
+							case EStructUpdate(_, _): true;
+							default: false;
+						};
+						if (i < lastIndex && isStructUpdate) {
+							// Drop non-final struct updates
+						} else {
+							filtered.push(e);
+						}
+						i++;
+					}
+					makeASTWithMeta(EBlock(filtered), n.metadata, n.pos);
+				default:
+					n;
+			}
+		});
+	}
 }
-
 #end
-

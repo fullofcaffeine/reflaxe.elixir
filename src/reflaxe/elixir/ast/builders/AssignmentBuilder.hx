@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.builders;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Type;
 import haxe.macro.Expr;
 import reflaxe.elixir.CompilationContext;
@@ -14,10 +13,10 @@ import reflaxe.elixir.ast.NameUtils;
 import reflaxe.elixir.helpers.PatternDetector;
 
 private typedef LocalFieldAssign = {
-    baseVarName: String,
-    baseVarId: Int,
-    fieldNameSnake: String,
-    isStruct: Bool
+	baseVarName:String,
+	baseVarId:Int,
+	fieldNameSnake:String,
+	isStruct:Bool
 };
 
 /**
@@ -54,206 +53,192 @@ private typedef LocalFieldAssign = {
  *   buffer = %{buffer | byte_length: buffer.byte_length + 1}
  */
 class AssignmentBuilder {
-    public static function build(op: Binop, e1: TypedExpr, e2: TypedExpr, expr: TypedExpr, context: CompilationContext): Null<ElixirASTDef> {
-        return switch (op) {
-            case OpAssign:
-                buildAssign(e1, e2, context);
-            case OpAssignOp(innerOp):
-                buildAssignOp(innerOp, e1, e2, context);
-            default:
-                null;
-        }
-    }
+	public static function build(op:Binop, e1:TypedExpr, e2:TypedExpr, expr:TypedExpr, context:CompilationContext):Null<ElixirASTDef> {
+		return switch (op) {
+			case OpAssign:
+				buildAssign(e1, e2, context);
+			case OpAssignOp(innerOp):
+				buildAssignOp(innerOp, e1, e2, context);
+			default:
+				null;
+		}
+	}
 
-    static function buildAssign(e1: TypedExpr, e2: TypedExpr, context: CompilationContext): Null<ElixirASTDef> {
-        // Abstract constructors assign to `this` to define the underlying value:
-        //   this = expr;
-        // In Elixir there is no mutable `this`, so the assignment expression should
-        // simply evaluate to the RHS (constructor return value).
-        switch (e1.expr) {
-            case TConst(TThis):
-                var rhsAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e2, context);
-                return rhsAst != null ? rhsAst.def : ENil;
-            default:
-        }
+	static function buildAssign(e1:TypedExpr, e2:TypedExpr, context:CompilationContext):Null<ElixirASTDef> {
+		// Abstract constructors assign to `this` to define the underlying value:
+		//   this = expr;
+		// In Elixir there is no mutable `this`, so the assignment expression should
+		// simply evaluate to the RHS (constructor return value).
+		switch (e1.expr) {
+			case TConst(TThis):
+				var rhsAst = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e2, context);
+				return rhsAst != null ? rhsAst.def : ENil;
+			default:
+		}
 
-        var localField = detectLocalFieldAssign(e1);
-        var pattern: EPattern = (localField != null)
-            ? EPattern.PVar(localField.baseVarName)
-            : PatternBuilder.extractPattern(e1, context);
+		var localField = detectLocalFieldAssign(e1);
+		var pattern:EPattern = (localField != null) ? EPattern.PVar(localField.baseVarName) : PatternBuilder.extractPattern(e1, context);
 
-        // Flatten nested underscore assignment: x = _ = expr → x = expr
-        var rhsExpr = e2;
-        switch (e2.expr) {
-            case TBinop(OpAssign, innerLhs, innerRhs):
-                switch (innerLhs.expr) {
-                    case TLocal(v) if (v.name == "_"):
-                        rhsExpr = innerRhs;
-                    default:
-                }
-            default:
-        }
+		// Flatten nested underscore assignment: x = _ = expr → x = expr
+		var rhsExpr = e2;
+		switch (e2.expr) {
+			case TBinop(OpAssign, innerLhs, innerRhs):
+				switch (innerLhs.expr) {
+					case TLocal(v) if (v.name == "_"):
+						rhsExpr = innerRhs;
+					default:
+				}
+			default:
+		}
 
-        var rightAST = if (localField != null) {
-            buildLocalFieldAssignUpdate(localField, rhsExpr, context);
-        } else {
-            reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(rhsExpr, context);
-        }
+		var rightAST = if (localField != null) {
+			buildLocalFieldAssignUpdate(localField, rhsExpr, context);
+		} else {
+			reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(rhsExpr, context);
+		}
 
-        // Skip redundant self-assign patterns (e.g. temp = temp) introduced by Haxe lowering.
-        var shouldSkipAssign = false;
-        switch (pattern) {
-            case PVar(name):
-                var valueName = switch (rightAST != null ? rightAST.def : null) {
-                    case EVar(varName): varName;
-                    default: null;
-                };
+		// Skip redundant self-assign patterns (e.g. temp = temp) introduced by Haxe lowering.
+		var shouldSkipAssign = false;
+		switch (pattern) {
+			case PVar(name):
+				var valueName = switch (rightAST != null ? rightAST.def : null) {
+					case EVar(varName): varName;
+					default: null;
+				};
 
-                if (PatternDetector.isTempPatternVarName(name)) {
-                    shouldSkipAssign = switch (rightAST != null ? rightAST.def : null) {
-                        case EVar(varName) if (varName == name || PatternDetector.isTempPatternVarName(varName)):
-                            true;
-                        default:
-                            false;
-                    };
-                } else if (valueName != null) {
-                    if (valueName == name) {
-                        shouldSkipAssign = true;
-                    } else if (PatternDetector.isTempPatternVarName(valueName)) {
-                        shouldSkipAssign = true;
-                    }
-                }
-            default:
-        }
+				if (PatternDetector.isTempPatternVarName(name)) {
+					shouldSkipAssign = switch (rightAST != null ? rightAST.def : null) {
+						case EVar(varName) if (varName == name || PatternDetector.isTempPatternVarName(varName)):
+							true;
+						default:
+							false;
+					};
+				} else if (valueName != null) {
+					if (valueName == name) {
+						shouldSkipAssign = true;
+					} else if (PatternDetector.isTempPatternVarName(valueName)) {
+						shouldSkipAssign = true;
+					}
+				}
+			default:
+		}
 
-        if (shouldSkipAssign) return null;
+		if (shouldSkipAssign)
+			return null;
 
-        var matchNode = makeAST(EMatch(pattern, rightAST));
-        attachVarIdMetadata(matchNode, e1, localField);
-        return matchNode.def;
-    }
+		var matchNode = makeAST(EMatch(pattern, rightAST));
+		attachVarIdMetadata(matchNode, e1, localField);
+		return matchNode.def;
+	}
 
-    static function buildAssignOp(innerOp: Binop, e1: TypedExpr, e2: TypedExpr, context: CompilationContext): Null<ElixirASTDef> {
-        var localField = detectLocalFieldAssign(e1);
-        if (localField != null) {
-            // base.field <op>= rhs  ->  base = update(base, field, base.field <op> rhs)
-            var leftAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e1, context);
-            var rightAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e2, context);
+	static function buildAssignOp(innerOp:Binop, e1:TypedExpr, e2:TypedExpr, context:CompilationContext):Null<ElixirASTDef> {
+		var localField = detectLocalFieldAssign(e1);
+		if (localField != null) {
+			// base.field <op>= rhs  ->  base = update(base, field, base.field <op> rhs)
+			var leftAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e1, context);
+			var rightAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e2, context);
 
-            var innerBinop = BinaryOpBuilder.buildBinopFromAST(
-                innerOp,
-                leftAST,
-                rightAST,
-                e1,
-                e2,
-                s -> NameUtils.toSnakeCase(s)
-            );
+			var innerBinop = BinaryOpBuilder.buildBinopFromAST(innerOp, leftAST, rightAST, e1, e2, s -> NameUtils.toSnakeCase(s));
 
-            var updated = buildLocalFieldAssignUpdateFromValue(localField, innerBinop);
-            var matchNode = makeAST(EMatch(EPattern.PVar(localField.baseVarName), updated));
-            if (matchNode.metadata == null) matchNode.metadata = {};
-            matchNode.metadata.varId = localField.baseVarId;
-            return matchNode.def;
-        }
+			var updated = buildLocalFieldAssignUpdateFromValue(localField, innerBinop);
+			var matchNode = makeAST(EMatch(EPattern.PVar(localField.baseVarName), updated));
+			if (matchNode.metadata == null)
+				matchNode.metadata = {};
+			matchNode.metadata.varId = localField.baseVarId;
+			return matchNode.def;
+		}
 
-        // Default: x += y -> x = x + y
-        var pattern = PatternBuilder.extractPattern(e1, context);
-        var leftAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e1, context);
-        var rightAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e2, context);
+		// Default: x += y -> x = x + y
+		var pattern = PatternBuilder.extractPattern(e1, context);
+		var leftAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e1, context);
+		var rightAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e2, context);
 
-        var innerBinop = BinaryOpBuilder.buildBinopFromAST(
-            innerOp,
-            leftAST,
-            rightAST,
-            e1,
-            e2,
-            s -> NameUtils.toSnakeCase(s)
-        );
+		var innerBinop = BinaryOpBuilder.buildBinopFromAST(innerOp, leftAST, rightAST, e1, e2, s -> NameUtils.toSnakeCase(s));
 
-        var matchNode = makeAST(EMatch(pattern, innerBinop));
-        attachVarIdMetadata(matchNode, e1, null);
-        return matchNode.def;
-    }
+		var matchNode = makeAST(EMatch(pattern, innerBinop));
+		attachVarIdMetadata(matchNode, e1, null);
+		return matchNode.def;
+	}
 
-    static function detectLocalFieldAssign(e: TypedExpr): Null<LocalFieldAssign> {
-        return switch (e.expr) {
-            case TField(baseExpr, fa):
-                switch (baseExpr.expr) {
-                    case TLocal(v):
-                        var baseVarName = ElixirASTHelpers.toElixirVarName(v.name);
-                        // Avoid rewriting instance field assignment on this/_this (handled elsewhere)
-                        if (baseVarName == "this" || baseVarName == "_this") return null;
+	static function detectLocalFieldAssign(e:TypedExpr):Null<LocalFieldAssign> {
+		return switch (e.expr) {
+			case TField(baseExpr, fa):
+				switch (baseExpr.expr) {
+					case TLocal(v):
+						var baseVarName = ElixirASTHelpers.toElixirVarName(v.name);
+						// Avoid rewriting instance field assignment on this/_this (handled elsewhere)
+						if (baseVarName == "this" || baseVarName == "_this")
+							return null;
 
-                        var rawFieldName = switch (fa) {
-                            case FInstance(_, _, cf): cf.get().name;
-                            case FStatic(_, cf): cf.get().name;
-                            case FAnon(cf): cf.get().name;
-                            case FClosure(_, cf): cf.get().name;
-                            case FEnum(_, ef): ef.name;
-                            case FDynamic(s): s;
-                        };
+						var rawFieldName = switch (fa) {
+							case FInstance(_, _, cf): cf.get().name;
+							case FStatic(_, cf): cf.get().name;
+							case FAnon(cf): cf.get().name;
+							case FClosure(_, cf): cf.get().name;
+							case FEnum(_, ef): ef.name;
+							case FDynamic(s): s;
+						};
 
-                        var fieldNameSnake = NameUtils.toSnakeCase(rawFieldName);
-                        var isStruct = switch (baseExpr.t) {
-                            case TInst(_, _): true;
-                            default: false;
-                        };
+						var fieldNameSnake = NameUtils.toSnakeCase(rawFieldName);
+						var isStruct = switch (baseExpr.t) {
+							case TInst(_, _): true;
+							default: false;
+						};
 
-                        { baseVarName: baseVarName, baseVarId: v.id, fieldNameSnake: fieldNameSnake, isStruct: isStruct };
-                    default:
-                        null;
-                }
-            default:
-                null;
-        }
-    }
+						{
+							baseVarName: baseVarName,
+							baseVarId: v.id,
+							fieldNameSnake: fieldNameSnake,
+							isStruct: isStruct
+						};
+					default:
+						null;
+				}
+			default:
+				null;
+		}
+	}
 
-    static function buildLocalFieldAssignUpdate(localField: LocalFieldAssign, rhsExpr: TypedExpr, context: CompilationContext): ElixirAST {
-        var valueAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(rhsExpr, context);
-        return buildLocalFieldAssignUpdateFromValue(localField, valueAST);
-    }
+	static function buildLocalFieldAssignUpdate(localField:LocalFieldAssign, rhsExpr:TypedExpr, context:CompilationContext):ElixirAST {
+		var valueAST = reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(rhsExpr, context);
+		return buildLocalFieldAssignUpdateFromValue(localField, valueAST);
+	}
 
-    static function buildLocalFieldAssignUpdateFromValue(localField: LocalFieldAssign, valueAST: ElixirAST): ElixirAST {
-        if (localField.isStruct) {
-            // %{base | field: value}
-            return makeAST(EStructUpdate(
-                makeAST(EVar(localField.baseVarName)),
-                [{ key: localField.fieldNameSnake, value: valueAST }]
-            ));
-        }
+	static function buildLocalFieldAssignUpdateFromValue(localField:LocalFieldAssign, valueAST:ElixirAST):ElixirAST {
+		if (localField.isStruct) {
+			// %{base | field: value}
+			return makeAST(EStructUpdate(makeAST(EVar(localField.baseVarName)), [{key: localField.fieldNameSnake, value: valueAST}]));
+		}
 
-        // Map.put(base, :field, value)
-        return makeAST(ERemoteCall(
-            makeAST(EVar("Map")),
-            "put",
-            [
-                makeAST(EVar(localField.baseVarName)),
-                makeAST(EAtom(localField.fieldNameSnake)),
-                valueAST
-            ]
-        ));
-    }
+		// Map.put(base, :field, value)
+		return makeAST(ERemoteCall(makeAST(EVar("Map")), "put", [
+			makeAST(EVar(localField.baseVarName)),
+			makeAST(EAtom(localField.fieldNameSnake)),
+			valueAST
+		]));
+	}
 
-    static function attachVarIdMetadata(matchNode: ElixirAST, lhs: TypedExpr, localField: Null<LocalFieldAssign>): Void {
-        if (matchNode == null) return;
-        if (matchNode.metadata == null) matchNode.metadata = {};
+	static function attachVarIdMetadata(matchNode:ElixirAST, lhs:TypedExpr, localField:Null<LocalFieldAssign>):Void {
+		if (matchNode == null)
+			return;
+		if (matchNode.metadata == null)
+			matchNode.metadata = {};
 
-        switch (lhs.expr) {
-            case TLocal(v):
-                matchNode.metadata.varId = v.id;
-            case TField(baseExpr, _):
-                if (localField != null) {
-                    matchNode.metadata.varId = localField.baseVarId;
-                } else {
-                    switch (baseExpr.expr) {
-                        case TLocal(v2):
-                            matchNode.metadata.varId = v2.id;
-                        default:
-                    }
-                }
-            default:
-        }
-    }
+		switch (lhs.expr) {
+			case TLocal(v):
+				matchNode.metadata.varId = v.id;
+			case TField(baseExpr, _):
+				if (localField != null) {
+					matchNode.metadata.varId = localField.baseVarId;
+				} else {
+					switch (baseExpr.expr) {
+						case TLocal(v2):
+							matchNode.metadata.varId = v2.id;
+						default:
+					}
+				}
+			default:
+		}
+	}
 }
-
 #end

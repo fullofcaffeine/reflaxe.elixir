@@ -43,7 +43,6 @@ package haxe.iterators;
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  */
-
 /**
  * ArrayKeyValueIterator for Reflaxe.Elixir - Type Compatibility Layer
  * 
@@ -65,32 +64,32 @@ package haxe.iterators;
  * The ArrayKeyValueIterator is completely eliminated during compilation.
  */
 class ArrayKeyValueIterator<T> {
-    final array: Array<T>;
-    var current: Int = 0;
-    
-    /**
-     * Create a new ArrayKeyValueIterator.
-     * NOTE: This constructor is only called at compile-time for type checking.
-     * The actual iterator is never instantiated in generated Elixir code.
-     */
-    public inline function new(array: Array<T>) {
-        this.array = array;
-    }
-    
-    /**
-     * Check if there are more elements.
-     * NOTE: Transformed to Enum.with_index in Elixir.
-     */
-    public inline function hasNext(): Bool {
-        return current < array.length;
-    }
-    
-    /**
-     * Get the next key-value pair.
-     * NOTE: Transformed to Enum.with_index in Elixir.
-     */
-    public inline function next(): {key: Int, value: T} {
-        var index = current++;
-        return {key: index, value: array[index]};
-    }
+	final array:Array<T>;
+	var current:Int = 0;
+
+	/**
+	 * Create a new ArrayKeyValueIterator.
+	 * NOTE: This constructor is only called at compile-time for type checking.
+	 * The actual iterator is never instantiated in generated Elixir code.
+	 */
+	public inline function new(array:Array<T>) {
+		this.array = array;
+	}
+
+	/**
+	 * Check if there are more elements.
+	 * NOTE: Transformed to Enum.with_index in Elixir.
+	 */
+	public inline function hasNext():Bool {
+		return current < array.length;
+	}
+
+	/**
+	 * Get the next key-value pair.
+	 * NOTE: Transformed to Enum.with_index in Elixir.
+	 */
+	public inline function next():{key:Int, value:T} {
+		var index = current++;
+		return {key: index, value: array[index]};
+	}
 }

@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
@@ -48,100 +47,101 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
  *     end)
  */
 class EctoEqPinnedNilGuardTransforms {
-    static inline function isWhereCall(module: ElixirAST, func: String): Bool {
-        return func == "where"; // allow both Ecto.Query.where and imported where
-    }
+	static inline function isWhereCall(module:ElixirAST, func:String):Bool {
+		return func == "where"; // allow both Ecto.Query.where and imported where
+	}
 
-    static function unwrapParen(e: ElixirAST): ElixirAST {
-        return switch (e.def) {
-            case EParen(inner): unwrapParen(inner);
-            default: e;
-        }
-    }
+	static function unwrapParen(e:ElixirAST):ElixirAST {
+		return switch (e.def) {
+			case EParen(inner): unwrapParen(inner);
+			default: e;
+		}
+	}
 
-    static function extractPinnedVar(expr: ElixirAST): Null<ElixirAST> {
-        return switch (expr.def) {
-            case EPin(inner):
-                var u = unwrapParen(inner);
-                switch (u.def) {
-                    case EVar(_): u;
-                    default: null;
-                }
-            default: null;
-        }
-    }
+	static function extractPinnedVar(expr:ElixirAST):Null<ElixirAST> {
+		return switch (expr.def) {
+			case EPin(inner):
+				var u = unwrapParen(inner);
+				switch (u.def) {
+					case EVar(_): u;
+					default: null;
+				}
+			default: null;
+		}
+	}
 
-    static function isFieldExpr(e: ElixirAST): Bool {
-        return switch (e.def) {
-            case EField(_, _): true;
-            default: false;
-        };
-    }
+	static function isFieldExpr(e:ElixirAST):Bool {
+		return switch (e.def) {
+			case EField(_, _): true;
+			default: false;
+		};
+	}
 
-    static function makeIsNil(e: ElixirAST): ElixirAST {
-        // Kernel.is_nil/1 - use in plain Elixir contexts (outside Ecto DSL)
-        return makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [e]));
-    }
+	static function makeIsNil(e:ElixirAST):ElixirAST {
+		// Kernel.is_nil/1 - use in plain Elixir contexts (outside Ecto DSL)
+		return makeAST(ERemoteCall(makeAST(EVar("Kernel")), "is_nil", [e]));
+	}
 
-    static function guardCompare(op: EBinaryOp, left: ElixirAST, right: ElixirAST): ElixirAST {
-        // try left pinned, right field
-        var pinned = extractPinnedVar(left);
-        var field  = isFieldExpr(right) ? right : null;
-        if (pinned == null || field == null) {
-            // try right pinned, left field
-            pinned = extractPinnedVar(right);
-            field  = isFieldExpr(left) ? left : null;
-        }
-        if (pinned == null || field == null) return null;
+	static function guardCompare(op:EBinaryOp, left:ElixirAST, right:ElixirAST):ElixirAST {
+		// try left pinned, right field
+		var pinned = extractPinnedVar(left);
+		var field = isFieldExpr(right) ? right : null;
+		if (pinned == null || field == null) {
+			// try right pinned, left field
+			pinned = extractPinnedVar(right);
+			field = isFieldExpr(left) ? left : null;
+		}
+		if (pinned == null || field == null)
+			return null;
 
-        // Build branch selection outside of the query macro: if is_nil(^var) do <thenCond> else <original>
-        // We return a special sentinel EIf body here; the caller will stitch in the correct args around it.
-        // Outside the query macro (in the surrounding if), we must not use the pin operator.
-        var isNilPinned = makeIsNil(pinned);
-        // Annotate as an Ecto-pinned-nil guard to prevent later constant-fold simplification
-        isNilPinned = makeASTWithMeta(isNilPinned.def, { ectoPinnedNilGuard: true }, isNilPinned.pos);
-        // In Ecto DSL conditions, prefer unqualified is_nil(field)
-        var isNilField  = makeAST(ECall(null, "is_nil", [field]));
-        var thenBody: ElixirAST = switch (op) {
-            case Equal: isNilField;
-            case NotEqual: makeAST(EUnary(Not, isNilField));
-            default: return null;
-        };
-        // Use EIf with placeholder bodies; the caller will replace with full where calls
-        return makeAST(EIf(isNilPinned, thenBody, makeAST(EBinary(op, left, right))));
-    }
+		// Build branch selection outside of the query macro: if is_nil(^var) do <thenCond> else <original>
+		// We return a special sentinel EIf body here; the caller will stitch in the correct args around it.
+		// Outside the query macro (in the surrounding if), we must not use the pin operator.
+		var isNilPinned = makeIsNil(pinned);
+		// Annotate as an Ecto-pinned-nil guard to prevent later constant-fold simplification
+		isNilPinned = makeASTWithMeta(isNilPinned.def, {ectoPinnedNilGuard: true}, isNilPinned.pos);
+		// In Ecto DSL conditions, prefer unqualified is_nil(field)
+		var isNilField = makeAST(ECall(null, "is_nil", [field]));
+		var thenBody:ElixirAST = switch (op) {
+			case Equal: isNilField;
+			case NotEqual: makeAST(EUnary(Not, isNilField));
+			default: return null;
+		};
+		// Use EIf with placeholder bodies; the caller will replace with full where calls
+		return makeAST(EIf(isNilPinned, thenBody, makeAST(EBinary(op, left, right))));
+	}
 
-    public static function transformPass(ast: ElixirAST): ElixirAST {
-        return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case ERemoteCall(module, func, args) if (isWhereCall(module, func) && args != null && args.length >= 2):
-                    var idx = args.length - 1;
-                    var cond = args[idx];
-                    switch (cond.def) {
-                        case EBinary(op, l, r):
-                            var branchExpr = guardCompare(op, l, r);
-                            if (branchExpr == null) return n;
-                            // branchExpr is EIf(is_nil(^var), <thenCond>, <elseCond>)
-                            switch (branchExpr.def) {
-                                case EIf(isNilPinned, thenCond, elseCond):
-                                    var thenArgs = args.copy();
-                                    thenArgs[idx] = thenCond;
-                                    var elseArgs = args.copy();
-                                    elseArgs[idx] = elseCond;
-                                    var thenWhere = makeAST(ERemoteCall(module, func, thenArgs));
-                                    var elseWhere = makeAST(ERemoteCall(module, func, elseArgs));
-                                    makeASTWithMeta(EIf(isNilPinned, thenWhere, elseWhere), n.metadata, n.pos);
-                                default:
-                                    n;
-                            }
-                        default:
-                            n;
-                    }
-                default:
-                    n;
-            }
-        });
-    }
+	public static function transformPass(ast:ElixirAST):ElixirAST {
+		return reflaxe.elixir.ast.ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case ERemoteCall(module, func, args) if (isWhereCall(module, func) && args != null && args.length >= 2):
+					var idx = args.length - 1;
+					var cond = args[idx];
+					switch (cond.def) {
+						case EBinary(op, l, r):
+							var branchExpr = guardCompare(op, l, r);
+							if (branchExpr == null)
+								return n;
+							// branchExpr is EIf(is_nil(^var), <thenCond>, <elseCond>)
+							switch (branchExpr.def) {
+								case EIf(isNilPinned, thenCond, elseCond):
+									var thenArgs = args.copy();
+									thenArgs[idx] = thenCond;
+									var elseArgs = args.copy();
+									elseArgs[idx] = elseCond;
+									var thenWhere = makeAST(ERemoteCall(module, func, thenArgs));
+									var elseWhere = makeAST(ERemoteCall(module, func, elseArgs));
+									makeASTWithMeta(EIf(isNilPinned, thenWhere, elseWhere), n.metadata, n.pos);
+								default:
+									n;
+							}
+						default:
+							n;
+					}
+				default:
+					n;
+			}
+		});
+	}
 }
-
 #end

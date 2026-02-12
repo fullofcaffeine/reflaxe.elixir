@@ -19,8 +19,8 @@ package shared.liveview;
  */
 @:phxHookNames
 enum abstract HookName(String) from String to String {
-    var AutoFocus = "AutoFocus";
-    var Ping = "Ping";
-    var CopyToClipboard = "CopyToClipboard";
-    var ThemeToggle = "ThemeToggle";
+	var AutoFocus = "AutoFocus";
+	var Ping = "Ping";
+	var CopyToClipboard = "CopyToClipboard";
+	var ThemeToggle = "ThemeToggle";
 }

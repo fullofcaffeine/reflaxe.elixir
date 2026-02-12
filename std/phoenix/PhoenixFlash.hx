@@ -19,7 +19,6 @@ import phoenix.types.Flash.FlashMap;
  */
 @:native("Phoenix.Flash")
 extern class PhoenixFlash {
-    @:native("get")
-    static function get(flash: FlashMap, key: Atom): Null<String>;
+	@:native("get")
+	static function get(flash:FlashMap, key:Atom):Null<String>;
 }
-

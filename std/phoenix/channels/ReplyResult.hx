@@ -1,7 +1,6 @@
 package phoenix.channels;
 
 #if (macro || reflaxe_runtime)
-
 import elixir.types.Term;
 
 /**
@@ -31,9 +30,8 @@ import elixir.types.Term;
  *   def handle_in(_, _, socket), do: {:noreply, socket}
  */
 enum ReplyResult<TSocket> {
-    Noreply(socket: TSocket);
-    Reply(reply: Term, socket: TSocket);
-    Stop(reason: Term, socket: TSocket);
+	Noreply(socket:TSocket);
+	Reply(reply:Term, socket:TSocket);
+	Stop(reason:Term, socket:TSocket);
 }
-
 #end

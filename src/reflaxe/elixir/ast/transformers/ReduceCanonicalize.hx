@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
@@ -44,52 +43,63 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   end
  */
 class ReduceCanonicalize {
-    public static function pass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EFn(clauses):
-                    var out = [];
-                    for (cl in clauses) {
-                        var binderName: Null<String> = null;
-                        var accName: Null<String> = null;
-                        if (cl.args != null && cl.args.length == 2) {
-                            switch (cl.args[0]) { case PVar(nm): binderName = nm; default: }
-                            switch (cl.args[1]) { case PVar(nm2): accName = nm2; default: }
-                        }
-                        var newBody = (binderName != null || accName != null)
-                            ? rewriteBody(cl.body, binderName, accName)
-                            : cl.body;
-                        out.push({ args: cl.args, guard: cl.guard, body: newBody });
-                    }
-                    makeASTWithMeta(EFn(out), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        });
-    }
+	public static function pass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EFn(clauses):
+					var out = [];
+					for (cl in clauses) {
+						var binderName:Null<String> = null;
+						var accName:Null<String> = null;
+						if (cl.args != null && cl.args.length == 2) {
+							switch (cl.args[0]) {
+								case PVar(nm): binderName = nm;
+								default:
+							}
+							switch (cl.args[1]) {
+								case PVar(nm2): accName = nm2;
+								default:
+							}
+						}
+						var newBody = (binderName != null || accName != null) ? rewriteBody(cl.body, binderName, accName) : cl.body;
+						out.push({args: cl.args, guard: cl.guard, body: newBody});
+					}
+					makeASTWithMeta(EFn(out), n.metadata, n.pos);
+				default:
+					n;
+			}
+		});
+	}
 
-    static function rewriteBody(body: ElixirAST, binderName: Null<String>, accName: Null<String>): ElixirAST {
-        return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
-            return switch (x.def) {
-                // lhs = Enum.concat(lhs, list) → acc = Enum.concat(acc, list)
-                case EBinary(Match, left, { def: ERemoteCall(_, "concat", cargs) }) if (accName != null && cargs != null && cargs.length == 2):
-                    var lhsName: Null<String> = switch (left.def) { case EVar(n): n; default: null; };
-                    var isSelf = switch (cargs[0].def) { case EVar(n): (lhsName != null && n == lhsName); default: false; };
-                    if (isSelf) {
-                        var replLeft = makeAST(EVar(accName));
-                        var replRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs[1]]));
-                        makeASTWithMeta(EBinary(Match, replLeft, replRight), x.metadata, x.pos);
-                    } else x;
-                // PVar = list[0] → PVar = binder
-                case EMatch(pat, { def: EAccess(_, key) }) if (binderName != null):
-                    var isZero = switch (key.def) { case EInteger(v) if (v == 0): true; default: false; };
-                    if (isZero) makeASTWithMeta(EMatch(pat, makeAST(EVar(binderName))), x.metadata, x.pos) else x;
-                default:
-                    x;
-            }
-        });
-    }
+	static function rewriteBody(body:ElixirAST, binderName:Null<String>, accName:Null<String>):ElixirAST {
+		return ElixirASTTransformer.transformNode(body, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				// lhs = Enum.concat(lhs, list) → acc = Enum.concat(acc, list)
+				case EBinary(Match, left, {def: ERemoteCall(_, "concat", cargs)}) if (accName != null && cargs != null && cargs.length == 2):
+					var lhsName:Null<String> = switch (left.def) {
+						case EVar(n): n;
+						default: null;
+					};
+					var isSelf = switch (cargs[0].def) {
+						case EVar(n): (lhsName != null && n == lhsName);
+						default: false;
+					};
+					if (isSelf) {
+						var replLeft = makeAST(EVar(accName));
+						var replRight = makeAST(ERemoteCall(makeAST(EVar("Enum")), "concat", [makeAST(EVar(accName)), cargs[1]]));
+						makeASTWithMeta(EBinary(Match, replLeft, replRight), x.metadata, x.pos);
+					} else x;
+				// PVar = list[0] → PVar = binder
+				case EMatch(pat, {def: EAccess(_, key)}) if (binderName != null):
+					var isZero = switch (key.def) {
+						case EInteger(v) if (v == 0): true;
+						default: false;
+					};
+					if (isZero) makeASTWithMeta(EMatch(pat, makeAST(EVar(binderName))), x.metadata, x.pos) else x;
+				default:
+					x;
+			}
+		});
+	}
 }
-
 #end
-

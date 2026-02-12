@@ -1,7 +1,6 @@
 package ecto;
 
 #if (elixir || reflaxe_runtime)
-
 import elixir.types.Atom;
 import elixir.types.Term;
 
@@ -30,12 +29,11 @@ import elixir.types.Term;
  */
 @:native("Ecto.Migrator")
 extern class Migrator {
-    @:native("with_repo")
-    @:overload(function(repo: Term, callback: Term -> Term): Term {})
-    static function withRepo(repo: Term, callback: Term -> Term, opts: Array<{_0: Atom, _1: Term}>): Term;
+	@:native("with_repo")
+	@:overload(function(repo:Term, callback:Term->Term):Term {})
+	static function withRepo(repo:Term, callback:Term->Term, opts:Array<{_0:Atom, _1:Term}>):Term;
 
-    @:native("run")
-    static function run(repo: Term, path: String, direction: Atom, opts: Array<{_0: Atom, _1: Term}>): Term;
+	@:native("run")
+	static function run(repo:Term, path:String, direction:Atom, opts:Array<{_0:Atom, _1:Term}>):Term;
 }
-
 #end

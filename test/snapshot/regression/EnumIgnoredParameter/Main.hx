@@ -7,23 +7,22 @@
  * Issue: When pattern `{:ok, g}` extracts nil into g, TEnumParameter tries elem(g, 1)
  * which fails because g is nil, not the original tuple.
  */
-
 enum Result<T> {
-	Ok(value: T);
-	Error(msg: String);
+	Ok(value:T);
+	Error(msg:String);
 }
 
 enum DataResult {
-	Data(id: Int, timestamp: Float, name: String, metadata: Dynamic);
+	Data(id:Int, timestamp:Float, name:String, metadata:Dynamic);
 	NoData;
 }
 
 class Main {
 	// Function that returns Ok(nil) to simulate the TodoPubSub.subscribe scenario
-	static function subscribe(): Result<String> {
+	static function subscribe():Result<String> {
 		return Ok(null);
 	}
-	
+
 	public static function main() {
 		// Test 1: Ignored parameter - should NOT generate elem() extraction
 		switch (subscribe()) {
@@ -32,7 +31,7 @@ class Main {
 			case Error(msg):
 				trace("Error: " + msg);
 		}
-		
+
 		// Test 2: Used parameter - extraction is needed
 		switch (subscribe()) {
 			case Ok(value):
@@ -44,7 +43,7 @@ class Main {
 			case Error(msg):
 				trace("Error: " + msg);
 		}
-		
+
 		// Test 3: Multiple parameters with some ignored
 		var result = processData();
 		switch (result) {
@@ -55,7 +54,7 @@ class Main {
 		}
 	}
 
-	static function processData(): DataResult {
+	static function processData():DataResult {
 		return Data(42, Date.now().getTime(), "Test", null);
 	}
 }

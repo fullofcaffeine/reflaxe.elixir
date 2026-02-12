@@ -18,8 +18,5 @@ package server.infrastructure;
  */
 @:native("TodoAppWeb.UserSocket")
 @:socket
-@:socketChannels([
-    {topic: "typed:*", channel: server.channels.PingChannel}
-])
+@:socketChannels([{topic: "typed:*", channel: server.channels.PingChannel}])
 class UserSocket {}
-

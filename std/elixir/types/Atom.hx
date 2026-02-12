@@ -46,79 +46,78 @@ package elixir.types;
  * @since 1.0.0
  */
 abstract Atom(String) from String to String {
-    
-    /**
-     * Create an Atom from a string literal
-     * 
-     * @param s The string to convert to an atom
-     */
-    public inline function new(s: String) {
-        this = s;
-    }
-    
-    /**
-     * Convert atom to string representation
-     * Useful for debugging or string operations
-     * 
-     * @return The string value of the atom
-     */
-    public inline function toString(): String {
-        return this;
-    }
-    
-    /**
-     * Check equality with another atom
-     * 
-     * @param other The atom to compare with
-     * @return True if atoms are equal
-     */
-    @:op(A == B)
-    public inline function equals(other: Atom): Bool {
-        return this == cast other;
-    }
-    
-    /**
-     * Check inequality with another atom
-     * 
-     * @param other The atom to compare with
-     * @return True if atoms are not equal
-     */
-    @:op(A != B)
-    public inline function notEquals(other: Atom): Bool {
-        return this != cast other;
-    }
-    
-    /**
-     * Static helper to create an atom
-     * Alternative to implicit conversion
-     * 
-     * @param s The string to convert
-     * @return An Atom
-     */
-    public static inline function fromString(s: String): Atom {
-        return new Atom(s);
-    }
-    
-    // Common Elixir atoms as static constants
-    public static inline var OK: Atom = "ok";
-    public static inline var ERROR: Atom = "error";
-    public static inline var TRUE: Atom = "true";
-    public static inline var FALSE: Atom = "false";
-    public static inline var NIL: Atom = "nil";
-    public static inline var UNDEFINED: Atom = "undefined";
-    public static inline var INFINITY: Atom = "infinity";
-    public static inline var TIMEOUT: Atom = "timeout";
-    public static inline var NORMAL: Atom = "normal";
-    public static inline var SHUTDOWN: Atom = "shutdown";
-    
-    // Comparison result atoms
-    public static inline var LT: Atom = "lt";
-    public static inline var EQ: Atom = "eq";
-    public static inline var GT: Atom = "gt";
-    
-    // Time unit atoms (for DateTime operations)
-    public static inline var SECOND: Atom = "second";
-    public static inline var MILLISECOND: Atom = "millisecond";
-    public static inline var MICROSECOND: Atom = "microsecond";
-    public static inline var NANOSECOND: Atom = "nanosecond";
+	/**
+	 * Create an Atom from a string literal
+	 * 
+	 * @param s The string to convert to an atom
+	 */
+	public inline function new(s:String) {
+		this = s;
+	}
+
+	/**
+	 * Convert atom to string representation
+	 * Useful for debugging or string operations
+	 * 
+	 * @return The string value of the atom
+	 */
+	public inline function toString():String {
+		return this;
+	}
+
+	/**
+	 * Check equality with another atom
+	 * 
+	 * @param other The atom to compare with
+	 * @return True if atoms are equal
+	 */
+	@:op(A == B)
+	public inline function equals(other:Atom):Bool {
+		return this == cast other;
+	}
+
+	/**
+	 * Check inequality with another atom
+	 * 
+	 * @param other The atom to compare with
+	 * @return True if atoms are not equal
+	 */
+	@:op(A != B)
+	public inline function notEquals(other:Atom):Bool {
+		return this != cast other;
+	}
+
+	/**
+	 * Static helper to create an atom
+	 * Alternative to implicit conversion
+	 * 
+	 * @param s The string to convert
+	 * @return An Atom
+	 */
+	public static inline function fromString(s:String):Atom {
+		return new Atom(s);
+	}
+
+	// Common Elixir atoms as static constants
+	public static inline var OK:Atom = "ok";
+	public static inline var ERROR:Atom = "error";
+	public static inline var TRUE:Atom = "true";
+	public static inline var FALSE:Atom = "false";
+	public static inline var NIL:Atom = "nil";
+	public static inline var UNDEFINED:Atom = "undefined";
+	public static inline var INFINITY:Atom = "infinity";
+	public static inline var TIMEOUT:Atom = "timeout";
+	public static inline var NORMAL:Atom = "normal";
+	public static inline var SHUTDOWN:Atom = "shutdown";
+
+	// Comparison result atoms
+	public static inline var LT:Atom = "lt";
+	public static inline var EQ:Atom = "eq";
+	public static inline var GT:Atom = "gt";
+
+	// Time unit atoms (for DateTime operations)
+	public static inline var SECOND:Atom = "second";
+	public static inline var MILLISECOND:Atom = "millisecond";
+	public static inline var MICROSECOND:Atom = "microsecond";
+	public static inline var NANOSECOND:Atom = "nanosecond";
 }

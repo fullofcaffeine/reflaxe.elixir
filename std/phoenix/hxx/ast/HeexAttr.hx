@@ -21,8 +21,8 @@ package phoenix.hxx.ast;
  * - This module is compile-time only and is suppressed from emission in Elixir outputs.
  */
 enum HeexAttr {
-    Static(name: String, value: String);
-    Bool(name: String);
-    Expr<T>(name: String, value: T);
-    Spread<T>(attrs: T);
+	Static(name:String, value:String);
+	Bool(name:String);
+	Expr<T>(name:String, value:T);
+	Spread<T>(attrs:T);
 }

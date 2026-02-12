@@ -9,29 +9,28 @@ package haxe;
  */
 @:coreApi
 class Log {
-    /**
-     * Format output with position information
-     */
-    public static function formatOutput(v: Dynamic, infos: PosInfos): String {
-        var str = Std.string(v);
-        if (infos == null) {
-            return str;
-        }
-        
-        // For Elixir, we'll just return the value since IO.inspect handles formatting
-        // The position info can be passed as a label option
-        return str;
-    }
-    
-    /**
-     * Main trace function - outputs to IO.inspect in Elixir
-     * 
-     * This generates idiomatic Elixir code using IO.inspect instead of Log.trace
-     */
-    public static dynamic function trace(v: Dynamic, ?infos: PosInfos): Void {
-        // Build label and inspect entirely in injected Elixir to avoid local temp vars
-        untyped __elixir__(
-            '
+	/**
+	 * Format output with position information
+	 */
+	public static function formatOutput(v:Dynamic, infos:PosInfos):String {
+		var str = Std.string(v);
+		if (infos == null) {
+			return str;
+		}
+
+		// For Elixir, we'll just return the value since IO.inspect handles formatting
+		// The position info can be passed as a label option
+		return str;
+	}
+
+	/**
+	 * Main trace function - outputs to IO.inspect in Elixir
+	 * 
+	 * This generates idiomatic Elixir code using IO.inspect instead of Log.trace
+	 */
+	public static dynamic function trace(v:Dynamic, ?infos:PosInfos):Void {
+		// Build label and inspect entirely in injected Elixir to avoid local temp vars
+		untyped __elixir__('
             case {1} do
               nil -> IO.inspect({0})
               infos ->
@@ -48,5 +47,5 @@ class Log {
                 if label != nil, do: IO.inspect({0}, label: label), else: IO.inspect({0})
             end
             ', v, infos);
-    }
+	}
 }

@@ -7,16 +7,16 @@ package;
 @:template
 class UserView {
 	// Simple template function
-	public static function userCard(user: Dynamic): String {
+	public static function userCard(user:Dynamic):String {
 		return '<div class="user-card">
 			<h3><%= user.name %></h3>
 			<p>Age: <%= user.age %></p>
 			<p>Email: <%= user.email %></p>
 		</div>';
 	}
-	
+
 	// Template with conditionals
-	public static function userList(users: Array<Dynamic>): String {
+	public static function userList(users:Array<Dynamic>):String {
 		return '<div class="user-list">
 			<%= if length(users) == 0 do %>
 				<p>No users found</p>
@@ -29,9 +29,9 @@ class UserView {
 			<% end %>
 		</div>';
 	}
-	
+
 	// Template with assigns
-	public static function dashboard(assigns: Dynamic): String {
+	public static function dashboard(assigns:Dynamic):String {
 		return '<div class="dashboard">
 			<h1>Welcome, <%= @current_user.name %>!</h1>
 			<div class="stats">
@@ -46,17 +46,18 @@ class UserView {
 			<% end %>
 		</div>';
 	}
-	
+
 	// Component template
+
 	@:component
-	public static function button(text: String, ?type: String = "primary", ?disabled: Bool = false): String {
+	public static function button(text:String, ?type:String = "primary", ?disabled:Bool = false):String {
 		return '<button class="btn btn-<%= type %>" <%= if disabled do %>disabled<% end %>>
 			<%= text %>
 		</button>';
 	}
-	
+
 	// Form template
-	public static function userForm(changeset: Dynamic): String {
+	public static function userForm(changeset:Dynamic):String {
 		return '<%= form_for(changeset, "#", fn f -> %>
 			<div class="form-group">
 				<%= label(f, :name) %>
@@ -79,10 +80,11 @@ class UserView {
 			<%= submit("Save") %>
 		<% end) %>';
 	}
-	
+
 	// Layout template
+
 	@:layout
-	public static function appLayout(inner_content: String, assigns: Dynamic): String {
+	public static function appLayout(inner_content:String, assigns:Dynamic):String {
 		return '<!DOCTYPE html>
 		<html>
 			<head>

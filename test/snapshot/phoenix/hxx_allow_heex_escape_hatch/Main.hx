@@ -3,16 +3,15 @@ package;
 import HXX;
 
 typedef Assigns = {
-    var count: Int;
+	var count:Int;
 }
 
 class Main {
-    @:allow_heex
-    public static function render(assigns: Assigns): String {
-        // Allowed via explicit opt-in. This is an escape hatch and should be avoided for most code.
-        return HXX.hxx('<div>count: <%= @count %></div>');
-    }
+	@:allow_heex
+	public static function render(assigns:Assigns):String {
+		// Allowed via explicit opt-in. This is an escape hatch and should be avoided for most code.
+		return HXX.hxx('<div>count: <%= @count %></div>');
+	}
 
-    public static function main() {}
+	public static function main() {}
 }
-

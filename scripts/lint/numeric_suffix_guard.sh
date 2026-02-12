@@ -62,27 +62,63 @@ if [[ "$FULL_SCAN" -eq 0 ]] && git rev-parse --is-inside-work-tree >/dev/null 2>
 
   if [[ "$FULL_SCAN" -eq 0 ]]; then
     if {
-        git diff -U0 "${range_args[@]}" -- "${TARGET_DIR}";
-        git diff -U0 --cached -- "${TARGET_DIR}";
-        git diff -U0 -- "${TARGET_DIR}";
+        git diff -U0 -w "${range_args[@]}" -- "${TARGET_DIR}";
+        git diff -U0 -w --cached -- "${TARGET_DIR}";
+        git diff -U0 -w -- "${TARGET_DIR}";
       } \
       | perl -ne '
           BEGIN {
-            $decl = qr/\b(?:var|final|function)\s+[A-Za-z_][A-Za-z0-9_]*[0-9]+\b/;
-            $param = qr/function[^\(]*\([^)]*[A-Za-z_][A-Za-z0-9_]*[0-9]+\s*:/;
-            $found = 0;
+            $decl = qr/\b(?:var|final|function)\s+([A-Za-z_][A-Za-z0-9_]*[0-9]+)\b/;
+            $param = qr/([A-Za-z_][A-Za-z0-9_]*[0-9]+)\s*:/;
+            %removed_counts = ();
+            %added_counts = ();
+            %added_examples = ();
             $file = undef;
+          }
+          sub collect_ids {
+            my ($line) = @_;
+            my @ids = ();
+            while ($line =~ /$decl/g) {
+              push @ids, $1;
+            }
+            if ($line =~ /\bfunction\b/) {
+              while ($line =~ /$param/g) {
+                push @ids, $1;
+              }
+            }
+            return @ids;
           }
           if (/^\+\+\+ (?:[a-z]\/)?(\S+)/) { $file = $1; next; }
           next if !defined($file) || $file !~ /\.hx$/;
+          if (/^-([^-].*)$/) {
+            my $line = $1;
+            for my $id (collect_ids($line)) {
+              $removed_counts{$id}++;
+            }
+            next;
+          }
           if (/^\+[^+]/) {
             my $line = substr($_, 1);
-            if ($line =~ $decl || $line =~ $param) {
-              print "[guard:numeric] $file: $line";
-              $found = 1;
+            for my $id (collect_ids($line)) {
+              $added_counts{$id}++;
+              if (!exists $added_examples{$id}) {
+                chomp($line);
+                $added_examples{$id} = "[guard:numeric] $file: $line\n";
+              }
             }
+            next;
           }
-          END { exit($found ? 1 : 0); }
+          END {
+            my $found = 0;
+            for my $id (sort keys %added_counts) {
+              my $removed = $removed_counts{$id} // 0;
+              if ($added_counts{$id} > $removed) {
+                print $added_examples{$id};
+                $found = 1;
+              }
+            }
+            exit($found ? 1 : 0);
+          }
         '
     then
       : # OK

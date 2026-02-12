@@ -1,7 +1,6 @@
 package phoenix.channels;
 
 #if (macro || reflaxe_runtime)
-
 import elixir.types.Term;
 import phoenix.Channel;
 import phoenix.channels.ChannelProtocol;
@@ -30,34 +29,33 @@ import phoenix.channels.ChannelProtocol;
 @:native("Phoenix.Channels.TypedChannelServer")
 #end
 class TypedChannelServer {
-    public static inline function decode<TSend, TRecv>(protocol: ChannelProtocol<TSend, TRecv>, event: String, payload: Term): Null<TRecv> {
-        return protocol.decodeRecv(event, payload);
-    }
+	public static inline function decode<TSend, TRecv>(protocol:ChannelProtocol<TSend, TRecv>, event:String, payload:Term):Null<TRecv> {
+		return protocol.decodeRecv(event, payload);
+	}
 
-    public static function broadcast<TSend, TRecv>(socket: Term, protocol: ChannelProtocol<TSend, TRecv>, message: TSend): Term {
-        var encoded = protocol.encodeSend(message);
-        return Channel.broadcast(socket, encoded.event, encoded.payload);
-    }
+	public static function broadcast<TSend, TRecv>(socket:Term, protocol:ChannelProtocol<TSend, TRecv>, message:TSend):Term {
+		var encoded = protocol.encodeSend(message);
+		return Channel.broadcast(socket, encoded.event, encoded.payload);
+	}
 
-    public static function broadcastBang<TSend, TRecv>(socket: Term, protocol: ChannelProtocol<TSend, TRecv>, message: TSend): Term {
-        var encoded = protocol.encodeSend(message);
-        return Channel.broadcastBang(socket, encoded.event, encoded.payload);
-    }
+	public static function broadcastBang<TSend, TRecv>(socket:Term, protocol:ChannelProtocol<TSend, TRecv>, message:TSend):Term {
+		var encoded = protocol.encodeSend(message);
+		return Channel.broadcastBang(socket, encoded.event, encoded.payload);
+	}
 
-    public static function broadcastFrom<TSend, TRecv>(socket: Term, protocol: ChannelProtocol<TSend, TRecv>, message: TSend): Term {
-        var encoded = protocol.encodeSend(message);
-        return Channel.broadcastFrom(socket, encoded.event, encoded.payload);
-    }
+	public static function broadcastFrom<TSend, TRecv>(socket:Term, protocol:ChannelProtocol<TSend, TRecv>, message:TSend):Term {
+		var encoded = protocol.encodeSend(message);
+		return Channel.broadcastFrom(socket, encoded.event, encoded.payload);
+	}
 
-    public static function broadcastFromBang<TSend, TRecv>(socket: Term, protocol: ChannelProtocol<TSend, TRecv>, message: TSend): Term {
-        var encoded = protocol.encodeSend(message);
-        return Channel.broadcastFromBang(socket, encoded.event, encoded.payload);
-    }
+	public static function broadcastFromBang<TSend, TRecv>(socket:Term, protocol:ChannelProtocol<TSend, TRecv>, message:TSend):Term {
+		var encoded = protocol.encodeSend(message);
+		return Channel.broadcastFromBang(socket, encoded.event, encoded.payload);
+	}
 
-    public static function push<TSend, TRecv>(socket: Term, protocol: ChannelProtocol<TSend, TRecv>, message: TSend): Term {
-        var encoded = protocol.encodeSend(message);
-        return Channel.push(socket, encoded.event, encoded.payload);
-    }
+	public static function push<TSend, TRecv>(socket:Term, protocol:ChannelProtocol<TSend, TRecv>, message:TSend):Term {
+		var encoded = protocol.encodeSend(message);
+		return Channel.push(socket, encoded.event, encoded.payload);
+	}
 }
-
 #end

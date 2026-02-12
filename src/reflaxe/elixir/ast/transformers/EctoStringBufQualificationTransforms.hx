@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
@@ -36,69 +35,79 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   end
  */
 class EctoStringBufQualificationTransforms {
-    public static function transformPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EModule(name, attrs, body):
-                    var hasShims = hasEctoShims(body);
-                    if (!hasShims) return n;
-                    var app = deriveAppPrefix(name);
-                    if (app == null || app.length == 0) {
-                        try app = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
-                    }
-                    if (app == null || app.length == 0) return n;
-                    var newBody = [for (b in body) qualifyStringBuf(b, app)];
-                    makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
-                case EDefmodule(name, doBlock):
-                    var stmts: Array<ElixirAST> = switch (doBlock.def) {
-                        case EBlock(ss): ss;
-                        case EDo(ss): ss;
-                        default: [doBlock];
-                    };
-                    var hasShims2 = hasEctoShims(stmts);
-                    if (!hasShims2) return n;
-                    var app2 = deriveAppPrefix(name);
-                    if (app2 == null || app2.length == 0) {
-                        try app2 = reflaxe.elixir.PhoenixMapper.getAppModuleName() catch (e) {}
-                    }
-                    if (app2 == null || app2.length == 0) return n;
-                    var newDo = makeAST(EBlock([for (s in stmts) qualifyStringBuf(s, app2)]));
-                    makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        });
-    }
+	public static function transformPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EModule(name, attrs, body):
+					var hasShims = hasEctoShims(body);
+					if (!hasShims)
+						return n;
+					var app = deriveAppPrefix(name);
+					if (app == null || app.length == 0) {
+						try
+							app = reflaxe.elixir.PhoenixMapper.getAppModuleName()
+						catch (e) {}
+					}
+					if (app == null || app.length == 0)
+						return n;
+					var newBody = [for (b in body) qualifyStringBuf(b, app)];
+					makeASTWithMeta(EModule(name, attrs, newBody), n.metadata, n.pos);
+				case EDefmodule(name, doBlock):
+					var stmts:Array<ElixirAST> = switch (doBlock.def) {
+						case EBlock(ss): ss;
+						case EDo(ss): ss;
+						default: [doBlock];
+					};
+					var hasShims2 = hasEctoShims(stmts);
+					if (!hasShims2)
+						return n;
+					var app2 = deriveAppPrefix(name);
+					if (app2 == null || app2.length == 0) {
+						try
+							app2 = reflaxe.elixir.PhoenixMapper.getAppModuleName()
+						catch (e) {}
+					}
+					if (app2 == null || app2.length == 0)
+						return n;
+					var newDo = makeAST(EBlock([for (s in stmts) qualifyStringBuf(s, app2)]));
+					makeASTWithMeta(EDefmodule(name, newDo), n.metadata, n.pos);
+				default:
+					n;
+			}
+		});
+	}
 
-    static function hasEctoShims(body: Array<ElixirAST>): Bool {
-        for (b in body) switch (b.def) {
-            case EDefp(fname, args, _, _) if (fname == "from" || fname == "where"):
-                return true;
-            default:
-        }
-        return false;
-    }
+	static function hasEctoShims(body:Array<ElixirAST>):Bool {
+		for (b in body)
+			switch (b.def) {
+				case EDefp(fname, args, _, _) if (fname == "from" || fname == "where"):
+					return true;
+				default:
+			}
+		return false;
+	}
 
-    static function deriveAppPrefix(moduleName: String): Null<String> {
-        if (moduleName == null) return null;
-        // Prefer exact prefix before Web, but allow plain modules too
-        var idx = moduleName.indexOf("Web");
-        if (idx > 0) return moduleName.substring(0, idx);
-        return null;
-    }
+	static function deriveAppPrefix(moduleName:String):Null<String> {
+		if (moduleName == null)
+			return null;
+		// Prefer exact prefix before Web, but allow plain modules too
+		var idx = moduleName.indexOf("Web");
+		if (idx > 0)
+			return moduleName.substring(0, idx);
+		return null;
+	}
 
-    static function qualifyStringBuf(node: ElixirAST, app: String): ElixirAST {
-        return ElixirASTTransformer.transformNode(node, function(m: ElixirAST): ElixirAST {
-            return switch (m.def) {
-                case ERemoteCall({def: EVar(mod)}, func, args) if (mod == "StringBuf"):
-                    makeASTWithMeta(ERemoteCall(makeAST(EVar(app + ".StringBuf")), func, args), m.metadata, m.pos);
-                case ECall({def: EVar(mod)}, func, args) if (mod == "StringBuf"):
-                    makeASTWithMeta(ERemoteCall(makeAST(EVar(app + ".StringBuf")), func, args), m.metadata, m.pos);
-                default:
-                    m;
-            }
-        });
-    }
+	static function qualifyStringBuf(node:ElixirAST, app:String):ElixirAST {
+		return ElixirASTTransformer.transformNode(node, function(m:ElixirAST):ElixirAST {
+			return switch (m.def) {
+				case ERemoteCall({def: EVar(mod)}, func, args) if (mod == "StringBuf"):
+					makeASTWithMeta(ERemoteCall(makeAST(EVar(app + ".StringBuf")), func, args), m.metadata, m.pos);
+				case ECall({def: EVar(mod)}, func, args) if (mod == "StringBuf"):
+					makeASTWithMeta(ERemoteCall(makeAST(EVar(app + ".StringBuf")), func, args), m.metadata, m.pos);
+				default:
+					m;
+			}
+		});
+	}
 }
-
 #end

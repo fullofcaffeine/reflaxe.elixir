@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.analyzers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
@@ -43,268 +42,335 @@ import reflaxe.elixir.ast.analyzers.ElixirCodeVarRefTokenizer;
  * Elixir refs (collector): {"elem"}   # `elem` used free in nested fn
  */
 class VariableUsageCollector {
-    /** Return set of variable names referenced from the current function scope. */
-    public static function referencedInFunctionScope(body: ElixirAST): Map<String, Bool> {
-        var refs = new Map<String, Bool>();
-        // Shadow-set holds names that are locally bound and therefore should not
-        // be counted as references to the outer function scope when seen.
-        var empty = new Map<String, Bool>();
-        walk(body, empty, refs);
-        return refs;
-    }
+	/** Return set of variable names referenced from the current function scope. */
+	public static function referencedInFunctionScope(body:ElixirAST):Map<String, Bool> {
+		var refs = new Map<String, Bool>();
+		// Shadow-set holds names that are locally bound and therefore should not
+		// be counted as references to the outer function scope when seen.
+		var empty = new Map<String, Bool>();
+		walk(body, empty, refs);
+		return refs;
+	}
 
-    /** True when `name` is referenced from the current function scope. */
-    public static function usedInFunctionScope(body: ElixirAST, name: String): Bool {
-        if (name == null || name.length == 0) return false;
-        var refs = referencedInFunctionScope(body);
-        return refs.exists(name);
-    }
+	/** True when `name` is referenced from the current function scope. */
+	public static function usedInFunctionScope(body:ElixirAST, name:String):Bool {
+		if (name == null || name.length == 0)
+			return false;
+		var refs = referencedInFunctionScope(body);
+		return refs.exists(name);
+	}
 
-    // ------------------------ Internals ------------------------
+	// ------------------------ Internals ------------------------
 
-	    static function walk(n: ElixirAST, shadowed: Map<String, Bool>, refs: Map<String, Bool>): Void {
-	        if (n == null || n.def == null) return;
-	        switch (n.def) {
-            // References
-            case EVar(v):
-                if (!shadowed.exists(v)) refs.set(v, true);
-                // Some passes or builder shapes may encode dotted field access as a single EVar
-                // (e.g., "todo.completed", "socket.assigns.todos"). Treat the base binder as a
-                // reference as well so hygiene passes can correctly detect binder usage.
-                var dotIndex = v.indexOf(".");
-                if (dotIndex > 0) {
-                    var base = v.substring(0, dotIndex);
-                    var c = base.charAt(0);
-                    var looksLikeVar = (c == '_') || (c.toLowerCase() == c && c.toUpperCase() != c);
-                    if (looksLikeVar && !shadowed.exists(base)) refs.set(base, true);
-                }
+	static function walk(n:ElixirAST, shadowed:Map<String, Bool>, refs:Map<String, Bool>):Void {
+		if (n == null || n.def == null)
+			return;
+		switch (n.def) {
+			// References
+			case EVar(v):
+				if (!shadowed.exists(v))
+					refs.set(v, true);
+				// Some passes or builder shapes may encode dotted field access as a single EVar
+				// (e.g., "todo.completed", "socket.assigns.todos"). Treat the base binder as a
+				// reference as well so hygiene passes can correctly detect binder usage.
+				var dotIndex = v.indexOf(".");
+				if (dotIndex > 0) {
+					var base = v.substring(0, dotIndex);
+					var c = base.charAt(0);
+					var looksLikeVar = (c == '_') || (c.toLowerCase() == c && c.toUpperCase() != c);
+					if (looksLikeVar && !shadowed.exists(base))
+						refs.set(base, true);
+				}
 
-            // Do not treat LHS as reference; only RHS can reference
-            case EBinary(op, left, right):
-                // Assignment/match binds on the LHS; only RHS can reference.
-                // All other binary ops may reference from both sides.
-                switch (op) {
-                    case Match:
-                        walk(right, shadowed, refs);
-                    default:
-                        walk(left, shadowed, refs);
-                        walk(right, shadowed, refs);
-                }
-            case EMatch(_, rhsExpr):
-                walk(rhsExpr, shadowed, refs);
-	            case EUnary(_, expr):
-	                walk(expr, shadowed, refs);
+			// Do not treat LHS as reference; only RHS can reference
+			case EBinary(op, left, right):
+				// Assignment/match binds on the LHS; only RHS can reference.
+				// All other binary ops may reference from both sides.
+				switch (op) {
+					case Match:
+						walk(right, shadowed, refs);
+					default:
+						walk(left, shadowed, refs);
+						walk(right, shadowed, refs);
+				}
+			case EMatch(_, rhsExpr):
+				walk(rhsExpr, shadowed, refs);
+			case EUnary(_, expr):
+				walk(expr, shadowed, refs);
 
-	            // Interpolated strings: references inside `#{...}` do not appear as EVar nodes.
-	            case EString(v):
-	                var tmp = new Map<String, Bool>();
-	                ElixirCodeVarRefTokenizer.collectFromInterpolatedStringText(v, tmp);
-	                for (k in tmp.keys()) if (!shadowed.exists(k)) refs.set(k, true);
+			// Interpolated strings: references inside `#{...}` do not appear as EVar nodes.
+			case EString(v):
+				var tmp = new Map<String, Bool>();
+				ElixirCodeVarRefTokenizer.collectFromInterpolatedStringText(v, tmp);
+				for (k in tmp.keys())
+					if (!shadowed.exists(k))
+						refs.set(k, true);
 
-	            // Blocks / groups
-	            case EBlock(stmts):
-	                for (s in stmts) walk(s, shadowed, refs);
-	            case EDo(statements):
-	                for (s in statements) walk(s, shadowed, refs);
-            case EParen(e):
-                walk(e, shadowed, refs);
-            case EPipe(l, r):
-                walk(l, shadowed, refs); walk(r, shadowed, refs);
-            case ERange(start, end, _exclusive, step):
-                walk(start, shadowed, refs);
-                walk(end, shadowed, refs);
-                if (step != null) walk(step, shadowed, refs);
+			// Blocks / groups
+			case EBlock(stmts):
+				for (s in stmts)
+					walk(s, shadowed, refs);
+			case EDo(statements):
+				for (s in statements)
+					walk(s, shadowed, refs);
+			case EParen(e):
+				walk(e, shadowed, refs);
+			case EPipe(l, r):
+				walk(l, shadowed, refs);
+				walk(r, shadowed, refs);
+			case ERange(start, end, _exclusive, step):
+				walk(start, shadowed, refs);
+				walk(end, shadowed, refs);
+				if (step != null)
+					walk(step, shadowed, refs);
 
-            // Control flow
-            case EIf(c,t,e):
-                walk(c, shadowed, refs); walk(t, shadowed, refs); if (e != null) walk(e, shadowed, refs);
-            case EUnless(c, b, e):
-                walk(c, shadowed, refs); walk(b, shadowed, refs); if (e != null) walk(e, shadowed, refs);
-            case ECond(clauses):
-                for (cl in clauses) {
-                    walk(cl.condition, shadowed, refs);
-                    walk(cl.body, shadowed, refs);
-                }
+			// Control flow
+			case EIf(c, t, e):
+				walk(c, shadowed, refs);
+				walk(t, shadowed, refs);
+				if (e != null)
+					walk(e, shadowed, refs);
+			case EUnless(c, b, e):
+				walk(c, shadowed, refs);
+				walk(b, shadowed, refs);
+				if (e != null)
+					walk(e, shadowed, refs);
+			case ECond(clauses):
+				for (cl in clauses) {
+					walk(cl.condition, shadowed, refs);
+					walk(cl.body, shadowed, refs);
+				}
 
-            // Case/Receive: pattern binds names visible within guard/body
-            case ECase(expr, clauses):
-                walk(expr, shadowed, refs);
-                for (cl in clauses) {
-                    var add = collectPatternVars(cl.pattern);
-                    var next = extendShadow(shadowed, add);
-                    if (cl.guard != null) walk(cl.guard, next, refs);
-                    walk(cl.body, next, refs);
-                }
-            case EReceive(clauses, after):
-                for (cl in clauses) {
-                    var add = collectPatternVars(cl.pattern);
-                    var next = extendShadow(shadowed, add);
-                    walk(cl.body, next, refs);
-                }
-                if (after != null) {
-                    walk(after.timeout, shadowed, refs);
-                    walk(after.body, shadowed, refs);
-                }
+			// Case/Receive: pattern binds names visible within guard/body
+			case ECase(expr, clauses):
+				walk(expr, shadowed, refs);
+				for (cl in clauses) {
+					var add = collectPatternVars(cl.pattern);
+					var next = extendShadow(shadowed, add);
+					if (cl.guard != null)
+						walk(cl.guard, next, refs);
+					walk(cl.body, next, refs);
+				}
+			case EReceive(clauses, after):
+				for (cl in clauses) {
+					var add = collectPatternVars(cl.pattern);
+					var next = extendShadow(shadowed, add);
+					walk(cl.body, next, refs);
+				}
+				if (after != null) {
+					walk(after.timeout, shadowed, refs);
+					walk(after.body, shadowed, refs);
+				}
 
-            // With: each clause pattern binds names; these are visible in do/else
-            case EWith(clauses, doBlock, elseBlock):
-                var accum = cloneShadow(shadowed);
-                for (wc in clauses) {
-                    // The expression may reference outer vars
-                    walk(wc.expr, accum, refs);
-                    // Pattern binds new names for subsequent clauses and do/else
-                    var add = collectPatternVars(wc.pattern);
-                    for (k in add.keys()) accum.set(k, true);
-                }
-                walk(doBlock, accum, refs);
-                if (elseBlock != null) walk(elseBlock, accum, refs);
+			// With: each clause pattern binds names; these are visible in do/else
+			case EWith(clauses, doBlock, elseBlock):
+				var accum = cloneShadow(shadowed);
+				for (wc in clauses) {
+					// The expression may reference outer vars
+					walk(wc.expr, accum, refs);
+					// Pattern binds new names for subsequent clauses and do/else
+					var add = collectPatternVars(wc.pattern);
+					for (k in add.keys())
+						accum.set(k, true);
+				}
+				walk(doBlock, accum, refs);
+				if (elseBlock != null)
+					walk(elseBlock, accum, refs);
 
-            // For/comprehension: generator pattern binds names for filters/body
-            case EFor(gens, filters, body, into, _uniq):
-                var accum = cloneShadow(shadowed);
-                for (g in gens) {
-                    walk(g.expr, accum, refs);
-                    var add = collectPatternVars(g.pattern);
-                    for (k in add.keys()) accum.set(k, true);
-                }
-                for (f in filters) walk(f, accum, refs);
-                if (body != null) walk(body, accum, refs);
-                if (into != null) walk(into, shadowed, refs);
+			// For/comprehension: generator pattern binds names for filters/body
+			case EFor(gens, filters, body, into, _uniq):
+				var accum = cloneShadow(shadowed);
+				for (g in gens) {
+					walk(g.expr, accum, refs);
+					var add = collectPatternVars(g.pattern);
+					for (k in add.keys())
+						accum.set(k, true);
+				}
+				for (f in filters)
+					walk(f, accum, refs);
+				if (body != null)
+					walk(body, accum, refs);
+				if (into != null)
+					walk(into, shadowed, refs);
 
-            // Pin operator: inner can reference vars
-            case EPin(inner):
-                walk(inner, shadowed, refs);
+			// Pin operator: inner can reference vars
+			case EPin(inner):
+				walk(inner, shadowed, refs);
 
-            // Calls / data structures
-            case ECall(tgt, _, args):
-                if (tgt != null) walk(tgt, shadowed, refs);
-                for (a in args) walk(a, shadowed, refs);
-            case ERemoteCall(targetExpr, _, argsList):
-                walk(targetExpr, shadowed, refs);
-                for (a in argsList) walk(a, shadowed, refs);
-            case EField(obj, _):
-                walk(obj, shadowed, refs);
-            case EAccess(objectExpr, key):
-                walk(objectExpr, shadowed, refs); walk(key, shadowed, refs);
-            case EKeywordList(pairs):
-                for (p in pairs) walk(p.value, shadowed, refs);
-            case EMap(pairs):
-                for (p in pairs) { walk(p.key, shadowed, refs); walk(p.value, shadowed, refs); }
-            case EStructUpdate(base, fields):
-                walk(base, shadowed, refs); for (f in fields) walk(f.value, shadowed, refs);
-            case EStruct(_module, fields):
-                for (f in fields) walk(f.value, shadowed, refs);
-            case EBitstring(segments):
-                for (s in segments) {
-                    walk(s.value, shadowed, refs);
-                    if (s.size != null) walk(s.size, shadowed, refs);
-                }
-            case ETuple(elems) | EList(elems):
-                for (e in elems) walk(e, shadowed, refs);
+			// Calls / data structures
+			case ECall(tgt, _, args):
+				if (tgt != null)
+					walk(tgt, shadowed, refs);
+				for (a in args)
+					walk(a, shadowed, refs);
+			case ERemoteCall(targetExpr, _, argsList):
+				walk(targetExpr, shadowed, refs);
+				for (a in argsList)
+					walk(a, shadowed, refs);
+			case EField(obj, _):
+				walk(obj, shadowed, refs);
+			case EAccess(objectExpr, key):
+				walk(objectExpr, shadowed, refs);
+				walk(key, shadowed, refs);
+			case EKeywordList(pairs):
+				for (p in pairs)
+					walk(p.value, shadowed, refs);
+			case EMap(pairs):
+				for (p in pairs) {
+					walk(p.key, shadowed, refs);
+					walk(p.value, shadowed, refs);
+				}
+			case EStructUpdate(base, fields):
+				walk(base, shadowed, refs);
+				for (f in fields)
+					walk(f.value, shadowed, refs);
+			case EStruct(_module, fields):
+				for (f in fields)
+					walk(f.value, shadowed, refs);
+			case EBitstring(segments):
+				for (s in segments) {
+					walk(s.value, shadowed, refs);
+					if (s.size != null)
+						walk(s.size, shadowed, refs);
+				}
+			case ETuple(elems) | EList(elems):
+				for (e in elems)
+					walk(e, shadowed, refs);
 
-            // Misc expression forms
-            case EMacroCall(_macroName, args, doBlock):
-                for (a in args) walk(a, shadowed, refs);
-                walk(doBlock, shadowed, refs);
-            case ECapture(expr, _):
-                walk(expr, shadowed, refs);
+			// Misc expression forms
+			case EMacroCall(_macroName, args, doBlock):
+				for (a in args)
+					walk(a, shadowed, refs);
+				walk(doBlock, shadowed, refs);
+			case ECapture(expr, _):
+				walk(expr, shadowed, refs);
 
-            // Anonymous functions: binder args shadow same-named outer vars
-            case EFn(clauses):
-                for (cl in clauses) {
-                    var add = collectArgVars(cl.args);
-                    var next = extendShadow(shadowed, add);
-                    if (cl.guard != null) walk(cl.guard, next, refs);
-                    walk(cl.body, next, refs);
-                }
+			// Anonymous functions: binder args shadow same-named outer vars
+			case EFn(clauses):
+				for (cl in clauses) {
+					var add = collectArgVars(cl.args);
+					var next = extendShadow(shadowed, add);
+					if (cl.guard != null)
+						walk(cl.guard, next, refs);
+					walk(cl.body, next, refs);
+				}
 
-            // Try/catch/rescue: patterns bind vars within respective bodies
-            case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
-                walk(body, shadowed, refs);
-                if (rescueClauses != null) for (rc in rescueClauses) {
-                    var add = collectPatternVars(rc.pattern);
-                    var next = extendShadow(shadowed, add);
-                    walk(rc.body, next, refs);
-                }
-                if (catchClauses != null) for (cc in catchClauses) {
-                    var add = collectPatternVars(cc.pattern);
-                    var next = extendShadow(shadowed, add);
-                    walk(cc.body, next, refs);
-                }
-                if (afterBlock != null) walk(afterBlock, shadowed, refs);
-                if (elseBlock != null) walk(elseBlock, shadowed, refs);
+			// Try/catch/rescue: patterns bind vars within respective bodies
+			case ETry(body, rescueClauses, catchClauses, afterBlock, elseBlock):
+				walk(body, shadowed, refs);
+				if (rescueClauses != null)
+					for (rc in rescueClauses) {
+						var add = collectPatternVars(rc.pattern);
+						var next = extendShadow(shadowed, add);
+						walk(rc.body, next, refs);
+					}
+				if (catchClauses != null)
+					for (cc in catchClauses) {
+						var add = collectPatternVars(cc.pattern);
+						var next = extendShadow(shadowed, add);
+						walk(cc.body, next, refs);
+					}
+				if (afterBlock != null)
+					walk(afterBlock, shadowed, refs);
+				if (elseBlock != null)
+					walk(elseBlock, shadowed, refs);
 
-            case ERaise(exception, attributes):
-                walk(exception, shadowed, refs);
-                if (attributes != null) walk(attributes, shadowed, refs);
-            case EThrow(value):
-                walk(value, shadowed, refs);
-            case ESend(target, message):
-                walk(target, shadowed, refs);
-                walk(message, shadowed, refs);
-            case EModuleAttribute(_name, value):
-                walk(value, shadowed, refs);
-            case EQuote(options, expr):
-                for (o in options) walk(o, shadowed, refs);
-                walk(expr, shadowed, refs);
-            case EUnquote(expr) | EUnquoteSplicing(expr):
-                walk(expr, shadowed, refs);
-            case EUse(_module, options):
-                for (o in options) walk(o, shadowed, refs);
-            case EFragment(_tag, attrs, children):
-                for (a in attrs) walk(a.value, shadowed, refs);
-                for (c in children) walk(c, shadowed, refs);
+			case ERaise(exception, attributes):
+				walk(exception, shadowed, refs);
+				if (attributes != null)
+					walk(attributes, shadowed, refs);
+			case EThrow(value):
+				walk(value, shadowed, refs);
+			case ESend(target, message):
+				walk(target, shadowed, refs);
+				walk(message, shadowed, refs);
+			case EModuleAttribute(_name, value):
+				walk(value, shadowed, refs);
+			case EQuote(options, expr):
+				for (o in options)
+					walk(o, shadowed, refs);
+				walk(expr, shadowed, refs);
+			case EUnquote(expr) | EUnquoteSplicing(expr):
+				walk(expr, shadowed, refs);
+			case EUse(_module, options):
+				for (o in options)
+					walk(o, shadowed, refs);
+			case EFragment(_tag, attrs, children):
+				for (a in attrs)
+					walk(a.value, shadowed, refs);
+				for (c in children)
+					walk(c, shadowed, refs);
 
-            // Ignore raw literals and strings for now; ERaw/ESigil usage is handled by
-            // transform-specific heuristics when needed.
-            default:
-        }
-    }
+			// Ignore raw literals and strings for now; ERaw/ESigil usage is handled by
+			// transform-specific heuristics when needed.
+			default:
+		}
+	}
 
-    static function extendShadow(base: Map<String, Bool>, add: Map<String, Bool>): Map<String, Bool> {
-        var m = cloneShadow(base);
-        for (k in add.keys()) m.set(k, true);
-        return m;
-    }
+	static function extendShadow(base:Map<String, Bool>, add:Map<String, Bool>):Map<String, Bool> {
+		var m = cloneShadow(base);
+		for (k in add.keys())
+			m.set(k, true);
+		return m;
+	}
 
-    static function cloneShadow(m: Map<String, Bool>): Map<String, Bool> {
-        var n = new Map<String, Bool>();
-        for (k in m.keys()) n.set(k, true);
-        return n;
-    }
+	static function cloneShadow(m:Map<String, Bool>):Map<String, Bool> {
+		var n = new Map<String, Bool>();
+		for (k in m.keys())
+			n.set(k, true);
+		return n;
+	}
 
-    static function collectArgVars(args: Array<EPattern>): Map<String, Bool> {
-        var m = new Map<String, Bool>();
-        for (a in args) for (k in collectPatternVars(a).keys()) m.set(k, true);
-        return m;
-    }
+	static function collectArgVars(args:Array<EPattern>):Map<String, Bool> {
+		var m = new Map<String, Bool>();
+		for (a in args)
+			for (k in collectPatternVars(a).keys())
+				m.set(k, true);
+		return m;
+	}
 
-    static function collectPatternVars(p: EPattern): Map<String, Bool> {
-        var m = new Map<String, Bool>();
-        function add(nm: String): Void {
-            if (nm == null) return;
-            // Shadow exactly the bound name; do not map underscore/base variants.
-            // In Elixir, `name` and `_name` are distinct variables; referencing `name`
-            // when `_name` is bound should be considered a free use of `name`.
-            m.set(nm, true);
-        }
-        function visit(pp: EPattern): Void {
-            switch (pp) {
-                case PVar(n): add(n);
-                case PAlias(varName, pat): add(varName); visit(pat);
-                case PTuple(es): for (e in es) visit(e);
-                case PList(es): for (e in es) visit(e);
-                case PCons(h, t): visit(h); visit(t);
-                case PMap(kvs): for (kv in kvs) visit(kv.value);
-                case PStruct(_, fs): for (f in fs) visit(f.value);
-                case PBinary(segs): for (s in segs) visit(s.pattern);
-                case PPin(inner): visit(inner);
-                default:
-            }
-        }
-        visit(p);
-        return m;
-    }
+	static function collectPatternVars(p:EPattern):Map<String, Bool> {
+		var m = new Map<String, Bool>();
+		function add(nm:String):Void {
+			if (nm == null)
+				return;
+			// Shadow exactly the bound name; do not map underscore/base variants.
+			// In Elixir, `name` and `_name` are distinct variables; referencing `name`
+			// when `_name` is bound should be considered a free use of `name`.
+			m.set(nm, true);
+		}
+		function visit(pp:EPattern):Void {
+			switch (pp) {
+				case PVar(n):
+					add(n);
+				case PAlias(varName, pat):
+					add(varName);
+					visit(pat);
+				case PTuple(es):
+					for (e in es)
+						visit(e);
+				case PList(es):
+					for (e in es)
+						visit(e);
+				case PCons(h, t):
+					visit(h);
+					visit(t);
+				case PMap(kvs):
+					for (kv in kvs)
+						visit(kv.value);
+				case PStruct(_, fs):
+					for (f in fs)
+						visit(f.value);
+				case PBinary(segs):
+					for (s in segs)
+						visit(s.pattern);
+				case PPin(inner):
+					visit(inner);
+				default:
+			}
+		}
+		visit(p);
+		return m;
+	}
 }
-
 #end

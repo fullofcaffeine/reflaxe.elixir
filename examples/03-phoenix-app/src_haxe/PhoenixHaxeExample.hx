@@ -15,22 +15,22 @@ import elixir.otp.Supervisor.ChildSpecFormat;
 @:application
 @:appName("PhoenixHaxeExample")
 class PhoenixHaxeExample {
-    /**
-     * Start the application supervision tree.
-     */
-    @:keep
-    public static function start(type: ApplicationStartType, args: ApplicationArgs): ApplicationResult {
-        var children: Array<ChildSpecFormat> = [
-            TypeSafeChildSpec.pubSub("PhoenixHaxeExample.PubSub"),
-            TypeSafeChildSpec.endpoint("PhoenixHaxeExampleWeb.Endpoint")
-        ];
+	/**
+	 * Start the application supervision tree.
+	 */
+	@:keep
+	public static function start(type:ApplicationStartType, args:ApplicationArgs):ApplicationResult {
+		var children:Array<ChildSpecFormat> = [
+			TypeSafeChildSpec.pubSub("PhoenixHaxeExample.PubSub"),
+			TypeSafeChildSpec.endpoint("PhoenixHaxeExampleWeb.Endpoint")
+		];
 
-        final options: SupervisorOptions = {
-            strategy: SupervisorStrategy.OneForOne,
-            max_restarts: 3,
-            max_seconds: 5
-        };
+		final options:SupervisorOptions = {
+			strategy: SupervisorStrategy.OneForOne,
+			max_restarts: 3,
+			max_seconds: 5
+		};
 
-        return SupervisorExtern.startLink(children, options);
-    }
+		return SupervisorExtern.startLink(children, options);
+	}
 }

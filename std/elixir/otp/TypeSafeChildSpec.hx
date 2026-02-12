@@ -35,139 +35,139 @@ import elixir.types.Term;
  * - Map specs: `%{id: MyWorker, start: {MyWorker, :start_link, []}}`
  */
 class TypeSafeChildSpec {
-    
-    /**
-     * Phoenix PubSub child specification
-     * 
-     * @param name The PubSub name (e.g., "MyApp.PubSub")
-     * @return Child spec for Phoenix.PubSub
-     */
-    public static inline function pubSub(name: String): ChildSpecFormat {
-        // Phoenix.PubSub expects a keyword list with name
-        return ModuleWithConfig("Phoenix.PubSub", [{key: "name", value: name}]);
-    }
-    
-    /**
-     * Ecto Repository child specification
-     * 
-     * @param module The repo module name (e.g., "MyApp.Repo")
-     * @param config Optional configuration as keyword list
-     * @return Child spec for the repository
-     */
-    public static inline function repo(module: String, ?config: Array<{key: String, value: Term}>): ChildSpecFormat {
-        if (config != null) {
-            return ModuleWithConfig(module, config);
-        } else {
-            // Just the module reference
-            return ModuleRef(module);
-        }
-    }
-    
-    /**
-     * Phoenix Endpoint child specification
-     * 
-     * @param module The endpoint module name
-     * @return Module reference for the endpoint
-     */
-    public static inline function endpoint(module: String): ChildSpecFormat {
-        return ModuleRef(module);
-    }
-    
-    /**
-     * Telemetry supervisor child specification
-     * 
-     * @param module The telemetry module name
-     * @return Module reference for telemetry
-     */
-    public static inline function telemetry(module: String): ChildSpecFormat {
-        return ModuleRef(module);
-    }
-    
-    /**
-     * Generic worker child specification
-     * 
-     * @param module The worker module
-     * @param args Arguments to pass to start_link
-     * @return Child spec for the worker
-     */
-    public static inline function worker(module: String, ?args: Array<Term>): ChildSpecFormat {
-        if (args != null && args.length > 0) {
-            return ModuleWithArgs(module, args);
-        } else {
-            return ModuleRef(module);
-        }
-    }
-    
-    /**
-     * Generic supervisor child specification
-     * 
-     * @param module The supervisor module
-     * @param args Arguments to pass to start_link
-     * @param opts Additional options for full spec
-     * @return Child spec for the supervisor
-     */
-    public static inline function supervisor(module: String, ?args: Array<Term>, ?opts: ChildSpec): ChildSpecFormat {
-        if (opts != null) {
-            // Use full spec with provided options
-            var spec = opts;
-            spec.id = module;
-            spec.start = {module: module, func: "start_link", args: args != null ? args : []};
-            if (spec.type == null) spec.type = Supervisor;
-            return FullSpec(spec);
-        } else if (args != null && args.length > 0) {
-            return ModuleWithArgs(module, args);
-        } else {
-            return ModuleRef(module);
-        }
-    }
-    
-    /**
-     * Task supervisor child specification
-     * 
-     * @param name The task supervisor name
-     * @return Child spec for Task.Supervisor
-     */
-    public static inline function taskSupervisor(name: String): ChildSpecFormat {
-        return ModuleWithConfig("Task.Supervisor", [{key: "name", value: name}]);
-    }
-    
-    /**
-     * Registry child specification
-     * 
-     * @param name The registry name
-     * @param opts Registry options as keyword list
-     * @return Child spec for Registry
-     */
-    public static inline function registry(name: String, ?opts: Array<{key: String, value: Term}>): ChildSpecFormat {
-        var config = [{key: "name", value: name}];
-        if (opts != null) {
-            config = config.concat(opts);
-        }
-        return ModuleWithConfig("Registry", config);
-    }
-    
-    /**
-     * Dynamic child specification from a map
-     * 
-     * @param spec The child spec map
-     * @return The child spec as a full specification
-     */
-    public static inline function fromMap(spec: ChildSpec): ChildSpecFormat {
-        return FullSpec(spec);
-    }
-    
-    /**
-     * Create a simple child spec from module and arguments
-     * 
-     * @param module The module to start
-     * @param args Arguments for start_link
-     * @return Simple module-based child spec
-     */
-    public static inline function simple(module: String, ?args: Array<Term>): ChildSpecFormat {
-        if (args != null && args.length > 0) {
-            return ModuleWithArgs(module, args);
-        } else {
-            return ModuleRef(module);
-        }
-    }
+	/**
+	 * Phoenix PubSub child specification
+	 * 
+	 * @param name The PubSub name (e.g., "MyApp.PubSub")
+	 * @return Child spec for Phoenix.PubSub
+	 */
+	public static inline function pubSub(name:String):ChildSpecFormat {
+		// Phoenix.PubSub expects a keyword list with name
+		return ModuleWithConfig("Phoenix.PubSub", [{key: "name", value: name}]);
+	}
+
+	/**
+	 * Ecto Repository child specification
+	 * 
+	 * @param module The repo module name (e.g., "MyApp.Repo")
+	 * @param config Optional configuration as keyword list
+	 * @return Child spec for the repository
+	 */
+	public static inline function repo(module:String, ?config:Array<{key:String, value:Term}>):ChildSpecFormat {
+		if (config != null) {
+			return ModuleWithConfig(module, config);
+		} else {
+			// Just the module reference
+			return ModuleRef(module);
+		}
+	}
+
+	/**
+	 * Phoenix Endpoint child specification
+	 * 
+	 * @param module The endpoint module name
+	 * @return Module reference for the endpoint
+	 */
+	public static inline function endpoint(module:String):ChildSpecFormat {
+		return ModuleRef(module);
+	}
+
+	/**
+	 * Telemetry supervisor child specification
+	 * 
+	 * @param module The telemetry module name
+	 * @return Module reference for telemetry
+	 */
+	public static inline function telemetry(module:String):ChildSpecFormat {
+		return ModuleRef(module);
+	}
+
+	/**
+	 * Generic worker child specification
+	 * 
+	 * @param module The worker module
+	 * @param args Arguments to pass to start_link
+	 * @return Child spec for the worker
+	 */
+	public static inline function worker(module:String, ?args:Array<Term>):ChildSpecFormat {
+		if (args != null && args.length > 0) {
+			return ModuleWithArgs(module, args);
+		} else {
+			return ModuleRef(module);
+		}
+	}
+
+	/**
+	 * Generic supervisor child specification
+	 * 
+	 * @param module The supervisor module
+	 * @param args Arguments to pass to start_link
+	 * @param opts Additional options for full spec
+	 * @return Child spec for the supervisor
+	 */
+	public static inline function supervisor(module:String, ?args:Array<Term>, ?opts:ChildSpec):ChildSpecFormat {
+		if (opts != null) {
+			// Use full spec with provided options
+			var spec = opts;
+			spec.id = module;
+			spec.start = {module: module, func: "start_link", args: args != null ? args : []};
+			if (spec.type == null)
+				spec.type = Supervisor;
+			return FullSpec(spec);
+		} else if (args != null && args.length > 0) {
+			return ModuleWithArgs(module, args);
+		} else {
+			return ModuleRef(module);
+		}
+	}
+
+	/**
+	 * Task supervisor child specification
+	 * 
+	 * @param name The task supervisor name
+	 * @return Child spec for Task.Supervisor
+	 */
+	public static inline function taskSupervisor(name:String):ChildSpecFormat {
+		return ModuleWithConfig("Task.Supervisor", [{key: "name", value: name}]);
+	}
+
+	/**
+	 * Registry child specification
+	 * 
+	 * @param name The registry name
+	 * @param opts Registry options as keyword list
+	 * @return Child spec for Registry
+	 */
+	public static inline function registry(name:String, ?opts:Array<{key:String, value:Term}>):ChildSpecFormat {
+		var config = [{key: "name", value: name}];
+		if (opts != null) {
+			config = config.concat(opts);
+		}
+		return ModuleWithConfig("Registry", config);
+	}
+
+	/**
+	 * Dynamic child specification from a map
+	 * 
+	 * @param spec The child spec map
+	 * @return The child spec as a full specification
+	 */
+	public static inline function fromMap(spec:ChildSpec):ChildSpecFormat {
+		return FullSpec(spec);
+	}
+
+	/**
+	 * Create a simple child spec from module and arguments
+	 * 
+	 * @param module The module to start
+	 * @param args Arguments for start_link
+	 * @return Simple module-based child spec
+	 */
+	public static inline function simple(module:String, ?args:Array<Term>):ChildSpecFormat {
+		if (args != null && args.length > 0) {
+			return ModuleWithArgs(module, args);
+		} else {
+			return ModuleRef(module);
+		}
+	}
 }

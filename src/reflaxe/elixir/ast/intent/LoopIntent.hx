@@ -1,12 +1,12 @@
 package reflaxe.elixir.ast.intent;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Type;
 import haxe.macro.Expr.Position;
 import reflaxe.elixir.ast.ElixirAST;
 
 typedef TypedExpr = haxe.macro.Type.TypedExpr;
+
 /**
  * LoopIntent: Semantic Loop Representation
  * 
@@ -43,8 +43,8 @@ enum LoopIntent {
 	 * @param body The loop body to execute for each iteration
 	 * @param isInclusive Whether the range is inclusive (start..end) or exclusive (start...end)
 	 */
-	RangeLoop(varName: String, start: TypedExpr, end: TypedExpr, body: TypedExpr, isInclusive: Bool);
-	
+	RangeLoop(varName:String, start:TypedExpr, end:TypedExpr, body:TypedExpr, isInclusive:Bool);
+
 	/**
 	 * Collection-based for loop: for (item in collection)
 	 * 
@@ -52,8 +52,8 @@ enum LoopIntent {
 	 * @param collection The collection expression to iterate over
 	 * @param body The loop body to execute for each element
 	 */
-	CollectionLoop(varName: String, collection: TypedExpr, body: TypedExpr);
-	
+	CollectionLoop(varName:String, collection:TypedExpr, body:TypedExpr);
+
 	/**
 	 * While loop: while (condition)
 	 * 
@@ -61,16 +61,16 @@ enum LoopIntent {
 	 * @param body The loop body to execute while condition is true
 	 * @param counterVar Optional counter variable for desugared patterns
 	 */
-	WhileLoop(condition: TypedExpr, body: TypedExpr, ?counterVar: String);
-	
+	WhileLoop(condition:TypedExpr, body:TypedExpr, ?counterVar:String);
+
 	/**
 	 * Do-while loop: do { body } while (condition)
 	 * 
 	 * @param body The loop body to execute at least once
 	 * @param condition The continuation condition checked after each iteration
 	 */
-	DoWhileLoop(body: TypedExpr, condition: TypedExpr);
-	
+	DoWhileLoop(body:TypedExpr, condition:TypedExpr);
+
 	/**
 	 * Comprehension pattern: [for (x in xs) if (pred(x)) transform(x)]
 	 * Detected when loop builds a collection with accumulator
@@ -81,8 +81,8 @@ enum LoopIntent {
 	 * @param filter Optional predicate for filtering elements
 	 * @param accumulator Variable that collects results (e.g., "items", "results")
 	 */
-	ComprehensionLoop(varName: String, collection: TypedExpr, transform: TypedExpr, ?filter: TypedExpr, ?accumulator: String);
-	
+	ComprehensionLoop(varName:String, collection:TypedExpr, transform:TypedExpr, ?filter:TypedExpr, ?accumulator:String);
+
 	/**
 	 * Map pattern: collection.map(x -> transform(x))
 	 * Detected when loop transforms each element without filtering
@@ -91,8 +91,8 @@ enum LoopIntent {
 	 * @param collection The source collection
 	 * @param transform The transformation function
 	 */
-	MapLoop(varName: String, collection: TypedExpr, transform: TypedExpr);
-	
+	MapLoop(varName:String, collection:TypedExpr, transform:TypedExpr);
+
 	/**
 	 * Filter pattern: collection.filter(x -> predicate(x))
 	 * Detected when loop selectively includes elements
@@ -101,8 +101,8 @@ enum LoopIntent {
 	 * @param collection The source collection
 	 * @param predicate The filter condition
 	 */
-	FilterLoop(varName: String, collection: TypedExpr, predicate: TypedExpr);
-	
+	FilterLoop(varName:String, collection:TypedExpr, predicate:TypedExpr);
+
 	/**
 	 * Reduce/fold pattern: collection.reduce(init, (acc, x) -> combine(acc, x))
 	 * Detected when loop accumulates a single value
@@ -113,15 +113,15 @@ enum LoopIntent {
 	 * @param init Initial accumulator value
 	 * @param combine The combination function
 	 */
-	ReduceLoop(varName: String, collection: TypedExpr, accumulator: String, init: TypedExpr, combine: TypedExpr);
+	ReduceLoop(varName:String, collection:TypedExpr, accumulator:String, init:TypedExpr, combine:TypedExpr);
 }
 
 /**
  * Accumulator variable information
  */
 typedef AccumulatorVar = {
-	var name: String;
-	var type: String;
+	var name:String;
+	var type:String;
 }
 
 /**
@@ -132,40 +132,40 @@ typedef LoopIntentMetadata = {
 	 * Variables that appear to be accumulators (modified in loop body)
 	 * These need initialization before the loop (e.g., items = [])
 	 */
-	var ?accumulatorVars: Array<AccumulatorVar>;
-	
+	var ?accumulatorVars:Array<AccumulatorVar>;
+
 	/**
 	 * Original source position for error reporting
 	 */
-	var ?sourcePos: Position;
-	
+	var ?sourcePos:Position;
+
 	/**
 	 * Whether this loop was desugared from a for loop by Haxe
 	 */
-	var ?wasDesugared: Bool;
-	
+	var ?wasDesugared:Bool;
+
 	/**
 	 * Infrastructure variables to remove (g, g1, _g, etc.)
 	 */
-	var ?infrastructureVars: Array<String>;
-	
+	var ?infrastructureVars:Array<String>;
+
 	/**
 	 * Variable mapping for infrastructure variable elimination
 	 * Maps infrastructure names (_g, _g1) to user names (i, limit)
 	 */
-	var ?variableMapping: Map<String, String>;
-	
+	var ?variableMapping:Map<String, String>;
+
 	/**
 	 * Hints for optimization (e.g., "can_be_comprehension", "tail_recursive")
 	 */
-	var ?optimizationHints: Array<String>;
+	var ?optimizationHints:Array<String>;
 }
 
 /**
  * Container for LoopIntent with metadata
  */
 typedef LoopIntentWithMetadata = {
-	var intent: LoopIntent;
-	var metadata: LoopIntentMetadata;
+	var intent:LoopIntent;
+	var metadata:LoopIntentMetadata;
 }
 #end

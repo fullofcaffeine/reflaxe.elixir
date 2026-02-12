@@ -16,12 +16,10 @@ import phoenix.PresenceBehavior;
  * - @:presence injects `use Phoenix.Presence, otp_app: ...` at the Elixir level.
  */
 typedef PresenceMeta = {
-    var onlineAt: Float;
-    var name: String;
+	var onlineAt:Float;
+	var name:String;
 }
 
 @:native("PhoenixChatWeb.Presence")
 @:presence
-class ChatPresence implements PresenceBehavior {
-}
-
+class ChatPresence implements PresenceBehavior {}

@@ -9,12 +9,12 @@ import reflaxe.elixir.macros.HttpMethod;
 @:router
 @:build(reflaxe.elixir.macros.RouterBuildMacro.generateRoutes())
 @:routes([
-    {
-        name: "home",
-        method: HttpMethod.GET,
-        path: "/",
-        controller: controllers.PageController,
-        action: controllers.PageController.home
-    }
+	{
+		name: "home",
+		method: HttpMethod.GET,
+		path: "/",
+		controller: controllers.PageController,
+		action: controllers.PageController.home
+	}
 ])
 class PhoenixHaxeExampleRouter {}

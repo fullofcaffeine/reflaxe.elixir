@@ -30,43 +30,43 @@ import phoenix.Phoenix.Socket;
 @:native("TestAppWeb.FastBootLive")
 @:liveview
 class Main {
-  public static function mount(params: Term, session: Term, socket: Socket<FastBootAssigns>): MountResult<FastBootAssigns> {
-    // Exercise assign/assigns transforms without relying on raw param maps.
-    socket = LiveView.assign(socket, "count", 0);
-    socket = LiveView.assign(socket, "active", false);
-    return Ok(socket);
-  }
+	public static function mount(params:Term, session:Term, socket:Socket<FastBootAssigns>):MountResult<FastBootAssigns> {
+		// Exercise assign/assigns transforms without relying on raw param maps.
+		socket = LiveView.assign(socket, "count", 0);
+		socket = LiveView.assign(socket, "active", false);
+		return Ok(socket);
+	}
 
-  public static function handle_event(event: String, params: Term, socket: Socket<FastBootAssigns>): HandleEventResult<FastBootAssigns> {
-    // Event names are generic; no app-specific heuristics.
-    switch (event) {
-      case "increment":
-        var next = socket.assigns.count + 1;
-        socket = LiveView.assign(socket, "count", next);
-      case "toggle":
-        socket = LiveView.assign(socket, "active", !socket.assigns.active);
-      case _:
-    }
-    return NoReply(socket);
-  }
+	public static function handle_event(event:String, params:Term, socket:Socket<FastBootAssigns>):HandleEventResult<FastBootAssigns> {
+		// Event names are generic; no app-specific heuristics.
+		switch (event) {
+			case "increment":
+				var next = socket.assigns.count + 1;
+				socket = LiveView.assign(socket, "count", next);
+			case "toggle":
+				socket = LiveView.assign(socket, "active", !socket.assigns.active);
+			case _:
+		}
+		return NoReply(socket);
+	}
 
-  /**
-   * Render a small template using HXX.hxx to ensure HEEx transforms stay
-   * correct under fast_boot gating.
-   */
-  public static function render(assigns:{ count:Int, active:Bool }):String {
-    return HXX.hxx('
+	/**
+	 * Render a small template using HXX.hxx to ensure HEEx transforms stay
+	 * correct under fast_boot gating.
+	 */
+	public static function render(assigns:{count:Int, active:Bool}):String {
+		return HXX.hxx('
       <div>
         <span data-testid="count">#{@count}</span>
         <span data-testid="status" class={if @active, do: "on", else: "off"}>status</span>
       </div>
     ');
-  }
+	}
 
-  static inline function ignore<T>(value:T):Void {}
+	static inline function ignore<T>(value:T):Void {}
 }
 
 typedef FastBootAssigns = {
-  var count: Int;
-  var active: Bool;
+	var count:Int;
+	var active:Bool;
 }

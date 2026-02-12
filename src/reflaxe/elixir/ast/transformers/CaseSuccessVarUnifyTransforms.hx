@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
@@ -50,84 +49,125 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   pass aligns the pattern itself with usage to avoid future drift.
  */
 class CaseSuccessVarUnifyTransforms {
-    public static function transformPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case ECase(expr, clauses):
-                    var newClauses = [];
-                    for (cl in clauses) {
-                        // Skip if payload binder is locked/canonicalized to _value
-                        if (isLockedPayload(cl)) { newClauses.push(cl); continue; }
-                        // Collect names used in body
-                        var used = new Map<String, Bool>();
-                        collectNames(cl.body, used);
-                        // Rewrite {:ok, _x} -> {:ok, x} when body references x
-                        var newPattern:EPattern = cl.pattern;
-                                switch (cl.pattern) {
-                            case PTuple(parts) if (parts.length == 2):
-                                var firstIsOk = false;
-                                switch (parts[0]) {
-                                    case PLiteral(lit):
-                                        firstIsOk = switch (lit.def) {
-                                            case EAtom(val) if (val == ":ok" || val == "ok"): true;
-                                            default: false;
-                                        };
-                                    default:
-                                }
-                                if (firstIsOk) switch (parts[1]) {
-                                    case PVar(binder) if (binder != null && binder.length > 1 && binder.charAt(0) == '_'):
-                                        var cand = binder.substr(1);
-                                        if (used.exists(cand)) newPattern = PTuple([parts[0], PVar(cand)]);
-                                    default:
-                                }
-                            default:
-                        }
-                        newClauses.push({ pattern: newPattern, guard: cl.guard, body: cl.body });
-                    }
-                    makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        });
-    }
+	public static function transformPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case ECase(expr, clauses):
+					var newClauses = [];
+					for (cl in clauses) {
+						// Skip if payload binder is locked/canonicalized to _value
+						if (isLockedPayload(cl)) {
+							newClauses.push(cl);
+							continue;
+						}
+						// Collect names used in body
+						var used = new Map<String, Bool>();
+						collectNames(cl.body, used);
+						// Rewrite {:ok, _x} -> {:ok, x} when body references x
+						var newPattern:EPattern = cl.pattern;
+						switch (cl.pattern) {
+							case PTuple(parts) if (parts.length == 2):
+								var firstIsOk = false;
+								switch (parts[0]) {
+									case PLiteral(lit):
+										firstIsOk = switch (lit.def) {
+											case EAtom(val) if (val == ":ok" || val == "ok"): true;
+											default: false;
+										};
+									default:
+								}
+								if (firstIsOk) switch (parts[1]) {
+									case PVar(binder) if (binder != null && binder.length > 1 && binder.charAt(0) == '_'):
+										var cand = binder.substr(1);
+										if (used.exists(cand)) newPattern = PTuple([parts[0], PVar(cand)]);
+									default:
+								}
+							default:
+						}
+						newClauses.push({pattern: newPattern, guard: cl.guard, body: cl.body});
+					}
+					makeASTWithMeta(ECase(expr, newClauses), n.metadata, n.pos);
+				default:
+					n;
+			}
+		});
+	}
 
-    static inline function isLockedPayload(cl: ECaseClause): Bool {
-        var isTwo = false;
-        var secondIsValue = false;
-        switch (cl.pattern) {
-            case PTuple(parts) if (parts.length == 2):
-                isTwo = true;
-                switch (parts[1]) { case PVar(b) if (b == "_value"): secondIsValue = true; default: }
-            default:
-        }
-        if (!isTwo) return false;
-        if (secondIsValue) return true;
-        // Also honor explicit lock flag on the body, if present
-        return cl.body != null
-            && cl.body.metadata != null
-            && (cl.body.metadata.lockPayloadBinder == true);
-    }
+	static inline function isLockedPayload(cl:ECaseClause):Bool {
+		var isTwo = false;
+		var secondIsValue = false;
+		switch (cl.pattern) {
+			case PTuple(parts) if (parts.length == 2):
+				isTwo = true;
+				switch (parts[1]) {
+					case PVar(b) if (b == "_value"): secondIsValue = true;
+					default:
+				}
+			default:
+		}
+		if (!isTwo)
+			return false;
+		if (secondIsValue)
+			return true;
+		// Also honor explicit lock flag on the body, if present
+		return cl.body != null && cl.body.metadata != null && (cl.body.metadata.lockPayloadBinder == true);
+	}
 
-    static function collectNames(node: ElixirAST, acc: Map<String, Bool>): Void {
-        if (node == null || node.def == null) return;
-        switch (node.def) {
-            case EVar(n): acc.set(n, true);
-            case EBlock(ss): for (s in ss) collectNames(s, acc);
-            case EIf(c,t,e): collectNames(c, acc); collectNames(t, acc); if (e != null) collectNames(e, acc);
-            case ECase(ex, cls): collectNames(ex, acc); for (c in cls) collectNames(c.body, acc);
-            case EBinary(_, l, r): collectNames(l, acc); collectNames(r, acc);
-            case EMatch(p, rhs): collectNames(rhs, acc);
-            case ECall(tgt, _, args): if (tgt != null) collectNames(tgt, acc); for (a in args) collectNames(a, acc);
-            case ERemoteCall(targetExpr, _, argsList): collectNames(targetExpr, acc); for (argNode in argsList) collectNames(argNode, acc);
-            case EList(els): for (e in els) collectNames(e, acc);
-            case ETuple(els): for (e in els) collectNames(e, acc);
-            case EMap(kvs): for (kv in kvs) { collectNames(kv.key, acc); collectNames(kv.value, acc); }
-            case EKeywordList(kvs): for (kv in kvs) collectNames(kv.value, acc);
-            case EStructUpdate(base, flds): collectNames(base, acc); for (f in flds) collectNames(f.value, acc);
-            case EFn(clauses): for (cl in clauses) collectNames(cl.body, acc);
-            default:
-        }
-    }
+	static function collectNames(node:ElixirAST, acc:Map<String, Bool>):Void {
+		if (node == null || node.def == null)
+			return;
+		switch (node.def) {
+			case EVar(n):
+				acc.set(n, true);
+			case EBlock(ss):
+				for (s in ss)
+					collectNames(s, acc);
+			case EIf(c, t, e):
+				collectNames(c, acc);
+				collectNames(t, acc);
+				if (e != null)
+					collectNames(e, acc);
+			case ECase(ex, cls):
+				collectNames(ex, acc);
+				for (c in cls)
+					collectNames(c.body, acc);
+			case EBinary(_, l, r):
+				collectNames(l, acc);
+				collectNames(r, acc);
+			case EMatch(p, rhs):
+				collectNames(rhs, acc);
+			case ECall(tgt, _, args):
+				if (tgt != null)
+					collectNames(tgt, acc);
+				for (a in args)
+					collectNames(a, acc);
+			case ERemoteCall(targetExpr, _, argsList):
+				collectNames(targetExpr, acc);
+				for (argNode in argsList)
+					collectNames(argNode, acc);
+			case EList(els):
+				for (e in els)
+					collectNames(e, acc);
+			case ETuple(els):
+				for (e in els)
+					collectNames(e, acc);
+			case EMap(kvs):
+				for (kv in kvs) {
+					collectNames(kv.key, acc);
+					collectNames(kv.value, acc);
+				}
+			case EKeywordList(kvs):
+				for (kv in kvs)
+					collectNames(kv.value, acc);
+			case EStructUpdate(base, flds):
+				collectNames(base, acc);
+				for (f in flds)
+					collectNames(f.value, acc);
+			case EFn(clauses):
+				for (cl in clauses)
+					collectNames(cl.body, acc);
+			default:
+		}
+	}
 }
-
 #end

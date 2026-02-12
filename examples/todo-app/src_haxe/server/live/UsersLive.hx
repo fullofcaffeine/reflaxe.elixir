@@ -24,41 +24,43 @@ import server.types.Types.Session;
 import shared.AvatarTools;
 import shared.liveview.EventName;
 import StringTools;
+
 using reflaxe.elixir.macros.TypedQueryLambda;
 
 typedef UserRowView = {
-    var id: Int;
-    var name: String;
-    var email: String;
-    var avatar_initials: String;
-    var avatar_class: String;
-    var avatar_style: String;
-    var status_label: String;
-    var status_class: String;
-    var last_login_label: String;
-    var toggle_label: String;
-    var toggle_class: String;
+	var id:Int;
+	var name:String;
+	var email:String;
+	var avatar_initials:String;
+	var avatar_class:String;
+	var avatar_style:String;
+	var status_label:String;
+	var status_class:String;
+	var last_login_label:String;
+	var toggle_label:String;
+	var toggle_class:String;
 }
 
 typedef UsersLiveAssigns = {
-    var signed_in: Bool;
-    var current_user: Null<User>;
+	var signed_in:Bool;
+	var current_user:Null<User>;
 
-    var search_query: String;
-    var status_filter: String;
+	var search_query:String;
+	var status_filter:String;
 
-    var all_users: Array<User>;
-    var visible_users: Array<UserRowView>;
+	var all_users:Array<User>;
+	var visible_users:Array<UserRowView>;
 
-    var total_users: Int;
-    var active_users: Int;
-    var inactive_users: Int;
+	var total_users:Int;
+	var active_users:Int;
+	var inactive_users:Int;
 }
 
-typedef UsersLiveRenderAssigns = {> UsersLiveAssigns,
-    var flash: FlashMap;
-    var flash_info: Null<String>;
-    var flash_error: Null<String>;
+typedef UsersLiveRenderAssigns = {
+	> UsersLiveAssigns,
+	var flash:FlashMap;
+	var flash_info:Null<String>;
+	var flash_error:Null<String>;
 }
 
 /**
@@ -78,215 +80,219 @@ typedef UsersLiveRenderAssigns = {> UsersLiveAssigns,
 @:native("TodoAppWeb.UsersLive")
 @:liveview
 class UsersLive {
-    public static function mount(params: MountParams, session: Session, socket: Socket<UsersLiveAssigns>): MountResult<UsersLiveAssigns> {
-        var sock: LiveSocket<UsersLiveAssigns> = socket;
+	public static function mount(params:MountParams, session:Session, socket:Socket<UsersLiveAssigns>):MountResult<UsersLiveAssigns> {
+		var sock:LiveSocket<UsersLiveAssigns> = socket;
 
-        var maybeUserId = sessionUserId(session);
-        var signedIn = maybeUserId != null;
-        var currentUser: Null<User> = signedIn ? Repo.get(User, cast maybeUserId) : null;
-        if (currentUser == null) signedIn = false;
+		var maybeUserId = sessionUserId(session);
+		var signedIn = maybeUserId != null;
+		var currentUser:Null<User> = signedIn ? Repo.get(User, cast maybeUserId) : null;
+		if (currentUser == null)
+			signedIn = false;
 
-        if (!signedIn || currentUser == null) {
-            sock = LiveView.putFlash(sock, FlashType.Error, "Sign in to view users.");
-            sock = LiveView.pushNavigate(sock, {to: "/login"});
-            currentUser = null;
-            signedIn = false;
-        }
+		if (!signedIn || currentUser == null) {
+			sock = LiveView.putFlash(sock, FlashType.Error, "Sign in to view users.");
+			sock = LiveView.pushNavigate(sock, {to: "/login"});
+			currentUser = null;
+			signedIn = false;
+		}
 
-        var allUsers = (signedIn && currentUser != null) ? loadUsers(currentUser.organizationId) : [];
-        var stats = deriveStats(allUsers);
-        var searchQuery = "";
-        var statusFilter = "all";
+		var allUsers = (signedIn && currentUser != null) ? loadUsers(currentUser.organizationId) : [];
+		var stats = deriveStats(allUsers);
+		var searchQuery = "";
+		var statusFilter = "all";
 
-        sock = sock.merge({
-            signed_in: signedIn,
-            current_user: currentUser,
-            search_query: searchQuery,
-            status_filter: statusFilter,
-            all_users: allUsers,
-            visible_users: buildRows(filterUsers(allUsers, searchQuery, statusFilter)),
-            total_users: stats.total,
-            active_users: stats.active,
-            inactive_users: stats.inactive
-        });
+		sock = sock.merge({
+			signed_in: signedIn,
+			current_user: currentUser,
+			search_query: searchQuery,
+			status_filter: statusFilter,
+			all_users: allUsers,
+			visible_users: buildRows(filterUsers(allUsers, searchQuery, statusFilter)),
+			total_users: stats.total,
+			active_users: stats.active,
+			inactive_users: stats.inactive
+		});
 
-        return Ok(sock);
-    }
+		return Ok(sock);
+	}
 
-    static function sessionUserId(session: Session): Null<Int> {
-        if (session == null) return null;
-        var sessionTerm: Term = cast session;
-        var primary: Term = ElixirMap.get(sessionTerm, "user_id");
-        var chosen: Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
-        return chosen != null ? cast chosen : null;
-    }
+	static function sessionUserId(session:Session):Null<Int> {
+		if (session == null)
+			return null;
+		var sessionTerm:Term = cast session;
+		var primary:Term = ElixirMap.get(sessionTerm, "user_id");
+		var chosen:Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
+		return chosen != null ? cast chosen : null;
+	}
 
-    /**
-     * Router action handler (placeholder to satisfy route validation).
-     */
-    public static function index(): String {
-        return "index";
-    }
+	/**
+	 * Router action handler (placeholder to satisfy route validation).
+	 */
+	public static function index():String {
+		return "index";
+	}
 
-    public static function handle_event(event: String, params: Term, socket: Socket<UsersLiveAssigns>): HandleEventResult<UsersLiveAssigns> {
-        var sock: LiveSocket<UsersLiveAssigns> = socket;
+	public static function handle_event(event:String, params:Term, socket:Socket<UsersLiveAssigns>):HandleEventResult<UsersLiveAssigns> {
+		var sock:LiveSocket<UsersLiveAssigns> = socket;
 
-        return switch (event) {
-            case EventName.FilterUsers:
-                NoReply(applyFilters(params, sock));
-            case EventName.ToggleActive:
-                NoReply(toggleActive(params, sock));
-            case _:
-                NoReply(sock);
-        };
-    }
+		return switch (event) {
+			case EventName.FilterUsers:
+				NoReply(applyFilters(params, sock));
+			case EventName.ToggleActive:
+				NoReply(toggleActive(params, sock));
+			case _:
+				NoReply(sock);
+		};
+	}
 
-    static function applyFilters(params: Term, socket: LiveSocket<UsersLiveAssigns>): LiveSocket<UsersLiveAssigns> {
-        var queryTerm: Term = ElixirMap.get(params, "query");
-        var statusTerm: Term = ElixirMap.get(params, "status");
+	static function applyFilters(params:Term, socket:LiveSocket<UsersLiveAssigns>):LiveSocket<UsersLiveAssigns> {
+		var queryTerm:Term = ElixirMap.get(params, "query");
+		var statusTerm:Term = ElixirMap.get(params, "status");
 
-        var searchQuery = queryTerm != null ? StringTools.trim(cast queryTerm) : socket.assigns.search_query;
-        var statusFilter = statusTerm != null ? cast statusTerm : socket.assigns.status_filter;
-        if (statusFilter != "all" && statusFilter != "active" && statusFilter != "inactive") statusFilter = "all";
+		var searchQuery = queryTerm != null ? StringTools.trim(cast queryTerm) : socket.assigns.search_query;
+		var statusFilter = statusTerm != null ? cast statusTerm : socket.assigns.status_filter;
+		if (statusFilter != "all" && statusFilter != "active" && statusFilter != "inactive")
+			statusFilter = "all";
 
-        var visible = buildRows(filterUsers(socket.assigns.all_users, searchQuery, statusFilter));
-        return socket.merge({
-            search_query: searchQuery,
-            status_filter: statusFilter,
-            visible_users: visible
-        });
-    }
+		var visible = buildRows(filterUsers(socket.assigns.all_users, searchQuery, statusFilter));
+		return socket.merge({
+			search_query: searchQuery,
+			status_filter: statusFilter,
+			visible_users: visible
+		});
+	}
 
-    static function toggleActive(params: Term, socket: LiveSocket<UsersLiveAssigns>): LiveSocket<UsersLiveAssigns> {
-        if (!socket.assigns.signed_in) {
-            return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage users.");
-        }
-        if (socket.assigns.current_user == null) {
-            return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage users.");
-        }
+	static function toggleActive(params:Term, socket:LiveSocket<UsersLiveAssigns>):LiveSocket<UsersLiveAssigns> {
+		if (!socket.assigns.signed_in) {
+			return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage users.");
+		}
+		if (socket.assigns.current_user == null) {
+			return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage users.");
+		}
 
-        var idValue = parseId(ElixirMap.get(params, "id"));
-        if (idValue == null) {
-            return LiveView.putFlash(socket, FlashType.Error, "Invalid user id.");
-        }
+		var idValue = parseId(ElixirMap.get(params, "id"));
+		if (idValue == null) {
+			return LiveView.putFlash(socket, FlashType.Error, "Invalid user id.");
+		}
 
-        var user = Users.getUserSafe(idValue);
-        if (user == null) {
-            return LiveView.putFlash(socket, FlashType.Error, "User not found.");
-        }
-        if (user.organizationId != socket.assigns.current_user.organizationId) {
-            return LiveView.putFlash(socket, FlashType.Error, "Not authorized.");
-        }
+		var user = Users.getUserSafe(idValue);
+		if (user == null) {
+			return LiveView.putFlash(socket, FlashType.Error, "User not found.");
+		}
+		if (user.organizationId != socket.assigns.current_user.organizationId) {
+			return LiveView.putFlash(socket, FlashType.Error, "Not authorized.");
+		}
 
-        return switch (Users.updateUser(user, {active: !user.active})) {
-            case Ok(updated):
-                var allUsers = loadUsers(socket.assigns.current_user.organizationId);
-                var stats = deriveStats(allUsers);
-                var visible = buildRows(filterUsers(allUsers, socket.assigns.search_query, socket.assigns.status_filter));
-                var updatedSocket = socket.merge({
-                    all_users: allUsers,
-                    visible_users: visible,
-                    total_users: stats.total,
-                    active_users: stats.active,
-                    inactive_users: stats.inactive
-                });
-                LiveView.putFlash(updatedSocket, FlashType.Info, updated.active ? "User activated." : "User deactivated.");
+		return switch (Users.updateUser(user, {active: !user.active})) {
+			case Ok(updated):
+				var allUsers = loadUsers(socket.assigns.current_user.organizationId);
+				var stats = deriveStats(allUsers);
+				var visible = buildRows(filterUsers(allUsers, socket.assigns.search_query, socket.assigns.status_filter));
+				var updatedSocket = socket.merge({
+					all_users: allUsers,
+					visible_users: visible,
+					total_users: stats.total,
+					active_users: stats.active,
+					inactive_users: stats.inactive
+				});
+				LiveView.putFlash(updatedSocket, FlashType.Info, updated.active ? "User activated." : "User deactivated.");
 
-            case Error(_changeset):
-                LiveView.putFlash(socket, FlashType.Error, "Could not update user.");
-        };
-    }
+			case Error(_changeset):
+				LiveView.putFlash(socket, FlashType.Error, "Could not update user.");
+		};
+	}
 
-    static function parseId(value: Term): Null<Int> {
-        if (value == null) return null;
-        if (Kernel.isInteger(value)) return cast value;
-        if (Kernel.isFloat(value)) return Kernel.trunc(value);
-        if (Kernel.isBinary(value)) return Std.parseInt(cast value);
-        return null;
-    }
+	static function parseId(value:Term):Null<Int> {
+		if (value == null)
+			return null;
+		if (Kernel.isInteger(value))
+			return cast value;
+		if (Kernel.isFloat(value))
+			return Kernel.trunc(value);
+		if (Kernel.isBinary(value))
+			return Std.parseInt(cast value);
+		return null;
+	}
 
-    static function loadUsers(organizationId: Int): Array<User> {
-        var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId);
-        var users: Array<User> = Repo.all(query);
-        // Stable ordering improves UX and test determinism.
-        users.sort(function(a, b) return a.id - b.id);
-        return users;
-    }
+	static function loadUsers(organizationId:Int):Array<User> {
+		var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId);
+		var users:Array<User> = Repo.all(query);
+		// Stable ordering improves UX and test determinism.
+		users.sort(function(a, b) return a.id - b.id);
+		return users;
+	}
 
-    static function deriveStats(users: Array<User>): contexts.Users.UserStats {
-        var total = users.length;
-        var active = 0;
-        for (user in users) {
-            if (user.active) active++;
-        }
-        return {total: total, active: active, inactive: total - active};
-    }
+	static function deriveStats(users:Array<User>):contexts.Users.UserStats {
+		var total = users.length;
+		var active = 0;
+		for (user in users) {
+			if (user.active)
+				active++;
+		}
+		return {total: total, active: active, inactive: total - active};
+	}
 
-    static function filterUsers(users: Array<User>, searchQuery: String, statusFilter: String): Array<User> {
-        var filtered = users;
+	static function filterUsers(users:Array<User>, searchQuery:String, statusFilter:String):Array<User> {
+		var filtered = users;
 
-        var query = StringTools.trim(searchQuery).toLowerCase();
-        if (query != "") {
-            filtered = filtered.filter(user -> {
-                var name = user.name != null ? user.name.toLowerCase() : "";
-                var email = user.email != null ? user.email.toLowerCase() : "";
-                return StringTools.contains(name, query) || StringTools.contains(email, query);
-            });
-        }
+		var query = StringTools.trim(searchQuery).toLowerCase();
+		if (query != "") {
+			filtered = filtered.filter(user -> {
+				var name = user.name != null ? user.name.toLowerCase() : "";
+				var email = user.email != null ? user.email.toLowerCase() : "";
+				return StringTools.contains(name, query) || StringTools.contains(email, query);
+			});
+		}
 
-        if (statusFilter == "active") {
-            filtered = filtered.filter(user -> user.active);
-        } else if (statusFilter == "inactive") {
-            filtered = filtered.filter(user -> !user.active);
-        }
+		if (statusFilter == "active") {
+			filtered = filtered.filter(user -> user.active);
+		} else if (statusFilter == "inactive") {
+			filtered = filtered.filter(user -> !user.active);
+		}
 
-        return filtered;
-    }
+		return filtered;
+	}
 
-    static function buildRows(users: Array<User>): Array<UserRowView> {
-        return users.map(toRowView);
-    }
+	static function buildRows(users:Array<User>):Array<UserRowView> {
+		return users.map(toRowView);
+	}
 
-    static function toRowView(user: User): UserRowView {
-        var avatarInitials = AvatarTools.initials(user.name, user.email);
-        var avatarBgClass = AvatarTools.avatarBgClass(user.name, user.email);
-        var avatarStyle = AvatarTools.avatarStyle(user.name, user.email, 64);
-        var avatarClass = "h-9 w-9 rounded-full flex items-center justify-center text-white font-semibold shadow-sm bg-cover bg-center " + avatarBgClass;
+	static function toRowView(user:User):UserRowView {
+		var avatarInitials = AvatarTools.initials(user.name, user.email);
+		var avatarBgClass = AvatarTools.avatarBgClass(user.name, user.email);
+		var avatarStyle = AvatarTools.avatarStyle(user.name, user.email, 64);
+		var avatarClass = "h-9 w-9 rounded-full flex items-center justify-center text-white font-semibold shadow-sm bg-cover bg-center " + avatarBgClass;
 
-        var statusLabel = user.active ? "Active" : "Inactive";
-        var statusClass = user.active
-            ? "inline-flex items-center px-2 py-1 rounded bg-green-50 text-green-700 border border-green-200 text-xs dark:bg-green-900/30 dark:text-green-200 dark:border-green-800"
-            : "inline-flex items-center px-2 py-1 rounded bg-gray-50 text-gray-700 border border-gray-200 text-xs dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700";
+		var statusLabel = user.active ? "Active" : "Inactive";
+		var statusClass = user.active ? "inline-flex items-center px-2 py-1 rounded bg-green-50 text-green-700 border border-green-200 text-xs dark:bg-green-900/30 dark:text-green-200 dark:border-green-800" : "inline-flex items-center px-2 py-1 rounded bg-gray-50 text-gray-700 border border-gray-200 text-xs dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700";
 
-        var lastLoginLabel = user.lastLoginAt != null ? Std.string(user.lastLoginAt) : "Never";
+		var lastLoginLabel = user.lastLoginAt != null ? Std.string(user.lastLoginAt) : "Never";
 
-        var toggleLabel = user.active ? "Deactivate" : "Activate";
-        var toggleClass = user.active
-            ? "px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-sm"
-            : "px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm";
+		var toggleLabel = user.active ? "Deactivate" : "Activate";
+		var toggleClass = user.active ? "px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-sm" : "px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm";
 
-        return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            avatar_initials: avatarInitials,
-            avatar_class: avatarClass,
-            avatar_style: avatarStyle,
-            status_label: statusLabel,
-            status_class: statusClass,
-            last_login_label: lastLoginLabel,
-            toggle_label: toggleLabel,
-            toggle_class: toggleClass
-        };
-    }
+		return {
+			id: user.id,
+			name: user.name,
+			email: user.email,
+			avatar_initials: avatarInitials,
+			avatar_class: avatarClass,
+			avatar_style: avatarStyle,
+			status_label: statusLabel,
+			status_class: statusClass,
+			last_login_label: lastLoginLabel,
+			toggle_label: toggleLabel,
+			toggle_class: toggleClass
+		};
+	}
 
-    public static function render(assigns: UsersLiveRenderAssigns): String {
-        var renderAssigns: Assigns<UsersLiveRenderAssigns> = assigns;
-        renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
-        renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
-        assigns = renderAssigns;
+	public static function render(assigns:UsersLiveRenderAssigns):String {
+		var renderAssigns:Assigns<UsersLiveRenderAssigns> = assigns;
+		renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
+		renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
+		assigns = renderAssigns;
 
-        return hxx('
+		return hxx('
             <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-10 max-w-5xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
@@ -399,5 +405,5 @@ class UsersLive {
                 </div>
             </div>
         ');
-    }
+	}
 }

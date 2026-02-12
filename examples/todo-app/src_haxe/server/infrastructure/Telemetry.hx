@@ -12,35 +12,33 @@ import elixir.types.Term;
  * Type definition for telemetry supervisor options
  */
 typedef TelemetryOptions = {
-    ?name: String,
-    ?metrics_port: Int,
-    ?reporters: Array<String>
+	?name:String,
+	?metrics_port:Int,
+	?reporters:Array<String>
 }
 
 /**
  * Type definition for OTP child specification
  */
 typedef ChildSpec = {
-    id: String,
-    start: {
-        module: String,
-        func: String,
-        args: Array<TelemetryOptions>
-    },
-    type: String,
-    restart: String,
-    shutdown: String
+	id:String,
+	start:{
+		module:String, func:String, args:Array<TelemetryOptions>
+	},
+	type:String,
+	restart:String,
+	shutdown:String
 }
 
 /**
  * Type definition for telemetry metrics
  */
 typedef TelemetryMetric = {
-    name: String,
-    event: String,
-    measurement: String,
-    ?unit: String,
-    ?tags: Array<String>
+	name:String,
+	event:String,
+	measurement:String,
+	?unit:String,
+	?tags:Array<String>
 }
 
 /**
@@ -54,68 +52,66 @@ typedef TelemetryMetric = {
 @:supervisor
 @:appName("TodoApp")
 class Telemetry {
-    /**
-     * Child specification for OTP supervisor
-     * 
-     * Returns a proper child spec map for Supervisor.start_link
-     */
-    public static function child_spec(opts: TelemetryOptions): ChildSpec {
-        // Return a properly typed child spec structure
-        return {
-            id: "TodoAppWeb.Telemetry",
-            start: {
-                module: "TodoAppWeb.Telemetry",
-                func: "start_link",
-                args: [opts]
-            },
-            type: "supervisor",
-            restart: "permanent", 
-            shutdown: "infinity"
-        };
-    }
-    
-    /**
-     * Start the telemetry supervisor
-     * 
-     * Initializes application metrics collection including:
-     * - Phoenix endpoint metrics (request duration, status codes)
-     * - Ecto repository metrics (query time, connection pool)
-     * - LiveView metrics (mount time, event handling)
-     * - Custom application metrics
-     * 
-     * @param args Telemetry configuration options
-     * @return Application result with supervisor PID
-    */
-	    public static function start_link(args: TelemetryOptions): ApplicationResult {
-	        // Start a telemetry supervisor with no children; reporters are added dynamically.
-	        var options: SupervisorOptions = {
-	            strategy: SupervisorStrategy.OneForOne,
-	            max_restarts: 3,
-            max_seconds: 5
-        };
-        return SupervisorExtern.startLink([], options);
-    }
+	/**
+	 * Child specification for OTP supervisor
+	 * 
+	 * Returns a proper child spec map for Supervisor.start_link
+	 */
+	public static function child_spec(opts:TelemetryOptions):ChildSpec {
+		// Return a properly typed child spec structure
+		return {
+			id: "TodoAppWeb.Telemetry",
+			start: {
+				module: "TodoAppWeb.Telemetry",
+				func: "start_link",
+				args: [opts]
+			},
+			type: "supervisor",
+			restart: "permanent",
+			shutdown: "infinity"
+		};
+	}
 
+	/**
+	 * Start the telemetry supervisor
+	 * 
+	 * Initializes application metrics collection including:
+	 * - Phoenix endpoint metrics (request duration, status codes)
+	 * - Ecto repository metrics (query time, connection pool)
+	 * - LiveView metrics (mount time, event handling)
+	 * - Custom application metrics
+	 * 
+	 * @param args Telemetry configuration options
+	 * @return Application result with supervisor PID
+	 */
+	public static function start_link(args:TelemetryOptions):ApplicationResult {
+		// Start a telemetry supervisor with no children; reporters are added dynamically.
+		var options:SupervisorOptions = {
+			strategy: SupervisorStrategy.OneForOne,
+			max_restarts: 3,
+			max_seconds: 5
+		};
+		return SupervisorExtern.startLink([], options);
+	}
 
-	    public static function init(args: TelemetryOptions): Term {
-	        var options: SupervisorOptions = {
-	            strategy: SupervisorStrategy.OneForOne,
-	            max_restarts: 3,
-            max_seconds: 5
-        };
-        return SupervisorExtern.init([], options);
-    }
+	public static function init(args:TelemetryOptions):Term {
+		var options:SupervisorOptions = {
+			strategy: SupervisorStrategy.OneForOne,
+			max_restarts: 3,
+			max_seconds: 5
+		};
+		return SupervisorExtern.init([], options);
+	}
 
-    
-    /**
-     * Get telemetry metrics configuration
-     * 
-     * Returns the list of telemetry events and handlers configured
-     * for this application, used for debugging and monitoring.
-     */
-    public static function metrics(): Array<TelemetryMetric> {
-        // Returns configured telemetry metrics
-        // In a real application, this would return actual metric definitions
-        return [];
-    }
+	/**
+	 * Get telemetry metrics configuration
+	 * 
+	 * Returns the list of telemetry events and handlers configured
+	 * for this application, used for debugging and monitoring.
+	 */
+	public static function metrics():Array<TelemetryMetric> {
+		// Returns configured telemetry metrics
+		// In a real application, this would return actual metric definitions
+		return [];
+	}
 }

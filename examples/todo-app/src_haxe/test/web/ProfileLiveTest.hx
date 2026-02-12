@@ -23,30 +23,29 @@ import server.infrastructure.Repo;
  */
 @:exunit
 class ProfileLiveTest extends TestCase {
-    @:test
-    public function testProfileUpdatePersistsBio(): Void {
-        var conn = ConnTest.build_conn();
-        conn = ConnTest.post(conn, "/auth/login", {name: "Alice Example", email: "alice_profile@example.com"});
-        assertEqual(302, conn.status);
+	@:test
+	public function testProfileUpdatePersistsBio():Void {
+		var conn = ConnTest.build_conn();
+		conn = ConnTest.post(conn, "/auth/login", {name: "Alice Example", email: "alice_profile@example.com"});
+		assertEqual(302, conn.status);
 
-        var plugConn: plug.Conn<{}> = cast conn;
-        var userIdTerm: Term = plugConn.getSession("user_id");
-        assertTrue(userIdTerm != null);
-        var userId: Int = cast userIdTerm;
+		var plugConn:plug.Conn<{}> = cast conn;
+		var userIdTerm:Term = plugConn.getSession("user_id");
+		assertTrue(userIdTerm != null);
+		var userId:Int = cast userIdTerm;
 
-        var lvTuple: Term = LiveViewTest.live(conn, "/profile");
-        var lv: LiveView = LiveViewTest.view(lvTuple);
+		var lvTuple:Term = LiveViewTest.live(conn, "/profile");
+		var lv:LiveView = LiveViewTest.view(lvTuple);
 
-        var formEl: Term = LiveViewTest.element(lv, "form[phx-submit='save_profile']");
-        LiveViewTest.render_submit(formEl, {name: "Alice Updated", bio: "Hello from Haxe"});
+		var formEl:Term = LiveViewTest.element(lv, "form[phx-submit='save_profile']");
+		LiveViewTest.render_submit(formEl, {name: "Alice Updated", bio: "Hello from Haxe"});
 
-        var html: String = LiveViewTest.render(lv);
-        assertTrue(html.indexOf("Profile updated.") != -1);
-        assertTrue(html.indexOf("Alice Updated") != -1);
+		var html:String = LiveViewTest.render(lv);
+		assertTrue(html.indexOf("Profile updated.") != -1);
+		assertTrue(html.indexOf("Alice Updated") != -1);
 
-        var user = Repo.get(server.schemas.User, userId);
-        assertTrue(user != null);
-        assertEqual("Hello from Haxe", user.bio);
-    }
+		var user = Repo.get(server.schemas.User, userId);
+		assertTrue(user != null);
+		assertEqual("Hello from Haxe", user.bio);
+	}
 }
-

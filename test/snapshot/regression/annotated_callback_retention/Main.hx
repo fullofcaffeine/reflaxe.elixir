@@ -8,6 +8,5 @@ package;
  * - Preserve their OTP callbacks (start/2, child_spec/1, etc.) so they are emitted in generated Elixir.
  */
 class Main {
-    static function main() {}
+	static function main() {}
 }
-

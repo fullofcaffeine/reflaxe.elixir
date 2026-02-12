@@ -25,55 +25,56 @@ import haxe.io.Eof;
  */
 @:native("Sys.IO.Process")
 class Process {
-    /** Standard output stream (merged stdout+stderr). */
-    public var stdout(default, null): haxe.io.Input;
+	/** Standard output stream (merged stdout+stderr). */
+	public var stdout(default, null):haxe.io.Input;
 
-    /** Standard error stream (merged into `stdout` on BEAM). */
-    public var stderr(default, null): haxe.io.Input;
+	/** Standard error stream (merged into `stdout` on BEAM). */
+	public var stderr(default, null):haxe.io.Input;
 
-    /** Standard input stream. */
-    public var stdin(default, null): haxe.io.Output;
+	/** Standard input stream. */
+	public var stdin(default, null):haxe.io.Output;
 
-    final port: Term;
-    var exitCodeCache: Null<Int> = null;
-    var isClosed: Bool = false;
+	final port:Term;
+	var exitCodeCache:Null<Int> = null;
+	var isClosed:Bool = false;
 
-    public function new(cmd: String, ?args: Array<String>, ?detached: Bool): Void {
-        var useStdio = detached != true;
+	public function new(cmd:String, ?args:Array<String>, ?detached:Bool):Void {
+		var useStdio = detached != true;
 
-        if (args == null) {
-            port = openShellCommand(cmd, useStdio);
-        } else {
-            port = openExecutable(cmd, args, useStdio);
-        }
+		if (args == null) {
+			port = openShellCommand(cmd, useStdio);
+		} else {
+			port = openExecutable(cmd, args, useStdio);
+		}
 
-        if (useStdio) {
-            var mergedOutput = new PortInput(port);
-            stdout = mergedOutput;
-            stderr = mergedOutput;
-            stdin = new PortOutput(port);
-        } else {
-            var disabledInput = new DisabledInput();
-            stdout = disabledInput;
-            stderr = disabledInput;
-            stdin = new DisabledOutput();
-        }
-    }
+		if (useStdio) {
+			var mergedOutput = new PortInput(port);
+			stdout = mergedOutput;
+			stderr = mergedOutput;
+			stdin = new PortOutput(port);
+		} else {
+			var disabledInput = new DisabledInput();
+			stdout = disabledInput;
+			stderr = disabledInput;
+			stdin = new DisabledOutput();
+		}
+	}
 
-    public function getPid(): Int {
-        return untyped __elixir__('
+	public function getPid():Int {
+		return untyped __elixir__('
             port = {0}
             case :erlang.port_info(port, :os_pid) do
               {:os_pid, pid} -> pid
               _ -> -1
             end
         ', port);
-    }
+	}
 
-    public function exitCode(block: Bool = true): Null<Int> {
-        if (exitCodeCache != null) return exitCodeCache;
+	public function exitCode(block:Bool = true):Null<Int> {
+		if (exitCodeCache != null)
+			return exitCodeCache;
 
-        var maybe: Null<Int> = untyped __elixir__('
+		var maybe:Null<Int> = untyped __elixir__('
             port = {0}
             receive do
               {^port, {:exit_status, status}} -> status
@@ -82,114 +83,116 @@ class Process {
             end
         ', port);
 
-        if (maybe != null) {
-            exitCodeCache = maybe;
-            return maybe;
-        }
+		if (maybe != null) {
+			exitCodeCache = maybe;
+			return maybe;
+		}
 
-        // IMPORTANT: Prefer an explicit comparison over `!block` so that, if a caller
-        // reaches this function with a missing/`nil` value at runtime (Elixir interop),
-        // we still default to blocking semantics.
-        if (block == false) return null;
+		// IMPORTANT: Prefer an explicit comparison over `!block` so that, if a caller
+		// reaches this function with a missing/`nil` value at runtime (Elixir interop),
+		// we still default to blocking semantics.
+		if (block == false)
+			return null;
 
-        var status: Int = untyped __elixir__('
+		var status:Int = untyped __elixir__('
             port = {0}
             receive do
               {^port, {:exit_status, status}} -> status
             end
         ', port);
 
-        exitCodeCache = status;
-        return status;
-    }
+		exitCodeCache = status;
+		return status;
+	}
 
-    public function close(): Void {
-        if (isClosed) return;
-        isClosed = true;
+	public function close():Void {
+		if (isClosed)
+			return;
+		isClosed = true;
 
-        // Best-effort: close the port if still alive.
-        untyped __elixir__('
+		// Best-effort: close the port if still alive.
+		untyped __elixir__('
             port = {0}
             if Port.info(port) != nil do
               Port.close(port)
             end
         ', port);
-    }
+	}
 
-    public function kill(): Void {
-        // `Port.close/1` terminates the OS process backing the port.
-        close();
-    }
+	public function kill():Void {
+		// `Port.close/1` terminates the OS process backing the port.
+		close();
+	}
 
-    static function openExecutable(cmd: String, args: Array<String>, useStdio: Bool): Term {
-        var executable: Null<String> = untyped __elixir__('System.find_executable({0})', cmd);
-        if (executable == null) {
-            throw "sys.io.Process: executable not found: " + cmd;
-        }
+	static function openExecutable(cmd:String, args:Array<String>, useStdio:Bool):Term {
+		var executable:Null<String> = untyped __elixir__('System.find_executable({0})', cmd);
+		if (executable == null) {
+			throw "sys.io.Process: executable not found: " + cmd;
+		}
 
-        return untyped __elixir__('
+		return untyped __elixir__('
             stdio_opt = if {2}, do: :use_stdio, else: :nouse_stdio
             opts = [:binary, :exit_status, stdio_opt, {:args, {1}}]
             opts = if {2}, do: [:stderr_to_stdout | opts], else: opts
             Port.open({:spawn_executable, {0}}, opts)
         ', executable, args, useStdio);
-    }
+	}
 
-    static function openShellCommand(cmd: String, useStdio: Bool): Term {
-        var shell: Null<String> = untyped __elixir__('System.find_executable("sh")');
-        if (shell == null) {
-            throw "sys.io.Process: shell executable not found (sh)";
-        }
+	static function openShellCommand(cmd:String, useStdio:Bool):Term {
+		var shell:Null<String> = untyped __elixir__('System.find_executable("sh")');
+		if (shell == null) {
+			throw "sys.io.Process: shell executable not found (sh)";
+		}
 
-        return untyped __elixir__('
+		return untyped __elixir__('
             stdio_opt = if {2}, do: :use_stdio, else: :nouse_stdio
             opts = [:binary, :exit_status, stdio_opt, {:args, ["-c", {1}]}]
             opts = if {2}, do: [:stderr_to_stdout | opts], else: opts
             Port.open({:spawn_executable, {0}}, opts)
         ', shell, cmd, useStdio);
-    }
+	}
 }
 
 private class PortInput extends haxe.io.Input {
-    final port: Term;
-    var buffer: Bytes = null;
-    var bufferOffset: Int = 0;
-    var ended: Bool = false;
+	final port:Term;
+	var buffer:Bytes = null;
+	var bufferOffset:Int = 0;
+	var ended:Bool = false;
 
-    public function new(port: Term) {
-        this.port = port;
-    }
+	public function new(port:Term) {
+		this.port = port;
+	}
 
-    override public function readByte(): Int {
-        if (!ensureBuffered()) {
-            throw new Eof();
-        }
+	override public function readByte():Int {
+		if (!ensureBuffered()) {
+			throw new Eof();
+		}
 
-        var value = buffer.get(bufferOffset);
-        bufferOffset += 1;
-        return value;
-    }
+		var value = buffer.get(bufferOffset);
+		bufferOffset += 1;
+		return value;
+	}
 
-    /**
-     * Override readAll for BEAM ports.
-     *
-     * WHY
-     * - `haxe.io.Input.readAll()` in the upstream stdlib is implemented in terms of
-     *   `readBytes`, which assumes `Bytes.set/blit` mutate in place.
-     * - On the Elixir target our `Bytes` implementation is immutable, so the base
-     *   implementation cannot fill a preallocated buffer correctly.
-     *
-     * HOW
-     * - Read all `{:data, binary}` messages from the port until `{:exit_status, status}`.
-     * - Re-send the exit_status message back to self so `Process.exitCode()` can still
-     *   observe it (mirrors `ensureBuffered()` behavior).
-     * - Return a single `Bytes` built from the collected binary.
-     */
-    override public function readAll(?bufsize: Int): Bytes {
-        // bufsize is ignored: BEAM ports deliver binary chunks sized by the driver/OS.
-        // NOTE: Wrap the multi-expression snippet in parentheses so it is treated as
-        // a single Elixir expression when used as the RHS of `=` assignments.
-        var data: Term = untyped __elixir__('(
+	/**
+	 * Override readAll for BEAM ports.
+	 *
+	 * WHY
+	 * - `haxe.io.Input.readAll()` in the upstream stdlib is implemented in terms of
+	 *   `readBytes`, which assumes `Bytes.set/blit` mutate in place.
+	 * - On the Elixir target our `Bytes` implementation is immutable, so the base
+	 *   implementation cannot fill a preallocated buffer correctly.
+	 *
+	 * HOW
+	 * - Read all `{:data, binary}` messages from the port until `{:exit_status, status}`.
+	 * - Re-send the exit_status message back to self so `Process.exitCode()` can still
+	 *   observe it (mirrors `ensureBuffered()` behavior).
+	 * - Return a single `Bytes` built from the collected binary.
+	 */
+	override public function readAll(?bufsize:Int):Bytes {
+		// bufsize is ignored: BEAM ports deliver binary chunks sized by the driver/OS.
+		// NOTE: Wrap the multi-expression snippet in parentheses so it is treated as
+		// a single Elixir expression when used as the RHS of `=` assignments.
+		var data:Term = untyped __elixir__('(
             port = {0}
             chunks = Enum.reduce_while(Stream.repeatedly(fn -> :ok end), [], fn _, acc ->
               receive do
@@ -201,85 +204,87 @@ private class PortInput extends haxe.io.Input {
             end)
             :erlang.iolist_to_binary(Enum.reverse(chunks))
         )', port);
-        return Bytes.ofData(data);
-    }
+		return Bytes.ofData(data);
+	}
 
-    override public function readBytes(buf: Bytes, pos: Int, len: Int): Int {
-        if (pos < 0 || len < 0 || pos + len > buf.length) {
-            throw haxe.io.Error.OutsideBounds;
-        }
-        if (len == 0) return 0;
+	override public function readBytes(buf:Bytes, pos:Int, len:Int):Int {
+		if (pos < 0 || len < 0 || pos + len > buf.length) {
+			throw haxe.io.Error.OutsideBounds;
+		}
+		if (len == 0)
+			return 0;
 
-        var totalRead = 0;
-        while (totalRead < len) {
-            if (!ensureBuffered()) {
-                break;
-            }
+		var totalRead = 0;
+		while (totalRead < len) {
+			if (!ensureBuffered()) {
+				break;
+			}
 
-            var available = buffer.length - bufferOffset;
-            var remaining = len - totalRead;
-            var toCopy = remaining < available ? remaining : available;
+			var available = buffer.length - bufferOffset;
+			var remaining = len - totalRead;
+			var toCopy = remaining < available ? remaining : available;
 
-            buf.blit(pos + totalRead, buffer, bufferOffset, toCopy);
-            bufferOffset += toCopy;
-            totalRead += toCopy;
-        }
+			buf.blit(pos + totalRead, buffer, bufferOffset, toCopy);
+			bufferOffset += toCopy;
+			totalRead += toCopy;
+		}
 
-        if (totalRead == 0) {
-            throw new Eof();
-        }
+		if (totalRead == 0) {
+			throw new Eof();
+		}
 
-        return totalRead;
-    }
+		return totalRead;
+	}
 
-    function ensureBuffered(): Bool {
-        if (ended) return false;
+	function ensureBuffered():Bool {
+		if (ended)
+			return false;
 
-        if (buffer != null && bufferOffset < buffer.length) {
-            return true;
-        }
+		if (buffer != null && bufferOffset < buffer.length) {
+			return true;
+		}
 
-        buffer = null;
-        bufferOffset = 0;
+		buffer = null;
+		bufferOffset = 0;
 
-        var data: Term = receiveDataNonBlocking();
-        if (data != null) {
-            buffer = Bytes.ofData(data);
-            return true;
-        }
+		var data:Term = receiveDataNonBlocking();
+		if (data != null) {
+			buffer = Bytes.ofData(data);
+			return true;
+		}
 
-        if (!isPortOpen()) {
-            ended = true;
-            return false;
-        }
+		if (!isPortOpen()) {
+			ended = true;
+			return false;
+		}
 
-        var message: Term = receiveDataOrExitBlocking();
-        var tag: Term = untyped __elixir__('elem({0}, 0)', message);
+		var message:Term = receiveDataOrExitBlocking();
+		var tag:Term = untyped __elixir__('elem({0}, 0)', message);
 
-        if (untyped __elixir__('{0} == :data', tag)) {
-            var payload: Term = untyped __elixir__('elem({0}, 1)', message);
-            buffer = Bytes.ofData(payload);
-            return true;
-        }
+		if (untyped __elixir__('{0} == :data', tag)) {
+			var payload:Term = untyped __elixir__('elem({0}, 1)', message);
+			buffer = Bytes.ofData(payload);
+			return true;
+		}
 
-        if (untyped __elixir__('{0} == :exit', tag)) {
-            // Preserve the exit status for `Process.exitCode/1`.
-            var status: Term = untyped __elixir__('elem({0}, 1)', message);
-            untyped __elixir__('send(self(), {{0}, {:exit_status, {1}}})', port, status);
-            ended = true;
-            return false;
-        }
+		if (untyped __elixir__('{0} == :exit', tag)) {
+			// Preserve the exit status for `Process.exitCode/1`.
+			var status:Term = untyped __elixir__('elem({0}, 1)', message);
+			untyped __elixir__('send(self(), {{0}, {:exit_status, {1}}})', port, status);
+			ended = true;
+			return false;
+		}
 
-        ended = true;
-        return false;
-    }
+		ended = true;
+		return false;
+	}
 
-    inline function isPortOpen(): Bool {
-        return untyped __elixir__('Port.info({0}) != nil', port);
-    }
+	inline function isPortOpen():Bool {
+		return untyped __elixir__('Port.info({0}) != nil', port);
+	}
 
-    function receiveDataNonBlocking(): Term {
-        return untyped __elixir__('
+	function receiveDataNonBlocking():Term {
+		return untyped __elixir__('
             port = {0}
             receive do
               {^port, {:data, data}} -> data
@@ -287,66 +292,67 @@ private class PortInput extends haxe.io.Input {
               nil
             end
         ', port);
-    }
+	}
 
-    function receiveDataOrExitBlocking(): Term {
-        return untyped __elixir__('
+	function receiveDataOrExitBlocking():Term {
+		return untyped __elixir__('
             port = {0}
             receive do
               {^port, {:data, data}} -> {:data, data}
               {^port, {:exit_status, status}} -> {:exit, status}
             end
         ', port);
-    }
+	}
 }
 
 private class PortOutput extends haxe.io.Output {
-    final port: Term;
+	final port:Term;
 
-    public function new(port: Term) {
-        this.port = port;
-    }
+	public function new(port:Term) {
+		this.port = port;
+	}
 
-    override public function writeByte(c: Int): Void {
-        untyped __elixir__('Port.command({0}, <<{1}::8>>)', port, c);
-    }
+	override public function writeByte(c:Int):Void {
+		untyped __elixir__('Port.command({0}, <<{1}::8>>)', port, c);
+	}
 
-    override public function writeBytes(b: Bytes, pos: Int, len: Int): Int {
-        if (pos < 0 || len < 0 || pos + len > b.length) {
-            throw haxe.io.Error.OutsideBounds;
-        }
-        if (len == 0) return 0;
+	override public function writeBytes(b:Bytes, pos:Int, len:Int):Int {
+		if (pos < 0 || len < 0 || pos + len > b.length) {
+			throw haxe.io.Error.OutsideBounds;
+		}
+		if (len == 0)
+			return 0;
 
-        var slice = b.sub(pos, len).getData();
-        untyped __elixir__('Port.command({0}, {1})', port, slice);
-        return len;
-    }
+		var slice = b.sub(pos, len).getData();
+		untyped __elixir__('Port.command({0}, {1})', port, slice);
+		return len;
+	}
 
-    override public function close(): Void {
-        // Intentionally a no-op: closing stdin independently is not exposed by ports.
-    }
+	override public function close():Void {
+		// Intentionally a no-op: closing stdin independently is not exposed by ports.
+	}
 }
 
 private class DisabledInput extends haxe.io.Input {
-    public function new() {}
+	public function new() {}
 
-    override public function readByte(): Int {
-        throw new Eof();
-    }
+	override public function readByte():Int {
+		throw new Eof();
+	}
 
-    override public function readBytes(buf: Bytes, pos: Int, len: Int): Int {
-        throw new Eof();
-    }
+	override public function readBytes(buf:Bytes, pos:Int, len:Int):Int {
+		throw new Eof();
+	}
 }
 
 private class DisabledOutput extends haxe.io.Output {
-    public function new() {}
+	public function new() {}
 
-    override public function writeByte(c: Int): Void {
-        throw "sys.io.Process: stdin is not available for detached processes";
-    }
+	override public function writeByte(c:Int):Void {
+		throw "sys.io.Process: stdin is not available for detached processes";
+	}
 
-    override public function writeBytes(b: Bytes, pos: Int, len: Int): Int {
-        throw "sys.io.Process: stdin is not available for detached processes";
-    }
+	override public function writeBytes(b:Bytes, pos:Int, len:Int):Int {
+		throw "sys.io.Process: stdin is not available for detached processes";
+	}
 }

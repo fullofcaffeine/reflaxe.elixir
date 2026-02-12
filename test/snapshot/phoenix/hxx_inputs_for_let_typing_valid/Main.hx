@@ -3,17 +3,17 @@ package;
 import HXX;
 
 typedef Assigns = {
-    var field: {};
+	var field:{};
 }
 
 class Main {
-    public static function render(assigns: Assigns): String {
-        return HXX.hxx('
+	public static function render(assigns:Assigns):String {
+		return HXX.hxx('
             <.inputs_for field={@field} :let={f}>
                 <span>#{f.id} (#{f.index})</span>
             </.inputs_for>
         ');
-    }
+	}
 
-    public static function main() {}
+	public static function main() {}
 }

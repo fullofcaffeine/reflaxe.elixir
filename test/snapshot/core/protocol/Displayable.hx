@@ -6,18 +6,19 @@ package;
  */
 @:protocol
 interface Displayable {
-	function display(): String;
-	function format(options: Dynamic): String;
+	function display():String;
+	function format(options:Dynamic):String;
 }
 
 // Implementation for String
+
 @:impl(Displayable)
 class StringDisplay {
-	public static function display(value: String): String {
+	public static function display(value:String):String {
 		return value;
 	}
-	
-	public static function format(value: String, options: Dynamic): String {
+
+	public static function format(value:String, options:Dynamic):String {
 		if (options.uppercase) {
 			return value.toUpperCase();
 		}
@@ -26,13 +27,14 @@ class StringDisplay {
 }
 
 // Implementation for Int
+
 @:impl(Displayable)
 class IntDisplay {
-	public static function display(value: Int): String {
+	public static function display(value:Int):String {
 		return Std.string(value);
 	}
-	
-	public static function format(value: Int, options: Dynamic): String {
+
+	public static function format(value:Int, options:Dynamic):String {
 		if (options.hex) {
 			return "0x" + StringTools.hex(value);
 		}
@@ -42,10 +44,10 @@ class IntDisplay {
 
 // Implementation for custom type
 class User {
-	public var name: String;
-	public var age: Int;
-	
-	public function new(name: String, age: Int) {
+	public var name:String;
+	public var age:Int;
+
+	public function new(name:String, age:Int) {
 		this.name = name;
 		this.age = age;
 	}
@@ -53,11 +55,11 @@ class User {
 
 @:impl(Displayable)
 class UserDisplay {
-	public static function display(user: User): String {
+	public static function display(user:User):String {
 		return '${user.name} (${user.age})';
 	}
-	
-	public static function format(user: User, options: Dynamic): String {
+
+	public static function format(user:User, options:Dynamic):String {
 		if (options.verbose) {
 			return 'User: ${user.name}, Age: ${user.age}';
 		}

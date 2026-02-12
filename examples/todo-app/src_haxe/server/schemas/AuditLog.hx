@@ -23,18 +23,18 @@ import elixir.types.Term;
 @:schema("audit_logs")
 @:timestamps
 class AuditLog {
-    @:field @:primary_key public var id: Int;
-    @:field public var organizationId: Int;
-    @:field public var actorId: Int;
-    @:field public var action: String;
-    @:field public var entity: String;
-    @:field public var entityId: Null<Int>;
-    @:field public var metadata: Null<Term>;
+	@:field @:primary_key public var id:Int;
+	@:field public var organizationId:Int;
+	@:field public var actorId:Int;
+	@:field public var action:String;
+	@:field public var entity:String;
+	@:field public var entityId:Null<Int>;
+	@:field public var metadata:Null<Term>;
 
-    public function new() {}
+	public function new() {}
 
-    public static function changeset(entry: AuditLog, params: Term): Changeset<AuditLog, Term> {
-        // Audit logs are immutable; this is used only for inserts.
-        return ecto.Changeset.change(entry, params);
-    }
+	public static function changeset(entry:AuditLog, params:Term):Changeset<AuditLog, Term> {
+		// Audit logs are immutable; this is used only for inserts.
+		return ecto.Changeset.change(entry, params);
+	}
 }

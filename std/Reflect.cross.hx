@@ -239,295 +239,285 @@
  * @see https://api.haxe.org/Reflect.html - Official Haxe Reflect documentation
  * @see https://hexdocs.pm/elixir/Map.html - Elixir Map module documentation
  */
-//@:coreApi  // Commented out to allow Elixir-specific signatures for immutability
+// @:coreApi  // Commented out to allow Elixir-specific signatures for immutability
 class Reflect {
-    /**
-     * Get a field value from an object.
-     * 
-     * WHY: Dynamic field access is needed for deserialization and meta-programming.
-     * WHAT: Retrieves a field value from an object (map) by field name.
-     * HOW: The compiler will optimize this to Map.get with atom conversion.
-     * 
-     * EDGE CASES:
-     * - Returns null if field doesn't exist
-     * - Handles both atom and string field names in the map
-     * - Works with nested maps/structs
-     * 
-     * @param obj The object (map) to get the field from
-     * @param field The name of the field to retrieve
-     * @return The value of the field, or null if it doesn't exist
-     */
-    public static function field(o: Dynamic, field: String): Dynamic {
-        // JSON payloads use string keys; Haxe object literals typically use atom keys.
-        // Prefer string lookup first, then fall back to an existing atom key if present.
-        return untyped __elixir__(
-            "if Map.has_key?({0}, {1}) do\n  Map.get({0}, {1})\nelse\n  try do\n    Map.get({0}, String.to_existing_atom({1}))\n  rescue\n    ArgumentError -> nil\n  end\nend",
-            o,
-            field
-        );
-    }
-    
-    /**
-     * Set a field value on an object.
-     *
-     * WHY: Dynamic field modification is needed for object construction and updates.
-     * WHAT: Sets or updates a field value in an object (map).
-     * HOW: The compiler will optimize this to Map.put.
-     *
-     * NOTE: In Elixir, this returns a new map (immutability).
-     * The original object is not modified.
-     *
-     * @param obj The object (map) to set the field on
-     * @param field The name of the field to set
-     * @param value The value to set
-     * @return The updated object (new map with the field set)
-     */
-    @:hack  // Override core API signature for Elixir immutability
-    public static function setField(o: Dynamic, field: String, value: Dynamic): Dynamic {
-        // Preserve the existing key type if present:
-        // - if the map already has a string key, keep string keys (common for JSON payloads)
-        // - otherwise, if the map has an existing atom key, update that atom key
-        // - otherwise, default to string keys to avoid creating atoms from arbitrary strings
-        return untyped __elixir__(
-            "if Map.has_key?({0}, {1}) do\n  Map.put({0}, {1}, {2})\nelse\n  try do\n    key = String.to_existing_atom({1})\n    if Map.has_key?({0}, key) do\n      Map.put({0}, key, {2})\n    else\n      Map.put({0}, {1}, {2})\n    end\n  rescue\n    ArgumentError -> Map.put({0}, {1}, {2})\n  end\nend",
-            o,
-            field,
-            value
-        );
-    }
-    
-    /**
-     * Get all field names from an object.
-     * 
-     * WHY: Needed for serialization, debugging, and meta-programming.
-     * WHAT: Returns all field names (keys) from an object (map).
-     * HOW: The compiler will optimize this to Map.keys.
-     * 
-     * @param obj The object (map) to get fields from
-     * @return Array of field names as strings
-     */
-    public static function fields(o: Dynamic): Array<String> {
-        // Map keys may be atoms (Haxe object literals) or strings (JSON payloads).
-        // Return only string-like keys, converting atoms to strings.
-        return untyped __elixir__(
-            "Map.keys({0})\n|> Enum.flat_map(fn k ->\n  cond do\n    is_atom(k) -> [Atom.to_string(k)]\n    is_binary(k) -> [k]\n    true -> []\n  end\nend)",
-            o
-        );
-    }
-    
-    /**
-     * Check if an object has a specific field.
-     * 
-     * WHY: Needed for optional field handling and defensive programming.
-     * WHAT: Checks if an object (map) contains a specific field.
-     * HOW: The compiler will optimize this to Map.has_key?.
-     * 
-     * @param obj The object (map) to check
-     * @param field The name of the field to check for
-     * @return True if the field exists, false otherwise
-     */
-    public static function hasField(o: Dynamic, field: String): Bool {
-        return untyped __elixir__(
-            "if Map.has_key?({0}, {1}) do\n  true\nelse\n  try do\n    Map.has_key?({0}, String.to_existing_atom({1}))\n  rescue\n    ArgumentError -> false\n  end\nend",
-            o,
-            field
-        );
-    }
-    
-    /**
-     * Delete a field from an object.
-     *
-     * WHY: Needed for removing optional fields or cleaning objects.
-     * WHAT: Removes a field from an object (map).
-     * HOW: The compiler will optimize this to Map.delete.
-     *
-     * NOTE: Returns a new map without the field (immutability).
-     *
-     * @param obj The object (map) to delete the field from
-     * @param field The name of the field to delete
-     * @return The updated object (new map without the field)
-     */
-    @:hack  // Override core API signature for Elixir immutability
-    public static function deleteField(o: Dynamic, field: String): Dynamic {
-        // Delete supports both string and atom keys without creating atoms.
-        return untyped __elixir__(
-            "if Map.has_key?({0}, {1}) do\n  Map.delete({0}, {1})\nelse\n  try do\n    key = String.to_existing_atom({1})\n    if Map.has_key?({0}, key) do\n      Map.delete({0}, key)\n    else\n      {0}\n    end\n  rescue\n    ArgumentError -> {0}\n  end\nend",
-            o,
-            field
-        );
-    }
-    
-    /**
-     * Check if a value is an object (map in Elixir).
-     * 
-     * WHY: Type checking is needed for safe reflection operations.
-     * WHAT: Determines if a value is an object that supports reflection.
-     * HOW: The compiler will optimize this to is_map guard.
-     * 
-     * @param value The value to check
-     * @return True if the value is an object/map
-     */
-    public static function isObject(v: Dynamic): Bool {
-        // In Elixir, objects are maps
-        return untyped __elixir__('is_map({0})', v);
-    }
-    
-    /**
-     * Make a shallow copy of an object with all its fields.
-     * 
-     * WHY: Object cloning is needed for immutable updates and snapshots.
-     * WHAT: Creates a shallow copy of an object (map).
-     * HOW: Maps are immutable in Elixir, so just returns the same map.
-     * 
-     * @param obj The object to copy
-     * @return A shallow copy of the object
-     */
-    public static inline function copy<T>(o: T): T {
-        // In Elixir, maps are immutable, so we just return the same map
-        // This maintains API compatibility while being efficient
-        return o;
-    }
-    
-    /**
-     * Call a method on an object dynamically.
-     * 
-     * WHY: Dynamic method invocation is needed for meta-programming and reflection.
-     * WHAT: Calls a method/function with the given arguments.
-     * HOW: The compiler will handle various Elixir callable types properly.
-     * 
-     * In Elixir, this handles:
-     * - Function references: calls the function with obj as first argument
-     * - Module functions: when passed as a function reference
-     * 
-     * @param obj The object to pass as context (can be null)
-     * @param func The function to call
-     * @param args Array of arguments to pass to the function
-     * @return The return value of the function call
-     */
-	public static function callMethod(_o: Dynamic, func: haxe.Constraints.Function, args: Array<Dynamic>): Dynamic {
+	/**
+	 * Get a field value from an object.
+	 * 
+	 * WHY: Dynamic field access is needed for deserialization and meta-programming.
+	 * WHAT: Retrieves a field value from an object (map) by field name.
+	 * HOW: The compiler will optimize this to Map.get with atom conversion.
+	 * 
+	 * EDGE CASES:
+	 * - Returns null if field doesn't exist
+	 * - Handles both atom and string field names in the map
+	 * - Works with nested maps/structs
+	 * 
+	 * @param obj The object (map) to get the field from
+	 * @param field The name of the field to retrieve
+	 * @return The value of the field, or null if it doesn't exist
+	 */
+	public static function field(o:Dynamic, field:String):Dynamic {
+		// JSON payloads use string keys; Haxe object literals typically use atom keys.
+		// Prefer string lookup first, then fall back to an existing atom key if present.
+		return
+			untyped __elixir__("if Map.has_key?({0}, {1}) do\n  Map.get({0}, {1})\nelse\n  try do\n    Map.get({0}, String.to_existing_atom({1}))\n  rescue\n    ArgumentError -> nil\n  end\nend",
+			o, field);
+	}
+
+	/**
+	 * Set a field value on an object.
+	 *
+	 * WHY: Dynamic field modification is needed for object construction and updates.
+	 * WHAT: Sets or updates a field value in an object (map).
+	 * HOW: The compiler will optimize this to Map.put.
+	 *
+	 * NOTE: In Elixir, this returns a new map (immutability).
+	 * The original object is not modified.
+	 *
+	 * @param obj The object (map) to set the field on
+	 * @param field The name of the field to set
+	 * @param value The value to set
+	 * @return The updated object (new map with the field set)
+	 */
+	@:hack // Override core API signature for Elixir immutability
+	public static function setField(o:Dynamic, field:String, value:Dynamic):Dynamic {
+		// Preserve the existing key type if present:
+		// - if the map already has a string key, keep string keys (common for JSON payloads)
+		// - otherwise, if the map has an existing atom key, update that atom key
+		// - otherwise, default to string keys to avoid creating atoms from arbitrary strings
+		return
+			untyped __elixir__("if Map.has_key?({0}, {1}) do\n  Map.put({0}, {1}, {2})\nelse\n  try do\n    key = String.to_existing_atom({1})\n    if Map.has_key?({0}, key) do\n      Map.put({0}, key, {2})\n    else\n      Map.put({0}, {1}, {2})\n    end\n  rescue\n    ArgumentError -> Map.put({0}, {1}, {2})\n  end\nend",
+			o, field, value);
+	}
+
+	/**
+	 * Get all field names from an object.
+	 * 
+	 * WHY: Needed for serialization, debugging, and meta-programming.
+	 * WHAT: Returns all field names (keys) from an object (map).
+	 * HOW: The compiler will optimize this to Map.keys.
+	 * 
+	 * @param obj The object (map) to get fields from
+	 * @return Array of field names as strings
+	 */
+	public static function fields(o:Dynamic):Array<String> {
+		// Map keys may be atoms (Haxe object literals) or strings (JSON payloads).
+		// Return only string-like keys, converting atoms to strings.
+		return
+			untyped __elixir__("Map.keys({0})\n|> Enum.flat_map(fn k ->\n  cond do\n    is_atom(k) -> [Atom.to_string(k)]\n    is_binary(k) -> [k]\n    true -> []\n  end\nend)",
+			o);
+	}
+
+	/**
+	 * Check if an object has a specific field.
+	 * 
+	 * WHY: Needed for optional field handling and defensive programming.
+	 * WHAT: Checks if an object (map) contains a specific field.
+	 * HOW: The compiler will optimize this to Map.has_key?.
+	 * 
+	 * @param obj The object (map) to check
+	 * @param field The name of the field to check for
+	 * @return True if the field exists, false otherwise
+	 */
+	public static function hasField(o:Dynamic, field:String):Bool {
+		return
+			untyped __elixir__("if Map.has_key?({0}, {1}) do\n  true\nelse\n  try do\n    Map.has_key?({0}, String.to_existing_atom({1}))\n  rescue\n    ArgumentError -> false\n  end\nend",
+			o, field);
+	}
+
+	/**
+	 * Delete a field from an object.
+	 *
+	 * WHY: Needed for removing optional fields or cleaning objects.
+	 * WHAT: Removes a field from an object (map).
+	 * HOW: The compiler will optimize this to Map.delete.
+	 *
+	 * NOTE: Returns a new map without the field (immutability).
+	 *
+	 * @param obj The object (map) to delete the field from
+	 * @param field The name of the field to delete
+	 * @return The updated object (new map without the field)
+	 */
+	@:hack // Override core API signature for Elixir immutability
+	public static function deleteField(o:Dynamic, field:String):Dynamic {
+		// Delete supports both string and atom keys without creating atoms.
+		return
+			untyped __elixir__("if Map.has_key?({0}, {1}) do\n  Map.delete({0}, {1})\nelse\n  try do\n    key = String.to_existing_atom({1})\n    if Map.has_key?({0}, key) do\n      Map.delete({0}, key)\n    else\n      {0}\n    end\n  rescue\n    ArgumentError -> {0}\n  end\nend",
+			o, field);
+	}
+
+	/**
+	 * Check if a value is an object (map in Elixir).
+	 * 
+	 * WHY: Type checking is needed for safe reflection operations.
+	 * WHAT: Determines if a value is an object that supports reflection.
+	 * HOW: The compiler will optimize this to is_map guard.
+	 * 
+	 * @param value The value to check
+	 * @return True if the value is an object/map
+	 */
+	public static function isObject(v:Dynamic):Bool {
+		// In Elixir, objects are maps
+		return untyped __elixir__('is_map({0})', v);
+	}
+
+	/**
+	 * Make a shallow copy of an object with all its fields.
+	 * 
+	 * WHY: Object cloning is needed for immutable updates and snapshots.
+	 * WHAT: Creates a shallow copy of an object (map).
+	 * HOW: Maps are immutable in Elixir, so just returns the same map.
+	 * 
+	 * @param obj The object to copy
+	 * @return A shallow copy of the object
+	 */
+	public static inline function copy<T>(o:T):T {
+		// In Elixir, maps are immutable, so we just return the same map
+		// This maintains API compatibility while being efficient
+		return o;
+	}
+
+	/**
+	 * Call a method on an object dynamically.
+	 * 
+	 * WHY: Dynamic method invocation is needed for meta-programming and reflection.
+	 * WHAT: Calls a method/function with the given arguments.
+	 * HOW: The compiler will handle various Elixir callable types properly.
+	 * 
+	 * In Elixir, this handles:
+	 * - Function references: calls the function with obj as first argument
+	 * - Module functions: when passed as a function reference
+	 * 
+	 * @param obj The object to pass as context (can be null)
+	 * @param func The function to call
+	 * @param args Array of arguments to pass to the function
+	 * @return The return value of the function call
+	 */
+	public static function callMethod(_o:Dynamic, func:haxe.Constraints.Function, args:Array<Dynamic>):Dynamic {
 		// Elixir functions don't carry a `this` context; keep the object parameter
 		// for API parity but only forward the provided arguments. Mark it used to
 		// avoid compiler warnings when no context is needed.
 		var _ignoreObj = _o;
 		return untyped __elixir__('apply({0}, {1})', func, args);
 	}
-    
-    /**
-     * Compare two values for ordering.
-     * 
-     * WHY: Needed for sorting and ordered data structures.
-     * WHAT: Compares two values and returns their ordering.
-     * HOW: Uses string comparison as a generic fallback.
-     * 
-     * @param a First value to compare
-     * @param b Second value to compare
-     * @return -1 if a < b, 0 if a == b, 1 if a > b
-     */
-    public static function compare<T>(a: T, b: T): Int {
-        // Use string comparison and avoid early returns so the printer emits a
-        // single expression (maps to `cond`/`if ... else ... end` in Elixir) and
-        // preserves the final 0 fallback deterministically.
-        // Avoid locals to prevent late passes from demoting them to underscores.
-        return if (Std.string(a) < Std.string(b)) -1 else if (Std.string(a) > Std.string(b)) 1 else 0;
-    }
-    
-    /**
-     * Check if a value is an enum value.
-     * 
-     * WHY: Needed for enum type checking in runtime.
-     * WHAT: Determines if a value is a Haxe enum value.
-     * HOW: The compiler will check for tagged tuple structure.
-     * 
-     * In Elixir, Haxe enums are represented as:
-     * - Simple constructors: atoms like :Constructor
-     * - With parameters: tuples like {:Constructor, param1, param2}
-     * 
-     * @param value The value to check
-     * @return True if the value is an enum value
-     */
-    public static function isEnumValue(v: Dynamic): Bool {
-        // In Elixir, enums are represented as tagged tuples
-        return untyped __elixir__('is_tuple({0}) and tuple_size({0}) >= 1 and is_atom(elem({0}, 0))', v);
-    }
-    
-    /**
-     * Check if a value is a function.
-     * 
-     * WHY: Type checking for dynamic function invocation and validation.
-     * WHAT: Determines if a value can be called as a function.
-     * HOW: In Elixir, checks if value is a function reference.
-     * 
-     * @param f The value to check
-     * @return True if the value is a function
-     */
-    public static function isFunction(f: Dynamic): Bool {
-        // In Elixir, check if it's a function
-        // Use Kernel.is_function to avoid conflict with our own function name
-        return untyped __elixir__('Kernel.is_function({0})', f);
-    }
-    
-    /**
-     * Compare two function references for equality.
-     * 
-     * WHY: Needed for checking if two function references point to the same function.
-     * WHAT: Compares two function values for reference equality.
-     * HOW: In Elixir, function references can be compared directly.
-     * 
-     * @param f1 First function to compare
-     * @param f2 Second function to compare
-     * @return True if both refer to the same function
-     */
-    public static function compareMethods(f1: Dynamic, f2: Dynamic): Bool {
-        // In Elixir, function references can be compared directly
-        return untyped __elixir__('{0} == {1}', f1, f2);
-    }
-    
-    /**
-     * Get a property value from an object.
-     * 
-     * WHY: Some platforms distinguish between fields and properties.
-     * WHAT: Gets a property value (in Elixir, same as field).
-     * HOW: In Elixir, properties and fields are the same (map keys).
-     * 
-     * @param o The object to get property from
-     * @param field The property name
-     * @return The property value
-     */
-    public static function getProperty(o: Dynamic, field: String): Dynamic {
-        // In Elixir, properties are the same as fields
-        // Note: We're calling Reflect.field function, not using the parameter directly
-        return Reflect.field(o, field);
-    }
-    
-    /**
-     * Set a property value on an object.
-     * 
-     * WHY: Some platforms distinguish between fields and properties.
-     * WHAT: Sets a property value (in Elixir, same as field).
-     * HOW: In Elixir, properties and fields are the same (map keys).
-     * 
-     * @param o The object to set property on
-     * @param field The property name
-     * @param value The value to set
-     */
-    public static function setProperty(o: Dynamic, field: String, value: Dynamic): Void {
-        // In Elixir, properties are the same as fields
-        // Note: setField returns the new object, but setProperty returns Void
-        setField(o, field, value);
-    }
-    
-    /**
-     * Create a variable argument function wrapper.
-     * 
-     * WHY: Needed for functions that accept variable number of arguments.
-     * WHAT: Wraps a function to accept variable arguments.
-     * HOW: Creates a wrapper that collects arguments into an array.
-     * 
-     * @param f Function that takes an array of arguments
-     * @return Function that accepts variable arguments
-     */
-    public static function makeVarArgs(f: Array<Dynamic> -> Dynamic): Dynamic {
-        // Create a function that collects arguments into an array
-        return untyped __elixir__('fn args -> {0}.(args) end', f);
-    }
+
+	/**
+	 * Compare two values for ordering.
+	 * 
+	 * WHY: Needed for sorting and ordered data structures.
+	 * WHAT: Compares two values and returns their ordering.
+	 * HOW: Uses string comparison as a generic fallback.
+	 * 
+	 * @param a First value to compare
+	 * @param b Second value to compare
+	 * @return -1 if a < b, 0 if a == b, 1 if a > b
+	 */
+	public static function compare<T>(a:T, b:T):Int {
+		// Use string comparison and avoid early returns so the printer emits a
+		// single expression (maps to `cond`/`if ... else ... end` in Elixir) and
+		// preserves the final 0 fallback deterministically.
+		// Avoid locals to prevent late passes from demoting them to underscores.
+		return if (Std.string(a) < Std.string(b)) -1 else if (Std.string(a) > Std.string(b)) 1 else 0;
+	}
+
+	/**
+	 * Check if a value is an enum value.
+	 * 
+	 * WHY: Needed for enum type checking in runtime.
+	 * WHAT: Determines if a value is a Haxe enum value.
+	 * HOW: The compiler will check for tagged tuple structure.
+	 * 
+	 * In Elixir, Haxe enums are represented as:
+	 * - Simple constructors: atoms like :Constructor
+	 * - With parameters: tuples like {:Constructor, param1, param2}
+	 * 
+	 * @param value The value to check
+	 * @return True if the value is an enum value
+	 */
+	public static function isEnumValue(v:Dynamic):Bool {
+		// In Elixir, enums are represented as tagged tuples
+		return untyped __elixir__('is_tuple({0}) and tuple_size({0}) >= 1 and is_atom(elem({0}, 0))', v);
+	}
+
+	/**
+	 * Check if a value is a function.
+	 * 
+	 * WHY: Type checking for dynamic function invocation and validation.
+	 * WHAT: Determines if a value can be called as a function.
+	 * HOW: In Elixir, checks if value is a function reference.
+	 * 
+	 * @param f The value to check
+	 * @return True if the value is a function
+	 */
+	public static function isFunction(f:Dynamic):Bool {
+		// In Elixir, check if it's a function
+		// Use Kernel.is_function to avoid conflict with our own function name
+		return untyped __elixir__('Kernel.is_function({0})', f);
+	}
+
+	/**
+	 * Compare two function references for equality.
+	 * 
+	 * WHY: Needed for checking if two function references point to the same function.
+	 * WHAT: Compares two function values for reference equality.
+	 * HOW: In Elixir, function references can be compared directly.
+	 * 
+	 * @param f1 First function to compare
+	 * @param f2 Second function to compare
+	 * @return True if both refer to the same function
+	 */
+	public static function compareMethods(f1:Dynamic, f2:Dynamic):Bool {
+		// In Elixir, function references can be compared directly
+		return untyped __elixir__('{0} == {1}', f1, f2);
+	}
+
+	/**
+	 * Get a property value from an object.
+	 * 
+	 * WHY: Some platforms distinguish between fields and properties.
+	 * WHAT: Gets a property value (in Elixir, same as field).
+	 * HOW: In Elixir, properties and fields are the same (map keys).
+	 * 
+	 * @param o The object to get property from
+	 * @param field The property name
+	 * @return The property value
+	 */
+	public static function getProperty(o:Dynamic, field:String):Dynamic {
+		// In Elixir, properties are the same as fields
+		// Note: We're calling Reflect.field function, not using the parameter directly
+		return Reflect.field(o, field);
+	}
+
+	/**
+	 * Set a property value on an object.
+	 * 
+	 * WHY: Some platforms distinguish between fields and properties.
+	 * WHAT: Sets a property value (in Elixir, same as field).
+	 * HOW: In Elixir, properties and fields are the same (map keys).
+	 * 
+	 * @param o The object to set property on
+	 * @param field The property name
+	 * @param value The value to set
+	 */
+	public static function setProperty(o:Dynamic, field:String, value:Dynamic):Void {
+		// In Elixir, properties are the same as fields
+		// Note: setField returns the new object, but setProperty returns Void
+		setField(o, field, value);
+	}
+
+	/**
+	 * Create a variable argument function wrapper.
+	 * 
+	 * WHY: Needed for functions that accept variable number of arguments.
+	 * WHAT: Wraps a function to accept variable arguments.
+	 * HOW: Creates a wrapper that collects arguments into an array.
+	 * 
+	 * @param f Function that takes an array of arguments
+	 * @return Function that accepts variable arguments
+	 */
+	public static function makeVarArgs(f:Array<Dynamic>->Dynamic):Dynamic {
+		// Create a function that collects arguments into an array
+		return untyped __elixir__('fn args -> {0}.(args) end', f);
+	}
 }

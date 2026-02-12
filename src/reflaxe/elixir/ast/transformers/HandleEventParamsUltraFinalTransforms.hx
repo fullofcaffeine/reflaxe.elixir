@@ -37,35 +37,33 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *     end
  */
 class HandleEventParamsUltraFinalTransforms {
-    public static function transformPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EDef(name, args, guards, body) if (name == "handle_event" && args != null && args.length == 3):
-                    switch (args[1]) {
-                        case PVar(pn) if (pn != null && pn != "params"):
-                            var old = pn;
-                            var newArgs = args.copy();
-                            newArgs[1] = PVar("params");
-                            var newBody = renameVar(body, old, "params");
-                            makeASTWithMeta(EDef(name, newArgs, guards, newBody), n.metadata, n.pos);
-                        default:
-                            n;
-                    }
-                default:
-                    n;
-            }
-        });
-    }
+	public static function transformPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EDef(name, args, guards, body) if (name == "handle_event" && args != null && args.length == 3):
+					switch (args[1]) {
+						case PVar(pn) if (pn != null && pn != "params"):
+							var old = pn;
+							var newArgs = args.copy();
+							newArgs[1] = PVar("params");
+							var newBody = renameVar(body, old, "params");
+							makeASTWithMeta(EDef(name, newArgs, guards, newBody), n.metadata, n.pos);
+						default:
+							n;
+					}
+				default:
+					n;
+			}
+		});
+	}
 
-    static function renameVar(body: ElixirAST, from:String, to:String): ElixirAST {
-        return ElixirASTTransformer.transformNode(body, function(x: ElixirAST): ElixirAST {
-            return switch (x.def) {
-                case EVar(v) if (v == from): makeASTWithMeta(EVar(to), x.metadata, x.pos);
-                default: x;
-            }
-        });
-    }
+	static function renameVar(body:ElixirAST, from:String, to:String):ElixirAST {
+		return ElixirASTTransformer.transformNode(body, function(x:ElixirAST):ElixirAST {
+			return switch (x.def) {
+				case EVar(v) if (v == from): makeASTWithMeta(EVar(to), x.metadata, x.pos);
+				default: x;
+			}
+		});
+	}
 }
-
 #end
-

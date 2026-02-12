@@ -20,24 +20,24 @@
  * 3. Other expressions still compile correctly (no regressions)
  */
 class Main {
-    public static function main() {
-        // Test normal expression compilation
-        var message = "Testing composition architecture";
-        trace(message);
-        
-        // Test that __elixir__ injection is still processed
-        // Even though it generates .call wrapper, it should compile
-        untyped __elixir__('IO.puts("Injection still works")');
-        
-        // Test complex expression to ensure AST pipeline works
-        var numbers = [1, 2, 3, 4, 5];
-        var doubled = numbers.map(function(n) return n * 2);
-        
-        // Test that all expression types compile
-        if (doubled.length > 0) {
-            for (n in doubled) {
-                trace('Doubled: $n');
-            }
-        }
-    }
+	public static function main() {
+		// Test normal expression compilation
+		var message = "Testing composition architecture";
+		trace(message);
+
+		// Test that __elixir__ injection is still processed
+		// Even though it generates .call wrapper, it should compile
+		untyped __elixir__('IO.puts("Injection still works")');
+
+		// Test complex expression to ensure AST pipeline works
+		var numbers = [1, 2, 3, 4, 5];
+		var doubled = numbers.map(function(n) return n * 2);
+
+		// Test that all expression types compile
+		if (doubled.length > 0) {
+			for (n in doubled) {
+				trace('Doubled: $n');
+			}
+		}
+	}
 }

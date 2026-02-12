@@ -13,83 +13,85 @@ import elixir.types.Term;
 
 // Typed assigns for HXX (required by linter) — keep fields minimal and task-focused
 typedef ComponentAssigns = {
-    var className: String;
-    var title: String;
-    var content: String;
+	var className:String;
+	var title:String;
+	var content:String;
 }
 
 typedef ButtonAssigns = {
-    var type: String;
-    var disabled: Bool;
-    var label: String;
+	var type:String;
+	var disabled:Bool;
+	var label:String;
 }
 
 typedef LiveAssigns = {
-    // In app code this would be an Ecto.Changeset or proper form struct; typed here to satisfy linter
-    var form: Term;
-    var show_modal: Bool;
+	// In app code this would be an Ecto.Changeset or proper form struct; typed here to satisfy linter
+	var form:Term;
+	var show_modal:Bool;
 }
 
 // Test 1: Bitwise operations should trigger Bitwise import
 class BitwiseOperations {
-    public static function testBitwise(): Int {
-        var a = 0xFF;
-        var b = 0x0F;
-        
-        // Test all bitwise operators (Haxe syntax -> Elixir triple operators)
-        var andResult = a & b;        // Bitwise AND -> &&&
-        var orResult = a | b;         // Bitwise OR -> |||
-        var xorResult = a ^ b;        // Bitwise XOR -> ^^^
-        var notResult = ~a;           // Bitwise NOT -> ~~~
-        var leftShift = a << 2;       // Left shift -> <<<
-        var rightShift = a >>> 2;     // Right shift -> >>>
-        
-        return andResult + orResult + xorResult + notResult + leftShift + rightShift;
-    }
-    
-    // Nested usage in complex expression
-    public static function complexBitwise(): Int {
-        var mask = 0xFF;
-        var value = 0x12345678;
-        
-        // Complex expression with multiple bitwise ops
-        return (value & mask) | ((value >>> 8) & mask);
-    }
+	public static function testBitwise():Int {
+		var a = 0xFF;
+		var b = 0x0F;
+
+		// Test all bitwise operators (Haxe syntax -> Elixir triple operators)
+		var andResult = a & b; // Bitwise AND -> &&&
+		var orResult = a | b; // Bitwise OR -> |||
+		var xorResult = a ^ b; // Bitwise XOR -> ^^^
+		var notResult = ~a; // Bitwise NOT -> ~~~
+		var leftShift = a << 2; // Left shift -> <<<
+		var rightShift = a >>> 2; // Right shift -> >>>
+
+		return andResult + orResult + xorResult + notResult + leftShift + rightShift;
+	}
+
+	// Nested usage in complex expression
+	public static function complexBitwise():Int {
+		var mask = 0xFF;
+		var value = 0x12345678;
+
+		// Complex expression with multiple bitwise ops
+		return (value & mask) | ((value >>> 8) & mask);
+	}
 }
 
 // Test 2: HXX templates should trigger Phoenix.Component import
+
 @:native("TestAppWeb.TestComponent")
 class TestComponent {
-    public static function template(assigns: ComponentAssigns): String {
-        // This should generate ~H sigil and trigger use Phoenix.Component
-        return HXX.hxx('
+	public static function template(assigns:ComponentAssigns):String {
+		// This should generate ~H sigil and trigger use Phoenix.Component
+		return HXX.hxx('
             <div class=${assigns.className}>
                 <h1>${assigns.title}</h1>
                 <p>${assigns.content}</p>
             </div>
         ');
-    }
-    
-    public static function button(assigns: ButtonAssigns): String {
-        return HXX.hxx('
+	}
+
+	public static function button(assigns:ButtonAssigns):String {
+		return HXX.hxx('
             <button type=${assigns.type} disabled=${assigns.disabled}>
                 ${assigns.label}
             </button>
         ');
-    }
+	}
 }
 
 // Test 3: LiveView with components should trigger CoreComponents import
+
 @:native("TestAppWeb.TestLive")
 @:liveview
 class TestLive {
-    public static function mount(params: Term, session: Term, socket: phoenix.Phoenix.Socket<{}>): phoenix.Phoenix.MountResult<{}> {
-        return phoenix.Phoenix.MountResult.Ok(socket);
-    }
-    
-    public static function render(assigns: LiveAssigns): String {
-        // Component usage should trigger CoreComponents import
-        return HXX.hxx('
+	public static function mount(params:Term, session:Term, socket:phoenix.Phoenix.Socket<{}>):phoenix.Phoenix.MountResult<{}> {
+		return phoenix.Phoenix.MountResult.Ok(socket);
+	}
+
+	public static function render(assigns:LiveAssigns):String {
+		// Component usage should trigger CoreComponents import
+		return HXX.hxx('
             <div>
                 <.header title="Test Page" />
                 
@@ -104,32 +106,32 @@ class TestLive {
                 </.modal>
             </div>
         ');
-    }
-    
-    public static function handle_event(event: String, params: Term, socket: phoenix.Phoenix.Socket<{}>): phoenix.Phoenix.HandleEventResult<{}> {
-        return phoenix.Phoenix.HandleEventResult.NoReply(socket);
-    }
+	}
+
+	public static function handle_event(event:String, params:Term, socket:phoenix.Phoenix.Socket<{}>):phoenix.Phoenix.HandleEventResult<{}> {
+		return phoenix.Phoenix.HandleEventResult.NoReply(socket);
+	}
 }
 
 // Main entry point
 class Main {
-    static function main() {
-        // Call the test functions to ensure they compile
-        BitwiseOperations.testBitwise();
-        BitwiseOperations.complexBitwise();
-        
-        var assigns = {
-            className: "container",
-            title: "Test Title",
-            content: "Test content",
-            type: "button",
-            disabled: false,
-            label: "Click me"
-        };
-        
-        TestComponent.template(assigns);
-        TestComponent.button(assigns);
-        
-        trace("Implicit imports test compiled successfully");
-    }
+	static function main() {
+		// Call the test functions to ensure they compile
+		BitwiseOperations.testBitwise();
+		BitwiseOperations.complexBitwise();
+
+		var assigns = {
+			className: "container",
+			title: "Test Title",
+			content: "Test content",
+			type: "button",
+			disabled: false,
+			label: "Click me"
+		};
+
+		TestComponent.template(assigns);
+		TestComponent.button(assigns);
+
+		trace("Implicit imports test compiled successfully");
+	}
 }

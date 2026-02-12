@@ -9,13 +9,13 @@ import js.Syntax;
  * Your app can merge additional hooks into this object.
  */
 class Boot {
-  public static function main(): Void {
-    Syntax.code("
+	public static function main():Void {
+		Syntax.code("
       window.Hooks = window.Hooks || {};
       window.Hooks.AutoScroll = {
         mounted() { this.el.scrollTop = this.el.scrollHeight; },
         updated() { this.el.scrollTop = this.el.scrollHeight; },
       };
     ");
-  }
+	}
 }

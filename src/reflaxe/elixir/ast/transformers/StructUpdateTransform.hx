@@ -43,484 +43,483 @@ using reflaxe.elixir.ast.ElixirASTTransformer;
  */
 @:nullSafety(Off)
 class StructUpdateTransform {
-    
-    /**
-     * Main transformation pass for struct field updates
-     */
-    public static function structUpdateTransformPass(ast: ElixirAST): ElixirAST {
-        #if debug_struct_update_transform
-        #end
-        
-        return transformStructUpdates(ast);
-    }
-    
-    static function transformStructUpdates(node: ElixirAST): ElixirAST {
-        // First recursively transform children
-        var transformedNode = ElixirASTTransformer.transformAST(node, transformStructUpdates);
-        
-        // Handle null nodes
-        if (transformedNode == null) {
-            return null;
-        }
-        
-        // Check if this is a function with problematic field assignments
-        switch(transformedNode.def) {
-            case EDef(name, args, guards, body):
-                // Check if this public function has field assignments that need transformation
-                var transformedBody = transformFunctionBody(body, name);
-                if (transformedBody != body) {
-                    return makeASTWithMeta(EDef(name, args, guards, transformedBody), transformedNode.metadata, transformedNode.pos);
-                }
-                
-            case EDefp(name, args, guards, body):
-                // Check if this private function has field assignments that need transformation
-                var transformedBody = transformFunctionBody(body, name);
-                if (transformedBody != body) {
-                    return makeASTWithMeta(EDefp(name, args, guards, transformedBody), transformedNode.metadata, transformedNode.pos);
-                }
-                
-            default:
-                // Not a function, continue
-        }
-        
-        return transformedNode;
-    }
-    
-    /**
-     * Transform function body to handle struct field updates
-     */
-    static function transformFunctionBody(body: ElixirAST, functionName: String): ElixirAST {
-        if (body == null) return null;
-        
-        // For the 'set' method specifically, we need to transform field assignments
-        // into struct updates that return the updated struct
-        if (functionName == "set") {
-            return transformSetMethod(body);
-        }
-        
-        // For fluent API methods (like add_column, add_index, etc.), 
-        // transform field mutations into struct updates
-        if (isFluentAPIMethod(functionName)) {
-            return transformFluentMethod(body);
-        }
-        
-        // For other functions, we'll just detect and remove problematic assignments
-        // to eliminate warnings. A proper implementation would transform
-        // the entire function to thread struct updates properly.
-        
-        switch(body.def) {
-            case EBlock(exprs):
-                var filteredExprs = [];
-                var didChange = false;
-                for (expr in exprs) {
-                    if (!isProblematicFieldAssignment(expr, functionName)) {
-                        var transformed = transformFunctionBody(expr, functionName);
-                        if (transformed != expr) didChange = true;
-                        filteredExprs.push(transformed);
-                    } else {
-                        #if debug_struct_update_transform
-                        #end
-                        didChange = true;
-                        // Skip this assignment to avoid the warning
-                        // Future improvement: thread struct updates through the function body.
-                    }
-                }
-                return didChange ? makeASTWithMeta(EBlock(filteredExprs), body.metadata, body.pos) : body;
-                
-            default:
-                // Recursively transform other expressions
-                return ElixirASTTransformer.transformAST(body, node -> transformFunctionBody(node, functionName));
-        }
-    }
-    
-    /**
-     * Check if a method is a fluent API method that mutates fields and returns this
-     */
-    static function isFluentAPIMethod(name: String): Bool {
-        // Common fluent API method patterns
-        return StringTools.startsWith(name, "add_") || 
-               StringTools.startsWith(name, "set_") || 
-               StringTools.startsWith(name, "with_") ||
-               name == "push" ||
-               name == "append";
-    }
-    
-    /**
-     * Transform fluent API methods that mutate fields and return struct
-     */
-    static function transformFluentMethod(body: ElixirAST): ElixirAST {
-        if (body == null) return null;
-        
-        switch(body.def) {
-            case EBlock(exprs):
-                // Check for pattern: field mutation followed by return struct
-                // Transform to single struct update
-                if (exprs.length == 2) {
-                    var mutation = detectAndExtractFieldMutation(exprs[0]);
-                    if (mutation != null && isReturnStruct(exprs[1])) {
-                        #if debug_struct_update_transform
-                        #end
-                        return makeAST(EStructUpdate(
-                            makeAST(EVar("struct")),
-                            [mutation]
-                        ));
-                    }
-                }
-                
-                // Otherwise handle expressions individually
-                var transformedExprs = [];
-                var hasTransformations = false;
-                
-                for (i in 0...exprs.length) {
-                    var expr = exprs[i];
-                    
-                    // Check if this is a method call on struct that returns a new struct
-                    var transformed = transformStructMethodCall(expr);
-                    if (transformed != null) {
-                        transformedExprs.push(transformed);
-                        hasTransformations = true;
-                        #if debug_struct_update_transform
-                        #end
-                    }
-                    // Check if this is a field mutation that's being ignored  
-                    else if (isIgnoredFieldMutation(expr)) {
-                        // Transform to struct update
-                        var update = extractFieldUpdate(expr);
-                        if (update != null) {
-                            #if debug_struct_update_transform
-                            #end
-                            transformedExprs.push(makeAST(EStructUpdate(
-                                makeAST(EVar("struct")),
-                                [update]
-                            )));
-                            hasTransformations = true;
-                        }
-                    }
-                    else {
-                        transformedExprs.push(expr);
-                    }
-                }
-                
-                return hasTransformations ? makeAST(EBlock(transformedExprs)) : body;
-                
-            default:
-                return body;
-        }
-    }
-    
-    /**
-     * Transform method calls on struct to capture return value
-     */
-    static function transformStructMethodCall(expr: ElixirAST): Null<ElixirAST> {
-        if (expr == null) return null;
-        
-        switch(expr.def) {
-            case EBinary(Match, left, rhs):
-                // Handle statement-form `_ = call(...)` emitted as a binary match.
-                //
-                // WHY:
-                // - BareCallToUnderscoreAssignTransforms emits `_ = call(...)` as `EBinary(Match, EVar("_"), call)`.
-                // - Fluent/struct-mutating calls must still thread the updated struct to preserve semantics.
-                //
-                // HOW:
-                // - Detect discard binders (`_`) and, when the RHS is a fluent API call whose first
-                //   argument is `struct`, rebind: `struct = call(...)`.
-                var isDiscard = switch (left.def) {
-                    case EVar("_"): true;
-                    default: false;
-                };
+	/**
+	 * Main transformation pass for struct field updates
+	 */
+	public static function structUpdateTransformPass(ast:ElixirAST):ElixirAST {
+		#if debug_struct_update_transform
+		#end
 
-                if (isDiscard && rhs != null) {
-                    switch (rhs.def) {
-                        case ECall(callTarget, method, args):
-                            if (callTarget == null && args != null && args.length > 0) {
-                                switch (args[0].def) {
-                                    case EVar("struct") if (isFluentAPIMethod(method)):
-                                        return makeAST(EMatch(PVar("struct"), rhs));
-                                    default:
-                                }
-                            }
-                        case ERemoteCall(_, method, args):
-                            if (args != null && args.length > 0) {
-                                switch (args[0].def) {
-                                    case EVar("struct") if (isFluentAPIMethod(method)):
-                                        return makeAST(EMatch(PVar("struct"), rhs));
-                                    default:
-                                }
-                            }
-                        default:
-                    }
-                }
+		return transformStructUpdates(ast);
+	}
 
-            case EMatch(pattern, rhs):
-                // Many statements are emitted as `_ = expr` when the value is intentionally ignored.
-                // In fluent/struct-mutating contexts, we must still thread the updated struct.
-                var isDiscard = switch (pattern) {
-                    case PWildcard: true;
-                    case PVar("_"): true;
-                    default: false;
-                };
+	static function transformStructUpdates(node:ElixirAST):ElixirAST {
+		// First recursively transform children
+		var transformedNode = ElixirASTTransformer.transformAST(node, transformStructUpdates);
 
-                if (isDiscard && rhs != null) {
-                    switch (rhs.def) {
-                        case ECall(callTarget, method, args):
-                            // Local function style: add_column(struct, ...) → struct = add_column(struct, ...)
-                            if (callTarget == null && args != null && args.length > 0) {
-                                switch (args[0].def) {
-                                    case EVar("struct") if (isFluentAPIMethod(method)):
-                                        return makeAST(EMatch(PVar("struct"), rhs));
-                                    default:
-                                }
-                            }
-                        default:
-                    }
-                }
+		// Handle null nodes
+		if (transformedNode == null) {
+			return null;
+		}
 
-            case ECall(target, method, args):
-                // Check if target is not null and is a call on struct variable
-                if (target != null && target.def != null) {
-                    switch(target.def) {
-                        case EVar("struct"):
-                            // This is a method call on struct that should return a new struct
-                            // Transform: struct.method(...) -> struct = struct.method(...)
-                            #if debug_struct_update_transform
-                            #end
-                            return makeAST(EMatch(
-                                PVar("struct"),
-                                makeAST(ECall(target, method, args))
-                            ));
-                        default:
-                    }
-                }
+		// Check if this is a function with problematic field assignments
+		switch (transformedNode.def) {
+			case EDef(name, args, guards, body):
+				// Check if this public function has field assignments that need transformation
+				var transformedBody = transformFunctionBody(body, name);
+				if (transformedBody != body) {
+					return makeASTWithMeta(EDef(name, args, guards, transformedBody), transformedNode.metadata, transformedNode.pos);
+				}
 
-                // Local function style within the same module: method(struct, ...) should also thread
-                // for fluent API methods when used as a statement.
-                if (target == null && args != null && args.length > 0) {
-                    switch (args[0].def) {
-                        case EVar("struct") if (isFluentAPIMethod(method)):
-                            return makeAST(EMatch(
-                                PVar("struct"),
-                                makeAST(ECall(target, method, args))
-                            ));
-                        default:
-                    }
-                }
-            default:
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Detect and extract field mutation from any expression
-     */
-    static function detectAndExtractFieldMutation(expr: ElixirAST): Null<{key: String, value: ElixirAST}> {
-        if (expr == null) return null;
+			case EDefp(name, args, guards, body):
+				// Check if this private function has field assignments that need transformation
+				var transformedBody = transformFunctionBody(body, name);
+				if (transformedBody != body) {
+					return makeASTWithMeta(EDefp(name, args, guards, transformedBody), transformedNode.metadata, transformedNode.pos);
+				}
 
-        // Check for field concatenation pattern
-        switch(expr.def) {
-            case EBinary(Concat, left, right):
-                // Check if left side is struct.field access
-                switch(left.def) {
-                    case EField(obj, field):
-                        switch(obj.def) {
-                            case EVar("struct"):
-                                // GUARD: Only treat as struct field if field is not an array variable
-                                if (isArrayVariable(field)) {
-                                    #if debug_struct_update_transform
-                                    #end
-                                    return null;
-                                }
+			default:
+				// Not a function, continue
+		}
 
-                                // Found struct.field ++ something (and field is NOT an array variable)
-                                return {
-                                    key: field,
-                                    value: makeAST(EBinary(Concat, left, right))
-                                };
-                            default:
-                        }
-                    default:
-                }
-            case EField(obj, field):
-                // Check for simple field access that might be a mutation
-                switch(obj.def) {
-                    case EVar("struct"):
-                        // This is just struct.field, not a mutation
-                        return null;
-                    default:
-                }
-            default:
-        }
-        
-        return null;
-    }
-    
-    /**
-     * Check if a variable name indicates it's an array/list operation variable
-     * These are compiler-generated infrastructure variables for array building
-     *
-     * PUBLIC: Shared with ImmutabilityTransform to prevent struct update transformation
-     * for array infrastructure variables (g, g2, _g, _g2, etc.)
-     */
-    public static function isArrayVariable(varName: String): Bool {
-        if (varName == null) return false;
+		return transformedNode;
+	}
 
-        // Check for compiler-generated array variables
-        // Pattern: g, g2, g3, _g, _g2, etc.
-        if (varName == "g") return true;
-        if (StringTools.startsWith(varName, "g") && ~/^g\d+$/.match(varName)) return true;
-        if (StringTools.startsWith(varName, "_g")) return true;
+	/**
+	 * Transform function body to handle struct field updates
+	 */
+	static function transformFunctionBody(body:ElixirAST, functionName:String):ElixirAST {
+		if (body == null)
+			return null;
 
-        return false;
-    }
+		// For the 'set' method specifically, we need to transform field assignments
+		// into struct updates that return the updated struct
+		if (functionName == "set") {
+			return transformSetMethod(body);
+		}
 
-    /**
-     * Check if an expression is an ignored field mutation (like struct.columns ++ [...])
-     *
-     * CRITICAL: Only applies to actual struct field operations, NOT array operations.
-     * This prevents incorrectly transforming array concatenation like `arr = arr ++ [item]`
-     * into struct update syntax `%{struct | arr: arr ++ [item]}`.
-     */
-    static function isIgnoredFieldMutation(expr: ElixirAST): Bool {
-        if (expr == null) return false;
+		// For fluent API methods (like add_column, add_index, etc.),
+		// transform field mutations into struct updates
+		if (isFluentAPIMethod(functionName)) {
+			return transformFluentMethod(body);
+		}
 
-        switch(expr.def) {
-            case EBinary(Concat, left, right):
-                // Check if left side is struct.field access
-                switch(left.def) {
-                    case EField(obj, field):
-                        switch(obj.def) {
-                            case EVar(varName):
-                                // GUARD: Only treat as struct field if variable is "struct"
-                                // AND not an array infrastructure variable
-                                if (varName == "struct" && !isArrayVariable(field)) {
-                                    return true;
-                                }
-                                // GUARD: Reject array variables (g, g2, _g, etc.)
-                                if (isArrayVariable(varName)) {
-                                    #if debug_struct_update_transform
-                                    #end
-                                    return false;
-                                }
-                            default:
-                        }
-                    default:
-                }
-            default:
-        }
+		// For other functions, we'll just detect and remove problematic assignments
+		// to eliminate warnings. A proper implementation would transform
+		// the entire function to thread struct updates properly.
 
-        return false;
-    }
-    
-    /**
-     * Extract field update information from a mutation expression
-     *
-     * CRITICAL: Only extracts from actual struct field operations, NOT array operations.
-     */
-    static function extractFieldUpdate(expr: ElixirAST): Null<{key: String, value: ElixirAST}> {
-        if (expr == null) return null;
+		switch (body.def) {
+			case EBlock(exprs):
+				var filteredExprs = [];
+				var didChange = false;
+				for (expr in exprs) {
+					if (!isProblematicFieldAssignment(expr, functionName)) {
+						var transformed = transformFunctionBody(expr, functionName);
+						if (transformed != expr)
+							didChange = true;
+						filteredExprs.push(transformed);
+					} else {
+						#if debug_struct_update_transform
+						#end
+						didChange = true;
+						// Skip this assignment to avoid the warning
+						// Future improvement: thread struct updates through the function body.
+					}
+				}
+				return didChange ? makeASTWithMeta(EBlock(filteredExprs), body.metadata, body.pos) : body;
 
-        switch(expr.def) {
-            case EBinary(Concat, left, right):
-                // Extract field name and build update expression
-                switch(left.def) {
-                    case EField(obj, field):
-                        switch(obj.def) {
-                            case EVar(varName):
-                                // GUARD: Only extract if variable is "struct" and field is not an array variable
-                                if (varName == "struct" && !isArrayVariable(field)) {
-                                    // Build the complete update expression: struct.field ++ right
-                                    return {
-                                        key: field,
-                                        value: makeAST(EBinary(Concat, left, right))
-                                    };
-                                }
-                                // GUARD: Skip array variables
-                                if (isArrayVariable(varName)) {
-                                    return null;
-                                }
-                            default:
-                        }
-                    default:
-                }
-            default:
-        }
+			default:
+				// Recursively transform other expressions
+				return ElixirASTTransformer.transformAST(body, node -> transformFunctionBody(node, functionName));
+		}
+	}
 
-        return null;
-    }
-    
-    /**
-     * Check if an expression is returning the struct
-     */
-    static function isReturnStruct(expr: ElixirAST): Bool {
-        if (expr == null) return false;
-        
-        switch(expr.def) {
-            case EVar("struct"):
-                return true;
-            default:
-                return false;
-        }
-    }
-    
-    /**
-     * Transform the 'set' method to return the updated struct
-     */
-    static function transformSetMethod(body: ElixirAST): ElixirAST {
-        if (body == null) return null;
-        
-        switch(body.def) {
-            case EMatch(PVar("root"), right):
-                // Transform `root = insertNode(...)` to `%{struct | root: insertNode(...)}`
-                #if debug_struct_update_transform
-                #end
-                // Return a struct update expression
-                return makeAST(EStructUpdate(
-                    makeAST(EVar("struct")),
-                    [{
-                        key: "root",
-                        value: right
-                    }]
-                ));
-                
-            case EBlock(exprs):
-                // For blocks, transform the last expression if it's a root assignment
-                if (exprs.length > 0) {
-                    var lastIndex = exprs.length - 1;
-                    var lastExpr = exprs[lastIndex];
-                    var transformed = transformSetMethod(lastExpr);
-                    if (transformed != lastExpr) {
-                        var newExprs = exprs.copy();
-                        newExprs[lastIndex] = transformed;
-                        return makeAST(EBlock(newExprs));
-                    }
-                }
-                return body;
-                
-            default:
-                return body;
-        }
-    }
-    
-    /**
-     * Check if an expression is a problematic field assignment
-     */
-    static function isProblematicFieldAssignment(expr: ElixirAST, functionName: String): Bool {
-        if (expr == null) return false;
-        
-        switch(expr.def) {
-            case EMatch(PVar("root"), right):
-                // Special case for BalancedTree methods that assign to root
-                if (functionName == "set" || functionName == "remove" || functionName == "clear") {
-                    #if debug_struct_update_transform
-                    #end
-                    return true;
-                }
-                
-            default:
-                // Not a problematic assignment
-        }
-        
-        return false;
-    }
+	/**
+	 * Check if a method is a fluent API method that mutates fields and returns this
+	 */
+	static function isFluentAPIMethod(name:String):Bool {
+		// Common fluent API method patterns
+		return StringTools.startsWith(name, "add_")
+			|| StringTools.startsWith(name, "set_")
+			|| StringTools.startsWith(name, "with_")
+			|| name == "push"
+			|| name == "append";
+	}
+
+	/**
+	 * Transform fluent API methods that mutate fields and return struct
+	 */
+	static function transformFluentMethod(body:ElixirAST):ElixirAST {
+		if (body == null)
+			return null;
+
+		switch (body.def) {
+			case EBlock(exprs):
+				// Check for pattern: field mutation followed by return struct
+				// Transform to single struct update
+				if (exprs.length == 2) {
+					var mutation = detectAndExtractFieldMutation(exprs[0]);
+					if (mutation != null && isReturnStruct(exprs[1])) {
+						#if debug_struct_update_transform
+						#end
+						return makeAST(EStructUpdate(makeAST(EVar("struct")), [mutation]));
+					}
+				}
+
+				// Otherwise handle expressions individually
+				var transformedExprs = [];
+				var hasTransformations = false;
+
+				for (i in 0...exprs.length) {
+					var expr = exprs[i];
+
+					// Check if this is a method call on struct that returns a new struct
+					var transformed = transformStructMethodCall(expr);
+					if (transformed != null) {
+						transformedExprs.push(transformed);
+						hasTransformations = true;
+						#if debug_struct_update_transform
+						#end
+					}
+					// Check if this is a field mutation that's being ignored
+					else if (isIgnoredFieldMutation(expr)) {
+						// Transform to struct update
+						var update = extractFieldUpdate(expr);
+						if (update != null) {
+							#if debug_struct_update_transform
+							#end
+							transformedExprs.push(makeAST(EStructUpdate(makeAST(EVar("struct")), [update])));
+							hasTransformations = true;
+						}
+					} else {
+						transformedExprs.push(expr);
+					}
+				}
+
+				return hasTransformations ? makeAST(EBlock(transformedExprs)) : body;
+
+			default:
+				return body;
+		}
+	}
+
+	/**
+	 * Transform method calls on struct to capture return value
+	 */
+	static function transformStructMethodCall(expr:ElixirAST):Null<ElixirAST> {
+		if (expr == null)
+			return null;
+
+		switch (expr.def) {
+			case EBinary(Match, left, rhs):
+				// Handle statement-form `_ = call(...)` emitted as a binary match.
+				//
+				// WHY:
+				// - BareCallToUnderscoreAssignTransforms emits `_ = call(...)` as `EBinary(Match, EVar("_"), call)`.
+				// - Fluent/struct-mutating calls must still thread the updated struct to preserve semantics.
+				//
+				// HOW:
+				// - Detect discard binders (`_`) and, when the RHS is a fluent API call whose first
+				//   argument is `struct`, rebind: `struct = call(...)`.
+				var isDiscard = switch (left.def) {
+					case EVar("_"): true;
+					default: false;
+				};
+
+				if (isDiscard && rhs != null) {
+					switch (rhs.def) {
+						case ECall(callTarget, method, args):
+							if (callTarget == null && args != null && args.length > 0) {
+								switch (args[0].def) {
+									case EVar("struct") if (isFluentAPIMethod(method)):
+										return makeAST(EMatch(PVar("struct"), rhs));
+									default:
+								}
+							}
+						case ERemoteCall(_, method, args):
+							if (args != null && args.length > 0) {
+								switch (args[0].def) {
+									case EVar("struct") if (isFluentAPIMethod(method)):
+										return makeAST(EMatch(PVar("struct"), rhs));
+									default:
+								}
+							}
+						default:
+					}
+				}
+
+			case EMatch(pattern, rhs):
+				// Many statements are emitted as `_ = expr` when the value is intentionally ignored.
+				// In fluent/struct-mutating contexts, we must still thread the updated struct.
+				var isDiscard = switch (pattern) {
+					case PWildcard: true;
+					case PVar("_"): true;
+					default: false;
+				};
+
+				if (isDiscard && rhs != null) {
+					switch (rhs.def) {
+						case ECall(callTarget, method, args):
+							// Local function style: add_column(struct, ...) → struct = add_column(struct, ...)
+							if (callTarget == null && args != null && args.length > 0) {
+								switch (args[0].def) {
+									case EVar("struct") if (isFluentAPIMethod(method)):
+										return makeAST(EMatch(PVar("struct"), rhs));
+									default:
+								}
+							}
+						default:
+					}
+				}
+
+			case ECall(target, method, args):
+				// Check if target is not null and is a call on struct variable
+				if (target != null && target.def != null) {
+					switch (target.def) {
+						case EVar("struct"):
+							// This is a method call on struct that should return a new struct
+							// Transform: struct.method(...) -> struct = struct.method(...)
+							#if debug_struct_update_transform
+							#end
+							return makeAST(EMatch(PVar("struct"), makeAST(ECall(target, method, args))));
+						default:
+					}
+				}
+
+				// Local function style within the same module: method(struct, ...) should also thread
+				// for fluent API methods when used as a statement.
+				if (target == null && args != null && args.length > 0) {
+					switch (args[0].def) {
+						case EVar("struct") if (isFluentAPIMethod(method)):
+							return makeAST(EMatch(PVar("struct"), makeAST(ECall(target, method, args))));
+						default:
+					}
+				}
+			default:
+		}
+
+		return null;
+	}
+
+	/**
+	 * Detect and extract field mutation from any expression
+	 */
+	static function detectAndExtractFieldMutation(expr:ElixirAST):Null<{key:String, value:ElixirAST}> {
+		if (expr == null)
+			return null;
+
+		// Check for field concatenation pattern
+		switch (expr.def) {
+			case EBinary(Concat, left, right):
+				// Check if left side is struct.field access
+				switch (left.def) {
+					case EField(obj, field):
+						switch (obj.def) {
+							case EVar("struct"):
+								// GUARD: Only treat as struct field if field is not an array variable
+								if (isArrayVariable(field)) {
+									#if debug_struct_update_transform
+									#end
+									return null;
+								}
+
+								// Found struct.field ++ something (and field is NOT an array variable)
+								return {
+									key: field,
+									value: makeAST(EBinary(Concat, left, right))
+								};
+							default:
+						}
+					default:
+				}
+			case EField(obj, field):
+				// Check for simple field access that might be a mutation
+				switch (obj.def) {
+					case EVar("struct"):
+						// This is just struct.field, not a mutation
+						return null;
+					default:
+				}
+			default:
+		}
+
+		return null;
+	}
+
+	/**
+	 * Check if a variable name indicates it's an array/list operation variable
+	 * These are compiler-generated infrastructure variables for array building
+	 *
+	 * PUBLIC: Shared with ImmutabilityTransform to prevent struct update transformation
+	 * for array infrastructure variables (g, g2, _g, _g2, etc.)
+	 */
+	public static function isArrayVariable(varName:String):Bool {
+		if (varName == null)
+			return false;
+
+		// Check for compiler-generated array variables
+		// Pattern: g, g2, g3, _g, _g2, etc.
+		if (varName == "g")
+			return true;
+		if (StringTools.startsWith(varName, "g") && ~/^g\d+$/.match(varName))
+			return true;
+		if (StringTools.startsWith(varName, "_g"))
+			return true;
+
+		return false;
+	}
+
+	/**
+	 * Check if an expression is an ignored field mutation (like struct.columns ++ [...])
+	 *
+	 * CRITICAL: Only applies to actual struct field operations, NOT array operations.
+	 * This prevents incorrectly transforming array concatenation like `arr = arr ++ [item]`
+	 * into struct update syntax `%{struct | arr: arr ++ [item]}`.
+	 */
+	static function isIgnoredFieldMutation(expr:ElixirAST):Bool {
+		if (expr == null)
+			return false;
+
+		switch (expr.def) {
+			case EBinary(Concat, left, right):
+				// Check if left side is struct.field access
+				switch (left.def) {
+					case EField(obj, field):
+						switch (obj.def) {
+							case EVar(varName):
+								// GUARD: Only treat as struct field if variable is "struct"
+								// AND not an array infrastructure variable
+								if (varName == "struct" && !isArrayVariable(field)) {
+									return true;
+								}
+								// GUARD: Reject array variables (g, g2, _g, etc.)
+								if (isArrayVariable(varName)) {
+									#if debug_struct_update_transform
+									#end
+									return false;
+								}
+							default:
+						}
+					default:
+				}
+			default:
+		}
+
+		return false;
+	}
+
+	/**
+	 * Extract field update information from a mutation expression
+	 *
+	 * CRITICAL: Only extracts from actual struct field operations, NOT array operations.
+	 */
+	static function extractFieldUpdate(expr:ElixirAST):Null<{key:String, value:ElixirAST}> {
+		if (expr == null)
+			return null;
+
+		switch (expr.def) {
+			case EBinary(Concat, left, right):
+				// Extract field name and build update expression
+				switch (left.def) {
+					case EField(obj, field):
+						switch (obj.def) {
+							case EVar(varName):
+								// GUARD: Only extract if variable is "struct" and field is not an array variable
+								if (varName == "struct" && !isArrayVariable(field)) {
+									// Build the complete update expression: struct.field ++ right
+									return {
+										key: field,
+										value: makeAST(EBinary(Concat, left, right))
+									};
+								}
+								// GUARD: Skip array variables
+								if (isArrayVariable(varName)) {
+									return null;
+								}
+							default:
+						}
+					default:
+				}
+			default:
+		}
+
+		return null;
+	}
+
+	/**
+	 * Check if an expression is returning the struct
+	 */
+	static function isReturnStruct(expr:ElixirAST):Bool {
+		if (expr == null)
+			return false;
+
+		switch (expr.def) {
+			case EVar("struct"):
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	/**
+	 * Transform the 'set' method to return the updated struct
+	 */
+	static function transformSetMethod(body:ElixirAST):ElixirAST {
+		if (body == null)
+			return null;
+
+		switch (body.def) {
+			case EMatch(PVar("root"), right):
+				// Transform `root = insertNode(...)` to `%{struct | root: insertNode(...)}`
+				#if debug_struct_update_transform
+				#end
+				// Return a struct update expression
+				return makeAST(EStructUpdate(makeAST(EVar("struct")), [
+					{
+						key: "root",
+						value: right
+					}
+				]));
+
+			case EBlock(exprs):
+				// For blocks, transform the last expression if it's a root assignment
+				if (exprs.length > 0) {
+					var lastIndex = exprs.length - 1;
+					var lastExpr = exprs[lastIndex];
+					var transformed = transformSetMethod(lastExpr);
+					if (transformed != lastExpr) {
+						var newExprs = exprs.copy();
+						newExprs[lastIndex] = transformed;
+						return makeAST(EBlock(newExprs));
+					}
+				}
+				return body;
+
+			default:
+				return body;
+		}
+	}
+
+	/**
+	 * Check if an expression is a problematic field assignment
+	 */
+	static function isProblematicFieldAssignment(expr:ElixirAST, functionName:String):Bool {
+		if (expr == null)
+			return false;
+
+		switch (expr.def) {
+			case EMatch(PVar("root"), right):
+				// Special case for BalancedTree methods that assign to root
+				if (functionName == "set" || functionName == "remove" || functionName == "clear") {
+					#if debug_struct_update_transform
+					#end
+					return true;
+				}
+
+			default:
+				// Not a problematic assignment
+		}
+
+		return false;
+	}
 }

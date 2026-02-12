@@ -18,15 +18,15 @@ import haxe.macro.Expr;
  * that TargetCodeInjection.hx will recognize.
  */
 class ElixirInjection {
-    /**
-     * Macro implementation of __elixir__ that exists during typing phase
-     */
-    public static macro function __elixir__(code: String, args: Array<Expr>): Expr {
-        // Create the AST that Reflaxe expects for injection
-        var callArgs = [macro $v{code}].concat(args);
-        
-        // Return untyped call to __elixir__ that will be processed by Reflaxe
-        return macro untyped __elixir__($a{callArgs});
-    }
+	/**
+	 * Macro implementation of __elixir__ that exists during typing phase
+	 */
+	public static macro function __elixir__(code:String, args:Array<Expr>):Expr {
+		// Create the AST that Reflaxe expects for injection
+		var callArgs = [macro $v{code}].concat(args);
+
+		// Return untyped call to __elixir__ that will be processed by Reflaxe
+		return macro untyped __elixir__($a{callArgs});
+	}
 }
 #end

@@ -20,25 +20,27 @@ import server.support.OrganizationTools;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
 import shared.liveview.HookName;
+
 using reflaxe.elixir.macros.TypedQueryLambda;
 
 typedef AdminLiveAssigns = {
-    var signed_in: Bool;
-    var is_admin: Bool;
-    var current_user: Null<User>;
-    // Tenant/organization metadata (zero-logic HXX)
-    var organization_slug: String;
-    var organization_name: String;
-    var users: Array<User>;
-    var total_users: Int;
-    var admin_users: Int;
-    var regular_users: Int;
+	var signed_in:Bool;
+	var is_admin:Bool;
+	var current_user:Null<User>;
+	// Tenant/organization metadata (zero-logic HXX)
+	var organization_slug:String;
+	var organization_name:String;
+	var users:Array<User>;
+	var total_users:Int;
+	var admin_users:Int;
+	var regular_users:Int;
 }
 
-typedef AdminLiveRenderAssigns = {> AdminLiveAssigns,
-    var flash: FlashMap;
-    var flash_info: Null<String>;
-    var flash_error: Null<String>;
+typedef AdminLiveRenderAssigns = {
+	> AdminLiveAssigns,
+	var flash:FlashMap;
+	var flash_info:Null<String>;
+	var flash_error:Null<String>;
 }
 
 /**
@@ -57,85 +59,89 @@ typedef AdminLiveRenderAssigns = {> AdminLiveAssigns,
 @:native("TodoAppWeb.AdminLive")
 @:liveview
 class AdminLive {
-    public static function mount(params: MountParams, session: Session, socket: Socket<AdminLiveAssigns>): MountResult<AdminLiveAssigns> {
-        var sock: LiveSocket<AdminLiveAssigns> = socket;
+	public static function mount(params:MountParams, session:Session, socket:Socket<AdminLiveAssigns>):MountResult<AdminLiveAssigns> {
+		var sock:LiveSocket<AdminLiveAssigns> = socket;
 
-        var userId = sessionUserId(session);
-        var currentUser: Null<User> = userId != null ? Repo.get(User, userId) : null;
+		var userId = sessionUserId(session);
+		var currentUser:Null<User> = userId != null ? Repo.get(User, userId) : null;
 
-        if (userId != null && currentUser == null) {
-            sock = LiveView.putFlash(sock, FlashType.Error, "Your session is invalid. Please sign in again.");
-            sock = LiveView.pushNavigate(sock, {to: "/login"});
-        }
+		if (userId != null && currentUser == null) {
+			sock = LiveView.putFlash(sock, FlashType.Error, "Your session is invalid. Please sign in again.");
+			sock = LiveView.pushNavigate(sock, {to: "/login"});
+		}
 
-        if (currentUser == null) {
-            sock = LiveView.putFlash(sock, FlashType.Error, "Sign in to access the admin dashboard.");
-            sock = LiveView.pushNavigate(sock, {to: "/login"});
-        } else if (currentUser.role != "admin") {
-            sock = LiveView.putFlash(sock, FlashType.Error, "Admins only.");
-            sock = LiveView.pushNavigate(sock, {to: "/todos"});
-        }
+		if (currentUser == null) {
+			sock = LiveView.putFlash(sock, FlashType.Error, "Sign in to access the admin dashboard.");
+			sock = LiveView.pushNavigate(sock, {to: "/login"});
+		} else if (currentUser.role != "admin") {
+			sock = LiveView.putFlash(sock, FlashType.Error, "Admins only.");
+			sock = LiveView.pushNavigate(sock, {to: "/todos"});
+		}
 
-        var signedIn = currentUser != null;
-        var isAdmin = signedIn && currentUser.role == "admin";
-        var orgInfo = signedIn ? OrganizationTools.infoForId(currentUser.organizationId) : OrganizationTools.infoForId(OrganizationTools.DEMO_ORG_ID);
+		var signedIn = currentUser != null;
+		var isAdmin = signedIn && currentUser.role == "admin";
+		var orgInfo = signedIn ? OrganizationTools.infoForId(currentUser.organizationId) : OrganizationTools.infoForId(OrganizationTools.DEMO_ORG_ID);
 
-        var users = isAdmin ? loadUsers(currentUser.organizationId) : [];
-        var stats = deriveRoleStats(users);
+		var users = isAdmin ? loadUsers(currentUser.organizationId) : [];
+		var stats = deriveRoleStats(users);
 
-        sock = sock.merge({
-            signed_in: signedIn,
-            is_admin: isAdmin,
-            current_user: currentUser,
-            organization_slug: orgInfo.slug,
-            organization_name: orgInfo.name,
-            users: users,
-            total_users: users.length,
-            admin_users: stats.admin,
-            regular_users: stats.regular
-        });
+		sock = sock.merge({
+			signed_in: signedIn,
+			is_admin: isAdmin,
+			current_user: currentUser,
+			organization_slug: orgInfo.slug,
+			organization_name: orgInfo.name,
+			users: users,
+			total_users: users.length,
+			admin_users: stats.admin,
+			regular_users: stats.regular
+		});
 
-        return Ok(sock);
-    }
+		return Ok(sock);
+	}
 
-    static function sessionUserId(session: Session): Null<Int> {
-        if (session == null) return null;
-        var sessionTerm: Term = cast session;
-        var primary: Term = ElixirMap.get(sessionTerm, "user_id");
-        var chosen: Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
-        return chosen != null ? cast chosen : null;
-    }
+	static function sessionUserId(session:Session):Null<Int> {
+		if (session == null)
+			return null;
+		var sessionTerm:Term = cast session;
+		var primary:Term = ElixirMap.get(sessionTerm, "user_id");
+		var chosen:Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
+		return chosen != null ? cast chosen : null;
+	}
 
-    /**
-     * Router action handler (placeholder to satisfy route validation).
-     */
-    public static function index(): String {
-        return "index";
-    }
+	/**
+	 * Router action handler (placeholder to satisfy route validation).
+	 */
+	public static function index():String {
+		return "index";
+	}
 
-    static function loadUsers(organizationId: Int): Array<User> {
-        var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId);
-        var users: Array<User> = Repo.all(query);
-        users.sort((a, b) -> a.id - b.id);
-        return users;
-    }
+	static function loadUsers(organizationId:Int):Array<User> {
+		var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId);
+		var users:Array<User> = Repo.all(query);
+		users.sort((a, b) -> a.id - b.id);
+		return users;
+	}
 
-    static function deriveRoleStats(users: Array<User>): {admin: Int, regular: Int} {
-        var adminCount = 0;
-        var regularCount = 0;
-        for (user in users) {
-            if (user.role == "admin") adminCount++; else regularCount++;
-        }
-        return {admin: adminCount, regular: regularCount};
-    }
+	static function deriveRoleStats(users:Array<User>):{admin:Int, regular:Int} {
+		var adminCount = 0;
+		var regularCount = 0;
+		for (user in users) {
+			if (user.role == "admin")
+				adminCount++;
+			else
+				regularCount++;
+		}
+		return {admin: adminCount, regular: regularCount};
+	}
 
-    public static function render(assigns: AdminLiveRenderAssigns): String {
-        var renderAssigns: Assigns<AdminLiveRenderAssigns> = assigns;
-        renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
-        renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
-        assigns = renderAssigns;
+	public static function render(assigns:AdminLiveRenderAssigns):String {
+		var renderAssigns:Assigns<AdminLiveRenderAssigns> = assigns;
+		renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
+		renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
+		assigns = renderAssigns;
 
-        return hxx('
+		return hxx('
             <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-10 max-w-4xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
@@ -228,5 +234,5 @@ class AdminLive {
                 </div>
             </div>
         ');
-    }
+	}
 }

@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ASTUtils;
@@ -90,3878 +89,4480 @@ import reflaxe.elixir.macros.RepoDiscovery;
  *   are not validated to keep false positives low.
  */
 private typedef ComponentDefinition = {
-    var moduleTypePath: String;
-    var nativeModuleName: Null<String>;
-    var functionName: String; // snake_case
-    var props: Map<String, String>; // canonical prop key (snake_case) -> kind
-    var required: Map<String, Bool>; // canonical prop key (snake_case) -> required?
-    var slots: Map<String, ComponentSlotDefinition>; // slot name (snake_case) -> slot definition
+	var moduleTypePath:String;
+	var nativeModuleName:Null<String>;
+	var functionName:String; // snake_case
+	var props:Map<String, String>; // canonical prop key (snake_case) -> kind
+	var required:Map<String, Bool>; // canonical prop key (snake_case) -> required?
+	var slots:Map<String, ComponentSlotDefinition>; // slot name (snake_case) -> slot definition
 };
 
 private typedef ComponentSlotDefinition = {
-    var required: Bool; // required slot at callsite
-    var props: Map<String, String>; // canonical prop key (snake_case) -> kind
-    var requiredProps: Map<String, Bool>; // canonical prop key (snake_case) -> required?
-    var letBinding: Null<ComponentLetBindingDefinition>; // optional typing for :let binders inside slot content
+	var required:Bool; // required slot at callsite
+	var props:Map<String, String>; // canonical prop key (snake_case) -> kind
+	var requiredProps:Map<String, Bool>; // canonical prop key (snake_case) -> required?
+	var letBinding:Null<ComponentLetBindingDefinition>; // optional typing for :let binders inside slot content
 };
 
-	private typedef ComponentLetBindingDefinition = {
-	    var props: Map<String, String>; // canonical prop key (snake_case) -> kind
-	    var required: Map<String, Bool>; // canonical prop key (snake_case) -> required?
-	    var typeName: Null<String>; // informational: original Haxe type of the bound value
-	};
+private typedef ComponentLetBindingDefinition = {
+	var props:Map<String, String>; // canonical prop key (snake_case) -> kind
+	var required:Map<String, Bool>; // canonical prop key (snake_case) -> required?
+	var typeName:Null<String>; // informational: original Haxe type of the bound value
+};
 
-	private typedef HeexLetBindingScope = {
-	    var varName: String; // bound variable name (e.g., `row`)
-	    var props: Map<String, String>; // allowed fields on the bound value (snake_case)
-	    var contextTag: String; // e.g., "<:col>"
-	    var ownerTag: Null<String>; // e.g., "<.table>" when the binding is declared by a slot
-	    var typeName: Null<String>; // informational: original Haxe type of the bound value
-	    @:optional var indexedProps: Map<String, String>; // allowed fields on values returned by `varName[...]` (e.g. Phoenix forms)
-	    @:optional var indexedTypeName: String; // informational: type of indexed access value (e.g. phoenix.Phoenix.FormField)
-	};
+private typedef HeexLetBindingScope = {
+	var varName:String; // bound variable name (e.g., `row`)
+	var props:Map<String, String>; // allowed fields on the bound value (snake_case)
+	var contextTag:String; // e.g., "<:col>"
+	var ownerTag:Null<String>; // e.g., "<.table>" when the binding is declared by a slot
+	var typeName:Null<String>; // informational: original Haxe type of the bound value
+	@:optional var indexedProps:Map<String, String>; // allowed fields on values returned by `varName[...]` (e.g. Phoenix forms)
+	@:optional var indexedTypeName:String; // informational: type of indexed access value (e.g. phoenix.Phoenix.FormField)
+};
 
 #if macro
 private typedef StrictMeta = {
-    var strictComponents: Bool;
-    var strictSlots: Bool;
-    var strictHtml: Bool;
-    var strictPhxHook: Bool;
-    var strictPhxEvents: Bool;
-    var strictAttrValues: Bool;
-    var allowStringFallback: Bool;
+	var strictComponents:Bool;
+	var strictSlots:Bool;
+	var strictHtml:Bool;
+	var strictPhxHook:Bool;
+	var strictPhxEvents:Bool;
+	var strictAttrValues:Bool;
+	var allowStringFallback:Bool;
 };
-#end
 
+#end
 class HeexAssignsTypeLinterTransforms {
-    static var componentFunctionIndex: Null<Map<String, Array<ComponentDefinition>>> = null;
-    static var componentDefinitionCache: Map<String, Null<ComponentDefinition>> = new Map();
-    #if macro
-    static var phoenixCoreComponentDefinitionCache: Map<String, Null<ComponentDefinition>> = new Map();
-    static var activeAppWebRoot: Null<String> = null;
-
-    // Per-function strictness overrides derived from Haxe source metadata (e.g. `@:hxx_strict_html`).
-    // These are set while linting a specific function and reset immediately after.
-    static var activeStrictComponents: Bool = false;
-    static var activeStrictSlots: Bool = false;
-    static var activeStrictHtml: Bool = false;
-    static var activeStrictPhxHook: Bool = false;
-    static var activeStrictPhxEvents: Bool = false;
-    static var activeStrictAttrValues: Bool = false;
-    static var activeAllowStringFallback: Bool = false;
-    #end
-    static var fileContentCache: Map<String, Null<String>> = new Map();
-    static var assignsFieldsCache: Map<String, Null<Map<String, String>>> = new Map();
-    #if macro
-    static var phxHookNameCache: Null<Map<String, Bool>> = null;
-    static var phxEventNameCache: Null<Map<String, Bool>> = null;
-    #end
-
-    #if macro
-    /**
-     * Tooling export: discovered component index.
-     *
-     * Used by `tools/HxxRegistryIndex.hx` to emit a JSON vocabulary for editor tooling.
-     * This is macro-only to avoid bloating runtime output.
-     */
-    public static function exportComponentIndexForTooling(): Array<Dynamic> {
-        buildComponentFunctionIndex();
-        if (componentFunctionIndex == null) return [];
-
-        function mapToObject(map: Map<String, String>): Dynamic {
-            var obj: Dynamic = {};
-            if (map == null) return obj;
-            for (k in map.keys()) Reflect.setField(obj, k, map.get(k));
-            return obj;
-        }
-
-        function requiredKeys(map: Map<String, Bool>): Array<String> {
-            var keys: Array<String> = [];
-            if (map == null) return keys;
-            for (k in map.keys()) if (map.get(k) == true) keys.push(k);
-            keys.sort((a, b) -> a < b ? -1 : (a > b ? 1 : 0));
-            return keys;
-        }
-
-        var out: Array<Dynamic> = [];
-        for (fn in componentFunctionIndex.keys()) {
-            var defs = componentFunctionIndex.get(fn);
-            if (defs == null) continue;
-            for (def in defs) {
-                if (def == null) continue;
-
-                var slotsObj: Dynamic = {};
-                if (def.slots != null) {
-                    for (slotName in def.slots.keys()) {
-                        var slot = def.slots.get(slotName);
-                        if (slot == null) continue;
-
-                        var letObj: Dynamic = null;
-                        if (slot.letBinding != null) {
-                            letObj = {
-                                props: mapToObject(slot.letBinding.props),
-                                requiredProps: requiredKeys(slot.letBinding.required),
-                                typeName: slot.letBinding.typeName
-                            };
-                        }
-
-                        Reflect.setField(slotsObj, slotName, {
-                            required: slot.required,
-                            props: mapToObject(slot.props),
-                            requiredProps: requiredKeys(slot.requiredProps),
-                            letBinding: letObj
-                        });
-                    }
-                }
-
-                out.push({
-                    dotTag: "." + def.functionName,
-                    functionName: def.functionName,
-                    moduleTypePath: def.moduleTypePath,
-                    nativeModuleName: def.nativeModuleName,
-                    props: mapToObject(def.props),
-                    requiredProps: requiredKeys(def.required),
-                    slots: slotsObj
-                });
-            }
-        }
-
-        out.sort((a, b) -> {
-            var at = Std.string(Reflect.field(a, "dotTag"));
-            var bt = Std.string(Reflect.field(b, "dotTag"));
-            return at < bt ? -1 : (at > bt ? 1 : 0);
-        });
-
-        return out;
-    }
-    #end
-
-    // Public entry: non-contextual (throws on error)
-    public static function transformPass(ast: ElixirAST): ElixirAST {
-        return lint(ast, null);
-    }
-
-    // Public entry: contextual (uses CompilationContext for proper error reporting)
-    public static function contextualPass(ast: ElixirAST, ctx: reflaxe.elixir.CompilationContext): ElixirAST {
-        return lint(ast, ctx);
-    }
-
-    static function error(ctx: Null<reflaxe.elixir.CompilationContext>, msg: String, pos: haxe.macro.Expr.Position): Void {
-        if (ctx != null) ctx.error(msg, pos); else throw msg;
-    }
-
-    static function makeSpanPos(basePos: haxe.macro.Expr.Position, spanStart: Null<Int>, spanEnd: Null<Int>): haxe.macro.Expr.Position {
-        if (basePos == null || spanStart == null || spanEnd == null) return basePos;
-        #if macro
-        try {
-            var info = Context.getPosInfos(basePos);
-            var start = info.min + spanStart;
-            var end = info.min + spanEnd;
-            if (start < info.min) start = info.min;
-            if (end > info.max) end = info.max;
-            if (end <= start) end = (start + 1 <= info.max) ? (start + 1) : info.max;
-            return Context.makePosition({ file: info.file, min: start, max: end });
-        } catch (_:Dynamic) {
-            return basePos;
-        }
-        #else
-        return basePos;
-        #end
-    }
-
-    static function fragmentTagPos(fragment: ElixirAST, fallbackPos: haxe.macro.Expr.Position): haxe.macro.Expr.Position {
-        if (fragment == null || fragment.metadata == null) return fallbackPos;
-        return makeSpanPos(fallbackPos, fragment.metadata.heexTagNameSpanStart, fragment.metadata.heexTagNameSpanEnd);
-    }
-
-    static function attributeNamePos(attr: EAttribute, fallbackPos: haxe.macro.Expr.Position): haxe.macro.Expr.Position {
-        if (attr == null) return fallbackPos;
-        return makeSpanPos(fallbackPos, attr.nameSpanStart, attr.nameSpanEnd);
-    }
-
-    static function attributeValuePos(attr: EAttribute, fallbackPos: haxe.macro.Expr.Position): haxe.macro.Expr.Position {
-        if (attr == null) return fallbackPos;
-        var start = attr.valueSpanStart;
-        var end = attr.valueSpanEnd;
-        if (start == null || end == null) {
-            if (attr.value != null && attr.value.metadata != null) {
-                start = attr.value.metadata.heexAttrValueSpanStart;
-                end = attr.value.metadata.heexAttrValueSpanEnd;
-            }
-        }
-        return makeSpanPos(fallbackPos, start, end);
-    }
-
-    static function lint(ast: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>): ElixirAST {
-        // Lint any template-producing function in project files; skip compiler/vendor/std paths.
-        ASTUtils.walk(ast, function(n: ElixirAST): Void {
-            if (n == null || n.def == null) return;
-            switch (n.def) {
-                case EDef(_name, _args, _guards, _body) | EDefp(_name, _args, _guards, _body):
-                    lintFunction(n, ctx);
-                default:
-            }
-        });
-        return ast;
-    }
-
-    static function getFileContentCached(path: String): Null<String> {
-        if (path == null || path.length == 0) return null;
-        if (fileContentCache.exists(path)) return fileContentCache.get(path);
-        var content: Null<String> = null;
-        try content = sys.io.File.getContent(path) catch (_:Dynamic) content = null;
-        fileContentCache.set(path, content);
-        return content;
-    }
-
-    static function getAssignsFieldsCached(assignsTypeName: String, fileContent: String, hxPath: String): Null<Map<String, String>> {
-        if (assignsTypeName == null || assignsTypeName.length == 0) return null;
-        if (fileContent == null) return null;
-        var key = hxPath + "::" + assignsTypeName;
-        if (assignsFieldsCache.exists(key)) return assignsFieldsCache.get(key);
-        var fields = extractAssignsFields(assignsTypeName, fileContent);
-        assignsFieldsCache.set(key, fields);
-        return fields;
-    }
-
-    static function lintFunction(n: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>): Void {
-        var functionName: String = null;
-        var body: ElixirAST = null;
-        switch (n.def) {
-            case EDef(name, _args, _guards, fnBody):
-                functionName = name;
-                body = fnBody;
-            case EDefp(name, _args, _guards, fnBody):
-                functionName = name;
-                body = fnBody;
-            default:
-                return;
-        }
-
-        // Resolve Haxe source path for this function
-        var hxPath = (n.metadata != null && n.metadata.sourceFile != null) ? n.metadata.sourceFile : null;
-        if (hxPath == null && body != null && body.metadata != null && body.metadata.sourceFile != null) {
-            hxPath = body.metadata.sourceFile;
-        }
-#if debug_assigns_linter
-        trace('[assigns_linter] lintFunction fn=' + functionName + ' hxPath=' + hxPath);
-#end
-        if (hxPath == null) return; // No source; skip
-        // Skip compiler/library/internal files to avoid scanning whole libs
-        var hxPathNorm = StringTools.replace(hxPath, "\\", "/");
-        var hxPathMatch = hxPathNorm.startsWith("/") ? hxPathNorm : ("/" + hxPathNorm);
-        if (hxPathMatch.indexOf("/reflaxe/elixir/") != -1 || hxPathMatch.indexOf("/vendor/") != -1 || hxPathMatch.indexOf("/std/") != -1) {
-            return;
-        }
-
-        // Fail-fast: skip linter if this function body contains neither ~H sigils nor EFragment nodes.
-        // This check can be expensive, so do it only after ensuring we're in project sources.
-        if (!containsHeexOrFragments(body)) {
-            return;
-        }
-
-        var fileContent = getFileContentCached(hxPath);
-        if (fileContent == null) return;
-
-        #if macro
-        // Provide module context for component resolution within this Haxe source file.
-        // This enables deterministic disambiguation when multiple apps (or multiple component modules)
-        // define the same dot-component function name (e.g., `.card`).
-        var previousAppWebRoot = activeAppWebRoot;
-        activeAppWebRoot = inferAppWebRootFromFileContent(fileContent);
-
-        var previousStrictComponents = activeStrictComponents;
-        var previousStrictSlots = activeStrictSlots;
-        var previousStrictHtml = activeStrictHtml;
-        var previousStrictPhxHook = activeStrictPhxHook;
-        var previousStrictPhxEvents = activeStrictPhxEvents;
-        var previousStrictAttrValues = activeStrictAttrValues;
-        var previousAllowStringFallback = activeAllowStringFallback;
-        #end
-
-        var nearLine: Null<Int> = findMinSourceLine(body);
-        // Some template shapes (notably macro-produced `~H` bodies) may not propagate `sourceLine` onto
-        // nested nodes. Fall back to the function node's source line so per-function metadata works.
-        if (nearLine == null && n.metadata != null && n.metadata.sourceLine != null) {
-            nearLine = n.metadata.sourceLine;
-        }
-
-        #if macro
-        var strictMeta = extractStrictMetaForFunction(functionName, fileContent, nearLine);
-        activeStrictComponents = strictMeta.strictComponents;
-        activeStrictSlots = strictMeta.strictSlots;
-        activeStrictHtml = strictMeta.strictHtml;
-        activeStrictPhxHook = strictMeta.strictPhxHook;
-        activeStrictPhxEvents = strictMeta.strictPhxEvents;
-        activeStrictAttrValues = strictMeta.strictAttrValues;
-        activeAllowStringFallback = strictMeta.allowStringFallback;
-        #if debug_assigns_linter
-        trace('[assigns_linter] strictMeta fn=' + functionName
-            + ' strictHtml=' + strictMeta.strictHtml
-            + ' strictComponents=' + strictMeta.strictComponents
-            + ' strictSlots=' + strictMeta.strictSlots
-            + ' strictPhxHook=' + strictMeta.strictPhxHook
-            + ' strictPhxEvents=' + strictMeta.strictPhxEvents
-            + ' strictAttrValues=' + strictMeta.strictAttrValues
-            + ' allowStringFallback=' + strictMeta.allowStringFallback
-            + ' nearLine=' + (nearLine == null ? 'null' : Std.string(nearLine)));
-        #end
-        #end
-
-        var assignsTypeSpec = (nearLine != null)
-            ? extractAssignsTypeSpecForFunctionBefore(functionName, fileContent, nearLine)
-            : extractAssignsTypeSpecForFunction(functionName, fileContent);
-
-        var assignsTypeName = assignsTypeSpec != null ? unwrapAssignsType(assignsTypeSpec) : null;
-        var assignsTypeBase = assignsTypeName != null ? stripTypeParameters(assignsTypeName) : null;
-#if debug_assigns_linter
-#end
-        var fields: Null<Map<String, String>> = (assignsTypeBase != null) ? getAssignsFieldsCached(assignsTypeBase, fileContent, hxPath) : null;
-        var enableAssignsChecks = fields != null;
-        var fieldsForValidation = fields != null ? fields : new Map<String, String>();
-        var typeNameForErrors = assignsTypeBase != null ? assignsTypeBase : "(unknown assigns type)";
-#if debug_assigns_linter
-        if (fields != null) {
-            var keys = [for (k in fields.keys()) k].join(',');
-        }
-#end
-
-        // Prefer structured validation first
-        // 1) Validate ~H nodes via builder-attached typed HEEx AST (heexAST) or fragment metadata
-        validateHeexFragments(body, fieldsForValidation, typeNameForErrors, ctx, enableAssignsChecks);
-
-	        // 2) Validate any native EFragment nodes already present in the function body
-	        validateNativeEFragments(body, fieldsForValidation, typeNameForErrors, ctx, enableAssignsChecks);
-
-	        // 3) Bridge path: string-based validation for raw ~H contents.
-	        //
-	        // Default behavior is AST-first. We only fall back to string scanning when we do not have a typed
-	        // HEEx AST available (older pipeline / incomplete metadata), or when explicitly enabled for
-	        // debugging via `-D hxx_allow_string_fallback`.
-	        var hasTypedHeexAst = containsTypedHeexAST(body);
-	        if (enableAssignsChecks && (!hasTypedHeexAst || allowHeexStringFallbackEnabled())) {
-	            var contents: Array<{content:String, pos:haxe.macro.Expr.Position}> = [];
-	            collectHeexContents(body, contents);
-	            for (item in contents) {
-	                var used = collectAtFields(item.content);
-	                for (f in used) if (!fieldsForValidation.exists(f)) {
-	                    error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + typeNameForErrors + ')', item.pos);
-	                }
-	                checkLiteralComparisons(item.content, fieldsForValidation, typeNameForErrors, ctx, item.pos);
-	            }
-	        }
-
-        #if macro
-        activeAppWebRoot = previousAppWebRoot;
-        activeStrictComponents = previousStrictComponents;
-        activeStrictSlots = previousStrictSlots;
-        activeStrictHtml = previousStrictHtml;
-        activeStrictPhxHook = previousStrictPhxHook;
-        activeStrictPhxEvents = previousStrictPhxEvents;
-        activeStrictAttrValues = previousStrictAttrValues;
-        activeAllowStringFallback = previousAllowStringFallback;
-        #end
-    }
-
-    static function findAnySourceFile(node: ElixirAST): Null<String> {
-        var found: Null<String> = null;
-        ASTUtils.walk(node, function(x: ElixirAST): Void {
-            if (found == null && x.metadata != null && x.metadata.sourceFile != null) found = x.metadata.sourceFile;
-        });
-        return found;
-    }
-
-    static function collectHeexContents(node: ElixirAST, out: Array<{content:String, pos:haxe.macro.Expr.Position}>): Void {
-        ASTUtils.walk(node, function(x: ElixirAST): Void {
-            switch (x.def) {
-                case ESigil(type, content, _mods) if (type == "H"):
-                    out.push({ content: content, pos: x.pos });
-                default:
-            }
-        });
-    }
-
-    static function findMinSourceLine(node: ElixirAST): Null<Int> {
-        var minLine: Null<Int> = null;
-        ASTUtils.walk(node, function(x: ElixirAST): Void {
-            if (x.metadata != null && x.metadata.sourceLine != null) {
-                if (minLine == null || x.metadata.sourceLine < minLine) minLine = x.metadata.sourceLine;
-            }
-        });
-        return minLine;
-    }
-
-	    static function containsHeexOrFragments(node: ElixirAST): Bool {
-	        if (node == null || node.def == null) return false;
-	        var found = false;
-
-        function scan(x: ElixirAST): Void {
-            if (found || x == null || x.def == null) return;
-            switch (x.def) {
-                case ESigil(type, _content, _mods) if (type == "H"):
-                    found = true;
-                case EFragment(_tag, _attrs, _children):
-                    found = true;
-                default:
-                    ElixirASTTransformer.iterateAST(x, scan);
-            }
-        }
-
-	        scan(node);
-	        return found;
-	    }
-
-	    static function containsTypedHeexAST(node: ElixirAST): Bool {
-	        if (node == null || node.def == null) return false;
-	        var found = false;
-
-	        ASTUtils.walk(node, function(x: ElixirAST): Void {
-	            if (found) return;
-	            switch (x.def) {
-	                case ESigil(type, _content, _mods) if (type == "H"):
-	                    var meta = x.metadata;
-	                    if (meta != null) {
-	                        var nodes = meta.heexAST;
-	                        if (nodes != null && nodes.length > 0) found = true;
-	                    }
-	                default:
-	            }
-	        });
-
-	        return found;
-	    }
-
-	    // Validate attributes from parsed fragment metadata (if annotator ran)
-	    static function validateHeexFragments(node: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, enableAssignsChecks: Bool): Void {
-	        ASTUtils.walk(node, function(x: ElixirAST): Void {
-            switch (x.def) {
-                case ESigil(type, _content, _mods) if (type == "H"):
-                    var meta = x.metadata;
-                    if (meta != null) {
-                        // Prefer typed HEEx AST when available
-                        var nodes = meta.heexAST;
-                        if (nodes != null && nodes.length > 0) {
-                            validateHeexTypedAST(nodes, fields, typeName, ctx, x.pos, enableAssignsChecks);
-                        }
-                        var frags = meta.heexFragments;
-                        if (frags != null) {
-                            for (f in frags) {
-                                var attrs = f.attributes;
-                                if (attrs == null) continue;
-                                for (a in attrs) {
-                                    var vexpr: String = a.valueExpr;
-                                    // Unknown field checks: scan @field tokens
-                                    if (enableAssignsChecks) {
-                                        var used = collectAtFields(vexpr);
-                                        for (uf in used) {
-                                            if (!fields.exists(uf)) {
-                                                error(ctx, 'HEEx assigns error: Unknown field @' + uf + ' (not found in typedef ' + typeName + ')', x.pos);
-                                            }
-                                        }
-                                    }
-                                    // Literal kind mismatches within attribute expressions
-                                    if (enableAssignsChecks) {
-                                        checkLiteralComparisons(vexpr, fields, typeName, ctx, x.pos);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                default:
-            }
-        });
-    }
-
-	    // Validate attributes using native EFragment nodes present in AST
-	    static function validateNativeEFragments(node: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, enableAssignsChecks: Bool): Void {
-	        function traverse(x: ElixirAST): Void {
-	            if (x == null || x.def == null) return;
-	            switch (x.def) {
-	                case EFragment(_tag, _attributes, _children):
-	                    // Validate this subtree exactly once.
-	                    validateNode(x, null, fields, typeName, ctx, x.pos, enableAssignsChecks, []);
-	                default:
-	                    ElixirASTTransformer.iterateAST(x, traverse);
-	            }
-	        }
-
-	        traverse(node);
-	    }
-
-    // ---------------------------------------------------------------------
-    // Typed HEEx AST validation (preferred path)
-    // ---------------------------------------------------------------------
-    static function validateHeexTypedAST(nodes: Array<ElixirAST>, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
-        for (n in nodes) {
-            if (n == null || n.def == null) continue;
-            validateNode(n, null, fields, typeName, ctx, pos, enableAssignsChecks, []);
-        }
-    }
-
-	    static function validateNode(n: ElixirAST, parentTag: Null<String>, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool, letScopes: Array<HeexLetBindingScope>): Void {
-	        switch (n.def) {
-	            case EFragment(tag, attributes, children):
-                    var tagPos = fragmentTagPos(n, pos);
-	                validateHtmlTagName(tag, ctx, tagPos);
-	                validateSlotTag(tag, parentTag, ctx, tagPos);
-	
-	                var nextLetScopes = extendLetScopesForNode(tag, attributes, parentTag, letScopes);
-
-                validateFragment(tag, attributes, children, parentTag, fields, typeName, ctx, pos, tagPos, enableAssignsChecks, nextLetScopes);
-
-                for (c in children) {
-                    if (c == null || c.def == null) continue;
-                    validateNode(c, tag, fields, typeName, ctx, pos, enableAssignsChecks, nextLetScopes);
-                }
-	            case ERaw(code):
-	                validateRawForLetScopes(code, letScopes, ctx, pos);
-	                if (enableAssignsChecks) {
-	                    validateRawForAssigns(code, fields, typeName, ctx, pos);
-	                }
-	            default:
-	        }
-	    }
-
-	    static function validateRawForAssigns(code: String, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-	        if (code == null || code.length == 0) return;
-	        var used = collectAtFields(code);
-	        for (f in used) if (!fields.exists(f)) {
-	            error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + typeName + ')', pos);
-	        }
-	        checkLiteralComparisons(code, fields, typeName, ctx, pos);
-	    }
-
-    static function validateFragment(
-        tag: String,
-        attributes: Array<EAttribute>,
-        children: Array<ElixirAST>,
-        parentTag: Null<String>,
-        fields: Map<String,String>,
-        typeName: String,
-        ctx: Null<reflaxe.elixir.CompilationContext>,
-        fallbackPos: haxe.macro.Expr.Position,
-        tagPos: haxe.macro.Expr.Position,
-        enableAssignsChecks: Bool,
-        letScopes: Array<HeexLetBindingScope>
-    ): Void {
-        for (attr in attributes) {
-            var attrNameErrPos = attributeNamePos(attr, fallbackPos);
-            var attrValueErrPos = attributeValuePos(attr, attrNameErrPos);
-            validateAttribute(tag, parentTag, attr, fields, typeName, ctx, attrNameErrPos, attrValueErrPos, enableAssignsChecks, letScopes);
-        }
-        validatePhxHookRequiresId(tag, attributes, ctx, tagPos);
-        validateSlotInvocation(tag, parentTag, attributes, children, fields, ctx, tagPos);
-        // Component-level checks (requires full attribute set + children)
-        validateComponentInvocation(tag, attributes, children, fields, ctx, tagPos);
-    }
-
-    static function validatePhxHookRequiresId(tag: String, attributes: Array<EAttribute>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (tag == null || tag.length == 0) return;
-        if (attributes == null || attributes.length == 0) return;
-        // Phoenix: phx-hook requires a stable DOM id. Skip component/slot tags to avoid false positives
-        // on prop-passing (the component can apply the hook + id internally).
-        if (isHeexComponentTag(tag) || isSlotTag(tag)) return;
-
-        var hasPhxHook = false;
-        var hasId = false;
-
-        for (attr in attributes) {
-            if (attr == null || attr.name == null || attr.name.length == 0) continue;
-            if (attr.name.startsWith(":")) continue;
-            var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(attr.name));
-            if (canonical == null) continue;
-            switch (canonical) {
-                case "phx-hook":
-                    hasPhxHook = true;
-                case "id":
-                    hasId = true;
-                default:
-            }
-        }
-
-        if (hasPhxHook && !hasId) {
-            error(ctx, 'HEEx phx-hook error: <' + tag + '> uses phx-hook but is missing required attribute \"id\"', pos);
-        }
-    }
-
-    static function validateAttribute(tag: String, parentTag: Null<String>, attr: EAttribute, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, attrNamePosValue: haxe.macro.Expr.Position, attrValuePosValue: haxe.macro.Expr.Position, enableAssignsChecks: Bool, letScopes: Array<HeexLetBindingScope>): Void {
-        if (attr != null && attr.name == ":let") {
-            validateLetDirective(tag, parentTag, attr.value, ctx, attrValuePosValue);
-            // NOTE: :let is a binding pattern, not an expression; do not run assigns lints on it.
-            return;
-        }
-
-        if (isSlotTag(tag)) {
-            validateSlotAttributeName(tag, parentTag, attr.name, ctx, attrNamePosValue);
-            validateSlotPropValueKind(tag, parentTag, attr, fields, ctx, attrValuePosValue);
-        } else {
-            // 1) Name validation (only for known HTML elements; allow HEEx directive attrs)
-            validateAttributeName(tag, attr.name, ctx, attrNamePosValue);
-
-            // 2) Obvious kind validation for select attributes (bool-ish attrs, phx-hook, etc.)
-            validateAttributeValueKind(tag, attr.name, attr.value, fields, ctx, attrValuePosValue);
-
-            // 2b) Component prop kind validation (when the component + prop is resolvable)
-            validateComponentPropValueKind(tag, attr, fields, ctx, attrValuePosValue);
-
-            // 2c) Custom HTML tag attribute typing (registered via @:hxxHtmlTags).
-            validateCustomHtmlTagAttributeValueKind(tag, attr, fields, ctx, attrValuePosValue);
-        }
-
-        // 3) Assigns field usage within `{ ... }` attribute expressions
-        validateExprForAssigns(attr.value, fields, typeName, ctx, attrValuePosValue, enableAssignsChecks);
-
-        // 4) Slot :let binder field usage within attribute expressions (when a typed let scope is present)
-        validateExprForLetScopes(attr.value, letScopes, ctx, attrValuePosValue);
-    }
-
-    static var allowedHtmlAttributeCache: Map<String, Map<String, Bool>> = new Map();
-    static var globalHtmlAttributeCache: Null<Map<String, Bool>> = null;
-
-    static function validateSlotTag(tag: String, parentTag: Null<String>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (tag == null || tag.length == 0) return;
-        if (tag.charAt(0) != ":") return;
-
-        var slotName = tag.length > 1 ? tag.substr(1) : "";
-        if (!isValidHeexIdentifier(slotName)) {
-            error(ctx, 'HEEx slot tag error: <' + tag + '> is not a valid slot tag name (expected <:name>)', pos);
-        }
-
-        if (parentTag == null || !isHeexComponentTag(parentTag)) {
-            var parentDisplay = parentTag != null ? ('<' + parentTag + '>') : "the template root";
-            error(ctx, 'HEEx slot tag error: <' + tag + '> must be a direct child of a component tag (e.g. <.card>), not under ' + parentDisplay, pos);
-            return;
-        }
-
-        // If the parent component definition is discoverable, validate the slot exists.
-        var def = resolveComponentDefinition(parentTag);
-        if (def == null && strictSlotTypingEnabled()) {
-            error(ctx, 'HEEx slot tag error: under -D hxx_strict_slots, <' + tag + '> requires its parent <' + parentTag + '> to be resolvable (add a discoverable @:component definition or disable -D hxx_strict_slots)', pos);
-            return;
-        }
-        if (def != null) {
-            var slots = def.slots;
-            if (slots == null || !slots.exists(slotName)) {
-                error(ctx, 'HEEx slot tag error: <' + parentTag + '> does not define slot <:' + slotName + '>', pos);
-            }
-        }
-    }
-
-    static inline function isSlotTag(tag: String): Bool {
-        return tag != null && tag.length > 0 && tag.charAt(0) == ":";
-    }
-
-    static function validateLetDirective(tag: String, parentTag: Null<String>, value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (tag == null || tag.length == 0) return;
-        if (!isHeexComponentTag(tag) && !(tag.charAt(0) == ":")) {
-            error(ctx, 'HEEx directive error: ":let" is only valid on component tags and slot tags, not on <' + tag + '>', pos);
-        }
-
-        if (value == null) {
-            error(ctx, 'HEEx :let error: expected :let={var}, but got null', pos);
-        }
-
-        switch (value.def) {
-            case EVar(name):
-                if (!isValidElixirVarName(name)) {
-                    error(ctx, 'HEEx :let error: expected an Elixir variable name, but got "' + name + '"', pos);
-                }
-            case ERaw(pattern):
-                validateLetPatternString(pattern, ctx, pos);
-            case EAssign(_):
-                error(ctx, 'HEEx :let error: cannot bind to @assigns; expected :let={var}', pos);
-            case EBoolean(_):
-                error(ctx, 'HEEx :let error: expected :let={var}, but got a boolean attribute', pos);
-            default:
-                error(ctx, 'HEEx :let error: expected :let={var}, but got an invalid value', pos);
-        }
-
-        // Strict slot typing: if a template uses :let, require the component/slot to declare
-        // a typed let binding so the linter can validate field access on the bound variable.
-        if (strictSlotTypingEnabled()) {
-            var letDef: Null<ComponentLetBindingDefinition> = null;
-            if (isSlotTag(tag)) {
-                letDef = resolveSlotLetBindingDefinition(tag, parentTag);
-            } else if (isHeexComponentTag(tag)) {
-                letDef = resolveComponentLetBindingDefinition(tag);
-            }
-
-	            if (letDef == null || letDef.props == null || !letDef.props.keys().hasNext()) {
-	                var ownerPart = (isSlotTag(tag) && parentTag != null && parentTag.length > 0) ? (' (slot of <' + parentTag + '>)') : "";
-                    if (isSlotTag(tag) && parentTag != null && resolveComponentDefinition(parentTag) == null) {
-                        error(ctx, 'HEEx :let error: <' + tag + '>' + ownerPart + ' cannot be type-checked because parent component <' + parentTag + '> is not resolvable under -D hxx_strict_slots', pos);
-                    } else if (isHeexComponentTag(tag) && resolveComponentDefinition(tag) == null) {
-                        error(ctx, 'HEEx :let error: <' + tag + '>' + ownerPart + ' cannot be type-checked because the component is not resolvable under -D hxx_strict_slots', pos);
-                    } else {
-	                    error(ctx, 'HEEx :let error: <' + tag + '>' + ownerPart + ' does not declare a typed :let binding (add a Slot<..., LetType> or disable -D hxx_strict_slots)', pos);
-                    }
-	            } else {
-	                var isSimpleVar = switch (value.def) {
-	                    case EVar(_): true;
-	                    default: false;
-                };
-                if (!isSimpleVar) {
-                    error(ctx, 'HEEx :let error: <' + tag + '> requires :let={var} under -D hxx_strict_slots (binding patterns are not supported)', pos);
-                }
-            }
-        }
-    }
-
-    static function resolveSlotDefinition(slotTag: String, parentTag: Null<String>): Null<ComponentSlotDefinition> {
-        if (!isSlotTag(slotTag)) return null;
-        if (parentTag == null) return null;
-
-        var def = resolveComponentDefinition(parentTag);
-        if (def == null || def.slots == null) return null;
-
-        var slotName = slotTag.length > 1 ? slotTag.substr(1) : "";
-        if (slotName.length == 0) return null;
-        return def.slots.get(slotName);
-    }
-
-    static function validateSlotInvocation(
-        slotTag: String,
-        parentTag: Null<String>,
-        attributes: Array<EAttribute>,
-        children: Array<ElixirAST>,
-        fields: Map<String,String>,
-        ctx: Null<reflaxe.elixir.CompilationContext>,
-        pos: haxe.macro.Expr.Position
-    ): Void {
-        if (!isSlotTag(slotTag)) return;
-        if (parentTag == null || !isHeexComponentTag(parentTag)) return;
-
-        var parentDef = resolveComponentDefinition(parentTag);
-        if (parentDef == null && strictSlotTypingEnabled()) {
-            error(ctx, 'HEEx slot error: under -D hxx_strict_slots, <' + slotTag + '> cannot be type-checked because parent <' + parentTag + '> is not resolvable', pos);
-            return;
-        }
-
-        var slotDef = resolveSlotDefinition(slotTag, parentTag);
-        if (slotDef == null) {
-            if (strictSlotTypingEnabled() && parentDef != null) {
-                var slotName = slotTag.length > 1 ? slotTag.substr(1) : "";
-                error(ctx, 'HEEx slot error: under -D hxx_strict_slots, <' + parentTag + '> does not define slot <:' + slotName + '>', pos);
-            }
-            return;
-        }
-
-        var present = new Map<String, Bool>();
-        for (attr in attributes) {
-            if (attr == null || attr.name == null || attr.name.length == 0) continue;
-            if (attr.name.startsWith(":")) continue;
-            var key = componentAssignKeyFromAttributeName(attr.name);
-            present.set(key, true);
-        }
-
-        var hasInnerContent = present.exists("inner_content") || hasMeaningfulChildren(children);
-        for (k in slotDef.requiredProps.keys()) {
-            if (k == "inner_content") {
-                if (!hasInnerContent) {
-                    error(ctx, 'HEEx slot prop error: <' + slotTag + '> is missing required inner content', pos);
-                }
-                continue;
-            }
-            if (!present.exists(k)) {
-                error(ctx, 'HEEx slot prop error: <' + slotTag + '> is missing required attribute "' + k + '"', pos);
-            }
-        }
-    }
-
-    static function validateSlotAttributeName(slotTag: String, parentTag: Null<String>, attributeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (!isSlotTag(slotTag)) return;
-        if (attributeName == null || attributeName.length == 0) return;
-        if (attributeName.startsWith(":")) return;
-
-        var parentDef = parentTag != null ? resolveComponentDefinition(parentTag) : null;
-        if (parentDef == null && strictSlotTypingEnabled()) {
-            error(ctx, 'HEEx slot prop error: under -D hxx_strict_slots, <' + slotTag + '> cannot be type-checked because parent <' + parentTag + '> is not resolvable', pos);
-            return;
-        }
-
-        var slotDef = resolveSlotDefinition(slotTag, parentTag);
-        if (slotDef == null) return;
-
-        var key = componentAssignKeyFromAttributeName(attributeName);
-        if (slotDef.props.exists(key)) return;
-
-        error(ctx, 'HEEx slot prop error: <' + slotTag + '> does not allow attribute "' + attributeName + '"', pos);
-    }
-
-    static function validateSlotPropValueKind(
-        slotTag: String,
-        parentTag: Null<String>,
-        attr: EAttribute,
-        fields: Map<String,String>,
-        ctx: Null<reflaxe.elixir.CompilationContext>,
-        pos: haxe.macro.Expr.Position
-    ): Void {
-        if (!isSlotTag(slotTag)) return;
-        if (attr == null || attr.name == null || attr.name.length == 0) return;
-        if (attr.name.startsWith(":")) return;
-
-        var parentDef = parentTag != null ? resolveComponentDefinition(parentTag) : null;
-        if (parentDef == null && strictSlotTypingEnabled()) {
-            error(ctx, 'HEEx slot prop error: under -D hxx_strict_slots, <' + slotTag + '> cannot be type-checked because parent <' + parentTag + '> is not resolvable', pos);
-            return;
-        }
-
-        var slotDef = resolveSlotDefinition(slotTag, parentTag);
-        if (slotDef == null) return;
-
-        var key = componentAssignKeyFromAttributeName(attr.name);
-        if (!slotDef.props.exists(key)) return;
-
-        var expected = slotDef.props.get(key);
-        if (expected == null || expected == "unknown") return;
-
-        var actual = inferHeexExprKind(attr.value, fields);
-        if (!attributeKindsCompatible(expected, actual)) {
-            error(ctx, 'HEEx slot prop type error: <' + slotTag + '> "' + key + '" expects ' + expected + ' but got ' + actual, pos);
-        }
-    }
-
-    static function validateLetPatternString(pattern: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        var s = pattern != null ? pattern.trim() : "";
-        if (s.length == 0) {
-            error(ctx, 'HEEx :let error: expected a binding pattern, but got an empty pattern', pos);
-        }
-        if (s.indexOf("@") != -1) {
-            error(ctx, 'HEEx :let error: binding patterns cannot reference @assigns', pos);
-        }
-
-        var bound = collectElixirPatternVars(s);
-        if (bound.length == 0) {
-            error(ctx, 'HEEx :let error: binding pattern does not bind any variables', pos);
-        }
-    }
-
-    static function collectElixirPatternVars(pattern: String): Array<String> {
-        var found = new Map<String, Bool>();
-        if (pattern == null) return [];
-
-        var i = 0;
-        var inSingle = false;
-        var inDouble = false;
-
-        while (i < pattern.length) {
-            var ch = pattern.charCodeAt(i);
-
-            if (!inDouble && ch == "'".code) { inSingle = !inSingle; i++; continue; }
-            if (!inSingle && ch == "\"".code) { inDouble = !inDouble; i++; continue; }
-            if (inSingle || inDouble) { i++; continue; }
-
-            // Skip atoms like :ok
-            if (ch == ":".code && i + 1 < pattern.length && isHeexIdentStart(pattern.charCodeAt(i + 1))) {
-                i += 2;
-                while (i < pattern.length && isHeexIdentChar(pattern.charCodeAt(i))) i++;
-                continue;
-            }
-
-            // Recognize pinned variables (^var) by skipping '^' and letting ident parse handle it.
-            if (ch == "^".code) { i++; continue; }
-
-            if (isElixirVarStart(ch)) {
-                var start = i;
-                i++;
-                while (i < pattern.length && isHeexIdentChar(pattern.charCodeAt(i))) i++;
-                var name = pattern.substr(start, i - start);
-
-                // If immediately followed by ':', it's likely a map key (id:) not a variable binder.
-                if (i < pattern.length && pattern.charCodeAt(i) == ":".code) continue;
-
-                if (isValidElixirVarName(name)) found.set(name, true);
-                continue;
-            }
-
-            i++;
-        }
-
-        return [for (k in found.keys()) k];
-    }
-
-    static function extendLetScopesForNode(tag: String, attributes: Array<EAttribute>, parentTag: Null<String>, letScopes: Array<HeexLetBindingScope>): Array<HeexLetBindingScope> {
-        if (attributes == null || attributes.length == 0) return letScopes;
-        if (letScopes == null) letScopes = [];
-
-        var letAttr: Null<EAttribute> = null;
-        for (a in attributes) {
-            if (a != null && a.name == ":let") { letAttr = a; break; }
-        }
-        if (letAttr == null) return letScopes;
-
-        var letDef: Null<ComponentLetBindingDefinition> = null;
-        if (isSlotTag(tag)) {
-            letDef = resolveSlotLetBindingDefinition(tag, parentTag);
-        } else if (isHeexComponentTag(tag)) {
-            letDef = resolveComponentLetBindingDefinition(tag);
-        } else {
-            return letScopes;
-        }
-        if (letDef == null || letDef.props == null || !letDef.props.keys().hasNext()) return letScopes;
-
-        var boundVars = extractLetBoundVariables(letAttr.value);
-        if (boundVars == null || boundVars.length != 1) return letScopes;
-        var varName = boundVars[0];
-        if (!isValidElixirVarName(varName)) return letScopes;
-
-        var indexedProps: Null<Map<String, String>> = null;
-        var indexedTypeName: Null<String> = null;
-
-        #if macro
-        if (looksLikePhoenixFormLetBinding(letDef.props, letDef.typeName)) {
-            var formFieldType: Null<haxe.macro.Type> = null;
-            try formFieldType = Context.getType("phoenix.Phoenix.FormField") catch (_:Dynamic) formFieldType = null;
-            if (formFieldType != null) {
-                var letInfo = letBindingPropsFromType(formFieldType);
-                if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
-                    indexedProps = letInfo.props;
-                    indexedTypeName = TypeTools.toString(formFieldType);
-                }
-            }
-        }
-        #end
-
-	        var next = letScopes.copy();
-        next.push({
-	            varName: varName,
-	            props: letDef.props,
-	            contextTag: '<' + tag + '>',
-	            ownerTag: parentTag != null ? '<' + parentTag + '>' : null,
-	            typeName: letDef.typeName,
-	            indexedProps: indexedProps,
-            indexedTypeName: indexedTypeName
-        });
-        return next;
-    }
-
-    static function looksLikePhoenixFormLetBinding(props: Map<String, String>, typeName: Null<String>): Bool {
-        if (typeName != null && typeName.indexOf("phoenix.Phoenix.Form") != -1) return true;
-        if (props == null) return false;
-
-        return props.exists("source")
-            && props.exists("params")
-            && props.exists("options")
-            && props.exists("hidden")
-            && props.exists("impl")
-            && props.exists("id")
-            && props.exists("name")
-            && props.exists("data");
-    }
-
-    static function resolveComponentLetBindingDefinition(componentTag: String): Null<ComponentLetBindingDefinition> {
-        var def = resolveComponentDefinition(componentTag);
-        if (def == null || def.slots == null) return null;
-
-        var slotDef = def.slots.get("inner_block");
-        if (slotDef == null) return null;
-        return slotDef.letBinding;
-    }
-
-    static function resolveSlotLetBindingDefinition(slotTag: String, parentTag: Null<String>): Null<ComponentLetBindingDefinition> {
-        var slotDef = resolveSlotDefinition(slotTag, parentTag);
-        if (slotDef == null) return null;
-        return slotDef.letBinding;
-    }
-
-    static function extractLetBoundVariables(value: ElixirAST): Array<String> {
-        if (value == null || value.def == null) return [];
-        return switch (value.def) {
-            case EVar(name):
-                name != null && name.length > 0 ? [name] : [];
-            case ERaw(pattern):
-                collectElixirPatternVars(pattern);
-            default:
-                [];
-        };
-    }
-
-    static function validateExprForLetScopes(expr: ElixirAST, letScopes: Array<HeexLetBindingScope>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (expr == null || expr.def == null) return;
-        if (letScopes == null || letScopes.length == 0) return;
-
-        function walk(e: ElixirAST): Void {
-            if (e == null || e.def == null) return;
-            switch (e.def) {
-                case EField({def: EVar(varName)}, fieldName):
-                    validateLetFieldAccess(varName, fieldName, letScopes, ctx, pos);
-                case EField({def: EAccess({def: EVar(varName)}, _key)}, fieldName):
-                    validateIndexedLetFieldAccess(varName, fieldName, letScopes, ctx, pos);
-                case ERaw(code):
-                    validateRawForLetScopes(code, letScopes, ctx, pos);
-                default:
-                    ElixirASTTransformer.iterateAST(e, walk);
-            }
-        }
-
-        walk(expr);
-    }
-
-    static function validateRawForLetScopes(code: String, letScopes: Array<HeexLetBindingScope>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (code == null) return;
-        if (letScopes == null || letScopes.length == 0) return;
-
-        var s = code.trim();
-        if (s.startsWith("=")) s = s.substr(1);
-
-        for (scope in letScopes) {
-            if (scope == null || scope.varName == null || scope.varName.length == 0) continue;
-            if (scope.props == null) continue;
-
-            var fields = collectDotFieldAccesses(s, scope.varName);
-            for (fieldName in fields) {
-                validateLetFieldAccess(scope.varName, fieldName, letScopes, ctx, pos);
-            }
-
-            if (scope.indexedProps != null) {
-                var indexedFields = collectIndexedDotFieldAccesses(s, scope.varName);
-                for (fieldName in indexedFields) {
-                    validateIndexedLetFieldAccess(scope.varName, fieldName, letScopes, ctx, pos);
-                }
-            }
-        }
-    }
-
-	    static function validateLetFieldAccess(varName: String, fieldName: String, letScopes: Array<HeexLetBindingScope>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-	        if (varName == null || fieldName == null) return;
-	        var scope = findLetScope(varName, letScopes);
-	        if (scope == null || scope.props == null) return;
-
-        var key = NameUtils.toSnakeCase(fieldName);
-	        if (scope.props.exists(key)) return;
-
-	        var ownerPart = (scope.ownerTag != null && scope.ownerTag.length > 0) ? (' (slot of ' + scope.ownerTag + ')') : "";
-	        var typePart = (scope.typeName != null && scope.typeName.length > 0) ? (' (type: ' + scope.typeName + ')') : "";
-	        error(ctx, 'HEEx :let type error: ' + scope.contextTag + ownerPart + ' binding "' + scope.varName + '" does not define field "' + key + '"' + typePart, pos);
-	    }
-
-    static function validateIndexedLetFieldAccess(varName: String, fieldName: String, letScopes: Array<HeexLetBindingScope>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (varName == null || fieldName == null) return;
-        var scope = findLetScope(varName, letScopes);
-        if (scope == null || scope.indexedProps == null) return;
-
-        var key = NameUtils.toSnakeCase(fieldName);
-        if (scope.indexedProps.exists(key)) return;
-
-        var ownerPart = (scope.ownerTag != null && scope.ownerTag.length > 0) ? (' (slot of ' + scope.ownerTag + ')') : "";
-        var typeName = (scope.indexedTypeName != null && scope.indexedTypeName.length > 0) ? scope.indexedTypeName : "indexed value";
-        error(ctx, 'HEEx :let type error: ' + scope.contextTag + ownerPart + ' binding "' + scope.varName + '" indexed value does not define field "' + key + '" (type: ' + typeName + ')', pos);
-    }
-
-    static function findLetScope(varName: String, letScopes: Array<HeexLetBindingScope>): Null<HeexLetBindingScope> {
-        if (varName == null || letScopes == null) return null;
-        // Prefer innermost scope (last wins).
-        var i = letScopes.length - 1;
-        while (i >= 0) {
-            var scope = letScopes[i];
-            if (scope != null && scope.varName == varName) return scope;
-            i--;
-        }
-        return null;
-    }
-
-    static function collectDotFieldAccesses(code: String, varName: String): Array<String> {
-        if (code == null || varName == null || varName.length == 0) return [];
-        var found = new Map<String, Bool>();
-
-        var i = 0;
-        while (i < code.length) {
-            var idx = code.indexOf(varName, i);
-            if (idx == -1) break;
-
-            var prevIdx = idx - 1;
-            if (prevIdx >= 0 && isHeexIdentChar(code.charCodeAt(prevIdx))) {
-                i = idx + varName.length;
-                continue;
-            }
-
-            var dotIdx = idx + varName.length;
-            if (dotIdx >= code.length || code.charCodeAt(dotIdx) != ".".code) {
-                i = idx + varName.length;
-                continue;
-            }
-
-            var fieldStart = dotIdx + 1;
-            if (fieldStart >= code.length || !isHeexIdentStart(code.charCodeAt(fieldStart))) {
-                i = fieldStart;
-                continue;
-            }
-
-            var j = fieldStart + 1;
-            while (j < code.length && isHeexIdentChar(code.charCodeAt(j))) j++;
-            var fieldName = code.substr(fieldStart, j - fieldStart);
-            if (fieldName != null && fieldName.length > 0) found.set(fieldName, true);
-            i = j;
-        }
-
-        return [for (k in found.keys()) k];
-    }
-
-    static function collectIndexedDotFieldAccesses(code: String, varName: String): Array<String> {
-        if (code == null || varName == null || varName.length == 0) return [];
-        var found = new Map<String, Bool>();
-
-        var i = 0;
-        while (i < code.length) {
-            var idx = code.indexOf(varName, i);
-            if (idx == -1) break;
-
-            var prevIdx = idx - 1;
-            if (prevIdx >= 0 && isHeexIdentChar(code.charCodeAt(prevIdx))) {
-                i = idx + varName.length;
-                continue;
-            }
-
-            var j = idx + varName.length;
-            while (j < code.length && code.charCodeAt(j) <= 32) j++;
-            if (j >= code.length || code.charCodeAt(j) != "[".code) {
-                i = idx + varName.length;
-                continue;
-            }
-
-            var k = j + 1;
-            var depth = 1;
-            var quote: Null<Int> = null;
-            while (k < code.length && depth > 0) {
-                var ch = code.charCodeAt(k);
-                if (quote != null) {
-                    if (ch == "\\".code && k + 1 < code.length) { k += 2; continue; }
-                    if (ch == quote) quote = null;
-                    k++;
-                    continue;
-                }
-                if (ch == "\"".code || ch == "'".code) { quote = ch; k++; continue; }
-                if (ch == "[".code) { depth++; k++; continue; }
-                if (ch == "]".code) { depth--; k++; continue; }
-                k++;
-            }
-
-            if (depth != 0) break;
-
-            var after = k;
-            while (after < code.length && code.charCodeAt(after) <= 32) after++;
-            if (after >= code.length || code.charCodeAt(after) != ".".code) {
-                i = k;
-                continue;
-            }
-
-            var fieldStart = after + 1;
-            if (fieldStart >= code.length || !isHeexIdentStart(code.charCodeAt(fieldStart))) {
-                i = fieldStart;
-                continue;
-            }
-
-            var end = fieldStart + 1;
-            while (end < code.length && isHeexIdentChar(code.charCodeAt(end))) end++;
-            var fieldName = code.substr(fieldStart, end - fieldStart);
-            if (fieldName != null && fieldName.length > 0) found.set(fieldName, true);
-            i = end;
-        }
-
-        return [for (k in found.keys()) k];
-    }
-
-    static function isHeexComponentTag(tag: String): Bool {
-        if (tag == null || tag.length == 0) return false;
-        return tag.charAt(0) == "." || isLikelyModuleComponentTag(tag);
-    }
-
-    static function isValidHeexIdentifier(name: String): Bool {
-        if (name == null || name.length == 0) return false;
-        if (!isHeexIdentStart(name.charCodeAt(0))) return false;
-        for (i in 1...name.length) if (!isHeexIdentChar(name.charCodeAt(i))) return false;
-        return true;
-    }
-
-    static inline function isHeexIdentStart(code: Int): Bool {
-        return (code >= "A".code && code <= "Z".code)
-            || (code >= "a".code && code <= "z".code)
-            || code == "_".code;
-    }
-
-    static inline function isHeexIdentChar(code: Int): Bool {
-        return isHeexIdentStart(code) || (code >= "0".code && code <= "9".code);
-    }
-
-    static inline function isElixirVarStart(code: Int): Bool {
-        return code == "_".code || (code >= "a".code && code <= "z".code);
-    }
-
-    static function isValidElixirVarName(name: String): Bool {
-        if (name == null || name.length == 0) return false;
-        if (!isElixirVarStart(name.charCodeAt(0))) return false;
-        for (i in 1...name.length) if (!isHeexIdentChar(name.charCodeAt(i))) return false;
-        return true;
-    }
-
-    static function suggestionSuffixForAttribute(input: String, candidates: Array<String>): String {
-        var suggestions = findClosestAttributeSuggestions(input, candidates, 3);
-        if (suggestions.length == 0) return "";
-        return ' Did you mean: "' + suggestions.join('", "') + '"?';
-    }
-
-    static function allowedMapSuggestionCandidates(allowed: Map<String, Bool>): Array<String> {
-        var unique = new Map<String, Bool>();
-        if (allowed == null) return [];
-        for (name in allowed.keys()) {
-            if (name == null || name.length == 0) continue;
-            if (name.indexOf("*") != -1 || name.startsWith(":")) continue;
-            var normalized = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(name));
-            var candidate = (normalized != null && normalized.length > 0) ? normalized : name;
-            unique.set(candidate, true);
-        }
-        var out = [for (k in unique.keys()) k];
-        out.sort((a, b) -> a < b ? -1 : (a > b ? 1 : 0));
-        return out;
-    }
-
-    static function componentPropSuggestionCandidates(def: ComponentDefinition): Array<String> {
-        if (def == null || def.props == null) return [];
-        var unique = new Map<String, Bool>();
-        for (key in def.props.keys()) {
-            if (key == null || key.length == 0) continue;
-            if (key == "inner_content") continue;
-            unique.set(key, true);
-            unique.set(key.split("_").join("-"), true);
-        }
-        var out = [for (k in unique.keys()) k];
-        out.sort((a, b) -> a < b ? -1 : (a > b ? 1 : 0));
-        return out;
-    }
-
-    static function normalizeForSuggestion(name: String): String {
-        if (name == null) return "";
-        var normalized = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(name));
-        return (normalized != null ? normalized : name).toLowerCase();
-    }
-
-    static function findClosestAttributeSuggestions(input: String, candidates: Array<String>, maxCount: Int): Array<String> {
-        if (input == null || input.length == 0 || candidates == null || candidates.length == 0) return [];
-
-        var normalizedInput = normalizeForSuggestion(input);
-        var threshold = normalizedInput.length <= 4 ? 1 : (normalizedInput.length <= 7 ? 2 : 3);
-        var scored: Array<{ name: String, score: Int }> = [];
-
-        for (candidate in candidates) {
-            if (candidate == null || candidate.length == 0) continue;
-            var normalizedCandidate = normalizeForSuggestion(candidate);
-            if (normalizedCandidate == normalizedInput) continue;
-
-            var distance = levenshteinDistance(normalizedInput, normalizedCandidate);
-            var starts = StringTools.startsWith(normalizedCandidate, normalizedInput) || StringTools.startsWith(normalizedInput, normalizedCandidate);
-            var contains = normalizedCandidate.indexOf(normalizedInput) != -1 || normalizedInput.indexOf(normalizedCandidate) != -1;
-            if (starts) distance -= 1;
-            if (contains) distance -= 1;
-
-            if (distance <= threshold || starts || contains) {
-                scored.push({ name: candidate, score: distance < 0 ? 0 : distance });
-            }
-        }
-
-        scored.sort((a, b) -> {
-            if (a.score < b.score) return -1;
-            if (a.score > b.score) return 1;
-            return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0);
-        });
-
-        var out: Array<String> = [];
-        var seen = new Map<String, Bool>();
-        for (item in scored) {
-            if (seen.exists(item.name)) continue;
-            seen.set(item.name, true);
-            out.push(item.name);
-            if (out.length >= maxCount) break;
-        }
-        return out;
-    }
-
-    static function levenshteinDistance(a: String, b: String): Int {
-        if (a == null) a = "";
-        if (b == null) b = "";
-        if (a == b) return 0;
-        if (a.length == 0) return b.length;
-        if (b.length == 0) return a.length;
-
-        var previous = [for (_ in 0...b.length + 1) 0];
-        var current = [for (_ in 0...b.length + 1) 0];
-        for (j in 0...b.length + 1) previous[j] = j;
-
-        for (i in 1...a.length + 1) {
-            current[0] = i;
-            var aChar = a.charAt(i - 1);
-            for (j in 1...b.length + 1) {
-                var bChar = b.charAt(j - 1);
-                var cost = aChar == bChar ? 0 : 1;
-                var deletion = previous[j] + 1;
-                var insertion = current[j - 1] + 1;
-                var substitution = previous[j - 1] + cost;
-                var best = deletion < insertion ? deletion : insertion;
-                if (substitution < best) best = substitution;
-                current[j] = best;
-            }
-            var tmp = previous;
-            previous = current;
-            current = tmp;
-        }
-        return previous[b.length];
-    }
-
-    static function validateAttributeName(tag: String, attributeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (attributeName == null || attributeName.length == 0) return;
-        // HEEx directive attrs like :if/:for/:let are valid on any tag.
-        if (attributeName.startsWith(":")) return;
-
-        if (tag != null && tag.length > 0) {
-            var first = tag.charAt(0);
-            if (first == ".") {
-                // Phoenix core component allowlist first; otherwise attempt user component prop typing.
-                var allowedCore = getAllowedPhoenixCoreComponentAttributes(tag);
-                if (allowedCore != null) {
-                    validatePhoenixCoreComponentAttributeName(tag, attributeName, ctx, pos);
-                } else {
-                    validateUserComponentAttributeName(tag, attributeName, ctx, pos);
-                }
-                return;
-            } else if (isLikelyModuleComponentTag(tag)) {
-                validateUserComponentAttributeName(tag, attributeName, ctx, pos);
-                return;
-            }
-            // Slot tags (<:inner_block>) don't validate attributes.
-            if (first == ":") return;
-        }
-
-        // Only validate registered HTML elements to avoid false positives on Phoenix components/custom tags.
-        if (!isRegisteredHtmlElement(tag)) return;
-
-        var canonical = normalizeHeexAttributeName(attributeName);
-        var htmlName = HXXComponentRegistry.toHtmlAttribute(canonical);
-        // Allow wildcard-style attributes regardless of authoring style (kebab/camel/snake-case).
-        if (isWildcardHeexAttribute(canonical) || isWildcardHeexAttribute(htmlName)) return;
-
-        var allowed = getAllowedHtmlAttributesForTag(tag);
-        if (allowed.exists(attributeName) || allowed.exists(canonical) || (htmlName != null && allowed.exists(htmlName))) return;
-
-        var suffix = suggestionSuffixForAttribute(attributeName, allowedMapSuggestionCandidates(allowed));
-        error(ctx, 'HEEx attribute error: <' + tag + '> does not allow attribute "' + attributeName + '"' + suffix, pos);
-    }
-
-    static function validatePhoenixCoreComponentAttributeName(componentTag: String, attributeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        // Only validate a small allowlist of Phoenix core component tags to avoid
-        // false positives on user-defined components.
-        var allowed = getAllowedPhoenixCoreComponentAttributes(componentTag);
-        if (allowed == null) return;
-
-        var canonical = normalizeHeexAttributeName(attributeName);
-        var htmlName = HXXComponentRegistry.toHtmlAttribute(canonical);
-        if (isWildcardHeexAttribute(canonical) || isWildcardHeexAttribute(htmlName)) return;
-
-        if (allowed.exists(attributeName) || allowed.exists(canonical) || (htmlName != null && allowed.exists(htmlName))) return;
-
-        var suffix = suggestionSuffixForAttribute(attributeName, allowedMapSuggestionCandidates(allowed));
-        error(ctx, 'HEEx component attribute error: <' + componentTag + '> does not allow attribute "' + attributeName + '"' + suffix, pos);
-    }
-
-    static function validateUserComponentAttributeName(componentTag: String, attributeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        var def = resolveComponentDefinition(componentTag);
-        if (def == null) return; // Unknown/ambiguous component; skip to avoid false positives.
-
-        var canonical = normalizeHeexAttributeName(attributeName);
-        var htmlName = HXXComponentRegistry.toHtmlAttribute(canonical);
-        if (isWildcardHeexAttribute(canonical) || isWildcardHeexAttribute(htmlName)) return;
-
-        // Allow global HTML attributes on component tags (Phoenix pattern: pass-through globals/rest attrs).
-        var globals = getGlobalHtmlAttributes();
-        if (globals.exists(attributeName) || globals.exists(canonical) || (htmlName != null && globals.exists(htmlName))) return;
-
-        var key = componentAssignKeyFromAttributeName(attributeName);
-        if (def.props.exists(key)) return;
-
-        var suffix = suggestionSuffixForAttribute(attributeName, componentPropSuggestionCandidates(def));
-        error(ctx, 'HEEx component prop error: <' + componentTag + '> does not allow attribute "' + attributeName + '"' + suffix, pos);
-    }
-
-    static function componentAssignKeyFromAttributeName(attributeName: String): String {
-        var html = HXXComponentRegistry.toHtmlAttribute(attributeName);
-        if (html == null) return attributeName;
-        return html.split("-").join("_");
-    }
-
-    static function validateComponentInvocation(
-        tag: String,
-        attributes: Array<EAttribute>,
-        children: Array<ElixirAST>,
-        fields: Map<String,String>,
-        ctx: Null<reflaxe.elixir.CompilationContext>,
-        pos: haxe.macro.Expr.Position
-    ): Void {
-        if (tag == null || tag.length == 0) return;
-        if (tag.charAt(0) != "." && !isLikelyModuleComponentTag(tag)) return;
-
-        var def = resolveComponentDefinition(tag);
-        if (def == null) {
-            validatePhoenixCoreComponentInvocation(tag, attributes, children, ctx, pos);
-            validateStrictComponentResolution(tag, ctx, pos);
-            return;
-        }
-
-        var present = new Map<String, Bool>();
-        for (attr in attributes) {
-            if (attr == null || attr.name == null || attr.name.length == 0) continue;
-            if (attr.name.startsWith(":")) continue; // directives don't satisfy component assigns
-            var key = componentAssignKeyFromAttributeName(attr.name);
-            present.set(key, true);
-        }
-
-        // Treat inner_content as satisfied by non-whitespace children.
-        var hasInnerContent = present.exists("inner_content") || hasMeaningfulChildren(children);
-
-        for (k in def.required.keys()) {
-            if (k == "inner_content") {
-                if (!hasInnerContent) {
-                    error(ctx, 'HEEx component prop error: <' + tag + '> is missing required inner content', pos);
-                }
-                continue;
-            }
-            if (!present.exists(k)) {
-                error(ctx, 'HEEx component prop error: <' + tag + '> is missing required attribute "' + k + '"', pos);
-            }
-        }
-
-        // Required slot presence checks (when slot definitions are discoverable).
-        if (def.slots != null) {
-            var slotIter = def.slots.keys();
-            if (slotIter.hasNext()) {
-                var presentSlots = new Map<String, Bool>();
-                for (c in children) {
-                    if (c == null || c.def == null) continue;
-                    switch (c.def) {
-                        case EFragment(childTag, _, _) if (isSlotTag(childTag)):
-                            presentSlots.set(childTag.substr(1), true);
-                        default:
-                    }
-                }
-
-                // Default slot: treat non-slot-tag children as satisfying <:inner_block>.
-                if (!presentSlots.exists("inner_block") && hasMeaningfulInnerBlockChildren(children)) {
-                    presentSlots.set("inner_block", true);
-                }
-
-                for (slotName in def.slots.keys()) {
-                    var slotDef = def.slots.get(slotName);
-                    if (slotDef != null && slotDef.required && !presentSlots.exists(slotName)) {
-                        error(ctx, 'HEEx slot error: <' + tag + '> is missing required slot <:' + slotName + '>', pos);
-                    }
-                }
-            }
-        }
-    }
-
-    static function validatePhoenixCoreComponentInvocation(
-        tag: String,
-        attributes: Array<EAttribute>,
-        children: Array<ElixirAST>,
-        ctx: Null<reflaxe.elixir.CompilationContext>,
-        pos: haxe.macro.Expr.Position
-    ): Void {
-        if (tag == null || tag.length == 0) return;
-        if (tag.charAt(0) != ".") return;
-
-        var present = new Map<String, Bool>();
-        for (attr in attributes) {
-            if (attr == null || attr.name == null || attr.name.length == 0) continue;
-            if (attr.name.startsWith(":")) continue;
-            var key = componentAssignKeyFromAttributeName(attr.name);
-            present.set(key, true);
-        }
-
-        switch (tag) {
-            case ".live_component":
-                if (!present.exists("module")) {
-                    error(ctx, 'HEEx component prop error: <.live_component> is missing required attribute \"module\"', pos);
-                }
-                if (!present.exists("id")) {
-                    error(ctx, 'HEEx component prop error: <.live_component> is missing required attribute \"id\"', pos);
-                }
-            case ".form":
-                if (getAllowedPhoenixCoreComponentAttributes(tag) == null) return;
-                if (!present.exists("for")) {
-                    error(ctx, 'HEEx component prop error: <.form> is missing required attribute \"for\"', pos);
-                }
-            default:
-                if (getAllowedPhoenixCoreComponentAttributes(tag) == null) return;
-        }
-    }
-
-    static function validateStrictComponentResolution(tag: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (!strictComponentResolutionEnabled()) return;
-        if (tag == null || tag.length == 0) return;
-
-        // Phoenix core components are validated via the allowlist (and do not require RepoDiscovery).
-        if (isKnownPhoenixCoreComponentTag(tag)) return;
-
-        var reason = explainComponentResolutionFailure(tag);
-        error(ctx, 'HEEx component error: <' + tag + '> could not be resolved' + reason + ' (disable strict mode or add a discoverable @:component definition)', pos);
-    }
-
-    static function strictComponentResolutionEnabled(): Bool {
-        #if macro
-        return Context.defined("hxx_strict_components") || activeStrictComponents;
-        #else
-        return false;
-        #end
-    }
-
-	    static function strictSlotTypingEnabled(): Bool {
-	        #if macro
-	        return Context.defined("hxx_strict_slots") || activeStrictSlots;
-	        #else
-	        return false;
-	        #end
-	    }
-
-	    static function strictHtmlTagTypingEnabled(): Bool {
-	        #if macro
-	        return Context.defined("hxx_strict_html") || activeStrictHtml;
-	        #else
-	        return false;
-	        #end
-	    }
-
-	    static function strictPhxHookTypingEnabled(): Bool {
-	        #if macro
-	        return Context.defined("hxx_strict_phx_hook") || activeStrictPhxHook;
-        #else
-        return false;
-        #end
-    }
-
-	    static function strictPhxEventTypingEnabled(): Bool {
-	        #if macro
-	        return Context.defined("hxx_strict_phx_events") || activeStrictPhxEvents;
-	        #else
-	        return false;
-	        #end
-	    }
-
-	    static function strictAttributeValueTypingEnabled(): Bool {
-	        #if macro
-	        return Context.defined("hxx_strict_attr_values") || activeStrictAttrValues;
-	        #else
-	        return false;
-	        #end
-	    }
-
-	    static function allowHeexStringFallbackEnabled(): Bool {
-	        #if macro
-	        return Context.defined("hxx_allow_string_fallback") || activeAllowStringFallback;
-	        #else
-	        return false;
-	        #end
-	    }
-
-	    #if macro
-	    static function extractStrictMetaForFunction(functionName: String, fileContent: String, nearLine: Null<Int>): StrictMeta {
-	        var lines = fileContent.split("\n");
-	        if (lines.length == 0) {
-	            return {
-	                strictComponents: false,
-	                strictSlots: false,
-	                strictHtml: false,
-	                strictPhxHook: false,
-	                strictPhxEvents: false,
-                    strictAttrValues: false,
-	                allowStringFallback: false,
-	            };
-	        }
-	        var startIndex = (nearLine != null)
-	            ? Std.int(Math.max(0, Math.min(lines.length - 1, nearLine - 1)))
-	            : (lines.length - 1);
-	
-	        var functionRe = new EReg('\\bfunction\\s+' + functionName + '\\b', "");
-	        var functionLineIndex = -1;
-	        // Source positions are best-effort; some macro-produced nodes can end up with odd `sourceLine`
-	        // values. Avoid relying on it too heavily by finding the closest matching function signature.
-	        var matches: Array<Int> = [];
-	        for (i in 0...lines.length) {
-	            var line = lines[i];
-	            if (line != null && functionRe.match(line)) matches.push(i);
-	        }
-	        if (matches.length == 1) {
-	            functionLineIndex = matches[0];
-	        } else if (matches.length > 1) {
-	            // Pick the match closest to our anchor line.
-	            var best = matches[0];
-	            var bestDist = Std.int(Math.abs(best - startIndex));
-	            for (m in matches) {
-	                var dist = Std.int(Math.abs(m - startIndex));
-	                if (dist < bestDist) { best = m; bestDist = dist; }
-	            }
-	            functionLineIndex = best;
-	        } else {
-	            functionLineIndex = startIndex;
-	        }
-
-        // Regex literal: use single backslashes (not double-escaped like strings).
-        var classLineIndex = findLineIndexBefore(lines, functionLineIndex, ~/\bclass\s+[A-Za-z0-9_]+\b/);
-
-        function hasMetaNear(lineIndex: Int, metaName: String): Bool {
-            if (lineIndex < 0) return false;
-            var metaRe = new EReg('^\\s*@:' + metaName + '\\b', "");
-            var i = lineIndex - 1;
-            while (i >= 0) {
-                var trimmed = StringTools.trim(lines[i]);
-                if (trimmed.length == 0) { i--; continue; }
-                if (StringTools.startsWith(trimmed, "//")) { i--; continue; }
-
-                if (metaRe.match(trimmed)) return true;
-                if (StringTools.startsWith(trimmed, "@:")) { i--; continue; }
-
-                break;
-            }
-            return false;
-        }
-
-        function hasMeta(metaName: String): Bool {
-            return hasMetaNear(functionLineIndex, metaName) || hasMetaNear(classLineIndex, metaName);
-        }
-
-        #if debug_assigns_linter
-        trace('[assigns_linter] strictMeta scan fn=' + functionName
-            + ' functionLineIndex=' + functionLineIndex
-            + ' classLineIndex=' + classLineIndex
-            + ' startIndex=' + startIndex);
-        if (functionLineIndex >= 0 && functionLineIndex < lines.length) {
-            trace('[assigns_linter] strictMeta fnLine=' + StringTools.trim(lines[functionLineIndex]));
-        }
-        if (classLineIndex >= 0 && classLineIndex < lines.length) {
-            trace('[assigns_linter] strictMeta classLine=' + StringTools.trim(lines[classLineIndex]));
-        }
-        if (classLineIndex > 0 && classLineIndex - 1 < lines.length) {
-            trace('[assigns_linter] strictMeta classPrev=' + StringTools.trim(lines[classLineIndex - 1]));
-        }
-        #end
-
-        return {
-            strictComponents: hasMeta("hxx_strict_components"),
-            strictSlots: hasMeta("hxx_strict_slots"),
-            strictHtml: hasMeta("hxx_strict_html"),
-            strictPhxHook: hasMeta("hxx_strict_phx_hook"),
-            strictPhxEvents: hasMeta("hxx_strict_phx_events"),
-            strictAttrValues: hasMeta("hxx_strict_attr_values"),
-            allowStringFallback: hasMeta("hxx_allow_string_fallback"),
-        };
-    }
-
-	    static function findLineIndexBefore(lines: Array<String>, startIndex: Int, re: EReg): Int {
-	        if (lines == null || lines.length == 0) return -1;
-	        var i = Std.int(Math.min(startIndex, lines.length - 1));
-	        while (i >= 0) {
-	            var line = lines[i];
-	            if (line != null && re.match(line)) return i;
-	            i--;
-	        }
-	        return -1;
-	    }
-	    #end
-
-	    static function isKnownPhoenixCoreComponentTag(tag: String): Bool {
-	        if (tag == ".live_component") return true;
-	        return getAllowedPhoenixCoreComponentAttributes(tag) != null;
-	    }
-
-    static function explainComponentResolutionFailure(componentTag: String): String {
-        #if macro
-        if (componentTag == null || componentTag.length == 0) return "";
-
-        if (componentFunctionIndex == null) {
-            buildComponentFunctionIndex();
-        }
-        if (componentFunctionIndex == null) return "";
-
-        function displayModuleName(def: ComponentDefinition): String {
-            if (def == null) return "";
-            if (def.nativeModuleName != null && def.nativeModuleName.length > 0) return def.nativeModuleName;
-            return def.moduleTypePath;
-        }
-
-        function formatCandidateTags(fn: String, defs: Array<ComponentDefinition>, maxToShow: Int): String {
-            if (defs == null || defs.length == 0) return "";
-
-            var tags: Array<String> = [];
-            var limit = defs.length < maxToShow ? defs.length : maxToShow;
-            for (i in 0...limit) {
-                var moduleName = displayModuleName(defs[i]);
-                if (moduleName == null || moduleName.length == 0) continue;
-                tags.push("<" + moduleName + "." + fn + ">");
-            }
-
-            if (tags.length == 0) return "";
-            var suffix = defs.length > maxToShow ? ", …" : "";
-            return tags.join(", ") + suffix;
-        }
-
-        if (componentTag.charAt(0) == ".") {
-            var fn = componentTag.substr(1);
-            var candidates = componentFunctionIndex.get(fn);
-            if (candidates == null || candidates.length == 0) return ' (no @:component function named "' + fn + '" was discovered)';
-            if (candidates.length > 1) {
-                var examples = formatCandidateTags(fn, candidates, 6);
-                var hint = examples != "" ? (' Candidates: ' + examples + '.') : "";
-                return ' (ambiguous: ' + candidates.length + ' @:component functions named "' + fn + '" exist.' + hint + ' Use a module-qualified component tag (e.g. <SomeModule.' + fn + '>).)';
-            }
-            return "";
-        }
-
-        if (isLikelyModuleComponentTag(componentTag)) {
-            var lastDot = componentTag.lastIndexOf(".");
-            if (lastDot > 0 && lastDot < componentTag.length - 1) {
-                var modulePart = componentTag.substr(0, lastDot);
-                var fnPart = componentTag.substr(lastDot + 1);
-                var fn = NameUtils.toSnakeCase(fnPart);
-
-                var candidates = componentFunctionIndex.get(fn);
-                if (candidates == null || candidates.length == 0) {
-                    return ' (no @:component function named "' + fn + '" was discovered)';
-                }
-
-                var matchingDefs: Array<ComponentDefinition> = [];
-                for (c in candidates) if (componentModuleMatches(c, modulePart)) matchingDefs.push(c);
-
-                if (matchingDefs.length == 0) {
-                    var examples = formatCandidateTags(fn, candidates, 6);
-                    var hint = examples != "" ? (' Known components: ' + examples + '.') : "";
-                    return ' (no @:component module matched "' + modulePart + '" for function "' + fn + '".' + hint + ')';
-                }
-                if (matchingDefs.length > 1) {
-                    var examples = formatCandidateTags(fn, matchingDefs, 6);
-                    var hint = examples != "" ? (' Matches: ' + examples + '.') : "";
-                    return ' (ambiguous: ' + matchingDefs.length + ' @:component modules matched "' + modulePart + '" for function "' + fn + '".' + hint + ' Use a more specific module name in the tag.)';
-                }
-            }
-        }
-
-        return "";
-        #else
-        return "";
-        #end
-    }
-
-    static function hasMeaningfulChildren(children: Array<ElixirAST>): Bool {
-        if (children == null || children.length == 0) return false;
-        for (c in children) {
-            if (c == null) continue;
-            switch (c.def) {
-                case EString(s):
-                    if (s != null && s.trim() != "") return true;
-                case EFragment(_, _, _):
-                    return true;
-                default:
-                    return true;
-            }
-        }
-        return false;
-    }
-
-    static function hasMeaningfulInnerBlockChildren(children: Array<ElixirAST>): Bool {
-        if (children == null || children.length == 0) return false;
-        for (c in children) {
-            if (c == null || c.def == null) continue;
-            switch (c.def) {
-                case EString(s):
-                    if (s != null && s.trim() != "") return true;
-                case EFragment(tag, _, _) if (isSlotTag(tag)):
-                    // Slot entries do not count as default inner_block content.
-                default:
-                    return true;
-            }
-        }
-        return false;
-    }
-
-    static function validateComponentPropValueKind(
-        tag: String,
-        attr: EAttribute,
-        fields: Map<String,String>,
-        ctx: Null<reflaxe.elixir.CompilationContext>,
-        pos: haxe.macro.Expr.Position
-    ): Void {
-        if (tag == null || tag.length == 0) return;
-        if (attr == null || attr.name == null || attr.name.length == 0) return;
-        if (attr.name.startsWith(":")) return;
-        if (tag.charAt(0) != "." && !isLikelyModuleComponentTag(tag)) return;
-
-        var def = resolveComponentDefinition(tag);
-        if (def == null) return;
-
-        var key = componentAssignKeyFromAttributeName(attr.name);
-        if (!def.props.exists(key)) return;
-
-        var expected = def.props.get(key);
-        if (expected == null || expected == "unknown") return;
-
-        var actual = inferHeexExprKind(attr.value, fields);
-        if (!attributeKindsCompatible(expected, actual)) {
-            error(ctx, 'HEEx component prop type error: <' + tag + '> "' + key + '" expects ' + expected + ' but got ' + actual, pos);
-        }
-    }
-
-    static function resolveComponentDefinition(componentTag: String): Null<ComponentDefinition> {
-        if (componentTag == null || componentTag.length == 0) return null;
-        var cacheKey = componentDefinitionCacheKey(componentTag);
-        if (componentDefinitionCache.exists(cacheKey)) return componentDefinitionCache.get(cacheKey);
-
-        if (componentFunctionIndex == null) {
-            #if macro
-            buildComponentFunctionIndex();
-            #else
-            componentDefinitionCache.set(componentTag, null);
-            return null;
-            #end
-        }
-
-        var resolved: Null<ComponentDefinition> = null;
-        if (componentTag.charAt(0) == ".") {
-            var fn = componentTag.substr(1);
-            var candidates = componentFunctionIndex.get(fn);
-            if (candidates != null) {
-                if (candidates.length == 1) {
-                    resolved = candidates[0];
-                } else if (candidates.length > 1) {
-                    #if macro
-                    resolved = chooseComponentCandidateForCurrentApp(candidates);
-                    #end
-                }
-            }
-        } else if (isLikelyModuleComponentTag(componentTag)) {
-            var lastDot = componentTag.lastIndexOf(".");
-            if (lastDot > 0 && lastDot < componentTag.length - 1) {
-                var modulePart = componentTag.substr(0, lastDot);
-                var fnPart = componentTag.substr(lastDot + 1);
-                var fn = NameUtils.toSnakeCase(fnPart);
-                var candidates = componentFunctionIndex.get(fn);
-                if (candidates != null) {
-                    var matches: Array<ComponentDefinition> = [];
-                    for (c in candidates) if (componentModuleMatches(c, modulePart)) matches.push(c);
-                    if (matches.length == 1) {
-                        resolved = matches[0];
-                    } else if (matches.length > 1) {
-                        #if macro
-                        resolved = chooseComponentCandidateForCurrentApp(matches);
-                        #end
-                    }
-                }
-            }
-        }
-
-        #if macro
-        if (resolved == null) {
-            resolved = resolvePhoenixCoreComponentDefinition(componentTag);
-        }
-        #end
-
-        componentDefinitionCache.set(cacheKey, resolved);
-        return resolved;
-    }
-
-    static function componentDefinitionCacheKey(componentTag: String): String {
-        #if macro
-        if (activeAppWebRoot != null && activeAppWebRoot.length > 0) {
-            return componentTag + "@" + activeAppWebRoot;
-        }
-        #end
-        return componentTag;
-    }
-
-    #if macro
-    static function chooseComponentCandidateForCurrentApp(candidates: Array<ComponentDefinition>): Null<ComponentDefinition> {
-        if (candidates == null || candidates.length == 0) return null;
-        if (activeAppWebRoot == null || activeAppWebRoot.length == 0) return null;
-
-        var preferredModule = activeAppWebRoot + ".CoreComponents";
-        var preferred: Array<ComponentDefinition> = [];
-        for (c in candidates) {
-            if (c == null) continue;
-            if (c.nativeModuleName == preferredModule) preferred.push(c);
-        }
-        return preferred.length == 1 ? preferred[0] : null;
-    }
-
-    static function inferAppWebRootFromFileContent(fileContent: String): Null<String> {
-        if (fileContent == null || fileContent.length == 0) return null;
-
-        var re = ~/@:native\("([^"]+)"/g;
-        var idx = 0;
-        while (re.matchSub(fileContent, idx)) {
-            var nativeName = re.matched(1);
-            var matchPos = re.matchedPos();
-            idx = (matchPos != null) ? (matchPos.pos + matchPos.len) : (idx + 1);
-
-            if (nativeName == null || nativeName.length == 0) continue;
-            var dot = nativeName.indexOf(".");
-            if (dot <= 0) continue;
-
-            return nativeName.substr(0, dot);
-        }
-
-        return null;
-    }
-    #end
-
-    #if macro
-    static function resolvePhoenixCoreComponentDefinition(componentTag: String): Null<ComponentDefinition> {
-        if (componentTag == null || componentTag.length == 0) return null;
-        if (componentTag.charAt(0) != ".") return null;
-
-        if (phoenixCoreComponentDefinitionCache.exists(componentTag)) {
-            return phoenixCoreComponentDefinitionCache.get(componentTag);
-        }
-
-        var resolved: Null<ComponentDefinition> = null;
-        resolved = switch (componentTag) {
-            case ".form":
-                buildPhoenixCoreFormComponentDefinition();
-            case ".inputs_for":
-                buildPhoenixCoreInputsForComponentDefinition();
-            case ".link":
-                buildPhoenixCoreLinkComponentDefinition();
-            default:
-                null;
-        };
-
-        phoenixCoreComponentDefinitionCache.set(componentTag, resolved);
-        return resolved;
-    }
-
-    static function buildPhoenixCoreFormComponentDefinition(): Null<ComponentDefinition> {
-        var letBinding: Null<ComponentLetBindingDefinition> = null;
-        var formAssignsType = resolvePhoenixCoreFormLetType();
-	        if (formAssignsType != null) {
-	            var letInfo = letBindingPropsFromType(formAssignsType);
-	            if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
-	                letBinding = {
-	                    props: letInfo.props,
-	                    required: letInfo.required,
-	                    typeName: TypeTools.toString(formAssignsType)
-	                };
-	            }
-	        }
-
-        var slots = new Map<String, ComponentSlotDefinition>();
-        slots.set("inner_block", {
-            required: true,
-            props: new Map(),
-            requiredProps: new Map(),
-            letBinding: letBinding
-        });
-
-        var required = new Map<String, Bool>();
-        required.set("for", true);
-
-        var props = new Map<String, String>();
-        props.set("for", "map");
-        props.set("as", "string");
-        props.set("multipart", "bool");
-
-        return {
-            moduleTypePath: null,
-            nativeModuleName: "Phoenix.Component",
-            functionName: "form",
-            props: props,
-            required: required,
-            slots: slots
-        };
-    }
-
-    static function buildPhoenixCoreInputsForComponentDefinition(): Null<ComponentDefinition> {
-        var letBinding: Null<ComponentLetBindingDefinition> = null;
-        var formAssignsType = resolvePhoenixCoreFormLetType();
-	        if (formAssignsType != null) {
-	            var letInfo = letBindingPropsFromType(formAssignsType);
-	            if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
-	                letBinding = {
-	                    props: letInfo.props,
-	                    required: letInfo.required,
-	                    typeName: TypeTools.toString(formAssignsType)
-	                };
-	            }
-	        }
-
-        var slots = new Map<String, ComponentSlotDefinition>();
-        slots.set("inner_block", {
-            required: true,
-            props: new Map(),
-            requiredProps: new Map(),
-            letBinding: letBinding
-        });
-
-        var props = new Map<String, String>();
-        props.set("field", "map");
-        props.set("id", "string");
-        props.set("as", "string");
-        props.set("default", "unknown");
-        props.set("append", "unknown");
-        props.set("prepend", "unknown");
-        props.set("skip_hidden", "bool");
-        props.set("options", "unknown");
-
-        var required = new Map<String, Bool>();
-        required.set("field", true);
-
-        return {
-            moduleTypePath: null,
-            nativeModuleName: "Phoenix.Component",
-            functionName: "inputs_for",
-            props: props,
-            required: required,
-            slots: slots
-        };
-    }
-
-    static function buildPhoenixCoreLinkComponentDefinition(): Null<ComponentDefinition> {
-        var props = new Map<String, String>();
-        props.set("navigate", "string");
-        props.set("patch", "string");
-        props.set("href", "string");
-        props.set("method", "string|atom");
-        props.set("replace", "bool");
-
-        var required = new Map<String, Bool>();
-        required.set("inner_content", true);
-
-        return {
-            moduleTypePath: null,
-            nativeModuleName: "Phoenix.Component",
-            functionName: "link",
-            props: props,
-            required: required,
-            slots: new Map()
-        };
-    }
-
-    static function resolvePhoenixCoreFormLetType(): Null<haxe.macro.Type> {
-        var formType: Null<haxe.macro.Type> = null;
-        try formType = Context.getType("phoenix.Phoenix.Form") catch (_:Dynamic) formType = null;
-        if (formType == null) return null;
-
-        var termType: Null<haxe.macro.Type> = null;
-        try termType = Context.getType("elixir.types.Term") catch (_:Dynamic) termType = null;
-
-        return switch (formType) {
-            case TType(tdef, params):
-                var typeArgs = (termType != null) ? [termType] : params;
-                TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, typeArgs);
-            default:
-                formType;
-        };
-    }
-    #end
-
-    static function isLikelyModuleComponentTag(tag: String): Bool {
-        if (tag == null || tag.length < 3) return false;
-        if (tag.indexOf(".") == -1) return false;
-        // Elixir module aliases are PascalCase; avoid validating lowercase HTML tags.
-        var first = tag.charCodeAt(0);
-        return first >= "A".code && first <= "Z".code;
-    }
-
-    static function componentModuleMatches(def: ComponentDefinition, modulePart: String): Bool {
-        if (def == null || modulePart == null || modulePart.length == 0) return false;
-
-        if (def.nativeModuleName != null) {
-            if (def.nativeModuleName == modulePart) return true;
-            var parts = def.nativeModuleName.split(".");
-            var base = parts != null && parts.length > 0 ? parts[parts.length - 1] : null;
-            if (base != null && base == modulePart) return true;
-        }
-
-        if (def.moduleTypePath != null) {
-            if (def.moduleTypePath == modulePart) return true;
-            var typeParts = def.moduleTypePath.split(".");
-            var typeBase = typeParts != null && typeParts.length > 0 ? typeParts[typeParts.length - 1] : null;
-            if (typeBase != null && typeBase == modulePart) return true;
-        }
-
-        return false;
-    }
-
-    #if macro
-    static function buildComponentFunctionIndex(): Void {
-        if (componentFunctionIndex != null) return;
-        componentFunctionIndex = new Map<String, Array<ComponentDefinition>>();
-
-        var discovered = RepoDiscovery.getDiscovered();
-        if (discovered == null || discovered.length == 0) {
-            RepoDiscovery.run();
-            discovered = RepoDiscovery.getDiscovered();
-        }
-
-        if (discovered == null) return;
-
-        // RepoDiscovery enumerates type paths, but component modules can be multi-type
-        // (typedefs + classes). Use Context.getModule to avoid re-entering typing for a
-        // type that may still be in-progress and to access all types in the module.
-        var processedModules = new Map<String, Bool>();
-
-        #if debug_assigns_linter
-        trace('[HeexAssignsTypeLinter] building component index: discovered=' + discovered.length);
-        #end
-
-        for (typePath in discovered) {
-            if (typePath == null || typePath.length == 0) continue;
-            if (processedModules.exists(typePath)) continue;
-            processedModules.set(typePath, true);
-
-            var moduleTypes: Array<haxe.macro.Type> = null;
-            try moduleTypes = Context.getModule(typePath) catch (e:Dynamic) {
-                #if debug_assigns_linter
-                trace('[HeexAssignsTypeLinter] component index: failed to load module ' + typePath + ': ' + Std.string(e));
-                #end
-                continue;
-            }
-            if (moduleTypes == null) continue;
-
-            for (moduleType in moduleTypes) {
-                var cls: Null<haxe.macro.Type.ClassType> = null;
-                switch (TypeTools.follow(moduleType)) {
-                    case TInst(c, _):
-                        cls = c.get();
-                    default:
-                }
-                if (cls == null || cls.meta == null) continue;
-                if (!(cls.meta.has(":component") || cls.meta.has(":phoenix.components"))) continue;
-
-                var moduleTypePath = (cls.pack != null && cls.pack.length > 0)
-                    ? (cls.pack.concat([cls.name]).join("."))
-                    : cls.name;
-
-                var nativeModuleName: Null<String> = null;
-                if (cls.meta.has(":native")) {
-                    var nativeMeta = cls.meta.extract(":native");
-                    if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
-                        switch (nativeMeta[0].params[0].expr) {
-                            case EConst(CString(s, _)):
-                                nativeModuleName = s;
-                            default:
-                        }
-                    }
-                }
-
-                for (field in cls.statics.get()) {
-                    if (field == null || field.meta == null || !field.meta.has(":component")) continue;
-
-                    var fnName = NameUtils.toSnakeCase(field.name);
-                    var funArgs = switch (TypeTools.follow(field.type)) {
-                        case TFun(args, _):
-                            args;
-                        default:
-                            null;
-                    };
-                    if (funArgs == null || funArgs.length == 0) continue;
-
-                    var assignsType = funArgs[0].t;
-                    var propInfo = propsFromAssignsType(assignsType);
-                    if (propInfo == null) continue;
-
-                    var def: ComponentDefinition = {
-                        moduleTypePath: moduleTypePath,
-                        nativeModuleName: nativeModuleName,
-                        functionName: fnName,
-                        props: propInfo.props,
-                        required: propInfo.required,
-                        slots: propInfo.slots
-                    };
-
-                    var existing = componentFunctionIndex.get(fnName);
-                    if (existing == null) {
-                        componentFunctionIndex.set(fnName, [def]);
-                    } else {
-                        existing.push(def);
-                    }
-
-                    #if debug_assigns_linter
-                    trace('[HeexAssignsTypeLinter] component index: ' + fnName + ' from ' + (nativeModuleName != null ? nativeModuleName : moduleTypePath));
-                    #end
-                }
-            }
-        }
-    }
-
-    static function propsFromAssignsType(t: haxe.macro.Type): Null<{
-        props: Map<String, String>,
-        required: Map<String, Bool>,
-        slots: Map<String, ComponentSlotDefinition>
-    }> {
-        var followed = TypeTools.follow(t);
-        return switch (followed) {
-            case TAbstract(aRef, params):
-                var abs = aRef.get();
-                if (abs != null && abs.name == "Assigns" && abs.pack.join(".") == "phoenix.types" && params != null && params.length == 1) {
-                    propsFromAssignsType(params[0]);
-                } else {
-                    null;
-                }
-            case TAnonymous(a):
-                var props = new Map<String, String>();
-                var required = new Map<String, Bool>();
-                var slots = new Map<String, ComponentSlotDefinition>();
-
-                for (f in a.get().fields) {
-                    var typeStr = TypeTools.toString(f.type);
-                    var isOptional = fieldIsOptionalByTypeString(typeStr) || (f.meta != null && f.meta.has(":optional"));
-
-                    if (isSlotField(f)) {
-                        var slotName = NameUtils.toSnakeCase(f.name);
-                        var slotInfo = slotFieldInfoFromField(f);
-                        var entryType = slotInfo != null ? slotInfo.entryType : null;
-                        var letType = slotInfo != null ? slotInfo.letType : null;
-
-                        var slotProps = new Map<String, String>();
-                        var slotRequiredProps = new Map<String, Bool>();
-                        if (entryType != null) {
-                            var entryInfo = propsFromAssignsType(entryType);
-                            if (entryInfo != null) {
-                                slotProps = entryInfo.props;
-                                slotRequiredProps = entryInfo.required;
-                            }
-                        }
-
-	                        var letBinding: Null<ComponentLetBindingDefinition> = null;
-	                        if (letType != null && !isElixirTermType(letType)) {
-	                            var letInfo = letBindingPropsFromType(letType);
-	                            if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
-	                                letBinding = {
-	                                    props: letInfo.props,
-	                                    required: letInfo.required,
-	                                    typeName: TypeTools.toString(letType)
-	                                };
-	                            }
-	                        }
-
-                        slots.set(slotName, {
-                            required: !isOptional,
-                            props: slotProps,
-                            requiredProps: slotRequiredProps,
-                            letBinding: letBinding
-                        });
-                        continue;
-                    }
-
-                    var kind = kindFromType(f.type);
-                    var key = componentAssignKeyFromAttributeName(f.name);
-                    props.set(key, kind);
-
-                    if (!isOptional) required.set(key, true);
-                }
-
-                { props: props, required: required, slots: slots };
-            case TType(tdef, params):
-                propsFromAssignsType(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
-            default:
-                null;
-        }
-    }
-
-    static function letBindingPropsFromType(t: haxe.macro.Type): Null<{
-        props: Map<String, String>,
-        required: Map<String, Bool>
-    }> {
-        var followed = TypeTools.follow(t);
-        return switch (followed) {
-            case TAbstract(aRef, params):
-                var abs = aRef.get();
-                if (abs != null && abs.name == "Assigns" && abs.pack.join(".") == "phoenix.types" && params != null && params.length == 1) {
-                    letBindingPropsFromType(params[0]);
-                } else {
-                    null;
-                }
-            case TAnonymous(a):
-                var props = new Map<String, String>();
-                var required = new Map<String, Bool>();
-
-                for (f in a.get().fields) {
-                    var typeStr = TypeTools.toString(f.type);
-                    var isOptional = fieldIsOptionalByTypeString(typeStr) || (f.meta != null && f.meta.has(":optional"));
-
-                    // Let bindings represent Elixir struct/map fields (accessed via `var.field`),
-                    // not HTML/HEEx attribute names. Avoid toHtmlAttribute() quirks like treating
-                    // `data` as a `data-*` prefix.
-                    var key = NameUtils.toSnakeCase(f.name);
-                    props.set(key, kindFromType(f.type));
-
-                    if (!isOptional) required.set(key, true);
-                }
-
-                { props: props, required: required };
-            case TType(tdef, params):
-                letBindingPropsFromType(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
-            default:
-                null;
-        }
-    }
-
-    static function isSlotField(f: haxe.macro.Type.ClassField): Bool {
-        if (f == null) return false;
-        if (f.meta != null && f.meta.has(":slot")) return true;
-        return unwrapSlotTypeInfo(f.type) != null;
-    }
-
-    static function slotFieldInfoFromField(f: haxe.macro.Type.ClassField): Null<{ entryType: haxe.macro.Type, letType: Null<haxe.macro.Type> }> {
-        if (f == null) return null;
-        var unwrapped = unwrapSlotTypeInfo(f.type);
-        if (unwrapped != null) return unwrapped;
-        // Legacy/metadata-only syntax: @:slot on a concrete entry typedef.
-        if (f.meta != null && f.meta.has(":slot")) return { entryType: f.type, letType: null };
-        return null;
-    }
-
-    static function unwrapSlotTypeInfo(t: haxe.macro.Type): Null<{ entryType: haxe.macro.Type, letType: Null<haxe.macro.Type> }> {
-        if (t == null) return null;
-        return switch (t) {
-            case TType(tdef, params):
-                unwrapSlotTypeInfo(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
-            case TAbstract(aRef, params):
-                var abs = aRef.get();
-                if (abs == null) return null;
-                // Optional slot: Null<Slot<T>>
-                if (abs.name == "Null" && params != null && params.length == 1) {
-                    unwrapSlotTypeInfo(params[0]);
-                } else if (abs.name == "Slot" && abs.pack.join(".") == "phoenix.types" && params != null && params.length >= 1) {
-                    var entryType = params[0];
-                    var letType = params.length >= 2 ? params[1] : null;
-                    { entryType: entryType, letType: letType };
-                } else {
-                    null;
-                }
-            default:
-                null;
-        }
-    }
-
-    static function isElixirTermType(t: haxe.macro.Type): Bool {
-        if (t == null) return false;
-        return switch (TypeTools.follow(t)) {
-            case TAbstract(aRef, _):
-                var abs = aRef.get();
-                abs != null && abs.name == "Term" && abs.pack.join(".") == "elixir.types";
-            default:
-                false;
-        };
-    }
-
-    static function fieldIsOptionalByTypeString(typeStr: String): Bool {
-        if (typeStr == null) return true;
-        var s = typeStr.trim();
-        return s.startsWith("Null<") && s.endsWith(">");
-    }
-    #end
-
-    static function getAllowedPhoenixCoreComponentAttributes(tag: String): Null<Map<String, Bool>> {
-        return switch (tag) {
-            case ".form":
-                buildAllowedComponentAttributesFromHtmlTag("form", ["for", "as", "multipart"]);
-            case ".link":
-                buildAllowedComponentAttributesFromHtmlTag("a", ["navigate", "patch", "method", "replace"]);
-            case ".inputs_for":
-                buildAllowedComponentAttributes(["field", "id", "as", "default", "append", "prepend", "skip_hidden", "options"]);
-            default:
-                null;
-        }
-    }
-
-    static function buildAllowedComponentAttributes(extra: Array<String>): Map<String, Bool> {
-        var allowed: Map<String, Bool> = new Map();
-
-        var globals = getGlobalHtmlAttributes();
-        for (k in globals.keys()) allowed.set(k, true);
-
-        for (name in extra) addAllowedAttributeForms(allowed, name);
-
-        return allowed;
-    }
-
-    static function buildAllowedComponentAttributesFromHtmlTag(htmlTag: String, extra: Array<String>): Map<String, Bool> {
-        var allowed: Map<String, Bool> = new Map();
-
-        var html = getAllowedHtmlAttributesForTag(htmlTag);
-        for (k in html.keys()) allowed.set(k, true);
-
-        for (name in extra) addAllowedAttributeForms(allowed, name);
-
-        return allowed;
-    }
-
-    static function validateAttributeValueKind(tag: String, attributeName: String, value: ElixirAST, fields: Map<String,String>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (attributeName == null || attributeName.length == 0) return;
-        if (attributeName.startsWith(":")) return; // directive attrs: do not validate here
-
-        var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(attributeName));
-        if (canonical == null) return;
-
-        // Additional validation: when a hook registry exists, validate known literal hook names.
-        if (canonical == "phx-hook") {
-            validatePhxHookName(value, ctx, pos);
-            validateStrictPhxHookValue(value, ctx, pos);
-        }
-
-        if (isPhxEventAttribute(canonical)) {
-            validatePhxEventName(canonical, value, ctx, pos);
-            validateStrictPhxEventValue(canonical, value, ctx, pos);
-        }
-
-        validateStrictAttributeLiteralValue(tag, canonical, value, ctx, pos);
-
-        var expected = expectedKindForAttribute(canonical);
-        if (expected == null) return;
-
-        var actual = inferHeexExprKind(value, fields);
-        if (!attributeKindsCompatible(expected, actual)) {
-            error(ctx, 'HEEx attribute type error: "' + canonical + '" expects ' + expected + ' but got ' + actual, pos);
-        }
-    }
-
-    static function extractConstStringFromHeexExpr(expr: ElixirAST): Null<String> {
-        if (expr == null || expr.def == null) return null;
-        return switch (expr.def) {
-            case EString(s):
-                s;
-            case EParen(inner):
-                extractConstStringFromHeexExpr(inner);
-            case EBinary(StringConcat, left, right):
-                var leftValue = extractConstStringFromHeexExpr(left);
-                var rightValue = extractConstStringFromHeexExpr(right);
-                (leftValue != null && rightValue != null) ? (leftValue + rightValue) : null;
-            case ERaw(code):
-                extractConstDoubleQuotedStringFromRaw(code);
-            default:
-                null;
-        };
-    }
-
-    static function extractConstDoubleQuotedStringFromRaw(code: String): Null<String> {
-        if (code == null) return null;
-        var trimmed = unwrapRawParens(code);
-        if (trimmed.length < 2) return null;
-        if (trimmed.charAt(0) != '"' || trimmed.charAt(trimmed.length - 1) != '"') return null;
-        var inner = trimmed.substr(1, trimmed.length - 2);
-        // Only accept plain literals with no escapes or interpolation to avoid mis-parsing.
-        if (inner.indexOf("\\") != -1 || inner.indexOf("#{") != -1) return null;
-        return inner;
-    }
-
-    static function unwrapRawParens(code: String): String {
-        if (code == null) return "";
-        var current = code.trim();
-        while (current.length >= 2 && current.charAt(0) == "(" && current.charAt(current.length - 1) == ")") {
-            current = current.substr(1, current.length - 2).trim();
-        }
-        return current;
-    }
-
-    static function validatePhxHookName(value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        #if macro
-        var allowed = getAllowedPhxHookNames();
-        if (allowed == null) return;
-
-        if (value == null) return;
-        var name = extractConstStringFromHeexExpr(value);
-        if (name == null) return;
-        name = name.trim();
-        if (name.length == 0) return;
-
-        if (!allowed.exists(name)) {
-            error(ctx, 'HEEx phx-hook error: unknown hook "' + name + '" (not present in any @:phxHookNames registry)', pos);
-        }
-        #end
-    }
-
-    static function validateStrictPhxHookValue(value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (!strictPhxHookTypingEnabled()) return;
-        if (value == null) return;
-        if (value.metadata == null || value.metadata.heexAttrIsDynamic == null) return;
-
-        if (!value.metadata.heexAttrIsDynamic) {
-            error(
-                ctx,
-                'HEEx phx-hook error: under -D hxx_strict_phx_hook, phx-hook must be an expression (use phx-hook={HookName.Name} / HXX phx-hook=$${HookName.Name})',
-                pos
-            );
-            return;
-        }
-
-        // TSX-level mode: require a compile-time known hook name from a registry.
-        #if macro
-        var allowed = getAllowedPhxHookNames();
-        if (allowed == null) {
-            error(ctx, 'HEEx phx-hook error: under -D hxx_strict_phx_hook, you must define a hook registry (add @:phxHookNames to an enum abstract of String)', pos);
-            return;
-        }
-
-        var name = extractConstStringFromHeexExpr(value);
-        if (name == null) {
-            error(ctx, 'HEEx phx-hook error: under -D hxx_strict_phx_hook, phx-hook must be a compile-time constant from your hook registry (e.g., HookName.Ping)', pos);
-            return;
-        }
-        #end
-    }
-
-    static function isPhxEventAttribute(canonicalAttr: String): Bool {
-        if (canonicalAttr == null) return false;
-        return switch (canonicalAttr) {
-            case "phx-click", "phx-submit", "phx-change", "phx-blur", "phx-focus",
-                 "phx-keydown", "phx-keyup",
-                 "phx-window-keydown", "phx-window-keyup":
-                true;
-            default:
-                false;
-        };
-    }
-
-    static function validateStrictAttributeLiteralValue(tag: String, canonicalAttr: String, value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (!strictAttributeValueTypingEnabled()) return;
-        if (canonicalAttr == null || canonicalAttr.length == 0) return;
-        if (value == null) return;
-
-        var allowed = expectedLiteralValuesForAttribute(tag, canonicalAttr);
-        if (allowed == null || allowed.length == 0) return;
-
-        // Keep this conservative to avoid false positives: only validate static string literals.
-        var literal = extractConstStringFromHeexExpr(value);
-        if (literal == null) return;
-
-        var normalized = literal.trim().toLowerCase();
-        if (normalized.length == 0) return;
-
-        if (!isAllowedLiteralValue(normalized, allowed)) {
-            error(
-                ctx,
-                'HEEx attribute value error: under -D hxx_strict_attr_values, "' + canonicalAttr + '" on <' + (tag == null ? "?" : tag) + '> must be one of [' + allowed.join(", ") + '], got "' + literal + '"',
-                pos
-            );
-        }
-    }
-
-    static function expectedLiteralValuesForAttribute(tag: String, canonicalAttr: String): Null<Array<String>> {
-        if (canonicalAttr == null) return null;
-        var normalizedTag = tag == null ? "" : tag.trim().toLowerCase();
-
-        return switch (canonicalAttr) {
-            case "type":
-                switch (normalizedTag) {
-                    case "input":
-                        [
-                            "button", "checkbox", "color", "date", "datetime-local",
-                            "email", "file", "hidden", "image", "month", "number",
-                            "password", "radio", "range", "reset", "search", "submit",
-                            "tel", "text", "time", "url", "week"
-                        ];
-                    case "button":
-                        ["button", "submit", "reset"];
-                    default:
-                        null;
-                };
-            case "method":
-                normalizedTag == "form" ? ["get", "post"] : null;
-            case "wrap":
-                normalizedTag == "textarea" ? ["hard", "soft"] : null;
-            case "phx-update":
-                ["replace", "stream", "append", "prepend", "ignore"];
-            default:
-                null;
-        };
-    }
-
-    static function isAllowedLiteralValue(value: String, allowed: Array<String>): Bool {
-        if (allowed == null || allowed.length == 0) return true;
-        for (candidate in allowed) {
-            if (candidate == value) return true;
-        }
-        return false;
-    }
-
-    static function validatePhxEventName(canonicalAttr: String, value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        #if macro
-        var allowed = getAllowedPhxEventNamesForContext(ctx);
-        if (allowed == null) return;
-
-        if (value == null) return;
-        // Adoption-friendly: do not validate raw string literals.
-        // We skip only when we know it's a literal (`heexAttrIsDynamic == false`); some HXX interpolation
-        // paths may not populate this metadata yet, and should still be validated.
-        if (value.metadata != null && value.metadata.heexAttrIsDynamic == false) return;
-
-        var name = extractConstStringFromHeexExpr(value);
-        if (name == null) return;
-        name = name.trim();
-        if (name.length == 0) return;
-
-        if (!allowed.exists(name)) {
-            error(ctx, 'HEEx ' + canonicalAttr + ' error: unknown event "' + name + '" (not present in any known event registry)', pos);
-        }
-        #end
-    }
-
-    static function validateStrictPhxEventValue(canonicalAttr: String, value: ElixirAST, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        if (!strictPhxEventTypingEnabled()) return;
-        if (value == null) return;
-        if (value.metadata == null || value.metadata.heexAttrIsDynamic == null) return;
-
-        // TSX-level mode: require a compile-time known event name from a registry.
-        #if macro
-        var allowed = getAllowedPhxEventNamesForContext(ctx);
-        if (allowed == null) {
-            error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, you must either define an event registry (add @:phxEventNames to an enum abstract of String) or compile inside a @:liveview where events can be derived from handle_event/3', pos);
-            return;
-        }
-
-        var name = extractConstStringFromHeexExpr(value);
-        if (name == null) {
-            error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, ' + canonicalAttr + ' must be a compile-time constant (e.g., EventName.Save or {"save"})', pos);
-            return;
-        }
-        name = name.trim();
-        if (name.length == 0) return;
-
-        // If the attribute was written as a literal (e.g. `phx-click="increment"`),
-        // accept it only when it is still a compile-time constant known to the registry.
-        if (!allowed.exists(name)) {
-            error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, unknown event "' + name + '"', pos);
-        }
-        #end
-    }
-
-    #if macro
-    static function getAllowedPhxHookNames(): Null<Map<String, Bool>> {
-        if (phxHookNameCache != null) return phxHookNameCache;
-        phxHookNameCache = buildAllowedPhxHookNames();
-        return phxHookNameCache;
-    }
-
-    static function getAllowedPhxEventNames(): Null<Map<String, Bool>> {
-        if (phxEventNameCache != null) return phxEventNameCache;
-        phxEventNameCache = buildAllowedPhxEventNames();
-        return phxEventNameCache;
-    }
-
-    static function getAllowedPhxEventNamesForContext(ctx: Null<reflaxe.elixir.CompilationContext>): Null<Map<String, Bool>> {
-        // Prefer LiveView-local events derived from handle_event/3.
-        //
-        // WHY
-        // - Under -D hxx_strict_phx_events, we want TSX-level correctness: a LiveView template should
-        //   only accept events that the same LiveView can actually handle.
-        //
-        // HOW
-        // - If we're compiling a @:liveview module and any derived events exist for it, use those
-        //   (optionally unioned with any explicit @:phxEventNames registries).
-        // - Otherwise, fall back to explicit @:phxEventNames registries (global).
-        if (ctx != null && ctx.currentClass != null && ctx.currentClass.meta != null && ctx.currentClass.meta.has(":liveview")) {
-            var moduleTypePath = (ctx.currentClass.pack != null && ctx.currentClass.pack.length > 0)
-                ? (ctx.currentClass.pack.join(".") + "." + ctx.currentClass.name)
-                : ctx.currentClass.name;
-            if (moduleTypePath != null && moduleTypePath.length > 0) {
-                var derived = LiveViewEventRegistry.getEventsForModule(moduleTypePath);
-                if (derived != null && derived.keys().hasNext()) {
-                    // For @:liveview modules, keep the check local: only accept events that
-                    // this module can actually handle.
-                    return derived;
-                }
-            }
-        }
-
-        return getAllowedPhxEventNames();
-    }
-
-    static function buildAllowedPhxHookNames(): Null<Map<String, Bool>> {
-        var allowed: Map<String, Bool> = new Map();
-
-        var discovered = RepoDiscovery.getDiscovered();
-        if (discovered == null || discovered.length == 0) {
-            RepoDiscovery.run();
-            discovered = RepoDiscovery.getDiscovered();
-        }
-
-        if (discovered == null || discovered.length == 0) return null;
-
-        for (typePath in discovered) {
-            var t: haxe.macro.Type = null;
-            try t = Context.getType(typePath) catch (_:Dynamic) t = null;
-            if (t == null) continue;
-
-            switch (TypeTools.follow(t)) {
-                case TAbstract(aRef, _):
-                    var abs = aRef.get();
-                    if (abs == null || abs.meta == null || !abs.meta.has(":phxHookNames")) continue;
-                    collectConstStringStaticsFromAbstract(abs, allowed);
-                case TInst(cRef, _):
-                    var cls = cRef.get();
-                    if (cls == null || cls.meta == null || !cls.meta.has(":phxHookNames")) continue;
-                    collectConstStringStaticsFromClass(cls, allowed);
-                default:
-            }
-        }
-
-        return allowed.keys().hasNext() ? allowed : null;
-    }
-
-    static function buildAllowedPhxEventNames(): Null<Map<String, Bool>> {
-        var allowed: Map<String, Bool> = new Map();
-
-        var discovered = RepoDiscovery.getDiscovered();
-        if (discovered == null || discovered.length == 0) {
-            RepoDiscovery.run();
-            discovered = RepoDiscovery.getDiscovered();
-        }
-
-        if (discovered == null || discovered.length == 0) return null;
-
-        if (discovered != null) {
-            for (typePath in discovered) {
-                var t: haxe.macro.Type = null;
-                try t = Context.getType(typePath) catch (_:Dynamic) t = null;
-                if (t == null) continue;
-
-                switch (TypeTools.follow(t)) {
-                    case TAbstract(aRef, _):
-                        var abs = aRef.get();
-                        if (abs == null || abs.meta == null || !abs.meta.has(":phxEventNames")) continue;
-                        collectConstStringStaticsFromAbstract(abs, allowed);
-                    case TInst(cRef, _):
-                        var cls = cRef.get();
-                        if (cls == null || cls.meta == null || !cls.meta.has(":phxEventNames")) continue;
-                        collectConstStringStaticsFromClass(cls, allowed);
-                    default:
-                }
-            }
-        }
-
-        return allowed.keys().hasNext() ? allowed : null;
-    }
-
-    static function collectConstStringStaticsFromAbstract(abs: haxe.macro.Type.AbstractType, out: Map<String, Bool>): Void {
-        if (abs == null) return;
-        if (abs.impl == null) return;
-        var impl = abs.impl.get();
-        if (impl == null) return;
-        collectConstStringStaticsFromClass(impl, out);
-    }
-
-    static function collectConstStringStaticsFromClass(cls: haxe.macro.Type.ClassType, out: Map<String, Bool>): Void {
-        if (cls == null) return;
-        for (field in cls.statics.get()) {
-            if (field == null) continue;
-            var value = extractStringConst(field.expr());
-            if (value != null && value.length > 0) {
-                out.set(value, true);
-            }
-        }
-    }
-
-    static function extractStringConst(expr: Null<TypedExpr>): Null<String> {
-        if (expr == null) return null;
-        return switch (expr.expr) {
-            case TConst(TString(s)):
-                s;
-            case TMeta(_, inner):
-                extractStringConst(inner);
-            case TCast(inner, _):
-                extractStringConst(inner);
-            case TParenthesis(inner):
-                extractStringConst(inner);
-            default:
-                null;
-        };
-    }
-    #end
-
-	    static function isRegisteredHtmlElement(tag: String): Bool {
-	        if (tag == null || tag.length == 0) return false;
-	        // Skip Phoenix component tags (<.foo>) and slot tags (<:inner_block>)
-	        var first = tag.charAt(0);
-	        if (first == "." || first == ":") return false;
-	        // Treat built-in HTML tags as registered; treat custom tags as registered only when they
-	        // provide an explicit attribute allowlist to avoid false positives.
-	        if (HXXComponentRegistry.getElementType(tag) != null) return true;
-	        var customAttrs = getCustomHtmlTagAttributes(tag);
-	        return customAttrs != null && customAttrs.length > 0;
-	    }
-
-	    static var customHtmlTagRegistryCache: Null<Map<String, Array<String>>> = null;
-        static var customHtmlTagKindRegistryCache: Null<Map<String, Map<String, String>>> = null;
-
-	    static function isCustomHtmlTagRegistered(tag: String): Bool {
-	        if (tag == null || tag.length == 0) return false;
-	        if (tag.charAt(0) == "." || tag.charAt(0) == ":") return false;
-	        return getCustomHtmlTagRegistry().exists(tag.toLowerCase());
-	    }
-
-	    static function getCustomHtmlTagAttributes(tag: String): Null<Array<String>> {
-	        if (tag == null || tag.length == 0) return null;
-	        var key = tag.toLowerCase();
-	        var reg = getCustomHtmlTagRegistry();
-	        return reg.exists(key) ? reg.get(key) : null;
-	    }
-
-	    static function getCustomHtmlTagRegistry(): Map<String, Array<String>> {
-	        if (customHtmlTagRegistryCache != null) return customHtmlTagRegistryCache;
-	        #if macro
-	        ensureCustomHtmlTagRegistriesBuilt();
-	        #else
-	        customHtmlTagRegistryCache = new Map();
-	        if (customHtmlTagKindRegistryCache == null) customHtmlTagKindRegistryCache = new Map();
-	        #end
-	        return customHtmlTagRegistryCache;
-	    }
-
-        static function getCustomHtmlTagAttributeKinds(tag: String): Null<Map<String, String>> {
-            if (tag == null || tag.length == 0) return null;
-            var reg = getCustomHtmlTagKindRegistry();
-            var key = tag.toLowerCase();
-            return reg.exists(key) ? reg.get(key) : null;
-        }
-
-        static function getCustomHtmlTagKindRegistry(): Map<String, Map<String, String>> {
-            if (customHtmlTagKindRegistryCache != null) return customHtmlTagKindRegistryCache;
-            #if macro
-            ensureCustomHtmlTagRegistriesBuilt();
-            #else
-            customHtmlTagKindRegistryCache = new Map();
-            if (customHtmlTagRegistryCache == null) customHtmlTagRegistryCache = new Map();
-            #end
-            return customHtmlTagKindRegistryCache;
-        }
-
-	    #if macro
-	    static function ensureCustomHtmlTagRegistriesBuilt(): Void {
-	        if (customHtmlTagRegistryCache != null && customHtmlTagKindRegistryCache != null) return;
-	        if (customHtmlTagRegistryCache == null) customHtmlTagRegistryCache = new Map();
-	        if (customHtmlTagKindRegistryCache == null) customHtmlTagKindRegistryCache = new Map();
-
-	        var discovered = RepoDiscovery.getDiscovered();
-	        if (discovered == null || discovered.length == 0) {
-	            RepoDiscovery.run();
-	            discovered = RepoDiscovery.getDiscovered();
-	        }
-	        if (discovered == null || discovered.length == 0) return;
-
-	        for (typePath in discovered) {
-	            var t: haxe.macro.Type = null;
-	            try t = Context.getType(typePath) catch (_:Dynamic) t = null;
-	            if (t == null) continue;
-
-	            switch (TypeTools.follow(t)) {
-	                case TInst(cRef, _):
-	                    var cls = cRef.get();
-	                    if (cls == null || cls.meta == null || !cls.meta.has(":hxxHtmlTags")) continue;
-	                    collectCustomHtmlTagsFromClass(cls, customHtmlTagRegistryCache, customHtmlTagKindRegistryCache);
-	                case TAbstract(aRef, _):
-	                    var abs = aRef.get();
-	                    if (abs == null || abs.meta == null || !abs.meta.has(":hxxHtmlTags")) continue;
-	                    if (abs.impl == null) continue;
-	                    var impl = abs.impl.get();
-	                    if (impl == null) continue;
-	                    collectCustomHtmlTagsFromClass(impl, customHtmlTagRegistryCache, customHtmlTagKindRegistryCache);
-	                default:
-	            }
-	        }
-	    }
-
-	    static function collectCustomHtmlTagsFromClass(cls: haxe.macro.Type.ClassType, out: Map<String, Array<String>>, kinds: Map<String, Map<String, String>>): Void {
-	        if (cls == null) return;
-	        for (field in cls.statics.get()) {
-	            if (field == null) continue;
-
-	            var tag = extractStringConst(field.expr());
-	            if (tag == null || tag.length == 0) continue;
-
-	            var attrs: Array<String> = [];
-                var attrKinds: Map<String, String> = new Map();
-	            if (field.meta != null && field.meta.has(":hxxTagAttrs")) {
-	                for (entry in field.meta.extract(":hxxTagAttrs")) {
-	                    if (entry == null || entry.params == null) continue;
-	                    attrs = mergeUniqueStrings(attrs, extractStringArrayConst(entry.params));
-	                }
-	            }
-
-                if (field.meta != null && field.meta.has(":hxxTagAttrKinds")) {
-                    for (entry in field.meta.extract(":hxxTagAttrKinds")) {
-                        if (entry == null || entry.params == null) continue;
-                        attrKinds = mergeKindMaps(attrKinds, extractStringToStringMapConst(entry.params));
-                    }
-                }
-
-                // Ensure typed attrs are also allowed attrs.
-                for (k in attrKinds.keys()) attrs = mergeUniqueStrings(attrs, [k]);
-
-                var tagKey = tag.toLowerCase();
-
-                if (out.exists(tagKey)) {
-                    attrs = mergeUniqueStrings(out.get(tagKey), attrs);
-                }
-	            out.set(tagKey, attrs);
-
-                if (kinds.exists(tagKey)) {
-                    attrKinds = mergeKindMaps(kinds.get(tagKey), attrKinds);
-                }
-                kinds.set(tagKey, attrKinds);
-	        }
-	    }
-
-	    static function mergeUniqueStrings(existing: Array<String>, next: Array<String>): Array<String> {
-	        var out = existing != null ? existing.copy() : [];
-	        if (next == null) return out;
-	        var seen: Map<String, Bool> = new Map();
-	        for (s in out) if (s != null) seen.set(s.toLowerCase(), true);
-	        for (s in next) {
-	            if (s == null) continue;
-	            var k = s.toLowerCase();
-	            if (seen.exists(k)) continue;
-	            seen.set(k, true);
-	            out.push(s);
-	        }
-	        return out;
-	    }
-
-	    static function extractStringArrayConst(params: Array<Expr>): Array<String> {
-	        var out: Array<String> = [];
-	        if (params == null || params.length == 0) return out;
-
-	        function addExpr(e: Expr): Void {
-	            if (e == null) return;
-	            switch (e.expr) {
-	                case EConst(CString(s, _)):
-	                    if (s != null && s.length > 0) out.push(s);
-	                case EMeta(_, inner):
-	                    addExpr(inner);
-	                case EParenthesis(inner):
-	                    addExpr(inner);
-	                default:
-	            }
-	        }
-
-	        // Support both forms:
-	        // - @:hxxTagAttrs(["a", "b"])
-	        // - @:hxxTagAttrs("a", "b")
-	        if (params.length == 1) {
-	            switch (params[0].expr) {
-	                case EArrayDecl(items):
-	                    for (i in items) addExpr(i);
-	                    return out;
-	                default:
-	            }
-	        }
-
-	        for (p in params) addExpr(p);
-	        return out;
-	    }
-
-        static function extractStringToStringMapConst(params: Array<Expr>): Map<String, String> {
-            var out: Map<String, String> = new Map();
-            if (params == null || params.length == 0) return out;
-
-            // Support:
-            // - @:hxxTagAttrKinds({enabled: "bool", variant: "string"})
-            // - @:hxxTagAttrKinds("enabled", "bool", "variant", "string")
-            if (params.length == 1) {
-                switch (params[0].expr) {
-                    case EObjectDecl(fields):
-                        if (fields == null) return out;
-                        for (f in fields) {
-                            if (f == null) continue;
-                            var key = f.field;
-                            var value: Null<String> = null;
-                            switch (f.expr.expr) {
-                                case EConst(CString(s, _)):
-                                    value = s;
-                                case EParenthesis(inner):
-                                    switch (inner.expr) {
-                                        case EConst(CString(s, _)):
-                                            value = s;
-                                        default:
-                                    }
-                                default:
-                            }
-                            if (key != null && key.length > 0 && value != null && value.length > 0) {
-                                var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(key));
-                                if (canonical != null) out.set(canonical, value);
-                            }
-                        }
-                        return out;
-                    default:
-                }
-            }
-
-            var i = 0;
-            while (i + 1 < params.length) {
-                var key: Null<String> = null;
-                var value: Null<String> = null;
-                switch (params[i].expr) {
-                    case EConst(CString(s, _)):
-                        key = s;
-                    default:
-                }
-                switch (params[i + 1].expr) {
-                    case EConst(CString(s, _)):
-                        value = s;
-                    default:
-                }
-                if (key != null && key.length > 0 && value != null && value.length > 0) {
-                    var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(key));
-                    if (canonical != null) out.set(canonical, value);
-                }
-                i += 2;
-            }
-            return out;
-        }
-
-        static function mergeKindMaps(existing: Map<String, String>, next: Map<String, String>): Map<String, String> {
-            var out: Map<String, String> = new Map();
-            if (existing != null) for (k in existing.keys()) out.set(k, existing.get(k));
-            if (next == null) return out;
-            for (k in next.keys()) {
-                var left = out.exists(k) ? out.get(k) : null;
-                var right = next.get(k);
-                if (left == null || left.length == 0) {
-                    out.set(k, right);
-                } else if (right != null && right.length > 0 && left != right) {
-                    out.set(k, mergeKindUnion(left, right));
-                }
-            }
-            return out;
-        }
-	    #end
-
-        static function validateCustomHtmlTagAttributeValueKind(tag: String, attr: EAttribute, fields: Map<String,String>, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-            if (tag == null || tag.length == 0) return;
-            if (attr == null || attr.name == null || attr.name.length == 0) return;
-            if (attr.name.startsWith(":")) return;
-            if (isHeexComponentTag(tag) || isSlotTag(tag)) return;
-
-            // Built-in HTML tags use the HXXComponentRegistry typing.
-            if (HXXComponentRegistry.getElementType(tag) != null) return;
-
-            var kinds = getCustomHtmlTagAttributeKinds(tag);
-            if (kinds == null) return;
-
-            var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(attr.name));
-            if (canonical == null) return;
-
-            var expected = kinds.exists(canonical) ? kinds.get(canonical) : null;
-            if (expected == null || expected == "unknown") return;
-
-            var actual = inferHeexExprKind(attr.value, fields);
-            if (!attributeKindsCompatible(expected, actual)) {
-                error(ctx, 'HEEx attribute type error: <' + tag + '> "' + canonical + '" expects ' + expected + ' but got ' + actual, pos);
-            }
-        }
-
-	    static var strictHtmlAllowedTagCache: Null<Map<String, Bool>> = null;
-
-	    static function validateHtmlTagName(tag: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-	        if (!strictHtmlTagTypingEnabled()) return;
-	        if (tag == null || tag.length == 0) return;
-
-	        var first = tag.charAt(0);
-	        // Skip dot-components and slot tags.
-	        if (first == "." || first == ":") return;
-
-	        if (HXXComponentRegistry.getElementType(tag) != null) return;
-	        if (isCustomHtmlTagRegistered(tag)) return;
-	        if (isStrictHtmlAllowedTag(tag)) return;
-
-	        error(
-	            ctx,
-	            'HEEx tag error: <' + tag + '> is not a registered HTML tag under -D hxx_strict_html. ' +
-	            'Either register/allow it (e.g., -D hxx_strict_html_allow_tags=' + tag + ') or disable strict mode.',
-	            pos
-	        );
-	    }
-
-	    static function isStrictHtmlAllowedTag(tag: String): Bool {
-	        if (tag == null || tag.length == 0) return false;
-	        if (strictHtmlAllowedTagCache == null) strictHtmlAllowedTagCache = buildStrictHtmlAllowedTags();
-	        if (strictHtmlAllowedTagCache == null) return false;
-	        return strictHtmlAllowedTagCache.exists(tag.toLowerCase());
-	    }
-
-	    static function buildStrictHtmlAllowedTags(): Map<String, Bool> {
-	        var out: Map<String, Bool> = new Map();
-
-	        #if macro
-	        var raw = Context.definedValue("hxx_strict_html_allow_tags");
-	        if (raw == null || raw.length == 0) return out;
-
-	        for (part in raw.split(",")) {
-	            var trimmed = part.trim();
-	            if (trimmed.length == 0) continue;
-	            out.set(trimmed.toLowerCase(), true);
-	        }
-	        #end
-
-	        return out;
-	    }
-
-		    static function getAllowedHtmlAttributesForTag(tag: String): Map<String, Bool> {
-	        var key = tag.toLowerCase();
-	        if (allowedHtmlAttributeCache.exists(key)) return allowedHtmlAttributeCache.get(key);
-
-        var allowed: Map<String, Bool> = new Map();
-
-        var globals = getGlobalHtmlAttributes();
-        for (k in globals.keys()) allowed.set(k, true);
-
-	        if (HXXComponentRegistry.getElementType(tag) != null) {
-	            var attrs = HXXComponentRegistry.getAllowedAttributes(tag);
-	            for (a in attrs) addAllowedAttributeForms(allowed, a);
-	        } else {
-	            var customAttrs = getCustomHtmlTagAttributes(tag);
-	            if (customAttrs != null) for (a in customAttrs) addAllowedAttributeForms(allowed, a);
-	        }
-
-	        allowedHtmlAttributeCache.set(key, allowed);
-	        return allowed;
-	    }
-
-    static function getGlobalHtmlAttributes(): Map<String, Bool> {
-        if (globalHtmlAttributeCache != null) return globalHtmlAttributeCache;
-        var allowed: Map<String, Bool> = new Map();
-        // div is registered with global attributes in HXXComponentRegistry; use it as the source of truth.
-        for (a in HXXComponentRegistry.getAllowedAttributes("div")) addAllowedAttributeForms(allowed, a);
-        globalHtmlAttributeCache = allowed;
-        return allowed;
-    }
-
-    static function addAllowedAttributeForms(allowed: Map<String, Bool>, name: String): Void {
-        if (name == null || name.length == 0) return;
-        // Wildcard attributes (data*) are handled separately.
-        if (name.indexOf("*") != -1) return;
-        allowed.set(name, true);
-        var html = HXXComponentRegistry.toHtmlAttribute(name);
-        if (html != null) allowed.set(html, true);
-    }
-
-    static function normalizeHeexAttributeName(name: String): String {
-        // Accept snake_case in templates but validate against canonical kebab-case where applicable.
-        return name.indexOf("_") != -1 ? name.split("_").join("-") : name;
-    }
-
-    static function isWildcardHeexAttribute(name: String): Bool {
-        if (name == null) return false;
-        var n = name.toLowerCase();
-        return n.startsWith("data-") || n.startsWith("aria-") || n.startsWith("phx-value-");
-    }
-
-    static function expectedKindForAttribute(canonicalAttr: String): Null<String> {
-        return switch (canonicalAttr) {
-            // HTML boolean-ish attributes (subset)
-            case "disabled", "required", "checked", "selected", "readonly", "multiple", "autofocus",
-                 "defer", "async", "nomodule",
-                 // Phoenix/ARIA common boolean-ish attributes
-                 "phx-track-static", "aria-hidden":
-                "bool";
-            // Phoenix hook name
-            case "phx-hook":
-                "string";
-            // Phoenix LiveView events (string name or JS expression)
-            case "phx-click", "phx-submit", "phx-change", "phx-blur", "phx-focus",
-                 "phx-keydown", "phx-keyup",
-                 "phx-window-keydown", "phx-window-keyup":
-                "string";
-            default:
-                null;
-        }
-    }
-
-    static function inferHeexExprKind(expr: ElixirAST, fields: Map<String,String>): String {
-        if (expr == null) return "unknown";
-        return switch (expr.def) {
-            case EString(v):
-                var t = v != null ? v.trim().toLowerCase() : "";
-                (t == "true" || t == "false") ? "bool" : "string";
-            case EInteger(_): "int";
-            case EFloat(_): "float";
-            case EBoolean(_): "bool";
-            case ENil: "nil";
-            case EAtom(_): "atom";
-            case ECharlist(_): "string";
-            case EBitstring(_): "string";
-            case EList(_): "array";
-            case EKeywordList(_): "array";
-            case ETuple(_): "tuple";
-            case EMap(_): "map";
-            case EStruct(_, _): "map";
-            case EStructUpdate(_, _): "map";
-            case EAssign(name):
-                (fields != null && fields.exists(name)) ? fields.get(name) : "unknown";
-            case EBinary(op, _, _):
-                (isComparisonOp(op) || op == AndAlso || op == OrElse) ? "bool" : "unknown";
-            case EIf(_, thenB, elseB):
-                var thenKind = inferHeexExprKind(thenB, fields);
-                var elseKind = elseB != null ? inferHeexExprKind(elseB, fields) : "nil";
-                if (thenKind == elseKind) thenKind
-                else if (thenKind == "nil") elseKind
-                else if (elseKind == "nil") thenKind
-                else "unknown";
-            case EParen(inner):
-                inferHeexExprKind(inner, fields);
-            default:
-                "unknown";
-        }
-    }
-
-    static function attributeKindsCompatible(expected: String, actual: String): Bool {
-        if (expected == null || actual == null) return true;
-        // Allow nil for optional attribute omission.
-        if (actual == "nil") return true;
-        // If we can't confidently infer the kind, do not error.
-        if (actual == "unknown") return true;
-
-        if (expected.indexOf("|") != -1) {
-            for (p in expected.split("|")) {
-                if (p.trim() == actual) return true;
-            }
-            return false;
-        }
-
-        return expected == actual;
-    }
-
-    static function validateExprForAssigns(expr: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, enableAssignsChecks: Bool): Void {
-        if (!enableAssignsChecks) return;
-
-        // Collect used assigns fields and check comparisons on the fly
-        var used = new Map<String,Bool>();
-        analyzeExpr(expr, fields, typeName, ctx, pos, used);
-        for (k in used.keys()) {
-            if (!fields.exists(k)) {
-                error(ctx, 'HEEx assigns error: Unknown field @' + k + ' (not found in typedef ' + typeName + ')', pos);
-            }
-        }
-    }
-
-    static function analyzeExpr(expr: ElixirAST, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position, used: Map<String,Bool>): Void {
-        switch (expr.def) {
-            case EAssign(name):
-                used.set(name, true);
-            case EField(target, _):
-                analyzeExpr(target, fields, typeName, ctx, pos, used);
-            case EAccess(target, key):
-                analyzeExpr(target, fields, typeName, ctx, pos, used);
-                analyzeExpr(key, fields, typeName, ctx, pos, used);
-            case EBinary(op, left, right):
-                // Recurse first
-                analyzeExpr(left, fields, typeName, ctx, pos, used);
-                analyzeExpr(right, fields, typeName, ctx, pos, used);
-                // Check literal comparisons like @field == "str" or 1 < @field
-                if (isComparisonOp(op)) {
-                    var lName = extractAssignFieldName(left);
-                    var rName = extractAssignFieldName(right);
-                    var lLit = extractLiteralKind(left);
-                    var rLit = extractLiteralKind(right);
-                    if (lName != null && rLit != null) checkKindCompat(lName, rLit, fields, typeName, ctx, pos);
-                    if (rName != null && lLit != null) checkKindCompat(rName, lLit, fields, typeName, ctx, pos);
-                }
-            case EIf(cond, thenB, elseB):
-                analyzeExpr(cond, fields, typeName, ctx, pos, used);
-                analyzeExpr(thenB, fields, typeName, ctx, pos, used);
-                if (elseB != null) analyzeExpr(elseB, fields, typeName, ctx, pos, used);
-            case ECall(target, _fn, args):
-                if (target != null) analyzeExpr(target, fields, typeName, ctx, pos, used);
-                for (a in args) analyzeExpr(a, fields, typeName, ctx, pos, used);
-            case EParen(inner):
-                analyzeExpr(inner, fields, typeName, ctx, pos, used);
-            default:
-        }
-    }
-
-    static inline function isComparisonOp(op: EBinaryOp): Bool {
-        return switch (op) {
-            case Equal | NotEqual | Less | Greater | LessEqual | GreaterEqual | StrictEqual | StrictNotEqual: true;
-            default: false;
-        }
-    }
-
-    static function extractAssignFieldName(expr: ElixirAST): Null<String> {
-        return switch (expr.def) {
-            case EAssign(name): name;
-            case EField(target, _): extractAssignFieldName(target);
-            case EAccess(target, _): extractAssignFieldName(target);
-            default: null;
-        }
-    }
-
-    static function extractLiteralKind(expr: ElixirAST): Null<String> {
-        return switch (expr.def) {
-            case EString(_): "string";
-            case EInteger(_): "int";
-            case EBoolean(_): "bool";
-            case ENil: "nil";
-            default: null;
-        }
-    }
-
-    static function checkKindCompat(field: String, litKind: String, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        var fieldKind = fields.exists(field) ? fields.get(field) : null;
-        if (fieldKind != null && !kindsCompatible(fieldKind, litKind)) {
-            error(ctx, 'HEEx assigns type error: @' + field + ' is ' + fieldKind + ' but compared to ' + litKind + ' literal', pos);
-        }
-    }
-
-    static function collectAtFields(s: String): Array<String> {
-        var found = new Map<String, Bool>();
-        var i = 0;
-        while (i < s.length) {
-            var idx = s.indexOf("@", i);
-            if (idx == -1) break;
-            var j = idx + 1;
-            if (j < s.length && isIdentStart(s.charCodeAt(j))) {
-                var k = j + 1;
-                while (k < s.length && isIdentPart(s.charCodeAt(k))) k++;
-                var name = s.substr(j, k - j);
-                found.set(name, true);
-                i = k;
-            } else {
-                i = j;
-            }
-        }
-        return [for (k in found.keys()) k];
-    }
-
-    static inline function isIdentStart(c: Int): Bool {
-        return (c >= 'A'.code && c <= 'Z'.code) || (c >= 'a'.code && c <= 'z'.code) || c == '_'.code;
-    }
-    static inline function isIdentPart(c: Int): Bool {
-        return isIdentStart(c) || (c >= '0'.code && c <= '9'.code);
-    }
-
-    static function checkLiteralComparisons(content: String, fields: Map<String,String>, typeName: String, ctx: Null<reflaxe.elixir.CompilationContext>, pos: haxe.macro.Expr.Position): Void {
-        // Pattern 1: @field <op> <literal>
-        var p1 = ~/@([A-Za-z_][A-Za-z0-9_]*)\s*(==|!=|===|!==|<=|>=|<|>)\s*("[^"]*"|\d+|true|false|nil)/g;
-        var start1 = 0;
-        while (p1.matchSub(content, start1)) {
-            var field = p1.matched(1);
-            var lit = p1.matched(3);
-            var litKind = literalKind(lit);
-            var fieldKind = fields.exists(field) ? fields.get(field) : null;
-            if (fieldKind != null && !kindsCompatible(fieldKind, litKind)) {
-                error(ctx, 'HEEx assigns type error: @' + field + ' is ' + fieldKind + ' but compared to ' + litKind + ' literal', pos);
-            }
-            var mpos = p1.matchedPos();
-            start1 = mpos.pos + mpos.len;
-        }
-        // Pattern 2: <literal> <op> @field
-        var p2 = ~/("[^"]*"|\d+|true|false|nil)\s*(==|!=|===|!==|<=|>=|<|>)\s*@([A-Za-z_][A-Za-z0-9_]*)/g;
-        var start2 = 0;
-        while (p2.matchSub(content, start2)) {
-            var lit2 = p2.matched(1);
-            var field2 = p2.matched(3);
-            var litKind2 = literalKind(lit2);
-            var fieldKind2 = fields.exists(field2) ? fields.get(field2) : null;
-            if (fieldKind2 != null && !kindsCompatible(fieldKind2, litKind2)) {
-                error(ctx, 'HEEx assigns type error: @' + field2 + ' is ' + fieldKind2 + ' but compared to ' + litKind2 + ' literal', pos);
-            }
-            var mpos2 = p2.matchedPos();
-            start2 = mpos2.pos + mpos2.len;
-        }
-    }
-
-    static function literalKind(lit: String): String {
-        var t = lit.trim();
-        if (t == "true" || t == "false") return "bool";
-        if (t == "nil") return "nil";
-        if (t.length > 0 && t.charAt(0) == '"') return "string";
-        // numbers
-        return ~/^[0-9]+$/.match(t) ? "int" : "unknown";
-    }
-
-    static function kindsCompatible(fieldKind: String, litKind: String): Bool {
-        // Allow nil comparisons for nullable-like fields (we do not know nullability yet; allow all)
-        if (litKind == "nil") return true;
-        if (fieldKind == null || litKind == null) return true;
-        // Simple exact match for now
-        return fieldKind == litKind;
-    }
-
-    static function extractAssignsTypeSpecForFunction(functionName: String, hx: String): Null<String> {
-        return extractAssignsTypeSpecForFunctionBefore(functionName, hx, null);
-    }
-
-    static function extractAssignsTypeSpecForFunctionBefore(functionName: String, hx: String, nearLine: Null<Int>): Null<String> {
-        if (functionName == null || functionName.length == 0) return null;
-
-        var escaped = escapeRegExp(functionName);
-        var re = new EReg('function\\s+' + escaped + '\\s*\\(', "g");
-        var searchStart = 0;
-
-        var bestLine = -1;
-        var bestType: Null<String> = null;
-
-        while (re.matchSub(hx, searchStart)) {
-            var matchPos = re.matchedPos();
-            var openParenIndex = matchPos.pos + matchPos.len - 1;
-
-            var lineNo = lineNumberAtIndex(hx, matchPos.pos);
-
-            if (nearLine == null || lineNo <= nearLine) {
-                var params = extractEnclosed(hx, openParenIndex, "(", ")");
-                if (params != null) {
-                    var assignsTypeSpec = extractTypeSpecForParam("assigns", params);
-                    if (assignsTypeSpec != null && lineNo > bestLine) {
-                        bestLine = lineNo;
-                        bestType = assignsTypeSpec;
-                    }
-                }
-            }
-
-            searchStart = matchPos.pos + matchPos.len;
-        }
-
-        return bestType;
-    }
-
-    static function unwrapAssignsType(typeSpec: String): Null<String> {
-        if (typeSpec == null) return null;
-        var trimmed = typeSpec.trim();
-        if (trimmed.length == 0) return null;
-
-        var lt = trimmed.indexOf("<");
-        if (lt == -1) return trimmed;
-        var outer = trimmed.substr(0, lt).trim();
-        if (!outer.endsWith("Assigns")) return trimmed;
-
-        var inner = extractEnclosed(trimmed, lt, "<", ">");
-        return inner != null ? inner.trim() : trimmed;
-    }
-
-    static function stripTypeParameters(typeSpec: String): Null<String> {
-        if (typeSpec == null) return null;
-        var trimmed = typeSpec.trim();
-        if (trimmed.length == 0) return null;
-
-        var lt = trimmed.indexOf("<");
-        return lt == -1 ? trimmed : trimmed.substr(0, lt).trim();
-    }
-
-    static function extractEnclosed(hx: String, openIndex: Int, openToken: String, closeToken: String): Null<String> {
-        if (hx == null || openIndex < 0 || openIndex >= hx.length) return null;
-        if (hx.substr(openIndex, openToken.length) != openToken) return null;
-
-        var i = openIndex;
-        var depth = 0;
-        var start = openIndex + openToken.length;
-
-        while (i < hx.length) {
-            var ch = hx.charAt(i);
-            if (ch == openToken) {
-                depth++;
-            } else if (ch == closeToken) {
-                depth--;
-                if (depth == 0) {
-                    var end = i;
-                    return hx.substr(start, end - start);
-                }
-            }
-            i++;
-        }
-
-        return null;
-    }
-
-    static function extractTypeSpecForParam(paramName: String, params: String): Null<String> {
-        if (paramName == null || paramName.length == 0) return null;
-        if (params == null || params.length == 0) return null;
-
-        var searchStart = 0;
-        while (searchStart < params.length) {
-            var idx = params.indexOf(paramName, searchStart);
-            if (idx == -1) return null;
-
-            var beforeOk = idx == 0 || !isIdentPart(params.charCodeAt(idx - 1));
-            var afterIdx = idx + paramName.length;
-            var afterOk = afterIdx >= params.length || !isIdentPart(params.charCodeAt(afterIdx));
-
-            if (beforeOk && afterOk) {
-                var i = afterIdx;
-                while (i < params.length && StringTools.isSpace(params, i)) i++;
-                if (i < params.length && params.charAt(i) == ":") {
-                    i++;
-                    while (i < params.length && StringTools.isSpace(params, i)) i++;
-                    var start = i;
-
-                    var angleDepth = 0;
-                    var parenDepth = 0;
-                    var bracketDepth = 0;
-
-                    while (i < params.length) {
-                        var ch = params.charAt(i);
-                        switch (ch) {
-                            case "<":
-                                angleDepth++;
-                            case ">":
-                                if (angleDepth > 0) angleDepth--;
-                            case "(":
-                                parenDepth++;
-                            case ")":
-                                if (parenDepth > 0) parenDepth--;
-                            case "[":
-                                bracketDepth++;
-                            case "]":
-                                if (bracketDepth > 0) bracketDepth--;
-                            case "," | "=":
-                                if (angleDepth == 0 && parenDepth == 0 && bracketDepth == 0) {
-                                    var spec = params.substr(start, i - start).trim();
-                                    return spec.length > 0 ? spec : null;
-                                }
-                            default:
-                        }
-                        i++;
-                    }
-
-                    var endSpec = params.substr(start).trim();
-                    return endSpec.length > 0 ? endSpec : null;
-                }
-            }
-
-            searchStart = idx + paramName.length;
-        }
-
-        return null;
-    }
-
-    static function lineNumberAtIndex(text: String, index: Int): Int {
-        var lineNo = 1;
-        var i = 0;
-        var max = index < text.length ? index : text.length;
-        while (i < max) {
-            if (text.charAt(i) == "\n") lineNo++;
-            i++;
-        }
-        return lineNo;
-    }
-
-    static function escapeRegExp(s: String): String {
-        var escaped = "";
-        for (i in 0...s.length) {
-            var ch = s.charAt(i);
-            escaped += switch (ch) {
-                case "\\" | "^" | "$" | "." | "|" | "?" | "*" | "+" | "(" | ")" | "[" | "]" | "{" | "}":
-                    "\\" + ch;
-                default:
-                    ch;
-            }
-        }
-        return escaped;
-    }
-
-    static function extractAssignsFields(typeName: String, hx: String): Null<Map<String, String>> {
-        var parsed = extractAssignsFieldsFromTypedefBlock(typeName, hx);
-        if (parsed.foundTypedef) {
-            return parsed.fields;
-        }
-
-#if macro
-        // Fallback: resolve assigns typedefs via the Haxe typer so the linter works even
-        // when the assigns type is declared in a different module/file.
-        var resolved = extractAssignsFieldsViaContext(typeName, hx);
-        if (resolved != null) return resolved;
-#end
-
-        return null;
-    }
-
-	    private static function extractAssignsFieldsFromTypedefBlock(typeName: String, hx: String): { foundTypedef: Bool, fields: Map<String, String> } {
-	        var out = new Map<String, String>();
-	        // Find typedef <typeName> = { ... }
-	        var idx = hx.indexOf('typedef ' + typeName + '');
-	        if (idx == -1) return { foundTypedef: false, fields: out };
-	        var braceStart = hx.indexOf('{', idx);
-	        if (braceStart == -1) return { foundTypedef: false, fields: out };
-	        var i = braceStart + 1;
-	        var depth = 1;
-        while (i < hx.length && depth > 0) {
-            var ch = hx.charAt(i);
-            if (ch == '{') depth++; else if (ch == '}') depth--; i++;
-        }
-        var braceEnd = i - 1;
-        if (braceEnd <= braceStart) return { foundTypedef: false, fields: out };
-        var block = hx.substr(braceStart + 1, braceEnd - (braceStart + 1));
-
-        // Support anonymous structure extension: typedef X = {> Base, ... }
-        var baseTypes: Array<String> = [];
-
-        // Parse lines: supports both `var name: Type` and `name: Type`, with optional comma/semicolon terminators
-	        var lines = block.split("\n");
-	        for (ln in lines) {
-	            var line = ln.trim();
-	            if (line.length == 0 || line.startsWith("//")) continue;
-
-	            // Strip trailing inline comments (common in assigns typedefs).
-	            var commentIndex = line.indexOf("//");
-	            if (commentIndex != -1) {
-	                line = line.substr(0, commentIndex).trim();
-	                if (line.length == 0) continue;
-	            }
-
-	            // Strip leading metadata tags so we can parse assigns fields like:
-	            //   @:optional var className: String;
-	            //   @:slot @:optional var action: Slot<CardActionAssigns>;
-	            // NOTE: This keeps the linter tolerant of HXX/LiveView metadata while still
-	            // extracting the underlying field name/type.
-	            while (true) {
-	                var meta = ~/^@:[A-Za-z0-9_]+(?:\([^)]*\))?\s+/;
-	                if (!meta.match(line)) break;
-	                var pos = meta.matchedPos();
-	                line = line.substr(pos.pos + pos.len).trim();
-	            }
-
-	            if (line.startsWith(">")) {
-	                var rest = line.substr(1).trim();
-	                if (rest.endsWith(",")) rest = rest.substr(0, rest.length - 1).trim();
-	                if (rest.length > 0) baseTypes.push(rest);
-	                continue;
-	            }
-
-	            var name: String = null;
-	            var typeSpec: String = null;
-	            // Keep parsing tolerant of commas inside generic types (e.g. Slot<Term, CardLet>).
-	            var reVar = ~/^var\s+\??([A-Za-z0-9_]+)\s*:\s*(.+)$/;
-	            if (reVar.match(line)) {
-	                name = reVar.matched(1);
-	                typeSpec = reVar.matched(2).trim();
-	            } else {
-	                var rePlain = ~/^\??([A-Za-z0-9_]+)\s*:\s*(.+)$/;
-	                if (rePlain.match(line)) {
-	                    name = rePlain.matched(1);
-	                    typeSpec = rePlain.matched(2).trim();
-	                }
-	            }
-	            if (name != null && typeSpec != null) {
-	                // Strip common trailing terminators.
-	                while (typeSpec.endsWith(",") || typeSpec.endsWith(";")) {
-	                    typeSpec = typeSpec.substr(0, typeSpec.length - 1).trim();
-	                }
-	                var kind = normalizeKind(typeSpec);
-	                out.set(name, kind);
-	                // HXX/HEEx assigns normalize camelCase to snake_case (e.g. className -> @class_name).
-	                var snake = toSnakeCase(name);
-	                if (snake != name && !out.exists(snake)) {
-                    out.set(snake, kind);
-                }
-                // Phoenix component assigns may use HXX attribute naming (e.g. className -> @class).
-                var key = componentAssignKeyFromAttributeName(name);
-                if (key != name && !out.exists(key)) {
-                    out.set(key, kind);
-                }
-            }
-        }
-
-        for (base in baseTypes) {
-            var baseParsed = extractAssignsFieldsFromTypedefBlock(base, hx);
-            if (baseParsed.foundTypedef) {
-                for (k in baseParsed.fields.keys()) if (!out.exists(k)) out.set(k, baseParsed.fields.get(k));
-            }
-        }
-
-        return { foundTypedef: true, fields: out };
-    }
-
-    static function toSnakeCase(name: String): String {
-        var out = "";
-        for (i in 0...name.length) {
-            var ch = name.charAt(i);
-            var isUpper = ch != ch.toLowerCase() && ch == ch.toUpperCase();
-            if (isUpper) {
-                if (i > 0 && out.length > 0 && out.charAt(out.length - 1) != "_") out += "_";
-                out += ch.toLowerCase();
-            } else {
-                out += ch.toLowerCase();
-            }
-        }
-        return out;
-    }
-
-#if macro
-    static function extractAssignsFieldsViaContext(typeName: String, hx: String): Null<Map<String, String>> {
-        var candidates = new Array<String>();
-
-        if (typeName.indexOf(".") != -1) {
-            candidates.push(typeName);
-        }
-
-        var resolvedFromImports = resolveTypeNameFromImports(typeName, hx);
-        if (resolvedFromImports != null) candidates.push(resolvedFromImports);
-
-        var packageName = extractPackageName(hx);
-        if (packageName != null && typeName.indexOf(".") == -1) {
-            candidates.push(packageName + "." + typeName);
-        }
-
-        for (candidate in candidates) {
-            try {
-                var t = Context.getType(candidate);
-                var fields = fieldsFromType(t);
-                if (fields != null) return fields;
-            } catch (_:Dynamic) {
-                // try next candidate
-            }
-        }
-
-        return null;
-    }
-
-    static function fieldsFromType(t: haxe.macro.Type): Null<Map<String, String>> {
-        var out = new Map<String, String>();
-        var followed = TypeTools.follow(t);
-        switch (followed) {
-            case TAbstract(aRef, params):
-                var abs = aRef.get();
-                if (abs != null && abs.name == "Assigns" && abs.pack.join(".") == "phoenix.types" && params != null && params.length == 1) {
-                    return fieldsFromType(params[0]);
-                }
-                return null;
-            case TAnonymous(a):
-                for (f in a.get().fields) {
-                    var kind = kindFromType(f.type);
-                    out.set(f.name, kind);
-                    // HXX/HEEx assigns normalize camelCase to snake_case (e.g. className -> @class_name).
-                    var snake = toSnakeCase(f.name);
-                    if (snake != f.name && !out.exists(snake)) out.set(snake, kind);
-                    // Phoenix component assigns may use HXX attribute naming (e.g. className -> @class).
-                    var key = componentAssignKeyFromAttributeName(f.name);
-                    if (key != f.name && !out.exists(key)) out.set(key, kind);
-                }
-                return out;
-            case TType(tdef, params):
-                return fieldsFromType(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
-            default:
-                return null;
-        }
-    }
-
-    static function extractPackageName(hx: String): Null<String> {
-        var re = ~/^\s*package\s+([A-Za-z0-9_\.]+)\s*;/m;
-        return re.match(hx) ? re.matched(1) : null;
-    }
-
-    static function resolveTypeNameFromImports(typeName: String, hx: String): Null<String> {
-        var importPaths = new Map<String, String>();
-
-        // Supports:
-        // - import a.b.C;
-        // - import a.b.C as Alias;
-        var re = ~/^\s*import\s+([A-Za-z0-9_\.]+)(?:\s+as\s+([A-Za-z0-9_]+))?\s*;/m;
-        var start = 0;
-        while (re.matchSub(hx, start)) {
-            var full = re.matched(1);
-            var alias = re.matched(2);
-            var lastDot = full.lastIndexOf(".");
-            var visible = (alias != null && alias != "") ? alias : (lastDot == -1 ? full : full.substr(lastDot + 1));
-            importPaths.set(visible, full);
-
-            var pos = re.matchedPos();
-            start = pos.pos + pos.len;
-        }
-
-        if (importPaths.exists(typeName)) {
-            return importPaths.get(typeName);
-        }
-
-        // Handle module-import prefix usage: Foo.Bar where Foo is imported as a module.
-        var dot = typeName.indexOf(".");
-        if (dot != -1) {
-            var prefix = typeName.substr(0, dot);
-            if (importPaths.exists(prefix)) {
-                return importPaths.get(prefix) + typeName.substr(dot);
-            }
-        }
-
-        return null;
-    }
-#end
-
-    static function mergeKindUnion(left: String, right: String): String {
-        if (left == null || right == null) return "unknown";
-        if (left == "unknown" || right == "unknown") return "unknown";
-
-        var seen: Map<String, Bool> = new Map();
-        var ordered: Array<String> = [];
-
-        function addParts(k: String): Void {
-            if (k == null || k.length == 0) return;
-            var parts = k.split("|");
-            for (part in parts) {
-                var trimmed = part != null ? part.trim() : "";
-                if (trimmed.length == 0) continue;
-                if (seen.exists(trimmed)) continue;
-                seen.set(trimmed, true);
-                ordered.push(trimmed);
-            }
-        }
-
-        addParts(left);
-        addParts(right);
-
-        return ordered.length == 1 ? ordered[0] : ordered.join("|");
-    }
-
-    static function kindFromType(t: haxe.macro.Type): String {
-        if (t == null) return "unknown";
-
-        var followed = TypeTools.follow(t);
-        switch (followed) {
-            case TAbstract(aRef, params):
-                var abs = aRef.get();
-                if (abs != null && abs.name == "Atom" && abs.pack.join(".") == "elixir.types") {
-                    return "atom";
-                }
-                if (abs != null && abs.meta != null && abs.meta.has(":elixirStruct")) {
-                    return "map";
-                }
-                if (abs != null && abs.name == "EitherType" && abs.pack.join(".") == "haxe.extern" && params != null && params.length == 2) {
-                    var leftKind = kindFromType(params[0]);
-                    var rightKind = kindFromType(params[1]);
-                    return mergeKindUnion(leftKind, rightKind);
-                }
-            case TEnum(eRef, params):
-                var en = eRef.get();
-                if (en != null && en.name == "Either" && en.pack.join(".") == "haxe.ds" && params != null && params.length == 2) {
-                    var leftKind = kindFromType(params[0]);
-                    var rightKind = kindFromType(params[1]);
-                    return mergeKindUnion(leftKind, rightKind);
-                }
-            case TInst(cRef, _):
-                var cls = cRef.get();
-                if (cls != null && cls.meta != null && cls.meta.has(":elixirStruct")) {
-                    return "map";
-                }
-            default:
-        }
-
-        var kind = normalizeKind(TypeTools.toString(followed));
-        if (kind != "unknown") return kind;
-
-        var unwrapped = TypeTools.followWithAbstracts(followed);
-        kind = normalizeKind(TypeTools.toString(unwrapped));
-        return kind;
-    }
-
-    static function normalizeKind(spec: String): String {
-        var s = spec.trim();
-        // Unwrap Null<T>
-        if (s.startsWith("Null<") && s.endsWith(">")) {
-            s = s.substr(5, s.length - 6).trim();
-        }
-        // Anonymous structures compile to maps in Elixir.
-        if (s.startsWith("{") && s.endsWith("}")) return "map";
-        // Basic kinds
-        if (s == "String") return "string";
-        if (s == "Int") return "int";
-        if (s == "Float") return "float";
-        if (s == "Bool") return "bool";
-        if (s == "elixir.types.Atom" || s.endsWith(".Atom")) return "atom";
-        if (~/^Array<.*/.match(s)) return "array";
-        if (~/^Map<.*/.match(s) || ~/^haxe\\.ds\\..*Map<.*/.match(s)) return "map";
-        // Unknown/custom → leave unknown to avoid false positives
-        return "unknown";
-    }
+	static var componentFunctionIndex:Null<Map<String, Array<ComponentDefinition>>> = null;
+	static var componentDefinitionCache:Map<String, Null<ComponentDefinition>> = new Map();
+	#if macro
+	static var phoenixCoreComponentDefinitionCache:Map<String, Null<ComponentDefinition>> = new Map();
+	static var activeAppWebRoot:Null<String> = null;
+
+	// Per-function strictness overrides derived from Haxe source metadata (e.g. `@:hxx_strict_html`).
+	// These are set while linting a specific function and reset immediately after.
+	static var activeStrictComponents:Bool = false;
+	static var activeStrictSlots:Bool = false;
+	static var activeStrictHtml:Bool = false;
+	static var activeStrictPhxHook:Bool = false;
+	static var activeStrictPhxEvents:Bool = false;
+	static var activeStrictAttrValues:Bool = false;
+	static var activeAllowStringFallback:Bool = false;
+	#end
+	static var fileContentCache:Map<String, Null<String>> = new Map();
+	static var assignsFieldsCache:Map<String, Null<Map<String, String>>> = new Map();
+	#if macro
+	static var phxHookNameCache:Null<Map<String, Bool>> = null;
+	static var phxEventNameCache:Null<Map<String, Bool>> = null;
+	#end
+
+	#if macro
+	/**
+	 * Tooling export: discovered component index.
+	 *
+	 * Used by `tools/HxxRegistryIndex.hx` to emit a JSON vocabulary for editor tooling.
+	 * This is macro-only to avoid bloating runtime output.
+	 */
+	public static function exportComponentIndexForTooling():Array<Dynamic> {
+		buildComponentFunctionIndex();
+		if (componentFunctionIndex == null)
+			return [];
+
+		function mapToObject(map:Map<String, String>):Dynamic {
+			var obj:Dynamic = {};
+			if (map == null)
+				return obj;
+			for (k in map.keys())
+				Reflect.setField(obj, k, map.get(k));
+			return obj;
+		}
+
+		function requiredKeys(map:Map<String, Bool>):Array<String> {
+			var keys:Array<String> = [];
+			if (map == null)
+				return keys;
+			for (k in map.keys())
+				if (map.get(k) == true)
+					keys.push(k);
+			keys.sort((a, b) -> a < b ? -1 : (a > b ? 1 : 0));
+			return keys;
+		}
+
+		var out:Array<Dynamic> = [];
+		for (fn in componentFunctionIndex.keys()) {
+			var defs = componentFunctionIndex.get(fn);
+			if (defs == null)
+				continue;
+			for (def in defs) {
+				if (def == null)
+					continue;
+
+				var slotsObj:Dynamic = {};
+				if (def.slots != null) {
+					for (slotName in def.slots.keys()) {
+						var slot = def.slots.get(slotName);
+						if (slot == null)
+							continue;
+
+						var letObj:Dynamic = null;
+						if (slot.letBinding != null) {
+							letObj = {
+								props: mapToObject(slot.letBinding.props),
+								requiredProps: requiredKeys(slot.letBinding.required),
+								typeName: slot.letBinding.typeName
+							};
+						}
+
+						Reflect.setField(slotsObj, slotName, {
+							required: slot.required,
+							props: mapToObject(slot.props),
+							requiredProps: requiredKeys(slot.requiredProps),
+							letBinding: letObj
+						});
+					}
+				}
+
+				out.push({
+					dotTag: "." + def.functionName,
+					functionName: def.functionName,
+					moduleTypePath: def.moduleTypePath,
+					nativeModuleName: def.nativeModuleName,
+					props: mapToObject(def.props),
+					requiredProps: requiredKeys(def.required),
+					slots: slotsObj
+				});
+			}
+		}
+
+		out.sort((a, b) -> {
+			var at = Std.string(Reflect.field(a, "dotTag"));
+			var bt = Std.string(Reflect.field(b, "dotTag"));
+			return at < bt ? -1 : (at > bt ? 1 : 0);
+		});
+
+		return out;
+	}
+	#end
+
+	// Public entry: non-contextual (throws on error)
+	public static function transformPass(ast:ElixirAST):ElixirAST {
+		return lint(ast, null);
+	}
+
+	// Public entry: contextual (uses CompilationContext for proper error reporting)
+	public static function contextualPass(ast:ElixirAST, ctx:reflaxe.elixir.CompilationContext):ElixirAST {
+		return lint(ast, ctx);
+	}
+
+	static function error(ctx:Null<reflaxe.elixir.CompilationContext>, msg:String, pos:haxe.macro.Expr.Position):Void {
+		if (ctx != null)
+			ctx.error(msg, pos);
+		else
+			throw msg;
+	}
+
+	static function makeSpanPos(basePos:haxe.macro.Expr.Position, spanStart:Null<Int>, spanEnd:Null<Int>):haxe.macro.Expr.Position {
+		if (basePos == null || spanStart == null || spanEnd == null)
+			return basePos;
+		#if macro
+		try {
+			var info = Context.getPosInfos(basePos);
+			var start = info.min + spanStart;
+			var end = info.min + spanEnd;
+			if (start < info.min)
+				start = info.min;
+			if (end > info.max)
+				end = info.max;
+			if (end <= start)
+				end = (start + 1 <= info.max) ? (start + 1) : info.max;
+			return Context.makePosition({file: info.file, min: start, max: end});
+		} catch (_:Dynamic) {
+			return basePos;
+		}
+		#else
+		return basePos;
+		#end
+	}
+
+	static function fragmentTagPos(fragment:ElixirAST, fallbackPos:haxe.macro.Expr.Position):haxe.macro.Expr.Position {
+		if (fragment == null || fragment.metadata == null)
+			return fallbackPos;
+		return makeSpanPos(fallbackPos, fragment.metadata.heexTagNameSpanStart, fragment.metadata.heexTagNameSpanEnd);
+	}
+
+	static function attributeNamePos(attr:EAttribute, fallbackPos:haxe.macro.Expr.Position):haxe.macro.Expr.Position {
+		if (attr == null)
+			return fallbackPos;
+		return makeSpanPos(fallbackPos, attr.nameSpanStart, attr.nameSpanEnd);
+	}
+
+	static function attributeValuePos(attr:EAttribute, fallbackPos:haxe.macro.Expr.Position):haxe.macro.Expr.Position {
+		if (attr == null)
+			return fallbackPos;
+		var start = attr.valueSpanStart;
+		var end = attr.valueSpanEnd;
+		if (start == null || end == null) {
+			if (attr.value != null && attr.value.metadata != null) {
+				start = attr.value.metadata.heexAttrValueSpanStart;
+				end = attr.value.metadata.heexAttrValueSpanEnd;
+			}
+		}
+		return makeSpanPos(fallbackPos, start, end);
+	}
+
+	static function lint(ast:ElixirAST, ctx:Null<reflaxe.elixir.CompilationContext>):ElixirAST {
+		// Lint any template-producing function in project files; skip compiler/vendor/std paths.
+		ASTUtils.walk(ast, function(n:ElixirAST):Void {
+			if (n == null || n.def == null)
+				return;
+			switch (n.def) {
+				case EDef(_name, _args, _guards, _body) | EDefp(_name, _args, _guards, _body):
+					lintFunction(n, ctx);
+				default:
+			}
+		});
+		return ast;
+	}
+
+	static function getFileContentCached(path:String):Null<String> {
+		if (path == null || path.length == 0)
+			return null;
+		if (fileContentCache.exists(path))
+			return fileContentCache.get(path);
+		var content:Null<String> = null;
+		try
+			content = sys.io.File.getContent(path)
+		catch (_:Dynamic)
+			content = null;
+		fileContentCache.set(path, content);
+		return content;
+	}
+
+	static function getAssignsFieldsCached(assignsTypeName:String, fileContent:String, hxPath:String):Null<Map<String, String>> {
+		if (assignsTypeName == null || assignsTypeName.length == 0)
+			return null;
+		if (fileContent == null)
+			return null;
+		var key = hxPath + "::" + assignsTypeName;
+		if (assignsFieldsCache.exists(key))
+			return assignsFieldsCache.get(key);
+		var fields = extractAssignsFields(assignsTypeName, fileContent);
+		assignsFieldsCache.set(key, fields);
+		return fields;
+	}
+
+	static function lintFunction(n:ElixirAST, ctx:Null<reflaxe.elixir.CompilationContext>):Void {
+		var functionName:String = null;
+		var body:ElixirAST = null;
+		switch (n.def) {
+			case EDef(name, _args, _guards, fnBody):
+				functionName = name;
+				body = fnBody;
+			case EDefp(name, _args, _guards, fnBody):
+				functionName = name;
+				body = fnBody;
+			default:
+				return;
+		}
+
+		// Resolve Haxe source path for this function
+		var hxPath = (n.metadata != null && n.metadata.sourceFile != null) ? n.metadata.sourceFile : null;
+		if (hxPath == null && body != null && body.metadata != null && body.metadata.sourceFile != null) {
+			hxPath = body.metadata.sourceFile;
+		}
+		#if debug_assigns_linter
+		trace('[assigns_linter] lintFunction fn=' + functionName + ' hxPath=' + hxPath);
+		#end
+		if (hxPath == null)
+			return; // No source; skip
+		// Skip compiler/library/internal files to avoid scanning whole libs
+		var hxPathNorm = StringTools.replace(hxPath, "\\", "/");
+		var hxPathMatch = hxPathNorm.startsWith("/") ? hxPathNorm : ("/" + hxPathNorm);
+		if (hxPathMatch.indexOf("/reflaxe/elixir/") != -1 || hxPathMatch.indexOf("/vendor/") != -1 || hxPathMatch.indexOf("/std/") != -1) {
+			return;
+		}
+
+		// Fail-fast: skip linter if this function body contains neither ~H sigils nor EFragment nodes.
+		// This check can be expensive, so do it only after ensuring we're in project sources.
+		if (!containsHeexOrFragments(body)) {
+			return;
+		}
+
+		var fileContent = getFileContentCached(hxPath);
+		if (fileContent == null)
+			return;
+
+		#if macro
+		// Provide module context for component resolution within this Haxe source file.
+		// This enables deterministic disambiguation when multiple apps (or multiple component modules)
+		// define the same dot-component function name (e.g., `.card`).
+		var previousAppWebRoot = activeAppWebRoot;
+		activeAppWebRoot = inferAppWebRootFromFileContent(fileContent);
+
+		var previousStrictComponents = activeStrictComponents;
+		var previousStrictSlots = activeStrictSlots;
+		var previousStrictHtml = activeStrictHtml;
+		var previousStrictPhxHook = activeStrictPhxHook;
+		var previousStrictPhxEvents = activeStrictPhxEvents;
+		var previousStrictAttrValues = activeStrictAttrValues;
+		var previousAllowStringFallback = activeAllowStringFallback;
+		#end
+
+		var nearLine:Null<Int> = findMinSourceLine(body);
+		// Some template shapes (notably macro-produced `~H` bodies) may not propagate `sourceLine` onto
+		// nested nodes. Fall back to the function node's source line so per-function metadata works.
+		if (nearLine == null && n.metadata != null && n.metadata.sourceLine != null) {
+			nearLine = n.metadata.sourceLine;
+		}
+
+		#if macro
+		var strictMeta = extractStrictMetaForFunction(functionName, fileContent, nearLine);
+		activeStrictComponents = strictMeta.strictComponents;
+		activeStrictSlots = strictMeta.strictSlots;
+		activeStrictHtml = strictMeta.strictHtml;
+		activeStrictPhxHook = strictMeta.strictPhxHook;
+		activeStrictPhxEvents = strictMeta.strictPhxEvents;
+		activeStrictAttrValues = strictMeta.strictAttrValues;
+		activeAllowStringFallback = strictMeta.allowStringFallback;
+		#if debug_assigns_linter
+		trace('[assigns_linter] strictMeta fn=' + functionName + ' strictHtml=' + strictMeta.strictHtml + ' strictComponents=' + strictMeta.strictComponents
+			+ ' strictSlots=' + strictMeta.strictSlots + ' strictPhxHook=' + strictMeta.strictPhxHook + ' strictPhxEvents=' + strictMeta.strictPhxEvents
+			+ ' strictAttrValues=' + strictMeta.strictAttrValues + ' allowStringFallback=' + strictMeta.allowStringFallback + ' nearLine='
+			+ (nearLine == null ? 'null' : Std.string(nearLine)));
+		#end
+		#end
+
+		var assignsTypeSpec = (nearLine != null) ? extractAssignsTypeSpecForFunctionBefore(functionName, fileContent,
+			nearLine) : extractAssignsTypeSpecForFunction(functionName, fileContent);
+
+		var assignsTypeName = assignsTypeSpec != null ? unwrapAssignsType(assignsTypeSpec) : null;
+		var assignsTypeBase = assignsTypeName != null ? stripTypeParameters(assignsTypeName) : null;
+		#if debug_assigns_linter
+		#end
+		var fields:Null<Map<String, String>> = (assignsTypeBase != null) ? getAssignsFieldsCached(assignsTypeBase, fileContent, hxPath) : null;
+		var enableAssignsChecks = fields != null;
+		var fieldsForValidation = fields != null ? fields : new Map<String, String>();
+		var typeNameForErrors = assignsTypeBase != null ? assignsTypeBase : "(unknown assigns type)";
+		#if debug_assigns_linter
+		if (fields != null) {
+			var keys = [for (k in fields.keys()) k].join(',');
+		}
+		#end
+
+		// Prefer structured validation first
+		// 1) Validate ~H nodes via builder-attached typed HEEx AST (heexAST) or fragment metadata
+		validateHeexFragments(body, fieldsForValidation, typeNameForErrors, ctx, enableAssignsChecks);
+
+		// 2) Validate any native EFragment nodes already present in the function body
+		validateNativeEFragments(body, fieldsForValidation, typeNameForErrors, ctx, enableAssignsChecks);
+
+		// 3) Bridge path: string-based validation for raw ~H contents.
+		//
+		// Default behavior is AST-first. We only fall back to string scanning when we do not have a typed
+		// HEEx AST available (older pipeline / incomplete metadata), or when explicitly enabled for
+		// debugging via `-D hxx_allow_string_fallback`.
+		var hasTypedHeexAst = containsTypedHeexAST(body);
+		if (enableAssignsChecks && (!hasTypedHeexAst || allowHeexStringFallbackEnabled())) {
+			var contents:Array<{content:String, pos:haxe.macro.Expr.Position}> = [];
+			collectHeexContents(body, contents);
+			for (item in contents) {
+				var used = collectAtFields(item.content);
+				for (f in used)
+					if (!fieldsForValidation.exists(f)) {
+						error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + typeNameForErrors + ')', item.pos);
+					}
+				checkLiteralComparisons(item.content, fieldsForValidation, typeNameForErrors, ctx, item.pos);
+			}
+		}
+
+		#if macro
+		activeAppWebRoot = previousAppWebRoot;
+		activeStrictComponents = previousStrictComponents;
+		activeStrictSlots = previousStrictSlots;
+		activeStrictHtml = previousStrictHtml;
+		activeStrictPhxHook = previousStrictPhxHook;
+		activeStrictPhxEvents = previousStrictPhxEvents;
+		activeStrictAttrValues = previousStrictAttrValues;
+		activeAllowStringFallback = previousAllowStringFallback;
+		#end
+	}
+
+	static function findAnySourceFile(node:ElixirAST):Null<String> {
+		var found:Null<String> = null;
+		ASTUtils.walk(node, function(x:ElixirAST):Void {
+			if (found == null && x.metadata != null && x.metadata.sourceFile != null)
+				found = x.metadata.sourceFile;
+		});
+		return found;
+	}
+
+	static function collectHeexContents(node:ElixirAST, out:Array<{content:String, pos:haxe.macro.Expr.Position}>):Void {
+		ASTUtils.walk(node, function(x:ElixirAST):Void {
+			switch (x.def) {
+				case ESigil(type, content, _mods) if (type == "H"):
+					out.push({content: content, pos: x.pos});
+				default:
+			}
+		});
+	}
+
+	static function findMinSourceLine(node:ElixirAST):Null<Int> {
+		var minLine:Null<Int> = null;
+		ASTUtils.walk(node, function(x:ElixirAST):Void {
+			if (x.metadata != null && x.metadata.sourceLine != null) {
+				if (minLine == null || x.metadata.sourceLine < minLine)
+					minLine = x.metadata.sourceLine;
+			}
+		});
+		return minLine;
+	}
+
+	static function containsHeexOrFragments(node:ElixirAST):Bool {
+		if (node == null || node.def == null)
+			return false;
+		var found = false;
+
+		function scan(x:ElixirAST):Void {
+			if (found || x == null || x.def == null)
+				return;
+			switch (x.def) {
+				case ESigil(type, _content, _mods) if (type == "H"):
+					found = true;
+				case EFragment(_tag, _attrs, _children):
+					found = true;
+				default:
+					ElixirASTTransformer.iterateAST(x, scan);
+			}
+		}
+
+		scan(node);
+		return found;
+	}
+
+	static function containsTypedHeexAST(node:ElixirAST):Bool {
+		if (node == null || node.def == null)
+			return false;
+		var found = false;
+
+		ASTUtils.walk(node, function(x:ElixirAST):Void {
+			if (found)
+				return;
+			switch (x.def) {
+				case ESigil(type, _content, _mods) if (type == "H"):
+					var meta = x.metadata;
+					if (meta != null) {
+						var nodes = meta.heexAST;
+						if (nodes != null && nodes.length > 0)
+							found = true;
+					}
+				default:
+			}
+		});
+
+		return found;
+	}
+
+	// Validate attributes from parsed fragment metadata (if annotator ran)
+	static function validateHeexFragments(node:ElixirAST, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>,
+			enableAssignsChecks:Bool):Void {
+		ASTUtils.walk(node, function(x:ElixirAST):Void {
+			switch (x.def) {
+				case ESigil(type, _content, _mods) if (type == "H"):
+					var meta = x.metadata;
+					if (meta != null) {
+						// Prefer typed HEEx AST when available
+						var nodes = meta.heexAST;
+						if (nodes != null && nodes.length > 0) {
+							validateHeexTypedAST(nodes, fields, typeName, ctx, x.pos, enableAssignsChecks);
+						}
+						var frags = meta.heexFragments;
+						if (frags != null) {
+							for (f in frags) {
+								var attrs = f.attributes;
+								if (attrs == null)
+									continue;
+								for (a in attrs) {
+									var vexpr:String = a.valueExpr;
+									// Unknown field checks: scan @field tokens
+									if (enableAssignsChecks) {
+										var used = collectAtFields(vexpr);
+										for (uf in used) {
+											if (!fields.exists(uf)) {
+												error(ctx, 'HEEx assigns error: Unknown field @' + uf + ' (not found in typedef ' + typeName + ')', x.pos);
+											}
+										}
+									}
+									// Literal kind mismatches within attribute expressions
+									if (enableAssignsChecks) {
+										checkLiteralComparisons(vexpr, fields, typeName, ctx, x.pos);
+									}
+								}
+							}
+						}
+					}
+				default:
+			}
+		});
+	}
+
+	// Validate attributes using native EFragment nodes present in AST
+	static function validateNativeEFragments(node:ElixirAST, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>,
+			enableAssignsChecks:Bool):Void {
+		function traverse(x:ElixirAST):Void {
+			if (x == null || x.def == null)
+				return;
+			switch (x.def) {
+				case EFragment(_tag, _attributes, _children):
+					// Validate this subtree exactly once.
+					validateNode(x, null, fields, typeName, ctx, x.pos, enableAssignsChecks, []);
+				default:
+					ElixirASTTransformer.iterateAST(x, traverse);
+			}
+		}
+
+		traverse(node);
+	}
+
+	// ---------------------------------------------------------------------
+	// Typed HEEx AST validation (preferred path)
+	// ---------------------------------------------------------------------
+	static function validateHeexTypedAST(nodes:Array<ElixirAST>, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position, enableAssignsChecks:Bool):Void {
+		for (n in nodes) {
+			if (n == null || n.def == null)
+				continue;
+			validateNode(n, null, fields, typeName, ctx, pos, enableAssignsChecks, []);
+		}
+	}
+
+	static function validateNode(n:ElixirAST, parentTag:Null<String>, fields:Map<String, String>, typeName:String,
+			ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position, enableAssignsChecks:Bool, letScopes:Array<HeexLetBindingScope>):Void {
+		switch (n.def) {
+			case EFragment(tag, attributes, children):
+				var tagPos = fragmentTagPos(n, pos);
+				validateHtmlTagName(tag, ctx, tagPos);
+				validateSlotTag(tag, parentTag, ctx, tagPos);
+
+				var nextLetScopes = extendLetScopesForNode(tag, attributes, parentTag, letScopes);
+
+				validateFragment(tag, attributes, children, parentTag, fields, typeName, ctx, pos, tagPos, enableAssignsChecks, nextLetScopes);
+
+				for (c in children) {
+					if (c == null || c.def == null)
+						continue;
+					validateNode(c, tag, fields, typeName, ctx, pos, enableAssignsChecks, nextLetScopes);
+				}
+			case ERaw(code):
+				validateRawForLetScopes(code, letScopes, ctx, pos);
+				if (enableAssignsChecks) {
+					validateRawForAssigns(code, fields, typeName, ctx, pos);
+				}
+			default:
+		}
+	}
+
+	static function validateRawForAssigns(code:String, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		if (code == null || code.length == 0)
+			return;
+		var used = collectAtFields(code);
+		for (f in used)
+			if (!fields.exists(f)) {
+				error(ctx, 'HEEx assigns error: Unknown field @' + f + ' (not found in typedef ' + typeName + ')', pos);
+			}
+		checkLiteralComparisons(code, fields, typeName, ctx, pos);
+	}
+
+	static function validateFragment(tag:String, attributes:Array<EAttribute>, children:Array<ElixirAST>, parentTag:Null<String>, fields:Map<String, String>,
+			typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>, fallbackPos:haxe.macro.Expr.Position, tagPos:haxe.macro.Expr.Position,
+			enableAssignsChecks:Bool, letScopes:Array<HeexLetBindingScope>):Void {
+		for (attr in attributes) {
+			var attrNameErrPos = attributeNamePos(attr, fallbackPos);
+			var attrValueErrPos = attributeValuePos(attr, attrNameErrPos);
+			validateAttribute(tag, parentTag, attr, fields, typeName, ctx, attrNameErrPos, attrValueErrPos, enableAssignsChecks, letScopes);
+		}
+		validatePhxHookRequiresId(tag, attributes, ctx, tagPos);
+		validateSlotInvocation(tag, parentTag, attributes, children, fields, ctx, tagPos);
+		// Component-level checks (requires full attribute set + children)
+		validateComponentInvocation(tag, attributes, children, fields, ctx, tagPos);
+	}
+
+	static function validatePhxHookRequiresId(tag:String, attributes:Array<EAttribute>, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		if (tag == null || tag.length == 0)
+			return;
+		if (attributes == null || attributes.length == 0)
+			return;
+		// Phoenix: phx-hook requires a stable DOM id. Skip component/slot tags to avoid false positives
+		// on prop-passing (the component can apply the hook + id internally).
+		if (isHeexComponentTag(tag) || isSlotTag(tag))
+			return;
+
+		var hasPhxHook = false;
+		var hasId = false;
+
+		for (attr in attributes) {
+			if (attr == null || attr.name == null || attr.name.length == 0)
+				continue;
+			if (attr.name.startsWith(":"))
+				continue;
+			var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(attr.name));
+			if (canonical == null)
+				continue;
+			switch (canonical) {
+				case "phx-hook":
+					hasPhxHook = true;
+				case "id":
+					hasId = true;
+				default:
+			}
+		}
+
+		if (hasPhxHook && !hasId) {
+			error(ctx, 'HEEx phx-hook error: <' + tag + '> uses phx-hook but is missing required attribute \"id\"', pos);
+		}
+	}
+
+	static function validateAttribute(tag:String, parentTag:Null<String>, attr:EAttribute, fields:Map<String, String>, typeName:String,
+			ctx:Null<reflaxe.elixir.CompilationContext>, attrNamePosValue:haxe.macro.Expr.Position, attrValuePosValue:haxe.macro.Expr.Position,
+			enableAssignsChecks:Bool, letScopes:Array<HeexLetBindingScope>):Void {
+		if (attr != null && attr.name == ":let") {
+			validateLetDirective(tag, parentTag, attr.value, ctx, attrValuePosValue);
+			// NOTE: :let is a binding pattern, not an expression; do not run assigns lints on it.
+			return;
+		}
+
+		if (isSlotTag(tag)) {
+			validateSlotAttributeName(tag, parentTag, attr.name, ctx, attrNamePosValue);
+			validateSlotPropValueKind(tag, parentTag, attr, fields, ctx, attrValuePosValue);
+		} else {
+			// 1) Name validation (only for known HTML elements; allow HEEx directive attrs)
+			validateAttributeName(tag, attr.name, ctx, attrNamePosValue);
+
+			// 2) Obvious kind validation for select attributes (bool-ish attrs, phx-hook, etc.)
+			validateAttributeValueKind(tag, attr.name, attr.value, fields, ctx, attrValuePosValue);
+
+			// 2b) Component prop kind validation (when the component + prop is resolvable)
+			validateComponentPropValueKind(tag, attr, fields, ctx, attrValuePosValue);
+
+			// 2c) Custom HTML tag attribute typing (registered via @:hxxHtmlTags).
+			validateCustomHtmlTagAttributeValueKind(tag, attr, fields, ctx, attrValuePosValue);
+		}
+
+		// 3) Assigns field usage within `{ ... }` attribute expressions
+		validateExprForAssigns(attr.value, fields, typeName, ctx, attrValuePosValue, enableAssignsChecks);
+
+		// 4) Slot :let binder field usage within attribute expressions (when a typed let scope is present)
+		validateExprForLetScopes(attr.value, letScopes, ctx, attrValuePosValue);
+	}
+
+	static var allowedHtmlAttributeCache:Map<String, Map<String, Bool>> = new Map();
+	static var globalHtmlAttributeCache:Null<Map<String, Bool>> = null;
+
+	static function validateSlotTag(tag:String, parentTag:Null<String>, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (tag == null || tag.length == 0)
+			return;
+		if (tag.charAt(0) != ":")
+			return;
+
+		var slotName = tag.length > 1 ? tag.substr(1) : "";
+		if (!isValidHeexIdentifier(slotName)) {
+			error(ctx, 'HEEx slot tag error: <' + tag + '> is not a valid slot tag name (expected <:name>)', pos);
+		}
+
+		if (parentTag == null || !isHeexComponentTag(parentTag)) {
+			var parentDisplay = parentTag != null ? ('<' + parentTag + '>') : "the template root";
+			error(ctx, 'HEEx slot tag error: <'
+				+ tag
+				+ '> must be a direct child of a component tag (e.g. <.card>), not under '
+				+ parentDisplay, pos);
+			return;
+		}
+
+		// If the parent component definition is discoverable, validate the slot exists.
+		var def = resolveComponentDefinition(parentTag);
+		if (def == null && strictSlotTypingEnabled()) {
+			error(ctx,
+				'HEEx slot tag error: under -D hxx_strict_slots, <'
+				+ tag
+				+ '> requires its parent <'
+				+ parentTag
+				+ '> to be resolvable (add a discoverable @:component definition or disable -D hxx_strict_slots)',
+				pos);
+			return;
+		}
+		if (def != null) {
+			var slots = def.slots;
+			if (slots == null || !slots.exists(slotName)) {
+				error(ctx, 'HEEx slot tag error: <' + parentTag + '> does not define slot <:' + slotName + '>', pos);
+			}
+		}
+	}
+
+	static inline function isSlotTag(tag:String):Bool {
+		return tag != null && tag.length > 0 && tag.charAt(0) == ":";
+	}
+
+	static function validateLetDirective(tag:String, parentTag:Null<String>, value:ElixirAST, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		if (tag == null || tag.length == 0)
+			return;
+		if (!isHeexComponentTag(tag) && !(tag.charAt(0) == ":")) {
+			error(ctx, 'HEEx directive error: ":let" is only valid on component tags and slot tags, not on <' + tag + '>', pos);
+		}
+
+		if (value == null) {
+			error(ctx, 'HEEx :let error: expected :let={var}, but got null', pos);
+		}
+
+		switch (value.def) {
+			case EVar(name):
+				if (!isValidElixirVarName(name)) {
+					error(ctx, 'HEEx :let error: expected an Elixir variable name, but got "' + name + '"', pos);
+				}
+			case ERaw(pattern):
+				validateLetPatternString(pattern, ctx, pos);
+			case EAssign(_):
+				error(ctx, 'HEEx :let error: cannot bind to @assigns; expected :let={var}', pos);
+			case EBoolean(_):
+				error(ctx, 'HEEx :let error: expected :let={var}, but got a boolean attribute', pos);
+			default:
+				error(ctx, 'HEEx :let error: expected :let={var}, but got an invalid value', pos);
+		}
+
+		// Strict slot typing: if a template uses :let, require the component/slot to declare
+		// a typed let binding so the linter can validate field access on the bound variable.
+		if (strictSlotTypingEnabled()) {
+			var letDef:Null<ComponentLetBindingDefinition> = null;
+			if (isSlotTag(tag)) {
+				letDef = resolveSlotLetBindingDefinition(tag, parentTag);
+			} else if (isHeexComponentTag(tag)) {
+				letDef = resolveComponentLetBindingDefinition(tag);
+			}
+
+			if (letDef == null || letDef.props == null || !letDef.props.keys().hasNext()) {
+				var ownerPart = (isSlotTag(tag) && parentTag != null && parentTag.length > 0) ? (' (slot of <' + parentTag + '>)') : "";
+				if (isSlotTag(tag) && parentTag != null && resolveComponentDefinition(parentTag) == null) {
+					error(ctx,
+						'HEEx :let error: <'
+						+ tag
+						+ '>'
+						+ ownerPart
+						+ ' cannot be type-checked because parent component <'
+						+ parentTag
+						+ '> is not resolvable under -D hxx_strict_slots',
+						pos);
+				} else if (isHeexComponentTag(tag) && resolveComponentDefinition(tag) == null) {
+					error(ctx,
+						'HEEx :let error: <'
+						+ tag
+						+ '>'
+						+ ownerPart
+						+ ' cannot be type-checked because the component is not resolvable under -D hxx_strict_slots',
+						pos);
+				} else {
+					error(ctx,
+						'HEEx :let error: <'
+						+ tag
+						+ '>'
+						+ ownerPart
+						+ ' does not declare a typed :let binding (add a Slot<..., LetType> or disable -D hxx_strict_slots)',
+						pos);
+				}
+			} else {
+				var isSimpleVar = switch (value.def) {
+					case EVar(_): true;
+					default: false;
+				};
+				if (!isSimpleVar) {
+					error(ctx, 'HEEx :let error: <' + tag + '> requires :let={var} under -D hxx_strict_slots (binding patterns are not supported)', pos);
+				}
+			}
+		}
+	}
+
+	static function resolveSlotDefinition(slotTag:String, parentTag:Null<String>):Null<ComponentSlotDefinition> {
+		if (!isSlotTag(slotTag))
+			return null;
+		if (parentTag == null)
+			return null;
+
+		var def = resolveComponentDefinition(parentTag);
+		if (def == null || def.slots == null)
+			return null;
+
+		var slotName = slotTag.length > 1 ? slotTag.substr(1) : "";
+		if (slotName.length == 0)
+			return null;
+		return def.slots.get(slotName);
+	}
+
+	static function validateSlotInvocation(slotTag:String, parentTag:Null<String>, attributes:Array<EAttribute>, children:Array<ElixirAST>,
+			fields:Map<String, String>, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (!isSlotTag(slotTag))
+			return;
+		if (parentTag == null || !isHeexComponentTag(parentTag))
+			return;
+
+		var parentDef = resolveComponentDefinition(parentTag);
+		if (parentDef == null && strictSlotTypingEnabled()) {
+			error(ctx,
+				'HEEx slot error: under -D hxx_strict_slots, <'
+				+ slotTag
+				+ '> cannot be type-checked because parent <'
+				+ parentTag
+				+ '> is not resolvable',
+				pos);
+			return;
+		}
+
+		var slotDef = resolveSlotDefinition(slotTag, parentTag);
+		if (slotDef == null) {
+			if (strictSlotTypingEnabled() && parentDef != null) {
+				var slotName = slotTag.length > 1 ? slotTag.substr(1) : "";
+				error(ctx, 'HEEx slot error: under -D hxx_strict_slots, <' + parentTag + '> does not define slot <:' + slotName + '>', pos);
+			}
+			return;
+		}
+
+		var present = new Map<String, Bool>();
+		for (attr in attributes) {
+			if (attr == null || attr.name == null || attr.name.length == 0)
+				continue;
+			if (attr.name.startsWith(":"))
+				continue;
+			var key = componentAssignKeyFromAttributeName(attr.name);
+			present.set(key, true);
+		}
+
+		var hasInnerContent = present.exists("inner_content") || hasMeaningfulChildren(children);
+		for (k in slotDef.requiredProps.keys()) {
+			if (k == "inner_content") {
+				if (!hasInnerContent) {
+					error(ctx, 'HEEx slot prop error: <' + slotTag + '> is missing required inner content', pos);
+				}
+				continue;
+			}
+			if (!present.exists(k)) {
+				error(ctx, 'HEEx slot prop error: <' + slotTag + '> is missing required attribute "' + k + '"', pos);
+			}
+		}
+	}
+
+	static function validateSlotAttributeName(slotTag:String, parentTag:Null<String>, attributeName:String, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		if (!isSlotTag(slotTag))
+			return;
+		if (attributeName == null || attributeName.length == 0)
+			return;
+		if (attributeName.startsWith(":"))
+			return;
+
+		var parentDef = parentTag != null ? resolveComponentDefinition(parentTag) : null;
+		if (parentDef == null && strictSlotTypingEnabled()) {
+			error(ctx,
+				'HEEx slot prop error: under -D hxx_strict_slots, <'
+				+ slotTag
+				+ '> cannot be type-checked because parent <'
+				+ parentTag
+				+ '> is not resolvable',
+				pos);
+			return;
+		}
+
+		var slotDef = resolveSlotDefinition(slotTag, parentTag);
+		if (slotDef == null)
+			return;
+
+		var key = componentAssignKeyFromAttributeName(attributeName);
+		if (slotDef.props.exists(key))
+			return;
+
+		error(ctx, 'HEEx slot prop error: <' + slotTag + '> does not allow attribute "' + attributeName + '"', pos);
+	}
+
+	static function validateSlotPropValueKind(slotTag:String, parentTag:Null<String>, attr:EAttribute, fields:Map<String, String>,
+			ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (!isSlotTag(slotTag))
+			return;
+		if (attr == null || attr.name == null || attr.name.length == 0)
+			return;
+		if (attr.name.startsWith(":"))
+			return;
+
+		var parentDef = parentTag != null ? resolveComponentDefinition(parentTag) : null;
+		if (parentDef == null && strictSlotTypingEnabled()) {
+			error(ctx,
+				'HEEx slot prop error: under -D hxx_strict_slots, <'
+				+ slotTag
+				+ '> cannot be type-checked because parent <'
+				+ parentTag
+				+ '> is not resolvable',
+				pos);
+			return;
+		}
+
+		var slotDef = resolveSlotDefinition(slotTag, parentTag);
+		if (slotDef == null)
+			return;
+
+		var key = componentAssignKeyFromAttributeName(attr.name);
+		if (!slotDef.props.exists(key))
+			return;
+
+		var expected = slotDef.props.get(key);
+		if (expected == null || expected == "unknown")
+			return;
+
+		var actual = inferHeexExprKind(attr.value, fields);
+		if (!attributeKindsCompatible(expected, actual)) {
+			error(ctx, 'HEEx slot prop type error: <' + slotTag + '> "' + key + '" expects ' + expected + ' but got ' + actual, pos);
+		}
+	}
+
+	static function validateLetPatternString(pattern:String, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		var s = pattern != null ? pattern.trim() : "";
+		if (s.length == 0) {
+			error(ctx, 'HEEx :let error: expected a binding pattern, but got an empty pattern', pos);
+		}
+		if (s.indexOf("@") != -1) {
+			error(ctx, 'HEEx :let error: binding patterns cannot reference @assigns', pos);
+		}
+
+		var bound = collectElixirPatternVars(s);
+		if (bound.length == 0) {
+			error(ctx, 'HEEx :let error: binding pattern does not bind any variables', pos);
+		}
+	}
+
+	static function collectElixirPatternVars(pattern:String):Array<String> {
+		var found = new Map<String, Bool>();
+		if (pattern == null)
+			return [];
+
+		var i = 0;
+		var inSingle = false;
+		var inDouble = false;
+
+		while (i < pattern.length) {
+			var ch = pattern.charCodeAt(i);
+
+			if (!inDouble && ch == "'".code) {
+				inSingle = !inSingle;
+				i++;
+				continue;
+			}
+			if (!inSingle && ch == "\"".code) {
+				inDouble = !inDouble;
+				i++;
+				continue;
+			}
+			if (inSingle || inDouble) {
+				i++;
+				continue;
+			}
+
+			// Skip atoms like :ok
+			if (ch == ":".code && i + 1 < pattern.length && isHeexIdentStart(pattern.charCodeAt(i + 1))) {
+				i += 2;
+				while (i < pattern.length && isHeexIdentChar(pattern.charCodeAt(i)))
+					i++;
+				continue;
+			}
+
+			// Recognize pinned variables (^var) by skipping '^' and letting ident parse handle it.
+			if (ch == "^".code) {
+				i++;
+				continue;
+			}
+
+			if (isElixirVarStart(ch)) {
+				var start = i;
+				i++;
+				while (i < pattern.length && isHeexIdentChar(pattern.charCodeAt(i)))
+					i++;
+				var name = pattern.substr(start, i - start);
+
+				// If immediately followed by ':', it's likely a map key (id:) not a variable binder.
+				if (i < pattern.length && pattern.charCodeAt(i) == ":".code)
+					continue;
+
+				if (isValidElixirVarName(name))
+					found.set(name, true);
+				continue;
+			}
+
+			i++;
+		}
+
+		return [for (k in found.keys()) k];
+	}
+
+	static function extendLetScopesForNode(tag:String, attributes:Array<EAttribute>, parentTag:Null<String>,
+			letScopes:Array<HeexLetBindingScope>):Array<HeexLetBindingScope> {
+		if (attributes == null || attributes.length == 0)
+			return letScopes;
+		if (letScopes == null)
+			letScopes = [];
+
+		var letAttr:Null<EAttribute> = null;
+		for (a in attributes) {
+			if (a != null && a.name == ":let") {
+				letAttr = a;
+				break;
+			}
+		}
+		if (letAttr == null)
+			return letScopes;
+
+		var letDef:Null<ComponentLetBindingDefinition> = null;
+		if (isSlotTag(tag)) {
+			letDef = resolveSlotLetBindingDefinition(tag, parentTag);
+		} else if (isHeexComponentTag(tag)) {
+			letDef = resolveComponentLetBindingDefinition(tag);
+		} else {
+			return letScopes;
+		}
+		if (letDef == null || letDef.props == null || !letDef.props.keys().hasNext())
+			return letScopes;
+
+		var boundVars = extractLetBoundVariables(letAttr.value);
+		if (boundVars == null || boundVars.length != 1)
+			return letScopes;
+		var varName = boundVars[0];
+		if (!isValidElixirVarName(varName))
+			return letScopes;
+
+		var indexedProps:Null<Map<String, String>> = null;
+		var indexedTypeName:Null<String> = null;
+
+		#if macro
+		if (looksLikePhoenixFormLetBinding(letDef.props, letDef.typeName)) {
+			var formFieldType:Null<haxe.macro.Type> = null;
+			try
+				formFieldType = Context.getType("phoenix.Phoenix.FormField")
+			catch (_:Dynamic)
+				formFieldType = null;
+			if (formFieldType != null) {
+				var letInfo = letBindingPropsFromType(formFieldType);
+				if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
+					indexedProps = letInfo.props;
+					indexedTypeName = TypeTools.toString(formFieldType);
+				}
+			}
+		}
+		#end
+
+		var next = letScopes.copy();
+		next.push({
+			varName: varName,
+			props: letDef.props,
+			contextTag: '<' + tag + '>',
+			ownerTag: parentTag != null ? '<' + parentTag + '>' : null,
+			typeName: letDef.typeName,
+			indexedProps: indexedProps,
+			indexedTypeName: indexedTypeName
+		});
+		return next;
+	}
+
+	static function looksLikePhoenixFormLetBinding(props:Map<String, String>, typeName:Null<String>):Bool {
+		if (typeName != null && typeName.indexOf("phoenix.Phoenix.Form") != -1)
+			return true;
+		if (props == null)
+			return false;
+
+		return props.exists("source") && props.exists("params") && props.exists("options") && props.exists("hidden") && props.exists("impl")
+			&& props.exists("id") && props.exists("name") && props.exists("data");
+	}
+
+	static function resolveComponentLetBindingDefinition(componentTag:String):Null<ComponentLetBindingDefinition> {
+		var def = resolveComponentDefinition(componentTag);
+		if (def == null || def.slots == null)
+			return null;
+
+		var slotDef = def.slots.get("inner_block");
+		if (slotDef == null)
+			return null;
+		return slotDef.letBinding;
+	}
+
+	static function resolveSlotLetBindingDefinition(slotTag:String, parentTag:Null<String>):Null<ComponentLetBindingDefinition> {
+		var slotDef = resolveSlotDefinition(slotTag, parentTag);
+		if (slotDef == null)
+			return null;
+		return slotDef.letBinding;
+	}
+
+	static function extractLetBoundVariables(value:ElixirAST):Array<String> {
+		if (value == null || value.def == null)
+			return [];
+		return switch (value.def) {
+			case EVar(name): name != null && name.length > 0 ? [name] : [];
+			case ERaw(pattern):
+				collectElixirPatternVars(pattern);
+			default:
+				[];
+		};
+	}
+
+	static function validateExprForLetScopes(expr:ElixirAST, letScopes:Array<HeexLetBindingScope>, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		if (expr == null || expr.def == null)
+			return;
+		if (letScopes == null || letScopes.length == 0)
+			return;
+
+		function walk(e:ElixirAST):Void {
+			if (e == null || e.def == null)
+				return;
+			switch (e.def) {
+				case EField({def: EVar(varName)}, fieldName):
+					validateLetFieldAccess(varName, fieldName, letScopes, ctx, pos);
+				case EField({def: EAccess({def: EVar(varName)}, _key)}, fieldName):
+					validateIndexedLetFieldAccess(varName, fieldName, letScopes, ctx, pos);
+				case ERaw(code):
+					validateRawForLetScopes(code, letScopes, ctx, pos);
+				default:
+					ElixirASTTransformer.iterateAST(e, walk);
+			}
+		}
+
+		walk(expr);
+	}
+
+	static function validateRawForLetScopes(code:String, letScopes:Array<HeexLetBindingScope>, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		if (code == null)
+			return;
+		if (letScopes == null || letScopes.length == 0)
+			return;
+
+		var s = code.trim();
+		if (s.startsWith("="))
+			s = s.substr(1);
+
+		for (scope in letScopes) {
+			if (scope == null || scope.varName == null || scope.varName.length == 0)
+				continue;
+			if (scope.props == null)
+				continue;
+
+			var fields = collectDotFieldAccesses(s, scope.varName);
+			for (fieldName in fields) {
+				validateLetFieldAccess(scope.varName, fieldName, letScopes, ctx, pos);
+			}
+
+			if (scope.indexedProps != null) {
+				var indexedFields = collectIndexedDotFieldAccesses(s, scope.varName);
+				for (fieldName in indexedFields) {
+					validateIndexedLetFieldAccess(scope.varName, fieldName, letScopes, ctx, pos);
+				}
+			}
+		}
+	}
+
+	static function validateLetFieldAccess(varName:String, fieldName:String, letScopes:Array<HeexLetBindingScope>,
+			ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (varName == null || fieldName == null)
+			return;
+		var scope = findLetScope(varName, letScopes);
+		if (scope == null || scope.props == null)
+			return;
+
+		var key = NameUtils.toSnakeCase(fieldName);
+		if (scope.props.exists(key))
+			return;
+
+		var ownerPart = (scope.ownerTag != null && scope.ownerTag.length > 0) ? (' (slot of ' + scope.ownerTag + ')') : "";
+		var typePart = (scope.typeName != null && scope.typeName.length > 0) ? (' (type: ' + scope.typeName + ')') : "";
+		error(ctx,
+			'HEEx :let type error: '
+			+ scope.contextTag
+			+ ownerPart
+			+ ' binding "'
+			+ scope.varName
+			+ '" does not define field "'
+			+ key
+			+ '"'
+			+ typePart, pos);
+	}
+
+	static function validateIndexedLetFieldAccess(varName:String, fieldName:String, letScopes:Array<HeexLetBindingScope>,
+			ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (varName == null || fieldName == null)
+			return;
+		var scope = findLetScope(varName, letScopes);
+		if (scope == null || scope.indexedProps == null)
+			return;
+
+		var key = NameUtils.toSnakeCase(fieldName);
+		if (scope.indexedProps.exists(key))
+			return;
+
+		var ownerPart = (scope.ownerTag != null && scope.ownerTag.length > 0) ? (' (slot of ' + scope.ownerTag + ')') : "";
+		var typeName = (scope.indexedTypeName != null && scope.indexedTypeName.length > 0) ? scope.indexedTypeName : "indexed value";
+		error(ctx,
+			'HEEx :let type error: '
+			+ scope.contextTag
+			+ ownerPart
+			+ ' binding "'
+			+ scope.varName
+			+ '" indexed value does not define field "'
+			+ key
+			+ '" (type: '
+			+ typeName
+			+ ')',
+			pos);
+	}
+
+	static function findLetScope(varName:String, letScopes:Array<HeexLetBindingScope>):Null<HeexLetBindingScope> {
+		if (varName == null || letScopes == null)
+			return null;
+		// Prefer innermost scope (last wins).
+		var i = letScopes.length - 1;
+		while (i >= 0) {
+			var scope = letScopes[i];
+			if (scope != null && scope.varName == varName)
+				return scope;
+			i--;
+		}
+		return null;
+	}
+
+	static function collectDotFieldAccesses(code:String, varName:String):Array<String> {
+		if (code == null || varName == null || varName.length == 0)
+			return [];
+		var found = new Map<String, Bool>();
+
+		var i = 0;
+		while (i < code.length) {
+			var idx = code.indexOf(varName, i);
+			if (idx == -1)
+				break;
+
+			var prevIdx = idx - 1;
+			if (prevIdx >= 0 && isHeexIdentChar(code.charCodeAt(prevIdx))) {
+				i = idx + varName.length;
+				continue;
+			}
+
+			var dotIdx = idx + varName.length;
+			if (dotIdx >= code.length || code.charCodeAt(dotIdx) != ".".code) {
+				i = idx + varName.length;
+				continue;
+			}
+
+			var fieldStart = dotIdx + 1;
+			if (fieldStart >= code.length || !isHeexIdentStart(code.charCodeAt(fieldStart))) {
+				i = fieldStart;
+				continue;
+			}
+
+			var j = fieldStart + 1;
+			while (j < code.length && isHeexIdentChar(code.charCodeAt(j)))
+				j++;
+			var fieldName = code.substr(fieldStart, j - fieldStart);
+			if (fieldName != null && fieldName.length > 0)
+				found.set(fieldName, true);
+			i = j;
+		}
+
+		return [for (k in found.keys()) k];
+	}
+
+	static function collectIndexedDotFieldAccesses(code:String, varName:String):Array<String> {
+		if (code == null || varName == null || varName.length == 0)
+			return [];
+		var found = new Map<String, Bool>();
+
+		var i = 0;
+		while (i < code.length) {
+			var idx = code.indexOf(varName, i);
+			if (idx == -1)
+				break;
+
+			var prevIdx = idx - 1;
+			if (prevIdx >= 0 && isHeexIdentChar(code.charCodeAt(prevIdx))) {
+				i = idx + varName.length;
+				continue;
+			}
+
+			var j = idx + varName.length;
+			while (j < code.length && code.charCodeAt(j) <= 32)
+				j++;
+			if (j >= code.length || code.charCodeAt(j) != "[".code) {
+				i = idx + varName.length;
+				continue;
+			}
+
+			var k = j + 1;
+			var depth = 1;
+			var quote:Null<Int> = null;
+			while (k < code.length && depth > 0) {
+				var ch = code.charCodeAt(k);
+				if (quote != null) {
+					if (ch == "\\".code && k + 1 < code.length) {
+						k += 2;
+						continue;
+					}
+					if (ch == quote)
+						quote = null;
+					k++;
+					continue;
+				}
+				if (ch == "\"".code || ch == "'".code) {
+					quote = ch;
+					k++;
+					continue;
+				}
+				if (ch == "[".code) {
+					depth++;
+					k++;
+					continue;
+				}
+				if (ch == "]".code) {
+					depth--;
+					k++;
+					continue;
+				}
+				k++;
+			}
+
+			if (depth != 0)
+				break;
+
+			var after = k;
+			while (after < code.length && code.charCodeAt(after) <= 32)
+				after++;
+			if (after >= code.length || code.charCodeAt(after) != ".".code) {
+				i = k;
+				continue;
+			}
+
+			var fieldStart = after + 1;
+			if (fieldStart >= code.length || !isHeexIdentStart(code.charCodeAt(fieldStart))) {
+				i = fieldStart;
+				continue;
+			}
+
+			var end = fieldStart + 1;
+			while (end < code.length && isHeexIdentChar(code.charCodeAt(end)))
+				end++;
+			var fieldName = code.substr(fieldStart, end - fieldStart);
+			if (fieldName != null && fieldName.length > 0)
+				found.set(fieldName, true);
+			i = end;
+		}
+
+		return [for (k in found.keys()) k];
+	}
+
+	static function isHeexComponentTag(tag:String):Bool {
+		if (tag == null || tag.length == 0)
+			return false;
+		return tag.charAt(0) == "." || isLikelyModuleComponentTag(tag);
+	}
+
+	static function isValidHeexIdentifier(name:String):Bool {
+		if (name == null || name.length == 0)
+			return false;
+		if (!isHeexIdentStart(name.charCodeAt(0)))
+			return false;
+		for (i in 1...name.length)
+			if (!isHeexIdentChar(name.charCodeAt(i)))
+				return false;
+		return true;
+	}
+
+	static inline function isHeexIdentStart(code:Int):Bool {
+		return (code >= "A".code && code <= "Z".code) || (code >= "a".code && code <= "z".code) || code == "_".code;
+	}
+
+	static inline function isHeexIdentChar(code:Int):Bool {
+		return isHeexIdentStart(code) || (code >= "0".code && code <= "9".code);
+	}
+
+	static inline function isElixirVarStart(code:Int):Bool {
+		return code == "_".code || (code >= "a".code && code <= "z".code);
+	}
+
+	static function isValidElixirVarName(name:String):Bool {
+		if (name == null || name.length == 0)
+			return false;
+		if (!isElixirVarStart(name.charCodeAt(0)))
+			return false;
+		for (i in 1...name.length)
+			if (!isHeexIdentChar(name.charCodeAt(i)))
+				return false;
+		return true;
+	}
+
+	static function suggestionSuffixForAttribute(input:String, candidates:Array<String>):String {
+		var suggestions = findClosestAttributeSuggestions(input, candidates, 3);
+		if (suggestions.length == 0)
+			return "";
+		return ' Did you mean: "' + suggestions.join('", "') + '"?';
+	}
+
+	static function allowedMapSuggestionCandidates(allowed:Map<String, Bool>):Array<String> {
+		var unique = new Map<String, Bool>();
+		if (allowed == null)
+			return [];
+		for (name in allowed.keys()) {
+			if (name == null || name.length == 0)
+				continue;
+			if (name.indexOf("*") != -1 || name.startsWith(":"))
+				continue;
+			var normalized = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(name));
+			var candidate = (normalized != null && normalized.length > 0) ? normalized : name;
+			unique.set(candidate, true);
+		}
+		var out = [for (k in unique.keys()) k];
+		out.sort((a, b) -> a < b ? -1 : (a > b ? 1 : 0));
+		return out;
+	}
+
+	static function componentPropSuggestionCandidates(def:ComponentDefinition):Array<String> {
+		if (def == null || def.props == null)
+			return [];
+		var unique = new Map<String, Bool>();
+		for (key in def.props.keys()) {
+			if (key == null || key.length == 0)
+				continue;
+			if (key == "inner_content")
+				continue;
+			unique.set(key, true);
+			unique.set(key.split("_").join("-"), true);
+		}
+		var out = [for (k in unique.keys()) k];
+		out.sort((a, b) -> a < b ? -1 : (a > b ? 1 : 0));
+		return out;
+	}
+
+	static function normalizeForSuggestion(name:String):String {
+		if (name == null)
+			return "";
+		var normalized = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(name));
+		return (normalized != null ? normalized : name).toLowerCase();
+	}
+
+	static function findClosestAttributeSuggestions(input:String, candidates:Array<String>, maxCount:Int):Array<String> {
+		if (input == null || input.length == 0 || candidates == null || candidates.length == 0)
+			return [];
+
+		var normalizedInput = normalizeForSuggestion(input);
+		var threshold = normalizedInput.length <= 4 ? 1 : (normalizedInput.length <= 7 ? 2 : 3);
+		var scored:Array<{name:String, score:Int}> = [];
+
+		for (candidate in candidates) {
+			if (candidate == null || candidate.length == 0)
+				continue;
+			var normalizedCandidate = normalizeForSuggestion(candidate);
+			if (normalizedCandidate == normalizedInput)
+				continue;
+
+			var distance = levenshteinDistance(normalizedInput, normalizedCandidate);
+			var starts = StringTools.startsWith(normalizedCandidate, normalizedInput)
+				|| StringTools.startsWith(normalizedInput, normalizedCandidate);
+			var contains = normalizedCandidate.indexOf(normalizedInput) != -1 || normalizedInput.indexOf(normalizedCandidate) != -1;
+			if (starts)
+				distance -= 1;
+			if (contains)
+				distance -= 1;
+
+			if (distance <= threshold || starts || contains) {
+				scored.push({name: candidate, score: distance < 0 ? 0 : distance});
+			}
+		}
+
+		scored.sort((a, b) -> {
+			if (a.score < b.score)
+				return -1;
+			if (a.score > b.score)
+				return 1;
+			return a.name < b.name ? -1 : (a.name > b.name ? 1 : 0);
+		});
+
+		var out:Array<String> = [];
+		var seen = new Map<String, Bool>();
+		for (item in scored) {
+			if (seen.exists(item.name))
+				continue;
+			seen.set(item.name, true);
+			out.push(item.name);
+			if (out.length >= maxCount)
+				break;
+		}
+		return out;
+	}
+
+	static function levenshteinDistance(a:String, b:String):Int {
+		if (a == null)
+			a = "";
+		if (b == null)
+			b = "";
+		if (a == b)
+			return 0;
+		if (a.length == 0)
+			return b.length;
+		if (b.length == 0)
+			return a.length;
+
+		var previous = [for (_ in 0...b.length + 1) 0];
+		var current = [for (_ in 0...b.length + 1) 0];
+		for (j in 0...b.length + 1)
+			previous[j] = j;
+
+		for (i in 1...a.length + 1) {
+			current[0] = i;
+			var aChar = a.charAt(i - 1);
+			for (j in 1...b.length + 1) {
+				var bChar = b.charAt(j - 1);
+				var cost = aChar == bChar ? 0 : 1;
+				var deletion = previous[j] + 1;
+				var insertion = current[j - 1] + 1;
+				var substitution = previous[j - 1] + cost;
+				var best = deletion < insertion ? deletion : insertion;
+				if (substitution < best)
+					best = substitution;
+				current[j] = best;
+			}
+			var tmp = previous;
+			previous = current;
+			current = tmp;
+		}
+		return previous[b.length];
+	}
+
+	static function validateAttributeName(tag:String, attributeName:String, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (attributeName == null || attributeName.length == 0)
+			return;
+		// HEEx directive attrs like :if/:for/:let are valid on any tag.
+		if (attributeName.startsWith(":"))
+			return;
+
+		if (tag != null && tag.length > 0) {
+			var first = tag.charAt(0);
+			if (first == ".") {
+				// Phoenix core component allowlist first; otherwise attempt user component prop typing.
+				var allowedCore = getAllowedPhoenixCoreComponentAttributes(tag);
+				if (allowedCore != null) {
+					validatePhoenixCoreComponentAttributeName(tag, attributeName, ctx, pos);
+				} else {
+					validateUserComponentAttributeName(tag, attributeName, ctx, pos);
+				}
+				return;
+			} else if (isLikelyModuleComponentTag(tag)) {
+				validateUserComponentAttributeName(tag, attributeName, ctx, pos);
+				return;
+			}
+			// Slot tags (<:inner_block>) don't validate attributes.
+			if (first == ":")
+				return;
+		}
+
+		// Only validate registered HTML elements to avoid false positives on Phoenix components/custom tags.
+		if (!isRegisteredHtmlElement(tag))
+			return;
+
+		var canonical = normalizeHeexAttributeName(attributeName);
+		var htmlName = HXXComponentRegistry.toHtmlAttribute(canonical);
+		// Allow wildcard-style attributes regardless of authoring style (kebab/camel/snake-case).
+		if (isWildcardHeexAttribute(canonical) || isWildcardHeexAttribute(htmlName))
+			return;
+
+		var allowed = getAllowedHtmlAttributesForTag(tag);
+		if (allowed.exists(attributeName) || allowed.exists(canonical) || (htmlName != null && allowed.exists(htmlName)))
+			return;
+
+		var suffix = suggestionSuffixForAttribute(attributeName, allowedMapSuggestionCandidates(allowed));
+		error(ctx, 'HEEx attribute error: <' + tag + '> does not allow attribute "' + attributeName + '"' + suffix, pos);
+	}
+
+	static function validatePhoenixCoreComponentAttributeName(componentTag:String, attributeName:String, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		// Only validate a small allowlist of Phoenix core component tags to avoid
+		// false positives on user-defined components.
+		var allowed = getAllowedPhoenixCoreComponentAttributes(componentTag);
+		if (allowed == null)
+			return;
+
+		var canonical = normalizeHeexAttributeName(attributeName);
+		var htmlName = HXXComponentRegistry.toHtmlAttribute(canonical);
+		if (isWildcardHeexAttribute(canonical) || isWildcardHeexAttribute(htmlName))
+			return;
+
+		if (allowed.exists(attributeName) || allowed.exists(canonical) || (htmlName != null && allowed.exists(htmlName)))
+			return;
+
+		var suffix = suggestionSuffixForAttribute(attributeName, allowedMapSuggestionCandidates(allowed));
+		error(ctx, 'HEEx component attribute error: <' + componentTag + '> does not allow attribute "' + attributeName + '"' + suffix, pos);
+	}
+
+	static function validateUserComponentAttributeName(componentTag:String, attributeName:String, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		var def = resolveComponentDefinition(componentTag);
+		if (def == null)
+			return; // Unknown/ambiguous component; skip to avoid false positives.
+
+		var canonical = normalizeHeexAttributeName(attributeName);
+		var htmlName = HXXComponentRegistry.toHtmlAttribute(canonical);
+		if (isWildcardHeexAttribute(canonical) || isWildcardHeexAttribute(htmlName))
+			return;
+
+		// Allow global HTML attributes on component tags (Phoenix pattern: pass-through globals/rest attrs).
+		var globals = getGlobalHtmlAttributes();
+		if (globals.exists(attributeName) || globals.exists(canonical) || (htmlName != null && globals.exists(htmlName)))
+			return;
+
+		var key = componentAssignKeyFromAttributeName(attributeName);
+		if (def.props.exists(key))
+			return;
+
+		var suffix = suggestionSuffixForAttribute(attributeName, componentPropSuggestionCandidates(def));
+		error(ctx, 'HEEx component prop error: <' + componentTag + '> does not allow attribute "' + attributeName + '"' + suffix, pos);
+	}
+
+	static function componentAssignKeyFromAttributeName(attributeName:String):String {
+		var html = HXXComponentRegistry.toHtmlAttribute(attributeName);
+		if (html == null)
+			return attributeName;
+		return html.split("-").join("_");
+	}
+
+	static function validateComponentInvocation(tag:String, attributes:Array<EAttribute>, children:Array<ElixirAST>, fields:Map<String, String>,
+			ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (tag == null || tag.length == 0)
+			return;
+		if (tag.charAt(0) != "." && !isLikelyModuleComponentTag(tag))
+			return;
+
+		var def = resolveComponentDefinition(tag);
+		if (def == null) {
+			validatePhoenixCoreComponentInvocation(tag, attributes, children, ctx, pos);
+			validateStrictComponentResolution(tag, ctx, pos);
+			return;
+		}
+
+		var present = new Map<String, Bool>();
+		for (attr in attributes) {
+			if (attr == null || attr.name == null || attr.name.length == 0)
+				continue;
+			if (attr.name.startsWith(":"))
+				continue; // directives don't satisfy component assigns
+			var key = componentAssignKeyFromAttributeName(attr.name);
+			present.set(key, true);
+		}
+
+		// Treat inner_content as satisfied by non-whitespace children.
+		var hasInnerContent = present.exists("inner_content") || hasMeaningfulChildren(children);
+
+		for (k in def.required.keys()) {
+			if (k == "inner_content") {
+				if (!hasInnerContent) {
+					error(ctx, 'HEEx component prop error: <' + tag + '> is missing required inner content', pos);
+				}
+				continue;
+			}
+			if (!present.exists(k)) {
+				error(ctx, 'HEEx component prop error: <' + tag + '> is missing required attribute "' + k + '"', pos);
+			}
+		}
+
+		// Required slot presence checks (when slot definitions are discoverable).
+		if (def.slots != null) {
+			var slotIter = def.slots.keys();
+			if (slotIter.hasNext()) {
+				var presentSlots = new Map<String, Bool>();
+				for (c in children) {
+					if (c == null || c.def == null)
+						continue;
+					switch (c.def) {
+						case EFragment(childTag, _, _) if (isSlotTag(childTag)):
+							presentSlots.set(childTag.substr(1), true);
+						default:
+					}
+				}
+
+				// Default slot: treat non-slot-tag children as satisfying <:inner_block>.
+				if (!presentSlots.exists("inner_block") && hasMeaningfulInnerBlockChildren(children)) {
+					presentSlots.set("inner_block", true);
+				}
+
+				for (slotName in def.slots.keys()) {
+					var slotDef = def.slots.get(slotName);
+					if (slotDef != null && slotDef.required && !presentSlots.exists(slotName)) {
+						error(ctx, 'HEEx slot error: <' + tag + '> is missing required slot <:' + slotName + '>', pos);
+					}
+				}
+			}
+		}
+	}
+
+	static function validatePhoenixCoreComponentInvocation(tag:String, attributes:Array<EAttribute>, children:Array<ElixirAST>,
+			ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (tag == null || tag.length == 0)
+			return;
+		if (tag.charAt(0) != ".")
+			return;
+
+		var present = new Map<String, Bool>();
+		for (attr in attributes) {
+			if (attr == null || attr.name == null || attr.name.length == 0)
+				continue;
+			if (attr.name.startsWith(":"))
+				continue;
+			var key = componentAssignKeyFromAttributeName(attr.name);
+			present.set(key, true);
+		}
+
+		switch (tag) {
+			case ".live_component":
+				if (!present.exists("module")) {
+					error(ctx, 'HEEx component prop error: <.live_component> is missing required attribute \"module\"', pos);
+				}
+				if (!present.exists("id")) {
+					error(ctx, 'HEEx component prop error: <.live_component> is missing required attribute \"id\"', pos);
+				}
+			case ".form":
+				if (getAllowedPhoenixCoreComponentAttributes(tag) == null)
+					return;
+				if (!present.exists("for")) {
+					error(ctx, 'HEEx component prop error: <.form> is missing required attribute \"for\"', pos);
+				}
+			default:
+				if (getAllowedPhoenixCoreComponentAttributes(tag) == null)
+					return;
+		}
+	}
+
+	static function validateStrictComponentResolution(tag:String, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (!strictComponentResolutionEnabled())
+			return;
+		if (tag == null || tag.length == 0)
+			return;
+
+		// Phoenix core components are validated via the allowlist (and do not require RepoDiscovery).
+		if (isKnownPhoenixCoreComponentTag(tag))
+			return;
+
+		var reason = explainComponentResolutionFailure(tag);
+		error(ctx,
+			'HEEx component error: <'
+			+ tag
+			+ '> could not be resolved'
+			+ reason
+			+ ' (disable strict mode or add a discoverable @:component definition)', pos);
+	}
+
+	static function strictComponentResolutionEnabled():Bool {
+		#if macro
+		return Context.defined("hxx_strict_components") || activeStrictComponents;
+		#else
+		return false;
+		#end
+	}
+
+	static function strictSlotTypingEnabled():Bool {
+		#if macro
+		return Context.defined("hxx_strict_slots") || activeStrictSlots;
+		#else
+		return false;
+		#end
+	}
+
+	static function strictHtmlTagTypingEnabled():Bool {
+		#if macro
+		return Context.defined("hxx_strict_html") || activeStrictHtml;
+		#else
+		return false;
+		#end
+	}
+
+	static function strictPhxHookTypingEnabled():Bool {
+		#if macro
+		return Context.defined("hxx_strict_phx_hook") || activeStrictPhxHook;
+		#else
+		return false;
+		#end
+	}
+
+	static function strictPhxEventTypingEnabled():Bool {
+		#if macro
+		return Context.defined("hxx_strict_phx_events") || activeStrictPhxEvents;
+		#else
+		return false;
+		#end
+	}
+
+	static function strictAttributeValueTypingEnabled():Bool {
+		#if macro
+		return Context.defined("hxx_strict_attr_values") || activeStrictAttrValues;
+		#else
+		return false;
+		#end
+	}
+
+	static function allowHeexStringFallbackEnabled():Bool {
+		#if macro
+		return Context.defined("hxx_allow_string_fallback") || activeAllowStringFallback;
+		#else
+		return false;
+		#end
+	}
+
+	#if macro
+	static function extractStrictMetaForFunction(functionName:String, fileContent:String, nearLine:Null<Int>):StrictMeta {
+		var lines = fileContent.split("\n");
+		if (lines.length == 0) {
+			return {
+				strictComponents: false,
+				strictSlots: false,
+				strictHtml: false,
+				strictPhxHook: false,
+				strictPhxEvents: false,
+				strictAttrValues: false,
+				allowStringFallback: false,
+			};
+		}
+		var startIndex = (nearLine != null) ? Std.int(Math.max(0, Math.min(lines.length - 1, nearLine - 1))) : (lines.length - 1);
+
+		var functionRe = new EReg('\\bfunction\\s+' + functionName + '\\b', "");
+		var functionLineIndex = -1;
+		// Source positions are best-effort; some macro-produced nodes can end up with odd `sourceLine`
+		// values. Avoid relying on it too heavily by finding the closest matching function signature.
+		var matches:Array<Int> = [];
+		for (i in 0...lines.length) {
+			var line = lines[i];
+			if (line != null && functionRe.match(line))
+				matches.push(i);
+		}
+		if (matches.length == 1) {
+			functionLineIndex = matches[0];
+		} else if (matches.length > 1) {
+			// Pick the match closest to our anchor line.
+			var best = matches[0];
+			var bestDist = Std.int(Math.abs(best - startIndex));
+			for (m in matches) {
+				var dist = Std.int(Math.abs(m - startIndex));
+				if (dist < bestDist) {
+					best = m;
+					bestDist = dist;
+				}
+			}
+			functionLineIndex = best;
+		} else {
+			functionLineIndex = startIndex;
+		}
+
+		// Regex literal: use single backslashes (not double-escaped like strings).
+		var classLineIndex = findLineIndexBefore(lines, functionLineIndex, ~/\bclass\s+[A-Za-z0-9_]+\b/);
+
+		function hasMetaNear(lineIndex:Int, metaName:String):Bool {
+			if (lineIndex < 0)
+				return false;
+			var metaRe = new EReg('^\\s*@:' + metaName + '\\b', "");
+			var i = lineIndex - 1;
+			while (i >= 0) {
+				var trimmed = StringTools.trim(lines[i]);
+				if (trimmed.length == 0) {
+					i--;
+					continue;
+				}
+				if (StringTools.startsWith(trimmed, "//")) {
+					i--;
+					continue;
+				}
+
+				if (metaRe.match(trimmed))
+					return true;
+				if (StringTools.startsWith(trimmed, "@:")) {
+					i--;
+					continue;
+				}
+
+				break;
+			}
+			return false;
+		}
+
+		function hasMeta(metaName:String):Bool {
+			return hasMetaNear(functionLineIndex, metaName) || hasMetaNear(classLineIndex, metaName);
+		}
+
+		#if debug_assigns_linter
+		trace('[assigns_linter] strictMeta scan fn=' + functionName + ' functionLineIndex=' + functionLineIndex + ' classLineIndex=' + classLineIndex
+			+ ' startIndex=' + startIndex);
+		if (functionLineIndex >= 0 && functionLineIndex < lines.length) {
+			trace('[assigns_linter] strictMeta fnLine=' + StringTools.trim(lines[functionLineIndex]));
+		}
+		if (classLineIndex >= 0 && classLineIndex < lines.length) {
+			trace('[assigns_linter] strictMeta classLine=' + StringTools.trim(lines[classLineIndex]));
+		}
+		if (classLineIndex > 0 && classLineIndex - 1 < lines.length) {
+			trace('[assigns_linter] strictMeta classPrev=' + StringTools.trim(lines[classLineIndex - 1]));
+		}
+		#end
+
+		return {
+			strictComponents: hasMeta("hxx_strict_components"),
+			strictSlots: hasMeta("hxx_strict_slots"),
+			strictHtml: hasMeta("hxx_strict_html"),
+			strictPhxHook: hasMeta("hxx_strict_phx_hook"),
+			strictPhxEvents: hasMeta("hxx_strict_phx_events"),
+			strictAttrValues: hasMeta("hxx_strict_attr_values"),
+			allowStringFallback: hasMeta("hxx_allow_string_fallback"),
+		};
+	}
+
+	static function findLineIndexBefore(lines:Array<String>, startIndex:Int, re:EReg):Int {
+		if (lines == null || lines.length == 0)
+			return -1;
+		var i = Std.int(Math.min(startIndex, lines.length - 1));
+		while (i >= 0) {
+			var line = lines[i];
+			if (line != null && re.match(line))
+				return i;
+			i--;
+		}
+		return -1;
+	}
+	#end
+
+	static function isKnownPhoenixCoreComponentTag(tag:String):Bool {
+		if (tag == ".live_component")
+			return true;
+		return getAllowedPhoenixCoreComponentAttributes(tag) != null;
+	}
+
+	static function explainComponentResolutionFailure(componentTag:String):String {
+		#if macro
+		if (componentTag == null || componentTag.length == 0)
+			return "";
+
+		if (componentFunctionIndex == null) {
+			buildComponentFunctionIndex();
+		}
+		if (componentFunctionIndex == null)
+			return "";
+
+		function displayModuleName(def:ComponentDefinition):String {
+			if (def == null)
+				return "";
+			if (def.nativeModuleName != null && def.nativeModuleName.length > 0)
+				return def.nativeModuleName;
+			return def.moduleTypePath;
+		}
+
+		function formatCandidateTags(fn:String, defs:Array<ComponentDefinition>, maxToShow:Int):String {
+			if (defs == null || defs.length == 0)
+				return "";
+
+			var tags:Array<String> = [];
+			var limit = defs.length < maxToShow ? defs.length : maxToShow;
+			for (i in 0...limit) {
+				var moduleName = displayModuleName(defs[i]);
+				if (moduleName == null || moduleName.length == 0)
+					continue;
+				tags.push("<" + moduleName + "." + fn + ">");
+			}
+
+			if (tags.length == 0)
+				return "";
+			var suffix = defs.length > maxToShow ? ", …" : "";
+			return tags.join(", ") + suffix;
+		}
+
+		if (componentTag.charAt(0) == ".") {
+			var fn = componentTag.substr(1);
+			var candidates = componentFunctionIndex.get(fn);
+			if (candidates == null || candidates.length == 0)
+				return ' (no @:component function named "' + fn + '" was discovered)';
+			if (candidates.length > 1) {
+				var examples = formatCandidateTags(fn, candidates, 6);
+				var hint = examples != "" ? (' Candidates: ' + examples + '.') : "";
+				return ' (ambiguous: '
+					+ candidates.length
+					+ ' @:component functions named "'
+					+ fn
+					+ '" exist.'
+					+ hint
+					+ ' Use a module-qualified component tag (e.g. <SomeModule.'
+					+ fn
+					+ '>).)';
+			}
+			return "";
+		}
+
+		if (isLikelyModuleComponentTag(componentTag)) {
+			var lastDot = componentTag.lastIndexOf(".");
+			if (lastDot > 0 && lastDot < componentTag.length - 1) {
+				var modulePart = componentTag.substr(0, lastDot);
+				var fnPart = componentTag.substr(lastDot + 1);
+				var fn = NameUtils.toSnakeCase(fnPart);
+
+				var candidates = componentFunctionIndex.get(fn);
+				if (candidates == null || candidates.length == 0) {
+					return ' (no @:component function named "' + fn + '" was discovered)';
+				}
+
+				var matchingDefs:Array<ComponentDefinition> = [];
+				for (c in candidates)
+					if (componentModuleMatches(c, modulePart))
+						matchingDefs.push(c);
+
+				if (matchingDefs.length == 0) {
+					var examples = formatCandidateTags(fn, candidates, 6);
+					var hint = examples != "" ? (' Known components: ' + examples + '.') : "";
+					return ' (no @:component module matched "' + modulePart + '" for function "' + fn + '".' + hint + ')';
+				}
+				if (matchingDefs.length > 1) {
+					var examples = formatCandidateTags(fn, matchingDefs, 6);
+					var hint = examples != "" ? (' Matches: ' + examples + '.') : "";
+					return ' (ambiguous: ' + matchingDefs.length + ' @:component modules matched "' + modulePart + '" for function "' + fn + '".' + hint
+						+ ' Use a more specific module name in the tag.)';
+				}
+			}
+		}
+
+		return "";
+		#else
+		return "";
+		#end
+	}
+
+	static function hasMeaningfulChildren(children:Array<ElixirAST>):Bool {
+		if (children == null || children.length == 0)
+			return false;
+		for (c in children) {
+			if (c == null)
+				continue;
+			switch (c.def) {
+				case EString(s):
+					if (s != null && s.trim() != "")
+						return true;
+				case EFragment(_, _, _):
+					return true;
+				default:
+					return true;
+			}
+		}
+		return false;
+	}
+
+	static function hasMeaningfulInnerBlockChildren(children:Array<ElixirAST>):Bool {
+		if (children == null || children.length == 0)
+			return false;
+		for (c in children) {
+			if (c == null || c.def == null)
+				continue;
+			switch (c.def) {
+				case EString(s):
+					if (s != null && s.trim() != "")
+						return true;
+				case EFragment(tag, _, _) if (isSlotTag(tag)):
+					// Slot entries do not count as default inner_block content.
+				default:
+					return true;
+			}
+		}
+		return false;
+	}
+
+	static function validateComponentPropValueKind(tag:String, attr:EAttribute, fields:Map<String, String>, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		if (tag == null || tag.length == 0)
+			return;
+		if (attr == null || attr.name == null || attr.name.length == 0)
+			return;
+		if (attr.name.startsWith(":"))
+			return;
+		if (tag.charAt(0) != "." && !isLikelyModuleComponentTag(tag))
+			return;
+
+		var def = resolveComponentDefinition(tag);
+		if (def == null)
+			return;
+
+		var key = componentAssignKeyFromAttributeName(attr.name);
+		if (!def.props.exists(key))
+			return;
+
+		var expected = def.props.get(key);
+		if (expected == null || expected == "unknown")
+			return;
+
+		var actual = inferHeexExprKind(attr.value, fields);
+		if (!attributeKindsCompatible(expected, actual)) {
+			error(ctx, 'HEEx component prop type error: <' + tag + '> "' + key + '" expects ' + expected + ' but got ' + actual, pos);
+		}
+	}
+
+	static function resolveComponentDefinition(componentTag:String):Null<ComponentDefinition> {
+		if (componentTag == null || componentTag.length == 0)
+			return null;
+		var cacheKey = componentDefinitionCacheKey(componentTag);
+		if (componentDefinitionCache.exists(cacheKey))
+			return componentDefinitionCache.get(cacheKey);
+
+		if (componentFunctionIndex == null) {
+			#if macro
+			buildComponentFunctionIndex();
+			#else
+			componentDefinitionCache.set(componentTag, null);
+			return null;
+			#end
+		}
+
+		var resolved:Null<ComponentDefinition> = null;
+		if (componentTag.charAt(0) == ".") {
+			var fn = componentTag.substr(1);
+			var candidates = componentFunctionIndex.get(fn);
+			if (candidates != null) {
+				if (candidates.length == 1) {
+					resolved = candidates[0];
+				} else if (candidates.length > 1) {
+					#if macro
+					resolved = chooseComponentCandidateForCurrentApp(candidates);
+					#end
+				}
+			}
+		} else if (isLikelyModuleComponentTag(componentTag)) {
+			var lastDot = componentTag.lastIndexOf(".");
+			if (lastDot > 0 && lastDot < componentTag.length - 1) {
+				var modulePart = componentTag.substr(0, lastDot);
+				var fnPart = componentTag.substr(lastDot + 1);
+				var fn = NameUtils.toSnakeCase(fnPart);
+				var candidates = componentFunctionIndex.get(fn);
+				if (candidates != null) {
+					var matches:Array<ComponentDefinition> = [];
+					for (c in candidates)
+						if (componentModuleMatches(c, modulePart))
+							matches.push(c);
+					if (matches.length == 1) {
+						resolved = matches[0];
+					} else if (matches.length > 1) {
+						#if macro
+						resolved = chooseComponentCandidateForCurrentApp(matches);
+						#end
+					}
+				}
+			}
+		}
+
+		#if macro
+		if (resolved == null) {
+			resolved = resolvePhoenixCoreComponentDefinition(componentTag);
+		}
+		#end
+
+		componentDefinitionCache.set(cacheKey, resolved);
+		return resolved;
+	}
+
+	static function componentDefinitionCacheKey(componentTag:String):String {
+		#if macro
+		if (activeAppWebRoot != null && activeAppWebRoot.length > 0) {
+			return componentTag + "@" + activeAppWebRoot;
+		}
+		#end
+		return componentTag;
+	}
+
+	#if macro
+	static function chooseComponentCandidateForCurrentApp(candidates:Array<ComponentDefinition>):Null<ComponentDefinition> {
+		if (candidates == null || candidates.length == 0)
+			return null;
+		if (activeAppWebRoot == null || activeAppWebRoot.length == 0)
+			return null;
+
+		var preferredModule = activeAppWebRoot + ".CoreComponents";
+		var preferred:Array<ComponentDefinition> = [];
+		for (c in candidates) {
+			if (c == null)
+				continue;
+			if (c.nativeModuleName == preferredModule)
+				preferred.push(c);
+		}
+		return preferred.length == 1 ? preferred[0] : null;
+	}
+
+	static function inferAppWebRootFromFileContent(fileContent:String):Null<String> {
+		if (fileContent == null || fileContent.length == 0)
+			return null;
+
+		var re = ~/@:native\("([^"]+)"/g;
+		var idx = 0;
+		while (re.matchSub(fileContent, idx)) {
+			var nativeName = re.matched(1);
+			var matchPos = re.matchedPos();
+			idx = (matchPos != null) ? (matchPos.pos + matchPos.len) : (idx + 1);
+
+			if (nativeName == null || nativeName.length == 0)
+				continue;
+			var dot = nativeName.indexOf(".");
+			if (dot <= 0)
+				continue;
+
+			return nativeName.substr(0, dot);
+		}
+
+		return null;
+	}
+	#end
+
+	#if macro
+	static function resolvePhoenixCoreComponentDefinition(componentTag:String):Null<ComponentDefinition> {
+		if (componentTag == null || componentTag.length == 0)
+			return null;
+		if (componentTag.charAt(0) != ".")
+			return null;
+
+		if (phoenixCoreComponentDefinitionCache.exists(componentTag)) {
+			return phoenixCoreComponentDefinitionCache.get(componentTag);
+		}
+
+		var resolved:Null<ComponentDefinition> = null;
+		resolved = switch (componentTag) {
+			case ".form":
+				buildPhoenixCoreFormComponentDefinition();
+			case ".inputs_for":
+				buildPhoenixCoreInputsForComponentDefinition();
+			case ".link":
+				buildPhoenixCoreLinkComponentDefinition();
+			default:
+				null;
+		};
+
+		phoenixCoreComponentDefinitionCache.set(componentTag, resolved);
+		return resolved;
+	}
+
+	static function buildPhoenixCoreFormComponentDefinition():Null<ComponentDefinition> {
+		var letBinding:Null<ComponentLetBindingDefinition> = null;
+		var formAssignsType = resolvePhoenixCoreFormLetType();
+		if (formAssignsType != null) {
+			var letInfo = letBindingPropsFromType(formAssignsType);
+			if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
+				letBinding = {
+					props: letInfo.props,
+					required: letInfo.required,
+					typeName: TypeTools.toString(formAssignsType)
+				};
+			}
+		}
+
+		var slots = new Map<String, ComponentSlotDefinition>();
+		slots.set("inner_block", {
+			required: true,
+			props: new Map(),
+			requiredProps: new Map(),
+			letBinding: letBinding
+		});
+
+		var required = new Map<String, Bool>();
+		required.set("for", true);
+
+		var props = new Map<String, String>();
+		props.set("for", "map");
+		props.set("as", "string");
+		props.set("multipart", "bool");
+
+		return {
+			moduleTypePath: null,
+			nativeModuleName: "Phoenix.Component",
+			functionName: "form",
+			props: props,
+			required: required,
+			slots: slots
+		};
+	}
+
+	static function buildPhoenixCoreInputsForComponentDefinition():Null<ComponentDefinition> {
+		var letBinding:Null<ComponentLetBindingDefinition> = null;
+		var formAssignsType = resolvePhoenixCoreFormLetType();
+		if (formAssignsType != null) {
+			var letInfo = letBindingPropsFromType(formAssignsType);
+			if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
+				letBinding = {
+					props: letInfo.props,
+					required: letInfo.required,
+					typeName: TypeTools.toString(formAssignsType)
+				};
+			}
+		}
+
+		var slots = new Map<String, ComponentSlotDefinition>();
+		slots.set("inner_block", {
+			required: true,
+			props: new Map(),
+			requiredProps: new Map(),
+			letBinding: letBinding
+		});
+
+		var props = new Map<String, String>();
+		props.set("field", "map");
+		props.set("id", "string");
+		props.set("as", "string");
+		props.set("default", "unknown");
+		props.set("append", "unknown");
+		props.set("prepend", "unknown");
+		props.set("skip_hidden", "bool");
+		props.set("options", "unknown");
+
+		var required = new Map<String, Bool>();
+		required.set("field", true);
+
+		return {
+			moduleTypePath: null,
+			nativeModuleName: "Phoenix.Component",
+			functionName: "inputs_for",
+			props: props,
+			required: required,
+			slots: slots
+		};
+	}
+
+	static function buildPhoenixCoreLinkComponentDefinition():Null<ComponentDefinition> {
+		var props = new Map<String, String>();
+		props.set("navigate", "string");
+		props.set("patch", "string");
+		props.set("href", "string");
+		props.set("method", "string|atom");
+		props.set("replace", "bool");
+
+		var required = new Map<String, Bool>();
+		required.set("inner_content", true);
+
+		return {
+			moduleTypePath: null,
+			nativeModuleName: "Phoenix.Component",
+			functionName: "link",
+			props: props,
+			required: required,
+			slots: new Map()
+		};
+	}
+
+	static function resolvePhoenixCoreFormLetType():Null<haxe.macro.Type> {
+		var formType:Null<haxe.macro.Type> = null;
+		try
+			formType = Context.getType("phoenix.Phoenix.Form")
+		catch (_:Dynamic)
+			formType = null;
+		if (formType == null)
+			return null;
+
+		var termType:Null<haxe.macro.Type> = null;
+		try
+			termType = Context.getType("elixir.types.Term")
+		catch (_:Dynamic)
+			termType = null;
+
+		return switch (formType) {
+			case TType(tdef, params):
+				var typeArgs = (termType != null) ? [termType] : params;
+				TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, typeArgs);
+			default:
+				formType;
+		};
+	}
+	#end
+
+	static function isLikelyModuleComponentTag(tag:String):Bool {
+		if (tag == null || tag.length < 3)
+			return false;
+		if (tag.indexOf(".") == -1)
+			return false;
+		// Elixir module aliases are PascalCase; avoid validating lowercase HTML tags.
+		var first = tag.charCodeAt(0);
+		return first >= "A".code && first <= "Z".code;
+	}
+
+	static function componentModuleMatches(def:ComponentDefinition, modulePart:String):Bool {
+		if (def == null || modulePart == null || modulePart.length == 0)
+			return false;
+
+		if (def.nativeModuleName != null) {
+			if (def.nativeModuleName == modulePart)
+				return true;
+			var parts = def.nativeModuleName.split(".");
+			var base = parts != null && parts.length > 0 ? parts[parts.length - 1] : null;
+			if (base != null && base == modulePart)
+				return true;
+		}
+
+		if (def.moduleTypePath != null) {
+			if (def.moduleTypePath == modulePart)
+				return true;
+			var typeParts = def.moduleTypePath.split(".");
+			var typeBase = typeParts != null && typeParts.length > 0 ? typeParts[typeParts.length - 1] : null;
+			if (typeBase != null && typeBase == modulePart)
+				return true;
+		}
+
+		return false;
+	}
+
+	#if macro
+	static function buildComponentFunctionIndex():Void {
+		if (componentFunctionIndex != null)
+			return;
+		componentFunctionIndex = new Map<String, Array<ComponentDefinition>>();
+
+		var discovered = RepoDiscovery.getDiscovered();
+		if (discovered == null || discovered.length == 0) {
+			RepoDiscovery.run();
+			discovered = RepoDiscovery.getDiscovered();
+		}
+
+		if (discovered == null)
+			return;
+
+		// RepoDiscovery enumerates type paths, but component modules can be multi-type
+		// (typedefs + classes). Use Context.getModule to avoid re-entering typing for a
+		// type that may still be in-progress and to access all types in the module.
+		var processedModules = new Map<String, Bool>();
+
+		#if debug_assigns_linter
+		trace('[HeexAssignsTypeLinter] building component index: discovered=' + discovered.length);
+		#end
+
+		for (typePath in discovered) {
+			if (typePath == null || typePath.length == 0)
+				continue;
+			if (processedModules.exists(typePath))
+				continue;
+			processedModules.set(typePath, true);
+
+			var moduleTypes:Array<haxe.macro.Type> = null;
+			try
+				moduleTypes = Context.getModule(typePath)
+			catch (e:Dynamic) {
+				#if debug_assigns_linter
+				trace('[HeexAssignsTypeLinter] component index: failed to load module ' + typePath + ': ' + Std.string(e));
+				#end
+				continue;
+			}
+			if (moduleTypes == null)
+				continue;
+
+			for (moduleType in moduleTypes) {
+				var cls:Null<haxe.macro.Type.ClassType> = null;
+				switch (TypeTools.follow(moduleType)) {
+					case TInst(c, _):
+						cls = c.get();
+					default:
+				}
+				if (cls == null || cls.meta == null)
+					continue;
+				if (!(cls.meta.has(":component") || cls.meta.has(":phoenix.components")))
+					continue;
+
+				var moduleTypePath = (cls.pack != null && cls.pack.length > 0) ? (cls.pack.concat([cls.name]).join(".")) : cls.name;
+
+				var nativeModuleName:Null<String> = null;
+				if (cls.meta.has(":native")) {
+					var nativeMeta = cls.meta.extract(":native");
+					if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+						switch (nativeMeta[0].params[0].expr) {
+							case EConst(CString(s, _)):
+								nativeModuleName = s;
+							default:
+						}
+					}
+				}
+
+				for (field in cls.statics.get()) {
+					if (field == null || field.meta == null || !field.meta.has(":component"))
+						continue;
+
+					var fnName = NameUtils.toSnakeCase(field.name);
+					var funArgs = switch (TypeTools.follow(field.type)) {
+						case TFun(args, _):
+							args;
+						default:
+							null;
+					};
+					if (funArgs == null || funArgs.length == 0)
+						continue;
+
+					var assignsType = funArgs[0].t;
+					var propInfo = propsFromAssignsType(assignsType);
+					if (propInfo == null)
+						continue;
+
+					var def:ComponentDefinition = {
+						moduleTypePath: moduleTypePath,
+						nativeModuleName: nativeModuleName,
+						functionName: fnName,
+						props: propInfo.props,
+						required: propInfo.required,
+						slots: propInfo.slots
+					};
+
+					var existing = componentFunctionIndex.get(fnName);
+					if (existing == null) {
+						componentFunctionIndex.set(fnName, [def]);
+					} else {
+						existing.push(def);
+					}
+
+					#if debug_assigns_linter
+					trace('[HeexAssignsTypeLinter] component index: '
+						+ fnName
+						+ ' from '
+						+ (nativeModuleName != null ? nativeModuleName : moduleTypePath));
+					#end
+				}
+			}
+		}
+	}
+
+	static function propsFromAssignsType(t:haxe.macro.Type):Null<{
+		props:Map<String, String>,
+		required:Map<String, Bool>,
+		slots:Map<String, ComponentSlotDefinition>
+	}> {
+		var followed = TypeTools.follow(t);
+		return switch (followed) {
+			case TAbstract(aRef, params):
+				var abs = aRef.get();
+				if (abs != null
+					&& abs.name == "Assigns"
+					&& abs.pack.join(".") == "phoenix.types"
+					&& params != null
+					&& params.length == 1) {
+					propsFromAssignsType(params[0]);
+				} else {
+					null;
+				}
+			case TAnonymous(a):
+				var props = new Map<String, String>();
+				var required = new Map<String, Bool>();
+				var slots = new Map<String, ComponentSlotDefinition>();
+
+				for (f in a.get().fields) {
+					var typeStr = TypeTools.toString(f.type);
+					var isOptional = fieldIsOptionalByTypeString(typeStr) || (f.meta != null && f.meta.has(":optional"));
+
+					if (isSlotField(f)) {
+						var slotName = NameUtils.toSnakeCase(f.name);
+						var slotInfo = slotFieldInfoFromField(f);
+						var entryType = slotInfo != null ? slotInfo.entryType : null;
+						var letType = slotInfo != null ? slotInfo.letType : null;
+
+						var slotProps = new Map<String, String>();
+						var slotRequiredProps = new Map<String, Bool>();
+						if (entryType != null) {
+							var entryInfo = propsFromAssignsType(entryType);
+							if (entryInfo != null) {
+								slotProps = entryInfo.props;
+								slotRequiredProps = entryInfo.required;
+							}
+						}
+
+						var letBinding:Null<ComponentLetBindingDefinition> = null;
+						if (letType != null && !isElixirTermType(letType)) {
+							var letInfo = letBindingPropsFromType(letType);
+							if (letInfo != null && letInfo.props != null && letInfo.props.keys().hasNext()) {
+								letBinding = {
+									props: letInfo.props,
+									required: letInfo.required,
+									typeName: TypeTools.toString(letType)
+								};
+							}
+						}
+
+						slots.set(slotName, {
+							required: !isOptional,
+							props: slotProps,
+							requiredProps: slotRequiredProps,
+							letBinding: letBinding
+						});
+						continue;
+					}
+
+					var kind = kindFromType(f.type);
+					var key = componentAssignKeyFromAttributeName(f.name);
+					props.set(key, kind);
+
+					if (!isOptional)
+						required.set(key, true);
+				}
+
+				{props: props, required: required, slots: slots};
+			case TType(tdef, params):
+				propsFromAssignsType(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
+			default:
+				null;
+		}
+	}
+
+	static function letBindingPropsFromType(t:haxe.macro.Type):Null<{
+		props:Map<String, String>,
+		required:Map<String, Bool>
+	}> {
+		var followed = TypeTools.follow(t);
+		return switch (followed) {
+			case TAbstract(aRef, params):
+				var abs = aRef.get();
+				if (abs != null
+					&& abs.name == "Assigns"
+					&& abs.pack.join(".") == "phoenix.types"
+					&& params != null
+					&& params.length == 1) {
+					letBindingPropsFromType(params[0]);
+				} else {
+					null;
+				}
+			case TAnonymous(a):
+				var props = new Map<String, String>();
+				var required = new Map<String, Bool>();
+
+				for (f in a.get().fields) {
+					var typeStr = TypeTools.toString(f.type);
+					var isOptional = fieldIsOptionalByTypeString(typeStr) || (f.meta != null && f.meta.has(":optional"));
+
+					// Let bindings represent Elixir struct/map fields (accessed via `var.field`),
+					// not HTML/HEEx attribute names. Avoid toHtmlAttribute() quirks like treating
+					// `data` as a `data-*` prefix.
+					var key = NameUtils.toSnakeCase(f.name);
+					props.set(key, kindFromType(f.type));
+
+					if (!isOptional)
+						required.set(key, true);
+				}
+
+				{props: props, required: required};
+			case TType(tdef, params):
+				letBindingPropsFromType(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
+			default:
+				null;
+		}
+	}
+
+	static function isSlotField(f:haxe.macro.Type.ClassField):Bool {
+		if (f == null)
+			return false;
+		if (f.meta != null && f.meta.has(":slot"))
+			return true;
+		return unwrapSlotTypeInfo(f.type) != null;
+	}
+
+	static function slotFieldInfoFromField(f:haxe.macro.Type.ClassField):Null<{entryType:haxe.macro.Type, letType:Null<haxe.macro.Type>}> {
+		if (f == null)
+			return null;
+		var unwrapped = unwrapSlotTypeInfo(f.type);
+		if (unwrapped != null)
+			return unwrapped;
+		// Legacy/metadata-only syntax: @:slot on a concrete entry typedef.
+		if (f.meta != null && f.meta.has(":slot"))
+			return {entryType: f.type, letType: null};
+		return null;
+	}
+
+	static function unwrapSlotTypeInfo(t:haxe.macro.Type):Null<{entryType:haxe.macro.Type, letType:Null<haxe.macro.Type>}> {
+		if (t == null)
+			return null;
+		return switch (t) {
+			case TType(tdef, params):
+				unwrapSlotTypeInfo(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
+			case TAbstract(aRef, params):
+				var abs = aRef.get();
+				if (abs == null)
+					return null;
+				// Optional slot: Null<Slot<T>>
+				if (abs.name == "Null" && params != null && params.length == 1) {
+					unwrapSlotTypeInfo(params[0]);
+				} else if (abs.name == "Slot" && abs.pack.join(".") == "phoenix.types" && params != null && params.length >= 1) {
+					var entryType = params[0];
+					var letType = params.length >= 2 ? params[1] : null;
+					{entryType: entryType, letType: letType};
+				} else {
+					null;
+				}
+			default:
+				null;
+		}
+	}
+
+	static function isElixirTermType(t:haxe.macro.Type):Bool {
+		if (t == null)
+			return false;
+		return switch (TypeTools.follow(t)) {
+			case TAbstract(aRef, _): var abs = aRef.get(); abs != null && abs.name == "Term" && abs.pack.join(".") == "elixir.types";
+			default:
+				false;
+		};
+	}
+
+	static function fieldIsOptionalByTypeString(typeStr:String):Bool {
+		if (typeStr == null)
+			return true;
+		var s = typeStr.trim();
+		return s.startsWith("Null<") && s.endsWith(">");
+	}
+	#end
+
+	static function getAllowedPhoenixCoreComponentAttributes(tag:String):Null<Map<String, Bool>> {
+		return switch (tag) {
+			case ".form":
+				buildAllowedComponentAttributesFromHtmlTag("form", ["for", "as", "multipart"]);
+			case ".link":
+				buildAllowedComponentAttributesFromHtmlTag("a", ["navigate", "patch", "method", "replace"]);
+			case ".inputs_for":
+				buildAllowedComponentAttributes(["field", "id", "as", "default", "append", "prepend", "skip_hidden", "options"]);
+			default:
+				null;
+		}
+	}
+
+	static function buildAllowedComponentAttributes(extra:Array<String>):Map<String, Bool> {
+		var allowed:Map<String, Bool> = new Map();
+
+		var globals = getGlobalHtmlAttributes();
+		for (k in globals.keys())
+			allowed.set(k, true);
+
+		for (name in extra)
+			addAllowedAttributeForms(allowed, name);
+
+		return allowed;
+	}
+
+	static function buildAllowedComponentAttributesFromHtmlTag(htmlTag:String, extra:Array<String>):Map<String, Bool> {
+		var allowed:Map<String, Bool> = new Map();
+
+		var html = getAllowedHtmlAttributesForTag(htmlTag);
+		for (k in html.keys())
+			allowed.set(k, true);
+
+		for (name in extra)
+			addAllowedAttributeForms(allowed, name);
+
+		return allowed;
+	}
+
+	static function validateAttributeValueKind(tag:String, attributeName:String, value:ElixirAST, fields:Map<String, String>,
+			ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (attributeName == null || attributeName.length == 0)
+			return;
+		if (attributeName.startsWith(":"))
+			return; // directive attrs: do not validate here
+
+		var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(attributeName));
+		if (canonical == null)
+			return;
+
+		// Additional validation: when a hook registry exists, validate known literal hook names.
+		if (canonical == "phx-hook") {
+			validatePhxHookName(value, ctx, pos);
+			validateStrictPhxHookValue(value, ctx, pos);
+		}
+
+		if (isPhxEventAttribute(canonical)) {
+			validatePhxEventName(canonical, value, ctx, pos);
+			validateStrictPhxEventValue(canonical, value, ctx, pos);
+		}
+
+		validateStrictAttributeLiteralValue(tag, canonical, value, ctx, pos);
+
+		var expected = expectedKindForAttribute(canonical);
+		if (expected == null)
+			return;
+
+		var actual = inferHeexExprKind(value, fields);
+		if (!attributeKindsCompatible(expected, actual)) {
+			error(ctx, 'HEEx attribute type error: "' + canonical + '" expects ' + expected + ' but got ' + actual, pos);
+		}
+	}
+
+	static function extractConstStringFromHeexExpr(expr:ElixirAST):Null<String> {
+		if (expr == null || expr.def == null)
+			return null;
+		return switch (expr.def) {
+			case EString(s):
+				s;
+			case EParen(inner):
+				extractConstStringFromHeexExpr(inner);
+			case EBinary(StringConcat, left, right):
+				var leftValue = extractConstStringFromHeexExpr(left);
+				var rightValue = extractConstStringFromHeexExpr(right);
+				(leftValue != null && rightValue != null) ? (leftValue + rightValue) : null;
+			case ERaw(code):
+				extractConstDoubleQuotedStringFromRaw(code);
+			default:
+				null;
+		};
+	}
+
+	static function extractConstDoubleQuotedStringFromRaw(code:String):Null<String> {
+		if (code == null)
+			return null;
+		var trimmed = unwrapRawParens(code);
+		if (trimmed.length < 2)
+			return null;
+		if (trimmed.charAt(0) != '"' || trimmed.charAt(trimmed.length - 1) != '"')
+			return null;
+		var inner = trimmed.substr(1, trimmed.length - 2);
+		// Only accept plain literals with no escapes or interpolation to avoid mis-parsing.
+		if (inner.indexOf("\\") != -1 || inner.indexOf("#{") != -1)
+			return null;
+		return inner;
+	}
+
+	static function unwrapRawParens(code:String):String {
+		if (code == null)
+			return "";
+		var current = code.trim();
+		while (current.length >= 2 && current.charAt(0) == "(" && current.charAt(current.length - 1) == ")") {
+			current = current.substr(1, current.length - 2).trim();
+		}
+		return current;
+	}
+
+	static function validatePhxHookName(value:ElixirAST, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		#if macro
+		var allowed = getAllowedPhxHookNames();
+		if (allowed == null)
+			return;
+
+		if (value == null)
+			return;
+		var name = extractConstStringFromHeexExpr(value);
+		if (name == null)
+			return;
+		name = name.trim();
+		if (name.length == 0)
+			return;
+
+		if (!allowed.exists(name)) {
+			error(ctx, 'HEEx phx-hook error: unknown hook "' + name + '" (not present in any @:phxHookNames registry)', pos);
+		}
+		#end
+	}
+
+	static function validateStrictPhxHookValue(value:ElixirAST, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (!strictPhxHookTypingEnabled())
+			return;
+		if (value == null)
+			return;
+		if (value.metadata == null || value.metadata.heexAttrIsDynamic == null)
+			return;
+
+		if (!value.metadata.heexAttrIsDynamic) {
+			error(ctx,
+				'HEEx phx-hook error: under -D hxx_strict_phx_hook, phx-hook must be an expression (use phx-hook={HookName.Name} / HXX phx-hook=$${HookName.Name})',
+				pos);
+			return;
+		}
+
+		// TSX-level mode: require a compile-time known hook name from a registry.
+		#if macro
+		var allowed = getAllowedPhxHookNames();
+		if (allowed == null) {
+			error(ctx,
+				'HEEx phx-hook error: under -D hxx_strict_phx_hook, you must define a hook registry (add @:phxHookNames to an enum abstract of String)', pos);
+			return;
+		}
+
+		var name = extractConstStringFromHeexExpr(value);
+		if (name == null) {
+			error(ctx,
+				'HEEx phx-hook error: under -D hxx_strict_phx_hook, phx-hook must be a compile-time constant from your hook registry (e.g., HookName.Ping)',
+				pos);
+			return;
+		}
+		#end
+	}
+
+	static function isPhxEventAttribute(canonicalAttr:String):Bool {
+		if (canonicalAttr == null)
+			return false;
+		return switch (canonicalAttr) {
+			case "phx-click", "phx-submit", "phx-change", "phx-blur", "phx-focus", "phx-keydown", "phx-keyup", "phx-window-keydown", "phx-window-keyup":
+				true;
+			default:
+				false;
+		};
+	}
+
+	static function validateStrictAttributeLiteralValue(tag:String, canonicalAttr:String, value:ElixirAST, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		if (!strictAttributeValueTypingEnabled())
+			return;
+		if (canonicalAttr == null || canonicalAttr.length == 0)
+			return;
+		if (value == null)
+			return;
+
+		var allowed = expectedLiteralValuesForAttribute(tag, canonicalAttr);
+		if (allowed == null || allowed.length == 0)
+			return;
+
+		// Keep this conservative to avoid false positives: only validate static string literals.
+		var literal = extractConstStringFromHeexExpr(value);
+		if (literal == null)
+			return;
+
+		var normalized = literal.trim().toLowerCase();
+		if (normalized.length == 0)
+			return;
+
+		if (!isAllowedLiteralValue(normalized, allowed)) {
+			error(ctx,
+				'HEEx attribute value error: under -D hxx_strict_attr_values, "'
+				+ canonicalAttr
+				+ '" on <'
+				+ (tag == null ? "?" : tag)
+				+ '> must be one of ['
+				+ allowed.join(", ")
+				+ '], got "'
+				+ literal
+				+ '"',
+				pos);
+		}
+	}
+
+	static function expectedLiteralValuesForAttribute(tag:String, canonicalAttr:String):Null<Array<String>> {
+		if (canonicalAttr == null)
+			return null;
+		var normalizedTag = tag == null ? "" : tag.trim().toLowerCase();
+
+		return switch (canonicalAttr) {
+			case "type":
+				switch (normalizedTag) {
+					case "input":
+						[
+							"button",
+							"checkbox",
+							"color",
+							"date",
+							"datetime-local",
+							"email",
+							"file",
+							"hidden",
+							"image",
+							"month",
+							"number",
+							"password",
+							"radio",
+							"range",
+							"reset",
+							"search",
+							"submit",
+							"tel",
+							"text",
+							"time",
+							"url",
+							"week"
+						];
+					case "button":
+						["button", "submit", "reset"];
+					default:
+						null;
+				};
+			case "method":
+				normalizedTag == "form" ? ["get", "post"] : null;
+			case "wrap":
+				normalizedTag == "textarea" ? ["hard", "soft"] : null;
+			case "phx-update":
+				["replace", "stream", "append", "prepend", "ignore"];
+			default:
+				null;
+		};
+	}
+
+	static function isAllowedLiteralValue(value:String, allowed:Array<String>):Bool {
+		if (allowed == null || allowed.length == 0)
+			return true;
+		for (candidate in allowed) {
+			if (candidate == value)
+				return true;
+		}
+		return false;
+	}
+
+	static function validatePhxEventName(canonicalAttr:String, value:ElixirAST, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		#if macro
+		var allowed = getAllowedPhxEventNamesForContext(ctx);
+		if (allowed == null)
+			return;
+
+		if (value == null)
+			return;
+		// Adoption-friendly: do not validate raw string literals.
+		// We skip only when we know it's a literal (`heexAttrIsDynamic == false`); some HXX interpolation
+		// paths may not populate this metadata yet, and should still be validated.
+		if (value.metadata != null && value.metadata.heexAttrIsDynamic == false)
+			return;
+
+		var name = extractConstStringFromHeexExpr(value);
+		if (name == null)
+			return;
+		name = name.trim();
+		if (name.length == 0)
+			return;
+
+		if (!allowed.exists(name)) {
+			error(ctx, 'HEEx ' + canonicalAttr + ' error: unknown event "' + name + '" (not present in any known event registry)', pos);
+		}
+		#end
+	}
+
+	static function validateStrictPhxEventValue(canonicalAttr:String, value:ElixirAST, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		if (!strictPhxEventTypingEnabled())
+			return;
+		if (value == null)
+			return;
+		if (value.metadata == null || value.metadata.heexAttrIsDynamic == null)
+			return;
+
+		// TSX-level mode: require a compile-time known event name from a registry.
+		#if macro
+		var allowed = getAllowedPhxEventNamesForContext(ctx);
+		if (allowed == null) {
+			error(ctx,
+				'HEEx ' + canonicalAttr +
+				' error: under -D hxx_strict_phx_events, you must either define an event registry (add @:phxEventNames to an enum abstract of String) or compile inside a @:liveview where events can be derived from handle_event/3',
+				pos);
+			return;
+		}
+
+		var name = extractConstStringFromHeexExpr(value);
+		if (name == null) {
+			error(ctx,
+				'HEEx '
+				+ canonicalAttr
+				+ ' error: under -D hxx_strict_phx_events, '
+				+ canonicalAttr
+				+ ' must be a compile-time constant (e.g., EventName.Save or {"save"})',
+				pos);
+			return;
+		}
+		name = name.trim();
+		if (name.length == 0)
+			return;
+
+		// If the attribute was written as a literal (e.g. `phx-click="increment"`),
+		// accept it only when it is still a compile-time constant known to the registry.
+		if (!allowed.exists(name)) {
+			error(ctx, 'HEEx ' + canonicalAttr + ' error: under -D hxx_strict_phx_events, unknown event "' + name + '"', pos);
+		}
+		#end
+	}
+
+	#if macro
+	static function getAllowedPhxHookNames():Null<Map<String, Bool>> {
+		if (phxHookNameCache != null)
+			return phxHookNameCache;
+		phxHookNameCache = buildAllowedPhxHookNames();
+		return phxHookNameCache;
+	}
+
+	static function getAllowedPhxEventNames():Null<Map<String, Bool>> {
+		if (phxEventNameCache != null)
+			return phxEventNameCache;
+		phxEventNameCache = buildAllowedPhxEventNames();
+		return phxEventNameCache;
+	}
+
+	static function getAllowedPhxEventNamesForContext(ctx:Null<reflaxe.elixir.CompilationContext>):Null<Map<String, Bool>> {
+		// Prefer LiveView-local events derived from handle_event/3.
+		//
+		// WHY
+		// - Under -D hxx_strict_phx_events, we want TSX-level correctness: a LiveView template should
+		//   only accept events that the same LiveView can actually handle.
+		//
+		// HOW
+		// - If we're compiling a @:liveview module and any derived events exist for it, use those
+		//   (optionally unioned with any explicit @:phxEventNames registries).
+		// - Otherwise, fall back to explicit @:phxEventNames registries (global).
+		if (ctx != null && ctx.currentClass != null && ctx.currentClass.meta != null && ctx.currentClass.meta.has(":liveview")) {
+			var moduleTypePath = (ctx.currentClass.pack != null && ctx.currentClass.pack.length > 0) ? (ctx.currentClass.pack.join(".") + "."
+				+ ctx.currentClass.name) : ctx.currentClass.name;
+			if (moduleTypePath != null && moduleTypePath.length > 0) {
+				var derived = LiveViewEventRegistry.getEventsForModule(moduleTypePath);
+				if (derived != null && derived.keys().hasNext()) {
+					// For @:liveview modules, keep the check local: only accept events that
+					// this module can actually handle.
+					return derived;
+				}
+			}
+		}
+
+		return getAllowedPhxEventNames();
+	}
+
+	static function buildAllowedPhxHookNames():Null<Map<String, Bool>> {
+		var allowed:Map<String, Bool> = new Map();
+
+		var discovered = RepoDiscovery.getDiscovered();
+		if (discovered == null || discovered.length == 0) {
+			RepoDiscovery.run();
+			discovered = RepoDiscovery.getDiscovered();
+		}
+
+		if (discovered == null || discovered.length == 0)
+			return null;
+
+		for (typePath in discovered) {
+			var t:haxe.macro.Type = null;
+			try
+				t = Context.getType(typePath)
+			catch (_:Dynamic)
+				t = null;
+			if (t == null)
+				continue;
+
+			switch (TypeTools.follow(t)) {
+				case TAbstract(aRef, _):
+					var abs = aRef.get();
+					if (abs == null || abs.meta == null || !abs.meta.has(":phxHookNames"))
+						continue;
+					collectConstStringStaticsFromAbstract(abs, allowed);
+				case TInst(cRef, _):
+					var cls = cRef.get();
+					if (cls == null || cls.meta == null || !cls.meta.has(":phxHookNames"))
+						continue;
+					collectConstStringStaticsFromClass(cls, allowed);
+				default:
+			}
+		}
+
+		return allowed.keys().hasNext() ? allowed : null;
+	}
+
+	static function buildAllowedPhxEventNames():Null<Map<String, Bool>> {
+		var allowed:Map<String, Bool> = new Map();
+
+		var discovered = RepoDiscovery.getDiscovered();
+		if (discovered == null || discovered.length == 0) {
+			RepoDiscovery.run();
+			discovered = RepoDiscovery.getDiscovered();
+		}
+
+		if (discovered == null || discovered.length == 0)
+			return null;
+
+		if (discovered != null) {
+			for (typePath in discovered) {
+				var t:haxe.macro.Type = null;
+				try
+					t = Context.getType(typePath)
+				catch (_:Dynamic)
+					t = null;
+				if (t == null)
+					continue;
+
+				switch (TypeTools.follow(t)) {
+					case TAbstract(aRef, _):
+						var abs = aRef.get();
+						if (abs == null || abs.meta == null || !abs.meta.has(":phxEventNames"))
+							continue;
+						collectConstStringStaticsFromAbstract(abs, allowed);
+					case TInst(cRef, _):
+						var cls = cRef.get();
+						if (cls == null || cls.meta == null || !cls.meta.has(":phxEventNames"))
+							continue;
+						collectConstStringStaticsFromClass(cls, allowed);
+					default:
+				}
+			}
+		}
+
+		return allowed.keys().hasNext() ? allowed : null;
+	}
+
+	static function collectConstStringStaticsFromAbstract(abs:haxe.macro.Type.AbstractType, out:Map<String, Bool>):Void {
+		if (abs == null)
+			return;
+		if (abs.impl == null)
+			return;
+		var impl = abs.impl.get();
+		if (impl == null)
+			return;
+		collectConstStringStaticsFromClass(impl, out);
+	}
+
+	static function collectConstStringStaticsFromClass(cls:haxe.macro.Type.ClassType, out:Map<String, Bool>):Void {
+		if (cls == null)
+			return;
+		for (field in cls.statics.get()) {
+			if (field == null)
+				continue;
+			var value = extractStringConst(field.expr());
+			if (value != null && value.length > 0) {
+				out.set(value, true);
+			}
+		}
+	}
+
+	static function extractStringConst(expr:Null<TypedExpr>):Null<String> {
+		if (expr == null)
+			return null;
+		return switch (expr.expr) {
+			case TConst(TString(s)):
+				s;
+			case TMeta(_, inner):
+				extractStringConst(inner);
+			case TCast(inner, _):
+				extractStringConst(inner);
+			case TParenthesis(inner):
+				extractStringConst(inner);
+			default:
+				null;
+		};
+	}
+	#end
+
+	static function isRegisteredHtmlElement(tag:String):Bool {
+		if (tag == null || tag.length == 0)
+			return false;
+		// Skip Phoenix component tags (<.foo>) and slot tags (<:inner_block>)
+		var first = tag.charAt(0);
+		if (first == "." || first == ":")
+			return false;
+		// Treat built-in HTML tags as registered; treat custom tags as registered only when they
+		// provide an explicit attribute allowlist to avoid false positives.
+		if (HXXComponentRegistry.getElementType(tag) != null)
+			return true;
+		var customAttrs = getCustomHtmlTagAttributes(tag);
+		return customAttrs != null && customAttrs.length > 0;
+	}
+
+	static var customHtmlTagRegistryCache:Null<Map<String, Array<String>>> = null;
+	static var customHtmlTagKindRegistryCache:Null<Map<String, Map<String, String>>> = null;
+
+	static function isCustomHtmlTagRegistered(tag:String):Bool {
+		if (tag == null || tag.length == 0)
+			return false;
+		if (tag.charAt(0) == "." || tag.charAt(0) == ":")
+			return false;
+		return getCustomHtmlTagRegistry().exists(tag.toLowerCase());
+	}
+
+	static function getCustomHtmlTagAttributes(tag:String):Null<Array<String>> {
+		if (tag == null || tag.length == 0)
+			return null;
+		var key = tag.toLowerCase();
+		var reg = getCustomHtmlTagRegistry();
+		return reg.exists(key) ? reg.get(key) : null;
+	}
+
+	static function getCustomHtmlTagRegistry():Map<String, Array<String>> {
+		if (customHtmlTagRegistryCache != null)
+			return customHtmlTagRegistryCache;
+		#if macro
+		ensureCustomHtmlTagRegistriesBuilt();
+		#else
+		customHtmlTagRegistryCache = new Map();
+		if (customHtmlTagKindRegistryCache == null)
+			customHtmlTagKindRegistryCache = new Map();
+		#end
+		return customHtmlTagRegistryCache;
+	}
+
+	static function getCustomHtmlTagAttributeKinds(tag:String):Null<Map<String, String>> {
+		if (tag == null || tag.length == 0)
+			return null;
+		var reg = getCustomHtmlTagKindRegistry();
+		var key = tag.toLowerCase();
+		return reg.exists(key) ? reg.get(key) : null;
+	}
+
+	static function getCustomHtmlTagKindRegistry():Map<String, Map<String, String>> {
+		if (customHtmlTagKindRegistryCache != null)
+			return customHtmlTagKindRegistryCache;
+		#if macro
+		ensureCustomHtmlTagRegistriesBuilt();
+		#else
+		customHtmlTagKindRegistryCache = new Map();
+		if (customHtmlTagRegistryCache == null)
+			customHtmlTagRegistryCache = new Map();
+		#end
+		return customHtmlTagKindRegistryCache;
+	}
+
+	#if macro
+	static function ensureCustomHtmlTagRegistriesBuilt():Void {
+		if (customHtmlTagRegistryCache != null && customHtmlTagKindRegistryCache != null)
+			return;
+		if (customHtmlTagRegistryCache == null)
+			customHtmlTagRegistryCache = new Map();
+		if (customHtmlTagKindRegistryCache == null)
+			customHtmlTagKindRegistryCache = new Map();
+
+		var discovered = RepoDiscovery.getDiscovered();
+		if (discovered == null || discovered.length == 0) {
+			RepoDiscovery.run();
+			discovered = RepoDiscovery.getDiscovered();
+		}
+		if (discovered == null || discovered.length == 0)
+			return;
+
+		for (typePath in discovered) {
+			var t:haxe.macro.Type = null;
+			try
+				t = Context.getType(typePath)
+			catch (_:Dynamic)
+				t = null;
+			if (t == null)
+				continue;
+
+			switch (TypeTools.follow(t)) {
+				case TInst(cRef, _):
+					var cls = cRef.get();
+					if (cls == null || cls.meta == null || !cls.meta.has(":hxxHtmlTags"))
+						continue;
+					collectCustomHtmlTagsFromClass(cls, customHtmlTagRegistryCache, customHtmlTagKindRegistryCache);
+				case TAbstract(aRef, _):
+					var abs = aRef.get();
+					if (abs == null || abs.meta == null || !abs.meta.has(":hxxHtmlTags"))
+						continue;
+					if (abs.impl == null)
+						continue;
+					var impl = abs.impl.get();
+					if (impl == null)
+						continue;
+					collectCustomHtmlTagsFromClass(impl, customHtmlTagRegistryCache, customHtmlTagKindRegistryCache);
+				default:
+			}
+		}
+	}
+
+	static function collectCustomHtmlTagsFromClass(cls:haxe.macro.Type.ClassType, out:Map<String, Array<String>>, kinds:Map<String, Map<String, String>>):Void {
+		if (cls == null)
+			return;
+		for (field in cls.statics.get()) {
+			if (field == null)
+				continue;
+
+			var tag = extractStringConst(field.expr());
+			if (tag == null || tag.length == 0)
+				continue;
+
+			var attrs:Array<String> = [];
+			var attrKinds:Map<String, String> = new Map();
+			if (field.meta != null && field.meta.has(":hxxTagAttrs")) {
+				for (entry in field.meta.extract(":hxxTagAttrs")) {
+					if (entry == null || entry.params == null)
+						continue;
+					attrs = mergeUniqueStrings(attrs, extractStringArrayConst(entry.params));
+				}
+			}
+
+			if (field.meta != null && field.meta.has(":hxxTagAttrKinds")) {
+				for (entry in field.meta.extract(":hxxTagAttrKinds")) {
+					if (entry == null || entry.params == null)
+						continue;
+					attrKinds = mergeKindMaps(attrKinds, extractStringToStringMapConst(entry.params));
+				}
+			}
+
+			// Ensure typed attrs are also allowed attrs.
+			for (k in attrKinds.keys())
+				attrs = mergeUniqueStrings(attrs, [k]);
+
+			var tagKey = tag.toLowerCase();
+
+			if (out.exists(tagKey)) {
+				attrs = mergeUniqueStrings(out.get(tagKey), attrs);
+			}
+			out.set(tagKey, attrs);
+
+			if (kinds.exists(tagKey)) {
+				attrKinds = mergeKindMaps(kinds.get(tagKey), attrKinds);
+			}
+			kinds.set(tagKey, attrKinds);
+		}
+	}
+
+	static function mergeUniqueStrings(existing:Array<String>, next:Array<String>):Array<String> {
+		var out = existing != null ? existing.copy() : [];
+		if (next == null)
+			return out;
+		var seen:Map<String, Bool> = new Map();
+		for (s in out)
+			if (s != null)
+				seen.set(s.toLowerCase(), true);
+		for (s in next) {
+			if (s == null)
+				continue;
+			var k = s.toLowerCase();
+			if (seen.exists(k))
+				continue;
+			seen.set(k, true);
+			out.push(s);
+		}
+		return out;
+	}
+
+	static function extractStringArrayConst(params:Array<Expr>):Array<String> {
+		var out:Array<String> = [];
+		if (params == null || params.length == 0)
+			return out;
+
+		function addExpr(e:Expr):Void {
+			if (e == null)
+				return;
+			switch (e.expr) {
+				case EConst(CString(s, _)):
+					if (s != null && s.length > 0)
+						out.push(s);
+				case EMeta(_, inner):
+					addExpr(inner);
+				case EParenthesis(inner):
+					addExpr(inner);
+				default:
+			}
+		}
+
+		// Support both forms:
+		// - @:hxxTagAttrs(["a", "b"])
+		// - @:hxxTagAttrs("a", "b")
+		if (params.length == 1) {
+			switch (params[0].expr) {
+				case EArrayDecl(items):
+					for (i in items)
+						addExpr(i);
+					return out;
+				default:
+			}
+		}
+
+		for (p in params)
+			addExpr(p);
+		return out;
+	}
+
+	static function extractStringToStringMapConst(params:Array<Expr>):Map<String, String> {
+		var out:Map<String, String> = new Map();
+		if (params == null || params.length == 0)
+			return out;
+
+		// Support:
+		// - @:hxxTagAttrKinds({enabled: "bool", variant: "string"})
+		// - @:hxxTagAttrKinds("enabled", "bool", "variant", "string")
+		if (params.length == 1) {
+			switch (params[0].expr) {
+				case EObjectDecl(fields):
+					if (fields == null)
+						return out;
+					for (f in fields) {
+						if (f == null)
+							continue;
+						var key = f.field;
+						var value:Null<String> = null;
+						switch (f.expr.expr) {
+							case EConst(CString(s, _)):
+								value = s;
+							case EParenthesis(inner):
+								switch (inner.expr) {
+									case EConst(CString(s, _)):
+										value = s;
+									default:
+								}
+							default:
+						}
+						if (key != null && key.length > 0 && value != null && value.length > 0) {
+							var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(key));
+							if (canonical != null)
+								out.set(canonical, value);
+						}
+					}
+					return out;
+				default:
+			}
+		}
+
+		var i = 0;
+		while (i + 1 < params.length) {
+			var key:Null<String> = null;
+			var value:Null<String> = null;
+			switch (params[i].expr) {
+				case EConst(CString(s, _)):
+					key = s;
+				default:
+			}
+			switch (params[i + 1].expr) {
+				case EConst(CString(s, _)):
+					value = s;
+				default:
+			}
+			if (key != null && key.length > 0 && value != null && value.length > 0) {
+				var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(key));
+				if (canonical != null)
+					out.set(canonical, value);
+			}
+			i += 2;
+		}
+		return out;
+	}
+
+	static function mergeKindMaps(existing:Map<String, String>, next:Map<String, String>):Map<String, String> {
+		var out:Map<String, String> = new Map();
+		if (existing != null)
+			for (k in existing.keys())
+				out.set(k, existing.get(k));
+		if (next == null)
+			return out;
+		for (k in next.keys()) {
+			var left = out.exists(k) ? out.get(k) : null;
+			var right = next.get(k);
+			if (left == null || left.length == 0) {
+				out.set(k, right);
+			} else if (right != null && right.length > 0 && left != right) {
+				out.set(k, mergeKindUnion(left, right));
+			}
+		}
+		return out;
+	}
+	#end
+
+	static function validateCustomHtmlTagAttributeValueKind(tag:String, attr:EAttribute, fields:Map<String, String>,
+			ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (tag == null || tag.length == 0)
+			return;
+		if (attr == null || attr.name == null || attr.name.length == 0)
+			return;
+		if (attr.name.startsWith(":"))
+			return;
+		if (isHeexComponentTag(tag) || isSlotTag(tag))
+			return;
+
+		// Built-in HTML tags use the HXXComponentRegistry typing.
+		if (HXXComponentRegistry.getElementType(tag) != null)
+			return;
+
+		var kinds = getCustomHtmlTagAttributeKinds(tag);
+		if (kinds == null)
+			return;
+
+		var canonical = HXXComponentRegistry.toHtmlAttribute(normalizeHeexAttributeName(attr.name));
+		if (canonical == null)
+			return;
+
+		var expected = kinds.exists(canonical) ? kinds.get(canonical) : null;
+		if (expected == null || expected == "unknown")
+			return;
+
+		var actual = inferHeexExprKind(attr.value, fields);
+		if (!attributeKindsCompatible(expected, actual)) {
+			error(ctx, 'HEEx attribute type error: <' + tag + '> "' + canonical + '" expects ' + expected + ' but got ' + actual, pos);
+		}
+	}
+
+	static var strictHtmlAllowedTagCache:Null<Map<String, Bool>> = null;
+
+	static function validateHtmlTagName(tag:String, ctx:Null<reflaxe.elixir.CompilationContext>, pos:haxe.macro.Expr.Position):Void {
+		if (!strictHtmlTagTypingEnabled())
+			return;
+		if (tag == null || tag.length == 0)
+			return;
+
+		var first = tag.charAt(0);
+		// Skip dot-components and slot tags.
+		if (first == "." || first == ":")
+			return;
+
+		if (HXXComponentRegistry.getElementType(tag) != null)
+			return;
+		if (isCustomHtmlTagRegistered(tag))
+			return;
+		if (isStrictHtmlAllowedTag(tag))
+			return;
+
+		error(ctx,
+			'HEEx tag error: <'
+			+ tag
+			+ '> is not a registered HTML tag under -D hxx_strict_html. '
+			+ 'Either register/allow it (e.g., -D hxx_strict_html_allow_tags='
+			+ tag
+			+ ') or disable strict mode.',
+			pos);
+	}
+
+	static function isStrictHtmlAllowedTag(tag:String):Bool {
+		if (tag == null || tag.length == 0)
+			return false;
+		if (strictHtmlAllowedTagCache == null)
+			strictHtmlAllowedTagCache = buildStrictHtmlAllowedTags();
+		if (strictHtmlAllowedTagCache == null)
+			return false;
+		return strictHtmlAllowedTagCache.exists(tag.toLowerCase());
+	}
+
+	static function buildStrictHtmlAllowedTags():Map<String, Bool> {
+		var out:Map<String, Bool> = new Map();
+
+		#if macro
+		var raw = Context.definedValue("hxx_strict_html_allow_tags");
+		if (raw == null || raw.length == 0)
+			return out;
+
+		for (part in raw.split(",")) {
+			var trimmed = part.trim();
+			if (trimmed.length == 0)
+				continue;
+			out.set(trimmed.toLowerCase(), true);
+		}
+		#end
+
+		return out;
+	}
+
+	static function getAllowedHtmlAttributesForTag(tag:String):Map<String, Bool> {
+		var key = tag.toLowerCase();
+		if (allowedHtmlAttributeCache.exists(key))
+			return allowedHtmlAttributeCache.get(key);
+
+		var allowed:Map<String, Bool> = new Map();
+
+		var globals = getGlobalHtmlAttributes();
+		for (k in globals.keys())
+			allowed.set(k, true);
+
+		if (HXXComponentRegistry.getElementType(tag) != null) {
+			var attrs = HXXComponentRegistry.getAllowedAttributes(tag);
+			for (a in attrs)
+				addAllowedAttributeForms(allowed, a);
+		} else {
+			var customAttrs = getCustomHtmlTagAttributes(tag);
+			if (customAttrs != null)
+				for (a in customAttrs)
+					addAllowedAttributeForms(allowed, a);
+		}
+
+		allowedHtmlAttributeCache.set(key, allowed);
+		return allowed;
+	}
+
+	static function getGlobalHtmlAttributes():Map<String, Bool> {
+		if (globalHtmlAttributeCache != null)
+			return globalHtmlAttributeCache;
+		var allowed:Map<String, Bool> = new Map();
+		// div is registered with global attributes in HXXComponentRegistry; use it as the source of truth.
+		for (a in HXXComponentRegistry.getAllowedAttributes("div"))
+			addAllowedAttributeForms(allowed, a);
+		globalHtmlAttributeCache = allowed;
+		return allowed;
+	}
+
+	static function addAllowedAttributeForms(allowed:Map<String, Bool>, name:String):Void {
+		if (name == null || name.length == 0)
+			return;
+		// Wildcard attributes (data*) are handled separately.
+		if (name.indexOf("*") != -1)
+			return;
+		allowed.set(name, true);
+		var html = HXXComponentRegistry.toHtmlAttribute(name);
+		if (html != null)
+			allowed.set(html, true);
+	}
+
+	static function normalizeHeexAttributeName(name:String):String {
+		// Accept snake_case in templates but validate against canonical kebab-case where applicable.
+		return name.indexOf("_") != -1 ? name.split("_").join("-") : name;
+	}
+
+	static function isWildcardHeexAttribute(name:String):Bool {
+		if (name == null)
+			return false;
+		var n = name.toLowerCase();
+		return n.startsWith("data-") || n.startsWith("aria-") || n.startsWith("phx-value-");
+	}
+
+	static function expectedKindForAttribute(canonicalAttr:String):Null<String> {
+		return switch (canonicalAttr) {
+			// HTML boolean-ish attributes (subset)
+			case "disabled", "required", "checked", "selected", "readonly", "multiple", "autofocus", "defer", "async", "nomodule",
+				// Phoenix/ARIA common boolean-ish attributes
+				"phx-track-static", "aria-hidden":
+				"bool";
+			// Phoenix hook name
+			case "phx-hook":
+				"string";
+			// Phoenix LiveView events (string name or JS expression)
+			case "phx-click", "phx-submit", "phx-change", "phx-blur", "phx-focus", "phx-keydown", "phx-keyup", "phx-window-keydown", "phx-window-keyup":
+				"string";
+			default:
+				null;
+		}
+	}
+
+	static function inferHeexExprKind(expr:ElixirAST, fields:Map<String, String>):String {
+		if (expr == null)
+			return "unknown";
+		return switch (expr.def) {
+			case EString(v):
+				var t = v != null ? v.trim().toLowerCase() : "";
+					(t == "true" || t == "false") ? "bool" : "string";
+			case EInteger(_): "int";
+			case EFloat(_): "float";
+			case EBoolean(_): "bool";
+			case ENil: "nil";
+			case EAtom(_): "atom";
+			case ECharlist(_): "string";
+			case EBitstring(_): "string";
+			case EList(_): "array";
+			case EKeywordList(_): "array";
+			case ETuple(_): "tuple";
+			case EMap(_): "map";
+			case EStruct(_, _): "map";
+			case EStructUpdate(_, _): "map";
+			case EAssign(name):
+				(fields != null && fields.exists(name)) ? fields.get(name) : "unknown";
+			case EBinary(op, _, _):
+				(isComparisonOp(op) || op == AndAlso || op == OrElse) ? "bool" : "unknown";
+			case EIf(_, thenB, elseB):
+				var thenKind = inferHeexExprKind(thenB, fields);
+				var elseKind = elseB != null ? inferHeexExprKind(elseB, fields) : "nil";
+				if (thenKind == elseKind) thenKind else if (thenKind == "nil") elseKind else if (elseKind == "nil") thenKind else "unknown";
+			case EParen(inner):
+				inferHeexExprKind(inner, fields);
+			default:
+				"unknown";
+		}
+	}
+
+	static function attributeKindsCompatible(expected:String, actual:String):Bool {
+		if (expected == null || actual == null)
+			return true;
+		// Allow nil for optional attribute omission.
+		if (actual == "nil")
+			return true;
+		// If we can't confidently infer the kind, do not error.
+		if (actual == "unknown")
+			return true;
+
+		if (expected.indexOf("|") != -1) {
+			for (p in expected.split("|")) {
+				if (p.trim() == actual)
+					return true;
+			}
+			return false;
+		}
+
+		return expected == actual;
+	}
+
+	static function validateExprForAssigns(expr:ElixirAST, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position, enableAssignsChecks:Bool):Void {
+		if (!enableAssignsChecks)
+			return;
+
+		// Collect used assigns fields and check comparisons on the fly
+		var used = new Map<String, Bool>();
+		analyzeExpr(expr, fields, typeName, ctx, pos, used);
+		for (k in used.keys()) {
+			if (!fields.exists(k)) {
+				error(ctx, 'HEEx assigns error: Unknown field @' + k + ' (not found in typedef ' + typeName + ')', pos);
+			}
+		}
+	}
+
+	static function analyzeExpr(expr:ElixirAST, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position, used:Map<String, Bool>):Void {
+		switch (expr.def) {
+			case EAssign(name):
+				used.set(name, true);
+			case EField(target, _):
+				analyzeExpr(target, fields, typeName, ctx, pos, used);
+			case EAccess(target, key):
+				analyzeExpr(target, fields, typeName, ctx, pos, used);
+				analyzeExpr(key, fields, typeName, ctx, pos, used);
+			case EBinary(op, left, right):
+				// Recurse first
+				analyzeExpr(left, fields, typeName, ctx, pos, used);
+				analyzeExpr(right, fields, typeName, ctx, pos, used);
+				// Check literal comparisons like @field == "str" or 1 < @field
+				if (isComparisonOp(op)) {
+					var lName = extractAssignFieldName(left);
+					var rName = extractAssignFieldName(right);
+					var lLit = extractLiteralKind(left);
+					var rLit = extractLiteralKind(right);
+					if (lName != null && rLit != null)
+						checkKindCompat(lName, rLit, fields, typeName, ctx, pos);
+					if (rName != null && lLit != null)
+						checkKindCompat(rName, lLit, fields, typeName, ctx, pos);
+				}
+			case EIf(cond, thenB, elseB):
+				analyzeExpr(cond, fields, typeName, ctx, pos, used);
+				analyzeExpr(thenB, fields, typeName, ctx, pos, used);
+				if (elseB != null)
+					analyzeExpr(elseB, fields, typeName, ctx, pos, used);
+			case ECall(target, _fn, args):
+				if (target != null)
+					analyzeExpr(target, fields, typeName, ctx, pos, used);
+				for (a in args)
+					analyzeExpr(a, fields, typeName, ctx, pos, used);
+			case EParen(inner):
+				analyzeExpr(inner, fields, typeName, ctx, pos, used);
+			default:
+		}
+	}
+
+	static inline function isComparisonOp(op:EBinaryOp):Bool {
+		return switch (op) {
+			case Equal | NotEqual | Less | Greater | LessEqual | GreaterEqual | StrictEqual | StrictNotEqual: true;
+			default: false;
+		}
+	}
+
+	static function extractAssignFieldName(expr:ElixirAST):Null<String> {
+		return switch (expr.def) {
+			case EAssign(name): name;
+			case EField(target, _): extractAssignFieldName(target);
+			case EAccess(target, _): extractAssignFieldName(target);
+			default: null;
+		}
+	}
+
+	static function extractLiteralKind(expr:ElixirAST):Null<String> {
+		return switch (expr.def) {
+			case EString(_): "string";
+			case EInteger(_): "int";
+			case EBoolean(_): "bool";
+			case ENil: "nil";
+			default: null;
+		}
+	}
+
+	static function checkKindCompat(field:String, litKind:String, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		var fieldKind = fields.exists(field) ? fields.get(field) : null;
+		if (fieldKind != null && !kindsCompatible(fieldKind, litKind)) {
+			error(ctx, 'HEEx assigns type error: @' + field + ' is ' + fieldKind + ' but compared to ' + litKind + ' literal', pos);
+		}
+	}
+
+	static function collectAtFields(s:String):Array<String> {
+		var found = new Map<String, Bool>();
+		var i = 0;
+		while (i < s.length) {
+			var idx = s.indexOf("@", i);
+			if (idx == -1)
+				break;
+			var j = idx + 1;
+			if (j < s.length && isIdentStart(s.charCodeAt(j))) {
+				var k = j + 1;
+				while (k < s.length && isIdentPart(s.charCodeAt(k)))
+					k++;
+				var name = s.substr(j, k - j);
+				found.set(name, true);
+				i = k;
+			} else {
+				i = j;
+			}
+		}
+		return [for (k in found.keys()) k];
+	}
+
+	static inline function isIdentStart(c:Int):Bool {
+		return (c >= 'A'.code && c <= 'Z'.code) || (c >= 'a'.code && c <= 'z'.code) || c == '_'.code;
+	}
+
+	static inline function isIdentPart(c:Int):Bool {
+		return isIdentStart(c) || (c >= '0'.code && c <= '9'.code);
+	}
+
+	static function checkLiteralComparisons(content:String, fields:Map<String, String>, typeName:String, ctx:Null<reflaxe.elixir.CompilationContext>,
+			pos:haxe.macro.Expr.Position):Void {
+		// Pattern 1: @field <op> <literal>
+		var p1 = ~/@([A-Za-z_][A-Za-z0-9_]*)\s*(==|!=|===|!==|<=|>=|<|>)\s*("[^"]*"|\d+|true|false|nil)/g;
+		var start1 = 0;
+		while (p1.matchSub(content, start1)) {
+			var field = p1.matched(1);
+			var lit = p1.matched(3);
+			var litKind = literalKind(lit);
+			var fieldKind = fields.exists(field) ? fields.get(field) : null;
+			if (fieldKind != null && !kindsCompatible(fieldKind, litKind)) {
+				error(ctx, 'HEEx assigns type error: @' + field + ' is ' + fieldKind + ' but compared to ' + litKind + ' literal', pos);
+			}
+			var mpos = p1.matchedPos();
+			start1 = mpos.pos + mpos.len;
+		}
+		// Pattern 2: <literal> <op> @field
+		var p2 = ~/("[^"]*"|\d+|true|false|nil)\s*(==|!=|===|!==|<=|>=|<|>)\s*@([A-Za-z_][A-Za-z0-9_]*)/g;
+		var start2 = 0;
+		while (p2.matchSub(content, start2)) {
+			var lit2 = p2.matched(1);
+			var field2 = p2.matched(3);
+			var litKind2 = literalKind(lit2);
+			var fieldKind2 = fields.exists(field2) ? fields.get(field2) : null;
+			if (fieldKind2 != null && !kindsCompatible(fieldKind2, litKind2)) {
+				error(ctx, 'HEEx assigns type error: @' + field2 + ' is ' + fieldKind2 + ' but compared to ' + litKind2 + ' literal', pos);
+			}
+			var mpos2 = p2.matchedPos();
+			start2 = mpos2.pos + mpos2.len;
+		}
+	}
+
+	static function literalKind(lit:String):String {
+		var t = lit.trim();
+		if (t == "true" || t == "false")
+			return "bool";
+		if (t == "nil")
+			return "nil";
+		if (t.length > 0 && t.charAt(0) == '"')
+			return "string";
+		// numbers
+		return ~/^[0-9]+$/.match(t) ? "int" : "unknown";
+	}
+
+	static function kindsCompatible(fieldKind:String, litKind:String):Bool {
+		// Allow nil comparisons for nullable-like fields (we do not know nullability yet; allow all)
+		if (litKind == "nil")
+			return true;
+		if (fieldKind == null || litKind == null)
+			return true;
+		// Simple exact match for now
+		return fieldKind == litKind;
+	}
+
+	static function extractAssignsTypeSpecForFunction(functionName:String, hx:String):Null<String> {
+		return extractAssignsTypeSpecForFunctionBefore(functionName, hx, null);
+	}
+
+	static function extractAssignsTypeSpecForFunctionBefore(functionName:String, hx:String, nearLine:Null<Int>):Null<String> {
+		if (functionName == null || functionName.length == 0)
+			return null;
+
+		var escaped = escapeRegExp(functionName);
+		var re = new EReg('function\\s+' + escaped + '\\s*\\(', "g");
+		var searchStart = 0;
+
+		var bestLine = -1;
+		var bestType:Null<String> = null;
+
+		while (re.matchSub(hx, searchStart)) {
+			var matchPos = re.matchedPos();
+			var openParenIndex = matchPos.pos + matchPos.len - 1;
+
+			var lineNo = lineNumberAtIndex(hx, matchPos.pos);
+
+			if (nearLine == null || lineNo <= nearLine) {
+				var params = extractEnclosed(hx, openParenIndex, "(", ")");
+				if (params != null) {
+					var assignsTypeSpec = extractTypeSpecForParam("assigns", params);
+					if (assignsTypeSpec != null && lineNo > bestLine) {
+						bestLine = lineNo;
+						bestType = assignsTypeSpec;
+					}
+				}
+			}
+
+			searchStart = matchPos.pos + matchPos.len;
+		}
+
+		return bestType;
+	}
+
+	static function unwrapAssignsType(typeSpec:String):Null<String> {
+		if (typeSpec == null)
+			return null;
+		var trimmed = typeSpec.trim();
+		if (trimmed.length == 0)
+			return null;
+
+		var lt = trimmed.indexOf("<");
+		if (lt == -1)
+			return trimmed;
+		var outer = trimmed.substr(0, lt).trim();
+		if (!outer.endsWith("Assigns"))
+			return trimmed;
+
+		var inner = extractEnclosed(trimmed, lt, "<", ">");
+		return inner != null ? inner.trim() : trimmed;
+	}
+
+	static function stripTypeParameters(typeSpec:String):Null<String> {
+		if (typeSpec == null)
+			return null;
+		var trimmed = typeSpec.trim();
+		if (trimmed.length == 0)
+			return null;
+
+		var lt = trimmed.indexOf("<");
+		return lt == -1 ? trimmed : trimmed.substr(0, lt).trim();
+	}
+
+	static function extractEnclosed(hx:String, openIndex:Int, openToken:String, closeToken:String):Null<String> {
+		if (hx == null || openIndex < 0 || openIndex >= hx.length)
+			return null;
+		if (hx.substr(openIndex, openToken.length) != openToken)
+			return null;
+
+		var i = openIndex;
+		var depth = 0;
+		var start = openIndex + openToken.length;
+
+		while (i < hx.length) {
+			var ch = hx.charAt(i);
+			if (ch == openToken) {
+				depth++;
+			} else if (ch == closeToken) {
+				depth--;
+				if (depth == 0) {
+					var end = i;
+					return hx.substr(start, end - start);
+				}
+			}
+			i++;
+		}
+
+		return null;
+	}
+
+	static function extractTypeSpecForParam(paramName:String, params:String):Null<String> {
+		if (paramName == null || paramName.length == 0)
+			return null;
+		if (params == null || params.length == 0)
+			return null;
+
+		var searchStart = 0;
+		while (searchStart < params.length) {
+			var idx = params.indexOf(paramName, searchStart);
+			if (idx == -1)
+				return null;
+
+			var beforeOk = idx == 0 || !isIdentPart(params.charCodeAt(idx - 1));
+			var afterIdx = idx + paramName.length;
+			var afterOk = afterIdx >= params.length || !isIdentPart(params.charCodeAt(afterIdx));
+
+			if (beforeOk && afterOk) {
+				var i = afterIdx;
+				while (i < params.length && StringTools.isSpace(params, i))
+					i++;
+				if (i < params.length && params.charAt(i) == ":") {
+					i++;
+					while (i < params.length && StringTools.isSpace(params, i))
+						i++;
+					var start = i;
+
+					var angleDepth = 0;
+					var parenDepth = 0;
+					var bracketDepth = 0;
+
+					while (i < params.length) {
+						var ch = params.charAt(i);
+						switch (ch) {
+							case "<":
+								angleDepth++;
+							case ">":
+								if (angleDepth > 0)
+									angleDepth--;
+							case "(":
+								parenDepth++;
+							case ")":
+								if (parenDepth > 0)
+									parenDepth--;
+							case "[":
+								bracketDepth++;
+							case "]":
+								if (bracketDepth > 0)
+									bracketDepth--;
+							case "," | "=":
+								if (angleDepth == 0 && parenDepth == 0 && bracketDepth == 0) {
+									var spec = params.substr(start, i - start).trim();
+									return spec.length > 0 ? spec : null;
+								}
+							default:
+						}
+						i++;
+					}
+
+					var endSpec = params.substr(start).trim();
+					return endSpec.length > 0 ? endSpec : null;
+				}
+			}
+
+			searchStart = idx + paramName.length;
+		}
+
+		return null;
+	}
+
+	static function lineNumberAtIndex(text:String, index:Int):Int {
+		var lineNo = 1;
+		var i = 0;
+		var max = index < text.length ? index : text.length;
+		while (i < max) {
+			if (text.charAt(i) == "\n")
+				lineNo++;
+			i++;
+		}
+		return lineNo;
+	}
+
+	static function escapeRegExp(s:String):String {
+		var escaped = "";
+		for (i in 0...s.length) {
+			var ch = s.charAt(i);
+			escaped += switch (ch) {
+				case "\\" | "^" | "$" | "." | "|" | "?" | "*" | "+" | "(" | ")" | "[" | "]" | "{" | "}":
+					"\\" + ch;
+				default:
+					ch;
+			}
+		}
+		return escaped;
+	}
+
+	static function extractAssignsFields(typeName:String, hx:String):Null<Map<String, String>> {
+		var parsed = extractAssignsFieldsFromTypedefBlock(typeName, hx);
+		if (parsed.foundTypedef) {
+			return parsed.fields;
+		}
+
+		#if macro
+		// Fallback: resolve assigns typedefs via the Haxe typer so the linter works even
+		// when the assigns type is declared in a different module/file.
+		var resolved = extractAssignsFieldsViaContext(typeName, hx);
+		if (resolved != null)
+			return resolved;
+		#end
+
+		return null;
+	}
+
+	private static function extractAssignsFieldsFromTypedefBlock(typeName:String, hx:String):{foundTypedef:Bool, fields:Map<String, String>} {
+		var out = new Map<String, String>();
+		// Find typedef <typeName> = { ... }
+		var idx = hx.indexOf('typedef ' + typeName + '');
+		if (idx == -1)
+			return {foundTypedef: false, fields: out};
+		var braceStart = hx.indexOf('{', idx);
+		if (braceStart == -1)
+			return {foundTypedef: false, fields: out};
+		var i = braceStart + 1;
+		var depth = 1;
+		while (i < hx.length && depth > 0) {
+			var ch = hx.charAt(i);
+			if (ch == '{')
+				depth++;
+			else if (ch == '}')
+				depth--;
+			i++;
+		}
+		var braceEnd = i - 1;
+		if (braceEnd <= braceStart)
+			return {foundTypedef: false, fields: out};
+		var block = hx.substr(braceStart + 1, braceEnd - (braceStart + 1));
+
+		// Support anonymous structure extension: typedef X = {> Base, ... }
+		var baseTypes:Array<String> = [];
+
+		// Parse lines: supports both `var name: Type` and `name: Type`, with optional comma/semicolon terminators
+		var lines = block.split("\n");
+		for (ln in lines) {
+			var line = ln.trim();
+			if (line.length == 0 || line.startsWith("//"))
+				continue;
+
+			// Strip trailing inline comments (common in assigns typedefs).
+			var commentIndex = line.indexOf("//");
+			if (commentIndex != -1) {
+				line = line.substr(0, commentIndex).trim();
+				if (line.length == 0)
+					continue;
+			}
+
+			// Strip leading metadata tags so we can parse assigns fields like:
+			//   @:optional var className: String;
+			//   @:slot @:optional var action: Slot<CardActionAssigns>;
+			// NOTE: This keeps the linter tolerant of HXX/LiveView metadata while still
+			// extracting the underlying field name/type.
+			while (true) {
+				var meta = ~/^@:[A-Za-z0-9_]+(?:\([^)]*\))?\s+/;
+				if (!meta.match(line))
+					break;
+				var pos = meta.matchedPos();
+				line = line.substr(pos.pos + pos.len).trim();
+			}
+
+			if (line.startsWith(">")) {
+				var rest = line.substr(1).trim();
+				if (rest.endsWith(","))
+					rest = rest.substr(0, rest.length - 1).trim();
+				if (rest.length > 0)
+					baseTypes.push(rest);
+				continue;
+			}
+
+			var name:String = null;
+			var typeSpec:String = null;
+			// Keep parsing tolerant of commas inside generic types (e.g. Slot<Term, CardLet>).
+			var reVar = ~/^var\s+\??([A-Za-z0-9_]+)\s*:\s*(.+)$/;
+			if (reVar.match(line)) {
+				name = reVar.matched(1);
+				typeSpec = reVar.matched(2).trim();
+			} else {
+				var rePlain = ~/^\??([A-Za-z0-9_]+)\s*:\s*(.+)$/;
+				if (rePlain.match(line)) {
+					name = rePlain.matched(1);
+					typeSpec = rePlain.matched(2).trim();
+				}
+			}
+			if (name != null && typeSpec != null) {
+				// Strip common trailing terminators.
+				while (typeSpec.endsWith(",") || typeSpec.endsWith(";")) {
+					typeSpec = typeSpec.substr(0, typeSpec.length - 1).trim();
+				}
+				var kind = normalizeKind(typeSpec);
+				out.set(name, kind);
+				// HXX/HEEx assigns normalize camelCase to snake_case (e.g. className -> @class_name).
+				var snake = toSnakeCase(name);
+				if (snake != name && !out.exists(snake)) {
+					out.set(snake, kind);
+				}
+				// Phoenix component assigns may use HXX attribute naming (e.g. className -> @class).
+				var key = componentAssignKeyFromAttributeName(name);
+				if (key != name && !out.exists(key)) {
+					out.set(key, kind);
+				}
+			}
+		}
+
+		for (base in baseTypes) {
+			var baseParsed = extractAssignsFieldsFromTypedefBlock(base, hx);
+			if (baseParsed.foundTypedef) {
+				for (k in baseParsed.fields.keys())
+					if (!out.exists(k))
+						out.set(k, baseParsed.fields.get(k));
+			}
+		}
+
+		return {foundTypedef: true, fields: out};
+	}
+
+	static function toSnakeCase(name:String):String {
+		var out = "";
+		for (i in 0...name.length) {
+			var ch = name.charAt(i);
+			var isUpper = ch != ch.toLowerCase() && ch == ch.toUpperCase();
+			if (isUpper) {
+				if (i > 0 && out.length > 0 && out.charAt(out.length - 1) != "_")
+					out += "_";
+				out += ch.toLowerCase();
+			} else {
+				out += ch.toLowerCase();
+			}
+		}
+		return out;
+	}
+
+	#if macro
+	static function extractAssignsFieldsViaContext(typeName:String, hx:String):Null<Map<String, String>> {
+		var candidates = new Array<String>();
+
+		if (typeName.indexOf(".") != -1) {
+			candidates.push(typeName);
+		}
+
+		var resolvedFromImports = resolveTypeNameFromImports(typeName, hx);
+		if (resolvedFromImports != null)
+			candidates.push(resolvedFromImports);
+
+		var packageName = extractPackageName(hx);
+		if (packageName != null && typeName.indexOf(".") == -1) {
+			candidates.push(packageName + "." + typeName);
+		}
+
+		for (candidate in candidates) {
+			try {
+				var t = Context.getType(candidate);
+				var fields = fieldsFromType(t);
+				if (fields != null)
+					return fields;
+			} catch (_:Dynamic) {
+				// try next candidate
+			}
+		}
+
+		return null;
+	}
+
+	static function fieldsFromType(t:haxe.macro.Type):Null<Map<String, String>> {
+		var out = new Map<String, String>();
+		var followed = TypeTools.follow(t);
+		switch (followed) {
+			case TAbstract(aRef, params):
+				var abs = aRef.get();
+				if (abs != null
+					&& abs.name == "Assigns"
+					&& abs.pack.join(".") == "phoenix.types"
+					&& params != null
+					&& params.length == 1) {
+					return fieldsFromType(params[0]);
+				}
+				return null;
+			case TAnonymous(a):
+				for (f in a.get().fields) {
+					var kind = kindFromType(f.type);
+					out.set(f.name, kind);
+					// HXX/HEEx assigns normalize camelCase to snake_case (e.g. className -> @class_name).
+					var snake = toSnakeCase(f.name);
+					if (snake != f.name && !out.exists(snake))
+						out.set(snake, kind);
+					// Phoenix component assigns may use HXX attribute naming (e.g. className -> @class).
+					var key = componentAssignKeyFromAttributeName(f.name);
+					if (key != f.name && !out.exists(key))
+						out.set(key, kind);
+				}
+				return out;
+			case TType(tdef, params):
+				return fieldsFromType(TypeTools.applyTypeParameters(tdef.get().type, tdef.get().params, params));
+			default:
+				return null;
+		}
+	}
+
+	static function extractPackageName(hx:String):Null<String> {
+		var re = ~/^\s*package\s+([A-Za-z0-9_\.]+)\s*;/m;
+		return re.match(hx) ? re.matched(1) : null;
+	}
+
+	static function resolveTypeNameFromImports(typeName:String, hx:String):Null<String> {
+		var importPaths = new Map<String, String>();
+
+		// Supports:
+		// - import a.b.C;
+		// - import a.b.C as Alias;
+		var re = ~/^\s*import\s+([A-Za-z0-9_\.]+)(?:\s+as\s+([A-Za-z0-9_]+))?\s*;/m;
+		var start = 0;
+		while (re.matchSub(hx, start)) {
+			var full = re.matched(1);
+			var alias = re.matched(2);
+			var lastDot = full.lastIndexOf(".");
+			var visible = (alias != null && alias != "") ? alias : (lastDot == -1 ? full : full.substr(lastDot + 1));
+			importPaths.set(visible, full);
+
+			var pos = re.matchedPos();
+			start = pos.pos + pos.len;
+		}
+
+		if (importPaths.exists(typeName)) {
+			return importPaths.get(typeName);
+		}
+
+		// Handle module-import prefix usage: Foo.Bar where Foo is imported as a module.
+		var dot = typeName.indexOf(".");
+		if (dot != -1) {
+			var prefix = typeName.substr(0, dot);
+			if (importPaths.exists(prefix)) {
+				return importPaths.get(prefix) + typeName.substr(dot);
+			}
+		}
+
+		return null;
+	}
+	#end
+
+	static function mergeKindUnion(left:String, right:String):String {
+		if (left == null || right == null)
+			return "unknown";
+		if (left == "unknown" || right == "unknown")
+			return "unknown";
+
+		var seen:Map<String, Bool> = new Map();
+		var ordered:Array<String> = [];
+
+		function addParts(k:String):Void {
+			if (k == null || k.length == 0)
+				return;
+			var parts = k.split("|");
+			for (part in parts) {
+				var trimmed = part != null ? part.trim() : "";
+				if (trimmed.length == 0)
+					continue;
+				if (seen.exists(trimmed))
+					continue;
+				seen.set(trimmed, true);
+				ordered.push(trimmed);
+			}
+		}
+
+		addParts(left);
+		addParts(right);
+
+		return ordered.length == 1 ? ordered[0] : ordered.join("|");
+	}
+
+	static function kindFromType(t:haxe.macro.Type):String {
+		if (t == null)
+			return "unknown";
+
+		var followed = TypeTools.follow(t);
+		switch (followed) {
+			case TAbstract(aRef, params):
+				var abs = aRef.get();
+				if (abs != null && abs.name == "Atom" && abs.pack.join(".") == "elixir.types") {
+					return "atom";
+				}
+				if (abs != null && abs.meta != null && abs.meta.has(":elixirStruct")) {
+					return "map";
+				}
+				if (abs != null && abs.name == "EitherType" && abs.pack.join(".") == "haxe.extern" && params != null && params.length == 2) {
+					var leftKind = kindFromType(params[0]);
+					var rightKind = kindFromType(params[1]);
+					return mergeKindUnion(leftKind, rightKind);
+				}
+			case TEnum(eRef, params):
+				var en = eRef.get();
+				if (en != null && en.name == "Either" && en.pack.join(".") == "haxe.ds" && params != null && params.length == 2) {
+					var leftKind = kindFromType(params[0]);
+					var rightKind = kindFromType(params[1]);
+					return mergeKindUnion(leftKind, rightKind);
+				}
+			case TInst(cRef, _):
+				var cls = cRef.get();
+				if (cls != null && cls.meta != null && cls.meta.has(":elixirStruct")) {
+					return "map";
+				}
+			default:
+		}
+
+		var kind = normalizeKind(TypeTools.toString(followed));
+		if (kind != "unknown")
+			return kind;
+
+		var unwrapped = TypeTools.followWithAbstracts(followed);
+		kind = normalizeKind(TypeTools.toString(unwrapped));
+		return kind;
+	}
+
+	static function normalizeKind(spec:String):String {
+		var s = spec.trim();
+		// Unwrap Null<T>
+		if (s.startsWith("Null<") && s.endsWith(">")) {
+			s = s.substr(5, s.length - 6).trim();
+		}
+		// Anonymous structures compile to maps in Elixir.
+		if (s.startsWith("{") && s.endsWith("}"))
+			return "map";
+		// Basic kinds
+		if (s == "String")
+			return "string";
+		if (s == "Int")
+			return "int";
+		if (s == "Float")
+			return "float";
+		if (s == "Bool")
+			return "bool";
+		if (s == "elixir.types.Atom" || s.endsWith(".Atom"))
+			return "atom";
+		if (~/^Array<.*/.match(s))
+			return "array";
+		if (~/^Map<.*/.match(s) || ~/^haxe\\.ds\\..*Map<.*/.match(s))
+			return "map";
+		// Unknown/custom → leave unknown to avoid false positives
+		return "unknown";
+	}
 }
-
 #end

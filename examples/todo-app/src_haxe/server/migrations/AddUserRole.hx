@@ -17,14 +17,11 @@ import ecto.Migration.ColumnType;
  */
 @:migration({timestamp: "20251231233414"})
 class AddUserRole extends Migration {
-    public function up(): Void {
-        alterTable("users")
-            .addColumn("role", ColumnType.String(), {nullable: false, defaultValue: "user"});
-    }
+	public function up():Void {
+		alterTable("users").addColumn("role", ColumnType.String(), {nullable: false, defaultValue: "user"});
+	}
 
-    public function down(): Void {
-        alterTable("users")
-            .removeColumn("role");
-    }
+	public function down():Void {
+		alterTable("users").removeColumn("role");
+	}
 }
-

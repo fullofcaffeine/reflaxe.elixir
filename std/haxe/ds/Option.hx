@@ -50,29 +50,29 @@ package haxe.ds;
 // TODO: Future improvement - add AST transformer to properly map Some→ok and None→error
 // Currently @:elixirIdiomatic will just lowercase to {:some/:none} which isn't ideal.
 // A proper transformer would detect Option<T> specifically and map to {:ok/:error} for
-// true Elixir idiomatic patterns. For now, developers should prefer Result<T,E> for 
+// true Elixir idiomatic patterns. For now, developers should prefer Result<T,E> for
 // Elixir applications to get proper {:ok/:error} patterns.
 @:elixirIdiomatic
 enum Option<T> {
-    /**
-     * Represents a value that is present.
-     * 
-     * Compiles to:
-     * - Elixir: `{:some, value}` (will be `{:ok, value}` when AST transformer is improved)
-     * - JavaScript: `{tag: "some", value: value}`
-     * - Other targets: enum variant with data
-     * 
-     * @param v The contained value
-     */
-    Some(v: T);
-    
-    /**
-     * Represents the absence of a value.
-     * 
-     * Compiles to:
-     * - Elixir: `:none` (will be `:error` when AST transformer is improved)
-     * - JavaScript: `{tag: "none"}`
-     * - Other targets: enum variant without data
-     */
-    None;
+	/**
+	 * Represents a value that is present.
+	 * 
+	 * Compiles to:
+	 * - Elixir: `{:some, value}` (will be `{:ok, value}` when AST transformer is improved)
+	 * - JavaScript: `{tag: "some", value: value}`
+	 * - Other targets: enum variant with data
+	 * 
+	 * @param v The contained value
+	 */
+	Some(v:T);
+
+	/**
+	 * Represents the absence of a value.
+	 * 
+	 * Compiles to:
+	 * - Elixir: `:none` (will be `:error` when AST transformer is improved)
+	 * - JavaScript: `{tag: "none"}`
+	 * - Other targets: enum variant without data
+	 */
+	None;
 }

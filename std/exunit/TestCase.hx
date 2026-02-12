@@ -19,5 +19,5 @@ package exunit;
  */
 @:autoBuild(reflaxe.elixir.helpers.ExUnitBuilder.build())
 class TestCase {
-    public function new() {}
+	public function new() {}
 }

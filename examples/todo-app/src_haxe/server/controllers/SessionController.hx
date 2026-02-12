@@ -25,38 +25,28 @@ import StringTools;
 @:native("TodoAppWeb.SessionController")
 @:controller
 class SessionController {
-    public static function create(conn: Conn<{}>, params: Term): Conn<{}> {
-        var emailTerm: Term = ElixirMap.get(params, "email");
-        var nameTerm: Term = ElixirMap.get(params, "name");
+	public static function create(conn:Conn<{}>, params:Term):Conn<{}> {
+		var emailTerm:Term = ElixirMap.get(params, "email");
+		var nameTerm:Term = ElixirMap.get(params, "name");
 
-        var email: String = emailTerm != null ? cast emailTerm : "";
-        var name: String = nameTerm != null ? cast nameTerm : "";
+		var email:String = emailTerm != null ? cast emailTerm : "";
+		var name:String = nameTerm != null ? cast nameTerm : "";
 
-        if (StringTools.trim(email) == "" || StringTools.trim(name) == "") {
-            return conn
-                .putFlash("error", "Name and email are required.")
-                .redirect("/login");
-        }
+		if (StringTools.trim(email) == "" || StringTools.trim(name) == "") {
+			return conn.putFlash("error", "Name and email are required.").redirect("/login");
+		}
 
-        return switch (Accounts.getOrCreateUserForLogin(email, name)) {
-            case Ok(user):
-                conn
-                    .putSession("user_id", user.id)
-                    .putFlash("info", 'Signed in as ${user.name}.')
-                    .redirect("/todos");
-            case Error(_):
-                {
-                    conn
-                        .putFlash("error", "Could not sign in. Please check your details and try again.")
-                        .redirect("/login");
-                }
-        };
-    }
+		return switch (Accounts.getOrCreateUserForLogin(email, name)) {
+			case Ok(user):
+				conn.putSession("user_id", user.id).putFlash("info", 'Signed in as ${user.name}.').redirect("/todos");
+			case Error(_):
+				{
+					conn.putFlash("error", "Could not sign in. Please check your details and try again.").redirect("/login");
+				}
+		};
+	}
 
-    public static function delete(conn: Conn<{}>, params: Term): Conn<{}> {
-        return conn
-            .deleteSession("user_id")
-            .putFlash("info", "Signed out.")
-            .redirect("/");
-    }
+	public static function delete(conn:Conn<{}>, params:Term):Conn<{}> {
+		return conn.deleteSession("user_id").putFlash("info", "Signed out.").redirect("/");
+	}
 }

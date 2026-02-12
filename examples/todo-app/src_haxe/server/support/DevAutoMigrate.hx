@@ -26,26 +26,26 @@ import elixir.types.Term;
  *   DevAutoMigrate.runIfEnabled();
  */
 class DevAutoMigrate {
-    public static function runIfEnabled(): Void {
-        var mixEnv = Sys.getEnv("MIX_ENV");
-        if (mixEnv != "dev" && mixEnv != "e2e") {
-            return;
-        }
+	public static function runIfEnabled():Void {
+		var mixEnv = Sys.getEnv("MIX_ENV");
+		if (mixEnv != "dev" && mixEnv != "e2e") {
+			return;
+		}
 
-        var autoMigrateFlag = Sys.getEnv("TODOAPP_AUTO_MIGRATE");
-        if (autoMigrateFlag != null) {
-            var normalizedFlag = autoMigrateFlag.toLowerCase();
-            if (normalizedFlag == "0" || normalizedFlag == "false" || normalizedFlag == "no") {
-                return;
-            }
-        }
+		var autoMigrateFlag = Sys.getEnv("TODOAPP_AUTO_MIGRATE");
+		if (autoMigrateFlag != null) {
+			var normalizedFlag = autoMigrateFlag.toLowerCase();
+			if (normalizedFlag == "0" || normalizedFlag == "false" || normalizedFlag == "no") {
+				return;
+			}
+		}
 
-        var options: Array<{_0: Atom, _1: Term}> = [{_0: "all", _1: true}];
+		var options:Array<{_0:Atom, _1:Term}> = [{_0: "all", _1: true}];
 
-        var repoModule: Term = ErlangAtom.fromString("Elixir.TodoApp.Repo");
+		var repoModule:Term = ErlangAtom.fromString("Elixir.TodoApp.Repo");
 
-        Migrator.withRepo(repoModule, function(repo: Term): Term {
-            return Migrator.run(repo, "priv/repo/migrations", "up", options);
-        }, []);
-    }
+		Migrator.withRepo(repoModule, function(repo:Term):Term {
+			return Migrator.run(repo, "priv/repo/migrations", "up", options);
+		}, []);
+	}
 }

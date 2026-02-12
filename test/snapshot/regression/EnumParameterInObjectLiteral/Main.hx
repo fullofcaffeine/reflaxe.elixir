@@ -27,21 +27,20 @@
  * Real-world example: TodoPubSub.parseMessageImpl line 204-206
  * Related: commits 940c7722, bed3790c
  */
-
 enum Option<T> {
-	Some(value: T);
+	Some(value:T);
 	None;
 }
 
 enum BulkAction {
 	CompleteAll;
 	DeleteCompleted;
-	SetPriority(priority: String);
+	SetPriority(priority:String);
 }
 
 enum TodoMessage {
-	BulkUpdate(action: BulkAction);
-	TodoCreated(todo: String);
+	BulkUpdate(action:BulkAction);
+	TodoCreated(todo:String);
 }
 
 class Main {
@@ -52,7 +51,7 @@ class Main {
 		// Test 1: Nested enum extraction with wrapping (EXACT bug trigger)
 		var bulkAction = Some(SetPriority("high"));
 		var result = parseAction(bulkAction);
-		switch(result) {
+		switch (result) {
 			case Some(msg):
 				trace('Got message: $msg');
 			case None:
@@ -67,13 +66,13 @@ class Main {
 
 	// This function matches TodoPubSub.parseMessageImpl pattern exactly:
 	// Nested switch that extracts enum parameter, then wraps in another enum
-	static function parseAction(optAction: Option<BulkAction>): Option<TodoMessage> {
-		return switch(optAction) {
+	static function parseAction(optAction:Option<BulkAction>):Option<TodoMessage> {
+		return switch (optAction) {
 			case Some(action):
 				// Inner switch extracts 'priority' from SetPriority
 				// Then wraps in BulkUpdate which wraps in Some
 				// This triggers TEnumParameter extraction bug
-				switch(action) {
+				switch (action) {
 					case SetPriority(priority):
 						Some(BulkUpdate(SetPriority(priority))); // Bug: 'priority' becomes undefined
 					case CompleteAll:

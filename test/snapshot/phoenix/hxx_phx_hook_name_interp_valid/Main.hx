@@ -3,13 +3,13 @@ package;
 import HXX;
 
 typedef Assigns = {
-    var ok: Bool;
+	var ok:Bool;
 }
 
 class Main {
-    public static function render(assigns: Assigns): String {
-        return HXX.hxx('<div id="hook" phx-hook=${HookName.Known}></div>');
-    }
+	public static function render(assigns:Assigns):String {
+		return HXX.hxx('<div id="hook" phx-hook=${HookName.Known}></div>');
+	}
 
-    public static function main() {}
+	public static function main() {}
 }

@@ -11,7 +11,7 @@ import haxe.macro.Expr;
  * avoiding reliance on @:using resolution in user code.
  */
 class TypedQueryMacrosBridge {
-    public static macro function where(ethis:Expr, predicate:Expr):Expr {
-        return reflaxe.elixir.macros.TypedQueryLambda.buildWhereExpr(ethis, predicate);
-    }
+	public static macro function where(ethis:Expr, predicate:Expr):Expr {
+		return reflaxe.elixir.macros.TypedQueryLambda.buildWhereExpr(ethis, predicate);
+	}
 }

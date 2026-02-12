@@ -8,19 +8,20 @@ import haxe.ds.StringMap;
  * Note: This is a lightweight compatibility shim, not a full-featured Set.
  */
 class Set<T> {
-  var map: StringMap<Bool>;
+	var map:StringMap<Bool>;
 
-  public function new(?items: Iterable<T>) {
-    map = new StringMap();
-    if (items != null) for (item in items) add(item);
-  }
+	public function new(?items:Iterable<T>) {
+		map = new StringMap();
+		if (items != null)
+			for (item in items)
+				add(item);
+	}
 
-  public function add(item: T): Void {
-    map.set(Std.string(item), true);
-  }
+	public function add(item:T):Void {
+		map.set(Std.string(item), true);
+	}
 
-  public function exists(item: T): Bool {
-    return map.exists(Std.string(item));
-  }
+	public function exists(item:T):Bool {
+		return map.exists(Std.string(item));
+	}
 }
-

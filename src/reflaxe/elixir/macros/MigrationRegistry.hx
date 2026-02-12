@@ -9,27 +9,27 @@ import haxe.macro.Type;
  * Column information
  */
 typedef ColumnInfo = {
-    var name: String;
-    var type: String;  // String representation of the ColumnType
-    var nullable: Bool;
-    var sourcePos: Position;  // Where this column was defined
+	var name:String;
+	var type:String; // String representation of the ColumnType
+	var nullable:Bool;
+	var sourcePos:Position; // Where this column was defined
 }
 
 /**
  * Table schema information
  */
 typedef TableSchema = {
-    var name: String;
-    var columns: Map<String, ColumnInfo>;
-    var sourcePos: Position;  // Where this table was defined (for error messages)
+	var name:String;
+	var columns:Map<String, ColumnInfo>;
+	var sourcePos:Position; // Where this table was defined (for error messages)
 }
 
 /**
  * Pending validation request for a table name that may be registered later in compilation.
  */
 typedef PendingTableValidation = {
-    var tableName: String;
-    var positions: Array<Position>;
+	var tableName:String;
+	var positions:Array<Position>;
 }
 
 /**
@@ -64,320 +64,321 @@ typedef PendingTableValidation = {
  * ```
  */
 class MigrationRegistry {
-    
-    /**
-     * Global registry of all tables defined in migrations
-     * Static so it persists across macro calls during compilation
-     */
-    static var tables: Map<String, TableSchema> = new Map();
+	/**
+	 * Global registry of all tables defined in migrations
+	 * Static so it persists across macro calls during compilation
+	 */
+	static var tables:Map<String, TableSchema> = new Map();
 
-    /**
-     * Deferred validations for cross-migration references.
-     *
-     * WHY
-     * - Haxe does not guarantee the typing order of modules listed on the command line.
-     * - A migration may reference a table defined in another migration that gets typed later.
-     *
-     * HOW
-     * - When a referenced table is not yet registered, store a validation request.
-     * - Flush these requests in `Context.onAfterTyping` once all migration modules are typed.
-     */
-    static var pendingTableValidations: Map<String, PendingTableValidation> = new Map();
-    static var afterTypingHookRegistered: Bool = false;
-    
-    /**
-     * Register a new table in the migration registry
-     * 
-     * @param name The table name
-     * @param pos Source position for error reporting
-     */
-    public static function registerTable(name: String, pos: Position): Void {
-        #if debug_migration_registry
-        #if debug_migration trace('[MigrationRegistry] Registering table: $name'); #end
-        #end
-        
-        if (tables.exists(name)) {
-            Context.warning('Table "$name" is already defined. Overwriting previous definition.', pos);
-        }
-        
-        tables.set(name, {
-            name: name,
-            columns: new Map(),
-            sourcePos: pos
-        });
-    }
+	/**
+	 * Deferred validations for cross-migration references.
+	 *
+	 * WHY
+	 * - Haxe does not guarantee the typing order of modules listed on the command line.
+	 * - A migration may reference a table defined in another migration that gets typed later.
+	 *
+	 * HOW
+	 * - When a referenced table is not yet registered, store a validation request.
+	 * - Flush these requests in `Context.onAfterTyping` once all migration modules are typed.
+	 */
+	static var pendingTableValidations:Map<String, PendingTableValidation> = new Map();
 
-    /**
-     * Unregister a table (e.g. when handling drop operations).
-     *
-     * This is primarily used by validation macros to keep the registry aligned
-     * with the migration's up/down flow during analysis.
-     */
-    public static function unregisterTable(name: String): Void {
-        tables.remove(name);
-    }
-    
-    /**
-     * Register a column in a table
-     * 
-     * @param tableName The table this column belongs to
-     * @param columnName The column name
-     * @param columnType String representation of the column type
-     * @param nullable Whether the column allows nulls
-     * @param pos Source position for error reporting
-     */
-    public static function registerColumn(tableName: String, columnName: String, 
-                                         columnType: String, nullable: Bool, pos: Position): Void {
-        #if debug_migration_registry
-        #if debug_migration trace('[MigrationRegistry] Registering column: $tableName.$columnName ($columnType)'); #end
-        #end
-        
-        if (!tables.exists(tableName)) {
-            Context.error('Cannot add column to non-existent table "$tableName"', pos);
-            return;
-        }
-        
-        var table = tables.get(tableName);
-        if (table.columns.exists(columnName)) {
-            Context.warning('Column "$columnName" already exists in table "$tableName"', pos);
-        }
-        
-        table.columns.set(columnName, {
-            name: columnName,
-            type: columnType,
-            nullable: nullable,
-            sourcePos: pos
-        });
-    }
-    
-    /**
-     * Validate that a table exists
-     * 
-     * @param tableName The table to check
-     * @param pos Source position for error reporting
-     * @return True if table exists, false otherwise (after reporting error)
-     */
-    public static function validateTableExists(tableName: String, pos: Position): Bool {
-        if (!tables.exists(tableName)) {
-            var availableTables = [for (t in tables.keys()) t];
-            var suggestion = findClosestMatch(tableName, availableTables);
-            
-            var errorMsg = 'Table "$tableName" does not exist.';
-            if (suggestion != null) {
-                errorMsg += ' Did you mean "$suggestion"?';
-            }
-            if (availableTables.length > 0) {
-                errorMsg += ' Available tables: [${availableTables.join(", ")}]';
-            } else {
-                errorMsg += ' No tables have been defined yet.';
-            }
-            
-            Context.error(errorMsg, pos);
-            return false;
-        }
-        return true;
-    }
+	static var afterTypingHookRegistered:Bool = false;
 
-    /**
-     * Validate that a table exists, but allow forward references across migrations.
-     *
-     * WHY
-     * - Migration validation must not depend on the compiler's module typing order.
-     *
-     * HOW
-     * - If the table is already registered, validate immediately.
-     * - Otherwise, defer the validation until after typing so other migration modules
-     *   have a chance to register the table.
-     */
-    public static function validateTableExistsDeferred(tableName: String, pos: Position): Void {
-        if (tables.exists(tableName)) {
-            return;
-        }
+	/**
+	 * Register a new table in the migration registry
+	 * 
+	 * @param name The table name
+	 * @param pos Source position for error reporting
+	 */
+	public static function registerTable(name:String, pos:Position):Void {
+		#if debug_migration_registry
+		#if debug_migration trace('[MigrationRegistry] Registering table: $name'); #end
+		#end
 
-        queueTableValidation(tableName, pos);
-        ensureAfterTypingHook();
-    }
+		if (tables.exists(name)) {
+			Context.warning('Table "$name" is already defined. Overwriting previous definition.', pos);
+		}
 
-    static function queueTableValidation(tableName: String, pos: Position): Void {
-        var existing = pendingTableValidations.get(tableName);
-        if (existing == null) {
-            pendingTableValidations.set(tableName, {tableName: tableName, positions: [pos]});
-            return;
-        }
+		tables.set(name, {
+			name: name,
+			columns: new Map(),
+			sourcePos: pos
+		});
+	}
 
-        existing.positions.push(pos);
-    }
+	/**
+	 * Unregister a table (e.g. when handling drop operations).
+	 *
+	 * This is primarily used by validation macros to keep the registry aligned
+	 * with the migration's up/down flow during analysis.
+	 */
+	public static function unregisterTable(name:String):Void {
+		tables.remove(name);
+	}
 
-    static function ensureAfterTypingHook(): Void {
-        if (afterTypingHookRegistered) {
-            return;
-        }
+	/**
+	 * Register a column in a table
+	 * 
+	 * @param tableName The table this column belongs to
+	 * @param columnName The column name
+	 * @param columnType String representation of the column type
+	 * @param nullable Whether the column allows nulls
+	 * @param pos Source position for error reporting
+	 */
+	public static function registerColumn(tableName:String, columnName:String, columnType:String, nullable:Bool, pos:Position):Void {
+		#if debug_migration_registry
+		#if debug_migration trace('[MigrationRegistry] Registering column: $tableName.$columnName ($columnType)'); #end
+		#end
 
-        afterTypingHookRegistered = true;
-        Context.onAfterTyping(function(_modules: Array<ModuleType>) {
-            flushDeferredValidations();
-        });
-    }
+		if (!tables.exists(tableName)) {
+			Context.error('Cannot add column to non-existent table "$tableName"', pos);
+			return;
+		}
 
-    static function flushDeferredValidations(): Void {
-        if (pendingTableValidations.keys().hasNext() == false) {
-            return;
-        }
+		var table = tables.get(tableName);
+		if (table.columns.exists(columnName)) {
+			Context.warning('Column "$columnName" already exists in table "$tableName"', pos);
+		}
 
-        // If no migrations registered any tables, schema validation cannot run.
-        // WHY: Some builds compile only schemas (no migrations). In that case we intentionally
-        // skip validation to avoid false failures.
-        if (tables.keys().hasNext() == false) {
-            pendingTableValidations = new Map();
-            return;
-        }
+		table.columns.set(columnName, {
+			name: columnName,
+			type: columnType,
+			nullable: nullable,
+			sourcePos: pos
+		});
+	}
 
-        var pending = pendingTableValidations;
-        pendingTableValidations = new Map();
+	/**
+	 * Validate that a table exists
+	 * 
+	 * @param tableName The table to check
+	 * @param pos Source position for error reporting
+	 * @return True if table exists, false otherwise (after reporting error)
+	 */
+	public static function validateTableExists(tableName:String, pos:Position):Bool {
+		if (!tables.exists(tableName)) {
+			var availableTables = [for (t in tables.keys()) t];
+			var suggestion = findClosestMatch(tableName, availableTables);
 
-        for (tableName in pending.keys()) {
-            var entry = pending.get(tableName);
-            if (entry == null || entry.positions.length == 0) {
-                continue;
-            }
-            validateTableExists(tableName, entry.positions[0]);
-        }
-    }
-    
-    /**
-     * Validate that a column exists in a table
-     * 
-     * @param tableName The table to check
-     * @param columnName The column to check
-     * @param pos Source position for error reporting
-     * @return True if column exists, false otherwise (after reporting error)
-     */
-    public static function validateColumnExists(tableName: String, columnName: String, pos: Position): Bool {
-        if (!validateTableExists(tableName, pos)) {
-            return false;
-        }
-        
-        var table = tables.get(tableName);
-        if (!table.columns.exists(columnName)) {
-            var availableColumns = [for (c in table.columns.keys()) c];
-            var suggestion = findClosestMatch(columnName, availableColumns);
-            
-            var errorMsg = 'Column "$columnName" does not exist in table "$tableName".';
-            if (suggestion != null) {
-                errorMsg += ' Did you mean "$suggestion"?';
-            }
-            if (availableColumns.length > 0) {
-                errorMsg += ' Available columns: [${availableColumns.join(", ")}]';
-            } else {
-                errorMsg += ' No columns have been defined for this table yet.';
-            }
-            
-            Context.error(errorMsg, pos);
-            return false;
-        }
-        return true;
-    }
-    
-    /**
-     * Validate that all columns in a list exist in a table
-     * 
-     * @param tableName The table to check
-     * @param columnNames The columns to validate
-     * @param pos Source position for error reporting
-     * @return True if all columns exist, false otherwise
-     */
-    public static function validateColumnsExist(tableName: String, columnNames: Array<String>, pos: Position): Bool {
-        var allValid = true;
-        for (column in columnNames) {
-            if (!validateColumnExists(tableName, column, pos)) {
-                allValid = false;
-            }
-        }
-        return allValid;
-    }
-    
-    /**
-     * Find the closest matching string from a list (for typo suggestions)
-     * Uses Levenshtein distance algorithm
-     * 
-     * @param input The string to match
-     * @param candidates List of possible matches
-     * @return The closest match if within reasonable distance, null otherwise
-     */
-    static function findClosestMatch(input: String, candidates: Array<String>): Null<String> {
-        if (candidates.length == 0) return null;
-        
-        var bestMatch: String = null;
-        var bestDistance = 999;
-        
-        for (candidate in candidates) {
-            var distance = levenshteinDistance(input.toLowerCase(), candidate.toLowerCase());
-            
-            // Only suggest if the distance is reasonable (less than half the length)
-            if (distance < bestDistance && distance <= Math.ceil(input.length / 2)) {
-                bestDistance = distance;
-                bestMatch = candidate;
-            }
-        }
-        
-        return bestMatch;
-    }
-    
-    /**
-     * Calculate Levenshtein distance between two strings
-     * (Minimum number of single-character edits required to change one string into another)
-     */
-    static function levenshteinDistance(s1: String, s2: String): Int {
-        var len1 = s1.length;
-        var len2 = s2.length;
-        
-        if (len1 == 0) return len2;
-        if (len2 == 0) return len1;
-        
-        var matrix = [];
-        for (i in 0...len1 + 1) {
-            matrix[i] = [for (j in 0...len2 + 1) 0];
-        }
-        
-        for (i in 0...len1 + 1) matrix[i][0] = i;
-        for (j in 0...len2 + 1) matrix[0][j] = j;
-        
-        for (i in 1...len1 + 1) {
-            for (j in 1...len2 + 1) {
-                var cost = (s1.charAt(i - 1) == s2.charAt(j - 1)) ? 0 : 1;
-                matrix[i][j] = Math.floor(Math.min(
-                    matrix[i - 1][j] + 1,      // deletion
-                    Math.min(
-                        matrix[i][j - 1] + 1,   // insertion
-                        matrix[i - 1][j - 1] + cost  // substitution
-                    )
-                ));
-            }
-        }
-        
-        return matrix[len1][len2];
-    }
-    
-    /**
-     * Clear the registry (useful for testing)
-     */
-    public static function clear(): Void {
-        tables = new Map();
-    }
-    
-    /**
-     * Get a summary of all registered tables (for debugging)
-     */
-    public static function getSummary(): String {
-        var lines = ['Migration Registry Summary:'];
-        for (tableName in tables.keys()) {
-            var table = tables.get(tableName);
-            lines.push('  Table: $tableName');
-            for (column in table.columns) {
-                lines.push('    - ${column.name}: ${column.type}${column.nullable ? " (nullable)" : ""}');
-            }
-        }
-        return lines.join('\n');
-    }
+			var errorMsg = 'Table "$tableName" does not exist.';
+			if (suggestion != null) {
+				errorMsg += ' Did you mean "$suggestion"?';
+			}
+			if (availableTables.length > 0) {
+				errorMsg += ' Available tables: [${availableTables.join(", ")}]';
+			} else {
+				errorMsg += ' No tables have been defined yet.';
+			}
+
+			Context.error(errorMsg, pos);
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Validate that a table exists, but allow forward references across migrations.
+	 *
+	 * WHY
+	 * - Migration validation must not depend on the compiler's module typing order.
+	 *
+	 * HOW
+	 * - If the table is already registered, validate immediately.
+	 * - Otherwise, defer the validation until after typing so other migration modules
+	 *   have a chance to register the table.
+	 */
+	public static function validateTableExistsDeferred(tableName:String, pos:Position):Void {
+		if (tables.exists(tableName)) {
+			return;
+		}
+
+		queueTableValidation(tableName, pos);
+		ensureAfterTypingHook();
+	}
+
+	static function queueTableValidation(tableName:String, pos:Position):Void {
+		var existing = pendingTableValidations.get(tableName);
+		if (existing == null) {
+			pendingTableValidations.set(tableName, {tableName: tableName, positions: [pos]});
+			return;
+		}
+
+		existing.positions.push(pos);
+	}
+
+	static function ensureAfterTypingHook():Void {
+		if (afterTypingHookRegistered) {
+			return;
+		}
+
+		afterTypingHookRegistered = true;
+		Context.onAfterTyping(function(_modules:Array<ModuleType>) {
+			flushDeferredValidations();
+		});
+	}
+
+	static function flushDeferredValidations():Void {
+		if (pendingTableValidations.keys().hasNext() == false) {
+			return;
+		}
+
+		// If no migrations registered any tables, schema validation cannot run.
+		// WHY: Some builds compile only schemas (no migrations). In that case we intentionally
+		// skip validation to avoid false failures.
+		if (tables.keys().hasNext() == false) {
+			pendingTableValidations = new Map();
+			return;
+		}
+
+		var pending = pendingTableValidations;
+		pendingTableValidations = new Map();
+
+		for (tableName in pending.keys()) {
+			var entry = pending.get(tableName);
+			if (entry == null || entry.positions.length == 0) {
+				continue;
+			}
+			validateTableExists(tableName, entry.positions[0]);
+		}
+	}
+
+	/**
+	 * Validate that a column exists in a table
+	 * 
+	 * @param tableName The table to check
+	 * @param columnName The column to check
+	 * @param pos Source position for error reporting
+	 * @return True if column exists, false otherwise (after reporting error)
+	 */
+	public static function validateColumnExists(tableName:String, columnName:String, pos:Position):Bool {
+		if (!validateTableExists(tableName, pos)) {
+			return false;
+		}
+
+		var table = tables.get(tableName);
+		if (!table.columns.exists(columnName)) {
+			var availableColumns = [for (c in table.columns.keys()) c];
+			var suggestion = findClosestMatch(columnName, availableColumns);
+
+			var errorMsg = 'Column "$columnName" does not exist in table "$tableName".';
+			if (suggestion != null) {
+				errorMsg += ' Did you mean "$suggestion"?';
+			}
+			if (availableColumns.length > 0) {
+				errorMsg += ' Available columns: [${availableColumns.join(", ")}]';
+			} else {
+				errorMsg += ' No columns have been defined for this table yet.';
+			}
+
+			Context.error(errorMsg, pos);
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Validate that all columns in a list exist in a table
+	 * 
+	 * @param tableName The table to check
+	 * @param columnNames The columns to validate
+	 * @param pos Source position for error reporting
+	 * @return True if all columns exist, false otherwise
+	 */
+	public static function validateColumnsExist(tableName:String, columnNames:Array<String>, pos:Position):Bool {
+		var allValid = true;
+		for (column in columnNames) {
+			if (!validateColumnExists(tableName, column, pos)) {
+				allValid = false;
+			}
+		}
+		return allValid;
+	}
+
+	/**
+	 * Find the closest matching string from a list (for typo suggestions)
+	 * Uses Levenshtein distance algorithm
+	 * 
+	 * @param input The string to match
+	 * @param candidates List of possible matches
+	 * @return The closest match if within reasonable distance, null otherwise
+	 */
+	static function findClosestMatch(input:String, candidates:Array<String>):Null<String> {
+		if (candidates.length == 0)
+			return null;
+
+		var bestMatch:String = null;
+		var bestDistance = 999;
+
+		for (candidate in candidates) {
+			var distance = levenshteinDistance(input.toLowerCase(), candidate.toLowerCase());
+
+			// Only suggest if the distance is reasonable (less than half the length)
+			if (distance < bestDistance && distance <= Math.ceil(input.length / 2)) {
+				bestDistance = distance;
+				bestMatch = candidate;
+			}
+		}
+
+		return bestMatch;
+	}
+
+	/**
+	 * Calculate Levenshtein distance between two strings
+	 * (Minimum number of single-character edits required to change one string into another)
+	 */
+	static function levenshteinDistance(s1:String, s2:String):Int {
+		var len1 = s1.length;
+		var len2 = s2.length;
+
+		if (len1 == 0)
+			return len2;
+		if (len2 == 0)
+			return len1;
+
+		var matrix = [];
+		for (i in 0...len1 + 1) {
+			matrix[i] = [for (j in 0...len2 + 1) 0];
+		}
+
+		for (i in 0...len1 + 1)
+			matrix[i][0] = i;
+		for (j in 0...len2 + 1)
+			matrix[0][j] = j;
+
+		for (i in 1...len1 + 1) {
+			for (j in 1...len2 + 1) {
+				var cost = (s1.charAt(i - 1) == s2.charAt(j - 1)) ? 0 : 1;
+				matrix[i][j] = Math.floor(Math.min(matrix[i - 1][j] + 1, // deletion
+					Math.min(matrix[i][j - 1] + 1, // insertion
+						matrix[i - 1][j - 1] + cost // substitution
+					)));
+			}
+		}
+
+		return matrix[len1][len2];
+	}
+
+	/**
+	 * Clear the registry (useful for testing)
+	 */
+	public static function clear():Void {
+		tables = new Map();
+	}
+
+	/**
+	 * Get a summary of all registered tables (for debugging)
+	 */
+	public static function getSummary():String {
+		var lines = ['Migration Registry Summary:'];
+		for (tableName in tables.keys()) {
+			var table = tables.get(tableName);
+			lines.push('  Table: $tableName');
+			for (column in table.columns) {
+				lines.push('    - ${column.name}: ${column.type}${column.nullable ? " (nullable)" : ""}');
+			}
+		}
+		return lines.join('\n');
+	}
 }
 #end

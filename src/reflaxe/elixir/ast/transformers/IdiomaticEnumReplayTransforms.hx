@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -32,30 +31,29 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   {:full_spec, %{id: "M", ...}}      -> %{id: "M", ...}
  */
 class IdiomaticEnumReplayTransforms {
-    public static function pass(ast: ElixirAST): ElixirAST {
-        inline function otpEnumTag(node: ElixirAST): Null<String> {
-            return switch (node.def) {
-                case ETuple(elements) if (elements.length > 0):
-                    switch (elements[0].def) {
-                        case EAtom(name): name;
-                        default: null;
-                    }
-                default: null;
-            };
-        }
+	public static function pass(ast:ElixirAST):ElixirAST {
+		inline function otpEnumTag(node:ElixirAST):Null<String> {
+			return switch (node.def) {
+				case ETuple(elements) if (elements.length > 0):
+					switch (elements[0].def) {
+						case EAtom(name): name;
+						default: null;
+					}
+				default: null;
+			};
+		}
 
-        inline function isOtpSpecTag(tag: String): Bool {
-            return tag == "module_ref" || tag == "module_with_args" || tag == "module_with_config" || tag == "full_spec";
-        }
+		inline function isOtpSpecTag(tag:String):Bool {
+			return tag == "module_ref" || tag == "module_with_args" || tag == "module_with_config" || tag == "full_spec";
+		}
 
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            var tag = otpEnumTag(n);
-            if (tag != null && isOtpSpecTag(tag)) {
-                return reflaxe.elixir.ast.ElixirAST.applyIdiomaticEnumTransformation(n);
-            }
-            return n;
-        });
-    }
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			var tag = otpEnumTag(n);
+			if (tag != null && isOtpSpecTag(tag)) {
+				return reflaxe.elixir.ast.ElixirAST.applyIdiomaticEnumTransformation(n);
+			}
+			return n;
+		});
+	}
 }
-
 #end

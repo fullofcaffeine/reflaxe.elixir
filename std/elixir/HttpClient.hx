@@ -1,7 +1,6 @@
 package elixir;
 
 #if (elixir || reflaxe_runtime)
-
 import elixir.types.Term;
 import haxe.functional.Result;
 
@@ -25,9 +24,8 @@ import haxe.functional.Result;
  *   but this module also attempts to start them opportunistically.
  */
 class HttpClient {
-    extern inline public static function getJson(url: String, ?headers: Array<{_0: String, _1: String}>): Result<Term, String> {
-        return cast untyped __elixir__(
-            '
+	extern inline public static function getJson(url:String, ?headers:Array<{_0:String, _1:String}>):Result<Term, String> {
+		return cast untyped __elixir__('
             (fn ->
               :inets.start()
               :ssl.start()
@@ -53,15 +51,11 @@ class HttpClient {
                   {:error, "http_error: " <> inspect(reason)}
               end
             end).()
-            ',
-            url,
-            headers
-        );
-    }
+            ', url, headers);
+	}
 
-    extern inline public static function postFormJson(url: String, body: String, ?headers: Array<{_0: String, _1: String}>): Result<Term, String> {
-        return cast untyped __elixir__(
-            '
+	extern inline public static function postFormJson(url:String, body:String, ?headers:Array<{_0:String, _1:String}>):Result<Term, String> {
+		return cast untyped __elixir__('
             (fn ->
               :inets.start()
               :ssl.start()
@@ -87,12 +81,7 @@ class HttpClient {
                   {:error, "http_error: " <> inspect(reason)}
               end
             end).()
-            ',
-            url,
-            body,
-            headers
-        );
-    }
+            ', url, body, headers);
+	}
 }
-
 #end

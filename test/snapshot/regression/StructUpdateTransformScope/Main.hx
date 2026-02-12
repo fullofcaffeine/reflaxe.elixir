@@ -20,48 +20,47 @@ package;
  * 2. Struct field concatenation generates struct update syntax
  * 3. Compiler-generated array variables (g, _g) are NOT treated as structs
  */
-
 class Main {
-    static function main() {
-        // Test 1: Array concatenation should generate direct assignment
-        testArrayConcatenation();
+	static function main() {
+		// Test 1: Array concatenation should generate direct assignment
+		testArrayConcatenation();
 
-        // Test 2: Nested array building (the original bug pattern)
-        testNestedArrayBuilding();
-    }
+		// Test 2: Nested array building (the original bug pattern)
+		testNestedArrayBuilding();
+	}
 
-    /**
-     * Array concatenation: arr = arr ++ [item]
-     * Expected: Direct assignment, NOT struct update
-     */
-    static function testArrayConcatenation() {
-        var arr: Array<Int> = [];
+	/**
+	 * Array concatenation: arr = arr ++ [item]
+	 * Expected: Direct assignment, NOT struct update
+	 */
+	static function testArrayConcatenation() {
+		var arr:Array<Int> = [];
 
-        // Simple array concatenation
-        arr = arr.concat([1]);
-        arr = arr.concat([2]);
-        arr = arr.concat([3]);
+		// Simple array concatenation
+		arr = arr.concat([1]);
+		arr = arr.concat([2]);
+		arr = arr.concat([3]);
 
-        trace("Array: " + arr);
-    }
+		trace("Array: " + arr);
+	}
 
-    /**
-     * Nested array building (original bug pattern)
-     * Expected: Static nested lists, NOT struct update syntax
-     */
-    static function testNestedArrayBuilding() {
-        // Pattern that triggered the bug:
-        // Compiler-generated variables like g, g2, _g shouldn't trigger struct transform
+	/**
+	 * Nested array building (original bug pattern)
+	 * Expected: Static nested lists, NOT struct update syntax
+	 */
+	static function testNestedArrayBuilding() {
+		// Pattern that triggered the bug:
+		// Compiler-generated variables like g, g2, _g shouldn't trigger struct transform
 
-        var matrix = [];
-        for (i in 0...3) {
-            var row = [];
-            for (j in 0...3) {
-                row = row.concat([i * 3 + j]);
-            }
-            matrix = matrix.concat([row]);
-        }
+		var matrix = [];
+		for (i in 0...3) {
+			var row = [];
+			for (j in 0...3) {
+				row = row.concat([i * 3 + j]);
+			}
+			matrix = matrix.concat([row]);
+		}
 
-        trace("Matrix: " + matrix);
-    }
+		trace("Matrix: " + matrix);
+	}
 }

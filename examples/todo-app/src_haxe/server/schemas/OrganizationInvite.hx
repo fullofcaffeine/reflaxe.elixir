@@ -1,12 +1,13 @@
 package server.schemas;
+
 import elixir.DateTime.NaiveDateTime;
 
 typedef OrganizationInviteParams = {
-    ?organizationId: Int,
-    ?email: String,
-    ?role: String,
-    ?acceptedAt: Null<NaiveDateTime>,
-    ?acceptedByUserId: Null<Int>
+	?organizationId:Int,
+	?email:String,
+	?role:String,
+	?acceptedAt:Null<NaiveDateTime>,
+	?acceptedByUserId:Null<Int>
 }
 
 /**
@@ -29,12 +30,12 @@ typedef OrganizationInviteParams = {
 @:timestamps
 @:changeset(["organizationId", "email", "role", "acceptedAt", "acceptedByUserId"], ["organizationId", "email", "role"])
 class OrganizationInvite {
-    @:field @:primary_key public var id: Int;
-    @:field public var organizationId: Int;
-    @:field public var email: String;
-    @:field public var role: String = "user";
-    @:field public var acceptedAt: Null<NaiveDateTime>;
-    @:field public var acceptedByUserId: Null<Int>;
+	@:field @:primary_key public var id:Int;
+	@:field public var organizationId:Int;
+	@:field public var email:String;
+	@:field public var role:String = "user";
+	@:field public var acceptedAt:Null<NaiveDateTime>;
+	@:field public var acceptedByUserId:Null<Int>;
 
-    public function new() {}
+	public function new() {}
 }

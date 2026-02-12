@@ -28,29 +28,29 @@ import shared.channels.PingProtocol.PingServerEvent;
 @:native("TodoAppWeb.PingChannel")
 @:channel
 class PingChannel {
-    public static inline var Topic: String = PingProtocol.Topic;
+	public static inline var Topic:String = PingProtocol.Topic;
 
-    public static function join(topic: String, _payload: Term, socket: Term): JoinResult<Term> {
-        return (topic == Topic) ? Ok(socket) : Error("unauthorized");
-    }
+	public static function join(topic:String, _payload:Term, socket:Term):JoinResult<Term> {
+		return (topic == Topic) ? Ok(socket) : Error("unauthorized");
+	}
 
-    public static function handle_in(event: String, payload: Term, socket: Term): ReplyResult<Term> {
-        var protocol = PingProtocol.serverProtocol();
-        var decoded: Null<PingClientEvent> = TypedChannelServer.decode(protocol, event, payload);
+	public static function handle_in(event:String, payload:Term, socket:Term):ReplyResult<Term> {
+		var protocol = PingProtocol.serverProtocol();
+		var decoded:Null<PingClientEvent> = TypedChannelServer.decode(protocol, event, payload);
 
-        if (decoded == null) {
-            return Noreply(socket);
-        }
+		if (decoded == null) {
+			return Noreply(socket);
+		}
 
-        return switch (decoded) {
-            case Ping(ping):
-                if (ping.requestId == null || StringTools.trim(ping.requestId) == "") {
-                    Noreply(socket);
-                } else {
-                    var pong: PingServerEvent = Pong({requestId: ping.requestId});
-                    TypedChannelServer.broadcast(socket, protocol, pong);
-                    Noreply(socket);
-                }
-        };
-    }
+		return switch (decoded) {
+			case Ping(ping):
+				if (ping.requestId == null || StringTools.trim(ping.requestId) == "") {
+					Noreply(socket);
+				} else {
+					var pong:PingServerEvent = Pong({requestId: ping.requestId});
+					TypedChannelServer.broadcast(socket, protocol, pong);
+					Noreply(socket);
+				}
+		};
+	}
 }

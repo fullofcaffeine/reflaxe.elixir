@@ -19,17 +19,16 @@ import phoenix.test.ConnTest;
  */
 @:exunit
 class AuthFlowTest extends TestCase {
-    @:test
-    public function testLoginSetsSessionUserId(): Void {
-        var conn = ConnTest.build_conn();
-        conn = ConnTest.post(conn, "/auth/login", {name: "Alice Example", email: "alice@example.com"});
+	@:test
+	public function testLoginSetsSessionUserId():Void {
+		var conn = ConnTest.build_conn();
+		conn = ConnTest.post(conn, "/auth/login", {name: "Alice Example", email: "alice@example.com"});
 
-        assertEqual(302, conn.status);
+		assertEqual(302, conn.status);
 
-        // Verify Plug session key was set during the controller action.
-        var plugConn: plug.Conn<{}> = cast conn;
-        var userId = plugConn.getSession("user_id");
-        assertTrue(userId != null);
-    }
+		// Verify Plug session key was set during the controller action.
+		var plugConn:plug.Conn<{}> = cast conn;
+		var userId = plugConn.getSession("user_id");
+		assertTrue(userId != null);
+	}
 }
-

@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -43,49 +42,51 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   end
  */
 class StatementBlockFlattenTransforms {
-    public static function pass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EBlock(stmts):
-                    var flattened = flattenStatementList(stmts);
-                    flattened == stmts ? n : makeASTWithMeta(EBlock(flattened), n.metadata, n.pos);
-                case EDo(statements):
-                    var flattenedStatements = flattenStatementList(statements);
-                    flattenedStatements == statements ? n : makeASTWithMeta(EDo(flattenedStatements), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        });
-    }
+	public static function pass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EBlock(stmts):
+					var flattened = flattenStatementList(stmts);
+					flattened == stmts ? n : makeASTWithMeta(EBlock(flattened), n.metadata, n.pos);
+				case EDo(statements):
+					var flattenedStatements = flattenStatementList(statements);
+					flattenedStatements == statements ? n : makeASTWithMeta(EDo(flattenedStatements), n.metadata, n.pos);
+				default:
+					n;
+			}
+		});
+	}
 
-    static function unwrapParen(e: ElixirAST): ElixirAST {
-        return switch (e.def) {
-            case EParen(inner): unwrapParen(inner);
-            default: e;
-        };
-    }
+	static function unwrapParen(e:ElixirAST):ElixirAST {
+		return switch (e.def) {
+			case EParen(inner): unwrapParen(inner);
+			default: e;
+		};
+	}
 
-    static function flattenStatementList(stmts: Array<ElixirAST>): Array<ElixirAST> {
-        if (stmts == null || stmts.length == 0) return stmts;
-        var out: Array<ElixirAST> = [];
-        var changed = false;
+	static function flattenStatementList(stmts:Array<ElixirAST>):Array<ElixirAST> {
+		if (stmts == null || stmts.length == 0)
+			return stmts;
+		var out:Array<ElixirAST> = [];
+		var changed = false;
 
-        for (s in stmts) {
-            var unwrapped = unwrapParen(s);
-            switch (unwrapped.def) {
-                case EBlock(inner):
-                    changed = true;
-                    for (it in inner) out.push(it);
-                case EDo(innerStatements):
-                    changed = true;
-                    for (statement in innerStatements) out.push(statement);
-                default:
-                    out.push(s);
-            }
-        }
+		for (s in stmts) {
+			var unwrapped = unwrapParen(s);
+			switch (unwrapped.def) {
+				case EBlock(inner):
+					changed = true;
+					for (it in inner)
+						out.push(it);
+				case EDo(innerStatements):
+					changed = true;
+					for (statement in innerStatements)
+						out.push(statement);
+				default:
+					out.push(s);
+			}
+		}
 
-        return changed ? out : stmts;
-    }
+		return changed ? out : stmts;
+	}
 }
-
 #end

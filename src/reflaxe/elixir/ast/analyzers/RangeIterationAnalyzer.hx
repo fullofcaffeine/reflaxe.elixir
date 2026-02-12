@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.analyzers;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Type;
 import haxe.macro.Expr;
 import haxe.macro.Context;
@@ -36,176 +35,176 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
  */
 // Type definition must be at module level, not inside class
 typedef RangeInfo = {
-    start: TypedExpr,
-    end: TypedExpr,
-    step: Int,
-    indexVar: String,
-    isInclusive: Bool
+	start:TypedExpr,
+	end:TypedExpr,
+	step:Int,
+	indexVar:String,
+	isInclusive:Bool
 }
 
 class RangeIterationAnalyzer extends BaseLoopAnalyzer {
+	var detectedRange:Null<RangeInfo> = null;
 
-    var detectedRange: Null<RangeInfo> = null;
+	public function analyze(expr:TypedExpr, ir:LoopIR):Void {
+		switch (expr.expr) {
+			case TFor(v, iterator, body):
+				analyzeForLoop(v, iterator, body, ir);
 
-    public function analyze(expr: TypedExpr, ir: LoopIR): Void {
-        switch(expr.expr) {
-            case TFor(v, iterator, body):
-                analyzeForLoop(v, iterator, body, ir);
+			case TWhile(cond, body, true): // normal while
+				analyzeWhileLoop(cond, body, ir);
 
-            case TWhile(cond, body, true):  // normal while
-                analyzeWhileLoop(cond, body, ir);
+			case _:
+				// Not a loop we handle
+		}
+	}
 
-            case _:
-                // Not a loop we handle
-        }
-    }
+	function analyzeForLoop(v:TVar, iterator:TypedExpr, body:TypedExpr, ir:LoopIR):Void {
+		// Check for range pattern: 0...n or start...end
+		switch (iterator.expr) {
+			case TBinop(OpInterval, startExpr, endExpr):
+				// Haxe's ... operator (exclusive range)
+				detectedRange = {
+					start: startExpr,
+					end: endExpr,
+					step: 1,
+					indexVar: v.name,
+					isInclusive: false
+				};
 
-    function analyzeForLoop(v: TVar, iterator: TypedExpr, body: TypedExpr, ir: LoopIR): Void {
-        // Check for range pattern: 0...n or start...end
-        switch(iterator.expr) {
-            case TBinop(OpInterval, startExpr, endExpr):
-                // Haxe's ... operator (exclusive range)
-                detectedRange = {
-                    start: startExpr,
-                    end: endExpr,
-                    step: 1,
-                    indexVar: v.name,
-                    isInclusive: false
-                };
+				ir.kind = ForRange;
+				// Store the range info for later use
+				detectedRange = {
+					start: startExpr,
+					end: endExpr,
+					step: 1,
+					indexVar: v.name,
+					isInclusive: false
+				};
+				// Don't build AST during analysis - just mark the pattern
+				// The emitter will get the original TFor expr and extract what it needs
+				ir.source = Collection(makeAST(ENil)); // Will be replaced by emitter
+				ir.elementPattern = {
+					varName: v.name,
+					pattern: makeAST(ENil), // Placeholder
+					type: v.t
+				};
 
-                ir.kind = ForRange;
-                // Store the range info for later use
-                detectedRange = {
-                    start: startExpr,
-                    end: endExpr,
-                    step: 1,
-                    indexVar: v.name,
-                    isInclusive: false
-                };
-                // Don't build AST during analysis - just mark the pattern
-                // The emitter will get the original TFor expr and extract what it needs
-                ir.source = Collection(makeAST(ENil));  // Will be replaced by emitter
-                ir.elementPattern = {
-                    varName: v.name,
-                    pattern: makeAST(ENil), // Placeholder
-                    type: v.t
-                };
+			case _:
+				// Not a simple range
+		}
+	}
 
+	function analyzeWhileLoop(cond:TypedExpr, body:TypedExpr, ir:LoopIR):Void {
+		// Pattern: while (i < limit) with i++ in body
 
-            case _:
-                // Not a simple range
-        }
-    }
+		// Extract condition pattern
+		var condPattern = extractWhileCondition(cond);
+		if (condPattern == null)
+			return;
 
-    function analyzeWhileLoop(cond: TypedExpr, body: TypedExpr, ir: LoopIR): Void {
-        // Pattern: while (i < limit) with i++ in body
+		// Look for increment in body
+		var increment = findIncrement(body, condPattern.indexVar);
+		if (increment == null)
+			return;
 
-        // Extract condition pattern
-        var condPattern = extractWhileCondition(cond);
-        if (condPattern == null) return;
+		// This is a range loop!
+		detectedRange = {
+			start: makeConstInt(0), // Assume 0 if not found
+			end: condPattern.limit,
+			step: increment.step,
+			indexVar: condPattern.indexVar,
+			isInclusive: condPattern.isInclusive
+		};
 
-        // Look for increment in body
-        var increment = findIncrement(body, condPattern.indexVar);
-        if (increment == null) return;
+		ir.kind = While; // Will be transformed to ForRange
+		// Don't build AST during analysis - causes infinite recursion!
+		ir.source = Range(makeAST(ENil), // Placeholder - emitter will build from detectedRange
+			makeAST(ENil), // Placeholder - emitter will build from detectedRange
+			detectedRange.step);
+		ir.elementPattern = {
+			varName: condPattern.indexVar,
+			pattern: makeAST(ENil), // Placeholder
+			type: condPattern.type
+		};
+	}
 
-        // This is a range loop!
-        detectedRange = {
-            start: makeConstInt(0),  // Assume 0 if not found
-            end: condPattern.limit,
-            step: increment.step,
-            indexVar: condPattern.indexVar,
-            isInclusive: condPattern.isInclusive
-        };
+	function extractWhileCondition(cond:TypedExpr):Null<{
+		indexVar:String,
+		limit:TypedExpr,
+		isInclusive:Bool,
+		type:Type
+	}> {
+		// Handle parenthesis wrapper
+		var actualCond = switch (cond.expr) {
+			case TParenthesis(e): e;
+			case _: cond;
+		};
 
-        ir.kind = While;  // Will be transformed to ForRange
-        // Don't build AST during analysis - causes infinite recursion!
-        ir.source = Range(
-            makeAST(ENil),  // Placeholder - emitter will build from detectedRange
-            makeAST(ENil),  // Placeholder - emitter will build from detectedRange
-            detectedRange.step
-        );
-        ir.elementPattern = {
-            varName: condPattern.indexVar,
-            pattern: makeAST(ENil), // Placeholder
-            type: condPattern.type
-        };
+		switch (actualCond.expr) {
+			case TBinop(OpLt, {expr: TLocal(v)}, limitExpr):
+				return {
+					indexVar: v.name,
+					limit: limitExpr,
+					isInclusive: false,
+					type: v.t
+				};
 
-    }
+			case TBinop(OpLte, {expr: TLocal(v)}, limitExpr):
+				return {
+					indexVar: v.name,
+					limit: limitExpr,
+					isInclusive: true,
+					type: v.t
+				};
 
-    function extractWhileCondition(cond: TypedExpr): Null<{indexVar: String, limit: TypedExpr, isInclusive: Bool, type: Type}> {
-        // Handle parenthesis wrapper
-        var actualCond = switch(cond.expr) {
-            case TParenthesis(e): e;
-            case _: cond;
-        };
+			case _:
+				return null;
+		}
+	}
 
-        switch(actualCond.expr) {
-            case TBinop(OpLt, {expr: TLocal(v)}, limitExpr):
-                return {
-                    indexVar: v.name,
-                    limit: limitExpr,
-                    isInclusive: false,
-                    type: v.t
-                };
+	function findIncrement(body:TypedExpr, varName:String):Null<{step:Int}> {
+		// Look for i++ or i += n patterns
+		var increments = findAll(body, FunctionCall);
 
-            case TBinop(OpLte, {expr: TLocal(v)}, limitExpr):
-                return {
-                    indexVar: v.name,
-                    limit: limitExpr,
-                    isInclusive: true,
-                    type: v.t
-                };
+		for (expr in increments) {
+			switch (expr.expr) {
+				case TUnop(OpIncrement, _, {expr: TLocal(v)}) if (v.name == varName):
+					return {step: 1};
 
-            case _:
-                return null;
-        }
-    }
+				case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, {expr: TConst(TInt(n))}) if (v.name == varName):
+					return {step: n};
 
-    function findIncrement(body: TypedExpr, varName: String): Null<{step: Int}> {
-        // Look for i++ or i += n patterns
-        var increments = findAll(body, FunctionCall);
+				case _:
+					// Keep looking
+			}
+		}
 
-        for (expr in increments) {
-            switch(expr.expr) {
-                case TUnop(OpIncrement, _, {expr: TLocal(v)}) if (v.name == varName):
-                    return {step: 1};
+		return null;
+	}
 
-                case TBinop(OpAssignOp(OpAdd), {expr: TLocal(v)}, {expr: TConst(TInt(n))}) if (v.name == varName):
-                    return {step: n};
+	public function calculateConfidence():Float {
+		if (detectedRange != null) {
+			// High confidence for simple range patterns
+			return 0.9;
+		}
+		return 0.0;
+	}
 
-                case _:
-                    // Keep looking
-            }
-        }
+	function makeConstInt(n:Int):TypedExpr {
+		return {
+			expr: TConst(TInt(n)),
+			pos: Context.currentPos(),
+			t: Context.typeof(macro $v{n})
+		};
+	}
 
-        return null;
-    }
-
-    public function calculateConfidence(): Float {
-        if (detectedRange != null) {
-            // High confidence for simple range patterns
-            return 0.9;
-        }
-        return 0.0;
-    }
-
-
-    function makeConstInt(n: Int): TypedExpr {
-        return {
-            expr: TConst(TInt(n)),
-            pos: Context.currentPos(),
-            t: Context.typeof(macro $v{n})
-        };
-    }
-
-    function printExpr(expr: TypedExpr): String {
-        // Simplified expression printer for debug
-        return switch(expr.expr) {
-            case TConst(TInt(n)): Std.string(n);
-            case TLocal(v): v.name;
-            case _: "expr";
-        };
-    }
+	function printExpr(expr:TypedExpr):String {
+		// Simplified expression printer for debug
+		return switch (expr.expr) {
+			case TConst(TInt(n)): Std.string(n);
+			case TLocal(v): v.name;
+			case _: "expr";
+		};
+	}
 }
-
 #end

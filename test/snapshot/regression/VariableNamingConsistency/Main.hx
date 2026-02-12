@@ -28,44 +28,43 @@
  * - Reference gets: changeset (MISMATCH!)
  * - Result: undefined variable error
  */
-
 class Main {
-    static function main() {
-        trace("=== Test 1: Used variable (no underscore) ===");
+	static function main() {
+		trace("=== Test 1: Used variable (no underscore) ===");
 
-        // This variable IS used - should NOT have underscore prefix
-        var usedVariable = 42;
-        trace("Used: " + usedVariable);  // Reference should match declaration
+		// This variable IS used - should NOT have underscore prefix
+		var usedVariable = 42;
+		trace("Used: " + usedVariable); // Reference should match declaration
 
-        trace("\n=== Test 2: Unused variable (with underscore) ===");
+		trace("\n=== Test 2: Unused variable (with underscore) ===");
 
-        // This variable is NEVER used - should HAVE underscore prefix
-        var unusedVariable = 100;
-        // Note: Never referenced - should be compiled as _unusedVariable
+		// This variable is NEVER used - should HAVE underscore prefix
+		var unusedVariable = 100;
+		// Note: Never referenced - should be compiled as _unusedVariable
 
-        trace("\n=== Test 3: Partially used variables ===");
+		trace("\n=== Test 3: Partially used variables ===");
 
-        var firstVar = 1;   // Used
-        var secondVar = 2;  // NOT used
-        var thirdVar = 3;   // Used
+		var firstVar = 1; // Used
+		var secondVar = 2; // NOT used
+		var thirdVar = 3; // Used
 
-        trace("First: " + firstVar);
-        // secondVar intentionally not used
-        trace("Third: " + thirdVar);
+		trace("First: " + firstVar);
+		// secondVar intentionally not used
+		trace("Third: " + thirdVar);
 
-        trace("\n=== Test 4: Variable in conditional ===");
+		trace("\n=== Test 4: Variable in conditional ===");
 
-        var conditionalVar = "test";
-        if (conditionalVar != null) {
-            trace("Conditional: " + conditionalVar);  // Reference must match
-        }
+		var conditionalVar = "test";
+		if (conditionalVar != null) {
+			trace("Conditional: " + conditionalVar); // Reference must match
+		}
 
-        trace("\n=== Test 5: Multiple references ===");
+		trace("\n=== Test 5: Multiple references ===");
 
-        var multiRef = 10;
-        trace("Ref 1: " + multiRef);
-        trace("Ref 2: " + multiRef);
-        trace("Ref 3: " + multiRef);
-        // ALL references must use same name as declaration
-    }
+		var multiRef = 10;
+		trace("Ref 1: " + multiRef);
+		trace("Ref 2: " + multiRef);
+		trace("Ref 3: " + multiRef);
+		// ALL references must use same name as declaration
+	}
 }

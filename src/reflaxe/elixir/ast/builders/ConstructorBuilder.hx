@@ -1,16 +1,15 @@
 package reflaxe.elixir.ast.builders;
 
 #if (macro || reflaxe_runtime)
-
-	import haxe.macro.Type;
-	import haxe.macro.Expr;
-	import haxe.macro.Context;
-	import haxe.macro.TypeTools;
-	import reflaxe.elixir.ast.ElixirAST;
-	import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
-	import reflaxe.elixir.ast.ElixirAST.makeAST;
-	import reflaxe.elixir.ast.builders.ModuleBuilder;
-	import reflaxe.elixir.CompilationContext;
+import haxe.macro.Type;
+import haxe.macro.Expr;
+import haxe.macro.Context;
+import haxe.macro.TypeTools;
+import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
+import reflaxe.elixir.ast.ElixirAST.makeAST;
+import reflaxe.elixir.ast.builders.ModuleBuilder;
+import reflaxe.elixir.CompilationContext;
 
 /**
  * ConstructorBuilder: Handles constructor call compilation (TNew)
@@ -49,180 +48,175 @@ package reflaxe.elixir.ast.builders;
  */
 @:nullSafety(Off)
 class ConstructorBuilder {
-    
-    /**
-     * Build constructor call expression
-     * 
-     * WHY: Constructors in Haxe map to different Elixir patterns
-     * WHAT: Detects class type and generates appropriate construction
-     * HOW: Analyze class metadata and fields
-     * 
-     * @param c Class reference
-     * @param params Type parameters (unused in Elixir)
-     * @param el Constructor arguments
-     * @param context Compilation context
-     * @return ElixirASTDef for the constructor call
-     */
-	    public static function build(c: Ref<ClassType>, params: Array<Type>, el: Array<TypedExpr>, context: CompilationContext): Null<ElixirASTDef> {
-	        var classType = c.get();
-	        var className = classType.name;
-	        var moduleName = ModuleBuilder.extractModuleName(classType);
-	        
-	        #if debug_ast_builder
-	        #if debug_ast_builder trace('[ConstructorBuilder] Building constructor for class: $className'); #end
-	        #if debug_ast_builder trace('[ConstructorBuilder]   Arguments: ${el.length}'); #end
-	        #if debug_ast_builder trace('[ConstructorBuilder]   Has @:schema: ${classType.meta.has(":schema")}'); #end
-        #end
+	/**
+	 * Build constructor call expression
+	 * 
+	 * WHY: Constructors in Haxe map to different Elixir patterns
+	 * WHAT: Detects class type and generates appropriate construction
+	 * HOW: Analyze class metadata and fields
+	 * 
+	 * @param c Class reference
+	 * @param params Type parameters (unused in Elixir)
+	 * @param el Constructor arguments
+	 * @param context Compilation context
+	 * @return ElixirASTDef for the constructor call
+	 */
+	public static function build(c:Ref<ClassType>, params:Array<Type>, el:Array<TypedExpr>, context:CompilationContext):Null<ElixirASTDef> {
+		var classType = c.get();
+		var className = classType.name;
+		var moduleName = ModuleBuilder.extractModuleName(classType);
 
-        // CRITICAL FIX: Bypass compileExpressionImpl to preserve context
-        // WHY: compileExpressionImpl creates a FRESH context, losing our flag
-        // WHAT: Call ElixirASTBuilder directly with our context to preserve flags
-        // HOW: Use buildFromTypedExpr with current context instead of compiler method
-        #if debug_ast_builder trace('[ConstructorBuilder] SETTING FLAG isInConstructorArgContext = true'); #end
-        context.isInConstructorArgContext = true;
+		#if debug_ast_builder
+		#if debug_ast_builder trace('[ConstructorBuilder] Building constructor for class: $className'); #end
+		#if debug_ast_builder trace('[ConstructorBuilder]   Arguments: ${el.length}'); #end
+		#if debug_ast_builder trace('[ConstructorBuilder]   Has @:schema: ${classType.meta.has(":schema")}'); #end
+		#end
 
-        // Compile arguments directly with our context (not through compiler which creates fresh context)
-        var args = [for (e in el) reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context)];
+		// CRITICAL FIX: Bypass compileExpressionImpl to preserve context
+		// WHY: compileExpressionImpl creates a FRESH context, losing our flag
+		// WHAT: Call ElixirASTBuilder directly with our context to preserve flags
+		// HOW: Use buildFromTypedExpr with current context instead of compiler method
+		#if debug_ast_builder trace('[ConstructorBuilder] SETTING FLAG isInConstructorArgContext = true'); #end
+		context.isInConstructorArgContext = true;
 
-        context.isInConstructorArgContext = false;
-        #if debug_ast_builder trace('[ConstructorBuilder] RESET FLAG isInConstructorArgContext = false'); #end
+		// Compile arguments directly with our context (not through compiler which creates fresh context)
+		var args = [for (e in el) reflaxe.elixir.ast.ElixirASTBuilder.buildFromTypedExpr(e, context)];
 
-        // Optional args: Haxe typed constructor calls can omit trailing optional parameters.
-        // Elixir requires exact arity, so pad omitted trailing optionals with `nil`.
-        //
-        // Example (Haxe):
-        //   new haxe.Exception("oops") // where new(message, ?previous, ?native)
-        // Elixir (desired):
-        //   Reflaxe.Exception.new("oops", nil, nil)
-        var expectedCtorArgs: Null<Array<{name: String, opt: Bool, t: Type}>> = null;
-        if (classType.constructor != null) {
-            switch (TypeTools.follow(classType.constructor.get().type)) {
-                case TFun(fnArgs, _):
-                    expectedCtorArgs = fnArgs;
-                default:
-            }
-        }
-        if (expectedCtorArgs != null && args.length < expectedCtorArgs.length) {
-            for (i in args.length...expectedCtorArgs.length) {
-                if (expectedCtorArgs[i].opt) {
-                    args.push(makeAST(ENil));
-                }
-            }
-        }
+		context.isInConstructorArgContext = false;
+		#if debug_ast_builder trace('[ConstructorBuilder] RESET FLAG isInConstructorArgContext = false'); #end
 
-	        // ====================================================================
-	        // PATTERN 1: Ecto Schemas
-	        // ====================================================================
-	        if (classType.meta.has(":schema")) {
-	            #if debug_ast_builder trace('[ConstructorBuilder] ✓ Detected Ecto schema, generating struct literal'); #end
-	            return buildEctoSchema(moduleName);
-	        }
-        
-        // ====================================================================
-        // PATTERN 2: Map Types
-        // ====================================================================
-        if (isMapType(className)) {
-            #if debug_ast_builder trace('[ConstructorBuilder] ✓ Detected Map type, generating empty map'); #end
-            return EMap([]);
-        }
-        
-        // ====================================================================
-        // PATTERN 3: Regular Classes
-        // ====================================================================
-        var hasInstanceMethods = hasInstanceMethodsCheck(classType);
-        var hasConstructor = classType.constructor != null;
-        var ctorIsPublic = classType.constructor == null || classType.constructor.get().isPublic;
-        var isSameClass = false;
-        if (context.currentClass != null) {
-            // Reference equality is not reliable across Haxe macro type refs; compare stable identity.
-            if (context.currentClass == classType) {
-                isSameClass = true;
-            } else if (context.currentClass.module == classType.module && context.currentClass.name == classType.name) {
-                isSameClass = true;
-            }
-        }
-        
-        #if debug_ast_builder
-        #if debug_ast_builder trace('[ConstructorBuilder] Class analysis:'); #end
-        #if debug_ast_builder trace('[ConstructorBuilder]   Has instance methods: $hasInstanceMethods'); #end
-        #if debug_ast_builder trace('[ConstructorBuilder]   Has constructor: $hasConstructor'); #end
-        #end
-        
-        // Constructors compile to `new/arity` functions in the module.
-        //
-        // When a class has a private constructor, Haxe only allows `new Class(...)`
-        // within that same class. In Elixir, private functions (`defp new/...`) must be
-        // called locally (not as `Module.new(...)`), otherwise Elixir warns/fails with
-        // "undefined or private".
-        //
-        // So:
-        // - private ctor + same module: call local `new(...)`
-        // - otherwise: call `Module.new(...)`
-        var shouldCallLocalNew = hasConstructor && !ctorIsPublic && isSameClass;
+		// Optional args: Haxe typed constructor calls can omit trailing optional parameters.
+		// Elixir requires exact arity, so pad omitted trailing optionals with `nil`.
+		//
+		// Example (Haxe):
+		//   new haxe.Exception("oops") // where new(message, ?previous, ?native)
+		// Elixir (desired):
+		//   Reflaxe.Exception.new("oops", nil, nil)
+		var expectedCtorArgs:Null<Array<{name:String, opt:Bool, t:Type}>> = null;
+		if (classType.constructor != null) {
+			switch (TypeTools.follow(classType.constructor.get().type)) {
+				case TFun(fnArgs, _):
+					expectedCtorArgs = fnArgs;
+				default:
+			}
+		}
+		if (expectedCtorArgs != null && args.length < expectedCtorArgs.length) {
+			for (i in args.length...expectedCtorArgs.length) {
+				if (expectedCtorArgs[i].opt) {
+					args.push(makeAST(ENil));
+				}
+			}
+		}
 
-        if (shouldCallLocalNew) {
-            #if debug_ast_builder trace('[ConstructorBuilder] Generating local new() call (private ctor)'); #end
-            return ECall(null, "new", args);
-        }
+		// ====================================================================
+		// PATTERN 1: Ecto Schemas
+		// ====================================================================
+		if (classType.meta.has(":schema")) {
+			#if debug_ast_builder trace('[ConstructorBuilder] ✓ Detected Ecto schema, generating struct literal'); #end
+			return buildEctoSchema(moduleName);
+		}
 
-	        // Default: call the module's new function: ModuleName.new(args)
-	        #if debug_ast_builder trace('[ConstructorBuilder] Generating Module.new() call'); #end
-	        var moduleRef = makeAST(EVar(moduleName));
-	        return ERemoteCall(moduleRef, "new", args);
-	    }
-    
-    /**
-     * Build Ecto schema struct literal
-     * 
-     * WHY: Ecto schemas use struct literals, not constructor functions
-     * WHAT: Extract module name from metadata and generate struct
-     * HOW: Check @:native metadata for custom module name
-     */
-	    static function buildEctoSchema(moduleName: String): ElixirASTDef {
-	        // Generate struct literal: %ModuleName{}
-	        return EStruct(moduleName, []);
-	    }
-    
-    /**
-     * Check if class name represents a Map type
-     * 
-     * WHY: Map types should generate %{}, not structs
-     * WHAT: Check for common Map class names
-     * HOW: String matching on class name
-     */
-    static function isMapType(className: String): Bool {
-        return className == "StringMap" || 
-               className == "Map" || 
-               className == "IntMap" ||
-               StringTools.endsWith(className, "Map");
-    }
-    
-    /**
-     * Check if class has instance methods
-     * 
-     * WHY: Classes with methods need Module.new(), data classes use structs
-     * WHAT: Analyze class fields for non-static methods
-     * HOW: Iterate fields and check if they're methods and not static
-     */
-    static function hasInstanceMethodsCheck(classType: ClassType): Bool {
-        for (field in classType.fields.get()) {
-            // Instance methods are FMethod that are not in the statics list
-            if (field.kind.match(FMethod(_))) {
-                // Check if this field is NOT in the statics array
-                var isStatic = false;
-                for (staticField in classType.statics.get()) {
-                    if (staticField.name == field.name) {
-                        isStatic = true;
-                        break;
-                    }
-                }
-                if (!isStatic) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
+		// ====================================================================
+		// PATTERN 2: Map Types
+		// ====================================================================
+		if (isMapType(className)) {
+			#if debug_ast_builder trace('[ConstructorBuilder] ✓ Detected Map type, generating empty map'); #end
+			return EMap([]);
+		}
+
+		// ====================================================================
+		// PATTERN 3: Regular Classes
+		// ====================================================================
+		var hasInstanceMethods = hasInstanceMethodsCheck(classType);
+		var hasConstructor = classType.constructor != null;
+		var ctorIsPublic = classType.constructor == null || classType.constructor.get().isPublic;
+		var isSameClass = false;
+		if (context.currentClass != null) {
+			// Reference equality is not reliable across Haxe macro type refs; compare stable identity.
+			if (context.currentClass == classType) {
+				isSameClass = true;
+			} else if (context.currentClass.module == classType.module && context.currentClass.name == classType.name) {
+				isSameClass = true;
+			}
+		}
+
+		#if debug_ast_builder
+		#if debug_ast_builder trace('[ConstructorBuilder] Class analysis:'); #end
+		#if debug_ast_builder trace('[ConstructorBuilder]   Has instance methods: $hasInstanceMethods'); #end
+		#if debug_ast_builder trace('[ConstructorBuilder]   Has constructor: $hasConstructor'); #end
+		#end
+
+		// Constructors compile to `new/arity` functions in the module.
+		//
+		// When a class has a private constructor, Haxe only allows `new Class(...)`
+		// within that same class. In Elixir, private functions (`defp new/...`) must be
+		// called locally (not as `Module.new(...)`), otherwise Elixir warns/fails with
+		// "undefined or private".
+		//
+		// So:
+		// - private ctor + same module: call local `new(...)`
+		// - otherwise: call `Module.new(...)`
+		var shouldCallLocalNew = hasConstructor && !ctorIsPublic && isSameClass;
+
+		if (shouldCallLocalNew) {
+			#if debug_ast_builder trace('[ConstructorBuilder] Generating local new() call (private ctor)'); #end
+			return ECall(null, "new", args);
+		}
+
+		// Default: call the module's new function: ModuleName.new(args)
+		#if debug_ast_builder trace('[ConstructorBuilder] Generating Module.new() call'); #end
+		var moduleRef = makeAST(EVar(moduleName));
+		return ERemoteCall(moduleRef, "new", args);
+	}
+
+	/**
+	 * Build Ecto schema struct literal
+	 * 
+	 * WHY: Ecto schemas use struct literals, not constructor functions
+	 * WHAT: Extract module name from metadata and generate struct
+	 * HOW: Check @:native metadata for custom module name
+	 */
+	static function buildEctoSchema(moduleName:String):ElixirASTDef {
+		// Generate struct literal: %ModuleName{}
+		return EStruct(moduleName, []);
+	}
+
+	/**
+	 * Check if class name represents a Map type
+	 * 
+	 * WHY: Map types should generate %{}, not structs
+	 * WHAT: Check for common Map class names
+	 * HOW: String matching on class name
+	 */
+	static function isMapType(className:String):Bool {
+		return className == "StringMap" || className == "Map" || className == "IntMap" || StringTools.endsWith(className, "Map");
+	}
+
+	/**
+	 * Check if class has instance methods
+	 * 
+	 * WHY: Classes with methods need Module.new(), data classes use structs
+	 * WHAT: Analyze class fields for non-static methods
+	 * HOW: Iterate fields and check if they're methods and not static
+	 */
+	static function hasInstanceMethodsCheck(classType:ClassType):Bool {
+		for (field in classType.fields.get()) {
+			// Instance methods are FMethod that are not in the statics list
+			if (field.kind.match(FMethod(_))) {
+				// Check if this field is NOT in the statics array
+				var isStatic = false;
+				for (staticField in classType.statics.get()) {
+					if (staticField.name == field.name) {
+						isStatic = true;
+						break;
+					}
+				}
+				if (!isStatic) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 }
-
 #end

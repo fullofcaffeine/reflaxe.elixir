@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -44,72 +43,87 @@ import reflaxe.elixir.ast.analyzers.VarUseAnalyzer;
  *   end
  */
 class CaseBinderUnderscoreAlignTransforms {
-  public static function pass(ast: ElixirAST): ElixirAST {
-    return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-      return switch (n.def) {
-        case ECase(target, clauses):
-          var newClauses = [];
-          for (cl in clauses) {
-            var binders = collectPatternBinders(cl.pattern);
-            var renames:Array<{from:String, to:String}> = [];
+	public static function pass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case ECase(target, clauses):
+					var newClauses = [];
+					for (cl in clauses) {
+						var binders = collectPatternBinders(cl.pattern);
+						var renames:Array<{from:String, to:String}> = [];
 
-            for (b in binders) {
-              if (b != null && b.length > 1 && b.charAt(0) == "_") {
-                var bare = b.substr(1);
-                // Strict: only trigger when the body/guard references the bare name itself.
-                // The general VarUseAnalyzer also considers underscore variants which would
-                // incorrectly treat `_value` as a use of `value` here.
-                var bareIsUsed = VarUseAnalyzer.stmtUsesVarExact(cl.body, bare) || (cl.guard != null && VarUseAnalyzer.stmtUsesVarExact(cl.guard, bare));
-                if (bareIsUsed && binders.indexOf(bare) == -1) {
-                  renames.push({from: b, to: bare});
-                }
-              }
-            }
+						for (b in binders) {
+							if (b != null && b.length > 1 && b.charAt(0) == "_") {
+								var bare = b.substr(1);
+								// Strict: only trigger when the body/guard references the bare name itself.
+								// The general VarUseAnalyzer also considers underscore variants which would
+								// incorrectly treat `_value` as a use of `value` here.
+								var bareIsUsed = VarUseAnalyzer.stmtUsesVarExact(cl.body, bare)
+									|| (cl.guard != null && VarUseAnalyzer.stmtUsesVarExact(cl.guard, bare));
+								if (bareIsUsed && binders.indexOf(bare) == -1) {
+									renames.push({from: b, to: bare});
+								}
+							}
+						}
 
-            var newPat = renames.length > 0 ? renameBinders(cl.pattern, renames) : cl.pattern;
-            newClauses.push({pattern: newPat, guard: cl.guard, body: cl.body});
-          }
-          makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
-        default:
-          n;
-      }
-    });
-  }
+						var newPat = renames.length > 0 ? renameBinders(cl.pattern, renames) : cl.pattern;
+						newClauses.push({pattern: newPat, guard: cl.guard, body: cl.body});
+					}
+					makeASTWithMeta(ECase(target, newClauses), n.metadata, n.pos);
+				default:
+					n;
+			}
+		});
+	}
 
-  static function collectPatternBinders(p: EPattern): Array<String> {
-    var out:Array<String> = [];
-    function walk(pt:EPattern) {
-      switch (pt) {
-        case PVar(n): if (n != null) out.push(n);
-        case PTuple(es): for (e in es) walk(e);
-        case PList(es): for (e in es) walk(e);
-        case PCons(h, t): walk(h); walk(t);
-        case PMap(kvs): for (kv in kvs) walk(kv.value);
-        case PStruct(_, fs): for (f in fs) walk(f.value);
-        case PPin(inner): walk(inner);
-        default:
-      }
-    }
-    walk(p);
-    return out;
-  }
+	static function collectPatternBinders(p:EPattern):Array<String> {
+		var out:Array<String> = [];
+		function walk(pt:EPattern) {
+			switch (pt) {
+				case PVar(n):
+					if (n != null)
+						out.push(n);
+				case PTuple(es):
+					for (e in es)
+						walk(e);
+				case PList(es):
+					for (e in es)
+						walk(e);
+				case PCons(h, t):
+					walk(h);
+					walk(t);
+				case PMap(kvs):
+					for (kv in kvs)
+						walk(kv.value);
+				case PStruct(_, fs):
+					for (f in fs)
+						walk(f.value);
+				case PPin(inner):
+					walk(inner);
+				default:
+			}
+		}
+		walk(p);
+		return out;
+	}
 
-  static function renameBinders(p:EPattern, renames:Array<{from:String, to:String}>):EPattern {
-    function renameVar(name:String):String {
-      for (r in renames) if (r.from == name) return r.to;
-      return name;
-    }
-    return switch (p) {
-      case PVar(n): PVar(renameVar(n));
-      case PTuple(es): PTuple([for (e in es) renameBinders(e, renames)]);
-      case PList(es): PList([for (e in es) renameBinders(e, renames)]);
-      case PCons(h,t): PCons(renameBinders(h, renames), renameBinders(t, renames));
-      case PMap(kvs): PMap([for (kv in kvs) { key: kv.key, value: renameBinders(kv.value, renames) }]);
-      case PStruct(nm, fs): PStruct(nm, [for (f in fs) { key: f.key, value: renameBinders(f.value, renames) }]);
-      case PPin(inner): PPin(renameBinders(inner, renames));
-      default: p;
-    }
-  }
+	static function renameBinders(p:EPattern, renames:Array<{from:String, to:String}>):EPattern {
+		function renameVar(name:String):String {
+			for (r in renames)
+				if (r.from == name)
+					return r.to;
+			return name;
+		}
+		return switch (p) {
+			case PVar(n): PVar(renameVar(n));
+			case PTuple(es): PTuple([for (e in es) renameBinders(e, renames)]);
+			case PList(es): PList([for (e in es) renameBinders(e, renames)]);
+			case PCons(h, t): PCons(renameBinders(h, renames), renameBinders(t, renames));
+			case PMap(kvs): PMap([for (kv in kvs) {key: kv.key, value: renameBinders(kv.value, renames)}]);
+			case PStruct(nm, fs): PStruct(nm, [for (f in fs) {key: f.key, value: renameBinders(f.value, renames)}]);
+			case PPin(inner): PPin(renameBinders(inner, renames));
+			default: p;
+		}
+	}
 }
-
 #end

@@ -1,7 +1,6 @@
 package reflaxe.elixir;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Expr.Position;
 
 using reflaxe.helpers.PositionHelper;
@@ -27,35 +26,36 @@ using reflaxe.helpers.PositionHelper;
  *   emitting a mapping segment at every marker (plus a column-0 mapping per line).
  */
 class SourceMapMarkers {
-    public static inline var PREFIX = "\u0001SM";
-    public static inline var SUFFIX = "\u0002";
+	public static inline var PREFIX = "\u0001SM";
+	public static inline var SUFFIX = "\u0002";
 
-    final positions: Array<Position>;
+	final positions:Array<Position>;
 
-    // Avoid consecutive duplicates (wrapper nodes often share identical positions)
-    var lastEmittedKey: Null<String> = null;
+	// Avoid consecutive duplicates (wrapper nodes often share identical positions)
+	var lastEmittedKey:Null<String> = null;
 
-    public function new() {
-        positions = [];
-    }
+	public function new() {
+		positions = [];
+	}
 
-    public function emit(pos: Position): String {
-        if (pos == null) return "";
+	public function emit(pos:Position):String {
+		if (pos == null)
+			return "";
 
-        var key = pos.getFile() + ":" + pos.line() + ":" + pos.column();
-        if (lastEmittedKey == key) return "";
-        lastEmittedKey = key;
+		var key = pos.getFile() + ":" + pos.line() + ":" + pos.column();
+		if (lastEmittedKey == key)
+			return "";
+		lastEmittedKey = key;
 
-        var id = positions.length;
-        positions.push(pos);
-        return PREFIX + id + SUFFIX;
-    }
+		var id = positions.length;
+		positions.push(pos);
+		return PREFIX + id + SUFFIX;
+	}
 
-    public function getPosition(id: Int): Null<Position> {
-        if (id < 0 || id >= positions.length) return null;
-        return positions[id];
-    }
+	public function getPosition(id:Int):Null<Position> {
+		if (id < 0 || id >= positions.length)
+			return null;
+		return positions[id];
+	}
 }
-
 #end
-

@@ -20,6 +20,32 @@ else
   exit 1
 fi
 
+if ! haxelib run formatter --help >/dev/null 2>&1; then
+  echo "[pre-commit] ERROR: haxelib formatter is required but not installed."
+  echo "[pre-commit] Install: haxelib install formatter"
+  exit 1
+fi
+
+mapfile -t STAGED_HX_FILES < <(
+  git diff --cached --name-only --diff-filter=ACMR \
+    | rg '\.hx$' \
+    || true
+)
+
+if [ "${#STAGED_HX_FILES[@]}" -gt 0 ]; then
+  echo "[pre-commit] Formatting staged Haxe files..."
+  FORMAT_ARGS=()
+  for hx_file in "${STAGED_HX_FILES[@]}"; do
+    if [ -f "$ROOT_DIR/$hx_file" ]; then
+      FORMAT_ARGS+=("-s" "$ROOT_DIR/$hx_file")
+    fi
+  done
+  if [ "${#FORMAT_ARGS[@]}" -gt 0 ]; then
+    haxelib run formatter "${FORMAT_ARGS[@]}"
+    git add -- "${STAGED_HX_FILES[@]}"
+  fi
+fi
+
 echo "[pre-commit] Running name-heuristics guard..."
 "$ROOT_DIR/scripts/lint/name_heuristics_guard.sh"
 

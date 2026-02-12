@@ -18,7 +18,7 @@ import elixir.types.Term;
  */
 @:native("TodoAppWeb.ErrorHTML")
 class ErrorHTML {
-    public static function render(template: String, assigns: Term): String {
-        return phoenix.errors.DefaultErrorHTML.render(template, assigns);
-    }
+	public static function render(template:String, assigns:Term):String {
+		return phoenix.errors.DefaultErrorHTML.render(template, assigns);
+	}
 }

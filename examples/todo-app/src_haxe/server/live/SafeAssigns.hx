@@ -52,166 +52,158 @@ import elixir.List;
  */
 @:native("TodoApp.SafeAssigns")
 class SafeAssigns {
-    
-    /**
-     * Set the editingTodo field using LiveSocket's type-safe assign pattern
-     * 
-     * The _.editingTodo syntax is validated at compile time to ensure:
-     * - The field exists in TodoLiveAssigns
-     * - The type matches (Null<Todo>)
-     * - The field name is converted to :editing_todo in Elixir
-     */
-    public static function setEditingTodo(socket: Socket<TodoLiveAssigns>, todo: Null<server.schemas.Todo>): Socket<TodoLiveAssigns> {
-        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-        return liveSocket.assign(_.editing_todo, todo);
-    }
-    
-    /**
-     * Set the selectedTags field using LiveSocket's type-safe assign pattern
-     */
-    public static function setSelectedTags(socket: Socket<TodoLiveAssigns>, tags: Array<String>): Socket<TodoLiveAssigns> {
-        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-        return liveSocket.assign(_.selected_tags, tags);
-    }
-    
-    /**
-     * Set the filter field using LiveSocket's type-safe assign pattern
-     */
-    public static function setFilter(socket: Socket<TodoLiveAssigns>, filter: String): Socket<TodoLiveAssigns> {
-        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-        return liveSocket.assign(
-            _.filter,
-            switch (filter) {
-                case "active": shared.TodoTypes.TodoFilter.Active;
-                case "completed": shared.TodoTypes.TodoFilter.Completed;
-                case _: shared.TodoTypes.TodoFilter.All;
-            }
-        );
-    }
-    
-    /**
-     * Set the sortBy field using LiveSocket's type-safe assign pattern
-     */
-    public static function setSortBy(socket: Socket<TodoLiveAssigns>, sortBy: String): Socket<TodoLiveAssigns> {
-        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-        return liveSocket.assign(
-            _.sort_by,
-            switch (sortBy) {
-                case "priority": shared.TodoTypes.TodoSort.Priority;
-                case "due_date": shared.TodoTypes.TodoSort.DueDate;
-                case _: shared.TodoTypes.TodoSort.Created;
-            }
-        );
-    }
+	/**
+	 * Set the editingTodo field using LiveSocket's type-safe assign pattern
+	 * 
+	 * The _.editingTodo syntax is validated at compile time to ensure:
+	 * - The field exists in TodoLiveAssigns
+	 * - The type matches (Null<Todo>)
+	 * - The field name is converted to :editing_todo in Elixir
+	 */
+	public static function setEditingTodo(socket:Socket<TodoLiveAssigns>, todo:Null<server.schemas.Todo>):Socket<TodoLiveAssigns> {
+		final liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+		return liveSocket.assign(_.editing_todo, todo);
+	}
 
-    /**
-     * Set sort_by only; caller should trigger recompute_visible afterwards.
-     * This keeps SafeAssigns zero-logic and typed while avoiding
-     * cross-module helper dependencies.
-     */
-    public static function setSortByAndResort(socket: Socket<TodoLiveAssigns>, sortBy: String): Socket<TodoLiveAssigns> {
-        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-        return liveSocket.assign(
-            _.sort_by,
-            switch (sortBy) {
-                case "priority": shared.TodoTypes.TodoSort.Priority;
-                case "due_date": shared.TodoTypes.TodoSort.DueDate;
-                case _: shared.TodoTypes.TodoSort.Created;
-            }
-        );
-    }
-    
-    /**
-     * Set the searchQuery field using LiveSocket's type-safe assign pattern
-     */
-    public static function setSearchQuery(socket: Socket<TodoLiveAssigns>, query: String): Socket<TodoLiveAssigns> {
-        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-        return liveSocket.assign(_.search_query, query);
-    }
-    
-    /**
-     * Set the showForm field using LiveSocket's type-safe assign pattern
-     */
-    public static function setShowForm(socket: Socket<TodoLiveAssigns>, showForm: Bool): Socket<TodoLiveAssigns> {
-        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-        return liveSocket.assign(_.show_form, showForm);
-    }
+	/**
+	 * Set the selectedTags field using LiveSocket's type-safe assign pattern
+	 */
+	public static function setSelectedTags(socket:Socket<TodoLiveAssigns>, tags:Array<String>):Socket<TodoLiveAssigns> {
+		final liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+		return liveSocket.assign(_.selected_tags, tags);
+	}
 
-    /**
-     * Toggle a tag in the selected_tags list (gets tag from params)
-     * If the tag is present, remove it; if absent, add it.
-     */
-    public static function toggleTag(socket: Socket<TodoLiveAssigns>, tag: String): Socket<TodoLiveAssigns> {
-        var currentTags = socket.assigns.selected_tags;
-        var updatedTags = if (currentTags.contains(tag)) {
-            currentTags.filter(function(existingTag) return existingTag != tag);
-        } else {
-            List.insertAt(currentTags, 0, tag);
-        };
-        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-        return liveSocket.assign(_.selected_tags, updatedTags);
-    }
+	/**
+	 * Set the filter field using LiveSocket's type-safe assign pattern
+	 */
+	public static function setFilter(socket:Socket<TodoLiveAssigns>, filter:String):Socket<TodoLiveAssigns> {
+		final liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+		return liveSocket.assign(_.filter, switch (filter) {
+			case "active": shared.TodoTypes.TodoFilter.Active;
+			case "completed": shared.TodoTypes.TodoFilter.Completed;
+			case _: shared.TodoTypes.TodoFilter.All;
+		});
+	}
 
-    /**
-     * Backward-compatible helper that accepts raw params.
-     * Prefer toggleTag/3 to avoid reflection.
-     */
-    public static function toggleTagFromParams(socket: Socket<TodoLiveAssigns>, params: { tag:String }): Socket<TodoLiveAssigns> {
-        return toggleTag(socket, params.tag);
-    }
-    
-    /**
-     * Update todos and automatically recalculate statistics
-     * 
-     * Uses LiveSocket's merge pattern for type-safe bulk updates.
-     * The merge method validates all field names at compile time
-     * and ensures type compatibility. No casts or strings needed!
-     */
-    public static function updateTodosAndStats(socket: Socket<TodoLiveAssigns>, todos: Array<server.schemas.Todo>): Socket<TodoLiveAssigns> {
-        var completed = countCompleted(todos);
-        var pending = countPending(todos);
+	/**
+	 * Set the sortBy field using LiveSocket's type-safe assign pattern
+	 */
+	public static function setSortBy(socket:Socket<TodoLiveAssigns>, sortBy:String):Socket<TodoLiveAssigns> {
+		final liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+		return liveSocket.assign(_.sort_by, switch (sortBy) {
+			case "priority": shared.TodoTypes.TodoSort.Priority;
+			case "due_date": shared.TodoTypes.TodoSort.DueDate;
+			case _: shared.TodoTypes.TodoSort.Created;
+		});
+	}
 
-        // Use LiveSocket's type-safe merge for bulk updates
-        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-        final updatedSocket = liveSocket.merge({
-            todos: todos,
-            total_todos: todos.length,
-            completed_todos: completed,
-            pending_todos: pending
-        });
+	/**
+	 * Set sort_by only; caller should trigger recompute_visible afterwards.
+	 * This keeps SafeAssigns zero-logic and typed while avoiding
+	 * cross-module helper dependencies.
+	 */
+	public static function setSortByAndResort(socket:Socket<TodoLiveAssigns>, sortBy:String):Socket<TodoLiveAssigns> {
+		final liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+		return liveSocket.assign(_.sort_by, switch (sortBy) {
+			case "priority": shared.TodoTypes.TodoSort.Priority;
+			case "due_date": shared.TodoTypes.TodoSort.DueDate;
+			case _: shared.TodoTypes.TodoSort.Created;
+		});
+	}
 
-        return updatedSocket;
-    }
-    
-    /**
-     * Update just the todos list without stats recalculation
-     * 
-     * Uses LiveSocket's assign pattern for single field update.
-     */
-    public static function setTodos(socket: Socket<TodoLiveAssigns>, todos: Array<server.schemas.Todo>): Socket<TodoLiveAssigns> {
-        final liveSocket: LiveSocket<TodoLiveAssigns> = socket;
-        return liveSocket.assign(_.todos, todos);
-    }
-    
-    /**
-     * Helper function to count completed todos
-     */
-    private static function countCompleted(todos: Array<server.schemas.Todo>): Int {
-        var count = 0;
-        for (todo in todos) {
-            if (todo.completed) count++;
-        }
-        return count;
-    }
-    
-    /**
-     * Helper function to count pending todos
-     */
-    private static function countPending(todos: Array<server.schemas.Todo>): Int {
-        var count = 0;
-        for (todo in todos) {
-            if (!todo.completed) count++;
-        }
-        return count;
-    }
+	/**
+	 * Set the searchQuery field using LiveSocket's type-safe assign pattern
+	 */
+	public static function setSearchQuery(socket:Socket<TodoLiveAssigns>, query:String):Socket<TodoLiveAssigns> {
+		final liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+		return liveSocket.assign(_.search_query, query);
+	}
+
+	/**
+	 * Set the showForm field using LiveSocket's type-safe assign pattern
+	 */
+	public static function setShowForm(socket:Socket<TodoLiveAssigns>, showForm:Bool):Socket<TodoLiveAssigns> {
+		final liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+		return liveSocket.assign(_.show_form, showForm);
+	}
+
+	/**
+	 * Toggle a tag in the selected_tags list (gets tag from params)
+	 * If the tag is present, remove it; if absent, add it.
+	 */
+	public static function toggleTag(socket:Socket<TodoLiveAssigns>, tag:String):Socket<TodoLiveAssigns> {
+		var currentTags = socket.assigns.selected_tags;
+		var updatedTags = if (currentTags.contains(tag)) {
+			currentTags.filter(function(existingTag) return existingTag != tag);
+		} else {
+			List.insertAt(currentTags, 0, tag);
+		};
+		final liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+		return liveSocket.assign(_.selected_tags, updatedTags);
+	}
+
+	/**
+	 * Backward-compatible helper that accepts raw params.
+	 * Prefer toggleTag/3 to avoid reflection.
+	 */
+	public static function toggleTagFromParams(socket:Socket<TodoLiveAssigns>, params:{tag:String}):Socket<TodoLiveAssigns> {
+		return toggleTag(socket, params.tag);
+	}
+
+	/**
+	 * Update todos and automatically recalculate statistics
+	 * 
+	 * Uses LiveSocket's merge pattern for type-safe bulk updates.
+	 * The merge method validates all field names at compile time
+	 * and ensures type compatibility. No casts or strings needed!
+	 */
+	public static function updateTodosAndStats(socket:Socket<TodoLiveAssigns>, todos:Array<server.schemas.Todo>):Socket<TodoLiveAssigns> {
+		var completed = countCompleted(todos);
+		var pending = countPending(todos);
+
+		// Use LiveSocket's type-safe merge for bulk updates
+		final liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+		final updatedSocket = liveSocket.merge({
+			todos: todos,
+			total_todos: todos.length,
+			completed_todos: completed,
+			pending_todos: pending
+		});
+
+		return updatedSocket;
+	}
+
+	/**
+	 * Update just the todos list without stats recalculation
+	 * 
+	 * Uses LiveSocket's assign pattern for single field update.
+	 */
+	public static function setTodos(socket:Socket<TodoLiveAssigns>, todos:Array<server.schemas.Todo>):Socket<TodoLiveAssigns> {
+		final liveSocket:LiveSocket<TodoLiveAssigns> = socket;
+		return liveSocket.assign(_.todos, todos);
+	}
+
+	/**
+	 * Helper function to count completed todos
+	 */
+	private static function countCompleted(todos:Array<server.schemas.Todo>):Int {
+		var count = 0;
+		for (todo in todos) {
+			if (todo.completed)
+				count++;
+		}
+		return count;
+	}
+
+	/**
+	 * Helper function to count pending todos
+	 */
+	private static function countPending(todos:Array<server.schemas.Todo>):Int {
+		var count = 0;
+		for (todo in todos) {
+			if (!todo.completed)
+				count++;
+		}
+		return count;
+	}
 }

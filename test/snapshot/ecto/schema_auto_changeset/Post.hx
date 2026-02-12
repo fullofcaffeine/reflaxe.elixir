@@ -9,9 +9,8 @@ package;
  */
 @:schema
 class Post {
-    public var title: String;
-    public var description: String;
-    public var published: Bool;
-    public var dueDate: Null<Date>;
+	public var title:String;
+	public var description:String;
+	public var published:Bool;
+	public var dueDate:Null<Date>;
 }
-

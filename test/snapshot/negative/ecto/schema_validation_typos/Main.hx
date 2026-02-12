@@ -7,22 +7,21 @@ import ecto.Migration;
  */
 @:migration
 class CreateUsers extends Migration {
-    public function up(): Void {
-        createTable("users").addColumn("email", ecto.Migration.ColumnType.String(), {nullable: false});
-    }
+	public function up():Void {
+		createTable("users").addColumn("email", ecto.Migration.ColumnType.String(), {nullable: false});
+	}
 
-    public function down(): Void {
-        dropTable("users");
-    }
+	public function down():Void {
+		dropTable("users");
+	}
 }
 
 @:schema("userz")
 class User {
-    public var id: Int;
-    public var email: String;
+	public var id:Int;
+	public var email:String;
 }
 
 class Main {
-    static function main() {}
+	static function main() {}
 }
-

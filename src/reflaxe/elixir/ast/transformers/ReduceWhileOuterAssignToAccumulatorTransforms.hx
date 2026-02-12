@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.ds.StringMap;
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
@@ -57,8 +56,8 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   buf
  */
 class ReduceWhileOuterAssignToAccumulatorTransforms {
-	public static function pass(ast: ElixirAST): ElixirAST {
-		return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
+	public static function pass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
 			return switch (n.def) {
 				case EBlock(stmts):
 					var rewritten = rewriteStatements(stmts);
@@ -72,19 +71,16 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 		});
 	}
 
-	static function rewriteStatements(stmts: Array<ElixirAST>): Array<ElixirAST> {
-		var boundSoFar: StringMap<Bool> = new StringMap();
+	static function rewriteStatements(stmts:Array<ElixirAST>):Array<ElixirAST> {
+		var boundSoFar:StringMap<Bool> = new StringMap();
 		return rewriteStatementsWithContext(stmts, boundSoFar, []);
 	}
 
-	static function rewriteStatementsWithContext(
-		stmts: Array<ElixirAST>,
-		boundSoFar: StringMap<Bool>,
-		followStmts: Array<ElixirAST>
-	): Array<ElixirAST> {
-		if (stmts == null || stmts.length == 0) return stmts;
+	static function rewriteStatementsWithContext(stmts:Array<ElixirAST>, boundSoFar:StringMap<Bool>, followStmts:Array<ElixirAST>):Array<ElixirAST> {
+		if (stmts == null || stmts.length == 0)
+			return stmts;
 
-		var out: Array<ElixirAST> = [];
+		var out:Array<ElixirAST> = [];
 
 		for (index in 0...stmts.length) {
 			var stmt = stmts[index];
@@ -136,10 +132,12 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 
 			// Collect assignment binders inside the reducer body that correspond to already-bound outer vars.
 			var assignedNames = collectAssignedNames(fnClause.body);
-			var outerAssignedAndUsedLater: Array<String> = [];
+			var outerAssignedAndUsedLater:Array<String> = [];
 			for (name in assignedNames) {
-				if (!boundSoFar.exists(name)) continue;
-				if (!anyStatementUsesVar(follow, name)) continue;
+				if (!boundSoFar.exists(name))
+					continue;
+				if (!anyStatementUsesVar(follow, name))
+					continue;
 				outerAssignedAndUsedLater.push(name);
 			}
 
@@ -165,9 +163,10 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 
 			// Avoid duplicating vars already in the accumulator.
 			var existingAccVarNames = collectAccVarNames(oldAccPatternElems);
-			var extraVarNames: Array<String> = [];
+			var extraVarNames:Array<String> = [];
 			for (name in outerAssignedAndUsedLater) {
-				if (!existingAccVarNames.exists(name)) extraVarNames.push(name);
+				if (!existingAccVarNames.exists(name))
+					extraVarNames.push(name);
 			}
 			if (extraVarNames.length == 0) {
 				out.push(stmt);
@@ -175,46 +174,44 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 				continue;
 			}
 
-			var newAccPatternElems: Array<EPattern> = oldAccPatternElems.concat([for (name in extraVarNames) PVar(name)]);
-			var newAccExprElems: Array<ElixirAST> = oldAccExprElems.concat([for (name in extraVarNames) makeAST(EVar(name))]);
+			var newAccPatternElems:Array<EPattern> = oldAccPatternElems.concat([for (name in extraVarNames) PVar(name)]);
+			var newAccExprElems:Array<ElixirAST> = oldAccExprElems.concat([for (name in extraVarNames) makeAST(EVar(name))]);
 
-			var newAccPattern: EPattern = PTuple(newAccPatternElems);
+			var newAccPattern:EPattern = PTuple(newAccPatternElems);
 			var newInitialAcc = makeAST(ETuple(newAccExprElems));
 
 			var newReturnAccExpr = makeAST(ETuple([for (name in (collectPatternVarNames(newAccPatternElems))) makeAST(EVar(name))]));
-			var rewrittenBody = rewriteReturnTuples(
-				fnClause.body,
-				oldAccPatternElems,
-				newReturnAccExpr
-			);
+			var rewrittenBody = rewriteReturnTuples(fnClause.body, oldAccPatternElems, newReturnAccExpr);
 
-			var newFn = makeAST(EFn([{
-				args: [fnClause.binderPattern, newAccPattern],
-				guard: null,
-				body: rewrittenBody
-			}]));
-
-			var newReduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [
-				collectionExpr,
-				newInitialAcc,
-				newFn
+			var newFn = makeAST(EFn([
+				{
+					args: [fnClause.binderPattern, newAccPattern],
+					guard: null,
+					body: rewrittenBody
+				}
 			]));
 
-			// Bind the final accumulator and rebind outer vars from the returned tuple.
-			var usedNames: StringMap<Bool> = new StringMap();
-			for (k in boundSoFar.keys()) usedNames.set(k, true);
-			for (name in extraVarNames) usedNames.set(name, true);
+			var newReduceCall = makeAST(ERemoteCall(makeAST(EVar("Enum")), "reduce_while", [collectionExpr, newInitialAcc, newFn]));
 
-			var tempNames: Array<String> = [];
+			// Bind the final accumulator and rebind outer vars from the returned tuple.
+			var usedNames:StringMap<Bool> = new StringMap();
+			for (k in boundSoFar.keys())
+				usedNames.set(k, true);
+			for (name in extraVarNames)
+				usedNames.set(name, true);
+
+			var tempNames:Array<String> = [];
 			for (name in extraVarNames) {
 				var temp = freshTempName(name, usedNames);
 				usedNames.set(temp, true);
 				tempNames.push(temp);
 			}
 
-			var resultPatternElems: Array<EPattern> = [];
-			for (_ in 0...oldAccExprElems.length) resultPatternElems.push(PWildcard);
-			for (temp in tempNames) resultPatternElems.push(PVar(temp));
+			var resultPatternElems:Array<EPattern> = [];
+			for (_ in 0...oldAccExprElems.length)
+				resultPatternElems.push(PWildcard);
+			for (temp in tempNames)
+				resultPatternElems.push(PVar(temp));
 
 			var bindResult = makeAST(EMatch(PTuple(resultPatternElems), newReduceCall));
 			out.push(bindResult);
@@ -229,10 +226,12 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 		return out;
 	}
 
-	private static function extractEnumReduceWhileStatement(stmt: ElixirAST): Null<{ reduceCall: ElixirAST, args: Array<ElixirAST> }> {
-		if (stmt == null || stmt.def == null) return null;
+	private static function extractEnumReduceWhileStatement(stmt:ElixirAST):Null<{reduceCall:ElixirAST, args:Array<ElixirAST>}> {
+		if (stmt == null || stmt.def == null)
+			return null;
 		var direct = extractEnumReduceWhileCall(stmt);
-		if (direct != null) return direct;
+		if (direct != null)
+			return direct;
 
 		return switch (stmt.def) {
 			case EMatch(PVar("_"), rhs):
@@ -251,24 +250,27 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 		};
 	}
 
-	private static function extractEnumReduceWhileCall(expr: ElixirAST): Null<{ reduceCall: ElixirAST, args: Array<ElixirAST> }> {
-		if (expr == null || expr.def == null) return null;
+	private static function extractEnumReduceWhileCall(expr:ElixirAST):Null<{reduceCall:ElixirAST, args:Array<ElixirAST>}> {
+		if (expr == null || expr.def == null)
+			return null;
 		return switch (expr.def) {
-			case ERemoteCall({ def: EVar("Enum") }, "reduce_while", args):
-				{ reduceCall: expr, args: args };
-			case ECall({ def: EVar("Enum") }, "reduce_while", args):
-				{ reduceCall: expr, args: args };
+			case ERemoteCall({def: EVar("Enum")}, "reduce_while", args):
+				{reduceCall: expr, args: args};
+			case ECall({def: EVar("Enum")}, "reduce_while", args):
+				{reduceCall: expr, args: args};
 			default:
 				null;
 		};
 	}
 
-	private static function extractSingleClauseFn(fnNode: ElixirAST): Null<{ binderPattern: EPattern, accPattern: EPattern, body: ElixirAST }> {
-		if (fnNode == null || fnNode.def == null) return null;
+	private static function extractSingleClauseFn(fnNode:ElixirAST):Null<{binderPattern:EPattern, accPattern:EPattern, body:ElixirAST}> {
+		if (fnNode == null || fnNode.def == null)
+			return null;
 		return switch (fnNode.def) {
 			case EFn(clauses) if (clauses != null && clauses.length == 1):
 				var clause = clauses[0];
-				if (clause.args == null || clause.args.length != 2) return null;
+				if (clause.args == null || clause.args.length != 2)
+					return null;
 				{
 					binderPattern: clause.args[0],
 					accPattern: clause.args[1],
@@ -279,12 +281,13 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 		};
 	}
 
-	private static function collectAssignedNames(expr: ElixirAST): Array<String> {
-		var out: Array<String> = [];
-		var seen: StringMap<Bool> = new StringMap();
+	private static function collectAssignedNames(expr:ElixirAST):Array<String> {
+		var out:Array<String> = [];
+		var seen:StringMap<Bool> = new StringMap();
 
-		ElixirASTTransformer.transformAST(expr, function(n: ElixirAST): ElixirAST {
-			if (n == null || n.def == null) return n;
+		ElixirASTTransformer.transformAST(expr, function(n:ElixirAST):ElixirAST {
+			if (n == null || n.def == null)
+				return n;
 			switch (n.def) {
 				case EFn(_):
 					// Nested closures do not contribute assignments to the outer reducer.
@@ -311,8 +314,9 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 		return out;
 	}
 
-	private static function flattenAccPattern(p: EPattern): Null<Array<EPattern>> {
-		if (p == null) return null;
+	private static function flattenAccPattern(p:EPattern):Null<Array<EPattern>> {
+		if (p == null)
+			return null;
 		return switch (p) {
 			case PTuple(items): items;
 			case PVar(_): [p];
@@ -320,16 +324,17 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 		};
 	}
 
-	private static function flattenAccExpr(e: ElixirAST): Null<Array<ElixirAST>> {
-		if (e == null || e.def == null) return null;
+	private static function flattenAccExpr(e:ElixirAST):Null<Array<ElixirAST>> {
+		if (e == null || e.def == null)
+			return null;
 		return switch (e.def) {
 			case ETuple(items): items;
 			default: [e];
 		};
 	}
 
-	private static function collectAccVarNames(patternElems: Array<EPattern>): StringMap<Bool> {
-		var out: StringMap<Bool> = new StringMap();
+	private static function collectAccVarNames(patternElems:Array<EPattern>):StringMap<Bool> {
+		var out:StringMap<Bool> = new StringMap();
 		for (p in patternElems) {
 			switch (p) {
 				case PVar(name):
@@ -340,7 +345,7 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 		return out;
 	}
 
-	private static function allPatternVars(patternElems: Array<EPattern>): Bool {
+	private static function allPatternVars(patternElems:Array<EPattern>):Bool {
 		for (p in patternElems) {
 			switch (p) {
 				case PVar(_):
@@ -351,26 +356,28 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 		return true;
 	}
 
-	private static function collectPatternVarNames(patternElems: Array<EPattern>): Array<String> {
-		var out: Array<String> = [];
+	private static function collectPatternVarNames(patternElems:Array<EPattern>):Array<String> {
+		var out:Array<String> = [];
 		for (p in patternElems) {
 			switch (p) {
-				case PVar(name): out.push(name);
+				case PVar(name):
+					out.push(name);
 				default:
 			}
 		}
 		return out;
 	}
 
-	private static function isOldAccumulatorExpr(accExpr: ElixirAST, oldAccPatternElems: Array<EPattern>): Bool {
-		if (accExpr == null || accExpr.def == null) return false;
+	private static function isOldAccumulatorExpr(accExpr:ElixirAST, oldAccPatternElems:Array<EPattern>):Bool {
+		if (accExpr == null || accExpr.def == null)
+			return false;
 		var oldNames = collectPatternVarNames(oldAccPatternElems);
 
 		return switch (accExpr.def) {
-			case EVar(name):
-				oldNames.length == 1 && oldNames[0] == name;
+			case EVar(name): oldNames.length == 1 && oldNames[0] == name;
 			case ETuple(elems):
-				if (elems == null || elems.length != oldNames.length) return false;
+				if (elems == null || elems.length != oldNames.length)
+					return false;
 				for (i in 0...elems.length) {
 					switch (elems[i].def) {
 						case EVar(n) if (n == oldNames[i]):
@@ -384,20 +391,18 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 		};
 	}
 
-	private static function rewriteReturnTuples(body: ElixirAST, oldAccPatternElems: Array<EPattern>, newAccExpr: ElixirAST): ElixirAST {
-		return ElixirASTTransformer.transformAST(body, function(n: ElixirAST): ElixirAST {
-			if (n == null || n.def == null) return n;
+	private static function rewriteReturnTuples(body:ElixirAST, oldAccPatternElems:Array<EPattern>, newAccExpr:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformAST(body, function(n:ElixirAST):ElixirAST {
+			if (n == null || n.def == null)
+				return n;
 			return switch (n.def) {
 				case ETuple([tag, acc]):
 					var isContOrHalt = switch (tag.def) {
-						case EAtom(a):
-							var s: String = a;
-							s == "cont" || s == "halt";
+						case EAtom(a): var s:String = a; s == "cont" || s == "halt";
 						default:
 							false;
 					};
-					if (!isContOrHalt || !isOldAccumulatorExpr(acc, oldAccPatternElems)) n;
-					else makeAST(ETuple([tag, newAccExpr]));
+					if (!isContOrHalt || !isOldAccumulatorExpr(acc, oldAccPatternElems)) n; else makeAST(ETuple([tag, newAccExpr]));
 				case EFn(_):
 					// Do not rewrite nested closures.
 					n;
@@ -407,7 +412,7 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 		});
 	}
 
-	private static function freshTempName(baseName: String, used: StringMap<Bool>): String {
+	private static function freshTempName(baseName:String, used:StringMap<Bool>):String {
 		var candidates = [
 			"updated_" + baseName,
 			baseName + "_updated",
@@ -415,22 +420,26 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 			"updated_" + baseName + "_value",
 			"updated_" + baseName + "_tmp"
 		];
-		for (c in candidates) if (!used.exists(c)) return c;
+		for (c in candidates)
+			if (!used.exists(c))
+				return c;
 		// Fall back to a stable prefix; avoid numeric suffixes.
 		var fallback = "reflaxe_updated_" + baseName;
-		if (!used.exists(fallback)) return fallback;
+		if (!used.exists(fallback))
+			return fallback;
 		return "reflaxe_updated_" + baseName + "_value";
 	}
 
-	private static function unwrapParen(e: ElixirAST): ElixirAST {
+	private static function unwrapParen(e:ElixirAST):ElixirAST {
 		return switch (e.def) {
 			case EParen(inner): unwrapParen(inner);
 			default: e;
 		};
 	}
 
-	private static function bindFromStatement(stmt: ElixirAST, out: StringMap<Bool>): Void {
-		if (stmt == null || stmt.def == null) return;
+	private static function bindFromStatement(stmt:ElixirAST, out:StringMap<Bool>):Void {
+		if (stmt == null || stmt.def == null)
+			return;
 		switch (stmt.def) {
 			case EMatch(PVar(name), _):
 				out.set(name, true);
@@ -443,18 +452,23 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 		}
 	}
 
-	private static function anyStatementUsesVar(stmts: Array<ElixirAST>, name: String): Bool {
-		if (stmts == null || stmts.length == 0) return false;
-		for (s in stmts) if (exprUsesVar(s, name)) return true;
+	private static function anyStatementUsesVar(stmts:Array<ElixirAST>, name:String):Bool {
+		if (stmts == null || stmts.length == 0)
+			return false;
+		for (s in stmts)
+			if (exprUsesVar(s, name))
+				return true;
 		return false;
 	}
 
-	private static function exprUsesVar(expr: ElixirAST, name: String): Bool {
-		if (expr == null || expr.def == null) return false;
+	private static function exprUsesVar(expr:ElixirAST, name:String):Bool {
+		if (expr == null || expr.def == null)
+			return false;
 		var found = false;
 
-		function visit(e: ElixirAST): Void {
-			if (found || e == null || e.def == null) return;
+		function visit(e:ElixirAST):Void {
+			if (found || e == null || e.def == null)
+				return;
 
 			switch (e.def) {
 				case EVar(v) if (v == name):
@@ -469,7 +483,7 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 				default:
 			}
 
-			ElixirASTTransformer.transformAST(e, function(child: ElixirAST) {
+			ElixirASTTransformer.transformAST(e, function(child:ElixirAST) {
 				visit(child);
 				return child;
 			});
@@ -479,5 +493,4 @@ class ReduceWhileOuterAssignToAccumulatorTransforms {
 		return found;
 	}
 }
-
 #end

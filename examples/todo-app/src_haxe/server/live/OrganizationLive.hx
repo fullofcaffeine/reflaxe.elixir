@@ -31,55 +31,57 @@ import server.types.Types.MountParams;
 import server.types.Types.Session;
 import shared.liveview.EventName;
 import StringTools;
+
 using reflaxe.elixir.macros.TypedQueryLambda;
 
 typedef OrgRowView = {
-    var id: Int;
-    var slug: String;
-    var name: String;
-    var is_current: Bool;
+	var id:Int;
+	var slug:String;
+	var name:String;
+	var is_current:Bool;
 }
 
 typedef InviteRowView = {
-    var id: Int;
-    var email: String;
-    var role: String;
-    var is_accepted: Bool;
-    var status_label: String;
+	var id:Int;
+	var email:String;
+	var role:String;
+	var is_accepted:Bool;
+	var status_label:String;
 }
 
 typedef MemberRowView = {
-    var id: Int;
-    var name: String;
-    var email: String;
-    var role: String;
-    var is_self: Bool;
-    var is_last_admin: Bool;
+	var id:Int;
+	var name:String;
+	var email:String;
+	var role:String;
+	var is_self:Bool;
+	var is_last_admin:Bool;
 }
 
 typedef OrganizationLiveAssigns = {
-    var signed_in: Bool;
-    var current_user: Null<User>;
-    var is_admin: Bool;
+	var signed_in:Bool;
+	var current_user:Null<User>;
+	var is_admin:Bool;
 
-    var current_org_id: Int;
-    var current_org_slug: String;
-    var current_org_name: String;
+	var current_org_id:Int;
+	var current_org_slug:String;
+	var current_org_name:String;
 
-    var slug_input: String;
-    var org_rows: Array<OrgRowView>;
+	var slug_input:String;
+	var org_rows:Array<OrgRowView>;
 
-    var invite_email_input: String;
-    var invite_role_input: String;
-    var invite_rows: Array<InviteRowView>;
+	var invite_email_input:String;
+	var invite_role_input:String;
+	var invite_rows:Array<InviteRowView>;
 
-    var member_rows: Array<MemberRowView>;
+	var member_rows:Array<MemberRowView>;
 }
 
-typedef OrganizationLiveRenderAssigns = {> OrganizationLiveAssigns,
-    var flash: FlashMap;
-    var flash_info: Null<String>;
-    var flash_error: Null<String>;
+typedef OrganizationLiveRenderAssigns = {
+	> OrganizationLiveAssigns,
+	var flash:FlashMap;
+	var flash_info:Null<String>;
+	var flash_error:Null<String>;
 }
 
 /**
@@ -100,405 +102,404 @@ typedef OrganizationLiveRenderAssigns = {> OrganizationLiveAssigns,
 @:native("TodoAppWeb.OrganizationLive")
 @:liveview
 class OrganizationLive {
-    public static function mount(params: MountParams, session: Session, socket: Socket<OrganizationLiveAssigns>): MountResult<OrganizationLiveAssigns> {
-        var sock: LiveSocket<OrganizationLiveAssigns> = socket;
+	public static function mount(params:MountParams, session:Session, socket:Socket<OrganizationLiveAssigns>):MountResult<OrganizationLiveAssigns> {
+		var sock:LiveSocket<OrganizationLiveAssigns> = socket;
 
-        var userId = sessionUserId(session);
-        var user: Null<User> = userId != null ? Repo.get(User, userId) : null;
-        if (userId != null && user == null) {
-            sock = LiveView.putFlash(sock, FlashType.Error, "Your session is invalid. Please sign in again.");
-            sock = LiveView.pushNavigate(sock, {to: "/login"});
-        }
+		var userId = sessionUserId(session);
+		var user:Null<User> = userId != null ? Repo.get(User, userId) : null;
+		if (userId != null && user == null) {
+			sock = LiveView.putFlash(sock, FlashType.Error, "Your session is invalid. Please sign in again.");
+			sock = LiveView.pushNavigate(sock, {to: "/login"});
+		}
 
-        var signedIn = user != null;
-        if (!signedIn || user == null) {
-            sock = LiveView.putFlash(sock, FlashType.Error, "Sign in to manage organizations.");
-            sock = LiveView.pushNavigate(sock, {to: "/login"});
-        }
+		var signedIn = user != null;
+		if (!signedIn || user == null) {
+			sock = LiveView.putFlash(sock, FlashType.Error, "Sign in to manage organizations.");
+			sock = LiveView.pushNavigate(sock, {to: "/login"});
+		}
 
-        var isAdmin = signedIn && isAdminUser(user);
-        var orgInfo = signedIn ? OrganizationTools.infoForId(user.organizationId) : OrganizationTools.infoForId(OrganizationTools.DEMO_ORG_ID);
-        var rows = signedIn ? loadOrganizations(orgInfo.id) : [];
-        var invites = (signedIn && isAdmin) ? loadInvites(orgInfo.id) : [];
-        var adminCount = signedIn ? countAdmins(orgInfo.id) : 0;
-        var members = signedIn ? loadMembers(orgInfo.id, user.id, adminCount) : [];
+		var isAdmin = signedIn && isAdminUser(user);
+		var orgInfo = signedIn ? OrganizationTools.infoForId(user.organizationId) : OrganizationTools.infoForId(OrganizationTools.DEMO_ORG_ID);
+		var rows = signedIn ? loadOrganizations(orgInfo.id) : [];
+		var invites = (signedIn && isAdmin) ? loadInvites(orgInfo.id) : [];
+		var adminCount = signedIn ? countAdmins(orgInfo.id) : 0;
+		var members = signedIn ? loadMembers(orgInfo.id, user.id, adminCount) : [];
 
-        sock = sock.merge({
-            signed_in: signedIn,
-            current_user: user,
-            is_admin: isAdmin,
-            current_org_id: orgInfo.id,
-            current_org_slug: orgInfo.slug,
-            current_org_name: orgInfo.name,
-            slug_input: orgInfo.slug,
-            org_rows: rows,
-            invite_email_input: "",
-            invite_role_input: "user",
-            invite_rows: invites,
-            member_rows: members
-        });
+		sock = sock.merge({
+			signed_in: signedIn,
+			current_user: user,
+			is_admin: isAdmin,
+			current_org_id: orgInfo.id,
+			current_org_slug: orgInfo.slug,
+			current_org_name: orgInfo.name,
+			slug_input: orgInfo.slug,
+			org_rows: rows,
+			invite_email_input: "",
+			invite_role_input: "user",
+			invite_rows: invites,
+			member_rows: members
+		});
 
-        return Ok(sock);
-    }
+		return Ok(sock);
+	}
 
-    /**
-     * Router action handler (placeholder to satisfy route validation).
-     */
-    public static function index(): String {
-        return "index";
-    }
+	/**
+	 * Router action handler (placeholder to satisfy route validation).
+	 */
+	public static function index():String {
+		return "index";
+	}
 
-    static function sessionUserId(session: Session): Null<Int> {
-        if (session == null) return null;
-        var sessionTerm: Term = cast session;
-        var primary: Term = ElixirMap.get(sessionTerm, "user_id");
-        var chosen: Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
-        return chosen != null ? cast chosen : null;
-    }
+	static function sessionUserId(session:Session):Null<Int> {
+		if (session == null)
+			return null;
+		var sessionTerm:Term = cast session;
+		var primary:Term = ElixirMap.get(sessionTerm, "user_id");
+		var chosen:Term = primary != null ? primary : ElixirMap.get(sessionTerm, "userId");
+		return chosen != null ? cast chosen : null;
+	}
 
-    static function normalizeSlug(raw: String): String {
-        return StringTools.trim(raw).toLowerCase();
-    }
+	static function normalizeSlug(raw:String):String {
+		return StringTools.trim(raw).toLowerCase();
+	}
 
-    static function loadOrganizations(currentOrgId: Int): Array<OrgRowView> {
-        var query = ecto.TypedQuery.from(Organization);
-        var orgs: Array<Organization> = Repo.all(query);
-        orgs.sort((a, b) -> a.id - b.id);
-        return orgs.map(org -> {
-            id: org.id,
-            slug: org.slug,
-            name: org.name,
-            is_current: org.id == currentOrgId
-        });
-    }
+	static function loadOrganizations(currentOrgId:Int):Array<OrgRowView> {
+		var query = ecto.TypedQuery.from(Organization);
+		var orgs:Array<Organization> = Repo.all(query);
+		orgs.sort((a, b) -> a.id - b.id);
+		return orgs.map(org -> {
+			id: org.id,
+			slug: org.slug,
+			name: org.name,
+			is_current: org.id == currentOrgId
+		});
+	}
 
-    static function getOrganizationBySlug(slug: String): Null<Organization> {
-        var query = ecto.TypedQuery.from(Organization).where(o -> o.slug == slug);
-        var orgs: Array<Organization> = Repo.all(query);
-        return elixir.Enum.at(orgs, 0);
-    }
+	static function getOrganizationBySlug(slug:String):Null<Organization> {
+		var query = ecto.TypedQuery.from(Organization).where(o -> o.slug == slug);
+		var orgs:Array<Organization> = Repo.all(query);
+		return elixir.Enum.at(orgs, 0);
+	}
 
-    static function getOrCreateOrganizationBySlug(slug: String): Result<Organization, Changeset<Organization, server.schemas.Organization.OrganizationParams>> {
-        var existing = getOrganizationBySlug(slug);
-        if (existing != null) return Ok(existing);
+	static function getOrCreateOrganizationBySlug(slug:String):Result<Organization, Changeset<Organization, server.schemas.Organization.OrganizationParams>> {
+		var existing = getOrganizationBySlug(slug);
+		if (existing != null)
+			return Ok(existing);
 
-        var data: Organization = cast Kernel.struct(Organization);
-        var params: server.schemas.Organization.OrganizationParams = {slug: slug, name: slug};
-        var changeset = Organization.changeset(data, params);
-        return Repo.insert(changeset);
-    }
+		var data:Organization = cast Kernel.struct(Organization);
+		var params:server.schemas.Organization.OrganizationParams = {slug: slug, name: slug};
+		var changeset = Organization.changeset(data, params);
+		return Repo.insert(changeset);
+	}
 
-    public static function handle_event(event: String, params: Term, socket: Socket<OrganizationLiveAssigns>): HandleEventResult<OrganizationLiveAssigns> {
-        var sock: LiveSocket<OrganizationLiveAssigns> = socket;
-        return switch (event) {
-            case EventName.SwitchOrg:
-                NoReply(switchOrganization(params, sock));
-            case EventName.InviteOrg:
-                NoReply(createInvite(params, sock));
-            case EventName.RevokeInvite:
-                NoReply(revokeInvite(params, sock));
-            case EventName.SetUserRole:
-                NoReply(setUserRole(params, sock));
-            case _:
-                NoReply(sock);
-        };
-    }
+	public static function handle_event(event:String, params:Term, socket:Socket<OrganizationLiveAssigns>):HandleEventResult<OrganizationLiveAssigns> {
+		var sock:LiveSocket<OrganizationLiveAssigns> = socket;
+		return switch (event) {
+			case EventName.SwitchOrg:
+				NoReply(switchOrganization(params, sock));
+			case EventName.InviteOrg:
+				NoReply(createInvite(params, sock));
+			case EventName.RevokeInvite:
+				NoReply(revokeInvite(params, sock));
+			case EventName.SetUserRole:
+				NoReply(setUserRole(params, sock));
+			case _:
+				NoReply(sock);
+		};
+	}
 
-    static function switchOrganization(params: Term, socket: LiveSocket<OrganizationLiveAssigns>): LiveSocket<OrganizationLiveAssigns> {
-        if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
-            return LiveView.putFlash(socket, FlashType.Error, "Sign in to switch organizations.");
-        }
+	static function switchOrganization(params:Term, socket:LiveSocket<OrganizationLiveAssigns>):LiveSocket<OrganizationLiveAssigns> {
+		if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
+			return LiveView.putFlash(socket, FlashType.Error, "Sign in to switch organizations.");
+		}
 
-        var slugTerm: Term = ElixirMap.get(params, "slug");
-        var raw: String = slugTerm != null ? cast slugTerm : "";
-        var slug = normalizeSlug(raw);
-        if (slug == "") {
-            return LiveView.putFlash(socket, FlashType.Error, "Organization slug is required.");
-        }
+		var slugTerm:Term = ElixirMap.get(params, "slug");
+		var raw:String = slugTerm != null ? cast slugTerm : "";
+		var slug = normalizeSlug(raw);
+		if (slug == "") {
+			return LiveView.putFlash(socket, FlashType.Error, "Organization slug is required.");
+		}
 
-        var currentUser: User = socket.assigns.current_user;
+		var currentUser:User = socket.assigns.current_user;
 
-        return switch (getOrCreateOrganizationBySlug(slug)) {
-            case Error(changeset):
-                {
-                    LiveView.putFlash(socket, FlashType.Error, "Could not create organization.");
-                }
-            case Ok(org):
-                if (currentUser.organizationId == org.id) {
-                    LiveView.putFlash(socket, FlashType.Info, 'Already in organization "${org.slug}".');
-                } else {
-                    var isFirstUserInOrg = Repo.all(ecto.TypedQuery.from(User).where(u -> u.organizationId == org.id)).length == 0;
-                    var role = isFirstUserInOrg ? "admin" : "user";
+		return switch (getOrCreateOrganizationBySlug(slug)) {
+			case Error(changeset):
+				{
+					LiveView.putFlash(socket, FlashType.Error, "Could not create organization.");
+				}
+			case Ok(org):
+				if (currentUser.organizationId == org.id) {
+					LiveView.putFlash(socket, FlashType.Info, 'Already in organization "${org.slug}".');
+				} else {
+					var isFirstUserInOrg = Repo.all(ecto.TypedQuery.from(User).where(u -> u.organizationId == org.id)).length == 0;
+					var role = isFirstUserInOrg ? "admin" : "user";
 
-                    var changeset = Changeset.change(currentUser, {});
-                    changeset = changeset.putChange("organization_id", org.id);
-                    changeset = changeset.putChange("role", role);
+					var changeset = Changeset.change(currentUser, {});
+					changeset = changeset.putChange("organization_id", org.id);
+					changeset = changeset.putChange("role", role);
 
-                    switch (Repo.update(changeset)) {
-                        case Ok(_updated):
-                            var withFlash = LiveView.putFlash(socket, FlashType.Info, 'Switched to organization "${org.slug}".');
-                            LiveView.pushNavigate(withFlash, {to: "/todos"});
-                        case Error(updateChangeset):
-                            {
-                                LiveView.putFlash(socket, FlashType.Error, "Could not switch organization.");
-                            }
-                    }
-                }
-        };
-    }
+					switch (Repo.update(changeset)) {
+						case Ok(_updated):
+							var withFlash = LiveView.putFlash(socket, FlashType.Info, 'Switched to organization "${org.slug}".');
+							LiveView.pushNavigate(withFlash, {to: "/todos"});
+						case Error(updateChangeset):
+							{
+								LiveView.putFlash(socket, FlashType.Error, "Could not switch organization.");
+							}
+					}
+				}
+		};
+	}
 
-    static function isAdminUser(user: Null<User>): Bool {
-        if (user == null) return false;
-        return user.role == "admin";
-    }
+	static function isAdminUser(user:Null<User>):Bool {
+		if (user == null)
+			return false;
+		return user.role == "admin";
+	}
 
-    static function loadInvites(organizationId: Int): Array<InviteRowView> {
-        var invites: Array<OrganizationInvite> = Accounts.listOrganizationInvites(organizationId);
-        invites.sort((a, b) -> b.id - a.id);
-        return invites.map(invite -> {
-            var accepted = invite.acceptedAt != null;
-            return {
-                id: invite.id,
-                email: invite.email,
-                role: invite.role,
-                is_accepted: accepted,
-                status_label: accepted ? "Accepted" : "Pending"
-            };
-        });
-    }
+	static function loadInvites(organizationId:Int):Array<InviteRowView> {
+		var invites:Array<OrganizationInvite> = Accounts.listOrganizationInvites(organizationId);
+		invites.sort((a, b) -> b.id - a.id);
+		return invites.map(invite -> {
+			var accepted = invite.acceptedAt != null;
+			return {
+				id: invite.id,
+				email: invite.email,
+				role: invite.role,
+				is_accepted: accepted,
+				status_label: accepted ? "Accepted" : "Pending"
+			};
+		});
+	}
 
-    static function loadMembers(organizationId: Int, currentUserId: Int, adminCount: Int): Array<MemberRowView> {
-        var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId);
-        var users: Array<User> = Repo.all(query);
-        users.sort((a, b) -> a.id - b.id);
+	static function loadMembers(organizationId:Int, currentUserId:Int, adminCount:Int):Array<MemberRowView> {
+		var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId);
+		var users:Array<User> = Repo.all(query);
+		users.sort((a, b) -> a.id - b.id);
 
-        return users.map(u -> {
-            id: u.id,
-            name: u.name,
-            email: u.email,
-            role: u.role,
-            is_self: u.id == currentUserId,
-            is_last_admin: (u.role == "admin" && adminCount <= 1)
-        });
-    }
+		return users.map(u -> {
+			id: u.id,
+			name: u.name,
+			email: u.email,
+			role: u.role,
+			is_self: u.id == currentUserId,
+			is_last_admin: (u.role == "admin" && adminCount <= 1)
+		});
+	}
 
-    static function countAdmins(organizationId: Int): Int {
-        var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId && u.role == "admin");
-        return Repo.all(query).length;
-    }
+	static function countAdmins(organizationId:Int):Int {
+		var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId && u.role == "admin");
+		return Repo.all(query).length;
+	}
 
-    static function parseId(value: Term): Null<Int> {
-        if (value == null) return null;
-        if (Kernel.isInteger(value)) return cast value;
-        if (Kernel.isFloat(value)) return Kernel.trunc(value);
-        if (Kernel.isBinary(value)) return Std.parseInt(cast value);
-        return null;
-    }
+	static function parseId(value:Term):Null<Int> {
+		if (value == null)
+			return null;
+		if (Kernel.isInteger(value))
+			return cast value;
+		if (Kernel.isFloat(value))
+			return Kernel.trunc(value);
+		if (Kernel.isBinary(value))
+			return Std.parseInt(cast value);
+		return null;
+	}
 
-    static function setUserRole(params: Term, socket: LiveSocket<OrganizationLiveAssigns>): LiveSocket<OrganizationLiveAssigns> {
-        if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
-            return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage members.");
-        }
-        if (!socket.assigns.is_admin) {
-            return LiveView.putFlash(socket, FlashType.Error, "Only admins can change roles.");
-        }
+	static function setUserRole(params:Term, socket:LiveSocket<OrganizationLiveAssigns>):LiveSocket<OrganizationLiveAssigns> {
+		if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
+			return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage members.");
+		}
+		if (!socket.assigns.is_admin) {
+			return LiveView.putFlash(socket, FlashType.Error, "Only admins can change roles.");
+		}
 
-        var currentUser: User = socket.assigns.current_user;
+		var currentUser:User = socket.assigns.current_user;
 
-        var idValue = parseId(ElixirMap.get(params, "member_id"));
-        if (idValue == null || idValue <= 0) {
-            return LiveView.putFlash(socket, FlashType.Error, "Invalid user id.");
-        }
+		var idValue = parseId(ElixirMap.get(params, "member_id"));
+		if (idValue == null || idValue <= 0) {
+			return LiveView.putFlash(socket, FlashType.Error, "Invalid user id.");
+		}
 
-        var roleTerm: Term = ElixirMap.get(params, "role");
-        var rawRole: String = roleTerm != null ? cast roleTerm : "";
-        var role = StringTools.trim(rawRole).toLowerCase();
-        if (role != "admin" && role != "user") {
-            return LiveView.putFlash(socket, FlashType.Error, "Invalid role.");
-        }
+		var roleTerm:Term = ElixirMap.get(params, "role");
+		var rawRole:String = roleTerm != null ? cast roleTerm : "";
+		var role = StringTools.trim(rawRole).toLowerCase();
+		if (role != "admin" && role != "user") {
+			return LiveView.putFlash(socket, FlashType.Error, "Invalid role.");
+		}
 
-        var orgId = socket.assigns.current_org_id;
-        var user: Null<User> = Repo.get(User, idValue);
-        if (user == null) {
-            return LiveView.putFlash(socket, FlashType.Error, "User not found.");
-        }
-        if (user.organizationId != orgId) {
-            return LiveView.putFlash(socket, FlashType.Error, "Not authorized.");
-        }
+		var orgId = socket.assigns.current_org_id;
+		var user:Null<User> = Repo.get(User, idValue);
+		if (user == null) {
+			return LiveView.putFlash(socket, FlashType.Error, "User not found.");
+		}
+		if (user.organizationId != orgId) {
+			return LiveView.putFlash(socket, FlashType.Error, "Not authorized.");
+		}
 
-        if (user.role == "admin" && role != "admin") {
-            if (countAdmins(orgId) <= 1) {
-                return LiveView.putFlash(socket, FlashType.Error, "Cannot remove the last admin.");
-            }
-        }
+		if (user.role == "admin" && role != "admin") {
+			if (countAdmins(orgId) <= 1) {
+				return LiveView.putFlash(socket, FlashType.Error, "Cannot remove the last admin.");
+			}
+		}
 
-        if (user.role == role) {
-            return LiveView.putFlash(socket, FlashType.Info, "Role unchanged.");
-        }
+		if (user.role == role) {
+			return LiveView.putFlash(socket, FlashType.Info, "Role unchanged.");
+		}
 
-        var previousRole = user.role;
-        var changeset = Changeset.change(user, {});
-        changeset = changeset.putChange("role", role);
+		var previousRole = user.role;
+		var changeset = Changeset.change(user, {});
+		changeset = changeset.putChange("role", role);
 
-        return switch (Repo.update(changeset)) {
-            case Ok(updatedUser):
-                var auditMetadata: Term = {
-                    target_user_id: updatedUser.id,
-                    target_user_email: updatedUser.email,
-                    old_role: previousRole,
-                    new_role: updatedUser.role
-                };
-                switch (AuditLogs.record({
-                    organizationId: orgId,
-                    actorId: currentUser.id,
-                    action: AuditAction.UserRoleUpdated,
-                    entity: AuditEntity.UserEntity,
-                    entityId: updatedUser.id,
-                    metadata: auditMetadata
-                })) {
-                    case Ok(_entry):
-                    case Error(err):
-                }
+		return switch (Repo.update(changeset)) {
+			case Ok(updatedUser):
+				var auditMetadata:Term = {
+					target_user_id: updatedUser.id,
+					target_user_email: updatedUser.email,
+					old_role: previousRole,
+					new_role: updatedUser.role
+				};
+				switch (AuditLogs.record({
+					organizationId: orgId,
+					actorId: currentUser.id,
+					action: AuditAction.UserRoleUpdated,
+					entity: AuditEntity.UserEntity,
+					entityId: updatedUser.id,
+					metadata: auditMetadata
+				})) {
+					case Ok(_entry):
+					case Error(err):
+				}
 
-                var updatedCurrentUser = updatedUser.id == currentUser.id ? updatedUser : currentUser;
-                var updatedIsAdmin = isAdminUser(updatedCurrentUser);
+				var updatedCurrentUser = updatedUser.id == currentUser.id ? updatedUser : currentUser;
+				var updatedIsAdmin = isAdminUser(updatedCurrentUser);
 
-                var refreshedInvites = updatedIsAdmin ? loadInvites(orgId) : [];
-                var refreshedAdminCount = countAdmins(orgId);
-                var refreshedMembers = loadMembers(orgId, updatedCurrentUser.id, refreshedAdminCount);
+				var refreshedInvites = updatedIsAdmin ? loadInvites(orgId) : [];
+				var refreshedAdminCount = countAdmins(orgId);
+				var refreshedMembers = loadMembers(orgId, updatedCurrentUser.id, refreshedAdminCount);
 
-                var updatedSocket = socket.merge({
-                    current_user: updatedCurrentUser,
-                    is_admin: updatedIsAdmin,
-                    invite_rows: refreshedInvites,
-                    member_rows: refreshedMembers
-                });
+				var updatedSocket = socket.merge({
+					current_user: updatedCurrentUser,
+					is_admin: updatedIsAdmin,
+					invite_rows: refreshedInvites,
+					member_rows: refreshedMembers
+				});
 
-                updatedSocket = LiveView.clearFlash(updatedSocket);
-                updatedSocket = LiveView.putFlash(updatedSocket, FlashType.Info, "Role updated.");
-                updatedSocket;
-            case Error(err):
-                LiveView.putFlash(socket, FlashType.Error, "Could not update role.");
-        };
-    }
+				updatedSocket = LiveView.clearFlash(updatedSocket);
+				updatedSocket = LiveView.putFlash(updatedSocket, FlashType.Info, "Role updated.");
+				updatedSocket;
+			case Error(err):
+				LiveView.putFlash(socket, FlashType.Error, "Could not update role.");
+		};
+	}
 
-	    static function createInvite(params: Term, socket: LiveSocket<OrganizationLiveAssigns>): LiveSocket<OrganizationLiveAssigns> {
-	        if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
-	            return LiveView.putFlash(socket, FlashType.Error, "Sign in to invite users.");
-	        }
-        if (!socket.assigns.is_admin) {
-            return LiveView.putFlash(socket, FlashType.Error, "Only admins can invite users.");
-        }
+	static function createInvite(params:Term, socket:LiveSocket<OrganizationLiveAssigns>):LiveSocket<OrganizationLiveAssigns> {
+		if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
+			return LiveView.putFlash(socket, FlashType.Error, "Sign in to invite users.");
+		}
+		if (!socket.assigns.is_admin) {
+			return LiveView.putFlash(socket, FlashType.Error, "Only admins can invite users.");
+		}
 
-        var emailTerm: Term = ElixirMap.get(params, "email");
-        var roleTerm: Term = ElixirMap.get(params, "role");
-        var rawEmail: String = emailTerm != null ? cast emailTerm : "";
-        var rawRole: String = roleTerm != null ? cast roleTerm : "user";
+		var emailTerm:Term = ElixirMap.get(params, "email");
+		var roleTerm:Term = ElixirMap.get(params, "role");
+		var rawEmail:String = emailTerm != null ? cast emailTerm : "";
+		var rawRole:String = roleTerm != null ? cast roleTerm : "user";
 
-        if (StringTools.trim(rawEmail) == "") {
-            return LiveView.putFlash(socket, FlashType.Error, "Invite email is required.");
-        }
+		if (StringTools.trim(rawEmail) == "") {
+			return LiveView.putFlash(socket, FlashType.Error, "Invite email is required.");
+		}
 
-	        var orgId = socket.assigns.current_org_id;
-	        return switch (Accounts.createOrganizationInvite(orgId, rawEmail, rawRole)) {
-	            case Ok(invite):
-	                var auditMetadata: Term = {
-	                    invite_email: invite.email,
-	                    invite_role: invite.role
-	                };
-	                switch (AuditLogs.record({
-	                    organizationId: orgId,
-	                    actorId: socket.assigns.current_user.id,
-	                    action: AuditAction.OrganizationInviteCreated,
-	                    entity: AuditEntity.OrganizationInviteEntity,
-	                    entityId: invite.id,
-	                    metadata: auditMetadata
-	                })) {
-                    case Ok(_entry):
-                    case Error(err):
-                }
+		var orgId = socket.assigns.current_org_id;
+		return switch (Accounts.createOrganizationInvite(orgId, rawEmail, rawRole)) {
+			case Ok(invite):
+				var auditMetadata:Term = {
+					invite_email: invite.email,
+					invite_role: invite.role
+				};
+				switch (AuditLogs.record({
+					organizationId: orgId,
+					actorId: socket.assigns.current_user.id,
+					action: AuditAction.OrganizationInviteCreated,
+					entity: AuditEntity.OrganizationInviteEntity,
+					entityId: invite.id,
+					metadata: auditMetadata
+				})) {
+					case Ok(_entry):
+					case Error(err):
+				}
 
-	                var emailSent = InviteEmail.deliverInvite(
-	                    invite.email,
-	                    socket.assigns.current_org_slug,
-	                    socket.assigns.current_org_name,
-	                    invite.role,
-	                    socket.assigns.current_user.name
-	                );
+				var emailSent = InviteEmail.deliverInvite(invite.email, socket.assigns.current_org_slug, socket.assigns.current_org_name, invite.role,
+					socket.assigns.current_user.name);
 
-	                var refreshed = socket.assigns.is_admin ? loadInvites(orgId) : [];
-	                var updated = socket.merge({
-	                    invite_email_input: "",
-	                    invite_role_input: "user",
-	                    invite_rows: refreshed
-	                });
-	                updated = LiveView.clearFlash(updated);
-	                LiveView.putFlash(
-	                    updated,
-	                    emailSent ? FlashType.Info : FlashType.Error,
-	                    emailSent ? "Invite created. Email sent (preview at /dev/mailbox)." : "Invite created, but email failed to send."
-	                );
-            case Error(err):
-                LiveView.putFlash(socket, FlashType.Error, "Could not create invite.");
-        };
-	    }
+				var refreshed = socket.assigns.is_admin ? loadInvites(orgId) : [];
+				var updated = socket.merge({
+					invite_email_input: "",
+					invite_role_input: "user",
+					invite_rows: refreshed
+				});
+				updated = LiveView.clearFlash(updated);
+				LiveView.putFlash(updated, emailSent ? FlashType.Info : FlashType.Error,
+					emailSent ? "Invite created. Email sent (preview at /dev/mailbox)." : "Invite created, but email failed to send.");
+			case Error(err):
+				LiveView.putFlash(socket, FlashType.Error, "Could not create invite.");
+		};
+	}
 
-    static function revokeInvite(params: Term, socket: LiveSocket<OrganizationLiveAssigns>): LiveSocket<OrganizationLiveAssigns> {
-        if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
-            return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage invites.");
-        }
-        if (!socket.assigns.is_admin) {
-            return LiveView.putFlash(socket, FlashType.Error, "Only admins can manage invites.");
-        }
+	static function revokeInvite(params:Term, socket:LiveSocket<OrganizationLiveAssigns>):LiveSocket<OrganizationLiveAssigns> {
+		if (!socket.assigns.signed_in || socket.assigns.current_user == null) {
+			return LiveView.putFlash(socket, FlashType.Error, "Sign in to manage invites.");
+		}
+		if (!socket.assigns.is_admin) {
+			return LiveView.putFlash(socket, FlashType.Error, "Only admins can manage invites.");
+		}
 
-        var idTerm: Term = ElixirMap.get(params, "id");
-        var id: Int = idTerm != null ? cast idTerm : 0;
-        if (id <= 0) {
-            return LiveView.putFlash(socket, FlashType.Error, "Invite id is required.");
-        }
+		var idTerm:Term = ElixirMap.get(params, "id");
+		var id:Int = idTerm != null ? cast idTerm : 0;
+		if (id <= 0) {
+			return LiveView.putFlash(socket, FlashType.Error, "Invite id is required.");
+		}
 
-        var invite: Null<OrganizationInvite> = Repo.get(OrganizationInvite, id);
-        if (invite == null) {
-            return LiveView.putFlash(socket, FlashType.Error, "Invite not found.");
-        }
-        if (invite.organizationId != socket.assigns.current_org_id) {
-            return LiveView.putFlash(socket, FlashType.Error, "Invite does not belong to current organization.");
-        }
+		var invite:Null<OrganizationInvite> = Repo.get(OrganizationInvite, id);
+		if (invite == null) {
+			return LiveView.putFlash(socket, FlashType.Error, "Invite not found.");
+		}
+		if (invite.organizationId != socket.assigns.current_org_id) {
+			return LiveView.putFlash(socket, FlashType.Error, "Invite does not belong to current organization.");
+		}
 
-	        return switch (Repo.delete(invite)) {
-	            case Error(_):
-	                LiveView.putFlash(socket, FlashType.Error, "Could not revoke invite.");
-	            default:
-	                var auditMetadata: Term = {
-	                    invite_email: invite.email,
-	                    invite_role: invite.role
-	                };
-	                switch (AuditLogs.record({
-	                    organizationId: socket.assigns.current_org_id,
-	                    actorId: socket.assigns.current_user.id,
-	                    action: AuditAction.OrganizationInviteRevoked,
-	                    entity: AuditEntity.OrganizationInviteEntity,
-	                    entityId: invite.id,
-	                    metadata: auditMetadata
-	                })) {
-                    case Ok(_entry):
-                    case Error(err):
-                }
+		return switch (Repo.delete(invite)) {
+			case Error(_):
+				LiveView.putFlash(socket, FlashType.Error, "Could not revoke invite.");
+			default:
+				var auditMetadata:Term = {
+					invite_email: invite.email,
+					invite_role: invite.role
+				};
+				switch (AuditLogs.record({
+					organizationId: socket.assigns.current_org_id,
+					actorId: socket.assigns.current_user.id,
+					action: AuditAction.OrganizationInviteRevoked,
+					entity: AuditEntity.OrganizationInviteEntity,
+					entityId: invite.id,
+					metadata: auditMetadata
+				})) {
+					case Ok(_entry):
+					case Error(err):
+				}
 
-	                var refreshed = loadInvites(socket.assigns.current_org_id);
-	                var updated = socket.merge({invite_rows: refreshed});
-	                updated = LiveView.clearFlash(updated);
-	                LiveView.putFlash(updated, FlashType.Info, "Invite revoked.");
-	        };
-	    }
+				var refreshed = loadInvites(socket.assigns.current_org_id);
+				var updated = socket.merge({invite_rows: refreshed});
+				updated = LiveView.clearFlash(updated);
+				LiveView.putFlash(updated, FlashType.Info, "Invite revoked.");
+		};
+	}
 
-    public static function render(assigns: OrganizationLiveRenderAssigns): String {
-        var renderAssigns: Assigns<OrganizationLiveRenderAssigns> = assigns;
-        renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
-        renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
-        assigns = renderAssigns;
+	public static function render(assigns:OrganizationLiveRenderAssigns):String {
+		var renderAssigns:Assigns<OrganizationLiveRenderAssigns> = assigns;
+		renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));
+		renderAssigns = Component.assign(renderAssigns, "flash_error", PhoenixFlash.get(assigns.flash, "error"));
+		assigns = renderAssigns;
 
-        return hxx('
+		return hxx('
             <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
                 <div class="container mx-auto px-4 py-10 max-w-3xl">
                     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
@@ -697,5 +698,5 @@ class OrganizationLive {
                 </div>
             </div>
         ');
-    }
+	}
 }

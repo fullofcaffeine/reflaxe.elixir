@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirASTTransformer;
@@ -37,66 +36,72 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  *   ~H"""<div class={if @active, do: "on", else: "off"} phx-click={@click}></div>"""
  */
 class HeexPreferTypedEmissionTransforms {
-    public static function transformPass(ast: ElixirAST): ElixirAST {
-        #if !hxx_prefer_efragment
-        return ast;
-        #end
-        return ElixirASTTransformer.transformNode(ast, function(n) {
-            switch (n.def) {
-                case ESigil(type, content, modifiers) if (type == "H"):
-                    // Skip when content contains control tags/blocks still handled by string passes
-                    var s = content;
-                    if (
-                        // Skip when control tags are present
-                        s.indexOf("<if") != -1 || s.indexOf("</if>") != -1 || s.indexOf("<else") != -1 ||
-                        // Skip when any EEx is present (attribute or block) to avoid partial handling for now
-                        s.indexOf("<%=") != -1 || s.indexOf("<% ") != -1 || s.indexOf("<% if") != -1 || s.indexOf("<% else") != -1 || s.indexOf("<% end") != -1 ||
-                        // Skip when original template still contains HXX-style interpolations
-                        s.indexOf("${") != -1 || s.indexOf("#{") != -1
-                    ) {
-                        return n;
-                    }
+	public static function transformPass(ast:ElixirAST):ElixirAST {
+		#if !hxx_prefer_efragment
+		return ast;
+		#end
+		return ElixirASTTransformer.transformNode(ast, function(n) {
+			switch (n.def) {
+				case ESigil(type, content, modifiers) if (type == "H"):
+					// Skip when content contains control tags/blocks still handled by string passes
+					var s = content;
+					if ( // Skip when control tags are present
+						s.indexOf("<if") != -1
+						|| s.indexOf("</if>") != -1
+						|| s.indexOf("<else") != -1
+						|| // Skip when any EEx is present (attribute or block) to avoid partial handling for now
+						s.indexOf("<%=") != -1
+						|| s.indexOf("<% ") != -1
+						|| s.indexOf("<% if") != -1
+						|| s.indexOf("<% else") != -1
+						|| s.indexOf("<% end") != -1
+						|| // Skip when original template still contains HXX-style interpolations
+						s.indexOf("${") != -1
+						|| s.indexOf("#{") != -1) {
+						return n;
+					}
 
-                    // Parse typed fragments from the CURRENT content (post prior string passes)
-                    var nodes = reflaxe.elixir.ast.builders.HeexFragmentBuilder.build(content);
-                    if (nodes == null || nodes.length == 0) return n;
-                    // Rebuild content from typed fragments using HEEx-aware rendering
-                    var rendered = [for (child in nodes) renderHeex(child)].join("");
-                    var replacement = makeASTWithMeta(ESigil(type, rendered, modifiers), n.metadata, n.pos);
-                    return replacement;
-                default:
-            }
-            return n;
-        });
-    }
+					// Parse typed fragments from the CURRENT content (post prior string passes)
+					var nodes = reflaxe.elixir.ast.builders.HeexFragmentBuilder.build(content);
+					if (nodes == null || nodes.length == 0)
+						return n;
+					// Rebuild content from typed fragments using HEEx-aware rendering
+					var rendered = [for (child in nodes) renderHeex(child)].join("");
+					var replacement = makeASTWithMeta(ESigil(type, rendered, modifiers), n.metadata, n.pos);
+					return replacement;
+				default:
+			}
+			return n;
+		});
+	}
 
-    // HEEx-aware renderer (do not quote EString children)
-    static function renderHeex(node: ElixirAST): String {
-        return switch (node.def) {
-            case EFragment(tag, attributes, children):
-                var attrStr = renderAttrs(attributes);
-                var childStr = [for (c in children) renderHeex(c)].join("");
-                '<' + tag + attrStr + '>' + childStr + '</' + tag + '>';
-            case EString(v):
-                v;
-            default:
-                // Fallback: embed as interpolation
-                '<%= ' + ElixirASTPrinter.print(node, 0) + ' %>';
-        }
-    }
+	// HEEx-aware renderer (do not quote EString children)
+	static function renderHeex(node:ElixirAST):String {
+		return switch (node.def) {
+			case EFragment(tag, attributes, children):
+				var attrStr = renderAttrs(attributes);
+				var childStr = [for (c in children) renderHeex(c)].join("");
+				'<' + tag + attrStr + '>' + childStr + '</' + tag + '>';
+			case EString(v):
+				v;
+			default:
+				// Fallback: embed as interpolation
+				'<%= ' + ElixirASTPrinter.print(node, 0) + ' %>';
+		}
+	}
 
-    static function renderAttrs(attrs: Array<EAttribute>): String {
-        if (attrs == null || attrs.length == 0) return '';
-        var parts: Array<String> = [];
-        for (a in attrs) {
-            var val = switch (a.value.def) {
-                case EString(s): '"' + s + '"';
-                default: '{' + ElixirASTPrinter.print(a.value, 0) + '}';
-            };
-            parts.push(a.name + '=' + val);
-        }
-        return parts.length > 0 ? (' ' + parts.join(' ')) : '';
-    }
+	static function renderAttrs(attrs:Array<EAttribute>):String {
+		if (attrs == null || attrs.length == 0)
+			return '';
+		var parts:Array<String> = [];
+		for (a in attrs) {
+			var val = switch (a.value.def) {
+				case EString(s): '"' + s + '"';
+				default: '{' + ElixirASTPrinter.print(a.value, 0) + '}';
+			};
+			parts.push(a.name + '=' + val);
+		}
+		return parts.length > 0 ? (' ' + parts.join(' ')) : '';
+	}
 }
-
 #end

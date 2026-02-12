@@ -15,7 +15,7 @@ package reflaxe.elixir.util;
  * - Call `EnumReflection.enumConstructor(value)` instead of `Type.enumConstructor(value)`.
  */
 class EnumReflection {
-    public static inline function enumConstructor(value: EnumValue): String {
-        return Type.enumConstructor(value);
-    }
+	public static inline function enumConstructor(value:EnumValue):String {
+		return Type.enumConstructor(value);
+	}
 }

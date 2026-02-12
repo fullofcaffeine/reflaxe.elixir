@@ -3,7 +3,7 @@
  * Simplified implementation for compilation testing
  */
 class HXX {
-    public static function hxx(templateStr: String): String {
-        return templateStr;
-    }
+	public static function hxx(templateStr:String):String {
+		return templateStr;
+	}
 }

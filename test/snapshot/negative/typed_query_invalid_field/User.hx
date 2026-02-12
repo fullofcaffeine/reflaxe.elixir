@@ -5,9 +5,8 @@ package;
  */
 @:schema("users")
 class User {
-    public var id: Int;
-    public var name: String;
-    public var email: String;
-    public var age: Int;
+	public var id:Int;
+	public var name:String;
+	public var email:String;
+	public var age:Int;
 }
-

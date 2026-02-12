@@ -6,6 +6,7 @@ import haxe.io.Path;
 import reflaxe.elixir.generator.TemplateEngine;
 import reflaxe.elixir.generator.TemplateContext;
 import reflaxe.elixir.generator.TemplateContext.TemplateValue;
+
 using StringTools;
 
 /**
@@ -38,10 +39,9 @@ class ProjectGenerator {
 	// - phoenix: `mix phx.new`
 	// - liveview: `mix phx.new --live`
 	// - add-to-existing: scaffold into the current directory
-
 	public function new() {}
-	
-	public function generate(options: GeneratorOptions): Void {
+
+	public function generate(options:GeneratorOptions):Void {
 		// Validate project doesn't already exist (unless add-to-existing)
 		if (options.type != "add-to-existing") {
 			var projectPath = Path.join([options.workingDir, options.name]);
@@ -49,7 +49,7 @@ class ProjectGenerator {
 				throw 'Directory already exists: $projectPath';
 			}
 		}
-		
+
 		// Generate based on type
 		switch (options.type) {
 			case "add-to-existing":
@@ -59,33 +59,48 @@ class ProjectGenerator {
 			default:
 				throw 'Invalid project type: ${options.type}';
 		}
-		
+
 		// Install dependencies if needed
 		if (!options.skipInstall) {
 			installDependencies(options);
 		}
 	}
-	
-	function createNewProject(options: GeneratorOptions): Void {
+
+	function createNewProject(options:GeneratorOptions):Void {
 		var projectPath = Path.join([options.workingDir, options.name]);
-		
+
 		if (options.verbose) {
 			Sys.println('Creating project using Mix generator...');
 		}
-		
+
 		// Use Mix generators to create proper project structure.
 		//
 		// IMPORTANT: Always use `--no-install` for Phoenix generators to avoid interactive prompts.
 		// We install dependencies explicitly in `installDependencies()` when requested.
 		var projectModule = toPascalCase(options.name);
 
-		var mixArgs: Null<Array<String>> = switch (options.type) {
+		var mixArgs:Null<Array<String>> = switch (options.type) {
 			case "basic":
 				["new", options.name, "--module", projectModule];
 			case "phoenix":
-				["phx.new", options.name, "--module", projectModule, "--no-dashboard", "--no-install"];
+				[
+					"phx.new",
+					options.name,
+					"--module",
+					projectModule,
+					"--no-dashboard",
+					"--no-install"
+				];
 			case "liveview":
-				["phx.new", options.name, "--module", projectModule, "--live", "--no-dashboard", "--no-install"];
+				[
+					"phx.new",
+					options.name,
+					"--module",
+					projectModule,
+					"--live",
+					"--no-dashboard",
+					"--no-install"
+				];
 			default:
 				null;
 		};
@@ -108,24 +123,25 @@ class ProjectGenerator {
 		if (result != 0) {
 			throw 'Mix generator failed (exit $result). Ensure Elixir/Mix (and Phoenix for phx.new) are installed.';
 		}
-		
+
 		// Add Haxe integration to the project
 		addHaxeIntegration(projectPath, options);
-		
+
 		// Create additional Haxe-specific files
 		createProjectFiles(projectPath, options);
-		
+
 		// Add VS Code configuration if requested
 		if (options.vscode) {
 			createVSCodeConfig(projectPath);
 		}
 	}
-	
-	function createDirectoryRecursive(path: String): Void {
+
+	function createDirectoryRecursive(path:String):Void {
 		var parts = path.split("/");
 		var current = path.startsWith("/") ? "/" : "";
 		for (part in parts) {
-			if (part.length == 0) continue;
+			if (part.length == 0)
+				continue;
 			if (current == "" || current == "/") {
 				current = current + part;
 			} else {
@@ -136,13 +152,13 @@ class ProjectGenerator {
 			}
 		}
 	}
-	
+
 	// Phoenix generators already create the correct JS/CSS asset pipeline (including LiveView JS).
 	// Reflaxe.Elixir intentionally does not reimplement Phoenix assets, but for Phoenix/LiveView
 	// projects we do generate a minimal, opt-in Haxe client integration:
 	// - `mix haxe.phoenix.scaffold` applies the Phoenix client JS scaffold (Genes build + watcher promotion)
-	
-	function addHaxeIntegration(projectPath: String, options: GeneratorOptions): Void {
+
+	function addHaxeIntegration(projectPath:String, options:GeneratorOptions):Void {
 		// 1. Update mix.exs to include :haxe compiler + config, and add the reflaxe_elixir Mix dependency.
 		var haxeNamespace = toSnakeCase(options.name) + "_hx";
 		var outputDir = 'lib/${haxeNamespace}';
@@ -154,7 +170,7 @@ class ProjectGenerator {
 			mixContent = ensureHaxeCompilerConfigured(mixContent, "src_haxe", outputDir);
 			File.saveContent(mixPath, mixContent);
 		}
-		
+
 		// 2. Create src_haxe directory if it doesn't exist
 		var srcHaxePath = Path.join([projectPath, "src_haxe"]);
 		if (!FileSystem.exists(srcHaxePath)) {
@@ -178,30 +194,30 @@ class ProjectGenerator {
 			var buildContent = generateBuildHxml(options);
 			File.saveContent(buildHxmlPath, buildContent);
 		}
-		
+
 		// 5. Update package.json to include Haxe dependencies
 		var packagePath = Path.join([projectPath, "package.json"]);
 		if (!FileSystem.exists(packagePath)) {
 			var packageContent = generatePackageJson(options.name);
 			File.saveContent(packagePath, packageContent);
 		}
-		
+
 		// Phoenix/LiveView scaffolding is applied after dependencies are installed (so the generated
 		// project can run the canonical Mix task: `mix haxe.phoenix.scaffold`).
 	}
-	
-	function addToExistingProject(options: GeneratorOptions): Void {
+
+	function addToExistingProject(options:GeneratorOptions):Void {
 		var projectPath = options.workingDir;
 		var haxeNamespace = toSnakeCase(options.name) + "_hx";
 		var outputDir = 'lib/${haxeNamespace}';
-		
+
 		Sys.println("Adding Reflaxe.Elixir to existing project...");
-		
+
 		// Check if it's an Elixir project
 		if (!FileSystem.exists(Path.join([projectPath, "mix.exs"]))) {
 			throw "Not an Elixir project (mix.exs not found)";
 		}
-		
+
 		// Create src_haxe directory
 		var srcHaxePath = Path.join([projectPath, "src_haxe"]);
 		if (!FileSystem.exists(srcHaxePath)) {
@@ -230,7 +246,7 @@ class ProjectGenerator {
 		if (!FileSystem.exists(mainPath)) {
 			File.saveContent(mainPath, generateMainHx(haxeNamespace, options));
 		}
-		
+
 		// Create build.hxml
 		var buildHxml = Path.join([projectPath, "build.hxml"]);
 		if (!FileSystem.exists(buildHxml)) {
@@ -240,7 +256,7 @@ class ProjectGenerator {
 				Sys.println('Created build.hxml');
 			}
 		}
-		
+
 		// Create package.json if it doesn't exist
 		var packageJson = Path.join([projectPath, "package.json"]);
 		if (!FileSystem.exists(packageJson)) {
@@ -256,61 +272,61 @@ class ProjectGenerator {
 		if (!FileSystem.exists(haxercPath)) {
 			File.saveContent(haxercPath, '{\n  "version": "4.3.7",\n  "resolveLibs": "scoped"\n}\n');
 		}
-		
-			// Always regenerate AGENTS.md + CLAUDE.md from the same template (kept in sync).
-			var agentPath = Path.join([projectPath, "AGENTS.md"]);
-			var claudePath = Path.join([projectPath, "CLAUDE.md"]);
-			var content = generateClaudeInstructions(options);
-			File.saveContent(agentPath, content);
-			File.saveContent(claudePath, content);
-			if (options.verbose) {
-				Sys.println('Created AGENTS.md + CLAUDE.md with AI development instructions');
-			}
-		
+
+		// Always regenerate AGENTS.md + CLAUDE.md from the same template (kept in sync).
+		var agentPath = Path.join([projectPath, "AGENTS.md"]);
+		var claudePath = Path.join([projectPath, "CLAUDE.md"]);
+		var content = generateClaudeInstructions(options);
+		File.saveContent(agentPath, content);
+		File.saveContent(claudePath, content);
+		if (options.verbose) {
+			Sys.println('Created AGENTS.md + CLAUDE.md with AI development instructions');
+		}
+
 		Sys.println("");
 		Sys.println("✅ Updated mix.exs with :haxe compiler + reflaxe_elixir dependency");
 		Sys.println("");
 	}
-	
-	function createProjectFiles(projectPath: String, options: GeneratorOptions): Void {
+
+	function createProjectFiles(projectPath:String, options:GeneratorOptions):Void {
 		// Always regenerate README.md from template to ensure correct project name
 		var readmePath = Path.join([projectPath, "README.md"]);
 		var content = generateReadme(options);
 		File.saveContent(readmePath, content);
-		
+
 		// Create .gitignore if it doesn't exist
 		var gitignorePath = Path.join([projectPath, ".gitignore"]);
 		if (!FileSystem.exists(gitignorePath)) {
 			var content = generateGitignore();
 			File.saveContent(gitignorePath, content);
 		}
-		
-			// Always regenerate AGENTS.md + CLAUDE.md from the same template (kept in sync).
-			var agentPath = Path.join([projectPath, "AGENTS.md"]);
-			var claudePath = Path.join([projectPath, "CLAUDE.md"]);
-			var content = generateClaudeInstructions(options);
-			File.saveContent(agentPath, content);
-			File.saveContent(claudePath, content);
-			if (options.verbose) {
-				Sys.println('Created AGENTS.md + CLAUDE.md with AI development instructions');
-			}
+
+		// Always regenerate AGENTS.md + CLAUDE.md from the same template (kept in sync).
+		var agentPath = Path.join([projectPath, "AGENTS.md"]);
+		var claudePath = Path.join([projectPath, "CLAUDE.md"]);
+		var content = generateClaudeInstructions(options);
+		File.saveContent(agentPath, content);
+		File.saveContent(claudePath, content);
+		if (options.verbose) {
+			Sys.println('Created AGENTS.md + CLAUDE.md with AI development instructions');
+		}
 
 		// Ensure .haxerc exists for lix-managed toolchain
 		var haxercPath = Path.join([projectPath, ".haxerc"]);
 		if (!FileSystem.exists(haxercPath)) {
 			File.saveContent(haxercPath, '{\n  "version": "4.3.7",\n  "resolveLibs": "scoped"\n}\n');
 		}
-		
+
 		// Create LLM documentation directory structure
 		createLLMDocumentation(projectPath, options);
-		
+
 		// Ensure build.hxml exists
 		var buildHxmlPath = Path.join([projectPath, "build.hxml"]);
 		if (!FileSystem.exists(buildHxmlPath)) {
 			var content = generateBuildHxml(options);
 			File.saveContent(buildHxmlPath, content);
 		}
-		
+
 		// Ensure package.json exists
 		var packageJsonPath = Path.join([projectPath, "package.json"]);
 		if (!FileSystem.exists(packageJsonPath)) {
@@ -318,27 +334,27 @@ class ProjectGenerator {
 			File.saveContent(packageJsonPath, content);
 		}
 	}
-	
-	function createVSCodeConfig(projectPath: String): Void {
+
+	function createVSCodeConfig(projectPath:String):Void {
 		var vscodePath = Path.join([projectPath, ".vscode"]);
 		if (!FileSystem.exists(vscodePath)) {
 			FileSystem.createDirectory(vscodePath);
 		}
-		
+
 		// Create settings.json
 		var settingsPath = Path.join([vscodePath, "settings.json"]);
 		if (!FileSystem.exists(settingsPath)) {
 			var content = generateVSCodeSettings();
 			File.saveContent(settingsPath, content);
 		}
-		
+
 		// Create extensions.json
 		var extensionsPath = Path.join([vscodePath, "extensions.json"]);
 		if (!FileSystem.exists(extensionsPath)) {
 			var content = generateVSCodeExtensions();
 			File.saveContent(extensionsPath, content);
 		}
-		
+
 		// Create launch.json
 		var launchPath = Path.join([vscodePath, "launch.json"]);
 		if (!FileSystem.exists(launchPath)) {
@@ -346,19 +362,17 @@ class ProjectGenerator {
 			File.saveContent(launchPath, content);
 		}
 	}
-	
-	function installDependencies(options: GeneratorOptions): Void {
-		var projectPath = options.type == "add-to-existing" 
-			? options.workingDir 
-			: Path.join([options.workingDir, options.name]);
-		
+
+	function installDependencies(options:GeneratorOptions):Void {
+		var projectPath = options.type == "add-to-existing" ? options.workingDir : Path.join([options.workingDir, options.name]);
+
 		Sys.println("");
 		Sys.println("📦 Installing dependencies...");
-		
+
 		// Change to project directory
 		var originalCwd = Sys.getCwd();
 		Sys.setCwd(projectPath);
-		
+
 		try {
 			// Install npm dependencies
 			Sys.println("  Installing Haxe dependencies...");
@@ -375,7 +389,7 @@ class ProjectGenerator {
 			Sys.println('  Installing Haxe library: reflaxe.elixir#${haxeLibVersion} ...');
 			Sys.command("npx", ["lix", "install", 'github:fullofcaffeine/reflaxe.elixir#${haxeLibVersion}']);
 			Sys.command("npx", ["lix", "download"]);
-			
+
 			// Install Mix dependencies
 			if (FileSystem.exists("mix.exs")) {
 				Sys.println("  Installing Elixir dependencies...");
@@ -398,24 +412,24 @@ class ProjectGenerator {
 					}
 				}
 			}
-			
+
 			Sys.println("  ✅ Dependencies installed");
-		} catch (e: haxe.Exception) {
+		} catch (e:haxe.Exception) {
 			Sys.println("  ⚠️  Failed to install dependencies: " + e);
 			Sys.println("  Please run 'npm install' and 'mix deps.get' manually");
 		}
-		
+
 		// Restore original directory
 		Sys.setCwd(originalCwd);
 	}
-	
-	function getLibraryPath(): String {
+
+	function getLibraryPath():String {
 		// Try to find the library path
 		// First check if we're running from the source directory
 		if (FileSystem.exists("haxelib.json") && FileSystem.exists("src/Run.hx")) {
 			return Sys.getCwd();
 		}
-		
+
 		// Check if we're in a subdirectory of the library
 		var currentPath = Sys.getCwd();
 		while (currentPath != "/" && currentPath.length > 3) {
@@ -427,17 +441,17 @@ class ProjectGenerator {
 			}
 			currentPath = Path.directory(currentPath);
 		}
-		
+
 		// Fall back to assuming we're installed via haxelib/lix
 		// The library should be in a parent directory
 		var runPath = Sys.programPath();
 		var libPath = Path.directory(Path.directory(runPath));
 		return libPath;
 	}
-	
+
 	// Helper functions for generating files
-	
-	function generateBuildHxml(options: GeneratorOptions): String {
+
+	function generateBuildHxml(options:GeneratorOptions):String {
 		var haxeNamespace = toSnakeCase(options.name) + "_hx";
 		var appName = toPascalCase(options.name);
 		var outputDir = 'lib/${haxeNamespace}';
@@ -474,23 +488,23 @@ ${phoenixFlags}--main ${haxeNamespace}.Main
 ';
 	}
 
-	function getLibraryVersionTag(): String {
+	function getLibraryVersionTag():String {
 		try {
 			var libPath = getLibraryPath();
 			var haxelibPath = Path.join([libPath, "haxelib.json"]);
 			if (FileSystem.exists(haxelibPath)) {
-				var parsed: {version: String} = cast haxe.Json.parse(File.getContent(haxelibPath));
+				var parsed:{version:String} = cast haxe.Json.parse(File.getContent(haxelibPath));
 				var version = parsed.version;
 				if (version != null && version != "") {
 					return "v" + version;
 				}
 			}
-		} catch (e: haxe.Exception) {}
+		} catch (e:haxe.Exception) {}
 
 		return "latest";
 	}
-	
-	function generatePackageJson(projectName: String): String {
+
+	function generatePackageJson(projectName:String):String {
 		var name = projectName.toLowerCase().split(" ").join("-");
 		var tag = getLibraryVersionTag();
 		return '{
@@ -510,12 +524,12 @@ ${phoenixFlags}--main ${haxeNamespace}.Main
 }
 ';
 	}
-	
+
 	// Keep the old methods for backward compatibility but mark as deprecated
-	function generateReadmeOld(options: GeneratorOptions): String {
+	function generateReadmeOld(options:GeneratorOptions):String {
 		var title = options.name;
 		var description = getProjectDescription(options.type);
-		
+
 		return '# $title
 
 $description
@@ -570,8 +584,8 @@ mix test
 ';
 		return ""; // Deprecated
 	}
-	
-	function generateGitignore(): String {
+
+	function generateGitignore():String {
 		return '# Dependencies
 node_modules/
 deps/
@@ -598,8 +612,8 @@ npm-debug.log*
 .env.local
 ';
 	}
-	
-	function generateExampleModule(): String {
+
+	function generateExampleModule():String {
 		return 'package;
 
 /**
@@ -617,8 +631,8 @@ class HelloWorld {
 }
 ';
 	}
-	
-	function generateVSCodeSettings(): String {
+
+	function generateVSCodeSettings():String {
 		return '{
   "files.exclude": {
     "**/.git": true,
@@ -639,8 +653,8 @@ class HelloWorld {
 }
 ';
 	}
-	
-	function generateVSCodeExtensions(): String {
+
+	function generateVSCodeExtensions():String {
 		return '{
   "recommendations": [
     "vshaxe.haxe-extension-pack",
@@ -652,8 +666,8 @@ class HelloWorld {
 }
 ';
 	}
-	
-	function generateVSCodeLaunch(): String {
+
+	function generateVSCodeLaunch():String {
 		return '{
   "version": "0.2.0",
   "configurations": [
@@ -675,13 +689,13 @@ class HelloWorld {
 }
 ';
 	}
-	
-	function createLLMDocumentation(projectPath: String, options: GeneratorOptions): Void {
+
+	function createLLMDocumentation(projectPath:String, options:GeneratorOptions):Void {
 		// Create .taskmaster/docs structure for LLM documentation
 		var taskmasterPath = Path.join([projectPath, ".taskmaster"]);
 		var docsPath = Path.join([taskmasterPath, "docs"]);
 		var llmPath = Path.join([docsPath, "llm"]);
-		
+
 		if (!FileSystem.exists(taskmasterPath)) {
 			FileSystem.createDirectory(taskmasterPath);
 		}
@@ -691,19 +705,15 @@ class HelloWorld {
 		if (!FileSystem.exists(llmPath)) {
 			FileSystem.createDirectory(llmPath);
 		}
-		
+
 		// Copy foundation documentation from library
 		var libPath = getLibraryPath();
 		var sourceLLMPath = Path.join([libPath, "docs", "10-contributing", "llm-integration"]);
-		
+
 		if (FileSystem.exists(sourceLLMPath)) {
 			// Copy foundation docs
-			var foundationFiles = [
-				"HAXE_FUNDAMENTALS.md",
-				"REFLAXE_ELIXIR_BASICS.md",
-				"QUICK_START_PATTERNS.md"
-			];
-			
+			var foundationFiles = ["HAXE_FUNDAMENTALS.md", "REFLAXE_ELIXIR_BASICS.md", "QUICK_START_PATTERNS.md"];
+
 			for (file in foundationFiles) {
 				var srcFile = Path.join([sourceLLMPath, file]);
 				var destFile = Path.join([llmPath, file]);
@@ -715,7 +725,7 @@ class HelloWorld {
 				}
 			}
 		}
-		
+
 		// Create API reference skeleton
 		var apiRefPath = Path.join([llmPath, "API_REFERENCE_SKELETON.md"]);
 		if (!FileSystem.exists(apiRefPath)) {
@@ -725,13 +735,13 @@ class HelloWorld {
 				Sys.println('  Created API_REFERENCE_SKELETON.md');
 			}
 		}
-		
+
 		// Create patterns directory
 		var patternsPath = Path.join([docsPath, "patterns"]);
 		if (!FileSystem.exists(patternsPath)) {
 			FileSystem.createDirectory(patternsPath);
 		}
-		
+
 		// Create empty PATTERNS.md that will be populated when code is written
 		var patternsFile = Path.join([patternsPath, "PATTERNS.md"]);
 		if (!FileSystem.exists(patternsFile)) {
@@ -741,7 +751,7 @@ class HelloWorld {
 				Sys.println('  Created PATTERNS.md (will be populated as you code)');
 			}
 		}
-		
+
 		// Create template-specific documentation
 		var templateDocPath = Path.join([llmPath, "PROJECT_SPECIFICS.md"]);
 		if (!FileSystem.exists(templateDocPath)) {
@@ -752,33 +762,33 @@ class HelloWorld {
 			}
 		}
 	}
-	
-	// Deprecated old inline methods - kept for backward compatibility 
-	function generateAPIReferenceSkeletonOld(options: GeneratorOptions): String {
+
+	// Deprecated old inline methods - kept for backward compatibility
+	function generateAPIReferenceSkeletonOld(options:GeneratorOptions):String {
 		return ""; // Deprecated
 	}
-	
-	function generateEmptyPatternsFileOld(options: GeneratorOptions): String {
+
+	function generateEmptyPatternsFileOld(options:GeneratorOptions):String {
 		return ""; // Deprecated
 	}
-	
-	function generateTemplateSpecificDocsOld(options: GeneratorOptions): String {
+
+	function generateTemplateSpecificDocsOld(options:GeneratorOptions):String {
 		return ""; // Deprecated
 	}
-	
-	function loadTemplate(templateName: String): String {
+
+	function loadTemplate(templateName:String):String {
 		var libPath = getLibraryPath();
 		var templatePath = Path.join([libPath, "templates", "project", templateName]);
-		
+
 		if (!FileSystem.exists(templatePath)) {
 			// Fall back to embedded defaults when running from a minimal distribution.
 			return defaultTemplate(templateName);
 		}
-		
+
 		return File.getContent(templatePath);
 	}
 
-	function defaultTemplate(templateName: String): String {
+	function defaultTemplate(templateName:String):String {
 		return switch (templateName) {
 			case "readme.md.tpl":
 				'# {{PROJECT_NAME}}
@@ -808,8 +818,8 @@ mix phx.server
 ```
 ';
 
-				case "claude.md.tpl":
-					'# AI/Agent Development Context for {{PROJECT_NAME}}
+			case "claude.md.tpl":
+				'# AI/Agent Development Context for {{PROJECT_NAME}}
 
 > **⚠️ SYNC DIRECTIVE**: `AGENTS.md` and `CLAUDE.md` must be kept in sync. When updating either file, update the other as well.
 
@@ -881,51 +891,51 @@ Describe decisions and conventions unique to this project.
 				"";
 		}
 	}
-	
-	function processTemplate(templateName: String, context: TemplateContext): String {
+
+	function processTemplate(templateName:String, context:TemplateContext):String {
 		var template = loadTemplate(templateName);
 		var engine = new TemplateEngine();
 		return engine.processContent(template, context);
 	}
-	
-	function generateClaudeInstructions(options: GeneratorOptions): String {
+
+	function generateClaudeInstructions(options:GeneratorOptions):String {
 		var context = createTemplateContext(options);
 		return processTemplate("claude.md.tpl", context);
 	}
-	
-	function generateReadme(options: GeneratorOptions): String {
+
+	function generateReadme(options:GeneratorOptions):String {
 		var context = createTemplateContext(options);
 		return processTemplate("readme.md.tpl", context);
 	}
-	
-	function generateAPIReferenceSkeleton(options: GeneratorOptions): String {
+
+	function generateAPIReferenceSkeleton(options:GeneratorOptions):String {
 		var context = createTemplateContext(options);
 		context.set("BUILD_CONFIG", VString(generateBuildHxml(options)));
 		return processTemplate("api_reference.md.tpl", context);
 	}
-	
-	function generateEmptyPatternsFile(options: GeneratorOptions): String {
+
+	function generateEmptyPatternsFile(options:GeneratorOptions):String {
 		var context = createTemplateContext(options);
 		return processTemplate("patterns.md.tpl", context);
 	}
-	
-	function generateTemplateSpecificDocs(options: GeneratorOptions): String {
+
+	function generateTemplateSpecificDocs(options:GeneratorOptions):String {
 		var context = createTemplateContext(options);
 		return processTemplate("project_specifics.md.tpl", context);
 	}
-	
-	function createTemplateContext(options: GeneratorOptions): TemplateContext {
+
+	function createTemplateContext(options:GeneratorOptions):TemplateContext {
 		var projectName = options.name;
 		var projectType = options.type;
-		
+
 		var projectNameSnake = projectName.toLowerCase().replace(" ", "_").replace("-", "_");
 		var projectModule = toPascalCase(projectName);
-		
+
 		// Determine project type flags
 		var isPhoenix = projectType == "phoenix";
 		var isLiveView = projectType == "liveview";
 		var isBasic = projectType == "basic" || projectType == "add-to-existing";
-		
+
 		// Create template context map
 		var context = TemplateContext.empty();
 		context.set("PROJECT_NAME", VString(projectName));
@@ -946,9 +956,9 @@ Describe decisions and conventions unique to this project.
 
 		return context;
 	}
-	
-	function getProjectTypeDisplay(type: String): String {
-		return switch(type) {
+
+	function getProjectTypeDisplay(type:String):String {
+		return switch (type) {
 			case "phoenix": "Phoenix Web Application";
 			case "liveview": "Phoenix LiveView Application";
 			case "basic": "Mix Project";
@@ -956,21 +966,21 @@ Describe decisions and conventions unique to this project.
 			default: "Reflaxe.Elixir Project";
 		};
 	}
-	
-	function getProjectDescription(type: String): String {
-		return switch(type) {
+
+	function getProjectDescription(type:String):String {
+		return switch (type) {
 			case "phoenix": "A Phoenix web application built with Reflaxe.Elixir";
 			case "liveview": "A Phoenix LiveView application built with Reflaxe.Elixir";
 			case "basic": "A Mix project built with Reflaxe.Elixir";
 			default: "A Reflaxe.Elixir project";
 		};
 	}
-	
+
 	// Remove the old inline template generation methods
-	function generateOldClaudeInstructions(options: GeneratorOptions): String {
+	function generateOldClaudeInstructions(options:GeneratorOptions):String {
 		var projectName = options.name;
 		var projectType = options.type;
-		
+
 		var baseInstructions = '# AI Development Instructions for $projectName
 
 This file contains instructions for AI assistants (Claude, ChatGPT, etc.) working on this Reflaxe.Elixir project.
@@ -1186,47 +1196,64 @@ haxe build.hxml -D extract-patterns
 
 		return baseInstructions;
 	}
-	
+
 	// Utility functions
-	
-	function isTextFile(filename: String): Bool {
+
+	function isTextFile(filename:String):Bool {
 		var textExtensions = [
-			".hx", ".ex", ".exs", ".eex", ".heex", ".hxx",
-			".md", ".txt", ".json", ".xml", ".hxml",
-			".yml", ".yaml", ".toml", ".ini", ".conf",
-			".gitignore", ".editorconfig"
+			".hx",
+			".ex",
+			".exs",
+			".eex",
+			".heex",
+			".hxx",
+			".md",
+			".txt",
+			".json",
+			".xml",
+			".hxml",
+			".yml",
+			".yaml",
+			".toml",
+			".ini",
+			".conf",
+			".gitignore",
+			".editorconfig"
 		];
-		
+
 		for (ext in textExtensions) {
 			if (filename.endsWith(ext)) {
 				return true;
 			}
 		}
-		
+
 		// Check for files without extensions
 		var noExtFiles = ["README", "LICENSE", "Makefile", "Dockerfile"];
 		return noExtFiles.contains(filename);
 	}
-	
-	function toPascalCase(str: String): String {
+
+	function toPascalCase(str:String):String {
 		var words = ~/[-_\s]+/g.split(str);
 		return words.map(function(word) {
-			if (word.length == 0) return "";
+			if (word.length == 0)
+				return "";
 			return word.charAt(0).toUpperCase() + word.substr(1).toLowerCase();
 		}).join("");
 	}
 
-	function toSnakeCase(str: String): String {
+	function toSnakeCase(str:String):String {
 		var cleaned = str.toLowerCase();
 		cleaned = ~/[^a-z0-9]+/g.replace(cleaned, "_");
 		cleaned = ~/_{2,}/g.replace(cleaned, "_");
 		cleaned = cleaned.trim();
-		if (cleaned.startsWith("_")) cleaned = cleaned.substr(1);
-		if (cleaned.endsWith("_")) cleaned = cleaned.substr(0, cleaned.length - 1);
+		if (cleaned.startsWith("_"))
+			cleaned = cleaned.substr(1);
+		if (cleaned.endsWith("_"))
+			cleaned = cleaned.substr(0, cleaned.length - 1);
 		return cleaned;
 	}
 
-	function generateMainHx(haxeNamespace: String, options: GeneratorOptions): String {
+	function generateMainHx(haxeNamespace:String, options:GeneratorOptions):String {
 		var elixirNamespace = toPascalCase(options.name) + "Hx";
 		return 'package ${haxeNamespace};
 
@@ -1244,8 +1271,9 @@ class Main {
 ';
 	}
 
-	function ensureReflaxeElixirDependency(mixContent: String): String {
-		if (mixContent.indexOf("{:reflaxe_elixir") >= 0) return mixContent;
+	function ensureReflaxeElixirDependency(mixContent:String):String {
+		if (mixContent.indexOf("{:reflaxe_elixir") >= 0)
+			return mixContent;
 
 		var version = "v" + readLibraryVersion();
 		var depLine = '      {:reflaxe_elixir, github: \"fullofcaffeine/reflaxe.elixir\", tag: \"${version}\", runtime: false},';
@@ -1261,7 +1289,7 @@ class Main {
 		return mixContent;
 	}
 
-	function ensureHaxeCompilerConfigured(mixContent: String, sourceDir: String, targetDir: String): String {
+	function ensureHaxeCompilerConfigured(mixContent:String, sourceDir:String, targetDir:String):String {
 		// Reuse existing conservative compiler insertion logic.
 		if (mixContent.indexOf("compilers: [:haxe]") == -1 && mixContent.indexOf("[:haxe") == -1) {
 			var compilerPattern = ~/compilers:\s*\[([^\]]*)\]/;
@@ -1278,39 +1306,45 @@ class Main {
 		}
 
 		// Add `haxe:` config block if missing.
-		if (mixContent.indexOf("\n      haxe: [") == -1 && mixContent.indexOf("\n    haxe: [") == -1 && mixContent.indexOf("haxe: [") == -1) {
+		if (mixContent.indexOf("\n      haxe: [") == -1
+			&& mixContent.indexOf("\n    haxe: [") == -1
+			&& mixContent.indexOf("haxe: [") == -1) {
 			// Match the full `compilers:` entry including any commas inside list literals.
 			var compilersLinePattern = ~/compilers:\s*([^\n]+),/m;
 			if (compilersLinePattern.match(mixContent)) {
 				var matched = compilersLinePattern.matched(0);
-				mixContent = compilersLinePattern.replace(
-					mixContent,
-					matched + '\n      haxe: [hxml_file: \"build.hxml\", source_dir: \"' + sourceDir + '\", target_dir: \"' + targetDir + '\", watch: Mix.env() == :dev],'
-				);
+				mixContent = compilersLinePattern.replace(mixContent,
+					matched
+					+ '\n      haxe: [hxml_file: \"build.hxml\", source_dir: \"'
+					+ sourceDir
+					+ '\", target_dir: \"'
+					+ targetDir
+					+ '\", watch: Mix.env() == :dev],');
 			}
 		}
 
 		return mixContent;
 	}
 
-	function readLibraryVersion(): String {
+	function readLibraryVersion():String {
 		try {
 			var libPath = getLibraryPath();
 			var content = File.getContent(Path.join([libPath, "haxelib.json"]));
 			var parsed = haxe.Json.parse(content);
-			var version: Null<String> = Reflect.field(parsed, "version");
-			if (version != null && version != "") return version;
-		} catch (_: haxe.Exception) {}
+			var version:Null<String> = Reflect.field(parsed, "version");
+			if (version != null && version != "")
+				return version;
+		} catch (_:haxe.Exception) {}
 
 		return "1.0.0";
 	}
 }
 
 typedef GeneratorOptions = {
-	name: String,
-	type: String,
-	skipInstall: Bool,
-	verbose: Bool,
-	vscode: Bool,
-	workingDir: String
+	name:String,
+	type:String,
+	skipInstall:Bool,
+	verbose:Bool,
+	vscode:Bool,
+	workingDir:String
 }

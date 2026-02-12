@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.builders;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 
 /**
@@ -29,15 +28,15 @@ import reflaxe.elixir.ast.ElixirAST;
  *   <div><%= if @show do %><button disabled={@disabled}>OK</button><% end %></div>
  */
 class HeexAnalysisASTBuilder {
-    public static function build(content: String): Array<ElixirAST> {
-        if (content == null || content.length == 0) return [];
-        try {
-            var normalized = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(content);
-            return HeexFragmentBuilder.build(normalized);
-        } catch (_) {
-            return [];
-        }
-    }
+	public static function build(content:String):Array<ElixirAST> {
+		if (content == null || content.length == 0)
+			return [];
+		try {
+			var normalized = reflaxe.elixir.ast.transformers.HeexControlTagTransforms.rewrite(content);
+			return HeexFragmentBuilder.build(normalized);
+		} catch (_) {
+			return [];
+		}
+	}
 }
-
 #end

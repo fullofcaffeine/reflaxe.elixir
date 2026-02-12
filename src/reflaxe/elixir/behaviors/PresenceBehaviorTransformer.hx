@@ -1,7 +1,6 @@
 package reflaxe.elixir.behaviors;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.ElixirASTDef;
 import reflaxe.elixir.ast.ElixirASTBuilder;
@@ -38,133 +37,126 @@ using StringTools;
  * - get_by_key: no self() needed
  */
 class PresenceBehaviorTransformer implements IBehaviorTransformer {
-    
-    public function new() {}
-    
-    /**
-     * Transform Phoenix.Presence method calls when inside a @:presence module
-     */
-    public function transformMethodCall(
-        className: String,
-        methodName: String,
-        args: Array<ElixirAST>,
-        isStatic: Bool
-    ): Null<ElixirAST> {
-        #if debug_behavior_transformer
-        #end
-        
-        // Only transform Phoenix.Presence extern class calls
-        // FIX (January 2025): Don't match classes that just happen to end with ".Presence"
-        // We only want to transform calls to the Phoenix.Presence extern class,
-        // not custom modules like TodoPresence
-        if (className != "Presence" && className != "phoenix.Presence") {
-            #if debug_behavior_transformer
-            #end
-            return null;
-        }
-        
-        // Convert camelCase to snake_case for Elixir
-        var snakeCaseMethod = toSnakeCase(methodName);
-        
-        #if debug_behavior_transformer
-        #end
-        
-        // Determine if this method needs self() injection
-        var needsSelfInjection = needsSelf(methodName, args.length);
-        
-        #if debug_behavior_transformer
-        #end
-        
-        if (needsSelfInjection) {
-            // Create self() call
-            var selfCall = {def: ElixirASTDef.ECall(null, "self", []), metadata: {}, pos: null};
-            
-            // Inject self() as first argument
-            var argsWithSelf = [selfCall].concat(args);
-            
-            // Return local call with self()
-            return {def: ElixirASTDef.ECall(null, snakeCaseMethod, argsWithSelf), metadata: {}, pos: null};
-        } else {
-            // Methods like list, get_by_key don't need self()
-            // But they should still be local calls
-            return {def: ElixirASTDef.ECall(null, snakeCaseMethod, args), metadata: {}, pos: null};
-        }
-    }
-    
-    /**
-     * Determine if a Phoenix.Presence method needs self() injection
-     * 
-     * @param methodName The method being called (in original case)
-     * @param argCount Number of arguments
-     * @return true if self() should be injected
-     */
-    function needsSelf(methodName: String, argCount: Int): Bool {
-        // Handle @:native annotations - methods might be renamed
-        // For example, trackPid has @:native("track")
-        var effectiveMethod = resolveNativeMethodName(methodName);
-        
-        return switch(effectiveMethod) {
-            case "track":
-                // track needs self() for all overloads
-                // 3 args: track(socket, key, meta)
-                // 4 args: track(socket/pid, topic, key, meta)
-                true;
-                
-            case "update":
-                // update needs self() for all overloads
-                // 3 args: update(socket, key, meta)
-                // 4 args: update(socket/pid, topic, key, meta)
-                true;
-                
-            case "untrack":
-                // untrack needs self() for all overloads
-                // 2 args: untrack(socket, key)
-                // 3 args: untrack(socket/pid, topic, key)
-                true;
-                
-            case "list", "getByKey", "get_by_key":
-                // These don't need self()
-                false;
-                
-            default:
-                // Unknown methods - make them local but no self()
-                false;
-        };
-    }
-    
-    /**
-     * Resolve method name considering @:native annotations
-     * For example, trackPid has @:native("track"), so it becomes "track"
-     */
-    function resolveNativeMethodName(methodName: String): String {
-        // This would ideally check the actual field metadata
-        // For now, we handle known cases
-        return switch(methodName) {
-            case "trackPid": "track";
-            case "updatePid": "update";
-            case "untrackPid": "untrack";
-            // NOTE: trackUser, updateUser, etc. are custom functions, NOT behavior methods
-            // They should NOT be resolved to behavior method names
-            default: methodName;
-        };
-    }
-    
-    /**
-     * Convert camelCase to snake_case
-     * Note: Prefer the shared compiler naming utility when available.
-     */
-    function toSnakeCase(str: String): String {
-        var result = "";
-        for (i in 0...str.length) {
-            var char = str.charAt(i);
-            if (i > 0 && char == char.toUpperCase() && char != char.toLowerCase()) {
-                result += "_" + char.toLowerCase();
-            } else {
-                result += char.toLowerCase();
-            }
-        }
-        return result;
-    }
-}
+	public function new() {}
 
+	/**
+	 * Transform Phoenix.Presence method calls when inside a @:presence module
+	 */
+	public function transformMethodCall(className:String, methodName:String, args:Array<ElixirAST>, isStatic:Bool):Null<ElixirAST> {
+		#if debug_behavior_transformer
+		#end
+
+		// Only transform Phoenix.Presence extern class calls
+		// FIX (January 2025): Don't match classes that just happen to end with ".Presence"
+		// We only want to transform calls to the Phoenix.Presence extern class,
+		// not custom modules like TodoPresence
+		if (className != "Presence" && className != "phoenix.Presence") {
+			#if debug_behavior_transformer
+			#end
+			return null;
+		}
+
+		// Convert camelCase to snake_case for Elixir
+		var snakeCaseMethod = toSnakeCase(methodName);
+
+		#if debug_behavior_transformer
+		#end
+
+		// Determine if this method needs self() injection
+		var needsSelfInjection = needsSelf(methodName, args.length);
+
+		#if debug_behavior_transformer
+		#end
+
+		if (needsSelfInjection) {
+			// Create self() call
+			var selfCall = {def: ElixirASTDef.ECall(null, "self", []), metadata: {}, pos: null};
+
+			// Inject self() as first argument
+			var argsWithSelf = [selfCall].concat(args);
+
+			// Return local call with self()
+			return {def: ElixirASTDef.ECall(null, snakeCaseMethod, argsWithSelf), metadata: {}, pos: null};
+		} else {
+			// Methods like list, get_by_key don't need self()
+			// But they should still be local calls
+			return {def: ElixirASTDef.ECall(null, snakeCaseMethod, args), metadata: {}, pos: null};
+		}
+	}
+
+	/**
+	 * Determine if a Phoenix.Presence method needs self() injection
+	 * 
+	 * @param methodName The method being called (in original case)
+	 * @param argCount Number of arguments
+	 * @return true if self() should be injected
+	 */
+	function needsSelf(methodName:String, argCount:Int):Bool {
+		// Handle @:native annotations - methods might be renamed
+		// For example, trackPid has @:native("track")
+		var effectiveMethod = resolveNativeMethodName(methodName);
+
+		return switch (effectiveMethod) {
+			case "track":
+				// track needs self() for all overloads
+				// 3 args: track(socket, key, meta)
+				// 4 args: track(socket/pid, topic, key, meta)
+				true;
+
+			case "update":
+				// update needs self() for all overloads
+				// 3 args: update(socket, key, meta)
+				// 4 args: update(socket/pid, topic, key, meta)
+				true;
+
+			case "untrack":
+				// untrack needs self() for all overloads
+				// 2 args: untrack(socket, key)
+				// 3 args: untrack(socket/pid, topic, key)
+				true;
+
+			case "list", "getByKey", "get_by_key":
+				// These don't need self()
+				false;
+
+			default:
+				// Unknown methods - make them local but no self()
+				false;
+		};
+	}
+
+	/**
+	 * Resolve method name considering @:native annotations
+	 * For example, trackPid has @:native("track"), so it becomes "track"
+	 */
+	function resolveNativeMethodName(methodName:String):String {
+		// This would ideally check the actual field metadata
+		// For now, we handle known cases
+		return switch (methodName) {
+			case "trackPid": "track";
+			case "updatePid": "update";
+			case "untrackPid": "untrack";
+			// NOTE: trackUser, updateUser, etc. are custom functions, NOT behavior methods
+			// They should NOT be resolved to behavior method names
+			default: methodName;
+		};
+	}
+
+	/**
+	 * Convert camelCase to snake_case
+	 * Note: Prefer the shared compiler naming utility when available.
+	 */
+	function toSnakeCase(str:String):String {
+		var result = "";
+		for (i in 0...str.length) {
+			var char = str.charAt(i);
+			if (i > 0 && char == char.toUpperCase() && char != char.toLowerCase()) {
+				result += "_" + char.toLowerCase();
+			} else {
+				result += char.toLowerCase();
+			}
+		}
+		return result;
+	}
+}
 #end

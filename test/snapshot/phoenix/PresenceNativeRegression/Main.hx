@@ -18,20 +18,20 @@ import phoenix.Presence;
 @:native("MyAppWeb.Presence")
 @:presence
 class NativePresence {
-    public static function trackUser(socket: Dynamic, userId: String, meta: Dynamic): Dynamic {
-        // This should be transformed to: track(self(), socket, userId, meta)
-        return Presence.track(socket, userId, meta);
-    }
-    
-    public static function updateUser(socket: Dynamic, userId: String, meta: Dynamic): Dynamic {
-        // This should be transformed to: update(self(), socket, userId, meta)
-        return Presence.update(socket, userId, meta);
-    }
-    
-    public static function untrackUser(socket: Dynamic, userId: String): Dynamic {
-        // This should be transformed to: untrack(self(), socket, userId)
-        return Presence.untrack(socket, userId);
-    }
+	public static function trackUser(socket:Dynamic, userId:String, meta:Dynamic):Dynamic {
+		// This should be transformed to: track(self(), socket, userId, meta)
+		return Presence.track(socket, userId, meta);
+	}
+
+	public static function updateUser(socket:Dynamic, userId:String, meta:Dynamic):Dynamic {
+		// This should be transformed to: update(self(), socket, userId, meta)
+		return Presence.update(socket, userId, meta);
+	}
+
+	public static function untrackUser(socket:Dynamic, userId:String):Dynamic {
+		// This should be transformed to: untrack(self(), socket, userId)
+		return Presence.untrack(socket, userId);
+	}
 }
 
 /**
@@ -39,16 +39,16 @@ class NativePresence {
  */
 @:presence
 class RegularPresence {
-    public static function trackUser(socket: Dynamic, userId: String, meta: Dynamic): Dynamic {
-        return Presence.track(socket, userId, meta);
-    }
+	public static function trackUser(socket:Dynamic, userId:String, meta:Dynamic):Dynamic {
+		return Presence.track(socket, userId, meta);
+	}
 }
 
 class Main {
-    static function main() {
-        // Force compilation by using the classes
-        var socket = {};
-        NativePresence.trackUser(socket, "user1", {});
-        RegularPresence.trackUser(socket, "user2", {});
-    }
+	static function main() {
+		// Force compilation by using the classes
+		var socket = {};
+		NativePresence.trackUser(socket, "user1", {});
+		RegularPresence.trackUser(socket, "user2", {});
+	}
 }

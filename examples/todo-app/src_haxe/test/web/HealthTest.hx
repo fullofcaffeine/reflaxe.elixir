@@ -20,14 +20,14 @@ import phoenix.test.ConnTest;
  */
 @:exunit
 class HealthTest extends TestCase {
-    @:test
-    public function testHomePageLoads(): Void {
-        var conn = ConnTest.build_conn();
-        conn = ConnTest.get(conn, "/");
-        // Basic assertions: 200 OK and non-empty body via ConnTest helper
-        assertTrue(conn != null);
-        // Assert status directly from Conn struct type
-        var status: Int = conn.status;
-        assertEqual(200, status);
-    }
+	@:test
+	public function testHomePageLoads():Void {
+		var conn = ConnTest.build_conn();
+		conn = ConnTest.get(conn, "/");
+		// Basic assertions: 200 OK and non-empty body via ConnTest helper
+		assertTrue(conn != null);
+		// Assert status directly from Conn struct type
+		var status:Int = conn.status;
+		assertEqual(200, status);
+	}
 }

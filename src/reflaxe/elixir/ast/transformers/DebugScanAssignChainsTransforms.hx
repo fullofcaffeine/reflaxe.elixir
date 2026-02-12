@@ -20,24 +20,21 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  * EXAMPLES
  * - Covered by snapshot tests under `test/snapshot/**`.
  */
-
 class DebugScanAssignChainsTransforms {
-  public static function transformPass(ast: ElixirAST): ElixirAST {
-    #if debug_scan_assign
-    return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-      switch (n.def) {
-        case EBinary(Match, left, {def: EBinary(Match, left2, rhs)}):
-        case EMatch(pat, {def: EBinary(Match, left3, rhs3)}):
-        case EMatch(pat2, {def: EMatch(pat3, rhs4)}):
-        default:
-      }
-      return n;
-    });
-    #else
-    return ast;
-    #end
-  }
+	public static function transformPass(ast:ElixirAST):ElixirAST {
+		#if debug_scan_assign
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			switch (n.def) {
+				case EBinary(Match, left, {def: EBinary(Match, left2, rhs)}):
+				case EMatch(pat, {def: EBinary(Match, left3, rhs3)}):
+				case EMatch(pat2, {def: EMatch(pat3, rhs4)}):
+				default:
+			}
+			return n;
+		});
+		#else
+		return ast;
+		#end
+	}
 }
-
 #end
-

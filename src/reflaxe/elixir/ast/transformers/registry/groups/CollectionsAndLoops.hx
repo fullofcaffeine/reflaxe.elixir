@@ -4,82 +4,82 @@ package reflaxe.elixir.ast.transformers.registry.groups;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 
 /**
- * CollectionsAndLoops
- *
- * WHAT
- * - Loop and collection passes (unrolled loop repair, iterator transforms, map set rewrite,
- *   comprehension conversion, list effect lifting, optional for→Enum.each rewrite).
- *
- * WHY
- * - Modularize registry without behavior change; preserve order.
+	* CollectionsAndLoops
+	*
+	* WHAT
+	* - Loop and collection passes (unrolled loop repair, iterator transforms, map set rewrite,
+	*   comprehension conversion, list effect lifting, optional for→Enum.each rewrite).
+	*
+	* WHY
+	* - Modularize registry without behavior change; preserve order.
 
- *
- * HOW
- * - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
+	*
+	* HOW
+	* - Walk the ElixirAST with `ElixirASTTransformer.transformNode` and rewrite matching nodes.
 
- *
- * EXAMPLES
- * - Covered by snapshot tests under `test/snapshot/**`.
+	*
+	* EXAMPLES
+	* - Covered by snapshot tests under `test/snapshot/**`.
  */
 class CollectionsAndLoops {
-  public static function build():Array<ElixirASTTransformer.PassConfig> {
-    var passes:Array<ElixirASTTransformer.PassConfig> = [];
+	public static function build():Array<ElixirASTTransformer.PassConfig> {
+		var passes:Array<ElixirASTTransformer.PassConfig> = [];
 
-    passes.push({
-      name: "UnrolledLoopTransform",
-      description: "Transform unrolled loops (sequential statements) back to Enum.each",
-      enabled: #if no_traces false #else true #end,
-      pass: reflaxe.elixir.ast.transformers.LoopTransforms.unrolledLoopTransformPass
-    });
+		passes.push({
+			name: "UnrolledLoopTransform",
+			description: "Transform unrolled loops (sequential statements) back to Enum.each",
+			enabled: #if no_traces false #else true #end,
+			pass: reflaxe.elixir.ast.transformers.LoopTransforms.unrolledLoopTransformPass
+		});
 
-    passes.push({
-      name: "HaxeMapModuleCallRewrite",
-      description: "Rewrite IntMap/StringMap/ObjectMap calls to native Map operations",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.HaxeMapModuleCallRewriteTransforms.pass
-    });
+		passes.push({
+			name: "HaxeMapModuleCallRewrite",
+			description: "Rewrite IntMap/StringMap/ObjectMap calls to native Map operations",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.HaxeMapModuleCallRewriteTransforms.pass
+		});
 
-    passes.push({
-      name: "MapKeysIteratorReduceWhileRewrite",
-      description: "Rewrite iterator-driven reduce_while loops over Map.keys/1 into direct Enum.reduce_while",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.MapKeysIteratorReduceWhileRewriteTransforms.pass,
-      // This rewrite relies on the late match-chain normalization performed by MatchBlockRhsExtractLast_Final,
-      // which turns `Map.keys(m)` discards into stable `iter = _ = Map.keys(m)` assignments.
-      runAfter: ["ReduceWhileResultBinding", "MatchBlockRhsExtractLast_Final"]
-    });
+		passes.push({
+			name: "MapKeysIteratorReduceWhileRewrite",
+			description: "Rewrite iterator-driven reduce_while loops over Map.keys/1 into direct Enum.reduce_while",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.MapKeysIteratorReduceWhileRewriteTransforms.pass,
+			// This rewrite relies on the late match-chain normalization performed by MatchBlockRhsExtractLast_Final,
+			// which turns `Map.keys(m)` discards into stable `iter = _ = Map.keys(m)` assignments.
+			runAfter: ["ReduceWhileResultBinding", "MatchBlockRhsExtractLast_Final"]
+		});
 
-    passes.push({
-      name: "MapIteratorTransform",
-      description: "Transform Map iterator patterns from g.next() to idiomatic Enum operations",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapIteratorTransformPass
-    });
+		passes.push({
+			name: "MapIteratorTransform",
+			description: "Transform Map iterator patterns from g.next() to idiomatic Enum operations",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapIteratorTransformPass
+		});
 
-    passes.push({
-      name: "MapSetRewrite",
-      description: "Rewrite var.set(key, value) to var = Map.put(var, :key, value)",
-      enabled: true,
-      pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapSetRewritePass
-    });
+		passes.push({
+			name: "MapSetRewrite",
+			description: "Rewrite var.set(key, value) to var = Map.put(var, :key, value)",
+			enabled: true,
+			pass: reflaxe.elixir.ast.transformers.MapAndCollectionTransforms.mapSetRewritePass
+		});
 
-    #if !disable_comprehension_conversion
-    passes.push({
-      name: "ComprehensionConversion",
-      description: "Convert imperative loops to comprehensions",
-      enabled: true,
-      pass: ElixirASTTransformer.alias_comprehensionConversionPass
-    });
-    #end
+		#if !disable_comprehension_conversion
+		passes.push({
+			name: "ComprehensionConversion",
+			description: "Convert imperative loops to comprehensions",
+			enabled: true,
+			pass: ElixirASTTransformer.alias_comprehensionConversionPass
+		});
+		#end
 
-    passes.push({
-      name: "ListEffectLifting",
-      description: "Lift side-effecting expressions out of list literals",
-      enabled: true,
-      pass: ElixirASTTransformer.alias_listEffectLiftingPass
-    });
+		passes.push({
+			name: "ListEffectLifting",
+			description: "Lift side-effecting expressions out of list literals",
+			enabled: true,
+			pass: ElixirASTTransformer.alias_listEffectLiftingPass
+		});
 
-    return passes;
-  }
+		return passes;
+	}
 }
 #end

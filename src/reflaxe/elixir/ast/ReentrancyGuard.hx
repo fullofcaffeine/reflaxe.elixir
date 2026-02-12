@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast;
 
 #if (macro || reflaxe_runtime)
-
 import haxe.macro.Type;
 import haxe.macro.Expr.Position;
 import reflaxe.elixir.ast.ElixirAST;
@@ -11,9 +10,9 @@ import reflaxe.elixir.ast.ElixirAST.makeAST;
  * Processing state for each expression
  */
 enum ProcessingState {
-    NotStarted;
-    InProgress;
-    Completed(result: ElixirAST);
+	NotStarted;
+	InProgress;
+	Completed(result:ElixirAST);
 }
 
 /**
@@ -46,167 +45,167 @@ enum ProcessingState {
  * - Position-based keys may collide in generated code
  */
 class ReentrancyGuard {
+	/**
+	 * Cache of expression processing states
+	 * Uses position as unique identifier (may need refinement)
+	 */
+	var cache:Map<String, ProcessingState>;
 
-    /**
-     * Cache of expression processing states
-     * Uses position as unique identifier (may need refinement)
-     */
-    var cache: Map<String, ProcessingState>;
+	/**
+	 * Counter for generating unique IDs when position isn't available
+	 */
+	var uniqueIdCounter:Int;
 
-    /**
-     * Counter for generating unique IDs when position isn't available
-     */
-    var uniqueIdCounter: Int;
+	/**
+	 * Create a new reentrancy guard
+	 */
+	public function new() {
+		cache = new Map();
+		uniqueIdCounter = 0;
+	}
 
-    /**
-     * Create a new reentrancy guard
-     */
-    public function new() {
-        cache = new Map();
-        uniqueIdCounter = 0;
-    }
+	/**
+	 * Process an expression with reentrancy protection
+	 *
+	 * WHY: Safely processes expressions that might recurse
+	 * WHAT: Checks cache state, processes if needed, returns result
+	 * HOW: Tri-state logic prevents infinite recursion
+	 *
+	 * @param expr The typed expression to process
+	 * @param builder Function that builds the AST (may recurse)
+	 * @return The built AST or placeholder if recursive
+	 */
+	public function process(expr:TypedExpr, builder:() -> ElixirAST):ElixirAST {
+		var key = getExpressionKey(expr);
 
-    /**
-     * Process an expression with reentrancy protection
-     *
-     * WHY: Safely processes expressions that might recurse
-     * WHAT: Checks cache state, processes if needed, returns result
-     * HOW: Tri-state logic prevents infinite recursion
-     *
-     * @param expr The typed expression to process
-     * @param builder Function that builds the AST (may recurse)
-     * @return The built AST or placeholder if recursive
-     */
-    public function process(expr: TypedExpr, builder: () -> ElixirAST): ElixirAST {
-        var key = getExpressionKey(expr);
+		#if debug_reentrancy
+		#end
 
-        #if debug_reentrancy
-        #end
+		switch (cache.get(key)) {
+			case null | NotStarted:
+				// First time processing this expression
+				cache.set(key, InProgress);
 
-        switch(cache.get(key)) {
-            case null | NotStarted:
-                // First time processing this expression
-                cache.set(key, InProgress);
+				#if debug_reentrancy
+				#end
 
-                #if debug_reentrancy
-                #end
+				var result = builder();
+				cache.set(key, Completed(result));
 
-                var result = builder();
-                cache.set(key, Completed(result));
+				#if debug_reentrancy
+				#end
 
-                #if debug_reentrancy
-                #end
+				return result;
 
-                return result;
+			case InProgress:
+				// Recursion detected! Return placeholder to break cycle
+				#if debug_reentrancy
+				#end
 
-            case InProgress:
-                // Recursion detected! Return placeholder to break cycle
-                #if debug_reentrancy
-                #end
+				// Return a nil placeholder to break the cycle
+				// This won't affect the output as it's just a temporary placeholder
+				return makeAST(ENil);
 
-                // Return a nil placeholder to break the cycle
-                // This won't affect the output as it's just a temporary placeholder
-                return makeAST(ENil);
+			case Completed(result):
+				// Already processed, return cached result
+				#if debug_reentrancy
+				#end
 
-            case Completed(result):
-                // Already processed, return cached result
-                #if debug_reentrancy
-                #end
+				return result;
+		}
+	}
 
-                return result;
-        }
-    }
+	/**
+	 * Check if an expression is currently being processed
+	 *
+	 * WHY: Allows analyzers to detect recursion without triggering it
+	 * WHAT: Returns true if expression is marked as InProgress
+	 * HOW: Simple cache lookup
+	 */
+	public function isInProgress(expr:TypedExpr):Bool {
+		var key = getExpressionKey(expr);
+		return switch (cache.get(key)) {
+			case InProgress: true;
+			case _: false;
+		};
+	}
 
-    /**
-     * Check if an expression is currently being processed
-     *
-     * WHY: Allows analyzers to detect recursion without triggering it
-     * WHAT: Returns true if expression is marked as InProgress
-     * HOW: Simple cache lookup
-     */
-    public function isInProgress(expr: TypedExpr): Bool {
-        var key = getExpressionKey(expr);
-        return switch(cache.get(key)) {
-            case InProgress: true;
-            case _: false;
-        };
-    }
+	/**
+	 * Clear the cache
+	 *
+	 * WHY: Prevents memory leaks between compilation units
+	 * WHAT: Removes all cached states
+	 * HOW: Clears the map
+	 */
+	public function clear():Void {
+		cache.clear();
+		uniqueIdCounter = 0;
 
-    /**
-     * Clear the cache
-     *
-     * WHY: Prevents memory leaks between compilation units
-     * WHAT: Removes all cached states
-     * HOW: Clears the map
-     */
-    public function clear(): Void {
-        cache.clear();
-        uniqueIdCounter = 0;
+		#if debug_reentrancy
+		#end
+	}
 
-        #if debug_reentrancy
-        #end
-    }
+	/**
+	 * Generate a unique key for an expression
+	 *
+	 * WHY: Need to identify expressions uniquely for caching
+	 * WHAT: Creates string key from position or unique ID
+	 * HOW: Uses position when available, generates ID otherwise
+	 *
+	 * Note: Position alone might not be unique for generated code; if collisions
+	 * become observable, incorporate additional identity (e.g., a stable hash).
+	 */
+	function getExpressionKey(expr:TypedExpr):String {
+		// Use position as primary key
+		if (expr.pos != null) {
+			var pos = expr.pos;
+			// Create key from position info
+			// Note: This assumes position contains file and char range
+			return 'expr_${positionToString(pos)}';
+		}
 
-    /**
-     * Generate a unique key for an expression
-     *
-     * WHY: Need to identify expressions uniquely for caching
-     * WHAT: Creates string key from position or unique ID
-     * HOW: Uses position when available, generates ID otherwise
-     *
-     * Note: Position alone might not be unique for generated code; if collisions
-     * become observable, incorporate additional identity (e.g., a stable hash).
-     */
-    function getExpressionKey(expr: TypedExpr): String {
-        // Use position as primary key
-        if (expr.pos != null) {
-            var pos = expr.pos;
-            // Create key from position info
-            // Note: This assumes position contains file and char range
-            return 'expr_${positionToString(pos)}';
-        }
+		// Fallback: generate unique ID
+		// This shouldn't happen in normal compilation
+		var id = uniqueIdCounter++;
 
-        // Fallback: generate unique ID
-        // This shouldn't happen in normal compilation
-        var id = uniqueIdCounter++;
+		#if debug_reentrancy
+		#end
 
-        #if debug_reentrancy
-        #end
+		return 'expr_generated_$id';
+	}
 
-        return 'expr_generated_$id';
-    }
+	/**
+	 * Convert position to string for use as key
+	 */
+	function positionToString(pos:Position):String {
+		// Position is an abstract type in Haxe
+		// We'll use a simple string representation
+		// This may need adjustment based on actual Position structure
+		return Std.string(pos);
+	}
 
-    /**
-     * Convert position to string for use as key
-     */
-    function positionToString(pos: Position): String {
-        // Position is an abstract type in Haxe
-        // We'll use a simple string representation
-        // This may need adjustment based on actual Position structure
-        return Std.string(pos);
-    }
+	/**
+	 * Get statistics about the cache
+	 *
+	 * WHY: Useful for debugging and performance monitoring
+	 * WHAT: Returns counts of different states
+	 * HOW: Iterates cache and counts states
+	 */
+	public function getStats():{total:Int, inProgress:Int, completed:Int} {
+		var stats = {total: 0, inProgress: 0, completed: 0};
 
-    /**
-     * Get statistics about the cache
-     *
-     * WHY: Useful for debugging and performance monitoring
-     * WHAT: Returns counts of different states
-     * HOW: Iterates cache and counts states
-     */
-    public function getStats(): {total: Int, inProgress: Int, completed: Int} {
-        var stats = {total: 0, inProgress: 0, completed: 0};
+		for (state in cache) {
+			stats.total++;
+			switch (state) {
+				case InProgress:
+					stats.inProgress++;
+				case Completed(_):
+					stats.completed++;
+				case NotStarted: // Shouldn't happen in cache
+			}
+		}
 
-        for (state in cache) {
-            stats.total++;
-            switch(state) {
-                case InProgress: stats.inProgress++;
-                case Completed(_): stats.completed++;
-                case NotStarted: // Shouldn't happen in cache
-            }
-        }
-
-        return stats;
-    }
+		return stats;
+	}
 }
-
 #end

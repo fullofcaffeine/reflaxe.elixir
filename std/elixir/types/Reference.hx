@@ -17,35 +17,35 @@ package elixir.types;
  * ```
  */
 abstract Reference(Term) from Term to Term {
-    /**
-     * Create a new Reference wrapper
-     * Note: This is typically not called directly - refs come from Process/timer functions
-     */
-    public inline function new(ref: Term) {
-        this = ref;
-    }
-    
-    /**
-     * Create a new unique reference
-     * Useful for creating unique identifiers
-     */
-    public static inline function make(): Reference {
-        return new Reference(untyped __elixir__('make_ref()'));
-    }
-    
-    /**
-     * Convert this reference to its string representation
-     * Returns format like "#Reference<0.123.456.789>"
-     */
-    @:to
-    public inline function toString(): String {
-        return untyped __elixir__('inspect($this)');
-    }
-    
-    /**
-     * Check if this is a valid reference
-     */
-    public inline function isValid(): Bool {
-        return untyped __elixir__('is_reference($this)');
-    }
+	/**
+	 * Create a new Reference wrapper
+	 * Note: This is typically not called directly - refs come from Process/timer functions
+	 */
+	public inline function new(ref:Term) {
+		this = ref;
+	}
+
+	/**
+	 * Create a new unique reference
+	 * Useful for creating unique identifiers
+	 */
+	public static inline function make():Reference {
+		return new Reference(untyped __elixir__('make_ref()'));
+	}
+
+	/**
+	 * Convert this reference to its string representation
+	 * Returns format like "#Reference<0.123.456.789>"
+	 */
+	@:to
+	public inline function toString():String {
+		return untyped __elixir__('inspect($this)');
+	}
+
+	/**
+	 * Check if this is a valid reference
+	 */
+	public inline function isValid():Bool {
+		return untyped __elixir__('is_reference($this)');
+	}
 }

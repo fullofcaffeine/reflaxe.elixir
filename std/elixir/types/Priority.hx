@@ -32,50 +32,49 @@ import elixir.types.Atom;
  * @see ProcessFlag for other process flags
  */
 abstract Priority(Atom) from Atom to Atom {
-    
-    /**
-     * Low priority - process runs less frequently than normal.
-     * Use for background tasks that shouldn't interfere with
-     * interactive or time-sensitive operations.
-     */
-    public static inline function low(): Priority {
-        return new Priority("low");
-    }
-    
-    /**
-     * Normal priority - default for most processes.
-     * Provides balanced CPU allocation.
-     */
-    public static inline function normal(): Priority {
-        return new Priority("normal");
-    }
-    
-    /**
-     * High priority - process runs more frequently than normal.
-     * Use for time-sensitive operations that need quick response.
-     */
-    public static inline function high(): Priority {
-        return new Priority("high");
-    }
-    
-    /**
-     * Maximum priority - highest scheduling priority.
-     * Typically reserved for critical system processes.
-     * Use with extreme caution as it can starve other processes.
-     */
-    public static inline function max(): Priority {
-        return new Priority("max");
-    }
-    
-    /**
-     * Convert priority to its atom representation.
-     * @return The priority as an Elixir atom
-     */
-    public inline function toAtom(): Atom {
-        return this;
-    }
+	/**
+	 * Low priority - process runs less frequently than normal.
+	 * Use for background tasks that shouldn't interfere with
+	 * interactive or time-sensitive operations.
+	 */
+	public static inline function low():Priority {
+		return new Priority("low");
+	}
 
-    private inline function new(priority: Atom) {
-        this = priority;
-    }
+	/**
+	 * Normal priority - default for most processes.
+	 * Provides balanced CPU allocation.
+	 */
+	public static inline function normal():Priority {
+		return new Priority("normal");
+	}
+
+	/**
+	 * High priority - process runs more frequently than normal.
+	 * Use for time-sensitive operations that need quick response.
+	 */
+	public static inline function high():Priority {
+		return new Priority("high");
+	}
+
+	/**
+	 * Maximum priority - highest scheduling priority.
+	 * Typically reserved for critical system processes.
+	 * Use with extreme caution as it can starve other processes.
+	 */
+	public static inline function max():Priority {
+		return new Priority("max");
+	}
+
+	/**
+	 * Convert priority to its atom representation.
+	 * @return The priority as an Elixir atom
+	 */
+	public inline function toAtom():Atom {
+		return this;
+	}
+
+	private inline function new(priority:Atom) {
+		this = priority;
+	}
 }

@@ -6,37 +6,38 @@
  * - many_to_many join-through option parsing
  * - Class-level @:timestamps emission
  */
-
 @:schema("organizations")
 class Organization {
-    public function new() {}
-    public var id: Int;
-    public var name: String;
+	public function new() {}
+
+	public var id:Int;
+	public var name:String;
 }
 
 @:schema("tags")
 class Tag {
-    public function new() {}
-    public var id: Int;
-    public var name: String;
+	public function new() {}
+
+	public var id:Int;
+	public var name:String;
 }
 
 @:schema("posts")
 @:timestamps
 class Post {
-    public function new() {}
-    public var id: Int;
-    public var title: String;
+	public function new() {}
 
-    @:belongs_to("organization")
-    public var organization: Organization;
-    public var organization_id: Int;
+	public var id:Int;
+	public var title:String;
 
-    @:many_to_many("tags")
-    public var tags: Array<Tag>;
+	@:belongs_to("organization")
+	public var organization:Organization;
+	public var organization_id:Int;
+
+	@:many_to_many("tags")
+	public var tags:Array<Tag>;
 }
 
 class Main {
-    public static function main() {
-    }
+	public static function main() {}
 }

@@ -20,29 +20,25 @@ import reflaxe.elixir.ast.ElixirASTPrinter;
  * EXAMPLES
  * - Covered by snapshot tests under `test/snapshot/**`.
  */
-
 class DebugDumpReduceWhileEFnTransforms {
-  public static function transformPass(ast: ElixirAST): ElixirAST {
-    #if debug_reduce_dump
-    return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-      switch (n.def) {
-        case ERemoteCall({def: EVar("Enum")}, "reduce_while", args) if (args != null && args.length >= 3):
-          var fnArg = args[2];
-          switch (fnArg.def) {
-            case EFn(clauses):
-              for (cl in clauses) {
-              }
-            default:
-          }
-        default:
-      }
-      return n;
-    });
-    #else
-    return ast;
-    #end
-  }
+	public static function transformPass(ast:ElixirAST):ElixirAST {
+		#if debug_reduce_dump
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			switch (n.def) {
+				case ERemoteCall({def: EVar("Enum")}, "reduce_while", args) if (args != null && args.length >= 3):
+					var fnArg = args[2];
+					switch (fnArg.def) {
+						case EFn(clauses):
+							for (cl in clauses) {}
+						default:
+					}
+				default:
+			}
+			return n;
+		});
+		#else
+		return ast;
+		#end
+	}
 }
-
 #end
-

@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 /**
  * CaseClauseFixTransforms
  *
@@ -44,47 +43,49 @@ import reflaxe.elixir.ast.ElixirASTBuilder;
  * HOW: For each ECase clause, if body is EBlock([]) or effectively empty, replace with ENil.
  */
 class CaseClauseFixTransforms {
-    public static function caseClauseEmptyBodyToNilPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(node: ElixirAST): ElixirAST {
-            if (node == null || node.def == null) return node;
-            return switch(node.def) {
-                case ECase(target, clauses):
-                    var fixed = clauses.map(c -> {
-                        var body = c.body;
-                        var newBody = isEmptyBody(body) ? makeAST(ENil) : body;
-                        return { pattern: c.pattern, guard: c.guard, body: newBody };
-                    });
-                    makeASTWithMeta(ECase(target, fixed), node.metadata, node.pos);
-                default:
-                    node;
-            }
-        });
-    }
+	public static function caseClauseEmptyBodyToNilPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(node:ElixirAST):ElixirAST {
+			if (node == null || node.def == null)
+				return node;
+			return switch (node.def) {
+				case ECase(target, clauses):
+					var fixed = clauses.map(c -> {
+						var body = c.body;
+						var newBody = isEmptyBody(body) ? makeAST(ENil) : body;
+						return {pattern: c.pattern, guard: c.guard, body: newBody};
+					});
+					makeASTWithMeta(ECase(target, fixed), node.metadata, node.pos);
+				default:
+					node;
+			}
+		});
+	}
 
-    static function isEmptyBody(body: ElixirAST): Bool {
-        if (body == null || body.def == null) return true;
-        return switch(body.def) {
-            case EBlock(exprs):
-                if (exprs == null || exprs.length == 0) return true;
-                // Consider blocks consisting only of self-assignments that print empty
-                // E.g., `v = v` for non-temp vars
-                for (e in exprs) {
-                    switch(e.def) {
-                        case EMatch(PVar(name), {def: EVar(rhs)}):
-                            if (name == rhs && !ElixirASTBuilder.isTempPatternVarName(name)) {
-                                // continue checking
-                            } else {
-                                return false;
-                            }
-                        default:
-                            return false;
-                    }
-                }
-                // All expressions were no-op self-assignments
-                true;
-            default: false;
-        }
-    }
+	static function isEmptyBody(body:ElixirAST):Bool {
+		if (body == null || body.def == null)
+			return true;
+		return switch (body.def) {
+			case EBlock(exprs):
+				if (exprs == null || exprs.length == 0)
+					return true;
+				// Consider blocks consisting only of self-assignments that print empty
+				// E.g., `v = v` for non-temp vars
+				for (e in exprs) {
+					switch (e.def) {
+						case EMatch(PVar(name), {def: EVar(rhs)}):
+							if (name == rhs && !ElixirASTBuilder.isTempPatternVarName(name)) {
+								// continue checking
+							} else {
+								return false;
+							}
+						default:
+							return false;
+					}
+				}
+				// All expressions were no-op self-assignments
+				true;
+			default: false;
+		}
+	}
 }
-
 #end

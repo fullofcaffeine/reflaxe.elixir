@@ -22,24 +22,24 @@ import haxe.macro.Context;
  */
 @:nullSafety(Off)
 class Main {
-    #if macro
-    static function testMacro(socket: Expr): Expr {
-        // Try to generate a call to phoenix.Component.assign
-        var assigns = macro {test: "value"};
+	#if macro
+	static function testMacro(socket:Expr):Expr {
+		// Try to generate a call to phoenix.Component.assign
+		var assigns = macro {test: "value"};
 
-        // This should generate Phoenix.Component.assign(socket, assigns)
-        // but currently generates TodoApp.LiveView.phoenix.component.assign(socket, assigns)
-        return macro phoenix.Component.assign($socket, $assigns);
-    }
-    #end
+		// This should generate Phoenix.Component.assign(socket, assigns)
+		// but currently generates TodoApp.LiveView.phoenix.component.assign(socket, assigns)
+		return macro phoenix.Component.assign($socket, $assigns);
+	}
+	#end
 
-    static function main() {
-        // In a LiveView context
-        var socket: Dynamic = null;
+	static function main() {
+		// In a LiveView context
+		var socket:Dynamic = null;
 
-        // Call the macro
-        var result = testMacro(socket);
+		// Call the macro
+		var result = testMacro(socket);
 
-        trace("Test completed");
-    }
+		trace("Test completed");
+	}
 }

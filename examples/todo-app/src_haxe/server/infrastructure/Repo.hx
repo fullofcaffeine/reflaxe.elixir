@@ -28,23 +28,22 @@ import haxe.functional.Result;
  */
 @:native("TodoApp.Repo")
 @:repo({
-    adapter: Postgres,
-    json: Jason,
-    extensions: [],
-    poolSize: 10
+	adapter: Postgres,
+	json: Jason,
+	extensions: [],
+	poolSize: 10
 })
 extern class Repo {
-    // These are extern declarations for the functions injected by Ecto.Repo
-    
-    @:overload(function<T>(query: EctoQuery<T>): Array<T> {})
-    @:overload(function<T>(query: ecto.TypedQuery.TypedQuery<T>): Array<T> {})
-    public static function all<T>(queryable: Class<T>): Array<T>;
-    
-    public static function get<T>(queryable: Class<T>, id: Int): Null<T>;
-    
-    public static function insert<T, P>(changeset: Changeset<T, P>): Result<T, Changeset<T, P>>;
-    
-    public static function update<T, P>(changeset: Changeset<T, P>): Result<T, Changeset<T, P>>;
-    
-    public static function delete<T>(struct: T): Result<T, Changeset<T, {}>>;
+	// These are extern declarations for the functions injected by Ecto.Repo
+	@:overload(function<T>(query:EctoQuery<T>):Array<T> {})
+	@:overload(function<T>(query:ecto.TypedQuery.TypedQuery<T>):Array<T> {})
+	public static function all<T>(queryable:Class<T>):Array<T>;
+
+	public static function get<T>(queryable:Class<T>, id:Int):Null<T>;
+
+	public static function insert<T, P>(changeset:Changeset<T, P>):Result<T, Changeset<T, P>>;
+
+	public static function update<T, P>(changeset:Changeset<T, P>):Result<T, Changeset<T, P>>;
+
+	public static function delete<T>(struct:T):Result<T, Changeset<T, {}>>;
 }

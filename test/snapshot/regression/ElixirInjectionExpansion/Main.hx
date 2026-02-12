@@ -23,40 +23,39 @@
  *   Should generate: "Hello, #{name}!"
  *   NOT: __elixir__("\"Hello, {0}!\"", name)
  */
-
 class Main {
-    static function main() {
-        trace("=== Test 1: Simple __elixir__ call ===");
+	static function main() {
+		trace("=== Test 1: Simple __elixir__ call ===");
 
-        // Test 1: No parameters - should expand to inline Elixir
-        var currentTime = untyped __elixir__("DateTime.utc_now()");
-        trace("Current time: " + currentTime);
+		// Test 1: No parameters - should expand to inline Elixir
+		var currentTime = untyped __elixir__("DateTime.utc_now()");
+		trace("Current time: " + currentTime);
 
-        trace("\n=== Test 2: __elixir__ with parameter substitution ===");
+		trace("\n=== Test 2: __elixir__ with parameter substitution ===");
 
-        // Test 2: Single parameter - {0} should be substituted
-        var name = "Alice";
-        var greeting = untyped __elixir__("\"Hello, {0}!\"", name);
-        trace("Greeting: " + greeting);
+		// Test 2: Single parameter - {0} should be substituted
+		var name = "Alice";
+		var greeting = untyped __elixir__("\"Hello, {0}!\"", name);
+		trace("Greeting: " + greeting);
 
-        trace("\n=== Test 3: Multiple parameters ===");
+		trace("\n=== Test 3: Multiple parameters ===");
 
-        // Test 3: Multiple parameters - {0}, {1}, {2} should be substituted
-        var x = 10;
-        var y = 20;
-        var result = untyped __elixir__("{0} + {1}", x, y);
-        trace("Result: " + result);
+		// Test 3: Multiple parameters - {0}, {1}, {2} should be substituted
+		var x = 10;
+		var y = 20;
+		var result = untyped __elixir__("{0} + {1}", x, y);
+		trace("Result: " + result);
 
-        trace("\n=== Test 4: Complex Elixir expression ===");
+		trace("\n=== Test 4: Complex Elixir expression ===");
 
-        // Test 4: Complex expression with case statement
-        var dateStr = "2025-01-29T12:00:00Z";
-        var parsedDate = untyped __elixir__("
+		// Test 4: Complex expression with case statement
+		var dateStr = "2025-01-29T12:00:00Z";
+		var parsedDate = untyped __elixir__("
             case DateTime.from_iso8601({0}) do
                 {:ok, dt, _} -> dt
                 _ -> DateTime.utc_now()
             end
         ", dateStr);
-        trace("Parsed date: " + parsedDate);
-    }
+		trace("Parsed date: " + parsedDate);
+	}
 }

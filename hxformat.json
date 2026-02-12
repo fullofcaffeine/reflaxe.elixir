@@ -1,0 +1,22 @@
+{
+  "excludes": [
+    "\\.haxelib",
+    "\\.git",
+    "node_modules",
+    "vendor",
+    "examples/.*/deps",
+    "examples/.*/_build",
+    "std/elixir/Node.hx"
+  ],
+  "indentation": {
+    "character": "tab",
+    "tabWidth": 4,
+    "trailingWhitespace": false
+  },
+  "lineEnds": {
+    "lineEndCharacter": "lf"
+  },
+  "emptyLines": {
+    "finalNewline": true
+  }
+}

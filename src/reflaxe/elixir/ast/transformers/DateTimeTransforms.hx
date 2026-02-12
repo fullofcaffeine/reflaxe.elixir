@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
@@ -32,48 +31,46 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *   now.to_iso8601()          ->  DateTime.to_iso8601(now)
  */
 class DateTimeTransforms {
-    public static function dateTimeMethodRewritePass(ast: ElixirAST): ElixirAST {
-        function processBody(body: ElixirAST): ElixirAST {
-            var dtVars = new Map<String, Bool>();
+	public static function dateTimeMethodRewritePass(ast:ElixirAST):ElixirAST {
+		function processBody(body:ElixirAST):ElixirAST {
+			var dtVars = new Map<String, Bool>();
 
-            // First sweep: collect variables bound from DateTime.utc_now()
-            ElixirASTTransformer.transformNode(body, function(n) {
-                switch (n.def) {
-                    case EMatch(PVar(name), {def: ERemoteCall({def: EVar(mod)}, func, _ )}) if (mod == "DateTime" && func == "utc_now"):
-                        dtVars.set(name, true);
-                    default:
-                }
-                return n;
-            });
+			// First sweep: collect variables bound from DateTime.utc_now()
+			ElixirASTTransformer.transformNode(body, function(n) {
+				switch (n.def) {
+					case EMatch(PVar(name), {def: ERemoteCall({def: EVar(mod)}, func, _)}) if (mod == "DateTime" && func == "utc_now"):
+						dtVars.set(name, true);
+					default:
+				}
+				return n;
+			});
 
-            // Second sweep: rewrite method-style to_iso8601 calls on collected variables
-            return ElixirASTTransformer.transformNode(body, function(n: ElixirAST): ElixirAST {
-                return switch (n.def) {
-                    case ECall(target, "to_iso8601", args) if (target != null && args != null && args.length == 0):
-                        switch (target.def) {
-                            case EVar(v) if (dtVars.exists(v)):
-                                makeASTWithMeta(ERemoteCall(makeAST(EVar("DateTime")), "to_iso8601", [target]), n.metadata, n.pos);
-                            default:
-                                n;
-                        }
-                    default:
-                        n;
-                }
-            });
-        }
+			// Second sweep: rewrite method-style to_iso8601 calls on collected variables
+			return ElixirASTTransformer.transformNode(body, function(n:ElixirAST):ElixirAST {
+				return switch (n.def) {
+					case ECall(target, "to_iso8601", args) if (target != null && args != null && args.length == 0):
+						switch (target.def) {
+							case EVar(v) if (dtVars.exists(v)):
+								makeASTWithMeta(ERemoteCall(makeAST(EVar("DateTime")), "to_iso8601", [target]), n.metadata, n.pos);
+							default:
+								n;
+						}
+					default:
+						n;
+				}
+			});
+		}
 
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case EDef(name, args, guards, body):
-                    makeASTWithMeta(EDef(name, args, guards, processBody(body)), n.metadata, n.pos);
-                case EDefp(name, args, guards, body):
-                    makeASTWithMeta(EDefp(name, args, guards, processBody(body)), n.metadata, n.pos);
-                default:
-                    n;
-            }
-        });
-    }
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case EDef(name, args, guards, body):
+					makeASTWithMeta(EDef(name, args, guards, processBody(body)), n.metadata, n.pos);
+				case EDefp(name, args, guards, body):
+					makeASTWithMeta(EDefp(name, args, guards, processBody(body)), n.metadata, n.pos);
+				default:
+					n;
+			}
+		});
+	}
 }
-
 #end
-

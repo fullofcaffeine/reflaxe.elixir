@@ -19,15 +19,14 @@ import phoenix.PresenceBehavior;
  * - Marked @:presence so the compiler injects `use Phoenix.Presence, ...`.
  */
 typedef PresenceMeta = {
-    var onlineAt: Float;
-    var userName: String;
-    var userEmail: String;
-    var avatar: Null<String>;
-    var editingTodoId: Null<Int>;
-    var editingStartedAt: Null<Float>;
+	var onlineAt:Float;
+	var userName:String;
+	var userEmail:String;
+	var avatar:Null<String>;
+	var editingTodoId:Null<Int>;
+	var editingStartedAt:Null<Float>;
 }
 
 @:native("TodoAppWeb.Presence")
 @:presence
-class TodoPresence implements PresenceBehavior {
-}
+class TodoPresence implements PresenceBehavior {}

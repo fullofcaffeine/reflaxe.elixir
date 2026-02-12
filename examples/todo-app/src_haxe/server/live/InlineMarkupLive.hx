@@ -1,14 +1,14 @@
 package server.live;
 
-	import HXX.*;
-	import phoenix.Phoenix.MountResult;
-	import phoenix.Phoenix.Socket;
-	import phoenix.LiveSocket;
-	import server.types.Types.MountParams;
-	import server.types.Types.Session;
+import HXX.*;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Socket;
+import phoenix.LiveSocket;
+import server.types.Types.MountParams;
+import server.types.Types.Session;
 
 typedef InlineMarkupLiveAssigns = {
-    var message: String;
+	var message:String;
 }
 
 /**
@@ -35,22 +35,22 @@ typedef InlineMarkupLiveAssigns = {
 @:native("TodoAppWeb.InlineMarkupLive")
 @:liveview
 class InlineMarkupLive {
-    /**
-     * Router action handler (placeholder to satisfy route validation).
-     */
-    public static function index(): String {
-        return "index";
-	    }
+	/**
+	 * Router action handler (placeholder to satisfy route validation).
+	 */
+	public static function index():String {
+		return "index";
+	}
 
-	    public static function mount(params: MountParams, session: Session, socket: Socket<InlineMarkupLiveAssigns>): MountResult<InlineMarkupLiveAssigns> {
-	        var liveSocket: LiveSocket<InlineMarkupLiveAssigns> = socket;
-	        return Ok(liveSocket.merge({
-	            message: "Hello from inline markup 👋"
-	        }));
-	    }
+	public static function mount(params:MountParams, session:Session, socket:Socket<InlineMarkupLiveAssigns>):MountResult<InlineMarkupLiveAssigns> {
+		var liveSocket:LiveSocket<InlineMarkupLiveAssigns> = socket;
+		return Ok(liveSocket.merge({
+			message: "Hello from inline markup 👋"
+		}));
+	}
 
-    public static function render(assigns: InlineMarkupLiveAssigns): String {
-        return <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
+	public static function render(assigns:InlineMarkupLiveAssigns):String {
+		return <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-blue-900">
             <div class="container mx-auto px-4 py-10 max-w-3xl">
                 <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8">
                     <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Inline markup demo</h1>
@@ -69,5 +69,5 @@ class InlineMarkupLive {
                 </div>
             </div>
         </div>;
-    }
+	}
 }

@@ -20,15 +20,14 @@ import ecto.Migration.ColumnType;
  */
 @:migration({timestamp: "20260101004030"})
 class CreateOrganizations extends Migration {
-    public function up(): Void {
-        createTable("organizations")
-            .addColumn("slug", ColumnType.String(), {nullable: false})
-            .addColumn("name", ColumnType.String(), {nullable: false})
-            .addTimestamps()
-            .addUniqueConstraint(["slug"], "organizations_slug_unique");
-    }
+	public function up():Void {
+		createTable("organizations").addColumn("slug", ColumnType.String(), {nullable: false})
+			.addColumn("name", ColumnType.String(), {nullable: false})
+			.addTimestamps()
+			.addUniqueConstraint(["slug"], "organizations_slug_unique");
+	}
 
-    public function down(): Void {
-        dropTable("organizations");
-    }
+	public function down():Void {
+		dropTable("organizations");
+	}
 }

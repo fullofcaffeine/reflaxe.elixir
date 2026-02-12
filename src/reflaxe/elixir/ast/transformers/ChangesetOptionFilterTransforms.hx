@@ -1,7 +1,6 @@
 package reflaxe.elixir.ast.transformers;
 
 #if (macro || reflaxe_runtime)
-
 import reflaxe.elixir.ast.ElixirAST;
 import reflaxe.elixir.ast.ElixirAST.makeAST;
 import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
@@ -33,39 +32,40 @@ import reflaxe.elixir.ast.ElixirASTTransformer;
  *     Enum.filter([min: opts.min, max: opts.max, is: opts.is], fn {_, v} -> v != nil end))
  */
 class ChangesetOptionFilterTransforms {
-    public static function filterValidateLengthOptionsPass(ast: ElixirAST): ElixirAST {
-        return ElixirASTTransformer.transformNode(ast, function(n: ElixirAST): ElixirAST {
-            return switch (n.def) {
-                case ERemoteCall(mod, fn, args) if (isChangesetValidateLength(mod, fn, args)):
-                    var a = args.copy();
-                    if (a.length >= 3) switch (a[2].def) {
-                        case EKeywordList(pairs):
-                            // Build Enum.filter([...], fn {_, v} -> v != nil end)
-                            var listExpr = makeAST(EKeywordList(pairs));
-                            var filterFn = makeAST(EFn([{
-                                args: [PTuple([PWildcard, PVar("v")])],
-                                body: makeAST(EBinary(NotEqual, makeAST(EVar("v")), makeAST(ENil)))
-                            }]));
-                            var filtered = makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [listExpr, filterFn]));
-                            a[2] = filtered;
-                            makeASTWithMeta(ERemoteCall(mod, fn, a), n.metadata, n.pos);
-                        default:
-                            n;
-                    } else n;
-                default:
-                    n;
-            }
-        });
-    }
+	public static function filterValidateLengthOptionsPass(ast:ElixirAST):ElixirAST {
+		return ElixirASTTransformer.transformNode(ast, function(n:ElixirAST):ElixirAST {
+			return switch (n.def) {
+				case ERemoteCall(mod, fn, args) if (isChangesetValidateLength(mod, fn, args)):
+					var a = args.copy();
+					if (a.length >= 3) switch (a[2].def) {
+						case EKeywordList(pairs):
+							// Build Enum.filter([...], fn {_, v} -> v != nil end)
+							var listExpr = makeAST(EKeywordList(pairs));
+							var filterFn = makeAST(EFn([
+								{
+									args: [PTuple([PWildcard, PVar("v")])],
+									body: makeAST(EBinary(NotEqual, makeAST(EVar("v")), makeAST(ENil)))
+								}
+							]));
+							var filtered = makeAST(ERemoteCall(makeAST(EVar("Enum")), "filter", [listExpr, filterFn]));
+							a[2] = filtered;
+							makeASTWithMeta(ERemoteCall(mod, fn, a), n.metadata, n.pos);
+						default:
+							n;
+					} else n;
+				default:
+					n;
+			}
+		});
+	}
 
-    static inline function isChangesetValidateLength(mod: ElixirAST, fn: String, args: Array<ElixirAST>): Bool {
-        if (fn != "validate_length") return false;
-        return switch (mod.def) {
-            case EVar(name): name != null && (name == "Ecto.Changeset" || name.indexOf("Ecto.Changeset") != -1);
-            default: false;
-        }
-    }
+	static inline function isChangesetValidateLength(mod:ElixirAST, fn:String, args:Array<ElixirAST>):Bool {
+		if (fn != "validate_length")
+			return false;
+		return switch (mod.def) {
+			case EVar(name): name != null && (name == "Ecto.Changeset" || name.indexOf("Ecto.Changeset") != -1);
+			default: false;
+		}
+	}
 }
-
 #end
-
