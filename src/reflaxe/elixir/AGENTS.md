@@ -80,7 +80,7 @@ if (field.meta.has("liveview")) { ... }  // Missing colon!
 - **Include the colon**: Always use `":annotation"` not `"annotation"`
 - **Consistent behavior**: This applies to ALL metadata in Haxe
 - **Clean code**: Single check with colon is correct
-- **Verified**: Check Haxe reference sources in `/haxe.elixir.reference/`
+- **Verified**: Check Haxe reference sources in `${HAXE_ELIXIR_REFERENCE}/`
 
 ### 📁 Complete Compiler File Structure
 

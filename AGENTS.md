@@ -49,7 +49,7 @@ These failures usually come from running only a subset locally (e.g. `test:quick
 - Never commit machine-local absolute paths in tracked files (docs, JSON reports, snapshots, generated metadata, scripts output).
 - Use workspace-relative paths instead (e.g., `std`, `std/_std`, `src/haxe`) so artifacts are portable across machines and CI.
 - Before pushing, scan for leaked local paths and scrub them:
-  - `rg -n "/REDACTED_LOCAL_PATH]:\\\\Users\\\\" docs scripts test examples src std`
+  - `rg -n "/Users/|/var/folders/|[A-Za-z]:\\\\Users\\\\" docs scripts test examples src std`
 
 ## 🎨 Frontend/UI Work (Required)
 
@@ -1560,7 +1560,7 @@ if (node.metadata?.isIdiomaticEnum == true) { // ONLY check metadata
 - ✅ **Use Reflaxe's preprocessor system** - MarkUnusedVariablesImpl for unused variable detection
 - ✅ **Check established metadata** - Look for `-reflaxe.unused` instead of inventing detection
 - ✅ **Follow GenericCompiler patterns** - Extend established base class methods
-- ✅ **Study reference implementations** - Check `/haxe.elixir.reference/reflaxe/` for patterns
+- ✅ **Study reference implementations** - Check `${HAXE_ELIXIR_REFERENCE}/reflaxe/` for patterns
 
 **LESSON LEARNED: Orphaned Variable Detection**
 When we encountered orphaned `g_array` variables:
@@ -3263,13 +3263,16 @@ scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 60
 **See**: [`docs/03-compiler-development/testing-infrastructure.md`](docs/03-compiler-development/testing-infrastructure.md) - Complete test architecture and status
 
 ## Development Resources & Reference Strategy
-- **Reference Codebase (optional)**: If you keep a separate local “reference” checkout, point it via `HAXE_ELIXIR_REFERENCE_PATH` and consult it for:
+- **Reference Codebase (optional)**: If you keep a separate local “reference” checkout, point it via `HAXE_ELIXIR_REFERENCE` (or legacy `HAXE_ELIXIR_REFERENCE_PATH`) and consult it for:
   - Haxe macro API usage patterns
   - Reflaxe compiler implementation examples  
   - Working AST processing patterns
   - Test infrastructure patterns
   - **Elixir Language Source**: `elixir-lang/elixir`
   - **Phoenix Framework Source**: `phoenixframework/phoenix` and `phoenixframework/phoenix_live_view`
+- **Parity tooling env loading (required)**: Before running stdlib parity tooling, if `HAXE_ELIXIR_REFERENCE` is unset, load `.env` from repo root (if present):
+  - `set -a; [ -f .env ] && . ./.env; set +a`
+  - Keep machine-local paths in `.env` only; never commit absolute local paths.
 - **Haxe API Documentation**: https://api.haxe.org/ - For type system and language features  
 - **Haxe Manual**: https://haxe.org/manual/ - **CRITICAL**: Always consult for advanced features
 - **Web Resources**: Use WebSearch and WebFetch for current documentation

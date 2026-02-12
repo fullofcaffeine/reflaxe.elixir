@@ -32,7 +32,7 @@ Related work:
 - Module-level gap report: `docs/08-roadmap/stdlib-parity/gap-report.json`
 - Regeneration script: `scripts/stdlib-parity-report.sh`
 - CI drift guard (local-state consistency): `npm run guard:stdlib-parity`
-- Reference repo: `../haxe.elixir.reference`
+- Reference repo: `$HAXE_ELIXIR_REFERENCE` (local env var path)
 
 ## Current status (rolling)
 
@@ -243,7 +243,7 @@ Description:
   - `docs/08-roadmap/stdlib-parity/gap-report.json`
   - `docs/08-roadmap/stdlib-parity/gap-report.md`
   - `scripts/stdlib-parity-report.sh`
-  - Reference repo: `../haxe.elixir.reference`
+  - Reference repo: `$HAXE_ELIXIR_REFERENCE`
 - Acceptance:
   - Priority modules implemented in `std/` / `std/_std/` (or `src/haxe/` when required by consumer-install ordering).
   - Snapshot coverage + Haxe-authored ExUnit runtime tests for behaviors.

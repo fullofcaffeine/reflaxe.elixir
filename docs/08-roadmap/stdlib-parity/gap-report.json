@@ -268,7 +268,7 @@
       "haxe": 146,
       "sys": 34
     },
-    "std_root": "../haxe.elixir.reference/haxe/std",
+    "std_root": "$HAXE_ELIXIR_REFERENCE/haxe/std",
     "total_modules": 204
   }
 }

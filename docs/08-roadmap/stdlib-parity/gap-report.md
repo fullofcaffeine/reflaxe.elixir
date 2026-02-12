@@ -1,6 +1,6 @@
 # Stdlib Parity Gap Report (Module-Level)
 
-Generated: 2026-02-11
+Generated: 2026-02-12
 
 This report compares this repo’s Elixir-target stdlib overrides against the reference repository.
 
@@ -12,8 +12,9 @@ Local roots considered:
 To regenerate:
 
 ```bash
-scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --json > docs/08-roadmap/stdlib-parity/gap-report.json
-scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --markdown > docs/08-roadmap/stdlib-parity/gap-report.md
+export HAXE_ELIXIR_REFERENCE=/path/to/haxe.elixir.reference
+scripts/stdlib-parity-report.sh --json > docs/08-roadmap/stdlib-parity/gap-report.json
+scripts/stdlib-parity-report.sh --markdown > docs/08-roadmap/stdlib-parity/gap-report.md
 ```
 
 ## Summary

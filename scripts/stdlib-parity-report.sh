@@ -31,14 +31,18 @@ Options:
                      - /path/to/haxe/std
                      - /path/to/haxe-repo (containing haxe/std)
                      - /path/to/haxe (containing std/)
+                     If omitted, falls back to env vars:
+                     - HAXE_ELIXIR_REFERENCE
+                     - HAXE_ELIXIR_REFERENCE_PATH (legacy)
   --json             Emit machine-readable JSON to stdout (default: human-readable text)
   --markdown         Emit markdown summary to stdout (for docs)
   -h, --help         Show this help
 
 Examples:
-  scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference/haxe/std
-  scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --json
-  scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --markdown
+  export HAXE_ELIXIR_REFERENCE=/path/to/haxe.elixir.reference
+  scripts/stdlib-parity-report.sh --json
+  scripts/stdlib-parity-report.sh --markdown
+  scripts/stdlib-parity-report.sh --reference /path/to/haxe.elixir.reference/haxe/std
 EOF
   exit 2
 }
@@ -54,6 +58,12 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ -z "$REFERENCE_PATH" ]]; then
+  REFERENCE_PATH="${HAXE_ELIXIR_REFERENCE:-${HAXE_ELIXIR_REFERENCE_PATH:-}}"
+fi
+
+if [[ -z "$REFERENCE_PATH" ]]; then
+  echo "ERROR: Missing reference path." >&2
+  echo "Set HAXE_ELIXIR_REFERENCE or pass --reference PATH." >&2
   usage
 fi
 
@@ -208,7 +218,7 @@ def group_by_prefix(modules: List[str]) -> Dict[str, int]:
 
 report = {
   "reference": {
-    "std_root": str(reference_std),
+    "std_root": "$HAXE_ELIXIR_REFERENCE/haxe/std",
     "total_modules": len(reference_modules),
     "counts_by_prefix": group_by_prefix(list(reference_modules)),
   },
@@ -255,8 +265,9 @@ elif markdown_mode:
   print("To regenerate:")
   print("")
   print("```bash")
-  print("scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --json > docs/08-roadmap/stdlib-parity/gap-report.json")
-  print("scripts/stdlib-parity-report.sh --reference ../haxe.elixir.reference --markdown > docs/08-roadmap/stdlib-parity/gap-report.md")
+  print("export HAXE_ELIXIR_REFERENCE=/path/to/haxe.elixir.reference")
+  print("scripts/stdlib-parity-report.sh --json > docs/08-roadmap/stdlib-parity/gap-report.json")
+  print("scripts/stdlib-parity-report.sh --markdown > docs/08-roadmap/stdlib-parity/gap-report.md")
   print("```")
   print("")
   print("## Summary")

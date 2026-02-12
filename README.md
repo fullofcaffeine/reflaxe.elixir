@@ -338,6 +338,20 @@ npm run test:examples
 npm run test:quick
 ```
 
+### Local Reference Path (optional)
+
+Some parity tooling compares this repo against a local `haxe.elixir.reference` checkout.
+Configure the path in a local `.env` (gitignored) using the provided template:
+
+```bash
+cp .env.example .env
+# then edit .env
+```
+
+```bash
+export HAXE_ELIXIR_REFERENCE=/path/to/haxe.elixir.reference
+```
+
 ### Running Examples
 
 Each example is self-contained and documented. Start here:
