@@ -237,6 +237,7 @@ regression:
 
 - `docs/04-api-reference/FEATURE_FLAGS.md`
 - `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md`
+- `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md`
 
 ### Interop: “Elixir-Like” Haxe via Typed Externs (Optional)
 
@@ -245,6 +246,7 @@ integration when you want Elixir-native APIs and shapes (structs/atoms/tagged tu
 
 - `docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md`
 - `docs/02-user-guide/ESCAPE_HATCHES.md`
+- Authoring style decision guide: `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md`
 - Canonical extern workflow: `docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md`
 - Opt-in discipline for app code: `docs/06-guides/STRICT_MODE.md`
 
@@ -421,6 +423,7 @@ Start at **[docs/README.md](docs/README.md)** for the curated documentation inde
 
 ### Codegen Conventions
 - **[Writing Idiomatic Haxe](docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md)** - Practical guidance for clean, idiomatic Elixir output
+- **[Authoring Styles](docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md)** - Portable stdlib-first vs typed Elixir-first (one compiler pipeline)
 - **[Elixir Idioms & Hygiene](docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md)** - Naming, unused vars, enum shapes, and codegen conventions
 - **[Haxe→Elixir Mappings](docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md)** ✨ - Full mapping reference
 
@@ -446,6 +449,7 @@ Each example includes its own `README.md` with compile/run steps and Haxe -> gen
 - `examples/10-option-patterns/README.md`
 - `examples/11-domain-validation/README.md`
 - `examples/12-phoenix-chat/README.md`
+- `examples/13-elixir-first-liveview/README.md`
 - `examples/test-integration/README.md`
 - `examples/todo-app/README.md`
 

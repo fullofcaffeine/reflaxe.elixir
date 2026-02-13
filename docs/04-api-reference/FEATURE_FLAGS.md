@@ -52,7 +52,7 @@ These are the user-facing flags wired by the compiler (see `src/reflaxe/elixir/E
 ## Related Docs
 
 - Codegen mental model: `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md`
+- Authoring styles (portable vs Elixir-first): `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md`
 - "Portable stdlib" vs "BEAM-first externs": `docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md`
 - Calling Elixir from Haxe (typed externs): `docs/02-user-guide/ESCAPE_HATCHES.md`
 - Opt-in "Gleam-like discipline": `docs/06-guides/STRICT_MODE.md`
-

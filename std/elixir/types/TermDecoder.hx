@@ -2,7 +2,7 @@ package elixir.types;
 
 #if (elixir || reflaxe_runtime)
 import elixir.Kernel;
-import elixir.Tuple;
+import elixir.Tuple as ElixirTuple;
 import haxe.ds.Option;
 import haxe.functional.Result;
 
@@ -107,18 +107,21 @@ class TermDecoder {
 		return decode(term).map(function(value) return Some(value));
 	}
 
-	public static inline function fetch(map:Term, key:Term):Result<Term, TermDecodeError> {
-		return asMap(map).flatMap(function(_) {
-			var fetchResult:Term = untyped __elixir__('Map.fetch({0}, {1})', map, key);
-			return Tuple.isOkTuple(fetchResult) ? Ok(Tuple.getOkValue(fetchResult)) : Error(MissingKey(Kernel.inspect(key)));
-		});
+	public static function fetch(map:Term, key:Term):Result<Term, TermDecodeError> {
+		return switch (asMap(map)) {
+			case Ok(validatedMap):
+				var fetchResult:Term = untyped __elixir__('Map.fetch({0}, {1})', validatedMap, key);
+				ElixirTuple.isOkTuple(fetchResult) ? Ok(ElixirTuple.getOkValue(fetchResult)) : Error(MissingKey(Kernel.inspect(key)));
+			case Error(error):
+				Error(error);
+		}
 	}
 
-	public static inline function fetchStringKey(map:Term, key:String):Result<Term, TermDecodeError> {
+	public static function fetchStringKey(map:Term, key:String):Result<Term, TermDecodeError> {
 		return fetch(map, cast key);
 	}
 
-	public static inline function fetchAtomKey(map:Term, key:Atom):Result<Term, TermDecodeError> {
+	public static function fetchAtomKey(map:Term, key:Atom):Result<Term, TermDecodeError> {
 		return fetch(map, cast key);
 	}
 }

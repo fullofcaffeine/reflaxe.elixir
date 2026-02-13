@@ -31,6 +31,7 @@ You can author any of these in Haxe (incrementally, if desired):
 See working references:
 
 - Minimal Phoenix: `examples/03-phoenix-app/`
+- Elixir-first typed LiveView: `examples/13-elixir-first-liveview/`
 - End-to-end LiveView + Ecto: `examples/todo-app/`
 
 ## Channels (Socket + Channel Modules)

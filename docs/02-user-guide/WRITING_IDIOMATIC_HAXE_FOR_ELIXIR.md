@@ -5,6 +5,7 @@ It complements:
 
 - `docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md` (construct-by-construct mappings)
 - `docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md` (codegen conventions and hygiene rules)
+- `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md` (portable vs Elixir-first authoring choices)
 
 ## Quick Do / Don’t
 

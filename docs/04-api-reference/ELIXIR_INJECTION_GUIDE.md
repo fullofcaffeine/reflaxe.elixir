@@ -25,6 +25,9 @@ Reflaxe.Elixir provides direct Elixir code injection using:
 > That mode rejects `untyped`, `Dynamic`, and ad-hoc externs in project-local sources (see
 > `src/reflaxe/elixir/macros/StrictModeEnforcer.hx`).
 >
+> For the high-level decision of portable stdlib-first vs typed Elixir-first authoring, see
+> `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md`.
+>
 > If you need access to a Phoenix/Ecto/Elixir API from app code, add a typed wrapper in `std/`
 > (or a compiler-supported annotation module like `@:repo`) so the surface is reusable and documented.
 

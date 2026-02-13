@@ -17,6 +17,18 @@ Add this define to your server build `.hxml`:
 
 Strict mode is enforced by `src/reflaxe/elixir/macros/StrictModeEnforcer.hx` during macro typing.
 
+### `reflaxe_elixir_strict` vs `reflaxe_elixir_strict_examples`
+
+- `-D reflaxe_elixir_strict` is the **user-facing strict profile** for real applications.
+- `-D reflaxe_elixir_strict_examples` is a **repository policy guard** used by this repo’s shipped examples.
+
+They are not identical:
+
+- `reflaxe_elixir_strict` enforces `untyped`, `Dynamic`, and ad-hoc extern restrictions on project-local sources.
+- `reflaxe_elixir_strict_examples` focuses on keeping example app sources free of escape-hatch interop so examples stay reference-quality.
+
+For your own project, use `reflaxe_elixir_strict`.
+
 ---
 
 ## What strict mode enforces
@@ -53,4 +65,3 @@ Common replacements for `Dynamic` / `untyped`:
 If strict mode blocks a real Phoenix/Ecto integration you need, that’s a signal the framework layer is
 missing a reusable surface. Add it to `std/` (or a compiler-supported annotation module) so it benefits
 all projects.
-

@@ -9,6 +9,7 @@ You can use either layer (or both) in the same codebase. The choice is about **p
 
 See also:
 - `docs/04-api-reference/STDLIB_SUPPORT_MATRIX.md`
+- `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md`
 - `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md`
 - `docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md`
 - `docs/02-user-guide/REFLAXE_RUNTIME_EXPLAINED.md`

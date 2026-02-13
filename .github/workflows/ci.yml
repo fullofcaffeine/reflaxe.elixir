@@ -286,6 +286,11 @@ jobs:
             cache_paths: |
               examples/11-domain-validation/deps
               examples/11-domain-validation/_build
+          - shard: mix-13
+            only: '13-elixir-first-liveview'
+            cache_paths: |
+              examples/13-elixir-first-liveview/deps
+              examples/13-elixir-first-liveview/_build
     timeout-minutes: 90
     env:
       TIMEOUT_DEPS_GET: '600'

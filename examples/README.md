@@ -64,15 +64,42 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 **Features**: LiveView + PubSub + Presence, tiny client hook (Genes), strict TSX templates  
 **Use Case**: Real-time chat patterns in a small, focused Phoenix example
 
-### 13. [todo-app](./todo-app/)
+### 13. [13-elixir-first-liveview](./13-elixir-first-liveview/)
+**Difficulty**: Intermediate  
+**Features**: Typed Elixir-first LiveView, strict mode, typed boundary decoding, Result-based domain flow  
+**Use Case**: Use Haxe as typed Elixir with minimal portability-first constraints
+
+### 14. [todo-app](./todo-app/)
 **Difficulty**: Advanced  
 **Features**: Full Phoenix LiveView app, Ecto, Playwright E2E  
 **Use Case**: End-to-end reference app (recommended for Phoenix/LiveView)
 
-### 14. [test-integration](./test-integration/)
+### 15. [test-integration](./test-integration/)
 **Difficulty**: Intermediate  
 **Features**: Mix compiler task testing, build pipeline validation  
 **Use Case**: Testing Haxe→Elixir compilation in Mix projects
+
+## Authoring Style Matrix
+
+Reflaxe.Elixir supports two authoring styles on one compiler pipeline. This matrix shows how the examples lean.
+
+| Example | Style | Why |
+| --- | --- | --- |
+| `01-simple-modules` | Portable-first | Core Haxe module patterns with minimal framework coupling. |
+| `02-mix-project` | Portable-first | Mix integration around reusable domain-oriented modules. |
+| `03-phoenix-app` | Elixir-first | Minimal Phoenix app wiring via typed Phoenix extern surfaces. |
+| `04-ecto-migrations` | Elixir-first | Ecto migration APIs are inherently target-native. |
+| `05-heex-templates` | Hybrid | Legacy/balanced HXX migration patterns plus Phoenix templates. |
+| `06-user-management` | Hybrid | Phoenix/Ecto integration plus broader app flow abstractions. |
+| `07-protocols` | Elixir-first | Focused on BEAM protocol/dispatch shapes. |
+| `08-behaviors` | Elixir-first | OTP behavior contracts and callback surfaces. |
+| `09-phoenix-router` | Elixir-first | Typed Phoenix router DSL and controller wiring. |
+| `10-option-patterns` | Portable-first | Domain Result/Option modeling independent of Phoenix runtime. |
+| `11-domain-validation` | Portable-first | Parse-don't-validate domain types that can remain target-agnostic. |
+| `12-phoenix-chat` | Hybrid (intentional) | Haxe feature logic + hand-authored Phoenix scaffold for incremental adoption. |
+| `13-elixir-first-liveview` | Elixir-first | Typed LiveView app flow with strict-mode discipline and boundary decoding. |
+| `todo-app` | Hybrid (intentional) | Full app canary: portable shared domain + extensive Phoenix/Ecto/OTP integration. |
+| `test-integration` | N/A | Compiler/Mix integration verification harness. |
 
 ## 🧩 HXX Mode Policy
 
@@ -117,8 +144,9 @@ mix phx.server
 1. **Start**: 01-simple-modules - Basic compilation
 2. **Learn**: 02-mix-project - Mix integration  
 3. **Build**: 03-phoenix-app - Minimal Phoenix server + typed router
-4. **Extend**: 04-ecto-migrations, 05-heex-templates, 09-phoenix-router
-5. **Master**: 06-user-management - Everything integrated
+4. **Choose style**: 10-option-patterns (portable-first) or 13-elixir-first-liveview (typed Elixir-first)
+5. **Extend**: 04-ecto-migrations, 05-heex-templates, 09-phoenix-router
+6. **Master**: 06-user-management + todo-app
 
 ## 🧪 Running Examples
 

@@ -24,6 +24,7 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 - [Haxe Language Fundamentals](02-user-guide/HAXE_LANGUAGE_FUNDAMENTALS.md) - Core concepts
 - [Imperative→Functional Lowering](02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md) - How mutation/loops become immutable Elixir
 - [Writing Idiomatic Haxe](02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md) - Guidelines for clean, idiomatic Elixir output
+- [Authoring Styles: Portable vs Elixir-First](02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md) - Choose module-level strategy without changing compiler mode
 - [Haxe→Elixir Mappings](02-user-guide/HAXE_ELIXIR_MAPPINGS.md) - Language conversion guide
 - [Elixir Idioms & Hygiene](02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md) - Naming, unused vars, enum shapes, loop semantics
 - [Porting stdlib code (JS→Elixir)](02-user-guide/PORTING_STDLIB_CODE_JS_TO_ELIXIR.md) - Practical portability example

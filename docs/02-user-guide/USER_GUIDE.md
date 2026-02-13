@@ -19,6 +19,21 @@ The Phoenix docs are split into two concrete paths:
 
 Phoenix integration overview: `docs/02-user-guide/PHOENIX_INTEGRATION.md`.
 
+## Choose an Authoring Style
+
+You can build production Phoenix apps with either style today:
+
+- Portable stdlib-first (cross-target domain emphasis)
+- Typed Elixir-first (BEAM/Phoenix extern emphasis)
+
+Both styles compile through the same compiler pipeline. This is a source-authoring choice, not a separate backend mode.
+
+Start here:
+
+- `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md`
+- `docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md`
+- `examples/13-elixir-first-liveview/README.md`
+
 ## Core Concepts
 
 ### You don’t write `{:ok, ...}` in Haxe
