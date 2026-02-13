@@ -113,22 +113,30 @@ extern class ConnTest {
 	/**
 	 * Set request headers.
 	 */
-	public static function put_req_header(conn:Conn, key:String, value:String):Conn;
+	extern public static inline function put_req_header(conn:Conn, key:String, value:String):Conn {
+		return untyped __elixir__('Plug.Conn.put_req_header({0}, {1}, {2})', conn, key, value);
+	}
 
 	/**
 	 * Delete request header.
 	 */
-	public static function delete_req_header(conn:Conn, key:String):Conn;
+	extern public static inline function delete_req_header(conn:Conn, key:String):Conn {
+		return untyped __elixir__('Plug.Conn.delete_req_header({0}, {1})', conn, key);
+	}
 
 	/**
 	 * Set request cookie.
 	 */
-	public static function put_req_cookie(conn:Conn, key:String, value:String):Conn;
+	extern public static inline function put_req_cookie(conn:Conn, key:String, value:String):Conn {
+		return untyped __elixir__('Plug.Conn.put_req_cookie({0}, {1}, {2})', conn, key, value);
+	}
 
 	/**
 	 * Delete request cookie.
 	 */
-	public static function delete_req_cookie(conn:Conn, key:String):Conn;
+	extern public static inline function delete_req_cookie(conn:Conn, key:String):Conn {
+		return untyped __elixir__('Plug.Conn.delete_req_cookie({0}, {1})', conn, key);
+	}
 
 	/**
 	 * Fetch query parameters from the connection.

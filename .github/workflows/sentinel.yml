@@ -135,6 +135,96 @@ jobs:
             /tmp/qa-*.log
             qa-run.log
 
+  todo-app-mix-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: todo_app_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d todo_app_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+            examples/todo-app/package-lock.json
+
+      - name: Setup Erlang/Elixir
+        uses: erlef/setup-beam@v1
+        with:
+          otp-version: '27.2'
+          elixir-version: '1.18.3'
+
+      - name: Cache mix deps
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.mix
+            ~/.hex
+            examples/todo-app/deps
+            examples/todo-app/_build
+          key: ${{ runner.os }}-mix-${{ hashFiles('examples/todo-app/mix.lock') }}
+
+      - name: Cache Haxe toolchain (lix)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/haxe
+          key: ${{ runner.os }}-lix-haxe-4.3.7-${{ hashFiles('.haxerc', 'haxe_libraries/*.hxml', 'package-lock.json', 'examples/todo-app/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-lix-haxe-4.3.7-
+
+      - name: Install root dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install Haxe (pinned via lix)
+        run: |
+          set -euo pipefail
+          npx lix download
+          npx lix download haxe "4.3.7"
+          npx lix use haxe "4.3.7"
+          echo "$(pwd)/node_modules/.bin" >> "$GITHUB_PATH"
+          export PATH="$(pwd)/node_modules/.bin:$PATH"
+          haxe -version
+
+      - name: Download Haxe libraries (lix)
+        run: npx lix download
+
+      - name: Run todo-app mix test (bounded)
+        env:
+          MIX_ENV: test
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGPORT: '5432'
+        run: |
+          set -euo pipefail
+          scripts/with-timeout.sh --secs 1800 --cwd examples/todo-app -- mix test | tee todo-app-mix-test.log
+
+      - name: Upload todo-app mix test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: todo-app-mix-test-logs
+          path: |
+            todo-app-mix-test.log
+
   smoke-phoenix-chat:
     runs-on: ubuntu-latest
     timeout-minutes: 25

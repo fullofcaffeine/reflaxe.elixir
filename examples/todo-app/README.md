@@ -93,87 +93,59 @@ export GITHUB_REDIRECT_URI="http://localhost:4000/auth/github/callback"
 - Client hooks: `examples/todo-app/src_haxe/client/hooks/`
 - Playwright specs: `examples/todo-app/e2e/*.spec.ts`
 
-## QA / E2E
+## Testing Runbook
 
-This repo includes a non-blocking QA sentinel that:
-- compiles Haxe → Elixir
-- runs `mix compile`
-- boots Phoenix in the background
-- probes readiness + runs Playwright
+Full testing policy and test inventory live in:
+- `examples/todo-app/AGENTS.md` (`Testing Guide (Canonical)`)
 
-From repo root:
+Use this section for quick commands.
 
+### QA Sentinel (non-blocking)
+
+Compile + boot + readiness smoke:
 ```bash
-scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --async --deadline 900 --verbose
+scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose
 ```
 
-One-shot local smoke check (uses :4000, disables watchers, ensures DB is migrated):
+Smoke browser suite (CI-aligned):
+```bash
+scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec "e2e/smoke/*.spec.ts" --async --deadline 900 --verbose
+```
+
+Full browser suite:
+```bash
+scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --async --deadline 900 --verbose
+```
+
+One-shot app-local smoke helper (`:4000`):
 ```bash
 scripts/qa-sentinel-local.sh
 ```
 
-Alternative: stable background run without code reloader
+### ExUnit (Haxe-authored tests)
+
+Compile Haxe tests to `test/generated`:
 ```bash
-# Some debugging sessions are more stable with the application tree under :run --no-halt
-if [ -f tmp_run_bg.pid ]; then kill "$(cat tmp_run_bg.pid)" 2>/dev/null || true; rm -f tmp_run_bg.pid; fi
-: > tmp_run_bg.log
-( MIX_ENV=dev nohup mix run --no-halt >> tmp_run_bg.log 2>&1 & echo $! > tmp_run_bg.pid )
-sleep 5
-curl -sS -i http://localhost:4000 | sed -n '1,60p'
+scripts/with-timeout.sh --secs 180 --cwd examples/todo-app -- haxe build-tests.hxml
 ```
 
-Clean stop
+Run ExUnit:
 ```bash
-if [ -f tmp_server_bg.pid ]; then kill "$(cat tmp_server_bg.pid)" 2>/dev/null || true; rm -f tmp_server_bg.pid; fi
-if [ -f tmp_run_bg.pid ]; then kill "$(cat tmp_run_bg.pid)" 2>/dev/null || true; rm -f tmp_run_bg.pid; fi
+scripts/with-timeout.sh --secs 420 --cwd examples/todo-app -- mix test
 ```
 
-Tips
-- Use `mix compile --force` (or `mix haxe.watch`) on source changes; add the curl+logs check to catch assign shape issues, HEEx contract violations, Presence wiring, etc.
-- Prefer fixing transforms/Haxe source over editing generated Elixir. If you patch generated files for triage, follow up with proper fixes in the AST pipeline.
-- If custom Postgrex `types:` config causes local TypeManager errors, either define the types module or remove the option for local debugging.
+### Visual Regression (targeted)
 
-## Visual Regression (Local Pre-Commit Gate)
-
-### Why this exists
-
-`theme.spec.ts` now focuses on behavior (theme toggle + persistence).  
-Visual details (layout, spacing, color treatment) are covered separately with a tiny screenshot-based guard so visual regressions are caught early without turning all e2e tests into style assertions.
-
-### What is covered
-
-`examples/todo-app/e2e/ui_visual.spec.ts` captures only stable, high-signal regions:
-- `todo-controls-row` (search + filters + sort controls)
-- `todo-nav-auth-row` in dark theme (theme/users/sign-in chip row)
-
-Baselines are committed in:
-- `examples/todo-app/e2e/ui_visual.spec.ts-snapshots/`
-
-### How it runs
-
-The repo pre-commit hook runs this visual test as a local blocker only when staged files touch the todo-app UI surface (LiveView UI, client UI code, CSS, or visual test/snapshots).
-
-Manual run:
-
+Run visual spec only:
 ```bash
 scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec e2e/ui_visual.spec.ts --async --deadline 600 --verbose
 ```
 
-### Updating baselines intentionally
-
-1. Start app in background (keep alive):
-
+Update visual baselines intentionally:
 ```bash
 scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --keep-alive --async --deadline 600 --verbose
-```
-
-2. Update screenshots:
-
-```bash
 scripts/with-timeout.sh --secs 240 --cwd examples/todo-app -- env BASE_URL=http://localhost:4001 npx playwright test e2e/ui_visual.spec.ts --update-snapshots
 ```
-
-3. Review diffs and commit only intentional baseline changes.
 
 ## 🏗️ Architecture
 

@@ -25,7 +25,7 @@ import elixir.types.Term;
 class TenancyTest extends TestCase {
 	@:test
 	public function testTodosAreScopedToOrganization():Void {
-		var runId = Std.string(Std.int(Date.now().getTime()));
+		var runId = Std.string(Std.random(1000000000));
 		var orgA = 'org-a-${runId}.example.com';
 		var orgB = 'org-b-${runId}.example.com';
 		var title = 'Tenancy ${runId}';

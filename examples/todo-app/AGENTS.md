@@ -10,19 +10,159 @@
   - `scripts/with-timeout.sh --secs 120 --grace 2 --cwd examples/todo-app -- env BASE_URL=http://localhost:4011 npx playwright test e2e/*.spec.ts`
 - If a step exceeds its cap, treat it as a failure: abort, surface the last logs, and rerun narrowly with diagnostics — never wait indefinitely.
 
-## 👁️ Visual Regression Policy (Todo UI)
+## 🧪 Testing Guide (Canonical)
 
-- Keep behavioral assertions in `e2e/theme.spec.ts` (state toggle + persistence).
-- Keep visual assertions in `e2e/ui_visual.spec.ts` only (small scoped screenshots).
-- Snapshot scope is intentionally narrow and stable:
-  - `data-testid="todo-controls-row"`
-  - `data-testid="todo-nav-auth-row"`
-- Baselines live in `e2e/ui_visual.spec.ts-snapshots/` and are committed.
-- Pre-commit runs the visual spec as a local blocker when staged files touch todo-app UI surface (LiveView UI Haxe, client UI, CSS, visual spec/snapshots).
-- When visuals change intentionally:
-  1) Start keep-alive server with QA sentinel.
-  2) Run `npx playwright test e2e/ui_visual.spec.ts --update-snapshots` (bounded via `scripts/with-timeout.sh`).
-  3) Review image diffs before commit.
+This section is the source of truth for todo-app tests.
+`README.md` should stay short and link here for full policy/details.
+
+### Test Layers and Responsibilities
+
+1. **Haxe-authored ExUnit integration tests** (`src_haxe/test/**`)
+   - Purpose: server-side correctness (ConnTest/LiveViewTest/API behavior) with deterministic assertions.
+   - Build path: Haxe -> `test/generated/**/*.exs` via `build-tests.hxml`.
+   - Runner: `mix test` (alias runs `haxe.compile.tests` first).
+
+2. **Playwright E2E full suite** (`e2e/*.spec.ts`)
+   - Purpose: end-user flows across browser + LiveView boundary.
+   - Scope: CRUD, filters/sort/tags, auth/profile/users/admin/org/tenancy, realtime, and visual/theme behavior.
+
+3. **Playwright smoke suite** (`e2e/smoke/*.spec.ts`)
+   - Purpose: fast CI confidence for the highest-value paths.
+   - Used by CI sentinel lane by default (`.github/workflows/sentinel.yml`).
+
+4. **Visual regression spec** (`e2e/ui_visual.spec.ts`)
+   - Purpose: detect layout/styling regressions in stable, high-signal UI rows.
+   - This is intentionally narrow and complements behavioral specs.
+
+5. **QA sentinel orchestration** (`scripts/qa-sentinel.sh`)
+   - Purpose: non-blocking end-to-end harness (Haxe build, Mix compile, boot, readiness probe, optional Playwright).
+   - Agent-safe mode requires `--async --deadline`.
+
+### Command Runbook (bounded)
+
+- Compile/runtime smoke (no Playwright):
+  - `scripts/qa-sentinel.sh --app examples/todo-app --port 4001 --async --deadline 600 --verbose`
+- Smoke E2E (CI-aligned):
+  - `scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec "e2e/smoke/*.spec.ts" --async --deadline 900 --verbose`
+- Full E2E sweep:
+  - `scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --async --deadline 900 --verbose`
+- Single Playwright spec:
+  - `scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec e2e/<name>.spec.ts --async --deadline 600 --verbose`
+- ExUnit compile + run:
+  - `scripts/with-timeout.sh --secs 180 --cwd examples/todo-app -- haxe build-tests.hxml`
+  - `scripts/with-timeout.sh --secs 420 --cwd examples/todo-app -- mix test`
+- Log peek:
+  - `scripts/qa-logpeek.sh --run-id <RUN_ID> --last 200`
+  - `scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120`
+
+### Visual Regression Policy (`e2e/ui_visual.spec.ts`)
+
+#### What this test checks
+
+- Captures only two stable regions:
+  - `data-testid="todo-controls-row"` (search + filter + sort row)
+  - `data-testid="todo-nav-auth-row"` (theme/users/auth row)
+- Screenshots captured:
+  - `todo-controls-row.light.png`
+  - `todo-controls-row.dark.png`
+  - `todo-nav-auth-row.dark.png`
+- Baselines are committed in:
+  - `e2e/ui_visual.spec.ts-snapshots/`
+
+#### Why this is useful
+
+- Catches spacing/alignment/border/theme regressions early.
+- Keeps style assertions out of behavioral tests.
+- Gives a precise guardrail for UI refactors and CSS/HXX changes.
+
+#### When to run it
+
+- Any change to:
+  - `src_haxe/server/live/**` UI markup
+  - `src_haxe/client/**` UI behavior
+  - `assets/css/**`
+  - visual spec or visual baselines
+- Pre-commit already runs this as a local blocker for those staged-path patterns.
+
+#### How it stays stable
+
+- Fixed viewport (`1365x768`)
+- Waits for LiveView socket connection before snapshot
+- Disables animations/transitions
+- Uses strict diff threshold (`maxDiffPixelRatio: 0.001`)
+- Hides carets and disables animation-driven noise
+
+#### Expected behavior during redesigns
+
+- Yes: intentional design overhauls are expected to fail this spec until baselines are updated and reviewed.
+
+#### Process when visuals are expected to change
+
+1. Start keep-alive server (non-blocking):
+   - `scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --keep-alive --async --deadline 600 --verbose`
+2. Update baselines:
+   - `scripts/with-timeout.sh --secs 240 --cwd examples/todo-app -- env BASE_URL=http://localhost:4001 npx playwright test e2e/ui_visual.spec.ts --update-snapshots`
+3. Re-run visual check:
+   - `scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec e2e/ui_visual.spec.ts --async --deadline 600 --verbose`
+4. Review diffs and commit only intentional snapshot changes.
+5. Stop keep-alive server using the printed PGID (`kill -TERM -$PHX_PGID`) when done.
+
+### ExUnit Inventory (Haxe -> ExUnit)
+
+Source files under `src_haxe/test/**`:
+
+- `src_haxe/test/web/HealthTest.hx`
+- `src_haxe/test/web/AuthFlowTest.hx`
+- `src_haxe/test/web/TodoLiveCrudTest.hx`
+- `src_haxe/test/web/UsersLiveTest.hx`
+- `src_haxe/test/web/UsersApiTest.hx`
+- `src_haxe/test/web/ProfileLiveTest.hx`
+- `src_haxe/test/web/TenancyTest.hx`
+- `src_haxe/test/live/TodoLiveDueDateTest.hx`
+
+Execution wiring:
+
+- Explicit compile list: `build-tests.hxml`
+- Generated output: `test/generated/**/*.exs`
+- Runtime load bridge: `test/test_helper.exs` + `test/compiled_tests.exs`
+
+### Playwright Inventory
+
+#### Smoke specs (`e2e/smoke/*.spec.ts`)
+
+- `e2e/smoke/basic.spec.ts`
+- `e2e/smoke/search.spec.ts`
+- `e2e/smoke/typed-channel.spec.ts`
+- `e2e/smoke/optimistic-toggle.spec.ts`
+- `e2e/smoke/presence_collab.spec.ts`
+
+#### Full E2E specs (`e2e/*.spec.ts`)
+
+- Core todo CRUD + batch:
+  - `e2e/basic.spec.ts`, `e2e/create_todo.spec.ts`, `e2e/edit_todo.spec.ts`, `e2e/delete_todo.spec.ts`, `e2e/toggle_complete.spec.ts`, `e2e/toggle_persist.spec.ts`, `e2e/bulk_complete.spec.ts`, `e2e/bulk_delete_completed.spec.ts`, `e2e/bulk_set_priority.spec.ts`
+- Search/filter/tag/sort:
+  - `e2e/search.spec.ts`, `e2e/search_by_tag.spec.ts`, `e2e/filters.spec.ts`, `e2e/tags.spec.ts`, `e2e/tags_sort.spec.ts`, `e2e/sort.spec.ts`, `e2e/sort_created.spec.ts`, `e2e/sort_due_date.spec.ts`
+- Realtime/collab/channel:
+  - `e2e/live_updates.spec.ts`, `e2e/typed_channel.spec.ts`, `e2e/optimistic-toggle.spec.ts`, `e2e/toggle_optimistic.spec.ts`
+- Auth/profile/users/admin/org/tenancy/audit:
+  - `e2e/auth.spec.ts`, `e2e/profile.spec.ts`, `e2e/users_directory.spec.ts`, `e2e/admin.spec.ts`, `e2e/api_users_isolation.spec.ts`, `e2e/tenancy.spec.ts`, `e2e/org_switch.spec.ts`, `e2e/org_invite.spec.ts`, `e2e/org_last_admin.spec.ts`, `e2e/rbac_role_management.spec.ts`, `e2e/audit_log.spec.ts`, `e2e/invite_email.spec.ts`, `e2e/oauth_mock.spec.ts`
+- Edge and UI:
+  - `e2e/edge_cases.spec.ts`, `e2e/theme.spec.ts`, `e2e/ui_visual.spec.ts`
+
+### Other Test Artifacts
+
+- `test/tests/ReflectAPI/**` is a standalone compile-time/runtime harness for Reflect behavior experiments; it is not part of the default `mix test` / sentinel lanes.
+
+### CI Mapping
+
+- `.github/workflows/sentinel.yml` runs QA sentinel with:
+  - `--playwright --e2e-spec "e2e/smoke/*.spec.ts"`
+- `.github/workflows/sentinel.yml` also runs a dedicated todo-app ExUnit gate:
+  - bounded `mix test` from `examples/todo-app` (includes `haxe.compile.tests` via mix alias).
+- Local pre-commit (`scripts/hooks/pre-commit`) runs:
+  - `e2e/ui_visual.spec.ts` only when staged files touch UI-related paths.
+- `mix test` in todo-app compiles Haxe ExUnit tests first via alias:
+  - `haxe.compile.tests` -> `build-tests.hxml`.
 
 # AI Development Instructions for todo-app
 

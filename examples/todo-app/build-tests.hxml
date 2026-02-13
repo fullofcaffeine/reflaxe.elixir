@@ -29,4 +29,6 @@ web.AuthFlowTest
 web.TodoLiveCrudTest
 web.UsersLiveTest
 web.UsersApiTest
+web.ProfileLiveTest
+web.TenancyTest
 live.TodoLiveDueDateTest
