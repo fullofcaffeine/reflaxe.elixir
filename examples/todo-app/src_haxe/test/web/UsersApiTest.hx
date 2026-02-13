@@ -22,6 +22,10 @@ import StringTools;
  */
 @:exunit
 class UsersApiTest extends TestCase {
+	static inline function uniqueSuffix():String {
+		return Std.string(Std.random(1000000000));
+	}
+
 	static function acceptJson(conn:Conn):Conn {
 		return ConnTest.put_req_header(conn, "accept", "application/json");
 	}
@@ -36,7 +40,7 @@ class UsersApiTest extends TestCase {
 
 	@:test
 	public function testApiUsersRejectsNonAdmin():Void {
-		var domain = "api_users_forbidden.test";
+		var domain = 'api-users-forbidden-${uniqueSuffix()}.test';
 
 		// First user in org becomes admin.
 		var adminConn = ConnTest.build_conn();
@@ -54,8 +58,8 @@ class UsersApiTest extends TestCase {
 
 	@:test
 	public function testApiUsersIsOrganizationScoped():Void {
-		var org1Domain = "api_users_org1.test";
-		var org2Domain = "api_users_org2.test";
+		var org1Domain = 'api-users-org1-${uniqueSuffix()}.test';
+		var org2Domain = 'api-users-org2-${uniqueSuffix()}.test';
 
 		var org1AdminEmail = 'admin@${org1Domain}';
 		var org2UserEmail = 'user@${org2Domain}';
@@ -77,7 +81,7 @@ class UsersApiTest extends TestCase {
 
 	@:test
 	public function testApiUsersCreateDoesNotLeakPasswordHash():Void {
-		var domain = "api_users_create.test";
+		var domain = 'api-users-create-${uniqueSuffix()}.test';
 		var adminEmail = 'admin@${domain}';
 		var createdEmail = 'created@${domain}';
 

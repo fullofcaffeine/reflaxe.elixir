@@ -355,31 +355,31 @@ class TodoLive {
 		} else if (event == EventName.SortTodos) {
 			var sortBy:Null<String> = cast Reflect.field(params, "sort_by");
 			recomputeVisible(SafeAssigns.setSortByAndResort(socket, sortBy != null ? sortBy : "created"));
-			} else if (event == EventName.SearchTodos) {
-				var query:Null<String> = cast Reflect.field(params, "query");
-				var withQuery = SafeAssigns.setSearchQuery(socket, query != null ? query : "");
-				// Ensure tag-selection state composes with search changes.
-				recomputeVisible(SafeAssigns.setSelectedTags(withQuery, socket.assigns.selected_tags));
-			} else if (event == EventName.ToggleTag) {
-				var tagValue:Null<String> = Reflect.field(params, "tag");
-				if (tagValue == null) {
-					socket;
+		} else if (event == EventName.SearchTodos) {
+			var query:Null<String> = cast Reflect.field(params, "query");
+			var withQuery = SafeAssigns.setSearchQuery(socket, query != null ? query : "");
+			// Ensure tag-selection state composes with search changes.
+			recomputeVisible(SafeAssigns.setSelectedTags(withQuery, socket.assigns.selected_tags));
+		} else if (event == EventName.ToggleTag) {
+			var tagValue:Null<String> = Reflect.field(params, "tag");
+			if (tagValue == null) {
+				socket;
+			} else {
+				var tag:String = tagValue;
+				var current = socket.assigns.selected_tags;
+				var updated = if (current.contains(tag)) {
+					current.filter(function(t) return t != tag);
 				} else {
-					var tag:String = tagValue;
-					var current = socket.assigns.selected_tags;
-					var updated = if (current.contains(tag)) {
-						current.filter(function(t) return t != tag);
-					} else {
-						List.insertAt(current, 0, tag);
-					};
-					recomputeVisible(SafeAssigns.setSelectedTags(socket, updated));
-				}
-			} else if (event == EventName.ClearTags) {
-				recomputeVisible(SafeAssigns.setSelectedTags(socket, []));
-			} else if (event == EventName.SetPriority) {
-				var priority:Null<String> = cast Reflect.field(params, "priority");
-				update_todo_priority(extract_id(params), priority != null ? priority : "medium", socket);
-			} else if (event == EventName.ToggleForm) {
+					List.insertAt(current, 0, tag);
+				};
+				recomputeVisible(SafeAssigns.setSelectedTags(socket, updated));
+			}
+		} else if (event == EventName.ClearTags) {
+			recomputeVisible(SafeAssigns.setSelectedTags(socket, []));
+		} else if (event == EventName.SetPriority) {
+			var priority:Null<String> = cast Reflect.field(params, "priority");
+			update_todo_priority(extract_id(params), priority != null ? priority : "medium", socket);
+		} else if (event == EventName.ToggleForm) {
 			recomputeVisible(SafeAssigns.setShowForm(socket, !socket.assigns.show_form));
 		} else if (event == EventName.BulkComplete) {
 			complete_all_todos(socket);
@@ -1203,10 +1203,10 @@ class TodoLive {
 
 	// Typed UI helpers (no inline HEEx ops in HXX)
 	static inline function filterBtnClass(current:shared.TodoTypes.TodoFilter, expect:shared.TodoTypes.TodoFilter):String {
-		return "h-11 px-5 rounded-lg inline-flex items-center justify-center whitespace-nowrap text-sm font-semibold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-			+ (current == expect
-				? " bg-blue-500 border-blue-500 text-white shadow-sm hover:bg-blue-600"
-				: " bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600");
+		return
+			"h-11 px-5 rounded-lg inline-flex items-center justify-center whitespace-nowrap text-sm font-semibold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+			+
+			(current == expect ? " bg-blue-500 border-blue-500 text-white shadow-sm hover:bg-blue-600" : " bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600");
 	}
 
 	static inline function sortSelected(current:shared.TodoTypes.TodoSort, expect:shared.TodoTypes.TodoSort):Bool {
