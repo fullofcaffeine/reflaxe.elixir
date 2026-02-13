@@ -260,8 +260,12 @@ var value = ElixirMap.fetchBang(myMap, key);
 
 This section is about reading generated code, not writing raw Elixir by hand.
 
-When lowering Haxe control flow, generated `case`/`with` patterns may interact with existing locals. In Elixir
-patterns, a plain variable introduces/rebinds a binder, while `^var` matches an existing binding.
+When lowering Haxe control flow, read generated `case`/`with` patterns with this frame:
+
+- **Haxe intent**: compare against an already-bound local (for example, "match the current `status`").
+- **Generated Elixir shape**: use `^var` in the pattern instead of a plain variable binder.
+- **Why this preserves semantics**: plain pattern variables bind/rebind in Elixir; pinning avoids accidental
+  shadowing and keeps the original Haxe comparison intent.
 
 You may see normalizations like:
 

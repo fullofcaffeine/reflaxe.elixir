@@ -15,8 +15,11 @@ If you want the deep dive (with many examples), start here:
 
 ### 1) “Mutation” becomes **rebinding**
 
-Elixir variables are immutable, but can be rebound in a new binding within scope.
-Reflaxe.Elixir lowers Haxe mutation into **a sequence of rebindings** that preserves semantics.
+Read mutation lowering with this compiler-focused frame:
+- **Haxe intent**: mutate a local across sequential steps.
+- **Generated Elixir shape**: a sequence of explicit rebindings.
+- **Why this preserves semantics**: Elixir runtime values are immutable, so rebinding is how the compiler keeps
+  the original step-by-step Haxe behavior.
 
 Implication:
 - The output is still purely functional/immutable at runtime, but reads like idiomatic Elixir rebinding.

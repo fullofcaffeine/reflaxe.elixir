@@ -3305,6 +3305,12 @@ To maintain high-quality, self-explanatory compiler code, the following rules ar
   - Any new public externs in std/phoenix/ecto or vendor surfaces we expose
   - Vendor modifications (with file header comment and changelog entry as per vendor policy)
 - hxdoc must include: WHAT, WHY, HOW, and EXAMPLES (minimal Haxe input → Elixir before/after)
+- Documentation framing rule (applies to `docs/**/*.md` and hxdoc behavior notes): first explain
+  1) Haxe intent
+  2) Generated Elixir shape
+  3) Why this shape is required for semantic preservation
+- Re-state the 3-part framing when context changes (for example class-level vs function-level metadata semantics).
+- Do not write standalone Elixir tutorials in compiler docs unless explicitly requested; keep Elixir notes brief and tied to generated output behavior.
 - Cross-reference the snapshot(s) that cover the change and intended behavior; note limitations/non‑goals
 - Keep transformer files < 2000 LOC; extract helpers when approaching the limit
 - Inline rationale: when inlining values or using inline helpers for performance or WAE safety, explain the reason in hxdoc (e.g., “inline [] to avoid undefined children after hygiene passes”)

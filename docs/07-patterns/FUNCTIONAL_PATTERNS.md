@@ -110,7 +110,12 @@ sum = x + y  # numeric addition
 
 ### 4. Compound Assignment Operators
 
-Elixir variables are immutable, so compound assignments become rebinding.
+Use this compiler-focused reading:
+
+- **Haxe intent**: update a variable in sequence (`x += y`) while keeping later reads consistent.
+- **Generated Elixir shape**: explicit rebinding (`x = x + y`).
+- **Why this preserves semantics**: Elixir values are immutable, so rebinding is the way to model Haxe-style
+  mutation without changing execution meaning.
 
 #### Transformations
 | Haxe | Elixir |
@@ -128,9 +133,11 @@ Elixir variables are immutable, so compound assignments become rebinding.
 
 #### Rebinding and pattern pinning
 
-In generated Elixir, Haxe mutation is represented as rebinding (`x = x + 1`), not in-place updates.
+For generated `case`/`with` patterns, use the same frame:
 
-For generated `case`/`with` patterns, the compiler may pin existing bindings to avoid accidental shadowing:
+- **Haxe intent**: compare against an existing local.
+- **Generated Elixir shape**: pin with `^existing` inside pattern positions.
+- **Why this preserves semantics**: pattern variables would otherwise bind/rebind and can shadow previous values.
 
 ```elixir
 # Before normalization (shadow-prone)
