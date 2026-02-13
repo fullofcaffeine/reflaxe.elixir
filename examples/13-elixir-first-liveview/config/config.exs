@@ -14,5 +14,6 @@ config :logger, :console,
   metadata: [:request_id]
 
 config :phoenix, :json_library, Jason
+config :swoosh, :api_client, false
 
 import_config "#{config_env()}.exs"

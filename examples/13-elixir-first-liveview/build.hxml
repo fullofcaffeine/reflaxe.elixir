@@ -16,4 +16,7 @@
 ElixirFirstLiveview
 live.SearchLive
 live.SearchDomain
+server.infrastructure.CoreComponents
+server.infrastructure.Gettext
+server.infrastructure.Layouts
 live.SearchDomainTest
