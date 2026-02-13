@@ -85,7 +85,10 @@ jobs:
       - name: Install Haxe formatter
         run: |
           set -euo pipefail
-          haxelib install formatter --quiet || true
+          if ! haxelib run formatter --help >/dev/null 2>&1; then
+            haxelib install formatter --quiet || haxelib install formatter
+          fi
+          haxelib run formatter --help >/dev/null
       - name: Run guardrails
         run: npm run ci:guards
 
