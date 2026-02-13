@@ -1,0 +1,94 @@
+# Ecto API Reference (User-Facing)
+
+This page documents the primary Ecto-facing APIs and metadata used when compiling Haxe to idiomatic Ecto modules.
+
+## Primary Modules
+
+- `ecto.Schema`
+- `ecto.Changeset`
+- `ecto.Repository`
+- `ecto.Query` and `ecto.TypedQuery`
+- `ecto.Migration` and `ecto.Migrator`
+- `ecto.DatabaseAdapter`
+- `ecto.test.Sandbox`
+
+## Schema and Field Metadata
+
+Core schema tags:
+
+- `@:schema("table_name")`
+- `@:field`
+- `@:primary_key`
+- `@:timestamps`
+- `@:virtual`
+- associations such as `@:has_many`
+
+```haxe
+@:native("TodoApp.User")
+@:schema("users")
+@:timestamps
+class User {
+  @:field @:primary_key public var id:Int;
+  @:field public var email:String;
+  @:virtual @:field public var password:String;
+}
+```
+
+## Changeset Metadata
+
+Core changeset tags:
+
+- `@:changeset(...)`
+- `@:validate_required([...])`
+- `@:validate_format(...)`
+- `@:validate_length(...)`
+- `@:validate_number(...)`
+
+These map to the standard Ecto validation pipeline and should be used instead of ad-hoc runtime string patching.
+
+## Repository Surface
+
+`@:repo({...})` configures a repository module with typed adapter options.
+
+```haxe
+@:native("TodoApp.Repo")
+@:repo({adapter: Postgres, json: Jason, extensions: [], poolSize: 10})
+extern class Repo {}
+```
+
+`ecto.Repository` and typed query externs provide strongly-typed query entrypoints while still emitting standard Ecto usage.
+
+## Query Surface
+
+Recommended user-facing patterns:
+
+- Prefer typed query externs (`ecto.TypedQuery`) and typed lambdas/macros
+- Keep table/schema references typed wherever possible
+- Use `ROUTER_DSL.md`-style typed refs philosophy analogously for query callsites: avoid stringly-typed schema identifiers
+
+`@:query` currently appears as a reserved/forward-looking marker in examples; do not treat it as a stable codegen contract unless explicitly documented for your version.
+
+## Migration Surface
+
+`@:migration` marks migration classes for migration-specific processing.
+
+- In `.exs` migration mode (`-D ecto_migrations_exs`), only the documented supported DSL subset is guaranteed.
+- For unsupported advanced migration shapes, use hand-written Elixir migrations.
+
+## Test Surface
+
+- `ecto.test.Sandbox` provides typed test transaction/sandbox controls.
+- Pair sandbox setup with ExUnit metadata (`@:exunit`, `@:setup`, `@:teardown`) for deterministic DB tests.
+
+## Common Failure Modes
+
+- Missing FK field expectations in associations (`@:belongs_to`, `@:has_many`) when association validation is enabled
+- Overreliance on dynamic/untyped query snippets when typed query APIs exist
+- Assuming all migration DSL shapes are rewritten in `.exs` mode
+- Using generated runtime outputs as source-of-truth instead of changing `std/_std/*.hx` or compiler pipeline sources
+
+## Related Docs
+
+- `docs/04-api-reference/ANNOTATIONS.md`
+- `docs/04-api-reference/STDLIB_SUPPORT_MATRIX.md`
+- `docs/07-patterns/ECTO_INTEGRATION_PATTERNS.md`

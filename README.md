@@ -428,8 +428,12 @@ Start at **[docs/README.md](docs/README.md)** for the curated documentation inde
 - **[Haxe→Elixir Mappings](docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md)** ✨ - Full mapping reference
 
 ### Reference
+- **[API Index](docs/04-api-reference/API_INDEX.md)** - User-facing API/tag coverage map
 - **[Source Mapping Guide](docs/04-api-reference/SOURCE_MAPPING.md)** 🎯 - Complete guide to our pioneering source mapping feature
 - **[Annotations](docs/04-api-reference/ANNOTATIONS.md)** - Complete annotation reference
+- **[Phoenix API Reference](docs/04-api-reference/PHOENIX_API_REFERENCE.md)** - LiveView/Component/Channel/Presence APIs
+- **[Ecto API Reference](docs/04-api-reference/ECTO_API_REFERENCE.md)** - Schema/Changeset/Repo/Query/Migration APIs
+- **[Elixir Runtime API Reference](docs/04-api-reference/ELIXIR_RUNTIME_API_REFERENCE.md)** - Core runtime and OTP extern surfaces
 - **[Troubleshooting](docs/06-guides/TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Examples](examples/README.md)** - Working code examples (index)
 

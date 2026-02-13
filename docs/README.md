@@ -46,7 +46,11 @@ Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilatio
 
 ### 📋 API Reference
 **[04-api-reference/](04-api-reference/)** - Technical reference documentation
+- [API Index](04-api-reference/API_INDEX.md) - User-facing API/tag index and coverage map
 - [Annotations](04-api-reference/ANNOTATIONS.md) - @:router, @:liveview, @:schema reference
+- [Phoenix API Reference](04-api-reference/PHOENIX_API_REFERENCE.md) - LiveView/Component/Channel/Presence user APIs
+- [Ecto API Reference](04-api-reference/ECTO_API_REFERENCE.md) - Schema/Changeset/Repo/Query/Migration user APIs
+- [Elixir Runtime API Reference](04-api-reference/ELIXIR_RUNTIME_API_REFERENCE.md) - Core runtime and OTP extern surfaces
 - [Atom Type](04-api-reference/ATOM_TYPE.md) - Type-safe atoms for Elixir APIs
 - [Standard Library](04-api-reference/STANDARD_LIBRARY_HANDLING.md) - Stdlib strategy + guidance
 - [Stdlib Support Matrix](04-api-reference/STDLIB_SUPPORT_MATRIX.md) - What’s overridden vs upstream vs missing

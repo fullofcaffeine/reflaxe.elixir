@@ -1465,6 +1465,255 @@ class TodoTest extends TestCase {
 }
 ```
 
+## Additional User-Facing Metadata
+
+The sections above cover the core Phoenix/Ecto/OTP annotations. This section closes the remaining user-facing metadata used across examples and stdlib surfaces, especially tags that are context-sensitive or commonly confused.
+
+### @:component - Class Scope vs Function Scope
+
+`@:component` has two distinct roles:
+
+- **Class-level `@:component`** marks a module as a Phoenix component module.
+  - The compiler keeps/emits the module even when direct callsites are not obvious to Haxe DCE.
+  - Component-specific template/assigns handling is enabled for this module context.
+- **Function-level `@:component`** marks specific static functions as discoverable component entrypoints.
+  - These functions participate in dot-component resolution (`<.name ...>`) and typed props/slots validation.
+
+```haxe
+@:native("MyAppWeb.CoreComponents")
+@:component
+class CoreComponents {
+  @:component
+  public static function button(assigns:ButtonAssigns):String {
+    return <button class={@class}>{@inner_content}</button>;
+  }
+}
+```
+
+Why both are needed:
+
+- The class tag answers: "is this a component module?"
+- The function tag answers: "which functions are component entrypoints?"
+
+If strict component checks are enabled (`-D hxx_strict_components`), missing/ambiguous function-level component definitions become compile errors.
+
+### @:channel - Phoenix Channel Module
+
+Marks a module as a Phoenix channel callback module and enables channel-oriented transformation behavior.
+
+```haxe
+@:native("MyAppWeb.PingChannel")
+@:channel
+class PingChannel {
+  public static function join(topic:String, payload:Term, socket:Term):JoinResult {
+    return Ok(socket);
+  }
+}
+```
+
+### @:phoenixWebModule - `AppWeb` Helper Module
+
+Generates the Phoenix Web helper module (for `use AppWeb, :controller | :html | :live_view | ...`).
+
+```haxe
+@:native("MyAppWeb")
+@:phoenixWebModule
+class MyAppWeb {}
+```
+
+Use this when you need typed ownership of the app web namespace module itself.
+
+### @:native - Scope Semantics
+
+`@:native` is valid at multiple scopes and meaning changes by scope:
+
+- **Class-level**: pins generated module name.
+- **Function-level**: pins emitted function name (for callbacks/functions with exact naming like `handle_event`).
+
+```haxe
+@:native("MyAppWeb.UserLive")
+@:liveview
+class UserLive {
+  @:native("handle_event")
+  public static function handleEvent(event:String, params:Term, socket:Socket<UserAssigns>):HandleEventResult<UserAssigns> {
+    return NoReply(socket);
+  }
+}
+```
+
+Prefer `@:native` for compatibility with existing Elixir APIs; avoid using it to mask naming-model bugs in transforms.
+
+### @:module - Module Macro Convenience
+
+Used with the module macro pipeline to reduce boilerplate for utility-style static modules.
+
+```haxe
+@:module
+class StringUtils {
+  public static function slugify(input:String):String {
+    return input.toLowerCase();
+  }
+}
+```
+
+### @:build - Compile-Time Macro Hook
+
+Runs a build macro for the annotated type.
+
+Common Phoenix router pattern:
+
+```haxe
+@:router
+@:build(reflaxe.elixir.macros.RouterBuildMacro.generateRoutes())
+@:routes([...])
+class AppRouter {}
+```
+
+Use only for deterministic codegen/setup tasks.
+
+### @:field / @:primary_key / @:timestamps / @:virtual
+
+Field-level schema shaping metadata:
+
+- `@:field`: include property in schema field emission.
+- `@:primary_key`: mark field as PK.
+- `@:timestamps`: enable timestamp fields.
+- `@:virtual`: non-persisted schema field (e.g., password confirmation).
+
+```haxe
+@:schema("users")
+class User {
+  @:field @:primary_key public var id:Int;
+  @:field public var email:String;
+  @:virtual @:field public var password:String;
+}
+```
+
+### Validation Metadata (Changeset)
+
+These tags are usually declared inside a `@:changeset` module/class:
+
+- `@:validate_required([...])`
+- `@:validate_format(field, pattern)`
+- `@:validate_length(field, opts)`
+- `@:validate_number(field, opts)`
+
+They map to standard Ecto validation pipeline calls.
+
+### @:slot - Component Slot Contract
+
+Marks component assigns fields as slot contracts for typed slot validation:
+
+```haxe
+typedef CardAssigns = {
+  var title:String;
+  @:slot @:optional var action:Slot<CardActionAssigns>;
+  @:slot var inner_block:Slot<Term, CardLet>;
+}
+```
+
+### @:hxx_no_inline_markup - Disable Inline Markup Rewrite
+
+Opt out of inline-markup rewrite for a module:
+
+```haxe
+@:hxx_no_inline_markup
+class LegacyTemplateHelpers {}
+```
+
+Use when migrating legacy template strings or when explicit control of rewrite entrypoints is needed.
+
+### @:phxHookNames - Hook Registry for Typed `phx-hook`
+
+Registers compile-time hook names (typically enum abstract constants) used by strict hook validation.
+
+```haxe
+@:phxHookNames
+enum abstract HookName(String) from String to String {
+  var AutoFocus = "AutoFocus";
+  var CopyToClipboard = "CopyToClipboard";
+}
+```
+
+### @:supervisor - OTP Supervisor Module
+
+Marks a module as a supervisor surface so child-spec normalization and supervisor-oriented behavior can be applied.
+
+### @:callback / @:optional_callback
+
+Used inside `@:behaviour` contracts:
+
+- `@:callback`: required callback.
+- `@:optional_callback`: optional callback.
+
+### @:use vs @:using
+
+- `@:using(...)` is Haxe metadata for static extension attachment and is documented above.
+- `@:use(...)` appears in behavior-oriented examples as a contract/intention marker (for "this module uses this behavior").
+  - Treat `@:use` as an example-level convention unless a specific library macro consumes it in your build.
+
+### @:gettext
+
+Marks a module as the Gettext integration surface for the app web namespace.
+
+### @:keep
+
+Haxe DCE retention metadata. Use when declarations are referenced indirectly (framework callbacks, generated route wiring, reflective/macro paths) and might otherwise be removed.
+
+Why this matters in Phoenix/OTP code:
+
+- Phoenix and OTP often resolve callbacks/modules by convention or runtime wiring (`Application.start/2`, `ErrorHTML`, `ErrorJSON`, route/endpoint wiring).
+- Those paths are not always visible as direct Haxe callsites, so Haxe DCE can incorrectly prune them without `@:keep`.
+
+Typical pattern:
+
+```haxe
+@:native("MyApp.Application")
+@:application
+class MyApp {
+  @:keep
+  public static function start(type:ApplicationStartType, args:ApplicationArgs):ApplicationResult {
+    // Called by OTP runtime callback dispatch, not by direct Haxe call.
+    ...
+  }
+}
+```
+
+### @:from / @:to / @:overload / @:private / @:optional
+
+Frequently-used Haxe metadata in user-facing extern/abstraction layers:
+
+- `@:from`: implicit cast into type/abstract.
+- `@:to`: implicit cast from type/abstract.
+- `@:overload`: additional typing signatures for one emitted implementation.
+- `@:private`: hides helper members from public API surface.
+- `@:optional`: optional field/member in typedef/config contracts.
+
+### @:presenceTopic
+
+Optional presence helper metadata to provide a default topic for presence operations and reduce repeated string literals.
+
+### @:query (Status)
+
+`@:query` appears in examples as a forward-looking marker/commentary for typed query DSL direction.
+
+- **Current status**: reserved/experimental in example narrative.
+- Do not rely on `@:query` as a stable codegen contract unless your version explicitly documents implementation support.
+
+### Router Metadata Cross-Reference
+
+`@:routes` and `@:route` are both supported and documented in detail in `docs/04-api-reference/ROUTER_DSL.md`.
+
+- Prefer `@:routes` for typed modern router declarations.
+- Use `@:route` for manual/backward-compatible route metadata patterns (function-by-function route declarations, often with string controller/action literals).
+
+### Related Reference Pages
+
+- `docs/04-api-reference/ROUTER_DSL.md`
+- `docs/04-api-reference/FEATURE_FLAGS.md`
+- `docs/04-api-reference/HAXE_MACRO_APIS.md`
+- `docs/04-api-reference/API_INDEX.md`
+
 ## Usage Guidelines
 
 1. **One primary annotation per class** - Choose the main purpose of your class
