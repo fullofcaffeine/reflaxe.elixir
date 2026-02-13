@@ -15,9 +15,9 @@ import elixir.otp.Supervisor.ChildSpecFormat;
 // @:appName: sets the OTP app identifier used for generated module/config wiring.
 @:appName("ElixirFirstLiveview")
 class ElixirFirstLiveview {
-		// @:keep: required because OTP calls Application.start/2 by convention at runtime, so Haxe DCE cannot see a direct Haxe callsite.
-		@:keep
-		public static function start(type:ApplicationStartType, args:ApplicationArgs):ApplicationResult {
+	// @:keep: required because OTP calls Application.start/2 by convention at runtime, so Haxe DCE cannot see a direct Haxe callsite.
+	@:keep
+	public static function start(type:ApplicationStartType, args:ApplicationArgs):ApplicationResult {
 		var children:Array<ChildSpecFormat> = [
 			TypeSafeChildSpec.pubSub("ElixirFirstLiveview.PubSub"),
 			TypeSafeChildSpec.endpoint("ElixirFirstLiveviewWeb.Endpoint")

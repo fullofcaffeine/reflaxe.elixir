@@ -56,6 +56,7 @@ typedef TodoChangesetParams = {
 }
 
 // @:native: pins emitted naming to a specific Elixir symbol/module.
+
 @:native("TodoApp.Todo")
 // @:schema: marks this class as an Ecto schema and declares its table.
 @:schema("todos")

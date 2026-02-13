@@ -182,7 +182,7 @@ class UserGenServer {
 	}
 
 	public static function main():Void {
-// @:genserver: marks this module as a GenServer-style OTP process implementation.
+		// @:genserver: marks this module as a GenServer-style OTP process implementation.
 		trace("UserGenServer with @:genserver annotation compiled successfully!");
 	}
 }

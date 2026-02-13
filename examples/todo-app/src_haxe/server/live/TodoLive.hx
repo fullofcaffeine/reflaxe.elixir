@@ -76,6 +76,7 @@ enum ActivityKind {
  * LiveView component for todo management with real-time updates
  */
 // @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
+
 @:native("TodoAppWeb.TodoLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview
@@ -337,6 +338,7 @@ class TodoLive {
 	 * Each event carries its own typed parameters.
 	 */
 	// @:native (function): pins the emitted function/callback name to match an exact Elixir API.
+
 	@:native("handle_event")
 	public static function handle_event(event:String, params:Term, socket:Socket<TodoLiveAssigns>):HandleEventResult<TodoLiveAssigns> {
 		var nextSocket:Socket<TodoLiveAssigns> = if (event == EventName.CreateTodo) {

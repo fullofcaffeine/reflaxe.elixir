@@ -55,6 +55,7 @@ typedef UrlValidation = {
  * used throughout a Mix project for data integrity and security.
  */
 // @:module: applies module-macro conveniences so static members emit as idiomatic module functions.
+
 @:module
 class ValidationHelper {
 	/**
@@ -224,8 +225,8 @@ class ValidationHelper {
 	}
 
 	// Private helper functions
-
 	// @:private: keeps this helper internal to the module API surface.
+
 	@:private
 	static function isValidEmailFormat(email:String):Bool {
 		// Basic email regex pattern

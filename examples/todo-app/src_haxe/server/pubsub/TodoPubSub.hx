@@ -16,6 +16,7 @@ import Type;
  * Converts typed Haxe enums to Phoenix.PubSub calls.
  */
 // @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
+
 @:native("TodoApp.TodoPubSub")
 class TodoPubSub {
 	/**
@@ -107,6 +108,7 @@ class TodoPubSub {
 	}
 
 	// @:keep: these enum/string codec helpers are used from indirect PubSub serialization paths, so DCE should not prune them.
+
 	@:keep
 	public static function bulkActionToString(action:BulkOperationType):String {
 		var params = Type.enumParameters(action);

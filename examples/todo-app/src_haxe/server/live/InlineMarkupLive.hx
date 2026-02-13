@@ -33,6 +33,7 @@ typedef InlineMarkupLiveAssigns = {
  *   return <div class="card"><h1>${assigns.message}</h1></div>;
  */
 // @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
+
 @:native("TodoAppWeb.InlineMarkupLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview

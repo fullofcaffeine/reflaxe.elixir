@@ -62,6 +62,7 @@ private typedef ErrorAssigns = {
  * Demonstrates real-time user CRUD operations
  */
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
+
 @:liveview
 // @:hxx_mode: sets template authoring strictness mode for HXX/inline markup in this scope.
 @:hxx_mode("tsx")
@@ -362,7 +363,7 @@ class UserLive {
 	}
 
 	public static function main():Void {
-// @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
+		// @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 		trace("UserLive with @:liveview annotation compiled successfully!");
 	}
 }

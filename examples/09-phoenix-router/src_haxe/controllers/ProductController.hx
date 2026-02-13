@@ -19,6 +19,7 @@ class ProductController {
 	}
 
 	// @:route: attaches route metadata to this action/function (legacy/manual route style).
+
 	@:route({method: "GET", path: "/products/:product_id/reviews", as: "product_reviews"})
 	public static function reviews(product_id:Int):String {
 		return "Reviews for product " + product_id;

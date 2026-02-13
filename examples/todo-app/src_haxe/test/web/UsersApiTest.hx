@@ -32,6 +32,7 @@ class UsersApiTest extends TestCase {
 	}
 
 	// @:test: marks this function as an executable ExUnit test case.
+
 	@:test
 	public function testApiUsersRequiresAuth():Void {
 		var conn = ConnTest.build_conn();

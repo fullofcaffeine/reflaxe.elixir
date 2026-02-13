@@ -25,6 +25,7 @@ typedef SearchAssigns = {
  * Typed Elixir-first LiveView example.
  */
 // @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
+
 @:native("ElixirFirstLiveviewWeb.SearchLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview

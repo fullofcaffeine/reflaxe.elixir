@@ -78,6 +78,7 @@ typedef UsersLiveRenderAssigns = {
  *   precomputing a row view model (UserRowView) for the template.
  */
 // @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
+
 @:native("TodoAppWeb.UsersLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview

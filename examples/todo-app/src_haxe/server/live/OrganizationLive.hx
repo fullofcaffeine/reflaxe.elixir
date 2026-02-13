@@ -100,6 +100,7 @@ typedef OrganizationLiveRenderAssigns = {
  * - Switching updates `users.organization_id` (and demo role) then redirects back to `/todos`.
  */
 // @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
+
 @:native("TodoAppWeb.OrganizationLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview

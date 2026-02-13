@@ -28,6 +28,7 @@ typedef PresenceMeta = {
 }
 
 // @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
+
 @:native("TodoAppWeb.Presence")
 // @:presence: emits a Phoenix.Presence module for realtime presence tracking.
 @:presence

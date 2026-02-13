@@ -79,6 +79,7 @@ typedef AuditLogLiveRenderAssigns = {
  * - Filter form uses `phx-change` to reload rows by action/entity/actor_id.
  */
 // @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
+
 @:native("TodoAppWeb.AuditLogLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview

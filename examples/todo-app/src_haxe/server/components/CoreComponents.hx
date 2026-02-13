@@ -137,6 +137,7 @@ typedef LabelAssigns = {
  * Phoenix.Component functions.
  */
 // @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
+
 @:native("TodoAppWeb.CoreComponents")
 // @:component (class): marks this module as a Phoenix component container so component functions are preserved and discoverable.
 @:component
@@ -158,6 +159,7 @@ class CoreComponents {
 	 * Renders a modal dialog
 	 */
 	// @:component (function): marks this function as a typed dot-component entrypoint (props/slots can be validated).
+
 	@:component
 	public static function modal(assigns:ModalAssigns):String {
 		return (<div id=${assigns.id} class="modal" phx-show=${assigns.show}>

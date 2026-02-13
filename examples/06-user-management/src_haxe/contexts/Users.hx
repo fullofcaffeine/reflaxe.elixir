@@ -7,6 +7,7 @@ package contexts;
 import elixir.types.Term;
 
 // @:schema: marks this class as an Ecto schema and declares its table.
+
 @:schema("users")
 class User {
 	// @:primary_key: marks this schema field as the primary key.
@@ -49,6 +50,7 @@ class Post {
 }
 
 // @:changeset: configures generated Ecto changeset casting/validation behavior.
+
 @:changeset
 class UserChangeset {
 	// @:validate_required: adds required-field validation to the generated changeset pipeline.

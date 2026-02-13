@@ -9,6 +9,7 @@ import haxe.functional.Result;
  * numerical processing within a Mix project context.
  */
 // @:module: applies module-macro conveniences so static members emit as idiomatic module functions.
+
 @:module
 class MathHelper {
 	/**

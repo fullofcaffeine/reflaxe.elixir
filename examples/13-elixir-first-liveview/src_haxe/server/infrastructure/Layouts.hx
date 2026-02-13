@@ -11,6 +11,7 @@ typedef LayoutTemplateAssigns = {
  * Minimal layouts for Phoenix controller/live rendering.
  */
 // @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
+
 @:native("ElixirFirstLiveviewWeb.Layouts")
 // @:component (class): marks this module as a Phoenix component container so component functions are preserved and discoverable.
 @:component

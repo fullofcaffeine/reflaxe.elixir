@@ -11,6 +11,7 @@ using StringTools;
  * Haxe modules integrate seamlessly with Mix project structure.
  */
 // @:module: applies module-macro conveniences so static members emit as idiomatic module functions.
+
 @:module
 class UserService {
 	/**
@@ -100,8 +101,8 @@ class UserService {
 	}
 
 	// Private helper functions
-
 	// @:private: keeps this helper internal to the module API surface.
+
 	@:private
 	static function isValidUserData(data:NewUserInput):Bool {
 		if (data == null)

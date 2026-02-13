@@ -20,6 +20,7 @@ typedef OrganizationParams = {
  * - `name` is the human-friendly label.
  */
 // @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
+
 @:native("TodoApp.Organization")
 // @:schema: marks this class as an Ecto schema and declares its table.
 @:schema("organizations")

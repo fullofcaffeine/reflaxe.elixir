@@ -57,6 +57,7 @@ typedef AdminLiveRenderAssigns = {
  * - Loads and summarizes users for a small dashboard view model.
  */
 // @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
+
 @:native("TodoAppWeb.AdminLive")
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview

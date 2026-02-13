@@ -20,9 +20,9 @@ class PhoenixHaxeExample {
 	/**
 	 * Start the application supervision tree.
 	 */
-		// @:keep: required because OTP invokes Application.start/2 via runtime callback dispatch, not direct Haxe callsites.
-		@:keep
-		public static function start(type:ApplicationStartType, args:ApplicationArgs):ApplicationResult {
+	// @:keep: required because OTP invokes Application.start/2 via runtime callback dispatch, not direct Haxe callsites.
+	@:keep
+	public static function start(type:ApplicationStartType, args:ApplicationArgs):ApplicationResult {
 		var children:Array<ChildSpecFormat> = [
 			TypeSafeChildSpec.pubSub("PhoenixHaxeExample.PubSub"),
 			TypeSafeChildSpec.endpoint("PhoenixHaxeExampleWeb.Endpoint")

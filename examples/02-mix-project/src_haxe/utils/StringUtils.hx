@@ -17,6 +17,7 @@ private typedef EmailProcessResult = {
  * across different parts of a Mix project.
  */
 // @:module: applies module-macro conveniences so static members emit as idiomatic module functions.
+
 @:module
 class StringUtils {
 	/**

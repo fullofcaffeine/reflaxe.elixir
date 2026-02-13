@@ -165,9 +165,7 @@ class AnnotationTransforms {
 				value: liveConnectInfo
 			}
 		]));
-		var socketOptionEntries:Array<{key:String, value:ElixirAST}> = [
-			{key: "websocket", value: websocketConfig}
-		];
+		var socketOptionEntries:Array<{key:String, value:ElixirAST}> = [{key: "websocket", value: websocketConfig}];
 
 		var liveLongpollEnabled = metadata == null || metadata.endpointLiveLongpoll != false;
 		if (liveLongpollEnabled) {

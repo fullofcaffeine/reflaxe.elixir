@@ -4078,21 +4078,15 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 		// Removed API: legacy standalone endpoint longpoll metadata is no longer supported.
 		// Users must configure this via @:endpoint({liveLongpoll: ...}).
-		var legacyEntries = []
-			.concat(extractOne(":endpointLiveLongpoll"))
+		var legacyEntries = [].concat(extractOne(":endpointLiveLongpoll"))
 			.concat(extractOne("endpointLiveLongpoll"))
 			.concat(extractOne(":endpointLongpoll"))
 			.concat(extractOne("endpointLongpoll"));
 		if (legacyEntries.length > 0) {
-			Context.error(
-				"@:endpointLiveLongpoll/@:endpointLongpoll was removed. Use @:endpoint({liveLongpoll: true|false}) instead.",
-				legacyEntries[0].pos
-			);
+			Context.error("@:endpointLiveLongpoll/@:endpointLongpoll was removed. Use @:endpoint({liveLongpoll: true|false}) instead.", legacyEntries[0].pos);
 		}
 
-		var endpointEntries = []
-			.concat(extractOne(":endpoint"))
-			.concat(extractOne("endpoint"));
+		var endpointEntries = [].concat(extractOne(":endpoint")).concat(extractOne("endpoint"));
 		if (endpointEntries.length == 0) {
 			return null;
 		}
