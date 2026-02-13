@@ -156,17 +156,33 @@ class AnnotationTransforms {
 		statements.push(makeAST(EModuleAttribute("session_options", sessionOptions)));
 
 		// socket "/live", Phoenix.LiveView.Socket configuration
-		var socketOptions = makeAST(EKeywordList([
+		// Default: websocket + longpoll (Phoenix-friendly transport fallback behavior).
+		// Users can opt out with @:endpoint({liveLongpoll: false}).
+		var liveConnectInfo = makeAST(EKeywordList([{key: "session", value: makeAST(EVar("@session_options"))}]));
+		var websocketConfig = makeAST(EKeywordList([
 			{
-				key: "websocket",
-				value: makeAST(EKeywordList([
-					{
-						key: "connect_info",
-						value: makeAST(EKeywordList([{key: "session", value: makeAST(EVar("@session_options"))}]))
-					}
-				]))
+				key: "connect_info",
+				value: liveConnectInfo
 			}
 		]));
+		var socketOptionEntries:Array<{key:String, value:ElixirAST}> = [
+			{key: "websocket", value: websocketConfig}
+		];
+
+		var liveLongpollEnabled = metadata == null || metadata.endpointLiveLongpoll != false;
+		if (liveLongpollEnabled) {
+			var longpollConfig = makeAST(EKeywordList([
+				{
+					key: "connect_info",
+					value: liveConnectInfo
+				}
+			]));
+			socketOptionEntries.push({key: "longpoll", value: longpollConfig});
+		} else {
+			socketOptionEntries.push({key: "longpoll", value: makeAST(EBoolean(false))});
+		}
+
+		var socketOptions = makeAST(EKeywordList(socketOptionEntries));
 		statements.push(makeAST(ECall(null, "socket", [
 			makeAST(EString("/live")),
 			makeAST(EVar("Phoenix.LiveView.Socket")),

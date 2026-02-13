@@ -1,0 +1,23 @@
+# Haxe→JavaScript compilation for Phoenix LiveView client boot (Genes)
+
+-cp src_haxe/client
+-cp src_haxe
+
+-lib genes
+-lib phoenix_js
+
+-D js-es=6
+--macro genes.Generator.use()
+--macro addMetadata('@:genes.disableNativeAccessors', 'haxe.Exception')
+
+# Use temp output + promotion to avoid watch races while esbuild watches imports.
+-js assets/js/_hx_app_tmp.js
+-D js-unflatten
+--dce=full
+
+-D real-position
+-D js-source-map
+
+--macro exclude('server')
+
+-main client.Boot

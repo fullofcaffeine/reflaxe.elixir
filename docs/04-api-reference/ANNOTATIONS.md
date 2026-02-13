@@ -45,6 +45,24 @@ Adds one or more `socket/3` mounts to a `@:endpoint` module (for example, to mou
 class Endpoint {}
 ```
 
+### @:endpoint({...}) - Endpoint Options
+
+Configures endpoint-level generation options for a `@:endpoint` module.
+
+Current options:
+
+- `liveLongpoll: Bool` (default: `true`)
+  - Controls whether the generated LiveView socket mount at `"/live"` emits longpoll transport config.
+  - Default output is Phoenix-faithful and includes both websocket and longpoll for LiveView.
+  - Set `false` to emit `longpoll: false` for `"/live"`.
+
+**Usage**:
+```haxe
+@:native("MyAppWeb.Endpoint")
+@:endpoint({liveLongpoll: false})
+class Endpoint {}
+```
+
 ### @:controller - Phoenix Controller
 
 Marks a class as a Phoenix controller for handling HTTP requests.

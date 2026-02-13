@@ -405,7 +405,10 @@ class ProjectGenerator {
 				// Phoenix/LiveView: apply the canonical Phoenix client scaffold via Mix tooling.
 				if (options.type == "phoenix" || options.type == "liveview") {
 					Sys.println("  Applying Phoenix client scaffold...");
-					var args = options.verbose ? ["haxe.phoenix.scaffold", "--verbose"] : ["haxe.phoenix.scaffold"];
+					var args = ["haxe.phoenix.scaffold", "--client-mode", phoenixClientMode(options), "--yes"];
+					if (options.verbose) {
+						args.push("--verbose");
+					}
 					var rc = Sys.command("mix", args);
 					if (rc != 0) {
 						throw 'Failed to apply Phoenix client scaffold (exit $rc).';
@@ -1338,11 +1341,25 @@ class Main {
 
 		return "1.0.0";
 	}
+
+	function phoenixClientMode(options:GeneratorOptions):String {
+		var mode = options.clientMode;
+		if (mode == null || mode == "") {
+			return "genes";
+		}
+		var normalized = mode.toLowerCase();
+		return switch (normalized) {
+			case "genes": "genes";
+			case "plain-js", "plain_js": "plain-js";
+			default: "genes";
+		};
+	}
 }
 
 typedef GeneratorOptions = {
 	name:String,
 	type:String,
+	?clientMode:String,
 	skipInstall:Bool,
 	verbose:Bool,
 	vscode:Bool,

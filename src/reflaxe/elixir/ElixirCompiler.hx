@@ -2689,6 +2689,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			// Endpoints are supervisors too - they need child_spec/start_link
 			metadata.isSupervisor = true;
 			metadata.endpointSockets = extractEndpointSocketsFromMeta(classType);
+			metadata.endpointLiveLongpoll = extractEndpointLiveLongpollFromMeta(classType);
 			#if debug_annotation_transforms
 			#end
 		}
@@ -4067,6 +4068,68 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				Context.error("@:endpointSockets must be an array literal", entry.params[0].pos);
 				null;
 		}
+	}
+
+	private function extractEndpointLiveLongpollFromMeta(classType:ClassType):Null<Bool> {
+		function extractOne(metaName:String):Array<MetadataEntry> {
+			var entries = classType.meta.extract(metaName);
+			return entries == null ? [] : entries;
+		}
+
+		// Removed API: legacy standalone endpoint longpoll metadata is no longer supported.
+		// Users must configure this via @:endpoint({liveLongpoll: ...}).
+		var legacyEntries = []
+			.concat(extractOne(":endpointLiveLongpoll"))
+			.concat(extractOne("endpointLiveLongpoll"))
+			.concat(extractOne(":endpointLongpoll"))
+			.concat(extractOne("endpointLongpoll"));
+		if (legacyEntries.length > 0) {
+			Context.error(
+				"@:endpointLiveLongpoll/@:endpointLongpoll was removed. Use @:endpoint({liveLongpoll: true|false}) instead.",
+				legacyEntries[0].pos
+			);
+		}
+
+		var endpointEntries = []
+			.concat(extractOne(":endpoint"))
+			.concat(extractOne("endpoint"));
+		if (endpointEntries.length == 0) {
+			return null;
+		}
+
+		var liveLongpoll:Null<Bool> = null;
+		for (entry in endpointEntries) {
+			if (entry.params == null || entry.params.length == 0) {
+				continue;
+			}
+			if (entry.params.length > 1) {
+				Context.error("@:endpoint accepts a single options object, e.g. @:endpoint({liveLongpoll: true})", entry.params[1].pos);
+				continue;
+			}
+
+			switch (entry.params[0].expr) {
+				case EObjectDecl(fields):
+					for (f in fields) {
+						var fieldName = f.field;
+						if (fieldName == "liveLongpoll" || fieldName == "live_longpoll") {
+							if (liveLongpoll != null) {
+								Context.error("Duplicate liveLongpoll configuration in @:endpoint metadata", f.expr.pos);
+							}
+							liveLongpoll = switch (f.expr.expr) {
+								case EConst(CIdent("true")): true;
+								case EConst(CIdent("false")): false;
+								default:
+									Context.error("@:endpoint({liveLongpoll: ...}) expects a boolean literal", f.expr.pos);
+									null;
+							};
+						}
+					}
+				default:
+					Context.error("@:endpoint options must be an object literal, e.g. @:endpoint({liveLongpoll: true})", entry.params[0].pos);
+			}
+		}
+
+		return liveLongpoll;
 	}
 
 	/**

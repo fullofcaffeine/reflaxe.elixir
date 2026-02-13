@@ -123,6 +123,9 @@ mix haxe.gen.project --force
 
 # Phoenix-friendly scaffold (adds a typed LiveView example + HXX)
 mix haxe.gen.project --phoenix --basic-modules --force
+
+# Phoenix scaffold but keep plain Phoenix JS client bootstrap
+mix haxe.gen.project --phoenix --client-mode plain-js --force
 ```
 
 Output (defaults; configurable via flags):
@@ -146,6 +149,7 @@ Notes:
 - It does not install Haxe libraries for you. Use `npx lix install ...` + `npx lix download` (see `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`).
 - `--phoenix` is meant to be run from a **Phoenix app root**.
   - If the project does not look like Phoenix (missing `assets/js/app.js` or `config/dev.exs`), the task will still scaffold the server-side parts and print instructions to run `mix haxe.phoenix.scaffold` once Phoenix files exist.
+- `--client-mode <genes|plain-js>` controls Phoenix client wiring when `--phoenix` is enabled (default: `genes`).
 
 #### Phoenix Client Scaffold (`mix haxe.phoenix.scaffold`)
 
@@ -153,6 +157,8 @@ Phoenix client wiring is handled by a dedicated task:
 
 ```bash
 mix haxe.phoenix.scaffold
+mix haxe.phoenix.scaffold --client-mode genes
+mix haxe.phoenix.scaffold --client-mode plain-js --yes
 ```
 
 For a scenario-driven overview (greenfield vs existing app, fail-fast vs `--warn-only`, and how marker blocks work), see `docs/06-guides/SCAFFOLDING_SYSTEM.md`.
@@ -163,5 +169,8 @@ Key behaviors:
 - **Marker blocks**: patches `assets/js/app.js`, `config/dev.exs`, and `mix.exs` using explicit `BEGIN reflaxe_elixir ...` / `END reflaxe_elixir ...` blocks (reruns replace block content only).
 - **Fail-fast by default**: if the task cannot find an expected Phoenix insertion point (template drift or heavy customization), it raises instead of silently producing a partial scaffold.
 - **Opt-out**: `mix haxe.phoenix.scaffold --warn-only` emits warnings and skips patches it cannot safely apply.
+- **Modes**:
+  - `--client-mode genes` (default): typed Haxe/Genes client integration.
+  - `--client-mode plain-js`: removes only scaffold-managed Genes wiring; keeps custom user files.
 
 See `docs/06-guides/WATCHER_WORKFLOW.md` for the rationale and the “temp output + promote” pattern used to avoid transient `Could not resolve "./hx_app.js"` errors under esbuild watch mode.

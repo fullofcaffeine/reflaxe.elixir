@@ -251,8 +251,11 @@ Elixir output is produced when you run `mix compile.haxe` (or `haxe build.hxml`)
 
 ### mix haxe.phoenix.scaffold
 
-Applies the Phoenix client JS scaffold needed for Haxe client builds (Genes) to work reliably with
-Phoenix's asset watchers.
+Applies Phoenix client wiring for LiveView projects.
+
+Modes:
+- `--client-mode genes` (default): typed Haxe/Genes client build + watcher promotion + hook merge.
+- `--client-mode plain-js`: remove scaffold-managed Genes wiring and converge back to plain Phoenix JS bootstrap.
 
 This task wires the "temp output + promote" pattern to avoid esbuild `--watch` racing Haxe's `-js`
 output deletion window (which can otherwise produce transient `Could not resolve "./hx_app.js"` errors).
@@ -279,6 +282,8 @@ If it finds an existing scaffolded entry that is not marker-managed, it also fai
 
 ```bash
 mix haxe.phoenix.scaffold
+mix haxe.phoenix.scaffold --client-mode genes
+mix haxe.phoenix.scaffold --client-mode plain-js --yes
 mix haxe.phoenix.scaffold --verbose
 mix haxe.phoenix.scaffold --warn-only
 ```
@@ -286,6 +291,8 @@ mix haxe.phoenix.scaffold --warn-only
 **Options:**
 - `--verbose` - Print more detailed output
 - `--warn-only` - Do not raise on unexpected Phoenix template shapes; emit warnings and skip those patches
+- `--client-mode <genes|plain-js>` - Choose typed Genes mode or plain Phoenix JS convergence
+- `--yes` - Skip confirmation prompts (used by generators/CI; especially for `plain-js` mode)
 
 ### mix haxe.gen.project
 
@@ -294,10 +301,12 @@ Adds Reflaxe.Elixir support to an existing Elixir project (creates `build.hxml`,
 ```bash
 mix haxe.gen.project
 mix haxe.gen.project --phoenix
+mix haxe.gen.project --phoenix --client-mode plain-js
 mix haxe.gen.project --basic-modules
 ```
 
-If you pass `--phoenix`, the task also scaffolds the client JS build plumbing used by Phoenix LiveView:
+If you pass `--phoenix`, the task also invokes `mix haxe.phoenix.scaffold` for client wiring.
+Use `--client-mode genes|plain-js` (default `genes`) to control which client shape is applied.
 
 - Writes/updates `build-client.hxml` (Genes) to output to `assets/js/_hx_app_tmp.js`
 - Ensures a stable import path at `assets/js/hx_app.js`

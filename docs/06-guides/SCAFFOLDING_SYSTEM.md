@@ -15,24 +15,28 @@ For the detailed watcher workflow and environment variables, see `docs/06-guides
 
 There are three layers that work together:
 
-1. `mix haxe.gen.project`
-   - Adds server-side plumbing to an existing Mix project: `build.hxml`, `src_haxe/**`, Mix compiler wiring.
-   - With `--phoenix`, it also invokes the client scaffold (when the Phoenix shape is present).
+1. `haxe --run Run create <name> --type basic|phoenix|liveview|add-to-existing`
+   - Haxe-side generator for **new project directories** (greenfield).
+   - For Phoenix/LiveView, it creates the app via `mix phx.new`, then runs the same Mix scaffolding inside that app.
+   - Supports `--client-mode genes|plain-js` (default: `genes`) for Phoenix client wiring.
 
-2. `mix haxe.phoenix.scaffold`
-   - Phoenix client scaffold: Genes client build + watcher wiring + `assets/js/app.js` integration.
-   - This is the canonical “Phoenix client integration” command.
+2. `mix haxe.gen.project`
+   - Mix-side generator for **existing project directories** (gradual adoption).
+   - Adds server-side plumbing: `build.hxml`, `src_haxe/**`, Mix compiler wiring.
+   - With `--phoenix`, it also invokes `mix haxe.phoenix.scaffold`.
+   - Supports `--client-mode genes|plain-js` when `--phoenix` is used (default: `genes`).
 
-3. `haxe --run Run create <name> --type phoenix|liveview`
-   - Greenfield generator.
-   - It shells out to the canonical Phoenix generator (`mix phx.new`) to create a real Phoenix app, then layers the same Haxe/Mix scaffolding on top.
-   - For Phoenix projects, it delegates to `mix haxe.phoenix.scaffold` inside the generated project.
+3. `mix haxe.phoenix.scaffold`
+   - Canonical Phoenix client integration task.
+   - `--client-mode genes` (default): typed Haxe/Genes client build + watcher promotion + `app.js` hook merge.
+   - `--client-mode plain-js`: removes scaffold-managed Genes wiring and converges back to plain Phoenix JS.
+   - Use `--yes` for non-interactive plain-js convergence (CI/generator flows).
 
 Why both Mix and Haxe entrypoints exist:
 
 - Mix tasks are the best UX for “modify the current project in place”.
 - The Haxe generator is the best UX for “create a brand-new project directory”.
-- Both converge on the same canonical behavior once a Phoenix project exists: `mix haxe.phoenix.scaffold`.
+- Both converge on the same canonical Phoenix client behavior through `mix haxe.phoenix.scaffold`.
 
 ## Scenarios
 
@@ -41,13 +45,15 @@ Why both Mix and Haxe entrypoints exist:
 Run from the Phoenix project root:
 
 ```bash
-mix haxe.gen.project --phoenix --basic-modules --force
+mix haxe.gen.project --phoenix --client-mode genes --basic-modules --force
 ```
 
 If you only want the client/watch wiring (and already have server plumbing), run:
 
 ```bash
-mix haxe.phoenix.scaffold
+mix haxe.phoenix.scaffold --client-mode genes
+# or converge back to plain Phoenix JS:
+mix haxe.phoenix.scaffold --client-mode plain-js --yes
 ```
 
 ### New Phoenix app (greenfield)
@@ -55,7 +61,7 @@ mix haxe.phoenix.scaffold
 Use the Haxe generator so it can create the Phoenix project via `mix phx.new` first:
 
 ```bash
-haxe --run Run create my_app --type phoenix
+haxe --run Run create my_app --type phoenix --client-mode genes
 ```
 
 It installs deps (unless skipped) and then runs `mix haxe.phoenix.scaffold` within the generated app.
@@ -85,6 +91,9 @@ mix haxe.phoenix.scaffold --warn-only
 ```
 
 This prints loud warnings and skips patches it cannot safely apply.
+
+For plain-js convergence (`--client-mode plain-js`), the task asks for confirmation before removing scaffold-managed files.
+Use `--yes` to skip the prompt (recommended in automation).
 
 ## Marker-Block Patching (Idempotent + Obvious Diffs)
 

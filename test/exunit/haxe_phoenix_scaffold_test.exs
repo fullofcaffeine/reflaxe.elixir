@@ -720,6 +720,102 @@ defmodule HaxePhoenixScaffoldTest do
     assert stderr =~ "found an existing \"haxe.compile.client\" alias"
   end
 
+  test "plain-js mode removes scaffold-managed genes wiring" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_plain_js_remove_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+
+    File.write!(Path.join(assets_js, "app.js"), @minimal_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @minimal_dev_exs)
+    File.write!(Path.join(root, "mix.exs"), @minimal_mix_exs)
+    File.write!(Path.join(root, ".gitignore"), "")
+
+    assert :ok == HaxePhoenixScaffold.apply!(root, client_mode: :genes)
+    assert File.exists?(Path.join(root, "build-client.hxml"))
+    assert File.exists?(Path.join([root, "src_haxe", "client", "Boot.hx"]))
+    assert File.exists?(Path.join([assets_js, "hx_app.js"]))
+
+    assert :ok == HaxePhoenixScaffold.apply!(root, client_mode: :plain_js, yes: true)
+
+    refute File.exists?(Path.join(root, "build-client.hxml"))
+    refute File.exists?(Path.join([root, "src_haxe", "client", "Boot.hx"]))
+    refute File.exists?(Path.join([assets_js, "hx_app.js"]))
+    refute File.exists?(Path.join([root, "haxe_libraries", "genes.hxml"]))
+    refute File.exists?(Path.join([root, "haxe_libraries", "phoenix_js.hxml"]))
+    refute File.exists?(Path.join([root, "haxe_libraries", "helder.set.hxml"]))
+
+    app_js = File.read!(Path.join([assets_js, "app.js"]))
+    refute app_js =~ "BEGIN reflaxe_elixir"
+    refute app_js =~ ~s(import "./hx_app.js";)
+
+    dev_exs = File.read!(Path.join([config_dir, "dev.exs"]))
+    refute dev_exs =~ "BEGIN reflaxe_elixir haxe_client"
+    refute dev_exs =~ "haxe_client:"
+
+    mix_exs = File.read!(Path.join(root, "mix.exs"))
+    refute mix_exs =~ "BEGIN reflaxe_elixir haxe_compile_client_alias"
+    refute mix_exs =~ "BEGIN reflaxe_elixir assets.build_task"
+    refute mix_exs =~ "BEGIN reflaxe_elixir assets.deploy_task"
+    refute mix_exs =~ ~s("haxe.compile.client")
+
+    gitignore = File.read!(Path.join(root, ".gitignore"))
+    refute gitignore =~ "assets/js/_hx_app_tmp.js"
+    refute gitignore =~ "assets/js/hx_app.js"
+  end
+
+  test "plain-js mode keeps custom client files and warns" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_plain_js_keep_custom_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+    File.mkdir_p!(Path.join([root, "src_haxe", "client"]))
+    File.mkdir_p!(Path.join(root, "haxe_libraries"))
+
+    File.write!(Path.join(assets_js, "app.js"), @minimal_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @minimal_dev_exs)
+    File.write!(Path.join(root, "mix.exs"), @minimal_mix_exs)
+    File.write!(Path.join(root, ".gitignore"), "")
+
+    File.write!(
+      Path.join(root, "build-client.hxml"),
+      "-cp src_haxe\n-js assets/js/custom.js\n-main client.Boot\n"
+    )
+
+    File.write!(
+      Path.join([root, "src_haxe", "client", "Boot.hx"]),
+      "package client;\nclass Boot { public static function main() {} }\n"
+    )
+
+    File.write!(Path.join([assets_js, "hx_app.js"]), "// custom client bundle stub\n")
+    File.write!(Path.join([root, "haxe_libraries", "genes.hxml"]), "-cp vendor/genes/src\n")
+
+    stderr =
+      capture_io(:stderr, fn ->
+        assert :ok == HaxePhoenixScaffold.apply!(root, client_mode: :plain_js, yes: true)
+      end)
+
+    assert stderr =~ "plain-js mode kept custom files"
+    assert File.exists?(Path.join(root, "build-client.hxml"))
+    assert File.exists?(Path.join([root, "src_haxe", "client", "Boot.hx"]))
+    assert File.exists?(Path.join([assets_js, "hx_app.js"]))
+    assert File.exists?(Path.join([root, "haxe_libraries", "genes.hxml"]))
+  end
+
   defp count(haystack, needle) do
     haystack
     |> String.split(needle)

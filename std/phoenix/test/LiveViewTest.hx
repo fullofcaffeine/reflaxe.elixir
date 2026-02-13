@@ -87,6 +87,8 @@ extern class LiveViewTest {
 	/**
 	 * Simulate form change event (validation).
 	 */
+	@:overload(function(element:Term, data:Term):LiveView {})
+	@:overload(function(element:Term, data:Map<String, Term>):LiveView {})
 	@:overload(function(liveView:LiveView, form:String, data:Term):LiveView {})
 	@:overload(function(liveView:LiveView, form:String, data:Map<String, Term>):LiveView {})
 	public static function render_change(liveView:LiveView, form:String):LiveView;

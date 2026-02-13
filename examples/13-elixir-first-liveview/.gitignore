@@ -1,0 +1,24 @@
+# Haxe ExUnit generated test artifacts
+test/generated/
+
+# Haxe→JS generated client artifacts
+assets/js/client/
+assets/js/genes/
+assets/js/HxOverrides.js
+assets/js/HxOverrides.js.map
+assets/js/Std.js
+assets/js/Std.js.map
+assets/js/StringTools.js
+assets/js/StringTools.js.map
+assets/js/hx_app.js
+assets/js/hx_app.js.map
+assets/js/_hx_app_tmp.js
+assets/js/_hx_app_tmp.js.map
+
+# Built static assets
+priv/static/assets/
+
+# Reflaxe/Haxe local cache artifacts
+*.hxml.cache
+.haxe_cache/
+.reflaxe_elixir/

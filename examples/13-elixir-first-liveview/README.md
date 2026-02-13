@@ -8,6 +8,7 @@ This example shows a **typed Elixir-first** authoring style: use Haxe as a typed
 - Typed boundary decoding from `Term` using `elixir.Kernel` type guards.
 - Domain flow modeled with `haxe.functional.Result` (`Ok`/`Error`).
 - Search logic implemented with Elixir extern surfaces (`elixir.Enum`, `elixir.ElixirString`).
+- LiveView browser boot compiled from Haxe (Genes) with a Phoenix-style JS wrapper.
 
 ## Strict mode used here
 
@@ -26,6 +27,7 @@ That flag is a repository policy guard for shipped examples, while `reflaxe_elix
 cd examples/13-elixir-first-liveview
 mix deps.get
 mix deps.compile
+mix assets.build
 mix compile
 mix test
 mix phx.server
@@ -39,7 +41,22 @@ Open `http://localhost:4000/`.
 - `examples/13-elixir-first-liveview/src_haxe/ElixirFirstLiveviewRouter.hx` - typed router with `HttpMethod.LIVE`
 - `examples/13-elixir-first-liveview/src_haxe/live/SearchLive.hx` - LiveView callbacks and render
 - `examples/13-elixir-first-liveview/src_haxe/live/SearchDomain.hx` - pure domain logic
+- `examples/13-elixir-first-liveview/src_haxe/client/Boot.hx` - Genes-compiled LiveSocket bootstrap
+- `examples/13-elixir-first-liveview/test_haxe/web/SearchLiveIntegrationTest.hx` - Haxe-authored Phoenix LiveView integration tests
 - `examples/13-elixir-first-liveview/test_haxe/live/SearchDomainTest.hx` - Haxe-authored ExUnit tests
+
+## Haxe + Mix test integration
+
+- `mix test` runs the alias `haxe.compile.tests`, which executes `haxe build-tests.hxml`.
+- `build-tests.hxml` compiles Haxe ExUnit modules into `test/generated/**/*.exs`.
+- `test/test_helper.exs` auto-requires those generated `*_test.exs` files before ExUnit runs.
+
+## Haxe + Genes client integration
+
+- `build-client.hxml` compiles `client.Boot` into `assets/js/_hx_app_tmp.js`.
+- Mix alias `haxe.compile.client` promotes output to `assets/js/hx_app.js` for stable esbuild imports.
+- `assets/js/phoenix_app.js` stays close to Phoenix defaults and imports `./app.js` (which imports `hx_app.js`).
+- Layouts load `/assets/phoenix_app.js` using `phx-track-static`.
 
 ## Style notes (almost no stdlib)
 

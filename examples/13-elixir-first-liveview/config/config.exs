@@ -9,6 +9,15 @@ config :elixir_first_liveview, ElixirFirstLiveviewWeb.Endpoint,
   pubsub_server: ElixirFirstLiveview.PubSub,
   live_view: [signing_salt: "elixir_first_liveview_signing_salt"]
 
+config :esbuild,
+  version: "0.17.11",
+  elixir_first_liveview: [
+    args:
+      ~w(js/phoenix_app.js --bundle --target=es2017 --outdir=../priv/static/assets --external:/fonts/* --external:/images/*),
+    cd: Path.expand("../assets", __DIR__),
+    env: %{"NODE_PATH" => Path.expand("../deps", __DIR__)}
+  ]
+
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]

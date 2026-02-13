@@ -24,12 +24,16 @@ defmodule HaxePhoenixScaffold do
           {:verbose, boolean()}
           | {:strict, boolean()}
           | {:reflaxe_elixir_dep_path, binary() | nil}
+          | {:client_mode, :genes | :plain_js}
+          | {:yes, boolean()}
 
   @spec apply!(binary(), [option()]) :: :ok
   def apply!(project_root, opts \\ []) when is_binary(project_root) do
     verbose = Keyword.get(opts, :verbose, false)
     strict = Keyword.get(opts, :strict, true)
     reflaxe_elixir_dep_path = Keyword.get(opts, :reflaxe_elixir_dep_path, nil)
+    client_mode = Keyword.get(opts, :client_mode, :genes)
+    yes = Keyword.get(opts, :yes, false)
 
     assets_js_dir = Path.join([project_root, "assets", "js"])
     config_dir = Path.join(project_root, "config")
@@ -41,6 +45,45 @@ defmodule HaxePhoenixScaffold do
     unless File.dir?(config_dir) do
       raise "expected Phoenix config dir at #{config_dir}"
     end
+
+    case client_mode do
+      :genes ->
+        apply_genes_scaffold!(
+          project_root,
+          assets_js_dir,
+          config_dir,
+          reflaxe_elixir_dep_path,
+          verbose: verbose,
+          strict: strict
+        )
+
+      :plain_js ->
+        apply_plain_js_convergence!(
+          project_root,
+          assets_js_dir,
+          config_dir,
+          verbose: verbose,
+          strict: strict,
+          yes: yes
+        )
+
+      other ->
+        raise "invalid client mode: #{inspect(other)}"
+    end
+
+    :ok
+  end
+
+  defp apply_genes_scaffold!(
+         project_root,
+         assets_js_dir,
+         config_dir,
+         reflaxe_elixir_dep_path,
+         opts
+       )
+       when is_binary(project_root) and is_binary(assets_js_dir) and is_binary(config_dir) do
+    verbose = Keyword.get(opts, :verbose, false)
+    strict = Keyword.get(opts, :strict, true)
 
     ensure_dir!(Path.join(project_root, "haxe_libraries"))
 
@@ -87,14 +130,274 @@ defmodule HaxePhoenixScaffold do
     )
 
     patch_file!(Path.join([project_root, ".gitignore"]), &patch_gitignore/1, verbose: verbose)
+  end
 
-    :ok
+  defp apply_plain_js_convergence!(project_root, assets_js_dir, config_dir, opts)
+       when is_binary(project_root) and is_binary(assets_js_dir) and is_binary(config_dir) do
+    verbose = Keyword.get(opts, :verbose, false)
+    strict = Keyword.get(opts, :strict, true)
+    yes = Keyword.get(opts, :yes, false)
+
+    app_js_path = Path.join([assets_js_dir, "app.js"])
+    dev_exs_path = Path.join([config_dir, "dev.exs"])
+    mix_exs_path = Path.join([project_root, "mix.exs"])
+    gitignore_path = Path.join([project_root, ".gitignore"])
+
+    app_js_markers = [
+      {"BEGIN reflaxe_elixir hx_app_import", "END reflaxe_elixir hx_app_import"},
+      {"BEGIN reflaxe_elixir hooks_after_decl", "END reflaxe_elixir hooks_after_decl"},
+      {"BEGIN reflaxe_elixir hooks_property", "END reflaxe_elixir hooks_property"},
+      {"BEGIN reflaxe_elixir hooks_merge", "END reflaxe_elixir hooks_merge"}
+    ]
+
+    dev_exs_markers = [
+      {"BEGIN reflaxe_elixir haxe_client", "END reflaxe_elixir haxe_client"}
+    ]
+
+    mix_exs_markers = [
+      {"BEGIN reflaxe_elixir haxe_compile_client_alias",
+       "END reflaxe_elixir haxe_compile_client_alias"},
+      {"BEGIN reflaxe_elixir assets.build_task", "END reflaxe_elixir assets.build_task"},
+      {"BEGIN reflaxe_elixir assets.deploy_task", "END reflaxe_elixir assets.deploy_task"}
+    ]
+
+    pending_actions = []
+
+    pending_actions =
+      if file_contains_any_marker?(app_js_path, app_js_markers) do
+        pending_actions ++ ["Remove scaffold-managed markers from assets/js/app.js"]
+      else
+        pending_actions
+      end
+
+    pending_actions =
+      if file_contains_any_marker?(dev_exs_path, dev_exs_markers) do
+        pending_actions ++ ["Remove scaffold-managed haxe watcher from config/dev.exs"]
+      else
+        pending_actions
+      end
+
+    pending_actions =
+      if file_contains_any_marker?(mix_exs_path, mix_exs_markers) do
+        pending_actions ++ ["Remove scaffold-managed mix aliases from mix.exs"]
+      else
+        pending_actions
+      end
+
+    pending_actions =
+      if File.exists?(gitignore_path) &&
+           scaffold_gitignore_entry_present?(File.read!(gitignore_path)) do
+        pending_actions ++ ["Remove scaffold-managed haxe client entries from .gitignore"]
+      else
+        pending_actions
+      end
+
+    managed_candidates = managed_plain_js_candidate_files(project_root, assets_js_dir)
+
+    {managed_to_remove, custom_to_keep} =
+      Enum.reduce(managed_candidates, {[], []}, fn {path, managed_fun, description},
+                                                   {removable, keepers} ->
+        if File.exists?(path) do
+          content = File.read!(path)
+
+          if managed_fun.(content) do
+            {[{path, description} | removable], keepers}
+          else
+            {removable, [path | keepers]}
+          end
+        else
+          {removable, keepers}
+        end
+      end)
+
+    pending_actions =
+      Enum.reduce(managed_to_remove, pending_actions, fn {_path, description}, acc ->
+        acc ++ [description]
+      end)
+
+    confirm_plain_js_changes!(pending_actions, yes)
+
+    patch_file!(
+      app_js_path,
+      &remove_scaffold_marker_blocks(&1, app_js_markers, strict, "assets/js/app.js"),
+      verbose: verbose
+    )
+
+    patch_file!(
+      dev_exs_path,
+      &remove_scaffold_marker_blocks(&1, dev_exs_markers, strict, "config/dev.exs"),
+      verbose: verbose
+    )
+
+    patch_file!(
+      mix_exs_path,
+      &remove_scaffold_marker_blocks(&1, mix_exs_markers, strict, "mix.exs"),
+      verbose: verbose
+    )
+
+    if File.exists?(gitignore_path) do
+      patch_file!(gitignore_path, &remove_scaffold_entries_from_gitignore/1, verbose: verbose)
+    end
+
+    Enum.each(managed_to_remove, fn {path, _description} ->
+      File.rm!(path)
+      if verbose, do: IO.puts("[scaffold] removed #{path}")
+    end)
+
+    if custom_to_keep != [] do
+      IO.warn(
+        "plain-js mode kept custom files that are not scaffold-managed:\n" <>
+          Enum.map_join(Enum.sort(custom_to_keep), "\n", &"  - #{&1}")
+      )
+    end
+
+    maybe_remove_empty_dir(Path.join([project_root, "src_haxe", "client"]))
+    maybe_remove_empty_dir(Path.join(project_root, "haxe_libraries"))
+  end
+
+  defp managed_plain_js_candidate_files(project_root, assets_js_dir)
+       when is_binary(project_root) and is_binary(assets_js_dir) do
+    [
+      {
+        Path.join(project_root, "build-client.hxml"),
+        &managed_build_client_hxml?/1,
+        "Remove scaffold-managed build-client.hxml"
+      },
+      {
+        Path.join([project_root, "src_haxe", "client", "Boot.hx"]),
+        &managed_client_boot_hx?/1,
+        "Remove scaffold-managed src_haxe/client/Boot.hx"
+      },
+      {
+        Path.join([assets_js_dir, "hx_app.js"]),
+        &managed_hx_app_stub?/1,
+        "Remove scaffold-managed assets/js/hx_app.js stub"
+      },
+      {
+        Path.join([project_root, "haxe_libraries", "genes.hxml"]),
+        &managed_genes_stub?/1,
+        "Remove scaffold-managed haxe_libraries/genes.hxml"
+      },
+      {
+        Path.join([project_root, "haxe_libraries", "phoenix_js.hxml"]),
+        &managed_phoenix_js_stub?/1,
+        "Remove scaffold-managed haxe_libraries/phoenix_js.hxml"
+      },
+      {
+        Path.join([project_root, "haxe_libraries", "helder.set.hxml"]),
+        &managed_helder_set_stub?/1,
+        "Remove scaffold-managed haxe_libraries/helder.set.hxml"
+      }
+    ]
+  end
+
+  defp file_contains_any_marker?(path, marker_pairs)
+       when is_binary(path) and is_list(marker_pairs) do
+    if File.exists?(path) do
+      content = File.read!(path)
+
+      Enum.any?(marker_pairs, fn {begin_token, _end_token} ->
+        String.contains?(content, begin_token)
+      end)
+    else
+      false
+    end
+  end
+
+  defp confirm_plain_js_changes!(pending_actions, yes)
+       when is_list(pending_actions) and is_boolean(yes) do
+    if pending_actions == [] or yes do
+      :ok
+    else
+      IO.puts("plain-js mode will remove scaffold-managed Genes wiring:")
+      Enum.each(pending_actions, fn action -> IO.puts("  - #{action}") end)
+
+      answer = IO.gets("Continue? [y/N]: ")
+
+      approved =
+        case answer do
+          line when is_binary(line) ->
+            normalized = line |> String.trim() |> String.downcase()
+            normalized == "y" or normalized == "yes"
+
+          _ ->
+            false
+        end
+
+      if approved do
+        :ok
+      else
+        raise "aborted plain-js convergence. Re-run with --yes to skip confirmation."
+      end
+    end
+  end
+
+  defp remove_scaffold_marker_blocks(content, marker_pairs, strict, file_label)
+       when is_binary(content) and is_list(marker_pairs) and is_boolean(strict) and
+              is_binary(file_label) do
+    Enum.reduce(marker_pairs, content, fn {begin_token, end_token}, current ->
+      case remove_marker_block_lines(current, begin_token, end_token) do
+        {:ok, updated} ->
+          updated
+
+        :missing ->
+          current
+
+        :error ->
+          warn_or_raise(
+            "failed to patch #{file_label}: malformed reflaxe_elixir marker block (#{begin_token})",
+            strict
+          )
+
+          current
+      end
+    end)
+  end
+
+  defp scaffold_gitignore_entry_present?(content) when is_binary(content) do
+    entries = [
+      "assets/js/_hx_app_tmp.js",
+      "assets/js/_hx_app_tmp.js.map",
+      "assets/js/hx_app.js",
+      "assets/js/hx_app.js.map"
+    ]
+
+    Enum.any?(entries, &String.contains?(content, &1))
+  end
+
+  defp remove_scaffold_entries_from_gitignore(content) when is_binary(content) do
+    removal_lines =
+      MapSet.new([
+        "# Reflaxe.Elixir (Haxe client JS intermediate output)",
+        "assets/js/_hx_app_tmp.js",
+        "assets/js/_hx_app_tmp.js.map",
+        "# Reflaxe.Elixir (Haxe client JS stable import target; generated via promotion)",
+        "assets/js/hx_app.js",
+        "assets/js/hx_app.js.map"
+      ])
+
+    content
+    |> String.split("\n", trim: false)
+    |> Enum.reject(fn line -> MapSet.member?(removal_lines, String.trim(line)) end)
+    |> Enum.join("\n")
+  end
+
+  defp maybe_remove_empty_dir(path) when is_binary(path) do
+    if File.dir?(path) do
+      case File.ls(path) do
+        {:ok, []} -> File.rmdir(path)
+        _ -> :ok
+      end
+    else
+      :ok
+    end
   end
 
   @haxe_lib_stub_signature_prefix "reflaxe_elixir:scaffolded_haxe_library"
 
   defp ensure_haxe_libraries!(project_root, reflaxe_elixir_dep_path, opts)
-       when is_binary(project_root) and (is_binary(reflaxe_elixir_dep_path) or is_nil(reflaxe_elixir_dep_path)) do
+       when is_binary(project_root) and
+              (is_binary(reflaxe_elixir_dep_path) or is_nil(reflaxe_elixir_dep_path)) do
     verbose = Keyword.get(opts, :verbose, false)
 
     default_dep_path = Path.join([project_root, "deps", "reflaxe_elixir"])
@@ -240,8 +543,13 @@ defmodule HaxePhoenixScaffold do
     end
   end
 
+  @build_client_hxml_signature "reflaxe_elixir:build_client_hxml:v1"
+
   defp maybe_patch_build_client_hxml(content) do
     cond do
+      String.contains?(content, @build_client_hxml_signature) ->
+        build_client_hxml()
+
       String.contains?(content, "assets/js/_hx_app_tmp.js") ->
         content
 
@@ -257,6 +565,39 @@ defmodule HaxePhoenixScaffold do
   end
 
   @hx_app_stub_signature "reflaxe_elixir:hx_app_stub:v1"
+
+  defp normalize_scaffold_content(content) when is_binary(content) do
+    content
+    |> String.replace("\r\n", "\n")
+    |> String.trim()
+  end
+
+  defp managed_build_client_hxml?(content) when is_binary(content) do
+    normalized = normalize_scaffold_content(content)
+
+    normalized == normalize_scaffold_content(build_client_hxml()) or
+      normalized == normalize_scaffold_content(build_client_hxml_legacy())
+  end
+
+  defp managed_client_boot_hx?(content) when is_binary(content) do
+    normalize_scaffold_content(content) == normalize_scaffold_content(client_boot_hx())
+  end
+
+  defp managed_hx_app_stub?(content) when is_binary(content) do
+    String.contains?(content, @hx_app_stub_signature)
+  end
+
+  defp managed_genes_stub?(content) when is_binary(content) do
+    String.contains?(content, genes_hxml_signature())
+  end
+
+  defp managed_phoenix_js_stub?(content) when is_binary(content) do
+    String.contains?(content, phoenix_js_hxml_signature())
+  end
+
+  defp managed_helder_set_stub?(content) when is_binary(content) do
+    String.contains?(content, helder_set_hxml_signature())
+  end
 
   defp maybe_patch_hx_app_js_stub(existing) when is_binary(existing) do
     # Only rewrite if this is our stub (so we never clobber user customizations).
@@ -292,32 +633,32 @@ defmodule HaxePhoenixScaffold do
         if String.contains?(content, Enum.at(desired_lines, 0)) do
           content
         else
-        lines = String.split(content, "\n", trim: false)
+          lines = String.split(content, "\n", trim: false)
 
-        last_import_index =
-          lines
-          |> Enum.with_index()
-          |> Enum.reduce(-1, fn {line, idx}, acc ->
-            trimmed = String.trim_leading(line)
+          last_import_index =
+            lines
+            |> Enum.with_index()
+            |> Enum.reduce(-1, fn {line, idx}, acc ->
+              trimmed = String.trim_leading(line)
 
-            cond do
-              String.starts_with?(trimmed, "import ") -> idx
-              trimmed == "" -> acc
-              String.starts_with?(trimmed, "//") -> acc
-              String.starts_with?(trimmed, "/*") -> acc
-              true -> acc
-            end
-          end)
+              cond do
+                String.starts_with?(trimmed, "import ") -> idx
+                trimmed == "" -> acc
+                String.starts_with?(trimmed, "//") -> acc
+                String.starts_with?(trimmed, "/*") -> acc
+                true -> acc
+              end
+            end)
 
-        insert_at = if last_import_index >= 0, do: last_import_index + 1, else: 0
+          insert_at = if last_import_index >= 0, do: last_import_index + 1, else: 0
 
-        block =
-          marker_block_lines(begin_token, end_token, desired_lines,
-            indent: "",
-            comment_prefix: "//"
-          )
+          block =
+            marker_block_lines(begin_token, end_token, desired_lines,
+              indent: "",
+              comment_prefix: "//"
+            )
 
-        List.insert_at(lines, insert_at, Enum.join(block, "\n")) |> Enum.join("\n")
+          List.insert_at(lines, insert_at, Enum.join(block, "\n")) |> Enum.join("\n")
         end
 
       :error ->
@@ -415,7 +756,12 @@ defmodule HaxePhoenixScaffold do
                 end)
 
               if is_nil(hooks_prop_index) do
-                case upsert_live_socket_hooks_property(lines, begin_token_property, end_token_property, desired_property_line) do
+                case upsert_live_socket_hooks_property(
+                       lines,
+                       begin_token_property,
+                       end_token_property,
+                       desired_property_line
+                     ) do
                   {:ok, updated_lines} ->
                     Enum.join(updated_lines, "\n")
 
@@ -472,7 +818,8 @@ defmodule HaxePhoenixScaffold do
   end
 
   defp upsert_live_socket_hooks_property(lines, begin_token, end_token, desired_line)
-       when is_list(lines) and is_binary(begin_token) and is_binary(end_token) and is_binary(desired_line) do
+       when is_list(lines) and is_binary(begin_token) and is_binary(end_token) and
+              is_binary(desired_line) do
     live_socket_index =
       lines
       |> Enum.with_index()
@@ -659,53 +1006,53 @@ defmodule HaxePhoenixScaffold do
 
       content
     else
-    case replace_marker_block_lines(content, begin_token, end_token, desired_lines) do
-      {:ok, updated} ->
-        updated
+      case replace_marker_block_lines(content, begin_token, end_token, desired_lines) do
+        {:ok, updated} ->
+          updated
 
-      :missing ->
-        # Be tolerant to formatter drift (space/no-space) while still anchoring to the canonical Phoenix key.
-        # We intentionally keep the insertion inside the watchers list so the diff is obvious and removable.
-        idx =
-          case Regex.run(~r/watchers:\s*\[/, content, return: :index) do
-            [{pos, len} | _] -> {pos, len}
-            _ -> nil
+        :missing ->
+          # Be tolerant to formatter drift (space/no-space) while still anchoring to the canonical Phoenix key.
+          # We intentionally keep the insertion inside the watchers list so the diff is obvious and removable.
+          idx =
+            case Regex.run(~r/watchers:\s*\[/, content, return: :index) do
+              [{pos, len} | _] -> {pos, len}
+              _ -> nil
+            end
+
+          if is_nil(idx) do
+            warn_or_raise(
+              "failed to patch config/dev.exs: could not find a `watchers:` list (expected Phoenix dev.exs shape). Re-run with --warn-only to skip.",
+              strict
+            )
+
+            content
+          else
+            {pos, len} = idx
+            insert_at = pos + len
+
+            insertion =
+              "\n\n" <>
+                Enum.join(
+                  marker_block_lines(begin_token, end_token, desired_lines,
+                    indent: "    ",
+                    comment_prefix: "#"
+                  ),
+                  "\n"
+                ) <>
+                "\n"
+
+            String.slice(content, 0, insert_at) <>
+              insertion <> String.slice(content, insert_at..-1//1)
           end
 
-        if is_nil(idx) do
+        :error ->
           warn_or_raise(
-            "failed to patch config/dev.exs: could not find a `watchers:` list (expected Phoenix dev.exs shape). Re-run with --warn-only to skip.",
+            "failed to patch config/dev.exs: malformed reflaxe_elixir marker block (haxe_client)",
             strict
           )
 
           content
-        else
-          {pos, len} = idx
-          insert_at = pos + len
-
-          insertion =
-            "\n\n" <>
-              Enum.join(
-                marker_block_lines(begin_token, end_token, desired_lines,
-                  indent: "    ",
-                  comment_prefix: "#"
-                ),
-                "\n"
-              ) <>
-              "\n"
-
-          String.slice(content, 0, insert_at) <>
-            insertion <> String.slice(content, insert_at..-1//1)
-        end
-
-      :error ->
-        warn_or_raise(
-          "failed to patch config/dev.exs: malformed reflaxe_elixir marker block (haxe_client)",
-          strict
-        )
-
-        content
-    end
+      end
     end
   end
 
@@ -746,66 +1093,68 @@ defmodule HaxePhoenixScaffold do
 
       content
     else
-    case replace_marker_block_lines(content, begin_token, end_token, desired_lines) do
-      {:ok, updated} ->
-        updated
+      case replace_marker_block_lines(content, begin_token, end_token, desired_lines) do
+        {:ok, updated} ->
+          updated
 
-      :missing ->
-        idx =
-          case Regex.run(~r/\bdefp\s+aliases\b/, content, return: :index) do
-            [{pos, _len} | _] -> pos
-            _ ->
-              case Regex.run(~r/\bdef\s+aliases\b/, content, return: :index) do
-                [{pos2, _len2} | _] -> pos2
-                _ -> nil
-              end
-          end
+        :missing ->
+          idx =
+            case Regex.run(~r/\bdefp\s+aliases\b/, content, return: :index) do
+              [{pos, _len} | _] ->
+                pos
 
-        if is_nil(idx) do
-          warn_or_raise(
-            "failed to patch mix.exs: could not find an `aliases` function (expected Phoenix mix.exs shape). Re-run with --warn-only to skip.",
-            strict
-          )
+              _ ->
+                case Regex.run(~r/\bdef\s+aliases\b/, content, return: :index) do
+                  [{pos2, _len2} | _] -> pos2
+                  _ -> nil
+                end
+            end
 
-          content
-        else
-          after_aliases = String.slice(content, idx..-1//1)
-          list_open_idx = binary_index(after_aliases, "[")
-
-          if is_nil(list_open_idx) do
+          if is_nil(idx) do
             warn_or_raise(
-              "failed to patch mix.exs: could not locate aliases list `[` after `defp aliases`",
+              "failed to patch mix.exs: could not find an `aliases` function (expected Phoenix mix.exs shape). Re-run with --warn-only to skip.",
               strict
             )
 
             content
           else
-            insert_at = idx + list_open_idx + 1
+            after_aliases = String.slice(content, idx..-1//1)
+            list_open_idx = binary_index(after_aliases, "[")
 
-            insertion =
-              "\n\n" <>
-                Enum.join(
-                  marker_block_lines(begin_token, end_token, desired_lines,
-                    indent: "        ",
-                    comment_prefix: "#"
-                  ),
+            if is_nil(list_open_idx) do
+              warn_or_raise(
+                "failed to patch mix.exs: could not locate aliases list `[` after `defp aliases`",
+                strict
+              )
+
+              content
+            else
+              insert_at = idx + list_open_idx + 1
+
+              insertion =
+                "\n\n" <>
+                  Enum.join(
+                    marker_block_lines(begin_token, end_token, desired_lines,
+                      indent: "        ",
+                      comment_prefix: "#"
+                    ),
+                    "\n"
+                  ) <>
                   "\n"
-                ) <>
-                "\n"
 
-            String.slice(content, 0, insert_at) <>
-              insertion <> String.slice(content, insert_at..-1//1)
+              String.slice(content, 0, insert_at) <>
+                insertion <> String.slice(content, insert_at..-1//1)
+            end
           end
-        end
 
-      :error ->
-        warn_or_raise(
-          "failed to patch mix.exs: malformed reflaxe_elixir marker block (haxe_compile_client_alias)",
-          strict
-        )
+        :error ->
+          warn_or_raise(
+            "failed to patch mix.exs: malformed reflaxe_elixir marker block (haxe_compile_client_alias)",
+            strict
+          )
 
-        content
-    end
+          content
+      end
     end
   end
 
@@ -828,54 +1177,54 @@ defmodule HaxePhoenixScaffold do
          not String.contains?(content, end_token) do
       content
     else
-    case replace_marker_block_lines(content, begin_token, end_token, desired_lines) do
-      {:ok, updated} ->
-        updated
+      case replace_marker_block_lines(content, begin_token, end_token, desired_lines) do
+        {:ok, updated} ->
+          updated
 
-      :missing ->
-        pattern = ~r/"#{Regex.escape(alias_name)}"\s*:\s*\[/
+        :missing ->
+          pattern = ~r/"#{Regex.escape(alias_name)}"\s*:\s*\[/
 
-        match =
-          case Regex.run(pattern, content, return: :index) do
-            [{pos, len} | _] -> {pos, len}
-            _ -> nil
+          match =
+            case Regex.run(pattern, content, return: :index) do
+              [{pos, len} | _] -> {pos, len}
+              _ -> nil
+            end
+
+          if is_nil(match) do
+            warn_or_raise(
+              "failed to patch mix.exs: could not find an #{inspect(alias_name)} alias entry (expected \\\"#{alias_name}\\\": [ ... ] shape).",
+              strict
+            )
+
+            content
+          else
+            {pos, len} = match
+            insert_at = pos + len
+            remainder = String.slice(content, insert_at..-1//1)
+            remainder_indent = if String.starts_with?(remainder, "\n"), do: "", else: "\n        "
+
+            insertion =
+              "\n\n" <>
+                Enum.join(
+                  marker_block_lines(begin_token, end_token, desired_lines,
+                    indent: "        ",
+                    comment_prefix: "#"
+                  ),
+                  "\n"
+                ) <>
+                remainder_indent
+
+            String.slice(content, 0, insert_at) <> insertion <> remainder
           end
 
-        if is_nil(match) do
+        :error ->
           warn_or_raise(
-            "failed to patch mix.exs: could not find an #{inspect(alias_name)} alias entry (expected \\\"#{alias_name}\\\": [ ... ] shape).",
+            "failed to patch mix.exs: malformed reflaxe_elixir marker block (#{alias_name})",
             strict
           )
 
           content
-        else
-          {pos, len} = match
-          insert_at = pos + len
-          remainder = String.slice(content, insert_at..-1//1)
-          remainder_indent = if String.starts_with?(remainder, "\n"), do: "", else: "\n        "
-
-          insertion =
-            "\n\n" <>
-              Enum.join(
-                marker_block_lines(begin_token, end_token, desired_lines,
-                  indent: "        ",
-                  comment_prefix: "#"
-                ),
-                "\n"
-              ) <>
-              remainder_indent
-
-          String.slice(content, 0, insert_at) <> insertion <> remainder
-        end
-
-      :error ->
-        warn_or_raise(
-          "failed to patch mix.exs: malformed reflaxe_elixir marker block (#{alias_name})",
-          strict
-        )
-
-        content
-    end
+      end
     end
   end
 
@@ -883,7 +1232,8 @@ defmodule HaxePhoenixScaffold do
     entries = [
       {"# Reflaxe.Elixir (Haxe client JS intermediate output)", "assets/js/_hx_app_tmp.js"},
       {nil, "assets/js/_hx_app_tmp.js.map"},
-      {"# Reflaxe.Elixir (Haxe client JS stable import target; generated via promotion)", "assets/js/hx_app.js"},
+      {"# Reflaxe.Elixir (Haxe client JS stable import target; generated via promotion)",
+       "assets/js/hx_app.js"},
       {nil, "assets/js/hx_app.js.map"}
     ]
 
@@ -953,6 +1303,40 @@ defmodule HaxePhoenixScaffold do
           end)
 
         {:ok, Enum.join(updated, "\n")}
+      end
+    end
+  end
+
+  defp remove_marker_block_lines(content, begin_token, end_token)
+       when is_binary(content) and is_binary(begin_token) and is_binary(end_token) do
+    lines = String.split(content, "\n", trim: false)
+
+    begin_index =
+      Enum.find_index(lines, fn line ->
+        String.contains?(line, begin_token)
+      end)
+
+    if is_nil(begin_index) do
+      :missing
+    else
+      end_index =
+        lines
+        |> Enum.with_index()
+        |> Enum.find_value(fn {line, idx} ->
+          if idx > begin_index and String.contains?(line, end_token), do: idx, else: nil
+        end)
+
+      if is_nil(end_index) do
+        :error
+      else
+        updated =
+          lines
+          |> Enum.with_index()
+          |> Enum.reject(fn {_line, idx} -> idx >= begin_index and idx <= end_index end)
+          |> Enum.map(fn {line, _idx} -> line end)
+          |> Enum.join("\n")
+
+        {:ok, updated}
       end
     end
   end
@@ -1073,6 +1457,15 @@ defmodule HaxePhoenixScaffold do
     # Main client entry point
     -main client.Boot
     """
+  end
+
+  defp build_client_hxml_legacy do
+    build_client_hxml()
+    |> String.replace(
+      "To keep esbuild stable in watch mode, compile into a temporary entry file and then promote\n    # it into a stable path used by esbuild imports:\n    # - Haxe writes `assets/js/_hx_app_tmp.js` (and deletes it during rebuilds).\n    # - A watcher promotes that output into the stable `assets/js/hx_app.js` path atomically.\n    ",
+      ""
+    )
+    |> String.replace("-js assets/js/_hx_app_tmp.js", "-js assets/js/hx_app.js")
   end
 
   defp helder_set_hxml_signature do

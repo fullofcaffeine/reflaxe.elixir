@@ -38,6 +38,7 @@ defmodule ElixirFirstLiveview.MixProject do
       {:phoenix_html, "~> 3.3"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_view, "~> 1.0"},
+      {:lazy_html, ">= 0.1.0", only: :test},
       {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.8.0"},
       {:esbuild, "~> 0.5", runtime: Mix.env() == :dev},
@@ -54,9 +55,13 @@ defmodule ElixirFirstLiveview.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "assets.setup", "assets.build"],
+      test: ["haxe.compile.tests", "test"],
       "assets.setup": ["esbuild.install --if-missing"],
-      "assets.build": ["esbuild default"],
-      "assets.deploy": ["esbuild default --minify", "phx.digest"]
+      "assets.build": ["haxe.compile.client", "esbuild elixir_first_liveview"],
+      "assets.deploy": ["haxe.compile.client", "esbuild elixir_first_liveview --minify", "phx.digest"],
+      "haxe.compile.tests": ["cmd haxe build-tests.hxml"],
+      "haxe.compile.client":
+        "haxe.watch --once --hxml build-client.hxml --promote assets/js/_hx_app_tmp.js:assets/js/hx_app.js,assets/js/_hx_app_tmp.js.map:assets/js/hx_app.js.map"
     ]
   end
 end

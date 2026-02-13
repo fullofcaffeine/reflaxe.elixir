@@ -52,6 +52,7 @@ class Run {
 	static function handleCreate(args:Array<String>) {
 		var projectName = "";
 		var projectType = "";
+		var clientMode = "genes";
 		var interactive = true;
 		var skipInstall = false;
 		var verbose = false;
@@ -64,6 +65,10 @@ class Run {
 				case "--type", "-t":
 					if (i + 1 < args.length) {
 						projectType = args[++i];
+					}
+				case "--client-mode":
+					if (i + 1 < args.length) {
+						clientMode = normalizeClientMode(args[++i]);
 					}
 				case "--no-interactive":
 					interactive = false;
@@ -84,9 +89,10 @@ class Run {
 
 		// Interactive mode if needed
 		if (interactive) {
-			var config = InteractiveCLI.promptProjectConfiguration(projectName, projectType);
+			var config = InteractiveCLI.promptProjectConfiguration(projectName, projectType, clientMode);
 			projectName = config.name;
 			projectType = config.type;
+			clientMode = normalizeClientMode(config.clientMode);
 			skipInstall = config.skipInstall || skipInstall;
 		} else if (projectName == "") {
 			Sys.println("Error: Project name is required");
@@ -118,6 +124,7 @@ class Run {
 			var options = {
 				name: projectName,
 				type: projectType,
+				clientMode: clientMode,
 				skipInstall: skipInstall,
 				verbose: verbose,
 				vscode: true, // Always include VS Code config
@@ -129,7 +136,7 @@ class Run {
 			Sys.println("");
 			Sys.println('✨ Project created successfully!');
 			Sys.println("");
-			showNextSteps(projectName, projectType, skipInstall);
+			showNextSteps(projectName, projectType, skipInstall, clientMode);
 		} catch (e:haxe.Exception) {
 			Sys.println('Error: Failed to create project');
 			Sys.println('  $e');
@@ -137,7 +144,7 @@ class Run {
 		}
 	}
 
-	static function showNextSteps(projectName:String, projectType:String, skipInstall:Bool) {
+	static function showNextSteps(projectName:String, projectType:String, skipInstall:Bool, clientMode:String) {
 		Sys.println("📝 Next steps:");
 		Sys.println("");
 		Sys.println('  cd $projectName');
@@ -146,6 +153,9 @@ class Run {
 			Sys.println('  npm install          # Install Haxe dependencies');
 			Sys.println('  mix deps.get         # Install Elixir dependencies');
 			Sys.println('  npm run setup:haxe   # Install Haxe libraries (per .haxerc)');
+			if (projectType == "phoenix" || projectType == "liveview") {
+				Sys.println('  mix haxe.phoenix.scaffold --client-mode ${clientMode} --yes');
+			}
 		}
 
 		Sys.println('  npm run compile       # Compile Haxe to Elixir');
@@ -238,6 +248,7 @@ class Run {
 		Sys.println("");
 		Sys.println("Options:");
 		Sys.println("  --type, -t <type>    Project type (basic, phoenix, liveview, add-to-existing)");
+		Sys.println("  --client-mode <mode> Phoenix client mode for phoenix/liveview: genes (default) | plain-js");
 		Sys.println("  --no-interactive     Skip interactive prompts");
 		Sys.println("  --skip-install       Skip dependency installation");
 		Sys.println("  --verbose, -v        Verbose output");
@@ -252,6 +263,22 @@ class Run {
 		Sys.println("Examples:");
 		Sys.println("  haxelib run reflaxe.elixir create my-app");
 		Sys.println("  haxelib run reflaxe.elixir create my-app --type phoenix");
+		Sys.println("  haxelib run reflaxe.elixir create my-app --type phoenix --client-mode plain-js");
 		Sys.println("  haxelib run reflaxe.elixir create my-app --no-interactive --skip-install");
+	}
+
+	static function normalizeClientMode(mode:String):String {
+		if (mode == null || mode == "") {
+			return "genes";
+		}
+		var normalized = mode.toLowerCase();
+		return switch (normalized) {
+			case "genes": "genes";
+			case "plain-js", "plain_js": "plain-js";
+			default:
+				Sys.println('Error: Invalid client mode "$mode" (expected genes|plain-js)');
+				Sys.exit(1);
+				"genes";
+		}
 	}
 }

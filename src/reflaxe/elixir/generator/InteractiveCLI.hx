@@ -12,7 +12,7 @@ using StringTools;
 class InteractiveCLI {
 	static var input:Input = Sys.stdin();
 
-	public static function promptProjectConfiguration(?defaultName:String, ?defaultType:String):ProjectConfig {
+	public static function promptProjectConfiguration(?defaultName:String, ?defaultType:String, ?defaultClientMode:String):ProjectConfig {
 		Sys.println("🎯 Reflaxe.Elixir Project Generator");
 		Sys.println("===================================");
 		Sys.println("");
@@ -42,6 +42,7 @@ class InteractiveCLI {
 			type: type,
 			skipInstall: false,
 			includeExamples: true,
+			clientMode: defaultClientMode != null && defaultClientMode != "" ? defaultClientMode : "genes",
 			database: null,
 			authentication: null
 		};
@@ -58,6 +59,11 @@ class InteractiveCLI {
 			if (type == "liveview") {
 				options.authentication = promptYesNo("Include authentication?", true);
 			}
+
+			options.clientMode = promptChoice("Phoenix client mode", [
+				{value: "genes", label: "genes - typed Haxe client JS (recommended)"},
+				{value: "plain-js", label: "plain-js - keep default Phoenix JavaScript"}
+			], options.clientMode);
 		}
 
 		// Common options
@@ -77,6 +83,9 @@ class InteractiveCLI {
 		}
 		if (options.authentication == true) {
 			Sys.println('  Authentication: Yes');
+		}
+		if (type == "phoenix" || type == "liveview") {
+			Sys.println('  Client mode: ${options.clientMode}');
 		}
 		Sys.println('  Install dependencies: ${options.skipInstall ? "No" : "Yes"}');
 		Sys.println("");
@@ -283,6 +292,7 @@ typedef ProjectConfig = {
 	type:String,
 	skipInstall:Bool,
 	includeExamples:Bool,
+	clientMode:String,
 	?database:String,
 	?authentication:Bool
 }

@@ -3,13 +3,11 @@
 -lib reflaxe.elixir
 
 -cp src_haxe
--cp test_haxe
 
 -D elixir_output=lib
 -D reflaxe_runtime
 -D reflaxe_elixir_strict
 -D hxx_mode=tsx
--D exunit
 
 -D app_name=ElixirFirstLiveview
 
@@ -19,4 +17,3 @@ live.SearchDomain
 server.infrastructure.CoreComponents
 server.infrastructure.Gettext
 server.infrastructure.Layouts
-live.SearchDomainTest

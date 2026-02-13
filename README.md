@@ -380,7 +380,7 @@ defp deps do
   ]
 end
 
-> Note: the `mix haxe.gen.*` generators are Haxe-first scaffolds (they emit **Haxe only**, not Elixir). For Phoenix client wiring (Genes + esbuild watch safety), use `mix haxe.phoenix.scaffold` and see `docs/06-guides/WATCHER_WORKFLOW.md` (marker-block + fail-fast behavior). Full task reference: `docs/04-api-reference/MIX_TASKS.md`.
+> Note: the `mix haxe.gen.*` generators are Haxe-first scaffolds (they emit **Haxe only**, not Elixir). For Phoenix client wiring, use `mix haxe.phoenix.scaffold` (`--client-mode genes` default, or `--client-mode plain-js` to converge back to plain Phoenix JS). See `docs/06-guides/SCAFFOLDING_SYSTEM.md` + `docs/06-guides/WATCHER_WORKFLOW.md`. Full task reference: `docs/04-api-reference/MIX_TASKS.md`.
 
 # Compile Haxe as part of your build
 mix compile.haxe
