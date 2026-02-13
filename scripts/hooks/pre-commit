@@ -5,7 +5,7 @@ ROOT_DIR="$(git rev-parse --show-toplevel)"
 VISUAL_TRIGGER_PATTERN='^(examples/todo-app/src_haxe/server/live/.*\.hx|examples/todo-app/assets/css/.*|examples/todo-app/src_haxe/client/.*|examples/todo-app/e2e/ui_visual\.spec\.ts|examples/todo-app/e2e/ui_visual\.spec\.ts-snapshots/.*)$'
 
 echo "[pre-commit] Running local path guard on staged changes..."
-"$ROOT_DIR/scripts/lint/local_path_guard_staged.sh"
+bash "$ROOT_DIR/scripts/lint/local_path_guard_staged.sh"
 
 if ! command -v gitleaks >/dev/null 2>&1; then
   echo "[pre-commit] ERROR: gitleaks is required but not installed."
@@ -30,7 +30,12 @@ if ! haxelib run formatter --help >/dev/null 2>&1; then
   exit 1
 fi
 
-mapfile -t STAGED_HX_FILES < <(
+STAGED_HX_FILES=()
+while IFS= read -r staged_file; do
+  if [ -n "$staged_file" ]; then
+    STAGED_HX_FILES+=("$staged_file")
+  fi
+done < <(
   git diff --cached --name-only --diff-filter=ACMR \
     | rg '\.hx$' \
     || true
@@ -51,10 +56,10 @@ if [ "${#STAGED_HX_FILES[@]}" -gt 0 ]; then
 fi
 
 echo "[pre-commit] Running name-heuristics guard..."
-"$ROOT_DIR/scripts/lint/name_heuristics_guard.sh"
+bash "$ROOT_DIR/scripts/lint/name_heuristics_guard.sh"
 
 echo "[pre-commit] Running numeric-suffix guard..."
-"$ROOT_DIR/scripts/lint/numeric_suffix_guard.sh"
+bash "$ROOT_DIR/scripts/lint/numeric_suffix_guard.sh"
 
 if git diff --cached --name-only --diff-filter=ACMR | rg -q "$VISUAL_TRIGGER_PATTERN"; then
   echo "[pre-commit] Running todo-app visual regression gate..."

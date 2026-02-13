@@ -31,6 +31,16 @@ mix haxe.watch
 # Perfect for iterative development
 ```
 
+### Install Git Hooks (Recommended)
+Run this once per clone:
+
+```bash
+npm run hooks:install
+```
+
+- Enables repo-managed pre-commit checks (path leaks, secrets scan, staged `.hx` auto-format, naming guards).
+- If you use `bd hooks install --chain`, re-running `npm run hooks:install` updates `.git/hooks/pre-commit.old` so repo checks still run before the `bd` flush.
+
 ### Pre-commit Local Path Guard
 - The pre-commit hook blocks staged **absolute local paths** (for example `/Users/...`, `/home/...`, `/var/folders/...`, `C:\Users\...`).
 - Dot-relative path references (`./...`, `../...`) are allowed when they resolve inside the repo root.

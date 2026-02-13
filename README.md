@@ -806,6 +806,7 @@ npm run test:generator # Generator + Mix task scaffolds
 npm run test:update   # Update expected snapshot outputs
 npm run qa:sentinel   # Todo-app build + boot probe (async)
 npm run ci:guards     # Guardrails (no app heuristics, etc.)
+npm run hooks:install # Install repo pre-commit checks locally
 ```
 
 **Test Infrastructure:**

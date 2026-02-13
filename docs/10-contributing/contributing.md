@@ -44,10 +44,18 @@ cd reflaxe.elixir
 npm install       # Installs lix + Haxe dependencies
 npx lix download  # Downloads project-specific Haxe libraries
 mix deps.get      # Installs Elixir dependencies
+npm run hooks:install # Installs repo pre-commit checks
 
 # Run tests to verify setup
 npm test          # Run Haxe compiler tests
 npm run test:mix  # Run Elixir runtime tests
+```
+
+If you use `bd` git hooks, install them in chained mode so repo checks stay active:
+
+```bash
+bd hooks install --chain
+npm run hooks:install
 ```
 
 ## Making Changes
