@@ -117,17 +117,17 @@
 
   /* Search/filter/sort controls */
   .todo-controls-row {
-    @apply flex flex-wrap items-center gap-3;
+    @apply flex flex-wrap items-start gap-3;
   }
 
   .todo-control-field {
-    @apply block h-11 w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-800;
+    @apply block h-11 w-full rounded-lg border border-gray-300 bg-white text-gray-900;
     @apply focus:ring-2 focus:ring-blue-500;
     @apply dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100;
   }
 
   .todo-filter-group {
-    @apply inline-flex h-11 items-center gap-2 self-center;
+    @apply flex h-11 items-stretch gap-2 self-start;
   }
 
   .todo-filter-btn {
@@ -137,7 +137,7 @@
   }
 
   .todo-filter-btn-active {
-    @apply border-blue-500 bg-blue-500 text-white shadow-sm hover:bg-blue-600;
+    @apply border-blue-500 bg-blue-500 text-white hover:bg-blue-600;
     @apply dark:border-blue-500 dark:bg-blue-500 dark:text-white dark:hover:bg-blue-600;
   }
   
