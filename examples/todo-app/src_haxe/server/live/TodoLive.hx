@@ -1203,10 +1203,7 @@ class TodoLive {
 
 	// Typed UI helpers (no inline HEEx ops in HXX)
 	static inline function filterBtnClass(current:shared.TodoTypes.TodoFilter, expect:shared.TodoTypes.TodoFilter):String {
-		return
-			"h-11 px-5 rounded-lg inline-flex items-center justify-center whitespace-nowrap text-sm font-semibold transition-colors border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-			+
-			(current == expect ? " bg-blue-500 border-blue-500 text-white shadow-sm hover:bg-blue-600" : " bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-600");
+		return current == expect ? "todo-filter-btn todo-filter-btn-active" : "todo-filter-btn";
 	}
 
 	static inline function sortSelected(current:shared.TodoTypes.TodoSort, expect:shared.TodoTypes.TodoSort):Bool {
@@ -1395,50 +1392,50 @@ class TodoLive {
 												<span data-testid="org-slug">${assigns.organization_slug}</span>
 											</a>
 										</div>
-											<div data-testid="todo-nav-auth-row" class="mt-3 flex flex-wrap items-center gap-2 text-sm">
+											<div data-testid="todo-nav-auth-row" class="todo-nav-auth-row">
 													<button data-testid="nav-theme-toggle"
 														id="nav-theme-toggle"
 														type="button"
 														phx-hook=${HookName.ThemeToggle}
 														aria-label="Toggle theme"
-														class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-800 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+														class="nav-pill nav-pill-theme">
 														<span aria-hidden="true">🌓</span>
 														<span data-theme-label class="text-xs font-medium">Theme</span>
 													</button>
 														<if {assigns.signed_in}>
 															<if {assigns.current_user.role == "admin"}>
 																<a data-testid="nav-admin" href="/admin"
-																	class="inline-flex h-9 items-center rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+																	class="nav-pill">
 																	Admin
 																</a>
 															</if>
 																<a data-testid="nav-users" href="/users"
-																	class="inline-flex h-9 items-center rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+																	class="nav-pill">
 																	Users
 																</a>
 																<a data-testid="nav-profile" href="/profile"
-																	class="inline-flex h-9 items-center gap-2 rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+																	class="nav-pill nav-pill-avatar">
 																	<div data-testid="nav-profile-avatar" class={assigns.header_avatar_class} style={assigns.header_avatar_style}>
 																	${assigns.header_avatar_initials}
 																</div>
 																<span>Profile</span>
 															</a>
-															<form action="/auth/logout" method="post" class="inline-flex items-center">
+															<form action="/auth/logout" method="post" class="inline-flex h-9 items-center">
 																<input type="hidden" name="_csrf_token" value=${CSRFProtection.get_csrf_token()}/>
 																<button data-testid="nav-sign-out" type="submit"
-																	class="inline-flex h-9 items-center rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+																	class="nav-pill">
 																	Sign out
 																</button>
 														</form>
 													</if>
 														<if {!assigns.signed_in}>
-															<span class="text-gray-500 dark:text-gray-400">Demo mode</span>
+															<span class="nav-auth-hint">Demo mode</span>
 															<a data-testid="nav-users" href="/users"
-																class="inline-flex h-9 items-center rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+																class="nav-pill">
 																Users
 															</a>
 															<a data-testid="nav-sign-in" href="/login"
-																class="inline-flex h-9 items-center rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600">
+																class="nav-pill">
 																Sign in
 															</a>
 														</if>
@@ -1539,19 +1536,19 @@ class TodoLive {
 					
 							<!-- Filters and Search -->
 								<div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
-									<div data-testid="todo-controls-row" class="flex flex-wrap items-start gap-3">
+									<div data-testid="todo-controls-row" class="todo-controls-row">
 									<!-- Search -->
 									<div class="flex-1 min-w-[280px]">
 			                            <form phx-change=${EventName.SearchTodos} class="relative h-11">
 												<input type="search" name="query" value={assigns.search_query} phx-debounce="300"
-													class="block h-11 w-full pl-10 pr-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+													class="todo-control-field todo-control-field-search pl-10 pr-4"
 													placeholder="Search todos..." />
 												<span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
 											</form>
 									</div>
 									
 			                        <!-- Filter Buttons -->
-				                        <div class="flex h-11 items-stretch gap-2 self-start">
+				                        <div class="todo-filter-group">
 				                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="all" data-testid="btn-filter-all"
 				                                class={assigns.filter_btn_all_class}>All</button>
 				                            <button type="button" phx-click=${EventName.FilterTodos} phx-value-filter="active" data-testid="btn-filter-active"
@@ -1564,7 +1561,7 @@ class TodoLive {
 									<div class="min-w-[210px]">
 			                            <form phx-change=${EventName.SortTodos} class="h-11">
 				                                <select name="sort_by"
-				                                    class="block h-11 w-full px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white">
+				                                    class="todo-control-field px-4">
 				                                    <option value="created" selected={assigns.sort_selected_created}>Sort by Date</option>
 				                                    <option value="priority" selected={assigns.sort_selected_priority}>Sort by Priority</option>
 				                                    <option value="due_date" selected={assigns.sort_selected_due_date}>Sort by Due Date</option>

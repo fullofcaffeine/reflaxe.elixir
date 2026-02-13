@@ -84,6 +84,62 @@
   .form-help {
     @apply mt-1 text-sm text-gray-500 dark:text-gray-400;
   }
+
+  /* Header nav controls */
+  .todo-nav-auth-row {
+    @apply mt-3 flex flex-wrap items-center gap-2 text-sm;
+  }
+
+  .nav-pill {
+    @apply inline-flex h-9 items-center rounded-lg border px-3 text-sm font-medium transition-colors duration-150;
+    @apply border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200;
+  }
+
+  .dark .nav-pill {
+    @apply border-slate-600 bg-slate-700 text-slate-100 hover:bg-slate-600;
+  }
+
+  .nav-pill-theme {
+    @apply gap-2 text-gray-800;
+  }
+
+  .dark .nav-pill-theme {
+    @apply text-white;
+  }
+
+  .nav-pill-avatar {
+    @apply gap-2;
+  }
+
+  .nav-auth-hint {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+
+  /* Search/filter/sort controls */
+  .todo-controls-row {
+    @apply flex flex-wrap items-center gap-3;
+  }
+
+  .todo-control-field {
+    @apply block h-11 w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-800;
+    @apply focus:ring-2 focus:ring-blue-500;
+    @apply dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100;
+  }
+
+  .todo-filter-group {
+    @apply inline-flex h-11 items-center gap-2 self-center;
+  }
+
+  .todo-filter-btn {
+    @apply inline-flex h-11 items-center justify-center whitespace-nowrap rounded-lg border border-gray-300 bg-gray-100 px-5 text-sm font-semibold text-gray-700;
+    @apply transition-colors duration-150 hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500;
+    @apply dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600;
+  }
+
+  .todo-filter-btn-active {
+    @apply border-blue-500 bg-blue-500 text-white shadow-sm hover:bg-blue-600;
+    @apply dark:border-blue-500 dark:bg-blue-500 dark:text-white dark:hover:bg-blue-600;
+  }
   
   /* Todo-specific components */
   .todo-container {
