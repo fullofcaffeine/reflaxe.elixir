@@ -38,6 +38,27 @@ Why both Mix and Haxe entrypoints exist:
 - The Haxe generator is the best UX for “create a brand-new project directory”.
 - Both converge on the same canonical Phoenix client behavior through `mix haxe.phoenix.scaffold`.
 
+## Why This Split Exists (Not Redundant)
+
+This split is intentional and architectural, not duplication:
+
+1. Project creation and project mutation are different operations.
+   - `haxe --run Run create ...` owns **directory creation** and “new app” flows.
+   - Mix tasks own **in-place patching** of an existing Mix/Phoenix tree.
+
+2. Mix tasks are the canonical patching surface.
+   - Phoenix wiring is centralized in `mix haxe.phoenix.scaffold`.
+   - Both greenfield and gradual-adoption flows call the same task, so behavior stays aligned.
+
+3. This avoids drift between templates.
+   - One Phoenix wiring implementation means fewer divergent code paths and easier maintenance.
+
+Decision matrix:
+
+- New app directory: `haxe --run Run create <name> --type phoenix|liveview`
+- Existing app, add Haxe server plumbing: `mix haxe.gen.project`
+- Existing app, apply/remove Phoenix JS client wiring only: `mix haxe.phoenix.scaffold --client-mode genes|plain-js`
+
 ## Scenarios
 
 ### Existing Phoenix app (recommended)

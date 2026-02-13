@@ -8,6 +8,14 @@ Reflaxe.Elixir ships a small set of Mix generators to help scaffold **Haxe-first
 - **No app-specific heuristics**: templates are generic and follow Phoenix/Ecto APIs as-is.
 - **Typed by default**: prefer typed assigns/params/changesets and avoid `Dynamic` in generator output.
 
+## Why Mix Generators Exist Alongside `haxe --run Run create`
+
+- `haxe --run Run create ...` handles **new project directory creation** (greenfield).
+- `mix haxe.gen.*` tasks handle **in-place scaffolding** inside an existing Mix/Phoenix app.
+- Phoenix client wiring is intentionally centralized in `mix haxe.phoenix.scaffold`, which both flows use.
+
+This avoids duplicate Phoenix patching logic while keeping each entrypoint focused on one job.
+
 For end-to-end reference patterns, always compare against `examples/todo-app/`.
 
 ## Generators

@@ -249,6 +249,15 @@ mix haxe.watch --hxml build.hxml
 These tasks generate **Haxe-first** scaffolding (they write `.hx` source files).
 Elixir output is produced when you run `mix compile.haxe` (or `haxe build.hxml`).
 
+Why multiple scaffold entrypoints exist:
+
+- `haxe --run Run create ...` is for creating a **new project directory** (greenfield flow).
+- `mix haxe.gen.project` is for patching an **existing** project with Haxe server-side plumbing.
+- `mix haxe.phoenix.scaffold` is the canonical Phoenix client wiring layer used by both flows.
+
+This split keeps one canonical Phoenix patching implementation while supporting both user stories.
+See `docs/06-guides/SCAFFOLDING_SYSTEM.md` for the scenario-driven guide.
+
 ### mix haxe.phoenix.scaffold
 
 Applies Phoenix client wiring for LiveView projects.
