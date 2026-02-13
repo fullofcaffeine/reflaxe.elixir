@@ -72,6 +72,18 @@ defmodule HaxePhoenixScaffoldTest do
   liveSocket.connect()
   """
 
+  @minimal_root_layout_no_boilerplate """
+  <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    </head>
+    <body>
+      <%= @inner_content %>
+    </body>
+  </html>
+  """
+
   @dev_exs_no_watchers """
   import Config
 
@@ -337,6 +349,41 @@ defmodule HaxePhoenixScaffoldTest do
     gitignore = File.read!(Path.join(root, ".gitignore"))
     assert gitignore =~ "assets/js/_hx_app_tmp.js"
     assert gitignore =~ "assets/js/hx_app.js"
+  end
+
+  test "adds root layout baseline boilerplate when template exists" do
+    root =
+      Path.join(
+        System.tmp_dir!(),
+        "reflaxe_elixir_scaffold_root_layout_#{System.unique_integer([:positive])}"
+      )
+
+    assets_js = Path.join([root, "assets", "js"])
+    config_dir = Path.join([root, "config"])
+    root_layout_dir = Path.join([root, "lib", "my_app_web", "components", "layouts"])
+    root_layout_path = Path.join(root_layout_dir, "root.html.heex")
+
+    File.mkdir_p!(assets_js)
+    File.mkdir_p!(config_dir)
+    File.mkdir_p!(root_layout_dir)
+
+    File.write!(Path.join(assets_js, "app.js"), @minimal_app_js)
+    File.write!(Path.join(config_dir, "dev.exs"), @minimal_dev_exs)
+    File.write!(Path.join(root, "mix.exs"), @minimal_mix_exs)
+    File.write!(Path.join(root, ".gitignore"), "")
+    File.write!(root_layout_path, @minimal_root_layout_no_boilerplate)
+
+    assert :ok == HaxePhoenixScaffold.apply!(root)
+    assert :ok == HaxePhoenixScaffold.apply!(root)
+
+    root_layout = File.read!(root_layout_path)
+    assert root_layout =~ "<!DOCTYPE html>"
+    assert root_layout =~ ~s(name="csrf-token")
+    assert root_layout =~ "phx-track-static"
+    assert root_layout =~ ~s(src={~p"/assets/app.js"})
+    assert count(root_layout, "<!DOCTYPE html>") == 1
+    assert count(root_layout, "csrf-token") == 1
+    assert count(root_layout, "phx-track-static") == 1
   end
 
   test "does not clobber custom haxe_libraries stubs without signature" do

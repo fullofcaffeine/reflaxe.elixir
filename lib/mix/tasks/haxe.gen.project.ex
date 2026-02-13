@@ -35,6 +35,8 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
   @shortdoc "Adds Reflaxe.Elixir support to existing Elixir project"
   @requirements ["app.config"]
+  @haxe_test_helper_begin "# BEGIN reflaxe_elixir haxe_exunit_require"
+  @haxe_test_helper_end "# END reflaxe_elixir haxe_exunit_require"
 
   @doc """
   Entry point for the Mix task
@@ -88,6 +90,9 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     # 2. Create Haxe build configuration
     create_build_config(config)
 
+    # 2a. Create Haxe test build configuration
+    create_test_build_config(config)
+
     # 2b. Create .haxerc for lix-managed toolchain (if missing)
     create_haxerc(config)
 
@@ -109,6 +114,9 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
     # 7. Update .gitignore
     update_gitignore(config)
+
+    # 7a. Ensure test helper loads Haxe-compiled ExUnit modules
+    ensure_test_helper_bootstrap(config)
 
     # 7b. Phoenix client JS scaffold (Genes + esbuild --watch safe promotion)
     if config.phoenix do
@@ -163,6 +171,13 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
         base_directories
       end
 
+    all_directories =
+      all_directories ++
+        [
+          "test_haxe",
+          Path.join(["test", "generated"])
+        ]
+
     Enum.each(all_directories, fn dir ->
       File.mkdir_p!(dir)
       Mix.shell().info("Created directory: #{dir}")
@@ -194,6 +209,14 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
 
     write_file_with_confirmation("build.hxml", build_content, config.force)
     Mix.shell().info("Created Haxe build configuration: build.hxml")
+  end
+
+  # Create build-tests.hxml configuration file
+  defp create_test_build_config(config) do
+    test_build_content = build_tests_hxml_content(config)
+
+    write_file_with_confirmation("build-tests.hxml", test_build_content, config.force)
+    Mix.shell().info("Created Haxe test build configuration: build-tests.hxml")
   end
 
   defp create_haxerc(config) do
@@ -268,6 +291,15 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
   @doc false
   def build_hxml_content_for_test(config), do: build_hxml_content(config)
 
+  @doc false
+  def build_tests_hxml_content_for_test(config), do: build_tests_hxml_content(config)
+
+  @doc false
+  def patch_test_helper_content_for_test(content), do: patch_test_helper_content(content)
+
+  @doc false
+  def add_haxe_test_aliases_for_test(content), do: maybe_add_haxe_test_aliases_to_mix_exs(content)
+
   # Create package.json for npm dependencies
   defp create_package_json(config) do
     package_content = package_json_content(config)
@@ -315,11 +347,23 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     # Check if already has Haxe compiler and config
     if has_haxe_compiler? && has_haxe_config? do
       Mix.shell().info("mix.exs already includes Haxe compiler configuration")
+
+      updated_content = maybe_add_haxe_test_aliases_to_mix_exs(current_content)
+
+      if updated_content != current_content do
+        if config.force || confirm_overwrite("mix.exs") do
+          File.write!(mix_exs_path, updated_content)
+          Mix.shell().info("✅ Updated mix.exs with Haxe test aliases")
+        else
+          Mix.shell().info("Skipped updating mix.exs test aliases")
+        end
+      end
     else
       updated_content =
         current_content
         |> maybe_add_haxe_compiler_to_mix_exs(has_haxe_compiler?)
         |> maybe_add_haxe_config_to_mix_exs(config, has_haxe_config?)
+        |> maybe_add_haxe_test_aliases_to_mix_exs()
 
       if config.force || confirm_overwrite("mix.exs") do
         File.write!(mix_exs_path, updated_content)
@@ -363,8 +407,216 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
     end
   end
 
+  defp maybe_add_haxe_test_aliases_to_mix_exs(content) do
+    content
+    |> maybe_add_haxe_compile_tests_alias_to_mix_exs()
+    |> maybe_add_test_alias_to_mix_exs()
+  end
+
+  defp maybe_add_haxe_compile_tests_alias_to_mix_exs(content) do
+    if Regex.match?(~r/"haxe\.compile\.tests"\s*:/m, content) do
+      content
+    else
+      insert_alias_entry(content, ~s("haxe.compile.tests": ["cmd haxe build-tests.hxml"],))
+    end
+  end
+
+  defp maybe_add_test_alias_to_mix_exs(content) do
+    if Regex.match?(~r/"test"\s*:/m, content) do
+      content
+    else
+      insert_alias_entry(content, ~s("test": ["haxe.compile.tests", "test"],))
+    end
+  end
+
+  defp insert_alias_entry(content, alias_entry)
+       when is_binary(content) and is_binary(alias_entry) do
+    alias_pos =
+      case Regex.run(~r/\bdefp\s+aliases\b/m, content, return: :index) do
+        [{pos, _len} | _] ->
+          pos
+
+        _ ->
+          case Regex.run(~r/\bdef\s+aliases\b/m, content, return: :index) do
+            [{pos, _len} | _] -> pos
+            _ -> nil
+          end
+      end
+
+    if is_nil(alias_pos) do
+      content
+    else
+      after_aliases = String.slice(content, alias_pos..-1//1)
+      list_open_idx = binary_index(after_aliases, "[")
+
+      if is_nil(list_open_idx) do
+        content
+      else
+        insert_at = alias_pos + list_open_idx + 1
+        insertion = "\n        " <> alias_entry <> "\n"
+
+        String.slice(content, 0, insert_at) <>
+          insertion <> String.slice(content, insert_at..-1//1)
+      end
+    end
+  end
+
+  defp binary_index(haystack, needle) when is_binary(haystack) and is_binary(needle) do
+    case :binary.match(haystack, needle) do
+      {pos, _len} -> pos
+      :nomatch -> nil
+    end
+  end
+
   defp maybe_append_modules(modules, false, _to_append), do: modules
   defp maybe_append_modules(modules, true, to_append), do: modules ++ to_append
+
+  defp build_tests_hxml_content(config) do
+    """
+    # Reflaxe.Elixir ExUnit Test Build Configuration
+    # Generated by mix haxe.gen.project
+    #
+    # Notes
+    # - Compile Haxe-authored ExUnit modules to test/generated/**/*.exs.
+    # - test/test_helper.exs requires these files before ExUnit discovery.
+
+    # Libraries
+    -lib reflaxe.elixir
+
+    # Source directories
+    -cp #{config.haxe_dir}
+    -cp test_haxe
+
+    # Output test modules as .exs so ExUnit can require them directly
+    -D elixir_output=test/generated
+    -D elixir_output_exs
+
+    # Required for Reflaxe targets
+    -D reflaxe_runtime
+
+    # Enable ExUnit test codegen
+    -D exunit
+
+    # Application module prefix
+    -D app_name=#{config.elixir_namespace}
+
+    #{if config.phoenix, do: "-D hxx_mode=tsx\n", else: ""}# Enable dead code elimination to remove unused functions and reduce output noise
+    -dce full
+
+    # Add test modules to compile (one per line), for example:
+    # #{config.haxe_namespace}.tests.ExampleTest
+    """
+  end
+
+  defp ensure_test_helper_bootstrap(config) do
+    test_helper_path = Path.join(["test", "test_helper.exs"])
+
+    test_helper_content =
+      if File.exists?(test_helper_path) do
+        patch_test_helper_content(File.read!(test_helper_path))
+      else
+        default_test_helper_content()
+      end
+
+    write_file_with_confirmation(test_helper_path, test_helper_content, config.force)
+    Mix.shell().info("Ensured Haxe ExUnit bootstrap in test/test_helper.exs")
+  end
+
+  defp default_test_helper_content() do
+    """
+    ExUnit.start()
+
+    #{@haxe_test_helper_begin}
+    # Require Haxe-compiled ExUnit scripts generated by `haxe build-tests.hxml`.
+    for file <- Path.wildcard("test/generated/**/*_test.exs") do
+      Code.require_file(file)
+    end
+    #{@haxe_test_helper_end}
+    """
+  end
+
+  defp patch_test_helper_content(content) when is_binary(content) do
+    if String.contains?(content, @haxe_test_helper_begin) and
+         String.contains?(content, @haxe_test_helper_end) do
+      replace_test_helper_marker_block(content)
+    else
+      has_existing_loader? =
+        String.contains?(content, "Path.wildcard(\"test/generated/**/*_test.exs\")") and
+          String.contains?(content, "Code.require_file(")
+
+      if has_existing_loader? do
+        content
+      else
+        appended_block =
+          """
+
+          #{@haxe_test_helper_begin}
+          # Require Haxe-compiled ExUnit scripts generated by `haxe build-tests.hxml`.
+          for file <- Path.wildcard("test/generated/**/*_test.exs") do
+            Code.require_file(file)
+          end
+          #{@haxe_test_helper_end}
+          """
+
+        String.trim_trailing(content) <> appended_block <> "\n"
+      end
+    end
+  end
+
+  defp replace_test_helper_marker_block(content) do
+    lines = String.split(content, "\n", trim: false)
+
+    begin_index =
+      Enum.find_index(lines, fn line ->
+        String.contains?(line, @haxe_test_helper_begin)
+      end)
+
+    end_index =
+      lines
+      |> Enum.with_index()
+      |> Enum.find_value(fn {line, idx} ->
+        if idx > (begin_index || -1) and String.contains?(line, @haxe_test_helper_end),
+          do: idx,
+          else: nil
+      end)
+
+    if is_nil(begin_index) or is_nil(end_index) do
+      content
+    else
+      begin_line = Enum.at(lines, begin_index)
+      end_line = Enum.at(lines, end_index)
+      indent = leading_indent(begin_line)
+
+      replacement = [
+        begin_line,
+        indent <> "# Require Haxe-compiled ExUnit scripts generated by `haxe build-tests.hxml`.",
+        indent <> ~s|for file <- Path.wildcard("test/generated/**/*_test.exs") do|,
+        indent <> "  Code.require_file(file)",
+        indent <> "end",
+        end_line
+      ]
+
+      lines
+      |> Enum.with_index()
+      |> Enum.flat_map(fn {line, idx} ->
+        cond do
+          idx < begin_index -> [line]
+          idx == begin_index -> replacement
+          idx > begin_index and idx < end_index -> []
+          idx == end_index -> []
+          true -> [line]
+        end
+      end)
+      |> Enum.join("\n")
+    end
+  end
+
+  defp leading_indent(line) when is_binary(line) do
+    line
+    |> String.graphemes()
+    |> Enum.take_while(fn ch -> ch == " " or ch == "\t" end)
+    |> Enum.join()
+  end
 
   # Create example modules
   defp create_example_modules(config) do
@@ -620,6 +872,7 @@ defmodule Mix.Tasks.Haxe.Gen.Project do
       "",
       "# Reflaxe.Elixir generated files",
       "#{config.output_dir}/",
+      "test/generated/",
       "node_modules/",
       "package-lock.json",
       "*.hxml.cache",

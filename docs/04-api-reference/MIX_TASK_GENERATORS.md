@@ -149,6 +149,9 @@ Output (defaults; configurable via flags):
   - `-D hxx_mode=tsx` (when `--phoenix` is enabled; strict typed HXX for new scaffolds)
 - `package.json` + `.haxerc` (unless `--skip-npm`)
 - `mix.exs` updated to include `compilers: [:haxe] ++ Mix.compilers()` and a `haxe: [...]` config block
+- `build-tests.hxml` + `test_haxe/` + `test/generated/` for Haxe-authored ExUnit modules
+- `test/test_helper.exs` bootstrap that requires generated `test/generated/**/*_test.exs`
+- `mix.exs` aliases for Haxe test compilation (`haxe.compile.tests`, plus `test` alias when missing)
 - `.gitignore` updated to ignore generated output dir by default
 
 Notes:

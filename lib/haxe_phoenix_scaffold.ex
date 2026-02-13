@@ -46,6 +46,8 @@ defmodule HaxePhoenixScaffold do
       raise "expected Phoenix config dir at #{config_dir}"
     end
 
+    ensure_root_layout_boilerplate!(project_root, verbose: verbose, strict: strict)
+
     case client_mode do
       :genes ->
         apply_genes_scaffold!(
@@ -72,6 +74,80 @@ defmodule HaxePhoenixScaffold do
     end
 
     :ok
+  end
+
+  defp ensure_root_layout_boilerplate!(project_root, opts) when is_binary(project_root) do
+    verbose = Keyword.get(opts, :verbose, false)
+
+    candidates =
+      [
+        Path.join([project_root, "lib", "*_web", "components", "layouts", "root.html.heex"]),
+        Path.join([project_root, "lib", "*_web", "templates", "layout", "root.html.heex"]),
+        Path.join([project_root, "lib", "*_web", "templates", "layout", "root.html.leex"])
+      ]
+      |> Enum.flat_map(&Path.wildcard/1)
+      |> Enum.uniq()
+
+    Enum.each(candidates, fn path ->
+      patch_file!(path, &patch_root_layout_template/1, verbose: verbose)
+    end)
+
+    :ok
+  end
+
+  defp patch_root_layout_template(content) when is_binary(content) do
+    content
+    |> ensure_doctype()
+    |> ensure_csrf_meta()
+    |> ensure_tracked_app_script()
+  end
+
+  defp ensure_doctype(content) when is_binary(content) do
+    if Regex.match?(~r/^\s*<!doctype html>/im, content) do
+      content
+    else
+      "<!DOCTYPE html>\n" <> content
+    end
+  end
+
+  defp ensure_csrf_meta(content) when is_binary(content) do
+    if String.contains?(content, "csrf-token") do
+      content
+    else
+      insert_before_head_close(
+        content,
+        ~s|<meta name="csrf-token" content={Plug.CSRFProtection.get_csrf_token()} />|
+      )
+    end
+  end
+
+  defp ensure_tracked_app_script(content) when is_binary(content) do
+    if String.contains?(content, "phx-track-static") do
+      content
+    else
+      insert_before_head_close(
+        content,
+        ~s|<script defer phx-track-static type="text/javascript" src={~p"/assets/app.js"}></script>|
+      )
+    end
+  end
+
+  defp insert_before_head_close(content, line_to_insert)
+       when is_binary(content) and is_binary(line_to_insert) do
+    case Regex.run(~r/^([ \t]*)<\/head>/im, content, capture: :all_but_first, return: :index) do
+      [{indent_pos, indent_len}] ->
+        indent = String.slice(content, indent_pos, indent_len)
+
+        Regex.replace(
+          ~r/^([ \t]*)<\/head>/im,
+          content,
+          "#{indent}#{line_to_insert}\n\\0",
+          global: false
+        )
+
+      _ ->
+        content
+    end
   end
 
   defp apply_genes_scaffold!(

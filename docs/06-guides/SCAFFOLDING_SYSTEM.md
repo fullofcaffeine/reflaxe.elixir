@@ -23,6 +23,7 @@ There are three layers that work together:
 2. `mix haxe.gen.project`
    - Mix-side generator for **existing project directories** (gradual adoption).
    - Adds server-side plumbing: `build.hxml`, `src_haxe/**`, Mix compiler wiring.
+   - Adds Haxe ExUnit plumbing: `build-tests.hxml`, `test_haxe/`, generated-test loader in `test/test_helper.exs`, and test aliases.
    - With `--phoenix`, it also invokes `mix haxe.phoenix.scaffold`.
    - Supports `--client-mode genes|plain-js` when `--phoenix` is used (default: `genes`).
 
@@ -30,6 +31,7 @@ There are three layers that work together:
    - Canonical Phoenix client integration task.
    - `--client-mode genes` (default): typed Haxe/Genes client build + watcher promotion + `app.js` hook merge.
    - `--client-mode plain-js`: removes scaffold-managed Genes wiring and converges back to plain Phoenix JS.
+   - If a Phoenix root layout template is present, it also ensures baseline HTML boilerplate (doctype, CSRF meta tag, tracked app script).
    - Use `--yes` for non-interactive plain-js convergence (CI/generator flows).
 
 Why both Mix and Haxe entrypoints exist:

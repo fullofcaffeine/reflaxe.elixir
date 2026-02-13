@@ -317,6 +317,12 @@ mix haxe.gen.project --basic-modules
 If you pass `--phoenix`, the task also invokes `mix haxe.phoenix.scaffold` for client wiring.
 Use `--client-mode genes|plain-js` (default `genes`) to control which client shape is applied.
 
+It also scaffolds baseline Haxe ExUnit wiring:
+- `build-tests.hxml` (Haxe test compile target to `test/generated/**/*.exs`)
+- `test_haxe/` and `test/generated/` directories
+- `test/test_helper.exs` bootstrap block that requires generated `*_test.exs` files
+- Mix aliases: `"haxe.compile.tests"` and (when absent) `"test": ["haxe.compile.tests", "test"]`
+
 - Writes/updates `build-client.hxml` (Genes) to output to `assets/js/_hx_app_tmp.js`
 - Ensures a stable import path at `assets/js/hx_app.js`
 - Patches `assets/js/app.js` to import `./hx_app.js` and merge hooks from `window.Hooks`
