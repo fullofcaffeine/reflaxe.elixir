@@ -526,6 +526,28 @@ var [first, second, ...rest] = items;
 [first, second | rest] = items
 ```
 
+### Existing Bindings vs New Pattern Binders
+
+Elixir patterns bind by default. Reusing a variable name inside a pattern creates/rebinds that name in pattern scope,
+unless you pin it with `^`.
+
+```elixir
+x = 1
+
+case 2 do
+  x -> :matched   # binds/rebinds x in this pattern
+  _ -> :no
+end
+
+case 2 do
+  ^x -> :matched  # matches existing x
+  _ -> :no
+end
+```
+
+Reflaxe.Elixir applies late pattern-hygiene passes to pin existing bindings when needed so generated `case`/`with`
+code does not accidentally shadow prior values.
+
 ### Complex Pattern Matching
 
 **Haxe Input**:

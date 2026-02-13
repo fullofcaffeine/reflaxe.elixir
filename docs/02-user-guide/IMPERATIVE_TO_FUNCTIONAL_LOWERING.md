@@ -7,7 +7,7 @@ If you want the deep dive (with many examples), start here:
 
 - `docs/07-patterns/FUNCTIONAL_PATTERNS.md` (core lowering patterns)
 - `docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md` (language mapping reference)
-- `docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md` (naming, unused vars, collision rules, hygiene)
+- `docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md` (naming, unused vars, collision rules, hygiene; includes variable binding vs rebinding details)
 - `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md` (portable vs typed Elixir-first strategy)
 - `docs/06-guides/KNOWN_LIMITATIONS.md` (sharp edges + experimental surfaces)
 
@@ -20,6 +20,7 @@ Reflaxe.Elixir lowers Haxe mutation into **a sequence of rebindings** that prese
 
 Implication:
 - The output is still purely functional/immutable at runtime, but reads like idiomatic Elixir rebinding.
+- Rebinding in Elixir is legal by default. If you need "assign once" guarantees, use Haxe `final`.
 
 ### 2) “Loops” become **Enum/reduce recursion**
 

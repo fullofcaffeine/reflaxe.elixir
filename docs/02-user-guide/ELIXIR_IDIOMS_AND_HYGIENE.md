@@ -256,6 +256,48 @@ var value = ElixirMap.fetchBang(myMap, key);
 
 ## Control flow: expressions + preservation helpers
 
+### Variable binding vs rebinding (important)
+
+Elixir has immutable values, but variable names can be rebound in scope. Rebinding is valid Elixir and does not
+raise an error by default.
+
+```elixir
+x = 1
+x = 2
+```
+
+Pattern matching adds an important rule:
+
+- `x` in a pattern binds/rebinds a variable.
+- `^x` pins and matches against an existing binding.
+
+```elixir
+x = 1
+
+case 2 do
+  x -> :matched   # binds x to 2 in this pattern
+  _ -> :no
+end
+
+case 2 do
+  ^x -> :matched  # matches existing x (1)
+  _ -> :no
+end
+```
+
+Reflaxe.Elixir includes late hygiene passes that pin existing bindings in generated `case`/`with` patterns when needed
+to avoid accidental shadowing in emitted code.
+
+If you want "assign once" behavior in source Haxe, use `final`:
+
+```haxe
+final x = 1;
+x = 2; // Compile-time error in Haxe: Cannot assign to final
+```
+
+There is currently no global Reflaxe.Elixir mode that forbids all variable rebinding in generated Elixir. Use Haxe
+typing (`final`) and code review/lint policy for stricter assignment discipline.
+
 ### Reassignment pipelines → `|>`
 
 When the compiler sees a contiguous sequence like `x = f(x, ...)` then `x = g(x, ...)`, it may collapse it into a pipe:

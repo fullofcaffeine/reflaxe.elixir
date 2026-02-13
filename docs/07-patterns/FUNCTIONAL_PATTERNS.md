@@ -126,6 +126,33 @@ Elixir variables are immutable, so compound assignments become rebinding.
 | `x <<= y` | `x = Bitwise.<<<(x, y)` |
 | `x >>= y` | `x = Bitwise.>>>(x, y)` |
 
+#### Rebinding and pattern pinning
+
+Rebinding is valid Elixir. The name can be rebound, while values remain immutable:
+
+```elixir
+x = 1
+x = 2
+```
+
+In `case`/pattern contexts, use pinning to match an existing value:
+
+```elixir
+x = 1
+
+case 2 do
+  x -> :matched   # binds/rebinds x in the pattern
+  _ -> :no
+end
+
+case 2 do
+  ^x -> :matched  # matches the existing x
+  _ -> :no
+end
+```
+
+For strict "assign once" behavior in Haxe source, prefer `final` (compile-time enforced by Haxe).
+
 ### 5. Bitwise Operations
 
 Elixir requires the Bitwise module for certain operations.
