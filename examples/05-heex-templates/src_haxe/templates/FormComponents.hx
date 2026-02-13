@@ -6,6 +6,7 @@ import HXX.*;
  * Phoenix form component examples with HEEx templates
  * Demonstrates form helpers and validation integration
  */
+// @:template: binds this class to an external HEEx template resource.
 @:template("form_components.html.heex")
 class FormComponents {
 	/**
@@ -137,6 +138,7 @@ class FormComponents {
 	 *
 	 * In real Phoenix apps these are typically provided by your `CoreComponents` module.
 	 */
+	// @:component (function): marks this function as a typed dot-component entrypoint (props/slots can be validated).
 	@:component
 	public static function button(assigns:ButtonAssigns):String {
 		return hxx('

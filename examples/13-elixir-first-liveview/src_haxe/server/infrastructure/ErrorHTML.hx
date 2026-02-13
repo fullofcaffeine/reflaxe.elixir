@@ -5,7 +5,9 @@ import elixir.types.Term;
 /**
  * Minimal error HTML renderer to satisfy Phoenix error pipeline.
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("ElixirFirstLiveviewWeb.ErrorHTML")
+// @:keep: Phoenix resolves ErrorHTML by module convention in the endpoint pipeline, so this module can be runtime-referenced without direct Haxe calls.
 @:keep
 class ErrorHTML {
 	public static function render(template:String, _assigns:Term):String {

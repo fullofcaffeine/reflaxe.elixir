@@ -5,7 +5,9 @@ import elixir.types.Term;
 /**
  * Product controller with nested review routes.
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("PhoenixRouterWeb.ProductController")
+// @:controller: marks this module as a Phoenix controller for HTTP actions.
 @:controller
 class ProductController {
 	public static function index():String {
@@ -16,6 +18,7 @@ class ProductController {
 		return "Show product " + id;
 	}
 
+	// @:route: attaches route metadata to this action/function (legacy/manual route style).
 	@:route({method: "GET", path: "/products/:product_id/reviews", as: "product_reviews"})
 	public static function reviews(product_id:Int):String {
 		return "Reviews for product " + product_id;

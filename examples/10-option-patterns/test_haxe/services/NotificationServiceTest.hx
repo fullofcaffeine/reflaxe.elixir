@@ -16,8 +16,10 @@ using haxe.functional.ResultTools;
  * These tests verify that the notification service correctly handles business logic,
  * user preferences, error conditions, and bulk operations with type safety.
  */
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class NotificationServiceTest extends TestCase {
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	function sendToUserSucceedsForValidActiveUser() {
 		var result = NotificationService.sendToUser(1, "Test message", Email);

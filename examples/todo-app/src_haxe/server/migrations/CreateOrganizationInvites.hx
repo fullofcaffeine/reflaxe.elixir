@@ -18,6 +18,7 @@ import ecto.Migration.ColumnType;
  * - Mark acceptance with `accepted_at` and `accepted_by_user_id`.
  * - Enforce one invite per org+email via a unique constraint.
  */
+// @:migration: marks this class as an Ecto migration definition for migration emission.
 @:migration({timestamp: "20260101170000"})
 class CreateOrganizationInvites extends Migration {
 	public function up():Void {

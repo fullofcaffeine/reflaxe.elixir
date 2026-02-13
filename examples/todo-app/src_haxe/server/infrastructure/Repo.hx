@@ -26,7 +26,9 @@ import haxe.functional.Result;
  * end
  * ```
  */
+// @:native: pins emitted naming to a specific Elixir symbol/module.
 @:native("TodoApp.Repo")
+// @:repo: configures a typed Ecto repository module (adapter/json/extensions/pool).
 @:repo({
 	adapter: Postgres,
 	json: Jason,
@@ -35,6 +37,7 @@ import haxe.functional.Result;
 })
 extern class Repo {
 	// These are extern declarations for the functions injected by Ecto.Repo
+	// @:overload: declares additional function signatures for Haxe typing over one emitted implementation.
 	@:overload(function<T>(query:EctoQuery<T>):Array<T> {})
 	@:overload(function<T>(query:ecto.TypedQuery.TypedQuery<T>):Array<T> {})
 	public static function all<T>(queryable:Class<T>):Array<T>;

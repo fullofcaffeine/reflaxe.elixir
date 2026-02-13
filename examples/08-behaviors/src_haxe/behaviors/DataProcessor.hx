@@ -6,11 +6,13 @@ package behaviors;
  * This behavior ensures consistent interfaces for data processing operations
  * across different implementation strategies (streaming, batching, real-time)
  */
+// @:behaviour: defines a behavior contract that implementing modules must satisfy.
 @:behaviour
 class DataProcessor {
 	/**
 	 * Initialize the processor with configuration
 	 */
+	// @:callback: marks this function as a required behavior callback.
 	@:callback
 	public function init(config:ProcessorConfig):InitResponse {
 		throw "Callback must be implemented by behavior user";
@@ -51,6 +53,7 @@ class DataProcessor {
 	/**
 	 * Optional: Get processing statistics
 	 */
+	// @:optional_callback: marks this function as an optional behavior callback.
 	@:optional_callback
 	public function get_stats():ProcessorStats {
 		throw "Optional callback can be implemented by behavior user";

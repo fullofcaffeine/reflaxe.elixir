@@ -7,8 +7,10 @@ import phoenix.test.LiveViewTest;
 import phoenix.test.LiveView;
 import elixir.types.Term;
 
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class TodoLiveCrudTest extends TestCase {
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	public function testMountTodos():Void {
 		var conn = ConnTest.build_conn();

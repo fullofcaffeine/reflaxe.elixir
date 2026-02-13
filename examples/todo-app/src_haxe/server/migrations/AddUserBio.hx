@@ -15,6 +15,7 @@ import ecto.Migration.ColumnType;
  * HOW
  * - Uses the typed Migration DSL to alter `users` and add a nullable text column.
  */
+// @:migration: marks this class as an Ecto migration definition for migration emission.
 @:migration({timestamp: "20251231230017"})
 class AddUserBio extends Migration {
 	public function up():Void {

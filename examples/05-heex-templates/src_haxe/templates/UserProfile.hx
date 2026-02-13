@@ -6,6 +6,7 @@ import HXX.*;
  * HEEx template example using Haxe→Elixir compilation
  * Demonstrates type-safe Phoenix template generation
  */
+// @:template: binds this class to an external HEEx template resource.
 @:template("user_profile.html.heex")
 class UserProfile {
 	/**
@@ -96,6 +97,7 @@ class UserProfile {
 	 *
 	 * In real Phoenix apps this is typically provided by your `CoreComponents` module.
 	 */
+	// @:component (function): marks this function as a typed dot-component entrypoint (props/slots can be validated).
 	@:component
 	public static function button(assigns:UserProfileButtonAssigns):String {
 		return hxx('

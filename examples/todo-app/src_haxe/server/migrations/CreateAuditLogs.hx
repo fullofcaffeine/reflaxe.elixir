@@ -20,6 +20,7 @@ import ecto.Migration.ColumnType;
  * - Use `metadata` as JSON for small, typed-ish payloads (emails, role changes, etc.).
  * - Index common filter fields for fast admin queries.
  */
+// @:migration: marks this class as an Ecto migration definition for migration emission.
 @:migration({timestamp: "20260102120000"})
 class CreateAuditLogs extends Migration {
 	public function up():Void {

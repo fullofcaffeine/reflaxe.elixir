@@ -6,11 +6,14 @@ package contexts;
  */
 import elixir.types.Term;
 
+// @:schema: marks this class as an Ecto schema and declares its table.
 @:schema("users")
 class User {
+	// @:primary_key: marks this schema field as the primary key.
 	@:primary_key
 	public var id:Int;
 
+	// @:field: includes this property as an Ecto schema field in generated output.
 	@:field({type: "string", nullable: false})
 	public var name:String;
 
@@ -23,10 +26,12 @@ class User {
 	@:field({type: "boolean", defaultValue: true})
 	public var active:Bool;
 
+	// @:timestamps: enables Ecto timestamp fields (`inserted_at`/`updated_at`).
 	@:timestamps
 	public var insertedAt:String;
 	public var updatedAt:String;
 
+	// @:has_many: declares an Ecto has-many association for this schema field.
 	@:has_many("posts", "Post", "user_id")
 	public var posts:Array<Post>;
 }
@@ -43,11 +48,16 @@ class Post {
 	public var userId:Int;
 }
 
+// @:changeset: configures generated Ecto changeset casting/validation behavior.
 @:changeset
 class UserChangeset {
+	// @:validate_required: adds required-field validation to the generated changeset pipeline.
 	@:validate_required(["name", "email"])
+	// @:validate_format: adds format validation to the generated changeset pipeline.
 	@:validate_format("email", "email_regex")
+	// @:validate_length: adds length validation to the generated changeset pipeline.
 	@:validate_length("name", {min: 2, max: 100})
+	// @:validate_number: adds numeric constraint validation to the generated changeset pipeline.
 	@:validate_number("age", {greater_than: 0, less_than: 150})
 	public static function changeset(user:User, attrs:Term):Term {
 		// Changeset pipeline will be generated

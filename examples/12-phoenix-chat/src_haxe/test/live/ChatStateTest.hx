@@ -5,8 +5,10 @@ import exunit.Assert.*;
 import phoenix_chat_hx.live.AppLiveTypes.ChatMessage;
 import phoenix_chat_hx.live.ChatState;
 
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class ChatStateTest extends TestCase {
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	public function appendMessageReturnsNewArrayAndAppends():Void {
 		var original:ChatMessage = {

@@ -9,6 +9,7 @@ import ecto.Migration.ColumnType;
  * Uses the new typed Migration DSL for compile-time validation
  * and idiomatic Elixir code generation.
  */
+// @:migration: marks this class as an Ecto migration definition for migration emission.
 @:migration({timestamp: "20250813170314"})
 class CreateTodos extends Migration {
 	public function up():Void {

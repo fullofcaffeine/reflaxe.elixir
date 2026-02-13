@@ -25,6 +25,7 @@ using StringTools;
  *   `/auth/mock/callback?code=mock&state=...`.
  * - The callback validates the state and signs in via `Accounts.getOrCreateUserForLogin/2`.
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoApp.MockOAuth")
 class MockOAuth {
 	public static inline var SESSION_STATE_KEY = "mock_oauth_state";

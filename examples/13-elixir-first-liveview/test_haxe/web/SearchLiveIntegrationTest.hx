@@ -12,8 +12,10 @@ import phoenix.test.LiveViewTest;
 /**
  * Integration tests for SearchLive behavior through Phoenix test helpers.
  */
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class SearchLiveIntegrationTest extends TestCase {
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	public function testHomePageRendersLiveBootstrapMarkup():Void {
 		var conn = ConnTest.build_conn();

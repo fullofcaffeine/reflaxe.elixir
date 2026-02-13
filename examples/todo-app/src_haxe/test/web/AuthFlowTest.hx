@@ -17,8 +17,10 @@ import phoenix.test.ConnTest;
  * HOW
  * - POSTs to `/auth/login` and asserts a redirect plus presence of `:user_id` in session.
  */
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class AuthFlowTest extends TestCase {
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	public function testLoginSetsSessionUserId():Void {
 		var conn = ConnTest.build_conn();

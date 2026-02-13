@@ -14,7 +14,9 @@ import server.support.DevAutoMigrate;
  * Main TodoApp application module
  * Defines the OTP application supervision tree
  */
+// @:application: marks this class as an OTP application entry module.
 @:application
+// @:appName: sets the OTP app identifier used for generated module/config wiring.
 @:appName("TodoApp")
 class TodoApp {
 	/**

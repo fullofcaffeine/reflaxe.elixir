@@ -9,6 +9,7 @@ import ecto.Migration.ColumnType;
  * Uses the new typed Migration DSL for compile-time validation
  * and proper index/constraint generation.
  */
+// @:migration: marks this class as an Ecto migration definition for migration emission.
 @:migration({timestamp: "20250901092524"})
 class CreateUsers extends Migration {
 	public function up():Void {

@@ -21,8 +21,10 @@ import elixir.types.Term;
  * - Create a todo as a user in org A, then mount /todos as a user in org B and assert the title
  *   does not render.
  */
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class TenancyTest extends TestCase {
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	public function testTodosAreScopedToOrganization():Void {
 		var runId = Std.string(Std.random(1000000000));

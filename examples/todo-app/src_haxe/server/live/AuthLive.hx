@@ -50,7 +50,9 @@ typedef AuthLiveRenderAssigns = {
  * - Renders a standard HTML form that POSTs to SessionController.
  * - Lists existing users for quick switching in demos.
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoAppWeb.AuthLive")
+// @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview
 class AuthLive {
 	public static function mount(params:MountParams, session:Session, socket:Socket<AuthLiveAssigns>):MountResult<AuthLiveAssigns> {

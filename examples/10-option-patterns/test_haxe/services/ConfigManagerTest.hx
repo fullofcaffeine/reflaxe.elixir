@@ -15,8 +15,10 @@ using haxe.functional.ResultTools;
  * These tests verify that configuration management correctly handles missing values,
  * invalid formats, and provides appropriate defaults and validation.
  */
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class ConfigManagerTest extends TestCase {
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	function getReturnsValueForExistingKey() {
 		var value = ConfigManager.get("app_name");

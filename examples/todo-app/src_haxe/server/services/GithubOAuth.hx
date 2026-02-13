@@ -26,6 +26,7 @@ using StringTools;
  * - Exchanges `code` for an access token, then fetches `/user` and (if needed) `/user/emails`
  *   to resolve a usable email/name.
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoApp.GithubOAuth")
 class GithubOAuth {
 	static inline var AUTHORIZE_URL = "https://github.com/login/oauth/authorize";

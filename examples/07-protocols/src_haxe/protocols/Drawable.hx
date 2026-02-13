@@ -5,6 +5,7 @@ import elixir.types.Term;
 /**
  * Example protocol for drawable objects
  */
+// @:protocol: marks this class as an Elixir protocol definition.
 @:protocol
 class Drawable {
 	/**

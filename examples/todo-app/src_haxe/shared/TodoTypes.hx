@@ -52,6 +52,7 @@ typedef User = {
  * Server: `@:elixirIdiomatic` → `{:low | :medium | :high}`
  * Client: standard Haxe enum values.
  */
+// @:elixirIdiomatic: prefers idiomatic Elixir enum/result shapes over literal Haxe constructor naming.
 @:elixirIdiomatic
 enum TodoPriority {
 	Low;

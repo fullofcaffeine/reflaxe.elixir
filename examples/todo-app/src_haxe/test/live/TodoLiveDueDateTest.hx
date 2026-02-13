@@ -16,8 +16,10 @@ import elixir.types.Term;
  * WHY
  * - Guards the due_date normalization and rendering path (date-only -> 00:00:00).
  */
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class TodoLiveDueDateTest extends TestCase {
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	public function testCreateTodoWithDueDateRenders():Void {
 		var conn = ConnTest.build_conn();

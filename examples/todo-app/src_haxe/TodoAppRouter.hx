@@ -8,9 +8,13 @@ import reflaxe.elixir.macros.HttpMethod;
  * This example shows how to use HttpMethod enum and class references
  * instead of error-prone string literals for better compile-time safety.
  */
+// @:native: pins emitted naming to a specific Elixir symbol/module.
 @:native("TodoAppWeb.Router")
+// @:router: marks this module as a Phoenix router and enables route emission transforms.
 @:router
+// @:build: runs a compile-time macro to generate/augment declarations in this type.
 @:build(reflaxe.elixir.macros.RouterBuildMacro.generateRoutes())
+// @:routes: declares typed route definitions consumed by router build/emit logic.
 @:routes([
 	// Type-safe method using HttpMethod enum
 	{

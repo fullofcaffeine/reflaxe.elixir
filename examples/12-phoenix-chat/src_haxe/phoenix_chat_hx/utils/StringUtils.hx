@@ -4,6 +4,7 @@ package phoenix_chat_hx.utils;
  * String utility functions
  * Generated example module
  */
+// @:module: applies module-macro conveniences so static members emit as idiomatic module functions.
 @:module
 class StringUtils {
 	public static function capitalize(str:String):String {

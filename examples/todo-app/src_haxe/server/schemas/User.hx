@@ -12,10 +12,14 @@ import elixir.types.Term;
  * Provides a simple user model with basic authentication fields
  * and relationship to todos for user-specific task management.
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoApp.User")
+// @:schema: marks this class as an Ecto schema and declares its table.
 @:schema("users")
+// @:timestamps: enables Ecto timestamp fields (`inserted_at`/`updated_at`).
 @:timestamps
 class User {
+	// @:field: includes this property as an Ecto schema field in generated output.
 	@:field public var id:Int;
 	@:field public var name:String;
 	@:field public var email:String;
@@ -28,6 +32,7 @@ class User {
 	@:field public var active:Bool = true;
 
 	// Virtual field for password input (not stored in database)
+	// @:virtual: marks this Ecto field as virtual (not persisted in DB).
 	@:virtual @:field public var password:String;
 	@:virtual @:field public var passwordConfirmation:String;
 

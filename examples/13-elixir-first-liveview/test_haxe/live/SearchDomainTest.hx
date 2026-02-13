@@ -7,8 +7,10 @@ import haxe.functional.Result;
 /**
  * ExUnit tests for SearchDomain.
  */
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class SearchDomainTest extends TestCase {
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	function applyReturnsAllItemsForEmptyQuery() {
 		var catalog = ["Phoenix", "Ecto", "LiveView"];

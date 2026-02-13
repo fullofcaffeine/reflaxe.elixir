@@ -14,7 +14,9 @@ import plug.Conn;
  * The @:phoenixWebModule annotation triggers generation of all necessary
  * Phoenix macros including router, controller, live_view, etc.
  */
+// @:phoenixWebModule: generates the `AppWeb` helper module used by Phoenix `use AppWeb, ...` calls.
 @:phoenixWebModule
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoAppWeb")
 class TodoAppWeb {
 	/**

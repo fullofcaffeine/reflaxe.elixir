@@ -6,6 +6,7 @@ using StringTools;
  * This example showcases Elixir-style pipe operators (|>) for
  * functional composition, making code more readable and maintainable.
  */
+// @:module: applies module-macro conveniences so static members emit as idiomatic module functions.
 @:module
 class MathHelper {
 	/**

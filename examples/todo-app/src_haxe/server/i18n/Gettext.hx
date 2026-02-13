@@ -6,7 +6,9 @@ package server.i18n;
  * Provides translation and localization support for the Phoenix application.
  * This module wraps the Elixir Gettext functionality with type-safe Haxe interfaces.
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoAppWeb.Gettext")
+// @:gettext: marks this module as the app Gettext integration surface.
 @:gettext
 class Gettext {
 	/**

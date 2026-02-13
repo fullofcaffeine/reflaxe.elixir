@@ -14,6 +14,7 @@ private typedef User = {
  * private functions (defp in Elixir) alongside public functions,
  * demonstrating proper encapsulation patterns.
  */
+// @:module: applies module-macro conveniences so static members emit as idiomatic module functions.
 @:module
 class UserUtil {
 	/**
@@ -83,6 +84,7 @@ class UserUtil {
 	 * Private function - validates user name
 	 * Compiles to: defp is_valid_name(name)
 	 */
+	// @:private: keeps this helper internal to the module API surface.
 	@:private
 	static function isValidName(name:String):Bool {
 		if (name == null || name.length == 0) {

@@ -53,10 +53,12 @@ abstract FormTarget(String) {
 		this = target;
 	}
 
+	// @:from: enables implicit conversion from another type into this abstract/type.
 	@:from public static function fromString(s:String):FormTarget {
 		return new FormTarget(s);
 	}
 
+	// @:to: enables implicit conversion from this abstract/type into another type.
 	@:to public function toString():String {
 		return this;
 	}
@@ -89,7 +91,9 @@ typedef CardActionAssigns = {
 
 typedef CardAssigns = {
 	var title:String;
+	// @:optional: marks this field/contract member as optional in generated typing/validation.
 	@:optional var className:String;
+	// @:slot: marks this assigns field as a component slot contract for HEEx slot validation.
 	@:slot @:optional var action:Slot<CardActionAssigns>;
 	@:slot var inner_block:Slot<Term, CardLet>;
 }
@@ -132,7 +136,9 @@ typedef LabelAssigns = {
  * These components follow Phoenix LiveView conventions and compile to proper
  * Phoenix.Component functions.
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoAppWeb.CoreComponents")
+// @:component (class): marks this module as a Phoenix component container so component functions are preserved and discoverable.
 @:component
 class CoreComponents {
 	static function iconClass(name:String, className:Null<String>):String {
@@ -151,6 +157,7 @@ class CoreComponents {
 	/**
 	 * Renders a modal dialog
 	 */
+	// @:component (function): marks this function as a typed dot-component entrypoint (props/slots can be validated).
 	@:component
 	public static function modal(assigns:ModalAssigns):String {
 		return (<div id=${assigns.id} class="modal" phx-show=${assigns.show}>

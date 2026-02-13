@@ -18,8 +18,10 @@ import phoenix.test.ConnTest;
  * - Uses Phoenix.ConnTest externs to build a connection and GET "/".
  * - Asserts 200 OK and basic content presence.
  */
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class HealthTest extends TestCase {
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	public function testHomePageLoads():Void {
 		var conn = ConnTest.build_conn();

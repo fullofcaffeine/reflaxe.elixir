@@ -6,9 +6,12 @@ import elixir.types.Term;
  * Phoenix controller with @:route annotations
  * Demonstrates RESTful route generation and parameter handling
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("PhoenixRouterWeb.UserController")
+// @:controller: marks this module as a Phoenix controller for HTTP actions.
 @:controller
 class UserController {
+	// @:route: attaches route metadata to this action/function (legacy/manual route style).
 	@:route({method: "GET", path: "/users"})
 	public static function index():String {
 		return "List all users";

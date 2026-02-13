@@ -24,7 +24,9 @@ import server.services.GithubOAuth;
  * - `github_callback/2` validates state, exchanges the code for user info, then stores
  *   `:user_id` in the Plug session (same mechanism as SessionController).
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoAppWeb.GithubOAuthController")
+// @:controller: marks this module as a Phoenix controller for HTTP actions.
 @:controller
 class GithubOAuthController {
 	static function signInWithGithubIdentity(conn:Conn<{}>, identity:GithubIdentity):Conn<{}> {

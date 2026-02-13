@@ -15,6 +15,7 @@ import behaviors.DataProcessor.ProcessorState;
  * Accumulates data and processes in large batches for efficiency
  * Ideal for high-throughput scenarios with periodic processing
  */
+// @:use: declares this module uses a behavior contract and should implement its callbacks.
 @:use(DataProcessor)
 class BatchProcessor {
 	// DataProcessor behavior implementation

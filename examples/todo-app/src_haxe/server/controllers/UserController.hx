@@ -56,7 +56,9 @@ import StringTools;
  * 
  * @see https://hexdocs.pm/phoenix/Phoenix.Controller.html
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoAppWeb.UserController")
+// @:controller: marks this module as a Phoenix controller for HTTP actions.
 @:controller
 class UserController {
 	static function error<TParams>(conn:Conn<TParams>, status:Int, message:String):Conn<TParams> {

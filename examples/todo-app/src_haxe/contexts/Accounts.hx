@@ -34,6 +34,7 @@ using reflaxe.elixir.macros.TypedQueryLambda;
  * - "Sign in" is email-based: we find-or-create a user by email, touch `last_login_at`,
  *   and let the SessionController persist `:user_id` in the Plug session.
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoApp.Accounts")
 class Accounts {
 	static inline var DEMO_ORG_SLUG = "demo";

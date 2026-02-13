@@ -18,6 +18,7 @@ import ecto.Migration.ColumnType;
  * - Adds tenant scoping support (org_id fields) via follow-up migrations to keep
  *   ecto_migrations_exs bodies single-statement and transformer-friendly.
  */
+// @:migration: marks this class as an Ecto migration definition for migration emission.
 @:migration({timestamp: "20260101004030"})
 class CreateOrganizations extends Migration {
 	public function up():Void {

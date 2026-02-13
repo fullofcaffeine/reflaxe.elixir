@@ -49,6 +49,7 @@ class UserChangeset {
 	}
 }
 
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoApp.Users")
 class Users {
 	/**

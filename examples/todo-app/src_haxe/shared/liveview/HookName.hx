@@ -17,6 +17,7 @@ package shared.liveview;
  * - Server: used to enforce that templates only reference declared hooks (when `-D hxx_strict_phx_hook` is enabled).
  * - Client: used by `client.HookRegistry` to register hooks under exactly these names.
  */
+// @:phxHookNames: registers compile-time hook-name constants for typed `phx-hook` usage.
 @:phxHookNames
 enum abstract HookName(String) from String to String {
 	var AutoFocus = "AutoFocus";

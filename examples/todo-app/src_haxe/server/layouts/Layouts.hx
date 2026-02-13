@@ -11,7 +11,9 @@ import server.types.Types.User;
  * Main layouts module for Phoenix application
  * Provides the layout functions that Phoenix expects
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoAppWeb.Layouts")
+// @:component (class): marks this module as a Phoenix component container so component functions are preserved and discoverable.
 @:component
 class Layouts {
 	/**
@@ -26,6 +28,7 @@ class Layouts {
 	 *   and yields `assigns.inner_content`. This mirrors Phoenix 1.7 defaults and
 	 *   lets our HEEx transformer convert this string into a `~H` sigil.
 	 */
+	// @:component (function): marks this function as a typed dot-component entrypoint (props/slots can be validated).
 	@:component public static function root(assigns:Assigns<LayoutAssigns<User, TodoLiveAssigns>>):String {
 		return <html lang="en" class="h-full">
 			<head>

@@ -5,6 +5,7 @@
  * to eliminate boilerplate "public static" declarations while
  * maintaining Haxe's type safety.
  */
+// @:module: applies module-macro conveniences so static members emit as idiomatic module functions.
 @:module
 class BasicModule {
 	/**

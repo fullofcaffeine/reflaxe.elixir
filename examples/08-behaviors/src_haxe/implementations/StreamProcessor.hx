@@ -16,7 +16,9 @@ import behaviors.DataProcessor.ProcessorStats;
  * Processes data items one by one with low memory footprint
  * Ideal for real-time processing scenarios
  */
+// @:use: declares this module uses a behavior contract and should implement its callbacks.
 @:use(DataProcessor)
+// @:genserver: marks this module as a GenServer-style OTP process implementation.
 @:genserver
 class StreamProcessor {
 	// GenServer state

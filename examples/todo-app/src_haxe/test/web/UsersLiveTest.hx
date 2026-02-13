@@ -19,8 +19,10 @@ import elixir.types.Term;
  * HOW
  * - Uses Phoenix.LiveViewTest to mount `/users` and asserts basic render output.
  */
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class UsersLiveTest extends TestCase {
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	public function testUsersPageMounts():Void {
 		var conn = ConnTest.build_conn();

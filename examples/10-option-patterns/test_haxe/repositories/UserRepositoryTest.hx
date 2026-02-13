@@ -16,8 +16,10 @@ using haxe.functional.ResultTools;
  * This test class shows how to write type-safe tests for Option and Result types,
  * verifying that the repository correctly handles null safety and error conditions.
  */
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class UserRepositoryTest extends TestCase {
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	function findReturnsOptionForValidId() {
 		var user = UserRepository.find(1);

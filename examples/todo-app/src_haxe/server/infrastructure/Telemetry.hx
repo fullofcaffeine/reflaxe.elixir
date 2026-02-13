@@ -48,8 +48,11 @@ typedef TelemetryMetric = {
  * This module compiles to TodoAppWeb.Telemetry with proper Phoenix telemetry
  * configuration for monitoring web requests, database queries, and custom metrics.
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoAppWeb.Telemetry")
+// @:supervisor: marks this module as an OTP supervisor and enables child-spec normalization.
 @:supervisor
+// @:appName: sets the OTP app identifier used for generated module/config wiring.
 @:appName("TodoApp")
 class Telemetry {
 	/**

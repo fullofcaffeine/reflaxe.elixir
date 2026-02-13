@@ -7,9 +7,13 @@ package server.infrastructure;
  * Now using proper @:endpoint annotation with AST transformation
  * This generates a complete Phoenix.Endpoint module structure
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoAppWeb.Endpoint")
+// @:endpoint: marks this module as Phoenix endpoint infrastructure.
 @:endpoint
+// @:appName: sets the OTP app identifier used for generated module/config wiring.
 @:appName("todo_app")
+// @:endpointSockets: declares socket mounts to emit in the endpoint.
 @:endpointSockets([{path: "/socket", socket: server.infrastructure.UserSocket, session: true}])
 class Endpoint {
 	/**

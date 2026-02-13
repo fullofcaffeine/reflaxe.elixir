@@ -4,6 +4,7 @@ package phoenix_chat_hx.utils;
  * Mathematical utility functions  
  * Generated example module
  */
+// @:module: applies module-macro conveniences so static members emit as idiomatic module functions.
 @:module
 class MathHelper {
 	public static function clamp(value:Float, min:Float, max:Float):Float {

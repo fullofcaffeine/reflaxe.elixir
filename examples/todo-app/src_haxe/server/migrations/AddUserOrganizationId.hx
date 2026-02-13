@@ -16,6 +16,7 @@ import ecto.Migration.ColumnType;
  * - Adds an integer `organization_id` with a default of 0 for demo/anonymous mode.
  *   Real organizations use positive ids from the `organizations` table.
  */
+// @:migration: marks this class as an Ecto migration definition for migration emission.
 @:migration({timestamp: "20260101004031"})
 class AddUserOrganizationId extends Migration {
 	public function up():Void {

@@ -55,9 +55,13 @@ typedef TodoChangesetParams = {
 	?organization_id:Int
 }
 
+// @:native: pins emitted naming to a specific Elixir symbol/module.
 @:native("TodoApp.Todo")
+// @:schema: marks this class as an Ecto schema and declares its table.
 @:schema("todos")
+// @:timestamps: enables Ecto timestamp fields (`inserted_at`/`updated_at`).
 @:timestamps
+// @:changeset: configures generated Ecto changeset casting/validation behavior.
 @:changeset([
 	"title",
 	"description",
@@ -69,6 +73,7 @@ typedef TodoChangesetParams = {
 	"organizationId"
 ], ["title"])
 class Todo {
+	// @:field: includes this property as an Ecto schema field in generated output. @:primary_key: marks this schema field as the primary key.
 	@:field @:primary_key public var id:Int;
 	@:field public var title:String;
 	@:field public var description:String;

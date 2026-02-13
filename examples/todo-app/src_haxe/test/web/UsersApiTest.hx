@@ -20,6 +20,7 @@ import StringTools;
  * - Uses the existing `/auth/login` demo controller to create users and set Plug session.
  * - Calls the JSON API with `accept: application/json`.
  */
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class UsersApiTest extends TestCase {
 	static inline function uniqueSuffix():String {
@@ -30,6 +31,7 @@ class UsersApiTest extends TestCase {
 		return ConnTest.put_req_header(conn, "accept", "application/json");
 	}
 
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	public function testApiUsersRequiresAuth():Void {
 		var conn = ConnTest.build_conn();

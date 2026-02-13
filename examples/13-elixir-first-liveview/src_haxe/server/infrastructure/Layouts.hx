@@ -10,9 +10,12 @@ typedef LayoutTemplateAssigns = {
 /**
  * Minimal layouts for Phoenix controller/live rendering.
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("ElixirFirstLiveviewWeb.Layouts")
+// @:component (class): marks this module as a Phoenix component container so component functions are preserved and discoverable.
 @:component
 class Layouts {
+	// @:component (function): marks this function as a typed dot-component entrypoint (props/slots can be validated).
 	@:component
 	public static function root(assigns:LayoutTemplateAssigns):String {
 		return <html lang="en">

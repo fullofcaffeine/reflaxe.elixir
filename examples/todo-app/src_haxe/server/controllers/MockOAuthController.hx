@@ -28,7 +28,9 @@ import server.services.MockOAuth;
  * - Disabled by default. Enable only in e2e via config:
  *   `config :todo_app, :mock_oauth_enabled, true`
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoAppWeb.MockOAuthController")
+// @:controller: marks this module as a Phoenix controller for HTTP actions.
 @:controller
 class MockOAuthController {
 	static function disabled(conn:Conn<{}>):Conn<{}> {

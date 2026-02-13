@@ -5,6 +5,7 @@ import protocols.Drawable;
 /**
  * Protocol implementation for Integer types
  */
+// @:impl: marks this class as a protocol implementation for a target type.
 @:impl
 class IntDrawable {
 	public function draw(value:Int):String {

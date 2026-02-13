@@ -12,14 +12,17 @@ import elixir.otp.Supervisor.ChildSpecFormat;
  *
  * A minimal Phoenix application written in Haxe and compiled to idiomatic Elixir.
  */
+// @:application: marks this class as an OTP application entry module.
 @:application
+// @:appName: sets the OTP app identifier used for generated module/config wiring.
 @:appName("PhoenixHaxeExample")
 class PhoenixHaxeExample {
 	/**
 	 * Start the application supervision tree.
 	 */
-	@:keep
-	public static function start(type:ApplicationStartType, args:ApplicationArgs):ApplicationResult {
+		// @:keep: required because OTP invokes Application.start/2 via runtime callback dispatch, not direct Haxe callsites.
+		@:keep
+		public static function start(type:ApplicationStartType, args:ApplicationArgs):ApplicationResult {
 		var children:Array<ChildSpecFormat> = [
 			TypeSafeChildSpec.pubSub("PhoenixHaxeExample.PubSub"),
 			TypeSafeChildSpec.endpoint("PhoenixHaxeExampleWeb.Endpoint")

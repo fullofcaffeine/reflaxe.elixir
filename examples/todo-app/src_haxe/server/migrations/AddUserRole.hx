@@ -15,6 +15,7 @@ import ecto.Migration.ColumnType;
  * HOW
  * - Uses an `alter table` migration to add a NOT NULL role with a default of "user".
  */
+// @:migration: marks this class as an Ecto migration definition for migration emission.
 @:migration({timestamp: "20251231233414"})
 class AddUserRole extends Migration {
 	public function up():Void {

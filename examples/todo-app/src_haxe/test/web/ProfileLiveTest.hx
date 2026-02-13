@@ -20,8 +20,10 @@ import elixir.types.Term;
  * - Creates a user via the demo login controller, mounts `/profile`, submits the form, and
  *   asserts the updated fields render in the LiveView output.
  */
+// @:exunit: marks this class as an ExUnit test module.
 @:exunit
 class ProfileLiveTest extends TestCase {
+	// @:test: marks this function as an executable ExUnit test case.
 	@:test
 	public function testProfileUpdatePersistsBio():Void {
 		var conn = ConnTest.build_conn();

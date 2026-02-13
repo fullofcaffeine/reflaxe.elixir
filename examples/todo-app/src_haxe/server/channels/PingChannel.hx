@@ -25,7 +25,9 @@ import shared.channels.PingProtocol.PingServerEvent;
  * - Client pushes `"ping"` with payload `%{"request_id" => "..."}`
  * - Server broadcasts `"pong"` with the same payload and returns `{:noreply, socket}`
  */
+// @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoAppWeb.PingChannel")
+// @:channel: marks this module as a Phoenix.Channel callback module.
 @:channel
 class PingChannel {
 	public static inline var Topic:String = PingProtocol.Topic;
