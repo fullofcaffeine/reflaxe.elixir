@@ -128,26 +128,23 @@ Elixir variables are immutable, so compound assignments become rebinding.
 
 #### Rebinding and pattern pinning
 
-Rebinding is valid Elixir. The name can be rebound, while values remain immutable:
+In generated Elixir, Haxe mutation is represented as rebinding (`x = x + 1`), not in-place updates.
+
+For generated `case`/`with` patterns, the compiler may pin existing bindings to avoid accidental shadowing:
 
 ```elixir
-x = 1
-x = 2
-```
-
-In `case`/pattern contexts, use pinning to match an existing value:
-
-```elixir
-x = 1
-
-case 2 do
-  x -> :matched   # binds/rebinds x in the pattern
-  _ -> :no
+# Before normalization (shadow-prone)
+expected = value
+case value do
+  expected -> :same
+  _ -> :other
 end
 
-case 2 do
-  ^x -> :matched  # matches the existing x
-  _ -> :no
+# After normalization
+expected = value
+case value do
+  ^expected -> :same
+  _ -> :other
 end
 ```
 

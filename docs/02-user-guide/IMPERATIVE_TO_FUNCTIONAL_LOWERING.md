@@ -20,7 +20,8 @@ Reflaxe.Elixir lowers Haxe mutation into **a sequence of rebindings** that prese
 
 Implication:
 - The output is still purely functional/immutable at runtime, but reads like idiomatic Elixir rebinding.
-- Rebinding in Elixir is legal by default. If you need "assign once" guarantees, use Haxe `final`.
+- Generated code may rebind names to preserve Haxe mutation semantics; if you need "assign once" guarantees in source,
+  use Haxe `final`.
 
 ### 2) “Loops” become **Enum/reduce recursion**
 

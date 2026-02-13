@@ -256,47 +256,36 @@ var value = ElixirMap.fetchBang(myMap, key);
 
 ## Control flow: expressions + preservation helpers
 
-### Variable binding vs rebinding (important)
+### Binding semantics in generated patterns
 
-Elixir has immutable values, but variable names can be rebound in scope. Rebinding is valid Elixir and does not
-raise an error by default.
+This section is about reading generated code, not writing raw Elixir by hand.
 
-```elixir
-x = 1
-x = 2
-```
+When lowering Haxe control flow, generated `case`/`with` patterns may interact with existing locals. In Elixir
+patterns, a plain variable introduces/rebinds a binder, while `^var` matches an existing binding.
 
-Pattern matching adds an important rule:
-
-- `x` in a pattern binds/rebinds a variable.
-- `^x` pins and matches against an existing binding.
+You may see normalizations like:
 
 ```elixir
-x = 1
-
-case 2 do
-  x -> :matched   # binds x to 2 in this pattern
-  _ -> :no
+# Avoid ambiguous shadowing shape
+expected_status = status
+case status do
+  expected_status -> :same
+  _ -> :other
 end
 
-case 2 do
-  ^x -> :matched  # matches existing x (1)
-  _ -> :no
+# Compiler-emitted safe shape
+expected_status = status
+case status do
+  ^expected_status -> :same
+  _ -> :other
 end
 ```
 
-Reflaxe.Elixir includes late hygiene passes that pin existing bindings in generated `case`/`with` patterns when needed
-to avoid accidental shadowing in emitted code.
+Reflaxe.Elixir runs late hygiene passes to pin existing bindings where needed so generated pattern code preserves the
+intended semantics and avoids accidental shadowing.
 
-If you want "assign once" behavior in source Haxe, use `final`:
-
-```haxe
-final x = 1;
-x = 2; // Compile-time error in Haxe: Cannot assign to final
-```
-
-There is currently no global Reflaxe.Elixir mode that forbids all variable rebinding in generated Elixir. Use Haxe
-typing (`final`) and code review/lint policy for stricter assignment discipline.
+If you want strict "assign once" behavior in Haxe source, use `final` (enforced by Haxe typing). There is currently no
+global Reflaxe.Elixir mode that forbids all rebinding in generated Elixir.
 
 ### Reassignment pipelines → `|>`
 
