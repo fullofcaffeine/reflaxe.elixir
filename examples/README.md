@@ -69,12 +69,17 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 **Features**: Typed Elixir-first LiveView, strict mode, typed boundary decoding, Result-based domain flow  
 **Use Case**: Use Haxe as typed Elixir with minimal portability-first constraints
 
-### 14. [todo-app](./todo-app/)
+### 14. [14-abstraction-lab](./14-abstraction-lab/)
+**Difficulty**: Intermediate  
+**Features**: `@:protocol`, `@:impl`, `@:behaviour`, `@:use`, typed wrappers over low-level Elixir runtime APIs  
+**Use Case**: Author reusable Haxe abstractions that compile to native Elixir contract/process module shapes
+
+### 15. [todo-app](./todo-app/)
 **Difficulty**: Advanced  
 **Features**: Full Phoenix LiveView app, Ecto, Playwright E2E  
 **Use Case**: End-to-end reference app (recommended for Phoenix/LiveView)
 
-### 15. [test-integration](./test-integration/)
+### 16. [test-integration](./test-integration/)
 **Difficulty**: Intermediate  
 **Features**: Mix compiler task testing, build pipeline validation  
 **Use Case**: Testing Haxe→Elixir compilation in Mix projects
@@ -98,6 +103,7 @@ Reflaxe.Elixir supports two authoring styles on one compiler pipeline. This matr
 | `11-domain-validation` | Portable-first | Parse-don't-validate domain types that can remain target-agnostic. |
 | `12-phoenix-chat` | Hybrid (intentional) | Haxe feature logic + hand-authored Phoenix scaffold for incremental adoption. |
 | `13-elixir-first-liveview` | Elixir-first | Typed LiveView app flow with strict-mode discipline and boundary decoding. |
+| `14-abstraction-lab` | Elixir-first | Framework-agnostic abstraction patterns: protocols, behaviours, and typed process boundaries. |
 | `todo-app` | Hybrid (intentional) | Full app canary: portable shared domain + extensive Phoenix/Ecto/OTP integration. |
 | `test-integration` | N/A | Compiler/Mix integration verification harness. |
 
@@ -144,9 +150,10 @@ mix phx.server
 1. **Start**: 01-simple-modules - Basic compilation
 2. **Learn**: 02-mix-project - Mix integration  
 3. **Build**: 03-phoenix-app - Minimal Phoenix server + typed router
-4. **Choose style**: 10-option-patterns (portable-first) or 13-elixir-first-liveview (typed Elixir-first)
-5. **Extend**: 04-ecto-migrations, 05-heex-templates, 09-phoenix-router
-6. **Master**: 06-user-management + todo-app
+4. **Abstractions**: 07-protocols, 08-behaviors, 14-abstraction-lab
+5. **Choose style**: 10-option-patterns (portable-first) or 13-elixir-first-liveview (typed Elixir-first)
+6. **Extend**: 04-ecto-migrations, 05-heex-templates, 09-phoenix-router
+7. **Master**: 06-user-management + todo-app
 
 ## 🧪 Running Examples
 

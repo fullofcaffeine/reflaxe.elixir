@@ -1,0 +1,20 @@
+# Abstraction lab example build configuration for Reflaxe.Elixir
+# Demonstrates typed Haxe abstractions that compile to native Elixir constructs.
+
+-lib reflaxe.elixir
+
+-cp src_haxe
+
+-D elixir_output=lib
+-D reflaxe_runtime
+-D reflaxe_elixir_strict_examples
+-D no-utf16
+-D app_name=AbstractionLab
+
+protocols.CommandRenderable
+implementations.StringCommandRenderable
+implementations.IntCommandRenderable
+behaviors.RetryPolicy
+implementations.ImmediateRetryPolicy
+implementations.ExponentialRetryPolicy
+abstractions.ProcessBoundary

@@ -30,6 +30,20 @@ Reflaxe.Elixir is for teams that want Phoenix/OTP runtime behavior, while author
 Elixir's failure model is still the foundation (supervision, process isolation, let-it-crash where appropriate).
 The typed layer helps you decide more deliberately what should crash, what should return data, and where boundaries should be explicit.
 
+## Build Higher-Level Abstractions (Haxe + Elixir)
+
+Reflaxe.Elixir is not only about syntax translation. It lets you define typed authoring abstractions in Haxe and compile them to standard Elixir/Phoenix forms.
+
+| Haxe authoring surface | Generated Elixir shape | Why useful | Example |
+| --- | --- | --- | --- |
+| `@:routes` + router build macro | Phoenix router macros (`get`, `post`, `live`) | Keep route wiring declarative and type-checked | [`examples/09-phoenix-router`](examples/09-phoenix-router/README.md) |
+| `@:schema` + `@:changeset` | Ecto `schema` + `changeset/2` | Catch field/params shape issues early | [`examples/06-user-management`](examples/06-user-management/README.md) |
+| `TypedQueryLambda` | Normal Ecto query expressions | Keep query composition typed at authoring time | [`examples/todo-app`](examples/todo-app/README.md) |
+| `@:protocol` / `@:impl` / `@:behaviour` | Contract modules + typed implementation modules | Build pluggable contracts without giving up BEAM conventions | [`examples/14-abstraction-lab`](examples/14-abstraction-lab/README.md) |
+| Typed wrappers over Elixir externs (for example `elixir.Kernel`) | Direct BEAM primitives (`self`, `send`, type guards) | Expose low-level runtime power through explicit typed boundaries | [`examples/14-abstraction-lab`](examples/14-abstraction-lab/README.md) |
+
+For a focused walkthrough of these patterns in one place, see [`examples/14-abstraction-lab`](examples/14-abstraction-lab/README.md).
+
 ### How this differs from Gleam (briefly)
 
 Gleam is a strong typed BEAM language with its own language/runtime story.
