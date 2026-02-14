@@ -258,26 +258,21 @@ var value = ElixirMap.fetchBang(myMap, key);
 
 ### Binding semantics in generated patterns
 
-This section is about reading generated code, not writing raw Elixir by hand.
-
-When lowering Haxe control flow, read generated `case`/`with` patterns with this frame:
-
-- **Haxe intent**: compare against an already-bound local (for example, "match the current `status`").
-- **Generated Elixir shape**: use `^var` in the pattern instead of a plain variable binder.
-- **Why this preserves semantics**: plain pattern variables bind/rebind in Elixir; pinning avoids accidental
-  shadowing and keeps the original Haxe comparison intent.
+When Haxe control flow is lowered into `case`/`with`, the compiler may need to compare against a local that is
+already bound. In Elixir patterns, a plain name introduces/rebinds a pattern variable, while `^name` matches the
+existing binding. That pinning step is what preserves the original Haxe comparison semantics.
 
 You may see normalizations like:
 
 ```elixir
-# Avoid ambiguous shadowing shape
+# Plain pattern variable: binds a new value in pattern position
 expected_status = status
 case status do
   expected_status -> :same
   _ -> :other
 end
 
-# Compiler-emitted safe shape
+# Compiler-emitted shape: pin matches the existing local
 expected_status = status
 case status do
   ^expected_status -> :same
@@ -285,8 +280,8 @@ case status do
 end
 ```
 
-Reflaxe.Elixir runs late hygiene passes to pin existing bindings where needed so generated pattern code preserves the
-intended semantics and avoids accidental shadowing.
+Reflaxe.Elixir runs late hygiene passes to pin existing bindings where needed, so generated pattern code preserves
+intent and avoids accidental shadowing.
 
 If you want strict "assign once" behavior in Haxe source, use `final` (enforced by Haxe typing). There is currently no
 global Reflaxe.Elixir mode that forbids all rebinding in generated Elixir.

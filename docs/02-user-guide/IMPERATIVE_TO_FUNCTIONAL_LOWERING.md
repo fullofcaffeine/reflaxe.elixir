@@ -15,11 +15,8 @@ If you want the deep dive (with many examples), start here:
 
 ### 1) “Mutation” becomes **rebinding**
 
-Read mutation lowering with this compiler-focused frame:
-- **Haxe intent**: mutate a local across sequential steps.
-- **Generated Elixir shape**: a sequence of explicit rebindings.
-- **Why this preserves semantics**: Elixir runtime values are immutable, so rebinding is how the compiler keeps
-  the original step-by-step Haxe behavior.
+Elixir values are immutable, so Haxe-style mutation is lowered into a sequence of rebindings. Each step produces a new
+binding with the updated value, which preserves the original step-by-step behavior while staying idiomatic in Elixir.
 
 Implication:
 - The output is still purely functional/immutable at runtime, but reads like idiomatic Elixir rebinding.

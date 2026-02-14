@@ -110,12 +110,8 @@ sum = x + y  # numeric addition
 
 ### 4. Compound Assignment Operators
 
-Use this compiler-focused reading:
-
-- **Haxe intent**: update a variable in sequence (`x += y`) while keeping later reads consistent.
-- **Generated Elixir shape**: explicit rebinding (`x = x + y`).
-- **Why this preserves semantics**: Elixir values are immutable, so rebinding is the way to model Haxe-style
-  mutation without changing execution meaning.
+Compound assignments lower to explicit rebinding. For example, `x += y` becomes `x = x + y`. This keeps Haxe's
+sequential update behavior while fitting Elixir's immutable runtime model.
 
 #### Transformations
 | Haxe | Elixir |
@@ -133,21 +129,18 @@ Use this compiler-focused reading:
 
 #### Rebinding and pattern pinning
 
-For generated `case`/`with` patterns, use the same frame:
-
-- **Haxe intent**: compare against an existing local.
-- **Generated Elixir shape**: pin with `^existing` inside pattern positions.
-- **Why this preserves semantics**: pattern variables would otherwise bind/rebind and can shadow previous values.
+In generated expression code, rebinding is expected. Pattern positions are different: in `case`/`with`, a plain
+variable binds a new value. When source behavior requires comparing against an existing local, the compiler emits `^`.
 
 ```elixir
-# Before normalization (shadow-prone)
+# Plain pattern variable: binds a fresh value
 expected = value
 case value do
   expected -> :same
   _ -> :other
 end
 
-# After normalization
+# Compiler-normalized: pin matches the existing local
 expected = value
 case value do
   ^expected -> :same
@@ -156,6 +149,9 @@ end
 ```
 
 For strict "assign once" behavior in Haxe source, prefer `final` (compile-time enforced by Haxe).
+
+For a deeper explanation of binder/pin semantics in generated output, see
+`docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md#binding-semantics-in-generated-patterns`.
 
 ### 5. Bitwise Operations
 

@@ -528,17 +528,18 @@ var [first, second, ...rest] = items;
 
 ### Existing Bindings vs New Pattern Binders
 
-This note is specifically for interpreting generated `case`/`with` output.
+When reading generated `case`/`with` code, remember that a plain pattern variable introduces a binder, while `^`
+forces a comparison against an existing local.
 
 ```elixir
-# Shadow-prone shape
+# Plain pattern variable: binds a fresh value
 expected = value
 case value do
   expected -> :same
   _ -> :no
 end
 
-# Compiler-normalized shape
+# Compiler-normalized: pin matches the existing local
 expected = value
 case value do
   ^expected -> :same
@@ -548,6 +549,9 @@ end
 
 Reflaxe.Elixir applies late pattern-hygiene passes to pin existing bindings when needed so generated `case`/`with`
 code does not accidentally shadow prior locals.
+
+For the fuller discussion, see
+`docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md#binding-semantics-in-generated-patterns`.
 
 ### Complex Pattern Matching
 
