@@ -3327,6 +3327,11 @@ To maintain high-quality, self-explanatory compiler code, the following rules ar
 - Reader check: after each paragraph, a beginner should be able to answer:
   - "What Haxe code produced this?"
   - "Why is this detail useful to me?"
+- Abstraction-doc check (skeptical Elixir reader):
+  - Show the plain Elixir baseline first ("what would I write without this abstraction?").
+  - State one concrete edge for the Haxe+Elixir abstraction (typed safety, less repeated code, or one surface that coordinates multiple concerns).
+  - State one tradeoff explicitly (compile step, generated-shape indirection, or when plain Elixir is clearer).
+  - If you cannot name a concrete edge over the baseline, do not position it as an abstraction benefit.
 
 CI/QA Sentinel expectations:
 
