@@ -21,9 +21,9 @@ haxe build.hxml
 - `examples/07-protocols/src_haxe/implementations/NumberDrawable.hx`
 - `examples/07-protocols/lib/protocols/drawable.ex`
 
-## Plain Elixir baseline
+## Direct baseline (without this abstraction layer)
 
-In plain Elixir, you would maintain one contract module and each implementation module manually, keeping arities and value-shapes in sync yourself.
+Without this abstraction layer, you would maintain one contract module and each implementation module manually, keeping arities and value-shapes in sync yourself.
 
 ## Haxe abstraction input
 
@@ -57,7 +57,7 @@ defmodule StringDrawable do
 end
 ```
 
-## Edge over plain Elixir
+## Edge over the direct baseline
 
 - The contract and implementations share typed signatures in one authoring layer.
 - Refactors that change argument/return shapes fail earlier in compile-time checks instead of drifting across modules.
@@ -65,4 +65,4 @@ end
 
 ## Tradeoff
 
-This compiler currently emits contract/implementation modules, not native `defprotocol/defimpl` macros. If your team specifically needs protocol macro semantics, author that part directly in Elixir.
+This compiler currently emits contract/implementation modules, not native `defprotocol/defimpl` macros. If protocol-macro semantics are required in a specific boundary, keep that boundary explicit and minimal while the rest remains Haxe-authored.

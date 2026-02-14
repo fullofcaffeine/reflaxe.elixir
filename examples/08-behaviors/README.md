@@ -5,7 +5,7 @@ This example shows how `@:behaviour` + `@:use` can model callback contracts and 
 ## Why this example exists
 
 A skeptical Elixir question is: "Why not define `@callback` and `@behaviour` directly in Elixir modules?"
-This example shows where the Haxe layer helps and where plain Elixir may still be preferable.
+This example shows where the Haxe layer helps and where direct Haxe->Elixir authoring may still be preferable.
 
 ## Compile
 
@@ -21,9 +21,9 @@ haxe build.hxml
 - `examples/08-behaviors/src_haxe/implementations/StreamProcessor.hx`
 - `examples/08-behaviors/lib/behaviors/data_processor.ex`
 
-## Plain Elixir baseline
+## Direct baseline (without this abstraction layer)
 
-In plain Elixir, you usually keep callback docs/specs, expected state maps, and implementation modules aligned by convention and review.
+Without this abstraction layer, you usually keep callback docs/specs, expected state maps, and implementation modules aligned by convention and review.
 
 ## Haxe abstraction input
 
@@ -69,7 +69,7 @@ defmodule BatchProcessor do
 end
 ```
 
-## Edge over plain Elixir
+## Edge over the direct baseline
 
 - Callback signatures and payload/state shapes are typed in one place (`typedef`s + function signatures).
 - Changing contract fields propagates through compile-time checks across implementations.
@@ -77,4 +77,4 @@ end
 
 ## Tradeoff
 
-Generated behavior contracts are emitted as contract-style modules (with raising stubs), not literal Elixir `@callback` attributes. For teams that want canonical `@behaviour` macro surfaces in source, plain Elixir can be clearer for that layer.
+Generated behavior contracts are emitted as contract-style modules (with raising stubs), not literal Elixir `@callback` attributes. For canonical macro surfaces in specific boundaries, keep those boundaries explicit and minimal while keeping most logic Haxe-authored.

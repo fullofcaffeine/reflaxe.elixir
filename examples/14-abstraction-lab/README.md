@@ -1,6 +1,6 @@
 # 14 - Abstraction Lab (Haxe + Elixir)
 
-This lab collects three abstraction patterns and explains each one against a plain-Elixir baseline.
+This lab collects three abstraction patterns and explains each one against a direct baseline (without the extra abstraction layer).
 
 ## Why this lab exists
 
@@ -17,7 +17,7 @@ Generated files are emitted to `examples/14-abstraction-lab/lib/`.
 
 ## 1) Protocol-style contract + implementations
 
-### Plain Elixir baseline
+### Direct baseline (without this abstraction layer)
 
 Define one contract module and manually keep every implementation module aligned with that contract as signatures evolve.
 
@@ -53,7 +53,7 @@ defmodule AbstractionLab.StringCommandRenderable do
 end
 ```
 
-### Edge over plain Elixir
+### Edge over the direct baseline
 
 - One typed contract surface for all implementations.
 - Signature drift is caught earlier when implementations no longer match the typed contract.
@@ -64,7 +64,7 @@ This emits contract/implementation modules, not native `defprotocol/defimpl` mac
 
 ## 2) Behavior-style retry policies
 
-### Plain Elixir baseline
+### Direct baseline (without this abstraction layer)
 
 Define callback conventions and keep each retry policy implementation aligned by convention and review.
 
@@ -101,18 +101,18 @@ defmodule AbstractionLab.ExponentialRetryPolicy do
 end
 ```
 
-### Edge over plain Elixir
+### Edge over the direct baseline
 
 - Typed callback/state shapes make policy refactors safer.
 - Swapping strategies (`ImmediateRetryPolicy` vs `ExponentialRetryPolicy`) keeps one typed contract.
 
 ### Tradeoff
 
-If you want literal `@callback` / `@behaviour` macro surfaces in source, plain Elixir may be more direct.
+If you want literal `@callback` / `@behaviour` macro surfaces in source, keep those boundaries explicit and minimal while the rest stays Haxe-authored.
 
 ## 3) Typed boundary over low-level process primitives
 
-### Plain Elixir baseline
+### Direct baseline (without this abstraction layer)
 
 Repeat `is_pid` checks, `send`, `self`, and type checks at multiple call sites.
 
@@ -141,14 +141,14 @@ def send_if_pid(destination, message) do
 end
 ```
 
-### Edge over plain Elixir
+### Edge over the direct baseline
 
 - One reusable, typed boundary for low-level operations.
 - Reduces duplicated guard/send boilerplate and keeps boundary behavior consistent.
 
 ### Tradeoff
 
-Wrappers can hide details if overused; for one-off low-level calls, plain Elixir is often clearer.
+Wrappers can hide details if overused; for one-off low-level calls, direct Haxe->Elixir code is often clearer.
 
 ## Key files
 
