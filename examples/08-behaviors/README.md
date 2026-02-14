@@ -1,156 +1,80 @@
-# Example 08: OTP Behaviors
+# 08 - Behavior-Style Contracts (Haxe -> Elixir)
 
-This example demonstrates how to implement Elixir/OTP behaviors using Haxe with Reflaxe.Elixir.
+This example shows how `@:behaviour` + `@:use` can model callback contracts and strategy implementations.
 
-## Overview
+## Why this example exists
 
-Behaviors in Elixir/OTP define a common interface that multiple modules can implement, ensuring consistent APIs and enabling hot code swapping. This example shows:
+A skeptical Elixir question is: "Why not define `@callback` and `@behaviour` directly in Elixir modules?"
+This example shows where the Haxe layer helps and where plain Elixir may still be preferable.
 
-- **Behavior Definition**: Using `@:behaviour` to define callback contracts
-- **Multiple Implementations**: Different strategies implementing the same behavior  
-- **Callback Validation**: Compile-time enforcement of required callbacks
-- **Optional Callbacks**: Flexible interface definitions
+## Compile
 
-## Files Structure
-
-```
-src_haxe/
-├── behaviors/
-│   └── DataProcessor.hx          # Behavior definition with callbacks
-└── implementations/
-    ├── BatchProcessor.hx         # Batch processing implementation
-    └── StreamProcessor.hx        # Streaming implementation
+```bash
+cd examples/08-behaviors
+haxe build.hxml
 ```
 
-## Key Features Demonstrated
+## Key files
 
-### 1. Behavior Definition (`@:behaviour`)
+- `examples/08-behaviors/src_haxe/behaviors/DataProcessor.hx`
+- `examples/08-behaviors/src_haxe/implementations/BatchProcessor.hx`
+- `examples/08-behaviors/src_haxe/implementations/StreamProcessor.hx`
+- `examples/08-behaviors/lib/behaviors/data_processor.ex`
+
+## Plain Elixir baseline
+
+In plain Elixir, you usually keep callback docs/specs, expected state maps, and implementation modules aligned by convention and review.
+
+## Haxe abstraction input
 
 ```haxe
 @:behaviour
 class DataProcessor {
-    @:callback
-    public function process_item(item: DataItem, state: ProcessorState): ProcessItemResponse {
-        throw "Callback must be implemented by behavior user";
-    }
-    
-    @:optional_callback  
-    public function get_stats(): ProcessorStats {
-        throw "Optional callback can be implemented by behavior user";
-    }
+  @:callback
+  public function process_item(item:DataItem, state:ProcessorState):ProcessItemResponse {
+    throw "Callback must be implemented by behavior user";
+  }
+
+  @:optional_callback
+  public function get_stats():ProcessorStats {
+    throw "Optional callback can be implemented by behavior user";
+  }
 }
-```
 
-### 2. Behavior Implementation (`@:use`)
-
-```haxe
 @:use(DataProcessor)
 class BatchProcessor {
-    // Must implement all @:callback methods
-    public function process_item(item: DataItem, state: ProcessorState): ProcessItemResponse {
-        // Implementation specific to batch processing
-        return processInBatch(item, state);
+  public function process_item(item:DataItem, state:ProcessorState):ProcessItemResponse {
+    if (!validate_data(item)) {
+      // error path
     }
-    
-    // Optional callbacks can be omitted
-    // public function get_stats() - not implemented
+    // batch processing path
+  }
 }
 ```
 
-### 3. Different Processing Strategies
-
-- **BatchProcessor**: Accumulates data and processes in large batches for efficiency
-- **StreamProcessor**: Processes data items individually in real-time
-
-## Generated Elixir Code
-
-The Haxe behavior definitions compile to proper Elixir behavior modules:
+## Generated Elixir shape
 
 ```elixir
-# From DataProcessor.hx
 defmodule DataProcessor do
-  @callback init(config :: any()) :: {:ok, any()} | {:error, String.t()}
-  @callback process_item(item :: any(), state :: any()) :: {:result, any(), new_state :: any()}
-  @callback process_batch(items :: [any()], state :: any()) :: {:results, [any()], new_state :: any()}
-  @callback validate_data(data :: any()) :: boolean()
-  @callback handle_error(error :: any(), context :: any()) :: String.t()
-  
-  # Optional callbacks
-  @optional_callbacks get_stats: 0, cleanup: 1
-  @callback get_stats() :: %{String.t() => any()}
-  @callback cleanup(state :: any()) :: :ok
+  def process_item(_, _, _) do
+    raise Reflaxe.Elixir.HaxeThrow, [value: "Callback must be implemented by behavior user"]
+  end
 end
-```
 
-```elixir  
-# From BatchProcessor.hx
 defmodule BatchProcessor do
-  @behaviour DataProcessor
-  
-  def init(config) do
-    batch_size = Map.get(config, :batch_size, 100)
-    {:ok, %{batch_size: batch_size, mode: :batch_processing}}
-  end
-  
-  def process_item(item, state) do
-    # Batch processing logic
-  end
-  
-  # ... other callback implementations
-end
-```
-
-## Compilation
-
-```bash
-# Compile the behavior example
-haxe build.hxml
-
-# The generated Elixir modules will be available for use in Mix projects
-```
-
-## Usage in Elixir
-
-Once compiled, the behaviors can be used in standard Elixir applications:
-
-```elixir
-# In your Mix project
-defmodule MyApp.DataPipeline do
-  @behaviour DataProcessor
-  
-  def start_link(processor_module) do
-    GenServer.start_link(__MODULE__, processor_module)
-  end
-  
-  def init(processor_module) do
-    {:ok, state} = processor_module.init(%{batch_size: 50})
-    {:ok, %{processor: processor_module, state: state}}
-  end
-  
-  def handle_call({:process, item}, _from, %{processor: mod, state: state}) do
-    {result, new_state} = mod.process_item(item, state)
-    {:reply, result, %{processor: mod, state: new_state}}
+  def process_item(struct, item, state) do
+    # implementation body
+    apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :validate_data, [struct, item])
   end
 end
-
-# Usage
-{:ok, pid} = MyApp.DataPipeline.start_link(BatchProcessor)
-GenServer.call(pid, {:process, %{id: 1, data: "example"}})
 ```
 
-## Key Benefits
+## Edge over plain Elixir
 
-1. **Type Safety**: Compile-time validation ensures all required callbacks are implemented
-2. **Hot Code Swapping**: Standard Elixir behavior support enables live updates
-3. **Polymorphism**: Different implementations can be swapped at runtime
-4. **Documentation**: Behaviors serve as contracts documenting expected APIs
-5. **OTP Integration**: Works seamlessly with GenServer, Supervisor, and other OTP patterns
+- Callback signatures and payload/state shapes are typed in one place (`typedef`s + function signatures).
+- Changing contract fields propagates through compile-time checks across implementations.
+- Strategy modules (`BatchProcessor`, `StreamProcessor`) reuse one typed contract surface and can focus on logic.
 
-## Next Steps
+## Tradeoff
 
-- Explore combining behaviors with GenServer implementations
-- See how behaviors enable supervisor restart strategies
-- Learn about dynamic behavior loading and hot code replacement
-- Integration with Phoenix applications for pluggable components
-
-This example shows how Haxe's powerful type system can enhance Elixir's behavior-driven architecture while maintaining full OTP compatibility.
+Generated behavior contracts are emitted as contract-style modules (with raising stubs), not literal Elixir `@callback` attributes. For teams that want canonical `@behaviour` macro surfaces in source, plain Elixir can be clearer for that layer.

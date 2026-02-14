@@ -1,86 +1,68 @@
-# 07-protocols - Elixir Protocol System Example
+# 07 - Protocol-Style Contracts (Haxe -> Elixir)
 
-**Difficulty**: Intermediate  
-**Features**: @:protocol, @:impl annotations, polymorphic dispatch  
-**Use Case**: Type-safe polymorphic behavior with compile-time validation
+This example shows how `@:protocol` and `@:impl` can define a shared typed contract and multiple implementations.
 
-## 📖 Overview
+## Why this example exists
 
-This example demonstrates Elixir protocol support in Reflaxe.Elixir, enabling polymorphic dispatch similar to interfaces but following Elixir conventions.
+A skeptical Elixir question is: "Why not just write the polymorphic modules directly in Elixir?"
+This example demonstrates when the Haxe layer helps and what tradeoff comes with it.
 
-## 🎯 What You'll Learn
-
-- How to define protocols with `@:protocol` annotation
-- Implementing protocols for different types with `@:impl`
-- Polymorphic dispatch at runtime
-- Type-safe protocol contracts
-
-## 📁 Files
-
-- `src_haxe/protocols/Drawable.hx` - Protocol definition
-- `src_haxe/implementations/StringDrawable.hx` - String implementation
-- `src_haxe/implementations/NumberDrawable.hx` - Number implementations
-- `build.hxml` - Build configuration
-
-## 🚀 Running the Example
+## Compile
 
 ```bash
 cd examples/07-protocols
 haxe build.hxml
 ```
 
-Generated files appear in `lib/` directory:
-- `lib/protocols/drawable.ex` - Protocol module
-- `lib/implementations/string_drawable.ex` - String implementation
-- `lib/implementations/number_drawable.ex` - Number implementations
+## Key files
 
-## 📋 Generated Elixir Code
+- `examples/07-protocols/src_haxe/protocols/Drawable.hx`
+- `examples/07-protocols/src_haxe/implementations/StringDrawable.hx`
+- `examples/07-protocols/src_haxe/implementations/NumberDrawable.hx`
+- `examples/07-protocols/lib/protocols/drawable.ex`
 
-### Protocol Definition
+## Plain Elixir baseline
+
+In plain Elixir, you would maintain one contract module and each implementation module manually, keeping arities and value-shapes in sync yourself.
+
+## Haxe abstraction input
+
+```haxe
+@:protocol
+class Drawable {
+  public function draw(value:Term):String {
+    throw "Protocol method should be implemented";
+  }
+}
+
+@:impl
+class StringDrawable {
+  public function draw(value:String):String {
+    return "Drawing string: " + value;
+  }
+}
+```
+
+## Generated Elixir shape
+
 ```elixir
-defprotocol Drawable do
-  @spec draw(any()) :: String
-  def draw(value)
-  
-  @spec area(any()) :: Float
-  def area(value)
+defmodule Drawable do
+  def draw(_, _) do
+    raise Reflaxe.Elixir.HaxeThrow, [value: "Protocol method should be implemented"]
+  end
+end
+
+defmodule StringDrawable do
+  def draw(_, value), do: "Drawing string: #{value}"
 end
 ```
 
-### Protocol Implementations
-```elixir
-defimpl Drawable, for: String do
-  def draw(value), do: "Drawing string: #{value}"
-  def area(value), do: String.length(value)
-end
+## Edge over plain Elixir
 
-defimpl Drawable, for: Integer do
-  def draw(value), do: "Drawing integer: #{value}"
-  def area(value), do: value * value
-end
-```
+- The contract and implementations share typed signatures in one authoring layer.
+- Refactors that change argument/return shapes fail earlier in compile-time checks instead of drifting across modules.
+- Adding another implementation reuses the same typed contract surface.
 
-## 🧪 Testing with Elixir
+## Tradeoff
 
-```elixir
-# In IEx console:
-iex(1)> Drawable.draw("hello")
-"Drawing string: hello"
-
-iex(2)> Drawable.draw(42)
-"Drawing integer: 42"
-
-iex(3)> Drawable.area("test")
-4
-
-iex(4)> Drawable.area(5)
-25
-```
-
-## 🔑 Key Features
-
-1. **Type Safety**: Protocol contracts enforced at compile time
-2. **Polymorphism**: Same interface, different implementations
-3. **Extensibility**: Add implementations for new types easily
-4. **Performance**: Native Elixir dispatch, no runtime overhead
-5. **Integration**: Works seamlessly with existing Elixir protocols
+This compiler currently emits contract/implementation modules, not native `defprotocol/defimpl` macros. If your team specifically needs protocol macro semantics, author that part directly in Elixir.

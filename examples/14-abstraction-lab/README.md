@@ -1,24 +1,10 @@
 # 14 - Abstraction Lab (Haxe + Elixir)
 
-This example shows how to author reusable abstractions in Haxe that compile to familiar Elixir runtime constructs.
+This lab collects three abstraction patterns and explains each one against a plain-Elixir baseline.
 
-## What this example demonstrates
+## Why this lab exists
 
-- `@:protocol` + `@:impl` for polymorphic rendering contracts.
-- `@:behaviour` + `@:use` for callback contracts and interchangeable implementations.
-- A typed wrapper over low-level `Kernel` process primitives (`self`, `send`, `is_pid`, `node`).
-- Haxe-first authoring with direct mapping to Elixir contract/implementation modules and process primitives.
-
-## Why this example exists
-
-Most examples focus on Phoenix/Ecto app features. This lab isolates the abstraction pattern itself: define authoring surfaces in Haxe, keep runtime output native to Elixir.
-
-## Key files
-
-- `examples/14-abstraction-lab/src_haxe/protocols/CommandRenderable.hx`
-- `examples/14-abstraction-lab/src_haxe/behaviors/RetryPolicy.hx`
-- `examples/14-abstraction-lab/src_haxe/abstractions/ProcessBoundary.hx`
-- `examples/14-abstraction-lab/src_haxe/implementations/*.hx`
+The goal is not to replace Elixir style. The goal is to show where a typed Haxe authoring layer can remove drift or repeated boundary code while still compiling to regular Elixir modules.
 
 ## Compile
 
@@ -27,13 +13,15 @@ cd examples/14-abstraction-lab
 haxe build.hxml
 ```
 
-Generated Elixir files are emitted to `examples/14-abstraction-lab/lib/`.
+Generated files are emitted to `examples/14-abstraction-lab/lib/`.
 
-## Haxe -> generated Elixir shapes
+## 1) Protocol-style contract + implementations
 
-### Protocol contract + implementations
+### Plain Elixir baseline
 
-Haxe:
+Define one contract module and manually keep every implementation module aligned with that contract as signatures evolve.
+
+### Haxe abstraction input
 
 ```haxe
 @:protocol
@@ -51,7 +39,7 @@ class StringCommandRenderable {
 }
 ```
 
-Generated Elixir shape:
+### Generated Elixir shape
 
 ```elixir
 defmodule AbstractionLab.CommandRenderable do
@@ -65,9 +53,22 @@ defmodule AbstractionLab.StringCommandRenderable do
 end
 ```
 
-### Behavior contract + implementations
+### Edge over plain Elixir
 
-Haxe:
+- One typed contract surface for all implementations.
+- Signature drift is caught earlier when implementations no longer match the typed contract.
+
+### Tradeoff
+
+This emits contract/implementation modules, not native `defprotocol/defimpl` macros.
+
+## 2) Behavior-style retry policies
+
+### Plain Elixir baseline
+
+Define callback conventions and keep each retry policy implementation aligned by convention and review.
+
+### Haxe abstraction input
 
 ```haxe
 @:behaviour
@@ -86,7 +87,7 @@ class ExponentialRetryPolicy {
 }
 ```
 
-Generated Elixir shape:
+### Generated Elixir shape
 
 ```elixir
 defmodule AbstractionLab.RetryPolicy do
@@ -100,9 +101,22 @@ defmodule AbstractionLab.ExponentialRetryPolicy do
 end
 ```
 
-### Typed boundary over low-level process primitives
+### Edge over plain Elixir
 
-Haxe:
+- Typed callback/state shapes make policy refactors safer.
+- Swapping strategies (`ImmediateRetryPolicy` vs `ExponentialRetryPolicy`) keeps one typed contract.
+
+### Tradeoff
+
+If you want literal `@callback` / `@behaviour` macro surfaces in source, plain Elixir may be more direct.
+
+## 3) Typed boundary over low-level process primitives
+
+### Plain Elixir baseline
+
+Repeat `is_pid` checks, `send`, `self`, and type checks at multiple call sites.
+
+### Haxe abstraction input
 
 ```haxe
 class ProcessBoundary {
@@ -114,7 +128,7 @@ class ProcessBoundary {
 }
 ```
 
-Generated Elixir shape:
+### Generated Elixir shape
 
 ```elixir
 def send_if_pid(destination, message) do
@@ -126,3 +140,19 @@ def send_if_pid(destination, message) do
   end
 end
 ```
+
+### Edge over plain Elixir
+
+- One reusable, typed boundary for low-level operations.
+- Reduces duplicated guard/send boilerplate and keeps boundary behavior consistent.
+
+### Tradeoff
+
+Wrappers can hide details if overused; for one-off low-level calls, plain Elixir is often clearer.
+
+## Key files
+
+- `examples/14-abstraction-lab/src_haxe/protocols/CommandRenderable.hx`
+- `examples/14-abstraction-lab/src_haxe/behaviors/RetryPolicy.hx`
+- `examples/14-abstraction-lab/src_haxe/abstractions/ProcessBoundary.hx`
+- `examples/14-abstraction-lab/src_haxe/implementations/*.hx`

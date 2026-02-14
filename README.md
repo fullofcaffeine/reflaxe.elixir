@@ -32,17 +32,19 @@ The typed layer helps you decide more deliberately what should crash, what shoul
 
 ## Build Higher-Level Abstractions (Haxe + Elixir)
 
-Reflaxe.Elixir is not only about syntax translation. It lets you define typed authoring abstractions in Haxe and compile them to standard Elixir/Phoenix forms.
+These abstractions should earn their place. The question is not "can Haxe do this?", but "does this reduce drift, duplication, or unsafe boundaries compared to plain Elixir for this team?"
 
-| Haxe authoring surface | Generated Elixir shape | Why useful | Example |
+| Haxe authoring surface | Plain Elixir baseline | Edge over plain Elixir | Example |
 | --- | --- | --- | --- |
-| `@:routes` + router build macro | Phoenix router macros (`get`, `post`, `live`) | Keep route wiring declarative and type-checked | [`examples/09-phoenix-router`](examples/09-phoenix-router/README.md) |
-| `@:schema` + `@:changeset` | Ecto `schema` + `changeset/2` | Catch field/params shape issues early | [`examples/06-user-management`](examples/06-user-management/README.md) |
-| `TypedQueryLambda` | Normal Ecto query expressions | Keep query composition typed at authoring time | [`examples/todo-app`](examples/todo-app/README.md) |
-| `@:protocol` / `@:impl` / `@:behaviour` | Contract modules + typed implementation modules | Build pluggable contracts without giving up BEAM conventions | [`examples/14-abstraction-lab`](examples/14-abstraction-lab/README.md) |
-| Typed wrappers over Elixir externs (for example `elixir.Kernel`) | Direct BEAM primitives (`self`, `send`, type guards) | Expose low-level runtime power through explicit typed boundaries | [`examples/14-abstraction-lab`](examples/14-abstraction-lab/README.md) |
+| `@:routes` + router build macro | Hand-maintained route/controller wiring | Typed route declarations reduce path/action drift during refactors | [`examples/09-phoenix-router`](examples/09-phoenix-router/README.md) |
+| `@:schema` + `@:changeset` | Manual Ecto schema + changeset field alignment | Typed field/params surfaces catch boundary mismatches earlier | [`examples/06-user-management`](examples/06-user-management/README.md) |
+| `TypedQueryLambda` | Ad-hoc query composition with repeated field assumptions | Typed query lambdas keep predicates aligned with source model shapes | [`examples/todo-app`](examples/todo-app/README.md) |
+| `@:protocol` / `@:impl` / `@:behaviour` | Repeated contract maintenance across implementation modules | One typed contract surface, multiple implementations, less signature drift | [`examples/14-abstraction-lab`](examples/14-abstraction-lab/README.md) |
+| Typed wrappers over Elixir externs (for example `elixir.Kernel`) | Repeated low-level guard/send/type-check boilerplate | Centralized boundary helpers with explicit typed call surfaces | [`examples/14-abstraction-lab`](examples/14-abstraction-lab/README.md) |
 
 For a focused walkthrough of these patterns in one place, see [`examples/14-abstraction-lab`](examples/14-abstraction-lab/README.md).
+
+Tradeoff: you add a compile step and should still read generated Elixir for hot paths and debugging. If an abstraction does not remove real duplication or drift, plain Elixir is often the simpler choice.
 
 ### How this differs from Gleam (briefly)
 
