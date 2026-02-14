@@ -1,11 +1,11 @@
 # Reflaxe.Elixir Documentation
 
-**Type-safe Haxe→Elixir compilation with Phoenix framework integration**
+**Haxe->Elixir documentation for Phoenix/OTP integration**
 
-Welcome to the comprehensive documentation for Reflaxe.Elixir, a Haxe compilation target that generates idiomatic Elixir code with complete Phoenix/OTP integration.
+This index helps you find the right docs quickly, whether you're building apps with Phoenix or working on the compiler.
 
 > [!NOTE]
-> Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset.
+> Reflaxe.Elixir's documented subset is considered stable in `v1.x`.
 > Experimental/opt‑in features remain clearly labeled; see `docs/06-guides/PRODUCTION_READINESS.md` for the hardening checklist.
 
 ## 📚 Documentation Sections
@@ -105,8 +105,8 @@ Legacy guides (kept for link stability):
 - [JavaScript Patterns](07-patterns/JAVASCRIPT_PATTERNS.md) - JS generation patterns
 
 ### 🗺️ Roadmap & Planning
-**[08-roadmap/](08-roadmap/)** - Project direction and future plans
-- [Vision](08-roadmap/vision.md) - Long-term project vision
+**[08-roadmap/](08-roadmap/)** - Planning notes and long-term ideas
+- [Vision](08-roadmap/vision.md) - Long-term ideas (not a stability contract)
 
 ### 📜 History
 Historical notes and experiments are kept in git history to keep the working tree focused and current.

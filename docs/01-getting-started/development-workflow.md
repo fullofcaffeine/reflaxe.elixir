@@ -51,7 +51,7 @@ npm run hooks:install
 
 ## Dual-Ecosystem Architecture
 
-Reflaxe.Elixir coordinates two development ecosystems for complete validation:
+Reflaxe.Elixir coordinates two development ecosystems for practical end-to-end validation:
 
 ### 🔧 Haxe Development Side (npm + lix)
 **Purpose**: Build and test the Haxe→Elixir compiler itself
@@ -260,7 +260,7 @@ See `docs/04-api-reference/SOURCE_MAPPING.md` for the current status and next st
 ## Full-Stack Development
 
 ### Dual-Target Compilation
-Reflaxe.Elixir enables true full-stack development with a single language:
+Reflaxe.Elixir supports full-stack development with a single language:
 
 - **Server-side**: Haxe → Elixir (Phoenix LiveView, Ecto, OTP)
 - **Client-side**: Haxe → JavaScript with native async/await support
@@ -269,7 +269,7 @@ Reflaxe.Elixir enables true full-stack development with a single language:
 1. **Shared Types**: Define data structures in `shared/` directory
 2. **Dual Compilation**: Build both targets with type-safe contracts
 3. **Live Reload**: Hot reload for both Elixir and JavaScript changes
-4. **Type Safety**: Full-stack type guarantees at compile time
+4. **Type Safety**: Compile-time checks across shared server/client contracts
 
 **See**: [Quick Start Patterns](../07-patterns/quick-start-patterns.md) for copy‑paste, end‑to‑end patterns.
 
@@ -362,7 +362,7 @@ mix compile --force          # Verify Elixir compilation
 
 ### Code Quality
 - **Follow existing patterns** in the codebase
-- **Write comprehensive tests** for all new functionality
+- **Write thorough tests** for all new functionality
 - **Document architectural decisions** in appropriate guides
 - **Maintain performance targets** (see Performance Guide; large modules may require `fast_boot` during iteration)
 

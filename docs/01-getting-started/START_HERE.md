@@ -1,6 +1,6 @@
 # Start Here (Beginner Quickstart)
 
-This guide is for **complete beginners**:
+This guide is for beginners:
 
 - New to **Haxe**
 - New to **Elixir/Phoenix**
@@ -9,7 +9,7 @@ This guide is for **complete beginners**:
 Goal: run a real Phoenix LiveView app written in Haxe and understand the “mental model” in under ~15 minutes.
 
 > [!NOTE]
-> Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset.
+> The documented subset is considered stable in `v1.x`.
 > Experimental/opt‑in features remain clearly labeled; see `docs/06-guides/PRODUCTION_READINESS.md` for the hardening checklist.
 
 ## 0) Install prerequisites (one-time)

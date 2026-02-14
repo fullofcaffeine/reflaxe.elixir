@@ -114,14 +114,14 @@ You have three levers (from “earliest” to “latest” in the pipeline):
 - Pros: zero runtime overhead, simplest output, closest to hand‑written code.
 - Cons: not suited for program‑shape‑dependent rewrites.
 
-2) Macros (Compile‑time code generation)
+2) Macros (Compile-time code generation)
 - Best for: authoring ergonomics (e.g., HXX authoring), validations, and compile‑time safety.
-- Pros: great developer UX, early errors.
+- Pros: clear authoring UX, early errors.
 - Cons: runs in macro context; must avoid target‑only constructs in macro code.
 
 3) AST Transforms (Mid/Late pipeline)
 - Best for: structural rewrites based on typed program shape (loops → comprehensions, pattern rewrites, control‑flow normalization, etc.).
-- Pros: full view of typed code; powerful and target‑aware.
+- Pros: full view of typed code; expressive and target-aware.
 - Cons: can be harder to reason about if used for what a `.cross.hx` override should do.
 
 Rule of thumb:

@@ -14,7 +14,7 @@
 Write application code in Haxe and compile to conventional Elixir shapes for the BEAM ecosystem.
 
 > [!WARNING]
-> **Stability**: `v1.x` is non-alpha for the documented subset.
+> **Stability**: the documented subset is considered stable in `v1.x`.
 > Some features remain experimental/opt-in (for example source mapping, migrations `.exs` emission, `fast_boot`).
 > See [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
 

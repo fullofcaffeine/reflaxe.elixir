@@ -1,6 +1,6 @@
 # Quickstart (Phoenix-first)
 
-Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset. This quickstart is focused on helping a Phoenix developer get productive quickly while we continue hardening the compiler, stdlib, and tooling.
+The documented subset is considered stable in `v1.x`. This quickstart helps Phoenix developers get productive quickly while clearly flagging experimental surfaces.
 
 If you’re new to Haxe and/or new to Phoenix, start here first:
 

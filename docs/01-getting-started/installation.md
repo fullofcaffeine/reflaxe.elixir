@@ -1,8 +1,8 @@
 # Installation & Setup Guide
 
-Complete setup guide for Reflaxe.Elixir development with lix package manager and dual-ecosystem architecture.
+Setup guide for Reflaxe.Elixir development with lix package management and dual-ecosystem workflows.
 
-**⚠️ Having trouble with tests or compilation?** See the comprehensive troubleshooting section below for critical insights and solutions.
+**⚠️ Having trouble with tests or compilation?** See the troubleshooting section below.
 
 ## Prerequisites
 
@@ -149,7 +149,7 @@ haxe --version
 cd examples/01-simple-modules
 haxe BasicModule.hxml
 
-# Run comprehensive tests
+# Run full tests
 npm test
 ```
 
