@@ -10,6 +10,9 @@ import reflaxe.elixir.ast.ElixirAST.makeASTWithMeta;
 import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirAST.EKeywordPair;
 import reflaxe.elixir.ast.ElixirAST.EMapPair;
+import reflaxe.elixir.ast.ElixirAST.RouterNodeMeta;
+import reflaxe.elixir.ast.ElixirAST.RouterOptionMeta;
+import reflaxe.elixir.ast.ElixirAST.RouterMetaValue;
 import reflaxe.elixir.ast.ElixirAST.SchemaAssociationKind;
 import reflaxe.elixir.ast.ElixirASTTransformer;
 import reflaxe.elixir.ast.naming.ElixirAtom;
@@ -678,6 +681,10 @@ class AnnotationTransforms {
 	 * Build Phoenix router body with pipelines and routes
 	 */
 	static function buildRouterBody(moduleName:String, existingBody:ElixirAST, metadata:ElixirMetadata):ElixirAST {
+		if (hasTypedRouterDsl(metadata)) {
+			return buildRouterBodyFromDsl(moduleName, existingBody, metadata);
+		}
+
 		var statements = [];
 
 		// Add use Phoenix.Router
@@ -759,6 +766,10 @@ class AnnotationTransforms {
 					case "PUT": "put";
 					case "PATCH": "patch";
 					case "DELETE": "delete";
+					case "OPTIONS": "options";
+					case "HEAD": "head";
+					case "CONNECT": "connect";
+					case "TRACE": "trace";
 					default: null;
 				};
 				if (routeMacro == null)
@@ -879,6 +890,357 @@ class AnnotationTransforms {
 		}
 
 		return makeAST(EBlock(statements));
+	}
+
+	static function hasTypedRouterDsl(metadata:ElixirMetadata):Bool {
+		if (metadata == null || metadata.routerDslNodes == null || metadata.routerDslNodes.length == 0) {
+			return false;
+		}
+		for (node in metadata.routerDslNodes) {
+			if (node != null && node.kind != "compat_route") {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	static function getRouterOption(options:Array<RouterOptionMeta>, key:String):Null<RouterMetaValue> {
+		if (options == null) {
+			return null;
+		}
+		for (option in options) {
+			if (option.key == key) {
+				return option.value;
+			}
+		}
+		return null;
+	}
+
+	static function isRouterOptionExcludedFromKeyword(key:String):Bool {
+		return key == "name" || key == "params_contract" || key == "pipeline" || key == "alias";
+	}
+
+	static function normalizeAtomValue(value:String):String {
+		if (value == null) {
+			return "";
+		}
+		return StringTools.startsWith(value, ":") ? value.substr(1) : value;
+	}
+
+	static function routerMetaValueToAst(value:RouterMetaValue):ElixirAST {
+		return switch (value) {
+			case ROString(v):
+				makeAST(EString(v));
+			case ROInt(v):
+				makeAST(EInteger(v));
+			case ROBool(v):
+				makeAST(EBoolean(v));
+			case ROAtom(v):
+				makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(v))));
+			case ROVar(v):
+				makeAST(EVar(NameUtils.getElixirModuleName(v)));
+			case ROList(values):
+				makeAST(EList([for (item in values) routerMetaValueToAst(item)]));
+			case ROKeyword(values):
+				makeAST(EKeywordList([for (pair in values) {key: pair.key, value: routerMetaValueToAst(pair.value)}]));
+			case ROMap(values):
+				makeAST(EMap([
+					for (pair in values) {key: makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(pair.key)))), value: routerMetaValueToAst(pair.value)}
+				]));
+		}
+	}
+
+	static function optionValuesToKeyword(options:Array<RouterOptionMeta>):Array<EKeywordPair> {
+		var pairs:Array<EKeywordPair> = [];
+		if (options == null) {
+			return pairs;
+		}
+		for (option in options) {
+			if (isRouterOptionExcludedFromKeyword(option.key)) {
+				continue;
+			}
+
+			var value = switch (option.key) {
+				// Convert only/except lists to atom lists when possible.
+				case "only", "except":
+					switch (option.value) {
+						case ROList(listValues):
+							var atomValues = [];
+							for (listValue in listValues) {
+								switch (listValue) {
+									case ROString(s):
+										atomValues.push(makeAST(EAtom(ElixirAtom.raw(NameUtils.toSnakeCase(s)))));
+									case ROAtom(a):
+										atomValues.push(makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(a)))));
+									default:
+										atomValues.push(routerMetaValueToAst(listValue));
+								}
+							}
+							makeAST(EList(atomValues));
+						default:
+							routerMetaValueToAst(option.value);
+					}
+				default:
+					routerMetaValueToAst(option.value);
+			}
+
+			pairs.push({key: option.key, value: value});
+		}
+		return pairs;
+	}
+
+	static function routeMacroName(method:String):Null<String> {
+		return switch ((method ?? "").toUpperCase()) {
+			case "GET": "get";
+			case "POST": "post";
+			case "PUT": "put";
+			case "PATCH": "patch";
+			case "DELETE": "delete";
+			case "OPTIONS": "options";
+			case "HEAD": "head";
+			case "CONNECT": "connect";
+			case "TRACE": "trace";
+			case "LIVE": "live";
+			case "MATCH": "match";
+			default: null;
+		}
+	}
+
+	static function emitPipeThroughCall(pipelines:Array<String>):ElixirAST {
+		if (pipelines == null || pipelines.length == 0) {
+			return makeAST(ENil);
+		}
+
+		if (pipelines.length == 1) {
+			return makeAST(ECall(null, "pipe_through", [makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(pipelines[0]))))]));
+		}
+
+		return makeAST(ECall(null, "pipe_through", [
+			makeAST(EList([
+				for (pipeline in pipelines)
+					makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(pipeline))))
+			]))
+		]));
+	}
+
+	static function emitRouterDslNodes(nodes:Array<RouterNodeMeta>, webModuleName:String, withinScope:Bool):Array<ElixirAST> {
+		var emitted:Array<ElixirAST> = [];
+		if (nodes == null) {
+			return emitted;
+		}
+
+		for (node in nodes) {
+			if (node == null || node.kind == null) {
+				continue;
+			}
+
+			switch (node.kind) {
+				case "pipeline":
+					var pipelineName = node.name != null ? node.name : "browser";
+					var body = emitRouterDslNodes(node.children, webModuleName, false);
+					emitted.push(makeAST(EMacroCall("pipeline", [makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(pipelineName))))], makeAST(EBlock(body)))));
+
+				case "plug":
+					var callArgs:Array<ElixirAST> = [];
+					var plugTarget = node.moduleRef != null ? node.moduleRef : "Kernel";
+					if (plugTarget.indexOf(".") >= 0) {
+						callArgs.push(makeAST(EVar(NameUtils.getElixirModuleName(plugTarget))));
+					} else {
+						callArgs.push(makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(plugTarget)))));
+					}
+					var plugOpts = getRouterOption(node.options, "init_args");
+					if (plugOpts != null) {
+						callArgs.push(routerMetaValueToAst(plugOpts));
+					}
+					emitted.push(makeAST(ECall(null, "plug", callArgs)));
+
+				case "scope":
+					var scopeArgs:Array<ElixirAST> = [];
+					scopeArgs.push(makeAST(EString(node.path != null ? node.path : "/")));
+
+					var aliasValue = getRouterOption(node.options, "alias");
+					if (aliasValue != null) {
+						scopeArgs.push(routerMetaValueToAst(aliasValue));
+					}
+
+					var scopeKeyword = optionValuesToKeyword(node.options);
+					if (scopeKeyword.length > 0) {
+						scopeArgs.push(makeAST(EKeywordList(scopeKeyword)));
+					}
+
+					var scopeBody = emitRouterDslNodes(node.children, webModuleName, true);
+					emitted.push(makeAST(EMacroCall("scope", scopeArgs, makeAST(EBlock(scopeBody)))));
+
+				case "pipe_through":
+					emitted.push(emitPipeThroughCall(node.pipelines));
+
+				case "live_session":
+					var liveSessionArgs:Array<ElixirAST> = [
+						makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(node.name != null ? node.name : "default"))))
+					];
+					var liveSessionKeyword = optionValuesToKeyword(node.options);
+					if (liveSessionKeyword.length > 0) {
+						liveSessionArgs.push(makeAST(EKeywordList(liveSessionKeyword)));
+					}
+					var liveSessionBody = emitRouterDslNodes(node.children, webModuleName, true);
+					emitted.push(makeAST(EMacroCall("live_session", liveSessionArgs, makeAST(EBlock(liveSessionBody)))));
+
+				case "route", "compat_route":
+					var method = node.kind == "compat_route" ? (node.method ?? "GET") : (node.method ?? "GET");
+					var macroName = routeMacroName(method);
+					if (macroName == null) {
+						continue;
+					}
+
+					// Compatibility path: keep pipeline override by emitting a local pipe_through.
+					var compatPipeline = getRouterOption(node.options, "pipeline");
+					if (compatPipeline != null) {
+						switch (compatPipeline) {
+							case ROString(pipelineName):
+								emitted.push(emitPipeThroughCall([pipelineName]));
+							case ROAtom(pipelineName):
+								emitted.push(emitPipeThroughCall([pipelineName]));
+							default:
+						}
+					}
+
+					var routeArgs:Array<ElixirAST> = [];
+					if (macroName == "match") {
+						var verb = node.verb != null ? node.verb : "GET";
+						routeArgs.push(makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(verb.toLowerCase())))));
+					}
+					routeArgs.push(makeAST(EString(node.path != null ? node.path : "/")));
+					if (node.controller != null) {
+						routeArgs.push(makeAST(EVar(NameUtils.getElixirModuleName(node.controller))));
+					}
+					if (node.action != null) {
+						routeArgs.push(makeAST(EAtom(ElixirAtom.raw(NameUtils.toSnakeCase(node.action)))));
+					}
+					var routeKeyword = optionValuesToKeyword(node.options);
+					if (routeKeyword.length > 0) {
+						routeArgs.push(makeAST(EKeywordList(routeKeyword)));
+					}
+					emitted.push(makeAST(ECall(null, macroName, routeArgs)));
+
+				case "match":
+					var matchArgs:Array<ElixirAST> = [];
+					var verb = node.verb != null ? node.verb : "GET";
+					matchArgs.push(makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(verb.toLowerCase())))));
+					matchArgs.push(makeAST(EString(node.path != null ? node.path : "/")));
+					if (node.controller != null) {
+						matchArgs.push(makeAST(EVar(NameUtils.getElixirModuleName(node.controller))));
+					}
+					if (node.action != null) {
+						matchArgs.push(makeAST(EAtom(ElixirAtom.raw(NameUtils.toSnakeCase(node.action)))));
+					}
+					var matchKeyword = optionValuesToKeyword(node.options);
+					if (matchKeyword.length > 0) {
+						matchArgs.push(makeAST(EKeywordList(matchKeyword)));
+					}
+					emitted.push(makeAST(ECall(null, "match", matchArgs)));
+
+				case "forward":
+					var forwardArgs:Array<ElixirAST> = [makeAST(EString(node.path != null ? node.path : "/"))];
+					if (node.moduleRef != null) {
+						forwardArgs.push(makeAST(EVar(NameUtils.getElixirModuleName(node.moduleRef))));
+					}
+					var forwardKeyword = optionValuesToKeyword(node.options);
+					if (forwardKeyword.length > 0) {
+						forwardArgs.push(makeAST(EKeywordList(forwardKeyword)));
+					}
+					emitted.push(makeAST(ECall(null, "forward", forwardArgs)));
+
+				case "resources", "resource":
+					var resourcesArgs:Array<ElixirAST> = [makeAST(EString(node.path != null ? node.path : "/"))];
+					if (node.controller != null) {
+						resourcesArgs.push(makeAST(EVar(NameUtils.getElixirModuleName(node.controller))));
+					}
+					var resourcesKeyword = optionValuesToKeyword(node.options);
+					if (resourcesKeyword.length > 0) {
+						resourcesArgs.push(makeAST(EKeywordList(resourcesKeyword)));
+					}
+					emitted.push(makeAST(ECall(null, node.kind, resourcesArgs)));
+
+				case "live_dashboard":
+					var dashboardCallArgs:Array<ElixirAST> = [makeAST(EString(node.path != null ? node.path : "/dashboard"))];
+					var dashboardKeyword = optionValuesToKeyword(node.options);
+					if (dashboardKeyword.length > 0) {
+						dashboardCallArgs.push(makeAST(EKeywordList(dashboardKeyword)));
+					}
+					var dashboardCall = makeAST(ECall(null, "live_dashboard", dashboardCallArgs));
+					var envs = getRouterOption(node.options, "envs");
+					if (envs == null) {
+						var envCheck = makeAST(EBinary(In, makeAST(ERemoteCall(makeAST(EVar("Mix")), "env", [])), makeAST(EList([
+							makeAST(EAtom(ElixirAtom.raw("dev"))),
+							makeAST(EAtom(ElixirAtom.raw("test"))),
+							makeAST(EAtom(ElixirAtom.raw("e2e")))
+						]))));
+						emitted.push(makeAST(EIf(envCheck, makeAST(EBlock([dashboardCall])), null)));
+					} else {
+						emitted.push(dashboardCall);
+					}
+
+				case "mailbox":
+					var mailboxModule = getRouterOption(node.options, "mailbox_module");
+					var mailboxTarget = mailboxModule != null ? routerMetaValueToAst(mailboxModule) : makeAST(EVar("Plug.Swoosh.MailboxPreview"));
+					var mailboxCall = makeAST(ECall(null, "forward", [makeAST(EString(node.path != null ? node.path : "/mailbox")), mailboxTarget]));
+					var mailboxEnvs = getRouterOption(node.options, "envs");
+					if (mailboxEnvs == null) {
+						var mailboxEnvCheck = makeAST(EBinary(In, makeAST(ERemoteCall(makeAST(EVar("Mix")), "env", [])), makeAST(EList([
+							makeAST(EAtom(ElixirAtom.raw("dev"))),
+							makeAST(EAtom(ElixirAtom.raw("test"))),
+							makeAST(EAtom(ElixirAtom.raw("e2e")))
+						]))));
+						emitted.push(makeAST(EIf(mailboxEnvCheck, makeAST(EBlock([mailboxCall])), null)));
+					} else {
+						emitted.push(mailboxCall);
+					}
+
+				default:
+			}
+		}
+
+		return emitted;
+	}
+
+	static function buildRouterBodyFromDsl(moduleName:String, existingBody:ElixirAST, metadata:ElixirMetadata):ElixirAST {
+		var statements:Array<ElixirAST> = [];
+		statements.push(makeAST(EUse("Phoenix.Router", [])));
+		statements.push(makeAST(EImport("Phoenix.LiveView.Router", null, null)));
+		if (routerDslTreeHasKind(metadata.routerDslNodes, "live_dashboard")) {
+			statements.push(makeAST(EImport("Phoenix.LiveDashboard.Router", null, null)));
+		}
+
+		var webModuleName = StringTools.endsWith(moduleName, ".Router") ? moduleName.substr(0, moduleName.length - ".Router".length) : moduleName;
+		var dslStatements = emitRouterDslNodes(metadata.routerDslNodes, webModuleName, false);
+		statements = statements.concat(dslStatements);
+
+		switch (existingBody.def) {
+			case EBlock(existingStmts):
+				statements = statements.concat(existingStmts);
+			default:
+				statements.push(existingBody);
+		}
+
+		return makeAST(EBlock(statements));
+	}
+
+	static function routerDslTreeHasKind(nodes:Array<RouterNodeMeta>, kind:String):Bool {
+		if (nodes == null) {
+			return false;
+		}
+		for (node in nodes) {
+			if (node == null) {
+				continue;
+			}
+			if (node.kind == kind) {
+				return true;
+			}
+			if (routerDslTreeHasKind(node.children, kind)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

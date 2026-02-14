@@ -11,6 +11,7 @@ import haxe.macro.Expr.Binop;
 import haxe.macro.Expr.Unop;
 import haxe.macro.Expr;
 import haxe.macro.Expr.Constant;
+import haxe.macro.ExprTools;
 import reflaxe.GenericCompiler;
 import reflaxe.compiler.TargetCodeInjection;
 import reflaxe.data.ClassFuncData;
@@ -27,10 +28,14 @@ import reflaxe.elixir.ast.ElixirAST.ElixirMetadata;
 import reflaxe.elixir.ast.ElixirAST.SchemaAssociationKind;
 import reflaxe.elixir.ast.ElixirAST.SchemaAssociationMeta;
 import reflaxe.elixir.ast.ElixirAST.RouterRouteMeta;
+import reflaxe.elixir.ast.ElixirAST.RouterNodeMeta;
+import reflaxe.elixir.ast.ElixirAST.RouterOptionMeta;
+import reflaxe.elixir.ast.ElixirAST.RouterMetaValue;
 import reflaxe.elixir.ast.ElixirAST.SocketChannelMeta;
 import reflaxe.elixir.ast.ElixirAST.EndpointSocketMeta;
 import reflaxe.elixir.ast.builders.ModuleBuilder;
 import reflaxe.elixir.ast.naming.ElixirAtom;
+import reflaxe.elixir.ast.NameUtils;
 import reflaxe.elixir.CompilationContext;
 
 using StringTools;
@@ -2663,6 +2668,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		if (classType.meta.has(":router")) {
 			metadata.isRouter = true;
 			metadata.routerRoutes = extractRouterRoutesFromMeta(classType);
+			metadata.routerDslNodes = extractRouterDslNodesFromMeta(classType);
 			#if debug_annotation_transforms
 			#end
 		}
@@ -3809,8 +3815,14 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					};
 
 				default:
-					Context.error("Each route in @:routes must be an object: {name: ..., method: ..., path: ...}", routeExpr.pos);
-					null;
+					switch (routeExpr.expr) {
+						case ECall(_, _):
+							// Typed RouterDsl nodes are handled by extractRouterDslNodesFromMeta().
+							null;
+						default:
+							Context.error("Each route in @:routes must be an object: {name: ..., method: ..., path: ...}", routeExpr.pos);
+							null;
+					}
 			}
 		}
 
@@ -3826,6 +3838,712 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				routes.length > 0 ? routes : null;
 			default:
 				Context.error("@:routes parameter must be an array: @:routes([{...}])", routesExpr.pos);
+				null;
+		};
+	}
+
+	/**
+	 * Extract typed/nested router DSL nodes from @:routes metadata.
+	 *
+	 * Supports:
+	 * - legacy flat object routes (`{name, method, path, ...}`)
+	 * - typed builder nodes (`RouterDsl.scope(...)`, `RouterDsl.get(...)`, ...)
+	 */
+	private function extractRouterDslNodesFromMeta(classType:ClassType):Null<Array<RouterNodeMeta>> {
+		var routesMeta = classType.meta.extract(":routes");
+		var routesMetaAlt = classType.meta.extract("routes");
+		if (routesMetaAlt != null && routesMetaAlt.length > 0) {
+			routesMeta = routesMeta != null && routesMeta.length > 0 ? routesMeta.concat(routesMetaAlt) : routesMetaAlt;
+		}
+
+		if (routesMeta == null || routesMeta.length == 0) {
+			return null;
+		}
+
+		var entry = routesMeta[0];
+		if (entry.params == null || entry.params.length == 0) {
+			Context.error("@:routes annotation requires an array parameter: @:routes([...])", entry.pos);
+			return null;
+		}
+		var routesExpr = entry.params[0];
+		var routeValues:Array<Expr> = switch (routesExpr.expr) {
+			case EArrayDecl(values):
+				values;
+			default:
+				Context.error("@:routes parameter must be an array: @:routes([...])", routesExpr.pos);
+				return null;
+		};
+		var containsTypedDslCalls = false;
+		for (value in routeValues) {
+			switch (value.expr) {
+				case ECall(_, _):
+					containsTypedDslCalls = true;
+				default:
+			}
+			if (containsTypedDslCalls) {
+				break;
+			}
+		}
+		if (!containsTypedDslCalls) {
+			// Legacy object routes are handled by extractRouterRoutesFromMeta.
+			return null;
+		}
+
+		var strictTypedRouteControllerRefs = Context.defined("router_strict_typed_refs");
+
+		function extractDotPath(expr:Expr):Null<String> {
+			return switch (expr.expr) {
+				case EConst(CIdent(ident)):
+					ident;
+				case EField(e, field):
+					var base = extractDotPath(e);
+					base != null ? (base + "." + field) : field;
+				default:
+					null;
+			};
+		}
+
+		function normalizeOptionKey(key:String):String {
+			return switch (key) {
+				case "asName", "as":
+					"as";
+				case "privateData", "private":
+					"private";
+				case "aliasModule", "alias":
+					"alias";
+				case "paramsContract", "params":
+					"params_contract";
+				case "initArgs", "init_args":
+					"init_args";
+				case "rootLayout", "root_layout":
+					"root_layout";
+				case "onMount", "on_mount":
+					"on_mount";
+				case "mailboxModule", "mailbox_module":
+					"mailbox_module";
+				case "metricsModule", "metrics_module":
+					"metrics_module";
+				default:
+					NameUtils.toSnakeCase(key);
+			}
+		}
+
+		function extractStringValue(expr:Expr, fieldName:String, pos:haxe.macro.Expr.Position):Null<String> {
+			return switch (expr.expr) {
+				case EConst(CString(s, _)): s;
+				case EConst(CIdent(ident)): ident;
+				default:
+					Context.error('${fieldName} must be a string literal or identifier', pos);
+					null;
+			};
+		}
+
+		function extractMethodValue(expr:Expr, fieldName:String, pos:haxe.macro.Expr.Position):Null<String> {
+			return switch (expr.expr) {
+				case EConst(CString(s, _)): s.toUpperCase();
+				case EConst(CIdent(ident)): ident.toUpperCase();
+				case EField(e, field):
+					var base = extractDotPath(e);
+					if (base != null && (base == "HttpMethod" || StringTools.endsWith(base, ".HttpMethod"))) {
+						field.toUpperCase();
+					} else {
+						Context.error('${fieldName} must be a string literal or HttpMethod value', pos);
+						null;
+					}
+				default:
+					Context.error('${fieldName} must be a string literal or HttpMethod value', pos);
+					null;
+			};
+		}
+
+		function extractTypeRef(expr:Expr, fieldName:String, pos:haxe.macro.Expr.Position, allowStringLiteral:Bool):Null<String> {
+			return switch (expr.expr) {
+				case EConst(CString(s, _)):
+					if (allowStringLiteral) {
+						s;
+					} else {
+						Context.error('${fieldName} must be a type reference (string literals are not allowed in typed RouterDsl)', pos);
+						null;
+					}
+				default:
+					var path = extractDotPath(expr);
+					if (path == null) {
+						Context.error('${fieldName} must be a type/module reference', pos);
+						null;
+					} else {
+						try {
+							Context.getType(path);
+						} catch (e) {
+							Context.error('Could not resolve ${fieldName} type: ${path}', pos);
+						}
+						path;
+					}
+			};
+		}
+
+		function extractActionRef(expr:Expr, fieldName:String, pos:haxe.macro.Expr.Position, allowStringLiteral:Bool):Null<String> {
+			return switch (expr.expr) {
+				case EField(_, field):
+					field;
+				case EConst(CIdent(ident)):
+					ident;
+				case EConst(CString(s, _)):
+					if (allowStringLiteral) {
+						s;
+					} else {
+						Context.error('${fieldName} must be a method reference (e.g. controllers.UserController.index)', pos);
+						null;
+					}
+				default:
+					Context.error('${fieldName} must be a method reference', pos);
+					null;
+			};
+		}
+
+		function parseOptionValue(expr:Expr):RouterMetaValue {
+			return switch (expr.expr) {
+				case EConst(CString(s, _)):
+					ROString(s);
+				case EConst(CInt(i, _)):
+					ROInt(Std.parseInt(i));
+				case EConst(CIdent(id)):
+					switch (id) {
+						case "true":
+							ROBool(true);
+						case "false":
+							ROBool(false);
+						default:
+							ROAtom(id);
+					}
+				case EField(_, _):
+					var path = extractDotPath(expr);
+					path != null ? ROVar(path) : ROString(ExprTools.toString(expr));
+				case EArrayDecl(items):
+					ROList([for (item in items) parseOptionValue(item)]);
+				case EObjectDecl(fields):
+					var pairs:Array<RouterOptionMeta> = [];
+					for (field in fields) {
+						pairs.push({
+							key: normalizeOptionKey(field.field),
+							value: parseOptionValue(field.expr)
+						});
+					}
+					ROMap(pairs);
+				default:
+					var pathFallback = extractDotPath(expr);
+					pathFallback != null ? ROVar(pathFallback) : ROString(ExprTools.toString(expr));
+			};
+		}
+
+		function parseOptionsExpr(expr:Null<Expr>):Array<RouterOptionMeta> {
+			if (expr == null) {
+				return [];
+			}
+			return switch (expr.expr) {
+				case EObjectDecl(fields):
+					var pairs:Array<RouterOptionMeta> = [];
+					for (field in fields) {
+						var normalizedKey = normalizeOptionKey(field.field);
+						var parsedValue = switch (normalizedKey) {
+							case "params_contract", "alias", "mailbox_module", "metrics_module":
+								var path = extractTypeRef(field.expr, field.field, field.expr.pos, false);
+								path != null ? ROVar(path) : parseOptionValue(field.expr);
+							default:
+								parseOptionValue(field.expr);
+						}
+						pairs.push({
+							key: normalizedKey,
+							value: parsedValue
+						});
+					}
+					pairs;
+				default:
+					Context.error("Options argument must be an object literal", expr.pos);
+					[];
+			};
+		}
+
+		function getOption(options:Array<RouterOptionMeta>, key:String):Null<RouterMetaValue> {
+			for (option in options) {
+				if (option.key == key) {
+					return option.value;
+				}
+			}
+			return null;
+		}
+
+		function parsePathParams(path:String):Array<String> {
+			var params:Array<String> = [];
+			if (path == null || path == "") {
+				return params;
+			}
+			var segments = path.split("/");
+			for (segment in segments) {
+				if (segment == null || segment == "") {
+					continue;
+				}
+				if (StringTools.startsWith(segment, ":")) {
+					params.push(segment.substr(1));
+				} else if (StringTools.startsWith(segment, "*")) {
+					params.push(segment.substr(1));
+				}
+			}
+			return params;
+		}
+
+		function collectTypeFieldNames(t:Type, result:Array<String>):Void {
+			switch (t) {
+				case TAnonymous(a):
+					for (field in a.get().fields) {
+						result.push(field.name);
+					}
+				case TType(td, _):
+					collectTypeFieldNames(td.get().type, result);
+				case TInst(c, _):
+					for (field in c.get().fields.get()) {
+						result.push(field.name);
+					}
+				default:
+			}
+		}
+
+		function validatePathParamsContract(path:String, options:Array<RouterOptionMeta>, pos:haxe.macro.Expr.Position):Void {
+			var pathParams = parsePathParams(path);
+			if (pathParams.length == 0) {
+				return;
+			}
+
+			var contract = getOption(options, "params_contract");
+			if (contract == null) {
+				Context.error('Route path "${path}" contains path params (${pathParams.join(", ")}) but no paramsContract was provided in options', pos);
+				return;
+			}
+
+			var contractPath:Null<String> = switch (contract) {
+				case ROVar(path):
+					path;
+				default:
+					null;
+			};
+
+			if (contractPath == null) {
+				Context.error("paramsContract must be a type reference", pos);
+				return;
+			}
+
+			var contractType:Type = null;
+			try {
+				contractType = Context.getType(contractPath);
+			} catch (e) {
+				Context.error('Could not resolve paramsContract type: ${contractPath}', pos);
+				return;
+			}
+
+			var fieldNames:Array<String> = [];
+			collectTypeFieldNames(contractType, fieldNames);
+
+			var normalizedFields = new Map<String, Bool>();
+			for (fieldName in fieldNames) {
+				normalizedFields.set(NameUtils.toSnakeCase(fieldName), true);
+			}
+
+			for (param in pathParams) {
+				var normalizedParam = NameUtils.toSnakeCase(param);
+				if (!normalizedFields.exists(normalizedParam)) {
+					Context.error('paramsContract "${contractPath}" is missing field for path param "${param}"', pos);
+				}
+			}
+		}
+
+		function validateActionExists(controllerPath:String, actionName:String, pos:haxe.macro.Expr.Position):Void {
+			if (controllerPath == null || actionName == null || controllerPath == "" || actionName == "") {
+				return;
+			}
+
+			try {
+				var controllerType = Context.getType(controllerPath);
+				switch (controllerType) {
+					case TInst(c, _):
+						var classType = c.get();
+						var found = false;
+						for (field in classType.statics.get()) {
+							if (field.name == actionName) {
+								found = true;
+								break;
+							}
+						}
+						if (!found) {
+							Context.error('Action "${actionName}" not found on controller/live module "${controllerPath}"', pos);
+						}
+					default:
+						Context.error('Expected class type for controller/live module: ${controllerPath}', pos);
+				}
+			} catch (e) {
+				Context.error('Could not resolve controller/live module "${controllerPath}"', pos);
+			}
+		}
+
+		var parseNodeRef:Expr->Null<RouterNodeMeta> = null;
+
+		function parseChildren(expr:Expr):Array<RouterNodeMeta> {
+			return switch (expr.expr) {
+				case EArrayDecl(items):
+					var nodes:Array<RouterNodeMeta> = [];
+					for (item in items) {
+						var parsed = parseNodeRef(item);
+						if (parsed != null) {
+							nodes.push(parsed);
+						}
+					}
+					nodes;
+				default:
+					Context.error("Children argument must be an array of RouterDsl nodes", expr.pos);
+					[];
+			};
+		}
+
+		function parseCompatRouteObject(routeExpr:Expr):Null<RouterNodeMeta> {
+			return switch (routeExpr.expr) {
+				case EObjectDecl(fields):
+					var name:Null<String> = null;
+					var method:Null<String> = null;
+					var path:Null<String> = null;
+					var controller:Null<String> = null;
+					var action:Null<String> = null;
+					var pipeline:Null<String> = null;
+					var controllerWasStringLiteral = false;
+					var controllerPos = routeExpr.pos;
+
+					for (field in fields) {
+						switch (field.field) {
+							case "name":
+								name = extractStringValue(field.expr, "name", field.expr.pos);
+							case "method":
+								method = extractMethodValue(field.expr, "method", field.expr.pos);
+							case "path":
+								path = extractStringValue(field.expr, "path", field.expr.pos);
+							case "controller":
+								controllerWasStringLiteral = switch (field.expr.expr) {
+									case EConst(CString(_, _)): true;
+									default: false;
+								};
+								controllerPos = field.expr.pos;
+								controller = switch (field.expr.expr) {
+									case EConst(CString(s, _)):
+										s;
+									default:
+										var path = extractDotPath(field.expr);
+										if (path == null) {
+											Context.error('controller must be a string literal or type reference (e.g. controllers.UserController)',
+												field.expr.pos);
+											null;
+										} else {
+											path;
+										}
+								};
+							case "action":
+								action = extractActionRef(field.expr, "action", field.expr.pos, true);
+							case "pipeline":
+								pipeline = extractStringValue(field.expr, "pipeline", field.expr.pos);
+							default:
+								Context.warning('Unknown route field: ${field.field}', field.expr.pos);
+						}
+					}
+
+					if (name == null || method == null || path == null) {
+						Context.error("Route definition requires name/method/path", routeExpr.pos);
+						return null;
+					}
+
+					var methodUpper = method.toUpperCase();
+					if (methodUpper != "LIVE_DASHBOARD" && methodUpper != "MAILBOX") {
+						if (controller == null) {
+							Context.error('Route "${name}" is missing controller', routeExpr.pos);
+						}
+						if (action == null) {
+							Context.error('Route "${name}" is missing action', routeExpr.pos);
+						}
+					}
+
+					if (controllerWasStringLiteral && controller != null && controller != "") {
+						var recommendation = 'Route "${name}" in @:routes uses a legacy string literal for controller. Prefer a typed controller reference (for example controllers.UserController).';
+						if (strictTypedRouteControllerRefs) {
+							Context.error(recommendation + " Use @:route for intentionally legacy/manual string routing.", controllerPos);
+						} else {
+							Context.warning(recommendation + " Pass -D router_strict_typed_refs to enforce this as an error.", controllerPos);
+						}
+					}
+
+					var options:Array<RouterOptionMeta> = [];
+					if (pipeline != null) {
+						options.push({key: "pipeline", value: ROString(pipeline)});
+					}
+					options.push({key: "name", value: ROString(name)});
+
+					switch (methodUpper) {
+						case "LIVE_DASHBOARD":
+							{
+								kind: "live_dashboard",
+								path: path,
+								options: options
+							};
+						case "MAILBOX":
+							{
+								kind: "mailbox",
+								path: path,
+								options: options
+							};
+						default:
+							{
+								kind: "compat_route",
+								name: name,
+								method: methodUpper,
+								path: path,
+								controller: controller,
+								action: action,
+								options: options
+							};
+					}
+				default:
+					null;
+			};
+		}
+
+		function extractCallName(expr:Expr):Null<String> {
+			return switch (expr.expr) {
+				case EConst(CIdent(name)):
+					name;
+				case EField(_, field):
+					field;
+				default:
+					null;
+			};
+		}
+
+		function parseNode(nodeExpr:Expr):Null<RouterNodeMeta> {
+			var compat = parseCompatRouteObject(nodeExpr);
+			if (compat != null) {
+				return compat;
+			}
+
+			return switch (nodeExpr.expr) {
+				case ECall(callee, args):
+					var name = extractCallName(callee);
+					if (name == null) {
+						Context.error("RouterDsl node call is malformed", nodeExpr.pos);
+						return null;
+					}
+
+					switch (name) {
+						case "pipeline":
+							if (args.length < 2) {
+								Context.error('RouterDsl.pipeline(name, children) requires two arguments', nodeExpr.pos);
+							}
+							var pipelineName = extractStringValue(args[0], "pipeline name", nodeExpr.pos);
+							var children = parseChildren(args[1]);
+							{
+								kind: "pipeline",
+								name: pipelineName,
+								children: children
+							};
+
+						case "plug":
+							if (args.length < 1) {
+								Context.error('RouterDsl.plug(target, ?opts) requires at least one argument', nodeExpr.pos);
+							}
+							var target = switch (args[0].expr) {
+								case EConst(CString(s, _)):
+									s;
+								case EConst(CIdent(ident)):
+									ident;
+								default:
+									var path = extractDotPath(args[0]);
+									if (path == null) {
+										Context.error('plug target must be an atom/module reference (e.g. "accepts" or Plug.MyPlug)', nodeExpr.pos);
+										null;
+									} else {
+										path;
+									}
+							}
+							var opts = args.length > 1 ? parseOptionsExpr(args[1]) : [];
+							{
+								kind: "plug",
+								moduleRef: target,
+								options: opts
+							};
+
+						case "scope":
+							if (args.length < 2) {
+								Context.error('RouterDsl.scope(path, children, ?opts) requires at least two arguments', nodeExpr.pos);
+							}
+							var scopePath = extractStringValue(args[0], "scope path", nodeExpr.pos);
+							var scopeChildren = parseChildren(args[1]);
+							var scopeOpts = args.length > 2 ? parseOptionsExpr(args[2]) : [];
+							{
+								kind: "scope",
+								path: scopePath,
+								children: scopeChildren,
+								options: scopeOpts
+							};
+
+						case "pipeThrough":
+							if (args.length < 1) {
+								Context.error('RouterDsl.pipeThrough(pipelines, ?opts) requires at least one argument', nodeExpr.pos);
+							}
+							var pipelines:Array<String> = [];
+							switch (args[0].expr) {
+								case EArrayDecl(values):
+									for (value in values) {
+										var pipelineName = extractStringValue(value, "pipeline", value.pos);
+										if (pipelineName != null) {
+											pipelines.push(pipelineName);
+										}
+									}
+								default:
+									var singlePipeline = extractStringValue(args[0], "pipeline", args[0].pos);
+									if (singlePipeline != null) {
+										pipelines.push(singlePipeline);
+									}
+							}
+							{
+								kind: "pipe_through",
+								pipelines: pipelines
+							};
+
+						case "liveSession":
+							if (args.length < 2) {
+								Context.error('RouterDsl.liveSession(name, children, ?opts) requires at least two arguments', nodeExpr.pos);
+							}
+							var sessionName = extractStringValue(args[0], "live_session name", nodeExpr.pos);
+							var sessionChildren = parseChildren(args[1]);
+							var sessionOpts = args.length > 2 ? parseOptionsExpr(args[2]) : [];
+							{
+								kind: "live_session",
+								name: sessionName,
+								children: sessionChildren,
+								options: sessionOpts
+							};
+
+						case "get", "post", "put", "patch", "delete", "options", "head", "connect", "trace", "live":
+							if (args.length < 3) {
+								Context.error('RouterDsl.${name}(path, controller, action, ?opts) requires at least three arguments', nodeExpr.pos);
+							}
+							var routePath = extractStringValue(args[0], "route path", nodeExpr.pos);
+							var controllerPath = extractTypeRef(args[1], "controller/live module", nodeExpr.pos, false);
+							var actionName = extractActionRef(args[2], "action", nodeExpr.pos, false);
+							var routeOpts = args.length > 3 ? parseOptionsExpr(args[3]) : [];
+
+							validatePathParamsContract(routePath, routeOpts, nodeExpr.pos);
+							if (controllerPath != null && actionName != null) {
+								validateActionExists(controllerPath, actionName, nodeExpr.pos);
+							}
+
+							{
+								kind: "route",
+								method: name.toUpperCase(),
+								path: routePath,
+								controller: controllerPath,
+								action: actionName,
+								options: routeOpts
+							};
+
+						case "match":
+							if (args.length < 4) {
+								Context.error('RouterDsl.match(verb, path, controller, action, ?opts) requires at least four arguments', nodeExpr.pos);
+							}
+							var verb = extractMethodValue(args[0], "verb", nodeExpr.pos);
+							var matchPath = extractStringValue(args[1], "route path", nodeExpr.pos);
+							var matchController = extractTypeRef(args[2], "controller", nodeExpr.pos, false);
+							var matchAction = extractActionRef(args[3], "action", nodeExpr.pos, false);
+							var matchOpts = args.length > 4 ? parseOptionsExpr(args[4]) : [];
+							validatePathParamsContract(matchPath, matchOpts, nodeExpr.pos);
+							if (matchController != null && matchAction != null) {
+								validateActionExists(matchController, matchAction, nodeExpr.pos);
+							}
+							{
+								kind: "match",
+								verb: verb,
+								path: matchPath,
+								controller: matchController,
+								action: matchAction,
+								options: matchOpts
+							};
+
+						case "forward":
+							if (args.length < 2) {
+								Context.error('RouterDsl.forward(path, moduleRef, ?opts) requires at least two arguments', nodeExpr.pos);
+							}
+							var forwardPath = extractStringValue(args[0], "forward path", nodeExpr.pos);
+							var moduleRef = extractTypeRef(args[1], "forward module", nodeExpr.pos, false);
+							var forwardOpts = args.length > 2 ? parseOptionsExpr(args[2]) : [];
+							{
+								kind: "forward",
+								path: forwardPath,
+								moduleRef: moduleRef,
+								options: forwardOpts
+							};
+
+						case "resources", "resource":
+							if (args.length < 2) {
+								Context.error('RouterDsl.${name}(path, controller, ?opts) requires at least two arguments', nodeExpr.pos);
+							}
+							var resourcePath = extractStringValue(args[0], "resource path", nodeExpr.pos);
+							var resourceController = extractTypeRef(args[1], "resource controller", nodeExpr.pos, false);
+							var resourceOpts = args.length > 2 ? parseOptionsExpr(args[2]) : [];
+							{
+								kind: name == "resource" ? "resource" : "resources",
+								path: resourcePath,
+								controller: resourceController,
+								options: resourceOpts
+							};
+
+						case "liveDashboard":
+							if (args.length < 1) {
+								Context.error('RouterDsl.liveDashboard(path, ?opts) requires at least one argument', nodeExpr.pos);
+							}
+							var dashboardPath = extractStringValue(args[0], "dashboard path", nodeExpr.pos);
+							var dashboardOpts = args.length > 1 ? parseOptionsExpr(args[1]) : [];
+							{
+								kind: "live_dashboard",
+								path: dashboardPath,
+								options: dashboardOpts
+							};
+
+						case "mailbox":
+							if (args.length < 1) {
+								Context.error('RouterDsl.mailbox(path, ?opts) requires at least one argument', nodeExpr.pos);
+							}
+							var mailboxPath = extractStringValue(args[0], "mailbox path", nodeExpr.pos);
+							var mailboxOpts = args.length > 1 ? parseOptionsExpr(args[1]) : [];
+							{
+								kind: "mailbox",
+								path: mailboxPath,
+								options: mailboxOpts
+							};
+
+						default:
+							Context.error('Unsupported RouterDsl node constructor: ${name}', nodeExpr.pos);
+							null;
+					}
+				default:
+					Context.error("Each @:routes entry must be a legacy route object or RouterDsl.* node call", nodeExpr.pos);
+					null;
+			};
+		}
+
+		parseNodeRef = parseNode;
+		return switch (routesExpr.expr) {
+			case EArrayDecl(values):
+				var nodes:Array<RouterNodeMeta> = [];
+				for (value in values) {
+					var parsed = parseNode(value);
+					if (parsed != null) {
+						nodes.push(parsed);
+					}
+				}
+				nodes.length > 0 ? nodes : null;
+			default:
+				Context.error("@:routes parameter must be an array: @:routes([...])", routesExpr.pos);
 				null;
 		};
 	}

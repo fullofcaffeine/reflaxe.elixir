@@ -22,6 +22,21 @@ enum HttpMethod {
 	/** Standard HTTP PATCH request */
 	PATCH;
 
+	/** Standard HTTP OPTIONS request */
+	OPTIONS;
+
+	/** Standard HTTP HEAD request */
+	HEAD;
+
+	/** Standard HTTP CONNECT request */
+	CONNECT;
+
+	/** Standard HTTP TRACE request */
+	TRACE;
+
+	/** Phoenix match macro route */
+	MATCH;
+
 	/** Phoenix LiveView route */
 	LIVE;
 

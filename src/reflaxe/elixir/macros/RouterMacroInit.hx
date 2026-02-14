@@ -72,6 +72,30 @@ class RouterMacroInit {
 		// Check if the class has both @:routes and some route functions
 		var hasRoutes = classType.meta.has(":routes");
 		var hasRouteFunctions = false;
+		var hasTypedRouterDslEntries = false;
+
+		if (hasRoutes) {
+			var routesEntries = classType.meta.extract(":routes");
+			if (routesEntries != null && routesEntries.length > 0) {
+				var params = routesEntries[0].params;
+				if (params != null && params.length > 0) {
+					switch (params[0].expr) {
+						case EArrayDecl(items):
+							for (item in items) {
+								switch (item.expr) {
+									case ECall(_, _):
+										hasTypedRouterDslEntries = true;
+									default:
+								}
+								if (hasTypedRouterDslEntries) {
+									break;
+								}
+							}
+						default:
+					}
+				}
+			}
+		}
 
 		// Check static fields for @:route annotations
 		var statics = classType.statics.get();
@@ -82,7 +106,7 @@ class RouterMacroInit {
 			}
 		}
 
-		if (hasRoutes && !hasRouteFunctions) {
+		if (hasRoutes && !hasRouteFunctions && !hasTypedRouterDslEntries) {
 			Context.warning("Class has @:routes annotation but no route functions were generated. "
 				+ "Make sure to use @:build(reflaxe.elixir.macros.RouterBuildMacro.generateRoutes())",
 				classType.pos);

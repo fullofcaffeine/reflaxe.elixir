@@ -1,0 +1,20 @@
+{
+  "filesGenerated": [
+  "user_controller.ex",
+  "type.ex",
+  "string_buf.ex",
+  "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/macros/http_method.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "my_app_web/router.ex",
+  "my_app_web.ex",
+  "int_iterator.ex",
+  "haxe/iterators/array_iterator.ex",
+  "dashboard_live.ex",
+  "api_controller.ex"
+],
+  "id": 0,
+  "wasCached": false,
+  "version": 1
+}

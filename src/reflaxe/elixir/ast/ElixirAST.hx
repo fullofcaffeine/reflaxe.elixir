@@ -622,6 +622,48 @@ typedef RouterRouteMeta = {
 }
 
 /**
+ * Router option key/value metadata parsed from typed RouterDsl nodes.
+ */
+typedef RouterOptionMeta = {
+	var key:String;
+	var value:RouterMetaValue;
+}
+
+/**
+ * Strongly-typed router option values for metadata transport.
+ */
+enum RouterMetaValue {
+	ROString(value:String);
+	ROInt(value:Int);
+	ROBool(value:Bool);
+	ROAtom(value:String);
+	ROVar(value:String);
+	ROList(value:Array<RouterMetaValue>);
+	ROKeyword(value:Array<RouterOptionMeta>);
+	ROMap(value:Array<RouterOptionMeta>);
+}
+
+/**
+ * Router DSL node metadata parsed from `@:routes`.
+ *
+ * Supports nested scope/pipeline/live_session trees while preserving
+ * old flat route metadata compatibility.
+ */
+typedef RouterNodeMeta = {
+	var kind:String;
+	@:optional var name:String;
+	@:optional var method:String;
+	@:optional var verb:String;
+	@:optional var path:String;
+	@:optional var controller:String;
+	@:optional var action:String;
+	@:optional var moduleRef:String;
+	@:optional var pipelines:Array<String>;
+	@:optional var children:Array<RouterNodeMeta>;
+	@:optional var options:Array<RouterOptionMeta>;
+}
+
+/**
  * Socket channel metadata parsed from @:socketChannels on @:socket modules.
  */
 typedef SocketChannelMeta = {
@@ -795,6 +837,7 @@ typedef ElixirMetadata = {
 	?isGenServer:Bool, // @:genserver GenServer behavior
 	?isRouter:Bool, // @:router Phoenix.Router
 	?routerRoutes:Array<RouterRouteMeta>, // Parsed @:routes metadata for Router emission
+	?routerDslNodes:Array<RouterNodeMeta>, // Parsed nested RouterDsl metadata for Router emission
 	?isController:Bool, // @:controller Phoenix.Controller
 	?isPresence:Bool, // @:presence Phoenix.Presence
 	?isPhoenixWeb:Bool, // @:phoenixWeb AppNameWeb module with macros

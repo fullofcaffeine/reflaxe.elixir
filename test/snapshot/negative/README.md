@@ -42,6 +42,10 @@ To update the expected error output:
   - Missing required attributes
   - Type mismatches in element properties
 
+### Router DSL validations
+- **Location**: `test/snapshot/negative/router_dsl_missing_params_contract/`
+- **Purpose**: Ensures typed `RouterDsl.*` routes with path params require `paramsContract`.
+
 ## Adding New Negative Tests
 
 When adding a negative test:

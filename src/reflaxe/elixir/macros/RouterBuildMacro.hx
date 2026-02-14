@@ -197,8 +197,15 @@ class RouterBuildMacro {
 				return routeDef;
 
 			case _:
-				Context.error("Route definition must be object: {name: \"...\", method: \"...\", ...}", routeExpr.pos);
-				return null;
+				switch (routeExpr.expr) {
+					case ECall(_, _):
+						// Typed/nested RouterDsl nodes are emitted by router transform passes.
+						// Build macro route helper generation is optional for these nodes.
+						return null;
+					default:
+						Context.error("Route definition must be object: {name: \"...\", method: \"...\", ...}", routeExpr.pos);
+						return null;
+				}
 		}
 	}
 
@@ -349,7 +356,21 @@ class RouterBuildMacro {
 			usedPaths.set(pathMethodKey, route.name);
 
 			// Validate HTTP method
-			var validMethods = ["GET", "POST", "PUT", "DELETE", "PATCH", "LIVE", "LIVE_DASHBOARD", "MAILBOX"];
+			var validMethods = [
+				"GET",
+				"POST",
+				"PUT",
+				"DELETE",
+				"PATCH",
+				"OPTIONS",
+				"HEAD",
+				"CONNECT",
+				"TRACE",
+				"MATCH",
+				"LIVE",
+				"LIVE_DASHBOARD",
+				"MAILBOX"
+			];
 			if (!validMethods.contains(route.method)) {
 				Context.warning('Unknown HTTP method: ${route.method}. Valid: ${validMethods.join(", ")}', pos);
 			}

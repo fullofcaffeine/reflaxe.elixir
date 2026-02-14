@@ -88,21 +88,28 @@ class UserController {
 
 Marks a class as a Phoenix router for request routing.
 
-**Recommended Usage (`@:routes`)**:
+**Recommended Usage (`@:routes` + static-imported router nodes)**:
 ```haxe
 import reflaxe.elixir.macros.HttpMethod;
+import reflaxe.elixir.macros.RouterDsl.*;
+
+typedef UserPathParams = {
+  var id:Int;
+}
 
 @:native("MyAppWeb.Router")
 @:router
-@:build(reflaxe.elixir.macros.RouterBuildMacro.generateRoutes())
 @:routes([
-  {
-    name: "usersIndex",
-    method: HttpMethod.GET,
-    path: "/users",
-    controller: controllers.UserController,
-    action: controllers.UserController.index
-  }
+  pipeline("browser", [
+    plug("accepts", {initArgs: ["html"]}),
+    plug("fetch_session")
+  ]),
+  scope("/", [
+    pipeThrough(["browser"]),
+    get("/users/:id", controllers.UserController, controllers.UserController.show, {
+      paramsContract: UserPathParams
+    })
+  ])
 ])
 class AppRouter {}
 ```
@@ -118,11 +125,13 @@ class LegacyRouter {
 }
 ```
 
-Use `@:routes` for new code. It supports typed controller/action refs and keeps route definitions declarative.
+Use `@:routes` for new code. Static-imported router nodes map directly to Phoenix router nesting and enable extra compile-time checks.
 Use `@:route` only for manual/legacy router glue where string literals are acceptable.
 
 `@:routes` controller string literals (`controller: "..."`) now emit warnings by default.
 Set `-D router_strict_typed_refs` to treat them as compile errors and enforce typed refs in CI.
+
+Typed router-node routes with path params (for example `/users/:id`) require `paramsContract` in options.
 
 See the full guide: `docs/04-api-reference/ROUTER_DSL.md`.
 
