@@ -8,6 +8,7 @@
 -D elixir_output=lib
 -D reflaxe_runtime
 -D reflaxe_elixir_strict_examples
+-D hxx_mode=tsx
 -D no-utf16
 -D app_name=AbstractionLab
 
