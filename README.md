@@ -10,540 +10,115 @@
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
 
-**Type-safe Haxe to Elixir compiler with Phoenix/LiveView support.** Write business logic in Haxe, compile to idiomatic Elixir code for the BEAM ecosystem.
+**Haxe -> Elixir compiler for Phoenix/LiveView projects.**
+Write application code in Haxe and compile to conventional Elixir shapes for the BEAM ecosystem.
 
 > [!WARNING]
-> **Stability**: Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset.
-> Some features remain **experimental/opt‑in** (e.g. source mapping, migrations `.exs` emission, `fast_boot`).
-> See: [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
+> **Stability**: `v1.x` is non-alpha for the documented subset.
+> Some features remain experimental/opt-in (for example source mapping, migrations `.exs` emission, `fast_boot`).
+> See [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
 
-### Stability tiers (tl;dr)
+## Why Reflaxe.Elixir
 
-- **Stable (documented subset)**: exercised by CI + todo-app; intended to be reliable within `v1.x`.
-- **Experimental (opt-in)**: available, but expect rough edges and possible breaking changes (e.g. source maps, migrations `.exs`, `fast_boot`).
-- **Dev/internal tooling**: debug flags and contributor-only workflows; not part of the end-user stability contract.
+Reflaxe.Elixir is for teams that want Phoenix/OTP runtime behavior, while authoring with stronger compile-time feedback.
 
-See: [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
+- **Keep standard Elixir/Phoenix runtime**: generated code follows normal module/function/tuple/map conventions.
+- **Add a typed authoring layer**: catch shape mismatches (assigns, params, tagged results) before runtime.
+- **Improve large refactors**: typed Haxe APIs and compiler checks help keep changes coherent across modules.
+- **Build ergonomic abstractions**: Haxe macros/typing can encode reusable authoring patterns without changing your BEAM deployment model.
 
-### Known sharp edges (top 3)
+Elixir's failure model is still the foundation (supervision, process isolation, let-it-crash where appropriate).
+The typed layer helps you decide more deliberately what should crash, what should return data, and where boundaries should be explicit.
 
-- `fast_boot` is for faster local iteration; don’t rely on its output shape for CI/production builds.
-- Watcher port conflicts can happen (Phoenix watchers + Haxe server ports); the repo examples auto-probe, but custom setups may need tweaks.
-- Typed boundaries matter: prefer `Term` at external boundaries and decode into typed structures instead of using `Dynamic`.
+### How this differs from Gleam (briefly)
 
-See: [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md).
+Gleam is a strong typed BEAM language with its own language/runtime story.
+Reflaxe.Elixir takes a different approach:
 
-> **Future Vision**: See [docs/08-roadmap/vision.md](docs/08-roadmap/vision.md) for long-term plans including AI tooling and universal platform support  
-> **Current Status**: Stable subset (v1.1) — non‑alpha for the documented subset; experimental features are clearly labeled.
+- You author in Haxe and compile to Elixir.
+- You integrate directly with Phoenix/LiveView/Ecto through typed extern surfaces.
+- You can reuse Haxe tooling/macros and keep cross-target options where they make sense.
 
-## Why Reflaxe.Elixir?
+## Current Support (v1.x)
 
-### 🎯 Type-Safe BEAM Development with Haxe
+### Stable (documented subset)
 
-**The Problem**: You want BEAM's incredible concurrency and fault tolerance, but Elixir's dynamic typing means runtime errors in production.
+- Phoenix integration (LiveView/controllers/templates/routers) for documented paths
+- HEEx-oriented template authoring modes (`tsx`, `balanced`, `metal`)
+- Ecto schemas/changesets/typed query surfaces
+- OTP patterns (GenServer/Supervisor/Registry)
+- Mix integration (`mix compile.haxe`, watcher workflows)
 
-**The Solution**: Reflaxe.Elixir brings compile-time type safety to the BEAM ecosystem:
-- **Type Safety Today** - Catch errors at compile time, not in production
-- **Idiomatic Elixir Output** - Generated code looks hand-written by Elixir experts
-- **Full Phoenix Integration** - LiveView, Ecto, OTP, GenServers all supported
-- **Future Expansion** - Haxe's multi-target nature enables future platform support
+### Experimental / opt-in
 
-The BEAM is designed to *recover* from failures (supervision + “let it crash/let it heal”), but typed code still helps a lot:
-- Prevent accidental crashes and make refactors safer.
-- Make *intentional* failures explicit (e.g. `Result`/`Option` patterns) so you can be deliberate about what should crash vs what should be handled locally.
+- Source mapping (`.ex.map`, `mix haxe.source_map`)
+- Migration `.exs` emission
+- `fast_boot`
 
-### How this compares to Gleam
+For exact boundaries, use:
+- [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md)
+- [Support Matrix](docs/06-guides/SUPPORT_MATRIX.md)
+- [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md)
 
-Gleam is an excellent typed BEAM language with a strong focus on correctness and a great compiler UX. Reflaxe.Elixir takes a different path:
-- **Direct Elixir ecosystem leverage**: Reflaxe.Elixir generates idiomatic Elixir and targets HEEx (`~H`) and Phoenix/LiveView patterns directly.
-- **Fewer “FFI boundary” tradeoffs**: in Gleam, calling into non-Gleam libraries via externals is powerful, but the external code can’t be type-checked by the Gleam compiler and editor assistance is reduced. Reflaxe.Elixir aims to keep you on the “typed path” while still producing standard Elixir/Phoenix code.
+## Quick Start
 
-### 💡 Real-World Scenarios
+### Start here
 
-#### Build Type-Safe Phoenix Applications
-Write your Phoenix app in Haxe and get:
-- **Compile-time validation** of LiveView assign/update patterns
-- **Type-safe Ecto schemas** with automatic changeset generation
-- **OTP supervision trees** with typed GenServer callbacks
-- **Idiomatic Elixir output** that Phoenix developers recognize
+If you're new to this stack, begin with:
+- [Start Here](docs/01-getting-started/START_HERE.md)
+- [Quickstart](docs/06-guides/QUICKSTART.md)
 
-#### Share Code with Frontend (Future)
-The foundation for multi-target development:
-- **Business logic in Haxe** - validation, algorithms, data transformations
-- **Backend on BEAM** - Phoenix/LiveView/Ecto with full type safety ✅
-- **Frontend on JavaScript** - Async/await support + [Genes](https://github.com/benmerckx/genes) ES module output (see todo-app) ✅
-- **TypeScript ecosystem access** - dts2hx planned (optional future)
-
-#### Leverage BEAM's Unique Strengths
-- **Massive concurrency** - Handle millions of connections with lightweight processes
-- **Fault tolerance** - Let it crash philosophy with supervisor recovery
-- **Hot code reloading** - Update production systems without downtime
-- **Type safety** - Catch errors before they reach production
-
-### 🚀 How It Compares
-
-| | Reflaxe.Elixir | Gleam | Pure Elixir | TypeScript |
-|---|---|---|---|---|
-| **Type Safety** | ✅ Compile-time | ✅ Compile-time | ❌ Runtime | ✅ Compile-time |
-| **BEAM Integration** | ✅ Phoenix/OTP integration | ✅ Native | ✅ Native | ❌ None |
-| **Phoenix LiveView** | ✅ Native support | ⚠️ Via externals (tradeoffs) | ✅ Native | ❌ None |
-| **Multi-target Potential** | ✅ Haxe foundation | ✅ BEAM + JS | ❌ BEAM only | ⚠️ JS only |
-| **Ecosystem Maturity** | ✅ Since 2005 | ⚠️ New | ✅ Mature | ✅ Mature |
-| **Learning Curve** | ✅ TypeScript-like | ⚠️ Rust-like | ⚠️ Ruby-like | ✅ Familiar |
-
-### 🎪 Built on Proven Technology
-
-- **Haxe** (2005): Battle-tested cross-platform toolkit used in production by companies like Netflix, Disney, BBC, Toyota, and more
-- **Elixir/BEAM**: Powers WhatsApp (2B users), Discord, Pinterest, and other massive-scale systems
-- **Reflaxe**: Modern compiler framework making Haxe more powerful than ever
-
-## Current Status & Roadmap
-
-### ✅ Stable (v1.1)
-- **Phoenix Integration** - LiveView/controllers/templates/routers are supported for the documented subset (see examples + user guides)
-- **HEEx Templates (typed-first)** - TSX-like inline markup + compile-time lowering to `~H` with optional strict checks for Phoenix/LiveView attributes
-  - Inline markup (`return <div>...</div>`) is the recommended default: `${...}` splices are real Haxe expressions (parsed + type-checked) and are lowered into HEEx (`~H`) by the compiler pipeline.
-  - TSX control tags are typed and compile to HEEx blocks: `<if ${cond}> ... <else> ... </else> </if>` and `<for ${item in items}> ... </for>`.
-  - TSX spread attrs are typed and lower to HEEx spread attrs: `<section {assigns.attrs}>` (or `<section {@assigns.attrs}>`) compiles to `<section {@attrs}>`.
-  - Template strings (`hxx('...')` / `HXX.hxx('...')`) remain supported for migration, but they are **string-rewritten + linted**, not fully Haxe-typed. Prefer inline markup for typed Haxe expressions.
-  - Layered template modes:
-    - `@:hxx_mode("tsx")`: strict typed authoring (recommended for new code).
-    - `@:hxx_mode("balanced")`: default migration-friendly mode (typed inline markup + legacy string templates).
-    - `@:hxx_mode("metal")`: raw HEEx-leaning mode (discouraged).
-  - Raw HEEx escape hatch is explicit: use `@:allow_heex` (or migration-only `-D hxx_allow_raw_heex`).
-  - Short helper alias: `phoenix.hxx.H` mirrors `phoenix.hxx.HeexTemplate` (`H.root`, `H.root_ast`, `H.for_each`, `H.each`).
-  - **Template Helper Metadata** ✨ NEW - Uses @:templateHelper metadata for extensible Phoenix function compilation
-  - **Type-Safe Phoenix Abstractions** ✨ NEW - Assigns<T>, LiveViewSocket<T>, FlashMessage, RouteParams<T> with operator overloading
-- **Ecto Integration** - Schemas, changesets, and typed queries supported; **migrations remain opt‑in/experimental** (`-D ecto_migrations_exs`)  
-- **Mix Integration** - Seamless build pipeline with file watching and incremental compilation
-- **Source Mapping (experimental)** - `.ex.map` emission + `mix haxe.source_map` lookup are implemented (line coverage + many expression-level boundaries; see `docs/04-api-reference/SOURCE_MAPPING.md`)
-- **OTP Support** - GenServers, Supervisors, Registry with type-safe compilation
-- **Type Safety** - Complete Haxe→Elixir type mapping and compile-time validation
-- **JavaScript Async/Await** - Native async/await compilation for modern JS development
-
-### 🔮 Future Expansion
-For the complete roadmap including AI tooling, universal deployment, and multi-platform support, see [docs/08-roadmap/vision.md](docs/08-roadmap/vision.md):
-
-- **JavaScript Integration** - Advanced TypeScript ecosystem access
-- **Mobile Support** - Capacitor and React Native deployment  
-- **Desktop Applications** - Electron/Tauri cross-platform apps
-- **AI-Enhanced Tooling** - Intelligent development assistance  
-
-## Installation
-
-### Prerequisites
-- Haxe 4.3.7+ (installed globally, or pinned per-project via `lix` and used via `./node_modules/.bin/haxe`)
-- Node.js 16+ (for lix package management; Node 20 recommended)
-- Elixir 1.14+ (for Phoenix/Ecto ecosystem)
-
-### Method 1: Install via Lix (Recommended)
+### Install with lix (recommended)
 
 ```bash
-# Create a lix scope in your project directory
 npx lix scope create
 
-# Install the latest GitHub release tag (recommended)
-# If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
-REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
+# Install latest GitHub release tag
+REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*"tag_name":[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)"
 npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
 
-# Download pinned Haxe libraries for the project (reflaxe + tink_* + deps)
+# Download project-pinned Haxe deps
 npx lix download
-
-# Bleeding edge (main branch; not necessarily a release)
-# npx lix install github:fullofcaffeine/reflaxe.elixir --force
 ```
 
-> Reflaxe.Elixir GitHub Releases are created for `vX.Y.Z` tags. To use a specific release, install that tag with lix.
-
-### Method 2: Vendoring (Copy source directly)
-
-For projects that want to vendor the compiler source:
-
-```bash
-# Clone or download the repository
-git clone https://github.com/fullofcaffeine/reflaxe.elixir.git
-
-# Copy necessary files to your project
-cp -r reflaxe.elixir/src/ your-project/vendor/reflaxe.elixir/src/
-cp -r reflaxe.elixir/std/ your-project/vendor/reflaxe.elixir/std/
-cp reflaxe.elixir/haxelib.json your-project/vendor/reflaxe.elixir/
-
-# In your build.hxml, add:
-# -cp vendor/reflaxe.elixir/src
-# -cp vendor/reflaxe.elixir/std
-# -lib reflaxe
-# --macro reflaxe.elixir.CompilerInit.Start()
-```
-
-### Usage in Your Project
-
-Once installed, add to your `build.hxml`:
+### Minimal `build.hxml`
 
 ```hxml
 -lib reflaxe.elixir
 -cp src_haxe
+-main my_app_hx.Main
 
-# Output directory for generated .ex files
--D elixir_output=lib/my_app_hx
-
-# Required for Reflaxe targets
 -D reflaxe_runtime
-
-# Elixir is not a UTF-16 platform
 -D no-utf16
-
-# Application module prefix (used for Phoenix/Ecto integration; typically your app module name)
+-D elixir_output=lib/my_app_hx
 -D app_name=MyApp
 
-# Enable dead code elimination to reduce output noise
 -dce full
-#
-# Why this repo recommends `-dce full`:
-# - Keeps generated `.ex` output small and readable (less stdlib/helpers noise).
-# - Makes snapshot diffs meaningful and keeps CI/budgets predictable.
-# - Catches “indirect runtime reference” regressions early (OTP/Phoenix callbacks/modules can be DCE’d otherwise).
-
-# Define a stable entrypoint
-# Entrypoint Haxe class (package.ClassName). Adjust to your app.
---main my_app_hx.Main
 ```
 
-### ⚠️ Important: Compiler Configuration
+Important compiler flag note:
+- Do **not** use `-D analyzer-optimize` when targeting Elixir.
+- See [Compiler Flags Guide](docs/01-getting-started/compiler-flags-guide.md).
 
-**DO NOT use `-D analyzer-optimize`** when compiling to Elixir. This flag triggers aggressive optimizations designed for C++ and JavaScript that produce non-idiomatic Elixir code.
+### New Phoenix app (greenfield)
 
-**Recommended configuration:**
-```hxml
-# Good optimizations
--dce full                    # Dead code elimination (recommended)
--D loop_unroll_max_cost=0    # Disable loop unrolling (preserve functional shapes)
+Use the guided flow:
+- [Phoenix New App Guide](docs/06-guides/PHOENIX_NEW_APP.md)
 
-# AVOID these
-# -D analyzer-optimize       # Destroys functional patterns
-# -D analyzer-check          # May trigger unwanted optimizations
-```
+For gradual adoption in an existing Phoenix codebase:
+- [Phoenix Gradual Adoption](docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md)
 
-For complete compiler configuration guidance, see [docs/01-getting-started/compiler-flags-guide.md](docs/01-getting-started/compiler-flags-guide.md).
-
-### Codegen Philosophy (One Pipeline + Feature Flags)
-
-Reflaxe.Elixir has a single semantics-preserving compilation pipeline that aims to be **Haxe-friendly by default**
-(you can write straightforward Haxe, including loops/rebinding) while lowering to **idiomatic Elixir shapes**
-where it is semantics-safe.
-
-Some codegen strategies are behind **feature flags** so you can opt in/out during rollouts or when debugging a
-regression:
-
-- `docs/04-api-reference/FEATURE_FLAGS.md`
-- `docs/02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md`
-- `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md`
-
-### Interop: “Elixir-Like” Haxe via Typed Externs (Optional)
-
-You can keep most of your code “portable stdlib-first”, and still use typed extern surfaces for BEAM/Phoenix/Ecto
-integration when you want Elixir-native APIs and shapes (structs/atoms/tagged tuples):
-
-- `docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md`
-- `docs/02-user-guide/ESCAPE_HATCHES.md`
-- Authoring style decision guide: `docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md`
-- Canonical extern workflow: `docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md`
-- Opt-in discipline for app code: `docs/06-guides/STRICT_MODE.md`
-
-## Quick Start
-
-### Start Here (New to Haxe and/or Phoenix?)
-
-Follow: `docs/01-getting-started/START_HERE.md`
-
-- Run the repo todo-app (end-to-end) with a single command
-- Learn the Haxe→Elixir→Phoenix mental model
-- Generate a fresh Phoenix+Haxe project via the generator
-
-### Hello Phoenix in ~5 minutes (no repo clone)
-
-This creates a new Phoenix+Haxe project using the **latest GitHub release tag**:
+### Todo app smoke (repo)
 
 ```bash
-mkdir haxir-demo && cd haxir-demo
-npm init -y
-npm install --save-dev lix
-npx lix scope create
-
-# Install the generator (latest GitHub release tag)
-# If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
-REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
-npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
-
-# Optional but recommended: pin a known-good Haxe toolchain (avoids relying on a global install).
-npx lix download haxe 4.3.7
-npx lix use haxe 4.3.7
-
-# Generate a Phoenix app
-# (Use `haxe --run Run` here because some lix/haxelib shim versions rely on an internal
-# `run-dir` command which is not reliable across environments.)
-REFLAXE_ELIXIR_SRC="$(./node_modules/.bin/haxelib path reflaxe.elixir | tr -d '\r' | grep -E 'reflaxe\.elixir/.*/src/?$' | head -n 1)"
-./node_modules/.bin/haxe -cp "$REFLAXE_ELIXIR_SRC" --run Run create hello_haxir --type phoenix --no-interactive
-
-cd hello_haxir
-mix setup
-mix phx.server
+npm run qa:sentinel
+scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 120
 ```
 
-See also: `docs/06-guides/PHOENIX_NEW_APP.md`.
+## Example (LiveView)
 
-### Quick Demo (Todo App)
+Haxe:
 
-Run a full build + boot + Playwright smoke **without blocking your terminal**:
-
-```bash
-scripts/qa-sentinel.sh --app examples/todo-app --env e2e --port 4001 --playwright --e2e-spec "e2e/*.spec.ts" --async --deadline 900 --verbose
-scripts/qa-logpeek.sh --run-id <RUN_ID> --until-done 900
-```
-
-### Phoenix (Recommended Next Step)
-
-- New Phoenix project: `docs/06-guides/PHOENIX_NEW_APP.md`
-- Add Haxe gradually to an existing Phoenix project: `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`
-
-Also see: `docs/06-guides/QUICKSTART.md`
-
-## Development Workflow
-
-### Basic Compilation
-
-```bash
-# Compile once
-haxe build.hxml
-
-# Watch for changes (long-running)
-mix haxe.watch
-```
-
-### Client Builds (JavaScript)
-
-For Phoenix apps with client-side hooks, the recommended path is:
-
-- **Genes (recommended)**: ES modules + clean output via `-lib genes` (see `docs/05-architecture/HXML_ARCHITECTURE.md` and `examples/todo-app/build-client.hxml`).
-- **Plain Haxe JS target**: still works, but you’ll write more interop glue and typically won’t get ES module output.
-
-### Running Tests
-
-```bash
-# Full test suite (snapshots + Mix task tests)
-npm test
-
-# Compile-check every example under examples/
-npm run test:examples
-
-# Quick snapshot-only run
-npm run test:quick
-```
-
-### Local Reference Path (optional)
-
-Some parity tooling compares this repo against a local `haxe.elixir.reference` checkout.
-Configure the path in a local `.env` (gitignored) using the provided template:
-
-```bash
-cp .env.example .env
-# then edit .env
-```
-
-```bash
-export HAXE_ELIXIR_REFERENCE=/path/to/haxe.elixir.reference
-```
-
-### Running Examples
-
-Each example is self-contained and documented. Start here:
-
-- `examples/README.md`
-
-Most examples can be compiled with:
-
-```bash
-cd examples/<example-name>
-haxe build.hxml   # or compile-all.hxml when present
-```
-
-### Phoenix Integration
-
-```bash
-# Add to your Phoenix project's mix.exs
-defp deps do
-  [
-    # ... other deps
-    # Mix tasks only (build-time): pin to a GitHub release tag or use a commit SHA
-    # Replace <RELEASE_TAG> with the tag you installed via lix (e.g. v1.2.3)
-    {:reflaxe_elixir, github: "fullofcaffeine/reflaxe.elixir", tag: "<RELEASE_TAG>", only: [:dev, :test], runtime: false}
-  ]
-end
-
-> Note: the `mix haxe.gen.*` generators are Haxe-first scaffolds (they emit **Haxe only**, not Elixir). For Phoenix client wiring, use `mix haxe.phoenix.scaffold` (`--client-mode genes` default, or `--client-mode plain-js` to converge back to plain Phoenix JS). Why both Haxe and Mix entrypoints exist: `haxe --run Run create ...` is for **creating a new project directory**, while Mix tasks are for **patching an existing project in place**; both converge on the same Phoenix client wiring task. See `docs/06-guides/SCAFFOLDING_SYSTEM.md` + `docs/06-guides/WATCHER_WORKFLOW.md`. Full task reference: `docs/04-api-reference/MIX_TASKS.md`.
-
-# Compile Haxe as part of your build
-mix compile.haxe
-
-# Start Phoenix with Haxe compilation
-mix phx.server
-```
-
-### File Organization
-
-```
-your-project/
-├── src_haxe/              # Your Haxe source files
-│   ├── controllers/       # Phoenix controllers
-│   ├── live/             # LiveView modules  
-│   ├── contexts/         # Business logic
-│   └── schemas/          # Ecto schemas
-├── lib/                  # Generated Elixir files
-│   └── (compiled output)
-├── build.hxml            # Haxe build configuration
-└── mix.exs              # Phoenix/Elixir dependencies
-```
-
-## 📚 Documentation
-
-Start at **[docs/README.md](docs/README.md)** for the curated documentation index.
-
-### Quick Links
-- **[Installation Guide](docs/01-getting-started/installation.md)** - Setup and prerequisites
-- **[Quickstart](docs/06-guides/QUICKSTART.md)** - Your first Haxe→Elixir project
-- **[Phoenix (New App)](docs/06-guides/PHOENIX_NEW_APP.md)** - Greenfield Phoenix setup
-- **[Phoenix (Existing App)](docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md)** - Add Haxe to an existing Phoenix app
-- **[Phoenix Chat Tutorial](docs/06-guides/PHOENIX_CHAT_TUTORIAL.md)** - Presence + PubSub + LiveView in Haxe
-- **[Portable Chat Tutorial](docs/06-guides/PORTABLE_CHAT_TUTORIAL.md)** - Shared Haxe domain logic pattern
-- **[Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)** - Controllers, LiveView, Ecto, Channels
-- **[Escape Hatches](docs/02-user-guide/ESCAPE_HATCHES.md)** - Calling Elixir from Haxe safely
-- **[Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md)** - Sharp edges and experimental surfaces
-- **[Support Matrix](docs/06-guides/SUPPORT_MATRIX.md)** - CI-tested toolchain versions
-- **[Licensing & Distribution](docs/06-guides/LICENSING_AND_DISTRIBUTION.md)** - GPL notes (not legal advice)
-
-### Codegen Conventions
-- **[Writing Idiomatic Haxe](docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md)** - Practical guidance for clean, idiomatic Elixir output
-- **[Authoring Styles](docs/02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md)** - Portable stdlib-first vs typed Elixir-first (one compiler pipeline)
-- **[Elixir Idioms & Hygiene](docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md)** - Naming, unused vars, enum shapes, and codegen conventions
-- **[Haxe→Elixir Mappings](docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md)** ✨ - Full mapping reference
-
-### Reference
-- **[API Index](docs/04-api-reference/API_INDEX.md)** - User-facing API/tag coverage map
-- **[Source Mapping Guide](docs/04-api-reference/SOURCE_MAPPING.md)** 🎯 - Complete guide to our pioneering source mapping feature
-- **[Annotations](docs/04-api-reference/ANNOTATIONS.md)** - Complete annotation reference
-- **[Phoenix API Reference](docs/04-api-reference/PHOENIX_API_REFERENCE.md)** - LiveView/Component/Channel/Presence APIs
-- **[Ecto API Reference](docs/04-api-reference/ECTO_API_REFERENCE.md)** - Schema/Changeset/Repo/Query/Migration APIs
-- **[Elixir Runtime API Reference](docs/04-api-reference/ELIXIR_RUNTIME_API_REFERENCE.md)** - Core runtime and OTP extern surfaces
-- **[Troubleshooting](docs/06-guides/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[Examples](examples/README.md)** - Working code examples (index)
-
-### Examples
-
-Each example includes its own `README.md` with compile/run steps and Haxe -> generated Elixir mapping snippets:
-
-- `examples/01-simple-modules/README.md`
-- `examples/02-mix-project/README.md`
-- `examples/03-phoenix-app/README.md`
-- `examples/04-ecto-migrations/README.md`
-- `examples/05-heex-templates/README.md`
-- `examples/06-user-management/README.md`
-- `examples/07-protocols/README.md`
-- `examples/08-behaviors/README.md`
-- `examples/09-phoenix-router/README.md`
-- `examples/10-option-patterns/README.md`
-- `examples/11-domain-validation/README.md`
-- `examples/12-phoenix-chat/README.md`
-- `examples/13-elixir-first-liveview/README.md`
-- `examples/test-integration/README.md`
-- `examples/todo-app/README.md`
-
-You can compile-check all examples with `npm run test:examples`.
-
-### Architecture
-- **[Architecture Overview](docs/05-architecture/ARCHITECTURE.md)** - Compiler internals
-- **[Testing Guide](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md)** - Snapshot + integration testing system
-- **[Contributing](docs/10-contributing/contributing.md)** - Contributing and extending
-
-## Project Meta
-
-- `CONTRIBUTING.md` – contribution workflow and commands
-- `SECURITY.md` – vulnerability reporting process
-- `CODE_OF_CONDUCT.md` – community guidelines
-- `RELEASING.md` – release checklist and tagging
-
-### Manual Installation (For Contributors)
-
-```bash
-# Clone and setup
-git clone https://github.com/fullofcaffeine/reflaxe.elixir
-cd reflaxe.elixir
-
-# Install dependencies (both ecosystems)
-npm ci            # Installs lix + Haxe dependencies
-npx lix download  # Downloads project-specific Haxe libraries
-mix deps.get      # Installs Elixir dependencies
-
-# Run tests
-npm test          # Full suite (snapshots + Elixir validation + Mix)
-npm run qa:sentinel  # Todo-app build + boot probe (async)
-```
-
-📖 **New to lix or Haxe?** See [docs/01-getting-started/installation.md](docs/01-getting-started/installation.md) for complete setup guide with troubleshooting.
-
-## Project Structure
-
-Reflaxe.Elixir follows standard Reflaxe compiler conventions (similar to Reflaxe.CPP):
-
-```
-reflaxe.elixir/
-├── src/                    # Compiler source (macro-time transpiler code)
-│   └── reflaxe/elixir/     # ElixirCompiler.hx and helpers
-├── std/                    # Standard library (compile-time classpath)
-│   ├── elixir/             # Elixir stdlib externs (IO, File, GenServer, etc.)
-│   ├── phoenix/            # Phoenix framework externs (LiveView, Socket, etc.)
-│   └── ecto/               # Ecto ORM externs (Schema, Changeset, Query)
-├── lib/                    # Elixir runtime support (Mix integration)
-│   ├── haxe_compiler.ex    # Mix compilation task
-│   ├── haxe_watcher.ex     # File watching for development
-│   └── haxe_server.ex      # Haxe compilation server wrapper
-├── test/                   # Compiler tests (snapshot testing)
-└── examples/               # Example applications
-    └── todo-app/           
-        └── src_haxe/       # User application code in Haxe
-```
-
-### Directory Purposes
-
-- **`src/`** - The compiler that transforms Haxe TypedExpr → ElixirAST → transforms → printed Elixir
-- **`std/`** - Haxe externs and abstractions for Elixir/Phoenix/Ecto functionality (included via `-lib reflaxe.elixir` or vendoring)
-- **`lib/`** - Elixir runtime files needed for Mix integration and compilation support
-- **`src_haxe/`** - User application code written in Haxe (in examples)
-
-This separation follows Reflaxe conventions and ensures clear boundaries between compiler code, standard library, and user application code.
-
-## Architecture
-
-Reflaxe.Elixir uses a **dual-ecosystem architecture**:
-
-### 🔧 Haxe Development (npm + lix)
-- **Compiler development**: Build the Haxe→Elixir compiler
-- **Modern testing**: tink_unittest + tink_testrunner with rich output
-- **Dependency management**: lix with GitHub sources + locked versions
-
-### ⚡ Elixir Runtime (mix)  
-- **Generated code testing**: Validate compiled Elixir modules
-- **Phoenix integration**: Test LiveView, Ecto, GenServer workflows
-- **Native tooling**: Standard mix tasks and BEAM ecosystem
-
-## Usage
-
-### Source Mapping (Experimental)
-
-Reflaxe.Elixir source mapping is implemented but experimental: `.ex.map` emission and `mix haxe.source_map` lookup are available, with best-effort column granularity.
-
-See `docs/04-api-reference/SOURCE_MAPPING.md` for current status and how to experiment.
-
-### Phoenix LiveView
 ```haxe
 import elixir.types.Term;
 import phoenix.LiveSocket;
@@ -555,408 +130,61 @@ typedef CounterAssigns = { count: Int };
 
 @:native("MyAppWeb.CounterLive")
 @:liveview
-@:hxx_mode("tsx")
 class CounterLive {
   public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
     var liveSocket: LiveSocket<CounterAssigns> = socket;
     return Ok(liveSocket.assign(_.count, 0));
   }
-
-  @:native("handle_event")
-  public static function handle_event(event: String, _params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
-    var liveSocket: LiveSocket<CounterAssigns> = socket;
-    return switch (event) {
-      case "increment":
-        NoReply(liveSocket.assign(_.count, liveSocket.assigns.count + 1));
-      case _:
-        NoReply(liveSocket);
-    };
-  }
-
-  public static function render(assigns: CounterAssigns): String {
-    return <div class="counter">
-      <h1>${assigns.count}</h1>
-      <button phx-click="increment">+</button>
-    </div>;
-  }
 }
 ```
 
-Template control flow in TSX mode:
-
-```haxe
-typedef Item = { var name: String; };
-
-public static function render(assigns: { var items: Array<Item>; }): String {
-  return <ul>
-    <for ${item in assigns.items}>
-      <li>${item.name}</li>
-    </for>
-  </ul>;
-}
-```
-
-TSX also supports `:for` directive sugar on elements:
-
-```haxe
-return <ul>
-  <li :for ${item in assigns.items}>${item.name}</li>
-</ul>;
-```
-
-This lowers to a HEEx `for` block around the element so `item` stays Haxe-typed in the body.
-
-If you need expression-level composition in balanced mode, `phoenix.hxx.HeexTemplate.for_each/2`
-(or `phoenix.hxx.H.each/2` / `phoenix.hxx.H.for_each/2`) lowers to the same HEEx `for` block.
-
-Typed spread attrs in TSX mode:
-
-```haxe
-return <section {assigns.attrs} data-testid="users"></section>;
-```
-
-Compiles to HEEx spread attrs:
+Generated Elixir shape:
 
 ```elixir
-<section {@attrs} data-testid="users"></section>
-```
-
-Notes:
-- Inline markup is enabled by default for Phoenix-facing modules; opt out with `-D hxx_no_inline_markup` or `@:hxx_no_inline_markup`.
-- Modes (TSX is named after TypeScript JSX to signal strict, expression-typed template authoring):
-  - `@:hxx_mode("tsx")` (recommended): strict typed template authoring, no legacy string markers, no raw HEEx escapes.
-  - `@:hxx_mode("balanced")` (default): typed inline markup plus legacy template-string support for migration.
-  - `@:hxx_mode("metal")` (discouraged): closest to raw HEEx; useful only for edge escape-hatch scenarios.
-- Recommended strict profile for new apps (compiler defaults remain permissive):
-  - `-D hxx_strict_phx_hook`
-  - `-D hxx_strict_phx_events`
-  - `-D hxx_strict_components`
-  - `-D hxx_strict_slots`
-  - `-D hxx_strict_attr_values`
-- Raw HEEx escape hatch: `@:allow_heex` (or migration-only `-D hxx_allow_raw_heex`).
-- Legacy inline-markup rewrite escape hatch: `@:hxx_legacy`.
-- Haxe inline markup requires a valid XML root tag name. Phoenix dot-components like `<.form>` cannot be the root; wrap them in a normal element (e.g. `<div>...</div>`).
-- Haxe inline markup does not support fragment roots (`<> ... </>`).
-
-More: `docs/02-user-guide/INLINE_MARKUP.md`
-Modes and comparison: `docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md`
-
-Compiles to:
-```elixir  
 defmodule CounterLive do
   use Phoenix.LiveView
-  
+
   def mount(_params, _session, socket) do
     {:ok, assign(socket, :count, 0)}
   end
-  
-  def handle_event("increment", _params, socket) do
-    count = socket.assigns.count + 1
-    {:noreply, assign(socket, :count, count)}
-  end
-  
-  def render(assigns) do
-    ~H"""
-    <div class="counter">
-      <h1><%= @count %></h1>
-      <button phx-click="increment">+</button>
-    </div>
-    """
-  end
 end
 ```
 
-Note: prefer unqualified enum constructors when unambiguous (`Ok(...)`, `NoReply(...)`); they compile to standard Elixir atom-tagged tuples (`{:ok, ...}`, `{:noreply, ...}`).
+More examples:
+- [Examples Index](examples/README.md)
+- [Phoenix Chat Tutorial](docs/06-guides/PHOENIX_CHAT_TUTORIAL.md)
+- [Functional Patterns](docs/07-patterns/FUNCTIONAL_PATTERNS.md)
 
-### Ecto Changesets
-```haxe
-import ecto.Changeset;
+## Documentation
 
-// 1) Typed params accepted by the changeset boundary.
-typedef UserParams = {
-  ?name: String,
-  ?email: String
-}
+Start at [docs/README.md](docs/README.md).
 
-// 2) Schema metadata drives generated Ecto schema + changeset pipeline.
-@:native("MyApp.Accounts.User")
-@:schema("users")
-@:timestamps
-@:changeset(cast(["name", "email"]), validate(["name", "email"]))
-class User {
-  // 3) Fields compile to Ecto schema fields.
-  @:field @:primary_key public var id: Int;
-  @:field public var name: String;
-  @:field public var email: String;
-}
+### Recommended links
 
-class Users {
-  // 4) App code uses typed changesets and typed Result flow.
-  // `@:schema` auto-injects a typed `changeset<Params>(schema, params)` declaration.
-  public static function create(params: UserParams): haxe.functional.Result<User, Changeset<User, UserParams>> {
-    var changeset = User.changeset(new User(), params);
-    return MyApp.Repo.insert(changeset);
-  }
-}
-```
-
-Legacy compatibility form (still supported):
-```haxe
-@:changeset(["name", "email"], ["name", "email"])
-```
-
-Optional compatibility path (usually unnecessary):
-```haxe
-class User {
-  // Keep this only when you intentionally want an explicit declaration.
-  extern public static function changeset(user: User, params: UserParams): Changeset<User, UserParams>;
-}
-```
-
-Compiles to:
-```elixir
-defmodule MyApp.Accounts.User do
-  use Ecto.Schema
-  import Ecto.Changeset
-
-  schema "users" do
-    field :name, :string
-    field :email, :string
-    timestamps()
-  end
-
-  def changeset(user, params) do
-    user
-    |> cast(params, [:name, :email])
-    |> validate_required([:name, :email])
-  end
-end
-
-defmodule Users do
-  def create(params) do
-    changeset = MyApp.Accounts.User.changeset(%MyApp.Accounts.User{}, params)
-    MyApp.Repo.insert(changeset)
-  end
-end
-```
-
-More: `docs/07-patterns/ECTO_INTEGRATION_PATTERNS.md`
-
-### OTP GenServer
-```haxe
-import elixir.types.Atom;
-import elixir.types.GenServerCallbackResults.HandleCallResult;
-import elixir.types.GenServerCallbackResults.InitResult;
-import elixir.types.Term;
-
-enum abstract CounterCall(Atom) to Atom {
-    var Get = "get";
-    var Increment = "increment";
-}
-
-@:genserver
-class CounterServer {
-    public static function init(initial: Int): InitResult<Int> {
-        return Ok(initial);
-    }
-
-    @:native("handle_call")
-    public static function handle_call(request: CounterCall, _from: Term, state: Int): HandleCallResult<Int, Int> {
-        return switch (request) {
-            case Get:
-                Reply(state, state);
-            case Increment:
-                Reply(state + 1, state + 1);
-        }
-    }
-}
-```
-
-Compiles to:
-```elixir
-defmodule CounterServer do
-  use GenServer
-
-  def init(initial) do
-    {:ok, initial}
-  end
-
-  def handle_call(:get, _from, state) do
-    {:reply, state, state}
-  end
-
-  def handle_call(:increment, _from, state) do
-    next_state = state + 1
-    {:reply, next_state, next_state}
-  end
-end
-```
-
-## Development
-
-### Testing
-
-The project uses a dual-ecosystem testing approach with self-referential library configuration:
-
-```bash
-npm test              # Full suite (snapshots + Elixir validation + Mix)
-npm run test:quick    # Snapshot suite only
-npm run test:mix      # Mix/Elixir tests only
-npm run test:generator # Generator + Mix task scaffolds
-npm run test:update   # Update expected snapshot outputs
-npm run qa:sentinel   # Todo-app build + boot probe (async)
-npm run ci:guards     # Guardrails (no app heuristics, etc.)
-npm run hooks:install # Install repo pre-commit checks locally
-```
-
-**Test Infrastructure:**
-- **Complete Coverage**: `npm test` runs Haxe compiler tests, generator tests, AND Mix runtime tests
-- **Snapshot Testing**: Validates compiler output against expected Elixir code
-- **Generator Testing**: Validates project templates and tooling
-- **Runtime Validation**: Mix tests compile/run generated Elixir code
-- **Self-Referential Library**: Tests use `-lib reflaxe.elixir` via `haxe_libraries/reflaxe.elixir.hxml`
-- **Mix Integration**: Tests real compilation in Phoenix projects
-- **Test Helper**: `test/support/haxe_test_helper.ex` handles project setup
-
-**⚠️ Critical**: For self-referential library configuration issues, see [docs/06-guides/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md](docs/06-guides/SELF_REFERENTIAL_LIBRARY_TROUBLESHOOTING.md)
-
-For detailed testing documentation, see [docs/03-compiler-development/TESTING_INFRASTRUCTURE.md](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md)
-
-### Development Workflow
-```bash
-# Start file watching for instant feedback
-mix haxe.watch
-
-# In another terminal, make changes
-vim src_haxe/MyModule.hx  # Files auto-compile on save
-
-# Or for compiler development:
-vim src/reflaxe/elixir/ElixirCompiler.hx
-npm test  # Test compiler changes
-```
-
-### LLM Development  
-Perfect for AI-assisted development with fast feedback loops:
-```bash
-# Start watching with LLM-friendly output
-mix haxe.watch --verbose
-
-# LLM creates/modifies .hx files → automatic compilation
-# Sub-second feedback enables rapid iteration
-```
-
-## Package Management
-
-### Why lix + npm?
-- **lix**: Modern Haxe package manager with GitHub sources
-- **npm**: JavaScript ecosystem integration and script orchestration  
-- **Benefits**: Project-specific Haxe versions, zero global conflicts
-
-### Why mix?
-- **Native Elixir tooling**: Industry standard for BEAM development
-- **Phoenix ecosystem**: Seamless LiveView, Ecto, OTP integration
-- **Generated code validation**: Tests the actual output, not just compilation
-
-## Performance
-
-All compilation targets exceed performance requirements:
-
-- **Basic compilation**: 0.015ms (750x faster than 15ms target) ⚡
-- **Ecto Changesets**: 0.006ms average (2500x faster) ⚡  
-- **Migration DSL**: 6.5μs per migration (2300x faster) ⚡
-- **OTP GenServer**: 0.07ms average (214x faster) ⚡
-- **Phoenix LiveView**: <1ms average (15x faster) ⚡
-
-## Verification
-
-CI is the source of truth (see the CI badge above). Locally:
-
-### New-user quickcheck (install from GitHub release tag)
-
-This validates that a brand-new project can install Reflaxe.Elixir from a `vX.Y.Z` release and compile a generated Phoenix app.
-
-```bash
-mkdir -p /tmp/reflaxe_elixir_verify && cd /tmp/reflaxe_elixir_verify
-npm init -y
-npm install --save-dev lix
-npx lix scope create
-
-# Pin a known-good Haxe toolchain (avoids relying on a global install).
-npx lix download haxe 4.3.7
-npx lix use haxe 4.3.7
-
-# Install the latest GitHub release tag (recommended).
-# If this fails (no `curl` / GitHub rate limit), pick a tag from the Releases page and set it manually.
-REFLAXE_ELIXIR_TAG="$(curl -fsSL https://api.github.com/repos/fullofcaffeine/reflaxe.elixir/releases/latest | sed -n 's/.*\"tag_name\":[[:space:]]*\"\\([^\"]*\\)\".*/\\1/p' | head -n 1)"
-npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
-npx lix download
-
-# Generate + compile a Phoenix app (compile-only smoke)
-REFLAXE_ELIXIR_SRC="$(./node_modules/.bin/haxelib path reflaxe.elixir | tr -d '\r' | grep -E 'reflaxe\.elixir/.*/src/?$' | head -n 1)"
-./node_modules/.bin/haxe -cp "$REFLAXE_ELIXIR_SRC" --run Run create my_app --type phoenix --no-interactive --skip-install
-cd my_app
-npm install --no-audit --no-fund
-npx lix scope create
-npx lix install "github:fullofcaffeine/reflaxe.elixir#${REFLAXE_ELIXIR_TAG}"
-npx lix download
-mix deps.get
-mix compile
-```
-
-> Maintainers: this flow is also verified weekly in CI by the scheduled workflow
-> **README Release Smoke (scheduled)**.
-
-### Repo verification (contributors / maintainers)
-
-- `npm run ci:guards`
-- `npm test`
-- `npm run test:examples`
-- `npm run test:examples-elixir`
-- `npm run ci:budgets`
-- `npm run qa:sentinel` (todo-app boot + Playwright smoke; non-blocking)
+- [Installation](docs/01-getting-started/installation.md)
+- [Writing Idiomatic Haxe for Elixir](docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md)
+- [Elixir Idioms & Hygiene](docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md)
+- [Haxe->Elixir Mappings](docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md)
+- [Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)
+- [API Index](docs/04-api-reference/API_INDEX.md)
+- [Mix Tasks](docs/04-api-reference/MIX_TASKS.md)
+- [Elixir Injection Guide](docs/04-api-reference/ELIXIR_INJECTION_GUIDE.md)
+- [Troubleshooting](docs/06-guides/TROUBLESHOOTING.md)
 
 ## Contributing
 
-See [docs/10-contributing/contributing.md](docs/10-contributing/contributing.md) for detailed development guide.
-Releases are published automatically via semantic versioning; see [docs/10-contributing/RELEASING.md](docs/10-contributing/RELEASING.md).
-
-### Adding Features
-1. Extend the AST pipeline (`src/reflaxe/elixir/ast/`) in builder/transformer/printer layers
-2. Add/adjust std externs in `std/` when exposing Elixir/Phoenix/Ecto APIs
-3. Add snapshot coverage under `test/snapshot/` (and update intended outputs if needed)
-4. Run `npm test` and `npm run qa:sentinel`
-
-### Task Management (Beads + Plans)
-
-This repo uses Beads (`bd`) for dependency-aware task tracking and a lightweight `plans/` directory for decision records.
-
-- Issues live in `.beads/issues.jsonl` (git-native export) and are edited with `bd`.
-  - Common commands: `bd list`, `bd show <id>`, `bd edit <id>`, `bd update <id> --body-file <file>`, `bd close <id>`
-- Plans live under `plans/`:
-  - `plans/active/` while any related beads tasks are still open
-  - `plans/archived/` once all related beads tasks are closed
-- Source-of-truth rule:
-  - Beads tasks must be decision-complete (files, algorithm, failure modes, tests, verification).
-  - Plans are historical context and cross-task coherence; tasks should not require reading a plan to implement.
-
-See:
-- `plans/README.md` for the plan lifecycle and the task spec contract
-- `.beads/README.md` for Beads usage
-
-## Roadmap
-
-- Near-term priorities: [ROADMAP.md](ROADMAP.md)
-- Long-term direction: [docs/08-roadmap/vision.md](docs/08-roadmap/vision.md)
-- 1.0 readiness checklist: [docs/06-guides/PRODUCTION_READINESS.md](docs/06-guides/PRODUCTION_READINESS.md)
+- [Contributing Guide](docs/10-contributing/contributing.md)
+- [Compiler Testing Infrastructure](docs/03-compiler-development/TESTING_INFRASTRUCTURE.md)
+- [Development Workflow](docs/01-getting-started/development-workflow.md)
 
 ## License
 
-GPL-3.0 - See [LICENSE](LICENSE) for details
+GPL-3.0 - see [LICENSE](LICENSE).
 
 ## Links
 
-- [Haxe](https://haxe.org) - The cross-platform toolkit  
-- [Reflaxe](https://github.com/SomeRanDev/reflaxe) - Haxe-to-everything compiler framework
-- [Elixir](https://elixir-lang.org) - Dynamic, functional language for BEAM
-- [Phoenix](https://phoenixframework.org) - Productive web framework  
-- [lix](https://github.com/lix-pm/lix.client) - Modern Haxe package manager
+- [Haxe](https://haxe.org)
+- [Reflaxe](https://github.com/SomeRanDev/reflaxe)
+- [Elixir](https://elixir-lang.org)
+- [Phoenix](https://phoenixframework.org)
+- [lix](https://github.com/lix-pm/lix.client)
