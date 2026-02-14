@@ -129,24 +129,29 @@ sequential update behavior while fitting Elixir's immutable runtime model.
 
 #### Rebinding and pattern pinning
 
-In generated expression code, rebinding is expected. Pattern positions are different: in `case`/`with`, a plain
-variable binds a new value. When source behavior requires comparing against an existing local, the compiler emits `^`.
+This shows up when Haxe code updates a value and later compares against a local captured earlier.
+
+```haxe
+var expected = score;
+score += bonus;
+var isSame = (score == expected);
+```
+
+One generated Elixir shape may look like:
 
 ```elixir
-# Plain pattern variable: binds a fresh value
-expected = value
-case value do
-  expected -> :same
-  _ -> :other
-end
+expected = score
+score = score + bonus
 
-# Compiler-normalized: pin matches the existing local
-expected = value
-case value do
-  ^expected -> :same
-  _ -> :other
-end
+is_same =
+  case score do
+    ^expected -> true
+    _ -> false
+  end
 ```
+
+Here `^expected` means "use the existing value in `expected`". A plain `expected` in pattern position would create or
+rebind a variable instead of comparing.
 
 For strict "assign once" behavior in Haxe source, prefer `final` (compile-time enforced by Haxe).
 

@@ -18,6 +18,18 @@ If you want the deep dive (with many examples), start here:
 Elixir values are immutable, so Haxe-style mutation is lowered into a sequence of rebindings. Each step produces a new
 binding with the updated value, which preserves the original step-by-step behavior while staying idiomatic in Elixir.
 
+Example:
+
+```haxe
+var total = 1;
+total += 2;
+```
+
+```elixir
+total = 1
+total = total + 2
+```
+
 Implication:
 - The output is still purely functional/immutable at runtime, but reads like idiomatic Elixir rebinding.
 - Generated code may rebind names to preserve Haxe mutation semantics; if you need "assign once" guarantees in source,

@@ -258,11 +258,19 @@ var value = ElixirMap.fetchBang(myMap, key);
 
 ### Binding semantics in generated patterns
 
-When Haxe control flow is lowered into `case`/`with`, the compiler may need to compare against a local that is
-already bound. In Elixir patterns, a plain name introduces/rebinds a pattern variable, while `^name` matches the
-existing binding. That pinning step is what preserves the original Haxe comparison semantics.
+This section explains a generated-code detail that comes from ordinary Haxe comparisons against an already-known local.
 
-You may see normalizations like:
+Example Haxe source:
+
+```haxe
+var expectedStatus = status;
+var label = (status == expectedStatus) ? "same" : "other";
+```
+
+When lowered to expression-oriented Elixir, a common shape is a `case` comparison with pinning.
+In Elixir patterns, `^name` means "match the existing value", while plain `name` creates/rebinds a pattern variable.
+
+During lowering, you may see a shadow-prone intermediate form that is normalized to the final safe shape:
 
 ```elixir
 # Plain pattern variable: binds a new value in pattern position
@@ -279,6 +287,8 @@ case status do
   _ -> :other
 end
 ```
+
+`^expected_status` preserves the comparison intent from Haxe. Without `^`, the branch pattern would bind a new value.
 
 Reflaxe.Elixir runs late hygiene passes to pin existing bindings where needed, so generated pattern code preserves
 intent and avoids accidental shadowing.

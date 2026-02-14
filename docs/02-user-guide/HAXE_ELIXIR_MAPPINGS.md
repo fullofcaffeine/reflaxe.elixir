@@ -528,27 +528,30 @@ var [first, second, ...rest] = items;
 
 ### Existing Bindings vs New Pattern Binders
 
-When reading generated `case`/`with` code, remember that a plain pattern variable introduces a binder, while `^`
-forces a comparison against an existing local.
+This detail matters when Haxe logic compares a value against a local that was computed earlier.
 
-```elixir
-# Plain pattern variable: binds a fresh value
-expected = value
-case value do
-  expected -> :same
-  _ -> :no
-end
-
-# Compiler-normalized: pin matches the existing local
-expected = value
-case value do
-  ^expected -> :same
-  _ -> :no
-end
+**Haxe Input (intent)**:
+```haxe
+var expected = status;
+var label = (status == expected) ? "same" : "other";
 ```
 
-Reflaxe.Elixir applies late pattern-hygiene passes to pin existing bindings when needed so generated `case`/`with`
-code does not accidentally shadow prior locals.
+**Generated Elixir (one common shape)**:
+```elixir
+expected = status
+
+label =
+  case status do
+    ^expected -> "same"
+    _ -> "other"
+  end
+```
+
+The `^` is Elixir's pin operator: it means "compare against the existing value in `expected`".
+Without `^`, `expected` in a pattern would bind a new value instead of comparing.
+
+Reflaxe.Elixir applies late pattern-hygiene passes so generated `case`/`with` code keeps the original Haxe
+comparison intent and does not accidentally shadow prior locals.
 
 For the fuller discussion, see
 `docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md#binding-semantics-in-generated-patterns`.
