@@ -749,6 +749,18 @@ body {
   line-height: 1.25rem;
 }
 
+.nav-pill-form {
+  margin: 0px;
+  display: -webkit-inline-box;
+  display: -ms-inline-flexbox;
+  display: inline-flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -ms-flex-item-align: center;
+      align-self: center;
+}
+
 .nav-pill {
   display: -webkit-inline-box;
   display: -ms-inline-flexbox;
@@ -757,6 +769,10 @@ body {
   -webkit-box-align: center;
       -ms-flex-align: center;
           align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  white-space: nowrap;
   border-radius: 0.5rem;
   border-width: 1px;
   padding-left: 0.75rem;
@@ -764,6 +780,7 @@ body {
   font-size: 0.875rem;
   line-height: 1.25rem;
   font-weight: 500;
+  line-height: 1;
   -webkit-transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   -webkit-transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);

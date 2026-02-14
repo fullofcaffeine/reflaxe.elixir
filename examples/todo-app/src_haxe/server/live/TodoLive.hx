@@ -1425,12 +1425,12 @@ class TodoLive {
 																</div>
 																<span>Profile</span>
 															</a>
-															<form action="/auth/logout" method="post" class="inline-flex h-9 items-center">
-																<input type="hidden" name="_csrf_token" value=${CSRFProtection.get_csrf_token()}/>
-																<button data-testid="nav-sign-out" type="submit"
-																	class="nav-pill">
-																	Sign out
-																</button>
+																<form action="/auth/logout" method="post" class="nav-pill-form">
+																	<input type="hidden" name="_csrf_token" value=${CSRFProtection.get_csrf_token()}/>
+																	<button data-testid="nav-sign-out" type="submit"
+																		class="nav-pill">
+																		Sign out
+																	</button>
 														</form>
 													</if>
 														<if {!assigns.signed_in}>

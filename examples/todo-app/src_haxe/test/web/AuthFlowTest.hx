@@ -33,4 +33,27 @@ class AuthFlowTest extends TestCase {
 		var userId = plugConn.getSession("user_id");
 		assertTrue(userId != null);
 	}
+
+	@:test
+	public function testLoginWithSameEmailKeepsSameUserId():Void {
+		var runId = Std.string(Std.random(1000000000));
+		var email = 'same-email-${runId}@example.com';
+
+		var connA = ConnTest.build_conn();
+		connA = ConnTest.post(connA, "/auth/login", {name: "Original Name", email: email});
+		assertEqual(302, connA.status);
+
+		var plugConnA:plug.Conn<{}> = cast connA;
+		var userIdA = plugConnA.getSession("user_id");
+		assertTrue(userIdA != null);
+
+		var connB = ConnTest.build_conn();
+		connB = ConnTest.post(connB, "/auth/login", {name: "Different Name", email: email});
+		assertEqual(302, connB.status);
+
+		var plugConnB:plug.Conn<{}> = cast connB;
+		var userIdB = plugConnB.getSession("user_id");
+		assertTrue(userIdB != null);
+		assertEqual(userIdA, userIdB);
+	}
 }

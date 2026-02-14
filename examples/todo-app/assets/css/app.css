@@ -90,8 +90,12 @@
     @apply mt-3 flex flex-wrap items-center gap-2 text-sm;
   }
 
+  .nav-pill-form {
+    @apply m-0 inline-flex items-center self-center;
+  }
+
   .nav-pill {
-    @apply inline-flex h-9 items-center rounded-lg border px-3 text-sm font-medium transition-colors duration-150;
+    @apply inline-flex h-9 items-center justify-center whitespace-nowrap rounded-lg border px-3 text-sm font-medium leading-none transition-colors duration-150;
     @apply border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200;
   }
 

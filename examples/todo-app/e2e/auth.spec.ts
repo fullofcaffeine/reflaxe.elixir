@@ -67,3 +67,36 @@ test('optional login + profile edit', async ({ page }) => {
   await page.waitForURL('**/', { timeout: 10000 })
   await expect(page.locator('body')).toContainText(/demo mode/i)
 })
+
+test('signed-in nav auth pills stay vertically aligned', async ({ page }) => {
+  const base = process.env.BASE_URL || 'http://localhost:4001'
+  const runId = Date.now()
+  const domain = `auth-align-${runId}.example.com`
+  const name = `PW Align ${runId}`
+  const email = `pw-align-${runId}@${domain}`
+
+  await login(page, base, name, email)
+  await expect(page.getByTestId('todo-nav-auth-row')).toBeVisible()
+
+  const usersBox = await page.getByTestId('nav-users').boundingBox()
+  const profileBox = await page.getByTestId('nav-profile').boundingBox()
+  const signOutBox = await page.getByTestId('nav-sign-out').boundingBox()
+
+  expect(usersBox).not.toBeNull()
+  expect(profileBox).not.toBeNull()
+  expect(signOutBox).not.toBeNull()
+
+  if (!usersBox || !profileBox || !signOutBox) {
+    throw new Error('Expected nav auth row pills to be visible for alignment checks')
+  }
+
+  const centerY = (box: { y: number; height: number }) => box.y + box.height / 2
+  const usersCenter = centerY(usersBox)
+  const profileCenter = centerY(profileBox)
+  const signOutCenter = centerY(signOutBox)
+
+  expect(Math.abs(usersCenter - signOutCenter)).toBeLessThanOrEqual(1.5)
+  expect(Math.abs(profileCenter - signOutCenter)).toBeLessThanOrEqual(1.5)
+  expect(Math.abs(usersBox.height - signOutBox.height)).toBeLessThanOrEqual(1.0)
+  expect(Math.abs(profileBox.height - signOutBox.height)).toBeLessThanOrEqual(1.0)
+})
