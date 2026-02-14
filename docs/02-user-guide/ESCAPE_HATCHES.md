@@ -2,9 +2,11 @@
 
 Reflaxe.Elixir is designed for **pure Haxe → idiomatic Elixir**. When you need to integrate with existing Elixir/Erlang libraries, use **externs** and **typed boundary types**.
 
+Start with `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md` for the practical workflow (how to call hand-written Elixir from Haxe). This page is the escape-hatch focused companion.
+
 > Application code should **not** use `untyped` or `__elixir__()` injections. If something is missing, add/extend an extern (preferred) or implement it in a shared library layer.
 >
-> Canonical workflow (extern + wrapper + testing): `docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md`
+> Canonical workflow (extern + wrapper + testing): `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md` and `docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md`
 
 ## 1) Map Haxe code to existing Elixir modules with `@:native`
 

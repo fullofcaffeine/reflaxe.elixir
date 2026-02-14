@@ -247,6 +247,8 @@ See a production-grade example authored in Haxe:
 
 ## 6) Calling existing Elixir code from Haxe (typed externs)
 
+Use `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md` as the canonical workflow. This section is the quick-start version.
+
 When you want to call a hand-written Elixir module from Haxe, define a typed extern:
 
 ```haxe
@@ -257,6 +259,8 @@ extern class SomeElixirModule {
 ```
 
 Avoid `__elixir__()` in application code. If a Phoenix-specific helper is missing, prefer adding it to `std/phoenix/**` (typed extern/shim) and reusing it across apps.
+
+For strict-mode behavior and escape-hatch tradeoffs, continue in `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md`.
 
 ## 7) Deployment (build-time compilation)
 

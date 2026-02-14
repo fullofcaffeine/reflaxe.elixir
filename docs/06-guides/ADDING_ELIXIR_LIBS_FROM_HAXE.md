@@ -8,6 +8,10 @@ It keeps code:
 - idiomatic in the generated Elixir
 - resilient to framework changes
 
+This same workflow also applies when the Elixir module is your own hand-written app code (not only Hex dependencies).
+
+If you are specifically integrating intentionally pure-Elixir modules in your app, read this together with `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md`.
+
 ## The Pattern: Thin Extern + Optional Wrapper
 
 1. **Thin extern (extern class)**: a typed surface that maps 1:1 to Elixir module functions.
@@ -18,6 +22,29 @@ It keeps code:
 
 If you are contributing a generally useful integration, put the extern in `std/elixir/*`, `std/phoenix/*`, or `std/ecto/*`.
 Otherwise, keep it app-local under your project’s `src_haxe/`.
+
+## App-Local Existing Elixir Module (same pattern)
+
+If your app already has a module like `MyApp.LegacyBilling`, map it exactly the same way:
+
+```haxe
+package my_app.extern;
+
+import elixir.ElixirResult;
+import elixir.types.Term;
+
+@:native("MyApp.LegacyBilling")
+extern class LegacyBilling {
+  @:native("charge")
+  static function charge(accountId: String, amountCents: Int): ElixirResult<String, Term>;
+}
+```
+
+Generated call sites stay direct:
+
+```elixir
+MyApp.LegacyBilling.charge(account_id, amount_cents)
+```
 
 ## Step 1: Add The Hex Dependency
 
@@ -174,6 +201,7 @@ If you want to avoid hand-writing boilerplate, use the generator:
 
 Related docs:
 
+- `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md`
 - `docs/02-user-guide/ESCAPE_HATCHES.md`
 - `docs/04-api-reference/MIX_TASK_GENERATORS.md`
 - `docs/06-guides/STRICT_MODE.md`

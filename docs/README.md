@@ -25,6 +25,7 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Imperative→Functional Lowering](02-user-guide/IMPERATIVE_TO_FUNCTIONAL_LOWERING.md) - How mutation/loops become immutable Elixir
 - [Writing Idiomatic Haxe](02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md) - Guidelines for clean, idiomatic Elixir output
 - [Authoring Styles: Portable vs Elixir-First](02-user-guide/AUTHORING_STYLES_PORTABLE_VS_ELIXIR_FIRST.md) - Choose module-level strategy without changing compiler mode
+- [Interop With Existing Elixir Modules](02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md) - Typed extern-first workflow for calling hand-written Elixir from Haxe
 - [Haxe→Elixir Mappings](02-user-guide/HAXE_ELIXIR_MAPPINGS.md) - Language conversion guide
 - [Elixir Idioms & Hygiene](02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md) - Naming, unused vars, enum shapes, loop semantics
 - [Porting stdlib code (JS→Elixir)](02-user-guide/PORTING_STDLIB_CODE_JS_TO_ELIXIR.md) - Practical portability example
@@ -135,6 +136,7 @@ This documentation is optimized for AI assistant development with **AGENTS.md** 
 - **[Quickstart](06-guides/QUICKSTART.md)** - Your first Haxe→Elixir project
 - **[Phoenix (New App)](06-guides/PHOENIX_NEW_APP.md)** - Greenfield Phoenix setup
 - **[Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md)** - Add Haxe to an existing Phoenix app
+- **[Interop With Existing Elixir](02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md)** - Call pure Elixir modules from Haxe with typed boundaries
 - **[Phoenix Guide](02-user-guide/PHOENIX_INTEGRATION.md)** - Building Phoenix applications
 - **[Troubleshooting](06-guides/TROUBLESHOOTING.md)** - Solve common issues
 - **[Known Limitations](06-guides/KNOWN_LIMITATIONS.md)** - Sharp edges and experimental surfaces

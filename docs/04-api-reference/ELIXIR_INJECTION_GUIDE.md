@@ -1,5 +1,8 @@
 # Elixir Code Injection Guide
 
+This page is the low-level reference for `untyped __elixir__()` mechanics.
+For the default app-level workflow (typed extern first, `__elixir__()` last resort), start with `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md`.
+
 ## 📝 Code Injection Method
 
 Reflaxe.Elixir provides direct Elixir code injection using:
@@ -216,6 +219,8 @@ var filtered = untyped __elixir__("
 
 ## When to Use `__elixir__()`
 
+Treat this as an exception path. For app code, try typed `extern` + wrapper first and keep `__elixir__()` for explicit gaps.
+
 ### ✅ GOOD Use Cases
 
 1. **Standard Library Implementation**
@@ -224,9 +229,9 @@ var filtered = untyped __elixir__("
    return untyped __elixir__("DateTime.utc_now()");
    ```
 
-2. **Framework Integration**
+2. **Temporary Gap Before a Typed Surface Exists**
    ```haxe
-   // Direct access to Phoenix/Ecto APIs
+   // Short-term bridge; replace with extern/wrapper when available
    untyped __elixir__("Phoenix.Controller.json({0}, {1})", conn, data);
    ```
 

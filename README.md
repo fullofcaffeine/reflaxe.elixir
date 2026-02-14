@@ -181,6 +181,7 @@ Start at [docs/README.md](docs/README.md).
 - [Writing Idiomatic Haxe for Elixir](docs/02-user-guide/WRITING_IDIOMATIC_HAXE_FOR_ELIXIR.md)
 - [Elixir Idioms & Hygiene](docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md)
 - [Haxe->Elixir Mappings](docs/02-user-guide/HAXE_ELIXIR_MAPPINGS.md)
+- [Interop With Existing Elixir](docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md)
 - [Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)
 - [API Index](docs/04-api-reference/API_INDEX.md)
 - [Mix Tasks](docs/04-api-reference/MIX_TASKS.md)

@@ -34,6 +34,15 @@ Start here:
 - `docs/04-api-reference/STANDARD_LIBRARY_HANDLING.md`
 - `examples/13-elixir-first-liveview/README.md`
 
+## Calling Existing Elixir Modules
+
+If some modules stay intentionally pure Elixir, use typed extern boundaries from Haxe (and wrappers only when they remove repeated boundary work).
+
+Start here:
+
+- `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md`
+- `docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md`
+
 ## Core Concepts
 
 ### You don’t write `{:ok, ...}` in Haxe

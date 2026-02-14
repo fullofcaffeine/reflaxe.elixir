@@ -49,6 +49,7 @@ Typical characteristics:
 Start here:
 
 - `examples/13-elixir-first-liveview/README.md`
+- `docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md`
 - `docs/06-guides/STRICT_MODE.md`
 - `docs/06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md`
 
