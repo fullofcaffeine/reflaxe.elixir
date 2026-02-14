@@ -3305,16 +3305,28 @@ To maintain high-quality, self-explanatory compiler code, the following rules ar
   - Any new public externs in std/phoenix/ecto or vendor surfaces we expose
   - Vendor modifications (with file header comment and changelog entry as per vendor policy)
 - hxdoc must include: WHAT, WHY, HOW, and EXAMPLES (minimal Haxe input → Elixir before/after)
-- Documentation framing rule (applies to `docs/**/*.md` and hxdoc behavior notes): first explain
-  1) Haxe intent
-  2) Generated Elixir shape
-  3) Why this shape is required for semantic preservation
-- Re-state the 3-part framing when context changes (for example class-level vs function-level metadata semantics).
-- Do not write standalone Elixir tutorials in compiler docs unless explicitly requested; keep Elixir notes brief and tied to generated output behavior.
+- Documentation teaching guideline (applies to `docs/**/*.md` and hxdoc behavior notes): prefer this flow when explaining behavior:
+  1) Haxe input/intent (what the author wrote)
+  2) Generated Elixir shape (what the compiler emitted)
+  3) Why this shape preserves semantics
+- Do not force a rigid template when a section is already clear; each fragment should teach one useful thing and justify why it exists.
+- Define jargon on first use (for example, "pin `^` matches an existing value instead of creating a new binding").
+- Avoid Elixir-only explanations detached from source intent; anchor behavior notes to concrete Haxe examples.
+- Do not write standalone Elixir tutorials in compiler docs unless explicitly requested; keep Elixir notes brief and tied to generated output behavior from shown Haxe code.
 - Cross-reference the snapshot(s) that cover the change and intended behavior; note limitations/non‑goals
 - Keep transformer files < 2000 LOC; extract helpers when approaching the limit
 - Inline rationale: when inlining values or using inline helpers for performance or WAE safety, explain the reason in hxdoc (e.g., “inline [] to avoid undefined children after hygiene passes”)
 - No app-specific name heuristics; scope all rules by shape/API (see Hard Rule section)
+
+### Docs Writing Lesson: Teach From Haxe, Not Elixir Internals
+
+- Anti-pattern (synthetic, hard to map back to source):
+  - "When reading generated `case`/`with` code, remember that a plain pattern variable introduces a binder..."
+- Better (source-anchored and purpose-driven):
+  - "If Haxe `switch` compares against an already-known local, generated Elixir uses `^var` so the pattern compares instead of rebinding."
+- Reader check: after each paragraph, a beginner should be able to answer:
+  - "What Haxe code produced this?"
+  - "Why is this detail useful to me?"
 
 CI/QA Sentinel expectations:
 
