@@ -1,0 +1,21 @@
+{
+  "filesGenerated": [
+  "type.ex",
+  "string_buf.ex",
+  "std.ex",
+  "reflaxe/exception.ex",
+  "reflaxe/elixir/haxe_throw.ex",
+  "protocols/command_renderable.ex",
+  "int_iterator.ex",
+  "implementations/string_command_renderable.ex",
+  "implementations/int_command_renderable.ex",
+  "implementations/immediate_retry_policy.ex",
+  "implementations/exponential_retry_policy.ex",
+  "haxe/iterators/array_iterator.ex",
+  "behaviors/retry_policy.ex",
+  "abstractions/process_boundary.ex"
+],
+  "id": 4,
+  "wasCached": false,
+  "version": 1
+}
