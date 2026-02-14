@@ -154,7 +154,8 @@ public static function mount(_params:MountParams, _session:Session, socket:Socke
 }
 ```
 
-Generated Elixir shape:
+Why this generated shape matters: `LiveView.assignMultiple(...)` lowers to a pipe of `assign/3` calls, so
+stacktraces/logs map cleanly back to the Haxe assigns you wrote.
 
 ```elixir
 def mount(_params, _session, socket) do

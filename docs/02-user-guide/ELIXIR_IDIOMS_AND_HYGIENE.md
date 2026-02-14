@@ -311,6 +311,19 @@ This is a readability optimization only; it doesn’t change semantics.
 Haxe `switch` is an expression; Elixir `case` is also an expression, but compilation sometimes needs
 temporary variables to preserve evaluation order and “return from inside” behavior.
 
+Example Haxe source that may trigger helper shapes:
+
+```haxe
+var label = switch (status) {
+  case Pending: "waiting";
+  case Processing(progress): 'processing ${progress}%';
+  case Done(result): result;
+}
+```
+
+Why this exists: the compiler must preserve Haxe expression semantics exactly, even when Elixir needs extra
+plumbing bindings to represent the same flow safely.
+
 You may see compiler-generated helpers such as:
 
 - `_g` / `g` scratch variables (for expression plumbing)
@@ -323,6 +336,22 @@ These are intentional and exist to keep Haxe semantics correct in Elixir’s imm
 
 When Haxe uses `break` / `continue`, compilation may introduce `throw`/`catch` inside
 `Enum.reduce_while` to emulate structured loop control flow without mutable state.
+
+Example Haxe source:
+
+```haxe
+var found = -1;
+for (i in 0...items.length) {
+  if (items[i] == null) continue;
+  if (items[i] == target) {
+    found = i;
+    break;
+  }
+}
+```
+
+Why this exists: Elixir has no direct mutable loop + `break`/`continue` construct, so the compiler encodes
+those exits with reduction state and structured throws/catches.
 
 In those cases you’ll often see patterns like:
 

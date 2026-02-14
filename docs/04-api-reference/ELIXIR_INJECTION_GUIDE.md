@@ -50,9 +50,10 @@ atom = :ok
 tuple = {:error, "reason"}
 ```
 
-### ⚠️ CRITICAL: Correct Placeholder Syntax Required
+### Placeholder Syntax: Why `{N}` Is Required
 
-The `__elixir__()` function requires specific placeholder syntax to work correctly:
+This is a common Haxe-side mistake when using `__elixir__()`. The first argument must stay a constant
+string literal so Reflaxe can process it as target code injection.
 
 ```haxe
 // ❌ WRONG: $variable syntax causes Haxe string interpolation at compile-time
@@ -65,11 +66,10 @@ untyped __elixir__('Phoenix.Controller.json({0}, {1})', conn, data);  // WORKS!
 // Variables are passed as parameters and substituted at placeholder positions
 ```
 
-**WHY THIS MATTERS**: 
-- `$variable` triggers Haxe's compile-time string interpolation
-- The result is no longer a constant string literal
-- Reflaxe's TargetCodeInjection requires the first parameter to be a constant
-- `{N}` placeholders preserve the constant string while allowing substitution
+Why this works:
+- `$variable` interpolation runs in Haxe first, so the expression is no longer a constant literal.
+- Reflaxe target injection requires that first argument to remain constant.
+- `{0}`, `{1}`, ... keep the template constant and substitute values safely.
 
 ### With Parameters
 

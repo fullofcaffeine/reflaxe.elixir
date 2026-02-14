@@ -212,12 +212,13 @@ end)
 
 ## Parameter Mapping
 
-Haxe allows arbitrary parameter names, but we standardize them for consistency.
+This is mostly a compiler-internal detail. In app code, keep descriptive Haxe parameter names; the compiler may
+normalize generated parameter names in some emitted signatures to keep internal mapping deterministic.
 
 ### Mapping Rules
-1. Function parameters are renamed to `arg0`, `arg1`, etc. in signatures
-2. A mapping table tracks original names for use in function bodies
-3. TLocal references are translated using the mapping
+1. Some generated signatures may use `arg0`, `arg1`, etc.
+2. The original Haxe names are tracked internally for body references.
+3. TLocal references are resolved through that mapping.
 
 ### Example
 ```haxe
