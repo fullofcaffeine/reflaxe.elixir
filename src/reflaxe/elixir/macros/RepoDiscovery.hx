@@ -184,80 +184,89 @@ class RepoDiscovery {
 
 	static function processHxFile(filePath:String):Void {
 		var file:Null<sys.io.FileInput> = null;
+		var inBlock = false;
+		var hasRelevantMeta = false;
+		var pkg = "";
+		var typeName:Null<String> = null;
+		var classRe = ~/^(?:extern\s+)?class\s+([A-Za-z0-9_]+)/;
+		var enumAbstractRe = ~/^enum\s+abstract\s+([A-Za-z0-9_]+)/;
+		var enumRe = ~/^enum\s+([A-Za-z0-9_]+)/;
+		var abstractRe = ~/^abstract\s+([A-Za-z0-9_]+)/;
+
 		try {
 			file = sys.io.File.read(filePath, false);
+			try {
+				while (true) {
+					var line = file.readLine();
+					var t = StringTools.trim(line);
 
-			var inBlock = false;
-			var hasRelevantMeta = false;
-			var pkg = "";
-			var typeName:Null<String> = null;
-			var classRe = ~/^(?:extern\s+)?class\s+([A-Za-z0-9_]+)/;
-			var enumAbstractRe = ~/^enum\s+abstract\s+([A-Za-z0-9_]+)/;
-			var enumRe = ~/^enum\s+([A-Za-z0-9_]+)/;
-			var abstractRe = ~/^abstract\s+([A-Za-z0-9_]+)/;
+					if (t.length == 0)
+						continue;
 
-			while (true) {
-				var line = file.readLine();
-				var t = StringTools.trim(line);
-
-				if (t.length == 0)
-					continue;
-
-				if (inBlock) {
-					if (t.indexOf("*/") != -1)
-						inBlock = false;
-					continue;
-				}
-				if (t.startsWith("/*")) {
-					if (t.indexOf("*/") == -1)
-						inBlock = true;
-					continue;
-				}
-				if (t.startsWith("//"))
-					continue;
-
-				if (pkg.length == 0 && t.startsWith("package ")) {
-					var rest = t.substr("package ".length);
-					var semi = rest.indexOf(";");
-					if (semi != -1)
-						rest = rest.substr(0, semi);
-					pkg = StringTools.trim(rest);
-				}
-
-				if (!hasRelevantMeta && hasRelevantMetadataToken(t)) {
-					hasRelevantMeta = true;
-				}
-
-				if (typeName == null) {
-					if (classRe.match(t)) {
-						typeName = classRe.matched(1);
-					} else if (enumAbstractRe.match(t)) {
-						typeName = enumAbstractRe.matched(1);
-					} else if (enumRe.match(t)) {
-						typeName = enumRe.matched(1);
-					} else if (abstractRe.match(t)) {
-						typeName = abstractRe.matched(1);
+					if (inBlock) {
+						if (t.indexOf("*/") != -1)
+							inBlock = false;
+						continue;
 					}
-				}
+					if (t.startsWith("/*")) {
+						if (t.indexOf("*/") == -1)
+							inBlock = true;
+						continue;
+					}
+					if (t.startsWith("//"))
+						continue;
 
-				if (hasRelevantMeta && typeName != null)
-					break;
+					if (pkg.length == 0 && t.startsWith("package ")) {
+						var rest = t.substr("package ".length);
+						var semi = rest.indexOf(";");
+						if (semi != -1)
+							rest = rest.substr(0, semi);
+						pkg = StringTools.trim(rest);
+					}
+
+					if (!hasRelevantMeta && hasRelevantMetadataToken(t)) {
+						hasRelevantMeta = true;
+					}
+
+					if (typeName == null) {
+						if (classRe.match(t)) {
+							typeName = classRe.matched(1);
+						} else if (enumAbstractRe.match(t)) {
+							typeName = enumAbstractRe.matched(1);
+						} else if (enumRe.match(t)) {
+							typeName = enumRe.matched(1);
+						} else if (abstractRe.match(t)) {
+							typeName = abstractRe.matched(1);
+						}
+					}
+
+					if (hasRelevantMeta && typeName != null)
+						break;
+				}
+			} catch (e:Eof) {
+				// Reached end-of-file; process what we discovered.
 			}
 
-			if (!hasRelevantMeta || typeName == null)
+			if (!hasRelevantMeta)
+				return;
+
+			var moduleName = Path.withoutExtension(Path.withoutDirectory(filePath));
+			if (moduleName == null || moduleName.length == 0) {
+				// Fallback for unusual paths.
+				moduleName = typeName;
+			}
+			if (moduleName == null || moduleName.length == 0)
 				return;
 
 			// Haxe modules are named after the file. If a file contains multiple top-level types,
 			// additional types are addressed as Module.Type (e.g., Main.CustomTags).
-			var moduleName = Path.withoutExtension(Path.withoutDirectory(filePath));
-			if (moduleName == null || moduleName.length == 0)
-				moduleName = typeName;
-
+			//
+			// Module-level fields may have relevant metadata without an explicit class declaration.
+			// In that case, force-typing the module path itself is sufficient and yields the
+			// synthetic KModuleFields container.
 			var modBase = (pkg.length > 0) ? (pkg + "." + moduleName) : moduleName;
-			var mod = (typeName != moduleName) ? (modBase + "." + typeName) : modBase;
+			var mod = (typeName != null && typeName != moduleName) ? (modBase + "." + typeName) : modBase;
 			forceType(mod);
-		} catch (e:Eof) {
-			// EOF
 		} catch (_) {}
 		try
 			if (file != null)
@@ -332,7 +341,7 @@ class RepoDiscovery {
 			Context.onAfterInitMacros(function() {
 				for (pendingTypePath in pendingTypePaths) {
 					try {
-						Context.getType(pendingTypePath);
+						forceTypeOrModule(pendingTypePath);
 					} catch (e) {
 						#if debug_repo_discovery
 						trace('[RepoDiscovery] failed to type ' + pendingTypePath + ': ' + Std.string(e));
@@ -358,11 +367,62 @@ class RepoDiscovery {
 
 		for (typePath in queued) {
 			try {
-				Context.getType(typePath);
+				forceTypeOrModule(typePath);
 			} catch (e) {
 				#if debug_repo_discovery
 				trace('[RepoDiscovery] failed to type ' + typePath + ': ' + Std.string(e));
 				#end
+			}
+		}
+	}
+
+	static function forceTypeOrModule(typePath:String):Void {
+		try {
+			Context.getType(typePath);
+			return;
+		} catch (_:Dynamic) {
+			// Module-level fields may not expose a top-level type with the module name.
+			// Fall back to forcing the module itself so KModuleFields containers are typed.
+		}
+		var moduleTypes = Context.getModule(typePath);
+		markModuleFieldContainersKept(moduleTypes);
+	}
+
+	static function markModuleFieldContainersKept(moduleTypes:Array<haxe.macro.Type>):Void {
+		if (moduleTypes == null)
+			return;
+
+		for (moduleType in moduleTypes) {
+			switch (moduleType) {
+				case TInst(classRef, _):
+					var classType = classRef.get();
+					switch (classType.kind) {
+						case KModuleFields(_):
+							var hasFrameworkMeta = false;
+							for (staticField in classType.statics.get()) {
+								for (token in metaTokens) {
+									var metaName = token.substr(1); // "@:router" -> ":router"
+									var bareMetaName = metaName.charAt(0) == ":" ? metaName.substr(1) : metaName;
+									if (staticField.meta.has(metaName) || staticField.meta.has(bareMetaName)) {
+										hasFrameworkMeta = true;
+										break;
+									}
+								}
+								if (hasFrameworkMeta)
+									break;
+							}
+
+							if (hasFrameworkMeta) {
+								if (!classType.meta.has(":keep")) {
+									classType.meta.add(":keep", [], classType.pos);
+								}
+								if (!classType.meta.has(":used")) {
+									classType.meta.add(":used", [], classType.pos);
+								}
+							}
+						default:
+					}
+				default:
 			}
 		}
 	}

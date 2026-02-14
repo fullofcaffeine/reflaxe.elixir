@@ -37,6 +37,7 @@ import reflaxe.elixir.ast.builders.ModuleBuilder;
 import reflaxe.elixir.ast.naming.ElixirAtom;
 import reflaxe.elixir.ast.NameUtils;
 import reflaxe.elixir.CompilationContext;
+import reflaxe.elixir.macros.ModuleFieldMetadataRegistry;
 
 using StringTools;
 using reflaxe.helpers.NameMetaHelper;
@@ -264,6 +265,11 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	public var modulePackages:Map<String, Array<String>> = new Map();
 
 	/**
+	 * Cache parsed import tables by source file path for metadata expression resolution.
+	 */
+	private var sourceImportResolutionCache:Map<String, {directImports:Map<String, String>, wildcardImports:Array<String>}> = new Map();
+
+	/**
 	 * Map module name -> BaseType for synthetic outputs (e.g., bootstrap files)
 	 * WHY: OutputManager requires a BaseType for each DataAndFileInfo; we use the module's
 	 *      BaseType combined with overrideFileName to write custom files.
@@ -401,7 +407,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		}
 
 		// Force generation for @:router classes (Phoenix Router modules)
-		if (classType.meta.has(":router")) {
+		if (hasClassOrStaticMetadata(classType, ":router", "router")) {
 			#if debug_annotation_transforms
 			#end
 			return true;
@@ -428,6 +434,14 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * Centralized suppression rules for std and internal modules
 	 */
 	private function shouldSuppressStdEmission(classType:ClassType):Bool {
+		switch (classType.kind) {
+			case KModuleFields(_):
+				// Module-level fields are compiled into synthetic KModuleFields classes
+				// under underscored pseudo-packages. Do not suppress them.
+				return false;
+			default:
+		}
+
 		// Fast checks by name
 		var n = classType.name;
 		if (n == null)
@@ -735,7 +749,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		}
 
 		// Router modules: map to lib/<app_snake>_web/router.ex
-		if (classType.meta.has(":router")) {
+		if (hasClassOrStaticMetadata(classType, ":router", "router")) {
 			var appModuleName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
 			var appSnake = reflaxe.elixir.ast.NameUtils.toSnakeCase(appModuleName);
 			var webSnake = appSnake + "_web";
@@ -831,23 +845,22 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		var moduleName = classType.name;
 		var modulePack = classType.pack;
 
-		if (classType.meta.has(":native")) {
-			var nativeMeta = classType.meta.extract(":native");
-			if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
-				switch (nativeMeta[0].params[0].expr) {
-					case EConst(CString(s, _)):
-						// Parse the native module name for package and name
-						var parts = s.split(".");
-						if (parts.length > 1) {
-							moduleName = parts[parts.length - 1];
-							modulePack = parts.slice(0, parts.length - 1).map(p -> reflaxe.elixir.ast.NameUtils.toSnakeCase(p));
-						} else {
-							moduleName = s;
-							modulePack = [];
-						}
-					default:
-						// Keep original if annotation is malformed
-				}
+		var nativeMetaEntries = collectClassAndStaticMetadata(classType, ":native", "native");
+
+		if (nativeMetaEntries != null && nativeMetaEntries.length > 0 && nativeMetaEntries[0].params != null && nativeMetaEntries[0].params.length > 0) {
+			switch (nativeMetaEntries[0].params[0].expr) {
+				case EConst(CString(s, _)):
+					// Parse the native module name for package and name
+					var parts = s.split(".");
+					if (parts.length > 1) {
+						moduleName = parts[parts.length - 1];
+						modulePack = parts.slice(0, parts.length - 1).map(p -> reflaxe.elixir.ast.NameUtils.toSnakeCase(p));
+					} else {
+						moduleName = s;
+						modulePack = [];
+					}
+				default:
+					// Keep original if annotation is malformed
 			}
 		}
 
@@ -1513,7 +1526,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			|| classType.meta.has(":gettext")
 			|| classType.meta.has(":application")
 			|| classType.meta.has(":genserver")
-			|| classType.meta.has(":router")
+			|| hasClassOrStaticMetadata(classType, ":router", "router")
 			|| classType.meta.has(":controller")
 			|| classType.meta.has(":presence")
 			|| classType.meta.has(":phoenixWeb")
@@ -2664,8 +2677,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			#end
 		}
 
-		// Enable Router transformation pass for @:router modules
-		if (classType.meta.has(":router")) {
+		// Enable Router transformation pass for @:router modules.
+		// Module-level fields are compiled by Haxe into KModuleFields classes,
+		// with metadata attached to synthetic static fields, so we check both.
+		if (hasClassOrStaticMetadata(classType, ":router", "router")) {
 			metadata.isRouter = true;
 			metadata.routerRoutes = extractRouterRoutesFromMeta(classType);
 			metadata.routerDslNodes = extractRouterDslNodesFromMeta(classType);
@@ -3652,12 +3667,227 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	/**
 	 * Extract router route definitions from @:routes metadata for @:router modules.
 	 */
-	private function extractRouterRoutesFromMeta(classType:ClassType):Null<Array<RouterRouteMeta>> {
-		var routesMeta = classType.meta.extract(":routes");
-		var routesMetaAlt = classType.meta.extract("routes");
-		if (routesMetaAlt != null && routesMetaAlt.length > 0) {
-			routesMeta = routesMeta != null && routesMeta.length > 0 ? routesMeta.concat(routesMetaAlt) : routesMetaAlt;
+	private function collectClassAndStaticMetadata(classType:ClassType, primaryName:String, alternateName:String):Array<MetadataEntry> {
+		var entries:Array<MetadataEntry> = [];
+
+		var classPrimary = classType.meta.extract(primaryName);
+		if (classPrimary != null && classPrimary.length > 0) {
+			entries = entries.concat(classPrimary);
 		}
+
+		var classAlternate = classType.meta.extract(alternateName);
+		if (classAlternate != null && classAlternate.length > 0) {
+			entries = entries.concat(classAlternate);
+		}
+
+		switch (classType.kind) {
+			case KModuleFields(_):
+				for (staticField in classType.statics.get()) {
+					var staticPrimary = staticField.meta.extract(primaryName);
+					if (staticPrimary != null && staticPrimary.length > 0) {
+						entries = entries.concat(staticPrimary);
+					}
+
+					var staticAlternate = staticField.meta.extract(alternateName);
+					if (staticAlternate != null && staticAlternate.length > 0) {
+						entries = entries.concat(staticAlternate);
+					}
+				}
+			default:
+		}
+
+		var moduleFieldMeta = ModuleFieldMetadataRegistry.extractMetadata(classType, primaryName, alternateName);
+		if (moduleFieldMeta != null && moduleFieldMeta.length > 0) {
+			entries = entries.concat(moduleFieldMeta);
+		}
+
+		return entries;
+	}
+
+	private function hasClassOrStaticMetadata(classType:ClassType, primaryName:String, alternateName:String):Bool {
+		return collectClassAndStaticMetadata(classType, primaryName, alternateName).length > 0;
+	}
+
+	private function canResolveTypePath(typePath:String):Bool {
+		if (typePath == null || typePath.length == 0)
+			return false;
+		try {
+			Context.getType(typePath);
+			return true;
+		} catch (_:Dynamic) {
+			return false;
+		}
+	}
+
+	private function applyImportLookup(typePath:String, directImports:Map<String, String>, wildcardImports:Array<String>):Null<String> {
+		if (typePath == null || typePath.length == 0 || directImports == null)
+			return null;
+
+		var directMatch = directImports.get(typePath);
+		if (directMatch != null && directMatch.length > 0)
+			return directMatch;
+
+		var dotIndex = typePath.indexOf(".");
+		if (dotIndex > 0) {
+			var alias = typePath.substr(0, dotIndex);
+			if (directImports.exists(alias)) {
+				var aliasTarget = directImports.get(alias);
+				var remainder = typePath.substr(dotIndex + 1);
+				if (aliasTarget != null && aliasTarget.length > 0 && remainder != null && remainder.length > 0)
+					return aliasTarget + "." + remainder;
+			}
+		}
+
+		if (typePath.indexOf(".") == -1 && wildcardImports != null) {
+			for (wildcardImport in wildcardImports) {
+				var candidate = wildcardImport + "." + typePath;
+				if (canResolveTypePath(candidate))
+					return candidate;
+			}
+		}
+
+		return null;
+	}
+
+	private function getSourceImportLookup(filePath:String):{directImports:Map<String, String>, wildcardImports:Array<String>} {
+		if (filePath == null || filePath.length == 0) {
+			return {
+				directImports: new Map<String, String>(),
+				wildcardImports: []
+			};
+		}
+
+		if (sourceImportResolutionCache.exists(filePath)) {
+			return sourceImportResolutionCache.get(filePath);
+		}
+
+		var directImports = new Map<String, String>();
+		var wildcardImports:Array<String> = [];
+		var aliasPattern = ~/^import\s+([A-Za-z0-9_.]+)\s+as\s+([A-Za-z0-9_]+)\s*;$/;
+		var wildcardPattern = ~/^import\s+([A-Za-z0-9_.]+)\.\*\s*;$/;
+		var importPattern = ~/^import\s+([A-Za-z0-9_.]+)\s*;$/;
+
+		try {
+			if (sys.FileSystem.exists(filePath)) {
+				var content = sys.io.File.getContent(filePath);
+				for (line in content.split("\n")) {
+					var trimmed = StringTools.trim(line);
+					if (trimmed.length == 0
+						|| StringTools.startsWith(trimmed, "//")
+						|| StringTools.startsWith(trimmed, "/*")
+						|| StringTools.startsWith(trimmed, "*")) {
+						continue;
+					}
+
+					if (aliasPattern.match(trimmed)) {
+						var importPath = aliasPattern.matched(1);
+						var alias = aliasPattern.matched(2);
+						if (alias != null && alias.length > 0 && importPath != null && importPath.length > 0)
+							directImports.set(alias, importPath);
+						continue;
+					}
+
+					if (wildcardPattern.match(trimmed)) {
+						var wildcardPath = wildcardPattern.matched(1);
+						if (wildcardPath != null && wildcardPath.length > 0 && wildcardImports.indexOf(wildcardPath) == -1)
+							wildcardImports.push(wildcardPath);
+						continue;
+					}
+
+					if (importPattern.match(trimmed)) {
+						var importPath = importPattern.matched(1);
+						if (importPath != null && importPath.length > 0) {
+							var importParts = importPath.split(".");
+							var shortName = importParts[importParts.length - 1];
+							if (shortName != null && shortName.length > 0)
+								directImports.set(shortName, importPath);
+						}
+					}
+				}
+			}
+		} catch (_:Dynamic) {}
+
+		var lookup = {
+			directImports: directImports,
+			wildcardImports: wildcardImports
+		};
+		sourceImportResolutionCache.set(filePath, lookup);
+		return lookup;
+	}
+
+	private function resolveTypePathFromLocalImports(classType:ClassType, typePath:String, ?sourcePos:haxe.macro.Expr.Position):String {
+		if (typePath == null || typePath.length == 0)
+			return typePath;
+
+		var imports = Context.getLocalImports();
+		if (imports != null) {
+			var directImports = new Map<String, String>();
+			var wildcardImports:Array<String> = [];
+
+			for (importExpr in imports) {
+				if (importExpr == null || importExpr.path == null || importExpr.path.length == 0)
+					continue;
+
+				var importParts = [for (segment in importExpr.path) segment.name];
+				var importPath = importParts.join(".");
+				if (importPath == null || importPath.length == 0)
+					continue;
+
+				switch (importExpr.mode) {
+					case IAsName(alias):
+						if (alias != null && alias.length > 0)
+							directImports.set(alias, importPath);
+					case IAll:
+						if (wildcardImports.indexOf(importPath) == -1)
+							wildcardImports.push(importPath);
+					case INormal:
+						var importedName = importExpr.path[importExpr.path.length - 1].name;
+						if (importedName != null && importedName.length > 0)
+							directImports.set(importedName, importPath);
+				}
+			}
+
+			var localImportMatch = applyImportLookup(typePath, directImports, wildcardImports);
+			if (localImportMatch != null)
+				return localImportMatch;
+		}
+
+		if (sourcePos != null) {
+			try {
+				var posInfo = Context.getPosInfos(sourcePos);
+				if (posInfo != null && posInfo.file != null && posInfo.file.length > 0) {
+					var lookup = getSourceImportLookup(posInfo.file);
+					var sourceImportMatch = applyImportLookup(typePath, lookup.directImports, lookup.wildcardImports);
+					if (sourceImportMatch != null)
+						return sourceImportMatch;
+				}
+			} catch (_:Dynamic) {
+				// Fall through to package/default resolution.
+			}
+		}
+
+		if (typePath.indexOf(".") == -1 && classType != null && classType.module != null && classType.module.length > 0) {
+			var moduleCandidate = classType.module + "." + typePath;
+			if (canResolveTypePath(moduleCandidate))
+				return moduleCandidate;
+			if (classType.pack != null && classType.pack.length > 0 && classType.module.indexOf(".") == -1) {
+				var qualifiedModuleCandidate = classType.pack.join(".") + "." + classType.module + "." + typePath;
+				if (canResolveTypePath(qualifiedModuleCandidate))
+					return qualifiedModuleCandidate;
+			}
+		}
+
+		if (typePath.indexOf(".") == -1 && classType != null && classType.pack != null && classType.pack.length > 0) {
+			var packageCandidate = classType.pack.join(".") + "." + typePath;
+			if (canResolveTypePath(packageCandidate))
+				return packageCandidate;
+		}
+
+		return typePath;
+	}
+
+	private function extractRouterRoutesFromMeta(classType:ClassType):Null<Array<RouterRouteMeta>> {
+		var routesMeta = collectClassAndStaticMetadata(classType, ":routes", "routes");
 
 		if (routesMeta == null || routesMeta.length == 0) {
 			return null;
@@ -3850,11 +4080,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	 * - typed builder nodes (`RouterDsl.scope(...)`, `RouterDsl.get(...)`, ...)
 	 */
 	private function extractRouterDslNodesFromMeta(classType:ClassType):Null<Array<RouterNodeMeta>> {
-		var routesMeta = classType.meta.extract(":routes");
-		var routesMetaAlt = classType.meta.extract("routes");
-		if (routesMetaAlt != null && routesMetaAlt.length > 0) {
-			routesMeta = routesMeta != null && routesMeta.length > 0 ? routesMeta.concat(routesMetaAlt) : routesMetaAlt;
-		}
+		var routesMeta = collectClassAndStaticMetadata(classType, ":routes", "routes");
 
 		if (routesMeta == null || routesMeta.length == 0) {
 			return null;
@@ -3956,6 +4182,32 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			};
 		}
 
+		function normalizeImportedTypePath(path:String, sourcePos:haxe.macro.Expr.Position):String {
+			var fromModuleFieldRegistry = ModuleFieldMetadataRegistry.resolveImportedTypePath(classType, path);
+			if (fromModuleFieldRegistry != null && fromModuleFieldRegistry != path)
+				return fromModuleFieldRegistry;
+			return resolveTypePathFromLocalImports(classType, path, sourcePos);
+		}
+
+		function resolveTypePathFromExpr(expr:Expr, fallbackPath:String):String {
+			var normalizedFallback = normalizeImportedTypePath(fallbackPath, expr != null ? expr.pos : null);
+			try {
+				var resolvedType = Context.typeof(expr);
+				return switch (resolvedType) {
+					case TInst(classRef, _):
+						var resolvedClass = classRef.get();
+						resolvedClass.pack.length > 0 ? resolvedClass.pack.join(".") + "." + resolvedClass.name : resolvedClass.name;
+					case TType(typeRef, _):
+						var typedefType = typeRef.get();
+						typedefType.pack.length > 0 ? typedefType.pack.join(".") + "." + typedefType.name : typedefType.name;
+					default:
+						normalizedFallback;
+				};
+			} catch (_:Dynamic) {
+				return normalizedFallback;
+			}
+		}
+
 		function extractTypeRef(expr:Expr, fieldName:String, pos:haxe.macro.Expr.Position, allowStringLiteral:Bool):Null<String> {
 			return switch (expr.expr) {
 				case EConst(CString(s, _)):
@@ -3971,12 +4223,13 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 						Context.error('${fieldName} must be a type/module reference', pos);
 						null;
 					} else {
+						var resolvedPath = resolveTypePathFromExpr(expr, path);
 						try {
-							Context.getType(path);
-						} catch (e) {
-							Context.error('Could not resolve ${fieldName} type: ${path}', pos);
+							Context.getType(resolvedPath);
+						} catch (_:Dynamic) {
+							Context.error('Could not resolve ${fieldName} type: ${resolvedPath}', pos);
 						}
-						path;
+						resolvedPath;
 					}
 			};
 		}

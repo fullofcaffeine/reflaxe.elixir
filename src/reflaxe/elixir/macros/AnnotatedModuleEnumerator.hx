@@ -8,6 +8,7 @@ import reflaxe.elixir.macros.MigrationRegistry;
 import reflaxe.elixir.macros.LiveViewEventRegistry;
 import reflaxe.elixir.macros.LiveViewTemplateUsageRegistry;
 import reflaxe.elixir.macros.EctoSchemaAssociationValidator;
+import reflaxe.elixir.macros.ModuleFieldMetadataRegistry;
 
 /**
  * AnnotatedModuleEnumerator
@@ -70,6 +71,7 @@ class AnnotatedModuleEnumerator {
 			return null;
 
 		final fields = Context.getBuildFields();
+		ModuleFieldMetadataRegistry.capture(cls, fields);
 		final isSchema = meta.has(":schema");
 		final isLiveView = meta.has(":liveview");
 
@@ -100,6 +102,26 @@ class AnnotatedModuleEnumerator {
 			}
 		}
 
+		// Module-level fields are compiled as KModuleFields classes, with metadata on
+		// synthetic static fields instead of class metadata. Mirror keep detection there.
+		if (!shouldKeepModule) {
+			switch (cls.kind) {
+				case KModuleFields(_):
+					for (field in fields) {
+						for (metaName in keepMetas) {
+							var alternate = metaName.charAt(0) == ":" ? metaName.substr(1) : null;
+							if (fieldMetaHas(field.meta, metaName) || (alternate != null && fieldMetaHas(field.meta, alternate))) {
+								shouldKeepModule = true;
+								break;
+							}
+						}
+						if (shouldKeepModule)
+							break;
+					}
+				default:
+			}
+		}
+
 		if (!isSchema && !shouldKeepModule)
 			return null;
 
@@ -110,8 +132,19 @@ class AnnotatedModuleEnumerator {
 		if (!shouldKeepModule)
 			return fields;
 
-		final keepAllPublicStatic = meta.has(":controller") || meta.has(":channel") || meta.has(":socket") || meta.has(":router") || meta.has(":endpoint")
-			|| meta.has(":phoenixWeb") || meta.has(":phoenixWebModule");
+		final keepAllPublicStatic = meta.has(":controller")
+			|| anyFieldHasMeta(fields, ":controller")
+			|| meta.has(":channel")
+			|| anyFieldHasMeta(fields, ":channel")
+			|| meta.has(":socket")
+			|| anyFieldHasMeta(fields, ":socket")
+			|| meta.has(":router")
+			|| anyFieldHasMeta(fields, ":router")
+			|| anyFieldHasMeta(fields, "router")
+			|| meta.has(":endpoint")
+			|| anyFieldHasMeta(fields, ":endpoint")
+			|| meta.has(":phoenixWeb")
+			|| meta.has(":phoenixWebModule");
 
 		final keepOnlyComponentFunctions = meta.has(":component");
 		final keepNames = buildKeepNameSet(meta);
@@ -1136,6 +1169,16 @@ class AnnotatedModuleEnumerator {
 				return false;
 		}
 		return isStatic;
+	}
+
+	static function anyFieldHasMeta(fields:Array<Field>, metaName:String):Bool {
+		if (fields == null)
+			return false;
+		for (field in fields) {
+			if (fieldMetaHas(field.meta, metaName))
+				return true;
+		}
+		return false;
 	}
 
 	static function fieldMetaHas(meta:Null<Array<MetadataEntry>>, metaName:String):Bool {

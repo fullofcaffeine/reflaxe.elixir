@@ -3,7 +3,9 @@ package reflaxe.elixir.ast.builders;
 #if (macro || reflaxe_runtime)
 import haxe.macro.Type;
 import haxe.macro.Context;
+import haxe.macro.Expr;
 import reflaxe.elixir.ast.ElixirAST;
+import reflaxe.elixir.macros.ModuleFieldMetadataRegistry;
 
 /**
  * Bootstrap strategy for module loading
@@ -59,25 +61,46 @@ class ModuleBuilder {
 	 * @return The module name
 	 */
 	public static function extractModuleName(classType:ClassType):String {
+		var nativeMeta = collectClassAndModuleMetadata(classType, ":native", "native");
+
 		// Check for @:native annotation first
-		if (classType.meta.has(":native")) {
-			var nativeMeta = classType.meta.extract(":native");
-			if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
-				switch (nativeMeta[0].params[0].expr) {
-					case EConst(CString(s, _)):
-						// Prefer idiomatic module aliases (String) over fully-qualified internal names (Elixir.String).
-						return StringTools.startsWith(s, "Elixir.") ? s.substr("Elixir.".length) : s;
-					default:
-				}
+		if (nativeMeta.length > 0 && nativeMeta[0].params != null && nativeMeta[0].params.length > 0) {
+			switch (nativeMeta[0].params[0].expr) {
+				case EConst(CString(s, _)):
+					// Prefer idiomatic module aliases (String) over fully-qualified internal names (Elixir.String).
+					return StringTools.startsWith(s, "Elixir.") ? s.substr("Elixir.".length) : s;
+				default:
 			}
+		}
+
+		var appName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+		if (hasClassOrModuleMetadata(classType, ":router", "router") && appName != null && appName != "") {
+			return appName + "Web.Router";
+		}
+		if (hasClassOrModuleMetadata(classType, ":endpoint", "endpoint") && appName != null && appName != "") {
+			return appName + "Web.Endpoint";
+		}
+		if ((hasClassOrModuleMetadata(classType, ":phoenixWebModule", "phoenixWebModule")
+			|| hasClassOrModuleMetadata(classType, ":phoenixWeb", "phoenixWeb"))
+			&& appName != null
+			&& appName != "") {
+			return appName + "Web";
+		}
+
+		// For @:application classes without @:native, append ".Application" to module name
+		// This follows Phoenix/OTP convention where applications are named AppName.Application
+		if (hasClassOrModuleMetadata(classType, ":application", "application") && nativeMeta.length == 0) {
+			if (appName != null && appName != "")
+				return appName + ".Application";
+			return classType.name + ".Application";
 		}
 
 		// Migration emission mode: migrations are compiled into `priv/repo/migrations/*.exs`.
 		// Ecto convention is `MyApp.Repo.Migrations.*`, so we force that namespace when
 		// `-D ecto_migrations_exs` is enabled.
 		if (Context.defined("ecto_migrations_exs") && classType.meta.has(":migration")) {
-			var appName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
-			return appName + ".Repo.Migrations." + classType.name;
+			var migrationAppName = reflaxe.elixir.PhoenixMapper.getAppModuleName();
+			return migrationAppName + ".Repo.Migrations." + classType.name;
 		}
 
 		// For non-extern project code in a packaged namespace, qualify with the configured app module prefix.
@@ -89,23 +112,50 @@ class ModuleBuilder {
 		// unqualified modules (e.g., `Log`, `BalancedTree`) and are referenced unqualified by the runtime.
 		if (!classType.isExtern && classType.pack.length > 0 && classType.pack[0] != "haxe" && classType.pack[0] != "sys" && classType.pack[0] != "elixir"
 			&& classType.pack[0] != "ecto" && classType.pack[0] != "phoenix" && classType.pack[0] != "plug") {
-			var appName = Context.definedValue("app_name");
-			if (appName != null && appName != "") {
-				return appName + "." + classType.name;
+			var configuredAppName = Context.definedValue("app_name");
+			if (configuredAppName != null && configuredAppName != "") {
+				return configuredAppName + "." + classType.name;
 			}
-		}
-
-		// For @:application classes without @:native, append ".Application" to module name
-		// This follows Phoenix/OTP convention where applications are named AppName.Application
-		if (classType.meta.has(":application") && !classType.meta.has(":native")) {
-			var appName = Context.definedValue("app_name");
-			if (appName != null && appName != "")
-				return appName + ".Application";
-			return classType.name + ".Application";
 		}
 
 		// Default to class name
 		return classType.name;
+	}
+
+	static function collectClassAndModuleMetadata(classType:ClassType, primaryName:String, alternateName:String):Array<MetadataEntry> {
+		var entries:Array<MetadataEntry> = [];
+
+		var classPrimary = classType.meta.extract(primaryName);
+		if (classPrimary != null && classPrimary.length > 0)
+			entries = entries.concat(classPrimary);
+
+		var classAlternate = classType.meta.extract(alternateName);
+		if (classAlternate != null && classAlternate.length > 0)
+			entries = entries.concat(classAlternate);
+
+		switch (classType.kind) {
+			case KModuleFields(_):
+				for (staticField in classType.statics.get()) {
+					var staticPrimary = staticField.meta.extract(primaryName);
+					if (staticPrimary != null && staticPrimary.length > 0)
+						entries = entries.concat(staticPrimary);
+
+					var staticAlternate = staticField.meta.extract(alternateName);
+					if (staticAlternate != null && staticAlternate.length > 0)
+						entries = entries.concat(staticAlternate);
+				}
+			default:
+		}
+
+		var moduleFieldMetadata = ModuleFieldMetadataRegistry.extractMetadata(classType, primaryName, alternateName);
+		if (moduleFieldMetadata != null && moduleFieldMetadata.length > 0)
+			entries = entries.concat(moduleFieldMetadata);
+
+		return entries;
+	}
+
+	static inline function hasClassOrModuleMetadata(classType:ClassType, primaryName:String, alternateName:String):Bool {
+		return collectClassAndModuleMetadata(classType, primaryName, alternateName).length > 0;
 	}
 
 	/**

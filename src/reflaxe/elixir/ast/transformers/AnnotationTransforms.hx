@@ -690,9 +690,6 @@ class AnnotationTransforms {
 		// Add use Phoenix.Router
 		statements.push(makeAST(EUse("Phoenix.Router", [])));
 
-		// Import LiveView router helpers
-		statements.push(makeAST(EImport("Phoenix.LiveView.Router", null, null)));
-
 		var webModuleName = StringTools.endsWith(moduleName, ".Router") ? moduleName.substr(0, moduleName.length - ".Router".length) : moduleName;
 
 		// pipeline :browser do ... end
@@ -793,6 +790,10 @@ class AnnotationTransforms {
 					browserHttpRouteCalls.push(routeCall);
 				}
 			}
+		}
+
+		if (browserLiveRouteCalls.length > 0) {
+			statements.push(makeAST(EImport("Phoenix.LiveView.Router", null, null)));
 		}
 
 		// pipeline :api do ... end (only if needed)
@@ -928,6 +929,30 @@ class AnnotationTransforms {
 	}
 
 	static function routerMetaValueToAst(value:RouterMetaValue):ElixirAST {
+		function normalizeRouterModuleVar(path:String):String {
+			if (path == null || path.length == 0)
+				return path;
+			if (StringTools.startsWith(path, "Elixir."))
+				return path;
+
+			var firstDot = path.indexOf(".");
+			if (firstDot <= 0)
+				return path;
+
+			var firstSegment = path.substr(0, firstDot);
+			var firstChar = firstSegment.charAt(0);
+			var isUpperModule = firstChar >= "A" && firstChar <= "Z";
+			if (!isUpperModule)
+				return NameUtils.getElixirModuleName(path);
+
+			return switch (firstSegment) {
+				case "Plug", "Phoenix", "Ecto", "Kernel", "Mix":
+					"Elixir." + path;
+				default:
+					path;
+			};
+		}
+
 		return switch (value) {
 			case ROString(v):
 				makeAST(EString(v));
@@ -938,14 +963,15 @@ class AnnotationTransforms {
 			case ROAtom(v):
 				makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(v))));
 			case ROVar(v):
-				makeAST(EVar(NameUtils.getElixirModuleName(v)));
+				makeAST(EVar(normalizeRouterModuleVar(v)));
 			case ROList(values):
 				makeAST(EList([for (item in values) routerMetaValueToAst(item)]));
 			case ROKeyword(values):
 				makeAST(EKeywordList([for (pair in values) {key: pair.key, value: routerMetaValueToAst(pair.value)}]));
 			case ROMap(values):
 				makeAST(EMap([
-					for (pair in values) {key: makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(pair.key)))), value: routerMetaValueToAst(pair.value)}
+					for (pair in values)
+						{key: makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(pair.key)))), value: routerMetaValueToAst(pair.value)}
 				]));
 		}
 	}
@@ -1029,6 +1055,45 @@ class AnnotationTransforms {
 			return emitted;
 		}
 
+		function isUpperModulePath(path:String):Bool {
+			if (path == null || path.length == 0)
+				return false;
+			var firstDot = path.indexOf(".");
+			var firstSegment = firstDot == -1 ? path : path.substr(0, firstDot);
+			if (firstSegment == null || firstSegment.length == 0)
+				return false;
+			var firstChar = firstSegment.charAt(0);
+			return firstChar >= "A" && firstChar <= "Z";
+		}
+
+		function qualifyExternalModule(path:String):String {
+			if (path == null || path.length == 0)
+				return path;
+			if (StringTools.startsWith(path, "Elixir."))
+				return path;
+			if (!isUpperModulePath(path))
+				return NameUtils.getElixirModuleName(path);
+			var firstDot = path.indexOf(".");
+			var firstSegment = firstDot == -1 ? path : path.substr(0, firstDot);
+			return switch (firstSegment) {
+				case "Plug", "Phoenix", "Ecto", "Kernel", "Mix":
+					"Elixir." + path;
+				default:
+					path;
+			};
+		}
+
+		function qualifyWebModule(path:String):String {
+			if (path == null || path.length == 0)
+				return path;
+			if (isUpperModulePath(path))
+				return qualifyExternalModule(path);
+			var shortName = NameUtils.getElixirModuleName(path);
+			if (webModuleName != null && webModuleName.length > 0)
+				return webModuleName + "." + shortName;
+			return shortName;
+		}
+
 		for (node in nodes) {
 			if (node == null || node.kind == null) {
 				continue;
@@ -1044,7 +1109,7 @@ class AnnotationTransforms {
 					var callArgs:Array<ElixirAST> = [];
 					var plugTarget = node.moduleRef != null ? node.moduleRef : "Kernel";
 					if (plugTarget.indexOf(".") >= 0) {
-						callArgs.push(makeAST(EVar(NameUtils.getElixirModuleName(plugTarget))));
+						callArgs.push(makeAST(EVar(qualifyExternalModule(plugTarget))));
 					} else {
 						callArgs.push(makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(plugTarget)))));
 					}
@@ -1111,7 +1176,7 @@ class AnnotationTransforms {
 					}
 					routeArgs.push(makeAST(EString(node.path != null ? node.path : "/")));
 					if (node.controller != null) {
-						routeArgs.push(makeAST(EVar(NameUtils.getElixirModuleName(node.controller))));
+						routeArgs.push(makeAST(EVar(qualifyWebModule(node.controller))));
 					}
 					if (node.action != null) {
 						routeArgs.push(makeAST(EAtom(ElixirAtom.raw(NameUtils.toSnakeCase(node.action)))));
@@ -1128,7 +1193,7 @@ class AnnotationTransforms {
 					matchArgs.push(makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(verb.toLowerCase())))));
 					matchArgs.push(makeAST(EString(node.path != null ? node.path : "/")));
 					if (node.controller != null) {
-						matchArgs.push(makeAST(EVar(NameUtils.getElixirModuleName(node.controller))));
+						matchArgs.push(makeAST(EVar(qualifyWebModule(node.controller))));
 					}
 					if (node.action != null) {
 						matchArgs.push(makeAST(EAtom(ElixirAtom.raw(NameUtils.toSnakeCase(node.action)))));
@@ -1142,7 +1207,7 @@ class AnnotationTransforms {
 				case "forward":
 					var forwardArgs:Array<ElixirAST> = [makeAST(EString(node.path != null ? node.path : "/"))];
 					if (node.moduleRef != null) {
-						forwardArgs.push(makeAST(EVar(NameUtils.getElixirModuleName(node.moduleRef))));
+						forwardArgs.push(makeAST(EVar(qualifyExternalModule(node.moduleRef))));
 					}
 					var forwardKeyword = optionValuesToKeyword(node.options);
 					if (forwardKeyword.length > 0) {
@@ -1153,7 +1218,7 @@ class AnnotationTransforms {
 				case "resources", "resource":
 					var resourcesArgs:Array<ElixirAST> = [makeAST(EString(node.path != null ? node.path : "/"))];
 					if (node.controller != null) {
-						resourcesArgs.push(makeAST(EVar(NameUtils.getElixirModuleName(node.controller))));
+						resourcesArgs.push(makeAST(EVar(qualifyWebModule(node.controller))));
 					}
 					var resourcesKeyword = optionValuesToKeyword(node.options);
 					if (resourcesKeyword.length > 0) {
@@ -1206,7 +1271,11 @@ class AnnotationTransforms {
 	static function buildRouterBodyFromDsl(moduleName:String, existingBody:ElixirAST, metadata:ElixirMetadata):ElixirAST {
 		var statements:Array<ElixirAST> = [];
 		statements.push(makeAST(EUse("Phoenix.Router", [])));
-		statements.push(makeAST(EImport("Phoenix.LiveView.Router", null, null)));
+		var hasLiveDsl = routerDslTreeHasKind(metadata.routerDslNodes, "live")
+			|| routerDslTreeHasKind(metadata.routerDslNodes, "live_session");
+		if (hasLiveDsl) {
+			statements.push(makeAST(EImport("Phoenix.LiveView.Router", null, null)));
+		}
 		if (routerDslTreeHasKind(metadata.routerDslNodes, "live_dashboard")) {
 			statements.push(makeAST(EImport("Phoenix.LiveDashboard.Router", null, null)));
 		}
