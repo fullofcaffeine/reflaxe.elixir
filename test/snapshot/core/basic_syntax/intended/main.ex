@@ -34,21 +34,21 @@ defmodule Main do
   def calculate(struct, x, y) do
     x + y * struct.instance_var
   end
-  def check_value(_, n) do
+  def check_value(_struct, n) do
     cond do
       n < 0 -> "negative"
       n == 0 -> "zero"
       :true -> "positive"
     end
   end
-  def sum_range(_, start, end_param) do
+  def sum_range(_struct, start, end_param) do
     sum = 0
     _g = start
     g_value = end_param
     sum = Enum.reduce(start..(g_value - 1)//1, sum, fn i, sum_acc -> sum_acc + i end)
     sum
   end
-  def factorial(_, n) do
+  def factorial(_struct, n) do
     result = 1
     i = n
     {result, _i} = Enum.reduce_while(Stream.iterate(0, fn n -> n + 1 end), {result, i}, fn _, {acc_result, acc_i} ->
@@ -74,7 +74,7 @@ defmodule Main do
     end)
     result
   end
-  def day_name(_, day) do
+  def day_name(_struct, day) do
     (case day do
       1 -> "Monday"
       2 -> "Tuesday"

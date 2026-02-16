@@ -35,7 +35,7 @@ end))
   defp used_param(t) do
     t + 1
   end
-  defp unused_param(_) do
+  defp unused_param(_t) do
     
   end
   defp for_loop_test(arr) do
@@ -47,11 +47,11 @@ end))
   defp string_concat(t) do
     "Value: #{t}"
   end
-  defp field_vs_ident(obj, _) do
+  defp field_vs_ident(obj, _t) do
     _ = Map.put(obj, :t, 1)
     nil
   end
-  defp multiple_unused(_, _, _) do
+  defp multiple_unused(_a, _b, _c) do
     42
   end
   defp process(value) do

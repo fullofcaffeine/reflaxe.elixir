@@ -13,7 +13,7 @@ defmodule Main do
       {:error, _msg} -> nil
     end)
   end
-  defp test_unused_parameter(_) do
+  defp test_unused_parameter(_unused_param) do
     nil
   end
 end

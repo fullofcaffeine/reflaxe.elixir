@@ -123,7 +123,7 @@ end).()]
     _has_very_long = ArrayTools.any(strings, fn s -> String.length(s) > 10 end)
     _all_positive = ArrayTools.foreach(numbers, fn n -> n > 0 end)
     _all_short = ArrayTools.all(strings, fn s -> String.length(s) < 10 end)
-    _ = ArrayTools.for_each(numbers, fn _ -> nil end)
+    _ = ArrayTools.for_each(numbers, fn _n -> nil end)
     _ = ArrayTools.take(numbers, 3)
     _ = ArrayTools.drop(numbers, 2)
     nested_arrays = [[1, 2], [3, 4], [5]]

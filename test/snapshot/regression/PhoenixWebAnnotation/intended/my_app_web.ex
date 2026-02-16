@@ -65,7 +65,7 @@ defmodule TestAppWeb do
       import TestAppWeb.Gettext
     end
   end
-  def live_session(_) do
+  def live_session(_conn) do
     %{}
   end
 end
@@ -138,7 +138,7 @@ defmodule AlternateAppWeb do
       import AlternateAppWeb.Gettext
     end
   end
-  def live_session(_) do
+  def live_session(_conn) do
     %{}
   end
 end

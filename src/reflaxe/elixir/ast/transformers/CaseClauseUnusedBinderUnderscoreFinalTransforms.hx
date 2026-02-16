@@ -11,8 +11,10 @@ import reflaxe.elixir.ast.ASTUtils;
  * CaseClauseUnusedBinderUnderscoreFinalTransforms
  *
  * WHAT
- * - Absolute-final pass: underscore simple pattern binders that are not referenced
- *   in their visible scope.
+ * - Absolute-final pass: normalize unused pattern binders in visible scopes.
+ * - Uses wildcard `_` for true throwaway binders when semantics are unchanged.
+ * - Uses underscored named binders (`_name`) when wildcarding would change
+ *   pattern semantics (for example repeated/equality binders and aliases).
  * - Applies to:
  *   - `case` / `receive` clauses (clause-local)
  *   - `with` clause patterns (used in later clauses + do/else blocks)
@@ -20,12 +22,16 @@ import reflaxe.elixir.ast.ASTUtils;
  *   - comprehension generator patterns (`for ... <- ...`) (used in later generators + filters + body)
  *
  * WHY
- * - Elixir warns about unused variables in pattern matches. Adding underscore
- *   prefix (_value) silences these warnings for intentionally unused binders.
+ * - Elixir warns about unused variables in pattern matches.
+ * - `_` is the clearest idiomatic discard for single-use throwaway slots.
+ * - Repeated binders and alias binders carry matching semantics, so we keep
+ *   them as named binders and only underscore (`_name`) when unused.
  *
  * HOW
- * - Build a conservative usage index for the scope where the binder is visible,
- *   then underscore any pattern binders not present in that usage index.
+ * - Build a conservative usage index for the scope where the binder is visible.
+ * - For each unused binder:
+ *   - emit `_` when safe (single-use non-alias binder)
+ *   - otherwise emit underscored named binder (`_name`) preserving semantics
  *
  * NOTE
  * - We do not rewrite pinned patterns (`^var`) because pins are *uses*, not binders.
@@ -37,8 +43,11 @@ import reflaxe.elixir.ast.ASTUtils;
  *   end
  * After:
  *   case result do
- *     {:ok, _value} -> :ok
+ *     {:ok, _} -> :ok
  *   end
+ *
+ * Repeated binder example (preserved semantics):
+ *   {:pair, x, x} -> :ok   =>   {:pair, _x, _x} -> :ok
  */
 class CaseClauseUnusedBinderUnderscoreFinalTransforms {
 	public static function pass(ast:ElixirAST):ElixirAST {
@@ -344,19 +353,21 @@ class CaseClauseUnusedBinderUnderscoreFinalTransforms {
 
 	static function underscoreUnusedInPattern(p:EPattern, used:Map<String, Bool>):EPattern {
 		// Two-phase rewrite:
-		// 1) Collect binder names (excluding pins) and decide which are unused.
+		// 1) Collect binder stats (counts + alias binders, excluding pins).
 		// 2) Build a stable rename map oldName -> newName and apply it consistently,
 		//    preserving equality semantics for repeated binders.
-		var binders = collectPatternBinders(p);
-		if (binders.length == 0)
+		var binderStats = collectPatternBinderStats(p);
+		var binderCounts = binderStats.counts;
+		var aliasBinders = binderStats.aliasBinders;
+		if (!binderCounts.keys().hasNext())
 			return p;
 
 		var rename:Map<String, String> = new Map();
 		var taken:Map<String, Bool> = new Map();
-		for (b in binders)
+		for (b in binderCounts.keys())
 			taken.set(b, true);
 
-		for (b in binders) {
+		for (b in binderCounts.keys()) {
 			if (b == null || b.length == 0 || b == "_" || b.charAt(0) == "_")
 				continue;
 			// Only underscore binders that are not referenced in the visible usage scope.
@@ -364,11 +375,15 @@ class CaseClauseUnusedBinderUnderscoreFinalTransforms {
 				continue;
 
 			if (!rename.exists(b)) {
-				var candidate = "_" + b;
-				while (taken.exists(candidate))
-					candidate = "_" + candidate;
-				rename.set(b, candidate);
-				taken.set(candidate, true);
+				if (canUseWildcard(b, binderCounts, aliasBinders)) {
+					rename.set(b, "_");
+				} else {
+					var candidate = "_" + b;
+					while (taken.exists(candidate))
+						candidate = "_" + candidate;
+					rename.set(b, candidate);
+					taken.set(candidate, true);
+				}
 			}
 		}
 
@@ -377,14 +392,25 @@ class CaseClauseUnusedBinderUnderscoreFinalTransforms {
 		return applyPatternRenames(p, rename);
 	}
 
-	static function collectPatternBinders(p:EPattern):Array<String> {
-		var out:Array<String> = [];
+	static function collectPatternBinderStats(p:EPattern):{counts:Map<String, Int>, aliasBinders:Map<String, Bool>} {
+		var counts:Map<String, Int> = new Map();
+		var aliasBinders:Map<String, Bool> = new Map();
+		inline function addBinder(name:String):Void {
+			if (name == null || name.length == 0)
+				return;
+			if (counts.exists(name)) {
+				counts.set(name, counts.get(name) + 1);
+			} else {
+				counts.set(name, 1);
+			}
+		}
 		function walk(px:EPattern):Void {
 			switch (px) {
 				case PVar(n):
-					out.push(n);
+					addBinder(n);
 				case PAlias(aliasName, inner):
-					out.push(aliasName);
+					addBinder(aliasName);
+					aliasBinders.set(aliasName, true);
 					walk(inner);
 				case PTuple(es):
 					for (e in es)
@@ -410,13 +436,26 @@ class CaseClauseUnusedBinderUnderscoreFinalTransforms {
 			}
 		}
 		walk(p);
-		return out;
+		return {
+			counts: counts,
+			aliasBinders: aliasBinders
+		};
+	}
+
+	static inline function canUseWildcard(name:String, binderCounts:Map<String, Int>, aliasBinders:Map<String, Bool>):Bool {
+		var count = binderCounts.exists(name) ? binderCounts.get(name) : 0;
+		return count == 1 && !aliasBinders.exists(name);
 	}
 
 	static function applyPatternRenames(p:EPattern, rename:Map<String, String>):EPattern {
 		return switch (p) {
 			case PVar(n):
-				rename.exists(n) ? PVar(rename.get(n)) : p;
+				if (rename.exists(n)) {
+					var next = rename.get(n);
+					(next == "_") ? PWildcard : PVar(next);
+				} else {
+					p;
+				}
 			case PAlias(aliasName, inner):
 				var newAlias = rename.exists(aliasName) ? rename.get(aliasName) : aliasName;
 				PAlias(newAlias, applyPatternRenames(inner, rename));

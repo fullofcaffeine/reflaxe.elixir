@@ -5394,7 +5394,7 @@ class ElixirASTTransformer {
 				case PVar(name):
 					// Track all named parameters (including underscored ones) so we can:
 					// - mark usage accurately (even for `_arg` style params)
-					// - replace truly unused params with `_` (wildcard) to avoid duplicate-binder warnings.
+					// - rewrite truly unused params to readable underscored binders (`_arg`).
 					if (name != null && name != "" && name != "_") {
 						// Some parameter names are semantically required (or referenced indirectly)
 						// by framework macros (e.g., Phoenix HEEx requires `assigns`).
@@ -5560,27 +5560,28 @@ class ElixirASTTransformer {
 
 		var hasChanges = false;
 
-		// Replace unused parameters with the wildcard `_` (PWildcard).
+		// Rewrite unused parameters to readable underscored binders.
 		//
 		// WHY:
-		// - Prefixing unused params with `_name` can still produce warnings when the same
-		//   underscored binder appears multiple times (e.g., `_arg, _arg`), because those
-		//   are real variables and must match equal values.
-		// - Haxe cannot emit duplicate argument names, so repeated binders are always
-		//   compiler-generated hygiene artifacts; `_` is the correct Elixir idiom.
+		// - Function/callback signatures are most readable in generated Elixir when unused
+		//   arguments keep their source identity (`_params`, `_session`, `_reason`) instead
+		//   of collapsing to `_`.
+		// - `_name` remains idiomatic Elixir for intentionally-unused arguments.
 		//
 		// HOW:
-		// - After usage analysis, convert any unused `PVar(name)` (including underscored)
-		//   into `PWildcard`. No body rewrite is needed because the variable is unused.
+		// - After usage analysis, convert any unused non-underscored `PVar(name)` into
+		//   `PVar(_name)`. Preserve wildcard `_` as-is.
+		// - Keep alias structure and only underscore the alias binder name when unused.
+		// - No body rewrite is needed because only unused binders are rewritten.
 		function rewriteUnusedInPattern(pattern:EPattern):EPattern {
 			if (pattern == null)
 				return pattern;
 			return switch (pattern) {
 				case PVar(name):
 					var used = (name != null && paramNames.exists(name)) ? paramNames.get(name) : true;
-					if (name != null && name != "" && name != "_" && used == false) {
+					if (name != null && name != "" && name != "_" && used == false && !StringTools.startsWith(name, "_")) {
 						hasChanges = true;
-						PWildcard;
+						PVar("_" + name);
 					} else {
 						pattern;
 					}
@@ -5597,13 +5598,14 @@ class ElixirASTTransformer {
 				case PPin(p):
 					PPin(rewriteUnusedInPattern(p));
 				case PAlias(varName, inner):
-					// If the alias binder itself is unused, drop it to `_` and keep matching on inner.
+					// Keep alias semantics and only underscore the alias binder when unused.
 					var used = (varName != null && paramNames.exists(varName)) ? paramNames.get(varName) : true;
-					if (varName != null && varName != "" && varName != "_" && used == false) {
+					var rewrittenInner = rewriteUnusedInPattern(inner);
+					if (varName != null && varName != "" && varName != "_" && used == false && !StringTools.startsWith(varName, "_")) {
 						hasChanges = true;
-						rewriteUnusedInPattern(inner);
+						PAlias("_" + varName, rewrittenInner);
 					} else {
-						PAlias(varName, rewriteUnusedInPattern(inner));
+						PAlias(varName, rewrittenInner);
 					}
 				case PBinary(segments):
 					PBinary([

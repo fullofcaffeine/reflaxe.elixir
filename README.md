@@ -36,7 +36,7 @@ These abstractions should earn their place. The question is not "can Haxe do thi
 
 | Haxe authoring surface | Direct Haxe->Elixir baseline | Edge over that baseline | Example |
 | --- | --- | --- | --- |
-| `@:routes` + router build macro | Hand-maintained route/controller wiring in direct modules | Typed route declarations reduce path/action drift during refactors | [`examples/09-phoenix-router`](examples/09-phoenix-router/README.md) |
+| Module-level `final routes = [...]` | Hand-maintained route/controller wiring in direct modules | Typed route declarations reduce path/action drift during refactors | [`examples/09-phoenix-router`](examples/09-phoenix-router/README.md) |
 | `@:schema` + `@:changeset` | Manually keeping schema/changeset field surfaces aligned | Typed field/params surfaces catch boundary mismatches earlier | [`examples/06-user-management`](examples/06-user-management/README.md) |
 | `TypedQueryLambda` | Ad-hoc query composition with repeated field assumptions | Typed query lambdas keep predicates aligned with source model shapes | [`examples/todo-app`](examples/todo-app/README.md) |
 | `@:protocol` / `@:impl` / `@:behaviour` | Repeated contract maintenance across implementation modules | One typed contract surface, multiple implementations, less signature drift | [`examples/14-abstraction-lab`](examples/14-abstraction-lab/README.md) |

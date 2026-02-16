@@ -38,7 +38,7 @@ Open `http://localhost:4000/`.
 ## Haxe source map
 
 - `examples/13-elixir-first-liveview/src_haxe/ElixirFirstLiveview.hx` - OTP application entrypoint
-- `examples/13-elixir-first-liveview/src_haxe/ElixirFirstLiveviewRouter.hx` - typed router with `HttpMethod.LIVE`
+- `examples/13-elixir-first-liveview/src_haxe/ElixirFirstLiveviewRouter.hx` - typed router via module-level `final routes`
 - `examples/13-elixir-first-liveview/src_haxe/live/SearchLive.hx` - LiveView callbacks and render
 - `examples/13-elixir-first-liveview/src_haxe/live/SearchDomain.hx` - pure domain logic
 - `examples/13-elixir-first-liveview/src_haxe/client/Boot.hx` - Genes-compiled LiveSocket bootstrap

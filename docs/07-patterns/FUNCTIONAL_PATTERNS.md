@@ -153,6 +153,10 @@ is_same =
 Here `^expected` means "use the existing value in `expected`". A plain `expected` in pattern position would create or
 rebind a variable instead of comparing.
 
+In generated patterns, unused throwaway slots may appear as `_`, while unused function/callback parameters stay
+readable as `_name`. When a pattern name carries matching semantics (for example repeated binders), the compiler keeps
+an underscored named binder instead of collapsing it to `_`.
+
 For strict "assign once" behavior in Haxe source, prefer `final` (compile-time enforced by Haxe).
 
 For a deeper explanation of binder/pin semantics in generated output, see

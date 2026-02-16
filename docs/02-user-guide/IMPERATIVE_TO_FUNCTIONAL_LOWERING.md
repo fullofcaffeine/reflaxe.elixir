@@ -103,7 +103,8 @@ See:
 ### Unused variables and hygiene
 
 Elixir warnings around unused bindings are handled by:
-- emitting `_name` bindings when a value is intentionally unused
+- emitting `_name` for unused function/callback parameters (readable signatures)
+- using `_` for true throwaway pattern slots in generated `case`/`with`, while keeping `_name` when a named binder is needed to preserve pattern semantics
 - applying naming collision rules to avoid keywords and built-in collisions
 
 See: `docs/02-user-guide/ELIXIR_IDIOMS_AND_HYGIENE.md`

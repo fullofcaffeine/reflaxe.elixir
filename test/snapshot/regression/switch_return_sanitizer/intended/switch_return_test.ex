@@ -2,7 +2,7 @@ defmodule SwitchReturnTest do
   def new() do
     %{:__reflaxe_class__ => SwitchReturnTest}
   end
-  def instance_unwrap_or(_, result, default_value) do
+  def instance_unwrap_or(_struct, result, default_value) do
     (case result do
       {:ok, value} -> value
       {:error, _error} -> default_value

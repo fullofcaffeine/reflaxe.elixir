@@ -10,9 +10,7 @@ import reflaxe.elixir.macros.RouterDsl.*;
 @:native("PhoenixHaxeExampleWeb.Router")
 // @:router: marks this module as a Phoenix router and enables route emission transforms.
 @:router
-// @:routes: declares typed route definitions consumed by router build/emit logic.
-@:routes([
+final routes = [
 	pipeline("browser", [plug("accepts", {initArgs: ["html"]}), plug("fetch_session")]),
 	scope("/", [pipeThrough(["browser"]), get("/", PageController, PageController.home)])
-])
-extern function routerConfig():Void;
+];

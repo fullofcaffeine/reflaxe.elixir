@@ -887,37 +887,24 @@ class TodoLive {
 ### 4. Phoenix Router with DSL
 
 ```haxe
-// src_haxe/server/TodoAppRouter.hx
-import reflaxe.elixir.macros.HttpMethod;
+// src_haxe/TodoAppRouter.hx
+import reflaxe.elixir.macros.RouterDsl.*;
+import server.live.ProfileLive;
+import server.live.TodoLive;
 
 @:router
-@:routes([
-    {
-        name: "root",
-        method: HttpMethod.LIVE,
-        path: "/",
-        controller: server.live.TodoLive,
-        action: server.live.TodoLive.index
-    },
-    {
-        name: "todos",
-        method: HttpMethod.LIVE,
-        path: "/todos",
-        controller: server.live.TodoLive,
-        action: server.live.TodoLive.index
-    },
-    {
-        name: "profile",
-        method: HttpMethod.LIVE,
-        path: "/profile",
-        controller: server.live.ProfileLive,
-        action: server.live.ProfileLive.show
-    }
-])
-class TodoAppRouter {
-    // Routes are auto-generated from @:routes annotation
-    // Generates proper Phoenix router DSL
-}
+final routes = [
+    pipeline("browser", [
+        plug("accepts", {initArgs: ["html"]}),
+        plug("fetch_session")
+    ]),
+    scope("/", [
+        pipeThrough(["browser"]),
+        live("/", TodoLive, TodoLive.index),
+        live("/todos", TodoLive, TodoLive.index),
+        live("/profile", ProfileLive, ProfileLive.show)
+    ])
+];
 ```
 
 ### 5. Contexts (Business Logic)

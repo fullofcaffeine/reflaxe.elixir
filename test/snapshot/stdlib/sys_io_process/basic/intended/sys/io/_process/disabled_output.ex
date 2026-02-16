@@ -2,10 +2,10 @@ defmodule DisabledOutput do
   def new() do
     %{:__reflaxe_class__ => DisabledOutput, :big_endian => nil}
   end
-  def write_byte(_, _) do
+  def write_byte(_struct, _c) do
     raise Reflaxe.Elixir.HaxeThrow, [value: "sys.io.Process: stdin is not available for detached processes"]
   end
-  def write_bytes(_, _, _, _) do
+  def write_bytes(_struct, _b, _pos, _len) do
     raise Reflaxe.Elixir.HaxeThrow, [value: "sys.io.Process: stdin is not available for detached processes"]
   end
   def set_big_endian(struct, b) do

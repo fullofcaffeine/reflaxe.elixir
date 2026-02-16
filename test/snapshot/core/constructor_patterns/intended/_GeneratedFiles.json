@@ -10,7 +10,6 @@
   "main.ex",
   "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
-  "haxe/ds/_map/map_impl_.ex",
   "data_structure_test.ex",
   "constructor_test/user.ex"
 ],

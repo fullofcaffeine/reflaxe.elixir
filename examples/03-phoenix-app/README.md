@@ -5,7 +5,7 @@ This example is the smallest Phoenix server authored in Haxe and compiled to Eli
 ## What it covers
 
 - `@:application` supervision entrypoint
-- `@:router` with `@:routes` typed route metadata
+- `@:router` with module-level typed `routes` DSL
 - `@:controller` action authored in Haxe
 - Mix integration (`mix compile` runs Haxe compilation)
 
@@ -23,7 +23,7 @@ Then open `http://localhost:4000/`.
 ## Haxe source map
 
 - `examples/03-phoenix-app/src_haxe/PhoenixHaxeExample.hx` - OTP app module (`@:application`)
-- `examples/03-phoenix-app/src_haxe/PhoenixHaxeExampleRouter.hx` - router (`@:router`, `@:routes`)
+- `examples/03-phoenix-app/src_haxe/PhoenixHaxeExampleRouter.hx` - router (`@:router`, module-level `routes`)
 - `examples/03-phoenix-app/src_haxe/controllers/PageController.hx` - controller (`@:controller`)
 - `examples/03-phoenix-app/src_haxe/server/infrastructure/*` - endpoint/web helpers
 
@@ -32,16 +32,21 @@ Then open `http://localhost:4000/`.
 Haxe router:
 
 ```haxe
-@:routes([
-  {
-    name: "home",
-    method: HttpMethod.GET,
-    path: "/",
-    controller: controllers.PageController,
-    action: controllers.PageController.home
-  }
-])
-class PhoenixHaxeExampleRouter {}
+import controllers.PageController;
+import reflaxe.elixir.macros.RouterDsl.*;
+
+@:native("PhoenixHaxeExampleWeb.Router")
+@:router
+final routes = [
+  pipeline("browser", [
+    plug("accepts", {initArgs: ["html"]}),
+    plug("fetch_session")
+  ]),
+  scope("/", [
+    pipeThrough(["browser"]),
+    get("/", PageController, PageController.home)
+  ])
+];
 ```
 
 Haxe controller:

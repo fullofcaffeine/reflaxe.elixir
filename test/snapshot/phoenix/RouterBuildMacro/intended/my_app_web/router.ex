@@ -1,27 +1,27 @@
-defmodule AppRouter do
+defmodule MyAppWeb.Router do
   use Phoenix.Router
-  import Phoenix.LiveView.Router
   pipeline :browser do
     _ = plug(:accepts, ["html"])
     _ = plug(:fetch_session)
     _ = plug(:fetch_live_flash)
-    _ = plug(:put_root_layout, {AppRouter.Layouts, :root})
+    _ = plug(:put_root_layout, {MyAppWeb.Layouts, :root})
     _ = plug(:protect_from_forgery)
     _ = plug(:put_secure_browser_headers)
   end
+  import Phoenix.LiveView.Router
   pipeline :api do
     _ = plug(:accepts, ["json"])
     _ = plug(:fetch_session)
   end
-  scope "/", AppRouter do
+  scope "/", MyAppWeb do
     _ = pipe_through(:browser)
-    live_session :default, [session: {AppRouter, :live_session, []}] do
+    live_session :default, [session: {MyAppWeb, :live_session, []}] do
       _ = live("/", PageLive, :index)
       _ = live("/users", UserLive, :index)
       _ = live("/users/:id", UserLive, :show)
     end
   end
-  scope "/api", AppRouter do
+  scope "/api", MyAppWeb do
     _ = pipe_through(:api)
     _ = get("/users", UserController, :index)
     _ = post("/users", UserController, :create)
@@ -30,7 +30,7 @@ defmodule AppRouter do
     import Phoenix.LiveDashboard.Router
     scope "/dev" do
       _ = pipe_through(:browser)
-      _ = live_dashboard("/dashboard", [metrics: AppRouter.Telemetry])
+      _ = live_dashboard("/dashboard", [metrics: MyAppWeb.Telemetry])
     end
   end
   def home() do

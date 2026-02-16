@@ -4,7 +4,7 @@ defmodule SpecialChild do
     struct = Map.merge(struct, Map.delete(Child.new(name_param, age_param), :__struct__))
     struct
   end
-  def get_description(_) do
+  def get_description(_struct) do
     "Special #{Child.get_description(super)}"
   end
   def get_age(struct) do

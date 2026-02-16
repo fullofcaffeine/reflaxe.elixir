@@ -4,7 +4,7 @@ defmodule TestClass do
     struct = %{struct | name: name_param}
     struct
   end
-  def do_something(_) do
+  def do_something(_struct) do
     nil
   end
 end

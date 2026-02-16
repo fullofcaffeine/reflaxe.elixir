@@ -1,5 +1,5 @@
 defmodule DatabaseConnection do
-  def start_link(_) do
+  def start_link(_config) do
     {:ok, self()}
   end
   def child_spec(config) do

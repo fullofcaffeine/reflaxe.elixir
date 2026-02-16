@@ -17,7 +17,7 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 ### 3. [03-phoenix-app](./03-phoenix-app/)
 **Difficulty**: Intermediate  
 **Features**: Phoenix endpoint/router/controller authored in Haxe, JSON responses  
-**Use Case**: Minimal Phoenix web app with typed `@:routes` and controller actions
+**Use Case**: Minimal Phoenix web app with typed module-level router DSL and controller actions
 
 ### 4. [04-ecto-migrations](./04-ecto-migrations/)
 **Difficulty**: Intermediate  
@@ -207,7 +207,7 @@ Notes:
 - `@:liveview` - Generate Phoenix LiveView modules
 - `@:genserver` - Create OTP GenServer modules
 - `@:migration` - Define database migrations (experimental)
-- `@:router` / `@:routes` - Define typed Phoenix routes
+- `@:router` + module-level `routes` - Define typed Phoenix routes
 - `@:query` - Build type-safe Ecto queries
 
 ### Compilation

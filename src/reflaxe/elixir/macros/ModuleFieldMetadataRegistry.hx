@@ -32,6 +32,7 @@ typedef ModuleFieldImportData = {
 class ModuleFieldMetadataRegistry {
 	static var metadataByModulePath:Map<String, Array<MetadataEntry>> = new Map();
 	static var importsByModulePath:Map<String, ModuleFieldImportData> = new Map();
+	static var fieldInitializersByModulePath:Map<String, Map<String, Expr>> = new Map();
 
 	public static function capture(classType:ClassType, fields:Array<Field>):Void {
 		if (classType == null || fields == null)
@@ -41,6 +42,7 @@ class ModuleFieldMetadataRegistry {
 			case KModuleFields(_):
 				captureMetadata(classType, fields);
 				captureImports(classType);
+				captureFieldInitializers(classType, fields);
 			default:
 		}
 	}
@@ -65,6 +67,16 @@ class ModuleFieldMetadataRegistry {
 
 	public static function hasMetadata(classType:ClassType, primaryName:String, alternateName:String):Bool {
 		return extractMetadata(classType, primaryName, alternateName).length > 0;
+	}
+
+	public static function extractFieldInitializer(classType:ClassType, fieldName:String):Null<Expr> {
+		if (classType == null || fieldName == null || fieldName.length == 0)
+			return null;
+
+		var initializers = findFieldInitializers(classType);
+		if (initializers == null)
+			return null;
+		return initializers.get(fieldName);
 	}
 
 	public static function resolveImportedTypePath(classType:ClassType, typePath:String):String {
@@ -130,7 +142,7 @@ class ModuleFieldMetadataRegistry {
 		if (entries.length == 0)
 			return;
 
-		for (key in registryKeys(classType)) {
+		for (key in captureKeys(classType)) {
 			metadataByModulePath.set(key, entries);
 		}
 	}
@@ -167,8 +179,36 @@ class ModuleFieldMetadataRegistry {
 			explicitImports: explicit,
 			wildcardImports: wildcards
 		};
-		for (key in registryKeys(classType)) {
+		for (key in captureKeys(classType)) {
 			importsByModulePath.set(key, data);
+		}
+	}
+
+	static function captureFieldInitializers(classType:ClassType, fields:Array<Field>):Void {
+		var initializers = new Map<String, Expr>();
+		for (field in fields) {
+			if (field == null || field.name == null || field.name.length == 0)
+				continue;
+
+			var initializer:Null<Expr> = switch (field.kind) {
+				case FVar(_, expr):
+					expr;
+				case FProp(_, _, _, expr):
+					expr;
+				default:
+					null;
+			};
+
+			if (initializer == null)
+				continue;
+			initializers.set(field.name, initializer);
+		}
+
+		if (!initializers.iterator().hasNext())
+			return;
+
+		for (key in captureKeys(classType)) {
+			fieldInitializersByModulePath.set(key, initializers);
 		}
 	}
 
@@ -182,7 +222,7 @@ class ModuleFieldMetadataRegistry {
 		return classType.pack.length > 0 ? classType.pack.join(".") + "." + classType.name : classType.name;
 	}
 
-	static function registryKeys(classType:ClassType):Array<String> {
+	static function captureKeys(classType:ClassType):Array<String> {
 		var keys:Array<String> = [];
 		addRegistryKey(keys, resolveClassPath(classType));
 		addRegistryKey(keys, resolveModulePath(classType));
@@ -190,6 +230,30 @@ class ModuleFieldMetadataRegistry {
 			&& classType.module.indexOf(".") == -1) {
 			addRegistryKey(keys, classType.pack.join(".") + "." + classType.module);
 		}
+		return keys;
+	}
+
+	static function lookupKeys(classType:ClassType):Array<String> {
+		var keys:Array<String> = [];
+		// Module-level metadata belongs only to the synthetic KModuleFields carrier type.
+		// Never expose it to regular classes from the same source module.
+		var isModuleFieldCarrier = switch (classType.kind) {
+			case KModuleFields(_):
+				true;
+			default:
+				false;
+		};
+		if (!isModuleFieldCarrier) {
+			return keys;
+		}
+
+		addRegistryKey(keys, resolveClassPath(classType));
+		addRegistryKey(keys, resolveModulePath(classType));
+		if (classType.pack != null && classType.pack.length > 0 && classType.module != null && classType.module.length > 0
+			&& classType.module.indexOf(".") == -1) {
+			addRegistryKey(keys, classType.pack.join(".") + "." + classType.module);
+		}
+
 		return keys;
 	}
 
@@ -201,7 +265,7 @@ class ModuleFieldMetadataRegistry {
 	}
 
 	static function findMetadata(classType:ClassType):Null<Array<MetadataEntry>> {
-		for (key in registryKeys(classType)) {
+		for (key in lookupKeys(classType)) {
 			var entries = metadataByModulePath.get(key);
 			if (entries != null && entries.length > 0)
 				return entries;
@@ -210,10 +274,19 @@ class ModuleFieldMetadataRegistry {
 	}
 
 	static function findImports(classType:ClassType):Null<ModuleFieldImportData> {
-		for (key in registryKeys(classType)) {
+		for (key in lookupKeys(classType)) {
 			var data = importsByModulePath.get(key);
 			if (data != null)
 				return data;
+		}
+		return null;
+	}
+
+	static function findFieldInitializers(classType:ClassType):Null<Map<String, Expr>> {
+		for (key in lookupKeys(classType)) {
+			var initializers = fieldInitializersByModulePath.get(key);
+			if (initializers != null)
+				return initializers;
 		}
 		return null;
 	}

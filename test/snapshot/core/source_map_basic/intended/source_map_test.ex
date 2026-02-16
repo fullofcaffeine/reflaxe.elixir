@@ -2,10 +2,10 @@ defmodule SourceMapTest do
   def new() do
     %{:__reflaxe_class__ => SourceMapTest}
   end
-  def simple_method(_) do
+  def simple_method(_struct) do
     "test"
   end
-  def conditional_method(_, value) do
+  def conditional_method(_struct, value) do
     if (value > 0), do: true, else: false
   end
   def main() do

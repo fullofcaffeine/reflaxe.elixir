@@ -85,8 +85,10 @@ Elixir warns on unused variables and parameters. The idiomatic way to silence th
 Reflaxe.Elixir performs **usage analysis** and automatically prefixes unused binders in the generated Elixir:
 
 - unused local variables → `_var_name = ...`
-- unused parameters → `def f(_arg) do ... end`
-- unused pattern binders → `{:tag, _unused, used} -> ...`
+- unused function/callback parameters → `def f(_arg) do ... end`
+- unused pattern binders:
+  - `case`/`with` throwaway slots prefer wildcard `_` when safe
+  - binders that carry pattern semantics stay named (`_name`)
 
 This means:
 
@@ -110,6 +112,31 @@ _upper_result = ResultTools.map(result, fn s -> String.upcase(s) end)
 
 - `_` is treated as the Elixir wildcard and is preserved as-is.
 - `_name` is treated as an intentionally-unused named variable and is preserved (or generated) as `_name`.
+
+Generated policy for readability + semantics:
+
+- Function/callback parameters use `_name` so signatures stay easy to read.
+- Pattern slots in `case`/`with`/`receive` use `_` when that slot is a pure discard.
+- The compiler keeps `_name` in patterns when wildcarding would change matching behavior (for example repeated binders or alias binders).
+
+Example:
+
+```haxe
+switch (result) {
+  case Ok(value): true;
+  case Error(reason): false;
+}
+```
+
+```elixir
+case result do
+  {:ok, _} -> true
+  {:error, _} -> false
+end
+```
+
+When a named binder is required to keep pattern behavior (for example repeated binders that must match),
+generated code keeps an underscored name such as `{:pair, _x, _x}`.
 
 ### Special case: Phoenix `assigns`
 

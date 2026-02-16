@@ -2,10 +2,10 @@ defmodule DisabledInput do
   def new() do
     %{:__reflaxe_class__ => DisabledInput, :big_endian => nil}
   end
-  def read_byte(_) do
+  def read_byte(_struct) do
     raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
   end
-  def read_bytes(_, _, _, _) do
+  def read_bytes(_struct, _buf, _pos, _len) do
     raise Reflaxe.Elixir.HaxeThrow, [value: Eof.new()]
   end
   def set_big_endian(struct, b) do

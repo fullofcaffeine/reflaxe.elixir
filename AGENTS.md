@@ -376,6 +376,21 @@ Examples
   - `Ok(...)`, `NoReply(...)`, `Error(...)` instead of `MountResult.Ok(...)`, `HandleEventResult.NoReply(...)`, etc.
 - Keep qualification only when needed to avoid ambiguity (for example, both `HandleEventResult` and `HandleInfoResult` constructors in the same scope).
 
+### Phoenix Router DSL Style (Hard Rule)
+
+- Keep router DSL close to Phoenix shape in app/example Haxe code.
+- Prefer `import reflaxe.elixir.macros.RouterDsl.*;` and short node calls (`pipeline(...)`, `scope(...)`, `get(...)`) over `RouterDsl.*` prefixes.
+- Prefer imported short module refs in routes (`UserController`, `TodoLive`) over package-qualified refs (`controllers.UserController`, `server.live.TodoLive`) when unambiguous.
+- Use package-qualified refs only when needed for disambiguation or type resolution.
+- For typed route nodes, prefer Phoenix-mapped options (`asName` -> `as:`) and avoid `name` unless you are intentionally using flat compatibility-route metadata.
+
+### Module-Level Fields Over Empty Classes (Hard Rule)
+
+- For API design and code style, default to module-level fields whenever a class would otherwise be empty (for example, annotation/config containers with no meaningful fields/functions).
+- This keeps user-facing Haxe APIs shorter and clearer, and maps naturally through Haxe’s `KModuleFields` model.
+- Prefer this in docs/examples and new framework DSL surfaces unless a concrete type is required.
+- Keep explicit classes when they are required for behavior, inheritance, interfaces, or user-facing type APIs.
+
 ## 📚 Complete Documentation Index
 
 **All documentation is organized in [`docs/`](docs/) - Always check here first for comprehensive information.**
@@ -3327,6 +3342,10 @@ To maintain high-quality, self-explanatory compiler code, the following rules ar
 - Reader check: after each paragraph, a beginner should be able to answer:
   - "What Haxe code produced this?"
   - "Why is this detail useful to me?"
+- Generated Elixir naming policy (readability + semantics):
+  - Prefer `_name` for unused function/callback parameters so generated signatures stay readable.
+  - Prefer `_` for true throwaway slots in `case`/`with`/`receive` patterns.
+  - Do not collapse to `_` when a named pattern binder carries matching semantics (for example repeated binders or alias binders); keep an underscored named binder in those cases.
 - Abstraction-doc check (skeptical Elixir reader):
   - Show the no-abstraction baseline first ("what would I write without this extra layer?").
   - State one concrete edge for the Haxe+Elixir abstraction (typed safety, less repeated code, or one surface that coordinates multiple concerns).

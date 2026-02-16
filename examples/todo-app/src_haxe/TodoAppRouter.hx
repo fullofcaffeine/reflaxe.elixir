@@ -1,202 +1,81 @@
 package;
 
-import reflaxe.elixir.macros.HttpMethod;
+import controllers.GithubOAuthController;
+import controllers.MockOAuthController;
+import controllers.SessionController;
+import controllers.UserController;
+import reflaxe.elixir.macros.RouterDsl.*;
+import server.live.AdminLive;
+import server.live.AuditLogLive;
+import server.live.AuthLive;
+import server.live.InlineMarkupLive;
+import server.live.OrganizationLive;
+import server.live.ProfileLive;
+import server.live.TodoLive;
+import server.live.UsersLive;
+
+typedef TodoIdPathParams = {
+	var id:Int;
+}
+
+typedef UserIdPathParams = {
+	var id:Int;
+}
 
 /**
- * Type-safe Router DSL example demonstrating enhanced syntax
- * 
- * This example shows how to use HttpMethod enum and class references
- * instead of error-prone string literals for better compile-time safety.
+ * Type-safe Router DSL example demonstrating module-level typed route declarations.
  */
 // @:native: pins emitted naming to a specific Elixir symbol/module.
+
 @:native("TodoAppWeb.Router")
 // @:router: marks this module as a Phoenix router and enables route emission transforms.
 @:router
-// @:build: runs a compile-time macro to generate/augment declarations in this type.
-@:build(reflaxe.elixir.macros.RouterBuildMacro.generateRoutes())
-// @:routes: declares typed route definitions consumed by router build/emit logic.
-@:routes([
-	// Type-safe method using HttpMethod enum
-	{
-		name: "root",
-		method: HttpMethod.LIVE,
-		path: "/",
-		controller: server.live.TodoLive,
-		action: server.live.TodoLive.index
-	},
-	// Optional demo login + profile
-	{
-		name: "login",
-		method: HttpMethod.LIVE,
-		path: "/login",
-		controller: server.live.AuthLive,
-		action: server.live.AuthLive.index
-	},
-	{
-		name: "profile",
-		method: HttpMethod.LIVE,
-		path: "/profile",
-		controller: server.live.ProfileLive,
-		action: server.live.ProfileLive.show
-	},
-	// Organization switcher (multi-tenant showcase UX)
-	{
-		name: "org",
-		method: HttpMethod.LIVE,
-		path: "/org",
-		controller: server.live.OrganizationLive,
-		action: server.live.OrganizationLive.index
-	},
-	{
-		name: "users",
-		method: HttpMethod.LIVE,
-		path: "/users",
-		controller: server.live.UsersLive,
-		action: server.live.UsersLive.index
-	},
-	{
-		name: "admin",
-		method: HttpMethod.LIVE,
-		path: "/admin",
-		controller: server.live.AdminLive,
-		action: server.live.AdminLive.index
-	},
-	{
-		name: "adminAudit",
-		method: HttpMethod.LIVE,
-		path: "/admin/audit",
-		controller: server.live.AuditLogLive,
-		action: server.live.AuditLogLive.index
-	},
-	// Session endpoints (set/clear Plug session)
-	{
-		name: "authLogin",
-		method: HttpMethod.POST,
-		path: "/auth/login",
-		controller: controllers.SessionController,
-		action: controllers.SessionController.create
-	},
-	// Optional GitHub OAuth login (requires env vars; demo login remains available)
-	{
-		name: "authGithub",
-		method: HttpMethod.GET,
-		path: "/auth/github",
-		controller: controllers.GithubOAuthController,
-		action: controllers.GithubOAuthController.github
-	},
-	{
-		name: "authGithubCallback",
-		method: HttpMethod.GET,
-		path: "/auth/github/callback",
-		controller: controllers.GithubOAuthController,
-		action: controllers.GithubOAuthController.github_callback
-	},
-	// Deterministic local OAuth (enabled in e2e only; used by Playwright)
-	{
-		name: "authMock",
-		method: HttpMethod.GET,
-		path: "/auth/mock",
-		controller: controllers.MockOAuthController,
-		action: controllers.MockOAuthController.mock
-	},
-	{
-		name: "authMockCallback",
-		method: HttpMethod.GET,
-		path: "/auth/mock/callback",
-		controller: controllers.MockOAuthController,
-		action: controllers.MockOAuthController.mock_callback
-	},
-	{
-		name: "authLogout",
-		method: HttpMethod.POST,
-		path: "/auth/logout",
-		controller: controllers.SessionController,
-		action: controllers.SessionController.delete
-	},
-	// Standard HTTP methods with enum
-	{
-		name: "todosIndex",
-		method: HttpMethod.LIVE,
-		path: "/todos",
-		controller: server.live.TodoLive,
-		action: server.live.TodoLive.index
-	},
-	{
-		name: "todosShow",
-		method: HttpMethod.LIVE,
-		path: "/todos/:id",
-		controller: server.live.TodoLive,
-		action: server.live.TodoLive.show
-	},
-	{
-		name: "todosEdit",
-		method: HttpMethod.LIVE,
-		path: "/todos/:id/edit",
-		controller: server.live.TodoLive,
-		action: server.live.TodoLive.edit
-	},
+final routes = [
+	pipeline("browser", [
+		plug("accepts", {initArgs: ["html"]}),
+		plug("fetch_session"),
+		plug("fetch_live_flash"),
+		plug("protect_from_forgery"),
+		plug("put_secure_browser_headers")
+	]),
+	pipeline("api", [plug("accepts", {initArgs: ["json"]})]),
+	scope("/", [
+		pipeThrough(["browser"]),
+		// Live routes
+		liveSession("default", [
+			live("/", TodoLive, TodoLive.index),
+			live("/login", AuthLive, AuthLive.index),
+			live("/profile", ProfileLive, ProfileLive.show),
+			live("/org", OrganizationLive, OrganizationLive.index),
+			live("/users", UsersLive, UsersLive.index),
+			live("/admin", AdminLive, AdminLive.index),
+			live("/admin/audit", AuditLogLive, AuditLogLive.index),
+			live("/todos", TodoLive, TodoLive.index),
+			live("/todos/:id", TodoLive, TodoLive.show,
+				{
+					paramsContract: TodoIdPathParams
+				}),
+			live("/todos/:id/edit", TodoLive, TodoLive.edit, {paramsContract: TodoIdPathParams}),
+			live("/dev/inline-markup", InlineMarkupLive, InlineMarkupLive.index)
+		]),
+		// Session/OAuth endpoints
+		post("/auth/login", SessionController, SessionController.create),
+		get("/auth/github", GithubOAuthController, GithubOAuthController.github),
+		get("/auth/github/callback", GithubOAuthController, GithubOAuthController.github_callback),
+		get("/auth/mock", MockOAuthController, MockOAuthController.mock),
+		get("/auth/mock/callback", MockOAuthController, MockOAuthController.mock_callback),
+		post("/auth/logout", SessionController, SessionController.delete),
+		// Dev-only helpers
+		liveDashboard("/dev/dashboard"),
+		mailbox("/dev/mailbox")
+	]),
 	// JSON API endpoints (admin-only; scoped by session org)
-	{
-		name: "apiUsersIndex",
-		method: HttpMethod.GET,
-		path: "/api/users",
-		controller: controllers.UserController,
-		action: controllers.UserController.index
-	},
-	{
-		name: "apiUsersShow",
-		method: HttpMethod.GET,
-		path: "/api/users/:id",
-		controller: controllers.UserController,
-		action: controllers.UserController.show
-	},
-	{
-		name: "apiUsersCreate",
-		method: HttpMethod.POST,
-		path: "/api/users",
-		controller: controllers.UserController,
-		action: controllers.UserController.create
-	},
-	{
-		name: "apiUsersUpdate",
-		method: HttpMethod.PUT,
-		path: "/api/users/:id",
-		controller: controllers.UserController,
-		action: controllers.UserController.update
-	},
-	{
-		name: "apiUsersDelete",
-		method: HttpMethod.DELETE,
-		path: "/api/users/:id",
-		controller: controllers.UserController,
-		action: controllers.UserController.delete
-	},
-	// Inline markup (TSX-like) showcase
-	{
-		name: "inlineMarkup",
-		method: HttpMethod.LIVE,
-		path: "/dev/inline-markup",
-		controller: server.live.InlineMarkupLive,
-		action: server.live.InlineMarkupLive.index
-	},
-	// LiveDashboard + mailbox preview (dev-only)
-	{
-		name: "dashboard",
-		method: HttpMethod.LIVE_DASHBOARD,
-		path: "/dev/dashboard"
-	},
-	{
-		name: "mailbox",
-		method: HttpMethod.MAILBOX,
-		path: "/dev/mailbox"
-	}
-])
-class TodoAppRouter {
-	// Functions auto-generated with type-safe route helpers!
-	//
-	// Generated functions:
-	// public static function root(): String { return "/"; }
-	// public static function todosIndex(): String { return "/todos"; }
-	// public static function apiTodos(): String { return "/api/todos"; }
-	// etc.
-}
+	scope("/api", [
+		pipeThrough(["api"]),
+		get("/users", UserController, UserController.index),
+		get("/users/:id", UserController, UserController.show, {paramsContract: UserIdPathParams}),
+		post("/users", UserController, UserController.create),
+		put("/users/:id", UserController, UserController.update, {paramsContract: UserIdPathParams}),
+		delete("/users/:id", UserController, UserController.delete, {paramsContract: UserIdPathParams})
+	])
+];

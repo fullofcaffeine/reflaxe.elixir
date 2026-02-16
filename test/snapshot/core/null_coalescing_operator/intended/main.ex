@@ -84,10 +84,10 @@ end))), do: tmp, else: "default"
   defp get_data() do
     %{:title => nil, :description => "Has value", :active => nil}
   end
-  defp do_something(_) do
+  defp do_something(_value) do
     
   end
-  defp do_multiple(_, _) do
+  defp do_multiple(_a, _b) do
     
   end
   defp get_optional() do

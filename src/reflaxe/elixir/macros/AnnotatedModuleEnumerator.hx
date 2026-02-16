@@ -72,6 +72,7 @@ class AnnotatedModuleEnumerator {
 
 		final fields = Context.getBuildFields();
 		ModuleFieldMetadataRegistry.capture(cls, fields);
+		neutralizeModuleLevelRoutesFieldInitializer(cls, fields);
 		final isSchema = meta.has(":schema");
 		final isLiveView = meta.has(":liveview");
 
@@ -170,6 +171,38 @@ class AnnotatedModuleEnumerator {
 		return fields;
 		#end
 		return null;
+	}
+
+	static function neutralizeModuleLevelRoutesFieldInitializer(cls:haxe.macro.Type.ClassType, fields:Array<Field>):Void {
+		if (fields == null || cls == null)
+			return;
+
+		var isModuleFields = switch (cls.kind) {
+			case KModuleFields(_):
+				true;
+			default:
+				false;
+		};
+		if (!isModuleFields)
+			return;
+
+		var classHasRouterMeta = cls.meta != null && cls.meta.has(":router");
+		for (field in fields) {
+			if (field == null || field.name != "routes")
+				continue;
+
+			var fieldHasRouterMeta = fieldMetaHas(field.meta, ":router") || fieldMetaHas(field.meta, "router");
+			if (!classHasRouterMeta && !fieldHasRouterMeta)
+				continue;
+
+			switch (field.kind) {
+				case FVar(fieldType, _):
+					field.kind = FVar(fieldType, macro null);
+				case FProp(get, set, fieldType, _):
+					field.kind = FProp(get, set, fieldType, macro null);
+				default:
+			}
+		}
 	}
 
 	static function registerLiveViewEvents(cls:haxe.macro.Type.ClassType, fields:Array<Field>):Void {

@@ -8,7 +8,7 @@ defmodule Main do
   defp test_changeset_pattern() do
     
   end
-  defp process_data(_, data) do
+  defp process_data(_unused, data) do
     data * 2
   end
   defp test_pattern_matching_unused() do

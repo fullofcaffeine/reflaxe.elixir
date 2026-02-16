@@ -138,7 +138,7 @@ defmodule StringUtils do
       result = ""
       _g = 0
       g_value = repeat_count
-      result = Enum.reduce(0..(g_value - 1)//1, result, fn _, result_acc -> result_acc <> "*" end)
+      result = Enum.reduce(0..(g_value - 1)//1, result, fn _i, result_acc -> result_acc <> "*" end)
       result
     else
       visible = String.slice(text, 0, visible_chars)
@@ -146,7 +146,7 @@ defmodule StringUtils do
       masked = ""
       _g = 0
       g_value = masked_count
-      masked = Enum.reduce(0..(g_value - 1)//1, masked, fn _, masked_acc -> masked_acc <> "*" end)
+      masked = Enum.reduce(0..(g_value - 1)//1, masked, fn _i, masked_acc -> masked_acc <> "*" end)
       "#{visible}#{masked}"
     end
   end

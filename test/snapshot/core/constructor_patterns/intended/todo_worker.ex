@@ -4,7 +4,7 @@ defmodule TodoWorker do
     struct = %{struct | state: initial_state}
     struct
   end
-  def handle_call(_, _, _, state_param) do
+  def handle_call(_struct, _msg, _from, state_param) do
     state_param
   end
 end

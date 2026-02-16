@@ -80,18 +80,18 @@ class UserController {
 }
 ```
 
-`@:controller` defines controller modules and actions. Route wiring is usually done in a `@:router` module via `@:routes(...)`.
+`@:controller` defines controller modules and actions. Route wiring is usually done in a `@:router` declaration with module-level `final routes = [...]`.
 
-`@:route(...)` still exists for legacy/manual router patterns (see below), but new code should prefer `@:routes`.
+`@:route(...)` still exists for legacy/manual router patterns (see below), but new code should prefer module-level typed route nodes.
 
 ### @:router - Phoenix Router Configuration
 
 Marks a class as a Phoenix router for request routing.
 
-**Recommended Usage (`@:routes` + static-imported router nodes)**:
+**Recommended Usage (module-level `final routes` + static-imported router nodes)**:
 ```haxe
-import reflaxe.elixir.macros.HttpMethod;
 import reflaxe.elixir.macros.RouterDsl.*;
+import controllers.UserController;
 
 typedef UserPathParams = {
   var id:Int;
@@ -99,19 +99,18 @@ typedef UserPathParams = {
 
 @:native("MyAppWeb.Router")
 @:router
-@:routes([
+final routes = [
   pipeline("browser", [
     plug("accepts", {initArgs: ["html"]}),
     plug("fetch_session")
   ]),
   scope("/", [
     pipeThrough(["browser"]),
-    get("/users/:id", controllers.UserController, controllers.UserController.show, {
+    get("/users/:id", UserController, UserController.show, {
       paramsContract: UserPathParams
     })
   ])
-])
-class AppRouter {}
+];
 ```
 
 **Legacy Manual Usage (`@:route`)**:
@@ -125,7 +124,8 @@ class LegacyRouter {
 }
 ```
 
-Use `@:routes` for new code. Static-imported router nodes map directly to Phoenix router nesting and enable extra compile-time checks.
+Use module-level `final routes = [...]` for new code. Static-imported router nodes map directly to Phoenix router nesting and enable extra compile-time checks.
+Use `@:routes` as a compatibility surface when migrating existing code.
 Use `@:route` only for manual/legacy router glue where string literals are acceptable.
 
 `@:routes` controller string literals (`controller: "..."`) now emit warnings by default.
@@ -1569,7 +1569,7 @@ class StringUtils {
 
 Runs a build macro for the annotated type.
 
-Common Phoenix router pattern:
+Compatibility Phoenix router pattern (legacy helper generation):
 
 ```haxe
 @:router
@@ -1578,7 +1578,8 @@ Common Phoenix router pattern:
 class AppRouter {}
 ```
 
-Use only for deterministic codegen/setup tasks.
+For new routers, prefer module-level `final routes = [...]` instead of requiring a build macro.
+Use `@:build` only for deterministic codegen/setup tasks.
 
 ### @:field / @:primary_key / @:timestamps / @:virtual
 
@@ -1711,9 +1712,10 @@ Optional presence helper metadata to provide a default topic for presence operat
 
 ### Router Metadata Cross-Reference
 
-`@:routes` and `@:route` are both supported and documented in detail in `docs/04-api-reference/ROUTER_DSL.md`.
+Module-level `final routes = [...]`, `@:routes`, and `@:route` are documented in detail in `docs/04-api-reference/ROUTER_DSL.md`.
 
-- Prefer `@:routes` for typed modern router declarations.
+- Prefer module-level `final routes = [...]` for typed modern router declarations.
+- Use `@:routes` for compatibility during migration of existing routers.
 - Use `@:route` for manual/backward-compatible route metadata patterns (function-by-function route declarations, often with string controller/action literals).
 
 ### Related Reference Pages

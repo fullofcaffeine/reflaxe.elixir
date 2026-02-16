@@ -11,10 +11,10 @@ defmodule SourceMapValidationTest do
     _ = apply(Map.get(instance, :__reflaxe_class__) || Map.get(instance, :__struct__), :do_something, [instance])
     nil
   end
-  defp test_function(_, _) do
+  defp test_function(_str, _num) do
     nil
   end
-  defp process_item(_) do
+  defp process_item(_item) do
     nil
   end
 end

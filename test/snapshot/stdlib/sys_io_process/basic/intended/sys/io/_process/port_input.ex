@@ -15,7 +15,7 @@ defmodule PortInput do
     reflaxe_dispatch_receiver = struct.buffer
     _ = apply(Map.get(reflaxe_dispatch_receiver, :__reflaxe_class__) || Map.get(reflaxe_dispatch_receiver, :__struct__), :get, [reflaxe_dispatch_receiver, struct.buffer_offset])
   end
-  def read_all(struct, _) do
+  def read_all(struct, _bufsize) do
     data = (
             port = struct.port
             chunks = Enum.reduce_while(Stream.repeatedly(fn -> :ok end), [], fn _, acc ->
@@ -30,7 +30,7 @@ defmodule PortInput do
         )
     _ = Bytes.of_data(data)
   end
-  def read_bytes(_, buf, pos, len) do
+  def read_bytes(_struct, buf, pos, len) do
     if (pos < 0 or len < 0 or pos + len > buf.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: {:outside_bounds}]
     end

@@ -5,10 +5,10 @@ defmodule PropertySetterTest do
     _ = set_name(struct, "")
     struct
   end
-  def set_value(_, v) do
+  def set_value(_struct, v) do
     v
   end
-  def set_name(_, n) do
+  def set_name(_struct, n) do
     n
   end
 end

@@ -134,7 +134,7 @@ end)
       if (n > 3), do: n * 10, else: n + 100
     end)
     _has_even = Lambda.exists(numbers, fn n -> rem(n, 2) == 0 end)
-    _ = Lambda.iter(numbers, fn _ -> nil end)
+    _ = Lambda.iter(numbers, fn _n -> nil end)
     _found = Lambda.find(numbers, fn n -> n > 3 end)
     _count_evens = Lambda.count(numbers, fn n -> rem(n, 2) == 0 end)
     nil

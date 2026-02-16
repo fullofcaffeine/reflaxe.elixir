@@ -2,13 +2,13 @@ defmodule TestObject do
   def new() do
     %{:__reflaxe_class__ => TestObject}
   end
-  def get_name(_) do
+  def get_name(_struct) do
     "TestName"
   end
-  def get_value(_) do
+  def get_value(_struct) do
     42
   end
-  def process(_) do
+  def process(_struct) do
     "processed"
   end
 end

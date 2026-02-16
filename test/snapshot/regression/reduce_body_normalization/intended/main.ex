@@ -1,8 +1,8 @@
 defmodule Main do
   def main() do
     tags = ["a", "b", "c"]
-    _out = Enum.reduce(tags, [], fn _, acc ->
-      _head = Enum.at(tags, 0)
+    _out = Enum.reduce(tags, [], fn tag, acc ->
+      _head = tag
       acc
     end)
     nil

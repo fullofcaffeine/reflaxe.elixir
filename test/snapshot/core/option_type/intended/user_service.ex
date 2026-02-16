@@ -36,7 +36,7 @@ end) do
   def notify_user(name, message) do
     OptionTools.unwrap(OptionTools.map(get_user_email(name), fn email -> send_email(email, message) end), false)
   end
-  defp send_email(_, _) do
+  defp send_email(_email, _message) do
     true
   end
 end

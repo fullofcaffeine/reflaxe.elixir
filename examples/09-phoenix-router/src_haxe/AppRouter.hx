@@ -1,106 +1,58 @@
 package;
 
-import reflaxe.elixir.macros.HttpMethod;
+import controllers.ProductController;
+import controllers.UserController;
+import reflaxe.elixir.macros.RouterDsl.*;
+
+typedef UserIdPathParams = {
+	var id:Int;
+}
+
+typedef ProductIdPathParams = {
+	var id:Int;
+}
+
+typedef ProductReviewPathParams = {
+	var product_id:Int;
+}
 
 /**
  * Main Phoenix router configuration
- * Demonstrates modern @:routes DSL with typed controller/action references.
+ * Demonstrates module-level typed router DSL with typed controller/action references.
  */
 // @:native: pins emitted naming to a specific Elixir symbol/module.
+
 @:native("PhoenixRouterWeb.Router")
 // @:router: marks this module as a Phoenix router and enables route emission transforms.
 @:router
-// @:build: runs a compile-time macro to generate/augment declarations in this type.
-@:build(reflaxe.elixir.macros.RouterBuildMacro.generateRoutes())
-// @:routes: declares typed route definitions consumed by router build/emit logic.
-@:routes([
-	{
-		name: "usersIndex",
-		method: HttpMethod.GET,
-		path: "/users",
-		controller: controllers.UserController,
-		action: controllers.UserController.index
-	},
-	{
-		name: "usersShow",
-		method: HttpMethod.GET,
-		path: "/users/:id",
-		controller: controllers.UserController,
-		action: controllers.UserController.show
-	},
-	{
-		name: "usersCreate",
-		method: HttpMethod.POST,
-		path: "/users",
-		controller: controllers.UserController,
-		action: controllers.UserController.create
-	},
-	{
-		name: "usersUpdate",
-		method: HttpMethod.PUT,
-		path: "/users/:id",
-		controller: controllers.UserController,
-		action: controllers.UserController.update
-	},
-	{
-		name: "usersDelete",
-		method: HttpMethod.DELETE,
-		path: "/users/:id",
-		controller: controllers.UserController,
-		action: controllers.UserController.delete
-	},
-	{
-		name: "productsIndex",
-		method: HttpMethod.GET,
-		path: "/products",
-		controller: controllers.ProductController,
-		action: controllers.ProductController.index
-	},
-	{
-		name: "productsShow",
-		method: HttpMethod.GET,
-		path: "/products/:id",
-		controller: controllers.ProductController,
-		action: controllers.ProductController.show
-	},
-	{
-		name: "productsCreate",
-		method: HttpMethod.POST,
-		path: "/products",
-		controller: controllers.ProductController,
-		action: controllers.ProductController.create
-	},
-	{
-		name: "productsUpdate",
-		method: HttpMethod.PUT,
-		path: "/products/:id",
-		controller: controllers.ProductController,
-		action: controllers.ProductController.update
-	},
-	{
-		name: "productsDelete",
-		method: HttpMethod.DELETE,
-		path: "/products/:id",
-		controller: controllers.ProductController,
-		action: controllers.ProductController.delete
-	},
-	{
-		name: "productReviews",
-		method: HttpMethod.GET,
-		path: "/products/:product_id/reviews",
-		controller: controllers.ProductController,
-		action: controllers.ProductController.reviews
-	},
-	{
-		name: "productReviewsCreate",
-		method: HttpMethod.POST,
-		path: "/products/:product_id/reviews",
-		controller: controllers.ProductController,
-		action: controllers.ProductController.create_review
-	}
-])
+final routes = [
+	pipeline("browser", [plug("accepts", {initArgs: ["html"]}), plug("fetch_session")]),
+	scope("/", [
+		pipeThrough(["browser"]),
+		get("/users", UserController, UserController.index),
+		get("/users/:id", UserController, UserController.show,
+			{
+				paramsContract: UserIdPathParams
+			}),
+		post("/users", UserController, UserController.create),
+		put("/users/:id", UserController, UserController.update, {paramsContract: UserIdPathParams}),
+		delete("/users/:id", UserController, UserController.delete, {paramsContract: UserIdPathParams}),
+		get("/products", ProductController, ProductController.index),
+		get("/products/:id", ProductController, ProductController.show, {paramsContract: ProductIdPathParams}),
+		post("/products", ProductController, ProductController.create),
+		put("/products/:id", ProductController, ProductController.update, {paramsContract: ProductIdPathParams}),
+		delete("/products/:id", ProductController, ProductController.delete, {paramsContract: ProductIdPathParams}),
+		get("/products/:product_id/reviews", ProductController, ProductController.reviews, {
+			paramsContract: ProductReviewPathParams
+		}),
+		post("/products/:product_id/reviews", ProductController, ProductController.create_review, {
+			paramsContract: ProductReviewPathParams
+		})
+	])
+];
+
 class AppRouter {
 	public static function main():Void {
-		trace("Phoenix Router DSL Example - App Router (typed @:routes)");
+		trace("Phoenix Router DSL Example - App Router (typed routes)");
 	}
 }

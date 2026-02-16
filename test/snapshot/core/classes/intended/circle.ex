@@ -12,7 +12,7 @@ defmodule Circle do
   def update(struct, dt) do
     apply(Map.get(struct, :__reflaxe_class__) || Map.get(struct, :__struct__), :move, [struct, struct.velocity.x * dt, struct.velocity.y * dt])
   end
-  def set_velocity(_, vx, vy) do
+  def set_velocity(_struct, vx, vy) do
     _x = vx
     y = vy
     y

@@ -1,6 +1,6 @@
 defmodule ApplicationSupervisor do
   use Supervisor
-  def init(_, _) do
+  def init(_struct, _args) do
     children = [Worker.child_spec(%{}), DatabaseConnection.child_spec(%{:port => 5432})]
     opts = [strategy: :one_for_one, max_restarts: 3, max_seconds: 5]
     {:ok, {opts, children}}

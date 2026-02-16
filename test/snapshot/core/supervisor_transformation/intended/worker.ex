@@ -1,5 +1,5 @@
 defmodule Worker do
-  def start_link(_) do
+  def start_link(_args) do
     {:ok, self()}
   end
   def child_spec(args) do

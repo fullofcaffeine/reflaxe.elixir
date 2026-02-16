@@ -23,7 +23,7 @@ defmodule Main do
     end)
   end
   def get_value_or_default(result) do
-    ResultTools.fold(result, fn value -> value end, fn _ -> -1 end)
+    ResultTools.fold(result, fn value -> value end, fn _error -> -1 end)
   end
   def test_extension_methods() do
     result = {:ok, "hello"}

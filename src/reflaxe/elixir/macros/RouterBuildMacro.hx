@@ -262,6 +262,24 @@ class RouterBuildMacro {
 	 * - controllers.UserController
 	 * - server.live.TodoLive
 	 */
+	private static function resolveTypePathFromExpr(expr:Expr, fallbackPath:String):String {
+		try {
+			var resolvedType = Context.typeof(expr);
+			return switch (resolvedType) {
+				case TInst(classRef, _):
+					var classType = classRef.get();
+					classType.pack.length > 0 ? classType.pack.join(".") + "." + classType.name : classType.name;
+				case TType(typeRef, _):
+					var typedefType = typeRef.get();
+					typedefType.pack.length > 0 ? typedefType.pack.join(".") + "." + typedefType.name : typedefType.name;
+				default:
+					fallbackPath;
+			};
+		} catch (_:Dynamic) {
+			return fallbackPath;
+		}
+	}
+
 	private static function extractControllerValue(expr:Expr):String {
 		return switch (expr.expr) {
 			case EConst(CString(s, _)):
@@ -272,7 +290,7 @@ class RouterBuildMacro {
 					Context.error('controller must be a string literal or type reference (e.g. controllers.UserController)', expr.pos);
 					null;
 				} else {
-					path;
+					resolveTypePathFromExpr(expr, path);
 				}
 		};
 	}

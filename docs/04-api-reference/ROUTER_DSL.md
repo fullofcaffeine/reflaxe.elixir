@@ -1,24 +1,23 @@
-# Router DSL (`@:routes` / `@:route`)
+# Router DSL (`final routes` / `@:routes` / `@:route`)
 
 ## Summary
 
-Use `@:routes` on a `@:router` module for new code.
+Use module-level `final routes = [...]` on a `@:router` declaration for new code.
 
-Inside `@:routes([...])` you can use:
+Router declarations support:
 
 1. **Typed tree nodes** from `RouterDsl.*` static imports (recommended)
 2. **Flat route objects** `{name, method, path, ...}` (compatibility mode)
 
 `@:route(...)` on controller functions is still supported for legacy/manual routing.
 
-## Recommended: Typed router nodes (without `RouterDsl.` prefix)
+## Recommended: Module-Level `final routes` with typed router nodes
 
 Why this section exists: Phoenix routers are nested (`pipeline`, `scope`, `live_session`). Static-imported router node builders let your Haxe source express that structure directly.
 
 ### Haxe input
 
 ```haxe
-import reflaxe.elixir.macros.HttpMethod;
 import reflaxe.elixir.macros.RouterDsl.*;
 
 typedef UserPathParams = {
@@ -35,7 +34,7 @@ class UserController {
 
 @:native("MyAppWeb.Router")
 @:router
-@:routes([
+final routes = [
   pipeline("browser", [
     plug("accepts", {initArgs: ["html"]}),
     plug("fetch_session")
@@ -49,8 +48,7 @@ class UserController {
       })
     ])
   ])
-])
-class MyAppRouter {}
+];
 ```
 
 ### Generated Elixir shape
@@ -86,7 +84,7 @@ For typed router nodes, the compiler validates:
 - Action references exist on the target module.
 - Routes with path params (`:id`, `*rest`) include `paramsContract`.
 - `paramsContract` contains fields for those path params (snake_case-normalized).
-- Controller/live/action refs should use resolvable type paths (for example `controllers.UserController`, and `Main.UserController` in single-file test modules).
+- Controller/live/action refs should resolve as types (for example `UserController` via import, or `Main.UserController` in single-file test modules).
 
 Example of a rejected route:
 
@@ -114,6 +112,14 @@ This fails because `paramsContract` is required when path params are present.
   - `liveDashboard(path, ?opts)`
   - `mailbox(path, ?opts)`
 
+## Route option parity
+
+- Typed route-node options are Phoenix-shaped:
+  - `asName` maps to Phoenix `as:`
+  - `paramsContract` is a compiler-only type check for path params
+- Leave `asName` unset to keep Phoenix default helper-name inference.
+- `name` is for flat compatibility-route metadata and is not a Phoenix route keyword.
+
 ## Supported `HttpMethod` values
 
 Prefer `reflaxe.elixir.macros.HttpMethod`:
@@ -132,20 +138,25 @@ Prefer `reflaxe.elixir.macros.HttpMethod`:
 - `LIVE_DASHBOARD`
 - `MAILBOX`
 
-## Compatibility: flat `@:routes` objects
+## Compatibility: `@:routes([...])`
 
-Flat objects remain supported and are useful for migration:
+`@:routes([...])` remains supported for existing routers and migration work.
 
 ```haxe
+import controllers.UserController;
+import reflaxe.elixir.macros.HttpMethod;
+
+@:router
 @:routes([
   {
     name: "usersIndex",
     method: HttpMethod.GET,
     path: "/users",
-    controller: controllers.UserController,
-    action: controllers.UserController.index
+    controller: UserController,
+    action: UserController.index
   }
 ])
+class LegacyRouter {}
 ```
 
 String controller refs in flat `@:routes` objects are compatibility-only:
@@ -167,7 +178,7 @@ class LegacyRouter {
 }
 ```
 
-For new routers, prefer `@:routes` with static-imported router nodes.
+For new routers, prefer module-level `final routes = [...]`.
 
 ## References
 

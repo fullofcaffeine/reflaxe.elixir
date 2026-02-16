@@ -58,6 +58,11 @@ typedef FrameworkNamingResult = {
 	var outputPath:Null<String>;
 }
 
+typedef RouterRoutesSource = {
+	var expr:Expr;
+	var source:String;
+}
+
 /**
  * Reflaxe.Elixir compiler for generating idiomatic Elixir code from Haxe.
  * 
@@ -1743,9 +1748,24 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		// --------------------------------------------------------------------
 		if (varFields != null) {
 			var staticVars:Array<{name:String, init:reflaxe.elixir.ast.ElixirAST}> = [];
+			var isRouterModule = hasClassOrStaticMetadata(classType, ":router", "router");
+			var isRouterModuleFieldCarrier = isRouterModule && switch (classType.kind) {
+				case KModuleFields(_):
+					true;
+				default:
+					false;
+			};
 
 			for (varData in varFields) {
 				if (!varData.isStatic)
+					continue;
+				// Module-level router declarations use static fields as compile-time configuration only.
+				// Do not emit runtime static accessors for synthetic KModuleFields router carriers.
+				if (isRouterModuleFieldCarrier)
+					continue;
+				// Module-level `final routes = [...]` is router configuration input and should not
+				// emit runtime static accessor functions in generated router modules.
+				if (isRouterModule && varData.field.name == "routes")
 					continue;
 
 				var elixirName = reflaxe.elixir.ast.NameUtils.toSnakeCase(varData.field.name);
@@ -3665,7 +3685,10 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 	}
 
 	/**
-	 * Extract router route definitions from @:routes metadata for @:router modules.
+	 * Extract router route definitions for @:router modules.
+	 *
+	 * Preferred source: module-level `final routes = [...]`
+	 * Compatibility source: `@:routes([...])`
 	 */
 	private function collectClassAndStaticMetadata(classType:ClassType, primaryName:String, alternateName:String):Array<MetadataEntry> {
 		var entries:Array<MetadataEntry> = [];
@@ -3886,18 +3909,58 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 		return typePath;
 	}
 
-	private function extractRouterRoutesFromMeta(classType:ClassType):Null<Array<RouterRouteMeta>> {
-		var routesMeta = collectClassAndStaticMetadata(classType, ":routes", "routes");
-
-		if (routesMeta == null || routesMeta.length == 0) {
+	private function extractRoutesFieldExpr(classType:ClassType):Null<Expr> {
+		if (classType == null)
 			return null;
-		}
+		return ModuleFieldMetadataRegistry.extractFieldInitializer(classType, "routes");
+	}
+
+	private function extractRoutesMetaExpr(classType:ClassType):Null<Expr> {
+		var routesMeta = collectClassAndStaticMetadata(classType, ":routes", "routes");
+		if (routesMeta == null || routesMeta.length == 0)
+			return null;
 
 		var entry = routesMeta[0];
 		if (entry.params == null || entry.params.length == 0) {
-			Context.error("@:routes annotation requires an array parameter: @:routes([{...}])", entry.pos);
+			Context.error("@:routes annotation requires an array parameter: @:routes([...])", entry.pos);
 			return null;
 		}
+
+		return entry.params[0];
+	}
+
+	private function resolveRouterRoutesSource(classType:ClassType):Null<RouterRoutesSource> {
+		var routesFieldExpr = extractRoutesFieldExpr(classType);
+		var routesMetaExpr = extractRoutesMetaExpr(classType);
+
+		if (routesFieldExpr != null && routesMetaExpr != null) {
+			Context.warning('Both module-level `final routes = [...]` and `@:routes([...])` were found for router declaration. '
+				+ 'Using module-level `routes` and ignoring `@:routes`.',
+				routesFieldExpr.pos);
+		}
+
+		if (routesFieldExpr != null) {
+			return {
+				expr: routesFieldExpr,
+				source: "module-level routes field"
+			};
+		}
+
+		if (routesMetaExpr != null) {
+			return {
+				expr: routesMetaExpr,
+				source: "@:routes annotation"
+			};
+		}
+
+		return null;
+	}
+
+	private function extractRouterRoutesFromMeta(classType:ClassType):Null<Array<RouterRouteMeta>> {
+		var routesSource = resolveRouterRoutesSource(classType);
+		if (routesSource == null)
+			return null;
+		var routesExpr = routesSource.expr;
 
 		var strictTypedRouteControllerRefs = Context.defined("router_strict_typed_refs");
 
@@ -3975,7 +4038,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 
 		function emitLegacyControllerLiteralDiagnostic(routeName:Null<String>, pos:haxe.macro.Expr.Position):Void {
 			var resolvedRouteName = (routeName != null && routeName != "") ? routeName : "<unnamed>";
-			var recommendation = 'Route "${resolvedRouteName}" in @:routes uses a legacy string literal for controller. Prefer a typed controller reference (for example controllers.UserController).';
+			var recommendation = 'Route "${resolvedRouteName}" uses a legacy string literal for controller. Prefer a typed controller reference (for example controllers.UserController).';
 			if (strictTypedRouteControllerRefs) {
 				Context.error(recommendation + " Use @:route for intentionally legacy/manual string routing.", pos);
 			} else {
@@ -4050,13 +4113,12 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 							// Typed RouterDsl nodes are handled by extractRouterDslNodesFromMeta().
 							null;
 						default:
-							Context.error("Each route in @:routes must be an object: {name: ..., method: ..., path: ...}", routeExpr.pos);
+							Context.error("Each route entry must be an object: {name: ..., method: ..., path: ...}", routeExpr.pos);
 							null;
 					}
 			}
 		}
 
-		var routesExpr = entry.params[0];
 		return switch (routesExpr.expr) {
 			case EArrayDecl(values):
 				var routes:Array<RouterRouteMeta> = [];
@@ -4067,36 +4129,29 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				}
 				routes.length > 0 ? routes : null;
 			default:
-				Context.error("@:routes parameter must be an array: @:routes([{...}])", routesExpr.pos);
+				Context.error('Router routes from ${routesSource.source} must be an array: final routes = [...]', routesExpr.pos);
 				null;
 		};
 	}
 
 	/**
-	 * Extract typed/nested router DSL nodes from @:routes metadata.
+	 * Extract typed/nested router DSL nodes from router route declarations.
 	 *
 	 * Supports:
 	 * - legacy flat object routes (`{name, method, path, ...}`)
 	 * - typed builder nodes (`RouterDsl.scope(...)`, `RouterDsl.get(...)`, ...)
 	 */
 	private function extractRouterDslNodesFromMeta(classType:ClassType):Null<Array<RouterNodeMeta>> {
-		var routesMeta = collectClassAndStaticMetadata(classType, ":routes", "routes");
-
-		if (routesMeta == null || routesMeta.length == 0) {
+		var routesSource = resolveRouterRoutesSource(classType);
+		if (routesSource == null)
 			return null;
-		}
 
-		var entry = routesMeta[0];
-		if (entry.params == null || entry.params.length == 0) {
-			Context.error("@:routes annotation requires an array parameter: @:routes([...])", entry.pos);
-			return null;
-		}
-		var routesExpr = entry.params[0];
+		var routesExpr = routesSource.expr;
 		var routeValues:Array<Expr> = switch (routesExpr.expr) {
 			case EArrayDecl(values):
 				values;
 			default:
-				Context.error("@:routes parameter must be an array: @:routes([...])", routesExpr.pos);
+				Context.error('Router routes from ${routesSource.source} must be an array: final routes = [...]', routesExpr.pos);
 				return null;
 		};
 		var containsTypedDslCalls = false;
@@ -4208,7 +4263,27 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			}
 		}
 
-		function extractTypeRef(expr:Expr, fieldName:String, pos:haxe.macro.Expr.Position, allowStringLiteral:Bool):Null<String> {
+		function stripLocalModulePrefix(path:String):String {
+			if (path == null || path.length == 0)
+				return path;
+
+			var modulePath = classType.module;
+			if (modulePath != null && modulePath.length > 0 && StringTools.startsWith(path, modulePath + ".")) {
+				return path.substr(modulePath.length + 1);
+			}
+
+			if (classType.pack != null && classType.pack.length > 0 && modulePath != null && modulePath.length > 0 && modulePath.indexOf(".") == -1) {
+				var qualifiedModulePath = classType.pack.join(".") + "." + modulePath;
+				if (StringTools.startsWith(path, qualifiedModulePath + ".")) {
+					return path.substr(qualifiedModulePath.length + 1);
+				}
+			}
+
+			return path;
+		}
+
+		function extractTypeRef(expr:Expr, fieldName:String, pos:haxe.macro.Expr.Position, allowStringLiteral:Bool,
+				normalizeForRouterOutput:Bool):Null<String> {
 			return switch (expr.expr) {
 				case EConst(CString(s, _)):
 					if (allowStringLiteral) {
@@ -4229,7 +4304,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 						} catch (_:Dynamic) {
 							Context.error('Could not resolve ${fieldName} type: ${resolvedPath}', pos);
 						}
-						resolvedPath;
+						normalizeForRouterOutput ? stripLocalModulePrefix(resolvedPath) : resolvedPath;
 					}
 			};
 		}
@@ -4299,7 +4374,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 						var normalizedKey = normalizeOptionKey(field.field);
 						var parsedValue = switch (normalizedKey) {
 							case "params_contract", "alias", "mailbox_module", "metrics_module":
-								var path = extractTypeRef(field.expr, field.field, field.expr.pos, false);
+								var normalizeForRouterOutput = normalizedKey != "params_contract";
+								var path = extractTypeRef(field.expr, field.field, field.expr.pos, false, normalizeForRouterOutput);
 								path != null ? ROVar(path) : parseOptionValue(field.expr);
 							default:
 								parseOptionValue(field.expr);
@@ -4519,7 +4595,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 					}
 
 					if (controllerWasStringLiteral && controller != null && controller != "") {
-						var recommendation = 'Route "${name}" in @:routes uses a legacy string literal for controller. Prefer a typed controller reference (for example controllers.UserController).';
+						var recommendation = 'Route "${name}" uses a legacy string literal for controller. Prefer a typed controller reference (for example controllers.UserController).';
 						if (strictTypedRouteControllerRefs) {
 							Context.error(recommendation + " Use @:route for intentionally legacy/manual string routing.", controllerPos);
 						} else {
@@ -4682,13 +4758,14 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 								Context.error('RouterDsl.${name}(path, controller, action, ?opts) requires at least three arguments', nodeExpr.pos);
 							}
 							var routePath = extractStringValue(args[0], "route path", nodeExpr.pos);
-							var controllerPath = extractTypeRef(args[1], "controller/live module", nodeExpr.pos, false);
+							var controllerTypePath = extractTypeRef(args[1], "controller/live module", nodeExpr.pos, false, false);
+							var controllerPath = controllerTypePath != null ? stripLocalModulePrefix(controllerTypePath) : null;
 							var actionName = extractActionRef(args[2], "action", nodeExpr.pos, false);
 							var routeOpts = args.length > 3 ? parseOptionsExpr(args[3]) : [];
 
 							validatePathParamsContract(routePath, routeOpts, nodeExpr.pos);
-							if (controllerPath != null && actionName != null) {
-								validateActionExists(controllerPath, actionName, nodeExpr.pos);
+							if (controllerTypePath != null && actionName != null) {
+								validateActionExists(controllerTypePath, actionName, nodeExpr.pos);
 							}
 
 							{
@@ -4706,12 +4783,13 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 							}
 							var verb = extractMethodValue(args[0], "verb", nodeExpr.pos);
 							var matchPath = extractStringValue(args[1], "route path", nodeExpr.pos);
-							var matchController = extractTypeRef(args[2], "controller", nodeExpr.pos, false);
+							var matchControllerTypePath = extractTypeRef(args[2], "controller", nodeExpr.pos, false, false);
+							var matchController = matchControllerTypePath != null ? stripLocalModulePrefix(matchControllerTypePath) : null;
 							var matchAction = extractActionRef(args[3], "action", nodeExpr.pos, false);
 							var matchOpts = args.length > 4 ? parseOptionsExpr(args[4]) : [];
 							validatePathParamsContract(matchPath, matchOpts, nodeExpr.pos);
-							if (matchController != null && matchAction != null) {
-								validateActionExists(matchController, matchAction, nodeExpr.pos);
+							if (matchControllerTypePath != null && matchAction != null) {
+								validateActionExists(matchControllerTypePath, matchAction, nodeExpr.pos);
 							}
 							{
 								kind: "match",
@@ -4727,7 +4805,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 								Context.error('RouterDsl.forward(path, moduleRef, ?opts) requires at least two arguments', nodeExpr.pos);
 							}
 							var forwardPath = extractStringValue(args[0], "forward path", nodeExpr.pos);
-							var moduleRef = extractTypeRef(args[1], "forward module", nodeExpr.pos, false);
+							var forwardModuleTypePath = extractTypeRef(args[1], "forward module", nodeExpr.pos, false, false);
+							var moduleRef = forwardModuleTypePath != null ? stripLocalModulePrefix(forwardModuleTypePath) : null;
 							var forwardOpts = args.length > 2 ? parseOptionsExpr(args[2]) : [];
 							{
 								kind: "forward",
@@ -4741,7 +4820,8 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 								Context.error('RouterDsl.${name}(path, controller, ?opts) requires at least two arguments', nodeExpr.pos);
 							}
 							var resourcePath = extractStringValue(args[0], "resource path", nodeExpr.pos);
-							var resourceController = extractTypeRef(args[1], "resource controller", nodeExpr.pos, false);
+							var resourceControllerTypePath = extractTypeRef(args[1], "resource controller", nodeExpr.pos, false, false);
+							var resourceController = resourceControllerTypePath != null ? stripLocalModulePrefix(resourceControllerTypePath) : null;
 							var resourceOpts = args.length > 2 ? parseOptionsExpr(args[2]) : [];
 							{
 								kind: name == "resource" ? "resource" : "resources",
@@ -4779,7 +4859,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 							null;
 					}
 				default:
-					Context.error("Each @:routes entry must be a legacy route object or RouterDsl.* node call", nodeExpr.pos);
+					Context.error("Each route entry must be a legacy route object or RouterDsl.* node call", nodeExpr.pos);
 					null;
 			};
 		}
@@ -4796,7 +4876,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 				}
 				nodes.length > 0 ? nodes : null;
 			default:
-				Context.error("@:routes parameter must be an array: @:routes([...])", routesExpr.pos);
+				Context.error('Router routes from ${routesSource.source} must be an array: final routes = [...]', routesExpr.pos);
 				null;
 		};
 	}
