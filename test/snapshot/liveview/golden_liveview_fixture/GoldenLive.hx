@@ -15,6 +15,9 @@ typedef GoldenAssigns = {
 	var selected_tags:Array<String>;
 }
 
+@:build(phoenix.macros.AssignKeysBuilder.build(GoldenAssigns))
+class GoldenAssignKeys {}
+
 enum GoldenMessage {
 	ExternalIncrement(amount:Int);
 	ExternalReset;
@@ -36,7 +39,7 @@ enum GoldenMessage {
  * HOW
  * - Implements the canonical Phoenix callback names in Haxe (`handle_event`) and a
  *   Haxe-idiomatic variant (`handleInfo`) that must be normalized to `handle_info`.
- * - Uses LiveSocket macros to validate assign key conversion (camelCase → snake_case).
+ * - Uses generated typed assign keys to validate assign/update key typing and output shape.
  *
  * EXAMPLES
  * Haxe:
@@ -51,7 +54,7 @@ enum GoldenMessage {
 class GoldenLive {
 	public static function mount(_params:Term, _session:Term, socket:Socket<GoldenAssigns>):MountResult<GoldenAssigns> {
 		var live:LiveSocket<GoldenAssigns> = socket;
-		live = live.merge({
+		live = live.assign({
 			counter: 0,
 			search_query: "",
 			sort_by: "created",
@@ -64,13 +67,13 @@ class GoldenLive {
 		var live:LiveSocket<GoldenAssigns> = socket;
 
 		if (event == "increment") {
-			live = live.update(_.counter, (n) -> n + 1);
+			live = live.updateKey(GoldenAssignKeys.counter, (n) -> n + 1);
 		} else if (event == "set_sort") {
 			var sortByValue:Null<String> = cast Reflect.field(params, "sort_by");
-			live = live.assign(_.sort_by, sortByValue != null ? sortByValue : "created");
+			live = live.assignKey(GoldenAssignKeys.sort_by, sortByValue != null ? sortByValue : "created");
 		} else if (event == "search") {
 			var queryValue:Null<String> = cast Reflect.field(params, "query");
-			live = live.assign(_.search_query, queryValue != null ? queryValue : "");
+			live = live.assignKey(GoldenAssignKeys.search_query, queryValue != null ? queryValue : "");
 		} else if (event == "toggle_tag") {
 			var tag:Null<String> = cast Reflect.field(params, "tag");
 			if (tag != null) {
@@ -80,11 +83,11 @@ class GoldenLive {
 				} else {
 					elixir.List.insertAt(currentTags, 0, tag);
 				};
-				live = live.assign(_.selected_tags, updatedTags);
+				live = live.assignKey(GoldenAssignKeys.selected_tags, updatedTags);
 			}
 		} else if (event == "set_priority") {
 			var id = extractId(params);
-			live = live.update(_.counter, (n) -> n + id);
+			live = live.updateKey(GoldenAssignKeys.counter, (n) -> n + id);
 		}
 
 		return NoReply(live);
@@ -94,9 +97,9 @@ class GoldenLive {
 		var live:LiveSocket<GoldenAssigns> = socket;
 		var nextSocket = switch (msg) {
 			case ExternalIncrement(amount):
-				live.update(_.counter, (n) -> n + amount);
+				live.updateKey(GoldenAssignKeys.counter, (n) -> n + amount);
 			case ExternalReset:
-				live.merge({
+				live.assign({
 					counter: 0,
 					search_query: "",
 					selected_tags: []

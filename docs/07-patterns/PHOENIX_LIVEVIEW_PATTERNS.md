@@ -11,7 +11,7 @@ Reflaxe.Elixir generates idiomatic LiveView modules:
 - Return values stay Phoenix-native (`{:ok, socket}`, `{:noreply, socket}`, …) but are authored as typed Haxe enums (`Ok(...)`, `NoReply(...)`, …). Prefer unqualified constructors when unambiguous.
 - Keep application code free of `untyped __elixir__(...)`. If a Phoenix helper is missing, add a typed extern/shim under `std/phoenix/**`.
 
-## Pattern: Typed Assigns + `LiveSocket.assign`
+## Pattern: Typed Assigns + `LiveSocket` Assign APIs
 
 Define assigns as a Haxe `typedef` and keep state updates typed end-to-end.
 
@@ -30,7 +30,9 @@ typedef CounterAssigns = { count: Int };
 class CounterLive {
   public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
     var liveSocket: LiveSocket<CounterAssigns> = socket;
-    liveSocket = liveSocket.assign(_.count, 0);
+    liveSocket = liveSocket.assign({
+      count: 0
+    });
     return Ok(liveSocket);
   }
 
@@ -88,9 +90,28 @@ end
 
 Notes:
 - `_.count` is a compile-time field selector for `LiveSocket.assign`; `_` here is not a runtime variable.
+- `assign({ ... })` maps to Phoenix `assign(socket, %{...})` (bulk assign).
+- For strongest completion + key-specific value typing in Haxe 4.3.7, use typed keys (`assignKey` / `updateKey`).
 - `event` and `params` are runtime values from Phoenix.
 - In Haxe, you can use plain names (`params`, `session`); generated Elixir will still emit `_params` / `_session` when unused.
 - Typed assigns give you compile-time validation in both LiveView logic and templates.
+
+Typed-key variant:
+
+```haxe
+typedef CounterAssigns = { count: Int };
+
+@:build(phoenix.macros.AssignKeysBuilder.build(CounterAssigns))
+class CounterAssignKeys {}
+
+var liveSocket: LiveSocket<CounterAssigns> = socket;
+liveSocket = liveSocket.assignKey(CounterAssignKeys.count, 0);
+liveSocket = liveSocket.updateKey(CounterAssignKeys.count, (n) -> n + 1);
+```
+
+Deep dive:
+
+- `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
 
 ## Pattern: Decode Event Params Once (Boundary → Typed)
 

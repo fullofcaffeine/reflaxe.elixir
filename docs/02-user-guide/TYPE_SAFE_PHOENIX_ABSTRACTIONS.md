@@ -17,7 +17,13 @@ typedef CounterAssigns = {
 };
 ```
 
-In LiveView modules, take a typed socket and update assigns via `LiveSocket.assign`:
+In LiveView modules, take a typed socket and choose the assign shape that matches your goal:
+
+- `assign(_.field, value)`: shortest single-field update
+- `assign({ ... })`: Phoenix-style bulk assign
+- `assignKey(Keys.field, value)`: strongest completion + key-specific typing
+
+Single-field example:
 
 	```haxe
 	import elixir.types.Term;
@@ -39,6 +45,25 @@ Notes:
 - `_.count` is a typed field selector that the assign macro reads at compile time.
 - Haxe callback arguments do not need `_` prefixes; unused ones are normalized to `_name` in generated Elixir.
 
+Bulk assign example:
+
+```haxe
+var liveSocket: LiveSocket<CounterAssigns> = socket;
+liveSocket = liveSocket.assign({
+  count: 0
+});
+```
+
+Typed-key example:
+
+```haxe
+@:build(phoenix.macros.AssignKeysBuilder.build(CounterAssigns))
+class CounterAssignKeys {}
+
+var liveSocket: LiveSocket<CounterAssigns> = socket;
+liveSocket = liveSocket.assignKey(CounterAssignKeys.count, 0);
+```
+
 Compiles to:
 
 ```elixir
@@ -50,6 +75,10 @@ defmodule CounterLive do
   end
 end
 ```
+
+Deep dive:
+
+- `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
 
 In `render/1`, prefer a typed assigns parameter:
 

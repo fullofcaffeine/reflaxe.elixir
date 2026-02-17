@@ -13,26 +13,26 @@ import elixir.List;
  * of field names WITHOUT needing raw maps, casts, or string field names.
  * 
  * ## Architecture Benefits:
- * - **Compile-time field validation**: The `_.fieldName` pattern validates fields exist
+ * - **Compile-time field validation**: `_.fieldName` validates fields exist
  * - **No cast needed**: LiveSocket methods return properly typed sockets
  * - **No raw-map access needed**: Field access is validated at compile time
- * - **No strings for field names**: The underscore pattern provides type safety
- * - **Automatic camelCase conversion**: Field names are converted to snake_case for Phoenix
- * - **IntelliSense support**: Full IDE autocomplete for all operations
+ * - **No strings for field names**: macro field selectors provide type safety
+ * - **Automatic key normalization**: field names are converted to Phoenix atom keys
+ * - **Completion options**: macro shorthand is minimal; typed keys are the strongest completion path
  * 
  * ## Usage Patterns:
  * ```haxe
- * // Type-safe individual assignments with _.fieldName pattern
+ * // Type-safe individual assignments with _.fieldName selectors
  * var liveSocket: LiveSocket<TodoLiveAssigns> = socket;
- * socket = liveSocket.assign(_.editingTodo, todo);
- * socket = liveSocket.assign(_.selectedTags, tags);
+ * socket = liveSocket.assign(_.editing_todo, todo);
+ * socket = liveSocket.assign(_.selected_tags, tags);
  * 
- * // Type-safe bulk assignments with merge
- * socket = liveSocket.merge({
+ * // Type-safe bulk assignments with assign({...}) (Phoenix-style)
+ * socket = liveSocket.assign({
  *     todos: newTodos,
- *     totalTodos: newTodos.length,
- *     completedTodos: completed,
- *     pendingTodos: pending
+ *     total_todos: newTodos.length,
+ *     completed_todos: completed,
+ *     pending_todos: pending
  * });
  * ```
  * 
@@ -40,15 +40,14 @@ import elixir.List;
  * Phoenix LiveView uses dynamic assigns that could cause runtime errors.
  * The LiveSocket wrapper provides compile-time validation that:
  * 1. Fields exist in the assigns typedef
- * 2. Values match the expected types
- * 3. Field names are correctly converted to snake_case
+ * 2. Field names are correctly converted to snake_case
+ * 3. Typed-key calls (`assignKey` / `updateKey`) also enforce key-specific value types
  * 
  * This prevents the #1 source of LiveView bugs: typos in assign keys.
  * 
  * ## Future Improvements:
- * While the `_.fieldName` syntax works well, we're exploring more intuitive alternatives.
- * See [Future Assign Syntax Ideas](../../../docs/07-patterns/future-assign-syntax-ideas.md)
- * for proposals like typed field descriptors and fluent builders that might feel more natural.
+ * If you want stronger completion in Haxe 4.3.7, use the typed-key API:
+ * `assignKey` / `assignNewKey` / `updateKey`.
  */
 // @:native (class): pins the generated Elixir module name to match Phoenix/Ecto runtime expectations.
 @:native("TodoApp.SafeAssigns")
@@ -154,17 +153,17 @@ class SafeAssigns {
 	/**
 	 * Update todos and automatically recalculate statistics
 	 * 
-	 * Uses LiveSocket's merge pattern for type-safe bulk updates.
-	 * The merge method validates all field names at compile time
+	 * Uses `assign({...})` for type-safe bulk updates.
+	 * The macro validates all field names at compile time
 	 * and ensures type compatibility. No casts or strings needed!
 	 */
 	public static function updateTodosAndStats(socket:Socket<TodoLiveAssigns>, todos:Array<server.schemas.Todo>):Socket<TodoLiveAssigns> {
 		var completed = countCompleted(todos);
 		var pending = countPending(todos);
 
-		// Use LiveSocket's type-safe merge for bulk updates
+		// Use LiveSocket's Phoenix-style assign map form for bulk updates
 		final liveSocket:LiveSocket<TodoLiveAssigns> = socket;
-		final updatedSocket = liveSocket.merge({
+		final updatedSocket = liveSocket.assign({
 			todos: todos,
 			total_todos: todos.length,
 			completed_todos: completed,

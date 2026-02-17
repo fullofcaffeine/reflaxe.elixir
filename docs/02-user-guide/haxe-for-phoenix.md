@@ -14,7 +14,13 @@ This page focuses on what exists in Reflaxe.Elixir **today** (v1.x): how to buil
 
 ### 1) Type-safe LiveView state (assigns)
 
-In Elixir, LiveView state lives in `socket.assigns` and is keyed by atoms. In Haxe, you model assigns as a `typedef` and update them through `phoenix.LiveSocket`, which validates fields at compile time and emits atom keys in Elixir.
+In Elixir, LiveView state lives in `socket.assigns` and is keyed by atoms. In Haxe, you model assigns as a `typedef` and update them through `phoenix.LiveSocket`.
+
+`LiveSocket` has three practical assign paths:
+
+- `assign(_.field, value)` for concise single-field updates
+- `assign({ ... })` for Phoenix-style bulk assigns (`assign/2`)
+- `assignKey(Keys.field, value)` for strongest completion and key/value typing
 
 ```haxe
 import elixir.types.Term;
@@ -50,6 +56,31 @@ class CounterLive {
 Notes:
 - `_.count` is a typed field selector consumed at compile time by `LiveSocket.assign`.
 - `params` and `session` do not need leading `_` in Haxe. When unused, generated Elixir still emits `_params` / `_session`.
+
+Bulk assign example (Phoenix-style):
+
+```haxe
+var ls: LiveSocket<CounterAssigns> = socket;
+ls = ls.assign({
+  count: 0
+});
+```
+
+Completion-first typed key example:
+
+```haxe
+typedef CounterAssigns = { count: Int };
+
+@:build(phoenix.macros.AssignKeysBuilder.build(CounterAssigns))
+class CounterAssignKeys {}
+
+var ls: LiveSocket<CounterAssigns> = socket;
+ls = ls.assignKey(CounterAssignKeys.count, 0);
+```
+
+Technical + behavior details:
+
+- `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
 
 ### 2) HEEx templates from Haxe via HXX
 

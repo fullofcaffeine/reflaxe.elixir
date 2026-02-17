@@ -155,8 +155,13 @@ class CounterLive {
 ```
 
 Notes:
-- `_.count` is a compile-time field selector used by `LiveSocket.assign`; `_` here is not a runtime variable.
+- `_.count` can look odd at first because `_` usually means “unused variable.” Here, `_` is a macro marker.
+- Why the API looks like this: Haxe has no built-in “field reference literal” for typedef fields, so `LiveSocket.assign` uses `_.field` as a compact compile-time selector.
+- What you get from it: the compiler validates the field name, converts to Phoenix atom style, and emits `assign(socket, :count, value)`. `_` does not exist at runtime.
+- Phoenix-style bulk assigns are available as `assign({ ... })`, which emits `assign(socket, %{...})`.
+- For strongest completion and key-specific value typing in Haxe 4.3.7, use the typed-key API (`assignKey`/`assignNewKey`/`updateKey`) with generated `AssignKey` constants.
 - In Haxe, write callback args naturally (`params`, `session`). If they are unused, generated Elixir is automatically normalized to `_params`, `_session`.
+- API deep dive: `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
 
 Generated Elixir shape:
 
@@ -188,6 +193,7 @@ Start at [docs/README.md](docs/README.md).
 - [Interop With Existing Elixir](docs/02-user-guide/INTEROP_WITH_EXISTING_ELIXIR.md)
 - [Phoenix Integration](docs/02-user-guide/PHOENIX_INTEGRATION.md)
 - [API Index](docs/04-api-reference/API_INDEX.md)
+- [LiveSocket Assign API](docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md)
 - [Mix Tasks](docs/04-api-reference/MIX_TASKS.md)
 - [Elixir Injection Guide](docs/04-api-reference/ELIXIR_INJECTION_GUIDE.md)
 - [Troubleshooting](docs/06-guides/TROUBLESHOOTING.md)

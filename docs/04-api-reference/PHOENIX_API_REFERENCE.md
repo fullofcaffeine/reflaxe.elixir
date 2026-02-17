@@ -36,6 +36,21 @@ Key points:
 - Use `@:native("handle_event")` when your Haxe method name differs from canonical callback naming.
 - Prefer typed assigns typedefs and keep them shared between render/mount/event paths.
 
+## LiveSocket Assign APIs (Important)
+
+`phoenix.LiveSocket` supports both Phoenix-faithful runtime semantics and Haxe-oriented authoring ergonomics:
+
+- `assign(_.field, value)` for short single-field updates
+- `assign({ ... })` for Phoenix-style bulk updates (`assign/2` shape)
+- `assignKey(Keys.field, value)` for strongest Haxe 4.3.7 completion and key-specific typing
+- `assignNew` / `assignNewKey` and `update` / `updateKey` for default/update workflows
+
+`merge({ ... })` remains available as a backward-compatible alias; prefer `assign({ ... })` for 1:1 Phoenix API shape.
+
+Canonical deep dive:
+
+- `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
+
 ## Component Surface
 
 `@:component` semantics are two-level:
@@ -104,6 +119,7 @@ Keep most coverage in Haxe-authored ExUnit integration tests and use Playwright 
 
 ## Related Docs
 
+- `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
 - `docs/04-api-reference/ANNOTATIONS.md`
 - `docs/04-api-reference/ROUTER_DSL.md`
 - `docs/02-user-guide/HXX_SYNTAX_AND_COMPARISON.md`

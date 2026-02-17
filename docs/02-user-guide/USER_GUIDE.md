@@ -66,7 +66,13 @@ function parseIntSafe(s: String): Result<Int, String> {
 
 ### LiveView state is a typed `typedef`
 
-LiveView state lives in assigns. In Haxe you model assigns as a `typedef`, then use `phoenix.LiveSocket` to update assigns with compile-time field validation.
+LiveView state lives in assigns. In Haxe you model assigns as a `typedef`, then use `phoenix.LiveSocket` to update assigns.
+
+Use this quick rule:
+
+- shortest single update: `assign(_.field, value)`
+- Phoenix-style bulk update: `assign({ ... })`
+- strongest completion + key/value typing: `assignKey(Keys.field, value)`
 
 ```haxe
 import elixir.types.Term;
@@ -102,6 +108,7 @@ class CounterLive {
 Notes:
 - `_.count` is a compile-time field selector for typed assigns updates.
 - You can keep Haxe argument names plain (`params`, `session`). The compiler adds Elixir-style `_` prefixes when those arguments are unused.
+- For full API behavior details (including macro dispatch and typed keys), see `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`.
 
 Compiles to:
 

@@ -26,6 +26,7 @@ Not included as primary reference surface:
 - Compiler/user feature flags: `docs/04-api-reference/FEATURE_FLAGS.md`
 - Macro API usage guidance: `docs/04-api-reference/HAXE_MACRO_APIS.md`
 - Phoenix API deep dive: `docs/04-api-reference/PHOENIX_API_REFERENCE.md`
+- LiveSocket assign API (consumer + technical): `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
 - Ecto API deep dive: `docs/04-api-reference/ECTO_API_REFERENCE.md`
 - Elixir runtime API deep dive: `docs/04-api-reference/ELIXIR_RUNTIME_API_REFERENCE.md`
 
@@ -126,6 +127,7 @@ Template/HXX:
 Types and registries:
 
 - `std/phoenix/types/Assigns.hx`
+- `std/phoenix/types/AssignKey.hx`
 - `std/phoenix/types/Socket.hx`
 - `std/phoenix/types/Slot.hx`
 - `std/phoenix/types/Flash.hx`
