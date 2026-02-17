@@ -58,9 +58,11 @@ Version strings are updated automatically via `scripts/release/sync-versions.js`
 
 ## Token / permissions notes
 
-The release job uses the GitHub Actions token by default. If your repo has hardened permissions
-and semantic-release fails to push tags or publish releases, add a `RELEASE_TOKEN` secret (PAT or fine‑grained token)
-with `contents: write` access and the workflow will use it automatically.
+The release job uses the built-in GitHub Actions token (`github.token`) with `contents: write`.
+This avoids failures caused by stale or under-scoped personal tokens.
+
+If your org/repo policy blocks tag or release publishing with `github.token`, update
+`.github/workflows/release.yml` to use a dedicated PAT secret explicitly for that environment.
 
 ## Backfilling releases for existing tags
 
