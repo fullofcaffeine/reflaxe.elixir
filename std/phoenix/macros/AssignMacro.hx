@@ -100,6 +100,46 @@ class AssignMacro {
 	}
 
 	/**
+	 * Process typed-key assign operation.
+	 *
+	 * When key syntax is field-like (`keys.count`, `CounterAssignKeys.count`), emit
+	 * a direct atom literal for cleaner generated Elixir. Otherwise pass the key expression
+	 * through as-is.
+	 */
+	public static function processAssignKey(socketExpr:Expr, keyExpr:Expr, value:Expr):Expr {
+		var fieldName = extractTypedKeyFieldName(keyExpr);
+		if (fieldName != null) {
+			var atomKeyExpr:Expr = macro(($v{camelToSnake(fieldName)} : elixir.types.Atom));
+			return macro phoenix.Component.assign($socketExpr, $e{atomKeyExpr}, $value);
+		}
+		return macro phoenix.Component.assign($socketExpr, $keyExpr, $value);
+	}
+
+	/**
+	 * Process typed-key assign_new operation.
+	 */
+	public static function processAssignNewKey(socketExpr:Expr, keyExpr:Expr, defaultFn:Expr):Expr {
+		var fieldName = extractTypedKeyFieldName(keyExpr);
+		if (fieldName != null) {
+			var atomKeyExpr:Expr = macro(($v{camelToSnake(fieldName)} : elixir.types.Atom));
+			return macro phoenix.Component.assignNew($socketExpr, $e{atomKeyExpr}, $defaultFn);
+		}
+		return macro phoenix.Component.assignNew($socketExpr, $keyExpr, $defaultFn);
+	}
+
+	/**
+	 * Process typed-key update operation.
+	 */
+	public static function processUpdateKey(socketExpr:Expr, keyExpr:Expr, updater:Expr):Expr {
+		var fieldName = extractTypedKeyFieldName(keyExpr);
+		if (fieldName != null) {
+			var atomKeyExpr:Expr = macro(($v{camelToSnake(fieldName)} : elixir.types.Atom));
+			return macro phoenix.Component.update($socketExpr, $e{atomKeyExpr}, $updater);
+		}
+		return macro phoenix.Component.update($socketExpr, $keyExpr, $updater);
+	}
+
+	/**
 	 * Process an update operation.
 	 */
 	public static function processUpdate(socketExpr:Expr, fieldExpr:Expr, updater:Expr):Expr {
@@ -153,6 +193,21 @@ class AssignMacro {
 			case _:
 				return null;
 		}
+	}
+
+	private static function extractTypedKeyFieldName(expr:Expr):Null<String> {
+		return switch (expr.expr) {
+			case EField(_, field):
+				field;
+			case EParenthesis(inner):
+				extractTypedKeyFieldName(inner);
+			case ECheckType(inner, _):
+				extractTypedKeyFieldName(inner);
+			case EMeta(_, inner):
+				extractTypedKeyFieldName(inner);
+			case _:
+				null;
+		};
 	}
 
 	private static function extractAssignsType(socketExpr:Expr):Type {

@@ -21,7 +21,7 @@ In LiveView modules, take a typed socket and choose the assign shape that matche
 
 - `assign(_.field, value)`: shortest single-field update
 - `assign({ ... })`: Phoenix-style bulk assign
-- `assignKey(Keys.field, value)`: strongest completion + key-specific typing
+- `assignKey(keys.field, value)`: optional typed-key mode
 
 Single-field example:
 
@@ -57,12 +57,20 @@ liveSocket = liveSocket.assign({
 Typed-key example:
 
 ```haxe
-@:build(phoenix.macros.AssignKeysBuilder.build(CounterAssigns))
-class CounterAssignKeys {}
+import phoenix.AssignKeys;
+
+var keys = AssignKeys.of(CounterAssigns);
 
 var liveSocket: LiveSocket<CounterAssigns> = socket;
-liveSocket = liveSocket.assignKey(CounterAssignKeys.count, 0);
+liveSocket = liveSocket.assignKey(keys.count, 0);
 ```
+
+`AssignKeys.of(...)` is the recommended typed-key setup.
+If you use `assign(_.field, value)` / `assign({ ... })`, no key setup is required.
+
+Pros/cons at a glance:
+- Default assign style (`assign(_.field, value)` / `assign({ ... })`): least code, best for most app code.
+- Typed-key style (`assignKey(keys.field, value)`): more explicit key tokens and stronger key/value coupling in signatures.
 
 Compiles to:
 

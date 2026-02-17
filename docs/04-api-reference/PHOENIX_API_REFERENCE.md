@@ -42,10 +42,14 @@ Key points:
 
 - `assign(_.field, value)` for short single-field updates
 - `assign({ ... })` for Phoenix-style bulk updates (`assign/2` shape)
-- `assignKey(Keys.field, value)` for strongest Haxe 4.3.7 completion and key-specific typing
+- `assignKey(keys.field, value)` as an optional typed-key mode
 - `assignNew` / `assignNewKey` and `update` / `updateKey` for default/update workflows
 
 `merge({ ... })` remains available as a backward-compatible alias; prefer `assign({ ... })` for 1:1 Phoenix API shape.
+
+Typed-key setup is now:
+- `var keys = phoenix.AssignKeys.of(MyAssigns)`
+- then `assignKey(keys.field, value)`
 
 Canonical deep dive:
 

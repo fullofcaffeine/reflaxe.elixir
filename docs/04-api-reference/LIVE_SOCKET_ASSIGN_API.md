@@ -1,25 +1,27 @@
 # LiveSocket Assign API (Haxe -> Phoenix)
 
-This page explains the `LiveSocket` assign API from both angles:
+This page explains the two LiveSocket assign authoring styles and when to use each one.
 
-- consumer angle: which call to use in normal app code
-- technical angle: how the compiler/macros lower each call to Phoenix
+## Why this page exists
+
+Both styles generate normal Phoenix calls at runtime. The choice is about Haxe authoring ergonomics:
+
+- default macro selector style: least code to write
+- typed-key style: explicit key tokens and stronger key/value coupling
 
 ## Quick Choice Guide
 
-Use this rule of thumb:
-
 | Goal | Haxe API | Phoenix runtime call |
-|---|---|---|
+| --- | --- | --- |
 | Shortest single-field update | `assign(_.field, value)` | `assign(socket, :field, value)` |
 | Phoenix-style multi-field update | `assign({field_a: a, field_b: b})` | `assign(socket, %{field_a: a, field_b: b})` |
-| Strongest completion + key/value typing | `assignKey(Keys.field, value)` | `assign(socket, :field, value)` |
-| Set default-if-missing | `assignNew(_.field, fn)` or `assignNewKey(Keys.field, fn)` | `assign_new(socket, :field, fn -> ... end)` |
-| Update from previous value | `update(_.field, fn)` or `updateKey(Keys.field, fn)` | `update(socket, :field, fn prev -> ... end)` |
+| Typed key-token style (optional) | `assignKey(keys.field, value)` | `assign(socket, :field, value)` |
+| Set default-if-missing | `assignNew(_.field, fn)` or `assignNewKey(keys.field, fn)` | `assign_new(socket, :field, fn -> ... end)` |
+| Update from previous value | `update(_.field, fn)` or `updateKey(keys.field, fn)` | `update(socket, :field, fn prev -> ... end)` |
 
 ## Consumer View
 
-### 1) Single field (`assign(_.field, value)`)
+### 1) Default single-field style (`assign(_.field, value)`)
 
 ```haxe
 var live: LiveSocket<CounterAssigns> = socket;
@@ -28,8 +30,8 @@ live = live.assign(_.count, 0);
 
 Why this exists:
 
-- Haxe has no built-in field-reference literal for typedef fields.
-- `_.field` is a compact compile-time selector that the macro reads.
+- Haxe has no built-in typed field-reference literal for typedef fields.
+- `_.field` is a compact compile-time selector read by the assign macro.
 
 What you get:
 
@@ -37,7 +39,7 @@ What you get:
 - automatic `camelCase -> snake_case` atom conversion
 - idiomatic Phoenix `assign/3` output
 
-### 2) Multiple fields (`assign({...})`)
+### 2) Default bulk style (`assign({...})`)
 
 ```haxe
 live = live.assign({
@@ -48,36 +50,55 @@ live = live.assign({
 
 Why this exists:
 
-- It matches Phoenix `assign(socket, %{...})` semantics directly.
-- It replaces most `merge({...})` use cases with a more 1:1 Phoenix API shape.
+- It maps directly to Phoenix `assign(socket, %{...})`.
+- It keeps the API close to Phoenix `assign/2` shape.
 
 What you get:
 
 - compile-time field-name validation for each object field
 - snake_case atom-key rewrite in generated Elixir
 
-### 3) Completion-first typed keys (`assignKey(Keys.field, value)`)
+### 3) Optional typed-key style (`assignKey(keys.field, value)`)
 
 ```haxe
+import phoenix.AssignKeys;
+
 typedef CounterAssigns = { count: Int };
 
-@:build(phoenix.macros.AssignKeysBuilder.build(CounterAssigns))
-class CounterAssignKeys {}
+var keys = AssignKeys.of(CounterAssigns);
 
 var live: LiveSocket<CounterAssigns> = socket;
-live = live.assignKey(CounterAssignKeys.count, 0);
-live = live.updateKey(CounterAssignKeys.count, (n) -> n + 1);
+live = live.assignKey(keys.count, 0);
+live = live.updateKey(keys.count, (n) -> n + 1);
 ```
 
 Why this exists:
 
-- Haxe 4.3.7 completion is strongest on normal typed arguments.
-- Macro `Expr` arguments are convenient syntax, but weaker for completion.
+- Some teams want explicit key tokens in function signatures.
+- It binds key and value types at the type-token level.
 
 What you get:
 
-- key completion from generated `CounterAssignKeys.*`
-- key-specific value typing (`count` key enforces `Int`)
+- key-specific value typing (`keys.count` enforces `Int`)
+- optional better field completion from `keys.<field>`
+
+### Compare the two styles
+
+| Aspect | `assign(_.field, value)` / `assign({...})` | `assignKey(keys.field, value)` |
+| --- | --- | --- |
+| Setup required | none | one `var keys = AssignKeys.of(MyAssigns)` |
+| Code size | shortest | slightly more explicit |
+| Runtime mapping | Phoenix-faithful | Phoenix-faithful |
+| Key/value typing | field name validated; value typed by call context | explicit key token carries value type |
+| Good default for most apps | yes | optional advanced mode |
+
+### Do I need `@:build(...)`?
+
+Usually, no.
+
+- If you use default assign APIs (`assign`, `assignNew`, `update`, bulk `assign({...})`), you do not need `@:build(...)`.
+- If you use typed keys, prefer `AssignKeys.of(MyAssigns)` first.
+- `@:build(phoenix.macros.AssignKeysBuilder.build(MyAssigns))` is still supported when you explicitly want a dedicated static key class.
 
 ## Technical View
 
@@ -89,7 +110,8 @@ What you get:
 
 Dispatch rules:
 
-- `value` omitted -> treat as `assign({...})` map form
+- `value` omitted + object literal -> validate fields + emit bulk assign map
+- `value` omitted + non-literal map value -> pass through to `phoenix.Component.assign(socket, updates)`
 - `value` provided + first arg is `_.field` -> validate field + emit atom key
 - `value` provided + first arg is not `_.field` -> pass through to `phoenix.Component.assign(socket, key, value)`
 
@@ -100,37 +122,45 @@ Source:
 
 ### Why not `@:overload` on `LiveSocket.assign`?
 
-For this API surface we need syntax-shape dispatch (`_.field` vs object literal), not only type-based overload selection. Macro dispatch is the right tool here.
+This API needs syntax-shape dispatch (`_.field` vs object literal), not only type-based overload selection. Macro dispatch is the right fit here.
 
-`@:overload` is still used where it fits best (for example `phoenix.Component.assign` extern signatures).
+`@:overload` is still used where it fits (for example `phoenix.Component.assign` extern signatures).
 
 ### `merge({...})` status
 
-`merge({...})` is kept as a backward-compatible alias. Prefer `assign({...})` for Phoenix API parity.
+`merge({...})` remains as a backward-compatible alias. Prefer `assign({...})` for clearer Phoenix parity.
+
+### Typed-key lowering details
+
+`assignKey` / `assignNewKey` / `updateKey` are macro-based too.
+
+- When the key expression is field-shaped (`keys.count`, `MyKeys.count`), the compiler emits a direct atom key (`:count`) for clean Phoenix output.
+- When the key is a computed token expression, the compiler passes that token expression through.
 
 ### Key generation details
 
-Typed keys are generated by:
+Typed-key mode has two generation options:
 
-- `@:build(phoenix.macros.AssignKeysBuilder.build(MyAssigns))`
+- preferred:
+  - `phoenix.AssignKeys.of(MyAssigns)`
+- optional static-class mode:
+  - `@:build(phoenix.macros.AssignKeysBuilder.build(MyAssigns))`
 
-The build macro:
-
-- resolves the assigns type via `Context.getType`
-- emits `public static inline var field: AssignKey<TAssigns, TValue>`
-- uses the same snake_case normalization as assign macros
+Both use the same key normalization (`camelCase -> snake_case`) and produce `AssignKey<TAssigns, TValue>` tokens.
 
 Source:
 
+- `std/phoenix/AssignKeys.hx`
 - `std/phoenix/types/AssignKey.hx`
 - `std/phoenix/macros/AssignKeysBuilder.hx`
+- `std/phoenix/macros/AssignKeysSupport.hx`
 
 ### Error behavior summary
 
 - `assign(_.missingField, value)` -> compile-time error (unknown assigns field)
 - `assign({missing_field: value})` -> compile-time error (unknown assigns field)
-- `assignKey(Keys.count, "x")` when `count` is `Int` -> compile-time type error
-- `assign(updatesVar)` (no second arg) -> compile-time error unless it is an object literal; use `phoenix.Component.assign(socket, updatesVar)` for dynamic map values
+- `assignKey(keys.count, "x")` when `count` is `Int` -> compile-time type error
+- `assign(nonLiteralMap)` -> forwarded to Phoenix assign/2 runtime call
 
 ## See Also
 

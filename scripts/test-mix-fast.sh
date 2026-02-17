@@ -10,8 +10,8 @@ set -euo pipefail
 export HAXE_NO_SERVER="${HAXE_NO_SERVER:-1}"
 export MIX_ENV="${MIX_ENV:-test}"
 
-mix local.hex --force
-mix local.rebar --force
+mix local.hex --if-missing --force
+mix local.rebar --if-missing --force
 
 mix deps.get
 mix deps.compile
@@ -33,4 +33,3 @@ if [[ "$supports_stale" -eq 1 ]]; then
 fi
 
 mix test "${args[@]}"
-

@@ -11,12 +11,12 @@ import phoenix.types.AssignKey;
  * WHAT
  * - Provides two assign APIs on top of `Socket<TAssigns>`:
  *   - macro shorthand (`assign(_.field, value)`) for minimal Haxe code
- *   - typed keys (`assignKey(Keys.field, value)`) for stronger IDE completion and key-specific value typing
+ *   - typed keys (`assignKey(keys.field, value)`) for explicit key tokens and key-specific value typing
  *
  * WHY
  * - Assign keys are central to LiveView behavior and typos are costly.
- * - Haxe 4.3.7 completion is strongest when values are regular typed expressions
- *   (not macro `Expr` arguments). Typed keys unlock that path.
+ * - Typed keys are useful when you want key tokens in shared helper APIs.
+ * - In Haxe 4.3.7 they can also improve completion quality.
  *
  * HOW
  * - Macro shorthand methods:
@@ -34,9 +34,10 @@ import phoenix.types.AssignKey;
  *   live = live.assign(_.count, 0);
  *   live = live.update(_.count, (n) -> n + 1);
  *
- *   // Best completion path (typed key tokens)
- *   live = live.assignKey(CounterAssignKeys.count, 0);
- *   live = live.updateKey(CounterAssignKeys.count, (n) -> n + 1);
+ *   // Optional typed-key path
+ *   var keys = AssignKeys.of(CounterAssigns);
+ *   live = live.assignKey(keys.count, 0);
+ *   live = live.updateKey(keys.count, (n) -> n + 1);
  *
  * Elixir:
  *   socket
@@ -82,10 +83,10 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	}
 
 	/**
-	 * Assign one field using a typed key token (completion-first path).
+	 * Assign one field using a typed key token.
 	 */
-	extern inline public function assignKey<V>(key:AssignKey<T, V>, value:V):LiveSocket<T> {
-		return untyped __elixir__('Phoenix.Component.assign({0}, {1}, {2})', this, key, value);
+	public macro function assignKey<T, V>(ethis:ExprOf<LiveSocket<T>>, keyExpr:ExprOf<AssignKey<T, V>>, value:ExprOf<V>):ExprOf<LiveSocket<T>> {
+		return phoenix.macros.AssignMacro.processAssignKey(ethis, keyExpr, value);
 	}
 
 	/**
@@ -104,10 +105,10 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	}
 
 	/**
-	 * Assign a default value using a typed key token (completion-first path).
+	 * Assign a default value using a typed key token.
 	 */
-	extern inline public function assignNewKey<V>(key:AssignKey<T, V>, defaultFn:Void->V):LiveSocket<T> {
-		return untyped __elixir__('Phoenix.Component.assign_new({0}, {1}, {2})', this, key, defaultFn);
+	public macro function assignNewKey<T, V>(ethis:ExprOf<LiveSocket<T>>, keyExpr:ExprOf<AssignKey<T, V>>, defaultFn:ExprOf<Void->V>):ExprOf<LiveSocket<T>> {
+		return phoenix.macros.AssignMacro.processAssignNewKey(ethis, keyExpr, defaultFn);
 	}
 
 	/**
@@ -118,10 +119,10 @@ abstract LiveSocket<T>(phoenix.Phoenix.Socket<T>) from phoenix.Phoenix.Socket<T>
 	}
 
 	/**
-	 * Update an existing assign using a typed key token (completion-first path).
+	 * Update an existing assign using a typed key token.
 	 */
-	extern inline public function updateKey<V>(key:AssignKey<T, V>, updater:V->V):LiveSocket<T> {
-		return untyped __elixir__('Phoenix.Component.update({0}, {1}, {2})', this, key, updater);
+	public macro function updateKey<T, V>(ethis:ExprOf<LiveSocket<T>>, keyExpr:ExprOf<AssignKey<T, V>>, updater:ExprOf<V->V>):ExprOf<LiveSocket<T>> {
+		return phoenix.macros.AssignMacro.processUpdateKey(ethis, keyExpr, updater);
 	}
 
 	/**

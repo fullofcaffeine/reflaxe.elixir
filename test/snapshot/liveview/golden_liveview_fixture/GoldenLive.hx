@@ -2,6 +2,7 @@ package;
 
 import HXX;
 import elixir.types.Term;
+import phoenix.AssignKeys;
 import phoenix.LiveSocket;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.HandleInfoResult;
@@ -14,9 +15,6 @@ typedef GoldenAssigns = {
 	var sort_by:String;
 	var selected_tags:Array<String>;
 }
-
-@:build(phoenix.macros.AssignKeysBuilder.build(GoldenAssigns))
-class GoldenAssignKeys {}
 
 enum GoldenMessage {
 	ExternalIncrement(amount:Int);
@@ -65,15 +63,16 @@ class GoldenLive {
 
 	public static function handle_event(event:String, params:Term, socket:Socket<GoldenAssigns>):HandleEventResult<GoldenAssigns> {
 		var live:LiveSocket<GoldenAssigns> = socket;
+		var keys = AssignKeys.of(GoldenAssigns);
 
 		if (event == "increment") {
-			live = live.updateKey(GoldenAssignKeys.counter, (n) -> n + 1);
+			live = live.updateKey(keys.counter, (n) -> n + 1);
 		} else if (event == "set_sort") {
 			var sortByValue:Null<String> = cast Reflect.field(params, "sort_by");
-			live = live.assignKey(GoldenAssignKeys.sort_by, sortByValue != null ? sortByValue : "created");
+			live = live.assignKey(keys.sort_by, sortByValue != null ? sortByValue : "created");
 		} else if (event == "search") {
 			var queryValue:Null<String> = cast Reflect.field(params, "query");
-			live = live.assignKey(GoldenAssignKeys.search_query, queryValue != null ? queryValue : "");
+			live = live.assignKey(keys.search_query, queryValue != null ? queryValue : "");
 		} else if (event == "toggle_tag") {
 			var tag:Null<String> = cast Reflect.field(params, "tag");
 			if (tag != null) {
@@ -83,11 +82,11 @@ class GoldenLive {
 				} else {
 					elixir.List.insertAt(currentTags, 0, tag);
 				};
-				live = live.assignKey(GoldenAssignKeys.selected_tags, updatedTags);
+				live = live.assignKey(keys.selected_tags, updatedTags);
 			}
 		} else if (event == "set_priority") {
 			var id = extractId(params);
-			live = live.updateKey(GoldenAssignKeys.counter, (n) -> n + id);
+			live = live.updateKey(keys.counter, (n) -> n + id);
 		}
 
 		return NoReply(live);
@@ -95,9 +94,10 @@ class GoldenLive {
 
 	public static function handleInfo(msg:GoldenMessage, socket:Socket<GoldenAssigns>):HandleInfoResult<GoldenAssigns> {
 		var live:LiveSocket<GoldenAssigns> = socket;
+		var keys = AssignKeys.of(GoldenAssigns);
 		var nextSocket = switch (msg) {
 			case ExternalIncrement(amount):
-				live.updateKey(GoldenAssignKeys.counter, (n) -> n + amount);
+				live.updateKey(keys.counter, (n) -> n + amount);
 			case ExternalReset:
 				live.assign({
 					counter: 0,

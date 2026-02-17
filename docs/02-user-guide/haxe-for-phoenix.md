@@ -16,11 +16,10 @@ This page focuses on what exists in Reflaxe.Elixir **today** (v1.x): how to buil
 
 In Elixir, LiveView state lives in `socket.assigns` and is keyed by atoms. In Haxe, you model assigns as a `typedef` and update them through `phoenix.LiveSocket`.
 
-`LiveSocket` has three practical assign paths:
+`LiveSocket` has two default assign paths:
 
 - `assign(_.field, value)` for concise single-field updates
 - `assign({ ... })` for Phoenix-style bulk assigns (`assign/2`)
-- `assignKey(Keys.field, value)` for strongest completion and key/value typing
 
 ```haxe
 import elixir.types.Term;
@@ -62,21 +61,31 @@ Bulk assign example (Phoenix-style):
 ```haxe
 var ls: LiveSocket<CounterAssigns> = socket;
 ls = ls.assign({
-  count: 0
+  count: 0,
+  search_query: "",
+  sort_by: "created"
 });
 ```
 
-Completion-first typed key example:
+Optional typed-key path (no `@:build` required):
 
 ```haxe
+import phoenix.AssignKeys;
+
 typedef CounterAssigns = { count: Int };
 
-@:build(phoenix.macros.AssignKeysBuilder.build(CounterAssigns))
-class CounterAssignKeys {}
+var keys = AssignKeys.of(CounterAssigns);
 
 var ls: LiveSocket<CounterAssigns> = socket;
-ls = ls.assignKey(CounterAssignKeys.count, 0);
+ls = ls.assignKey(keys.count, 0);
 ```
+
+Use this only if you explicitly want key-token APIs (`assignKey`/`updateKey`) and slightly more explicit call sites.
+For most application code, `assign(_.field, value)` and `assign({ ... })` are the intended defaults.
+
+Quick decision:
+- Choose default assign style when you want the shortest Phoenix-like authoring flow.
+- Choose typed-key style when shared helpers/APIs benefit from explicit key tokens in function signatures.
 
 Technical + behavior details:
 

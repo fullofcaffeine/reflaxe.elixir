@@ -91,22 +91,23 @@ end
 Notes:
 - `_.count` is a compile-time field selector for `LiveSocket.assign`; `_` here is not a runtime variable.
 - `assign({ ... })` maps to Phoenix `assign(socket, %{...})` (bulk assign).
-- For strongest completion + key-specific value typing in Haxe 4.3.7, use typed keys (`assignKey` / `updateKey`).
+- Typed keys (`assignKey` / `updateKey`) are optional and use `AssignKeys.of(...)`.
 - `event` and `params` are runtime values from Phoenix.
 - In Haxe, you can use plain names (`params`, `session`); generated Elixir will still emit `_params` / `_session` when unused.
 - Typed assigns give you compile-time validation in both LiveView logic and templates.
 
-Typed-key variant:
+Optional typed-key variant:
 
 ```haxe
+import phoenix.AssignKeys;
+
 typedef CounterAssigns = { count: Int };
 
-@:build(phoenix.macros.AssignKeysBuilder.build(CounterAssigns))
-class CounterAssignKeys {}
+var keys = AssignKeys.of(CounterAssigns);
 
 var liveSocket: LiveSocket<CounterAssigns> = socket;
-liveSocket = liveSocket.assignKey(CounterAssignKeys.count, 0);
-liveSocket = liveSocket.updateKey(CounterAssignKeys.count, (n) -> n + 1);
+liveSocket = liveSocket.assignKey(keys.count, 0);
+liveSocket = liveSocket.updateKey(keys.count, (n) -> n + 1);
 ```
 
 Deep dive:

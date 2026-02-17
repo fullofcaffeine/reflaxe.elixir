@@ -9,7 +9,8 @@ defmodule TestAppWeb.GoldenLive do
   def handle_info(msg, socket) do
     live = socket
     next_socket = (case msg do
-      {:external_increment, amount} -> Phoenix.Component.update(live, :counter, fn n -> n + amount end)
+      {:external_increment, amount} ->
+        Phoenix.Component.update(live, :counter, fn n -> n + amount end)
       {:external_reset} ->
         Phoenix.Component.assign(live, %{:counter => 0, :search_query => "", :selected_tags => []})
     end)
@@ -86,7 +87,7 @@ end) do
                 end)
             end)
         end)
-        live = Phoenix.Component.assign(live, :sort_by, (if (sort_by_value != nil), do: sort_by_value, else: "created"))
+        live = Phoenix.Component.assign(live, :sort_by, (if (not Kernel.is_nil(sort_by_value)), do: sort_by_value, else: "created"))
         live
       event == "search" ->
         query_value = (case {params, "query"} do
@@ -106,7 +107,7 @@ end) do
                 end)
             end)
         end)
-        live = Phoenix.Component.assign(live, :search_query, (if (query_value != nil), do: query_value, else: ""))
+        live = Phoenix.Component.assign(live, :search_query, (if (not Kernel.is_nil(query_value)), do: query_value, else: ""))
         live
       event == "toggle_tag" ->
         tag = (case {params, "tag"} do

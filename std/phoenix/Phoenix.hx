@@ -42,8 +42,9 @@ import phoenix.types.Flash.FlashType;
  *     // Option 2: Convert to LiveSocket for type safety
  *     var liveSocket: LiveSocket<MyAssigns> = socket;
  *     liveSocket = liveSocket.assign(_.count, 0);  // Field key validated at compile time
- *     // For stronger IDE completion in Haxe 4.3.7:
- *     // liveSocket = liveSocket.assignKey(MyAssignKeys.count, 0);
+ *     // Optional typed-key mode (no @:build needed):
+ *     // var keys = AssignKeys.of(MyAssigns);
+ *     // liveSocket = liveSocket.assignKey(keys.count, 0);
  *     
  *     return Ok(socket);
  * }

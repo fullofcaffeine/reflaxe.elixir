@@ -72,7 +72,7 @@ Use this quick rule:
 
 - shortest single update: `assign(_.field, value)`
 - Phoenix-style bulk update: `assign({ ... })`
-- strongest completion + key/value typing: `assignKey(Keys.field, value)`
+- optional typed-key mode: `assignKey(keys.field, value)`
 
 ```haxe
 import elixir.types.Term;
@@ -108,6 +108,7 @@ class CounterLive {
 Notes:
 - `_.count` is a compile-time field selector for typed assigns updates.
 - You can keep Haxe argument names plain (`params`, `session`). The compiler adds Elixir-style `_` prefixes when those arguments are unused.
+- `assignKey(...)` is optional; preferred setup is `var keys = phoenix.AssignKeys.of(MyAssigns)`.
 - For full API behavior details (including macro dispatch and typed keys), see `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`.
 
 Compiles to:

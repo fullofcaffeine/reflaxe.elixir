@@ -109,7 +109,8 @@ run_step() {
   local safe_phase="${CURRENT_PHASE:-step}"
   safe_phase="${safe_phase// /_}"
   local log_file
-  log_file="$(mktemp "${LOG_DIR}/${safe_example}.${safe_phase}.XXXXXX.log")"
+  # Keep XXXXXX at the end for BSD/macOS mktemp compatibility.
+  log_file="$(mktemp "${LOG_DIR}/${safe_example}.${safe_phase}.XXXXXX")"
   LAST_LOG_FILE="$log_file"
   LAST_CMD="$(printf '%q ' "$@")"
 
@@ -348,7 +349,7 @@ main() {
 
   CURRENT_EXAMPLE="bootstrap"
   CURRENT_PHASE="mix.local.rebar"
-  run_step_retry 5 60 "$ROOT_DIR" mix local.rebar --force || fail "mix local.rebar --force failed"
+  run_step_retry 5 60 "$ROOT_DIR" mix local.rebar --if-missing --force || fail "mix local.rebar --if-missing --force failed"
 
   local dir name
   for dir in "$EXAMPLES_DIR"/*; do

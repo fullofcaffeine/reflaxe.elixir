@@ -159,7 +159,8 @@ Notes:
 - Why the API looks like this: Haxe has no built-in “field reference literal” for typedef fields, so `LiveSocket.assign` uses `_.field` as a compact compile-time selector.
 - What you get from it: the compiler validates the field name, converts to Phoenix atom style, and emits `assign(socket, :count, value)`. `_` does not exist at runtime.
 - Phoenix-style bulk assigns are available as `assign({ ... })`, which emits `assign(socket, %{...})`.
-- For strongest completion and key-specific value typing in Haxe 4.3.7, use the typed-key API (`assignKey`/`assignNewKey`/`updateKey`) with generated `AssignKey` constants.
+- Typed-key APIs (`assignKey`/`assignNewKey`/`updateKey`) are optional advanced mode with `var keys = phoenix.AssignKeys.of(MyAssigns)`.
+  Use default `assign(_.field, value)` / `assign({ ... })` for shortest code; use typed keys when you want explicit key tokens in APIs.
 - In Haxe, write callback args naturally (`params`, `session`). If they are unused, generated Elixir is automatically normalized to `_params`, `_session`.
 - API deep dive: `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
 
