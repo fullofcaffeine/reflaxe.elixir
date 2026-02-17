@@ -457,7 +457,7 @@ typedef Assigns = { clicked: Bool }
 @:liveview
 class MyLive {
     @:native("handle_event")
-    public static function handle_event(event: String, _params: Term, socket: Socket<Assigns>): HandleEventResult<Assigns> {
+    public static function handle_event(event: String, params: Term, socket: Socket<Assigns>): HandleEventResult<Assigns> {
         var liveSocket: LiveSocket<Assigns> = cast socket;
 
         return switch (event) {
@@ -492,12 +492,14 @@ typedef Assigns = {
     loading: Bool
 }
 
-public static function mount(_params: Term, _session: Term, socket: Socket<Assigns>): MountResult<Assigns> {
+public static function mount(params: Term, session: Term, socket: Socket<Assigns>): MountResult<Assigns> {
     var liveSocket: LiveSocket<Assigns> = cast socket;
     liveSocket = LiveView.assignMultiple(liveSocket, {products: [], loading: true});
     return Ok(liveSocket);
 }
 ```
+
+`params`/`session` do not need `_` in Haxe. If they are unused, generated Elixir is normalized to `_params`/`_session`.
 
 ### Problem: Routes not found
 

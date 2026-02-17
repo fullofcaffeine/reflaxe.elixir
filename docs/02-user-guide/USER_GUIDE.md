@@ -80,13 +80,13 @@ typedef CounterAssigns = { count: Int };
 @:native("MyAppWeb.CounterLive")
 @:liveview
 class CounterLive {
-  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+  public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
     var ls: LiveSocket<CounterAssigns> = socket;
     return Ok(ls.assign(_.count, 0));
   }
 
   @:native("handle_event")
-  public static function handle_event(event: String, _params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
+  public static function handle_event(event: String, params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
     var ls: LiveSocket<CounterAssigns> = socket;
     return switch (event) {
       case "increment":
@@ -98,6 +98,10 @@ class CounterLive {
   }
 }
 ```
+
+Notes:
+- `_.count` is a compile-time field selector for typed assigns updates.
+- You can keep Haxe argument names plain (`params`, `session`). The compiler adds Elixir-style `_` prefixes when those arguments are unused.
 
 Compiles to:
 

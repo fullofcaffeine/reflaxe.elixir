@@ -60,7 +60,7 @@ typedef TodoEventParams = {
 
 @:liveview
 class TodoLive {
-    public static function mount(_params: Term, _session: Term, socket: Socket<TodoAssigns>): MountResult<TodoAssigns> {
+    public static function mount(params: Term, session: Term, socket: Socket<TodoAssigns>): MountResult<TodoAssigns> {
         var liveSocket: LiveSocket<TodoAssigns> = cast socket;
         liveSocket = LiveView.assignMultiple(liveSocket, {todos: []});
         return Ok(liveSocket);

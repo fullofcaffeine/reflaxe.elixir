@@ -147,12 +147,16 @@ typedef CounterAssigns = { count: Int };
 @:native("MyAppWeb.CounterLive")
 @:liveview
 class CounterLive {
-  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+  public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
     var liveSocket: LiveSocket<CounterAssigns> = socket;
     return Ok(liveSocket.assign(_.count, 0));
   }
 }
 ```
+
+Notes:
+- `_.count` is a compile-time field selector used by `LiveSocket.assign`; `_` here is not a runtime variable.
+- In Haxe, write callback args naturally (`params`, `session`). If they are unused, generated Elixir is automatically normalized to `_params`, `_session`.
 
 Generated Elixir shape:
 

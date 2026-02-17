@@ -27,13 +27,17 @@ In LiveView modules, take a typed socket and update assigns via `LiveSocket.assi
 
 	@:liveview
 	class CounterLive {
-	  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+	  public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
 	    var liveSocket: LiveSocket<CounterAssigns> = socket;
 	    liveSocket = liveSocket.assign(_.count, 0);
 	    return Ok(liveSocket);
 	  }
 	}
 	```
+
+Notes:
+- `_.count` is a typed field selector that the assign macro reads at compile time.
+- Haxe callback arguments do not need `_` prefixes; unused ones are normalized to `_name` in generated Elixir.
 
 Compiles to:
 

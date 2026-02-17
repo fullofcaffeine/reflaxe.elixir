@@ -28,14 +28,14 @@ typedef CounterAssigns = { count: Int };
 	@:native("MyAppWeb.CounterLive")
 	@:liveview
 class CounterLive {
-  public static function mount(_params: Term, _session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+  public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
     var liveSocket: LiveSocket<CounterAssigns> = socket;
     liveSocket = liveSocket.assign(_.count, 0);
     return Ok(liveSocket);
   }
 
 	  @:native("handle_event")
-	  public static function handle_event(event: String, _params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
+	  public static function handle_event(event: String, params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
 	    var liveSocket: LiveSocket<CounterAssigns> = socket;
 
     return switch (event) {
@@ -87,7 +87,9 @@ end
 ```
 
 Notes:
-- `event` and `_params` are runtime values from Phoenix.
+- `_.count` is a compile-time field selector for `LiveSocket.assign`; `_` here is not a runtime variable.
+- `event` and `params` are runtime values from Phoenix.
+- In Haxe, you can use plain names (`params`, `session`); generated Elixir will still emit `_params` / `_session` when unused.
 - Typed assigns give you compile-time validation in both LiveView logic and templates.
 
 ## Pattern: Decode Event Params Once (Boundary → Typed)

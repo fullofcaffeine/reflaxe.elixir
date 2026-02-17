@@ -74,7 +74,7 @@ import plug.Conn;
 
 @:controller
 class UserController {
-    public static function index(conn: Conn<Term>, _params: Term): Conn<Term> {
+    public static function index(conn: Conn<Term>, params: Term): Conn<Term> {
         return conn.json({ok: true});
     }
 }
@@ -337,14 +337,14 @@ typedef UserAssigns = { users: Array<User> }
 
 @:liveview
 class UserLive {
-    public static function mount(_params: Term, _session: Term, socket: Socket<UserAssigns>): MountResult<UserAssigns> {
+    public static function mount(params: Term, session: Term, socket: Socket<UserAssigns>): MountResult<UserAssigns> {
         var liveSocket: LiveSocket<UserAssigns> = cast socket;
         liveSocket = LiveView.assignMultiple(liveSocket, {users: []});
         return Ok(liveSocket);
     }
     
     @:native("handle_event")
-    public static function handle_event(event: String, _params: Term, socket: Socket<UserAssigns>): HandleEventResult<UserAssigns> {
+    public static function handle_event(event: String, params: Term, socket: Socket<UserAssigns>): HandleEventResult<UserAssigns> {
         return NoReply(socket);
     }
     
@@ -353,6 +353,10 @@ class UserLive {
     }
 }
 ```
+
+Notes:
+- Use plain Haxe parameter names (`params`, `session`) unless you prefer `_params` style.
+- If a callback parameter is unused, generated Elixir will still follow convention and prefix it with `_`.
 
 **Generated Elixir**:
 ```elixir

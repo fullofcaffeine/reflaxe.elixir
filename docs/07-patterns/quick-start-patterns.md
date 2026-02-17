@@ -35,7 +35,7 @@ typedef ProductEventParams = {
 @:native("MyAppWeb.ProductLive")
 @:liveview
 class ProductLive {
-    public static function mount(_params: Term, _session: Term, socket: Socket<ProductAssigns>): MountResult<ProductAssigns> {
+    public static function mount(params: Term, session: Term, socket: Socket<ProductAssigns>): MountResult<ProductAssigns> {
         var liveSocket: LiveSocket<ProductAssigns> = cast socket;
 
         liveSocket = LiveView.assignMultiple(liveSocket, {
@@ -95,6 +95,7 @@ Notes
 - Use `Socket<TAssigns>` in callback signatures (what Phoenix expects).
 - Cast to `LiveSocket<TAssigns>` to use ergonomic, type‑safe helpers.
 - Keep params typed (`typedef ProductEventParams`) so you can do `params.query` without reflection.
+- If `params`/`session` are unused in Haxe, generated Elixir still emits `_params`/`_session`.
 
 ## 2) Ecto schema + generated changeset (recommended default)
 
