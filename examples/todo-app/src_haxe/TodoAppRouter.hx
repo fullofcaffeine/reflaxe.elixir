@@ -38,7 +38,7 @@ final routes = [
 		plug("protect_from_forgery"),
 		plug("put_secure_browser_headers")
 	]),
-	pipeline("api", [plug("accepts", {initArgs: ["json"]})]),
+	pipeline("api", [plug("accepts", {initArgs: ["json"]}), plug("fetch_session")]),
 	scope("/", [
 		pipeThrough(["browser"]),
 		// Live routes
