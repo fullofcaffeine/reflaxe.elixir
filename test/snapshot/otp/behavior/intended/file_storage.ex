@@ -27,16 +27,16 @@ end)}
     end
     %{:ok => struct}
   end
-  def get(_, _) do
+  def get(_struct, _key) do
     nil
   end
-  def put(_, _, _) do
+  def put(_struct, _key, _value) do
     true
   end
-  def delete(_, _) do
+  def delete(_struct, _key) do
     true
   end
-  def list(_) do
+  def list(_struct) do
     []
   end
 end

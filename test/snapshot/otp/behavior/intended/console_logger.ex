@@ -2,10 +2,10 @@ defmodule ConsoleLogger do
   def new() do
     %{:__reflaxe_class__ => ConsoleLogger}
   end
-  def log(_, _) do
+  def log(_struct, _message) do
     nil
   end
-  def debug(_, _) do
+  def debug(_struct, _message) do
     nil
   end
 end

@@ -4,7 +4,7 @@ defmodule MyWorker do
     struct = %{struct | config: config_param}
     struct
   end
-  def start_link(_) do
+  def start_link(_args) do
     {"ok", "worker_pid"}
   end
 end

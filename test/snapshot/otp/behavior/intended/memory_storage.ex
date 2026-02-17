@@ -4,7 +4,7 @@ defmodule MemoryStorage do
     struct = %{struct | data: %{}}
     struct
   end
-  def init(struct, _) do
+  def init(struct, _config) do
     %{:ok => struct}
   end
   def get(struct, key) do

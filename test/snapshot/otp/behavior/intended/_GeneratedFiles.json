@@ -8,7 +8,6 @@
   "memory_storage.ex",
   "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
-  "haxe/ds/_map/map_impl_.ex",
   "file_storage.ex",
   "console_logger.ex"
 ],

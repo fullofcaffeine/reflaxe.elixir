@@ -14,7 +14,7 @@ defmodule Main do
     _ = on_exit(fn -> global = nil end)
     :ok
   end
-  defp helper_method(_) do
+  defp helper_method(_struct) do
     assert true
   end
   defp static_helper() do

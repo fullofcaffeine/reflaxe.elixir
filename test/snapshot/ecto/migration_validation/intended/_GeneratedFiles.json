@@ -12,6 +12,7 @@
   "int_iterator.ex",
   "haxe/iterators/array_iterator.ex",
   "haxe/io/bytes.ex",
+  "haxe/int64_helper.ex",
   "elixir/types/_atom/atom_impl_.ex",
   "ecto/table_builder.ex",
   "ecto/postgres_extension.ex",

@@ -102,10 +102,10 @@ end)} end).())
     end
     query
   end
-  defp from(_, _, _) do
+  defp from(_table, _alias_param, _opts) do
     nil
   end
-  defp where(_, _, _) do
+  defp where(_query, _alias_param, _condition) do
     nil
   end
 end

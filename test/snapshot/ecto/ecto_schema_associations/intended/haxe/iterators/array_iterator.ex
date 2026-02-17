@@ -1,14 +1,25 @@
 defmodule ArrayIterator do
-  defstruct array: [], current: 0, ref: nil
-  def new(array), do: %__MODULE__{array: array, current: 0, ref: make_ref()}
-  defp state_key(ref), do: {__MODULE__, ref}
-  defp current_index(struct) do
-    if Kernel.is_nil(struct.ref), do: struct.current, else: Process.get(state_key(struct.ref), struct.current)
+  def new(array_param) do
+    struct = %{:__reflaxe_class__ => ArrayIterator, :array => nil, :ref => nil, :current => nil}
+    struct = %{struct | current: 0}
+    struct = %{struct | array: array_param}
+    struct = %{struct | ref: make_ref()}
+    struct
   end
-  def has_next(struct), do: current_index(struct) < length(struct.array)
+  defp state_key(struct) do
+    {__MODULE__, struct.ref}
+  end
+  defp current_index(struct) do
+    Process.get(state_key(struct), struct.current)
+  end
+  def has_next(struct) do
+    current_index(struct) < length(struct.array)
+  end
   def next(struct) do
-    i = current_index(struct)
-    if not Kernel.is_nil(struct.ref), do: Process.put(state_key(struct.ref), i + 1)
-    Enum.at(struct.array, i)
+    
+            index = current_index(struct)
+            Process.put(state_key(struct), index + 1)
+            Enum.at(struct.array, index)
+        
   end
 end

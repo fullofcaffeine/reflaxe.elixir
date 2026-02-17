@@ -43,10 +43,10 @@ defmodule Main do
   def module_state(value) do
     __haxe_static_put__(:module_state, value)
   end
-  defp safe_divide(_, a, b) do
+  defp safe_divide(_struct, a, b) do
     if (b == 0), do: {:error, "Division by zero"}, else: {:ok, a / b}
   end
-  defp find_in_array(_, arr, item) do
+  defp find_in_array(_struct, arr, item) do
     _g = 0
     (case Enum.reduce_while(arr, :__reflaxe_no_return__, fn element, _ ->
   if (element == item), do: {:halt, {:__reflaxe_return__, {:some, element}}}, else: {:cont, :__reflaxe_no_return__}
@@ -55,7 +55,7 @@ end) do
       _ -> {:none}
     end)
   end
-  defp perform_async_calculation(_) do
+  defp perform_async_calculation(_struct) do
     sum = 0
     sum = sum + 1
     sum = sum + 2
@@ -69,7 +69,7 @@ end) do
     sum = sum + 10
     sum * 2
   end
-  defp throw_error(_, message) do
+  defp throw_error(_struct, message) do
     raise Reflaxe.Elixir.HaxeThrow, [value: message]
   end
   describe "Performance Tests" do

@@ -7,7 +7,7 @@ defmodule MyAppWeb.ConditionalPresence do
       MyApp.Presence.track(self(), socket, user_id, %{:role => "user", :meta => meta})
     end
   end
-  def track_in_switch(socket, user_id, user_type, _) do
+  def track_in_switch(socket, user_id, user_type, _meta) do
     (case user_type do
       "admin" ->
         MyApp.Presence.track(self(), socket, user_id, %{:role => "admin", :permissions => "all"})

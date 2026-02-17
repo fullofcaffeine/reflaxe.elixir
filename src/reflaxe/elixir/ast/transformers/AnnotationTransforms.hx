@@ -1094,6 +1094,71 @@ class AnnotationTransforms {
 			return shortName;
 		}
 
+		function isAtomPlugCall(nodeAst:ElixirAST, plugName:String):Bool {
+			if (nodeAst == null || nodeAst.def == null || plugName == null) {
+				return false;
+			}
+
+			return switch (nodeAst.def) {
+				case ECall(_, "plug", args):
+					if (args == null || args.length == 0 || args[0] == null) {
+						false;
+					} else {
+						switch (args[0].def) {
+							case EAtom(atom):
+								normalizeAtomValue(cast atom) == normalizeAtomValue(plugName);
+							default:
+								false;
+						}
+					}
+				default:
+					false;
+			};
+		}
+
+		function hasRootLayoutPlug(body:Array<ElixirAST>):Bool {
+			if (body == null) {
+				return false;
+			}
+			for (statement in body) {
+				if (isAtomPlugCall(statement, "put_root_layout")) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		function defaultRootLayoutPlug():ElixirAST {
+			var layoutsModule = (webModuleName != null && webModuleName.length > 0) ? (webModuleName + ".Layouts") : "Layouts";
+			return makeAST(ECall(null, "plug", [
+				makeAST(EAtom(ElixirAtom.raw("put_root_layout"))),
+				makeAST(ETuple([makeAST(EVar(layoutsModule)), makeAST(EAtom(ElixirAtom.raw("root")))]))
+			]));
+		}
+
+		function ensureDefaultBrowserRootLayout(body:Array<ElixirAST>):Array<ElixirAST> {
+			if (body == null) {
+				return [defaultRootLayoutPlug()];
+			}
+			if (hasRootLayoutPlug(body)) {
+				return body;
+			}
+
+			var withRootLayout:Array<ElixirAST> = [];
+			var inserted = false;
+			for (statement in body) {
+				withRootLayout.push(statement);
+				if (!inserted && isAtomPlugCall(statement, "fetch_live_flash")) {
+					withRootLayout.push(defaultRootLayoutPlug());
+					inserted = true;
+				}
+			}
+			if (!inserted) {
+				withRootLayout.push(defaultRootLayoutPlug());
+			}
+			return withRootLayout;
+		}
+
 		for (node in nodes) {
 			if (node == null || node.kind == null) {
 				continue;
@@ -1103,6 +1168,9 @@ class AnnotationTransforms {
 				case "pipeline":
 					var pipelineName = node.name != null ? node.name : "browser";
 					var body = emitRouterDslNodes(node.children, webModuleName, false);
+					if (normalizeAtomValue(pipelineName) == "browser") {
+						body = ensureDefaultBrowserRootLayout(body);
+					}
 					emitted.push(makeAST(EMacroCall("pipeline", [makeAST(EAtom(ElixirAtom.raw(normalizeAtomValue(pipelineName))))], makeAST(EBlock(body)))));
 
 				case "plug":

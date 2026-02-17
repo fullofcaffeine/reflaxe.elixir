@@ -1,7 +1,7 @@
 defmodule TestAppWeb.GoldenLive do
   use Phoenix.Component
   use Phoenix.LiveView, layout: {TestAppWeb.Layouts, :app}
-  def mount(_, _, socket) do
+  def mount(_params, _session, socket) do
     live = socket
     live = Phoenix.Component.assign(live, %{:counter => 0, :search_query => "", :sort_by => "created", :selected_tags => []})
     {:ok, live}

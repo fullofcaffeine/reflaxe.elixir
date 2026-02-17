@@ -262,21 +262,127 @@ class RouterBuildMacro {
 	 * - controllers.UserController
 	 * - server.live.TodoLive
 	 */
-	private static function resolveTypePathFromExpr(expr:Expr, fallbackPath:String):String {
+	private static function resolveClassTypePath(classType:ClassType):String {
+		var classPath = classType.pack.length > 0 ? classType.pack.join(".") + "." + classType.name : classType.name;
+		var modulePath = classType.module;
+
+		if (modulePath == null || modulePath.length == 0 || modulePath == classType.name) {
+			return classPath;
+		}
+
+		if (classType.pack != null && classType.pack.length > 0 && modulePath.indexOf(".") == -1) {
+			return classType.pack.join(".") + "." + modulePath + "." + classType.name;
+		}
+
+		return modulePath + "." + classType.name;
+	}
+
+	private static function canResolveTypePath(typePath:String):Bool {
+		if (typePath == null || typePath.length == 0) {
+			return false;
+		}
+
 		try {
-			var resolvedType = Context.typeof(expr);
-			return switch (resolvedType) {
-				case TInst(classRef, _):
-					var classType = classRef.get();
-					classType.pack.length > 0 ? classType.pack.join(".") + "." + classType.name : classType.name;
-				case TType(typeRef, _):
-					var typedefType = typeRef.get();
-					typedefType.pack.length > 0 ? typedefType.pack.join(".") + "." + typedefType.name : typedefType.name;
-				default:
-					fallbackPath;
-			};
+			Context.getType(typePath);
+			return true;
 		} catch (_:Dynamic) {
-			return fallbackPath;
+			return false;
+		}
+	}
+
+	private static function normalizeClassLiteralTypePath(typePath:String):String {
+		if (typePath == null || typePath.length == 0) {
+			return typePath;
+		}
+
+		var normalized = StringTools.trim(typePath);
+		if (normalized.startsWith("Class<") && normalized.endsWith(">")) {
+			normalized = normalized.substr(6, normalized.length - 7);
+		}
+
+		if (canResolveTypePath(normalized)) {
+			return normalized;
+		}
+
+		if (normalized.indexOf(".") != -1) {
+			return normalized;
+		}
+
+		var localClass = Context.getLocalClass().get();
+		if (localClass != null) {
+			var modulePath = localClass.module;
+			if (modulePath != null && modulePath.length > 0) {
+				var moduleCandidate = modulePath + "." + normalized;
+				if (canResolveTypePath(moduleCandidate)) {
+					return moduleCandidate;
+				}
+
+				if (localClass.pack != null && localClass.pack.length > 0 && modulePath.indexOf(".") == -1) {
+					var qualifiedModuleCandidate = localClass.pack.join(".") + "." + modulePath + "." + normalized;
+					if (canResolveTypePath(qualifiedModuleCandidate)) {
+						return qualifiedModuleCandidate;
+					}
+				}
+			}
+
+			if (localClass.pack != null && localClass.pack.length > 0) {
+				var packageCandidate = localClass.pack.join(".") + "." + normalized;
+				if (canResolveTypePath(packageCandidate)) {
+					return packageCandidate;
+				}
+			}
+		}
+
+		return normalized;
+	}
+
+	private static function resolveTypePathFromType(resolvedType:Type):Null<String> {
+		return switch (resolvedType) {
+			case TMono(monoRef):
+				var resolvedMono = monoRef.get();
+				resolvedMono != null ? resolveTypePathFromType(resolvedMono) : null;
+			case TLazy(loader):
+				resolveTypePathFromType(loader());
+			case TInst(classRef, params):
+				var classType = classRef.get();
+				if (classType.name == "Class" && params != null && params.length == 1) {
+					resolveTypePathFromType(params[0]);
+				} else {
+					resolveClassTypePath(classType);
+				}
+			case TType(typeRef, params):
+				var typedefType = typeRef.get();
+				if (typedefType.name == "Class" && params != null && params.length == 1) {
+					resolveTypePathFromType(params[0]);
+				} else {
+					typedefType.pack.length > 0 ? typedefType.pack.join(".") + "." + typedefType.name : typedefType.name;
+				}
+			case TAbstract(abstractRef, params):
+				var abstractType = abstractRef.get();
+				if (abstractType.name == "Class" && params != null && params.length == 1) {
+					resolveTypePathFromType(params[0]);
+				} else {
+					abstractType.pack.length > 0 ? abstractType.pack.join(".") + "." + abstractType.name : abstractType.name;
+				}
+			default:
+				null;
+		};
+	}
+
+	private static function resolveTypePathFromExpr(expr:Expr, fallbackPath:String):String {
+		var normalizedFallback = normalizeClassLiteralTypePath(fallbackPath);
+		try {
+			var resolvedPath = resolveTypePathFromType(Context.typeof(expr));
+			var normalizedResolved = resolvedPath != null ? normalizeClassLiteralTypePath(resolvedPath) : null;
+			if (normalizedResolved != null && normalizedResolved.length > 0) {
+				if (normalizedFallback != null && normalizedFallback.indexOf(".") != -1 && normalizedResolved.indexOf(".") == -1) {
+					return normalizedFallback;
+				}
+				return normalizedResolved;
+			}
+			return normalizedFallback;
+		} catch (_:Dynamic) {
+			return normalizedFallback;
 		}
 	}
 

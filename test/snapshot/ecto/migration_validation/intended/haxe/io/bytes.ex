@@ -6,7 +6,7 @@ defmodule Bytes do
     struct = %{struct | b: b_param}
     struct
   end
-  def get_string(struct, pos, len, _) do
+  def get_string(struct, pos, len, _encoding) do
     if (pos < 0 or len < 0 or pos + len > struct.length) do
       raise Reflaxe.Elixir.HaxeThrow, [value: "Out of bounds"]
     end
@@ -217,7 +217,7 @@ defmodule Bytes do
     b = :binary.copy(<<0>>, length_param)
     _ = new(length_param, b)
   end
-  def of_string(s, _) do
+  def of_string(s, _encoding) do
     binary = :unicode.characters_to_binary(s, :utf8)
     length = byte_size(binary)
     _ = new(length, binary)

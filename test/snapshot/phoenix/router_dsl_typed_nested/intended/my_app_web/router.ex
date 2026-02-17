@@ -5,6 +5,7 @@ defmodule RouterDslTypedNested do
   pipeline :browser do
     _ = plug(:accepts, ["html"])
     _ = plug(:fetch_session)
+    _ = plug(:put_root_layout, {RouterDslTypedNested.Layouts, :root})
   end
   pipeline :api do
     _ = plug(:accepts, ["json"])

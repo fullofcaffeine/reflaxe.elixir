@@ -65,7 +65,7 @@ defmodule MyAppWeb do
   def static_paths() do
     ["assets", "fonts", "images", "favicon.ico", "robots.txt"]
   end
-  def live_session(_) do
+  def live_session(_conn) do
     %{}
   end
 end

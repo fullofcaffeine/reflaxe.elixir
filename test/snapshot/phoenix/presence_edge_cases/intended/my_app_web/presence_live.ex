@@ -2,7 +2,7 @@ defmodule MyAppWeb.PresenceLive do
   use Phoenix.Component
   use Phoenix.LiveView, layout: {MyAppWeb.Layouts, :app}
   use Phoenix.Presence, otp_app: :my_app, pubsub_server: MyApp.PubSub
-  def mount(_, session, socket) do
+  def mount(_params, session, socket) do
     user_id = (case session do
       dyn_obj ->
         (case Map.fetch(dyn_obj, "user_id") do

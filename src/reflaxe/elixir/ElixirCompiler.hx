@@ -4244,20 +4244,79 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 			return resolveTypePathFromLocalImports(classType, path, sourcePos);
 		}
 
+		function normalizeClassLiteralTypePath(path:String, sourcePos:haxe.macro.Expr.Position):String {
+			if (path == null || path.length == 0) {
+				return path;
+			}
+
+			var normalized = StringTools.trim(path);
+			if (StringTools.startsWith(normalized, "Class<") && StringTools.endsWith(normalized, ">")) {
+				normalized = normalized.substr(6, normalized.length - 7);
+			}
+
+			return normalizeImportedTypePath(normalized, sourcePos);
+		}
+
+		function resolveClassTypePath(resolvedClass:ClassType):String {
+			var classPath = resolvedClass.pack.length > 0 ? resolvedClass.pack.join(".") + "." + resolvedClass.name : resolvedClass.name;
+			var modulePath = resolvedClass.module;
+
+			if (modulePath == null || modulePath.length == 0 || modulePath == resolvedClass.name) {
+				return classPath;
+			}
+
+			if (resolvedClass.pack != null && resolvedClass.pack.length > 0 && modulePath.indexOf(".") == -1) {
+				return resolvedClass.pack.join(".") + "." + modulePath + "." + resolvedClass.name;
+			}
+
+			return modulePath + "." + resolvedClass.name;
+		}
+
+		function resolveTypePathFromType(resolvedType:Type):Null<String> {
+			return switch (resolvedType) {
+				case TMono(monoRef):
+					var resolvedMono = monoRef.get();
+					resolvedMono != null ? resolveTypePathFromType(resolvedMono) : null;
+				case TLazy(loader):
+					resolveTypePathFromType(loader());
+				case TInst(classRef, params):
+					var resolvedClass = classRef.get();
+					if (resolvedClass.name == "Class" && params != null && params.length == 1) {
+						resolveTypePathFromType(params[0]);
+					} else {
+						resolveClassTypePath(resolvedClass);
+					}
+				case TType(typeRef, params):
+					var resolvedTypedef = typeRef.get();
+					if (resolvedTypedef.name == "Class" && params != null && params.length == 1) {
+						resolveTypePathFromType(params[0]);
+					} else {
+						resolvedTypedef.pack.length > 0 ? resolvedTypedef.pack.join(".") + "." + resolvedTypedef.name : resolvedTypedef.name;
+					}
+				case TAbstract(abstractRef, params):
+					var resolvedAbstract = abstractRef.get();
+					if (resolvedAbstract.name == "Class" && params != null && params.length == 1) {
+						resolveTypePathFromType(params[0]);
+					} else {
+						resolvedAbstract.pack.length > 0 ? resolvedAbstract.pack.join(".") + "." + resolvedAbstract.name : resolvedAbstract.name;
+					}
+				default:
+					null;
+			};
+		}
+
 		function resolveTypePathFromExpr(expr:Expr, fallbackPath:String):String {
-			var normalizedFallback = normalizeImportedTypePath(fallbackPath, expr != null ? expr.pos : null);
+			var normalizedFallback = normalizeClassLiteralTypePath(fallbackPath, expr != null ? expr.pos : null);
 			try {
-				var resolvedType = Context.typeof(expr);
-				return switch (resolvedType) {
-					case TInst(classRef, _):
-						var resolvedClass = classRef.get();
-						resolvedClass.pack.length > 0 ? resolvedClass.pack.join(".") + "." + resolvedClass.name : resolvedClass.name;
-					case TType(typeRef, _):
-						var typedefType = typeRef.get();
-						typedefType.pack.length > 0 ? typedefType.pack.join(".") + "." + typedefType.name : typedefType.name;
-					default:
-						normalizedFallback;
-				};
+				var resolvedPath = resolveTypePathFromType(Context.typeof(expr));
+				var normalizedResolved = resolvedPath != null ? normalizeClassLiteralTypePath(resolvedPath, expr != null ? expr.pos : null) : null;
+				if (normalizedResolved != null && normalizedResolved.length > 0) {
+					if (normalizedFallback != null && normalizedFallback.indexOf(".") != -1 && normalizedResolved.indexOf(".") == -1) {
+						return normalizedFallback;
+					}
+					return normalizedResolved;
+				}
+				return normalizedFallback;
 			} catch (_:Dynamic) {
 				return normalizedFallback;
 			}

@@ -1,10 +1,10 @@
 defmodule TestAppWeb.ValueToIdLive do
   use Phoenix.Component
   use Phoenix.LiveView, layout: {TestAppWeb.Layouts, :app}
-  def mount(_, _, socket) do
+  def mount(_params, _session, socket) do
     {:ok, socket}
   end
-  defp toggle_todo(_, _) do
+  defp toggle_todo(_id, _socket) do
     
   end
   def handle_event(event, params, socket) do

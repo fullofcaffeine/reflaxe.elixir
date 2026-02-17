@@ -11,19 +11,19 @@ defmodule CreateProductsTable do
   def down(struct) do
     drop_table(struct, "products")
   end
-  defp should_add_inventory(_) do
+  defp should_add_inventory(_struct) do
     true
   end
-  defp create_table(_, _) do
+  defp create_table(_struct, _table_name) do
     
   end
-  defp drop_table(_, _) do
+  defp drop_table(_struct, _table_name) do
     
   end
-  defp add_column(_, _, _, _) do
+  defp add_column(_struct, _table, _column, _type) do
     
   end
-  defp timestamps(_) do
+  defp timestamps(_struct) do
     
   end
 end
