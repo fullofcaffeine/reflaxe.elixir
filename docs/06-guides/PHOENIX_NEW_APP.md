@@ -96,5 +96,6 @@ If you prefer a ready-made example to copy:
 
 - `examples/03-phoenix-app/` — minimal Phoenix app authored in Haxe
 - `examples/13-elixir-first-liveview/` — minimal typed Elixir-first LiveView workflow in Haxe
-- `examples/12-phoenix-chat/` — Presence + PubSub + LiveView in Haxe (chat tutorial)
+- `examples/12-phoenix-chat/` — Presence + PubSub + LiveView in Haxe (hybrid adoption tutorial)
+- `examples/15-phoenix-chat-haxe-first/` — Presence + PubSub + LiveView with app/router also authored in Haxe
 - `examples/todo-app/` — end-to-end Phoenix LiveView + Ecto + Playwright E2E

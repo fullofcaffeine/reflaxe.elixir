@@ -112,13 +112,6 @@ class AdminLive {
 		return chosen != null ? cast chosen : null;
 	}
 
-	/**
-	 * Router action handler (placeholder to satisfy route validation).
-	 */
-	public static function index():String {
-		return "index";
-	}
-
 	static function loadUsers(organizationId:Int):Array<User> {
 		var query = ecto.TypedQuery.from(User).where(u -> u.organizationId == organizationId);
 		var users:Array<User> = Repo.all(query);

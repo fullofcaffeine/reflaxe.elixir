@@ -897,9 +897,9 @@ final routes = [
     ]),
     scope("/", [
         pipeThrough(["browser"]),
-        live("/", TodoLive, TodoLive.index),
-        live("/todos", TodoLive, TodoLive.index),
-        live("/profile", ProfileLive, ProfileLive.show)
+        live("/", TodoLive),
+        live("/todos", TodoLive),
+        live("/profile", ProfileLive)
     ])
 ];
 ```

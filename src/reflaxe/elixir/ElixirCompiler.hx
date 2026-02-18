@@ -4812,7 +4812,7 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 								options: sessionOpts
 							};
 
-						case "get", "post", "put", "patch", "delete", "options", "head", "connect", "trace", "live":
+						case "get", "post", "put", "patch", "delete", "options", "head", "connect", "trace":
 							if (args.length < 3) {
 								Context.error('RouterDsl.${name}(path, controller, action, ?opts) requires at least three arguments', nodeExpr.pos);
 							}
@@ -4834,6 +4834,42 @@ class ElixirCompiler extends GenericCompiler<reflaxe.elixir.ast.ElixirAST, // Co
 								controller: controllerPath,
 								action: actionName,
 								options: routeOpts
+							};
+
+						case "live":
+							if (args.length < 2) {
+								Context.error('RouterDsl.live(path, liveModule, ?action, ?opts) requires at least two arguments', nodeExpr.pos);
+							}
+							var livePath = extractStringValue(args[0], "route path", nodeExpr.pos);
+							var liveControllerTypePath = extractTypeRef(args[1], "controller/live module", nodeExpr.pos, false, false);
+							var liveControllerPath = liveControllerTypePath != null ? stripLocalModulePrefix(liveControllerTypePath) : null;
+							var liveActionName:Null<String> = null;
+							var liveRouteOpts:Array<RouterOptionMeta> = [];
+
+							if (args.length > 2) {
+								switch (args[2].expr) {
+									case EObjectDecl(_):
+										liveRouteOpts = parseOptionsExpr(args[2]);
+									case EConst(CIdent("null")):
+										liveRouteOpts = args.length > 3 ? parseOptionsExpr(args[3]) : [];
+									default:
+										liveActionName = extractActionRef(args[2], "action", nodeExpr.pos, false);
+										liveRouteOpts = args.length > 3 ? parseOptionsExpr(args[3]) : [];
+								}
+							}
+
+							validatePathParamsContract(livePath, liveRouteOpts, nodeExpr.pos);
+							if (liveControllerTypePath != null && liveActionName != null) {
+								validateActionExists(liveControllerTypePath, liveActionName, nodeExpr.pos);
+							}
+
+							{
+								kind: "route",
+								method: "LIVE",
+								path: livePath,
+								controller: liveControllerPath,
+								action: liveActionName,
+								options: liveRouteOpts
 							};
 
 						case "match":

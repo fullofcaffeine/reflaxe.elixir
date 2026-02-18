@@ -291,6 +291,11 @@ jobs:
             cache_paths: |
               examples/13-elixir-first-liveview/deps
               examples/13-elixir-first-liveview/_build
+          - shard: mix-15
+            only: '15-phoenix-chat-haxe-first'
+            cache_paths: |
+              examples/15-phoenix-chat-haxe-first/deps
+              examples/15-phoenix-chat-haxe-first/_build
     timeout-minutes: 90
     env:
       TIMEOUT_DEPS_GET: '600'

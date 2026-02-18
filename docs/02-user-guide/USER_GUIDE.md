@@ -19,6 +19,10 @@ The Phoenix docs are split into two concrete paths:
 
 Phoenix integration overview: `docs/02-user-guide/PHOENIX_INTEGRATION.md`.
 
+Chat walkthroughs for both adoption styles:
+- Hybrid (gradual): `docs/06-guides/PHOENIX_CHAT_TUTORIAL.md`
+- Haxe-first server: `docs/06-guides/PHOENIX_CHAT_TUTORIAL_HAXE_FIRST.md`
+
 ## Choose an Authoring Style
 
 You can build production Phoenix apps with either style today:

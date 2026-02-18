@@ -128,13 +128,6 @@ class UsersLive {
 		return chosen != null ? cast chosen : null;
 	}
 
-	/**
-	 * Router action handler (placeholder to satisfy route validation).
-	 */
-	public static function index():String {
-		return "index";
-	}
-
 	public static function handle_event(event:String, params:Term, socket:Socket<UsersLiveAssigns>):HandleEventResult<UsersLiveAssigns> {
 		var sock:LiveSocket<UsersLiveAssigns> = socket;
 

@@ -43,20 +43,19 @@ final routes = [
 		pipeThrough(["browser"]),
 		// Live routes
 		liveSession("default", [
-			live("/", TodoLive, TodoLive.index),
-			live("/login", AuthLive, AuthLive.index),
-			live("/profile", ProfileLive, ProfileLive.show),
-			live("/org", OrganizationLive, OrganizationLive.index),
-			live("/users", UsersLive, UsersLive.index),
-			live("/admin", AdminLive, AdminLive.index),
-			live("/admin/audit", AuditLogLive, AuditLogLive.index),
-			live("/todos", TodoLive, TodoLive.index),
-			live("/todos/:id", TodoLive, TodoLive.show,
-				{
-					paramsContract: TodoIdPathParams
-				}),
-			live("/todos/:id/edit", TodoLive, TodoLive.edit, {paramsContract: TodoIdPathParams}),
-			live("/dev/inline-markup", InlineMarkupLive, InlineMarkupLive.index)
+			live("/", TodoLive),
+			live("/login", AuthLive),
+			live("/profile", ProfileLive),
+			live("/org", OrganizationLive),
+			live("/users", UsersLive),
+			live("/admin", AdminLive),
+			live("/admin/audit", AuditLogLive),
+			live("/todos", TodoLive),
+			live("/todos/:id", TodoLive, {
+				paramsContract: TodoIdPathParams
+			}),
+			live("/todos/:id/edit", TodoLive, {paramsContract: TodoIdPathParams}),
+			live("/dev/inline-markup", InlineMarkupLive)
 		]),
 		// Session/OAuth endpoints
 		post("/auth/login", SessionController, SessionController.create),

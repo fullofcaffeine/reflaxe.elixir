@@ -12,8 +12,5 @@ import reflaxe.elixir.macros.RouterDsl.*;
 @:router
 final routes = [
 	pipeline("browser", [plug("accepts", {initArgs: ["html"]}), plug("fetch_session")]),
-	scope("/", [
-		pipeThrough(["browser"]),
-		liveSession("default", [live("/", SearchLive, SearchLive.index)])
-	])
+	scope("/", [pipeThrough(["browser"]), liveSession("default", [live("/", SearchLive)])])
 ];

@@ -103,13 +103,6 @@ class ProfileLive {
 		return chosen != null ? cast chosen : null;
 	}
 
-	/**
-	 * Router action handler (placeholder to satisfy route validation).
-	 */
-	public static function show():String {
-		return "show";
-	}
-
 	public static function handle_event(event:String, params:EventParams, socket:Socket<ProfileLiveAssigns>):HandleEventResult<ProfileLiveAssigns> {
 		var sock:LiveSocket<ProfileLiveAssigns> = socket;
 		return switch (event) {

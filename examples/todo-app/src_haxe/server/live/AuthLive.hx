@@ -87,13 +87,6 @@ class AuthLive {
 		return chosen != null ? cast chosen : null;
 	}
 
-	/**
-	 * Router action handler (placeholder to satisfy route validation).
-	 */
-	public static function index():String {
-		return "index";
-	}
-
 	public static function render(assigns:AuthLiveRenderAssigns):String {
 		var renderAssigns:Assigns<AuthLiveRenderAssigns> = assigns;
 		renderAssigns = Component.assign(renderAssigns, "flash_info", PhoenixFlash.get(assigns.flash, "info"));

@@ -383,6 +383,8 @@ Examples
 - Prefer imported short module refs in routes (`UserController`, `TodoLive`) over package-qualified refs (`controllers.UserController`, `server.live.TodoLive`) when unambiguous.
 - Use package-qualified refs only when needed for disambiguation or type resolution.
 - For typed route nodes, prefer Phoenix-mapped options (`asName` -> `as:`) and avoid `name` unless you are intentionally using flat compatibility-route metadata.
+- Prefer omission-friendly typed APIs that match Phoenix defaults. Example: `live(path, LiveModule[, opts])` should not require placeholder `index/show/edit` methods when no route-action dispatch is needed.
+- API design rule for router/live surfaces: choose the shortest typed shape that preserves Phoenix faithfulness and compile-time checks; avoid adding user-facing boilerplate just to satisfy compiler internals.
 
 ### Module-Level Fields Over Empty Classes (Hard Rule)
 

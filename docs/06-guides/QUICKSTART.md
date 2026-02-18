@@ -10,7 +10,7 @@ If you’re new to Haxe and/or new to Phoenix, start here first:
 
 - New Phoenix app (greenfield): `docs/06-guides/PHOENIX_NEW_APP.md`
 - Existing Phoenix app (gradual adoption): `docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md`
-- Learn by example: `examples/README.md` (start with `examples/03-phoenix-app/`, then choose portable-first `examples/10-option-patterns/` or Elixir-first `examples/13-elixir-first-liveview/`)
+- Learn by example: `examples/README.md` (start with `examples/03-phoenix-app/`, then compare hybrid `examples/12-phoenix-chat/` vs Haxe-first `examples/15-phoenix-chat-haxe-first/`)
 
 ## Prerequisites
 

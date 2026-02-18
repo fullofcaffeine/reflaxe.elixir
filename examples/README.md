@@ -74,12 +74,17 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 **Features**: `@:protocol`, `@:impl`, `@:behaviour`, `@:use`, typed wrappers over low-level Elixir runtime APIs  
 **Use Case**: Author reusable Haxe abstractions that compile to native Elixir contract/process module shapes
 
-### 15. [todo-app](./todo-app/)
+### 15. [15-phoenix-chat-haxe-first](./15-phoenix-chat-haxe-first/)
+**Difficulty**: Intermediate  
+**Features**: Haxe-authored `@:application`, module-level `@:router`, LiveView + PubSub + Presence, tiny client hook (Genes)  
+**Use Case**: Haxe-first Phoenix chat where app/router/live/presence are authored in Haxe
+
+### 16. [todo-app](./todo-app/)
 **Difficulty**: Advanced  
 **Features**: Full Phoenix LiveView app, Ecto, Playwright E2E  
 **Use Case**: End-to-end reference app (recommended for Phoenix/LiveView)
 
-### 16. [test-integration](./test-integration/)
+### 17. [test-integration](./test-integration/)
 **Difficulty**: Intermediate  
 **Features**: Mix compiler task testing, build pipeline validation  
 **Use Case**: Testing Haxe→Elixir compilation in Mix projects
@@ -104,6 +109,7 @@ Reflaxe.Elixir supports two authoring styles on one compiler pipeline. This matr
 | `12-phoenix-chat` | Hybrid (intentional) | Haxe feature logic + hand-authored Phoenix scaffold for incremental adoption. |
 | `13-elixir-first-liveview` | Elixir-first | Typed LiveView app flow with strict-mode discipline and boundary decoding. |
 | `14-abstraction-lab` | Elixir-first | Framework-agnostic abstraction patterns: protocols, behaviours, and typed process boundaries. |
+| `15-phoenix-chat-haxe-first` | Elixir-first | Haxe-authored `@:application` + module-level `@:router` + LiveView/Presence in one server-first workflow. |
 | `todo-app` | Hybrid (intentional) | Full app canary: portable shared domain + extensive Phoenix/Ecto/OTP integration. |
 | `test-integration` | N/A | Compiler/Mix integration verification harness. |
 

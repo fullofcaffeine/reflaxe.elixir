@@ -185,8 +185,18 @@ class RouterDsl {
 		return route("TRACE", path, controller, action, opts);
 	}
 
-	/** `live "/path", LiveModule, :action` */
-	public static inline function live(path:String, liveModule:Class<Any>, action:Any, ?opts:RouteOptions):RouterDslNode {
+	/**
+	 * `live "/path", LiveModule, :action`
+	 *
+	 * The action is optional:
+	 * - `live("/", AppLive)` emits `live "/", AppLive`
+	 * - `live("/todos/:id", TodoLive, TodoLive.show)` emits `live "/todos/:id", TodoLive, :show`
+	 *
+	 * WHY
+	 * - Phoenix allows live routes without an explicit action.
+	 * - Requiring a placeholder action method in LiveView modules adds noise for simple routes.
+	 */
+	public static inline function live(path:String, liveModule:Class<Any>, ?action:Any, ?opts:RouteOptions):RouterDslNode {
 		return route("LIVE", path, liveModule, action, opts);
 	}
 

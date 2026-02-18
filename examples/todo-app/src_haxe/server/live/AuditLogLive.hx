@@ -132,13 +132,6 @@ class AuditLogLive {
 		return Ok(sock);
 	}
 
-	/**
-	 * Router action handler (placeholder to satisfy route validation).
-	 */
-	public static function index():String {
-		return "index";
-	}
-
 	static function sessionUserId(session:Session):Null<Int> {
 		if (session == null)
 			return null;

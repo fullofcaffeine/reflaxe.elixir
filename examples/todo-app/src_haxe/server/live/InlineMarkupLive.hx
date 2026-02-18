@@ -37,13 +37,6 @@ typedef InlineMarkupLiveAssigns = {
 // @:liveview: compiles this module as a Phoenix LiveView with LiveView callback semantics.
 @:liveview
 class InlineMarkupLive {
-	/**
-	 * Router action handler (placeholder to satisfy route validation).
-	 */
-	public static function index():String {
-		return "index";
-	}
-
 	public static function mount(params:MountParams, session:Session, socket:Socket<InlineMarkupLiveAssigns>):MountResult<InlineMarkupLiveAssigns> {
 		return Ok(socket.merge({
 			message: "Hello from inline markup 👋"

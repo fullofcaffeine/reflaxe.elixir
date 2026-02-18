@@ -1,12 +1,20 @@
-# Phoenix Chat Tutorial (Haxe + Presence + LiveView)
+# Phoenix Chat Tutorial (Hybrid Adoption: Haxe + Phoenix)
 
-This tutorial walks through building a small real-time chat LiveView in **Haxe**, compiled to idiomatic Elixir, with:
+This tutorial walks through a **hybrid adoption** shape:
+
+- LiveView/Presence feature logic in Haxe
+- Phoenix app/router boot wiring in Elixir
+
+You will build a small real-time chat LiveView in Haxe (compiled to idiomatic Elixir), with:
 
 - PubSub broadcasts for chat messages
 - Phoenix Presence for “Online users”
 - A tiny client-side hook (auto-scroll) compiled with Genes (Haxe -> JS)
 
 Reference implementation: `examples/12-phoenix-chat/`.
+
+If you want the Haxe-first variant (app + router + LiveView + Presence all authored in Haxe), use:
+`docs/06-guides/PHOENIX_CHAT_TUTORIAL_HAXE_FIRST.md`
 
 ## Goal
 
@@ -103,7 +111,11 @@ typedef PresenceMeta = {
 class ChatPresence implements PresenceBehavior {}
 ```
 
-Add it to your supervision tree (Elixir), typically in `lib/phoenix_chat/application.ex`:
+Why this remains Elixir in this tutorial:
+- This guide demonstrates gradual adoption for existing Phoenix teams.
+- You can move feature logic to Haxe first, without immediately rewriting boot/router modules.
+
+If you follow this hybrid path, add Presence to the existing Phoenix supervision tree in `lib/phoenix_chat/application.ex`:
 
 ```elixir
 children = [
@@ -112,6 +124,8 @@ children = [
   PhoenixChatWeb.Endpoint
 ]
 ```
+
+Haxe-first version of this step (using `@:application`): `docs/06-guides/PHOENIX_CHAT_TUTORIAL_HAXE_FIRST.md`.
 
 ## 5) Implement Chat LiveView (server)
 

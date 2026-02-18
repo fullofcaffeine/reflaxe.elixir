@@ -42,7 +42,7 @@ final routes = [
   scope("/", [
     pipeThrough(["browser"]),
     liveSession("default", [
-      live("/", UsersLive, UsersLive.index),
+      live("/", UsersLive),
       get("/users/:id", UserController, UserController.show, {
         paramsContract: UserPathParams
       })
@@ -67,7 +67,7 @@ defmodule MyAppWeb.Router do
     pipe_through :browser
 
     live_session :default do
-      live "/", UsersLive, :index
+      live "/", UsersLive
       get "/users/:id", UserController, :show
     end
   end
@@ -103,7 +103,7 @@ This fails because `paramsContract` is required when path params are present.
   - `liveSession(name, children, ?opts)`
 - Routes:
   - `get/post/put/patch/delete/options/head/connect/trace(path, controller, action, ?opts)`
-  - `live(path, liveModule, action, ?opts)`
+  - `live(path, liveModule, ?action, ?opts)`
   - `match(verb, path, controller, action, ?opts)`
 - Other Phoenix router macros:
   - `forward(path, moduleRef, ?opts)`
@@ -111,6 +111,13 @@ This fails because `paramsContract` is required when path params are present.
   - `resource(path, controller, ?opts)`
   - `liveDashboard(path, ?opts)`
   - `mailbox(path, ?opts)`
+
+### Live route action behavior
+
+- `live("/", AppLive)` is valid and compiles to `live "/", AppLive`.
+- Add an explicit action only when you need it:
+  - `live("/todos/:id/edit", TodoLive, TodoLive.edit)`
+- WHY: Phoenix supports live routes without `:action`; forcing placeholder action methods adds noise.
 
 ## Route option parity
 

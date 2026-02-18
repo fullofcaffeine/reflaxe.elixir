@@ -31,10 +31,6 @@ typedef SearchAssigns = {
 // @:hxx_mode: sets template authoring strictness mode for HXX/inline markup in this scope.
 @:hxx_mode("tsx")
 class SearchLive {
-	public static function index():String {
-		return "index";
-	}
-
 	public static function mount(_params:MountParams, _session:Session, socket:Socket<SearchAssigns>):MountResult<SearchAssigns> {
 		var catalog = [
 			"Phoenix LiveView",

@@ -78,7 +78,8 @@ This index helps you find the right docs quickly, whether you're building apps w
 - [Phoenix (Existing App)](06-guides/PHOENIX_GRADUAL_ADOPTION.md) - Gradual adoption in an existing app
 - [Scaffolding System](06-guides/SCAFFOLDING_SYSTEM.md) - How generators + marker blocks work
 - [Adding Elixir Libraries From Haxe](06-guides/ADDING_ELIXIR_LIBS_FROM_HAXE.md) - Thin extern + wrapper pattern
-- [Phoenix Chat Tutorial](06-guides/PHOENIX_CHAT_TUTORIAL.md) - Presence + PubSub + LiveView in Haxe
+- [Phoenix Chat Tutorial (Hybrid)](06-guides/PHOENIX_CHAT_TUTORIAL.md) - Gradual adoption: feature logic in Haxe, core app/router wiring in Elixir
+- [Phoenix Chat Tutorial (Haxe-First)](06-guides/PHOENIX_CHAT_TUTORIAL_HAXE_FIRST.md) - App/router/live/presence authored in Haxe
 - [Portable Chat Tutorial](06-guides/PORTABLE_CHAT_TUTORIAL.md) - Shared Haxe domain logic pattern
 - [Dogfooding](06-guides/DOGFOODING.md) - External Phoenix app upgrade validation
 - [Todo-app Cowboy Toolchain](06-guides/TODOAPP_COWBOY_TOOLCHAIN.md) - Why the todo-app pins Cowboy deps
