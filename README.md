@@ -148,6 +148,7 @@ typedef CounterAssigns = { count: Int };
 @:liveview
 class CounterLive {
   public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+    // Phoenix callbacks receive Socket<T>. Convert once to LiveSocket<T> to use assign helpers.
     var liveSocket: LiveSocket<CounterAssigns> = socket;
     return Ok(liveSocket.assign(_.count, 0));
   }
