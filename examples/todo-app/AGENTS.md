@@ -209,7 +209,7 @@ This file contains todo-app specific instructions for AI assistants working on t
 - ✅ Fix issues in the compiler source at `/src/reflaxe/elixir/`
 - ✅ Edit Haxe source files in `src_haxe/`
 - ✅ Write migrations in Haxe using @:migration annotation
-- ✅ Regenerate with `haxe build.hxml` after fixing the compiler
+- ✅ Regenerate with `haxe build-server.hxml` after fixing the compiler (`build.hxml` remains a thin alias)
 
 ### Why This Matters:
 Generated files are overwritten every time you compile. Any manual edits will be lost. All fixes must be made at the source - either in the Haxe code (`src_haxe/`) or in the compiler itself (`/src/reflaxe/elixir/`).
@@ -415,7 +415,7 @@ We compile the server (Haxe→Elixir) via a Mix compiler and the client (Haxe→
 
 - Server compiler: `Mix.Tasks.Compile.Haxe` (lib/mix/tasks/compile.haxe.ex)
   - Enabled in mix.exs: `compilers: [:haxe] ++ Mix.compilers()`
-  - Uses `build.hxml` to generate idiomatic Elixir under `lib/`
+  - Uses `build-server.hxml` as source of truth to generate idiomatic Elixir under `lib/` (`build.hxml` is a thin alias)
 
 - Client compilation: handled by assets watchers/aliases
   - Dev: `haxe` watcher runs `haxe build-client.hxml --wait 6001` and esbuild bundles `assets/js/phoenix_app.js` (see config/dev.exs)
