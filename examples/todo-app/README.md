@@ -161,12 +161,14 @@ todo-app/
 │   └── client/            # Client-side JavaScript
 ├── lib/                   # Generated Elixir code
 ├── priv/static/assets/    # Bundled JS/CSS (esbuild output)
-├── build.hxml             # Server (Haxe→Elixir) build
+├── build-server.hxml      # Canonical server (Haxe→Elixir) build
+├── build.hxml             # Thin alias to build-server.hxml (compat)
 └── build-client.hxml      # Client (Haxe→JS) build (used by assets alias)
 ```
 
 Build note:
-- The canonical entrypoints are `build.hxml` (server), `build-client.hxml` (client), and `build-tests.hxml` (tests).
+- Server source of truth is `build-server.hxml`; `build.hxml` is a thin compatibility alias (`--next build-server.hxml`).
+- The other canonical entrypoints are `build-client.hxml` (client) and `build-tests.hxml` (tests).
 - Legacy multi-pass/prewarm build experiments are kept in git history and are not required for normal development.
 
 ### Is the todo-app “100% Haxe”?

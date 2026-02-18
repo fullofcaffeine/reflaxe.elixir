@@ -51,8 +51,8 @@ todo-app/
 │   │   └── contexts/     # Generated contexts
 │   └── [many .ex files]  # Generated Haxe stdlib, helpers
 │
-├── build.hxml            # Main build configuration
-├── build-server.hxml     # Server compilation (Haxe→Elixir)
+├── build-server.hxml     # Canonical server compilation (Haxe→Elixir)
+├── build.hxml            # Thin alias to build-server.hxml (compat)
 ├── build-client.hxml     # Client compilation (Haxe→JavaScript)
 ├── mix.exs               # Elixir project config (manual)
 └── config/               # Phoenix config (manual)
@@ -77,8 +77,8 @@ graph LR
 
 ```bash
 # One-time compilation
-haxe build.hxml          # Compile everything
-haxe build-server.hxml   # Compile server only (Haxe→Elixir)
+haxe build-server.hxml   # Compile server (Haxe→Elixir, source of truth)
+haxe build.hxml          # Same as build-server.hxml (alias)
 haxe build-client.hxml   # Compile client only (Haxe→JS via Genes)
 
 # Client output locations (Genes)

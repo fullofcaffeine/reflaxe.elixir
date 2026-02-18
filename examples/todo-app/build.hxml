@@ -1,6 +1,5 @@
 # Main build configuration - delegates to server build
 # Use build-client.hxml for JavaScript compilation
-# Use build-server.hxml for Elixir compilation (default)
+# Use build-server.hxml for Elixir compilation (source of truth)
 
 --next build-server.hxml
--D hxx_mode=tsx
