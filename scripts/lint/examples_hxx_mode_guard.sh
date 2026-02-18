@@ -24,6 +24,36 @@ fail=0
 
 echo "[guard:examples-hxx-mode] Checking example HXX mode policy..."
 
+has_strict_hxx_mode() {
+  local build_file="$1"
+
+  if rg -q --fixed-strings -- "-D hxx_mode=tsx" "$build_file"; then
+    return 0
+  fi
+
+  # Support thin alias entrypoints (for example build.hxml -> build-server.hxml).
+  local build_dir
+  build_dir="$(dirname "$build_file")"
+
+  local next_ref
+  while IFS= read -r next_ref; do
+    [[ -n "$next_ref" ]] || continue
+
+    local next_file
+    if [[ "$next_ref" = /* ]]; then
+      next_file="$next_ref"
+    else
+      next_file="${build_dir}/${next_ref}"
+    fi
+
+    if [[ -f "$next_file" ]] && rg -q --fixed-strings -- "-D hxx_mode=tsx" "$next_file"; then
+      return 0
+    fi
+  done < <(awk '/^[[:space:]]*--next[[:space:]]+/ {print $2}' "$build_file")
+
+  return 1
+}
+
 # 1) Build defaults: non-demo examples must opt into strict TSX mode.
 for build_file in examples/*/build.hxml; do
   example_dir="$(dirname "$build_file")"
@@ -32,8 +62,8 @@ for build_file in examples/*/build.hxml; do
     continue
   fi
 
-  if ! rg -q --fixed-strings -- "-D hxx_mode=tsx" "$build_file"; then
-    echo "[guard:examples-hxx-mode] ERROR: Missing '-D hxx_mode=tsx' in ${build_file}" >&2
+  if ! has_strict_hxx_mode "$build_file"; then
+    echo "[guard:examples-hxx-mode] ERROR: Missing '-D hxx_mode=tsx' in ${build_file} (or its --next target)" >&2
     fail=1
   fi
 done
