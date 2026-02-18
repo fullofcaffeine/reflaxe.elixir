@@ -6,7 +6,8 @@ This page documents high-impact Phoenix-facing APIs used by applications authore
 
 - `phoenix.Phoenix`: canonical LiveView callback result types and helper entrypoints
 - `phoenix.Component`: assign/slot helper APIs and component-oriented utilities
-- `phoenix.LiveSocket`: typed LiveView socket wrapper operations
+- `phoenix.Phoenix.Socket`: LiveView callback socket surface (includes assign helpers via extensions)
+- `phoenix.LiveSocket`: optional typed wrapper operations
 - `phoenix.PhoenixFlash`: typed flash helpers
 - `phoenix.Channel` + `phoenix.channels.*`: typed channel callback/result helpers
 - `phoenix.Presence` + `phoenix.PresenceModule`: presence tracking APIs
@@ -36,9 +37,9 @@ Key points:
 - Use `@:native("handle_event")` when your Haxe method name differs from canonical callback naming.
 - Prefer typed assigns typedefs and keep them shared between render/mount/event paths.
 
-## LiveSocket Assign APIs (Important)
+## LiveView Assign APIs (Important)
 
-`phoenix.LiveSocket` supports both Phoenix-faithful runtime semantics and Haxe-oriented authoring ergonomics:
+`phoenix.Phoenix.Socket` supports Phoenix-faithful runtime semantics with Haxe-oriented authoring ergonomics:
 
 - `assign(_.field, value)` for short single-field updates
 - `assign({ ... })` for Phoenix-style bulk updates (`assign/2` shape)
@@ -50,6 +51,8 @@ Key points:
 Typed-key setup is now:
 - `var keys = phoenix.AssignKeys.of(MyAssigns)`
 - then `assignKey(keys.field, value)`
+
+`phoenix.LiveSocket` keeps the same APIs for explicit wrapper-style helpers.
 
 Canonical deep dive:
 

@@ -1,6 +1,6 @@
-# LiveSocket Assign API (Haxe -> Phoenix)
+# LiveView Assign API (Haxe -> Phoenix)
 
-This page explains the two LiveSocket assign authoring styles and when to use each one.
+This page explains the two assign authoring styles and when to use each one.
 
 ## Why this page exists
 
@@ -24,8 +24,7 @@ Both styles generate normal Phoenix calls at runtime. The choice is about Haxe a
 ### 1) Default single-field style (`assign(_.field, value)`)
 
 ```haxe
-var live: LiveSocket<CounterAssigns> = socket;
-live = live.assign(_.count, 0);
+socket = socket.assign(_.count, 0);
 ```
 
 Why this exists:
@@ -42,7 +41,7 @@ What you get:
 ### 2) Default bulk style (`assign({...})`)
 
 ```haxe
-live = live.assign({
+socket = socket.assign({
   count: 0,
   search_query: ""
 });
@@ -67,9 +66,8 @@ typedef CounterAssigns = { count: Int };
 
 var keys = AssignKeys.of(CounterAssigns);
 
-var live: LiveSocket<CounterAssigns> = socket;
-live = live.assignKey(keys.count, 0);
-live = live.updateKey(keys.count, (n) -> n + 1);
+socket = socket.assignKey(keys.count, 0);
+socket = socket.updateKey(keys.count, (n) -> n + 1);
 ```
 
 Why this exists:
@@ -100,11 +98,18 @@ Usually, no.
 - If you use typed keys, prefer `AssignKeys.of(MyAssigns)` first.
 - `@:build(phoenix.macros.AssignKeysBuilder.build(MyAssigns))` is still supported when you explicitly want a dedicated static key class.
 
+### Do I need `LiveSocket<T>`?
+
+Usually, no.
+
+- In callbacks, `socket: Socket<TAssigns>` can call assign helpers directly.
+- `LiveSocket<TAssigns>` remains available as an explicit wrapper if you prefer wrapper-style helper signatures or pipe-oriented code.
+
 ## Technical View
 
-### `LiveSocket.assign` arity model
+### `assign` arity model
 
-`LiveSocket.assign` is implemented as one macro entrypoint with an optional value:
+`assign` is implemented as one macro entrypoint with an optional value:
 
 - `assign(fieldOrUpdates, ?value)`
 
@@ -117,10 +122,11 @@ Dispatch rules:
 
 Source:
 
+- `std/phoenix/SocketAssignExtensions.hx`
 - `std/phoenix/LiveSocket.hx`
 - `std/phoenix/macros/AssignMacro.hx`
 
-### Why not `@:overload` on `LiveSocket.assign`?
+### Why not `@:overload` on `assign`?
 
 This API needs syntax-shape dispatch (`_.field` vs object literal), not only type-based overload selection. Macro dispatch is the right fit here.
 

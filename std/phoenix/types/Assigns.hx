@@ -145,20 +145,8 @@ abstract Assigns<T>(T) from T to T {
 	 * @param other Other assigns to merge
 	 * @return Assigns<T> New merged assigns
 	 */
-	public function merge<U>(other:Assigns<U>):Assigns<T> {
-		var result = {};
-
-		// Copy current assigns
-		for (field in Reflect.fields(this)) {
-			Reflect.setField(result, field, Reflect.field(this, field));
-		}
-
-		// Copy other assigns (overwrites existing)
-		for (field in Reflect.fields(other.toDynamic())) {
-			Reflect.setField(result, field, Reflect.field(other.toDynamic(), field));
-		}
-
-		return fromDynamic(result);
+	extern inline public function merge<U>(other:Assigns<U>):Assigns<T> {
+		return cast untyped __elixir__("Map.merge({0}, {1})", this, other.toDynamic());
 	}
 
 	/**
@@ -169,18 +157,8 @@ abstract Assigns<T>(T) from T to T {
 	 * @param value Field value to add
 	 * @return Assigns<T> New assigns with additional field
 	 */
-	public function withField<V>(field:String, value:V):Assigns<T> {
-		var result = {};
-
-		// Copy existing fields
-		for (existingField in Reflect.fields(this)) {
-			Reflect.setField(result, existingField, Reflect.field(this, existingField));
-		}
-
-		// Add new field
-		Reflect.setField(result, field, value);
-
-		return fromDynamic(result);
+	extern inline public function withField<V>(field:String, value:V):Assigns<T> {
+		return cast untyped __elixir__("Map.put({0}, {1}, {2})", this, field, value);
 	}
 }
 

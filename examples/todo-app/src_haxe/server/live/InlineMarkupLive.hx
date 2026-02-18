@@ -3,7 +3,6 @@ package server.live;
 import HXX.*;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Socket;
-import phoenix.LiveSocket;
 import server.types.Types.MountParams;
 import server.types.Types.Session;
 
@@ -46,8 +45,7 @@ class InlineMarkupLive {
 	}
 
 	public static function mount(params:MountParams, session:Session, socket:Socket<InlineMarkupLiveAssigns>):MountResult<InlineMarkupLiveAssigns> {
-		var liveSocket:LiveSocket<InlineMarkupLiveAssigns> = socket;
-		return Ok(liveSocket.merge({
+		return Ok(socket.merge({
 			message: "Hello from inline markup 👋"
 		}));
 	}

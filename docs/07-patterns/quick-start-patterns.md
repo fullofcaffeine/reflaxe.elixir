@@ -10,9 +10,7 @@ Copy‑paste patterns aligned with **Reflaxe.Elixir v1.0+** and the repo’s **N
 package live;
 
 import elixir.types.Term;
-import phoenix.LiveSocket;
 import phoenix.Phoenix.HandleEventResult;
-import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Socket;
 
@@ -36,33 +34,27 @@ typedef ProductEventParams = {
 @:liveview
 class ProductLive {
     public static function mount(params: Term, session: Term, socket: Socket<ProductAssigns>): MountResult<ProductAssigns> {
-        var liveSocket: LiveSocket<ProductAssigns> = cast socket;
-
-        liveSocket = LiveView.assignMultiple(liveSocket, {
+        socket = socket.assign({
             products: [],
             query: "",
             selectedId: null
         });
 
-        return Ok(liveSocket);
+        return Ok(socket);
     }
 
     @:native("handle_event")
     public static function handle_event(event: String, params: ProductEventParams, socket: Socket<ProductAssigns>): HandleEventResult<ProductAssigns> {
-        var liveSocket: LiveSocket<ProductAssigns> = cast socket;
-
         return switch (event) {
             case "search":
                 var query = params.query != null ? params.query : "";
-                liveSocket = LiveView.assignMultiple(liveSocket, {query: query});
-                NoReply(liveSocket);
+                NoReply(socket.assign({query: query}));
 
             case "select":
-                liveSocket = LiveView.assignMultiple(liveSocket, {selectedId: params.id});
-                NoReply(liveSocket);
+                NoReply(socket.assign({selectedId: params.id}));
 
             case _:
-                NoReply(liveSocket);
+                NoReply(socket);
         };
     }
 }
@@ -93,7 +85,7 @@ end
 
 Notes
 - Use `Socket<TAssigns>` in callback signatures (what Phoenix expects).
-- Cast to `LiveSocket<TAssigns>` to use ergonomic, type‑safe helpers.
+- Use socket helpers directly (`socket.assign(...)`, `socket.update(...)`). `LiveSocket<TAssigns>` is optional for wrapper-style helper APIs.
 - Keep params typed (`typedef ProductEventParams`) so you can do `params.query` without reflection.
 - If `params`/`session` are unused in Haxe, generated Elixir still emits `_params`/`_session`.
 

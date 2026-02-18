@@ -11,52 +11,48 @@ Reflaxe.Elixir generates idiomatic LiveView modules:
 - Return values stay Phoenix-native (`{:ok, socket}`, `{:noreply, socket}`, …) but are authored as typed Haxe enums (`Ok(...)`, `NoReply(...)`, …). Prefer unqualified constructors when unambiguous.
 - Keep application code free of `untyped __elixir__(...)`. If a Phoenix helper is missing, add a typed extern/shim under `std/phoenix/**`.
 
-## Pattern: Typed Assigns + `LiveSocket` Assign APIs
+## Pattern: Typed Assigns + `Socket<T>` Assign APIs
 
 Define assigns as a Haxe `typedef` and keep state updates typed end-to-end.
 
-	```haxe
-		import HXX.*;
-	import elixir.types.Term;
-	import phoenix.LiveSocket;
-	import phoenix.Phoenix.HandleEventResult;
-	import phoenix.Phoenix.MountResult;
-	import phoenix.Phoenix.Socket;
+```haxe
+import HXX.*;
+import elixir.types.Term;
+import phoenix.Phoenix.HandleEventResult;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Socket;
 
 typedef CounterAssigns = { count: Int };
 
-	@:native("MyAppWeb.CounterLive")
-	@:liveview
+@:native("MyAppWeb.CounterLive")
+@:liveview
 class CounterLive {
   public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
-    var liveSocket: LiveSocket<CounterAssigns> = socket;
-    liveSocket = liveSocket.assign({
+    socket = socket.assign({
       count: 0
     });
-    return Ok(liveSocket);
+    return Ok(socket);
   }
 
-	  @:native("handle_event")
-	  public static function handle_event(event: String, params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
-	    var liveSocket: LiveSocket<CounterAssigns> = socket;
-
+  @:native("handle_event")
+  public static function handle_event(event: String, params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
     return switch (event) {
       case "increment":
-        var nextCount = liveSocket.assigns.count + 1;
-        NoReply(liveSocket.assign(_.count, nextCount));
+        var nextCount = socket.assigns.count + 1;
+        NoReply(socket.assign(_.count, nextCount));
       case _:
-        NoReply(liveSocket);
+        NoReply(socket);
     }
   }
 
-	  public static function render(assigns: CounterAssigns): String {
-	    return hxx('
-	      <div class="counter">
-	        <h1>${assigns.count}</h1>
-	        <button phx-click="increment">+</button>
-	      </div>
-	    ');
-	  }
+  public static function render(assigns: CounterAssigns): String {
+    return hxx('
+      <div class="counter">
+        <h1>${assigns.count}</h1>
+        <button phx-click="increment">+</button>
+      </div>
+    ');
+  }
 }
 ```
 
@@ -89,9 +85,10 @@ end
 ```
 
 Notes:
-- `_.count` is a compile-time field selector for `LiveSocket.assign`; `_` here is not a runtime variable.
+- `_.count` is a compile-time field selector for `socket.assign`; `_` here is not a runtime variable.
 - `assign({ ... })` maps to Phoenix `assign(socket, %{...})` (bulk assign).
 - Typed keys (`assignKey` / `updateKey`) are optional and use `AssignKeys.of(...)`.
+- `LiveSocket<TAssigns>` remains available as an explicit wrapper when you want that style in helper APIs.
 - `event` and `params` are runtime values from Phoenix.
 - In Haxe, you can use plain names (`params`, `session`); generated Elixir will still emit `_params` / `_session` when unused.
 - Typed assigns give you compile-time validation in both LiveView logic and templates.
@@ -105,9 +102,8 @@ typedef CounterAssigns = { count: Int };
 
 var keys = AssignKeys.of(CounterAssigns);
 
-var liveSocket: LiveSocket<CounterAssigns> = socket;
-liveSocket = liveSocket.assignKey(keys.count, 0);
-liveSocket = liveSocket.updateKey(keys.count, (n) -> n + 1);
+socket = socket.assignKey(keys.count, 0);
+socket = socket.updateKey(keys.count, (n) -> n + 1);
 ```
 
 Deep dive:

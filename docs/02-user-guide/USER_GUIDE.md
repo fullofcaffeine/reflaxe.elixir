@@ -66,7 +66,7 @@ function parseIntSafe(s: String): Result<Int, String> {
 
 ### LiveView state is a typed `typedef`
 
-LiveView state lives in assigns. In Haxe you model assigns as a `typedef`, then use `phoenix.LiveSocket` to update assigns.
+LiveView state lives in assigns. In Haxe you model assigns as a `typedef`, then update assigns directly on `Socket<TAssigns>`.
 
 Use this quick rule:
 
@@ -76,7 +76,6 @@ Use this quick rule:
 
 ```haxe
 import elixir.types.Term;
-import phoenix.LiveSocket;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Socket;
@@ -87,19 +86,17 @@ typedef CounterAssigns = { count: Int };
 @:liveview
 class CounterLive {
   public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
-    var ls: LiveSocket<CounterAssigns> = socket;
-    return Ok(ls.assign(_.count, 0));
+    return Ok(socket.assign(_.count, 0));
   }
 
   @:native("handle_event")
   public static function handle_event(event: String, params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
-    var ls: LiveSocket<CounterAssigns> = socket;
     return switch (event) {
       case "increment":
-        var nextCount = ls.assigns.count + 1;
-        NoReply(ls.assign(_.count, nextCount));
+        var nextCount = socket.assigns.count + 1;
+        NoReply(socket.assign(_.count, nextCount));
       case _:
-        NoReply(ls);
+        NoReply(socket);
     }
   }
 }
@@ -108,6 +105,7 @@ class CounterLive {
 Notes:
 - `_.count` is a compile-time field selector for typed assigns updates.
 - You can keep Haxe argument names plain (`params`, `session`). The compiler adds Elixir-style `_` prefixes when those arguments are unused.
+- `LiveSocket<TAssigns>` is still available as an explicit wrapper when you want wrapper-specific helper signatures.
 - `assignKey(...)` is optional; preferred setup is `var keys = phoenix.AssignKeys.of(MyAssigns)`.
 - For full API behavior details (including macro dispatch and typed keys), see `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`.
 

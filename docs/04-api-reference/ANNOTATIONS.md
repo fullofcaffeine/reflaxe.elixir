@@ -327,9 +327,7 @@ Generates Phoenix LiveView modules for real-time UI.
 **Basic Usage**:
 ```haxe
 import elixir.types.Term;
-import phoenix.LiveSocket;
 import phoenix.Phoenix.HandleEventResult;
-import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Socket;
 
@@ -338,9 +336,8 @@ typedef UserAssigns = { users: Array<User> }
 @:liveview
 class UserLive {
     public static function mount(params: Term, session: Term, socket: Socket<UserAssigns>): MountResult<UserAssigns> {
-        var liveSocket: LiveSocket<UserAssigns> = cast socket;
-        liveSocket = LiveView.assignMultiple(liveSocket, {users: []});
-        return Ok(liveSocket);
+        socket = socket.assign({users: []});
+        return Ok(socket);
     }
     
     @:native("handle_event")
@@ -365,7 +362,7 @@ defmodule UserLive do
   
   @impl true
   def mount(_params, _session, socket) do
-    {:ok, socket}
+    {:ok, assign(socket, %{users: []})}
   end
   
   @impl true

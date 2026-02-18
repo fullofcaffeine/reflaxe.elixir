@@ -1,7 +1,6 @@
 package phoenix_chat_hx.live;
 
 import StringTools;
-import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.MountParams;
 import phoenix.Phoenix.Session;
 import phoenix.Phoenix.Socket;
@@ -56,7 +55,7 @@ class AppLive {
 			status: null,
 		};
 
-		var live:LiveSocket<AppLiveAssigns> = LiveView.assignMultiple(socket, assigns);
+		var live:LiveSocket<AppLiveAssigns> = socket.assign(assigns);
 
 		if (connected) {
 			var pubsub = pubsubModule();

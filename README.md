@@ -137,7 +137,6 @@ Haxe:
 
 ```haxe
 import elixir.types.Term;
-import phoenix.LiveSocket;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Socket;
@@ -148,16 +147,14 @@ typedef CounterAssigns = { count: Int };
 @:liveview
 class CounterLive {
   public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
-    // Phoenix callbacks receive Socket<T>. Convert once to LiveSocket<T> to use assign helpers.
-    var liveSocket: LiveSocket<CounterAssigns> = socket;
-    return Ok(liveSocket.assign(_.count, 0));
+    return Ok(socket.assign(_.count, 0));
   }
 }
 ```
 
 Notes:
-- `socket` in LiveView callbacks is `Socket<TAssigns>` (the Phoenix callback shape). `LiveSocket<TAssigns>` is a Haxe helper wrapper on top of it.
-- `var liveSocket: LiveSocket<CounterAssigns> = socket;` is an implicit compile-time conversion so you can call helper methods like `assign(...)`; it does not create a second runtime socket.
+- `socket` in LiveView callbacks is `Socket<TAssigns>` (the Phoenix callback shape), and you can call assign helpers on it directly (`socket.assign(...)`).
+- `LiveSocket<TAssigns>` is still available as an explicit wrapper when you prefer pipe-style chaining or helper signatures that use `LiveSocket`.
 - `_.count` can look odd at first because `_` usually means “unused variable.” Here, `_` is a macro marker.
 - Why the API looks like this: Haxe has no built-in “field reference literal” for typedef fields, so `LiveSocket.assign` uses `_.field` as a compact compile-time selector.
 - What you get from it: the compiler validates the field name, converts to Phoenix atom style, and emits `assign(socket, :count, value)`. `_` does not exist at runtime.
@@ -166,7 +163,7 @@ Notes:
   Use default `assign(_.field, value)` / `assign({ ... })` for shortest code; use typed keys when you want explicit key tokens in APIs.
   Tiny comparison:
   `var keys = phoenix.AssignKeys.of(CounterAssigns);`
-  `return Ok(liveSocket.assignKey(keys.count, 0));`
+  `return Ok(socket.assignKey(keys.count, 0));`
 - In Haxe, write callback args naturally (`params`, `session`). If they are unused, generated Elixir is automatically normalized to `_params`, `_session`.
 - API deep dive: `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
 

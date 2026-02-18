@@ -14,16 +14,15 @@ This page focuses on what exists in Reflaxe.Elixir **today** (v1.x): how to buil
 
 ### 1) Type-safe LiveView state (assigns)
 
-In Elixir, LiveView state lives in `socket.assigns` and is keyed by atoms. In Haxe, you model assigns as a `typedef` and update them through `phoenix.LiveSocket`.
+In Elixir, LiveView state lives in `socket.assigns` and is keyed by atoms. In Haxe, you model assigns as a `typedef` and update them directly on `Socket<TAssigns>`.
 
-`LiveSocket` has two default assign paths:
+Default assign paths:
 
 - `assign(_.field, value)` for concise single-field updates
 - `assign({ ... })` for Phoenix-style bulk assigns (`assign/2`)
 
 ```haxe
 import elixir.types.Term;
-import phoenix.LiveSocket;
 import phoenix.Phoenix.HandleEventResult;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Socket;
@@ -34,33 +33,31 @@ typedef CounterAssigns = { count: Int };
 @:liveview
 class CounterLive {
   public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
-    var ls: LiveSocket<CounterAssigns> = socket;
-    return Ok(ls.assign(_.count, 0));
+    return Ok(socket.assign(_.count, 0));
   }
 
   @:native("handle_event")
   public static function handle_event(event: String, params: Term, socket: Socket<CounterAssigns>): HandleEventResult<CounterAssigns> {
-    var ls: LiveSocket<CounterAssigns> = socket;
     return switch (event) {
       case "increment":
-        var nextCount = ls.assigns.count + 1;
-        NoReply(ls.assign(_.count, nextCount));
+        var nextCount = socket.assigns.count + 1;
+        NoReply(socket.assign(_.count, nextCount));
       case _:
-        NoReply(ls);
+        NoReply(socket);
     }
   }
 }
 ```
 
 Notes:
-- `_.count` is a typed field selector consumed at compile time by `LiveSocket.assign`.
+- `_.count` is a typed field selector consumed at compile time by `socket.assign`.
 - `params` and `session` do not need leading `_` in Haxe. When unused, generated Elixir still emits `_params` / `_session`.
+- `LiveSocket<TAssigns>` is still available as an explicit wrapper when you want pipe-style chaining or helper signatures that use `LiveSocket`.
 
 Bulk assign example (Phoenix-style):
 
 ```haxe
-var ls: LiveSocket<CounterAssigns> = socket;
-ls = ls.assign({
+socket = socket.assign({
   count: 0,
   search_query: "",
   sort_by: "created"
@@ -76,8 +73,7 @@ typedef CounterAssigns = { count: Int };
 
 var keys = AssignKeys.of(CounterAssigns);
 
-var ls: LiveSocket<CounterAssigns> = socket;
-ls = ls.assignKey(keys.count, 0);
+socket = socket.assignKey(keys.count, 0);
 ```
 
 Use this only if you explicitly want key-token APIs (`assignKey`/`updateKey`) and slightly more explicit call sites.

@@ -9,7 +9,7 @@ import phoenix.types.AssignKey;
  * LiveSocket - type-safe wrapper for `Phoenix.LiveView.Socket`.
  *
  * WHAT
- * - Provides two assign APIs on top of `Socket<TAssigns>`:
+ * - Provides assign APIs on top of `Socket<TAssigns>`:
  *   - macro shorthand (`assign(_.field, value)`) for minimal Haxe code
  *   - typed keys (`assignKey(keys.field, value)`) for explicit key tokens and key-specific value typing
  *
@@ -19,9 +19,11 @@ import phoenix.types.AssignKey;
  * - In Haxe 4.3.7 they can also improve completion quality.
  *
  * HOW
+ * - `Socket<TAssigns>` can call these helpers directly via `@:using(phoenix.SocketAssignExtensions)`.
+ * - `LiveSocket<TAssigns>` keeps the same helpers for explicit wrapper/pipe style.
  * - Macro shorthand methods:
  *   `assign`, `assignNew`, `update`.
- * - Completion-first typed-key methods:
+ * - Typed-key methods:
  *   `assignKey`, `assignNewKey`, `updateKey`.
  * - `assign({...})` handles Phoenix-style bulk assigns with field validation and
  *   snake_case atom key rewriting.

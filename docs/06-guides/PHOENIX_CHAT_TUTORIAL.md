@@ -145,7 +145,7 @@ Haxe callback shape:
 
 ```haxe
 public static function mount(params:MountParams, session:Session, socket:Socket<AppLiveAssigns>):MountResult<AppLiveAssigns> {
-  var live:LiveSocket<AppLiveAssigns> = LiveView.assignMultiple(socket, {
+  var live:LiveSocket<AppLiveAssigns> = socket.assign({
     room: "lobby",
     messages: [],
     online_user_count: 0
@@ -158,7 +158,7 @@ Notes:
 - `params` and `session` are plain Haxe names here; if unused, generated Elixir will still use `_params` / `_session`.
 - `_.field` syntax in `LiveSocket.assign` is a compile-time field selector, not a runtime variable.
 
-Why this generated shape matters: `LiveView.assignMultiple(...)` lowers to a pipe of `assign/3` calls, so
+Why this generated shape matters: `socket.assign({...})` lowers to a pipe of `assign/3` calls, so
 stacktraces/logs map cleanly back to the Haxe assigns you wrote.
 
 ```elixir

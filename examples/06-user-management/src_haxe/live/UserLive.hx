@@ -6,7 +6,6 @@ import elixir.ElixirMap;
 import elixir.types.Term;
 import phoenix.Phoenix.EventParams;
 import phoenix.Phoenix.HandleEventResult;
-import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.MountParams;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Session;
@@ -78,7 +77,7 @@ class UserLive {
 			showForm: false
 		};
 
-		return Ok(LiveView.assignMultiple(socket, assigns));
+		return Ok(socket.assign(assigns));
 	}
 
 	public static function handle_event(event:String, params:EventParams, socket:Socket<UserLiveAssigns>):HandleEventResult<UserLiveAssigns> {
@@ -107,7 +106,7 @@ class UserLive {
 	}
 
 	private static function handleNewUser(socket:Socket<UserLiveAssigns>):HandleEventResult<UserLiveAssigns> {
-		var updated = LiveView.assignMultiple(socket, {
+		var updated = socket.assign({
 			changeset: Users.change_user(null),
 			selectedUser: null,
 			showForm: true
@@ -121,7 +120,7 @@ class UserLive {
 			return NoReply(socket);
 
 		var selectedUser = Users.get_user(userId);
-		var updated = LiveView.assignMultiple(socket, {
+		var updated = socket.assign({
 			selectedUser: selectedUser,
 			changeset: Users.change_user(selectedUser),
 			showForm: true
@@ -136,7 +135,7 @@ class UserLive {
 		return switch (result.status) {
 			case "ok":
 				var users = Users.list_users();
-				var updated = LiveView.assignMultiple(socket, {
+				var updated = socket.assign({
 					users: users,
 					showForm: false,
 					selectedUser: null,
@@ -145,7 +144,7 @@ class UserLive {
 				NoReply(updated);
 
 			case "error":
-				var updated = LiveView.assignMultiple(socket, {changeset: result.changeset});
+				var updated = socket.assign({changeset: result.changeset});
 				NoReply(updated);
 
 			default:
@@ -163,7 +162,7 @@ class UserLive {
 
 		if (result.status == "ok") {
 			var users = Users.list_users();
-			var updated = LiveView.assignMultiple(socket, {users: users});
+			var updated = socket.assign({users: users});
 			return NoReply(updated);
 		}
 
@@ -177,12 +176,12 @@ class UserLive {
 
 		var users = searchTerm.length > 0 ? Users.search_users(searchTerm) : Users.list_users();
 
-		var updated = LiveView.assignMultiple(socket, {users: users, searchTerm: searchTerm});
+		var updated = socket.assign({users: users, searchTerm: searchTerm});
 		return NoReply(updated);
 	}
 
 	private static function handleCancel(socket:Socket<UserLiveAssigns>):HandleEventResult<UserLiveAssigns> {
-		var updated = LiveView.assignMultiple(socket, {
+		var updated = socket.assign({
 			showForm: false,
 			selectedUser: null,
 			changeset: Users.change_user(null)

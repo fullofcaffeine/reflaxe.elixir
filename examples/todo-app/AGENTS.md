@@ -850,9 +850,7 @@ typedef TodoParams = {
 ```haxe
 import HXX.*;
 import elixir.types.Term;
-import phoenix.LiveSocket;
 import phoenix.Phoenix.HandleEventResult;
-import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Socket;
 
@@ -867,9 +865,8 @@ typedef Assigns = {
 @:liveview
 class TodoLive {
     public static function mount(_params: Term, _session: Term, socket: Socket<Assigns>): MountResult<Assigns> {
-        var liveSocket: LiveSocket<Assigns> = cast socket;
         // Full implementation: examples/todo-app/src_haxe/server/live/TodoLive.hx
-        return Ok(liveSocket);
+        return Ok(socket);
     }
 
     @:native("handle_event")

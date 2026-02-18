@@ -98,15 +98,14 @@ class TodoLive {
 	}
 
 	static function updatePresenceEditing(socket:Socket<TodoLiveAssigns>, editingTodoId:Null<Int>):LiveSocket<TodoLiveAssigns> {
-		var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
 		if (socket.transport_pid == null)
-			return liveSocket;
+			return socket;
 
 		var topic = presenceUsersTopic(socket.assigns.current_user.organizationId);
 		var key = Std.string(socket.assigns.current_user.id);
 		var startedAt:Null<Float> = editingTodoId != null ? Date.now().getTime() : null;
 		var meta = buildPresenceMeta(socket.assigns.current_user, socket.assigns.presence_online_at, editingTodoId, startedAt);
-		return TodoPresence.updateWithSocket(liveSocket, topic, key, meta);
+		return TodoPresence.updateWithSocket(socket, topic, key, meta);
 	}
 
 	static inline function clearPresenceEditing(socket:Socket<TodoLiveAssigns>):LiveSocket<TodoLiveAssigns> {
@@ -316,7 +315,7 @@ class TodoLive {
 			activity_next_id: 1
 		};
 
-		sock = LiveView.assignMultiple(sock, assigns);
+		sock = sock.assign(assigns);
 
 		if (connected) {
 			var presenceKey = Std.string(currentUser.id);
@@ -426,8 +425,7 @@ class TodoLive {
 	 * The TAssigns type parameter will be inferred as TodoLiveAssigns from the socket parameter.
 	 */
 	public static function handleInfo(msg:Term, socket:Socket<TodoLiveAssigns>):HandleInfoResult<TodoLiveAssigns> {
-		var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
-		return handlePubSub(msg, liveSocket);
+		return handlePubSub(msg, socket);
 	}
 
 	static function isPresenceDiffBroadcast(msg:Term):Bool {
@@ -591,9 +589,7 @@ class TodoLive {
 				TodoPubSub.broadcast(TodoUpdates, TodoCreated(todo), socket.assigns.current_user.organizationId);
 
 				var todos = [todo].concat(socket.assigns.todos);
-				// Use LiveSocket for type-safe assigns manipulation
-				var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
-				var updatedSocket = liveSocket.merge({
+				var updatedSocket = socket.merge({
 					todos: todos,
 					show_form: false
 				});
@@ -641,8 +637,7 @@ class TodoLive {
 				// broadcast best-effort; ignore returned term
 				var _broadcastResult = TodoPubSub.broadcast(TodoUpdates, TodoCreated(value), socket.assigns.current_user.organizationId);
 				var todos = [value].concat(socket.assigns.todos);
-				var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
-				var updatedSocket:LiveSocket<TodoLiveAssigns> = liveSocket.merge({
+				var updatedSocket:LiveSocket<TodoLiveAssigns> = socket.merge({
 					todos: todos,
 					show_form: false,
 					total_todos: socket.assigns.total_todos + 1,
@@ -752,9 +747,7 @@ class TodoLive {
 		}
 
 		var todos = [todo].concat(socket.assigns.todos);
-		// Use LiveSocket for type-safe assigns manipulation
-		var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
-		return liveSocket.merge({todos: todos});
+		return socket.merge({todos: todos});
 	}
 
 	static function loadTodos(organizationId:Int):Array<server.schemas.Todo> {
@@ -846,9 +839,7 @@ class TodoLive {
 	// Missing helper functions
 	static function loadAndAssignTodos(socket:Socket<TodoLiveAssigns>):Socket<TodoLiveAssigns> {
 		var todos = loadTodos(socket.assigns.current_user.organizationId);
-		// Use LiveSocket's merge for type-safe bulk updates
-		var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
-		return liveSocket.merge({
+		return socket.merge({
 			todos: todos,
 			total_todos: todos.length,
 			completed_todos: countCompleted(todos),
@@ -1148,8 +1139,7 @@ class TodoLive {
 			case Ok(value):
 				// Best-effort broadcast
 				TodoPubSub.broadcast(TodoUpdates, TodoUpdated(value), socket.assigns.current_user.organizationId);
-				var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
-				var ls:LiveSocket<TodoLiveAssigns> = updateTodoInList(value, liveSocket);
+				var ls:LiveSocket<TodoLiveAssigns> = updateTodoInList(value, socket);
 				ls = clearPresenceEditing(ls);
 				ls = ls.assign(_.editing_todo, null);
 				ls = recomputeVisible(ls);
@@ -1271,9 +1261,7 @@ class TodoLive {
 				TodoPubSub.broadcast(TodoUpdates, TodoUpdated(updatedTodo), socket.assigns.current_user.organizationId);
 
 				var updatedSocket = updateTodoInList(updatedTodo, socket);
-				// Convert to LiveSocket to use assign for single field
-				var liveSocket:LiveSocket<TodoLiveAssigns> = updatedSocket;
-				return liveSocket.assign(_.editing_todo, null);
+				return updatedSocket.assign(_.editing_todo, null);
 
 			case Error(reason):
 				return LiveView.putFlash(socket, FlashType.Error, "Failed to save todo");
@@ -1285,9 +1273,8 @@ class TodoLive {
 		return switch (action) {
 			case CompleteAll:
 				// Reload todos once and apply in a single merge
-				var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
 				var refreshed = loadTodos(socket.assigns.current_user.organizationId);
-				liveSocket.merge({
+				socket.merge({
 					todos: refreshed,
 					total_todos: refreshed.length,
 					completed_todos: countCompleted(refreshed),
@@ -1295,9 +1282,8 @@ class TodoLive {
 				});
 
 			case DeleteCompleted:
-				var liveSocket:LiveSocket<TodoLiveAssigns> = socket;
 				var refreshed = loadTodos(socket.assigns.current_user.organizationId);
-				liveSocket.merge({
+				socket.merge({
 					todos: refreshed,
 					total_todos: refreshed.length,
 					completed_todos: countCompleted(refreshed),

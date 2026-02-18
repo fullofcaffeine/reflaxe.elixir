@@ -7,7 +7,6 @@ import elixir.types.Term;
 import haxe.functional.Result;
 import phoenix.Phoenix.EventParams;
 import phoenix.Phoenix.HandleEventResult;
-import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.MountParams;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Session;
@@ -56,7 +55,7 @@ class SearchLive {
 			validation_error: null
 		};
 
-		return Ok(LiveView.assignMultiple(socket, initialAssigns));
+		return Ok(socket.assign(initialAssigns));
 	}
 
 	public static function handle_event(event:String, params:EventParams, socket:Socket<SearchAssigns>):HandleEventResult<SearchAssigns> {
@@ -73,14 +72,14 @@ class SearchLive {
 	static function applySearch(socket:Socket<SearchAssigns>, query:String):Socket<SearchAssigns> {
 		return switch (SearchDomain.apply(query, socket.assigns.catalog)) {
 			case Ok(state):
-				LiveView.assignMultiple(socket, {
+				socket.assign({
 					query: state.query,
 					visible: state.visible,
 					result_count: state.result_count,
 					validation_error: null
 				});
 			case Error(reason):
-				LiveView.assignMultiple(socket, {
+				socket.assign({
 					query: socket.assigns.query,
 					visible: socket.assigns.visible,
 					result_count: socket.assigns.result_count,

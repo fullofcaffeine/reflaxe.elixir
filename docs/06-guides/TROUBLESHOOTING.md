@@ -365,13 +365,11 @@ This is now automatically handled by the compiler. If you see this issue:
 3. Consider adding explicit types for better IDE support:
 
 ```haxe
-import phoenix.LiveSocket;
 import phoenix.Phoenix.Socket;
 
 typedef Assigns = { todos: Array<Todo> }
 
-var liveSocket: LiveSocket<Assigns> = cast socket;
-var todos: Array<Todo> = liveSocket.assigns.todos;
+var todos: Array<Todo> = socket.assigns.todos;
 ```
 
 ### Problem: ".length on Dynamic generates invalid code"
@@ -447,9 +445,7 @@ LiveView component renders but doesn't respond to events.
 **Solution:**
 ```haxe
 import elixir.types.Term;
-import phoenix.LiveSocket;
 import phoenix.Phoenix.HandleEventResult;
-import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.Socket;
 
 typedef Assigns = { clicked: Bool }
@@ -458,14 +454,11 @@ typedef Assigns = { clicked: Bool }
 class MyLive {
     @:native("handle_event")
     public static function handle_event(event: String, params: Term, socket: Socket<Assigns>): HandleEventResult<Assigns> {
-        var liveSocket: LiveSocket<Assigns> = cast socket;
-
         return switch (event) {
             case "click":
-                liveSocket = LiveView.assignMultiple(liveSocket, {clicked: true});
-                NoReply(liveSocket);
+                NoReply(socket.assign({clicked: true}));
             case _:
-                NoReply(liveSocket);
+                NoReply(socket);
         };
     }
 }
@@ -482,8 +475,6 @@ class MyLive {
 ```haxe
 // Ensure assigns are set in mount
 import elixir.types.Term;
-import phoenix.LiveSocket;
-import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Socket;
 
@@ -493,9 +484,8 @@ typedef Assigns = {
 }
 
 public static function mount(params: Term, session: Term, socket: Socket<Assigns>): MountResult<Assigns> {
-    var liveSocket: LiveSocket<Assigns> = cast socket;
-    liveSocket = LiveView.assignMultiple(liveSocket, {products: [], loading: true});
-    return Ok(liveSocket);
+    socket = socket.assign({products: [], loading: true});
+    return Ok(socket);
 }
 ```
 

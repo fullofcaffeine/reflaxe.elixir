@@ -3,7 +3,7 @@
 Reflaxe.Elixir provides a small set of Phoenix-focused types that keep your **application code typed**, while still generating **idiomatic Phoenix** at runtime.
 
 This document covers the practical surfaces you’ll use most often:
-- `phoenix.types.Socket<TAssigns>` and `phoenix.LiveSocket<TAssigns>`
+- `phoenix.Phoenix.Socket<TAssigns>` (default callback + assign surface) and `phoenix.LiveSocket<TAssigns>` (optional wrapper)
 - `phoenix.types.Assigns<T>`
 - `phoenix.types.Flash.FlashMap`
 
@@ -25,21 +25,19 @@ In LiveView modules, take a typed socket and choose the assign shape that matche
 
 Single-field example:
 
-	```haxe
-	import elixir.types.Term;
-	import phoenix.LiveSocket;
-	import phoenix.Phoenix.MountResult;
-	import phoenix.Phoenix.Socket;
+```haxe
+import elixir.types.Term;
+import phoenix.Phoenix.MountResult;
+import phoenix.Phoenix.Socket;
 
-	@:liveview
-	class CounterLive {
-	  public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
-	    var liveSocket: LiveSocket<CounterAssigns> = socket;
-	    liveSocket = liveSocket.assign(_.count, 0);
-	    return Ok(liveSocket);
-	  }
-	}
-	```
+@:liveview
+class CounterLive {
+  public static function mount(params: Term, session: Term, socket: Socket<CounterAssigns>): MountResult<CounterAssigns> {
+    socket = socket.assign(_.count, 0);
+    return Ok(socket);
+  }
+}
+```
 
 Notes:
 - `_.count` is a typed field selector that the assign macro reads at compile time.
@@ -48,8 +46,7 @@ Notes:
 Bulk assign example:
 
 ```haxe
-var liveSocket: LiveSocket<CounterAssigns> = socket;
-liveSocket = liveSocket.assign({
+socket = socket.assign({
   count: 0
 });
 ```
@@ -61,8 +58,7 @@ import phoenix.AssignKeys;
 
 var keys = AssignKeys.of(CounterAssigns);
 
-var liveSocket: LiveSocket<CounterAssigns> = socket;
-liveSocket = liveSocket.assignKey(keys.count, 0);
+socket = socket.assignKey(keys.count, 0);
 ```
 
 `AssignKeys.of(...)` is the recommended typed-key setup.
@@ -71,6 +67,7 @@ If you use `assign(_.field, value)` / `assign({ ... })`, no key setup is require
 Pros/cons at a glance:
 - Default assign style (`assign(_.field, value)` / `assign({ ... })`): least code, best for most app code.
 - Typed-key style (`assignKey(keys.field, value)`): more explicit key tokens and stronger key/value coupling in signatures.
+- `LiveSocket<TAssigns>` is still available if you prefer explicit wrapper-style chaining in helpers.
 
 Compiles to:
 

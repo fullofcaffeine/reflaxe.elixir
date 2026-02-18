@@ -455,15 +455,13 @@ Application code should prefer **typed `typedef`s** for params and assigns; use 
 ### Typed Collection Operations (preferred)
 
 ```haxe
-import phoenix.LiveSocket;
 import phoenix.Phoenix.Socket;
 
 typedef Todo = { id: Int, title: String, completed: Bool }
 typedef Assigns = { todos: Array<Todo> }
 
 function compute(socket: Socket<Assigns>) {
-    var liveSocket: LiveSocket<Assigns> = cast socket;
-    var todos = liveSocket.assigns.todos;
+    var todos = socket.assigns.todos;
 
     var completed = todos.filter(t -> t.completed);
     var titles = todos.map(t -> t.title);

@@ -43,9 +43,7 @@ Todo.hx @:schema           → lib/todo_app/schemas/todo.ex    # Domain models
 ### LiveView Patterns
 ```haxe
 import elixir.types.Term;
-import phoenix.LiveSocket;
 import phoenix.Phoenix.HandleEventResult;
-import phoenix.Phoenix.LiveView;
 import phoenix.Phoenix.MountResult;
 import phoenix.Phoenix.Socket;
 
@@ -61,19 +59,16 @@ typedef TodoEventParams = {
 @:liveview
 class TodoLive {
     public static function mount(params: Term, session: Term, socket: Socket<TodoAssigns>): MountResult<TodoAssigns> {
-        var liveSocket: LiveSocket<TodoAssigns> = cast socket;
-        liveSocket = LiveView.assignMultiple(liveSocket, {todos: []});
-        return Ok(liveSocket);
+        socket = socket.assign({todos: []});
+        return Ok(socket);
     }
     
     @:native("handle_event")
     public static function handle_event(event: String, params: TodoEventParams, socket: Socket<TodoAssigns>): HandleEventResult<TodoAssigns> {
-        var liveSocket: LiveSocket<TodoAssigns> = cast socket;
-
         return switch (event) {
-            case "add_todo": NoReply(liveSocket);
-            case "toggle_todo": NoReply(liveSocket);
-            case _: NoReply(liveSocket);
+            case "add_todo": NoReply(socket);
+            case "toggle_todo": NoReply(socket);
+            case _: NoReply(socket);
         };
     }
 }

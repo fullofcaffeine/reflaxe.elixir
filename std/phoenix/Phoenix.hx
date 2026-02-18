@@ -21,6 +21,7 @@ import phoenix.types.Flash.FlashType;
  *    - Direct mapping to Elixir's Phoenix.LiveView.Socket
  *    - What Phoenix functions expect and return
  *    - Contains assigns, connection state, etc.
+ *    - Includes assign helpers via `@:using(phoenix.SocketAssignExtensions)`
  * 
  * 2. **LiveSocket<T>** (in LiveSocket.hx) - Type-safe Haxe wrapper
  *    - Abstract type wrapping Socket<T> with zero runtime overhead
@@ -36,15 +37,15 @@ import phoenix.types.Flash.FlashType;
  * ## Usage Pattern
  * ```haxe
  * function mount(params, session, socket: Socket<MyAssigns>) {
- *     // Option 1: Use LiveView functions (mirrors Elixir)
- *     socket = LiveView.assign(socket, "count", 0);
+ *     // Option 1 (default): call assign helpers directly on Socket<T>
+ *     socket = socket.assign(_.count, 0);
  *     
- *     // Option 2: Convert to LiveSocket for type safety
+ *     // Option 2: convert to LiveSocket when you want explicit wrapper flow
  *     var liveSocket: LiveSocket<MyAssigns> = socket;
- *     liveSocket = liveSocket.assign(_.count, 0);  // Field key validated at compile time
+ *     liveSocket = liveSocket.assign(_.count, 1);  // same assign semantics
  *     // Optional typed-key mode (no @:build needed):
  *     // var keys = AssignKeys.of(MyAssigns);
- *     // liveSocket = liveSocket.assignKey(keys.count, 0);
+ *     // socket = socket.assignKey(keys.count, 2);
  *     
  *     return Ok(socket);
  * }
@@ -493,7 +494,8 @@ extern class Router {
  * 
  * ## Relationship with LiveSocket
  * - **Socket<T>** is the base type - what Phoenix functions expect and return
- * - **LiveSocket<T>** is a type-safe wrapper that adds convenient methods
+ * - **Socket<T>** is also the default call site for assign helpers (via `@:using`)
+ * - **LiveSocket<T>** is an optional wrapper for explicit, chain-oriented helper APIs
  * - You can freely convert between them:
  *   ```haxe
  *   var socket: Socket<MyAssigns> = ...; 
@@ -502,20 +504,17 @@ extern class Router {
  *   ```
  * 
  * ## When to Use Socket vs LiveSocket
- * - **Use Socket<T>** in function signatures that Phoenix expects
- * - **Use LiveSocket<T>** when you need to manipulate assigns with type safety
+ * - **Use Socket<T>** in callbacks and most assign updates (`socket.assign(...)`)
+ * - **Use LiveSocket<T>** when an API explicitly wants `LiveSocket<T>` or you prefer explicit wrapper flow
  * 
  * ## Example
  * ```haxe
  * // Phoenix expects Socket in mount signature
  * static function mount(params: Term, session: Term, socket: Socket<MyAssigns>) {
- *     // Convert to LiveSocket for type-safe operations
- *     var liveSocket: LiveSocket<MyAssigns> = socket;
- *     
- *     // Use LiveSocket's type-safe methods
- *     return liveSocket.assign(_.userId, 123)
- *                      .assign(_.userName, "Alice");
- *     // Returns Socket<MyAssigns> automatically
+ *     // Default: call helper methods directly on Socket<T>
+ *     socket = socket.assign(_.userId, 123);
+ *     socket = socket.assign(_.userName, "Alice");
+ *     return Ok(socket);
  * }
  * ```
  * 
@@ -523,6 +522,7 @@ extern class Router {
  * @see LiveSocket For the type-safe wrapper with convenient methods
  * @see https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.Socket.html
  */
+@:using(phoenix.SocketAssignExtensions)
 @:native("Phoenix.LiveView.Socket")
 extern class Socket<T> {
 	var assigns:T; // Type-safe assigns with application-specific structure
