@@ -47,7 +47,7 @@ scripts/dogfood-phoenix.sh --mode github
 
 # Override upgrade path
 # (pick any two tags you care about)
-scripts/dogfood-phoenix.sh --from-tag v1.0.7 --to-tag v1.1.6
+scripts/dogfood-phoenix.sh --from-tag v0.1.0 --to-tag v0.1.1
 
 # Keep the generated app for inspection
 scripts/dogfood-phoenix.sh --keep-dir

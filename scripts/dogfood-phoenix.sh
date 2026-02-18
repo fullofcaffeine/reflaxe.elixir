@@ -36,18 +36,23 @@ VERBOSE=1
 MODE="local"
 
 TO_TAG="v$(node -p "require('${ROOT_DIR}/package.json').version")"
-# Default upgrade baseline: previous release tag.
+# Default upgrade baseline: previous release tag when available.
 #
 # WHY
 # - Dogfood is meant to validate the real-user upgrade path.
-# - Very old tags can legitimately fail under newer Elixir/OTP toolchains and WAE settings,
-#   producing noise unrelated to the current upgrade story.
+# - Repositories may temporarily have only one reachable release tag (for example after a reset).
 #
 # HOW
-# - Select the second-most-recent semver tag if available; fall back to a pinned legacy tag.
-FROM_TAG="$(git tag --list 'v[0-9]*' --sort=-version:refname | sed -n '2p' || true)"
+# - Select the second-most-recent semver tag when present.
+# - If only one tag exists, use that tag as baseline.
+# - If no tag exists, fall back to the current target tag.
+semver_tags="$(git tag --list 'v[0-9]*' --sort=-version:refname || true)"
+FROM_TAG="$(echo "$semver_tags" | sed -n '2p' || true)"
 if [[ -z "$FROM_TAG" ]]; then
-  FROM_TAG="v1.0.7"
+  FROM_TAG="$(echo "$semver_tags" | sed -n '1p' || true)"
+fi
+if [[ -z "$FROM_TAG" ]]; then
+  FROM_TAG="$TO_TAG"
 fi
 
 usage() {
