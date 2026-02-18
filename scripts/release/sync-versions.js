@@ -33,39 +33,37 @@ function updateJsonFile(path, update) {
 function updateMixExsVersion(version) {
   const path = 'mix.exs'
   const original = readUtf8(path)
-  const next = original.replace(
-    /version:\s*"[0-9]+\.[0-9]+\.[0-9]+(-[^"\s]+)?"/g,
-    `version: \"${version}\"`
-  )
-  if (next === original) {
+  const pattern = /version:\s*"[0-9]+\.[0-9]+\.[0-9]+(-[^"\s]+)?"/g
+  if (!pattern.test(original)) {
     throw new Error(`No version field found to update in ${path}`)
   }
-  writeUtf8(path, next)
+  const next = original.replace(pattern, `version: \"${version}\"`)
+  if (next !== original) writeUtf8(path, next)
 }
 
 function updateReadmeBadge(version) {
   const path = 'README.md'
   const original = readUtf8(path)
-  const next = original.replace(
-    /\[!\[Version\]\(https:\/\/img\.shields\.io\/badge\/version-[0-9A-Za-z.-]+-blue\)\]/,
-    `[![Version](https://img.shields.io/badge/version-${version}-blue)]`
-  )
-  if (next === original) {
+  const pattern =
+    /\[!\[Version\]\(https:\/\/img\.shields\.io\/badge\/version-[0-9A-Za-z.-]+-blue\)\]/
+  if (!pattern.test(original)) {
     throw new Error(`No Version badge found to update in ${path}`)
   }
-  writeUtf8(path, next)
+  const next = original.replace(
+    pattern,
+    `[![Version](https://img.shields.io/badge/version-${version}-blue)]`
+  )
+  if (next !== original) writeUtf8(path, next)
 }
 
 function updateHxmlLibraryVersion(path, version) {
   const original = readUtf8(path)
-  const next = original.replace(
-    /^-D\s+reflaxe\.elixir=[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?\s*$/gm,
-    `-D reflaxe.elixir=${version}`
-  )
-  if (next === original) {
+  const pattern = /^-D\s+reflaxe\.elixir=[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?\s*$/gm
+  if (!pattern.test(original)) {
     throw new Error(`No reflaxe.elixir version define found to update in ${path}`)
   }
-  writeUtf8(path, next)
+  const next = original.replace(pattern, `-D reflaxe.elixir=${version}`)
+  if (next !== original) writeUtf8(path, next)
 }
 
 function ensureSemver(version) {

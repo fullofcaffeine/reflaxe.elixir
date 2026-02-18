@@ -108,6 +108,8 @@
             "haxelib.json",
             "mix.exs",
             "README.md",
+            "haxe_libraries/reflaxe.elixir.hxml",
+            "test/support/test_reflaxe_elixir.hxml",
             "CHANGELOG.md"
           ],
           "message": "chore(release): ${nextRelease.version} [skip ci]\\n\\n${nextRelease.notes}"
