@@ -3,14 +3,16 @@
 Reflaxe.Elixir uses **semantic versioning** (`MAJOR.MINOR.PATCH`) and a **stability tier** model to
 make it clear what is safe to depend on and what may change.
 
-> Reflaxe.Elixir `v1.1.x` is considered **non‑alpha** for the documented subset (see `docs/06-guides/PRODUCTION_READINESS.md`).
+> Reflaxe.Elixir is currently in the **pre-1.0 (`v0.x`)** phase.
 > Experimental features remain opt‑in and may evolve in minor releases.
+> For now, even breaking changes are released on the `0.x` minor line and documented clearly.
 
 ## Stability tiers
 
-### ✅ Stable (SemVer protected)
+### ✅ Stable (SemVer protected, with pre-1.0 policy)
 
-Breaking changes require a **major** version bump.
+While the project is `0.x`, breaking changes to stable surfaces are treated as **minor bumps** and must be explicitly documented.
+After `1.0.0`, breaking changes require a **major** bump.
 
 Includes:
 
@@ -52,15 +54,16 @@ Reserved for:
 - intentionally incompatible output/semantics changes for the documented subset
 - removals of deprecated Stable APIs
 
-### MINOR (`1.X.0`)
+### MINOR (`0.X.0` while pre-1.0)
 
 Used for:
 
 - new Stable features (additive)
 - significant improvements and new integrations
 - changes to Experimental features (with explicit notes)
+- breaking changes while the project is pre-1.0 (with explicit migration notes)
 
-### PATCH (`1.0.X`)
+### PATCH (`0.X.Y` while pre-1.0)
 
 Used for:
 
@@ -69,8 +72,8 @@ Used for:
 - internal refactors that do not change Stable behavior
 
 If a bug fix changes behavior in a way that could break a real app, it must be clearly called out
-in `CHANGELOG.md`. If it breaks the documented Stable subset, it should be a MAJOR release unless
-the change is required for correctness and there is no safe alternative.
+in `CHANGELOG.md`. While pre-1.0, this can still ship as a MINOR; once `1.0.0` is reached, stable-surface
+breaks move to MAJOR.
 
 ## Deprecation policy
 

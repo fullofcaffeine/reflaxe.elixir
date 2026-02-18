@@ -13,9 +13,12 @@ High level:
 
 Semantic-release looks at commit messages since the last release:
 
-- `fix:` → patch release (`1.1.5` → `1.1.6`)
-- `feat:` → minor release (`1.1.5` → `1.2.0`)
-- `feat!:` or `BREAKING CHANGE:` → major release (`1.x` → `2.0.0`)
+- `fix:` → patch release (`0.1.2` → `0.1.3`)
+- `feat:` → minor release (`0.1.2` → `0.2.0`)
+- `feat!:` or `BREAKING CHANGE:` → **minor release while pre-1.0** (`0.2.0` → `0.3.0`)
+
+Current release config intentionally keeps all breaking changes on the minor line while the project is pre-1.0.
+When the project is ready for stable `1.x` majors, update the commit-analyzer rules in `package.json`.
 
 If there are no release-worthy commits, the workflow runs but produces no new release.
 
@@ -67,7 +70,7 @@ If your org/repo policy blocks tag or release publishing with `github.token`, up
 ## Baseline tag guard
 
 The release workflow now fails fast if no semver tag is reachable from current `main` history.
-This prevents semantic-release from incorrectly treating the repo as a first-time `1.0.0` release.
+This prevents semantic-release from incorrectly treating the repo as an initial `1.0.0` release.
 
 Quick diagnostic:
 
@@ -78,8 +81,8 @@ git tag --merged main | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
 If this returns nothing, create and push a baseline tag on a commit in current `main` ancestry:
 
 ```bash
-git tag -a v1.17.0 <commit-on-main-history> -m "Baseline release tag v1.17.0"
-git push origin v1.17.0
+git tag -a v0.1.0 <commit-on-main-history> -m "Baseline release tag v0.1.0"
+git push origin v0.1.0
 ```
 
 ## Backfilling releases for existing tags

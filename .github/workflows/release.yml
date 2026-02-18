@@ -46,8 +46,8 @@ jobs:
 
           if [ -z "$semver_tags" ]; then
             echo "::error::No semver tag is reachable from current main history."
-            echo "::error::semantic-release would treat this as first release (1.0.0)."
-            echo "::error::Create/push a baseline tag on main ancestry (for example: v1.17.0)."
+            echo "::error::semantic-release would treat this as an initial release (typically 1.0.0)."
+            echo "::error::Create/push a baseline tag on main ancestry (for example: v0.1.0)."
             exit 1
           fi
 

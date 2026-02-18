@@ -16,6 +16,6 @@
 -lib reflaxe
 
 # Define the library version
--D reflaxe.elixir=1.17.0
+-D reflaxe.elixir=0.1.0
 # Initialize the Elixir compiler
 --macro reflaxe.elixir.CompilerInit.Start()

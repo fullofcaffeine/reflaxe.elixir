@@ -1,6 +1,6 @@
 {
   "name": "reflaxe-elixir",
-  "version": "1.17.0",
+  "version": "0.1.0",
   "description": "Haxe to Elixir compilation target using Reflaxe with Mix integration. Uses npm/lix for Haxe compiler development, mix for Elixir runtime testing.",
   "main": "src/reflaxe/elixir/ElixirCompiler.hx",
   "keywords": [
@@ -90,7 +90,34 @@
       "main"
     ],
     "plugins": [
-      "@semantic-release/commit-analyzer",
+      [
+        "@semantic-release/commit-analyzer",
+        {
+          "preset": "conventionalcommits",
+          "releaseRules": [
+            {
+              "breaking": true,
+              "release": "minor"
+            },
+            {
+              "type": "feat",
+              "release": "minor"
+            },
+            {
+              "type": "fix",
+              "release": "patch"
+            },
+            {
+              "type": "perf",
+              "release": "patch"
+            },
+            {
+              "type": "revert",
+              "release": "patch"
+            }
+          ]
+        }
+      ],
       "@semantic-release/release-notes-generator",
       "@semantic-release/changelog",
       [

@@ -4,7 +4,7 @@
 
 # Reflaxe.Elixir (aka Haxir)
 
-[![Version](https://img.shields.io/badge/version-1.17.0-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![CI](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml)
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org)
@@ -14,7 +14,7 @@
 Write application code in Haxe and compile to conventional Elixir shapes for the BEAM ecosystem.
 
 > [!WARNING]
-> **Stability**: the documented subset is considered stable in `v1.x`.
+> **Stability**: the project is currently pre-1.0 (`v0.x`) and actively evolving.
 > Some features remain experimental/opt-in (for example source mapping, migrations `.exs` emission, `fast_boot`).
 > See [Known Limitations](docs/06-guides/KNOWN_LIMITATIONS.md) and [Versioning & Stability](docs/06-guides/VERSIONING_AND_STABILITY.md).
 
@@ -55,7 +55,7 @@ Reflaxe.Elixir takes a different approach:
 - You integrate directly with Phoenix/LiveView/Ecto through typed extern surfaces.
 - You can reuse Haxe tooling/macros and keep cross-target options where they make sense.
 
-## Current Support (v1.x)
+## Current Support (v0.x pre-1.0)
 
 ### Stable (documented subset)
 
