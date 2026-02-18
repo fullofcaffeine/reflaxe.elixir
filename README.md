@@ -155,12 +155,17 @@ class CounterLive {
 ```
 
 Notes:
+- `socket` in LiveView callbacks is `Socket<TAssigns>` (the Phoenix callback shape). `LiveSocket<TAssigns>` is a Haxe helper wrapper on top of it.
+- `var liveSocket: LiveSocket<CounterAssigns> = socket;` is an implicit compile-time conversion so you can call helper methods like `assign(...)`; it does not create a second runtime socket.
 - `_.count` can look odd at first because `_` usually means “unused variable.” Here, `_` is a macro marker.
 - Why the API looks like this: Haxe has no built-in “field reference literal” for typedef fields, so `LiveSocket.assign` uses `_.field` as a compact compile-time selector.
 - What you get from it: the compiler validates the field name, converts to Phoenix atom style, and emits `assign(socket, :count, value)`. `_` does not exist at runtime.
 - Phoenix-style bulk assigns are available as `assign({ ... })`, which emits `assign(socket, %{...})`.
 - Typed-key APIs (`assignKey`/`assignNewKey`/`updateKey`) are optional advanced mode with `var keys = phoenix.AssignKeys.of(MyAssigns)`.
   Use default `assign(_.field, value)` / `assign({ ... })` for shortest code; use typed keys when you want explicit key tokens in APIs.
+  Tiny comparison:
+  `var keys = phoenix.AssignKeys.of(CounterAssigns);`
+  `return Ok(liveSocket.assignKey(keys.count, 0));`
 - In Haxe, write callback args naturally (`params`, `session`). If they are unused, generated Elixir is automatically normalized to `_params`, `_session`.
 - API deep dive: `docs/04-api-reference/LIVE_SOCKET_ASSIGN_API.md`
 
