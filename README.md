@@ -10,7 +10,7 @@
 [![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org/)
 [![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org/)
 
-**[Haxe](https://haxe.org/) -> [Elixir](https://elixir-lang.org/) compiler for the BEAM ecosystem, with first-class [Phoenix](https://www.phoenixframework.org/)/LiveView support.**
+**[Haxe](https://haxe.org/) -> [Elixir](https://elixir-lang.org/) compiler for the BEAM ecosystem, with first-class [Phoenix](https://www.phoenixframework.org/)/[LiveView](https://hexdocs.pm/phoenix_live_view/Phoenix.LiveView.html) support.**
 Write application code in Haxe and compile to conventional Elixir shapes for pure Elixir/OTP services and Phoenix applications.
 
 > [!WARNING]
