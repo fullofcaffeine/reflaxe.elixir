@@ -22,23 +22,58 @@ jobs:
     name: Semantic Release
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-       !contains(github.event.workflow_run.head_commit.message, 'chore(release):'))
     permissions:
       contents: write
       issues: write
       pull-requests: write
     steps:
+      - name: Resolve release context
+        id: release_context
+        run: |
+          set -euo pipefail
+
+          event_name="${GITHUB_EVENT_NAME}"
+          target_sha="${GITHUB_SHA}"
+          should_skip="false"
+
+          if [ "${event_name}" = "workflow_run" ]; then
+            target_sha="$(jq -r '.workflow_run.head_sha // empty' "$GITHUB_EVENT_PATH")"
+            workflow_conclusion="$(jq -r '.workflow_run.conclusion // empty' "$GITHUB_EVENT_PATH")"
+            workflow_message="$(jq -r '.workflow_run.head_commit.message // empty' "$GITHUB_EVENT_PATH")"
+
+            if [ "${workflow_conclusion}" != "success" ]; then
+              should_skip="true"
+            fi
+
+            if [[ "${workflow_message}" == *"chore(release):"* ]]; then
+              should_skip="true"
+            fi
+          elif [ "${event_name}" != "workflow_dispatch" ]; then
+            should_skip="true"
+          fi
+
+          if [ -z "${target_sha}" ]; then
+            target_sha="${GITHUB_SHA}"
+          fi
+
+          echo "target_sha=${target_sha}" >> "$GITHUB_OUTPUT"
+          echo "should_skip=${should_skip}" >> "$GITHUB_OUTPUT"
+          echo "[release] event=${event_name} target_sha=${target_sha} skip=${should_skip}"
+
+      - name: Skip notice
+        if: steps.release_context.outputs.should_skip == 'true'
+        run: echo "[release] Skipping release for this trigger."
+
       - name: Checkout
+        if: steps.release_context.outputs.should_skip != 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.workflow_run.head_sha || 'main' }}
+          ref: ${{ steps.release_context.outputs.target_sha }}
           token: ${{ github.token }}
 
-      - name: Guard: reachable semver baseline tag
+      - name: "Guard: reachable semver baseline tag"
+        if: steps.release_context.outputs.should_skip != 'true'
         run: |
           set -euo pipefail
 
@@ -55,9 +90,10 @@ jobs:
           echo "$semver_tags" | sort -V | tail -n 5
 
       - name: Gate on required workflows (same SHA)
+        if: steps.release_context.outputs.should_skip != 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          SHA: ${{ steps.release_context.outputs.target_sha }}
           REQUIRED_WORKFLOWS: >-
             dogfood.yml:Dogfood (Generated Phoenix App),
             sentinel.yml:QA Sentinel Smoke,
@@ -139,20 +175,24 @@ jobs:
           done
 
       - name: Setup Node.js
+        if: steps.release_context.outputs.should_skip != 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
 
       - name: Install npm dependencies
+        if: steps.release_context.outputs.should_skip != 'true'
         run: npm ci --ignore-scripts --no-audit --no-fund
 
       - name: Configure git identity (for release commits)
+        if: steps.release_context.outputs.should_skip != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Release
+        if: steps.release_context.outputs.should_skip != 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GH_TOKEN: ${{ github.token }}
