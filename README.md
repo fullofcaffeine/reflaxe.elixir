@@ -7,11 +7,11 @@
 [![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/fullofcaffeine/reflaxe.elixir/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![CI](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml/badge.svg)](https://github.com/fullofcaffeine/reflaxe.elixir/actions/workflows/ci.yml)
-[![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org)
-[![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org)
+[![Haxe](https://img.shields.io/badge/Haxe-4.3.7+-orange)](https://haxe.org/)
+[![Elixir](https://img.shields.io/badge/Elixir-1.14+-purple)](https://elixir-lang.org/)
 
-**Haxe -> Elixir compiler for Phoenix/LiveView projects.**
-Write application code in Haxe and compile to conventional Elixir shapes for the BEAM ecosystem.
+**[Haxe](https://haxe.org/) -> [Elixir](https://elixir-lang.org/) compiler for the BEAM ecosystem, with first-class [Phoenix](https://www.phoenixframework.org/)/LiveView support.**
+Write application code in Haxe and compile to conventional Elixir shapes for pure Elixir/OTP services and Phoenix applications.
 
 > [!WARNING]
 > **Stability**: the project is currently pre-1.0 (`v0.x`) and actively evolving.
@@ -20,12 +20,13 @@ Write application code in Haxe and compile to conventional Elixir shapes for the
 
 ## Why Reflaxe.Elixir
 
-Reflaxe.Elixir is for teams that want Phoenix/OTP runtime behavior, while authoring with stronger compile-time feedback.
+Reflaxe.Elixir is for teams that want standard Elixir/OTP runtime behavior, while authoring with stronger compile-time feedback.
 
-- **Keep standard Elixir/Phoenix runtime**: generated code follows normal module/function/tuple/map conventions.
+- **Keep standard Elixir runtime semantics**: generated code follows normal module/function/tuple/map conventions.
 - **Add a typed authoring layer**: catch shape mismatches (assigns, params, tagged results) before runtime.
 - **Improve large refactors**: typed Haxe APIs and compiler checks help keep changes coherent across modules.
 - **Build ergonomic abstractions**: Haxe macros/typing can encode reusable authoring patterns without changing your BEAM deployment model.
+- **Use it with or without Phoenix**: works for pure Elixir/OTP codebases and Phoenix apps.
 
 Elixir's failure model is still the foundation (supervision, process isolation, let-it-crash where appropriate).
 The typed layer helps you decide more deliberately what should crash, what should return data, and where boundaries should be explicit.
@@ -63,7 +64,7 @@ Reflaxe.Elixir takes a different approach:
 - HEEx-oriented template authoring modes (`tsx`, `balanced`, `metal`)
 - Ecto schemas/changesets/typed query surfaces
 - OTP patterns (GenServer/Supervisor/Registry)
-- Mix integration (`mix compile.haxe`, watcher workflows)
+- Mix integration (`mix compile.haxe`, watcher workflows) and client hook builds with [Genes](https://github.com/benmerckx/genes)
 
 ### Experimental / opt-in
 
@@ -84,7 +85,7 @@ If you're new to this stack, begin with:
 - [Start Here](docs/01-getting-started/START_HERE.md)
 - [Quickstart](docs/06-guides/QUICKSTART.md)
 
-### Install with lix (recommended)
+### Install with [Lix](https://github.com/lix-pm/lix.client) (recommended)
 
 ```bash
 npx lix scope create
@@ -123,6 +124,12 @@ Use the guided flow:
 
 For gradual adoption in an existing Phoenix codebase:
 - [Phoenix Gradual Adoption](docs/06-guides/PHOENIX_GRADUAL_ADOPTION.md)
+
+### Pure Elixir / OTP (no Phoenix)
+
+Start from the Mix-based examples and author regular Elixir modules in Haxe:
+- [Examples Index](examples/README.md)
+- [`examples/02-mix-project`](examples/02-mix-project/)
 
 ### Todo app smoke (repo)
 
@@ -214,8 +221,9 @@ GPL-3.0 - see [LICENSE](LICENSE).
 
 ## Links
 
-- [Haxe](https://haxe.org)
+- [Haxe](https://haxe.org/)
 - [Reflaxe](https://github.com/SomeRanDev/reflaxe)
-- [Elixir](https://elixir-lang.org)
-- [Phoenix](https://phoenixframework.org)
-- [lix](https://github.com/lix-pm/lix.client)
+- [Elixir](https://elixir-lang.org/)
+- [Phoenix](https://www.phoenixframework.org/)
+- [Lix](https://github.com/lix-pm/lix.client)
+- [Genes](https://github.com/benmerckx/genes)
