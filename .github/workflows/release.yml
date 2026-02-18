@@ -38,6 +38,22 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha || 'main' }}
           token: ${{ github.token }}
 
+      - name: Guard: reachable semver baseline tag
+        run: |
+          set -euo pipefail
+
+          semver_tags="$(git tag --merged HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' || true)"
+
+          if [ -z "$semver_tags" ]; then
+            echo "::error::No semver tag is reachable from current main history."
+            echo "::error::semantic-release would treat this as first release (1.0.0)."
+            echo "::error::Create/push a baseline tag on main ancestry (for example: v1.17.0)."
+            exit 1
+          fi
+
+          echo "[release] Reachable semver tags (latest 5):"
+          echo "$semver_tags" | sort -V | tail -n 5
+
       - name: Gate on required workflows (same SHA)
         env:
           GITHUB_TOKEN: ${{ github.token }}

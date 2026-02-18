@@ -64,6 +64,24 @@ This avoids failures caused by stale or under-scoped personal tokens.
 If your org/repo policy blocks tag or release publishing with `github.token`, update
 `.github/workflows/release.yml` to use a dedicated PAT secret explicitly for that environment.
 
+## Baseline tag guard
+
+The release workflow now fails fast if no semver tag is reachable from current `main` history.
+This prevents semantic-release from incorrectly treating the repo as a first-time `1.0.0` release.
+
+Quick diagnostic:
+
+```bash
+git tag --merged main | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
+```
+
+If this returns nothing, create and push a baseline tag on a commit in current `main` ancestry:
+
+```bash
+git tag -a v1.17.0 <commit-on-main-history> -m "Baseline release tag v1.17.0"
+git push origin v1.17.0
+```
+
 ## Backfilling releases for existing tags
 
 If tags already exist but the GitHub **Releases** list is empty (or older tags predate the workflow),
