@@ -53,6 +53,12 @@ mix dev
 
 Visit `http://localhost:4000` to see the app.
 
+### Command Guide (Recommended)
+
+- `mix dev` (best default): runs `ecto.create`, `ecto.migrate`, then starts Phoenix with watchers.
+- `mix phx.server` (fast restart): starts Phoenix with the same dev watchers, but does not run DB create/migrate.
+- `mix assets.build && mix compile` (one-shot build): builds client assets and compiles server code without starting the server/watchers.
+
 ### Troubleshooting
 
 #### `ERROR 42703 (undefined_column) column t0.organization_id does not exist`
@@ -246,6 +252,8 @@ npm --prefix assets run watch:haxe
 ```
 
 Note
+- In this app, both `mix dev` and `mix phx.server` run Endpoint watchers from `config/dev.exs`
+  (esbuild, tailwind, Haxe server watcher, Haxe client watcher).
 - The Haxe client watcher is launched via npm (`npm --prefix assets run watch:haxe`).
 - If npm is not available on PATH, Phoenix starts without the Haxe watcher; you can still build once with `mix assets.build`.
 

@@ -424,7 +424,7 @@ We compile the server (Haxe→Elixir) via a Mix compiler and the client (Haxe→
 
 Quick commands
 - One‑liner with watchers (recommended): `mix dev`  
-  (alias for `mix setup && mix phx.server` — compiles client+server and starts Phoenix with all watchers)
+  (alias for `ecto.create`, `ecto.migrate`, then `phx.server` — includes Phoenix + dev watchers)
 - Manual one‑off build: `mix assets.build && mix compile`
 - Start server only (watchers also run): `mix phx.server`
 
