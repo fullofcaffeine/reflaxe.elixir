@@ -28,8 +28,10 @@ defmodule ElixirFirstLiveview.MixProject do
     ]
   end
 
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_), do: ["lib"]
+  # Keep a small tracked folder for intentionally hand-written Elixir modules.
+  # Generated Haxe output remains in lib/.
+  defp elixirc_paths(:test), do: ["src_elixir", "lib", "test/support"]
+  defp elixirc_paths(_), do: ["src_elixir", "lib"]
 
   defp deps do
     [

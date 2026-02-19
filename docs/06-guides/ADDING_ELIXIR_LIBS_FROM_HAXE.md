@@ -23,6 +23,16 @@ If you are specifically integrating intentionally pure-Elixir modules in your ap
 If you are contributing a generally useful integration, put the extern in `std/elixir/*`, `std/phoenix/*`, or `std/ecto/*`.
 Otherwise, keep it app-local under your project’s `src_haxe/`.
 
+Quick compare:
+
+- Thin extern only: best when the native call is already clear and used in few places.
+- Extern + wrapper: best when you want app-level naming, boundary decoding, or centralized error handling.
+
+Runnable reference:
+
+- `examples/13-elixir-first-liveview/src_haxe/interop/LegacySlugExtern.hx`
+- `examples/13-elixir-first-liveview/src_haxe/interop/LegacySlugBridge.hx`
+
 ## App-Local Existing Elixir Module (same pattern)
 
 If your app already has a module like `MyApp.LegacyBilling`, map it exactly the same way:

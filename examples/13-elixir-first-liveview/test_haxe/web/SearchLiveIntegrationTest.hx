@@ -42,4 +42,15 @@ class SearchLiveIntegrationTest extends TestCase {
 		assertTrue(ElixirString.contains(html, "Phoenix LiveView"));
 		assertFalse(ElixirString.contains(html, "GenServer"));
 	}
+
+	@:test
+	public function testInteropRouteRendersHandwrittenElixirSample():Void {
+		var conn = ConnTest.build_conn();
+		conn = ConnTest.get(conn, "/interop");
+
+		assertEqual(200, conn.status);
+		assertTrue(conn.resp_body != null);
+		assertTrue(ElixirString.contains(conn.resp_body, "Handwritten Elixir module from Haxe"));
+		assertTrue(ElixirString.contains(conn.resp_body, "haxe-elixir-interop"));
+	}
 }

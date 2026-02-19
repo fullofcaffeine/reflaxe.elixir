@@ -8,6 +8,7 @@ This example shows a **typed Elixir-first** authoring style: use Haxe as a typed
 - Typed boundary decoding from `Term` using `elixir.Kernel` type guards.
 - Domain flow modeled with `haxe.functional.Result` (`Ok`/`Error`).
 - Search logic implemented with Elixir extern surfaces (`elixir.Enum`, `elixir.ElixirString`).
+- A runnable handwritten Elixir interop boundary (`LegacySlug`) consumed from Haxe via typed extern + wrapper.
 - LiveView browser boot compiled from Haxe (Genes) with a Phoenix-style JS wrapper.
 
 ## Strict mode used here
@@ -34,16 +35,34 @@ mix phx.server
 ```
 
 Open `http://localhost:4000/`.
+Open `http://localhost:4000/interop` for the handwritten-Elixir interop sample.
 
 ## Haxe source map
 
 - `examples/13-elixir-first-liveview/src_haxe/ElixirFirstLiveview.hx` - OTP application entrypoint
 - `examples/13-elixir-first-liveview/src_haxe/ElixirFirstLiveviewRouter.hx` - typed router via module-level `final routes`
 - `examples/13-elixir-first-liveview/src_haxe/live/SearchLive.hx` - LiveView callbacks and render
+- `examples/13-elixir-first-liveview/src_haxe/live/InteropLive.hx` - dedicated interop demo route
 - `examples/13-elixir-first-liveview/src_haxe/live/SearchDomain.hx` - pure domain logic
+- `examples/13-elixir-first-liveview/src_haxe/interop/LegacySlugExtern.hx` - thin typed extern to a hand-written Elixir module
+- `examples/13-elixir-first-liveview/src_haxe/interop/LegacySlugBridge.hx` - app-facing wrapper over that extern
 - `examples/13-elixir-first-liveview/src_haxe/client/Boot.hx` - Genes-compiled LiveSocket bootstrap
 - `examples/13-elixir-first-liveview/test_haxe/web/SearchLiveIntegrationTest.hx` - Haxe-authored Phoenix LiveView integration tests
 - `examples/13-elixir-first-liveview/test_haxe/live/SearchDomainTest.hx` - Haxe-authored ExUnit tests
+
+## Handwritten Elixir Interop Sample
+
+This example keeps one intentional handwritten Elixir module:
+
+- `examples/13-elixir-first-liveview/src_elixir/elixir_first_liveview/legacy_slug.ex`
+
+And consumes it from Haxe using the default interop pattern:
+
+1. thin typed extern (`LegacySlugExtern`)
+2. small app wrapper (`LegacySlugBridge`)
+3. normal Haxe call sites (`InteropLive`)
+
+This keeps the boundary explicit while the rest of the app remains Haxe-first.
 
 ## Haxe + Mix test integration
 

@@ -7,6 +7,17 @@ Reflaxe.Elixir stays Haxe-first here:
 - optional layer: small Haxe wrappers for app ergonomics
 - last resort: `untyped __elixir__()` when no typed surface is practical yet
 
+## Runnable example in this repository
+
+For a concrete end-to-end sample, see:
+
+- `examples/13-elixir-first-liveview/src_elixir/elixir_first_liveview/legacy_slug.ex` (handwritten Elixir module)
+- `examples/13-elixir-first-liveview/src_haxe/interop/LegacySlugExtern.hx` (typed extern boundary)
+- `examples/13-elixir-first-liveview/src_haxe/interop/LegacySlugBridge.hx` (small app wrapper)
+- `examples/13-elixir-first-liveview/src_haxe/live/InteropLive.hx` (normal Haxe call site)
+
+Run `mix phx.server` in `examples/13-elixir-first-liveview` and open `/interop`.
+
 ## What "extern" and "__elixir__" mean
 
 - `extern` in Haxe: a typed declaration for functions that already exist in Elixir. It does not emit a new Elixir module.
@@ -106,6 +117,8 @@ With `-D reflaxe_elixir_strict`:
 - app-local `untyped` (including `__elixir__()`) is rejected
 - explicit `Dynamic` is rejected
 - ad-hoc app-local externs are restricted
+
+When you intentionally keep an app-local extern boundary, mark it explicitly (for example `@:unsafeExtern`) and keep it small and documented.
 
 If strict mode blocks a needed boundary, the preferred path is to add a typed surface in shared layers (`std/*`) or a documented, minimal project wrapper.
 

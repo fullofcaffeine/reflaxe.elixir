@@ -66,7 +66,7 @@ This directory contains progressive examples demonstrating Haxe→Elixir compila
 
 ### 13. [13-elixir-first-liveview](./13-elixir-first-liveview/)
 **Difficulty**: Intermediate  
-**Features**: Typed Elixir-first LiveView, strict mode, typed boundary decoding, Result-based domain flow  
+**Features**: Typed Elixir-first LiveView, strict mode, typed boundary decoding, Result-based domain flow, runnable handwritten-Elixir interop boundary sample  
 **Use Case**: Use Haxe as typed Elixir with minimal portability-first constraints
 
 ### 14. [14-abstraction-lab](./14-abstraction-lab/)
