@@ -800,10 +800,11 @@ This todo-app demonstrates writing an **entire Phoenix LiveView application** in
 class TodoApp {
     public static function start(_type, _args) {
         var children = [
-            TypeSafeChildSpec.supervisor(TodoAppWeb.Telemetry),
-            TypeSafeChildSpec.repo(TodoApp.Repo),
-            TypeSafeChildSpec.pubSub("TodoApp.PubSub", []),
-            TypeSafeChildSpec.endpoint(TodoAppWeb.Endpoint)
+            TypeSafeChildSpec.moduleRef(Repo),
+            TypeSafeChildSpec.pubSub(PubSub),
+            TypeSafeChildSpec.moduleRef(TodoPresence),
+            TypeSafeChildSpec.telemetry(Telemetry),
+            TypeSafeChildSpec.endpoint(Endpoint)
         ];
         
         var opts = {strategy: OneForOne, name: TodoApp.Supervisor};
