@@ -1,0 +1,6 @@
+-lib tink_macro
+-lib tink_parse
+-cp ${SCOPE_DIR}/../../src
+-D reflaxe.elixir=1.14.1
+${SCOPE_DIR}/../../extraParams.hxml
+--macro Sys.println("haxe_libraries/reflaxe.elixir.hxml:4: [Warning] Using dev version of library reflaxe.elixir")

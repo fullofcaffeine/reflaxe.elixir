@@ -26,7 +26,8 @@ _build/
 !/haxe_libraries/archived/
 /haxe_libraries/archived/*
 !/haxe_libraries/archived/*.hxml
-examples/**/haxe_libraries/
+examples/**/haxe_libraries/*
+!examples/**/haxe_libraries/*.hxml
 
 # Test outputs
 test/*/out/

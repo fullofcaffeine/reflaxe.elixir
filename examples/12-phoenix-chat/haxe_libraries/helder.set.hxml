@@ -1,0 +1,9 @@
+# reflaxe_elixir:scaffolded_haxe_library:helder.set:v1
+# helder.set — small Set<T> abstraction used by genes
+#
+# This file is scaffold-managed by `mix haxe.phoenix.scaffold`. If you customize it, remove
+# the signature line above to opt out of future updates.
+
+# @install: lix --silent download "haxelib:/helder.set#0.3.1" into helder.set/0.3.1/haxelib
+-cp ${HAXE_LIBCACHE}/helder.set/0.3.1/haxelib/src
+-D helder.set=0.3.1

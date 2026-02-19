@@ -1,0 +1,4 @@
+# Local vendor wiring for genes in the monorepo
+# Keep app-local classpath to avoid global coupling
+-cp ../../vendor/genes/src
+-D genes
